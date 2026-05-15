@@ -379,6 +379,21 @@ html{scroll-behavior:smooth}
 /* Selección de texto */
 ::selection{background:#bfdbfe;color:#1e3a5f}
 
+/* ════ DOCUMENTOS CLIENTE ════ */
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
+.doc-card{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px;text-align:center;position:relative;transition:all .15s}
+.doc-card:hover{border-color:#3b82f6;background:#eff6ff}
+.doc-card.uploaded{border-color:#10b981;background:#f0fdf4}
+.doc-card.uploading{border-color:#f59e0b;background:#fffbeb;animation:pulse .8s infinite}
+.doc-icon{font-size:28px;margin-bottom:6px;display:block}
+.doc-lbl{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.doc-name{font-size:9px;color:#64748b;margin-bottom:6px;word-break:break-all;max-height:28px;overflow:hidden}
+.doc-btns{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.doc-upload-input{display:none}
+.doc-drop-zone{border:2px dashed #cbd5e1;border-radius:10px;padding:16px 10px;text-align:center;cursor:pointer;transition:all .15s;margin-top:8px}
+.doc-drop-zone:hover{border-color:#3b82f6;background:#eff6ff}
+.doc-drop-zone.drag-over{border-color:#3b82f6;background:#dbeafe}
+.doc-preview-img{width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px;cursor:pointer}
 /* ════ SISTEMA DE ERRORES ════ */
 /* Panel de error elegante */
 .err-overlay{position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:9990;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:1rem}
@@ -480,9 +495,9 @@ html{scroll-behavior:smooth}
       <div class="sb-nav">
         <div class="ss">Principal</div>
         <div class="ni on" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Dashboard</span></div>
+        <div class="ni" onclick="nav('facturas',this)"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
         <div class="ni" onclick="nav('clientes',this)"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
         <div class="ni" onclick="nav('polizas',this)"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
-        <div class="ni" onclick="nav('facturas',this)"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
 
 
         <div class="ss">Financiero</div>
@@ -527,6 +542,7 @@ html{scroll-behavior:smooth}
           <button class="tn-b" onclick="abrirLog()" title="Log de errores"><i class="ti ti-bug"></i></button>
           <button id="btnInstalar" onclick="instalarApp()" title="Instalar como app" style="display:none;background:linear-gradient(135deg,#1e3a6e,#3b82f6);border:none;color:#fff;font-weight:700;font-size:10px;padding:0 10px;border-radius:8px;height:34px;gap:5px;align-items:center;cursor:pointer"><i class="ti ti-download"></i> <span>Instalar</span></button>
           <button class="tn-b" onclick="instalarApp()" title="Instalar como app en iOS/Android"><i class="ti ti-device-mobile-down"></i></button>
+          <button class="tn-b" onclick="abrirBackup()" title="Backup de seguridad" style="border-color:#10b981;color:#059669;background:#f0fdf4"><i class="ti ti-database-export"></i></button>
           <button class="tn-b" onclick="desconectar()" title="Config"><i class="ti ti-settings"></i></button>
         </div>
       </header>
@@ -1085,6 +1101,95 @@ html{scroll-behavior:smooth}
   </div>
 </div>
 
+<!-- Modal Documentos Cliente -->
+<div class="overlay" id="mDocs">
+  <div class="modal" style="max-width:580px">
+    <div class="mt"><span id="mDocsTitle">// DOCUMENTOS DEL CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mDocs')"><i class="ti ti-x"></i></button></div>
+
+    <div id="docsClienteInfo" style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:14px;border:1px solid #e2e8f0;font-size:12px"></div>
+
+    <!-- Grid de tipos de documentos -->
+    <div class="doc-grid" id="docsGrid"></div>
+
+    <!-- Zona de subida extra -->
+    <div class="doc-drop-zone" id="docsDropZone" onclick="document.getElementById('docsInputExtra').click()" ondragover="e=>e.preventDefault()" ondrop="dropDoc(event)">
+      <i class="ti ti-cloud-upload" style="font-size:22px;color:#94a3b8;display:block;margin-bottom:5px"></i>
+      <div style="font-size:11px;font-weight:600;color:#64748b">Otros documentos</div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:2px">Arrastra o toca para subir</div>
+      <input type="file" id="docsInputExtra" multiple accept="image/*,.pdf" onchange="subirDocExtra(this)"/>
+    </div>
+
+    <!-- Lista de archivos extra -->
+    <div id="docsExtraList" style="margin-top:8px"></div>
+
+    <div class="fe">
+      <button class="btn" onclick="closeM('mDocs')">Cerrar</button>
+      <button class="btn bc4" onclick="exportarDocsPDF()" id="btnExportDocs"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Preview de imagen -->
+<div class="overlay" id="mImgPreview" style="background:rgba(0,0,0,.9)" onclick="closeM('mImgPreview')">
+  <div style="max-width:90vw;max-height:90vh;position:relative">
+    <img id="previewImgSrc" style="max-width:100%;max-height:85vh;border-radius:8px;object-fit:contain"/>
+    <div style="text-align:center;margin-top:8px;font-size:12px;color:#fff" id="previewImgLbl"></div>
+  </div>
+</div>
+
+<!-- Modal Backup -->
+<div class="overlay" id="mBackup">
+  <div class="modal" style="max-width:480px">
+    <div class="mt" style="color:#059669"><span>// BACKUP DE SEGURIDAD</span><button class="btn bghost bsm" onclick="closeM('mBackup')"><i class="ti ti-x"></i></button></div>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #10b981;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:4px">⚠️ El plan gratuito NO hace backups automáticos</div>
+      <div style="font-size:11px;color:#374151;line-height:1.6">Si Supabase tiene un problema o borras datos por error, no se pueden recuperar. Guarda una copia regularmente.</div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Selecciona qué exportar:</div>
+
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer">
+        <input type="checkbox" id="bkClientes" checked style="width:15px;height:15px;accent-color:#3b82f6"/>
+        <span style="font-size:12px;font-weight:600">Clientes y pólizas</span>
+        <span style="margin-left:auto;font-size:10px;color:#64748b" id="bkCliCount"></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer">
+        <input type="checkbox" id="bkFacturas" checked style="width:15px;height:15px;accent-color:#3b82f6"/>
+        <span style="font-size:12px;font-weight:600">Facturas y NCF</span>
+        <span style="margin-left:auto;font-size:10px;color:#64748b" id="bkFactCount"></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer">
+        <input type="checkbox" id="bkCobros" checked style="width:15px;height:15px;accent-color:#3b82f6"/>
+        <span style="font-size:12px;font-weight:600">Cobros y abonos</span>
+        <span style="margin-left:auto;font-size:10px;color:#64748b" id="bkCobCount"></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer">
+        <input type="checkbox" id="bkEmpresas" checked style="width:15px;height:15px;accent-color:#3b82f6"/>
+        <span style="font-size:12px;font-weight:600">Empresas y agentes</span>
+        <span style="margin-left:auto;font-size:10px;color:#64748b" id="bkEmpCount"></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;cursor:pointer">
+        <input type="checkbox" id="bkContable" checked style="width:15px;height:15px;accent-color:#3b82f6"/>
+        <span style="font-size:12px;font-weight:600">Asientos contables</span>
+        <span style="margin-left:auto;font-size:10px;color:#64748b" id="bkAsiCount"></span>
+      </label>
+    </div>
+
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#92400e;line-height:1.6">
+      💡 <strong>Recomendación:</strong> Guarda el backup en Google Drive, USB o envíatelo por email. Hazlo <strong>una vez por semana</strong>.
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="closeM('mBackup')" style="flex:1">Cancelar</button>
+      <button class="btn bxl" onclick="ejecutarBackup()" style="flex:2;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 3px 10px rgba(16,185,129,.3)">
+        <i class="ti ti-database-export"></i> Descargar Backup Completo
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal WA Masivo -->
 <div class="overlay" id="mWAMasivo">
   <div class="modal" style="max-width:620px">
@@ -1187,6 +1292,7 @@ create table if not exists usuarios_sistema(id uuid default gen_random_uuid() pr
 create table if not exists secuencias_ncf(tipo text primary key,ultimo_numero integer default 0);
 create table if not exists comisiones(id uuid default gen_random_uuid() primary key,agente_id uuid,agente_nom text,mes integer,anio integer,periodo text,total_primas numeric default 0,porcentaje numeric default 0,monto_bruto numeric default 0,itbis numeric default 0,monto_neto numeric default 0,estado text default 'Pendiente',created_at timestamptz default now());
 create table if not exists configuracion(clave text primary key,valor text,updated_at timestamptz default now());
+create table if not exists documentos_clientes(id uuid default gen_random_uuid() primary key,cliente_id uuid not null,tipo text not null,nombre_archivo text,url_publica text,tipo_mime text,tamaño bigint,created_at timestamptz default now(),updated_at timestamptz default now());
 
 alter table empresas enable row level security;
 alter table agentes enable row level security;
@@ -1576,12 +1682,12 @@ function rDash(){
     <div class="kpi k3"><i class="ti ti-check ki"></i><div class="kl">COBRADO</div><div class="kv v3" style="font-size:13px">${fmt(cob)}</div><div class="ks">${ef}% efectividad</div></div>
     <div class="kpi k4"><i class="ti ti-clock ki"></i><div class="kl">PENDIENTE</div><div class="kv v4" style="font-size:13px">${fmt(pd)}</div><div class="ks">por cobrar</div></div>
     <div class="kpi k5"><i class="ti ti-building ki"></i><div class="kl">EMPRESAS</div><div class="kv v5">${ST.empresas.length}</div><div class="ks">${ST.agentes.length} agentes</div></div>`;
-  // KPI de utilidad si hay costos configurados
-  if(CFG.cost1||CFG.cost2||CFG.cost3){
+  // KPI de utilidad — SOLO VISIBLE PARA ADMIN
+  if((CFG.cost1||CFG.cost2||CFG.cost3) && sesion?.rol==='admin'){
     const costoTotal=act.reduce((s,c)=>{const cost=c.plan==='Básico'?CFG.cost1:c.plan==='Superior'?CFG.cost2:CFG.cost3;return s+cost+((c.deps||[]).length*(cost*0.6));},0);
     const utilidad=prima-costoTotal;
     const margen=prima>0?Math.round(utilidad/prima*100):0;
-    document.getElementById('kpiG').innerHTML+=`<div class="kpi k3" style="border-top:none;border-left:3px solid #059669"><i class="ti ti-trending-up ki"></i><div class="kl">UTILIDAD BRUTA</div><div class="kv v3" style="font-size:13px">${fmt(utilidad)}</div><div class="ks">Margen ${margen}%</div></div>`;
+    document.getElementById('kpiG').innerHTML+=`<div class="kpi k3" style="border-top:none;border-left:3px solid #059669;position:relative"><div style="position:absolute;top:8px;right:8px;background:#ede9fe;color:#6d28d9;font-size:8px;font-weight:700;padding:1px 6px;border-radius:10px;letter-spacing:.3px">ADMIN</div><i class="ti ti-trending-up ki"></i><div class="kl">UTILIDAD BRUTA</div><div class="kv v3" style="font-size:13px">${fmt(utilidad)}</div><div class="ks">Margen ${margen}%</div></div>`;
   }
   const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];
   const pMax=Math.max(...planes.map(p=>act.filter(c=>c.plan===p).reduce((s,c)=>s+getTot(c),0)),1);
@@ -1628,6 +1734,7 @@ function rCli(){
         <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar"><i class="ti ti-edit"></i></button>
         <button class="btn bsm bghost" onclick="abrirAbono('${c.id}')" title="Cobro"><i class="ti ti-wallet"></i></button>
         <button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')" title="Certificado PDF"><i class="ti ti-file-certificate"></i></button>
+        <button class="btn bsm bc2" onclick="abrirDocs('${c.id}')" title="Documentos"><i class="ti ti-folder-open"></i></button>
         ${inhabBtn}
       </td>
     </tr>`;
@@ -2277,7 +2384,10 @@ function rUsuarios(){const tb=document.getElementById('tbUsu');if(!ST.usuarios.l
       <option value="false" ${!u.activo?'selected':''}>Inactivo</option>
     </select>
   </td>
-  <td><button class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-trash"></i></button></td>
+  <td style="white-space:nowrap;display:flex;gap:4px">
+    <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña"><i class="ti ti-key"></i></button>
+    <button class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-trash"></i></button>
+  </td>
 </tr>`).join('');}
 
 async function cambiarRol(id,rol){
@@ -2289,10 +2399,425 @@ async function cambiarEstado(id,activo){
   try{await API.patch('usuarios_sistema',`id=eq.${id}`,{activo:v});const u=ST.usuarios.find(x=>x.id===id);if(u)u.activo=v;logAudit('ESTADO_USUARIO',`${u?.login} → ${v?'ACTIVO':'INACTIVO'}`);toast('ok','Estado actualizado',v?'Activo':'Inactivo');}
   catch(e){toast('err','Error',e.message);}
 }
+function abrirCambiarPwd(id, login){
+  const nuevaPwd = prompt(`Nueva contraseña para "${login}":\n(Mínimo 6 caracteres)`);
+  if(!nuevaPwd) return;
+  if(nuevaPwd.length < 6){ toast('err','Contraseña muy corta','Mínimo 6 caracteres'); return; }
+  confirmarCambiarPwd(id, login, nuevaPwd);
+}
+
+async function confirmarCambiarPwd(id, login, pwd){
+  try{
+    await API.patch('usuarios_sistema', `id=eq.${id}`, {pwd});
+    logAudit('CONTRASEÑA_CAMBIADA', `Usuario: ${login}`);
+    toast('ok', 'Contraseña actualizada', login);
+  }catch(e){
+    mostrarError(e.message, 'Al cambiar contraseña de: ' + login);
+  }
+}
+
 async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:document.getElementById('uPwd').value,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);closeM('mUsuario');rUsuarios();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
 async function eliminarUsu(id){if(!confirm('¿Eliminar usuario?'))return;try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);rUsuarios();}catch(e){toast('err','Error',e.message);}}
 
 // ── EXPORTAR CSV ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// SISTEMA DE DOCUMENTOS — Supabase Storage
+// ══════════════════════════════════════════════════════════════════
+
+const DOC_TIPOS = [
+  {key:'cedula_frontal',   lbl:'Cédula Frontal',   icon:'🪪', accept:'image/*'},
+  {key:'cedula_trasera',   lbl:'Cédula Trasera',   icon:'🪪', accept:'image/*'},
+  {key:'contrato',         lbl:'Contrato / Acta',  icon:'📄', accept:'image/*,.pdf'},
+  {key:'foto_cliente',     lbl:'Foto del titular', icon:'👤', accept:'image/*'},
+];
+
+let _docsCliId = null;
+let _docsCache = {}; // {cliId: [{key, url, name, size}]}
+
+async function abrirDocs(cliId){
+  _docsCliId = cliId;
+  const c = ST.clientes.find(x=>x.id===cliId);
+  if(!c) return;
+
+  document.getElementById('mDocsTitle').textContent = `// DOCUMENTOS — ${c.nom}`;
+  document.getElementById('docsClienteInfo').innerHTML = `
+    <div style="font-weight:700;color:#1e293b">${c.nom}</div>
+    <div style="color:#64748b;margin-top:2px">Póliza: <strong>${c.numero_poliza||'—'}</strong> · Plan: ${c.plan} · Cédula: ${c.cedula||'—'}</div>`;
+
+  await cargarDocs(cliId);
+  openM('mDocs');
+}
+
+async function cargarDocs(cliId){
+  const grid = document.getElementById('docsGrid');
+  grid.innerHTML = DOC_TIPOS.map(t=>`
+    <div class="doc-card" id="docCard_${t.key}" onclick="document.getElementById('docInput_${t.key}').click()">
+      <input type="file" id="docInput_${t.key}" class="doc-upload-input" accept="${t.accept}" onchange="subirDoc('${t.key}',this)"/>
+      <span class="doc-icon">${t.icon}</span>
+      <div class="doc-lbl">${t.lbl}</div>
+      <div class="doc-name" id="docName_${t.key}">Toca para subir</div>
+      <div class="doc-btns" id="docBtns_${t.key}"></div>
+    </div>`).join('');
+
+  // Cargar archivos existentes
+  try{
+    const archivos = await API.get('documentos_clientes', `cliente_id=eq.${cliId}&select=*`);
+    _docsCache[cliId] = archivos||[];
+    (archivos||[]).forEach(doc => renderDocCard(doc));
+  }catch(e){
+    // Si la tabla no existe, mostrar como vacío
+    console.log('Tabla documentos no existe aún:', e.message);
+  }
+  // Cargar extras
+  renderDocsExtra(cliId);
+}
+
+function renderDocCard(doc){
+  const card = document.getElementById(`docCard_${doc.tipo}`);
+  if(!card) return;
+  card.classList.add('uploaded');
+  const nameEl = document.getElementById(`docName_${doc.tipo}`);
+  if(nameEl) nameEl.textContent = doc.nombre_archivo||'Subido ✓';
+
+  const btnsEl = document.getElementById(`docBtns_${doc.tipo}`);
+  if(!btnsEl) return;
+
+  const esImg = doc.tipo_mime?.startsWith('image/');
+  btnsEl.innerHTML = `
+    ${esImg?`<button class="btn bsm bc1" onclick="event.stopPropagation();verDocImg('${doc.url_publica}','${doc.nombre_archivo||doc.tipo}')"><i class="ti ti-eye"></i></button>`:''}
+    <a href="${doc.url_publica}" download="${doc.nombre_archivo||doc.tipo}" class="btn bsm bc5" onclick="event.stopPropagation()"><i class="ti ti-download"></i></a>
+    <button class="btn bsm bc3" onclick="event.stopPropagation();eliminarDoc('${doc.id}','${doc.tipo}')"><i class="ti ti-trash"></i></button>`;
+}
+
+async function subirDoc(tipo, input){
+  if(!input.files||!input.files[0]) return;
+  const file = input.files[0];
+  const tipoInfo = DOC_TIPOS.find(t=>t.key===tipo);
+  const card = document.getElementById(`docCard_${tipo}`);
+  card.classList.add('uploading');
+  document.getElementById(`docName_${tipo}`).textContent = 'Subiendo...';
+
+  try{
+    const ext = file.name.split('.').pop();
+    const path = `clientes/${_docsCliId}/${tipo}.${ext}`;
+
+    // Subir a Supabase Storage
+    const formData = new FormData();
+    formData.append('', file);
+
+    const resp = await fetch(`${API.url}/storage/v1/object/documentos/${path}`, {
+      method: 'POST',
+      headers: {'apikey': API.key, 'Authorization': `Bearer ${API.key}`},
+      body: formData
+    });
+
+    // Si ya existe, hacer upsert
+    if(resp.status === 400){
+      await fetch(`${API.url}/storage/v1/object/documentos/${path}`, {
+        method: 'PUT',
+        headers: {'apikey': API.key, 'Authorization': `Bearer ${API.key}`},
+        body: formData
+      });
+    }
+
+    const urlPublica = `${API.url}/storage/v1/object/public/documentos/${path}`;
+
+    // Guardar referencia en BD
+    const existing = (_docsCache[_docsCliId]||[]).find(d=>d.tipo===tipo);
+    if(existing){
+      await API.patch('documentos_clientes', `id=eq.${existing.id}`, {
+        url_publica: urlPublica, nombre_archivo: file.name,
+        tipo_mime: file.type, tamaño: file.size, updated_at: new Date().toISOString()
+      });
+      existing.url_publica = urlPublica; existing.nombre_archivo = file.name; existing.tipo_mime = file.type;
+      renderDocCard(existing);
+    } else {
+      const nuevo = await API.post('documentos_clientes', {
+        cliente_id: _docsCliId, tipo, nombre_archivo: file.name,
+        url_publica: urlPublica, tipo_mime: file.type, tamaño: file.size
+      });
+      if(nuevo&&nuevo[0]){
+        if(!_docsCache[_docsCliId]) _docsCache[_docsCliId]=[];
+        _docsCache[_docsCliId].push(nuevo[0]);
+        renderDocCard(nuevo[0]);
+      }
+    }
+
+    card.classList.remove('uploading');
+    logAudit('DOCUMENTO_SUBIDO', `${tipoInfo?.lbl||tipo} — ${ST.clientes.find(c=>c.id===_docsCliId)?.nom||''}`);
+    toast('ok', `${tipoInfo?.lbl||tipo} subido`, file.name);
+
+  }catch(e){
+    card.classList.remove('uploading');
+    document.getElementById(`docName_${tipo}`).textContent = 'Error — toca para reintentar';
+    mostrarError(e.message, `Al subir documento: ${tipo}`);
+  }
+}
+
+async function subirDocExtra(input){
+  if(!input.files) return;
+  for(const file of input.files){
+    const path = `clientes/${_docsCliId}/extra_${Date.now()}_${file.name}`;
+    try{
+      const formData = new FormData();
+      formData.append('', file);
+      await fetch(`${API.url}/storage/v1/object/documentos/${path}`, {
+        method: 'POST',
+        headers: {'apikey': API.key, 'Authorization': `Bearer ${API.key}`},
+        body: formData
+      });
+      const url = `${API.url}/storage/v1/object/public/documentos/${path}`;
+      await API.post('documentos_clientes', {
+        cliente_id: _docsCliId, tipo:'extra', nombre_archivo: file.name,
+        url_publica: url, tipo_mime: file.type, tamaño: file.size
+      });
+      toast('ok', 'Archivo subido', file.name);
+      await cargarDocs(_docsCliId);
+    }catch(e){ toast('err', 'Error subiendo', file.name); }
+  }
+}
+
+function renderDocsExtra(cliId){
+  const extras = (_docsCache[cliId]||[]).filter(d=>d.tipo==='extra');
+  const el = document.getElementById('docsExtraList');
+  if(!el||!extras.length){ if(el) el.innerHTML=''; return; }
+  el.innerHTML = extras.map(d=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:4px">
+      <i class="ti ti-file" style="color:#64748b;font-size:16px"></i>
+      <span style="flex:1;font-size:11px;color:#1e293b">${d.nombre_archivo||'Archivo'}</span>
+      <a href="${d.url_publica}" download class="btn bsm bc5"><i class="ti ti-download"></i></a>
+      <button class="btn bsm bc3" onclick="eliminarDoc('${d.id}','extra')"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+}
+
+async function eliminarDoc(id, tipo){
+  if(!confirm('¿Eliminar este documento?')) return;
+  try{
+    await API.del('documentos_clientes', `id=eq.${id}`);
+    _docsCache[_docsCliId] = (_docsCache[_docsCliId]||[]).filter(d=>d.id!==id);
+    if(tipo!=='extra'){
+      const card = document.getElementById(`docCard_${tipo}`);
+      if(card){ card.classList.remove('uploaded');
+        document.getElementById(`docName_${tipo}`).textContent='Toca para subir';
+        document.getElementById(`docBtns_${tipo}`).innerHTML=''; }
+    } else { renderDocsExtra(_docsCliId); }
+    toast('ok','Documento eliminado');
+    logAudit('DOCUMENTO_ELIMINADO', tipo);
+  }catch(e){ toast('err','Error',e.message); }
+}
+
+function verDocImg(url, nombre){
+  document.getElementById('previewImgSrc').src = url;
+  document.getElementById('previewImgLbl').textContent = nombre;
+  openM('mImgPreview');
+}
+
+function dropDoc(e){
+  e.preventDefault();
+  const files = e.dataTransfer.files;
+  if(files.length){
+    const input = document.getElementById('docsInputExtra');
+    input.files = files;
+    subirDocExtra(input);
+  }
+}
+
+async function exportarDocsPDF(){
+  const c = ST.clientes.find(x=>x.id===_docsCliId);
+  const docs = _docsCache[_docsCliId]||[];
+  if(!docs.length){ toast('warn','Sin documentos','Este cliente no tiene documentos'); return; }
+
+  const btn = document.getElementById('btnExportDocs');
+  btn.disabled=true; btn.innerHTML='<div class="spin"></div> Generando...';
+
+  const docsHTML = await Promise.all(docs.map(async d=>{
+    const esImg = d.tipo_mime?.startsWith('image/');
+    const tipoLbl = DOC_TIPOS.find(t=>t.key===d.tipo)?.lbl || d.tipo;
+    if(esImg){
+      try{
+        const r = await fetch(d.url_publica);
+        const blob = await r.blob();
+        const b64 = await new Promise(res=>{const fr=new FileReader();fr.onload=e=>res(e.target.result);fr.readAsDataURL(blob);});
+        return `<div style="page-break-inside:avoid;margin-bottom:20px"><h3 style="color:#1e3a6e;border-bottom:1px solid #e2e8f0;padding-bottom:6px">${tipoLbl}</h3><img src="${b64}" style="max-width:100%;border-radius:6px;border:1px solid #e2e8f0"/></div>`;
+      }catch{ return `<div><h3>${tipoLbl}</h3><p>No se pudo cargar la imagen</p></div>`; }
+    }
+    return `<div style="page-break-inside:avoid;margin-bottom:16px"><h3 style="color:#1e3a6e">${tipoLbl}</h3><p><a href="${d.url_publica}">${d.nombre_archivo}</a></p></div>`;
+  }));
+
+  const contenido = `
+    <div style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
+      <div style="border-bottom:3px solid #1e3a6e;padding-bottom:16px;margin-bottom:20px;display:flex;justify-content:space-between">
+        <div><h1 style="color:#1e3a6e;margin:0">${CFG.empNom}</h1><div style="color:#666">RNC: ${CFG.empRNC} · ${CFG.empTel}</div></div>
+        <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#1e3a6e">EXPEDIENTE DE CLIENTE</div><div style="color:#666">Generado: ${hoy()}</div></div>
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:20px;border:1px solid #e2e8f0">
+        <div style="font-size:18px;font-weight:700">${c?.nom||''}</div>
+        <div style="color:#666;margin-top:4px">Cédula: ${c?.cedula||'—'} · Póliza: ${c?.numero_poliza||'—'} · Plan: ${c?.plan||''}</div>
+        <div style="color:#666">ARS: ${c?.ars||'—'} · Vigencia: ${c?.fecha_inicio||'—'} al ${c?.fecha_fin||'—'}</div>
+      </div>
+      <h2 style="color:#1e3a6e;margin-bottom:16px">Documentos adjuntos (${docs.length})</h2>
+      ${docsHTML.join('')}
+      <div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:10px;font-size:11px;color:#666;text-align:center">
+        ${CFG.empNom} · RNC: ${CFG.empRNC} · NEXUS PRO v7 · ${hoy()}
+      </div>
+    </div>`;
+
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expediente ${c?.nom}</title><style>@media print{body{margin:0}}</style></head><body>${contenido}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.print(); btn.disabled=false; btn.innerHTML='<i class="ti ti-file-type-pdf"></i> Exportar PDF'; }, 1000);
+  logAudit('EXPEDIENTE_EXPORTADO', c?.nom||'');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SISTEMA DE BACKUP COMPLETO
+// ══════════════════════════════════════════════════════════════════
+
+function abrirBackup(){
+  // Actualizar contadores
+  const el=id=>document.getElementById(id);
+  if(el('bkCliCount'))el('bkCliCount').textContent=ST.clientes.length+' registros';
+  if(el('bkFactCount'))el('bkFactCount').textContent=ST.facturas.length+' registros';
+  if(el('bkCobCount'))el('bkCobCount').textContent=ST.asientos.filter(a=>a.referencia?.includes('COB')).length+' registros';
+  if(el('bkEmpCount'))el('bkEmpCount').textContent=(ST.empresas.length+ST.agentes.length)+' registros';
+  if(el('bkAsiCount'))el('bkAsiCount').textContent=ST.asientos.length+' registros';
+  openM('mBackup');
+}
+
+async function ejecutarBackup(){
+  const btn=document.querySelector('#mBackup .bxl');
+  btn.disabled=true;btn.innerHTML='<div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff"></div> Generando...';
+
+  const fecha=hoy();
+  const hora=new Date().toTimeString().slice(0,5).replace(':','-');
+  const nombreBase=`NEXUS_Backup_${fecha}_${hora}`;
+  let archivosGenerados=0;
+
+  try{
+    // ── 1. CLIENTES Y PÓLIZAS ─────────────────────────────────
+    if(document.getElementById('bkClientes')?.checked){
+      const rows=[
+        [`NEXUS PRO — BACKUP CLIENTES Y PÓLIZAS`],
+        [`Correduría: ${CFG.empNom}`,`RNC: ${CFG.empRNC}`],
+        [`Fecha backup: ${fecha} ${hora.replace('-',':')}`,`Total: ${ST.clientes.length} clientes`],
+        [],
+        ['ID','N° PÓLIZA','NOMBRE','CÉDULA','WHATSAPP','TEL','EMAIL','PLAN','ARS','EMPRESA','AGENTE',
+         'DIRECCIÓN','DEPENDIENTES','PRIMA/MES','DEUDA TOTAL','COBRADO','PENDIENTE','ACTIVO',
+         'INICIO PÓLIZA','FIN PÓLIZA','TIPO NCF','DÍA FACT.','CREADO'],
+        ...ST.clientes.map(c=>{
+          const emp=gEmp(c.empresa_id)?.nom||'';
+          const agt=gAgt(c.agente_id)?.nom||'';
+          const deps=(c.deps||[]).map(d=>`${d.nom}(${d.rel})`).join('; ');
+          return[c.id,c.numero_poliza||'',c.nom,c.cedula||'',c.wa||'',c.tel||'',c.email||'',
+                 c.plan,c.ars||'',emp,agt,c.dir||'',deps,getTot(c),
+                 c.deuda_total||0,c.pagado||0,pend(c),c.activo?'Activo':'Inhabilitado',
+                 c.fecha_inicio||'',c.fecha_fin||'',c.tipo_ncf||'B02',c.dia_facturacion||1,
+                 c.created_at?.slice(0,19)||''];
+        })
+      ];
+      descCSV(rows,`${nombreBase}_Clientes.csv`);
+      archivosGenerados++;
+      await new Promise(r=>setTimeout(r,300));
+    }
+
+    // ── 2. FACTURAS ───────────────────────────────────────────
+    if(document.getElementById('bkFacturas')?.checked){
+      const rows=[
+        [`NEXUS PRO — BACKUP FACTURAS`],
+        [`Correduría: ${CFG.empNom}`,`RNC: ${CFG.empRNC}`],
+        [`Fecha backup: ${fecha}`,`Total: ${ST.facturas.length} facturas`],
+        [],
+        ['ID','CLIENTE','PLAN','EMPRESA','PERÍODO','MES','AÑO','PRIMA BASE','PRIMA DEPS',
+         'DEUDA ANT.','TOTAL','ESTADO','NCF','TIPO NCF','FECHA EMISIÓN','WA ENVIADO','CREADO'],
+        ...ST.facturas.map(f=>{
+          const emp=gEmp(f.empresa_id)?.nom||'';
+          return[f.id,f.cliente_nom,f.plan,emp,f.periodo,f.mes,f.anio,
+                 f.prima_base,f.prima_deps,f.deuda_ant,f.total,f.estado,
+                 f.ncf||'',f.tipo_ncf||'B02',f.fecha_emision||'',f.wa_sent?'Sí':'No',
+                 f.created_at?.slice(0,19)||''];
+        })
+      ];
+      descCSV(rows,`${nombreBase}_Facturas.csv`);
+      archivosGenerados++;
+      await new Promise(r=>setTimeout(r,300));
+    }
+
+    // ── 3. COBROS / ASIENTOS ──────────────────────────────────
+    if(document.getElementById('bkCobros')?.checked){
+      // Cargar abonos desde Supabase
+      let abonos=[];
+      try{abonos=await API.get('abonos','select=*&order=created_at.desc');}catch{}
+      const rows=[
+        [`NEXUS PRO — BACKUP COBROS Y ABONOS`],
+        [`Correduría: ${CFG.empNom}`],
+        [`Fecha backup: ${fecha}`,`Total: ${abonos.length} abonos`],
+        [],
+        ['ID','CLIENTE ID','MONTO','MÉTODO','REFERENCIA','FECHA','CREADO'],
+        ...abonos.map(a=>[a.id,a.cliente_id,a.monto,a.metodo||'',a.referencia||'',
+                          a.fecha||'',a.created_at?.slice(0,19)||''])
+      ];
+      descCSV(rows,`${nombreBase}_Cobros.csv`);
+      archivosGenerados++;
+      await new Promise(r=>setTimeout(r,300));
+    }
+
+    // ── 4. EMPRESAS Y AGENTES ─────────────────────────────────
+    if(document.getElementById('bkEmpresas')?.checked){
+      const rowsEmp=[
+        [`NEXUS PRO — BACKUP EMPRESAS`],
+        [`Total: ${ST.empresas.length} empresas`],
+        [],
+        ['ID','NOMBRE','RNC','SECTOR','TELÉFONO','EMAIL','CONTACTO','CREADO'],
+        ...ST.empresas.map(e=>[e.id,e.nom,e.rnc||'',e.sector||'',e.tel||'',
+                               e.email||'',e.contacto||'',e.created_at?.slice(0,19)||''])
+      ];
+      const rowsAgt=[
+        [],
+        [`BACKUP AGENTES — Total: ${ST.agentes.length}`],
+        [],
+        ['ID','NOMBRE','CARGO','TELÉFONO','EMAIL','LICENCIA','VENCE LICENCIA','ACTIVO','CREADO'],
+        ...ST.agentes.map(a=>[a.id,a.nom,a.cargo||'',a.tel||'',a.email||'',
+                              a.licencia||'',a.lic_vence||'',a.activo?'Sí':'No',
+                              a.created_at?.slice(0,19)||''])
+      ];
+      descCSV([...rowsEmp,...rowsAgt],`${nombreBase}_Empresas_Agentes.csv`);
+      archivosGenerados++;
+      await new Promise(r=>setTimeout(r,300));
+    }
+
+    // ── 5. ASIENTOS CONTABLES ─────────────────────────────────
+    if(document.getElementById('bkContable')?.checked){
+      const rows=[
+        [`NEXUS PRO — BACKUP CONTABILIDAD`],
+        [`Correduría: ${CFG.empNom}`,`RNC: ${CFG.empRNC}`],
+        [`Fecha backup: ${fecha}`,`Total: ${ST.asientos.length} asientos`],
+        [],
+        ['ID','FECHA','REFERENCIA','DESCRIPCIÓN','CTA DÉBITO COD','CTA DÉBITO','MONTO DR',
+         'CTA CRÉDITO COD','CTA CRÉDITO','MONTO CR','CREADO'],
+        ...ST.asientos.map(a=>[a.id,a.fecha,a.referencia||'',a.descripcion,
+                               a.cuenta_dr_cod||'',a.cuenta_dr_nom||'',a.monto_dr||0,
+                               a.cuenta_cr_cod||'',a.cuenta_cr_nom||'',a.monto_cr||0,
+                               a.created_at?.slice(0,19)||''])
+      ];
+      descCSV(rows,`${nombreBase}_Contabilidad.csv`);
+      archivosGenerados++;
+      await new Promise(r=>setTimeout(r,300));
+    }
+
+    // ── Registro en auditoría ─────────────────────────────────
+    logAudit('BACKUP_REALIZADO',`${archivosGenerados} archivos · ${fecha}`);
+    closeM('mBackup');
+    toast('ok',`Backup completo — ${archivosGenerados} archivos descargados`,
+          'Guárdalos en Google Drive, USB o correo electrónico');
+
+  }catch(e){
+    mostrarError(e.message,'Al generar el backup del sistema');
+  }
+
+  btn.disabled=false;
+  btn.innerHTML='<i class="ti ti-database-export"></i> Descargar Backup Completo';
+}
+
 function descCSV(rows,filename){
   const csv=rows.map(r=>r.map(v=>`"${String(v===null||v===undefined?'':v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
