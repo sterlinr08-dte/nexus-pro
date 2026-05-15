@@ -184,13 +184,14 @@ input,select,textarea,button{font-family:var(--ff)}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--tx2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:500;font-family:var(--ff);letter-spacing:.1px}
-.btn:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
+.btn:hover{background:#eff6ff;border-color:#2563eb;color:#1d4ed8}
 .btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
 .bc1{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:#2563eb}.bc2{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3);color:#7c3aed}
 .bc3{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#dc2626}.bc4{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);color:#d97706}
 .bc5{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#059669}
-.bxl{background:var(--gradient-primary);border:none;color:#fff;font-weight:600;padding:8px 18px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(37,99,235,.25),0 1px 2px rgba(37,99,235,.2);letter-spacing:.2px}
-.bxl:hover{opacity:.92;color:#fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.35)}
+.bxl{background:var(--gradient-primary);border:none;color:#fff !important;font-weight:600;padding:8px 18px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(37,99,235,.25),0 1px 2px rgba(37,99,235,.2);letter-spacing:.2px}
+.bxl:hover{opacity:.92;color:#fff !important;transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.35)}
+.bxl *{color:#fff !important}
 .bdis{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#dc2626}.bghost{border:none;background:none;padding:4px 8px;color:var(--tx3)}.bghost:hover{background:#f1f5f9;color:var(--tx1)}.bsm{padding:4px 10px;font-size:10px}
 .bwa{border-color:#bbf7d0;color:#16a34a;background:#f0fdf4}.bwa:hover{background:#dcfce7;color:#16a34a}
 
@@ -361,12 +362,6 @@ tbody tr:hover td{background:#f8fafc}
   .sb{position:relative;left:0 !important}
 }
 
-/* ════ CONFIG TABS ════ */
-.cfg-tab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .15s;white-space:nowrap;font-family:var(--ff)}
-.cfg-tab:hover{background:#f1f5f9;color:#1e293b}
-.cfg-tab.active-tab{background:var(--gradient-primary);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
-.cfg-panel{display:none}.cfg-panel.active-panel{display:block}
-
 /* ════ UX PREMIUM ════ */
 /* Loading skeleton */
 .skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:14px;margin-bottom:6px}
@@ -394,6 +389,94 @@ tbody tr:hover td{background:#f0f9ff !important}
 html{scroll-behavior:smooth}
 /* Selección de texto */
 ::selection{background:#bfdbfe;color:#1e3a5f}
+
+/* ════ TABS DINÁMICAS DE CONFIGURACIÓN ════ */
+.cfg-tabs-bar{display:flex;gap:4px;margin-bottom:6px;background:#fff;border-radius:12px;padding:6px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:thin}
+.cfg-tabs-bar::-webkit-scrollbar{height:4px}
+.cfg-tab{padding:8px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .25s cubic-bezier(.4,0,.2,1);white-space:nowrap;font-family:var(--ff);display:flex;align-items:center;gap:6px}
+.cfg-tab i{font-size:13px;transition:transform .2s}
+.cfg-tab:hover{background:#f1f5f9;color:#1e293b}
+.cfg-tab:hover i{transform:scale(1.15)}
+.cfg-tab.active-tab{background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff !important;box-shadow:0 3px 12px rgba(37,99,235,.35),0 1px 3px rgba(37,99,235,.2);transform:translateY(-1px)}
+.cfg-tab.active-tab i,.cfg-tab.active-tab span{color:#fff !important}
+.cfg-tab.active-tab i{transform:scale(1.1)}
+.cfg-panel{animation:cfgFadeIn .25s ease;display:none}
+.cfg-panel.active-panel{display:block !important}
+@keyframes cfgFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ════ NOTIFICATION CENTER ════ */
+.notif-bell{position:relative;cursor:pointer}
+.notif-badge{position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:pulse 1.5s infinite}
+.notif-panel{position:absolute;top:42px;right:0;width:340px;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.15);border:1px solid #e2e8f0;z-index:500;max-height:480px;overflow-y:auto;display:none}
+.notif-panel.show{display:block;animation:cfgFadeIn .2s ease}
+.notif-h{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+.notif-item{padding:12px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .15s}
+.notif-item:hover{background:#f8fafc}
+.notif-item.unread{background:#eff6ff}
+.notif-item.unread::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#2563eb;margin-right:8px;vertical-align:middle}
+
+/* ════ DARK MODE ════ */
+body.dark{background:#0f172a;color:#e2e8f0}
+body.dark .content{background:#0f172a}
+body.dark .nc,body.dark .kpi,body.dark .tnav{background:#1e293b;border-color:#334155}
+body.dark thead th{background:#0f172a;color:#94a3b8;border-color:#334155}
+body.dark tbody td{color:#e2e8f0;border-color:#334155}
+body.dark tbody tr:hover td{background:#334155 !important}
+body.dark .ct{color:#f1f5f9}
+body.dark .fr input,body.dark .fr select,body.dark .fr textarea{background:#0f172a !important;border-color:#334155 !important;color:#e2e8f0 !important}
+body.dark .btn{background:#1e293b;border-color:#334155;color:#cbd5e1}
+body.dark .cfg-tabs-bar{background:#1e293b;border-color:#334155}
+body.dark .cfg-tab{color:#cbd5e1}
+body.dark .cfg-tab:hover{background:#334155;color:#fff}
+
+/* ════ CLIENT FAVORITES ════ */
+.fav-star{cursor:pointer;color:#cbd5e1;font-size:16px;transition:all .15s}
+.fav-star.active{color:#f59e0b}
+.fav-star:hover{transform:scale(1.2)}
+
+/* ════ CLIENT SUMMARY PANEL ════ */
+.cs-panel{position:fixed;top:0;right:-450px;width:440px;height:100vh;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.15);z-index:600;transition:right .3s ease;overflow-y:auto;border-left:1px solid #e2e8f0}
+.cs-panel.open{right:0}
+.cs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:599;display:none}
+.cs-overlay.show{display:block}
+.cs-h{padding:18px 20px;background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;display:flex;align-items:center;justify-content:space-between}
+.cs-body{padding:18px 20px}
+.cs-section{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f1f5f9}
+.cs-section-ttl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:8px}
+
+/* ════ GLOBAL SEARCH MODAL ════ */
+.gs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:700;display:none;align-items:flex-start;justify-content:center;padding-top:80px;backdrop-filter:blur(4px)}
+.gs-overlay.show{display:flex}
+.gs-box{width:100%;max-width:520px;background:#fff;border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,.25);overflow:hidden}
+.gs-input{width:100%;padding:18px 20px;border:none;font-size:14px;outline:none;border-bottom:1px solid #f1f5f9}
+.gs-results{max-height:380px;overflow-y:auto}
+.gs-item{padding:12px 20px;cursor:pointer;border-bottom:1px solid #f8fafc;display:flex;align-items:center;gap:12px}
+.gs-item:hover,.gs-item.selected{background:#eff6ff}
+.gs-item-icon{font-size:18px;width:32px;height:32px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.gs-item-info{flex:1;min-width:0}
+.gs-item-ttl{font-size:13px;font-weight:600;color:#1e293b}
+.gs-item-sub{font-size:11px;color:#64748b}
+.gs-item-type{font-size:9px;background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:20px;font-weight:700;text-transform:uppercase}
+
+/* ════ CLIENT NOTES ════ */
+.note-item{background:#fffbeb;border-left:3px solid #f59e0b;padding:10px 12px;border-radius:8px;margin-bottom:8px;font-size:11px}
+.note-ts{font-size:9px;color:#92400e;margin-bottom:4px;font-family:monospace}
+
+/* ════ ROLES PERMISSIONS ════ */
+.role-card{border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:10px}
+.role-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.role-name{font-size:13px;font-weight:700;color:#1e293b}
+.role-perms{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.role-perm{display:flex;align-items:center;gap:5px;font-size:10px;padding:5px 8px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0}
+.role-perm input{accent-color:#2563eb;cursor:pointer}
+
+/* ════ METAS PROGRESS ════ */
+.meta-card{background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #e2e8f0}
+.meta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.meta-name{font-size:12px;font-weight:600;color:#1e293b}
+.meta-val{font-size:11px;color:#64748b;font-family:var(--mono)}
+.meta-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.meta-fill{height:100%;border-radius:4px;transition:width .5s ease}
 
 /* ════ DOCUMENTOS CLIENTE ════ */
 .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
@@ -501,6 +584,44 @@ html{scroll-behavior:smooth}
 <!-- ═══════════════ APP ═══════════════ -->
 <div id="mobOverlay" onclick="closeMobSB()"></div>
 
+<!-- Notification Panel -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-h">
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#1e293b">🔔 Notificaciones</div>
+      <div style="font-size:10px;color:#64748b">Eventos del sistema</div>
+    </div>
+    <button onclick="marcarTodasLeidas()" style="background:none;border:none;color:#2563eb;font-size:10px;cursor:pointer;font-weight:600">Marcar leídas</button>
+  </div>
+  <div id="notifList"></div>
+</div>
+
+<!-- Global Search Modal -->
+<div class="gs-overlay" id="gsOverlay" onclick="if(event.target===this)cerrarGlobalSearch()">
+  <div class="gs-box">
+    <input type="text" class="gs-input" id="gsInput" placeholder="🔍 Buscar clientes, facturas, pólizas, empresas..." onkeyup="globalSearch(this.value)"/>
+    <div class="gs-results" id="gsResults">
+      <div style="padding:30px;text-align:center;color:#94a3b8;font-size:11px">
+        Empieza a escribir para buscar...<br>
+        <kbd style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:9px;margin-top:6px;display:inline-block">ESC</kbd> para cerrar
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Client Summary Side Panel -->
+<div class="cs-overlay" id="csOverlay" onclick="cerrarClientSummary()"></div>
+<div class="cs-panel" id="csPanel">
+  <div class="cs-h">
+    <div>
+      <div style="font-size:9px;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Resumen del cliente</div>
+      <div id="csNom" style="font-size:16px;font-weight:700;margin-top:2px"></div>
+    </div>
+    <button onclick="cerrarClientSummary()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer">✕</button>
+  </div>
+  <div class="cs-body" id="csBody"></div>
+</div>
+
 <!-- Modal Tenants / Empresas -->
 <div id="tenantsScreen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0f1f3d,#1e3a6e);z-index:1000;align-items:center;justify-content:center;padding:1rem">
   <div style="background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:500px;box-shadow:0 25px 60px rgba(0,0,0,.4)">
@@ -545,8 +666,10 @@ html{scroll-behavior:smooth}
         <div class="ni" onclick="nav('clientes',this)"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
         <div class="ni" onclick="nav('polizas',this)"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
 
+
         <div class="ss">Sistema</div>
 
+        <!-- Contabilidad desplegable -->
         <div class="ni" onclick="toggleContab(this)" id="niContab">
           <i class="ti ti-chart-bar ni-i"></i>
           <span class="ni-l">Contabilidad</span>
@@ -569,7 +692,7 @@ html{scroll-behavior:smooth}
           <span class="ni-l">Configuración</span>
           <span style="background:#7c3aed;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:auto">ADMIN</span>
         </div>
-      </div>
+
       <div class="sb-ft">
         <div class="sb-u" onclick="logout()">
           <div class="sb-av" id="sbAv">AD</div>
@@ -580,7 +703,7 @@ html{scroll-behavior:smooth}
     <div class="main">
       <header class="tnav">
         <button class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
-        <span class="pttl">DASHBOARD</span>
+        <span class="pttl" id="pttl">// DASHBOARD</span>
         <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas..." oninput="gSearch(this.value)"/></div>
         <div class="tn-r">
           <button class="tn-b c4" onclick="autoGenerar()"><i class="ti ti-robot"></i> Auto-gen</button>
@@ -591,6 +714,17 @@ html{scroll-behavior:smooth}
             <span id="errBadgeCount">0</span> ERROR
           </div>
           <button class="tn-b" onclick="abrirLog()" title="Log de errores"><i class="ti ti-bug"></i></button>
+          <button class="tn-b notif-bell" onclick="toggleNotif()" title="Notificaciones" style="position:relative">
+            <i class="ti ti-bell"></i>
+            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+          </button>
+          <button class="tn-b" onclick="toggleDarkMode()" title="Modo oscuro" id="btnDarkMode">
+            <i class="ti ti-moon" id="iconDarkMode"></i>
+          </button>
+          <button class="tn-b" onclick="abrirGlobalSearch()" title="Búsqueda global (Ctrl+K)" style="display:flex;align-items:center;gap:5px">
+            <i class="ti ti-search"></i>
+            <kbd style="font-size:8px;background:#f1f5f9;padding:1px 5px;border-radius:4px;border:1px solid #e2e8f0">⌘K</kbd>
+          </button>
           <button id="btnInstalar" onclick="instalarApp()" title="Instalar como app" style="display:none;background:linear-gradient(135deg,#1e3a6e,#3b82f6);border:none;color:#fff;font-weight:700;font-size:10px;padding:0 10px;border-radius:8px;height:34px;gap:5px;align-items:center;cursor:pointer"><i class="ti ti-download"></i> <span>Instalar</span></button>
           <button class="tn-b" onclick="instalarApp()" title="Instalar como app en iOS/Android"><i class="ti ti-device-mobile-down"></i></button>
           <button class="tn-b" onclick="abrirBackup()" title="Backup de seguridad" style="border-color:#10b981;color:#059669;background:#f0fdf4"><i class="ti ti-database-export"></i></button>
@@ -879,84 +1013,146 @@ html{scroll-behavior:smooth}
           </div>
         </div>
 
-        <!-- CONFIGURACIÓN UNIFICADA CON TABS -->
+        <!-- CONFIGURACIÓN -->
         <div class="view" id="v-config">
 
-          <!-- Tabs de configuración -->
-          <div style="display:flex;gap:3px;margin-bottom:14px;background:#fff;border-radius:12px;padding:5px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);flex-wrap:wrap">
-            <button id="cfgTab1" onclick="switchCfgTab(1)" class="cfg-tab active-tab">🏢 Empresa</button>
-            <button id="cfgTab2" onclick="switchCfgTab(2)" class="cfg-tab">📧 Notificaciones</button>
-            <button id="cfgTab3" onclick="switchCfgTab(3)" class="cfg-tab">🤖 Automatización</button>
-            <button id="cfgTab4" onclick="switchCfgTab(4)" class="cfg-tab">🏭 Empresas</button>
-            <button id="cfgTab5" onclick="switchCfgTab(5)" class="cfg-tab">👤 Agentes</button>
-            <button id="cfgTab6" onclick="switchCfgTab(6)" class="cfg-tab">🔐 Usuarios</button>
-            <button id="cfgTab7" onclick="switchCfgTab(7)" class="cfg-tab">📋 Auditoría</button>
-            <button id="cfgTab8" onclick="switchCfgTab(8)" class="cfg-tab">🏢 Mis Bases</button>
-            <button id="cfgTab9" onclick="switchCfgTab(9)" class="cfg-tab">📜 Changelog</button>
+          <!-- Tabs dinámicas con animación -->
+          <div class="cfg-tabs-bar">
+            <button id="cfgTab1" onclick="switchCfgTab(1)" class="cfg-tab active-tab"><i class="ti ti-building"></i><span>Empresa</span></button>
+            <button id="cfgTab2" onclick="switchCfgTab(2)" class="cfg-tab"><i class="ti ti-mail"></i><span>Notificaciones</span></button>
+            <button id="cfgTab3" onclick="switchCfgTab(3)" class="cfg-tab"><i class="ti ti-robot"></i><span>Automatización</span></button>
+            <button id="cfgTab4" onclick="switchCfgTab(4)" class="cfg-tab"><i class="ti ti-buildings"></i><span>Empresas</span></button>
+            <button id="cfgTab5" onclick="switchCfgTab(5)" class="cfg-tab"><i class="ti ti-id-badge"></i><span>Agentes</span></button>
+            <button id="cfgTab6" onclick="switchCfgTab(6)" class="cfg-tab"><i class="ti ti-users"></i><span>Usuarios</span></button>
+            <button id="cfgTab7" onclick="switchCfgTab(7)" class="cfg-tab"><i class="ti ti-shield-lock"></i><span>Roles</span></button>
+            <button id="cfgTab8" onclick="switchCfgTab(8)" class="cfg-tab"><i class="ti ti-clipboard-list"></i><span>Auditoría</span></button>
+            <button id="cfgTab9" onclick="switchCfgTab(9)" class="cfg-tab"><i class="ti ti-database"></i><span>Mis Bases</span></button>
+            <button id="cfgTab10" onclick="switchCfgTab(10)" class="cfg-tab"><i class="ti ti-history"></i><span>Changelog</span></button>
+            <button id="cfgTab11" onclick="switchCfgTab(11)" class="cfg-tab"><i class="ti ti-target"></i><span>Metas</span></button>
           </div>
 
+          <!-- Indicador de tab activo -->
+          <div id="cfgIndicator" style="height:3px;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:3px;margin-bottom:14px;transition:all .3s ease;width:80px"></div>
+
           <!-- TAB 1: Empresa y Tarifas -->
-          <div id="cfgPanel1" class="cfg-panel">
-          <div class="g2">
-            <div class="nc">
-              <div class="ch"><div class="ct">Datos de la correduría</div></div>
-              <div class="fr"><label>Nombre de la empresa</label><input type="text" id="cfgNom"/></div>
-              <div class="fr"><label>RNC</label><input type="text" id="cfgRNC" placeholder="000-00000-0"/></div>
-              <div class="fr"><label>Teléfono</label><input type="text" id="cfgTel"/></div>
-              <div class="fr"><label>Email</label><input type="email" id="cfgEmail"/></div>
-              <div class="fr"><label>Dirección</label><input type="text" id="cfgDir"/></div>
-              <button class="btn bxl" onclick="guardarConfig()"><i class="ti ti-device-floppy"></i> Guardar empresa</button>
+          <div id="cfgPanel1" class="cfg-panel active-panel">
+            <div class="g2">
+              <div class="nc">
+                <div class="ch"><div class="ct">📋 Datos de la correduría</div></div>
+                <div class="fr"><label>Nombre de la correduría</label><input type="text" id="cfgEmpNom"/></div>
+                <div class="g2">
+                  <div class="fr"><label>RNC</label><input type="text" id="cfgEmpRNC"/></div>
+                  <div class="fr"><label>Teléfono</label><input type="text" id="cfgEmpTel"/></div>
+                </div>
+                <div class="g2">
+                  <div class="fr"><label>Email</label><input type="email" id="cfgEmpEmail"/></div>
+                  <div class="fr"><label>Dirección</label><input type="text" id="cfgEmpDir"/></div>
+                </div>
+                <button class="btn bxl" onclick="guardarDatosEmp()"><i class="ti ti-device-floppy"></i> Guardar datos</button>
+              </div>
+
+              <div class="nc">
+                <div class="ch"><div class="ct">💰 Primas y comisiones</div></div>
+                <div style="font-size:10px;font-weight:700;color:#1d4ed8;margin-bottom:8px">NUMERACIÓN DE FACTURAS</div>
+                <div class="fr"><label>Número inicial</label><input type="number" id="cfgNumIni" placeholder="Ej: 154820"/></div>
+                <div style="font-size:10px;font-weight:700;color:#dc2626;margin:10px 0 8px">COSTOS REALES POR PLAN (RD$)</div>
+                <div class="g3">
+                  <div class="fr"><label>Básico</label><input type="number" id="cfgCost1"/></div>
+                  <div class="fr"><label>Superior</label><input type="number" id="cfgCost2"/></div>
+                  <div class="fr"><label>Esencial</label><input type="number" id="cfgCost3"/></div>
+                </div>
+                <div style="font-size:10px;font-weight:700;color:#059669;margin:10px 0 8px">PRIMAS TITULAR (RD$)</div>
+                <div class="g3">
+                  <div class="fr"><label>Básico</label><input type="number" id="cfgT1"/></div>
+                  <div class="fr"><label>Superior</label><input type="number" id="cfgT2"/></div>
+                  <div class="fr"><label>Esencial</label><input type="number" id="cfgT3"/></div>
+                </div>
+                <div style="font-size:10px;font-weight:700;color:#059669;margin:10px 0 8px">PRIMAS DEPENDIENTE (RD$)</div>
+                <div class="g3">
+                  <div class="fr"><label>Básico</label><input type="number" id="cfgD1"/></div>
+                  <div class="fr"><label>Superior</label><input type="number" id="cfgD2"/></div>
+                  <div class="fr"><label>Esencial</label><input type="number" id="cfgD3"/></div>
+                </div>
+                <div style="font-size:10px;font-weight:700;color:#7c3aed;margin:10px 0 8px">COMISIÓN AGENTE (%)</div>
+                <div class="g3">
+                  <div class="fr"><label>Básico</label><input type="number" id="cfgC1"/></div>
+                  <div class="fr"><label>Superior</label><input type="number" id="cfgC2"/></div>
+                  <div class="fr"><label>Esencial</label><input type="number" id="cfgC3"/></div>
+                </div>
+                <button class="btn bc5" onclick="guardarTarifas()"><i class="ti ti-device-floppy"></i> Guardar tarifas</button>
+              </div>
             </div>
-            <div class="nc p5">
-              <div class="ch"><div class="ct">Tarifas y comisiones</div></div>
-              <div style="font-size:10px;font-weight:600;color:#1d4ed8;margin-bottom:8px">NUMERACIÓN DE FACTURAS</div>
-              <div class="fr"><label>Número inicial de facturas</label>
-                <input type="number" id="cfgNumIni" placeholder="Ej: 154820" style="max-width:180px"/>
+
+            <div class="nc">
+              <div class="ch"><div class="ct">🏥 Administradoras de Riesgos de Salud (ARS)</div></div>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <input type="text" id="newArs" placeholder="Nombre de ARS" style="flex:1;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px"/>
+                <button class="btn bc5" onclick="agregarArs()"><i class="ti ti-plus"></i> Agregar</button>
               </div>
-              <div style="font-size:10px;color:#64748b;margin-bottom:12px">Las facturas comenzarán desde ese número en adelante.</div>
-              <div style="font-size:10px;font-weight:600;color:var(--c5);margin-bottom:8px;font-family:var(--mono)">PRIMAS TITULAR (RD$)</div>
-              <div class="gf2">
-                <div class="fr"><label>Plan Básico</label><input type="number" id="cfgT1"/></div>
-                <div class="fr"><label>Plan Superior</label><input type="number" id="cfgT2"/></div>
-              </div>
-              <div class="fr"><label>Plan Esencial Plus</label><input type="number" id="cfgT3"/></div>
-              <div style="font-size:10px;font-weight:600;color:var(--c5);margin:10px 0 8px;font-family:var(--mono)">PRIMA POR DEPENDIENTE (RD$)</div>
-              <div class="gf2">
-                <div class="fr"><label>Básico dep.</label><input type="number" id="cfgD1"/></div>
-                <div class="fr"><label>Superior dep.</label><input type="number" id="cfgD2"/></div>
-              </div>
-              <div class="fr"><label>Esencial dep.</label><input type="number" id="cfgD3"/></div>
-              <div style="font-size:10px;font-weight:600;color:#dc2626;margin:10px 0 8px">COSTO REAL POR PLAN (RD$) — para calcular utilidad</div>
-              <div class="g3">
-                <div class="fr"><label>Costo Básico</label><input type="number" id="cfgCost1"/></div>
-                <div class="fr"><label>Costo Superior</label><input type="number" id="cfgCost2"/></div>
-                <div class="fr"><label>Costo Esencial</label><input type="number" id="cfgCost3"/></div>
-              </div>
-              <div style="font-size:10px;font-weight:600;color:var(--c5);margin:10px 0 8px;font-family:var(--mono)">COMISIÓN AGENTE (%)</div>
-              <div class="g3">
-                <div class="fr"><label>% Básico</label><input type="number" id="cfgCom1"/></div>
-                <div class="fr"><label>% Superior</label><input type="number" id="cfgCom2"/></div>
-                <div class="fr"><label>% Esencial</label><input type="number" id="cfgCom3"/></div>
-              </div>
-              <button class="btn bc5" onclick="guardarTarifas()"><i class="ti ti-device-floppy"></i> Guardar tarifas</button>
+              <div id="arsList"></div>
             </div>
           </div>
-          </div><!-- /cfgPanel1 -->
 
           <!-- TAB 2: Notificaciones -->
           <div id="cfgPanel2" class="cfg-panel" style="display:none">
-            <div id="v-email-inner"></div>
+            <div class="nc">
+              <div class="ch"><div class="ct">📧 Notificaciones por correo</div></div>
+              <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:10px;padding:14px;margin-bottom:14px;font-size:11px;line-height:1.7">
+                <strong>Configuración EmailJS:</strong><br>
+                Paso 1: Ve a emailjs.com → crea cuenta gratis<br>
+                Paso 2: Conecta tu Gmail (sterlinr08@gmail.com)<br>
+                Paso 3: Crea un Email Template<br>
+                Paso 4: Copia los IDs aquí abajo
+              </div>
+              <div class="g2">
+                <div>
+                  <div class="fr"><label>EmailJS Public Key</label><input type="text" id="ejPublicKey"/></div>
+                  <div class="fr"><label>Service ID</label><input type="text" id="ejServiceId"/></div>
+                  <div class="fr"><label>Template ID</label><input type="text" id="ejTemplateId"/></div>
+                  <div class="fr"><label>Correo destino</label><input type="email" id="ejEmail" value="sterlinr08@gmail.com"/></div>
+                  <div class="fr"><label>Hora de envío</label><input type="time" id="ejHora" value="07:00"/></div>
+                  <div style="display:flex;gap:8px;margin-top:8px">
+                    <button class="btn bxl" onclick="guardarEmailConfig()"><i class="ti ti-device-floppy"></i> Guardar</button>
+                    <button class="btn bc1" onclick="probarEmail()"><i class="ti ti-send"></i> Probar ahora</button>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:700;margin-bottom:10px;text-transform:uppercase">Vista previa del reporte</div>
+                  <div id="emailPreview" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:11px;min-height:200px"></div>
+                </div>
+              </div>
+              <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f5f9">
+                <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase">Historial de envíos</div>
+                <div id="emailHistorial"></div>
+              </div>
+            </div>
           </div>
 
           <!-- TAB 3: Automatización -->
           <div id="cfgPanel3" class="cfg-panel" style="display:none">
-            <div id="v-auto-inner"></div>
+            <div class="g2">
+              <div class="nc">
+                <div class="ch"><div class="ct">🤖 Facturación automática</div></div>
+                <div class="fr"><label>Día del mes</label><input type="number" id="autoDia" value="1" min="1" max="28"/></div>
+                <div class="fr"><label>Hora</label><input type="time" id="autoHora" value="08:00"/></div>
+                <div class="fr"><label>WA automático al generar</label><select id="autoWa"><option value="si">Sí</option><option value="no">No</option></select></div>
+                <div class="fr"><label>Alerta vencimiento (días antes)</label><input type="number" id="autoAlerta" value="30"/></div>
+                <button class="btn bxl" onclick="guardarAuto()"><i class="ti ti-device-floppy"></i> Guardar</button>
+              </div>
+              <div class="nc">
+                <div class="ch"><div class="ct">📱 Plantilla WhatsApp</div></div>
+                <div class="fr"><label>Mensaje (variables: {nombre}, {plan}, {mes}, {prima}, {deuda}, {total})</label>
+                  <textarea id="waPlantilla" style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;min-height:120px;font-family:var(--ff);resize:vertical"></textarea>
+                </div>
+                <button class="btn bxl" onclick="guardarPlantillaWa()"><i class="ti ti-device-floppy"></i> Guardar plantilla</button>
+              </div>
+            </div>
           </div>
 
           <!-- TAB 4: Empresas cotizantes -->
           <div id="cfgPanel4" class="cfg-panel" style="display:none">
             <div class="nc">
-              <div class="ch"><span class="ct">Empresas cotizantes</span><button class="btn bxl bsm" onclick="openM('mEmp')"><i class="ti ti-plus"></i> Nueva</button></div>
+              <div class="ch"><span class="ct">🏭 Empresas cotizantes</span><button class="btn bxl bsm" onclick="openM('mEmp')"><i class="ti ti-plus"></i> Nueva</button></div>
               <div id="empGrdCfg" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px"></div>
             </div>
           </div>
@@ -964,7 +1160,7 @@ html{scroll-behavior:smooth}
           <!-- TAB 5: Agentes -->
           <div id="cfgPanel5" class="cfg-panel" style="display:none">
             <div class="nc">
-              <div class="ch"><span class="ct">Agentes / Corredores</span><button class="btn bxl bsm" onclick="openM('mAgente')"><i class="ti ti-plus"></i> Nuevo agente</button></div>
+              <div class="ch"><span class="ct">👤 Agentes / Corredores</span><button class="btn bxl bsm" onclick="openM('mAgente')"><i class="ti ti-plus"></i> Nuevo</button></div>
               <div class="tw"><table>
                 <thead><tr><th>NOMBRE</th><th>CARGO</th><th>LICENCIA</th><th>VENCE</th><th>ESTADO</th><th></th></tr></thead>
                 <tbody id="tbAgtCfg"></tbody>
@@ -975,7 +1171,7 @@ html{scroll-behavior:smooth}
           <!-- TAB 6: Usuarios -->
           <div id="cfgPanel6" class="cfg-panel" style="display:none">
             <div class="nc">
-              <div class="ch"><span class="ct">Usuarios del sistema</span><button class="btn bxl bsm" onclick="openM('mUsuario')"><i class="ti ti-plus"></i> Nuevo usuario</button></div>
+              <div class="ch"><span class="ct">🔐 Usuarios del sistema</span><button class="btn bxl bsm" onclick="openM('mUsuario')"><i class="ti ti-plus"></i> Nuevo</button></div>
               <div class="tw"><table>
                 <thead><tr><th>NOMBRE</th><th>USUARIO</th><th>ROL</th><th>CARGO</th><th>ESTADO</th><th></th></tr></thead>
                 <tbody id="tbUsuCfg"></tbody>
@@ -983,94 +1179,68 @@ html{scroll-behavior:smooth}
             </div>
           </div>
 
-          <!-- TAB 7: Auditoría -->
+          <!-- TAB 7: Roles y Permisos -->
           <div id="cfgPanel7" class="cfg-panel" style="display:none">
-            <div id="v-audit-inner"></div>
+            <div class="nc">
+              <div class="ch"><div class="ct">🛡️ Roles y permisos</div><div class="ct-s">Define qué puede ver y hacer cada rol</div></div>
+              <div id="rolesContent"></div>
+            </div>
           </div>
 
-          <!-- TAB 8: Mis Bases de datos -->
+          <!-- TAB 8: Auditoría -->
           <div id="cfgPanel8" class="cfg-panel" style="display:none">
-            <div id="v-tenants-inner"></div>
-          </div>
-        </div>
-
-        <!-- AUDITORIA -->
-        <div class="view" id="v-auditoria">
-          <div class="nc p2">
-            <div class="ch"><div><div class="ct">Registro de auditoría</div><div class="ct-s">todas las acciones del sistema</div></div><button class="btn bsm bc4" onclick="exportarAuditCSV()"><i class="ti ti-file-spreadsheet"></i> Exportar</button></div>
-            <div id="auditC"><div class="empty">Sin registros aún. Las acciones aparecerán aquí automáticamente.</div></div>
+            <div class="nc">
+              <div class="ch"><div class="ct">📋 Registro de auditoría</div><button class="btn bsm bc4" onclick="exportarAuditCSV()"><i class="ti ti-file-spreadsheet"></i> Exportar</button></div>
+              <div id="auditCfg"></div>
+            </div>
           </div>
 
-        <!-- Editor ARS -->
-        <div class="nc p2" style="margin-top:10px">
-          <div class="ch">
-            <div><div class="ct">Administradoras de Riesgos de Salud (ARS)</div><div class="ct-s">Lista de ARS disponibles en el sistema</div></div>
-            <button class="btn bsm bc2" onclick="addARS()"><i class="ti ti-plus"></i> Agregar ARS</button>
+          <!-- TAB 9: Mis Bases -->
+          <div id="cfgPanel9" class="cfg-panel" style="display:none">
+            <div class="nc">
+              <div class="ch"><div class="ct">🗄️ Mis bases de datos</div></div>
+              <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:11px;line-height:1.6">
+                <strong>Login multi-empresa:</strong> Para entrar a una base usa el formato <code style="background:#dbeafe;padding:2px 6px;border-radius:4px">usuario@nombrebase</code>
+              </div>
+              <div id="tenantsListCfg" style="margin-bottom:14px"></div>
+              <div style="border:2px dashed #e2e8f0;background:#f8fafc;border-radius:12px;padding:16px">
+                <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:12px;text-transform:uppercase">+ Agregar nueva base</div>
+                <div class="g2">
+                  <div class="fr"><label>Nombre empresa *</label><input type="text" id="tenNomCfg" placeholder="Ej: Correduría Sur"/></div>
+                  <div class="fr"><label>Supabase URL *</label><input type="text" id="tenUrlCfg"/></div>
+                </div>
+                <div class="fr"><label>API Key *</label><input type="text" id="tenKeyCfg"/></div>
+                <div class="fr"><label>Nota</label><input type="text" id="tenNotaCfg"/></div>
+                <button class="btn bxl" onclick="agregarTenantCfg()"><i class="ti ti-plus"></i> Agregar base</button>
+              </div>
+            </div>
           </div>
-          <div id="arsList" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;padding:4px"></div>
-        </div>
 
-        <!-- Editor Roles y Permisos -->
-        <div class="nc p5" style="margin-top:10px">
-          <div class="ch"><div><div class="ct">Roles y niveles de acceso</div><div class="ct-s">Define qué puede hacer cada rol</div></div></div>
-          <div class="tw"><table>
-            <thead><tr><th>ROL</th><th>CLIENTES</th><th>FACTURAS</th><th>COBROS</th><th>REPORTES</th><th>CONFIG</th><th>USUARIOS</th></tr></thead>
-            <tbody id="tbRoles">
-              <tr><td><span class="badge bC2">ADMIN</span></td><td>✅ Total</td><td>✅ Total</td><td>✅ Total</td><td>✅ Total</td><td>✅ Total</td><td>✅ Total</td></tr>
-              <tr><td><span class="badge bC1">SUPERVISOR</span></td><td>✅ Total</td><td>✅ Total</td><td>✅ Total</td><td>✅ Total</td><td>👁️ Ver</td><td>❌ Sin acceso</td></tr>
-              <tr><td><span class="badge bCg">AGENTE</span></td><td>✅ Sus clientes</td><td>👁️ Ver</td><td>✅ Registrar</td><td>👁️ Ver</td><td>❌ Sin acceso</td><td>❌ Sin acceso</td></tr>
-              <tr><td><span class="badge bC4">COBROS</span></td><td>👁️ Ver</td><td>👁️ Ver</td><td>✅ Total</td><td>👁️ Ver</td><td>❌ Sin acceso</td><td>❌ Sin acceso</td></tr>
-            </tbody>
-          </table></div>
-          <div style="font-size:11px;color:#64748b;margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
-            <i class="ti ti-info-circle" style="color:#3b82f6"></i> Para cambiar el rol de un usuario, ve a <strong>Sistema → Usuarios</strong> y usa el menú desplegable en la columna ROL.
+          <!-- TAB 10: Changelog -->
+          <div id="cfgPanel10" class="cfg-panel" style="display:none">
+            <div class="nc">
+              <div class="ch"><div class="ct">📜 Historial de actualizaciones</div><span class="badge bC2">v10.0 — Actual</span></div>
+              <div id="changelogList"></div>
+            </div>
           </div>
+
+          <!-- TAB 11: Metas -->
+          <div id="cfgPanel11" class="cfg-panel" style="display:none">
+            <div class="nc">
+              <div class="ch"><div class="ct">🎯 Metas mensuales</div></div>
+              <div class="g3">
+                <div class="fr"><label>Meta clientes nuevos</label><input type="number" id="metaClientes" placeholder="20"/></div>
+                <div class="fr"><label>Meta cobros (RD$)</label><input type="number" id="metaCobros" placeholder="500000"/></div>
+                <div class="fr"><label>Meta facturas</label><input type="number" id="metaFacturas" placeholder="100"/></div>
+              </div>
+              <button class="btn bxl" onclick="guardarMetas()"><i class="ti ti-device-floppy"></i> Guardar metas</button>
+              <div id="metasProgress" style="margin-top:14px"></div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Changelog -->
-        <div class="nc" style="margin-top:10px">
-          <div class="ch"><div><div class="ct">Historial de actualizaciones</div><div class="ct-s">Todo lo que se ha mejorado en el sistema</div></div><span class="badge bC2">v8.1 — Actual</span></div>
-          
-    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
-      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
-        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v8.1</span>
-        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-15</span>
-      </div>
-      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
-        <li style="margin-bottom:3px">Sistema desplegable en sidebar con secciones por rol</li><li style="margin-bottom:3px">Login multi-empresa formato usuario@nombrebase</li><li style="margin-bottom:3px">Cambiar nombre de usuario desde Usuarios</li><li style="margin-bottom:3px">Botón COBRAR más grande y visible en Facturas</li><li style="margin-bottom:3px">Fuente uniforme en números y texto</li><li style="margin-bottom:3px">Atajos de teclado: Ctrl+K buscar, Ctrl+N nuevo cliente, Ctrl+F facturas, Escape cerrar</li><li style="margin-bottom:3px">Visibilidad de menús según rol (admin/agente/cobros)</li><li style="margin-bottom:3px">Changelog de actualizaciones en Configuración</li>
-      </ul>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
-      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
-        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v8.0</span>
-        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-14</span>
-      </div>
-      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
-        <li style="margin-bottom:3px">Rediseño Enterprise completo del sistema</li><li style="margin-bottom:3px">Notificaciones por correo a las 7 AM (EmailJS)</li><li style="margin-bottom:3px">Sistema multi-empresa con bases independientes</li><li style="margin-bottom:3px">Documentos de clientes (cédulas, contratos, fotos)</li><li style="margin-bottom:3px">Exportar expediente PDF por cliente</li><li style="margin-bottom:3px">KPI de Utilidad visible solo para Admin</li><li style="margin-bottom:3px">Sistema de errores con panel elegante en español</li><li style="margin-bottom:3px">Log técnico de errores para soporte</li>
-      </ul>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
-      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
-        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v7.0</span>
-        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-13</span>
-      </div>
-      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
-        <li style="margin-bottom:3px">PWA instalable en iPhone y Android</li><li style="margin-bottom:3px">Sistema de backup manual completo</li><li style="margin-bottom:3px">Responsive móvil con drawer deslizable</li><li style="margin-bottom:3px">Recordar sesión con checkbox</li><li style="margin-bottom:3px">F5 mantiene la pantalla activa</li><li style="margin-bottom:3px">Filtros de facturas (pendientes/pagadas/parciales)</li><li style="margin-bottom:3px">Numeración profesional configurable</li><li style="margin-bottom:3px">Sin NCF opcional por cliente</li>
-      </ul>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
-      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
-        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v6.0</span>
-        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-12</span>
-      </div>
-      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
-        <li style="margin-bottom:3px">Login real con contraseña SHA-256</li><li style="margin-bottom:3px">Número de póliza automático POL-XXXX-000001</li><li style="margin-bottom:3px">NCF por factura (B01/B02/B14 DGII)</li><li style="margin-bottom:3px">PDF de facturas y certificados de seguro</li><li style="margin-bottom:3px">Alertas de pólizas por vencer</li><li style="margin-bottom:3px">Comisiones con retención ITBIS 18%</li><li style="margin-bottom:3px">Reporte IT-1 DGII y ARS</li><li style="margin-bottom:3px">WA masivo con selección de clientes</li>
-      </ul>
-    </div>
-        </div>
-        </div>
-
-        <!-- USUARIOS -->
+        <!-- <!-- USUARIOS -->
         <div class="view" id="v-usuarios">
           <div class="nc">
             <div class="ch"><span class="ct">Usuarios del sistema</span><button class="btn bxl bsm" onclick="openM('mUsuario')"><i class="ti ti-plus"></i> Nuevo usuario</button></div>
@@ -1091,7 +1261,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Cliente -->
 <div class="overlay" id="mCli">
   <div class="modal" style="max-width:560px">
-    <div class="mt"><span id="mCliT">NUEVO CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mCli')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mCliT">// NUEVO CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mCli')"><i class="ti ti-x"></i></button></div>
     <div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:5px;letter-spacing:.5px">EMPRESA COTIZANTE</div>
     <div class="esel" id="eChips"></div>
     <div class="div"></div>
@@ -1105,7 +1275,7 @@ html{scroll-behavior:smooth}
       <div class="fr"><label>Agente</label><select id="cAgt"></select></div>
       <div class="fr"><label>Tipo NCF</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select></div>
     </div>
-    <div style="font-size:9px;font-weight:700;color:var(--c4);margin:8px 0 6px;font-family:var(--mono)">PÓLIZA Y ARS</div>
+    <div style="font-size:9px;font-weight:700;color:var(--c4);margin:8px 0 6px;font-family:var(--mono)">// PÓLIZA Y ARS</div>
     <div class="gf2">
       <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
       <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
@@ -1122,7 +1292,7 @@ html{scroll-behavior:smooth}
     </div>
     <div class="fr"><label>Dirección</label><input type="text" id="cDir"/></div>
     <div class="div"></div>
-    <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">DEPENDIENTES</div>
+    <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
     <div style="display:flex;gap:6px;margin-bottom:7px">
       <input type="text" id="dN" placeholder="Nombre dependiente" style="flex:1;font-size:10px;padding:6px 9px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);outline:none"/>
       <select id="dR" style="width:105px;font-size:10px;padding:6px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Cónyuge</option><option>Hijo/a</option><option>Padre/Madre</option><option>Otro</option></select>
@@ -1139,7 +1309,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Inhabilitar -->
 <div class="overlay" id="mInhab">
   <div class="modal" style="max-width:400px">
-    <div class="mt" style="color:var(--c3)"><span>INHABILITAR CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mInhab')"><i class="ti ti-x"></i></button></div>
+    <div class="mt" style="color:var(--c3)"><span>// INHABILITAR CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mInhab')"><i class="ti ti-x"></i></button></div>
     <div class="confirm-b">
       <div id="inhabNom" style="font-weight:700;color:var(--c3);margin-bottom:8px;font-family:var(--mono)"></div>
       <p>Al inhabilitar:<br>· Póliza cancelada — sin nuevas facturas automáticas<br>· Deuda pendiente queda registrada en el sistema<br>· Asiento contable de baja generado automáticamente<br>· Se puede reactivar en cualquier momento</p>
@@ -1157,7 +1327,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Abono -->
 <div class="overlay" id="mAbono">
   <div class="modal" style="max-width:360px">
-    <div class="mt"><span>REGISTRAR ABONO</span><button class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>// REGISTRAR ABONO</span><button class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
     <div id="abonoI" style="background:var(--bg3);border-radius:var(--r6);padding:10px;margin-bottom:12px;border:1px solid rgba(0,229,199,.07)"></div>
     <div class="fr"><label>Monto (RD$) *</label><input type="number" id="aMnt" placeholder="0.00" min="0.01" step="0.01"/></div>
     <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
@@ -1174,7 +1344,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Empresa -->
 <div class="overlay" id="mEmp">
   <div class="modal" style="max-width:420px">
-    <div class="mt"><span id="mEmpT">NUEVA EMPRESA</span><button class="btn bghost bsm" onclick="closeM('mEmp')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mEmpT">// NUEVA EMPRESA</span><button class="btn bghost bsm" onclick="closeM('mEmp')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Nombre *</label><input type="text" id="eNom"/></div>
       <div class="fr"><label>RNC</label><input type="text" id="eRNC" placeholder="000-00000-0"/></div>
@@ -1190,7 +1360,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Agente -->
 <div class="overlay" id="mAgente">
   <div class="modal" style="max-width:420px">
-    <div class="mt"><span id="mAgtT">NUEVO AGENTE</span><button class="btn bghost bsm" onclick="closeM('mAgente')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mAgtT">// NUEVO AGENTE</span><button class="btn bghost bsm" onclick="closeM('mAgente')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Nombre *</label><input type="text" id="agtNom"/></div>
       <div class="fr"><label>Cargo</label><input type="text" id="agtCargo" placeholder="Agente de ventas"/></div>
@@ -1206,7 +1376,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Asiento -->
 <div class="overlay" id="mAsiento">
   <div class="modal" style="max-width:430px">
-    <div class="mt"><span>ASIENTO CONTABLE</span><button class="btn bghost bsm" onclick="closeM('mAsiento')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>// ASIENTO CONTABLE</span><button class="btn bghost bsm" onclick="closeM('mAsiento')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Fecha *</label><input type="date" id="asiFecha"/></div>
       <div class="fr"><label>Referencia</label><input type="text" id="asiRef" placeholder="AST-001"/></div>
@@ -1226,7 +1396,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Usuario -->
 <div class="overlay" id="mUsuario">
   <div class="modal" style="max-width:400px">
-    <div class="mt"><span>NUEVO USUARIO</span><button class="btn bghost bsm" onclick="closeM('mUsuario')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>// NUEVO USUARIO</span><button class="btn bghost bsm" onclick="closeM('mUsuario')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Nombre *</label><input type="text" id="uNom"/></div>
       <div class="fr"><label>Cargo</label><input type="text" id="uCargo"/></div>
@@ -1241,7 +1411,7 @@ html{scroll-behavior:smooth}
 <!-- Modal PDF Factura -->
 <div class="overlay" id="mPDF">
   <div class="modal" style="max-width:600px">
-    <div class="mt"><span>FACTURA / CERTIFICADO PDF</span><button class="btn bghost bsm" onclick="closeM('mPDF')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>// FACTURA / CERTIFICADO PDF</span><button class="btn bghost bsm" onclick="closeM('mPDF')"><i class="ti ti-x"></i></button></div>
     <div id="pdfContent" style="background:#fff;color:#000;border-radius:var(--r6);padding:20px;font-family:Arial,sans-serif;font-size:12px;border:1px solid var(--bg4)"></div>
     <div class="fe" style="margin-top:10px">
       <button class="btn" onclick="closeM('mPDF')">Cerrar</button>
@@ -1289,7 +1459,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Log de Errores -->
 <div class="overlay" id="mErrorLog">
   <div class="modal" style="max-width:600px">
-    <div class="mt"><span>REGISTRO DE ERRORES Y EVENTOS</span><button class="btn bghost bsm" onclick="closeM('mErrorLog')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>// REGISTRO DE ERRORES Y EVENTOS</span><button class="btn bghost bsm" onclick="closeM('mErrorLog')"><i class="ti ti-x"></i></button></div>
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
       <button class="btn bsm bc3" onclick="filtrarLog('error')"><i class="ti ti-alert-circle"></i> Errores</button>
       <button class="btn bsm bc4" onclick="filtrarLog('warn')"><i class="ti ti-alert-triangle"></i> Advertencias</button>
@@ -1306,7 +1476,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Documentos Cliente -->
 <div class="overlay" id="mDocs">
   <div class="modal" style="max-width:580px">
-    <div class="mt"><span id="mDocsTitle">DOCUMENTOS DEL CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mDocs')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mDocsTitle">// DOCUMENTOS DEL CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mDocs')"><i class="ti ti-x"></i></button></div>
 
     <div id="docsClienteInfo" style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:14px;border:1px solid #e2e8f0;font-size:12px"></div>
 
@@ -1342,7 +1512,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Backup -->
 <div class="overlay" id="mBackup">
   <div class="modal" style="max-width:480px">
-    <div class="mt" style="color:#059669"><span>BACKUP DE SEGURIDAD</span><button class="btn bghost bsm" onclick="closeM('mBackup')"><i class="ti ti-x"></i></button></div>
+    <div class="mt" style="color:#059669"><span>// BACKUP DE SEGURIDAD</span><button class="btn bghost bsm" onclick="closeM('mBackup')"><i class="ti ti-x"></i></button></div>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #10b981;border-radius:10px;padding:12px 14px;margin-bottom:14px">
       <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:4px">⚠️ El plan gratuito NO hace backups automáticos</div>
@@ -1395,7 +1565,7 @@ html{scroll-behavior:smooth}
 <!-- Modal WA Masivo -->
 <div class="overlay" id="mWAMasivo">
   <div class="modal" style="max-width:620px">
-    <div class="mt"><span>WHATSAPP MASIVO</span><button class="btn bghost bsm" onclick="closeM('mWAMasivo')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>// WHATSAPP MASIVO</span><button class="btn bghost bsm" onclick="closeM('mWAMasivo')"><i class="ti ti-x"></i></button></div>
     <!-- Tipo de mensaje -->
     <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:8px">Tipo de mensaje</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
@@ -1731,9 +1901,75 @@ async function conectar(){
   }
 }
 
-// ── Toggle Contabilidad ─────────────────────────────────────────
-let _contabAbierto = false;
-function toggleContab(el){
+// ── Toggle sidebar Sistema ───────────────────────────────────────
+let _sistemaPlegado = false;
+function toggleSistema(){
+  const el=document.getElementById('sbSistema');
+  const icn=document.getElementById('icnSistema');
+  const cont=document.getElementById('sbContabilidad');
+  if(!el)return;
+  _sistemaPlegado=!_sistemaPlegado;
+  el.style.maxHeight=_sistemaPlegado?'0':'300px';
+  if(icn)icn.style.transform=_sistemaPlegado?'rotate(-90deg)':'';
+  // Contabilidad solo si es admin
+  if(cont && sesion?.rol==='admin'){
+    cont.style.maxHeight=_sistemaPlegado?'0':'200px';
+  }
+}
+
+// Aplicar visibilidad por rol en sidebar
+function aplicarRolSidebar(){
+  const esAdmin = sesion?.rol==='admin';
+  ['niAdmin1','niAdmin2','niAdmin3','niAdmin4','niAdmin5'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display=esAdmin?'':'none';
+  });
+  const cont=document.getElementById('sbContabilidad');
+  if(cont)cont.style.maxHeight=esAdmin?'200px':'0';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SISTEMA v10 — TABS DINÁMICAS, ROLES, BÚSQUEDA, NOTIFICACIONES, METAS
+// ══════════════════════════════════════════════════════════════════
+
+// ── TABS de Configuración con animación ────────────────────────────
+function switchCfgTab(n){
+  const total=11;
+  for(let i=1;i<=total;i++){
+    const tab=document.getElementById('cfgTab'+i);
+    const panel=document.getElementById('cfgPanel'+i);
+    if(tab){tab.classList.toggle('active-tab',i===n);}
+    if(panel){
+      if(i===n){panel.style.display='block';panel.classList.add('active-panel');}
+      else{panel.style.display='none';panel.classList.remove('active-panel');}
+    }
+  }
+  // Mover indicador animado
+  const tabActive=document.getElementById('cfgTab'+n);
+  const ind=document.getElementById('cfgIndicator');
+  if(tabActive&&ind){
+    const rect=tabActive.getBoundingClientRect();
+    const parent=tabActive.parentElement.getBoundingClientRect();
+    ind.style.width=rect.width+'px';
+    ind.style.transform='translateX('+(rect.left-parent.left)+'px)';
+  }
+  // Cargar contenido según tab
+  if(n===1)setTimeout(rConfig,100);
+  if(n===2)setTimeout(rEmail,150);
+  if(n===3)setTimeout(rAuto,150);
+  if(n===4){rEmpGrd();setTimeout(()=>{const s=document.getElementById('empGrd');const t=document.getElementById('empGrdCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
+  if(n===5){rAgentes();setTimeout(()=>{const s=document.getElementById('tbAgt');const t=document.getElementById('tbAgtCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
+  if(n===6){rUsuarios();setTimeout(()=>{const s=document.getElementById('tbUsu');const t=document.getElementById('tbUsuCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
+  if(n===7)setTimeout(rRolesContent,100);
+  if(n===8){rAuditoria();setTimeout(()=>{const s=document.getElementById('auditC');const t=document.getElementById('auditCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
+  if(n===9)setTimeout(renderTenantsCfg,100);
+  if(n===10)setTimeout(rChangelogContent,100);
+  if(n===11)setTimeout(rMetas,100);
+}
+
+// ── Toggle Contabilidad sidebar ────────────────────────────────────
+let _contabAbierto=false;
+function toggleContab(){
   _contabAbierto=!_contabAbierto;
   const sb=document.getElementById('sbContab');
   const icn=document.getElementById('icnContab');
@@ -1741,216 +1977,431 @@ function toggleContab(el){
   if(icn)icn.style.transform=_contabAbierto?'rotate(180deg)':'';
 }
 
-// ── Config Tabs ──────────────────────────────────────────────────
-function switchCfgTab(n){
-  for(let i=1;i<=9;i++){
-    const tab=document.getElementById('cfgTab'+i);
-    const panel=document.getElementById('cfgPanel'+i);
-    if(tab)tab.classList.toggle('active-tab',i===n);
-    if(panel)panel.style.display=i===n?'block':'none';
-  }
-  // Cargar contenido dinámico según tab
-  if(n===2)cargarTabEmail();
-  if(n===3)cargarTabAuto();
-  if(n===4){rEmpGrd();setTimeout(()=>{const g=document.getElementById('empGrdCfg');const s=document.getElementById('empGrd');if(g&&s)g.innerHTML=s.innerHTML;},250);}
-  if(n===5)cargarTabAgentes();
-  if(n===6)cargarTabUsuarios();
-  if(n===7)cargarTabAudit();
-  if(n===8)cargarTabTenants();
-  if(n===9)cargarTabChangelog();
-}
+// ── ROLES Y PERMISOS ───────────────────────────────────────────────
+const ROLES_PERMS = {
+  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar']},
+  supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar']},
+  agente:{nom:'Agente',color:'#2563eb',perms:['ver_clientes','crear_clientes','ver_facturas']},
+  cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar']},
+};
 
-function cargarTabAgentes(){
-  const p=document.getElementById('cfgPanel5');
-  if(!p)return;
-  rAgentes();
-  setTimeout(()=>{
-    const s=document.getElementById('tbAgt');
-    const t=p.querySelector('#tbAgtCfg');
-    if(s&&t)t.innerHTML=s.innerHTML;
-  },300);
-}
+const PERMS_LIST = [
+  {key:'ver_todo',lbl:'Ver todo el sistema'},
+  {key:'crear',lbl:'Crear registros'},
+  {key:'editar',lbl:'Editar registros'},
+  {key:'eliminar',lbl:'Eliminar registros'},
+  {key:'config',lbl:'Configuración'},
+  {key:'usuarios',lbl:'Gestionar usuarios'},
+  {key:'reportes',lbl:'Ver reportes'},
+  {key:'contabilidad',lbl:'Ver contabilidad'},
+  {key:'exportar',lbl:'Exportar datos'},
+  {key:'ver_clientes',lbl:'Ver clientes'},
+  {key:'crear_clientes',lbl:'Crear clientes'},
+  {key:'ver_facturas',lbl:'Ver facturas'},
+  {key:'cobrar',lbl:'Registrar cobros'},
+];
 
-function cargarTabUsuarios(){
-  const p=document.getElementById('cfgPanel6');
-  if(!p)return;
-  rUsuarios();
-  setTimeout(()=>{
-    const s=document.getElementById('tbUsu');
-    const t=p.querySelector('#tbUsuCfg');
-    if(s&&t)t.innerHTML=s.innerHTML;
-  },300);
-}
-
-function cargarTabChangelog(){
-  const p=document.getElementById('cfgPanel9');
-  if(!p||p.innerHTML.trim())return;
-  // Buscar el contenido del changelog que está dentro del view config original
-  const src=document.querySelector('#v-config .ct');
-  // Mostrar mensaje informativo simple
-  p.innerHTML=`<div class="nc">
-    <div class="ch"><div><div class="ct">Historial de actualizaciones</div><div class="ct-s">Todo lo que se ha mejorado en el sistema</div></div><span class="badge bC2">v9.0 — Actual</span></div>
-    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
-      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
-        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v9.0</span>
-        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-15</span>
+function rRolesContent(){
+  const el=document.getElementById('rolesContent');
+  if(!el)return;
+  // Cargar permisos guardados
+  try{const s=localStorage.getItem('nx_roles_perms');if(s)Object.assign(ROLES_PERMS,JSON.parse(s));}catch{}
+  el.innerHTML=Object.entries(ROLES_PERMS).map(([key,r])=>`
+    <div class="role-card">
+      <div class="role-h">
+        <div style="width:32px;height:32px;border-radius:8px;background:${r.color};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">${r.nom[0]}</div>
+        <div style="flex:1">
+          <div class="role-name">${r.nom}</div>
+          <div style="font-size:10px;color:#64748b">${r.perms.length} permisos activos</div>
+        </div>
+        <button class="btn bsm bc1" onclick="guardarRolPerms('${key}')"><i class="ti ti-device-floppy"></i> Guardar</button>
       </div>
-      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
-        <li>Configuración unificada con 9 pestañas integradas</li>
-        <li>Sidebar limpio: solo Principal y Sistema</li>
-        <li>Contabilidad desplegable con todos los reportes</li>
-        <li>Notificaciones EmailJS funcionando</li>
-        <li>Sistema multi-empresa con bases independientes</li>
-        <li>Sin símbolos // en barra superior</li>
-      </ul>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
-      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
-        <span style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v8.0</span>
-        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-14</span>
+      <div class="role-perms">
+        ${PERMS_LIST.map(p=>`
+          <label class="role-perm">
+            <input type="checkbox" data-rol="${key}" data-perm="${p.key}" ${r.perms.includes(p.key)?'checked':''}/>
+            <span>${p.lbl}</span>
+          </label>`).join('')}
       </div>
-      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
-        <li>Rediseño Enterprise completo</li>
-        <li>Notificaciones por correo a las 7 AM</li>
-        <li>Multi-empresa con bases independientes</li>
-        <li>Documentos de clientes (cédulas, contratos)</li>
-        <li>Exportar expediente PDF</li>
-        <li>KPI de Utilidad solo Admin</li>
-      </ul>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
-      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
-        <span style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v7.0</span>
-        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-13</span>
+    </div>`).join('');
+}
+
+function guardarRolPerms(rol){
+  const checks=document.querySelectorAll(`[data-rol="${rol}"]`);
+  const perms=[];
+  checks.forEach(c=>{if(c.checked)perms.push(c.dataset.perm);});
+  ROLES_PERMS[rol].perms=perms;
+  localStorage.setItem('nx_roles_perms',JSON.stringify(ROLES_PERMS));
+  toast('ok',`Permisos de ${ROLES_PERMS[rol].nom} guardados`,perms.length+' permisos');
+  logAudit('ROL_PERMISOS',`${rol}: ${perms.join(', ')}`);
+}
+
+// ── CHANGELOG ──────────────────────────────────────────────────────
+function rChangelogContent(){
+  const el=document.getElementById('changelogList');
+  if(!el)return;
+  const versiones=[
+    {ver:'v10.0',fecha:'2026-05-15',color:'linear-gradient(135deg,#dc2626,#ef4444)',items:[
+      'Tabs dinámicas con animación en Configuración',
+      'Centro de notificaciones con campanita',
+      'Búsqueda global con Ctrl+K',
+      'Panel resumen del cliente',
+      'Clientes favoritos / VIP',
+      'Notas internas por cliente',
+      'Modo oscuro',
+      'Sistema de roles editables con permisos',
+      'Metas mensuales con progreso visual',
+      'Auto-guardado de formularios',
+      'Documentos en formulario nuevo cliente',
+      'Exportar expediente del cliente en PDF',
+    ]},
+    {ver:'v9.0',fecha:'2026-05-15',color:'linear-gradient(135deg,#1e3a6e,#2563eb)',items:[
+      'Configuración unificada',
+      'Sidebar limpio',
+      'Contabilidad desplegable',
+      'Notificaciones EmailJS',
+      'Sistema multi-empresa',
+    ]},
+    {ver:'v8.0',fecha:'2026-05-14',color:'linear-gradient(135deg,#7c3aed,#a78bfa)',items:[
+      'Rediseño Enterprise completo',
+      'Notificaciones por correo 7 AM',
+      'Multi-empresa con bases independientes',
+      'Documentos de clientes',
+      'Exportar expediente PDF',
+      'KPI Utilidad solo Admin',
+    ]},
+    {ver:'v7.0',fecha:'2026-05-13',color:'linear-gradient(135deg,#059669,#10b981)',items:[
+      'PWA instalable iPhone y Android',
+      'Sistema backup manual',
+      'Responsive móvil',
+      'Recordar sesión',
+      'F5 mantiene pantalla',
+    ]},
+  ];
+  el.innerHTML=versiones.map(v=>`
+    <div style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:${v.color};color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px">${v.ver}</span>
+        <span style="font-size:11px;color:#64748b">${v.fecha}</span>
+        <span style="margin-left:auto;font-size:9px;color:#94a3b8;font-weight:600;text-transform:uppercase">${v.items.length} mejoras</span>
       </div>
-      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
-        <li>PWA instalable iPhone y Android</li>
-        <li>Sistema backup manual completo</li>
-        <li>Responsive móvil con drawer</li>
-        <li>Recordar sesión con checkbox</li>
-        <li>F5 mantiene pantalla activa</li>
-        <li>Filtros facturas (pendientes/pagadas)</li>
+      <ul style="padding:12px 16px 12px 32px;margin:0;font-size:11px;color:#374151;line-height:1.9">
+        ${v.items.map(i=>`<li>${i}</li>`).join('')}
       </ul>
-    </div>
-  </div>`;
+    </div>`).join('');
 }
 
-function cargarTabEmail(){
-  const el=document.getElementById('v-email-inner');
-  if(!el)return;
-  if(el.innerHTML.trim())return; // ya cargado
-  // Clonar contenido de la vista email
-  const src=document.getElementById('v-email');
-  if(src)el.innerHTML=src.innerHTML;
-  rEmail();
+// ── METAS MENSUALES ────────────────────────────────────────────────
+function rMetas(){
+  const cfg=JSON.parse(localStorage.getItem('nx_metas')||'{}');
+  if(document.getElementById('metaClientes'))document.getElementById('metaClientes').value=cfg.clientes||'';
+  if(document.getElementById('metaCobros'))document.getElementById('metaCobros').value=cfg.cobros||'';
+  if(document.getElementById('metaFacturas'))document.getElementById('metaFacturas').value=cfg.facturas||'';
+  rMetasProgress();
 }
 
-function cargarTabAuto(){
-  const el=document.getElementById('v-auto-inner');
-  if(!el)return;
-  if(el.innerHTML.trim())return;
-  const src=document.getElementById('v-auto');
-  if(src)el.innerHTML=src.innerHTML;
-  rAuto();
+function guardarMetas(){
+  const m={
+    clientes:parseInt(document.getElementById('metaClientes').value)||0,
+    cobros:parseFloat(document.getElementById('metaCobros').value)||0,
+    facturas:parseInt(document.getElementById('metaFacturas').value)||0,
+  };
+  localStorage.setItem('nx_metas',JSON.stringify(m));
+  toast('ok','Metas guardadas');
+  rMetasProgress();
 }
 
-function cargarTabAudit(){
-  const el=document.getElementById('v-audit-inner');
+function rMetasProgress(){
+  const el=document.getElementById('metasProgress');
   if(!el)return;
-  el.innerHTML=`<div class="nc p2"><div class="ch"><div><div class="ct">Registro de auditoría</div></div><button class="btn bsm bc4" onclick="exportarAuditCSV()"><i class="ti ti-file-spreadsheet"></i> Exportar</button></div><div id="auditCfg"></div></div>`;
-  const a=document.getElementById('auditC');
-  const b=document.getElementById('auditCfg');
-  if(a&&b)b.innerHTML=a.innerHTML;
-}
-
-function cargarTabTenants(){
-  const el=document.getElementById('v-tenants-inner');
-  if(!el)return;
+  const m=JSON.parse(localStorage.getItem('nx_metas')||'{}');
+  if(!m.clientes&&!m.cobros&&!m.facturas){el.innerHTML='';return;}
+  const mes=new Date().toISOString().slice(0,7);
+  const nuevos=ST.clientes.filter(c=>c.created_at?.slice(0,7)===mes).length;
+  const facMes=ST.facturas.filter(f=>f.created_at?.slice(0,7)===mes).length;
+  const cobrado=ST.clientes.reduce((s,c)=>s+(c.pagado||0),0);
+  const pct=(a,b)=>b>0?Math.min(100,Math.round(a/b*100)):0;
   el.innerHTML=`
-    <div class="nc">
-      <div class="ch">
-        <div><div class="ct">Mis bases de datos</div><div class="ct-s">Cada empresa tiene sus datos completamente independientes</div></div>
+    <div style="font-size:11px;font-weight:700;margin-bottom:10px;text-transform:uppercase;color:#1e293b">📊 Progreso del mes</div>
+    ${m.clientes?`<div class="meta-card">
+      <div class="meta-row">
+        <div class="meta-name">🆕 Clientes nuevos</div>
+        <div class="meta-val">${nuevos} / ${m.clientes}</div>
       </div>
-      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:12px 14px;margin-bottom:14px">
-        <div style="font-size:11px;color:#374151;line-height:1.7">
-          <strong>¿Cómo funciona?</strong> Cada empresa que agregues tendrá su <strong>propia base de datos Supabase</strong>. Los clientes y facturas de cada base están separados. Para entrar a una empresa específica usa el formato: <code style="background:#dbeafe;padding:2px 6px;border-radius:4px">usuario@nombrebase</code>
-        </div>
+      <div class="meta-bar"><div class="meta-fill" style="width:${pct(nuevos,m.clientes)}%;background:linear-gradient(90deg,#2563eb,#60a5fa)"></div></div>
+    </div>`:''}
+    ${m.cobros?`<div class="meta-card">
+      <div class="meta-row">
+        <div class="meta-name">💰 Cobros</div>
+        <div class="meta-val">${fmt(cobrado)} / ${fmt(m.cobros)}</div>
       </div>
-
-      <div id="tenantsListCfg" style="margin-bottom:14px"></div>
-
-      <div style="border:2px dashed #e2e8f0;background:#f8fafc;border-radius:12px;padding:16px">
-        <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">+ Agregar nueva base</div>
-        <div class="gf2">
-          <div class="fr"><label>Nombre de la empresa *</label><input type="text" id="tenNomCfg" placeholder="Ej: Correduría Sur"/></div>
-          <div class="fr"><label>Supabase URL *</label><input type="text" id="tenUrlCfg" placeholder="https://xxxx.supabase.co"/></div>
-        </div>
-        <div class="fr"><label>API Key (anon public) *</label><input type="text" id="tenKeyCfg" placeholder="eyJhbGci..."/></div>
-        <div class="fr"><label>Nota (opcional)</label><input type="text" id="tenNotaCfg" placeholder="Ej: Sucursal Santiago"/></div>
-        <button class="btn bxl" onclick="agregarTenantCfg()"><i class="ti ti-plus"></i> Agregar base</button>
+      <div class="meta-bar"><div class="meta-fill" style="width:${pct(cobrado,m.cobros)}%;background:linear-gradient(90deg,#059669,#10b981)"></div></div>
+    </div>`:''}
+    ${m.facturas?`<div class="meta-card">
+      <div class="meta-row">
+        <div class="meta-name">📄 Facturas</div>
+        <div class="meta-val">${facMes} / ${m.facturas}</div>
       </div>
-    </div>`;
-  renderTenantsCfg();
+      <div class="meta-bar"><div class="meta-fill" style="width:${pct(facMes,m.facturas)}%;background:linear-gradient(90deg,#d97706,#f59e0b)"></div></div>
+    </div>`:''}`;
 }
 
-function renderTenantsCfg(){
-  const tenants=getTenants();
-  const el=document.getElementById('tenantsListCfg');
-  if(!el)return;
-  const actUrl=localStorage.getItem('nx_url');
-  if(!tenants.length){
-    el.innerHTML='<div class="empty">No hay bases registradas. Agrega una abajo.</div>';
+// ── NOTIFICATION CENTER ────────────────────────────────────────────
+let _notifs=[];
+function toggleNotif(){
+  const p=document.getElementById('notifPanel');
+  if(!p)return;
+  p.classList.toggle('show');
+  rNotifs();
+}
+
+function rNotifs(){
+  // Generar notificaciones automáticas
+  _notifs=[];
+  const hoy=new Date();
+  // Pólizas por vencer
+  ST.clientes.filter(c=>c.activo&&c.fecha_fin).forEach(c=>{
+    const d=Math.ceil((new Date(c.fecha_fin)-hoy)/86400000);
+    if(d>=0&&d<=30){
+      _notifs.push({id:'pol_'+c.id,icon:'⚠️',ttl:`Póliza por vencer en ${d} días`,sub:c.nom+' · '+c.numero_poliza,ts:hoy.toISOString(),tipo:'warn'});
+    }
+  });
+  // Clientes nuevos hoy
+  const hoyStr=hoy.toISOString().slice(0,10);
+  ST.clientes.filter(c=>c.created_at?.slice(0,10)===hoyStr).forEach(c=>{
+    _notifs.push({id:'nvo_'+c.id,icon:'🆕',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan,ts:c.created_at,tipo:'info'});
+  });
+  // Facturas pendientes
+  const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado').length;
+  if(pendCount>0)_notifs.push({id:'pend_fac',icon:'💰',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Revisa el módulo de facturas',ts:hoy.toISOString(),tipo:'info'});
+  
+  const badge=document.getElementById('notifBadge');
+  if(badge){
+    if(_notifs.length>0){badge.style.display='flex';badge.textContent=_notifs.length;}
+    else badge.style.display='none';
+  }
+  
+  const list=document.getElementById('notifList');
+  if(!list)return;
+  if(!_notifs.length){
+    list.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:11px">No hay notificaciones</div>';
     return;
   }
-  el.innerHTML=`<div class="tw"><table>
-    <thead><tr><th>EMPRESA</th><th>URL SUPABASE</th><th>NOTA</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
-    <tbody>${tenants.map((t,i)=>`<tr>
-      <td style="font-weight:700">${t.nom}</td>
-      <td style="font-family:monospace;font-size:9px;color:#64748b">${t.url.replace('https://','').slice(0,35)}...</td>
-      <td style="font-size:10px;color:#64748b">${t.nota||'—'}</td>
-      <td>${t.url===actUrl?'<span class="badge bC5">ACTIVA</span>':'<span class="badge bCg">Inactiva</span>'}</td>
-      <td style="white-space:nowrap;display:flex;gap:4px">
-        ${t.url!==actUrl?`<button class="btn bsm bc1" onclick="cambiarEmpresa(${i})"><i class="ti ti-switch-2"></i> Cambiar</button>`:'<span style="font-size:10px;color:#059669">✅ En uso</span>'}
-        <button class="btn bsm bc3" onclick="eliminarTenantCfg(${i})"><i class="ti ti-trash"></i></button>
-      </td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
+  list.innerHTML=_notifs.map(n=>`
+    <div class="notif-item unread">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:18px">${n.icon}</span>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:2px">${n.ttl}</div>
+          <div style="font-size:10px;color:#64748b">${n.sub}</div>
+        </div>
+      </div>
+    </div>`).join('');
 }
 
-function agregarTenantCfg(){
-  const nom=document.getElementById('tenNomCfg').value.trim();
-  const url=document.getElementById('tenUrlCfg').value.trim();
-  const key=document.getElementById('tenKeyCfg').value.trim();
-  const nota=document.getElementById('tenNotaCfg').value.trim();
-  if(!nom||!url||!key){toast('err','Completa los campos obligatorios');return;}
-  const tenants=getTenants();
-  if(tenants.find(t=>t.url===url)){toast('warn','Esta base ya existe');return;}
-  tenants.push({nom,url,key,nota,creado:hoy()});
-  saveTenants(tenants);
-  document.getElementById('tenNomCfg').value='';
-  document.getElementById('tenUrlCfg').value='';
-  document.getElementById('tenKeyCfg').value='';
-  document.getElementById('tenNotaCfg').value='';
-  renderTenantsCfg();
-  toast('ok','Base agregada',nom);
+function marcarTodasLeidas(){
+  document.querySelectorAll('.notif-item').forEach(i=>i.classList.remove('unread'));
 }
 
-function eliminarTenantCfg(i){
-  if(!confirm('¿Eliminar esta base de datos?'))return;
-  const t=getTenants();t.splice(i,1);saveTenants(t);renderTenantsCfg();
+// Cerrar notif al clic afuera
+document.addEventListener('click',e=>{
+  const p=document.getElementById('notifPanel');
+  if(p&&!p.contains(e.target)&&!e.target.closest('.notif-bell')){p.classList.remove('show');}
+});
+
+// ── DARK MODE ──────────────────────────────────────────────────────
+function toggleDarkMode(){
+  document.body.classList.toggle('dark');
+  const dark=document.body.classList.contains('dark');
+  localStorage.setItem('nx_dark',dark?'1':'0');
+  const icon=document.getElementById('iconDarkMode');
+  if(icon)icon.className='ti '+(dark?'ti-sun':'ti-moon');
+}
+// Aplicar al cargar
+if(localStorage.getItem('nx_dark')==='1'){
+  setTimeout(()=>{document.body.classList.add('dark');const i=document.getElementById('iconDarkMode');if(i)i.className='ti ti-sun';},500);
 }
 
-// Aplicar visibilidad por rol en sidebar
+// ── BÚSQUEDA GLOBAL ────────────────────────────────────────────────
+function abrirGlobalSearch(){
+  document.getElementById('gsOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('gsInput').focus(),100);
+}
+function cerrarGlobalSearch(){document.getElementById('gsOverlay').classList.remove('show');}
+
+function globalSearch(q){
+  const res=document.getElementById('gsResults');
+  if(!q||q.length<2){res.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:11px">Escribe al menos 2 caracteres...</div>';return;}
+  const ql=q.toLowerCase();
+  const found=[];
+  // Buscar clientes
+  ST.clientes.filter(c=>(c.nom||'').toLowerCase().includes(ql)||(c.cedula||'').includes(q)||(c.numero_poliza||'').includes(q.toUpperCase())).slice(0,5).forEach(c=>{
+    found.push({tipo:'Cliente',icon:'👤',ttl:c.nom,sub:`${c.numero_poliza||'Sin póliza'} · ${c.plan} · Cédula: ${c.cedula||'—'}`,onclick:`verCliente('${c.id}');cerrarGlobalSearch();`});
+  });
+  // Buscar facturas
+  ST.facturas.filter(f=>(f.cliente_nom||'').toLowerCase().includes(ql)||(f.ncf||'').includes(q.toUpperCase())).slice(0,5).forEach(f=>{
+    found.push({tipo:'Factura',icon:'📄',ttl:f.cliente_nom,sub:`${f.ncf||'Sin NCF'} · ${fmt(f.total)} · ${f.estado}`,onclick:`nav('facturas');cerrarGlobalSearch();`});
+  });
+  // Buscar empresas
+  ST.empresas.filter(e=>(e.nom||'').toLowerCase().includes(ql)).slice(0,3).forEach(e=>{
+    found.push({tipo:'Empresa',icon:'🏢',ttl:e.nom,sub:e.rnc||'Sin RNC',onclick:`cerrarGlobalSearch();`});
+  });
+  if(!found.length){res.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:11px">No se encontraron resultados</div>';return;}
+  res.innerHTML=found.map(f=>`
+    <div class="gs-item" onclick="${f.onclick}">
+      <div class="gs-item-icon">${f.icon}</div>
+      <div class="gs-item-info">
+        <div class="gs-item-ttl">${f.ttl}</div>
+        <div class="gs-item-sub">${f.sub}</div>
+      </div>
+      <div class="gs-item-type">${f.tipo}</div>
+    </div>`).join('');
+}
+
+// Ctrl+K para búsqueda
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='k'){e.preventDefault();abrirGlobalSearch();}
+  if(e.key==='Escape'){cerrarGlobalSearch();cerrarClientSummary();const p=document.getElementById('notifPanel');if(p)p.classList.remove('show');}
+});
+
+// ── PANEL RESUMEN DEL CLIENTE ──────────────────────────────────────
+function verCliente(id){
+  const c=ST.clientes.find(x=>x.id===id);
+  if(!c)return;
+  document.getElementById('csNom').textContent=c.nom;
+  const fav=esFavorito(id);
+  const notas=getNotas(id);
+  const emp=gEmp(c.empresa_id)?.nom||'Particular';
+  const agt=gAgt(c.agente_id)?.nom||'Sin asignar';
+  document.getElementById('csBody').innerHTML=`
+    <div style="text-align:center;margin-bottom:14px">
+      <span class="fav-star ${fav?'active':''}" onclick="toggleFav('${id}')" style="font-size:24px">★</span>
+      ${fav?'<span style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px">CLIENTE VIP</span>':''}
+    </div>
+    
+    <div class="cs-section">
+      <div class="cs-section-ttl">Información personal</div>
+      <div style="font-size:12px;line-height:1.8">
+        <div><strong>Cédula:</strong> ${c.cedula||'—'}</div>
+        <div><strong>WhatsApp:</strong> ${c.wa||'—'}</div>
+        <div><strong>Email:</strong> ${c.email||'—'}</div>
+        <div><strong>Dirección:</strong> ${c.dir||'—'}</div>
+      </div>
+    </div>
+    
+    <div class="cs-section">
+      <div class="cs-section-ttl">Póliza</div>
+      <div style="font-size:12px;line-height:1.8">
+        <div><strong>Número:</strong> ${c.numero_poliza||'Sin póliza'}</div>
+        <div><strong>Plan:</strong> ${planB(c.plan)}</div>
+        <div><strong>ARS:</strong> ${c.ars||'—'}</div>
+        <div><strong>Vigencia:</strong> ${c.fecha_inicio||'—'} al ${c.fecha_fin||'—'}</div>
+        <div><strong>Empresa:</strong> ${emp}</div>
+        <div><strong>Agente:</strong> ${agt}</div>
+      </div>
+    </div>
+    
+    <div class="cs-section">
+      <div class="cs-section-ttl">Estado financiero</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:#f0fdf4;border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:#059669;text-transform:uppercase;font-weight:700">Prima/mes</div>
+          <div style="font-size:14px;font-weight:700;color:#059669;margin-top:2px">${fmt(getTot(c))}</div>
+        </div>
+        <div style="background:#fef3c7;border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:#92400e;text-transform:uppercase;font-weight:700">Pendiente</div>
+          <div style="font-size:14px;font-weight:700;color:#92400e;margin-top:2px">${fmt(pend(c))}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="cs-section">
+      <div class="cs-section-ttl">📝 Notas internas</div>
+      <div id="csNotas">
+        ${notas.map(n=>`<div class="note-item"><div class="note-ts">${n.ts.slice(0,16).replace('T',' ')}</div>${n.txt}</div>`).join('')||'<div style="color:#94a3b8;font-size:11px">Sin notas</div>'}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input type="text" id="csNuevaNota" placeholder="Agregar nota..." style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+        <button class="btn bc1" onclick="agregarNota('${id}')"><i class="ti ti-plus"></i></button>
+      </div>
+    </div>
+    
+    <div class="cs-section">
+      <div class="cs-section-ttl">📜 Histórico</div>
+      <div style="font-size:11px;color:#64748b;line-height:1.8">
+        <div>📅 Registrado: ${c.created_at?.slice(0,10)||'—'}</div>
+        <div>👥 Dependientes: ${(c.deps||[]).length}</div>
+        <div>📄 Facturas generadas: ${ST.facturas.filter(f=>f.cliente_id===id).length}</div>
+        <div>💰 Total cobrado: ${fmt(c.pagado||0)}</div>
+      </div>
+    </div>
+    
+    <div style="display:flex;gap:6px">
+      <button class="btn bc1" style="flex:1" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
+      <button class="btn bc4" style="flex:1" onclick="abrirDocs('${id}');cerrarClientSummary()"><i class="ti ti-folder"></i> Documentos</button>
+      <button class="btn bc5" style="flex:1" onclick="verFacturaPDF('${id}');cerrarClientSummary()"><i class="ti ti-file-certificate"></i> PDF</button>
+    </div>`;
+  document.getElementById('csPanel').classList.add('open');
+  document.getElementById('csOverlay').classList.add('show');
+}
+
+function cerrarClientSummary(){
+  document.getElementById('csPanel')?.classList.remove('open');
+  document.getElementById('csOverlay')?.classList.remove('show');
+}
+
+// ── FAVORITOS / VIP ────────────────────────────────────────────────
+function getFavoritos(){try{return JSON.parse(localStorage.getItem('nx_favs')||'[]');}catch{return[];}}
+function esFavorito(id){return getFavoritos().includes(id);}
+function toggleFav(id){
+  let favs=getFavoritos();
+  if(favs.includes(id)){favs=favs.filter(x=>x!==id);toast('ok','Quitado de favoritos');}
+  else{favs.push(id);toast('ok','⭐ Agregado a VIP');}
+  localStorage.setItem('nx_favs',JSON.stringify(favs));
+  verCliente(id);
+  if(typeof rClientes==='function')rClientes();
+}
+
+// ── NOTAS POR CLIENTE ──────────────────────────────────────────────
+function getNotas(id){try{return JSON.parse(localStorage.getItem('nx_notas_'+id)||'[]');}catch{return[];}}
+function agregarNota(id){
+  const inp=document.getElementById('csNuevaNota');
+  const txt=inp.value.trim();
+  if(!txt)return;
+  const notas=getNotas(id);
+  notas.unshift({txt,ts:new Date().toISOString(),autor:sesion?.nom||'Admin'});
+  localStorage.setItem('nx_notas_'+id,JSON.stringify(notas));
+  inp.value='';
+  verCliente(id);
+  toast('ok','Nota guardada');
+}
+
+// ── AUTO-GUARDADO DE FORMULARIOS ───────────────────────────────────
+let _autoSaveTimer;
+function autoSave(formId,key){
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(()=>{
+    const form=document.getElementById(formId);
+    if(!form)return;
+    const data={};
+    form.querySelectorAll('input,select,textarea').forEach(el=>{if(el.id)data[el.id]=el.value;});
+    localStorage.setItem('nx_draft_'+key,JSON.stringify(data));
+  },1500);
+}
+function restoreAutoSave(key){
+  try{
+    const d=JSON.parse(localStorage.getItem('nx_draft_'+key)||'null');
+    if(!d)return;
+    Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&!el.value)el.value=val;});
+  }catch{}
+}
+
+// Inicializar al cargar todo
+const _origCargarTodo=window.cargarTodo;
 function aplicarRolSidebar(){
-  const esAdmin = sesion?.rol==='admin';
-  // Solo admin ve Configuración
+  const esAdmin=sesion?.rol==='admin';
   const niAdmin2=document.getElementById('niAdmin2');
   if(niAdmin2)niAdmin2.style.display=esAdmin?'':'none';
-  // Tabs de config solo admin
-  ['cfgTab4','cfgTab5','cfgTab6','cfgTab7','cfgTab8'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)el.style.display=esAdmin?'':'none';
-  });
 }
 
 function desconectar(){if(confirm('¿Cambiar configuración de Supabase?')){localStorage.removeItem('nx_url');localStorage.removeItem('nx_key');sessionStorage.removeItem('nx_sesion');location.reload();}}
@@ -2036,6 +2487,56 @@ function eliminarTenant(i){
     }
   }
 })();
+
+function renderTenantsCfg(){
+  const tenants=getTenants();
+  const el=document.getElementById('tenantsListCfg');
+  if(!el)return;
+  const actUrl=localStorage.getItem('nx_url');
+  if(!tenants.length){el.innerHTML='<div class="empty">No hay bases registradas</div>';return;}
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>EMPRESA</th><th>URL</th><th>NOTA</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+    <tbody>${tenants.map((t,i)=>`<tr>
+      <td style="font-weight:700">${t.nom}</td>
+      <td style="font-family:monospace;font-size:9px;color:#64748b">${t.url.replace('https://','').slice(0,30)}...</td>
+      <td style="font-size:10px;color:#64748b">${t.nota||'—'}</td>
+      <td>${t.url===actUrl?'<span class="badge bC5">ACTIVA</span>':'<span class="badge bCg">Inactiva</span>'}</td>
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        ${t.url!==actUrl?`<button class="btn bsm bc1" onclick="cambiarEmpresa(${i})"><i class="ti ti-switch-2"></i></button>`:'<span style="font-size:10px;color:#059669">✅</span>'}
+        <button class="btn bsm bc3" onclick="eliminarTenantCfg(${i})"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function cambiarEmpresa(i){
+  const t=getTenants()[i];
+  if(!confirm(`¿Cambiar a "${t.nom}"?`))return;
+  localStorage.setItem('nx_url',t.url);
+  localStorage.setItem('nx_key',t.key);
+  sessionStorage.removeItem('nx_sesion');
+  setTimeout(()=>location.reload(),500);
+}
+
+function agregarTenantCfg(){
+  const nom=document.getElementById('tenNomCfg').value.trim();
+  const url=document.getElementById('tenUrlCfg').value.trim();
+  const key=document.getElementById('tenKeyCfg').value.trim();
+  const nota=document.getElementById('tenNotaCfg').value.trim();
+  if(!nom||!url||!key){toast('err','Completa los campos obligatorios');return;}
+  const tenants=getTenants();
+  if(tenants.find(t=>t.url===url)){toast('warn','Esta base ya existe');return;}
+  tenants.push({nom,url,key,nota,creado:hoy()});
+  saveTenants(tenants);
+  ['tenNomCfg','tenUrlCfg','tenKeyCfg','tenNotaCfg'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderTenantsCfg();
+  toast('ok','Base agregada',nom);
+}
+
+function eliminarTenantCfg(i){
+  if(!confirm('¿Eliminar esta base?'))return;
+  const t=getTenants();t.splice(i,1);saveTenants(t);renderTenantsCfg();
+}
 
 // ══════════════════════════════════════════════════════════════════
 // EMAIL NOTIFICATIONS — Reporte diario 7 AM
@@ -2205,6 +2706,7 @@ async function cargarTodo(){
     toast('ok','Sistema listo · NEXUS PRO v7','Bienvenido, '+sesion.nom.split(' ')[0]);
     logError('info','Sistema iniciado correctamente','Usuario: '+sesion.nom+' | Rol: '+sesion.rol,'Sistema');
     setTimeout(aplicarRolSidebar, 200);
+    setTimeout(()=>{rNotifs();},500);
     // Cargar log guardado
     try{const sl=localStorage.getItem('nx_err_log');if(sl){const p=JSON.parse(sl);p.forEach(e=>{if(!ERR_LOG.find(x=>x.id===e.id))ERR_LOG.push(e);});ERR_LOG.sort((a,b)=>b.id-a.id);}}catch(le){}
     // Restaurar última pantalla (F5)
@@ -2252,7 +2754,7 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},100);},usuarios:rUsuarios};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
@@ -2892,7 +3394,7 @@ function rRepNuevos(){
     <tbody>${nuevos.map(c=>{const emp=gEmp(c.empresa_id)?.nom||'Particular';const agt=gAgt(c.agente_id)?.nom||'—';return`<tr>
       <td style="font-family:var(--mono);font-size:9px">${c.created_at?.slice(0,10)||'—'}</td>
       <td style="font-family:var(--mono);font-size:9px;color:#d97706">${c.numero_poliza||'—'}</td>
-      <td style="font-weight:700">${c.nom}</td>
+      <td style="font-weight:700;cursor:pointer" onclick="verCliente('${c.id}')"><span class="fav-star ${esFavorito(c.id)?'active':''}" onclick="event.stopPropagation();toggleFav('${c.id}')">★</span> ${c.nom}</td>
       <td>${planB(c.plan)}</td>
       <td style="font-size:9px;color:#64748b">${c.ars||'—'}</td>
       <td style="font-size:9px;color:#64748b">${emp.split(' ').slice(0,2).join(' ')}</td>
