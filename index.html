@@ -29,6 +29,7 @@
 
 <!-- Manifest para Android/Chrome -->
 <link rel="manifest" href="manifest.json"/>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png"/>
 <link rel="icon" type="image/png" sizes="16x16" href="icon-16.png"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>"/>
@@ -36,15 +37,24 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg0:#f0f2f8;--bg1:#ffffff;--bg2:#ffffff;--bg3:#f8f9fc;--bg4:#e8ecf4;
-  --c1:#3b82f6;--c2:#8b5cf6;--c3:#ef4444;--c4:#f59e0b;--c5:#10b981;
-  --c1a:rgba(59,130,246,.1);--c2a:rgba(139,92,246,.1);--c3a:rgba(239,68,68,.1);--c4a:rgba(245,158,11,.1);
-  --tx1:#1e293b;--tx2:#64748b;--tx3:#94a3b8;
-  --ff:'Segoe UI',system-ui,sans-serif;--mono:'Cascadia Code','Courier New',monospace;--r6:8px;--r10:12px;--r14:16px;
-  --shadow:0 2px 8px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.06);
-  --shadow-md:0 4px 16px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);
-  --sidebar:#1e3a6e;--sidebar-hover:rgba(255,255,255,.08);--sidebar-active:rgba(59,130,246,.25);
-  --border:#e2e8f0;
+  /* Enterprise Color System */
+  --bg0:#f0f4f8;--bg1:#ffffff;--bg2:#ffffff;--bg3:#f8fafc;--bg4:#edf2f7;
+  --c1:#2563eb;--c2:#7c3aed;--c3:#dc2626;--c4:#d97706;--c5:#059669;
+  --c1a:rgba(37,99,235,.08);--c2a:rgba(124,58,237,.08);--c3a:rgba(220,38,38,.08);--c4a:rgba(217,119,6,.08);
+  --tx1:#0f172a;--tx2:#475569;--tx3:#94a3b8;
+  --ff:'Segoe UI',system-ui,-apple-system,sans-serif;
+  --mono:'Cascadia Code','Consolas','Courier New',monospace;
+  --r6:6px;--r10:10px;--r14:14px;--r20:20px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+  --shadow-md:0 8px 24px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.05);
+  --shadow-lg:0 16px 40px rgba(0,0,0,.12),0 8px 16px rgba(0,0,0,.06);
+  --sidebar:#0f1f3d;--sidebar-accent:#1e3a6e;--sidebar-hover:rgba(255,255,255,.07);
+  --sidebar-active:rgba(37,99,235,.3);--border:#e2e8f0;--border-light:#f1f5f9;
+  --gradient-primary:linear-gradient(135deg,#1e3a6e 0%,#2563eb 100%);
+  --gradient-success:linear-gradient(135deg,#059669 0%,#10b981 100%);
+  --gradient-danger:linear-gradient(135deg,#dc2626 0%,#ef4444 100%);
+  --gradient-warning:linear-gradient(135deg,#d97706 0%,#f59e0b 100%);
 }
 html,body{height:100%;font-family:var(--ff);background:var(--bg0);color:var(--tx1);font-size:13px}
 input,select,textarea,button{font-family:var(--ff)}
@@ -131,7 +141,7 @@ input,select,textarea,button{font-family:var(--ff)}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-.tnav{height:52px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 16px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tnav{height:56px;background:#fff;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0;box-shadow:0 1px 0 var(--border-light),0 2px 8px rgba(0,0,0,.04)}
 .tn-tog{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:15px;transition:all .15s;flex-shrink:0}
 .tn-tog:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
 .pttl{font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
@@ -144,7 +154,7 @@ input,select,textarea,button{font-family:var(--ff)}
 .tn-b:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
 .tn-b.c4{border-color:#fde68a;color:#d97706;background:#fffbeb;font-weight:600}
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
-.content{flex:1;overflow-y:auto;padding:16px;scrollbar-width:thin;scrollbar-color:rgba(59,130,246,.2) transparent;background:var(--bg0)}
+.content{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(37,99,235,.15) transparent;background:var(--bg0)}
 .content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-thumb{background:rgba(59,130,246,.2);border-radius:4px}
 
 /* ── VIEWS ── */
@@ -158,8 +168,8 @@ input,select,textarea,button{font-family:var(--ff)}
 
 /* ── KPIs ── */
 .kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin-bottom:12px}
-.kpi{background:#fff;border-radius:var(--r14);border:1px solid var(--border);padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
-.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.kpi{background:#fff;border-radius:14px;border:1px solid var(--border-light);padding:18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:all .2s cubic-bezier(.4,0,.2,1)}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--border)}
 .kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
 .k1::after{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.k2::after{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}.k3::after{background:linear-gradient(90deg,#10b981,#34d399)}.k4::after{background:linear-gradient(90deg,#ef4444,#f87171)}.k5::after{background:linear-gradient(90deg,#f59e0b,#fcd34d)}
 .kl{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
@@ -173,14 +183,14 @@ input,select,textarea,button{font-family:var(--ff)}
 .g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:12px}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;color:var(--tx2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:500;font-family:var(--ff)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--tx2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:500;font-family:var(--ff);letter-spacing:.1px}
 .btn:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
 .bc1{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:#2563eb}.bc2{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3);color:#7c3aed}
 .bc3{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#dc2626}.bc4{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);color:#d97706}
 .bc5{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#059669}
-.bxl{background:linear-gradient(135deg,#1e3a6e,#3b82f6);border:none;color:#fff;font-weight:700;padding:8px 16px;border-radius:10px;font-size:12px;box-shadow:0 3px 10px rgba(59,130,246,.3)}
-.bxl:hover{opacity:.9;color:#fff;transform:translateY(-1px);box-shadow:0 5px 14px rgba(59,130,246,.4)}
+.bxl{background:var(--gradient-primary);border:none;color:#fff;font-weight:600;padding:8px 18px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(37,99,235,.25),0 1px 2px rgba(37,99,235,.2);letter-spacing:.2px}
+.bxl:hover{opacity:.92;color:#fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.35)}
 .bdis{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#dc2626}.bghost{border:none;background:none;padding:4px 8px;color:var(--tx3)}.bghost:hover{background:#f1f5f9;color:var(--tx1)}.bsm{padding:4px 10px;font-size:10px}
 .bwa{border-color:#bbf7d0;color:#16a34a;background:#f0fdf4}.bwa:hover{background:#dcfce7;color:#16a34a}
 
@@ -484,6 +494,36 @@ html{scroll-behavior:smooth}
 
 <!-- ═══════════════ APP ═══════════════ -->
 <div id="mobOverlay" onclick="closeMobSB()"></div>
+
+<!-- Modal Tenants / Empresas -->
+<div id="tenantsScreen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0f1f3d,#1e3a6e);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:500px;box-shadow:0 25px 60px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:#0f1f3d">🏢 Seleccionar Empresa</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">Cada empresa tiene su base de datos independiente</div>
+      </div>
+      <button onclick="cerrarTenants()" style="background:none;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;cursor:pointer;color:#64748b">✕ Cerrar</button>
+    </div>
+
+    <div id="tenantsList" style="margin-bottom:16px;max-height:280px;overflow-y:auto"></div>
+
+    <div style="border-top:1px solid #f1f5f9;padding-top:14px">
+      <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">+ Agregar nueva empresa</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><label style="font-size:10px;color:#64748b;font-weight:600;display:block;margin-bottom:3px">NOMBRE EMPRESA</label>
+        <input type="text" id="tenNom" placeholder="Mi Correduría SA" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none"/></div>
+        <div><label style="font-size:10px;color:#64748b;font-weight:600;display:block;margin-bottom:3px">SUPABASE URL</label>
+        <input type="text" id="tenUrl" placeholder="https://xxx.supabase.co" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none"/></div>
+      </div>
+      <div style="margin-bottom:10px"><label style="font-size:10px;color:#64748b;font-weight:600;display:block;margin-bottom:3px">API KEY (ANON PUBLIC)</label>
+      <input type="text" id="tenKey" placeholder="eyJhbGci..." style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none"/></div>
+      <button onclick="agregarTenant()" style="width:100%;padding:11px;background:linear-gradient(135deg,#0f1f3d,#2563eb);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">
+        + Agregar empresa
+      </button>
+    </div>
+  </div>
+</div>
 <div id="app" style="display:none;flex-direction:column;height:100vh">
   <div class="ticker" id="tkr"><div class="ti">NEXUS PRO v6 <span class="tu">ONLINE</span></div></div>
   <div class="abody">
@@ -512,6 +552,7 @@ html{scroll-behavior:smooth}
         <div class="ni" onclick="nav('rep-empresa',this)"><i class="ti ti-building-store ni-i"></i><span class="ni-l">Por empresa</span></div>
         <div class="ni" onclick="nav('dgii',this)"><i class="ti ti-receipt-tax ni-i"></i><span class="ni-l">Reportes DGII</span></div>
         <div class="ss">Sistema</div>
+        <div class="ni" onclick="nav('email',this)"><i class="ti ti-mail ni-i"></i><span class="ni-l">Notificaciones</span></div>
         <div class="ni" onclick="nav('auto',this)"><i class="ti ti-robot ni-i"></i><span class="ni-l">Automatización</span></div>
         <div class="ni" onclick="nav('config',this)"><i class="ti ti-settings ni-i"></i><span class="ni-l">Configuración</span></div>
         <div class="ni" onclick="nav('empresas',this)"><i class="ti ti-building ni-i"></i><span class="ni-l">Empresas</span></div>
@@ -782,6 +823,48 @@ html{scroll-behavior:smooth}
                 <button class="btn bsm bc1" onclick="updWA()"><i class="ti ti-refresh"></i> Vista previa</button>
                 <button class="btn bsm bc2" onclick="guardarPlantilla()"><i class="ti ti-device-floppy"></i> Guardar</button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICACIONES EMAIL -->
+        <div class="view" id="v-email">
+          <div class="nc p2">
+            <div class="ch"><div><div class="ct">Notificaciones por correo</div><div class="ct-s">Reporte diario automático a las 7:00 AM</div></div>
+            <span class="badge bC5" style="font-size:10px">EmailJS</span></div>
+
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:14px;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:6px">📧 Configuración de EmailJS</div>
+              <div style="font-size:11px;color:#374151;line-height:1.7">
+                <strong>Paso 1:</strong> Ve a <a href="https://emailjs.com" target="_blank" style="color:#2563eb">emailjs.com</a> → crea cuenta gratis<br>
+                <strong>Paso 2:</strong> Conecta tu Gmail (sterlinr08@gmail.com)<br>
+                <strong>Paso 3:</strong> Crea un Email Template con las variables del reporte<br>
+                <strong>Paso 4:</strong> Copia los IDs y pégalos aquí abajo
+              </div>
+            </div>
+
+            <div class="g2">
+              <div>
+                <div class="fr"><label>EmailJS Public Key</label><input type="text" id="ejPublicKey" placeholder="Ej: user_xxxxxxxxxxxxxx"/></div>
+                <div class="fr"><label>Service ID</label><input type="text" id="ejServiceId" placeholder="Ej: service_xxxxxxx"/></div>
+                <div class="fr"><label>Template ID</label><input type="text" id="ejTemplateId" placeholder="Ej: template_xxxxxxx"/></div>
+                <div class="fr"><label>Correo destino</label><input type="email" id="ejEmail" value="sterlinr08@gmail.com"/></div>
+                <div class="fr"><label>Hora de envío</label><input type="time" id="ejHora" value="07:00"/></div>
+                <div style="display:flex;gap:8px;margin-top:4px">
+                  <button class="btn bxl" onclick="guardarEmailConfig()"><i class="ti ti-device-floppy"></i> Guardar</button>
+                  <button class="btn bc1" onclick="probarEmail()"><i class="ti ti-send"></i> Probar ahora</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Vista previa del reporte</div>
+                <div id="emailPreview" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:11px;color:#374151;line-height:1.8;min-height:200px"></div>
+                <button class="btn bsm bc4" onclick="generarEmailPreview()" style="margin-top:8px"><i class="ti ti-refresh"></i> Actualizar vista previa</button>
+              </div>
+            </div>
+
+            <div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+              <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Historial de envíos</div>
+              <div id="emailHistorial"><div class="empty">Sin historial aún</div></div>
             </div>
           </div>
         </div>
@@ -1292,7 +1375,6 @@ create table if not exists usuarios_sistema(id uuid default gen_random_uuid() pr
 create table if not exists secuencias_ncf(tipo text primary key,ultimo_numero integer default 0);
 create table if not exists comisiones(id uuid default gen_random_uuid() primary key,agente_id uuid,agente_nom text,mes integer,anio integer,periodo text,total_primas numeric default 0,porcentaje numeric default 0,monto_bruto numeric default 0,itbis numeric default 0,monto_neto numeric default 0,estado text default 'Pendiente',created_at timestamptz default now());
 create table if not exists configuracion(clave text primary key,valor text,updated_at timestamptz default now());
-create table if not exists documentos_clientes(id uuid default gen_random_uuid() primary key,cliente_id uuid not null,tipo text not null,nombre_archivo text,url_publica text,tipo_mime text,tamaño bigint,created_at timestamptz default now(),updated_at timestamptz default now());
 
 alter table empresas enable row level security;
 alter table agentes enable row level security;
@@ -1379,7 +1461,7 @@ const CUENTAS=[
   {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:2000},
   {cod:'5401',nom:'Comisiones pagadas',tipo:'Gasto',saldo:0},
 ];
-const TITLES={dashboard:'// DASHBOARD',auditoria:'// REGISTRO DE AUDITORÍA',clientes:'// CLIENTES',polizas:'// PÓLIZAS',facturas:'// FACTURAS',cobros:'// COBROS',empresas:'// EMPRESAS',agentes:'// AGENTES',comisiones:'// COMISIONES',mayor:'// MAYOR GENERAL',asientos:'// DIARIO DE ASIENTOS',balance:'// BALANCE GENERAL',pyg:'// P&G','rep-agente':'// REPORTE AGENTES','rep-plan':'// REPORTE PLANES','rep-empresa':'// REPORTE EMPRESAS',dgii:'// REPORTES DGII / ARS',auto:'// AUTOMATIZACIÓN',config:'// CONFIGURACIÓN',usuarios:'// USUARIOS'};
+const TITLES={dashboard:'// DASHBOARD',email:'// NOTIFICACIONES POR CORREO',auditoria:'// REGISTRO DE AUDITORÍA',clientes:'// CLIENTES',polizas:'// PÓLIZAS',facturas:'// FACTURAS',cobros:'// COBROS',empresas:'// EMPRESAS',agentes:'// AGENTES',comisiones:'// COMISIONES',mayor:'// MAYOR GENERAL',asientos:'// DIARIO DE ASIENTOS',balance:'// BALANCE GENERAL',pyg:'// P&G','rep-agente':'// REPORTE AGENTES','rep-plan':'// REPORTE PLANES','rep-empresa':'// REPORTE EMPRESAS',dgii:'// REPORTES DGII / ARS',auto:'// AUTOMATIZACIÓN',config:'// CONFIGURACIÓN',usuarios:'// USUARIOS'};
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
@@ -1514,6 +1596,219 @@ async function conectar(){
 
 function desconectar(){if(confirm('¿Cambiar configuración de Supabase?')){localStorage.removeItem('nx_url');localStorage.removeItem('nx_key');sessionStorage.removeItem('nx_sesion');location.reload();}}
 
+// ══════════════════════════════════════════════════════════════════
+// MULTI-TENANT — Sistema de empresas independientes
+// ══════════════════════════════════════════════════════════════════
+function mostrarTenants(){
+  document.getElementById('loginScreen').style.display='none';
+  const ts=document.getElementById('tenantsScreen');
+  ts.style.display='flex';
+  renderTenants();
+}
+function cerrarTenants(){
+  document.getElementById('tenantsScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+}
+function getTenants(){
+  try{return JSON.parse(localStorage.getItem('nx_tenants')||'[]');}catch{return[];}
+}
+function saveTenants(t){localStorage.setItem('nx_tenants',JSON.stringify(t));}
+
+function renderTenants(){
+  const tenants=getTenants();
+  const el=document.getElementById('tenantsList');
+  const actUrl=localStorage.getItem('nx_url');
+  if(!tenants.length){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">No hay empresas guardadas.<br>Agrega una empresa abajo.</div>';
+    return;
+  }
+  el.innerHTML=tenants.map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid ${t.url===actUrl?'#2563eb':'#e2e8f0'};background:${t.url===actUrl?'#eff6ff':'#f8fafc'};margin-bottom:8px;cursor:pointer" onclick="seleccionarTenant(${i})">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0f1f3d,#2563eb);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${(t.nom||'E')[0].toUpperCase()}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#0f172a">${t.nom}</div>
+        <div style="font-size:10px;color:#64748b;font-family:monospace">${t.url.replace('https://','').slice(0,30)}...</div>
+      </div>
+      ${t.url===actUrl?'<span style="background:#dcfce7;color:#059669;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px">ACTIVA</span>':''}
+      <button onclick="event.stopPropagation();eliminarTenant(${i})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px;padding:0 4px">🗑</button>
+    </div>`).join('');
+}
+
+function seleccionarTenant(i){
+  const t=getTenants()[i];
+  if(!t)return;
+  localStorage.setItem('nx_url',t.url);
+  localStorage.setItem('nx_key',t.key);
+  API.url=t.url;API.key=t.key;
+  sessionStorage.removeItem('nx_sesion');
+  cerrarTenants();
+  toast('ok',`Empresa: ${t.nom}`,'Inicia sesión con tus credenciales');
+}
+
+function agregarTenant(){
+  const nom=document.getElementById('tenNom').value.trim();
+  const url=document.getElementById('tenUrl').value.trim();
+  const key=document.getElementById('tenKey').value.trim();
+  if(!nom||!url||!key){toast('err','Completa todos los campos');return;}
+  const tenants=getTenants();
+  tenants.push({nom,url,key,creado:hoy()});
+  saveTenants(tenants);
+  document.getElementById('tenNom').value='';
+  document.getElementById('tenUrl').value='';
+  document.getElementById('tenKey').value='';
+  renderTenants();
+  toast('ok','Empresa agregada',nom);
+}
+
+function eliminarTenant(i){
+  if(!confirm('¿Eliminar esta empresa?'))return;
+  const t=getTenants();t.splice(i,1);saveTenants(t);renderTenants();
+}
+
+// Auto-guardar tenant actual si no está en la lista
+(function(){
+  const url=localStorage.getItem('nx_url');
+  const key=localStorage.getItem('nx_key');
+  if(url&&key){
+    const tenants=getTenants();
+    if(!tenants.find(t=>t.url===url)){
+      tenants.unshift({nom:'Mi Correduría (principal)',url,key,creado:hoy()});
+      saveTenants(tenants);
+    }
+  }
+})();
+
+// ══════════════════════════════════════════════════════════════════
+// EMAIL NOTIFICATIONS — Reporte diario 7 AM
+// ══════════════════════════════════════════════════════════════════
+let _emailCfg={publicKey:'',serviceId:'',templateId:'',email:'sterlinr08@gmail.com',hora:'07:00'};
+let _emailHistorial=[];
+
+function guardarEmailConfig(){
+  _emailCfg.publicKey=document.getElementById('ejPublicKey').value.trim();
+  _emailCfg.serviceId=document.getElementById('ejServiceId').value.trim();
+  _emailCfg.templateId=document.getElementById('ejTemplateId').value.trim();
+  _emailCfg.email=document.getElementById('ejEmail').value.trim();
+  _emailCfg.hora=document.getElementById('ejHora').value;
+  localStorage.setItem('nx_email_cfg',JSON.stringify(_emailCfg));
+  if(_emailCfg.publicKey)emailjs.init(_emailCfg.publicKey);
+  toast('ok','Configuración de email guardada','Reporte a las '+_emailCfg.hora+' diario');
+  logAudit('EMAIL_CONFIG','Configuración de notificaciones actualizada');
+}
+
+function rEmail(){
+  const cfg=localStorage.getItem('nx_email_cfg');
+  if(cfg)try{Object.assign(_emailCfg,JSON.parse(cfg));}catch{}
+  ['ejPublicKey','ejServiceId','ejTemplateId','ejEmail','ejHora'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){const k=id.replace('ej','').charAt(0).toLowerCase()+id.replace('ej','').slice(1);
+    if(_emailCfg[k])el.value=_emailCfg[k];}
+  });
+  generarEmailPreview();
+  renderEmailHistorial();
+}
+
+function generarEmailPreview(){
+  const act=ST.clientes.filter(c=>c.activo);
+  const hoyD=hoy();
+  const nuevosHoy=act.filter(c=>c.created_at?.slice(0,10)===hoyD).length;
+  const prima=act.reduce((s,c)=>s+getTot(c),0);
+  const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
+  const pend2=act.reduce((s,c)=>s+pend(c),0);
+  const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=30;}).length;
+  const facHoy=ST.facturas.filter(f=>f.created_at?.slice(0,10)===hoyD).length;
+
+  document.getElementById('emailPreview').innerHTML=`
+    <div style="font-weight:700;color:#0f1f3d;font-size:13px;margin-bottom:8px">📊 Reporte del día — ${hoyD}</div>
+    <div style="color:#2563eb;font-weight:600;margin-bottom:6px">${CFG.empNom}</div>
+    <div style="border-top:1px solid #e2e8f0;padding-top:8px">
+      <div style="margin-bottom:4px">👥 Clientes activos: <strong>${act.length}</strong></div>
+      <div style="margin-bottom:4px">🆕 Nuevos hoy: <strong>${nuevosHoy}</strong></div>
+      <div style="margin-bottom:4px">📄 Facturas hoy: <strong>${facHoy}</strong></div>
+      <div style="margin-bottom:4px">💰 Prima mensual: <strong>${fmt(prima)}</strong></div>
+      <div style="margin-bottom:4px">✅ Cobrado: <strong>${fmt(cob)}</strong></div>
+      <div style="margin-bottom:4px">⏳ Pendiente: <strong>${fmt(pend2)}</strong></div>
+      <div style="color:#dc2626">⚠️ Pólizas por vencer: <strong>${polVenc}</strong></div>
+    </div>`;
+}
+
+async function probarEmail(){
+  if(!_emailCfg.publicKey||!_emailCfg.serviceId||!_emailCfg.templateId){
+    toast('err','Configura EmailJS primero','Necesitas los 3 IDs de EmailJS');return;
+  }
+  const btn=event.target;btn.disabled=true;btn.textContent='Enviando...';
+  try{
+    const params=generarParamsEmail();
+    await emailjs.send(_emailCfg.serviceId,_emailCfg.templateId,params);
+    registrarEnvio('manual');
+    toast('ok','¡Correo enviado!','Revisa tu bandeja: '+_emailCfg.email);
+  }catch(e){
+    toast('err','Error enviando','Verifica los IDs de EmailJS: '+e.message);
+  }
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> Probar ahora';
+}
+
+function generarParamsEmail(){
+  const act=ST.clientes.filter(c=>c.activo);
+  const hoyD=hoy();
+  const prima=act.reduce((s,c)=>s+getTot(c),0);
+  const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
+  const pend2=act.reduce((s,c)=>s+pend(c),0);
+  const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=30;}).length;
+  return{
+    to_email:_emailCfg.email,
+    empresa:CFG.empNom,
+    fecha:hoyD,
+    clientes_activos:act.length,
+    nuevos_hoy:act.filter(c=>c.created_at?.slice(0,10)===hoyD).length,
+    facturas_hoy:ST.facturas.filter(f=>f.created_at?.slice(0,10)===hoyD).length,
+    prima_mensual:fmt(prima),
+    cobrado:fmt(cob),
+    pendiente:fmt(pend2),
+    polizas_vencer:polVenc,
+    usuario:sesion?.nom||'Admin',
+  };
+}
+
+function registrarEnvio(tipo){
+  _emailHistorial.unshift({ts:new Date().toISOString(),tipo,email:_emailCfg.email});
+  if(_emailHistorial.length>20)_emailHistorial.pop();
+  localStorage.setItem('nx_email_hist',JSON.stringify(_emailHistorial));
+  renderEmailHistorial();
+}
+
+function renderEmailHistorial(){
+  try{const h=localStorage.getItem('nx_email_hist');if(h)_emailHistorial=JSON.parse(h);}catch{}
+  const el=document.getElementById('emailHistorial');
+  if(!el)return;
+  if(!_emailHistorial.length){el.innerHTML='<div class="empty">Sin historial aún</div>';return;}
+  el.innerHTML=_emailHistorial.slice(0,10).map(h=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:4px">
+      <i class="ti ti-mail-check" style="color:#059669;font-size:14px"></i>
+      <div style="flex:1;font-size:11px;color:#1e293b">Enviado a ${h.email}</div>
+      <div style="font-size:9px;color:#94a3b8;font-family:monospace">${new Date(h.ts).toLocaleString('es-DO').slice(0,16)}</div>
+      <span style="background:${h.tipo==='auto'?'#dcfce7':'#eff6ff'};color:${h.tipo==='auto'?'#059669':'#2563eb'};font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px">${h.tipo==='auto'?'AUTO':'MANUAL'}</span>
+    </div>`).join('');
+}
+
+// Scheduler de email diario a las 7 AM
+let _emailSentToday=false;
+setInterval(()=>{
+  const cfg=localStorage.getItem('nx_email_cfg');
+  if(cfg)try{Object.assign(_emailCfg,JSON.parse(cfg));}catch{}
+  if(!_emailCfg.publicKey||!_emailCfg.serviceId||!_emailCfg.templateId)return;
+  const now=new Date();
+  const [h,m]=_emailCfg.hora.split(':').map(Number);
+  if(now.getHours()===h&&now.getMinutes()===m&&!_emailSentToday){
+    _emailSentToday=true;
+    emailjs.init(_emailCfg.publicKey);
+    emailjs.send(_emailCfg.serviceId,_emailCfg.templateId,generarParamsEmail())
+      .then(()=>{registrarEnvio('auto');toast('ok','Reporte diario enviado',_emailCfg.email);logAudit('EMAIL_AUTO','Reporte diario enviado a '+_emailCfg.email);})
+      .catch(e=>logError('error','Fallo envío email automático',e.message));
+  }
+  if(now.getHours()!==h)_emailSentToday=false;
+},60000);
+
 // ── INICIO APP ───────────────────────────────────────────────────────────────
 async function iniciarApp(){
   resetIdle(); // Iniciar contador de inactividad
@@ -1596,7 +1891,8 @@ function nav(view,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||'// '+view.toUpperCase();
-  const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(rArsList,100);},usuarios:rUsuarios};
+  const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(rArsList,100);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
