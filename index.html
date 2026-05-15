@@ -361,6 +361,12 @@ tbody tr:hover td{background:#f8fafc}
   .sb{position:relative;left:0 !important}
 }
 
+/* ════ CONFIG TABS ════ */
+.cfg-tab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .15s;white-space:nowrap;font-family:var(--ff)}
+.cfg-tab:hover{background:#f1f5f9;color:#1e293b}
+.cfg-tab.active-tab{background:var(--gradient-primary);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.cfg-panel{display:none}.cfg-panel.active-panel{display:block}
+
 /* ════ UX PREMIUM ════ */
 /* Loading skeleton */
 .skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:14px;margin-bottom:6px}
@@ -869,8 +875,24 @@ html{scroll-behavior:smooth}
           </div>
         </div>
 
-        <!-- CONFIGURACIÓN -->
+        <!-- CONFIGURACIÓN UNIFICADA CON TABS -->
         <div class="view" id="v-config">
+
+          <!-- Tabs de configuración -->
+          <div style="display:flex;gap:3px;margin-bottom:14px;background:#fff;border-radius:12px;padding:5px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);flex-wrap:wrap">
+            <button id="cfgTab1" onclick="switchCfgTab(1)" class="cfg-tab active-tab">🏢 Empresa</button>
+            <button id="cfgTab2" onclick="switchCfgTab(2)" class="cfg-tab">📧 Notificaciones</button>
+            <button id="cfgTab3" onclick="switchCfgTab(3)" class="cfg-tab">🤖 Automatización</button>
+            <button id="cfgTab4" onclick="switchCfgTab(4)" class="cfg-tab">🏭 Empresas</button>
+            <button id="cfgTab5" onclick="switchCfgTab(5)" class="cfg-tab">👤 Agentes</button>
+            <button id="cfgTab6" onclick="switchCfgTab(6)" class="cfg-tab">🔐 Usuarios</button>
+            <button id="cfgTab7" onclick="switchCfgTab(7)" class="cfg-tab">📋 Auditoría</button>
+            <button id="cfgTab8" onclick="switchCfgTab(8)" class="cfg-tab">🏢 Mis Bases</button>
+            <button id="cfgTab9" onclick="switchCfgTab(9)" class="cfg-tab">📜 Changelog</button>
+          </div>
+
+          <!-- TAB 1: Empresa y Tarifas -->
+          <div id="cfgPanel1" class="cfg-panel">
           <div class="g2">
             <div class="nc">
               <div class="ch"><div class="ct">Datos de la correduría</div></div>
@@ -914,6 +936,57 @@ html{scroll-behavior:smooth}
               </div>
               <button class="btn bc5" onclick="guardarTarifas()"><i class="ti ti-device-floppy"></i> Guardar tarifas</button>
             </div>
+          </div>
+          </div><!-- /cfgPanel1 -->
+
+          <!-- TAB 2: Notificaciones -->
+          <div id="cfgPanel2" class="cfg-panel" style="display:none">
+            <div id="v-email-inner"></div>
+          </div>
+
+          <!-- TAB 3: Automatización -->
+          <div id="cfgPanel3" class="cfg-panel" style="display:none">
+            <div id="v-auto-inner"></div>
+          </div>
+
+          <!-- TAB 4: Empresas cotizantes -->
+          <div id="cfgPanel4" class="cfg-panel" style="display:none">
+            <div class="nc">
+              <div class="ch"><span class="ct">Empresas cotizantes</span><button class="btn bxl bsm" onclick="openM('mEmp')"><i class="ti ti-plus"></i> Nueva</button></div>
+              <div id="empGrdCfg" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px"></div>
+            </div>
+          </div>
+
+          <!-- TAB 5: Agentes -->
+          <div id="cfgPanel5" class="cfg-panel" style="display:none">
+            <div class="nc">
+              <div class="ch"><span class="ct">Agentes / Corredores</span><button class="btn bxl bsm" onclick="openM('mAgente')"><i class="ti ti-plus"></i> Nuevo agente</button></div>
+              <div class="tw"><table>
+                <thead><tr><th>NOMBRE</th><th>CARGO</th><th>LICENCIA</th><th>VENCE</th><th>ESTADO</th><th></th></tr></thead>
+                <tbody id="tbAgtCfg"></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <!-- TAB 6: Usuarios -->
+          <div id="cfgPanel6" class="cfg-panel" style="display:none">
+            <div class="nc">
+              <div class="ch"><span class="ct">Usuarios del sistema</span><button class="btn bxl bsm" onclick="openM('mUsuario')"><i class="ti ti-plus"></i> Nuevo usuario</button></div>
+              <div class="tw"><table>
+                <thead><tr><th>NOMBRE</th><th>USUARIO</th><th>ROL</th><th>CARGO</th><th>ESTADO</th><th></th></tr></thead>
+                <tbody id="tbUsuCfg"></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <!-- TAB 7: Auditoría -->
+          <div id="cfgPanel7" class="cfg-panel" style="display:none">
+            <div id="v-audit-inner"></div>
+          </div>
+
+          <!-- TAB 8: Mis Bases de datos -->
+          <div id="cfgPanel8" class="cfg-panel" style="display:none">
+            <div id="v-tenants-inner"></div>
           </div>
         </div>
 
@@ -1654,31 +1727,81 @@ async function conectar(){
   }
 }
 
-// ── Toggle sidebar Sistema ───────────────────────────────────────
-let _sistemaPlegado = false;
-function toggleSistema(){
-  const el=document.getElementById('sbSistema');
-  const icn=document.getElementById('icnSistema');
-  const cont=document.getElementById('sbContabilidad');
-  if(!el)return;
-  _sistemaPlegado=!_sistemaPlegado;
-  el.style.maxHeight=_sistemaPlegado?'0':'300px';
-  if(icn)icn.style.transform=_sistemaPlegado?'rotate(-90deg)':'';
-  // Contabilidad solo si es admin
-  if(cont && sesion?.rol==='admin'){
-    cont.style.maxHeight=_sistemaPlegado?'0':'200px';
+// ── Toggle Contabilidad ─────────────────────────────────────────
+let _contabAbierto = false;
+function toggleContab(el){
+  _contabAbierto=!_contabAbierto;
+  const sb=document.getElementById('sbContab');
+  const icn=document.getElementById('icnContab');
+  if(sb)sb.style.maxHeight=_contabAbierto?'400px':'0';
+  if(icn)icn.style.transform=_contabAbierto?'rotate(180deg)':'';
+}
+
+// ── Config Tabs ──────────────────────────────────────────────────
+function switchCfgTab(n){
+  for(let i=1;i<=9;i++){
+    const tab=document.getElementById('cfgTab'+i);
+    const panel=document.getElementById('cfgPanel'+i);
+    if(tab)tab.classList.toggle('active-tab',i===n);
+    if(panel)panel.style.display=i===n?'block':'none';
   }
+  // Cargar contenido dinámico según tab
+  if(n===2)cargarTabEmail();
+  if(n===3)cargarTabAuto();
+  if(n===4){rEmpGrd();const g=document.getElementById('empGrdCfg');const s=document.getElementById('empGrd');if(g&&s)g.innerHTML=s.innerHTML;}
+  if(n===5){rAgentes();setTimeout(()=>{const t=document.getElementById('tbAgtCfg');const s=document.getElementById('tbAgt');if(t&&s)t.innerHTML=s.innerHTML;},300);}
+  if(n===6){rUsuarios();setTimeout(()=>{const t=document.getElementById('tbUsuCfg');const s=document.getElementById('tbUsu');if(t&&s)t.innerHTML=s.innerHTML;},300);}
+  if(n===7)cargarTabAudit();
+  if(n===8)cargarTabTenants();
+}
+
+function cargarTabEmail(){
+  const el=document.getElementById('v-email-inner');
+  if(!el)return;
+  if(el.innerHTML.trim())return; // ya cargado
+  // Clonar contenido de la vista email
+  const src=document.getElementById('v-email');
+  if(src)el.innerHTML=src.innerHTML;
+  rEmail();
+}
+
+function cargarTabAuto(){
+  const el=document.getElementById('v-auto-inner');
+  if(!el)return;
+  if(el.innerHTML.trim())return;
+  const src=document.getElementById('v-auto');
+  if(src)el.innerHTML=src.innerHTML;
+  rAuto();
+}
+
+function cargarTabAudit(){
+  const el=document.getElementById('v-audit-inner');
+  if(!el)return;
+  el.innerHTML=`<div class="nc p2"><div class="ch"><div><div class="ct">Registro de auditoría</div></div><button class="btn bsm bc4" onclick="exportarAuditCSV()"><i class="ti ti-file-spreadsheet"></i> Exportar</button></div><div id="auditCfg"></div></div>`;
+  const a=document.getElementById('auditC');
+  const b=document.getElementById('auditCfg');
+  if(a&&b)b.innerHTML=a.innerHTML;
+}
+
+function cargarTabTenants(){
+  const el=document.getElementById('v-tenants-inner');
+  if(!el)return;
+  el.innerHTML=`<div class="nc p2"><div class="ch"><div><div class="ct">Mis bases de datos</div><div class="ct-s">Empresas con base independiente</div></div><button class="btn bxl bsm" onclick="abrirAgregarTenant()"><i class="ti ti-plus"></i> Nueva base</button></div><div id="tenantsListCfg"></div></div>`;
+  rTenants();
+  setTimeout(()=>{const a=document.getElementById('tenantsListInApp');const b=document.getElementById('tenantsListCfg');if(a&&b)b.innerHTML=a.innerHTML;},300);
 }
 
 // Aplicar visibilidad por rol en sidebar
 function aplicarRolSidebar(){
   const esAdmin = sesion?.rol==='admin';
-  ['niAdmin1','niAdmin2','niAdmin3','niAdmin4','niAdmin5'].forEach(id=>{
+  // Solo admin ve Configuración
+  const niAdmin2=document.getElementById('niAdmin2');
+  if(niAdmin2)niAdmin2.style.display=esAdmin?'':'none';
+  // Tabs de config solo admin
+  ['cfgTab4','cfgTab5','cfgTab6','cfgTab7','cfgTab8'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.style.display=esAdmin?'':'none';
   });
-  const cont=document.getElementById('sbContabilidad');
-  if(cont)cont.style.maxHeight=esAdmin?'200px':'0';
 }
 
 function desconectar(){if(confirm('¿Cambiar configuración de Supabase?')){localStorage.removeItem('nx_url');localStorage.removeItem('nx_key');sessionStorage.removeItem('nx_sesion');location.reload();}}
@@ -1980,7 +2103,7 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||'// '+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(rArsList,100);},usuarios:rUsuarios};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},100);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
