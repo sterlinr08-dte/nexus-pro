@@ -545,26 +545,30 @@ html{scroll-behavior:smooth}
         <div class="ni" onclick="nav('clientes',this)"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
         <div class="ni" onclick="nav('polizas',this)"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
 
-
-        <div class="ss">Financiero</div>
-        <div class="ni" onclick="nav('comisiones',this)"><i class="ti ti-percentage ni-i"></i><span class="ni-l">Comisiones</span></div>
-        <div class="ni" onclick="nav('mayor',this)"><i class="ti ti-report-money ni-i"></i><span class="ni-l">Mayor general</span></div>
-        <div class="ni" onclick="nav('asientos',this)"><i class="ti ti-book ni-i"></i><span class="ni-l">Diario asientos</span></div>
-        <div class="ni" onclick="nav('balance',this)"><i class="ti ti-scale ni-i"></i><span class="ni-l">Balance</span></div>
-        <div class="ni" onclick="nav('pyg',this)"><i class="ti ti-chart-line ni-i"></i><span class="ni-l">P&amp;G</span></div>
-        <div class="ss">Reportes</div>
-        <div class="ni" onclick="nav('rep-agente',this)"><i class="ti ti-user-check ni-i"></i><span class="ni-l">Por agente</span></div>
-        <div class="ni" onclick="nav('rep-plan',this)"><i class="ti ti-layers ni-i"></i><span class="ni-l">Por plan</span></div>
-        <div class="ni" onclick="nav('rep-empresa',this)"><i class="ti ti-building-store ni-i"></i><span class="ni-l">Por empresa</span></div>
-        <div class="ni" onclick="nav('dgii',this)"><i class="ti ti-receipt-tax ni-i"></i><span class="ni-l">Reportes DGII</span></div>
         <div class="ss">Sistema</div>
-        <div class="ni" onclick="nav('email',this)"><i class="ti ti-mail ni-i"></i><span class="ni-l">Notificaciones</span></div>
-        <div class="ni" onclick="nav('auto',this)"><i class="ti ti-robot ni-i"></i><span class="ni-l">Automatización</span></div>
-        <div class="ni" onclick="nav('config',this)"><i class="ti ti-settings ni-i"></i><span class="ni-l">Configuración</span></div>
-        <div class="ni" onclick="nav('empresas',this)"><i class="ti ti-building ni-i"></i><span class="ni-l">Empresas</span></div>
-        <div class="ni" onclick="nav('agentes',this)"><i class="ti ti-id-badge ni-i"></i><span class="ni-l">Agentes</span></div>
-        <div class="ni" onclick="nav('usuarios',this)"><i class="ti ti-lock ni-i"></i><span class="ni-l">Usuarios</span></div>
-        <div class="ni" onclick="nav('auditoria',this)"><i class="ti ti-clipboard-list ni-i"></i><span class="ni-l">Auditoría</span></div>
+
+        <div class="ni" onclick="toggleContab(this)" id="niContab">
+          <i class="ti ti-chart-bar ni-i"></i>
+          <span class="ni-l">Contabilidad</span>
+          <i class="ti ti-chevron-down" id="icnContab" style="font-size:10px;margin-left:auto;transition:transform .2s;color:rgba(255,255,255,.4)"></i>
+        </div>
+        <div id="sbContab" style="overflow:hidden;max-height:0;transition:max-height .3s ease;padding-left:8px">
+          <div class="ni" onclick="nav('comisiones',this)" style="padding:6px 10px"><i class="ti ti-percentage ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Comisiones</span></div>
+          <div class="ni" onclick="nav('mayor',this)" style="padding:6px 10px"><i class="ti ti-report-money ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Mayor general</span></div>
+          <div class="ni" onclick="nav('asientos',this)" style="padding:6px 10px"><i class="ti ti-book ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Diario asientos</span></div>
+          <div class="ni" onclick="nav('balance',this)" style="padding:6px 10px"><i class="ti ti-scale ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Balance</span></div>
+          <div class="ni" onclick="nav('pyg',this)" style="padding:6px 10px"><i class="ti ti-chart-line ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">P&amp;G</span></div>
+          <div class="ni" onclick="nav('rep-agente',this)" style="padding:6px 10px"><i class="ti ti-user-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte agente</span></div>
+          <div class="ni" onclick="nav('rep-plan',this)" style="padding:6px 10px"><i class="ti ti-layers ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte plan</span></div>
+          <div class="ni" onclick="nav('rep-empresa',this)" style="padding:6px 10px"><i class="ti ti-building-store ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte empresa</span></div>
+          <div class="ni" onclick="nav('dgii',this)" style="padding:6px 10px"><i class="ti ti-receipt-tax ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">DGII / ARS</span></div>
+        </div>
+
+        <div id="niAdmin2" class="ni" onclick="nav('config',this)">
+          <i class="ti ti-settings ni-i"></i>
+          <span class="ni-l">Configuración</span>
+          <span style="background:#7c3aed;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:auto">ADMIN</span>
+        </div>
       </div>
       <div class="sb-ft">
         <div class="sb-u" onclick="logout()">
@@ -576,7 +580,7 @@ html{scroll-behavior:smooth}
     <div class="main">
       <header class="tnav">
         <button class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
-        <span class="pttl" id="pttl">// DASHBOARD</span>
+        <span class="pttl">DASHBOARD</span>
         <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas..." oninput="gSearch(this.value)"/></div>
         <div class="tn-r">
           <button class="tn-b c4" onclick="autoGenerar()"><i class="ti ti-robot"></i> Auto-gen</button>
@@ -1087,7 +1091,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Cliente -->
 <div class="overlay" id="mCli">
   <div class="modal" style="max-width:560px">
-    <div class="mt"><span id="mCliT">// NUEVO CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mCli')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mCliT">NUEVO CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mCli')"><i class="ti ti-x"></i></button></div>
     <div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:5px;letter-spacing:.5px">EMPRESA COTIZANTE</div>
     <div class="esel" id="eChips"></div>
     <div class="div"></div>
@@ -1101,7 +1105,7 @@ html{scroll-behavior:smooth}
       <div class="fr"><label>Agente</label><select id="cAgt"></select></div>
       <div class="fr"><label>Tipo NCF</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select></div>
     </div>
-    <div style="font-size:9px;font-weight:700;color:var(--c4);margin:8px 0 6px;font-family:var(--mono)">// PÓLIZA Y ARS</div>
+    <div style="font-size:9px;font-weight:700;color:var(--c4);margin:8px 0 6px;font-family:var(--mono)">PÓLIZA Y ARS</div>
     <div class="gf2">
       <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
       <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
@@ -1118,7 +1122,7 @@ html{scroll-behavior:smooth}
     </div>
     <div class="fr"><label>Dirección</label><input type="text" id="cDir"/></div>
     <div class="div"></div>
-    <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
+    <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">DEPENDIENTES</div>
     <div style="display:flex;gap:6px;margin-bottom:7px">
       <input type="text" id="dN" placeholder="Nombre dependiente" style="flex:1;font-size:10px;padding:6px 9px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);outline:none"/>
       <select id="dR" style="width:105px;font-size:10px;padding:6px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Cónyuge</option><option>Hijo/a</option><option>Padre/Madre</option><option>Otro</option></select>
@@ -1135,7 +1139,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Inhabilitar -->
 <div class="overlay" id="mInhab">
   <div class="modal" style="max-width:400px">
-    <div class="mt" style="color:var(--c3)"><span>// INHABILITAR CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mInhab')"><i class="ti ti-x"></i></button></div>
+    <div class="mt" style="color:var(--c3)"><span>INHABILITAR CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mInhab')"><i class="ti ti-x"></i></button></div>
     <div class="confirm-b">
       <div id="inhabNom" style="font-weight:700;color:var(--c3);margin-bottom:8px;font-family:var(--mono)"></div>
       <p>Al inhabilitar:<br>· Póliza cancelada — sin nuevas facturas automáticas<br>· Deuda pendiente queda registrada en el sistema<br>· Asiento contable de baja generado automáticamente<br>· Se puede reactivar en cualquier momento</p>
@@ -1153,7 +1157,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Abono -->
 <div class="overlay" id="mAbono">
   <div class="modal" style="max-width:360px">
-    <div class="mt"><span>// REGISTRAR ABONO</span><button class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>REGISTRAR ABONO</span><button class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
     <div id="abonoI" style="background:var(--bg3);border-radius:var(--r6);padding:10px;margin-bottom:12px;border:1px solid rgba(0,229,199,.07)"></div>
     <div class="fr"><label>Monto (RD$) *</label><input type="number" id="aMnt" placeholder="0.00" min="0.01" step="0.01"/></div>
     <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
@@ -1170,7 +1174,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Empresa -->
 <div class="overlay" id="mEmp">
   <div class="modal" style="max-width:420px">
-    <div class="mt"><span id="mEmpT">// NUEVA EMPRESA</span><button class="btn bghost bsm" onclick="closeM('mEmp')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mEmpT">NUEVA EMPRESA</span><button class="btn bghost bsm" onclick="closeM('mEmp')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Nombre *</label><input type="text" id="eNom"/></div>
       <div class="fr"><label>RNC</label><input type="text" id="eRNC" placeholder="000-00000-0"/></div>
@@ -1186,7 +1190,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Agente -->
 <div class="overlay" id="mAgente">
   <div class="modal" style="max-width:420px">
-    <div class="mt"><span id="mAgtT">// NUEVO AGENTE</span><button class="btn bghost bsm" onclick="closeM('mAgente')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mAgtT">NUEVO AGENTE</span><button class="btn bghost bsm" onclick="closeM('mAgente')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Nombre *</label><input type="text" id="agtNom"/></div>
       <div class="fr"><label>Cargo</label><input type="text" id="agtCargo" placeholder="Agente de ventas"/></div>
@@ -1202,7 +1206,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Asiento -->
 <div class="overlay" id="mAsiento">
   <div class="modal" style="max-width:430px">
-    <div class="mt"><span>// ASIENTO CONTABLE</span><button class="btn bghost bsm" onclick="closeM('mAsiento')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>ASIENTO CONTABLE</span><button class="btn bghost bsm" onclick="closeM('mAsiento')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Fecha *</label><input type="date" id="asiFecha"/></div>
       <div class="fr"><label>Referencia</label><input type="text" id="asiRef" placeholder="AST-001"/></div>
@@ -1222,7 +1226,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Usuario -->
 <div class="overlay" id="mUsuario">
   <div class="modal" style="max-width:400px">
-    <div class="mt"><span>// NUEVO USUARIO</span><button class="btn bghost bsm" onclick="closeM('mUsuario')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>NUEVO USUARIO</span><button class="btn bghost bsm" onclick="closeM('mUsuario')"><i class="ti ti-x"></i></button></div>
     <div class="gf2">
       <div class="fr"><label>Nombre *</label><input type="text" id="uNom"/></div>
       <div class="fr"><label>Cargo</label><input type="text" id="uCargo"/></div>
@@ -1237,7 +1241,7 @@ html{scroll-behavior:smooth}
 <!-- Modal PDF Factura -->
 <div class="overlay" id="mPDF">
   <div class="modal" style="max-width:600px">
-    <div class="mt"><span>// FACTURA / CERTIFICADO PDF</span><button class="btn bghost bsm" onclick="closeM('mPDF')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>FACTURA / CERTIFICADO PDF</span><button class="btn bghost bsm" onclick="closeM('mPDF')"><i class="ti ti-x"></i></button></div>
     <div id="pdfContent" style="background:#fff;color:#000;border-radius:var(--r6);padding:20px;font-family:Arial,sans-serif;font-size:12px;border:1px solid var(--bg4)"></div>
     <div class="fe" style="margin-top:10px">
       <button class="btn" onclick="closeM('mPDF')">Cerrar</button>
@@ -1285,7 +1289,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Log de Errores -->
 <div class="overlay" id="mErrorLog">
   <div class="modal" style="max-width:600px">
-    <div class="mt"><span>// REGISTRO DE ERRORES Y EVENTOS</span><button class="btn bghost bsm" onclick="closeM('mErrorLog')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>REGISTRO DE ERRORES Y EVENTOS</span><button class="btn bghost bsm" onclick="closeM('mErrorLog')"><i class="ti ti-x"></i></button></div>
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
       <button class="btn bsm bc3" onclick="filtrarLog('error')"><i class="ti ti-alert-circle"></i> Errores</button>
       <button class="btn bsm bc4" onclick="filtrarLog('warn')"><i class="ti ti-alert-triangle"></i> Advertencias</button>
@@ -1302,7 +1306,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Documentos Cliente -->
 <div class="overlay" id="mDocs">
   <div class="modal" style="max-width:580px">
-    <div class="mt"><span id="mDocsTitle">// DOCUMENTOS DEL CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mDocs')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span id="mDocsTitle">DOCUMENTOS DEL CLIENTE</span><button class="btn bghost bsm" onclick="closeM('mDocs')"><i class="ti ti-x"></i></button></div>
 
     <div id="docsClienteInfo" style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:14px;border:1px solid #e2e8f0;font-size:12px"></div>
 
@@ -1338,7 +1342,7 @@ html{scroll-behavior:smooth}
 <!-- Modal Backup -->
 <div class="overlay" id="mBackup">
   <div class="modal" style="max-width:480px">
-    <div class="mt" style="color:#059669"><span>// BACKUP DE SEGURIDAD</span><button class="btn bghost bsm" onclick="closeM('mBackup')"><i class="ti ti-x"></i></button></div>
+    <div class="mt" style="color:#059669"><span>BACKUP DE SEGURIDAD</span><button class="btn bghost bsm" onclick="closeM('mBackup')"><i class="ti ti-x"></i></button></div>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #10b981;border-radius:10px;padding:12px 14px;margin-bottom:14px">
       <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:4px">⚠️ El plan gratuito NO hace backups automáticos</div>
@@ -1391,7 +1395,7 @@ html{scroll-behavior:smooth}
 <!-- Modal WA Masivo -->
 <div class="overlay" id="mWAMasivo">
   <div class="modal" style="max-width:620px">
-    <div class="mt"><span>// WHATSAPP MASIVO</span><button class="btn bghost bsm" onclick="closeM('mWAMasivo')"><i class="ti ti-x"></i></button></div>
+    <div class="mt"><span>WHATSAPP MASIVO</span><button class="btn bghost bsm" onclick="closeM('mWAMasivo')"><i class="ti ti-x"></i></button></div>
     <!-- Tipo de mensaje -->
     <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:8px">Tipo de mensaje</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
@@ -1576,7 +1580,7 @@ const CUENTAS=[
   {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:2000},
   {cod:'5401',nom:'Comisiones pagadas',tipo:'Gasto',saldo:0},
 ];
-const TITLES={dashboard:'// DASHBOARD',email:'// NOTIFICACIONES POR CORREO',auditoria:'// REGISTRO DE AUDITORÍA',clientes:'// CLIENTES',polizas:'// PÓLIZAS',facturas:'// FACTURAS',cobros:'// COBROS',empresas:'// EMPRESAS',agentes:'// AGENTES',comisiones:'// COMISIONES',mayor:'// MAYOR GENERAL',asientos:'// DIARIO DE ASIENTOS',balance:'// BALANCE GENERAL',pyg:'// P&G','rep-agente':'// REPORTE AGENTES','rep-plan':'// REPORTE PLANES','rep-empresa':'// REPORTE EMPRESAS',dgii:'// REPORTES DGII / ARS',auto:'// AUTOMATIZACIÓN',config:'// CONFIGURACIÓN',usuarios:'// USUARIOS'};
+const TITLES={dashboard:'DASHBOARD',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
@@ -1748,11 +1752,87 @@ function switchCfgTab(n){
   // Cargar contenido dinámico según tab
   if(n===2)cargarTabEmail();
   if(n===3)cargarTabAuto();
-  if(n===4){rEmpGrd();const g=document.getElementById('empGrdCfg');const s=document.getElementById('empGrd');if(g&&s)g.innerHTML=s.innerHTML;}
-  if(n===5){rAgentes();setTimeout(()=>{const t=document.getElementById('tbAgtCfg');const s=document.getElementById('tbAgt');if(t&&s)t.innerHTML=s.innerHTML;},300);}
-  if(n===6){rUsuarios();setTimeout(()=>{const t=document.getElementById('tbUsuCfg');const s=document.getElementById('tbUsu');if(t&&s)t.innerHTML=s.innerHTML;},300);}
+  if(n===4){rEmpGrd();setTimeout(()=>{const g=document.getElementById('empGrdCfg');const s=document.getElementById('empGrd');if(g&&s)g.innerHTML=s.innerHTML;},250);}
+  if(n===5)cargarTabAgentes();
+  if(n===6)cargarTabUsuarios();
   if(n===7)cargarTabAudit();
   if(n===8)cargarTabTenants();
+  if(n===9)cargarTabChangelog();
+}
+
+function cargarTabAgentes(){
+  const p=document.getElementById('cfgPanel5');
+  if(!p)return;
+  rAgentes();
+  setTimeout(()=>{
+    const s=document.getElementById('tbAgt');
+    const t=p.querySelector('#tbAgtCfg');
+    if(s&&t)t.innerHTML=s.innerHTML;
+  },300);
+}
+
+function cargarTabUsuarios(){
+  const p=document.getElementById('cfgPanel6');
+  if(!p)return;
+  rUsuarios();
+  setTimeout(()=>{
+    const s=document.getElementById('tbUsu');
+    const t=p.querySelector('#tbUsuCfg');
+    if(s&&t)t.innerHTML=s.innerHTML;
+  },300);
+}
+
+function cargarTabChangelog(){
+  const p=document.getElementById('cfgPanel9');
+  if(!p||p.innerHTML.trim())return;
+  // Buscar el contenido del changelog que está dentro del view config original
+  const src=document.querySelector('#v-config .ct');
+  // Mostrar mensaje informativo simple
+  p.innerHTML=`<div class="nc">
+    <div class="ch"><div><div class="ct">Historial de actualizaciones</div><div class="ct-s">Todo lo que se ha mejorado en el sistema</div></div><span class="badge bC2">v9.0 — Actual</span></div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v9.0</span>
+        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-15</span>
+      </div>
+      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
+        <li>Configuración unificada con 9 pestañas integradas</li>
+        <li>Sidebar limpio: solo Principal y Sistema</li>
+        <li>Contabilidad desplegable con todos los reportes</li>
+        <li>Notificaciones EmailJS funcionando</li>
+        <li>Sistema multi-empresa con bases independientes</li>
+        <li>Sin símbolos // en barra superior</li>
+      </ul>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v8.0</span>
+        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-14</span>
+      </div>
+      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
+        <li>Rediseño Enterprise completo</li>
+        <li>Notificaciones por correo a las 7 AM</li>
+        <li>Multi-empresa con bases independientes</li>
+        <li>Documentos de clientes (cédulas, contratos)</li>
+        <li>Exportar expediente PDF</li>
+        <li>KPI de Utilidad solo Admin</li>
+      </ul>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v7.0</span>
+        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-13</span>
+      </div>
+      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
+        <li>PWA instalable iPhone y Android</li>
+        <li>Sistema backup manual completo</li>
+        <li>Responsive móvil con drawer</li>
+        <li>Recordar sesión con checkbox</li>
+        <li>F5 mantiene pantalla activa</li>
+        <li>Filtros facturas (pendientes/pagadas)</li>
+      </ul>
+    </div>
+  </div>`;
 }
 
 function cargarTabEmail(){
@@ -1786,9 +1866,78 @@ function cargarTabAudit(){
 function cargarTabTenants(){
   const el=document.getElementById('v-tenants-inner');
   if(!el)return;
-  el.innerHTML=`<div class="nc p2"><div class="ch"><div><div class="ct">Mis bases de datos</div><div class="ct-s">Empresas con base independiente</div></div><button class="btn bxl bsm" onclick="abrirAgregarTenant()"><i class="ti ti-plus"></i> Nueva base</button></div><div id="tenantsListCfg"></div></div>`;
-  rTenants();
-  setTimeout(()=>{const a=document.getElementById('tenantsListInApp');const b=document.getElementById('tenantsListCfg');if(a&&b)b.innerHTML=a.innerHTML;},300);
+  el.innerHTML=`
+    <div class="nc">
+      <div class="ch">
+        <div><div class="ct">Mis bases de datos</div><div class="ct-s">Cada empresa tiene sus datos completamente independientes</div></div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:11px;color:#374151;line-height:1.7">
+          <strong>¿Cómo funciona?</strong> Cada empresa que agregues tendrá su <strong>propia base de datos Supabase</strong>. Los clientes y facturas de cada base están separados. Para entrar a una empresa específica usa el formato: <code style="background:#dbeafe;padding:2px 6px;border-radius:4px">usuario@nombrebase</code>
+        </div>
+      </div>
+
+      <div id="tenantsListCfg" style="margin-bottom:14px"></div>
+
+      <div style="border:2px dashed #e2e8f0;background:#f8fafc;border-radius:12px;padding:16px">
+        <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">+ Agregar nueva base</div>
+        <div class="gf2">
+          <div class="fr"><label>Nombre de la empresa *</label><input type="text" id="tenNomCfg" placeholder="Ej: Correduría Sur"/></div>
+          <div class="fr"><label>Supabase URL *</label><input type="text" id="tenUrlCfg" placeholder="https://xxxx.supabase.co"/></div>
+        </div>
+        <div class="fr"><label>API Key (anon public) *</label><input type="text" id="tenKeyCfg" placeholder="eyJhbGci..."/></div>
+        <div class="fr"><label>Nota (opcional)</label><input type="text" id="tenNotaCfg" placeholder="Ej: Sucursal Santiago"/></div>
+        <button class="btn bxl" onclick="agregarTenantCfg()"><i class="ti ti-plus"></i> Agregar base</button>
+      </div>
+    </div>`;
+  renderTenantsCfg();
+}
+
+function renderTenantsCfg(){
+  const tenants=getTenants();
+  const el=document.getElementById('tenantsListCfg');
+  if(!el)return;
+  const actUrl=localStorage.getItem('nx_url');
+  if(!tenants.length){
+    el.innerHTML='<div class="empty">No hay bases registradas. Agrega una abajo.</div>';
+    return;
+  }
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>EMPRESA</th><th>URL SUPABASE</th><th>NOTA</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
+    <tbody>${tenants.map((t,i)=>`<tr>
+      <td style="font-weight:700">${t.nom}</td>
+      <td style="font-family:monospace;font-size:9px;color:#64748b">${t.url.replace('https://','').slice(0,35)}...</td>
+      <td style="font-size:10px;color:#64748b">${t.nota||'—'}</td>
+      <td>${t.url===actUrl?'<span class="badge bC5">ACTIVA</span>':'<span class="badge bCg">Inactiva</span>'}</td>
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        ${t.url!==actUrl?`<button class="btn bsm bc1" onclick="cambiarEmpresa(${i})"><i class="ti ti-switch-2"></i> Cambiar</button>`:'<span style="font-size:10px;color:#059669">✅ En uso</span>'}
+        <button class="btn bsm bc3" onclick="eliminarTenantCfg(${i})"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function agregarTenantCfg(){
+  const nom=document.getElementById('tenNomCfg').value.trim();
+  const url=document.getElementById('tenUrlCfg').value.trim();
+  const key=document.getElementById('tenKeyCfg').value.trim();
+  const nota=document.getElementById('tenNotaCfg').value.trim();
+  if(!nom||!url||!key){toast('err','Completa los campos obligatorios');return;}
+  const tenants=getTenants();
+  if(tenants.find(t=>t.url===url)){toast('warn','Esta base ya existe');return;}
+  tenants.push({nom,url,key,nota,creado:hoy()});
+  saveTenants(tenants);
+  document.getElementById('tenNomCfg').value='';
+  document.getElementById('tenUrlCfg').value='';
+  document.getElementById('tenKeyCfg').value='';
+  document.getElementById('tenNotaCfg').value='';
+  renderTenantsCfg();
+  toast('ok','Base agregada',nom);
+}
+
+function eliminarTenantCfg(i){
+  if(!confirm('¿Eliminar esta base de datos?'))return;
+  const t=getTenants();t.splice(i,1);saveTenants(t);renderTenantsCfg();
 }
 
 // Aplicar visibilidad por rol en sidebar
@@ -2101,7 +2250,7 @@ function nav(view,el){
   else document.querySelectorAll('.ni').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${view}'`))n.classList.add('on');});
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
-  document.getElementById('pttl').textContent=TITLES[view]||'// '+view.toUpperCase();
+  document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
       email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},100);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
@@ -2527,7 +2676,7 @@ function rEmpGrd(){
   if(!ST.empresas.length){grid.innerHTML='<div class="empty">Sin empresas</div>';return;}
   grid.innerHTML=ST.empresas.map((e,i)=>{const hex=COLS[i%COLS.length];const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-trash"></i></button></div></div>`;}).join('');
 }
-function editarEmp(id){const e=ST.empresas.find(x=>x.id===id);if(!e)return;editEmpId=id;document.getElementById('mEmpT').textContent='// EDITAR EMPRESA';document.getElementById('eNom').value=e.nom;document.getElementById('eRNC').value=e.rnc||'';document.getElementById('eSec').value=e.sector||'';document.getElementById('eTel2').value=e.tel||'';document.getElementById('eEmail').value=e.email||'';document.getElementById('eCon').value=e.contacto||'';openM('mEmp');}
+function editarEmp(id){const e=ST.empresas.find(x=>x.id===id);if(!e)return;editEmpId=id;document.getElementById('mEmpT').textContent='EDITAR EMPRESA';document.getElementById('eNom').value=e.nom;document.getElementById('eRNC').value=e.rnc||'';document.getElementById('eSec').value=e.sector||'';document.getElementById('eTel2').value=e.tel||'';document.getElementById('eEmail').value=e.email||'';document.getElementById('eCon').value=e.contacto||'';openM('mEmp');}
 async function guardarEmp(){
   const nom=document.getElementById('eNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
   const btn=document.getElementById('btnEmp');btn.disabled=true;
@@ -2535,7 +2684,7 @@ async function guardarEmp(){
   try{
     if(editEmpId){await API.patch('empresas',`id=eq.${editEmpId}`,datos);const idx=ST.empresas.findIndex(x=>x.id===editEmpId);ST.empresas[idx]={...ST.empresas[idx],...datos};toast('ok','Empresa actualizada',nom);}
     else{const r=await API.post('empresas',datos);if(r&&r[0])ST.empresas.push(r[0]);toast('ok','Empresa registrada',nom);}
-    closeM('mEmp');rEmpGrd();editEmpId=null;document.getElementById('mEmpT').textContent='// NUEVA EMPRESA';['eNom','eRNC','eSec','eTel2','eEmail','eCon'].forEach(id=>document.getElementById(id).value='');
+    closeM('mEmp');rEmpGrd();editEmpId=null;document.getElementById('mEmpT').textContent='NUEVA EMPRESA';['eNom','eRNC','eSec','eTel2','eEmail','eCon'].forEach(id=>document.getElementById(id).value='');
   }catch(e){mostrarError(e.message,'Al inhabilitar cliente ID: '+inhabCliId);toast('err','Error inhabilitando',e.message);}
   btn.disabled=false;
 }
@@ -2553,7 +2702,7 @@ function rAgentes(){
     return`<tr><td style="font-weight:700">${a.nom}</td><td style="color:var(--tx2)">${a.cargo||'—'}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${a.licencia||'—'}</td><td style="font-family:var(--mono);font-size:9px">${a.lic_vence||'—'}</td><td><span class="badge ${licEst.badge}">${licEst.lbl.toUpperCase()}</span></td><td style="white-space:nowrap;display:flex;gap:2px"><button class="btn bsm bghost" onclick="editarAgt('${a.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bc3" onclick="eliminarAgt('${a.id}')"><i class="ti ti-trash"></i></button></td></tr>`;
   }).join('');
 }
-function editarAgt(id){const a=ST.agentes.find(x=>x.id===id);if(!a)return;editAgtId=id;document.getElementById('mAgtT').textContent='// EDITAR AGENTE';document.getElementById('agtNom').value=a.nom;document.getElementById('agtCargo').value=a.cargo||'';document.getElementById('agtTel').value=a.tel||'';document.getElementById('agtEmail').value=a.email||'';document.getElementById('agtLic').value=a.licencia||'';document.getElementById('agtLicVence').value=a.lic_vence||'';openM('mAgente');}
+function editarAgt(id){const a=ST.agentes.find(x=>x.id===id);if(!a)return;editAgtId=id;document.getElementById('mAgtT').textContent='EDITAR AGENTE';document.getElementById('agtNom').value=a.nom;document.getElementById('agtCargo').value=a.cargo||'';document.getElementById('agtTel').value=a.tel||'';document.getElementById('agtEmail').value=a.email||'';document.getElementById('agtLic').value=a.licencia||'';document.getElementById('agtLicVence').value=a.lic_vence||'';openM('mAgente');}
 async function guardarAgente(){
   const nom=document.getElementById('agtNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
   const btn=document.getElementById('btnAgt');btn.disabled=true;
@@ -2561,7 +2710,7 @@ async function guardarAgente(){
   try{
     if(editAgtId){await API.patch('agentes',`id=eq.${editAgtId}`,datos);const idx=ST.agentes.findIndex(x=>x.id===editAgtId);ST.agentes[idx]={...ST.agentes[idx],...datos};toast('ok','Agente actualizado',nom);}
     else{const r=await API.post('agentes',datos);if(r&&r[0])ST.agentes.push(r[0]);toast('ok','Agente registrado',nom);}
-    closeM('mAgente');rAgentes();editAgtId=null;document.getElementById('mAgtT').textContent='// NUEVO AGENTE';['agtNom','agtCargo','agtTel','agtEmail','agtLic','agtLicVence'].forEach(id=>document.getElementById(id).value='');
+    closeM('mAgente');rAgentes();editAgtId=null;document.getElementById('mAgtT').textContent='NUEVO AGENTE';['agtNom','agtCargo','agtTel','agtEmail','agtLic','agtLicVence'].forEach(id=>document.getElementById(id).value='');
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
 }
@@ -2571,7 +2720,7 @@ async function eliminarAgt(id){if(ST.clientes.find(c=>c.agente_id===id)){toast('
 // ── CLIENTES (guardar/editar) ─────────────────────────────────────────────────
 function abrirNuevoCli(){
   editCliId=null;tempDeps=[];
-  document.getElementById('mCliT').textContent='// NUEVO CLIENTE';
+  document.getElementById('mCliT').textContent='NUEVO CLIENTE';
   ['cNom','cCed','cWA','cTel','cEmail','cDir','cFecIni','cFecFin'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cPlan').value='Básico';document.getElementById('cNCF').value='B02';
   rEChips(null);rAgtSel('cAgt','');document.getElementById('depLM').innerHTML='';
@@ -2584,7 +2733,7 @@ function abrirNuevoCli(){
 function editarCli(id){
   const c=ST.clientes.find(x=>x.id===id);if(!c)return;
   editCliId=id;tempDeps=[...(c.deps||[])];
-  document.getElementById('mCliT').textContent='// EDITAR CLIENTE';
+  document.getElementById('mCliT').textContent='EDITAR CLIENTE';
   document.getElementById('cNom').value=c.nom;document.getElementById('cCed').value=c.cedula||'';
   document.getElementById('cWA').value=c.wa||'';document.getElementById('cTel').value=c.tel||'';
   document.getElementById('cEmail').value=c.email||'';document.getElementById('cPlan').value=c.plan;
