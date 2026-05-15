@@ -173,7 +173,7 @@ input,select,textarea,button{font-family:var(--ff)}
 .kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
 .k1::after{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.k2::after{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}.k3::after{background:linear-gradient(90deg,#10b981,#34d399)}.k4::after{background:linear-gradient(90deg,#ef4444,#f87171)}.k5::after{background:linear-gradient(90deg,#f59e0b,#fcd34d)}
 .kl{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
-.kv{font-size:22px;font-weight:700;line-height:1;margin-bottom:4px}
+.kv{font-size:22px;font-weight:700;line-height:1;margin-bottom:4px;font-family:var(--ff)}
 .v1{color:#1d4ed8}.v2{color:#6d28d9}.v3{color:#059669}.v4{color:#dc2626}.v5{color:#d97706}
 .ks{font-size:10px;color:var(--tx3)}.ki{position:absolute;right:14px;top:14px;font-size:28px;opacity:.06}
 
@@ -949,6 +949,48 @@ html{scroll-behavior:smooth}
             <i class="ti ti-info-circle" style="color:#3b82f6"></i> Para cambiar el rol de un usuario, ve a <strong>Sistema → Usuarios</strong> y usa el menú desplegable en la columna ROL.
           </div>
         </div>
+
+        <!-- Changelog -->
+        <div class="nc" style="margin-top:10px">
+          <div class="ch"><div><div class="ct">Historial de actualizaciones</div><div class="ct-s">Todo lo que se ha mejorado en el sistema</div></div><span class="badge bC2">v8.1 — Actual</span></div>
+          
+    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v8.1</span>
+        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-15</span>
+      </div>
+      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
+        <li style="margin-bottom:3px">Sistema desplegable en sidebar con secciones por rol</li><li style="margin-bottom:3px">Login multi-empresa formato usuario@nombrebase</li><li style="margin-bottom:3px">Cambiar nombre de usuario desde Usuarios</li><li style="margin-bottom:3px">Botón COBRAR más grande y visible en Facturas</li><li style="margin-bottom:3px">Fuente uniforme en números y texto</li><li style="margin-bottom:3px">Atajos de teclado: Ctrl+K buscar, Ctrl+N nuevo cliente, Ctrl+F facturas, Escape cerrar</li><li style="margin-bottom:3px">Visibilidad de menús según rol (admin/agente/cobros)</li><li style="margin-bottom:3px">Changelog de actualizaciones en Configuración</li>
+      </ul>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v8.0</span>
+        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-14</span>
+      </div>
+      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
+        <li style="margin-bottom:3px">Rediseño Enterprise completo del sistema</li><li style="margin-bottom:3px">Notificaciones por correo a las 7 AM (EmailJS)</li><li style="margin-bottom:3px">Sistema multi-empresa con bases independientes</li><li style="margin-bottom:3px">Documentos de clientes (cédulas, contratos, fotos)</li><li style="margin-bottom:3px">Exportar expediente PDF por cliente</li><li style="margin-bottom:3px">KPI de Utilidad visible solo para Admin</li><li style="margin-bottom:3px">Sistema de errores con panel elegante en español</li><li style="margin-bottom:3px">Log técnico de errores para soporte</li>
+      </ul>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v7.0</span>
+        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-13</span>
+      </div>
+      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
+        <li style="margin-bottom:3px">PWA instalable en iPhone y Android</li><li style="margin-bottom:3px">Sistema de backup manual completo</li><li style="margin-bottom:3px">Responsive móvil con drawer deslizable</li><li style="margin-bottom:3px">Recordar sesión con checkbox</li><li style="margin-bottom:3px">F5 mantiene la pantalla activa</li><li style="margin-bottom:3px">Filtros de facturas (pendientes/pagadas/parciales)</li><li style="margin-bottom:3px">Numeración profesional configurable</li><li style="margin-bottom:3px">Sin NCF opcional por cliente</li>
+      </ul>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="background:#f8fafc;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e2e8f0">
+        <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">v6.0</span>
+        <span style="font-size:11px;color:#64748b;font-family:monospace">2026-05-12</span>
+      </div>
+      <ul style="padding:10px 14px 10px 28px;margin:0;font-size:11px;color:#374151;line-height:1.8">
+        <li style="margin-bottom:3px">Login real con contraseña SHA-256</li><li style="margin-bottom:3px">Número de póliza automático POL-XXXX-000001</li><li style="margin-bottom:3px">NCF por factura (B01/B02/B14 DGII)</li><li style="margin-bottom:3px">PDF de facturas y certificados de seguro</li><li style="margin-bottom:3px">Alertas de pólizas por vencer</li><li style="margin-bottom:3px">Comisiones con retención ITBIS 18%</li><li style="margin-bottom:3px">Reporte IT-1 DGII y ARS</li><li style="margin-bottom:3px">WA masivo con selección de clientes</li>
+      </ul>
+    </div>
+        </div>
         </div>
 
         <!-- USUARIOS -->
@@ -1513,12 +1555,30 @@ function copiarSQL(){navigator.clipboard.writeText(SQL_SCRIPT).then(()=>toast('o
 function mostrarSetup(){document.getElementById('loginScreen').style.display='none';document.getElementById('setupScreen').style.display='flex';}
 
 async function doLogin(){
-  const user=document.getElementById('loginUser').value.trim();
+  const rawUser=document.getElementById('loginUser').value.trim();
   const pwd=document.getElementById('loginPwd').value;
   const err=document.getElementById('loginErr');
   const btn=document.getElementById('btnLogin');
   err.style.display='none';
-  if(!user||!pwd){err.textContent='Ingresa usuario y contraseña.';err.style.display='block';return;}
+  if(!rawUser||!pwd){err.textContent='Ingresa usuario y contraseña.';err.style.display='block';return;}
+
+  // Detectar formato usuario@nombrebase
+  let user=rawUser, baseNom='';
+  if(rawUser.includes('@')){
+    const partes=rawUser.split('@');
+    user=partes[0];
+    baseNom=partes[1];
+    // Buscar la base por nombre
+    const tenants=getTenants();
+    const tenant=tenants.find(t=>t.nom.toLowerCase().replace(/\s+/g,'')===(baseNom||'').toLowerCase());
+    if(tenant){ API.url=tenant.url; API.key=tenant.key;
+      localStorage.setItem('nx_url',tenant.url); localStorage.setItem('nx_key',tenant.key);
+    } else if(baseNom){
+      err.innerHTML=`Base de datos "<strong>${baseNom}</strong>" no encontrada.<br>Verifica el nombre o usa solo tu usuario.`;
+      err.style.display='block'; return;
+    }
+  }
+
   // Verificar si hay conexión configurada
   if(!API.url||!API.key){
     const url=localStorage.getItem('nx_url'),key=localStorage.getItem('nx_key');
@@ -1592,6 +1652,33 @@ async function conectar(){
     err.style.display='block';API.url='';API.key='';
     btn.disabled=false;btn.innerHTML='<i class="ti ti-plug"></i> Conectar y entrar al sistema';
   }
+}
+
+// ── Toggle sidebar Sistema ───────────────────────────────────────
+let _sistemaPlegado = false;
+function toggleSistema(){
+  const el=document.getElementById('sbSistema');
+  const icn=document.getElementById('icnSistema');
+  const cont=document.getElementById('sbContabilidad');
+  if(!el)return;
+  _sistemaPlegado=!_sistemaPlegado;
+  el.style.maxHeight=_sistemaPlegado?'0':'300px';
+  if(icn)icn.style.transform=_sistemaPlegado?'rotate(-90deg)':'';
+  // Contabilidad solo si es admin
+  if(cont && sesion?.rol==='admin'){
+    cont.style.maxHeight=_sistemaPlegado?'0':'200px';
+  }
+}
+
+// Aplicar visibilidad por rol en sidebar
+function aplicarRolSidebar(){
+  const esAdmin = sesion?.rol==='admin';
+  ['niAdmin1','niAdmin2','niAdmin3','niAdmin4','niAdmin5'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display=esAdmin?'':'none';
+  });
+  const cont=document.getElementById('sbContabilidad');
+  if(cont)cont.style.maxHeight=esAdmin?'200px':'0';
 }
 
 function desconectar(){if(confirm('¿Cambiar configuración de Supabase?')){localStorage.removeItem('nx_url');localStorage.removeItem('nx_key');sessionStorage.removeItem('nx_sesion');location.reload();}}
@@ -1845,6 +1932,7 @@ async function cargarTodo(){
     rDash();initMesSel();initComSel();initDGIISel();rAuto();rConfig();
     toast('ok','Sistema listo · NEXUS PRO v7','Bienvenido, '+sesion.nom.split(' ')[0]);
     logError('info','Sistema iniciado correctamente','Usuario: '+sesion.nom+' | Rol: '+sesion.rol,'Sistema');
+    setTimeout(aplicarRolSidebar, 200);
     // Cargar log guardado
     try{const sl=localStorage.getItem('nx_err_log');if(sl){const p=JSON.parse(sl);p.forEach(e=>{if(!ERR_LOG.find(x=>x.id===e.id))ERR_LOG.push(e);});ERR_LOG.sort((a,b)=>b.id-a.id);}}catch(le){}
     // Restaurar última pantalla (F5)
@@ -2055,7 +2143,7 @@ function rPolizas(){
     // Factura más reciente del cliente
     const ultimaFac=ST.facturas.filter(f=>f.cliente_id===c.id).sort((a,b)=>b.created_at?.localeCompare(a.created_at||'')||0)[0];
     return`<tr>
-      <td style="font-family:var(--mono);font-size:9px;color:var(--c4);font-weight:700">${c.numero_poliza||'<span style="color:var(--tx3)">—</span>'}</td>
+      <td style="font-size:12px;color:#d97706;font-weight:700">${c.numero_poliza||'<span style="color:var(--tx3)">—</span>'}</td>
       <td><div style="font-weight:700;font-size:11px">${c.nom}</div><div style="font-size:8px;color:var(--tx3)">${c.cedula||''}</div></td>
       <td>${planB(c.plan)}</td>
       <td style="font-family:var(--mono);font-size:9px">${c.fecha_inicio||'—'}</td>
@@ -2132,7 +2220,7 @@ function rFact(){
     <td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c4)">${fmt(f.total)}</td>
     <td><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
     <td style="white-space:nowrap;display:flex;gap:2px;flex-wrap:wrap">
-      <button class="btn bsm bc1" onclick="cobrarDesdeFact('${f.cliente_id}')" title="Registrar cobro"><i class="ti ti-wallet"></i></button>
+      <button style="background:linear-gradient(135deg,#059669,#10b981);border:none;color:#fff;font-weight:700;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(16,185,129,.3)" onclick="cobrarDesdeFact('${f.cliente_id}')"><i class="ti ti-wallet"></i> COBRAR</button>
       <button class="btn bsm bghost" onclick="verFacturaPDF_id('${f.id}')" title="Ver factura PDF"><i class="ti ti-file-invoice"></i></button>
       <button class="btn bsm bwa" onclick="enviarWA('${f.id}')" title="Enviar por WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>
     </td>
@@ -2470,8 +2558,8 @@ async function calcularComisiones(){
     </div>
     <div class="tw"><table>
       <thead><tr><th style="width:28%">AGENTE</th><th style="width:10%">CLIENTES</th><th style="width:15%">PRIMA TOTAL</th><th style="width:10%">% COM.</th><th style="width:14%">COM. BRUTA</th><th style="width:11%">ITBIS 18%</th><th style="width:14%">NETO A PAGAR</th></tr></thead>
-      <tbody>${resultados.map(r=>{const pct=r.clis>0?(r.comBruta/r.primaTotal*100).toFixed(1):'0';return`<tr><td style="font-weight:700">${r.agente.nom}</td><td style="text-align:center">${r.clis}</td><td style="font-family:var(--mono);font-size:9px">${fmt(r.primaTotal)}</td><td style="text-align:center;font-family:var(--mono)">${pct}%</td><td style="font-family:var(--mono);font-size:9px;color:var(--c5)">${fmt(r.comBruta)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3)">(${fmt(r.itbis)})</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c1)">${fmt(r.comNeta)}</td></tr>`;}).join('')}
-      <tr style="background:var(--bg3)"><td style="font-weight:700">TOTAL</td><td style="text-align:center">${resultados.reduce((s,r)=>s+r.clis,0)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(resultados.reduce((s,r)=>s+r.primaTotal,0))}</td><td></td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c5)">${fmt(totalBruto)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c3)">(${fmt(totalITBIS)})</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c1)">${fmt(totalNeto)}</td></tr>
+      <tbody>${resultados.map(r=>{const pct=r.clis>0?(r.comBruta/r.primaTotal*100).toFixed(1):'0';return`<tr><td style="font-weight:700">${r.agente.nom}</td><td style="text-align:center">${r.clis}</td><td style="font-family:var(--mono);font-size:9px">${fmt(r.primaTotal)}</td><td style="text-align:center;font-family:var(--mono)">${pct}%</td><td style="font-family:var(--mono);font-size:9px;color:var(--c5)">${fmt(r.comBruta)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3)">(${fmt(r.itbis)})</td><td style="font-size:11px;font-weight:700;color:var(--c1)">${fmt(r.comNeta)}</td></tr>`;}).join('')}
+      <tr style="background:var(--bg3)"><td style="font-weight:700">TOTAL</td><td style="text-align:center">${resultados.reduce((s,r)=>s+r.clis,0)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(resultados.reduce((s,r)=>s+r.primaTotal,0))}</td><td></td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c5)">${fmt(totalBruto)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c3)">(${fmt(totalITBIS)})</td><td style="font-size:11px;font-weight:700;color:var(--c1)">${fmt(totalNeto)}</td></tr>
       </tbody>
     </table></div>
     <div style="margin-top:10px;display:flex;gap:7px">
@@ -2681,6 +2769,7 @@ function rUsuarios(){const tb=document.getElementById('tbUsu');if(!ST.usuarios.l
     </select>
   </td>
   <td style="white-space:nowrap;display:flex;gap:4px">
+    <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
     <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña"><i class="ti ti-key"></i></button>
     <button class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-trash"></i></button>
   </td>
@@ -2709,6 +2798,28 @@ async function confirmarCambiarPwd(id, login, pwd){
     toast('ok', 'Contraseña actualizada', login);
   }catch(e){
     mostrarError(e.message, 'Al cambiar contraseña de: ' + login);
+  }
+}
+
+function abrirCambiarLogin(id, loginActual){
+  const nuevoLogin = prompt(`Nuevo nombre de usuario para "${loginActual}":\n(Sin espacios, sin caracteres especiales)`);
+  if(!nuevoLogin) return;
+  if(nuevoLogin.length < 3){ toast('err','Nombre muy corto','Mínimo 3 caracteres'); return; }
+  if(/\s/.test(nuevoLogin)){ toast('err','Sin espacios','El usuario no puede tener espacios'); return; }
+  confirmarCambiarLogin(id, loginActual, nuevoLogin.toLowerCase().trim());
+}
+
+async function confirmarCambiarLogin(id, loginActual, nuevoLogin){
+  try{
+    await API.patch('usuarios_sistema', `id=eq.${id}`, {login: nuevoLogin});
+    const u = ST.usuarios.find(x=>x.id===id);
+    if(u) u.login = nuevoLogin;
+    logAudit('LOGIN_CAMBIADO', `${loginActual} → ${nuevoLogin}`);
+    toast('ok', 'Usuario actualizado', `${loginActual} → ${nuevoLogin}`);
+    rUsuarios();
+  }catch(e){
+    if(e.message.includes('unique')) toast('err','Ese usuario ya existe','Elige otro nombre');
+    else mostrarError(e.message, 'Al cambiar nombre de usuario');
   }
 }
 
