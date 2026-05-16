@@ -390,6 +390,12 @@ html{scroll-behavior:smooth}
 /* Selección de texto */
 ::selection{background:#bfdbfe;color:#1e3a5f}
 
+/* ════ SUB-TABS CLIENTES ════ */
+.cli-subtab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--ff)}
+.cli-subtab:hover{color:#1e293b}
+.cli-subtab.active-subtab{background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff !important;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.cli-subtab.active-subtab i,.cli-subtab.active-subtab span{color:#fff !important}
+
 /* ════ TABS DINÁMICAS DE CONFIGURACIÓN ════ */
 .cfg-tabs-bar{display:flex;gap:4px;margin-bottom:6px;background:#fff;border-radius:12px;padding:6px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:thin}
 .cfg-tabs-bar::-webkit-scrollbar{height:4px}
@@ -774,6 +780,15 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
                 <button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
                 <button class="btn bxl bsm" onclick="abrirNuevoCli()"><i class="ti ti-plus"></i> Nuevo</button>
               </div>
+            </div>
+            <!-- Sub-tabs Activos / Inhabilitados -->
+            <div style="display:flex;gap:4px;margin-bottom:12px;background:#f1f5f9;border-radius:10px;padding:4px;width:fit-content">
+              <button id="cliTabAct" class="cli-subtab active-subtab" onclick="switchCliTab('activos')">
+                <i class="ti ti-users"></i> Activos <span id="cntAct" style="background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              </button>
+              <button id="cliTabInh" class="cli-subtab" onclick="switchCliTab('inhabilitados')">
+                <i class="ti ti-user-off"></i> Inhabilitados <span id="cntInh" style="background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              </button>
             </div>
             <div class="frow">
               <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, cédula, póliza..." id="cliQ" oninput="debouncedRCli()"/></div>
@@ -1722,6 +1737,34 @@ function debounce(fn,delay=300){let t;return(...a)=>{clearTimeout(t);t=setTimeou
 
 // ── Auditoría ────────────────────────────────────────────────────────────────
 const AUDIT=[];
+function eliminarClienteDef(id){
+  // Solo admin puede eliminar definitivamente
+  if(sesion?.rol!=='admin'){
+    toast('err','Sin permiso','Solo el Administrador puede eliminar clientes');
+    return;
+  }
+  const c=ST.clientes.find(x=>x.id===id);
+  if(!c){toast('err','Cliente no encontrado');return;}
+  // Primera confirmación
+  if(!confirm(`⚠️ ELIMINAR DEFINITIVAMENTE\n\nCliente: ${c.nom}\nPóliza: ${c.numero_poliza||'—'}\n\nEsta acción NO se puede deshacer. Los datos se perderán para siempre.\n\n¿Continuar?`))return;
+  // Segunda confirmación — escribir ELIMINAR
+  const conf=prompt(`Para confirmar, escribe la palabra ELIMINAR en mayúsculas:`);
+  if(conf!=='ELIMINAR'){toast('warn','Cancelado','No se eliminó el cliente');return;}
+  ejecutarEliminarCliente(id,c);
+}
+
+async function ejecutarEliminarCliente(id,c){
+  try{
+    await API.del('clientes',`id=eq.${id}`);
+    ST.clientes=ST.clientes.filter(x=>x.id!==id);
+    logAudit('CLIENTE_ELIMINADO',`${c.nom} · Póliza ${c.numero_poliza||'—'} · Cédula ${c.cedula||'—'}`,'Clientes');
+    toast('ok','Cliente eliminado',c.nom);
+    rCli();rDash();
+  }catch(e){
+    mostrarError(e.message,'Al eliminar cliente: '+c.nom);
+  }
+}
+
 function mostrarError(mensaje, contexto=''){
   // Función segura para mostrar errores sin crashear el sistema
   console.error('NEXUS Error:', contexto, mensaje);
@@ -2080,8 +2123,8 @@ function toggleContab(){
 
 // ── ROLES Y PERMISOS ───────────────────────────────────────────────
 const ROLES_PERMS = {
-  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar']},
-  supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar']},
+  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas']},
+  supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria']},
   agente:{nom:'Agente',color:'#2563eb',perms:['ver_clientes','crear_clientes','ver_facturas']},
   cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar']},
 };
@@ -2100,6 +2143,12 @@ const PERMS_LIST = [
   {key:'crear_clientes',lbl:'Crear clientes'},
   {key:'ver_facturas',lbl:'Ver facturas'},
   {key:'cobrar',lbl:'Registrar cobros'},
+  {key:'eliminar_clientes',lbl:'Eliminar clientes'},
+  {key:'ver_utilidad',lbl:'Ver utilidad y márgenes'},
+  {key:'exportar_datos',lbl:'Exportar Excel/PDF'},
+  {key:'gestionar_backup',lbl:'Hacer copias de seguridad'},
+  {key:'ver_auditoria',lbl:'Ver registro de auditoría'},
+  {key:'editar_facturas',lbl:'Editar facturas emitidas'},
 ];
 
 function rRolesContent(){
@@ -2963,11 +3012,28 @@ function rDash(){
 }
 
 // ── CLIENTES ─────────────────────────────────────────────────────────────────
+let _cliTab='activos';
+function switchCliTab(tab){
+  _cliTab=tab;
+  document.getElementById('cliTabAct')?.classList.toggle('active-subtab',tab==='activos');
+  document.getElementById('cliTabInh')?.classList.toggle('active-subtab',tab==='inhabilitados');
+  rCli();
+}
+
 function rCli(){
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
   const fe=document.getElementById('fEst')?.value||'';
+  // Contar activos e inhabilitados
+  const totalAct=ST.clientes.filter(c=>c.activo!==false).length;
+  const totalInh=ST.clientes.filter(c=>c.activo===false).length;
+  const cAct=document.getElementById('cntAct');if(cAct)cAct.textContent=totalAct;
+  const cInh=document.getElementById('cntInh');if(cInh)cInh.textContent=totalInh;
   let list=ST.clientes.filter(c=>{
+    // Filtro principal: activos o inhabilitados
+    const esInhabilitado=c.activo===false;
+    if(_cliTab==='activos'&&esInhabilitado)return false;
+    if(_cliTab==='inhabilitados'&&!esInhabilitado)return false;
     if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q))return false;
     if(fp&&c.plan!==fp)return false;
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}
@@ -2996,6 +3062,7 @@ function rCli(){
         <button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')" title="Certificado PDF"><i class="ti ti-file-certificate"></i></button>
         <button class="btn bsm bc2" onclick="abrirDocs('${c.id}')" title="Documentos"><i class="ti ti-folder-open"></i></button>
         ${inhabBtn}
+        ${(!c.activo&&sesion?.rol==='admin')?`<button class="btn bsm bc3" onclick="eliminarClienteDef('${c.id}')" title="Eliminar definitivamente"><i class="ti ti-trash"></i></button>`:''}
       </td>
     </tr>`;
   }).join('');
