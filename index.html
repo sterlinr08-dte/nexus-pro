@@ -2261,15 +2261,7 @@ function toggleSistema(){
 }
 
 // Aplicar visibilidad por rol en sidebar
-function aplicarRolSidebar(){
-  const esAdmin = sesion?.rol==='admin';
-  ['niAdmin1','niAdmin2','niAdmin3','niAdmin4','niAdmin5'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)el.style.display=esAdmin?'':'none';
-  });
-  const cont=document.getElementById('sbContabilidad');
-  if(cont)cont.style.maxHeight=esAdmin?'200px':'0';
-}
+
 
 // ══════════════════════════════════════════════════════════════════
 // SISTEMA v10 — TABS DINÁMICAS, ROLES, BÚSQUEDA, NOTIFICACIONES, METAS
@@ -5382,7 +5374,7 @@ _${CFG.empNom}_`;
 
 // ── Auto-facturación mejorada ───────────────────────────────────────────────
 let _autoFactLock=false;
-async async function verificarAutoFacturacion(){
+async function verificarAutoFacturacion(){
   if(_autoFactLock)return;
   const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
   const now=new Date();
