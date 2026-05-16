@@ -791,7 +791,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
               </button>
             </div>
             <div class="frow">
-              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, cédula, póliza..." id="cliQ" oninput="debouncedRCli()"/></div>
+              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, apodo, cédula, póliza..." id="cliQ" oninput="debouncedRCli()"/></div>
               <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
             </div>
@@ -1313,6 +1313,9 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
       <div class="fr"><label>WhatsApp</label><input type="text" id="cWA" placeholder="18091234567"/></div>
       <div class="fr"><label>Teléfono</label><input type="text" id="cTel"/></div>
       <div class="fr"><label>Email</label><input type="email" id="cEmail"/></div>
+      <div class="fr" style="grid-column:1/-1"><div style="font-size:9px;font-weight:700;color:#7c3aed;margin-bottom:6px;letter-spacing:.3px">REFERENCIA DEL CLIENTE</div></div>
+      <div class="fr"><label>Referencia / Apodo <span style="color:#94a3b8;font-weight:400">(opcional)</span></label><input type="text" id="cRef" placeholder="Ej: Taller Santiago, Doña Ana..."/></div>
+      <div class="fr"><label>WhatsApp de referencia <span style="color:#94a3b8;font-weight:400">(opcional)</span></label><input type="text" id="cRefWa" placeholder="Ej: 8290000000"/></div>
       <div class="fr"><label>Plan *</label><select id="cPlan" onchange="actualizarPreciosPlan()"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select></div>
       <div class="fr"><label>Agente</label><select id="cAgt"></select></div>
       <div class="fr"><label>Tipo NCF</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select></div>
@@ -2201,8 +2204,8 @@ function toggleContab(){
 
 // ── ROLES Y PERMISOS ───────────────────────────────────────────────
 const ROLES_PERMS = {
-  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio']},
-  supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria']},
+  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio','can_edit_or_delete_payments','can_view_accounting']},
+  supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria','can_view_accounting']},
   agente:{nom:'Agente',color:'#2563eb',perms:['ver_clientes','crear_clientes','ver_facturas']},
   cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar']},
 };
@@ -2228,6 +2231,8 @@ const PERMS_LIST = [
   {key:'ver_auditoria',lbl:'Ver registro de auditoría'},
   {key:'editar_facturas',lbl:'Editar facturas emitidas'},
   {key:'modificar_precio',lbl:'Modificar precio del plan'},
+  {key:'can_edit_or_delete_payments',lbl:'Editar/eliminar pagos y abonos'},
+  {key:'can_view_accounting',lbl:'Ver módulo de Contabilidad'},
 ];
 
 function rRolesContent(){
@@ -2464,8 +2469,8 @@ function globalSearch(q){
   const ql=q.toLowerCase();
   const found=[];
   // Buscar clientes
-  ST.clientes.filter(c=>(c.nom||'').toLowerCase().includes(ql)||(c.cedula||'').includes(q)||(c.numero_poliza||'').includes(q.toUpperCase())).slice(0,5).forEach(c=>{
-    found.push({tipo:'Cliente',icon:'👤',ttl:c.nom,sub:`${c.numero_poliza||'Sin póliza'} · ${c.plan} · Cédula: ${c.cedula||'—'}`,onclick:`verCliente('${c.id}');cerrarGlobalSearch();`});
+  ST.clientes.filter(c=>(c.nom||'').toLowerCase().includes(ql)||(c.cedula||'').includes(q)||(c.numero_poliza||'').includes(q.toUpperCase())||(c.referencia||'').toLowerCase().includes(ql)||(c.tel||'').includes(q)||(c.wa||'').includes(q)||(c.referencia_wa||'').includes(q)).slice(0,5).forEach(c=>{
+    found.push({tipo:'Cliente',icon:'👤',ttl:c.nom+(c.referencia?` (${c.referencia})`:''),sub:`${c.numero_poliza||'Sin póliza'} · ${c.plan} · Cédula: ${c.cedula||'—'}`,onclick:`verCliente('${c.id}');cerrarGlobalSearch();`});
   });
   // Buscar facturas
   ST.facturas.filter(f=>(f.cliente_nom||'').toLowerCase().includes(ql)||(f.ncf||'').includes(q.toUpperCase())).slice(0,5).forEach(f=>{
@@ -2497,7 +2502,7 @@ document.addEventListener('keydown',e=>{
 function verCliente(id){
   const c=ST.clientes.find(x=>x.id===id);
   if(!c)return;
-  document.getElementById('csNom').textContent=c.nom;
+  document.getElementById('csNom').textContent=c.nom+(c.referencia?` (${c.referencia})`:'');
   const fav=esFavorito(id);
   const notas=getNotas(id);
   const emp=gEmp(c.empresa_id)?.nom||'Particular';
@@ -2512,9 +2517,12 @@ function verCliente(id){
       <div class="cs-section-ttl">Información personal</div>
       <div style="font-size:12px;line-height:1.8">
         <div><strong>Cédula:</strong> ${c.cedula||'—'}</div>
-        <div><strong>WhatsApp:</strong> ${c.wa||'—'}</div>
+        <div><strong>WhatsApp:</strong> ${c.wa||'—'} ${c.wa?`<a href="https://wa.me/1${c.wa}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a>`:''}</div>
+        <div><strong>Teléfono:</strong> ${c.tel||'—'}</div>
         <div><strong>Email:</strong> ${c.email||'—'}</div>
         <div><strong>Dirección:</strong> ${c.dir||'—'}</div>
+        ${c.referencia?`<div><strong>Apodo:</strong> ${c.referencia}</div>`:''}
+        ${c.referencia_wa?`<div><strong>📲 WhatsApp ref:</strong> ${c.referencia_wa} <a href="https://wa.me/1${c.referencia_wa}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a></div>`:''}
       </div>
     </div>
     
@@ -2565,11 +2573,12 @@ function verCliente(id){
       </div>
     </div>
     
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn bc1" style="flex:1" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
       <button class="btn bc4" style="flex:1" onclick="abrirDocs('${id}');cerrarClientSummary()"><i class="ti ti-folder"></i> Documentos</button>
       <button class="btn bc5" style="flex:1" onclick="verFacturaPDF('${id}');cerrarClientSummary()"><i class="ti ti-file-certificate"></i> PDF</button>
-    </div>`;
+    </div>
+    <button class="btn bc2" style="width:100%;margin-top:6px" onclick="verHistorialAbonos('${id}')"><i class="ti ti-history"></i> Ver historial de abonos</button>`;
   document.getElementById('csPanel').classList.add('open');
   document.getElementById('csOverlay').classList.add('show');
 }
@@ -2631,6 +2640,15 @@ function aplicarRolSidebar(){
   const esAdmin=sesion?.rol==='admin';
   const niAdmin2=document.getElementById('niAdmin2');
   if(niAdmin2)niAdmin2.style.display=esAdmin?'':'none';
+  // Ocultar Configuración desplegable si no es admin
+  const sbConfig=document.getElementById('sbConfig');
+  if(sbConfig&&!esAdmin)sbConfig.style.maxHeight='0';
+  // Ocultar menú Contabilidad si no tiene permiso
+  const niContab=document.getElementById('niContab');
+  const sbContab=document.getElementById('sbContab');
+  const puedeContab=tienePermiso('can_view_accounting');
+  if(niContab)niContab.style.display=puedeContab?'':'none';
+  if(sbContab&&!puedeContab)sbContab.style.maxHeight='0';
 }
 
 function desconectar(){if(confirm('¿Cambiar configuración de Supabase?')){localStorage.removeItem('nx_url');localStorage.removeItem('nx_key');sessionStorage.removeItem('nx_sesion');location.reload();}}
@@ -3045,6 +3063,12 @@ function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 
 function nav(view,el){
+  // ── Control de acceso a Contabilidad ──
+  const vistasContab=['mayor','asientos','balance','pyg','comisiones','rep-agente','rep-plan','rep-empresa','dgii'];
+  if(vistasContab.includes(view)&&!tienePermiso('can_view_accounting')){
+    toast('err','Acceso restringido','No tienes permiso para ver Contabilidad');
+    return;
+  }
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
   else document.querySelectorAll('.ni').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${view}'`))n.classList.add('on');});
@@ -3181,7 +3205,7 @@ function rCli(){
     const esInhabilitado=c.activo===false;
     if(_cliTab==='activos'&&esInhabilitado)return false;
     if(_cliTab==='inhabilitados'&&!esInhabilitado)return false;
-    if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q))return false;
+    if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
     if(fp&&c.plan!==fp)return false;
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}
     return true;
@@ -3195,7 +3219,7 @@ function rCli(){
     const hoy2=new Date(),fin=c.fecha_fin?new Date(c.fecha_fin):null;
     const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar"><i class="ti ti-user-check"></i></button>`;
     return`<tr style="${!c.activo?'opacity:.5':''}">
-      <td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div></div></div></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div></div></div></td>
       <td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'<span style="color:var(--tx3)">Sin póliza</span>'}</td>
       <td>${planB(c.plan)}</td>
       <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
@@ -3215,7 +3239,7 @@ function rCli(){
   }).join('');
   if(total>PAGE){const extra=document.createElement('tr');extra.innerHTML=`<td colspan="9" style="text-align:center;padding:10px"><button class="btn bsm bc1" onclick="rCliAll()"><i class="ti ti-chevron-down"></i> Ver todos (${total-PAGE} más)</button></td>`;tb.appendChild(extra);}
 }
-function rCliAll(){document.getElementById('fEst').value='';document.getElementById('fPlan').value='';document.getElementById('cliQ').value='';const tb=document.getElementById('tbCli');const list=ST.clientes;tb.innerHTML=list.map(c=>{const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar"><i class="ti ti-user-check"></i></button>`;return`<tr style="${!c.activo?'opacity:.5':''}"><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div></div></div></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td><td><span class="badge ${ep.badge}" style="font-size:8px">${ep.lbl}</span></td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;font-weight:${pd>0?700:400};color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td>${estB(c)}</td><td style="white-space:nowrap;display:flex;gap:2px"><button class="btn bsm bghost" onclick="editarCli('${c.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" onclick="abrirAbono('${c.id}')"><i class="ti ti-wallet"></i></button><button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')"><i class="ti ti-file-certificate"></i></button>${inhabBtn}</td></tr>`;}).join('');document.getElementById('cliCnt').textContent=`(${list.length} — todos)`;}
+function rCliAll(){document.getElementById('fEst').value='';document.getElementById('fPlan').value='';document.getElementById('cliQ').value='';const tb=document.getElementById('tbCli');const list=ST.clientes;tb.innerHTML=list.map(c=>{const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar"><i class="ti ti-user-check"></i></button>`;return`<tr style="${!c.activo?'opacity:.5':''}"><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div></div></div></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td><td><span class="badge ${ep.badge}" style="font-size:8px">${ep.lbl}</span></td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;font-weight:${pd>0?700:400};color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td>${estB(c)}</td><td style="white-space:nowrap;display:flex;gap:2px"><button class="btn bsm bghost" onclick="editarCli('${c.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" onclick="abrirAbono('${c.id}')"><i class="ti ti-wallet"></i></button><button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')"><i class="ti ti-file-certificate"></i></button>${inhabBtn}</td></tr>`;}).join('');document.getElementById('cliCnt').textContent=`(${list.length} — todos)`;}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
 function rPolizas(){
@@ -3234,7 +3258,7 @@ function rPolizas(){
     const ultimaFac=ST.facturas.filter(f=>f.cliente_id===c.id).sort((a,b)=>b.created_at?.localeCompare(a.created_at||'')||0)[0];
     return`<tr>
       <td style="font-size:12px;color:#d97706;font-weight:700">${c.numero_poliza||'<span style="color:var(--tx3)">—</span>'}</td>
-      <td><div style="font-weight:700;font-size:11px">${c.nom}</div><div style="font-size:8px;color:var(--tx3)">${c.cedula||''}</div></td>
+      <td><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3)">${c.cedula||''}</div></td>
       <td>${planB(c.plan)}</td>
       <td style="font-family:var(--mono);font-size:9px">${c.fecha_inicio||'—'}</td>
       <td style="font-family:var(--mono);font-size:9px">${c.fecha_fin||'—'}</td>
@@ -3448,7 +3472,7 @@ function rCob(){
   const tb=document.getElementById('tbCob');
   const activos=ST.clientes.filter(c=>c.activo);
   if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin clientes</div></td></tr>';return;}
-  tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}</div></div></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
+  tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
 }
 function abrirAbono(cid){
   abonoCliId=cid;const c=ST.clientes.find(x=>x.id===cid);
@@ -3458,6 +3482,100 @@ function abrirAbono(cid){
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
   openM('mAbono');
 }
+async function editarAbono(abonoId,clienteId){
+  // Verificar permiso
+  if(!tienePermiso('can_edit_or_delete_payments')){
+    toast('err','Sin permiso','No puedes editar pagos ni abonos');
+    return;
+  }
+  const c=ST.clientes.find(x=>x.id===clienteId);
+  if(!c){toast('err','Cliente no encontrado');return;}
+  // Buscar el abono
+  let abonos=[];
+  try{abonos=await API.get('abonos',`cliente_id=eq.${clienteId}&order=fecha.desc`);}catch(e){mostrarError(e.message,'Al cargar abonos');return;}
+  const abono=abonos.find(a=>a.id===abonoId);
+  if(!abono){toast('err','Abono no encontrado');return;}
+  // Pedir nuevo monto
+  const nuevoMonto=prompt(`Editar abono\n\nMonto actual: RD$ ${abono.monto}\n\nNuevo monto:`,abono.monto);
+  if(nuevoMonto===null)return;
+  const montoNum=parseFloat(nuevoMonto);
+  if(!montoNum||montoNum<=0){toast('err','Monto inválido');return;}
+  const valorAnterior=abono.monto;
+  try{
+    // Ajustar el pagado del cliente
+    const diferencia=montoNum-valorAnterior;
+    const nuevoP=(c.pagado||0)+diferencia;
+    await API.patch('abonos',`id=eq.${abonoId}`,{monto:montoNum});
+    await API.patch('clientes',`id=eq.${clienteId}`,{pagado:nuevoP});
+    c.pagado=nuevoP;
+    // Auditoría detallada
+    logAudit('PAGO_EDITADO',`Cliente: ${c.nom} · Abono modificado · Valor anterior: RD$${valorAnterior} · Valor nuevo: RD$${montoNum}`,'Cobros');
+    toast('ok','Abono editado',`${fmt(valorAnterior)} → ${fmt(montoNum)}`);
+    rCob();rDash();
+    if(document.getElementById('csPanel')?.classList.contains('open'))verCliente(clienteId);
+  }catch(e){
+    mostrarError(e.message,'Al editar abono');
+  }
+}
+
+async function eliminarAbono(abonoId,clienteId){
+  // Verificar permiso
+  if(!tienePermiso('can_edit_or_delete_payments')){
+    toast('err','Sin permiso','No puedes eliminar pagos ni abonos');
+    return;
+  }
+  const c=ST.clientes.find(x=>x.id===clienteId);
+  if(!c){toast('err','Cliente no encontrado');return;}
+  let abonos=[];
+  try{abonos=await API.get('abonos',`cliente_id=eq.${clienteId}&order=fecha.desc`);}catch(e){mostrarError(e.message,'Al cargar abonos');return;}
+  const abono=abonos.find(a=>a.id===abonoId);
+  if(!abono){toast('err','Abono no encontrado');return;}
+  if(!confirm(`⚠️ ELIMINAR ABONO\n\nCliente: ${c.nom}\nMonto: RD$ ${abono.monto}\nFecha: ${abono.fecha}\n\nEsta acción no se puede deshacer.\n¿Continuar?`))return;
+  try{
+    const nuevoP=Math.max(0,(c.pagado||0)-abono.monto);
+    await API.del('abonos',`id=eq.${abonoId}`);
+    await API.patch('clientes',`id=eq.${clienteId}`,{pagado:nuevoP});
+    c.pagado=nuevoP;
+    logAudit('PAGO_ELIMINADO',`Cliente: ${c.nom} · Abono eliminado · Valor: RD$${abono.monto} · Fecha original: ${abono.fecha}`,'Cobros');
+    toast('ok','Abono eliminado',c.nom);
+    rCob();rDash();
+    if(document.getElementById('csPanel')?.classList.contains('open'))verCliente(clienteId);
+  }catch(e){
+    mostrarError(e.message,'Al eliminar abono');
+  }
+}
+
+async function verHistorialAbonos(clienteId){
+  const c=ST.clientes.find(x=>x.id===clienteId);
+  if(!c)return;
+  let abonos=[];
+  try{abonos=await API.get('abonos',`cliente_id=eq.${clienteId}&order=fecha.desc`);}catch(e){mostrarError(e.message,'Al cargar historial');return;}
+  const puedeEditar=tienePermiso('can_edit_or_delete_payments');
+  const filas=abonos.length?abonos.map(a=>`
+    <tr>
+      <td style="font-size:10px">${(a.fecha||'').slice(0,10)}</td>
+      <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
+      <td style="font-size:10px">${a.metodo||'—'}</td>
+      <td style="font-size:10px">${a.referencia||'—'}</td>
+      ${puedeEditar?`<td style="white-space:nowrap;display:flex;gap:4px">
+        <button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')"><i class="ti ti-edit"></i></button>
+        <button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')"><i class="ti ti-trash"></i></button>
+      </td>`:'<td style="font-size:9px;color:#94a3b8">—</td>'}
+    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8">Sin abonos registrados</td></tr>';
+  const cont=document.getElementById('csBody');
+  if(cont){
+    const div=document.createElement('div');
+    div.innerHTML=`<div class="cs-section">
+      <div class="cs-section-ttl">💰 Historial de abonos (${abonos.length})</div>
+      <div class="tw" style="font-size:10px"><table>
+        <thead><tr><th>FECHA</th><th>MONTO</th><th>MÉTODO</th><th>REF</th><th></th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table></div>
+    </div>`;
+    cont.appendChild(div);
+  }
+}
+
 async function regAbono(){
   const monto=parseFloat(document.getElementById('aMnt').value);
   if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');return;}
@@ -3540,7 +3658,7 @@ async function eliminarAgt(id){if(ST.clientes.find(c=>c.agente_id===id)){toast('
 function abrirNuevoCli(){
   editCliId=null;tempDeps=[];
   document.getElementById('mCliT').textContent='NUEVO CLIENTE';
-  ['cNom','cCed','cWA','cTel','cEmail','cDir','cFecIni','cFecFin'].forEach(id=>document.getElementById(id).value='');
+  ['cNom','cCed','cWA','cTel','cEmail','cDir','cFecIni','cFecFin','cRef','cRefWa'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('cPlan').value='Básico';document.getElementById('cNCF').value='B02';
   rEChips(null);rAgtSel('cAgt','');document.getElementById('depLM').innerHTML='';
   // Default: inicio hoy, fin en 1 año
@@ -3564,6 +3682,8 @@ function editarCli(id){
   document.getElementById('cWA').value=c.wa||'';document.getElementById('cTel').value=c.tel||'';
   document.getElementById('cEmail').value=c.email||'';document.getElementById('cPlan').value=c.plan;
   document.getElementById('cDir').value=c.dir||'';document.getElementById('cNCF').value=c.tipo_ncf||'B02';
+  const cRefEl=document.getElementById('cRef');if(cRefEl)cRefEl.value=c.referencia||'';
+  const cRefWaEl=document.getElementById('cRefWa');if(cRefWaEl)cRefWaEl.value=c.referencia_wa||'';
   document.getElementById('cFecIni').value=c.fecha_inicio||'';document.getElementById('cFecFin').value=c.fecha_fin||'';
   rEChips(c.empresa_id);rAgtSel('cAgt',c.agente_id);rDepLM();
   // Cargar precio personalizado si el cliente lo tiene
@@ -3603,7 +3723,7 @@ async function guardarCli(){
     precioT=(vt!==''&&vt!=null)?parseFloat(vt):null;
     precioD=(vd!==''&&vd!=null)?parseFloat(vd):null;
   }
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD};
+  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null};
   try{
     if(editCliId){
       await API.patch('clientes',`id=eq.${editCliId}`,datos);
