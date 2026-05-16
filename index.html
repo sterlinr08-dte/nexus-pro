@@ -1231,14 +1231,29 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
               </div>
               <div id="tenantsListCfg" style="margin-bottom:14px"></div>
               <div style="border:2px dashed #e2e8f0;background:#f8fafc;border-radius:12px;padding:16px">
-                <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:12px;text-transform:uppercase">+ Agregar nueva base</div>
+                <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:12px;text-transform:uppercase">+ Agregar nueva base de datos</div>
+
+                <div style="font-size:10px;font-weight:700;color:#2563eb;margin-bottom:8px">📋 DATOS DE LA EMPRESA</div>
                 <div class="g2">
                   <div class="fr"><label>Nombre empresa *</label><input type="text" id="tenNomCfg" placeholder="Ej: Correduría Sur"/></div>
-                  <div class="fr"><label>Supabase URL *</label><input type="text" id="tenUrlCfg"/></div>
+                  <div class="fr"><label>Nombre para login * <span style="color:#64748b;font-weight:400">(sin espacios)</span></label><input type="text" id="tenLoginNom" placeholder="Ej: corredursur"/></div>
                 </div>
-                <div class="fr"><label>API Key *</label><input type="text" id="tenKeyCfg"/></div>
-                <div class="fr"><label>Nota</label><input type="text" id="tenNotaCfg"/></div>
-                <button class="btn bxl" onclick="agregarTenantCfg()"><i class="ti ti-plus"></i> Agregar base</button>
+                <div class="fr"><label>Supabase URL *</label><input type="text" id="tenUrlCfg" placeholder="https://xxxx.supabase.co"/></div>
+                <div class="fr"><label>API Key (anon public) *</label><input type="text" id="tenKeyCfg" placeholder="eyJhbGci..."/></div>
+                <div class="fr"><label>Nota (opcional)</label><input type="text" id="tenNotaCfg" placeholder="Ej: Sucursal Santiago"/></div>
+
+                <div style="font-size:10px;font-weight:700;color:#059669;margin:14px 0 8px;padding-top:12px;border-top:1px solid #e2e8f0">👤 USUARIO ADMINISTRADOR DE ESTA BASE</div>
+                <div class="g2">
+                  <div class="fr"><label>Nombre del administrador *</label><input type="text" id="tenAdminNom" placeholder="Ej: Juan Pérez"/></div>
+                  <div class="fr"><label>Usuario *</label><input type="text" id="tenAdminUser" placeholder="Ej: admin"/></div>
+                </div>
+                <div class="fr"><label>Contraseña temporal *</label><input type="text" id="tenAdminPwd" placeholder="Mínimo 6 caracteres"/></div>
+
+                <div style="background:#eff6ff;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:10px;color:#1e3a6e;line-height:1.6">
+                  💡 El administrador entrará con: <code style="background:#dbeafe;padding:1px 5px;border-radius:4px" id="loginPreview">usuario@nombrelogin</code>
+                </div>
+
+                <button class="btn bxl" onclick="agregarTenantCfg()"><i class="ti ti-plus"></i> Crear base de datos</button>
               </div>
             </div>
           </div>
@@ -1298,7 +1313,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
       <div class="fr"><label>WhatsApp</label><input type="text" id="cWA" placeholder="18091234567"/></div>
       <div class="fr"><label>Teléfono</label><input type="text" id="cTel"/></div>
       <div class="fr"><label>Email</label><input type="email" id="cEmail"/></div>
-      <div class="fr"><label>Plan *</label><select id="cPlan"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select></div>
+      <div class="fr"><label>Plan *</label><select id="cPlan" onchange="actualizarPreciosPlan()"><option value="Básico">Plan Básico</option><option value="Superior">Plan Superior</option><option value="Esencial Plus">Plan Esencial Plus</option></select></div>
       <div class="fr"><label>Agente</label><select id="cAgt"></select></div>
       <div class="fr"><label>Tipo NCF</label><select id="cNCF" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="B02">B02 - Consumidor Final</option><option value="B01">B01 - Crédito Fiscal</option><option value="B14">B14 - Régimen Especial</option></select></div>
     </div>
@@ -1319,6 +1334,24 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
     </div>
     <div class="fr"><label>Dirección</label><input type="text" id="cDir"/></div>
     <div class="div"></div>
+    <!-- PRECIO PERSONALIZADO (solo con permiso) -->
+    <div id="seccionPrecioCustom" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:#92400e">💲 PRECIO PERSONALIZADO</div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer">
+          <input type="checkbox" id="cPrecioCustomOn" onchange="togglePrecioCustom()" style="accent-color:#d97706"/>
+          <span>Activar precio especial</span>
+        </label>
+      </div>
+      <div id="camposPrecioCustom" style="display:none">
+        <div style="font-size:9px;color:#92400e;margin-bottom:8px">Deja en blanco para usar el precio estándar del plan</div>
+        <div class="g2">
+          <div class="fr"><label>Prima titular (RD$)</label><input type="number" id="cPrecioTitular" placeholder="Precio estándar"/></div>
+          <div class="fr"><label>Prima por dependiente (RD$)</label><input type="number" id="cPrecioDep" placeholder="Precio estándar"/></div>
+        </div>
+        <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 8px"></div>
+      </div>
+    </div>
     <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
     <div style="display:flex;gap:6px;margin-bottom:7px">
       <input type="text" id="dN" placeholder="Nombre dependiente" style="flex:1;font-size:10px;padding:6px 9px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);outline:none"/>
@@ -1812,6 +1845,46 @@ function logAudit(accion,detalle='',modulo=''){
   }
 }
 
+function actualizarPreciosPlan(){
+  const plan=document.getElementById('cPlan')?.value||'Básico';
+  const std=document.getElementById('precioStdInfo');
+  if(std){
+    std.textContent=`Precio estándar ${plan}: Titular ${fmt(getPT(plan))} · Dependiente ${fmt(getPD(plan))}`;
+  }
+}
+
+function togglePrecioCustom(){
+  const on=document.getElementById('cPrecioCustomOn')?.checked;
+  const campos=document.getElementById('camposPrecioCustom');
+  if(campos)campos.style.display=on?'block':'none';
+  if(on)actualizarPreciosPlan();
+  else{
+    // Limpiar al desactivar
+    const t=document.getElementById('cPrecioTitular');
+    const d=document.getElementById('cPrecioDep');
+    if(t)t.value='';if(d)d.value='';
+  }
+}
+
+function mostrarSeccionPrecioCustom(){
+  // Solo mostrar si el usuario tiene permiso
+  const sec=document.getElementById('seccionPrecioCustom');
+  if(sec)sec.style.display=tienePermiso('modificar_precio')?'block':'none';
+}
+
+function tienePermiso(perm){
+  // El admin siempre tiene todos los permisos
+  if(sesion?.rol==='admin')return true;
+  try{
+    let roles={};
+    const s=localStorage.getItem('nx_roles_perms');
+    if(s)roles=JSON.parse(s);
+    else roles=ROLES_PERMS;
+    const rolActual=roles[sesion?.rol];
+    return rolActual?.perms?.includes(perm)||false;
+  }catch{return false;}
+}
+
 function detectarModulo(accion){
   const a=(accion||'').toUpperCase();
   if(a.includes('CLIENTE'))return'Clientes';
@@ -1887,7 +1960,12 @@ let autoCfg={dia:1,hora:'08:00',wa:1,tpl:'Estimado/a *{{nombre}}*,\n\nSu factura
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const getPT=p=>p==='Básico'?CFG.t1:p==='Superior'?CFG.t2:CFG.t3;
 const getPD=p=>p==='Básico'?CFG.d1:p==='Superior'?CFG.d2:CFG.d3;
-const getTot=c=>getPT(c.plan)+((c.deps||[]).length*getPD(c.plan));
+// getTot ahora respeta precio personalizado si el cliente lo tiene
+const getTot=c=>{
+  const primaT=(c.precio_titular!=null&&c.precio_titular!=='')?Number(c.precio_titular):getPT(c.plan);
+  const primaD=(c.precio_dep!=null&&c.precio_dep!=='')?Number(c.precio_dep):getPD(c.plan);
+  return primaT+((c.deps||[]).length*primaD);
+};
 const pend=c=>Math.max(0,(c.deuda_total||0)-(c.pagado||0));
 const fmt=n=>'RD$ '+Math.round(n||0).toLocaleString('es-DO');
 const fmtN=n=>Math.round(n||0).toLocaleString('es-DO');
@@ -2123,7 +2201,7 @@ function toggleContab(){
 
 // ── ROLES Y PERMISOS ───────────────────────────────────────────────
 const ROLES_PERMS = {
-  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas']},
+  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio']},
   supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria']},
   agente:{nom:'Agente',color:'#2563eb',perms:['ver_clientes','crear_clientes','ver_facturas']},
   cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar']},
@@ -2149,6 +2227,7 @@ const PERMS_LIST = [
   {key:'gestionar_backup',lbl:'Hacer copias de seguridad'},
   {key:'ver_auditoria',lbl:'Ver registro de auditoría'},
   {key:'editar_facturas',lbl:'Editar facturas emitidas'},
+  {key:'modificar_precio',lbl:'Modificar precio del plan'},
 ];
 
 function rRolesContent(){
@@ -2638,7 +2717,21 @@ function eliminarTenant(i){
   }
 })();
 
+function actualizarLoginPreview(){
+  const u=document.getElementById('tenAdminUser')?.value?.trim()||'usuario';
+  const n=document.getElementById('tenLoginNom')?.value?.trim()||'nombrelogin';
+  const prev=document.getElementById('loginPreview');
+  if(prev)prev.textContent=`${u||'usuario'}@${n||'nombrelogin'}`;
+}
+
 function renderTenantsCfg(){
+  // Conectar listeners de vista previa
+  setTimeout(()=>{
+    const u=document.getElementById('tenAdminUser');
+    const n=document.getElementById('tenLoginNom');
+    if(u&&!u._listenerSet){u.addEventListener('input',actualizarLoginPreview);u._listenerSet=true;}
+    if(n&&!n._listenerSet){n.addEventListener('input',actualizarLoginPreview);n._listenerSet=true;}
+  },200);
   const tenants=getTenants();
   const el=document.getElementById('tenantsListCfg');
   if(!el)return;
@@ -2668,19 +2761,73 @@ function cambiarEmpresa(i){
   setTimeout(()=>location.reload(),500);
 }
 
-function agregarTenantCfg(){
-  const nom=document.getElementById('tenNomCfg').value.trim();
-  const url=document.getElementById('tenUrlCfg').value.trim();
-  const key=document.getElementById('tenKeyCfg').value.trim();
-  const nota=document.getElementById('tenNotaCfg').value.trim();
-  if(!nom||!url||!key){toast('err','Completa los campos obligatorios');return;}
+async function agregarTenantCfg(){
+  const get=id=>document.getElementById(id)?.value?.trim()||'';
+  const nom=get('tenNomCfg');
+  const loginNom=get('tenLoginNom').toLowerCase().replace(/\s+/g,'');
+  const url=get('tenUrlCfg');
+  const key=get('tenKeyCfg');
+  const nota=get('tenNotaCfg');
+  const adminNom=get('tenAdminNom');
+  const adminUser=get('tenAdminUser').toLowerCase().replace(/\s+/g,'');
+  const adminPwd=get('tenAdminPwd');
+
+  // Validaciones
+  if(!nom||!loginNom||!url||!key){toast('err','Completa los datos de la empresa','Nombre, login, URL y API Key');return;}
+  if(!adminNom||!adminUser||!adminPwd){toast('err','Completa los datos del administrador','Nombre, usuario y contraseña');return;}
+  if(adminPwd.length<6){toast('err','Contraseña muy corta','Mínimo 6 caracteres');return;}
+
   const tenants=getTenants();
   if(tenants.find(t=>t.url===url)){toast('warn','Esta base ya existe');return;}
-  tenants.push({nom,url,key,nota,creado:hoy()});
+  if(tenants.find(t=>(t.loginNom||'').toLowerCase()===loginNom)){toast('warn','Ese nombre de login ya existe','Elige otro');return;}
+
+  const btn=event?.target;
+  if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> Creando...';}
+
+  // Guardar tenant localmente
+  tenants.push({
+    nom, loginNom, url, key, nota,
+    adminUser, adminNom,
+    creado:hoy()
+  });
   saveTenants(tenants);
-  ['tenNomCfg','tenUrlCfg','tenKeyCfg','tenNotaCfg'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+
+  // Crear el usuario administrador en la base nueva (Supabase de esa base)
+  try{
+    const resp=await fetch(`${url}/rest/v1/usuarios_sistema`,{
+      method:'POST',
+      headers:{
+        'apikey':key,
+        'Authorization':'Bearer '+key,
+        'Content-Type':'application/json',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify({
+        nom:adminNom,
+        cargo:'Administrador',
+        login:adminUser,
+        pwd:adminPwd,
+        rol:'admin',
+        activo:true
+      })
+    });
+    if(resp.ok){
+      toast('ok','✅ Base creada con su administrador',`Login: ${adminUser}@${loginNom}`);
+    }else{
+      toast('warn','Base guardada','El usuario admin debe crearse manualmente en esa base');
+    }
+  }catch(e){
+    toast('warn','Base guardada localmente','Verifica la conexión de esa base de datos');
+  }
+
+  logAudit('BASE_CREADA',`Empresa: ${nom} · Login: ${loginNom} · Admin: ${adminUser}`,'Configuración');
+
+  // Limpiar campos
+  ['tenNomCfg','tenLoginNom','tenUrlCfg','tenKeyCfg','tenNotaCfg','tenAdminNom','tenAdminUser','tenAdminPwd'].forEach(id=>{
+    const e=document.getElementById(id);if(e)e.value='';
+  });
   renderTenantsCfg();
-  toast('ok','Base agregada',nom);
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-plus"></i> Crear base de datos';}
 }
 
 function eliminarTenantCfg(i){
@@ -3400,6 +3547,13 @@ function abrirNuevoCli(){
   document.getElementById('cFecIni').value=hoy();
   const fin=new Date();fin.setFullYear(fin.getFullYear()+1);
   document.getElementById('cFecFin').value=fin.toISOString().slice(0,10);
+  // Resetear precio personalizado
+  const pcOn=document.getElementById('cPrecioCustomOn');if(pcOn)pcOn.checked=false;
+  const pcT=document.getElementById('cPrecioTitular');if(pcT)pcT.value='';
+  const pcD=document.getElementById('cPrecioDep');if(pcD)pcD.value='';
+  const pcCampos=document.getElementById('camposPrecioCustom');if(pcCampos)pcCampos.style.display='none';
+  mostrarSeccionPrecioCustom();
+  actualizarPreciosPlan();
   openM('mCli');
 }
 function editarCli(id){
@@ -3411,24 +3565,57 @@ function editarCli(id){
   document.getElementById('cEmail').value=c.email||'';document.getElementById('cPlan').value=c.plan;
   document.getElementById('cDir').value=c.dir||'';document.getElementById('cNCF').value=c.tipo_ncf||'B02';
   document.getElementById('cFecIni').value=c.fecha_inicio||'';document.getElementById('cFecFin').value=c.fecha_fin||'';
-  rEChips(c.empresa_id);rAgtSel('cAgt',c.agente_id);rDepLM();openM('mCli');
+  rEChips(c.empresa_id);rAgtSel('cAgt',c.agente_id);rDepLM();
+  // Cargar precio personalizado si el cliente lo tiene
+  mostrarSeccionPrecioCustom();
+  const tieneCustom=(c.precio_titular!=null&&c.precio_titular!=='')||(c.precio_dep!=null&&c.precio_dep!=='');
+  const pcOn=document.getElementById('cPrecioCustomOn');
+  const pcCampos=document.getElementById('camposPrecioCustom');
+  if(pcOn)pcOn.checked=tieneCustom;
+  if(pcCampos)pcCampos.style.display=tieneCustom?'block':'none';
+  const pcT=document.getElementById('cPrecioTitular');if(pcT)pcT.value=c.precio_titular??'';
+  const pcD=document.getElementById('cPrecioDep');if(pcD)pcD.value=c.precio_dep??'';
+  actualizarPreciosPlan();
+  openM('mCli');
 }
 async function guardarCli(){
   const nom=document.getElementById('cNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
+  // ── Validar cédula duplicada (activos e inhabilitados) ──
+  const cedula=document.getElementById('cCed').value.trim();
+  if(cedula){
+    const dup=ST.clientes.find(c=>
+      (c.cedula||'').replace(/[\s-]/g,'')===cedula.replace(/[\s-]/g,'') &&
+      c.id!==editCliId
+    );
+    if(dup){
+      const estado=dup.activo===false?'inhabilitado':'activo';
+      toast('err','Cédula ya registrada',`Esta cédula pertenece a "${dup.nom}" (cliente ${estado}). No se puede duplicar.`);
+      return;
+    }
+  }
   const btn=document.getElementById('btnGCli');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null};
+  // Precio personalizado (solo si tiene permiso y está activado)
+  let precioT=null, precioD=null;
+  const customOn=document.getElementById('cPrecioCustomOn')?.checked;
+  if(customOn && tienePermiso('modificar_precio')){
+    const vt=document.getElementById('cPrecioTitular')?.value;
+    const vd=document.getElementById('cPrecioDep')?.value;
+    precioT=(vt!==''&&vt!=null)?parseFloat(vt):null;
+    precioD=(vd!==''&&vd!=null)?parseFloat(vd):null;
+  }
+  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD};
   try{
     if(editCliId){
       await API.patch('clientes',`id=eq.${editCliId}`,datos);
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
-      logAudit('CLIENTE_EDITADO',nom);
+      logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes');
     toast('ok','Cliente actualizado',nom);
     }else{
       // Generar número de póliza automático
       const numPol=await generarNumPoliza();
       const res=await API.post('clientes',{...datos,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
       if(res&&res[0]){res[0].deps=tempDeps;ST.clientes.push(res[0]);}
-      logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`);
+      logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes');
     toast('ok',`Cliente registrado · Póliza: ${numPol}`,nom);
     }
     closeM('mCli');rCli();rDash();actualizarTicker();verificarAlertas();
