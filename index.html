@@ -692,6 +692,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
   </div>
   <div class="cs-body" id="csBody"></div>
 </div>
+</div>
 
 <!-- Modal Tenants / Empresas -->
 <div id="tenantsScreen" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0f1f3d,#1e3a6e);z-index:1000;align-items:center;justify-content:center;padding:1rem">
@@ -959,9 +960,9 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
               <thead><tr><th>FECHA</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead>
               <tbody id="tbPagos"></tbody>
             </table></div>
-          
-          </div><!-- /panelPagos -->
-        </div>
+          </div><!-- /nc -->
+        </div><!-- /panelPagos -->
+        </div><!-- /v-facturas -->
 
         <!-- EMPRESAS -->
         <div class="view" id="v-empresas">
@@ -2313,6 +2314,12 @@ function toggleSistema(){
 
 // ── TABS de Configuración con animación ────────────────────────────
 function switchCfgTab(n){
+  // Asegurar que la vista de configuración esté visible
+  const vCfg=document.getElementById('v-config');
+  if(vCfg&&!vCfg.classList.contains('on')){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+    vCfg.classList.add('on');
+  }
   const total=11;
   for(let i=1;i<=total;i++){
     const tab=document.getElementById('cfgTab'+i);
@@ -2327,23 +2334,126 @@ function switchCfgTab(n){
   const tabActive=document.getElementById('cfgTab'+n);
   const ind=document.getElementById('cfgIndicator');
   if(tabActive&&ind){
-    const rect=tabActive.getBoundingClientRect();
-    const parent=tabActive.parentElement.getBoundingClientRect();
-    ind.style.width=rect.width+'px';
-    ind.style.transform='translateX('+(rect.left-parent.left)+'px)';
+    try{
+      const rect=tabActive.getBoundingClientRect();
+      const parent=tabActive.parentElement.getBoundingClientRect();
+      ind.style.width=rect.width+'px';
+      ind.style.transform='translateX('+(rect.left-parent.left)+'px)';
+    }catch(e){}
   }
-  // Cargar contenido según tab
-  if(n===1)setTimeout(rConfig,100);
-  if(n===2)setTimeout(rEmail,150);
-  if(n===3)setTimeout(rAuto,150);
-  if(n===4){rEmpGrd();setTimeout(()=>{const s=document.getElementById('empGrd');const t=document.getElementById('empGrdCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
-  if(n===5){rAgentes();setTimeout(()=>{const s=document.getElementById('tbAgt');const t=document.getElementById('tbAgtCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
-  if(n===6){rUsuarios();setTimeout(()=>{const s=document.getElementById('tbUsu');const t=document.getElementById('tbUsuCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
-  if(n===7)setTimeout(rRolesContent,100);
-  if(n===8){rAuditoria();setTimeout(()=>{const s=document.getElementById('auditC');const t=document.getElementById('auditCfg');if(s&&t)t.innerHTML=s.innerHTML;},250);}
-  if(n===9)setTimeout(renderTenantsCfg,100);
-  if(n===10)setTimeout(rChangelogContent,100);
-  if(n===11)setTimeout(rMetas,100);
+  // Cargar contenido del tab — cada función renderiza directo en su panel.
+  // Se usa try/catch para que un error no deje la pantalla vacía.
+  setTimeout(()=>cargarContenidoCfgTab(n),60);
+}
+
+function cargarContenidoCfgTab(n){
+  try{
+    if(n===1){ rConfig(); if(typeof rArsList==='function')rArsList(); }
+    else if(n===2){ rEmail(); }
+    else if(n===3){ rAuto(); }
+    else if(n===4){ renderEmpresasCfg(); }
+    else if(n===5){ renderAgentesCfg(); }
+    else if(n===6){ renderUsuariosCfg(); }
+    else if(n===7){ rRolesContent(); }
+    else if(n===8){ renderAuditoriaCfg(); }
+    else if(n===9){ renderTenantsCfg(); }
+    else if(n===10){ rChangelogContent(); }
+    else if(n===11){ rMetas(); }
+  }catch(e){
+    console.error('Error cargando tab '+n+':',e);
+    mostrarEstadoErrorCfg(n,e.message);
+  }
+}
+
+// Renderiza un estado de error elegante dentro del panel
+function mostrarEstadoErrorCfg(n,msg){
+  const panel=document.getElementById('cfgPanel'+n);
+  if(!panel)return;
+  panel.innerHTML=`<div class="nc"><div style="text-align:center;padding:40px 20px">
+    <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+    <div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px">No se pudo cargar este módulo</div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:14px">${msg||'Ocurrió un error inesperado'}</div>
+    <button class="btn bxl" onclick="switchCfgTab(${n})"><i class="ti ti-refresh"></i> Reintentar</button>
+  </div></div>`;
+}
+
+// ── Empresas dentro de Configuración (render directo) ──────────────
+function renderEmpresasCfg(){
+  const grid=document.getElementById('empGrdCfg');
+  if(!grid)return;
+  const COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];
+  if(!ST.empresas.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#94a3b8;font-size:12px">🏭 No hay empresas registradas todavía.<br><button class="btn bxl bsm" style="margin-top:10px" onclick="openM(\'mEmp\')"><i class="ti ti-plus"></i> Crear primera empresa</button></div>';
+    return;
+  }
+  grid.innerHTML=ST.empresas.map((e,i)=>{const hex=COLS[i%COLS.length];const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-trash"></i></button></div></div>`;}).join('');
+}
+
+// ── Agentes dentro de Configuración (render directo) ───────────────
+function renderAgentesCfg(){
+  const tb=document.getElementById('tbAgtCfg');
+  if(!tb)return;
+  if(!ST.agentes.length){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;font-size:12px">👤 No hay agentes registrados.<br><button class="btn bxl bsm" style="margin-top:10px" onclick="openM(\'mAgente\')"><i class="ti ti-plus"></i> Crear primer agente</button></td></tr>';
+    return;
+  }
+  tb.innerHTML=ST.agentes.map(a=>{
+    const vence=a.lic_vence?new Date(a.lic_vence):null;
+    const hoyD=new Date();
+    const licEst=!a.licencia?{badge:'bCg',lbl:'Sin licencia'}:!vence?{badge:'bC1',lbl:'Vigente'}:vence<hoyD?{badge:'bC3',lbl:'Vencida'}:Math.ceil((vence-hoyD)/86400000)<=30?{badge:'bC4',lbl:'Por vencer'}:{badge:'bC1',lbl:'Vigente'};
+    return`<tr><td style="font-weight:700">${a.nom}</td><td style="color:var(--tx2)">${a.cargo||'—'}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${a.licencia||'—'}</td><td style="font-family:var(--mono);font-size:9px">${a.lic_vence||'—'}</td><td><span class="badge ${licEst.badge}">${licEst.lbl.toUpperCase()}</span></td><td style="white-space:nowrap;display:flex;gap:2px"><button class="btn bsm bghost" onclick="editarAgt('${a.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bc3" onclick="eliminarAgt('${a.id}')"><i class="ti ti-trash"></i></button></td></tr>`;
+  }).join('');
+}
+
+// ── Usuarios dentro de Configuración (render directo) ──────────────
+function renderUsuariosCfg(){
+  const tb=document.getElementById('tbUsuCfg');
+  if(!tb)return;
+  if(!ST.usuarios.length){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;font-size:12px">🔐 No hay usuarios registrados.<br><button class="btn bxl bsm" style="margin-top:10px" onclick="openM(\'mUsuario\')"><i class="ti ti-plus"></i> Crear usuario</button></td></tr>';
+    return;
+  }
+  tb.innerHTML=ST.usuarios.map(u=>`<tr>
+    <td style="font-weight:700">${u.nom}</td>
+    <td style="font-family:var(--mono);font-size:9px;color:#2563eb">${u.login}</td>
+    <td><select onchange="cambiarRol('${u.id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
+      <option value="admin" ${u.rol==='admin'?'selected':''}>Administrador</option>
+      <option value="supervisor" ${u.rol==='supervisor'?'selected':''}>Supervisor</option>
+      <option value="agente" ${u.rol==='agente'?'selected':''}>Agente</option>
+      <option value="cobros" ${u.rol==='cobros'?'selected':''}>Cobros</option>
+    </select></td>
+    <td style="color:#64748b">${u.cargo||'—'}</td>
+    <td><select onchange="cambiarEstado('${u.id}',this.value)" style="font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer">
+      <option value="true" ${u.activo?'selected':''}>Activo</option>
+      <option value="false" ${!u.activo?'selected':''}>Inactivo</option>
+    </select></td>
+    <td style="white-space:nowrap;display:flex;gap:4px">
+      <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
+      <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña"><i class="ti ti-key"></i></button>
+      <button class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+
+// ── Auditoría dentro de Configuración (render directo) ─────────────
+function renderAuditoriaCfg(){
+  const cont=document.getElementById('auditCfg');
+  if(!cont)return;
+  // rAuditoria escribe en #auditC; aquí renderizamos en #auditCfg directamente
+  // Creamos un contenedor temporal con el id que rAuditoria espera
+  let temp=document.getElementById('auditC');
+  if(!temp){
+    temp=document.createElement('div');
+    temp.id='auditC';
+    temp.style.display='none';
+    document.body.appendChild(temp);
+  }
+  rAuditoria();
+  if(temp.innerHTML.trim()){
+    cont.innerHTML=temp.innerHTML;
+  }else{
+    cont.innerHTML='<div style="text-align:center;padding:30px;color:#94a3b8;font-size:12px">📋 Aún no hay registros de auditoría.<br>Las acciones del sistema se registrarán aquí automáticamente.</div>';
+  }
 }
 
 // ── Toggle Contabilidad sidebar ────────────────────────────────────
@@ -2357,14 +2467,15 @@ function toggleConfig(){
 }
 
 function navConfig(tabNum,el){
-  // Ir a la vista de config y abrir el tab específico
+  // Ir a la vista de config (sin restricción para admin)
   nav('config',null);
-  setTimeout(()=>switchCfgTab(tabNum),200);
   // Marcar activo en sidebar
   document.querySelectorAll('#sbConfig .ni').forEach(n=>n.classList.remove('on'));
   if(el)el.classList.add('on');
-  // En móvil cerrar el drawer
+  // En móvil cerrar el drawer primero, luego cargar el tab
   if(window.innerWidth<=900)closeMobSB();
+  // Cargar el tab con un pequeño retardo para que la vista esté lista
+  setTimeout(()=>switchCfgTab(tabNum||1),120);
 }
 
 let _contabAbierto=false;
