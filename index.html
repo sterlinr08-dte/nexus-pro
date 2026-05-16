@@ -3550,15 +3550,55 @@ function generarARS(){
 
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 function rConfig(){
-  document.getElementById('cfgNom').value=CFG.empNom;document.getElementById('cfgRNC').value=CFG.empRNC;document.getElementById('cfgTel').value=CFG.empTel;document.getElementById('cfgEmail').value=CFG.empEmail;document.getElementById('cfgDir').value=CFG.empDir;
-  document.getElementById('cfgT1').value=CFG.t1;document.getElementById('cfgT2').value=CFG.t2;document.getElementById('cfgT3').value=CFG.t3;
-  document.getElementById('cfgD1').value=CFG.d1;document.getElementById('cfgD2').value=CFG.d2;document.getElementById('cfgD3').value=CFG.d3;
-  document.getElementById('cfgCom1').value=CFG.com1;document.getElementById('cfgCom2').value=CFG.com2;document.getElementById('cfgCom3').value=CFG.com3;
+  // Función segura — verifica cada campo antes de asignar
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val??'';};
+  set('cfgEmpNom',CFG.empNom);
+  set('cfgEmpRNC',CFG.empRNC);
+  set('cfgEmpTel',CFG.empTel);
+  set('cfgEmpEmail',CFG.empEmail);
+  set('cfgEmpDir',CFG.empDir);
+  set('cfgNumIni',CFG.numIni||CFG.seqFactura);
+  set('cfgCost1',CFG.cost1);
+  set('cfgCost2',CFG.cost2);
+  set('cfgCost3',CFG.cost3);
+  set('cfgT1',CFG.t1);
+  set('cfgT2',CFG.t2);
+  set('cfgT3',CFG.t3);
+  set('cfgD1',CFG.d1);
+  set('cfgD2',CFG.d2);
+  set('cfgD3',CFG.d3);
+  set('cfgC1',CFG.com1);
+  set('cfgC2',CFG.com2);
+  set('cfgC3',CFG.com3);
 }
 // Audit mejorado ya aplicado arriba
+async function guardarDatosEmp(){
+  const get=id=>document.getElementById(id)?.value?.trim()||'';
+  const nom=get('cfgEmpNom');
+  if(!nom){toast('err','Campo requerido','Ingrese el nombre de la correduría');return;}
+  try{
+    const datos=[
+      {clave:'empresa_nom',valor:nom},
+      {clave:'empresa_rnc',valor:get('cfgEmpRNC')},
+      {clave:'empresa_tel',valor:get('cfgEmpTel')},
+      {clave:'empresa_email',valor:get('cfgEmpEmail')},
+      {clave:'empresa_dir',valor:get('cfgEmpDir')},
+    ];
+    for(const d of datos){
+      await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,updated_at:new Date().toISOString()});
+      ST.config[d.clave]=d.valor;
+    }
+    actualizarCFG();
+    logAudit('CONFIG_EMPRESA','Datos actualizados: '+nom,'Configuración');
+    toast('ok','Datos guardados',nom);
+  }catch(e){
+    mostrarError(e.message,'Al guardar datos de la empresa');
+  }
+}
+
 async function guardarConfig(){
-  const nom=document.getElementById('cfgNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
-  const datos=[{clave:'empresa_nom',valor:nom},{clave:'empresa_rnc',valor:document.getElementById('cfgRNC').value},{clave:'empresa_tel',valor:document.getElementById('cfgTel').value},{clave:'empresa_email',valor:document.getElementById('cfgEmail').value},{clave:'empresa_dir',valor:document.getElementById('cfgDir').value}];
+  const nom=document.getElementById('cfgEmpNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
+  const datos=[{clave:'empresa_nom',valor:nom},{clave:'empresa_rnc',valor:document.getElementById('cfgEmpRNC').value},{clave:'empresa_tel',valor:document.getElementById('cfgEmpTel').value},{clave:'empresa_email',valor:document.getElementById('cfgEmpEmail').value},{clave:'empresa_dir',valor:document.getElementById('cfgEmpDir').value}];
   try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,updated_at:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();logAudit('CONFIG_EMPRESA',`Empresa actualizada: ${nom}`);toast('ok','Datos de empresa guardados');}catch(e){mostrarError(e.message,'Al guardar configuración de empresa');toast('err','Error',e.message);}
 }
 // ── Gestión de ARS ───────────────────────────────────────────────────────────
@@ -3637,7 +3677,7 @@ function removeARS(idx){
 async function guardarTarifas(){
   const numIni=document.getElementById('cfgNumIni')?.value;
   if(numIni&&parseInt(numIni)>0){await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(parseInt(numIni)-1),updated_at:new Date().toISOString()});}
-  const datos=[{clave:'prima_basico',valor:document.getElementById('cfgT1').value},{clave:'prima_superior',valor:document.getElementById('cfgT2').value},{clave:'prima_esencial',valor:document.getElementById('cfgT3').value},{clave:'dep_basico',valor:document.getElementById('cfgD1').value},{clave:'dep_superior',valor:document.getElementById('cfgD2').value},{clave:'dep_esencial',valor:document.getElementById('cfgD3').value},{clave:'comision_basico',valor:document.getElementById('cfgCom1').value},{clave:'comision_superior',valor:document.getElementById('cfgCom2').value},{clave:'comision_esencial',valor:document.getElementById('cfgCom3').value}];
+  const datos=[{clave:'prima_basico',valor:document.getElementById('cfgT1').value},{clave:'prima_superior',valor:document.getElementById('cfgT2').value},{clave:'prima_esencial',valor:document.getElementById('cfgT3').value},{clave:'dep_basico',valor:document.getElementById('cfgD1').value},{clave:'dep_superior',valor:document.getElementById('cfgD2').value},{clave:'dep_esencial',valor:document.getElementById('cfgD3').value},{clave:'comision_basico',valor:document.getElementById('cfgC1').value},{clave:'comision_superior',valor:document.getElementById('cfgC2').value},{clave:'comision_esencial',valor:document.getElementById('cfgC3').value}];
   // Agregar costos si fueron ingresados
   const c1=document.getElementById('cfgCost1')?.value;
   const c2=document.getElementById('cfgCost2')?.value;
