@@ -734,7 +734,6 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
         <div class="ss">Principal</div>
         <div class="ni on" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Dashboard</span></div>
         <div class="ni" onclick="nav('facturas',this)"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
-        <div class="ni" onclick="nav('pagos',this)"><i class="ti ti-cash-register ni-i"></i><span class="ni-l">Historial de pagos</span></div>
         <div class="ni" onclick="nav('clientes',this)"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
         <div class="ni" onclick="nav('polizas',this)"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
 
@@ -889,6 +888,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
           <div style="display:flex;gap:4px;margin-bottom:12px;background:#fff;border-radius:12px;padding:5px;border:1.5px solid var(--border);box-shadow:var(--shadow);width:fit-content">
             <button id="tabFact" onclick="switchTab('fact')" style="padding:7px 18px;border-radius:9px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#1e3a6e,#3b82f6);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.3);transition:all .15s"><i class="ti ti-file-invoice"></i> Facturas</button>
             <button id="tabCob" onclick="switchTab('cob')" style="padding:7px 18px;border-radius:9px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .15s"><i class="ti ti-wallet"></i> Cobros</button>
+            <button id="tabPagos" onclick="switchTab('pagos')" style="padding:7px 18px;border-radius:9px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .15s"><i class="ti ti-cash-register"></i> Historial de pagos</button>
           </div>
           <!-- Panel Facturas -->
           <div id="panelFact">
@@ -926,10 +926,8 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
             </table></div>
           </div>
           </div><!-- /panelCob -->
-        </div>
-
-        <!-- HISTORIAL DE PAGOS -->
-        <div class="view" id="v-pagos">
+          <!-- Panel Historial de Pagos -->
+          <div id="panelPagos" style="display:none">
           <div class="nc">
             <div class="ch">
               <div><div class="ct">Historial de pagos</div><div class="ct-s">Todos los cobros y abonos registrados</div></div>
@@ -961,7 +959,8 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
               <thead><tr><th>FECHA</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead>
               <tbody id="tbPagos"></tbody>
             </table></div>
-          </div>
+          
+          </div><!-- /panelPagos -->
         </div>
 
         <!-- EMPRESAS -->
@@ -1984,6 +1983,10 @@ function logAudit(accion,detalle='',modulo=''){
   if(document.getElementById('cfgPanel8')?.style.display==='block'){
     setTimeout(()=>{rAuditoria();const s=document.getElementById('auditC');const t=document.getElementById('auditCfg');if(s&&t)t.innerHTML=s.innerHTML;},100);
   }
+  // Auto-refresco: cada acción registrada refresca la vista actual al instante
+  if(typeof refrescarVistaActual==='function'){
+    setTimeout(refrescarVistaActual,200);
+  }
 }
 
 function actualizarPreciosPlan(){
@@ -2025,6 +2028,47 @@ function tienePermiso(perm){
     return rolActual?.perms?.includes(perm)||false;
   }catch{return false;}
 }
+
+// ── AUTO-REFRESCO INTELIGENTE (Punto 14) ──────────────────────────
+function refrescarVistaActual(){
+  // Detecta qué vista está abierta y la actualiza al instante
+  const vistaActiva=document.querySelector('.view.on');
+  if(!vistaActiva)return;
+  const id=vistaActiva.id.replace('v-','');
+  const refrescos={
+    dashboard:rDash,
+    clientes:rCli,
+    polizas:rPolizas,
+    facturas:()=>{
+      const pP=document.getElementById('panelPagos');
+      const pC=document.getElementById('panelCob');
+      if(pP&&pP.style.display!=='none'){rPagos();}
+      else if(pC&&pC.style.display!=='none'){rCob();}
+      else{rFact();}
+    },
+    empresas:rEmpGrd,
+    agentes:rAgentes,
+  };
+  try{
+    if(refrescos[id])refrescos[id]();
+  }catch(e){console.log('Refresco:',e.message);}
+  // Refrescar notificaciones siempre
+  try{rNotifs();}catch(e){}
+}
+
+// Refresco automático cada 30 segundos si la pestaña está visible
+setInterval(()=>{
+  if(document.visibilityState==='visible'&&sesion){
+    refrescarVistaActual();
+  }
+},30000);
+
+// Refrescar al volver a la pestaña del navegador
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&sesion){
+    setTimeout(refrescarVistaActual,300);
+  }
+});
 
 function detectarModulo(accion){
   const a=(accion||'').toUpperCase();
@@ -2334,7 +2378,7 @@ function toggleContab(){
 
 // ── ROLES Y PERMISOS ───────────────────────────────────────────────
 const ROLES_PERMS = {
-  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio','can_edit_or_delete_payments','can_view_accounting']},
+  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio','can_view_accounting','payments_edit','payments_delete']},
   supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria','can_view_accounting']},
   agente:{nom:'Agente',color:'#2563eb',perms:['ver_clientes','crear_clientes','ver_facturas']},
   cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar']},
@@ -2361,8 +2405,9 @@ const PERMS_LIST = [
   {key:'ver_auditoria',lbl:'Ver registro de auditoría'},
   {key:'editar_facturas',lbl:'Editar facturas emitidas'},
   {key:'modificar_precio',lbl:'Modificar precio del plan'},
-  {key:'can_edit_or_delete_payments',lbl:'Editar/eliminar pagos y abonos'},
   {key:'can_view_accounting',lbl:'Ver módulo de Contabilidad'},
+  {key:'payments_edit',lbl:'Editar pagos y abonos'},
+  {key:'payments_delete',lbl:'Eliminar pagos y abonos'},
 ];
 
 function rRolesContent(){
@@ -2630,52 +2675,106 @@ function toggleNotif(){
   rNotifs();
 }
 
+let _notifLeidas=[];
+try{_notifLeidas=JSON.parse(localStorage.getItem('nx_notif_leidas')||'[]');}catch{}
+let _notifFiltro='todas';
+
 function rNotifs(){
-  // Generar notificaciones automáticas
   _notifs=[];
-  const hoy=new Date();
-  // Pólizas por vencer
+  const hoyD=new Date();
+  // Pólizas por vencer → navega al cliente
   ST.clientes.filter(c=>c.activo&&c.fecha_fin).forEach(c=>{
-    const d=Math.ceil((new Date(c.fecha_fin)-hoy)/86400000);
+    const d=Math.ceil((new Date(c.fecha_fin)-hoyD)/86400000);
     if(d>=0&&d<=30){
-      _notifs.push({id:'pol_'+c.id,icon:'⚠️',ttl:`Póliza por vencer en ${d} días`,sub:c.nom+' · '+c.numero_poliza,ts:hoy.toISOString(),tipo:'warn'});
+      _notifs.push({id:'pol_'+c.id,icon:'⚠️',ttl:`Póliza por vencer en ${d} días`,sub:c.nom+' · '+c.numero_poliza,ts:hoyD.toISOString(),tipo:'cobros',nav:{tipo:'cliente',id:c.id}});
     }
   });
-  // Clientes nuevos hoy
-  const hoyStr=hoy.toISOString().slice(0,10);
+  // Clientes nuevos hoy → navega al cliente
+  const hoyStr=hoyD.toISOString().slice(0,10);
   ST.clientes.filter(c=>c.created_at?.slice(0,10)===hoyStr).forEach(c=>{
-    _notifs.push({id:'nvo_'+c.id,icon:'🆕',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan,ts:c.created_at,tipo:'info'});
+    _notifs.push({id:'nvo_'+c.id,icon:'🆕',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
   });
-  // Facturas pendientes
+  // Facturas pendientes → navega a facturas
   const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado').length;
-  if(pendCount>0)_notifs.push({id:'pend_fac',icon:'💰',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Revisa el módulo de facturas',ts:hoy.toISOString(),tipo:'info'});
-  
+  if(pendCount>0)_notifs.push({id:'pend_fac',icon:'💰',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Toca para ir a Facturas',ts:hoyD.toISOString(),tipo:'cobros',nav:{tipo:'facturas'}});
+  // Errores del sistema → navega a auditoría
+  if(window._errorLog&&window._errorLog.length>0){
+    _notifs.push({id:'err_log',icon:'🔴',ttl:`${window._errorLog.length} errores registrados`,sub:'Toca para ver detalles',ts:hoyD.toISOString(),tipo:'errores',nav:{tipo:'auditoria'}});
+  }
+
   const badge=document.getElementById('notifBadge');
+  const noLeidas=_notifs.filter(n=>!_notifLeidas.includes(n.id));
   if(badge){
-    if(_notifs.length>0){badge.style.display='flex';badge.textContent=_notifs.length;}
+    if(noLeidas.length>0){badge.style.display='flex';badge.textContent=noLeidas.length;}
     else badge.style.display='none';
   }
-  
+
   const list=document.getElementById('notifList');
   if(!list)return;
-  if(!_notifs.length){
-    list.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:11px">No hay notificaciones</div>';
+
+  // Filtros
+  let mostrar=_notifs;
+  if(_notifFiltro==='pendientes')mostrar=_notifs.filter(n=>!_notifLeidas.includes(n.id));
+  else if(_notifFiltro==='leidas')mostrar=_notifs.filter(n=>_notifLeidas.includes(n.id));
+  else if(_notifFiltro!=='todas')mostrar=_notifs.filter(n=>n.tipo===_notifFiltro);
+
+  const filtrosHTML=`<div style="display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap">
+    ${[['todas','Todas'],['pendientes','Pendientes'],['leidas','Leídas'],['cobros','Cobros'],['errores','Errores'],['sistema','Sistema']].map(([k,l])=>
+      `<button onclick="filtrarNotifs('${k}')" style="font-size:9px;padding:3px 8px;border-radius:10px;border:none;cursor:pointer;background:${_notifFiltro===k?'#2563eb':'#f1f5f9'};color:${_notifFiltro===k?'#fff':'#64748b'};font-weight:600">${l}</button>`
+    ).join('')}
+  </div>`;
+
+  if(!mostrar.length){
+    list.innerHTML=filtrosHTML+'<div style="padding:30px;text-align:center;color:#94a3b8;font-size:11px">No hay notificaciones</div>';
     return;
   }
-  list.innerHTML=_notifs.map(n=>`
-    <div class="notif-item unread">
+  list.innerHTML=filtrosHTML+mostrar.map(n=>{
+    const leida=_notifLeidas.includes(n.id);
+    return `<div class="notif-item ${leida?'':'unread'}" onclick='abrirNotif(${JSON.stringify(n).replace(/'/g,"&#39;")})' style="cursor:pointer">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <span style="font-size:18px">${n.icon}</span>
         <div style="flex:1">
           <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:2px">${n.ttl}</div>
           <div style="font-size:10px;color:#64748b">${n.sub}</div>
         </div>
+        ${!leida?'<span style="width:7px;height:7px;border-radius:50%;background:#2563eb;flex-shrink:0;margin-top:4px"></span>':''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+function filtrarNotifs(f){_notifFiltro=f;rNotifs();}
+
+function abrirNotif(n){
+  // Marcar como leída
+  if(n.id&&!_notifLeidas.includes(n.id)){
+    _notifLeidas.push(n.id);
+    localStorage.setItem('nx_notif_leidas',JSON.stringify(_notifLeidas));
+  }
+  // Cerrar panel de notificaciones
+  document.getElementById('notifPanel')?.classList.remove('show');
+  // Navegar según el tipo
+  const nav=n.nav||{};
+  if(nav.tipo==='cliente'){
+    const c=ST.clientes.find(x=>x.id===nav.id);
+    if(c){verCliente(nav.id);}
+    else{toast('warn','Registro no disponible','Este registro ya no está disponible');}
+  }else if(nav.tipo==='facturas'){
+    window.nav('facturas',null);
+  }else if(nav.tipo==='auditoria'){
+    window.nav('config',null);
+    setTimeout(()=>switchCfgTab(8),300);
+  }else{
+    rNotifs();
+  }
+  rNotifs();
 }
 
 function marcarTodasLeidas(){
-  document.querySelectorAll('.notif-item').forEach(i=>i.classList.remove('unread'));
+  _notifs.forEach(n=>{if(n.id&&!_notifLeidas.includes(n.id))_notifLeidas.push(n.id);});
+  localStorage.setItem('nx_notif_leidas',JSON.stringify(_notifLeidas));
+  rNotifs();
+  toast('ok','Notificaciones marcadas como leídas');
 }
 
 // Cerrar notif al clic afuera
@@ -3317,7 +3416,7 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,pagos:rPagos,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},150);},usuarios:rUsuarios};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
@@ -3791,7 +3890,8 @@ function aplicarFiltrosPagos(){
     tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">No hay pagos que coincidan con los filtros</td></tr>';
     return;
   }
-  const puedeEditar=tienePermiso('can_edit_or_delete_payments');
+  const puedeEdit=tienePermiso('payments_edit');
+  const puedeDel=tienePermiso('payments_delete');
   tb.innerHTML=list.map(p=>`<tr>
     <td style="font-size:10px">${(p.fecha||'').slice(0,10)}</td>
     <td style="font-weight:700;font-size:11px">${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-size:9px">(${p.referencia_cli})</span>`:''}</td>
@@ -3799,10 +3899,9 @@ function aplicarFiltrosPagos(){
     <td style="font-size:10px">${p.metodo||'—'}</td>
     <td style="font-size:10px">${p.referencia||'—'}</td>
     <td style="white-space:nowrap">
-      ${puedeEditar?`
-        <button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar"><i class="ti ti-edit"></i></button>
-        <button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar"><i class="ti ti-trash"></i></button>
-      `:'<span style="font-size:9px;color:#94a3b8">Sin permiso</span>'}
+      ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar"><i class="ti ti-edit"></i></button>`:''}
+      ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
+      ${(!puedeEdit&&!puedeDel)?'<span style="font-size:9px;color:#94a3b8">Solo lectura</span>':''}
     </td>
   </tr>`).join('');
 }
@@ -3859,7 +3958,8 @@ async function abrirHistorialCobros(clienteId){
     return;
   }
   const totalCobrado=abonos.reduce((s,a)=>s+(Number(a.monto)||0),0);
-  const puedeEditar=tienePermiso('can_edit_or_delete_payments');
+  const puedeEdit=tienePermiso('payments_edit');
+  const puedeDel=tienePermiso('payments_delete');
   if(info){
     info.innerHTML=`
       <div style="display:flex;justify-content:space-between">
@@ -3888,9 +3988,10 @@ async function abrirHistorialCobros(clienteId){
 }
 
 async function editarAbono(abonoId,clienteId){
-  // Verificar permiso
-  if(!tienePermiso('can_edit_or_delete_payments')){
-    toast('err','Sin permiso','No puedes editar pagos ni abonos');
+  // RBAC: verificar permiso de edición
+  if(!tienePermiso('payments_edit')){
+    toast('err','Acceso denegado','No tienes permisos para realizar esta acción.');
+    logAudit('ACCESO_DENEGADO','Intento de editar pago sin permiso','Cobros');
     return;
   }
   const c=ST.clientes.find(x=>x.id===clienteId);
@@ -3925,9 +4026,10 @@ async function editarAbono(abonoId,clienteId){
 }
 
 async function eliminarAbono(abonoId,clienteId){
-  // Verificar permiso
-  if(!tienePermiso('can_edit_or_delete_payments')){
-    toast('err','Sin permiso','No puedes eliminar pagos ni abonos');
+  // RBAC: verificar permiso de eliminación
+  if(!tienePermiso('payments_delete')){
+    toast('err','Acceso denegado','No tienes permisos para realizar esta acción.');
+    logAudit('ACCESO_DENEGADO','Intento de eliminar pago sin permiso','Cobros');
     return;
   }
   const c=ST.clientes.find(x=>x.id===clienteId);
@@ -3957,7 +4059,8 @@ async function verHistorialAbonos(clienteId){
   if(!c)return;
   let abonos=[];
   try{abonos=await API.get('abonos',`cliente_id=eq.${clienteId}&order=fecha.desc`);}catch(e){mostrarError(e.message,'Al cargar historial');return;}
-  const puedeEditar=tienePermiso('can_edit_or_delete_payments');
+  const puedeEdit=tienePermiso('payments_edit');
+  const puedeDel=tienePermiso('payments_delete');
   const filas=abonos.length?abonos.map(a=>`
     <tr>
       <td style="font-size:10px">${(a.fecha||'').slice(0,10)}</td>
@@ -5220,18 +5323,30 @@ function swalConfirm(icon,title,msg){
 function switchTab(tab){
   const pF=document.getElementById('panelFact');
   const pC=document.getElementById('panelCob');
+  const pP=document.getElementById('panelPagos');
   const tF=document.getElementById('tabFact');
   const tC=document.getElementById('tabCob');
+  const tP=document.getElementById('tabPagos');
+  const activo='linear-gradient(135deg,#1e3a6e,#3b82f6)';
+  // Ocultar todos
+  if(pF)pF.style.display='none';
+  if(pC)pC.style.display='none';
+  if(pP)pP.style.display='none';
+  // Resetear todos los tabs
+  [tF,tC,tP].forEach(t=>{if(t){t.style.background='none';t.style.color='#64748b';t.style.boxShadow='none';}});
+  // Activar el seleccionado
   if(tab==='fact'){
-    pF.style.display='';pC.style.display='none';
-    tF.style.background='linear-gradient(135deg,#1e3a6e,#3b82f6)';tF.style.color='#fff';tF.style.boxShadow='0 2px 8px rgba(59,130,246,.3)';
-    tC.style.background='none';tC.style.color='#64748b';tC.style.boxShadow='none';
+    if(pF)pF.style.display='';
+    if(tF){tF.style.background=activo;tF.style.color='#fff';tF.style.boxShadow='0 2px 8px rgba(59,130,246,.3)';}
     initMesSel();rFact();
-  }else{
-    pF.style.display='none';pC.style.display='';
-    tC.style.background='linear-gradient(135deg,#1e3a6e,#3b82f6)';tC.style.color='#fff';tC.style.boxShadow='0 2px 8px rgba(59,130,246,.3)';
-    tF.style.background='none';tF.style.color='#64748b';tF.style.boxShadow='none';
+  }else if(tab==='cob'){
+    if(pC)pC.style.display='';
+    if(tC){tC.style.background=activo;tC.style.color='#fff';tC.style.boxShadow='0 2px 8px rgba(59,130,246,.3)';}
     rCob();
+  }else if(tab==='pagos'){
+    if(pP)pP.style.display='';
+    if(tP){tP.style.background=activo;tP.style.color='#fff';tP.style.boxShadow='0 2px 8px rgba(59,130,246,.3)';}
+    rPagos();
   }
 }
 
