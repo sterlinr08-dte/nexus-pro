@@ -390,6 +390,57 @@ html{scroll-behavior:smooth}
 /* Selección de texto */
 ::selection{background:#bfdbfe;color:#1e3a5f}
 
+/* ════ MEJORAS UI/UX PREMIUM (Punto 10) ════ */
+/* Botones con efecto 3D suave */
+.bxl,.bc1,.bc5{position:relative;transition:all .18s cubic-bezier(.4,0,.2,1)}
+.bxl:active,.bc1:active,.bc5:active{transform:translateY(1px)}
+/* Cards premium con sombra mejorada */
+.nc{transition:box-shadow .2s ease}
+.nc:hover{box-shadow:0 4px 20px rgba(0,0,0,.06)}
+/* KPIs con mejor jerarquía */
+.kpi{transition:transform .15s ease,box-shadow .2s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+/* Filas de tabla con hover suave */
+tbody tr{transition:background .12s ease}
+/* Inputs con focus elegante */
+.fr input:focus,.fr select:focus,.fr textarea:focus{
+  border-color:#2563eb !important;
+  box-shadow:0 0 0 3px rgba(37,99,235,.1);
+  outline:none;
+}
+/* Badges más pulidos */
+.badge{font-weight:700;letter-spacing:.2px}
+/* Scrollbar elegante */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#f1f5f9}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+/* Sidebar item activo más elegante */
+.ni.on{position:relative}
+.ni.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#60a5fa;border-radius:0 3px 3px 0}
+
+/* ════ ICONOS DE ACCIÓN MÁS VISIBLES (Punto 5) ════ */
+.btn.bsm.bghost{
+  width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+  border:1.5px solid #e2e8f0;background:#fff;border-radius:8px;transition:all .15s;
+}
+.btn.bsm.bghost i{font-size:15px;color:#475569}
+.btn.bsm.bghost:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.12)}
+/* Color por tipo de acción */
+.btn.bsm.bghost[title*="Editar"]:hover,.btn.bsm.bghost[title*="editar"]:hover{border-color:#2563eb;background:#eff6ff}
+.btn.bsm.bghost[title*="Editar"]:hover i,.btn.bsm.bghost[title*="editar"]:hover i{color:#2563eb}
+.btn.bsm.bghost[title*="cobro"]:hover,.btn.bsm.bghost[title*="Cobro"]:hover{border-color:#059669;background:#f0fdf4}
+.btn.bsm.bghost[title*="cobro"]:hover i,.btn.bsm.bghost[title*="Cobro"]:hover i{color:#059669}
+.btn.bsm.bghost[title*="PDF"]:hover,.btn.bsm.bghost[title*="Certificado"]:hover{border-color:#dc2626;background:#fef2f2}
+.btn.bsm.bghost[title*="PDF"]:hover i,.btn.bsm.bghost[title*="Certificado"]:hover i{color:#dc2626}
+.btn.bsm.bghost[title*="cobros"]:hover{border-color:#7c3aed;background:#faf5ff}
+.btn.bsm.bghost[title*="cobros"]:hover i{color:#7c3aed}
+/* En móvil, íconos más grandes para tocar fácil */
+@media(max-width:768px){
+  .btn.bsm.bghost{width:38px;height:38px}
+  .btn.bsm.bghost i{font-size:17px}
+}
+
 /* ════ SUB-TABS CLIENTES ════ */
 .cli-subtab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--ff)}
 .cli-subtab:hover{color:#1e293b}
@@ -683,6 +734,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
         <div class="ss">Principal</div>
         <div class="ni on" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Dashboard</span></div>
         <div class="ni" onclick="nav('facturas',this)"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
+        <div class="ni" onclick="nav('pagos',this)"><i class="ti ti-cash-register ni-i"></i><span class="ni-l">Historial de pagos</span></div>
         <div class="ni" onclick="nav('clientes',this)"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
         <div class="ni" onclick="nav('polizas',this)"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
 
@@ -874,6 +926,42 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
             </table></div>
           </div>
           </div><!-- /panelCob -->
+        </div>
+
+        <!-- HISTORIAL DE PAGOS -->
+        <div class="view" id="v-pagos">
+          <div class="nc">
+            <div class="ch">
+              <div><div class="ct">Historial de pagos</div><div class="ct-s">Todos los cobros y abonos registrados</div></div>
+              <button class="btn bsm bc4" onclick="exportarPagosExcel()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
+              <input type="text" id="pgBuscar" placeholder="Buscar cliente..." onkeyup="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+              <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+              <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+              <select id="pgEmpresa" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todas las empresas</option></select>
+              <select id="pgAgente" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los agentes</option></select>
+              <button class="btn bsm bghost" onclick="limpiarFiltrosPagos()"><i class="ti ti-filter-off"></i> Limpiar</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+              <div style="background:#f0fdf4;border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:9px;color:#059669;font-weight:700;text-transform:uppercase">Total cobrado</div>
+                <div id="pgTotalMonto" style="font-size:16px;font-weight:700;color:#059669;margin-top:3px">RD$ 0</div>
+              </div>
+              <div style="background:#eff6ff;border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:9px;color:#2563eb;font-weight:700;text-transform:uppercase">Pagos</div>
+                <div id="pgTotalCant" style="font-size:16px;font-weight:700;color:#2563eb;margin-top:3px">0</div>
+              </div>
+              <div style="background:#fef3c7;border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:9px;color:#92400e;font-weight:700;text-transform:uppercase">Promedio</div>
+                <div id="pgPromedio" style="font-size:16px;font-weight:700;color:#92400e;margin-top:3px">RD$ 0</div>
+              </div>
+            </div>
+            <div class="tw"><table>
+              <thead><tr><th>FECHA</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead>
+              <tbody id="tbPagos"></tbody>
+            </table></div>
+          </div>
         </div>
 
         <!-- EMPRESAS -->
@@ -1174,11 +1262,19 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
             <div class="g2">
               <div class="nc">
                 <div class="ch"><div class="ct">🤖 Facturación automática</div></div>
-                <div class="fr"><label>Día del mes</label><input type="number" id="autoDia" value="1" min="1" max="28"/></div>
+                <div class="fr"><label>Día del mes (principal)</label><input type="number" id="autoDia" value="1" min="1" max="28"/></div>
+                <div class="fr"><label>Días personalizados <span style="color:#94a3b8;font-weight:400">(opcional, separados por coma: 1,15,28)</span></label><input type="text" id="autoDiasCustom" placeholder="Ej: 1,15"/></div>
                 <div class="fr"><label>Hora</label><input type="time" id="autoHora" value="08:00"/></div>
                 <div class="fr"><label>WA automático al generar</label><select id="autoWa"><option value="si">Sí</option><option value="no">No</option></select></div>
                 <div class="fr"><label>Alerta vencimiento (días antes)</label><input type="number" id="autoAlerta" value="30"/></div>
+                <div style="background:#eff6ff;border-radius:8px;padding:9px 11px;font-size:10px;color:#1e3a6e;margin-bottom:10px;line-height:1.5">
+                  💡 Solo genera facturas de <strong>clientes activos</strong> y evita duplicar el mismo período. La generación ocurre cuando el sistema está abierto en el día y hora configurados.
+                </div>
                 <button class="btn bxl" onclick="guardarAuto()"><i class="ti ti-device-floppy"></i> Guardar</button>
+              </div>
+              <div class="nc">
+                <div class="ch"><div class="ct">📜 Historial de auto-facturación</div><button class="btn bsm bghost" onclick="rHistorialAuto()" style="width:auto;padding:0 12px"><i class="ti ti-refresh"></i></button></div>
+                <div id="autoHistorial"></div>
               </div>
               <div class="nc">
                 <div class="ch"><div class="ct">📱 Plantilla WhatsApp</div></div>
@@ -1275,7 +1371,35 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
           <!-- TAB 10: Changelog -->
           <div id="cfgPanel10" class="cfg-panel" style="display:none">
             <div class="nc">
-              <div class="ch"><div class="ct">📜 Historial de actualizaciones</div><span class="badge bC2">v10.0 — Actual</span></div>
+              <div class="ch"><div class="ct">🔄 Actualizaciones del sistema</div><span class="badge bC2" id="verActualBadge">v10.0</span></div>
+              <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;border-radius:12px;padding:16px;margin-bottom:14px">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:180px">
+                    <div style="font-size:12px;font-weight:700;color:#1e3a6e">Versión instalada: <span id="verInstalada">v10.0</span></div>
+                    <div style="font-size:10px;color:#64748b;margin-top:2px" id="verEstado">Presiona "Buscar actualizaciones" para verificar</div>
+                  </div>
+                  <button class="btn bxl" onclick="buscarActualizaciones()" id="btnBuscarAct"><i class="ti ti-refresh"></i> Buscar actualizaciones</button>
+                </div>
+                <div id="resultadoActualizacion" style="margin-top:12px"></div>
+              </div>
+              <div style="background:#fffbeb;border-left:3px solid #f59e0b;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:10px;color:#92400e;line-height:1.6">
+                💡 <strong>Actualización desde GitHub:</strong> Revisa si hay una versión publicada y la aplica a todos los equipos.
+              </div>
+
+              <!-- Actualización manual pegando código -->
+              <div style="border:2px dashed #cbd5e1;border-radius:12px;padding:16px;margin-bottom:14px">
+                <div style="font-size:12px;font-weight:700;color:#1e293b;margin-bottom:4px">📋 Aplicar actualización manual</div>
+                <div style="font-size:10px;color:#64748b;margin-bottom:10px">Pega aquí el código HTML nuevo que te enviaron y aplícalo en este equipo. Útil para probar antes de subir a GitHub.</div>
+                <textarea id="codigoActualizacion" placeholder="Pega aquí el código HTML completo de la versión nueva..." style="width:100%;min-height:120px;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:monospace;font-size:10px;resize:vertical"></textarea>
+                <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+                  <button class="btn bxl" onclick="aplicarCodigoManual()"><i class="ti ti-player-play"></i> Aplicar este código</button>
+                  <button class="btn bghost" onclick="document.getElementById('codigoActualizacion').value=''"><i class="ti ti-eraser"></i> Limpiar</button>
+                </div>
+                <div style="background:#fef2f2;border-radius:6px;padding:8px 10px;margin-top:10px;font-size:9px;color:#991b1b;line-height:1.5">
+                  ⚠️ Esta actualización aplica <strong>solo en este equipo y navegador</strong>. Para que llegue a todos los dispositivos, sube el código a GitHub.
+                </div>
+              </div>
+              <div class="ch"><div class="ct">📜 Historial de versiones</div></div>
               <div id="changelogList"></div>
             </div>
           </div>
@@ -2285,9 +2409,120 @@ function guardarRolPerms(rol){
 }
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
+// ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
+const APP_VERSION='10.0';
+// URL del archivo de versión en tu GitHub (lee la última versión publicada)
+const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
+
+async function buscarActualizaciones(){
+  const btn=document.getElementById('btnBuscarAct');
+  const estado=document.getElementById('verEstado');
+  const resultado=document.getElementById('resultadoActualizacion');
+  if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div> Buscando...';}
+  if(estado)estado.textContent='Verificando versión más reciente...';
+  if(resultado)resultado.innerHTML='';
+  try{
+    // Agregar timestamp para evitar caché
+    const resp=await fetch(URL_VERSION+'?t='+Date.now());
+    if(!resp.ok)throw new Error('No se encontró el archivo de versión');
+    const data=await resp.json();
+    const versionNueva=data.version;
+    const esNueva=compararVersiones(versionNueva,APP_VERSION)>0;
+    if(esNueva){
+      if(estado)estado.innerHTML=`<span style="color:#059669;font-weight:700">✅ Hay una versión nueva: v${versionNueva}</span>`;
+      resultado.innerHTML=`
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px">
+          <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px">🎉 Versión v${versionNueva} disponible</div>
+          ${data.cambios&&data.cambios.length?`
+            <div style="font-size:10px;font-weight:700;color:#166534;margin-bottom:4px">NOVEDADES:</div>
+            <ul style="margin:0 0 10px 18px;padding:0;font-size:10px;color:#15803d;line-height:1.7">
+              ${data.cambios.map(c=>`<li>${c}</li>`).join('')}
+            </ul>`:''}
+          <button class="btn bxl" onclick="aplicarActualizacion('${data.url||''}')"><i class="ti ti-download"></i> Aplicar actualización ahora</button>
+        </div>`;
+      logAudit('ACTUALIZACION_DISPONIBLE',`Versión v${versionNueva} detectada`,'Sistema');
+    }else{
+      if(estado)estado.innerHTML='<span style="color:#059669;font-weight:700">✅ Tu sistema está actualizado</span>';
+      resultado.innerHTML='<div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;font-size:11px;color:#64748b">Tienes la versión más reciente instalada (v'+APP_VERSION+')</div>';
+    }
+  }catch(e){
+    if(estado)estado.innerHTML='<span style="color:#dc2626">No se pudo verificar</span>';
+    resultado.innerHTML=`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;font-size:10px;color:#991b1b;line-height:1.6">
+      ⚠️ No se pudo conectar al servidor de actualizaciones.<br>
+      Esto puede pasar si todavía no se ha publicado el archivo <code>version.json</code> en tu GitHub.<br>
+      Mientras tanto, puedes actualizar manualmente copiando el archivo nuevo.
+    </div>`;
+  }
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Buscar actualizaciones';}
+}
+
+function aplicarCodigoManual(){
+  const codigo=document.getElementById('codigoActualizacion')?.value?.trim()||'';
+  if(!codigo){
+    toast('err','Sin código','Pega el código HTML primero');
+    return;
+  }
+  // Validar que sea un HTML válido del sistema
+  if(codigo.length<20000){
+    toast('err','Código incompleto','El código pegado parece estar incompleto o no es válido');
+    return;
+  }
+  if(!codigo.includes('<html')||!codigo.includes('NEXUS')){
+    toast('err','Código no válido','Este no parece ser el código de NEXUS PRO');
+    return;
+  }
+  if(!confirm('Se aplicará el código pegado en ESTE equipo.\n\nLa página se recargará con la versión nueva.\n\n⚠️ Recuerda: esto solo afecta este navegador. Para todos los equipos, sube el código a GitHub.\n\n¿Continuar?'))return;
+  try{
+    logAudit('ACTUALIZACION_MANUAL','Código aplicado manualmente en este equipo','Sistema');
+  }catch(e){}
+  toast('info','Aplicando actualización...','La página se recargará');
+  setTimeout(()=>{
+    document.open();
+    document.write(codigo);
+    document.close();
+  },800);
+}
+
+function compararVersiones(a,b){
+  // Devuelve 1 si a>b, -1 si a<b, 0 si iguales
+  const pa=String(a).split('.').map(Number);
+  const pb=String(b).split('.').map(Number);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const na=pa[i]||0,nb=pb[i]||0;
+    if(na>nb)return 1;
+    if(na<nb)return -1;
+  }
+  return 0;
+}
+
+async function aplicarActualizacion(urlArchivo){
+  if(!urlArchivo){
+    toast('err','Sin archivo','La actualización no tiene archivo asociado');
+    return;
+  }
+  if(!confirm('Se descargará e instalará la versión nueva.\n\nLa página se recargará automáticamente.\n¿Continuar?'))return;
+  toast('info','Descargando actualización...','Espera un momento');
+  try{
+    const resp=await fetch(urlArchivo+'?t='+Date.now());
+    if(!resp.ok)throw new Error('No se pudo descargar');
+    const nuevoHTML=await resp.text();
+    if(nuevoHTML.length<10000)throw new Error('El archivo descargado no es válido');
+    // Guardar y recargar con el contenido nuevo
+    logAudit('ACTUALIZACION_APLICADA','Sistema actualizado a versión nueva','Sistema');
+    document.open();
+    document.write(nuevoHTML);
+    document.close();
+  }catch(e){
+    toast('err','Error al actualizar',e.message);
+  }
+}
+
 function rChangelogContent(){
   const el=document.getElementById('changelogList');
   if(!el)return;
+  // Actualizar badges de versión
+  const vi=document.getElementById('verInstalada');if(vi)vi.textContent='v'+APP_VERSION;
+  const vb=document.getElementById('verActualBadge');if(vb)vb.textContent='v'+APP_VERSION;
   const versiones=[
     {ver:'v10.0',fecha:'2026-05-15',color:'linear-gradient(135deg,#dc2626,#ef4444)',items:[
       'Tabs dinámicas con animación en Configuración',
@@ -3090,7 +3325,7 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},150);},usuarios:rUsuarios};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,pagos:rPagos,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
@@ -3497,6 +3732,125 @@ function abrirAbono(cid){
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
   openM('mAbono');
 }
+let _pagosCache=[];
+
+async function rPagos(){
+  const tb=document.getElementById('tbPagos');
+  if(!tb)return;
+  tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Cargando pagos...</td></tr>';
+  // Cargar todos los abonos
+  let abonos=[];
+  try{
+    abonos=await API.get('abonos','select=*&order=fecha.desc')||[];
+  }catch(e){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626">Error al cargar pagos</td></tr>';
+    return;
+  }
+  // Enriquecer con datos del cliente
+  _pagosCache=abonos.map(a=>{
+    const c=ST.clientes.find(x=>x.id===a.cliente_id);
+    return{
+      ...a,
+      cliente_nom:c?.nom||'(cliente eliminado)',
+      empresa_id:c?.empresa_id||null,
+      agente_id:c?.agente_id||null,
+      referencia_cli:c?.referencia||''
+    };
+  });
+  // Llenar selects de filtro
+  const selEmp=document.getElementById('pgEmpresa');
+  const selAgt=document.getElementById('pgAgente');
+  if(selEmp&&selEmp.options.length<=1){
+    ST.empresas.forEach(e=>{selEmp.innerHTML+=`<option value="${e.id}">${e.nom}</option>`;});
+  }
+  if(selAgt&&selAgt.options.length<=1){
+    ST.agentes.forEach(a=>{selAgt.innerHTML+=`<option value="${a.id}">${a.nom}</option>`;});
+  }
+  aplicarFiltrosPagos();
+}
+
+function aplicarFiltrosPagos(){
+  const tb=document.getElementById('tbPagos');
+  if(!tb)return;
+  const q=(document.getElementById('pgBuscar')?.value||'').toLowerCase();
+  const fd=document.getElementById('pgFechaD')?.value||'';
+  const fh=document.getElementById('pgFechaH')?.value||'';
+  const emp=document.getElementById('pgEmpresa')?.value||'';
+  const agt=document.getElementById('pgAgente')?.value||'';
+
+  let list=_pagosCache.filter(p=>{
+    if(q&&!(p.cliente_nom||'').toLowerCase().includes(q)&&!(p.referencia_cli||'').toLowerCase().includes(q))return false;
+    const fecha=(p.fecha||'').slice(0,10);
+    if(fd&&fecha<fd)return false;
+    if(fh&&fecha>fh)return false;
+    if(emp&&p.empresa_id!==emp)return false;
+    if(agt&&p.agente_id!==agt)return false;
+    return true;
+  });
+
+  // Resumen
+  const total=list.reduce((s,p)=>s+(Number(p.monto)||0),0);
+  const prom=list.length?total/list.length:0;
+  const elM=document.getElementById('pgTotalMonto');if(elM)elM.textContent=fmt(total);
+  const elC=document.getElementById('pgTotalCant');if(elC)elC.textContent=list.length;
+  const elP=document.getElementById('pgPromedio');if(elP)elP.textContent=fmt(prom);
+
+  if(!list.length){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">No hay pagos que coincidan con los filtros</td></tr>';
+    return;
+  }
+  const puedeEditar=tienePermiso('can_edit_or_delete_payments');
+  tb.innerHTML=list.map(p=>`<tr>
+    <td style="font-size:10px">${(p.fecha||'').slice(0,10)}</td>
+    <td style="font-weight:700;font-size:11px">${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-size:9px">(${p.referencia_cli})</span>`:''}</td>
+    <td style="font-weight:700;color:#059669">${fmt(p.monto)}</td>
+    <td style="font-size:10px">${p.metodo||'—'}</td>
+    <td style="font-size:10px">${p.referencia||'—'}</td>
+    <td style="white-space:nowrap">
+      ${puedeEditar?`
+        <button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar"><i class="ti ti-edit"></i></button>
+        <button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+      `:'<span style="font-size:9px;color:#94a3b8">Sin permiso</span>'}
+    </td>
+  </tr>`).join('');
+}
+
+function limpiarFiltrosPagos(){
+  ['pgBuscar','pgFechaD','pgFechaH','pgEmpresa','pgAgente'].forEach(id=>{
+    const e=document.getElementById(id);if(e)e.value='';
+  });
+  aplicarFiltrosPagos();
+}
+
+function exportarPagosExcel(){
+  const q=(document.getElementById('pgBuscar')?.value||'').toLowerCase();
+  const fd=document.getElementById('pgFechaD')?.value||'';
+  const fh=document.getElementById('pgFechaH')?.value||'';
+  const emp=document.getElementById('pgEmpresa')?.value||'';
+  const agt=document.getElementById('pgAgente')?.value||'';
+  let list=_pagosCache.filter(p=>{
+    if(q&&!(p.cliente_nom||'').toLowerCase().includes(q))return false;
+    const fecha=(p.fecha||'').slice(0,10);
+    if(fd&&fecha<fd)return false;
+    if(fh&&fecha>fh)return false;
+    if(emp&&p.empresa_id!==emp)return false;
+    if(agt&&p.agente_id!==agt)return false;
+    return true;
+  });
+  if(!list.length){toast('warn','No hay pagos para exportar');return;}
+  let csv='Fecha,Cliente,Monto,Metodo,Referencia\n';
+  list.forEach(p=>{
+    csv+=`"${(p.fecha||'').slice(0,10)}","${p.cliente_nom}","${p.monto}","${p.metodo||''}","${p.referencia||''}"\n`;
+  });
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='historial_pagos_'+hoy()+'.csv';
+  a.click();
+  toast('ok','Excel exportado',list.length+' pagos');
+  logAudit('EXPORTAR_PAGOS',`${list.length} pagos exportados`,'Cobros');
+}
+
 async function abrirHistorialCobros(clienteId){
   const c=ST.clientes.find(x=>x.id===clienteId);
   if(!c){toast('err','Cliente no encontrado');return;}
@@ -4124,34 +4478,108 @@ async function guardarTarifas(){
 }
 
 // ── AUTOMATIZACIÓN ────────────────────────────────────────────────────────────
-function guardarAutoConfig(){autoCfg.dia=parseInt(document.getElementById('autoDia').value)||1;autoCfg.hora=document.getElementById('autoHora').value;autoCfg.wa=parseInt(document.getElementById('autoWA').value);localStorage.setItem('nx_auto',JSON.stringify(autoCfg));toast('ok','Config guardada',`Auto-fact: día ${autoCfg.dia} · ${autoCfg.hora}`);rAuto();}
+function guardarAutoConfig(){
+  autoCfg.dia=parseInt(document.getElementById('autoDia').value)||1;
+  autoCfg.hora=document.getElementById('autoHora').value;
+  const waEl=document.getElementById('autoWA')||document.getElementById('autoWa');
+  if(waEl)autoCfg.wa=waEl.value;
+  const dcEl=document.getElementById('autoDiasCustom');
+  autoCfg.diasCustom=dcEl?dcEl.value.trim():'';
+  localStorage.setItem('nx_auto',JSON.stringify(autoCfg));
+  const diasTxt=autoCfg.diasCustom?`días ${autoCfg.diasCustom}`:`día ${autoCfg.dia}`;
+  toast('ok','Configuración guardada',`Auto-facturación: ${diasTxt} · ${autoCfg.hora}`);
+  logAudit('CONFIG_AUTOMATIZACION',`Auto-facturación: ${diasTxt} a las ${autoCfg.hora}`,'Configuración');
+  rAuto();
+}
+function guardarAuto(){guardarAutoConfig();}
 function guardarPlantilla(){autoCfg.tpl=document.getElementById('waTpl').value;localStorage.setItem('nx_auto',JSON.stringify(autoCfg));toast('ok','Plantilla WA guardada');}
 function updWA(){const tpl=document.getElementById('waTpl').value;document.getElementById('waP').textContent=tpl.replace('{{nombre}}','María García').replace('{{plan}}','Superior').replace('{{mes}}','Junio 2026').replace('{{prima}}','5,800').replace('{{deuda}}','*Deuda anterior:* RD$ 5,800').replace('{{total}}','11,600').replace('{{poliza}}','POL-2026-000001').replace('{{vence}}','2026-12-31').replace('{{empresa}}',CFG.empNom);}
-function rAuto(){document.getElementById('autoDia').value=autoCfg.dia;document.getElementById('autoHora').value=autoCfg.hora;document.getElementById('autoWA').value=autoCfg.wa;document.getElementById('waTpl').value=autoCfg.tpl;updWA();const now=new Date(),dia=autoCfg.dia;const prox=[];for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()+i+(now.getDate()>=dia?1:0),dia);if(d>now)prox.push(`${MESES[d.getMonth()]} ${d.getFullYear()}`);}document.getElementById('proxE').innerHTML=prox.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--bg3);border-radius:var(--r6);border:1px solid rgba(0,229,199,.06);margin-bottom:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:${i===0?'var(--c1)':'var(--tx3)'};${i===0?'box-shadow:0 0 6px var(--c1)':''}"></div><span style="font-size:11px;font-family:var(--mono)">${p}</span></div><span style="font-size:9px;color:var(--tx3)">Día ${autoCfg.dia} · ${autoCfg.hora}</span></div>`).join('');}
+function rAuto(){
+  document.getElementById('autoDia').value=autoCfg.dia;
+  document.getElementById('autoHora').value=autoCfg.hora;
+  const waEl=document.getElementById('autoWA')||document.getElementById('autoWa');
+  if(waEl)waEl.value=autoCfg.wa;
+  const dcEl=document.getElementById('autoDiasCustom');
+  if(dcEl)dcEl.value=autoCfg.diasCustom||'';
+  const tplEl=document.getElementById('waTpl');
+  if(tplEl)tplEl.value=autoCfg.tpl||'';
+  if(typeof updWA==='function')updWA();
+  setTimeout(rHistorialAuto,100);const now=new Date(),dia=autoCfg.dia;const prox=[];for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()+i+(now.getDate()>=dia?1:0),dia);if(d>now)prox.push(`${MESES[d.getMonth()]} ${d.getFullYear()}`);}document.getElementById('proxE').innerHTML=prox.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--bg3);border-radius:var(--r6);border:1px solid rgba(0,229,199,.06);margin-bottom:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:${i===0?'var(--c1)':'var(--tx3)'};${i===0?'box-shadow:0 0 6px var(--c1)':''}"></div><span style="font-size:11px;font-family:var(--mono)">${p}</span></div><span style="font-size:9px;color:var(--tx3)">Día ${autoCfg.dia} · ${autoCfg.hora}</span></div>`).join('');}
 
 // ── USUARIOS ─────────────────────────────────────────────────────────────────
+let _auditPag=1;
+const _auditPorPag=25;
+
 function rAuditoria(){
   const el=document.getElementById('auditC');
   if(!el)return;
   if(!AUDIT.length){el.innerHTML='<div class="empty">Sin registros. Las acciones del sistema aparecen aquí automáticamente.</div>';return;}
-  el.innerHTML=`<div class="tw"><table>
-    <thead><tr>
-      <th style="width:16%">FECHA/HORA</th>
-      <th style="width:16%">USUARIO</th>
-      <th style="width:10%">ROL</th>
-      <th style="width:13%">MÓDULO</th>
-      <th style="width:18%">ACCIÓN</th>
-      <th>DESCRIPCIÓN</th>
-    </tr></thead>
-    <tbody>${AUDIT.map(a=>`<tr>
-      <td style="font-size:10px;color:#64748b">${(a.ts||'').replace('T',' ').slice(0,19)}</td>
-      <td style="font-weight:600">${a.usuario||'—'}</td>
-      <td><span class="badge ${a.rol==='admin'?'bC3':a.rol==='supervisor'?'bC2':'bC1'}">${(a.rol||'—').toUpperCase()}</span></td>
-      <td><span class="badge bCg">${a.modulo||detectarModulo(a.accion)}</span></td>
-      <td style="font-size:10px;font-weight:600;color:#1d4ed8">${a.accion||'—'}</td>
-      <td style="font-size:10px;color:#475569">${a.detalle||'—'}</td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
+
+  // Filtros
+  const fMod=document.getElementById('auditFiltroMod')?.value||'';
+  const fUsr=(document.getElementById('auditFiltroUsr')?.value||'').toLowerCase();
+  const fFecha=document.getElementById('auditFiltroFecha')?.value||'';
+
+  let lista=AUDIT.filter(a=>{
+    if(fMod&&(a.modulo||detectarModulo(a.accion))!==fMod)return false;
+    if(fUsr&&!(a.usuario||'').toLowerCase().includes(fUsr))return false;
+    if(fFecha&&!(a.ts||'').startsWith(fFecha))return false;
+    return true;
+  });
+
+  // Módulos únicos para el filtro
+  const modulos=[...new Set(AUDIT.map(a=>a.modulo||detectarModulo(a.accion)))].sort();
+
+  // Paginación
+  const totalPag=Math.ceil(lista.length/_auditPorPag)||1;
+  if(_auditPag>totalPag)_auditPag=totalPag;
+  const ini=(_auditPag-1)*_auditPorPag;
+  const pagina=lista.slice(ini,ini+_auditPorPag);
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px">
+      <select id="auditFiltroMod" onchange="_auditPag=1;rAuditoria()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px">
+        <option value="">Todos los módulos</option>
+        ${modulos.map(m=>`<option value="${m}" ${m===fMod?'selected':''}>${m}</option>`).join('')}
+      </select>
+      <input type="text" id="auditFiltroUsr" value="${fUsr}" placeholder="Buscar usuario..." onkeyup="_auditPag=1;rAuditoria()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+      <input type="date" id="auditFiltroFecha" value="${fFecha}" onchange="_auditPag=1;rAuditoria()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+      <button class="btn bsm bghost" onclick="limpiarFiltrosAudit()" style="width:auto;padding:0 12px"><i class="ti ti-filter-off"></i> Limpiar</button>
+    </div>
+    <div style="font-size:10px;color:#64748b;margin-bottom:8px">${lista.length} registro(s) — Página ${_auditPag} de ${totalPag}</div>
+    <div class="tw"><table>
+      <thead><tr>
+        <th style="width:15%">FECHA/HORA</th>
+        <th style="width:14%">USUARIO</th>
+        <th style="width:9%">ROL</th>
+        <th style="width:12%">MÓDULO</th>
+        <th style="width:9%">ORIGEN</th>
+        <th style="width:16%">ACCIÓN</th>
+        <th>DESCRIPCIÓN</th>
+      </tr></thead>
+      <tbody>${pagina.map(a=>`<tr>
+        <td style="font-size:10px;color:#64748b">${(a.ts||'').replace('T',' ').slice(0,19)}</td>
+        <td style="font-weight:600;font-size:10px">${a.usuario||'—'}</td>
+        <td><span class="badge ${a.rol==='admin'?'bC3':a.rol==='supervisor'?'bC2':'bC1'}">${(a.rol||'—').toUpperCase()}</span></td>
+        <td><span class="badge bCg">${a.modulo||detectarModulo(a.accion)}</span></td>
+        <td style="font-size:9px;color:#64748b">${a.origen||'web'}</td>
+        <td style="font-size:10px;font-weight:600;color:#1d4ed8">${a.accion||'—'}</td>
+        <td style="font-size:10px;color:#475569">${a.detalle||'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    ${totalPag>1?`<div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
+      <button class="btn bsm bghost" onclick="_auditPag=Math.max(1,_auditPag-1);rAuditoria()" ${_auditPag<=1?'disabled':''} style="width:auto;padding:0 12px"><i class="ti ti-chevron-left"></i> Anterior</button>
+      <span style="font-size:11px;padding:8px 12px;font-weight:600">${_auditPag} / ${totalPag}</span>
+      <button class="btn bsm bghost" onclick="_auditPag=Math.min(${totalPag},_auditPag+1);rAuditoria()" ${_auditPag>=totalPag?'disabled':''} style="width:auto;padding:0 12px">Siguiente <i class="ti ti-chevron-right"></i></button>
+    </div>`:''}`;
+}
+
+function limpiarFiltrosAudit(){
+  ['auditFiltroMod','auditFiltroUsr','auditFiltroFecha'].forEach(id=>{
+    const e=document.getElementById(id);if(e)e.value='';
+  });
+  _auditPag=1;
+  rAuditoria();
 }
 function exportarAuditCSV(){
   const rows=[['Timestamp','Usuario','Rol','Acción','Detalle'],...AUDIT.map(a=>[a.ts,a.usuario,a.rol,a.accion,a.detalle])];
@@ -4954,28 +5382,72 @@ _${CFG.empNom}_`;
 
 // ── Auto-facturación mejorada ───────────────────────────────────────────────
 let _autoFactLock=false;
-async function verificarAutoFacturacion(){
+async async function verificarAutoFacturacion(){
   if(_autoFactLock)return;
   const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
   const now=new Date();
-  const diaOk=now.getDate()===autoCfg.dia;
-  const horaOk=now.getHours()===parseInt(autoCfg.hora.split(':')[0]);
-  const minOk=now.getMinutes()===parseInt(autoCfg.hora.split(':')[1]);
+  // Días configurados — soporta uno o varios (ej: "1,15,28")
+  let dias=[autoCfg.dia||1];
+  if(autoCfg.diasCustom){
+    dias=String(autoCfg.diasCustom).split(',').map(d=>parseInt(d.trim())).filter(d=>d>=1&&d<=28);
+  }
+  const diaOk=dias.includes(now.getDate());
+  const horaOk=now.getHours()===parseInt((autoCfg.hora||'08:00').split(':')[0]);
+  const minOk=now.getMinutes()===parseInt((autoCfg.hora||'08:00').split(':')[1]);
   if(diaOk&&horaOk&&minOk){
     const mes=now.getMonth()+1,anio=now.getFullYear();
     const key2=`${anio}-${String(mes).padStart(2,'0')}`;
     const yaGeneradas=ST.facturas.filter(f=>f.periodo===key2).length>0;
-    if(!yaGeneradas&&ST.clientes.filter(c=>c.activo).length>0){
+    const activos=ST.clientes.filter(c=>c.activo).length;
+    if(!yaGeneradas&&activos>0){
       _autoFactLock=true;
-      toast('info','⚡ Auto-facturación ejecutada automáticamente',`${MESES[mes-1]} ${anio}`);
-      logAudit('AUTO_FACTURACION',`Facturas auto-generadas ${MESES[mes-1]} ${anio}`);
-      // Navegar a facturas y generar
+      toast('info','⚡ Auto-facturación ejecutada',`${MESES[mes-1]} ${anio}`);
+      logAudit('AUTO_FACTURACION',`Auto-generación ${MESES[mes-1]} ${anio} · ${activos} clientes activos`,'Facturas');
       const mesEl=document.getElementById('fMes');const anioEl=document.getElementById('fAnio');
       if(mesEl)mesEl.value=mes;if(anioEl)anioEl.value=anio;
-      await genFacturas();
+      try{
+        await genFacturas();
+        guardarHistorialAuto(mes,anio,activos,0,'Ejecutada correctamente');
+      }catch(e){
+        guardarHistorialAuto(mes,anio,0,1,'Error: '+e.message);
+      }
       setTimeout(()=>{_autoFactLock=false;},120000);
     }
   }
+}
+
+function guardarHistorialAuto(mes,anio,generadas,errores,nota){
+  let hist=[];
+  try{hist=JSON.parse(localStorage.getItem('nx_auto_historial')||'[]');}catch{}
+  hist.unshift({
+    ts:new Date().toISOString(),
+    periodo:`${MESES[mes-1]} ${anio}`,
+    generadas, errores, nota,
+    origen:'automático'
+  });
+  if(hist.length>50)hist.pop();
+  localStorage.setItem('nx_auto_historial',JSON.stringify(hist));
+}
+
+function rHistorialAuto(){
+  const el=document.getElementById('autoHistorial');
+  if(!el)return;
+  let hist=[];
+  try{hist=JSON.parse(localStorage.getItem('nx_auto_historial')||'[]');}catch{}
+  if(!hist.length){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:11px">Sin ejecuciones registradas todavía</div>';
+    return;
+  }
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>FECHA/HORA</th><th>PERÍODO</th><th>GENERADAS</th><th>ERRORES</th><th>RESULTADO</th></tr></thead>
+    <tbody>${hist.map(h=>`<tr>
+      <td style="font-size:10px">${(h.ts||'').replace('T',' ').slice(0,19)}</td>
+      <td style="font-size:10px;font-weight:600">${h.periodo}</td>
+      <td style="font-weight:700;color:#059669">${h.generadas}</td>
+      <td style="font-weight:700;color:${h.errores>0?'#dc2626':'#94a3b8'}">${h.errores}</td>
+      <td style="font-size:10px">${h.nota}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
 }
 // Verificar cada minuto
 setInterval(verificarAutoFacturacion, 60000);
