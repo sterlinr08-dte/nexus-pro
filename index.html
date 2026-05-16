@@ -616,6 +616,20 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 </div>
 
 <!-- Client Summary Side Panel -->
+<!-- Modal Historial de Cobros -->
+<div class="overlay" id="mHistCobros">
+  <div class="modal" style="max-width:560px">
+    <div class="mt">
+      <span id="mHistCobrosT">💰 Cobros del cliente</span>
+      <button class="btn bghost bsm" onclick="closeM('mHistCobros')"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="padding:4px 2px">
+      <div id="histCobrosInfo" style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px"></div>
+      <div id="histCobrosList"></div>
+    </div>
+  </div>
+</div>
+
 <div class="cs-overlay" id="csOverlay" onclick="cerrarClientSummary()"></div>
 <div class="cs-panel" id="csPanel">
   <div class="cs-h">
@@ -3229,7 +3243,8 @@ function rCli(){
       <td>${estB(c)}</td>
       <td style="white-space:nowrap;display:flex;gap:2px">
         <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar"><i class="ti ti-edit"></i></button>
-        <button class="btn bsm bghost" onclick="abrirAbono('${c.id}')" title="Cobro"><i class="ti ti-wallet"></i></button>
+        <button class="btn bsm bghost" onclick="abrirAbono('${c.id}')" title="Registrar cobro"><i class="ti ti-wallet"></i></button>
+        <button class="btn bsm bghost" onclick="abrirHistorialCobros('${c.id}')" title="Ver/editar cobros guardados"><i class="ti ti-receipt"></i></button>
         <button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')" title="Certificado PDF"><i class="ti ti-file-certificate"></i></button>
         <button class="btn bsm bc2" onclick="abrirDocs('${c.id}')" title="Documentos"><i class="ti ti-folder-open"></i></button>
         ${inhabBtn}
@@ -3482,6 +3497,50 @@ function abrirAbono(cid){
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
   openM('mAbono');
 }
+async function abrirHistorialCobros(clienteId){
+  const c=ST.clientes.find(x=>x.id===clienteId);
+  if(!c){toast('err','Cliente no encontrado');return;}
+  openM('mHistCobros');
+  document.getElementById('mHistCobrosT').textContent='💰 Cobros — '+c.nom;
+  const info=document.getElementById('histCobrosInfo');
+  const lista=document.getElementById('histCobrosList');
+  if(info)info.innerHTML='<div style="text-align:center;color:#94a3b8">Cargando...</div>';
+  let abonos=[];
+  try{
+    abonos=await API.get('abonos',`cliente_id=eq.${clienteId}&order=fecha.desc`);
+  }catch(e){
+    if(info)info.innerHTML='<div style="color:#dc2626">Error al cargar cobros</div>';
+    return;
+  }
+  const totalCobrado=abonos.reduce((s,a)=>s+(Number(a.monto)||0),0);
+  const puedeEditar=tienePermiso('can_edit_or_delete_payments');
+  if(info){
+    info.innerHTML=`
+      <div style="display:flex;justify-content:space-between">
+        <span>Total de cobros: <strong>${abonos.length}</strong></span>
+        <span>Total cobrado: <strong style="color:#059669">${fmt(totalCobrado)}</strong></span>
+      </div>
+      ${!puedeEditar?'<div style="color:#92400e;font-size:10px;margin-top:6px">⚠️ Necesitas el permiso "Editar/eliminar pagos" para modificar</div>':''}`;
+  }
+  if(!abonos.length){
+    lista.innerHTML='<div style="text-align:center;padding:30px;color:#94a3b8;font-size:11px">Este cliente no tiene cobros registrados</div>';
+    return;
+  }
+  lista.innerHTML=`<div class="tw"><table>
+    <thead><tr><th>FECHA</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th>${puedeEditar?'<th>ACCIONES</th>':''}</tr></thead>
+    <tbody>${abonos.map(a=>`<tr>
+      <td style="font-size:10px">${(a.fecha||'').slice(0,10)}</td>
+      <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
+      <td style="font-size:10px">${a.metodo||'—'}</td>
+      <td style="font-size:10px">${a.referencia||'—'}</td>
+      ${puedeEditar?`<td style="white-space:nowrap">
+        <button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')" title="Editar"><i class="ti ti-edit"></i></button>
+        <button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+      </td>`:''}
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
 async function editarAbono(abonoId,clienteId){
   // Verificar permiso
   if(!tienePermiso('can_edit_or_delete_payments')){
@@ -3513,6 +3572,7 @@ async function editarAbono(abonoId,clienteId){
     toast('ok','Abono editado',`${fmt(valorAnterior)} → ${fmt(montoNum)}`);
     rCob();rDash();
     if(document.getElementById('csPanel')?.classList.contains('open'))verCliente(clienteId);
+    if(document.getElementById('mHistCobros')?.classList.contains('on'))abrirHistorialCobros(clienteId);
   }catch(e){
     mostrarError(e.message,'Al editar abono');
   }
@@ -3540,6 +3600,7 @@ async function eliminarAbono(abonoId,clienteId){
     toast('ok','Abono eliminado',c.nom);
     rCob();rDash();
     if(document.getElementById('csPanel')?.classList.contains('open'))verCliente(clienteId);
+    if(document.getElementById('mHistCobros')?.classList.contains('on'))abrirHistorialCobros(clienteId);
   }catch(e){
     mostrarError(e.message,'Al eliminar abono');
   }
