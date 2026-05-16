@@ -687,10 +687,22 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
           <div class="ni" onclick="nav('dgii',this)" style="padding:6px 10px"><i class="ti ti-receipt-tax ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">DGII / ARS</span></div>
         </div>
 
-        <div id="niAdmin2" class="ni" onclick="nav('config',this)">
+        <!-- Configuración desplegable -->
+        <div id="niAdmin2" class="ni" onclick="toggleConfig(this)">
           <i class="ti ti-settings ni-i"></i>
           <span class="ni-l">Configuración</span>
-          <span style="background:#7c3aed;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:auto">ADMIN</span>
+          <span style="background:#7c3aed;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:6px">ADMIN</span>
+          <i class="ti ti-chevron-down" id="icnConfig" style="font-size:10px;margin-left:4px;transition:transform .2s;color:rgba(255,255,255,.4)"></i>
+        </div>
+        <div id="sbConfig" style="overflow:hidden;max-height:0;transition:max-height .3s ease;padding-left:8px">
+          <div class="ni" onclick="navConfig(1,this)" style="padding:6px 10px"><i class="ti ti-building ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Empresa y tarifas</span></div>
+          <div class="ni" onclick="navConfig(9,this)" style="padding:6px 10px"><i class="ti ti-database ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Base de datos</span></div>
+          <div class="ni" onclick="navConfig(6,this)" style="padding:6px 10px"><i class="ti ti-users ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Usuarios</span></div>
+          <div class="ni" onclick="navConfig(7,this)" style="padding:6px 10px"><i class="ti ti-shield-lock ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Seguridad / Roles</span></div>
+          <div class="ni" onclick="navConfig(8,this)" style="padding:6px 10px"><i class="ti ti-clipboard-list ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Auditoría</span></div>
+          <div class="ni" onclick="navConfig(3,this)" style="padding:6px 10px"><i class="ti ti-robot ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Automatización</span></div>
+          <div class="ni" onclick="navConfig(2,this)" style="padding:6px 10px"><i class="ti ti-mail ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Notificaciones</span></div>
+          <div class="ni" onclick="navConfig(11,this)" style="padding:6px 10px"><i class="ti ti-target ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Metas</span></div>
         </div>
 
       <div class="sb-ft">
@@ -1710,11 +1722,80 @@ function debounce(fn,delay=300){let t;return(...a)=>{clearTimeout(t);t=setTimeou
 
 // ── Auditoría ────────────────────────────────────────────────────────────────
 const AUDIT=[];
-function logAudit(accion,detalle=''){
-  const entry={ts:new Date().toISOString(),usuario:sesion?.nom||'?',rol:sesion?.rol||'?',accion,detalle};
-  AUDIT.unshift(entry);if(AUDIT.length>200)AUDIT.pop();
-  // Intentar guardar en Supabase (no bloquea si falla)
-  if(API.url)API.post('auditoria',entry).catch(()=>{});
+function mostrarError(mensaje, contexto=''){
+  // Función segura para mostrar errores sin crashear el sistema
+  console.error('NEXUS Error:', contexto, mensaje);
+  try{
+    logError('error', contexto||'Error del sistema', mensaje, 'Sistema');
+  }catch(e){
+    console.error('logError falló:', e);
+  }
+  // Mostrar toast al usuario
+  try{
+    toast('err', 'Ocurrió un error', contexto||mensaje);
+  }catch(e){}
+}
+
+function logError(tipo, titulo, detalle, modulo){
+  // Registro técnico de errores (no bloquea)
+  try{
+    const entry={ts:new Date().toISOString(),tipo,titulo,detalle,modulo:modulo||'Sistema'};
+    if(!window._errorLog)window._errorLog=[];
+    window._errorLog.unshift(entry);
+    if(window._errorLog.length>100)window._errorLog.pop();
+  }catch(e){}
+}
+
+function logAudit(accion,detalle='',modulo=''){
+  const entry={
+    ts:new Date().toISOString(),
+    usuario:sesion?.nom||'Sistema',
+    rol:sesion?.rol||'—',
+    accion,
+    detalle,
+    modulo:modulo||detectarModulo(accion)
+  };
+  AUDIT.unshift(entry);
+  if(AUDIT.length>300)AUDIT.pop();
+  // Guardar en Supabase
+  if(API.url){
+    API.post('auditoria',entry).catch(e=>{
+      console.log('Auditoría guardada localmente:',e.message);
+    });
+  }
+  // Refrescar vista si está abierta
+  if(document.getElementById('cfgPanel8')?.style.display==='block'){
+    setTimeout(()=>{rAuditoria();const s=document.getElementById('auditC');const t=document.getElementById('auditCfg');if(s&&t)t.innerHTML=s.innerHTML;},100);
+  }
+}
+
+function detectarModulo(accion){
+  const a=(accion||'').toUpperCase();
+  if(a.includes('CLIENTE'))return'Clientes';
+  if(a.includes('FACTURA'))return'Facturas';
+  if(a.includes('COBRO')||a.includes('ABONO')||a.includes('PAGO'))return'Cobros';
+  if(a.includes('EMPRESA'))return'Empresas';
+  if(a.includes('ARS'))return'ARS';
+  if(a.includes('AGENTE'))return'Agentes';
+  if(a.includes('USUARIO')||a.includes('LOGIN')||a.includes('CONTRASEÑA'))return'Usuarios';
+  if(a.includes('CONFIG')||a.includes('TARIFA')||a.includes('ROL')||a.includes('META'))return'Configuración';
+  if(a.includes('POLIZA')||a.includes('PÓLIZA'))return'Pólizas';
+  if(a.includes('BACKUP'))return'Backup';
+  if(a.includes('EMAIL'))return'Notificaciones';
+  return'Sistema';
+}
+
+async function cargarAuditoriaSupabase(){
+  if(!API.url)return;
+  try{
+    const registros=await API.get('auditoria','select=*&order=ts.desc&limit=300');
+    if(registros&&registros.length){
+      AUDIT.length=0;
+      registros.forEach(r=>AUDIT.push(r));
+    }
+  }catch(e){
+    console.log('No se pudo cargar auditoría:',e.message);
+  }
 }
 
 // ── Timeout de sesión (30 min inactividad) ───────────────────────────────────
@@ -1968,6 +2049,26 @@ function switchCfgTab(n){
 }
 
 // ── Toggle Contabilidad sidebar ────────────────────────────────────
+let _configAbierto=false;
+function toggleConfig(){
+  _configAbierto=!_configAbierto;
+  const sb=document.getElementById('sbConfig');
+  const icn=document.getElementById('icnConfig');
+  if(sb)sb.style.maxHeight=_configAbierto?'400px':'0';
+  if(icn)icn.style.transform=_configAbierto?'rotate(180deg)':'';
+}
+
+function navConfig(tabNum,el){
+  // Ir a la vista de config y abrir el tab específico
+  nav('config',null);
+  setTimeout(()=>switchCfgTab(tabNum),200);
+  // Marcar activo en sidebar
+  document.querySelectorAll('#sbConfig .ni').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  // En móvil cerrar el drawer
+  if(window.innerWidth<=900)closeMobSB();
+}
+
 let _contabAbierto=false;
 function toggleContab(){
   _contabAbierto=!_contabAbierto;
@@ -2359,7 +2460,7 @@ function toggleFav(id){
   else{favs.push(id);toast('ok','⭐ Agregado a VIP');}
   localStorage.setItem('nx_favs',JSON.stringify(favs));
   verCliente(id);
-  if(typeof rClientes==='function')rClientes();
+  if(typeof rCli==='function')rCli();
 }
 
 // ── NOTAS POR CLIENTE ──────────────────────────────────────────────
@@ -2707,6 +2808,7 @@ async function cargarTodo(){
     logError('info','Sistema iniciado correctamente','Usuario: '+sesion.nom+' | Rol: '+sesion.rol,'Sistema');
     setTimeout(aplicarRolSidebar, 200);
     setTimeout(()=>{rNotifs();},500);
+    setTimeout(()=>{cargarAuditoriaSupabase();},800);
     // Cargar log guardado
     try{const sl=localStorage.getItem('nx_err_log');if(sl){const p=JSON.parse(sl);p.forEach(e=>{if(!ERR_LOG.find(x=>x.id===e.id))ERR_LOG.push(e);});ERR_LOG.sort((a,b)=>b.id-a.id);}}catch(le){}
     // Restaurar última pantalla (F5)
@@ -3151,6 +3253,7 @@ async function regAbono(){
     const nuevoP=(c.pagado||0)+monto;
     await API.patch('clientes',`id=eq.${c.id}`,{pagado:nuevoP});c.pagado=nuevoP;
     await API.post('abonos',{cliente_id:c.id,monto,metodo:document.getElementById('aMet').value,referencia:document.getElementById('aRef').value,fecha:hoy()});
+    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${document.getElementById('aMet').value}`,'Cobros');
     const metodo=document.getElementById('aMet')?.value||'Efectivo';
     const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:metodo==='Transferencia'||metodo==='Depósito'?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
     const asi={fecha:hoy(),referencia:'AST-COB-'+c.numero_poliza?.replace('POL-','').slice(-4)||'0000',descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
@@ -3184,8 +3287,8 @@ async function guardarEmp(){
   const btn=document.getElementById('btnEmp');btn.disabled=true;
   const datos={nom,rnc:document.getElementById('eRNC').value.trim(),sector:document.getElementById('eSec').value.trim(),tel:document.getElementById('eTel2').value.trim(),email:document.getElementById('eEmail').value.trim(),contacto:document.getElementById('eCon').value.trim()};
   try{
-    if(editEmpId){await API.patch('empresas',`id=eq.${editEmpId}`,datos);const idx=ST.empresas.findIndex(x=>x.id===editEmpId);ST.empresas[idx]={...ST.empresas[idx],...datos};toast('ok','Empresa actualizada',nom);}
-    else{const r=await API.post('empresas',datos);if(r&&r[0])ST.empresas.push(r[0]);toast('ok','Empresa registrada',nom);}
+    if(editEmpId){await API.patch('empresas',`id=eq.${editEmpId}`,datos);const idx=ST.empresas.findIndex(x=>x.id===editEmpId);ST.empresas[idx]={...ST.empresas[idx],...datos};logAudit('EMPRESA_EDITADA','Empresa: '+nom,'Empresas');toast('ok','Empresa actualizada',nom);}
+    else{const r=await API.post('empresas',datos);if(r&&r[0])ST.empresas.push(r[0]);logAudit('EMPRESA_CREADA','Empresa: '+nom,'Empresas');toast('ok','Empresa registrada',nom);}
     closeM('mEmp');rEmpGrd();editEmpId=null;document.getElementById('mEmpT').textContent='NUEVA EMPRESA';['eNom','eRNC','eSec','eTel2','eEmail','eCon'].forEach(id=>document.getElementById(id).value='');
   }catch(e){mostrarError(e.message,'Al inhabilitar cliente ID: '+inhabCliId);toast('err','Error inhabilitando',e.message);}
   btn.disabled=false;
@@ -3210,8 +3313,8 @@ async function guardarAgente(){
   const btn=document.getElementById('btnAgt');btn.disabled=true;
   const datos={nom,cargo:document.getElementById('agtCargo').value.trim(),tel:document.getElementById('agtTel').value.trim(),email:document.getElementById('agtEmail').value.trim(),licencia:document.getElementById('agtLic').value.trim(),lic_vence:document.getElementById('agtLicVence').value||null};
   try{
-    if(editAgtId){await API.patch('agentes',`id=eq.${editAgtId}`,datos);const idx=ST.agentes.findIndex(x=>x.id===editAgtId);ST.agentes[idx]={...ST.agentes[idx],...datos};toast('ok','Agente actualizado',nom);}
-    else{const r=await API.post('agentes',datos);if(r&&r[0])ST.agentes.push(r[0]);toast('ok','Agente registrado',nom);}
+    if(editAgtId){await API.patch('agentes',`id=eq.${editAgtId}`,datos);const idx=ST.agentes.findIndex(x=>x.id===editAgtId);ST.agentes[idx]={...ST.agentes[idx],...datos};logAudit('AGENTE_EDITADO','Agente: '+nom,'Agentes');toast('ok','Agente actualizado',nom);}
+    else{const r=await API.post('agentes',datos);if(r&&r[0])ST.agentes.push(r[0]);logAudit('AGENTE_CREADO','Agente: '+nom,'Agentes');toast('ok','Agente registrado',nom);}
     closeM('mAgente');rAgentes();editAgtId=null;document.getElementById('mAgtT').textContent='NUEVO AGENTE';['agtNom','agtCargo','agtTel','agtEmail','agtLic','agtLicVence'].forEach(id=>document.getElementById(id).value='');
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
@@ -3461,6 +3564,44 @@ async function guardarConfig(){
 // ── Gestión de ARS ───────────────────────────────────────────────────────────
 let _arsList = ['ARS Humano','ARS Reservas','ARS Semma','ARS Universal','ARS Meta Salud','ARS CMD','ARS Yunen','ARS Futuro','ARS Asemap','ARS BHD'];
 
+function agregarArs(){
+  const inp=document.getElementById('newArs');
+  if(!inp){toast('err','Error','Campo ARS no encontrado');return;}
+  const nombre=inp.value.trim();
+  if(!nombre){toast('err','Escribe el nombre de la ARS');return;}
+  // Cargar lista actual
+  try{const s=localStorage.getItem('nx_ars_list');if(s)_arsList=JSON.parse(s);}catch{}
+  // Verificar duplicado
+  if(_arsList.some(a=>(typeof a==='string'?a:a.nom).toLowerCase()===nombre.toLowerCase())){
+    toast('warn','Esa ARS ya existe',nombre);return;
+  }
+  // Agregar
+  _arsList.push(nombre);
+  localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
+  // Guardar en Supabase también
+  if(API.url){
+    API.post('configuracion',{clave:'ars_list',valor:JSON.stringify(_arsList)}).catch(()=>{
+      API.patch('configuracion','clave=eq.ars_list',{valor:JSON.stringify(_arsList)}).catch(()=>{});
+    });
+  }
+  inp.value='';
+  rArsList();
+  logAudit('ARS_CREADA','ARS: '+nombre);
+  toast('ok','ARS creada correctamente',nombre);
+}
+
+function eliminarArs(i){
+  if(!confirm('¿Eliminar esta ARS?'))return;
+  try{const s=localStorage.getItem('nx_ars_list');if(s)_arsList=JSON.parse(s);}catch{}
+  const nombre=typeof _arsList[i]==='string'?_arsList[i]:_arsList[i]?.nom;
+  _arsList.splice(i,1);
+  localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
+  if(API.url)API.patch('configuracion','clave=eq.ars_list',{valor:JSON.stringify(_arsList)}).catch(()=>{});
+  rArsList();
+  logAudit('ARS_ELIMINADA','ARS: '+(nombre||''));
+  toast('ok','ARS eliminada');
+}
+
 function rArsList(){
   const el=document.getElementById('arsList');
   if(!el)return;
@@ -3516,8 +3657,26 @@ function rAuto(){document.getElementById('autoDia').value=autoCfg.dia;document.g
 // ── USUARIOS ─────────────────────────────────────────────────────────────────
 function rAuditoria(){
   const el=document.getElementById('auditC');
-  if(!AUDIT.length){el.innerHTML='<div class="empty">Sin registros. Las acciones aparecen aquí en tiempo real.</div>';return;}
-  el.innerHTML=`<div class="tw"><table><thead><tr><th style="width:20%">FECHA/HORA</th><th style="width:20%">USUARIO</th><th style="width:12%">ROL</th><th style="width:22%">ACCIÓN</th><th>DETALLE</th></tr></thead><tbody>${AUDIT.map(a=>`<tr><td style="font-family:var(--mono);font-size:9px">${a.ts.replace('T',' ').slice(0,19)}</td><td style="font-weight:600">${a.usuario}</td><td><span class="badge bC2">${a.rol.toUpperCase()}</span></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${a.accion}</td><td style="font-size:9px;color:var(--tx2)">${a.detalle}</td></tr>`).join('')}</tbody></table></div>`;
+  if(!el)return;
+  if(!AUDIT.length){el.innerHTML='<div class="empty">Sin registros. Las acciones del sistema aparecen aquí automáticamente.</div>';return;}
+  el.innerHTML=`<div class="tw"><table>
+    <thead><tr>
+      <th style="width:16%">FECHA/HORA</th>
+      <th style="width:16%">USUARIO</th>
+      <th style="width:10%">ROL</th>
+      <th style="width:13%">MÓDULO</th>
+      <th style="width:18%">ACCIÓN</th>
+      <th>DESCRIPCIÓN</th>
+    </tr></thead>
+    <tbody>${AUDIT.map(a=>`<tr>
+      <td style="font-size:10px;color:#64748b">${(a.ts||'').replace('T',' ').slice(0,19)}</td>
+      <td style="font-weight:600">${a.usuario||'—'}</td>
+      <td><span class="badge ${a.rol==='admin'?'bC3':a.rol==='supervisor'?'bC2':'bC1'}">${(a.rol||'—').toUpperCase()}</span></td>
+      <td><span class="badge bCg">${a.modulo||detectarModulo(a.accion)}</span></td>
+      <td style="font-size:10px;font-weight:600;color:#1d4ed8">${a.accion||'—'}</td>
+      <td style="font-size:10px;color:#475569">${a.detalle||'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
 }
 function exportarAuditCSV(){
   const rows=[['Timestamp','Usuario','Rol','Acción','Detalle'],...AUDIT.map(a=>[a.ts,a.usuario,a.rol,a.accion,a.detalle])];
@@ -3597,7 +3756,7 @@ async function confirmarCambiarLogin(id, loginActual, nuevoLogin){
   }
 }
 
-async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:document.getElementById('uPwd').value,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);closeM('mUsuario');rUsuarios();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
+async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:document.getElementById('uPwd').value,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');rUsuarios();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
 async function eliminarUsu(id){if(!confirm('¿Eliminar usuario?'))return;try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);rUsuarios();}catch(e){toast('err','Error',e.message);}}
 
 // ── EXPORTAR CSV ─────────────────────────────────────────────────────────────
