@@ -3696,6 +3696,27 @@ async function cargarTodo(){
     // Cargar config
     (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});
     actualizarCFG();
+    // ── Cargar ARS, roles/permisos y configs desde Supabase (para TODOS los usuarios) ──
+    (cfg||[]).forEach(c=>{
+      try{
+        if(c.clave==='ars_list'&&c.valor){
+          const arr=JSON.parse(c.valor);
+          if(Array.isArray(arr)){_arsList=arr;localStorage.setItem('nx_ars_list',c.valor);}
+        }
+        if(c.clave==='roles_perms'&&c.valor){
+          const rp=JSON.parse(c.valor);
+          if(rp){Object.assign(ROLES_PERMS,rp);localStorage.setItem('nx_roles_perms',c.valor);}
+        }
+        if(c.clave==='emailjs'&&c.valor){
+          Object.assign(_emailCfg,JSON.parse(c.valor));
+          localStorage.setItem('nx_email_cfg',c.valor);
+        }
+        if(c.clave==='auto_facturacion'&&c.valor){
+          Object.assign(autoCfg,JSON.parse(c.valor));
+          localStorage.setItem('nx_auto',c.valor);
+        }
+      }catch(e){}
+    });
     ST.clientes.forEach(c=>{if(typeof c.deps==='string')try{c.deps=JSON.parse(c.deps);}catch{c.deps=[];}});
     // Cargar auto config
     const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
@@ -4925,12 +4946,23 @@ function eliminarArs(i){
   toast('ok','ARS eliminada');
 }
 
-function rArsList(){
+async function rArsList(){
   const el=document.getElementById('arsList');
   if(!el)return;
-  // Cargar desde localStorage si hay guardado
-  const saved=localStorage.getItem('nx_ars_list');
-  if(saved)try{_arsList=JSON.parse(saved);}catch{}
+  // Cargar ARS desde Supabase primero (para que TODOS los usuarios las vean)
+  try{
+    const supa=await cargarConfigSupabase('ars_list');
+    if(supa&&Array.isArray(supa)){
+      _arsList=supa;
+      localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
+    }else{
+      const saved=localStorage.getItem('nx_ars_list');
+      if(saved)try{_arsList=JSON.parse(saved);}catch{}
+    }
+  }catch(e){
+    const saved=localStorage.getItem('nx_ars_list');
+    if(saved)try{_arsList=JSON.parse(saved);}catch{}
+  }
   el.innerHTML=_arsList.map((a,i)=>`
     <div style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:5px 10px">
       <span style="font-size:11px;font-weight:500;color:#1d4ed8">${a}</span>
