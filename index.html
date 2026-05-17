@@ -631,7 +631,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div><div class="lbrand">NEXUS PRO v6</div><div class="lver">Sistema de Seguros de Salud · República Dominicana</div></div>
   </div>
   <div class="lh">Iniciar sesión</div>
-  <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" placeholder="admin" autocomplete="username"/></div>
+  <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="admin" autocomplete="username"/></div>
   <div class="lfr"><label>Contraseña</label><input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
   <div class="lerr" id="loginErr"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
@@ -1377,9 +1377,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                 <div style="font-size:10px;font-weight:700;color:#059669;margin:14px 0 8px;padding-top:12px;border-top:1px solid #e2e8f0">👤 USUARIO ADMINISTRADOR DE ESTA BASE</div>
                 <div class="g2">
                   <div class="fr"><label>Nombre del administrador *</label><input type="text" id="tenAdminNom" placeholder="Ej: Juan Pérez"/></div>
-                  <div class="fr"><label>Usuario *</label><input type="text" id="tenAdminUser" placeholder="Ej: admin"/></div>
+                  <div class="fr"><label>Usuario *</label><input type="text" id="tenAdminUser" class="no-upper" placeholder="Ej: admin"/></div>
                 </div>
-                <div class="fr"><label>Contraseña temporal *</label><input type="text" id="tenAdminPwd" placeholder="Mínimo 6 caracteres"/></div>
+                <div class="fr"><label>Contraseña temporal *</label><input type="text" id="tenAdminPwd" class="no-upper" placeholder="Mínimo 6 caracteres"/></div>
 
                 <div style="background:#eff6ff;border-radius:8px;padding:10px 12px;margin:10px 0;font-size:10px;color:#1e3a6e;line-height:1.6">
                   💡 El administrador entrará con: <code style="background:#dbeafe;padding:1px 5px;border-radius:4px" id="loginPreview">usuario@nombrelogin</code>
@@ -1623,7 +1623,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="gf2">
       <div class="fr"><label>Nombre *</label><input type="text" id="uNom"/></div>
       <div class="fr"><label>Cargo</label><input type="text" id="uCargo"/></div>
-      <div class="fr"><label>Usuario (login) *</label><input type="text" id="uLogin" placeholder="juanperez"/></div>
+      <div class="fr"><label>Usuario (login) *</label><input type="text" id="uLogin" class="no-upper" placeholder="juanperez"/></div>
       <div class="fr"><label>Contraseña *</label><input type="password" id="uPwd" placeholder="Mínimo 6 caracteres"/></div>
       <div class="fr"><label>Rol</label><select id="uRol" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="admin">Administrador</option><option value="supervisor">Supervisor</option><option value="agente">Agente</option><option value="cobros">Cobros</option></select></div>
     </div>
@@ -5467,11 +5467,9 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(s && url && key){
     try{
       sesion = JSON.parse(s);
-      document.getElementById('loginScreen').style.display = 'flex';
-      document.getElementById('setupScreen').style.display = 'none';
-      document.getElementById('app').style.display = 'none';
-      // Intentar auto-login si sesión válida
+      // Restaurar sesión directamente sin mostrar el login (evita el parpadeo)
       document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('setupScreen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       document.getElementById('sbAv').textContent = inits(sesion.nom);
       document.getElementById('sbNom').textContent = sesion.nom.split(' ')[0];
