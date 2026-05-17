@@ -4914,13 +4914,16 @@ async function guardarConfig(){
 // ── Gestión de ARS ───────────────────────────────────────────────────────────
 let _arsList = ['ARS Humano','ARS Reservas','ARS Semma','ARS Universal','ARS Meta Salud','ARS CMD','ARS Yunen','ARS Futuro','ARS Asemap','ARS BHD'];
 
-function agregarArs(){
+async function agregarArs(){
   const inp=document.getElementById('newArs');
   if(!inp){toast('err','Error','Campo ARS no encontrado');return;}
   const nombre=mayus(inp.value.trim());
   if(!nombre){toast('err','Escribe el nombre de la ARS');return;}
-  // Cargar lista actual
-  try{const s=localStorage.getItem('nx_ars_list');if(s)_arsList=JSON.parse(s);}catch{}
+  // Cargar la lista MAS RECIENTE desde Supabase antes de agregar
+  try{
+    const supa=await cargarConfigSupabase('ars_list');
+    if(supa&&Array.isArray(supa))_arsList=supa;
+  }catch(e){}
   // Verificar duplicado
   if(_arsList.some(a=>(typeof a==='string'?a:a.nom).toLowerCase()===nombre.toLowerCase())){
     toast('warn','Esa ARS ya existe',nombre);return;
@@ -4928,22 +4931,27 @@ function agregarArs(){
   // Agregar
   _arsList.push(nombre);
   localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
-  // Guardar en Supabase también
-  if(API.url){
-    API.post('configuracion',{clave:'ars_list',valor:JSON.stringify(_arsList)}).catch(()=>{
-      API.patch('configuracion','clave=eq.ars_list',{valor:JSON.stringify(_arsList)}).catch(()=>{});
-    });
+  // Guardar en Supabase con el helper correcto
+  try{
+    await guardarConfigSupabase('ars_list',_arsList);
+  }catch(e){
+    toast('warn','ARS guardada localmente','No se pudo sincronizar con Supabase');
   }
   inp.value='';
   rArsList();
-  logAudit('ARS_CREADA','ARS: '+nombre);
+  logAudit('ARS_CREADA','ARS: '+nombre,'Configuración');
   toast('ok','ARS creada correctamente',nombre);
 }
 
-function eliminarArs(i){
-  try{const s=localStorage.getItem('nx_ars_list');if(s)_arsList=JSON.parse(s);}catch{}
+async function eliminarArs(i){
+  // Cargar la lista MAS RECIENTE desde Supabase
+  try{
+    const supa=await cargarConfigSupabase('ars_list');
+    if(supa&&Array.isArray(supa))_arsList=supa;
+  }catch(e){}
   const nombre=typeof _arsList[i]==='string'?_arsList[i]:_arsList[i]?.nom;
-  // #6: NO eliminar si tiene clientes asociados — solo verificar
+  if(!nombre){toast('err','ARS no encontrada');return;}
+  // NO eliminar si tiene clientes asociados
   const clientesConArs=ST.clientes.filter(c=>{
     const plan=(c.plan||'').toUpperCase();
     return plan.includes((nombre||'').toUpperCase());
@@ -4953,14 +4961,22 @@ function eliminarArs(i){
     logAudit('ARS_ELIMINAR_BLOQUEADA',`Intento de eliminar ${nombre} con clientes asociados`,'Configuración');
     return;
   }
-  if(!confirm('¿Eliminar esta ARS?'))return;
+  if(!confirm('¿Eliminar la ARS "'+nombre+'"?'))return;
   _arsList.splice(i,1);
   localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
-  if(API.url)API.patch('configuracion','clave=eq.ars_list',{valor:JSON.stringify(_arsList)}).catch(()=>{});
+  try{
+    await guardarConfigSupabase('ars_list',_arsList);
+  }catch(e){
+    toast('warn','Eliminada localmente','No se pudo sincronizar con Supabase');
+  }
   rArsList();
   logAudit('ARS_ELIMINADA','ARS: '+(nombre||''),'Configuración');
-  toast('ok','ARS eliminada');
+  toast('ok','ARS eliminada',nombre);
 }
+
+// removeARS es el nombre que usa el botón × — apunta a eliminarArs
+function removeARS(i){ eliminarArs(i); }
+function addARS(){ document.getElementById('newArs')?.focus(); }
 
 async function rArsList(){
   const el=document.getElementById('arsList');
@@ -4987,22 +5003,6 @@ async function rArsList(){
   // Actualizar también el select de clientes
   const sel=document.getElementById('cARS');
   if(sel){const cur=sel.value;sel.innerHTML='<option value="">Seleccionar ARS...</option>'+_arsList.map(a=>`<option ${a===cur?'selected':''}>${a}</option>`).join('');}
-}
-
-function addARS(){
-  const nom=prompt('Nombre de la nueva ARS:');
-  if(!nom||!nom.trim())return;
-  _arsList.push(nom.trim());
-  localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
-  rArsList();toast('ok','ARS agregada',nom.trim());
-  logAudit('ARS_AGREGADA',nom.trim());
-}
-
-function removeARS(idx){
-  if(!confirm(`¿Eliminar "${_arsList[idx]}"?`))return;
-  _arsList.splice(idx,1);
-  localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
-  rArsList();toast('ok','ARS eliminada');
 }
 
 async function guardarTarifas(){
