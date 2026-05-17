@@ -2620,11 +2620,17 @@ const PERMS_LIST = [
   {key:'payments_delete',lbl:'Eliminar pagos y abonos'},
 ];
 
-function rRolesContent(){
+async function rRolesContent(){
   const el=document.getElementById('rolesContent');
   if(!el)return;
-  // Cargar permisos guardados
-  try{const s=localStorage.getItem('nx_roles_perms');if(s)Object.assign(ROLES_PERMS,JSON.parse(s));}catch{}
+  // Cargar permisos desde Supabase primero (persistente), localStorage de respaldo
+  try{
+    const supa=await cargarConfigSupabase('roles_perms');
+    if(supa){Object.assign(ROLES_PERMS,supa);localStorage.setItem('nx_roles_perms',JSON.stringify(ROLES_PERMS));}
+    else{const s=localStorage.getItem('nx_roles_perms');if(s)Object.assign(ROLES_PERMS,JSON.parse(s));}
+  }catch(e){
+    try{const s=localStorage.getItem('nx_roles_perms');if(s)Object.assign(ROLES_PERMS,JSON.parse(s));}catch{}
+  }
   el.innerHTML=Object.entries(ROLES_PERMS).map(([key,r])=>`
     <div class="role-card">
       <div class="role-h">
@@ -2645,14 +2651,19 @@ function rRolesContent(){
     </div>`).join('');
 }
 
-function guardarRolPerms(rol){
+async function guardarRolPerms(rol){
   const checks=document.querySelectorAll(`[data-rol="${rol}"]`);
   const perms=[];
   checks.forEach(c=>{if(c.checked)perms.push(c.dataset.perm);});
+  // Guardar permisos viejos para la auditoría (#4)
+  const permsViejos=(ROLES_PERMS[rol].perms||[]).slice();
   ROLES_PERMS[rol].perms=perms;
+  // Guardar local + Supabase (persistente)
   localStorage.setItem('nx_roles_perms',JSON.stringify(ROLES_PERMS));
+  try{await guardarConfigSupabase('roles_perms',ROLES_PERMS);}catch(e){console.log('Roles Supabase:',e.message);}
   toast('ok',`Permisos de ${ROLES_PERMS[rol].nom} guardados`,perms.length+' permisos');
-  logAudit('ROL_PERMISOS',`${rol}: ${perms.join(', ')}`);
+  // Auditoría detallada: usuario, permisos viejos y nuevos
+  logAudit('ROL_PERMISOS',`${ROLES_PERMS[rol].nom} · Antes: ${permsViejos.length} permisos · Ahora: ${perms.length} permisos`,'Seguridad');
 }
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
@@ -3300,8 +3311,22 @@ function agregarTenant(){
 }
 
 function eliminarTenant(i){
-  if(!confirm('¿Eliminar esta empresa?'))return;
-  const t=getTenants();t.splice(i,1);saveTenants(t);renderTenants();
+  const t=getTenants();
+  // #5: NO eliminar la base principal si es la única
+  if(t.length<=1){
+    toast('err','No se puede eliminar','Esta es la única base de datos registrada. No se puede eliminar.');
+    return;
+  }
+  const base=t[i];
+  const actUrl=localStorage.getItem('nx_url');
+  if(base&&base.url===actUrl){
+    toast('err','No se puede eliminar','Esta es la base de datos activa. Selecciona otra antes de eliminarla.');
+    return;
+  }
+  if(!confirm('¿Eliminar esta base de datos?'))return;
+  t.splice(i,1);saveTenants(t);renderTenants();
+  try{logAudit('BASE_ELIMINADA','Base: '+(base?.nom||''),'Configuración');}catch(e){}
+  toast('ok','Base de datos eliminada');
 }
 
 // Auto-guardar tenant actual si no está en la lista
@@ -4855,7 +4880,7 @@ let _arsList = ['ARS Humano','ARS Reservas','ARS Semma','ARS Universal','ARS Met
 function agregarArs(){
   const inp=document.getElementById('newArs');
   if(!inp){toast('err','Error','Campo ARS no encontrado');return;}
-  const nombre=inp.value.trim();
+  const nombre=mayus(inp.value.trim());
   if(!nombre){toast('err','Escribe el nombre de la ARS');return;}
   // Cargar lista actual
   try{const s=localStorage.getItem('nx_ars_list');if(s)_arsList=JSON.parse(s);}catch{}
@@ -4879,14 +4904,24 @@ function agregarArs(){
 }
 
 function eliminarArs(i){
-  if(!confirm('¿Eliminar esta ARS?'))return;
   try{const s=localStorage.getItem('nx_ars_list');if(s)_arsList=JSON.parse(s);}catch{}
   const nombre=typeof _arsList[i]==='string'?_arsList[i]:_arsList[i]?.nom;
+  // #6: NO eliminar si tiene clientes asociados — solo verificar
+  const clientesConArs=ST.clientes.filter(c=>{
+    const plan=(c.plan||'').toUpperCase();
+    return plan.includes((nombre||'').toUpperCase());
+  });
+  if(clientesConArs.length>0){
+    toast('err','No se puede eliminar',`NO SE PUEDE ELIMINAR ESTA ARS PORQUE TIENE ${clientesConArs.length} CLIENTE(S) ASOCIADO(S).`);
+    logAudit('ARS_ELIMINAR_BLOQUEADA',`Intento de eliminar ${nombre} con clientes asociados`,'Configuración');
+    return;
+  }
+  if(!confirm('¿Eliminar esta ARS?'))return;
   _arsList.splice(i,1);
   localStorage.setItem('nx_ars_list',JSON.stringify(_arsList));
   if(API.url)API.patch('configuracion','clave=eq.ars_list',{valor:JSON.stringify(_arsList)}).catch(()=>{});
   rArsList();
-  logAudit('ARS_ELIMINADA','ARS: '+(nombre||''));
+  logAudit('ARS_ELIMINADA','ARS: '+(nombre||''),'Configuración');
   toast('ok','ARS eliminada');
 }
 
