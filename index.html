@@ -1180,6 +1180,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <button id="cfgTab9" onclick="switchCfgTab(9)" class="cfg-tab"><i class="ti ti-database"></i><span>Mis Bases</span></button>
             <button id="cfgTab10" onclick="switchCfgTab(10)" class="cfg-tab"><i class="ti ti-history"></i><span>Changelog</span></button>
             <button id="cfgTab11" onclick="switchCfgTab(11)" class="cfg-tab"><i class="ti ti-target"></i><span>Metas</span></button>
+            <button id="cfgTab12" onclick="switchCfgTab(12)" class="cfg-tab"><i class="ti ti-palette"></i><span>Apariencia</span></button>
           </div>
 
           <!-- Indicador de tab activo -->
@@ -1438,6 +1439,11 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <button class="btn bxl" onclick="guardarMetas()"><i class="ti ti-device-floppy"></i> Guardar metas</button>
               <div id="metasProgress" style="margin-top:14px"></div>
             </div>
+          </div>
+
+          <!-- TAB 12: Apariencia -->
+          <div id="cfgPanel12" class="cfg-panel" style="display:none">
+            <div id="cfgApariencia"></div>
           </div>
 
         </div>
@@ -2335,6 +2341,61 @@ function toggleSistema(){
 // ══════════════════════════════════════════════════════════════════
 
 // ── TABS de Configuración con animación ────────────────────────────
+// ── SISTEMA DE TEMAS VISUALES ──────────────────────────────────────
+function aplicarTema(tema){
+  const body=document.body;
+  // Quitar todas las clases de tema
+  body.classList.remove('tema-clasico','tema-premium','tema-glass');
+  let temaReal=tema;
+  // AUTO: seguir preferencia del dispositivo
+  if(tema==='auto'){
+    const oscuro=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
+    temaReal=oscuro?'premium':'clasico';
+  }
+  if(temaReal==='premium')body.classList.add('tema-premium');
+  else if(temaReal==='glass')body.classList.add('tema-glass');
+  // clasico = sin clase (diseño por defecto)
+  // Guardar preferencia
+  localStorage.setItem('nx_tema',tema);
+  // Actualizar selección visual en el panel
+  document.querySelectorAll('.tema-opcion').forEach(o=>{
+    o.classList.toggle('tema-sel',o.dataset.tema===tema);
+  });
+}
+
+function cargarTemaGuardado(){
+  const tema=localStorage.getItem('nx_tema')||'clasico';
+  aplicarTema(tema);
+}
+
+function rApariencia(){
+  const cont=document.getElementById('cfgApariencia');
+  if(!cont)return;
+  const temaActual=localStorage.getItem('nx_tema')||'clasico';
+  const temas=[
+    {id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'},
+    {id:'premium',nom:'PREMIUM DARK',desc:'Software empresarial moderno, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#0a1020,#1a2540)'},
+    {id:'glass',nom:'LIQUID GLASS',desc:'Estilo iOS, vidrio translúcido con blur',ico:'💎',preview:'linear-gradient(135deg,#dbe4f3,#eef2f9)'},
+    {id:'auto',nom:'AUTOMÁTICO',desc:'Sigue la preferencia de tu dispositivo',ico:'⚙️',preview:'linear-gradient(135deg,#1a2540,#eef2f9)'}
+  ];
+  cont.innerHTML=`<div class="nc">
+    <div class="ch"><div class="ct">🎨 Apariencia del sistema</div></div>
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:14px">Elige el aspecto visual del sistema. El cambio es instantáneo y se guarda automáticamente.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
+      ${temas.map(t=>`
+        <div class="tema-opcion ${t.id===temaActual?'tema-sel':''}" data-tema="${t.id}" onclick="aplicarTema('${t.id}')" style="cursor:pointer;border:2px solid ${t.id===temaActual?'var(--c1)':'var(--border,#e2e8f0)'};border-radius:14px;overflow:hidden;transition:all .2s">
+          <div style="height:70px;background:${t.preview};display:flex;align-items:center;justify-content:center;font-size:28px">${t.ico}</div>
+          <div style="padding:10px">
+            <div style="font-size:12px;font-weight:700;color:var(--tx1)">${t.nom}</div>
+            <div style="font-size:9px;color:var(--tx3);margin-top:2px;line-height:1.4">${t.desc}</div>
+            ${t.id===temaActual?'<div style="font-size:9px;color:var(--c1);font-weight:700;margin-top:6px">✓ ACTIVO</div>':''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
 function switchCfgTab(n){
   // Asegurar que la vista de configuración esté visible
   const vCfg=document.getElementById('v-config');
@@ -2342,7 +2403,7 @@ function switchCfgTab(n){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
     vCfg.classList.add('on');
   }
-  const total=11;
+  const total=12;
   for(let i=1;i<=total;i++){
     const tab=document.getElementById('cfgTab'+i);
     const panel=document.getElementById('cfgPanel'+i);
@@ -2386,6 +2447,7 @@ function cargarContenidoCfgTab(n){
     else if(n===9){ renderTenantsCfg(); }
     else if(n===10){ rChangelogContent(); }
     else if(n===11){ rMetas(); }
+    else if(n===12){ rApariencia(); }
   }catch(e){
     console.error('Error cargando tab '+n+':',e);
     mostrarEstadoErrorCfg(n,e.message);
@@ -3506,6 +3568,7 @@ function mayus(txt){
 async function iniciarApp(){
   resetIdle(); // Iniciar contador de inactividad
   activarMayusculasGlobales(); // Mayúsculas automáticas en inputs
+  cargarTemaGuardado(); // Aplicar tema visual guardado
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('setupScreen').style.display='none';
   document.getElementById('app').style.display='flex';
@@ -3536,17 +3599,22 @@ async function cargarTodo(){
     const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
     actualizarTicker();
     verificarAlertas();
-    rDash();initMesSel();initComSel();initDGIISel();rAuto();rConfig();
-    toast('ok','Sistema listo · NEXUS PRO v7','Bienvenido, '+sesion.nom.split(' ')[0]);
+    initMesSel();initComSel();initDGIISel();rAuto();rConfig();
+    toast('ok','Sistema listo · NEXUS PRO','Bienvenido, '+sesion.nom.split(' ')[0]);
     logError('info','Sistema iniciado correctamente','Usuario: '+sesion.nom+' | Rol: '+sesion.rol,'Sistema');
     setTimeout(aplicarRolSidebar, 200);
     setTimeout(()=>{rNotifs();},500);
     setTimeout(()=>{cargarAuditoriaSupabase();},800);
     // Cargar log guardado
     try{const sl=localStorage.getItem('nx_err_log');if(sl){const p=JSON.parse(sl);p.forEach(e=>{if(!ERR_LOG.find(x=>x.id===e.id))ERR_LOG.push(e);});ERR_LOG.sort((a,b)=>b.id-a.id);}}catch(le){}
-    // Restaurar última pantalla (F5)
+    // Restaurar la pantalla exacta donde estaba el usuario (sin parpadeo).
+    // Se hace de inmediato, sin timeout, para no mostrar el dashboard primero.
     const lastView=localStorage.getItem('nx_last_view');
-    if(lastView&&lastView!=='dashboard'){setTimeout(()=>nav(lastView,null),200);}
+    if(lastView){
+      nav(lastView,null);
+    }else{
+      nav('dashboard',null);
+    }
   }catch(e){
     mostrarError(e.message,'Error crítico al cargar datos del sistema. Verifica la conexión con Supabase.');
     toast('err','Error cargando datos',e.message);
@@ -5191,7 +5259,77 @@ async function exportarDocsPDF(){
     </div>`;
 
   const w = window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expediente ${c?.nom}</title><style>@media print{body{margin:0}}</style></head><body>${contenido}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expediente ${c?.nom}</title><style>@media print{body{margin:0}}
+/* ═══════════ SISTEMA DE TEMAS ═══════════ */
+/* TEMA PREMIUM DARK - software empresarial */
+body.tema-premium{
+  --bg0:#0a1020;--bg1:#131c30;--bg2:#1a2540;--bg3:#0f1828;--bg4:#1e2a48;
+  --tx1:#e8edf5;--tx2:#9aa8c0;--tx3:#5d6b85;
+  --c1:#3b82f6;--c2:#a78bfa;--c3:#f87171;--c4:#fbbf24;--c5:#34d399;
+  --c1a:rgba(59,130,246,.15);--c2a:rgba(167,139,250,.15);--c3a:rgba(248,113,113,.15);--c4a:rgba(251,191,36,.15);
+  background:#0a1020;
+}
+body.tema-premium .nc,body.tema-premium .modal,body.tema-premium .kpi{
+  background:linear-gradient(145deg,#1a2540,#131c30);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 4px 24px rgba(0,0,0,.4);
+}
+body.tema-premium .nc:hover,body.tema-premium .kpi:hover{
+  border-color:rgba(59,130,246,.3);
+  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 20px rgba(59,130,246,.1);
+}
+body.tema-premium .sb,body.tema-premium nav.sb{
+  background:linear-gradient(180deg,#0d1424,#0a1020);
+  border-right:1px solid rgba(255,255,255,.05);
+}
+body.tema-premium table thead th{background:#0f1828;color:#9aa8c0}
+body.tema-premium tbody tr{border-color:rgba(255,255,255,.04)}
+body.tema-premium tbody tr:hover{background:rgba(59,130,246,.06)}
+body.tema-premium input,body.tema-premium select,body.tema-premium textarea{
+  background:#0f1828;border-color:rgba(255,255,255,.08);color:#e8edf5;
+}
+body.tema-premium .btn{box-shadow:0 2px 8px rgba(0,0,0,.3)}
+body.tema-premium .ticker{background:linear-gradient(90deg,#131c30,#1a2540)}
+body.tema-premium .topbar,body.tema-premium .tbar{background:#131c30;border-color:rgba(255,255,255,.05)}
+
+/* TEMA LIQUID GLASS - estilo iOS */
+body.tema-glass{
+  --bg0:#e8eef7;--bg1:rgba(255,255,255,.72);--bg2:rgba(255,255,255,.8);
+  background:linear-gradient(135deg,#dbe4f3,#eef2f9,#e3ebf7);
+  background-attachment:fixed;
+}
+body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,body.tema-glass .sb{
+  background:rgba(255,255,255,.6);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 8px 32px rgba(31,38,135,.12);
+}
+body.tema-glass .nc:hover,body.tema-glass .kpi:hover{
+  background:rgba(255,255,255,.75);
+  box-shadow:0 12px 40px rgba(31,38,135,.18);
+}
+body.tema-glass .btn{
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+body.tema-glass .ticker,body.tema-glass .topbar,body.tema-glass .tbar{
+  background:rgba(255,255,255,.55);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+body.tema-glass table thead th{background:rgba(255,255,255,.5)}
+/* Fallback si el navegador NO soporta backdrop-filter */
+@supports not (backdrop-filter:blur(1px)){
+  body.tema-glass .nc,body.tema-glass .modal,body.tema-glass .kpi,body.tema-glass .sb{
+    background:rgba(255,255,255,.92);
+  }
+}
+/* Transición suave al cambiar de tema */
+body,.nc,.modal,.kpi,.sb,.btn,table,input,select,textarea{
+  transition:background .3s ease,border-color .3s ease,box-shadow .3s ease,color .3s ease;
+}
+</style></head><body>${contenido}</body></html>`);
   w.document.close();
   setTimeout(()=>{ w.print(); btn.disabled=false; btn.innerHTML='<i class="ti ti-file-type-pdf"></i> Exportar PDF'; }, 1000);
   logAudit('EXPEDIENTE_EXPORTADO', c?.nom||'');
@@ -5442,6 +5580,8 @@ function exportarNuevosCSV(){
 const debouncedRCli=debounce(rCli,250);
 
 window.addEventListener('DOMContentLoaded',()=>{
+  // Aplicar tema visual guardado de inmediato (también en pantalla de login)
+  try{cargarTemaGuardado();}catch(e){}
   // Usar credenciales fijas si están disponibles
   const fixedUrl = SUPABASE_URL_FIXED;
   const fixedKey = SUPABASE_KEY_FIXED;
