@@ -2326,8 +2326,13 @@ function switchCfgTab(n){
     const panel=document.getElementById('cfgPanel'+i);
     if(tab){tab.classList.toggle('active-tab',i===n);}
     if(panel){
-      if(i===n){panel.style.display='block';panel.classList.add('active-panel');}
-      else{panel.style.display='none';panel.classList.remove('active-panel');}
+      if(i===n){
+        panel.classList.add('active-panel');
+        panel.style.setProperty('display','block','important');
+      }else{
+        panel.classList.remove('active-panel');
+        panel.style.setProperty('display','none','important');
+      }
     }
   }
   // Mover indicador animado
@@ -2466,7 +2471,11 @@ function toggleConfig(){
   if(icn)icn.style.transform=_configAbierto?'rotate(180deg)':'';
 }
 
+let _cfgTabSolicitado=null;
+
 function navConfig(tabNum,el){
+  // Recordar qué tab se pidió para que nav() no lo pise con el tab 1
+  _cfgTabSolicitado=tabNum||1;
   // Ir a la vista de config (sin restricción para admin)
   nav('config',null);
   // Marcar activo en sidebar
@@ -2474,8 +2483,8 @@ function navConfig(tabNum,el){
   if(el)el.classList.add('on');
   // En móvil cerrar el drawer primero, luego cargar el tab
   if(window.innerWidth<=900)closeMobSB();
-  // Cargar el tab con un pequeño retardo para que la vista esté lista
-  setTimeout(()=>switchCfgTab(tabNum||1),120);
+  // Cargar el tab solicitado de forma garantizada
+  setTimeout(()=>switchCfgTab(tabNum||1),200);
 }
 
 let _contabAbierto=false;
@@ -3527,7 +3536,7 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(1);},150);},usuarios:rUsuarios};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
