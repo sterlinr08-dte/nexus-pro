@@ -3492,14 +3492,23 @@ async function guardarEmailConfig(){
 
 // ── PERSISTENCIA DE CONFIGURACIONES EN SUPABASE (Bloque 2 y #8) ──
 async function guardarConfigSupabase(clave,valor){
-  const registro={clave:clave,valor:JSON.stringify(valor),actualizado:new Date().toISOString()};
-  // Intentar actualizar; si no existe, crear
+  // Registro base (sin columnas opcionales)
+  const registro={clave:clave,valor:JSON.stringify(valor)};
   try{
     const existe=await API.get('configuracion',`clave=eq.${clave}`);
     if(existe&&existe.length>0){
-      await API.patch('configuracion',`clave=eq.${clave}`,registro);
+      // Intentar con columna 'actualizado'; si no existe, reintentar sin ella
+      try{
+        await API.patch('configuracion',`clave=eq.${clave}`,{...registro,actualizado:new Date().toISOString()});
+      }catch(eCol){
+        await API.patch('configuracion',`clave=eq.${clave}`,registro);
+      }
     }else{
-      await API.post('configuracion',registro);
+      try{
+        await API.post('configuracion',{...registro,actualizado:new Date().toISOString()});
+      }catch(eCol){
+        await API.post('configuracion',registro);
+      }
     }
   }catch(e){
     throw e;
