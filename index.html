@@ -597,6 +597,28 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .err-badge{background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;display:none;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.3px}
 .err-badge.show{display:flex}
 .err-badge-dot{width:7px;height:7px;border-radius:50%;background:#dc2626;animation:pulse 1s infinite}
+
+/* ════ MAYÚSCULAS GLOBALES ════ */
+body, .ni-l, .ct, .ct-s, button, .btn, td, th, label, .badge,
+.notif-item, select, textarea, .card, h1, h2, h3, h4, .modal,
+input::placeholder, textarea::placeholder, select option,
+.pttl, .qa-l, .sb-nm, .sb-sm, .cs-h, .cs-body{
+  text-transform: uppercase;
+}
+/* EXCEPCIONES - estos NO se transforman */
+input[type="email"], input[type="password"], input[type="url"],
+.no-upper, .email-field, .tech-field, code, .mono,
+input[type="email"]::placeholder, input[type="password"]::placeholder,
+[data-no-upper], .login-input{
+  text-transform: none !important;
+}
+/* Inputs de texto normal sí van en mayúsculas visualmente */
+input[type="text"], input[type="search"]{
+  text-transform: uppercase;
+}
+input[type="text"].no-upper, input[type="search"].no-upper{
+  text-transform: none !important;
+}
 </style>
 </head>
 <body>
@@ -2243,7 +2265,7 @@ async function doLogin(){
     sessionStorage.setItem('nx_sesion',sesData);
     if(recordar){localStorage.setItem('nx_sesion_persist',sesData);localStorage.setItem('nx_user_persist',user);}
     logAudit('LOGIN_EXITOSO',`${user} · ${new Date().toLocaleString('es-DO')}`);
-    iniciarApp();
+    await iniciarApp();
   }catch(e){
     err.textContent=e.message.includes('fetch')||e.message.includes('Failed')?'No se puede conectar. Verifica tu conexión a internet.':e.message;
     err.style.display='block';
@@ -3445,8 +3467,45 @@ setInterval(()=>{
 },60000);
 
 // ── INICIO APP ───────────────────────────────────────────────────────────────
+async // ── MAYÚSCULAS AUTOMÁTICAS EN INPUTS ──────────────────────────────
+function activarMayusculasGlobales(){
+  // Campos que NO se convierten (email, password, url, técnicos)
+  function esExcluido(el){
+    if(!el)return true;
+    const t=(el.type||'').toLowerCase();
+    if(t==='email'||t==='password'||t==='url'||t==='number'||t==='date'||t==='time'||t==='tel'||t==='file'||t==='checkbox'||t==='radio')return true;
+    if(el.classList.contains('no-upper')||el.classList.contains('login-input')||el.classList.contains('email-field')||el.classList.contains('tech-field'))return true;
+    if(el.hasAttribute('data-no-upper'))return true;
+    const id=(el.id||'').toLowerCase();
+    const ph=(el.placeholder||'').toLowerCase();
+    // Excluir por nombre de campo (correos, contraseñas, usuarios técnicos, urls)
+    if(/mail|correo|pass|clave|contra|url|token|key|login|user/.test(id))return true;
+    if(/correo|email|contraseña|usuario|@/.test(ph))return true;
+    return false;
+  }
+  // Listener global: cualquier input/textarea que se escriba
+  document.addEventListener('input',function(e){
+    const el=e.target;
+    if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'))return;
+    if(esExcluido(el))return;
+    const pos=el.selectionStart;
+    const arriba=el.value.toUpperCase();
+    if(el.value!==arriba){
+      el.value=arriba;
+      try{el.setSelectionRange(pos,pos);}catch(e){}
+    }
+  },true);
+}
+
+// Convierte un texto a mayúsculas de forma segura (para guardar datos)
+function mayus(txt){
+  if(txt===null||txt===undefined)return txt;
+  return String(txt).toUpperCase();
+}
+
 async function iniciarApp(){
   resetIdle(); // Iniciar contador de inactividad
+  activarMayusculasGlobales(); // Mayúsculas automáticas en inputs
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('setupScreen').style.display='none';
   document.getElementById('app').style.display='flex';
@@ -4248,6 +4307,10 @@ async function guardarEmp(){
   const nom=document.getElementById('eNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
   const btn=document.getElementById('btnEmp');btn.disabled=true;
   const datos={nom,rnc:document.getElementById('eRNC').value.trim(),sector:document.getElementById('eSec').value.trim(),tel:document.getElementById('eTel2').value.trim(),email:document.getElementById('eEmail').value.trim(),contacto:document.getElementById('eCon').value.trim()};
+  // Normalizar texto a MAYÚSCULAS (email intacto)
+  datos.nom=mayus(datos.nom);
+  datos.sector=mayus(datos.sector);
+  datos.contacto=mayus(datos.contacto);
   try{
     if(editEmpId){await API.patch('empresas',`id=eq.${editEmpId}`,datos);const idx=ST.empresas.findIndex(x=>x.id===editEmpId);ST.empresas[idx]={...ST.empresas[idx],...datos};logAudit('EMPRESA_EDITADA','Empresa: '+nom,'Empresas');toast('ok','Empresa actualizada',nom);}
     else{const r=await API.post('empresas',datos);if(r&&r[0])ST.empresas.push(r[0]);logAudit('EMPRESA_CREADA','Empresa: '+nom,'Empresas');toast('ok','Empresa registrada',nom);}
@@ -4274,6 +4337,9 @@ async function guardarAgente(){
   const nom=document.getElementById('agtNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
   const btn=document.getElementById('btnAgt');btn.disabled=true;
   const datos={nom,cargo:document.getElementById('agtCargo').value.trim(),tel:document.getElementById('agtTel').value.trim(),email:document.getElementById('agtEmail').value.trim(),licencia:document.getElementById('agtLic').value.trim(),lic_vence:document.getElementById('agtLicVence').value||null};
+  // Normalizar texto a MAYÚSCULAS (email intacto)
+  datos.nom=mayus(datos.nom);
+  datos.cargo=mayus(datos.cargo);
   try{
     if(editAgtId){await API.patch('agentes',`id=eq.${editAgtId}`,datos);const idx=ST.agentes.findIndex(x=>x.id===editAgtId);ST.agentes[idx]={...ST.agentes[idx],...datos};logAudit('AGENTE_EDITADO','Agente: '+nom,'Agentes');toast('ok','Agente actualizado',nom);}
     else{const r=await API.post('agentes',datos);if(r&&r[0])ST.agentes.push(r[0]);logAudit('AGENTE_CREADO','Agente: '+nom,'Agentes');toast('ok','Agente registrado',nom);}
@@ -4354,6 +4420,10 @@ async function guardarCli(){
     precioD=(vd!==''&&vd!=null)?parseFloat(vd):null;
   }
   const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null};
+  // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
+  datos.nom=mayus(datos.nom);
+  datos.dir=mayus(datos.dir);
+  if(datos.referencia)datos.referencia=mayus(datos.referencia);
   try{
     if(editCliId){
       await API.patch('clientes',`id=eq.${editCliId}`,datos);
