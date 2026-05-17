@@ -2361,6 +2361,12 @@ function aplicarTema(tema){
   document.querySelectorAll('.tema-opcion').forEach(o=>{
     o.classList.toggle('tema-sel',o.dataset.tema===tema);
   });
+  // Re-renderizar dashboard y gráficos para que íconos y gráfica
+  // tomen el estilo del tema al instante (sin actualizar la página)
+  setTimeout(()=>{
+    try{if(typeof rDash==='function')rDash();}catch(e){}
+    try{if(typeof rApariencia==='function')rApariencia();}catch(e){}
+  },50);
 }
 
 function cargarTemaGuardado(){
@@ -2700,28 +2706,56 @@ async function buscarActualizaciones(){
 function aplicarCodigoManual(){
   const codigo=document.getElementById('codigoActualizacion')?.value?.trim()||'';
   if(!codigo){
-    toast('err','Sin código','Pega el código HTML primero');
+    toast('err','Sin codigo','Pega el codigo HTML primero');
     return;
   }
-  // Validar que sea un HTML válido del sistema
   if(codigo.length<20000){
-    toast('err','Código incompleto','El código pegado parece estar incompleto o no es válido');
+    toast('err','Codigo incompleto','El codigo pegado parece estar incompleto o no es valido');
     return;
   }
   if(!codigo.includes('<html')||!codigo.includes('NEXUS')){
-    toast('err','Código no válido','Este no parece ser el código de NEXUS PRO');
+    toast('err','Codigo no valido','Este no parece ser el codigo de NEXUS PRO');
     return;
   }
-  if(!confirm('Se aplicará el código pegado en ESTE equipo.\n\nLa página se recargará con la versión nueva.\n\n⚠️ Recuerda: esto solo afecta este navegador. Para todos los equipos, sube el código a GitHub.\n\n¿Continuar?'))return;
+  // CHANGELOG AUTOMATICO: descripcion obligatoria
+  const descripcion=prompt('Describe brevemente que incluye esta actualizacion (obligatorio):');
+  if(!descripcion||!descripcion.trim()){
+    toast('warn','Descripcion requerida','Debes describir la actualizacion para continuar');
+    return;
+  }
+  if(!confirm('Se aplicara el codigo pegado en ESTE equipo. La pagina se recargara. Continuar?'))return;
+  guardarChangelogAuto(descripcion.trim());
   try{
-    logAudit('ACTUALIZACION_MANUAL','Código aplicado manualmente en este equipo','Sistema');
+    logAudit('ACTUALIZACION_MANUAL','Codigo aplicado: '+descripcion.trim(),'Sistema');
   }catch(e){}
-  toast('info','Aplicando actualización...','La página se recargará');
+  toast('info','Aplicando actualizacion...','La pagina se recargara');
   setTimeout(()=>{
     document.open();
     document.write(codigo);
     document.close();
   },800);
+}
+
+// CHANGELOG AUTOMATICO (Actualizacion #7)
+function guardarChangelogAuto(descripcion){
+  let log=[];
+  try{log=JSON.parse(localStorage.getItem('nx_changelog_auto')||'[]');}catch{}
+  log.unshift({
+    ts:new Date().toISOString(),
+    usuario:sesion?.nom||'Sistema',
+    version:'v'+APP_VERSION,
+    descripcion:descripcion,
+    resultado:'Aplicada correctamente'
+  });
+  if(log.length>100)log.pop();
+  localStorage.setItem('nx_changelog_auto',JSON.stringify(log));
+}
+
+function rChangelogAuto(){
+  let log=[];
+  try{log=JSON.parse(localStorage.getItem('nx_changelog_auto')||'[]');}catch{}
+  if(!log.length)return '';
+  return '<div class="nc"><div class="ch"><div class="ct">Actualizaciones aplicadas</div></div><div class="tw"><table><thead><tr><th>FECHA</th><th>USUARIO</th><th>VERSION</th><th>DESCRIPCION</th><th>RESULTADO</th></tr></thead><tbody>'+log.map(l=>'<tr><td style="font-size:10px">'+((l.ts||'').replace('T',' ').slice(0,19))+'</td><td style="font-size:10px;font-weight:600">'+l.usuario+'</td><td style="font-size:10px"><span class="badge bC1">'+l.version+'</span></td><td style="font-size:10px">'+l.descripcion+'</td><td style="font-size:10px;color:#059669">'+l.resultado+'</td></tr>').join('')+'</tbody></table></div></div>';
 }
 
 function compararVersiones(a,b){
@@ -2813,6 +2847,9 @@ function rChangelogContent(){
         ${v.items.map(i=>`<li>${i}</li>`).join('')}
       </ul>
     </div>`).join('');
+  // Mostrar el changelog automático arriba del historial fijo
+  const auto=rChangelogAuto();
+  if(auto)el.innerHTML=auto+el.innerHTML;
 }
 
 // ── METAS MENSUALES ────────────────────────────────────────────────
@@ -2896,7 +2933,8 @@ function rNotifs(){
   // Clientes nuevos hoy → navega al cliente
   const hoyStr=hoyD.toISOString().slice(0,10);
   ST.clientes.filter(c=>c.created_at?.slice(0,10)===hoyStr).forEach(c=>{
-    _notifs.push({id:'nvo_'+c.id,icon:'🆕',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
+    const creadoPor=c.created_by_name?' · CREADO POR: '+c.created_by_name:'';
+    _notifs.push({id:'nvo_'+c.id,icon:'🆕',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan+creadoPor,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
   });
   // Facturas pendientes → navega a facturas
   const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado').length;
@@ -4492,16 +4530,45 @@ async function guardarCli(){
   datos.nom=mayus(datos.nom);
   datos.dir=mayus(datos.dir);
   if(datos.referencia)datos.referencia=mayus(datos.referencia);
+  // ── TRAZABILIDAD: registrar quién crea / modifica ──
+  const usuarioActual=sesion?.nom||'Sistema';
+  const usuarioId=sesion?.id||null;
+  if(editCliId){
+    datos.updated_by_name=usuarioActual;
+    datos.updated_by_user_id=usuarioId;
+    datos.updated_at=new Date().toISOString();
+  }else{
+    datos.created_by_name=usuarioActual;
+    datos.created_by_user_id=usuarioId;
+    datos.updated_by_name=usuarioActual;
+    datos.updated_by_user_id=usuarioId;
+  }
   try{
     if(editCliId){
-      await API.patch('clientes',`id=eq.${editCliId}`,datos);
+      try{
+        await API.patch('clientes',`id=eq.${editCliId}`,datos);
+      }catch(eCol){
+        // Si falla por columnas de trazabilidad inexistentes, reintentar sin ellas
+        const d2={...datos};
+        delete d2.created_by_name;delete d2.created_by_user_id;
+        delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
+        await API.patch('clientes',`id=eq.${editCliId}`,d2);
+      }
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
       logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes');
     toast('ok','Cliente actualizado',nom);
     }else{
       // Generar número de póliza automático
       const numPol=await generarNumPoliza();
-      const res=await API.post('clientes',{...datos,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
+      let res;
+      try{
+        res=await API.post('clientes',{...datos,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
+      }catch(eCol){
+        const d2={...datos};
+        delete d2.created_by_name;delete d2.created_by_user_id;
+        delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
+        res=await API.post('clientes',{...d2,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
+      }
       if(res&&res[0]){res[0].deps=tempDeps;ST.clientes.push(res[0]);}
       logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes');
     toast('ok',`Cliente registrado · Póliza: ${numPol}`,nom);
