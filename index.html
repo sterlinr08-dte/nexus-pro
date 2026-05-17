@@ -2864,7 +2864,12 @@ function rChangelogContent(){
 }
 
 // ── METAS MENSUALES ────────────────────────────────────────────────
-function rMetas(){
+async function rMetas(){
+  // Cargar metas desde Supabase primero (para todos los usuarios)
+  try{
+    const supa=await cargarConfigSupabase('metas');
+    if(supa)localStorage.setItem('nx_metas',JSON.stringify(supa));
+  }catch(e){}
   const cfg=JSON.parse(localStorage.getItem('nx_metas')||'{}');
   if(document.getElementById('metaClientes'))document.getElementById('metaClientes').value=cfg.clientes||'';
   if(document.getElementById('metaCobros'))document.getElementById('metaCobros').value=cfg.cobros||'';
@@ -2872,13 +2877,15 @@ function rMetas(){
   rMetasProgress();
 }
 
-function guardarMetas(){
+async function guardarMetas(){
   const m={
     clientes:parseInt(document.getElementById('metaClientes').value)||0,
     cobros:parseFloat(document.getElementById('metaCobros').value)||0,
     facturas:parseInt(document.getElementById('metaFacturas').value)||0,
   };
+  // Guardar local + Supabase (para que todos los usuarios vean las mismas metas)
   localStorage.setItem('nx_metas',JSON.stringify(m));
+  try{await guardarConfigSupabase('metas',m);}catch(e){console.log('Metas Supabase:',e.message);}
   toast('ok','Metas guardadas');
   rMetasProgress();
 }
@@ -5033,7 +5040,20 @@ async function guardarAutoConfig(){
   rAuto();
 }
 function guardarAuto(){guardarAutoConfig();}
-function guardarPlantilla(){autoCfg.tpl=document.getElementById('waTpl').value;localStorage.setItem('nx_auto',JSON.stringify(autoCfg));toast('ok','Plantilla WA guardada');}
+async function guardarPlantilla(){autoCfg.tpl=document.getElementById('waTpl').value;localStorage.setItem('nx_auto',JSON.stringify(autoCfg));try{await guardarConfigSupabase('auto_facturacion',autoCfg);}catch(e){console.log('Plantilla Supabase:',e.message);}toast('ok','Plantilla WA guardada');}
+
+// Función para el segundo botón de plantilla (textarea waPlantilla)
+async function guardarPlantillaWa(){
+  const el=document.getElementById('waPlantilla');
+  if(!el){toast('err','No se encontró la plantilla');return;}
+  autoCfg.tpl=el.value;
+  // Sincronizar también el otro textarea si existe
+  const waTplEl=document.getElementById('waTpl');
+  if(waTplEl)waTplEl.value=el.value;
+  localStorage.setItem('nx_auto',JSON.stringify(autoCfg));
+  try{await guardarConfigSupabase('auto_facturacion',autoCfg);}catch(e){console.log('Plantilla Supabase:',e.message);}
+  toast('ok','Plantilla WhatsApp guardada');
+}
 function updWA(){const tpl=document.getElementById('waTpl').value;document.getElementById('waP').textContent=tpl.replace('{{nombre}}','María García').replace('{{plan}}','Superior').replace('{{mes}}','Junio 2026').replace('{{prima}}','5,800').replace('{{deuda}}','*Deuda anterior:* RD$ 5,800').replace('{{total}}','11,600').replace('{{poliza}}','POL-2026-000001').replace('{{vence}}','2026-12-31').replace('{{empresa}}',CFG.empNom);}
 async function rAuto(){
   // Cargar config desde Supabase primero (persistente)
@@ -5049,6 +5069,8 @@ async function rAuto(){
   if(dcEl)dcEl.value=autoCfg.diasCustom||'';
   const tplEl=document.getElementById('waTpl');
   if(tplEl)tplEl.value=autoCfg.tpl||'';
+  const tplEl2=document.getElementById('waPlantilla');
+  if(tplEl2)tplEl2.value=autoCfg.tpl||'';
   if(typeof updWA==='function')updWA();
   setTimeout(rHistorialAuto,100);const now=new Date(),dia=autoCfg.dia;const prox=[];for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()+i+(now.getDate()>=dia?1:0),dia);if(d>now)prox.push(`${MESES[d.getMonth()]} ${d.getFullYear()}`);}document.getElementById('proxE').innerHTML=prox.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--bg3);border-radius:var(--r6);border:1px solid rgba(0,229,199,.06);margin-bottom:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:${i===0?'var(--c1)':'var(--tx3)'};${i===0?'box-shadow:0 0 6px var(--c1)':''}"></div><span style="font-size:11px;font-family:var(--mono)">${p}</span></div><span style="font-size:9px;color:var(--tx3)">Día ${autoCfg.dia} · ${autoCfg.hora}</span></div>`).join('');}
 
