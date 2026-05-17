@@ -3441,26 +3441,65 @@ function eliminarTenantCfg(i){
 let _emailCfg={publicKey:'',serviceId:'',templateId:'',email:'sterlinr08@gmail.com',hora:'07:00'};
 let _emailHistorial=[];
 
-function guardarEmailConfig(){
+async function guardarEmailConfig(){
   _emailCfg.publicKey=document.getElementById('ejPublicKey').value.trim();
   _emailCfg.serviceId=document.getElementById('ejServiceId').value.trim();
   _emailCfg.templateId=document.getElementById('ejTemplateId').value.trim();
   _emailCfg.email=document.getElementById('ejEmail').value.trim();
   _emailCfg.hora=document.getElementById('ejHora').value;
+  // Guardar en localStorage (respaldo local)
   localStorage.setItem('nx_email_cfg',JSON.stringify(_emailCfg));
+  // Guardar PERMANENTE en Supabase (tabla configuracion)
+  try{
+    await guardarConfigSupabase('emailjs',_emailCfg);
+  }catch(e){console.log('Email config Supabase:',e.message);}
   if(_emailCfg.publicKey)emailjs.init(_emailCfg.publicKey);
   toast('ok','Configuración de email guardada','Reporte a las '+_emailCfg.hora+' diario');
-  logAudit('EMAIL_CONFIG','Configuración de notificaciones actualizada');
+  logAudit('EMAIL_CONFIG','Configuración de notificaciones actualizada','Notificaciones');
 }
 
-function rEmail(){
-  const cfg=localStorage.getItem('nx_email_cfg');
-  if(cfg)try{Object.assign(_emailCfg,JSON.parse(cfg));}catch{}
+// ── PERSISTENCIA DE CONFIGURACIONES EN SUPABASE (Bloque 2 y #8) ──
+async function guardarConfigSupabase(clave,valor){
+  const registro={clave:clave,valor:JSON.stringify(valor),actualizado:new Date().toISOString()};
+  // Intentar actualizar; si no existe, crear
+  try{
+    const existe=await API.get('configuracion',`clave=eq.${clave}`);
+    if(existe&&existe.length>0){
+      await API.patch('configuracion',`clave=eq.${clave}`,registro);
+    }else{
+      await API.post('configuracion',registro);
+    }
+  }catch(e){
+    throw e;
+  }
+}
+
+async function cargarConfigSupabase(clave){
+  try{
+    const res=await API.get('configuracion',`clave=eq.${clave}`);
+    if(res&&res.length>0&&res[0].valor){
+      return JSON.parse(res[0].valor);
+    }
+  }catch(e){console.log('Cargar config '+clave+':',e.message);}
+  return null;
+}
+
+async function rEmail(){
+  // Cargar desde Supabase primero (persistente), localStorage como respaldo
+  const cfgSupa=await cargarConfigSupabase('emailjs');
+  if(cfgSupa){
+    Object.assign(_emailCfg,cfgSupa);
+    localStorage.setItem('nx_email_cfg',JSON.stringify(_emailCfg));
+  }else{
+    const cfg=localStorage.getItem('nx_email_cfg');
+    if(cfg)try{Object.assign(_emailCfg,JSON.parse(cfg));}catch{}
+  }
   ['ejPublicKey','ejServiceId','ejTemplateId','ejEmail','ejHora'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){const k=id.replace('ej','').charAt(0).toLowerCase()+id.replace('ej','').slice(1);
     if(_emailCfg[k])el.value=_emailCfg[k];}
   });
+  if(_emailCfg.publicKey){try{emailjs.init(_emailCfg.publicKey);}catch(e){}}
   generarEmailPreview();
   renderEmailHistorial();
 }
@@ -4898,23 +4937,43 @@ async function guardarTarifas(){
 }
 
 // ── AUTOMATIZACIÓN ────────────────────────────────────────────────────────────
-function guardarAutoConfig(){
-  autoCfg.dia=parseInt(document.getElementById('autoDia').value)||1;
-  autoCfg.hora=document.getElementById('autoHora').value;
+async function guardarAutoConfig(){
+  // Validaciones (#3)
+  const diaVal=parseInt(document.getElementById('autoDia').value)||1;
+  if(diaVal<1||diaVal>28){toast('err','Día inválido','El día debe estar entre 1 y 28');return;}
+  const horaVal=document.getElementById('autoHora').value;
+  if(!horaVal){toast('err','Hora inválida','Selecciona una hora válida');return;}
+  const dcEl=document.getElementById('autoDiasCustom');
+  const diasCustomVal=dcEl?dcEl.value.trim():'';
+  if(diasCustomVal){
+    const dias=diasCustomVal.split(',').map(d=>parseInt(d.trim()));
+    if(dias.some(d=>isNaN(d)||d<1||d>28)){
+      toast('err','Días inválidos','Los días deben ser números entre 1 y 28, separados por coma');
+      return;
+    }
+  }
+  autoCfg.dia=diaVal;
+  autoCfg.hora=horaVal;
   const waEl=document.getElementById('autoWA')||document.getElementById('autoWa');
   if(waEl)autoCfg.wa=waEl.value;
-  const dcEl=document.getElementById('autoDiasCustom');
-  autoCfg.diasCustom=dcEl?dcEl.value.trim():'';
+  autoCfg.diasCustom=diasCustomVal;
+  // Guardar local + Supabase (persistente)
   localStorage.setItem('nx_auto',JSON.stringify(autoCfg));
+  try{await guardarConfigSupabase('auto_facturacion',autoCfg);}catch(e){console.log('Auto config Supabase:',e.message);}
   const diasTxt=autoCfg.diasCustom?`días ${autoCfg.diasCustom}`:`día ${autoCfg.dia}`;
   toast('ok','Configuración guardada',`Auto-facturación: ${diasTxt} · ${autoCfg.hora}`);
-  logAudit('CONFIG_AUTOMATIZACION',`Auto-facturación: ${diasTxt} a las ${autoCfg.hora}`,'Configuración');
+  logAudit('CONFIG_AUTOMATIZACION',`Auto-facturación: ${diasTxt} a las ${autoCfg.hora}`,'Automatización');
   rAuto();
 }
 function guardarAuto(){guardarAutoConfig();}
 function guardarPlantilla(){autoCfg.tpl=document.getElementById('waTpl').value;localStorage.setItem('nx_auto',JSON.stringify(autoCfg));toast('ok','Plantilla WA guardada');}
 function updWA(){const tpl=document.getElementById('waTpl').value;document.getElementById('waP').textContent=tpl.replace('{{nombre}}','María García').replace('{{plan}}','Superior').replace('{{mes}}','Junio 2026').replace('{{prima}}','5,800').replace('{{deuda}}','*Deuda anterior:* RD$ 5,800').replace('{{total}}','11,600').replace('{{poliza}}','POL-2026-000001').replace('{{vence}}','2026-12-31').replace('{{empresa}}',CFG.empNom);}
-function rAuto(){
+async function rAuto(){
+  // Cargar config desde Supabase primero (persistente)
+  try{
+    const cfgSupa=await cargarConfigSupabase('auto_facturacion');
+    if(cfgSupa){Object.assign(autoCfg,cfgSupa);localStorage.setItem('nx_auto',JSON.stringify(autoCfg));}
+  }catch(e){}
   document.getElementById('autoDia').value=autoCfg.dia;
   document.getElementById('autoHora').value=autoCfg.hora;
   const waEl=document.getElementById('autoWA')||document.getElementById('autoWa');
