@@ -1491,6 +1491,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
       <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
       <div class="fr"><label>Día de facturación (1-28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" placeholder="Día del mes"/></div>
+      <div class="fr"><label>Deuda inicial RD$ (meses atrasados, opcional)</label><input type="number" id="cDeudaIni" value="0" min="0" step="0.01" placeholder="Ej: 17400 si ya debe de antes" class="no-upper"/></div>
     </div>
     <div class="fr"><label>ARS (Administradora de Riesgos de Salud)</label>
       <select id="cARS" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:var(--tx1)">
@@ -2176,8 +2177,13 @@ const getPT=p=>p==='Básico'?CFG.t1:p==='Superior'?CFG.t2:CFG.t3;
 const getPD=p=>p==='Básico'?CFG.d1:p==='Superior'?CFG.d2:CFG.d3;
 // getTot ahora respeta precio personalizado si el cliente lo tiene
 const getTot=c=>{
-  const primaT=(c.precio_titular!=null&&c.precio_titular!=='')?Number(c.precio_titular):getPT(c.plan);
-  const primaD=(c.precio_dep!=null&&c.precio_dep!=='')?Number(c.precio_dep):getPD(c.plan);
+  // Precio del titular: usa el personalizado si es válido y mayor a 0, si no el del plan
+  const ptCustom=Number(c.precio_titular);
+  const primaT=(c.precio_titular!=null&&c.precio_titular!==''&&!isNaN(ptCustom)&&ptCustom>0)?ptCustom:getPT(c.plan);
+  // Precio del dependiente: igual. Si quedó en 0 o vacío, usa el del plan
+  // (así los dependientes SIEMPRE suman aunque haya precio especial)
+  const pdCustom=Number(c.precio_dep);
+  const primaD=(c.precio_dep!=null&&c.precio_dep!==''&&!isNaN(pdCustom)&&pdCustom>0)?pdCustom:getPD(c.plan);
   return primaT+((c.deps||[]).length*primaD);
 };
 const pend=c=>Math.max(0,(c.deuda_total||0)-(c.pagado||0));
@@ -4563,6 +4569,10 @@ function abrirNuevoCli(){
   document.getElementById('mCliT').textContent='NUEVO CLIENTE';
   ['cNom','cCed','cWA','cTel','cEmail','cDir','cFecIni','cFecFin','cRef','cRefWa'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('cPlan').value='Básico';document.getElementById('cNCF').value='B02';
+  const cArsNew=document.getElementById('cARS');if(cArsNew)cArsNew.value='';
+  // Día de facturación: por defecto el día configurado del sistema (ej: 20)
+  const cDiaNew=document.getElementById('cDiaFact');if(cDiaNew)cDiaNew.value=autoCfg.dia||1;
+  const cDeudaNew=document.getElementById('cDeudaIni');if(cDeudaNew){cDeudaNew.value='0';cDeudaNew.disabled=false;}
   rEChips(null);rAgtSel('cAgt','');document.getElementById('depLM').innerHTML='';
   // Default: inicio hoy, fin en 1 año
   document.getElementById('cFecIni').value=hoy();
@@ -4584,6 +4594,13 @@ function editarCli(id){
   document.getElementById('cNom').value=c.nom;document.getElementById('cCed').value=c.cedula||'';
   document.getElementById('cWA').value=c.wa||'';document.getElementById('cTel').value=c.tel||'';
   document.getElementById('cEmail').value=c.email||'';document.getElementById('cPlan').value=c.plan;
+  const cArsEd=document.getElementById('cARS');if(cArsEd)cArsEd.value=c.ars||'';
+  // Día de facturación: el guardado del cliente, o el del sistema si no tiene
+  const cDiaEd=document.getElementById('cDiaFact');if(cDiaEd)cDiaEd.value=c.dia_facturacion||autoCfg.dia||1;
+  // Deuda: al editar se muestra la deuda actual pero bloqueada (para no duplicarla).
+  // Para cambiar la deuda de un cliente existente se usa el botón Abonar / cobros.
+  const cDeudaEd=document.getElementById('cDeudaIni');
+  if(cDeudaEd){cDeudaEd.value=c.deuda_total||0;cDeudaEd.disabled=true;}
   document.getElementById('cDir').value=c.dir||'';document.getElementById('cNCF').value=c.tipo_ncf||'B02';
   const cRefEl=document.getElementById('cRef');if(cRefEl)cRefEl.value=c.referencia||'';
   const cRefWaEl=document.getElementById('cRefWa');if(cRefWaEl)cRefWaEl.value=c.referencia_wa||'';
@@ -4626,7 +4643,7 @@ async function guardarCli(){
     precioT=(vt!==''&&vt!=null)?parseFloat(vt):null;
     precioD=(vd!==''&&vd!=null)?parseFloat(vd):null;
   }
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null};
+  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null};
   // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
   datos.nom=mayus(datos.nom);
   datos.dir=mayus(datos.dir);
@@ -4661,14 +4678,16 @@ async function guardarCli(){
     }else{
       // Generar número de póliza automático
       const numPol=await generarNumPoliza();
+      // Deuda inicial: si el cliente ya venía debiendo meses atrasados
+      const deudaIni=parseFloat(document.getElementById('cDeudaIni')?.value)||0;
       let res;
       try{
-        res=await API.post('clientes',{...datos,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
+        res=await API.post('clientes',{...datos,deuda_total:deudaIni,pagado:0,activo:true,numero_poliza:numPol});
       }catch(eCol){
         const d2={...datos};
         delete d2.created_by_name;delete d2.created_by_user_id;
         delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
-        res=await API.post('clientes',{...d2,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
+        res=await API.post('clientes',{...d2,deuda_total:deudaIni,pagado:0,activo:true,numero_poliza:numPol});
       }
       if(res&&res[0]){res[0].deps=tempDeps;ST.clientes.push(res[0]);}
       logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes');
@@ -4886,6 +4905,17 @@ async function guardarDatosEmp(){
   const get=id=>document.getElementById(id)?.value?.trim()||'';
   const nom=get('cfgEmpNom');
   if(!nom){toast('err','Campo requerido','Ingrese el nombre de la correduría');return;}
+  // Helper: guarda un valor de TEXTO PLANO en la tabla configuracion
+  const guardarTexto=async(clave,valor)=>{
+    const existe=await API.get('configuracion',`clave=eq.${clave}`);
+    if(existe&&existe.length>0){
+      try{await API.patch('configuracion',`clave=eq.${clave}`,{valor:valor,actualizado:new Date().toISOString()});}
+      catch(e){await API.patch('configuracion',`clave=eq.${clave}`,{valor:valor});}
+    }else{
+      try{await API.post('configuracion',{clave:clave,valor:valor,actualizado:new Date().toISOString()});}
+      catch(e){await API.post('configuracion',{clave:clave,valor:valor});}
+    }
+  };
   try{
     const datos=[
       {clave:'empresa_nom',valor:nom},
@@ -4895,8 +4925,15 @@ async function guardarDatosEmp(){
       {clave:'empresa_dir',valor:get('cfgEmpDir')},
     ];
     for(const d of datos){
-      await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,updated_at:new Date().toISOString()});
+      await guardarTexto(d.clave,d.valor);
       ST.config[d.clave]=d.valor;
+    }
+    // Guardar la numeración inicial de facturas
+    const numIni=get('cfgNumIni');
+    if(numIni&&parseInt(numIni)>0){
+      await guardarTexto('seq_poliza',String(parseInt(numIni)-1));
+      ST.config['seq_poliza']=String(parseInt(numIni)-1);
+      ST.config['numIni']=numIni;
     }
     actualizarCFG();
     logAudit('CONFIG_EMPRESA','Datos actualizados: '+nom,'Configuración');
