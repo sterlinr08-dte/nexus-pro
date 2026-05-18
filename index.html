@@ -778,6 +778,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="ni" onclick="nav('rep-agente',this)" style="padding:6px 10px"><i class="ti ti-user-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte agente</span></div>
           <div class="ni" onclick="nav('rep-plan',this)" style="padding:6px 10px"><i class="ti ti-layers ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte plan</span></div>
           <div class="ni" onclick="nav('rep-empresa',this)" style="padding:6px 10px"><i class="ti ti-building-store ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte empresa</span></div>
+          <div class="ni" onclick="nav('rep-aging',this)" style="padding:6px 10px"><i class="ti ti-clock-dollar ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Aging cartera</span></div>
           <div class="ni" onclick="nav('dgii',this)" style="padding:6px 10px"><i class="ti ti-receipt-tax ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">DGII / ARS</span></div>
         </div>
 
@@ -927,6 +928,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                   <option value="Pagado">Pagadas</option>
                   <option value="Pendiente">Solo pendientes</option>
                   <option value="Parcial">Parciales</option>
+                  <option value="Anulada">Anuladas</option>
                 </select>
                 <button class="btn bsm bc1" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
                 <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
@@ -957,6 +959,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <button class="btn bsm bc4" onclick="exportarPagosExcel()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
+              <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:600;color:#2563eb"></select>
               <input type="text" id="pgBuscar" placeholder="Buscar cliente..." onkeyup="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
@@ -1047,13 +1050,20 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
         <!-- P&G -->
         <div class="view" id="v-pyg">
-          <div class="nc"><div class="ch"><span class="ct">Estado de Resultados P&amp;G</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="pygC"></div></div>
+          <div class="nc"><div class="ch"><span class="ct">Estado de Resultados P&amp;G</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:var(--r8)">
+              <span style="font-size:9px;font-weight:700;color:var(--tx2);font-family:var(--mono)">PERÍODO CONTABLE (20 al 19):</span>
+              <select id="pygPeriodo" onchange="rPYG()" style="font-size:11px;padding:5px 8px;border:1px solid rgba(0,229,199,.15);border-radius:var(--r6);background:var(--bg2);color:var(--tx1)"></select>
+            </div>
+            <div id="pygC"></div>
+          </div>
         </div>
 
         <!-- REPORTES -->
         <div class="view" id="v-rep-agente"><div class="nc"><div class="ch"><span class="ct">Reporte por agente</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rAgt"></div></div></div>
         <div class="view" id="v-rep-plan"><div class="nc"><div class="ch"><span class="ct">Reporte por plan</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rPlan"></div></div></div>
         <div class="view" id="v-rep-empresa"><div class="nc"><div class="ch"><span class="ct">Reporte por empresa</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rEmp"></div></div></div>
+        <div class="view" id="v-rep-aging"><div class="nc"><div class="ch"><span class="ct">Aging de cartera — Antigüedad de la deuda</span></div><div id="rAging"></div></div></div>
 
         <!-- DGII -->
         <div class="view" id="v-dgii">
@@ -1097,74 +1107,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           </div>
         </div>
 
-        <!-- AUTOMATIZACION -->
-        <div class="view" id="v-auto">
-          <div class="g2">
-            <div class="nc">
-              <div class="ch"><div class="ct">Programación automática</div></div>
-              <div class="fr"><label>Día del mes</label><input type="number" id="autoDia" value="1" min="1" max="28"/></div>
-              <div class="fr"><label>Hora</label><input type="time" id="autoHora" value="08:00"/></div>
-              <div class="fr"><label>WA automático al generar</label><select id="autoWA" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="1">Sí</option><option value="0">No</option></select></div>
-              <div class="fr"><label>Alerta de vencimiento (días antes)</label><input type="number" id="autoAlerta" value="30" min="1" max="90"/></div>
-              <button class="btn bxl" style="margin-top:6px" onclick="guardarAutoConfig()"><i class="ti ti-device-floppy"></i> Guardar</button>
-              <div class="div"></div>
-              <div id="proxE"></div>
-            </div>
-            <div class="nc p2">
-              <div class="ch"><div class="ct">Plantilla WhatsApp</div></div>
-              <div class="fr"><label>Mensaje (variables: nombre, plan, mes, prima, deuda, total, poliza, vence)</label><textarea id="waTpl" rows="9" style="resize:vertical;font-size:10px;font-family:var(--mono);line-height:1.7"></textarea></div>
-              <div style="font-size:9px;color:var(--c1);font-family:var(--mono);padding:8px 10px;background:rgba(0,229,199,.05);border-radius:var(--r6);border:1px solid rgba(0,229,199,.08);white-space:pre-line;line-height:1.6;margin-top:4px" id="waP"></div>
-              <div style="display:flex;gap:6px;margin-top:8px">
-                <button class="btn bsm bc1" onclick="updWA()"><i class="ti ti-refresh"></i> Vista previa</button>
-                <button class="btn bsm bc2" onclick="guardarPlantilla()"><i class="ti ti-device-floppy"></i> Guardar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- NOTIFICACIONES EMAIL -->
-        <div class="view" id="v-email">
-          <div class="nc p2">
-            <div class="ch"><div><div class="ct">Notificaciones por correo</div><div class="ct-s">Reporte diario automático a las 7:00 AM</div></div>
-            <span class="badge bC5" style="font-size:10px">EmailJS</span></div>
-
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:14px;margin-bottom:16px">
-              <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:6px">📧 Configuración de EmailJS</div>
-              <div style="font-size:11px;color:#374151;line-height:1.7">
-                <strong>Paso 1:</strong> Ve a <a href="https://emailjs.com" target="_blank" style="color:#2563eb">emailjs.com</a> → crea cuenta gratis<br>
-                <strong>Paso 2:</strong> Conecta tu Gmail (sterlinr08@gmail.com)<br>
-                <strong>Paso 3:</strong> Crea un Email Template con las variables del reporte<br>
-                <strong>Paso 4:</strong> Copia los IDs y pégalos aquí abajo
-              </div>
-            </div>
-
-            <div class="g2">
-              <div>
-                <div class="fr"><label>EmailJS Public Key</label><input type="text" id="ejPublicKey" placeholder="Ej: user_xxxxxxxxxxxxxx"/></div>
-                <div class="fr"><label>Service ID</label><input type="text" id="ejServiceId" placeholder="Ej: service_xxxxxxx"/></div>
-                <div class="fr"><label>Template ID</label><input type="text" id="ejTemplateId" placeholder="Ej: template_xxxxxxx"/></div>
-                <div class="fr"><label>Correo destino</label><input type="email" id="ejEmail" value="sterlinr08@gmail.com"/></div>
-                <div class="fr"><label>Hora de envío</label><input type="time" id="ejHora" value="07:00"/></div>
-                <div style="display:flex;gap:8px;margin-top:4px">
-                  <button class="btn bxl" onclick="guardarEmailConfig()"><i class="ti ti-device-floppy"></i> Guardar</button>
-                  <button class="btn bc1" onclick="probarEmail()"><i class="ti ti-send"></i> Probar ahora</button>
-                </div>
-              </div>
-              <div>
-                <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Vista previa del reporte</div>
-                <div id="emailPreview" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:11px;color:#374151;line-height:1.8;min-height:200px"></div>
-                <button class="btn bsm bc4" onclick="generarEmailPreview()" style="margin-top:8px"><i class="ti ti-refresh"></i> Actualizar vista previa</button>
-              </div>
-            </div>
-
-            <div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
-              <div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Historial de envíos</div>
-              <div id="emailHistorial"><div class="empty">Sin historial aún</div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONFIGURACIÓN -->
         <div class="view" id="v-config">
 
           <!-- Tabs dinámicas con animación -->
@@ -1491,7 +1433,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
       <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
       <div class="fr"><label>Día de facturación (1-28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" placeholder="Día del mes"/></div>
-      <div class="fr"><label>Deuda inicial RD$ (meses atrasados, opcional)</label><input type="number" id="cDeudaIni" value="0" min="0" step="0.01" placeholder="Ej: 17400 si ya debe de antes" class="no-upper"/></div>
+      <div class="fr"><label>Deuda RD$ (al crear: deuda previa · al editar: ajusta la deuda total)</label><input type="number" id="cDeudaIni" value="0" min="0" step="0.01" placeholder="Ej: 17400" class="no-upper"/></div>
     </div>
     <div class="fr"><label>ARS (Administradora de Riesgos de Salud)</label>
       <select id="cARS" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:var(--tx1)">
@@ -1632,7 +1574,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Cargo</label><input type="text" id="uCargo"/></div>
       <div class="fr"><label>Usuario (login) *</label><input type="text" id="uLogin" class="no-upper" placeholder="juanperez"/></div>
       <div class="fr"><label>Contraseña *</label><input type="password" id="uPwd" placeholder="Mínimo 6 caracteres"/></div>
-      <div class="fr"><label>Rol</label><select id="uRol" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="admin">Administrador</option><option value="supervisor">Supervisor</option><option value="agente">Agente</option><option value="cobros">Cobros</option></select></div>
+      <div class="fr"><label>Rol</label><select id="uRol" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="admin">Administrador</option><option value="supervisor">Supervisor</option><option value="cajero">Cajero</option><option value="cobros">Cobros</option><option value="agente">Agente</option></select></div>
     </div>
     <div class="fe"><button class="btn" onclick="closeM('mUsuario')">Cancelar</button><button class="btn bxl" onclick="guardarUsuario()" id="btnUsu"><i class="ti ti-check"></i> Guardar</button></div>
   </div>
@@ -1935,7 +1877,6 @@ const SUPABASE_KEY_FIXED = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 
 // ── Seguridad ────────────────────────────────────────────────────────────────
 async function sha256(str){const b=new TextEncoder().encode(str);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
-function sanitize(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 function debounce(fn,delay=300){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),delay);};}
 
 // ── Auditoría ────────────────────────────────────────────────────────────────
@@ -2131,7 +2072,7 @@ async function cargarAuditoriaSupabase(){
 
 // ── Timeout de sesión (30 min inactividad) ───────────────────────────────────
 let _idleT;
-function resetIdle(){clearTimeout(_idleT);_idleT=setTimeout(()=>{if(sesion){toast('warn','Sesión expirada','Inactividad de 30 minutos');setTimeout(logout,3000);}},30*60*1000);}
+function resetIdle(){clearTimeout(_idleT);_idleT=setTimeout(()=>{if(sesion){try{logAudit('SESION_EXPIRADA','Sesión cerrada por 30 min de inactividad','Seguridad');}catch(e){}toast('warn','Sesión expirada','Inactividad de 30 minutos');setTimeout(()=>logout(true),3000);}},30*60*1000);}
 document.addEventListener('click',resetIdle);document.addEventListener('keydown',resetIdle);
 
 // ── API REST directa ─────────────────────────────────────────────────────────
@@ -2147,22 +2088,22 @@ const API = {
 // ── Constantes ───────────────────────────────────────────────────────────────
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const CUENTAS=[
-  {cod:'1101',nom:'Efectivo y equivalentes',tipo:'Activo',saldo:45000},
-  {cod:'1201',nom:'Cuentas por cobrar — Clientes',tipo:'Activo',saldo:21620},
+  {cod:'1101',nom:'Efectivo y equivalentes',tipo:'Activo',saldo:0},
+  {cod:'1201',nom:'Cuentas por cobrar — Clientes',tipo:'Activo',saldo:0},
   {cod:'1301',nom:'Primas por cobrar',tipo:'Activo',saldo:0},
-  {cod:'2101',nom:'Cuentas por pagar',tipo:'Pasivo',saldo:8000},
-  {cod:'2201',nom:'ITBIS por pagar',tipo:'Pasivo',saldo:3500},
+  {cod:'2101',nom:'Cuentas por pagar',tipo:'Pasivo',saldo:0},
+  {cod:'2201',nom:'ITBIS por pagar',tipo:'Pasivo',saldo:0},
   {cod:'2301',nom:'Comisiones por pagar',tipo:'Pasivo',saldo:0},
-  {cod:'3101',nom:'Capital social',tipo:'Patrimonio',saldo:50000},
-  {cod:'3201',nom:'Utilidades retenidas',tipo:'Patrimonio',saldo:5200},
-  {cod:'4101',nom:'Ingresos por primas',tipo:'Ingreso',saldo:31800},
-  {cod:'4201',nom:'Comisiones ganadas',tipo:'Ingreso',saldo:5000},
-  {cod:'5101',nom:'Gastos operativos',tipo:'Gasto',saldo:12000},
-  {cod:'5201',nom:'Nómina agentes',tipo:'Gasto',saldo:8000},
-  {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:2000},
+  {cod:'3101',nom:'Capital social',tipo:'Patrimonio',saldo:0},
+  {cod:'3201',nom:'Utilidades retenidas',tipo:'Patrimonio',saldo:0},
+  {cod:'4101',nom:'Ingresos por primas',tipo:'Ingreso',saldo:0},
+  {cod:'4201',nom:'Comisiones ganadas',tipo:'Ingreso',saldo:0},
+  {cod:'5101',nom:'Gastos operativos',tipo:'Gasto',saldo:0},
+  {cod:'5201',nom:'Nómina agentes',tipo:'Gasto',saldo:0},
+  {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:0},
   {cod:'5401',nom:'Comisiones pagadas',tipo:'Gasto',saldo:0},
 ];
-const TITLES={dashboard:'DASHBOARD',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
+const TITLES={dashboard:'DASHBOARD',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
@@ -2195,6 +2136,27 @@ const gAgt=id=>ST.agentes.find(a=>a.id===id);
 const getEst=c=>!c.activo?'Inhabilitado':pend(c)===0?'Al día':c.pagado>0?'Parcial':'Pendiente';
 const hoy=()=>new Date().toISOString().slice(0,10);
 const addSaldo=(cod,n)=>{const c=CUENTAS.find(x=>x.cod===cod);if(c)c.saldo+=n;};
+
+// Recalcula los saldos contables desde los asientos REALES guardados.
+// Los saldos NO son números fijos: se construyen sumando cada asiento.
+function recalcularSaldosContables(){
+  // Reiniciar todas las cuentas a 0
+  CUENTAS.forEach(c=>c.saldo=0);
+  // Recorrer cada asiento real: acumular débitos y créditos por cuenta
+  const dr={},cr={};
+  (ST.asientos||[]).forEach(a=>{
+    if(a.cuenta_dr_cod)dr[a.cuenta_dr_cod]=(dr[a.cuenta_dr_cod]||0)+(Number(a.monto_dr)||0);
+    if(a.cuenta_cr_cod)cr[a.cuenta_cr_cod]=(cr[a.cuenta_cr_cod]||0)+(Number(a.monto_cr)||0);
+  });
+  // Saldo según naturaleza de la cuenta:
+  // Activo y Gasto: naturaleza deudora  -> saldo = débitos - créditos
+  // Pasivo, Patrimonio, Ingreso: naturaleza acreedora -> saldo = créditos - débitos
+  CUENTAS.forEach(c=>{
+    const d=dr[c.cod]||0,r=cr[c.cod]||0;
+    if(c.tipo==='Activo'||c.tipo==='Gasto')c.saldo=d-r;
+    else c.saldo=r-d;
+  });
+}
 
 // Estado de póliza
 function getEstPol(c){
@@ -2259,24 +2221,29 @@ async function doLogin(){
     // Rate limiting: max 5 intentos
     const lk='nx_fails_'+user; const fails=parseInt(localStorage.getItem(lk)||'0');
     const lockT=parseInt(localStorage.getItem(lk+'_t')||'0');
-    if(fails>=5&&Date.now()-lockT<300000){throw new Error('Cuenta bloqueada 5 min por intentos fallidos. Intenta de nuevo más tarde.');}
+    if(fails>=5&&Date.now()-lockT<300000){
+      try{logAudit('LOGIN_BLOQUEADO',`Cuenta ${user} bloqueada — intento durante bloqueo`,'Seguridad');}catch(e){}
+      throw new Error('Cuenta bloqueada 5 min por intentos fallidos. Intenta de nuevo más tarde.');
+    }
     const users=await API.get('usuarios_sistema',`login=eq.${encodeURIComponent(user)}&activo=eq.true&select=*`);
     const pwdHash=await sha256(pwd);
     const pwdLegacy=users&&users[0]&&users[0].pwd===pwd; // compatibilidad contraseñas viejas
     const pwdOk=users&&users[0]&&(users[0].pwd===pwdHash||pwdLegacy);
     if(!users||!users.length||!pwdOk){
       const nf=fails+1;localStorage.setItem(lk,nf);localStorage.setItem(lk+'_t',Date.now());
+      // Auditoría de login fallido
+      try{logAudit('LOGIN_FALLIDO',`Usuario "${user}" — credenciales incorrectas (intento ${nf}/5)`,'Seguridad');}catch(e){}
+      if(nf>=5){try{logAudit('CUENTA_BLOQUEADA',`Cuenta "${user}" bloqueada 5 min por 5 intentos fallidos`,'Seguridad');}catch(e){}}
       throw new Error(nf>=5?'Cuenta bloqueada 5 min por demasiados intentos.':`Usuario o contraseña incorrectos. Intentos: ${nf}/5`);
     }
     localStorage.removeItem(lk);localStorage.removeItem(lk+'_t');
     sesion=users[0];
-    sessionStorage.setItem('nx_sesion',JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo}));
-    sesion=users[0];
     const recordar=document.getElementById('rememberMe')?.checked;
-    const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo});
+    const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,inicio:Date.now()});
     sessionStorage.setItem('nx_sesion',sesData);
+    sessionStorage.setItem('nx_sesion_actividad',String(Date.now()));
     if(recordar){localStorage.setItem('nx_sesion_persist',sesData);localStorage.setItem('nx_user_persist',user);}
-    logAudit('LOGIN_EXITOSO',`${user} · ${new Date().toLocaleString('es-DO')}`);
+    logAudit('LOGIN_EXITOSO',`${user} · ${new Date().toLocaleString('es-DO')}`,'Seguridad');
     await iniciarApp();
   }catch(e){
     err.textContent=e.message.includes('fetch')||e.message.includes('Failed')?'No se puede conectar. Verifica tu conexión a internet.':e.message;
@@ -2285,12 +2252,14 @@ async function doLogin(){
   }
 }
 
-function logout(){
-  if(confirm('¿Cerrar sesión?')){
+function logout(forzado){
+  // forzado=true: cierre automático (inactividad/inconsistencia), sin preguntar
+  if(forzado||confirm('¿Cerrar sesión?')){
+    try{logAudit('LOGOUT',forzado?'Sesión cerrada automáticamente':'Sesión cerrada por el usuario','Seguridad');}catch(e){}
     sessionStorage.removeItem('nx_sesion');
+    sessionStorage.removeItem('nx_sesion_actividad');
     localStorage.removeItem('nx_sesion_persist');
     localStorage.removeItem('nx_user_persist');
-    logAudit('LOGOUT','Sesión cerrada');
     location.reload();
   }
 }
@@ -2325,20 +2294,6 @@ async function conectar(){
 
 // ── Toggle sidebar Sistema ───────────────────────────────────────
 let _sistemaPlegado = false;
-function toggleSistema(){
-  const el=document.getElementById('sbSistema');
-  const icn=document.getElementById('icnSistema');
-  const cont=document.getElementById('sbContabilidad');
-  if(!el)return;
-  _sistemaPlegado=!_sistemaPlegado;
-  el.style.maxHeight=_sistemaPlegado?'0':'300px';
-  if(icn)icn.style.transform=_sistemaPlegado?'rotate(-90deg)':'';
-  // Contabilidad solo si es admin
-  if(cont && sesion?.rol==='admin'){
-    cont.style.maxHeight=_sistemaPlegado?'0':'200px';
-  }
-}
-
 // Aplicar visibilidad por rol en sidebar
 
 
@@ -2430,6 +2385,8 @@ function switchCfgTab(n){
       }
     }
   }
+  // Limpiar el campo de nueva ARS al cambiar de pestaña
+  const newArsEl=document.getElementById('newArs');if(newArsEl)newArsEl.value='';
   // Mover indicador animado
   const tabActive=document.getElementById('cfgTab'+n);
   const ind=document.getElementById('cfgIndicator');
@@ -2596,8 +2553,9 @@ function toggleContab(){
 const ROLES_PERMS = {
   admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio','can_view_accounting','payments_edit','payments_delete']},
   supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria','can_view_accounting']},
+  cajero:{nom:'Cajero',color:'#f59e0b',perms:['ver_clientes','ver_facturas','cobrar']},
+  cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar','reportes']},
   agente:{nom:'Agente',color:'#2563eb',perms:['ver_clientes','crear_clientes','ver_facturas']},
-  cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar']},
 };
 
 const PERMS_LIST = [
@@ -2961,7 +2919,7 @@ function rNotifs(){
     _notifs.push({id:'nvo_'+c.id,icon:'🆕',ttl:'Cliente nuevo hoy',sub:c.nom+' · '+c.plan+creadoPor,ts:c.created_at,tipo:'sistema',nav:{tipo:'cliente',id:c.id}});
   });
   // Facturas pendientes → navega a facturas
-  const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado').length;
+  const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
   if(pendCount>0)_notifs.push({id:'pend_fac',icon:'💰',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Toca para ir a Facturas',ts:hoyD.toISOString(),tipo:'cobros',nav:{tipo:'facturas'}});
   // Errores del sistema → navega a auditoría
   if(window._errorLog&&window._errorLog.length>0){
@@ -3262,12 +3220,6 @@ function desconectar(){if(confirm('¿Cambiar configuración de Supabase?')){loca
 // ══════════════════════════════════════════════════════════════════
 // MULTI-TENANT — Sistema de empresas independientes
 // ══════════════════════════════════════════════════════════════════
-function mostrarTenants(){
-  document.getElementById('loginScreen').style.display='none';
-  const ts=document.getElementById('tenantsScreen');
-  ts.style.display='flex';
-  renderTenants();
-}
 function cerrarTenants(){
   document.getElementById('tenantsScreen').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
@@ -3715,6 +3667,7 @@ async function cargarTodo(){
     ]);
     ST.empresas=emp||[];ST.agentes=agt||[];ST.clientes=cli||[];
     ST.facturas=fac||[];ST.asientos=asi||[];ST.usuarios=usu||[];
+    recalcularSaldosContables();
     // Cargar config
     (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});
     actualizarCFG();
@@ -3796,7 +3749,7 @@ function closeM(id){document.getElementById(id).classList.remove('open');}
 
 function nav(view,el){
   // ── Control de acceso a Contabilidad ──
-  const vistasContab=['mayor','asientos','balance','pyg','comisiones','rep-agente','rep-plan','rep-empresa','dgii'];
+  const vistasContab=['mayor','asientos','balance','pyg','comisiones','rep-agente','rep-plan','rep-empresa','rep-aging','dgii'];
   if(vistasContab.includes(view)&&!tienePermiso('can_view_accounting')){
     toast('err','Acceso restringido','No tienes permiso para ver Contabilidad');
     return;
@@ -3808,8 +3761,12 @@ function nav(view,el){
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
-      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);},usuarios:rUsuarios};
+      email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
+  // Limpiar campos de búsqueda al cambiar de ventana
+  ['gsInput','newArs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.querySelectorAll('.tn-sr input,.gs-input').forEach(i=>{i.value='';});
+  const gsr=document.getElementById('gsResults');if(gsr)gsr.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:11px">Escribe al menos 2 caracteres...</div>';
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
   // Guardar pantalla actual para F5
@@ -4015,30 +3972,44 @@ function initMesSel(){
   [now.getFullYear()-1,now.getFullYear(),now.getFullYear()+1].forEach(a=>{sa.innerHTML+=`<option value="${a}"${a===now.getFullYear()?' selected':''}>${a}</option>`;});
 }
 
+let _generandoFacturas=false;
 async function genFacturas(){
+  // Protección contra doble clic / doble ejecución
+  if(_generandoFacturas){toast('warn','Espera','Ya se están generando facturas...');return;}
+  _generandoFacturas=true;
+  try{
+    await _genFacturasInterno();
+  }finally{
+    _generandoFacturas=false;
+  }
+}
+
+async function _genFacturasInterno(){
   const mes=parseInt(document.getElementById('fMes')?.value||new Date().getMonth()+1);
   const anio=parseInt(document.getElementById('fAnio')?.value||new Date().getFullYear());
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
+  // Solo clientes activos (no inactivos ni suspendidos)
   const activos=ST.clientes.filter(c=>c.activo);
   if(!activos.length){toast('warn','Sin clientes activos');return;}
   toast('info','Generando facturas con NCF...','Por favor espera');
-  let n=0;const nuevasFact=[],nuevosAsi=[],cliAct=[];
+  let n=0,duplicados=0;const nuevasFact=[],nuevosAsi=[],cliAct=[];
   for(const c of activos){
-    if(ST.facturas.find(f=>f.cliente_id===c.id&&f.periodo===key))continue;
+    // Anti-duplicado: ya existe factura de este cliente para este período (y no anulada)
+    if(ST.facturas.find(f=>f.cliente_id===c.id&&f.periodo===key&&f.estado!=='Anulada')){duplicados++;continue;}
     const pb=getPT(c.plan),pd=(c.deps||[]).length*getPD(c.plan),da=pend(c);
     const ncf=await generarNCF(c.tipo_ncf||'B02');
     nuevasFact.push({cliente_id:c.id,cliente_nom:c.nom,plan:c.plan,empresa_id:c.empresa_id,periodo:key,mes,anio,prima_base:pb,prima_deps:pd,deuda_ant:da,total:pb+pd+da,estado:'Pendiente',wa_sent:false,ncf,tipo_ncf:c.tipo_ncf||'B02'});
     nuevosAsi.push({fecha:hoy(),referencia:`F-${String(n+1).padStart(3,'0')}`,descripcion:`Factura ${MESES[mes-1]} ${anio} — ${c.nom} [${ncf}]`,cuenta_dr_cod:'1201',cuenta_dr_nom:'Cuentas por cobrar',monto_dr:pb+pd,cuenta_cr_cod:'4101',cuenta_cr_nom:'Ingresos por primas',monto_cr:pb+pd});
     cliAct.push({id:c.id,deuda_total:(c.deuda_total||0)+pb+pd});n++;
   }
-  if(!n){toast('warn','Sin cambios','Ya existen facturas para este período');return;}
+  if(duplicados>0){try{logAudit('FACTURA_DUPLICADA_EVITADA',`${duplicados} cliente(s) ya tenían factura de ${key} — se omitieron`,'Facturas');}catch(e){}}
+  if(!n){toast('warn','Sin cambios',`Ya existen facturas para ${MESES[mes-1]} ${anio}`);return;}
   try{
     if(nuevasFact.length){const fd=await API.post('facturas',nuevasFact);if(fd)ST.facturas.unshift(...fd);}
     if(nuevosAsi.length){const ad=await API.post('asientos',nuevosAsi);if(ad)ST.asientos.unshift(...ad);}
     for(const cu of cliAct){await API.patch('clientes',`id=eq.${cu.id}`,{deuda_total:cu.deuda_total});const cl=ST.clientes.find(x=>x.id===cu.id);if(cl)cl.deuda_total=cu.deuda_total;}
-    addSaldo('1201',nuevasFact.reduce((s,f)=>s+f.prima_base+f.prima_deps,0));
-    addSaldo('4101',nuevasFact.reduce((s,f)=>s+f.prima_base+f.prima_deps,0));
-    logAudit('FACTURAS_GENERADAS',`${n} facturas · ${MESES[mes-1]} ${anio}`);
+    recalcularSaldosContables();
+    logAudit('FACTURAS_GENERADAS',`${n} facturas · ${MESES[mes-1]} ${anio}`+(duplicados?` · ${duplicados} duplicadas evitadas`:''),'Facturas');
     toast('ok',`${n} facturas generadas con NCF`,`${MESES[mes-1]} ${anio} · ${n} asientos contables`);
     rFact();rDash();actualizarTicker();
   }catch(e){mostrarError(e.message,'Al generar facturas del período: '+key);toast('err','Error generando facturas',e.message);}
@@ -4052,11 +4023,11 @@ function rFact(){
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
   const filtroEst=document.getElementById('fFactEstado')?.value||'activas';
   let lista=ST.facturas.filter(f=>f.periodo===key);
-  if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado');
+  if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada');
   else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
   const tb=document.getElementById('tbFact');
   if(!lista.length){tb.innerHTML='<tr><td colspan="10"><div class="empty">Sin facturas · Presiona "Generar + NCF"</div></td></tr>';return;}
-  tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':'bC3';return`<tr>
+  tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
     <td style="font-weight:700;font-size:10px">${f.cliente_nom}</td>
     <td><span class="ncf-badge">${f.ncf||'—'}</span></td>
     <td>${planB(f.plan)}</td>
@@ -4067,11 +4038,38 @@ function rFact(){
     <td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c4)">${fmt(f.total)}</td>
     <td><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
     <td style="white-space:nowrap;display:flex;gap:2px;flex-wrap:wrap">
-      <button style="background:linear-gradient(135deg,#059669,#10b981);border:none;color:#fff;font-weight:700;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(16,185,129,.3)" onclick="cobrarDesdeFact('${f.cliente_id}')"><i class="ti ti-wallet"></i> COBRAR</button>
+      ${f.estado!=='Anulada'?`<button style="background:linear-gradient(135deg,#059669,#10b981);border:none;color:#fff;font-weight:700;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(16,185,129,.3)" onclick="cobrarDesdeFact('${f.cliente_id}')"><i class="ti ti-wallet"></i> COBRAR</button>`:''}
       <button class="btn bsm bghost" onclick="verFacturaPDF_id('${f.id}')" title="Ver factura PDF"><i class="ti ti-file-invoice"></i></button>
-      <button class="btn bsm bwa" onclick="enviarWA('${f.id}')" title="Enviar por WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>
+      ${f.estado!=='Anulada'?`<button class="btn bsm bwa" onclick="enviarWA('${f.id}')" title="Enviar por WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>`:''}
+      ${(f.estado!=='Anulada'&&f.estado!=='Pagado')?`<button class="btn bsm bc3" onclick="anularFactura('${f.id}')" title="Anular factura"><i class="ti ti-ban"></i></button>`:''}
     </td>
   </tr>`;}).join('');
+}
+
+async function anularFactura(facturaId){
+  const f=ST.facturas.find(x=>x.id===facturaId);
+  if(!f){toast('err','Factura no encontrada');return;}
+  if(f.estado==='Anulada'){toast('warn','Esta factura ya está anulada');return;}
+  if(f.estado==='Pagado'){toast('err','No se puede anular','Una factura pagada no se puede anular');return;}
+  // Permiso
+  if(typeof tienePermiso==='function'&&!tienePermiso('billing_edit')&&(sesion?.rol||'')!=='admin'){
+    toast('err','Acceso denegado','No tienes permiso para anular facturas');
+    logAudit('ACCESO_DENEGADO','Intento de anular factura sin permiso','Facturas');
+    return;
+  }
+  const motivo=prompt('Motivo de la anulación (obligatorio):');
+  if(motivo===null)return;
+  if(!motivo.trim()){toast('err','Motivo requerido','Debes indicar por qué se anula');return;}
+  try{
+    await API.patch('facturas',`id=eq.${facturaId}`,{estado:'Anulada'});
+    f.estado='Anulada';
+    logAudit('FACTURA_ANULADA',`Factura ${f.ncf||f.periodo||''} de ${f.cliente_nom} · ${fmt(f.total)} · Motivo: ${motivo.trim()}`,'Facturas');
+    rFacturas();
+    if(typeof rDash==='function')rDash();
+    toast('ok','Factura anulada',f.cliente_nom);
+  }catch(e){
+    mostrarError(e.message,'Al anular la factura');
+  }
 }
 
 function cobrarDesdeFact(cid){
@@ -4088,15 +4086,6 @@ async function enviarWA(fid){
   window.open(`https://wa.me/${c.wa}?text=${encodeURIComponent(msg)}`,'_blank');
   await API.patch('facturas',`id=eq.${fid}`,{wa_sent:true});f.wa_sent=true;
   toast('ok','WhatsApp abierto',c.nom);rFact();
-}
-
-async function enviarTodas(){
-  const mes=parseInt(document.getElementById('fMes')?.value||new Date().getMonth()+1);
-  const anio=parseInt(document.getElementById('fAnio')?.value||new Date().getFullYear());
-  const key=`${anio}-${String(mes).padStart(2,'0')}`;
-  const p2=ST.facturas.filter(f=>f.periodo===key&&!f.wa_sent);
-  for(const f of p2){await API.patch('facturas',`id=eq.${f.id}`,{wa_sent:true});f.wa_sent=true;}
-  toast('ok',`${p2.length} WA marcados como enviados`,`${MESES[mes-1]} ${anio}`);rFact();
 }
 
 function enviarWAPoliza(cid){
@@ -4217,7 +4206,49 @@ function abrirAbono(cid){
 }
 let _pagosCache=[];
 
+// Período de pagos 20→19: "Mayo 2026" va del 20 may 2026 al 19 jun 2026
+function periodoPagos(mes,anio){
+  const desde=new Date(anio,mes-1,20);
+  let mFin=mes+1,aFin=anio;
+  if(mFin>12){mFin=1;aFin=anio+1;}
+  const hasta=new Date(aFin,mFin-1,19,23,59,59);
+  return {desde,hasta};
+}
+
+function llenarPeriodosPagos(){
+  const sel=document.getElementById('pgPeriodo');
+  if(!sel||sel.options.length)return;
+  const hoy=new Date();
+  let opts='<option value="">Todos los pagos</option>';
+  for(let i=0;i<12;i++){
+    const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
+    const mes=d.getMonth()+1,anio=d.getFullYear();
+    const mSig=mes===12?1:mes+1;
+    opts+=`<option value="${anio}-${mes}">${MESES[mes-1]} ${anio} (20 ${MESES[mes-1].slice(0,3)} – 19 ${MESES[mSig-1].slice(0,3)})</option>`;
+  }
+  sel.innerHTML=opts;
+}
+
+// Cuando se elige un período, calcula las fechas y refresca
+function aplicarPeriodoPagos(){
+  const sel=document.getElementById('pgPeriodo');
+  const fd=document.getElementById('pgFechaD');
+  const fh=document.getElementById('pgFechaH');
+  if(sel&&sel.value){
+    const p=sel.value.split('-');
+    const {desde,hasta}=periodoPagos(parseInt(p[1]),parseInt(p[0]));
+    const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(fd)fd.value=iso(desde);
+    if(fh)fh.value=iso(hasta);
+  }else{
+    if(fd)fd.value='';
+    if(fh)fh.value='';
+  }
+  rPagos();
+}
+
 async function rPagos(){
+  llenarPeriodosPagos();
   const tb=document.getElementById('tbPagos');
   if(!tb)return;
   tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Cargando pagos...</td></tr>';
@@ -4358,20 +4389,20 @@ async function abrirHistorialCobros(clienteId){
         <span>Total de cobros: <strong>${abonos.length}</strong></span>
         <span>Total cobrado: <strong style="color:#059669">${fmt(totalCobrado)}</strong></span>
       </div>
-      ${!puedeEditar?'<div style="color:#92400e;font-size:10px;margin-top:6px">⚠️ Necesitas el permiso "Editar/eliminar pagos" para modificar</div>':''}`;
+      ${!puedeEdit?'<div style="color:#92400e;font-size:10px;margin-top:6px">⚠️ Necesitas el permiso "Editar/eliminar pagos" para modificar</div>':''}`;
   }
   if(!abonos.length){
     lista.innerHTML='<div style="text-align:center;padding:30px;color:#94a3b8;font-size:11px">Este cliente no tiene cobros registrados</div>';
     return;
   }
   lista.innerHTML=`<div class="tw"><table>
-    <thead><tr><th>FECHA</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th>${puedeEditar?'<th>ACCIONES</th>':''}</tr></thead>
+    <thead><tr><th>FECHA</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th>${puedeEdit?'<th>ACCIONES</th>':''}</tr></thead>
     <tbody>${abonos.map(a=>`<tr>
       <td style="font-size:10px">${(a.fecha||'').slice(0,10)}</td>
       <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
-      ${puedeEditar?`<td style="white-space:nowrap">
+      ${puedeEdit?`<td style="white-space:nowrap">
         <button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')" title="Editar"><i class="ti ti-edit"></i></button>
         <button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')" title="Eliminar"><i class="ti ti-trash"></i></button>
       </td>`:''}
@@ -4459,7 +4490,7 @@ async function verHistorialAbonos(clienteId){
       <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
-      ${puedeEditar?`<td style="white-space:nowrap;display:flex;gap:4px">
+      ${puedeEdit?`<td style="white-space:nowrap;display:flex;gap:4px">
         <button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')"><i class="ti ti-edit"></i></button>
         <button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')"><i class="ti ti-trash"></i></button>
       </td>`:'<td style="font-size:9px;color:#94a3b8">—</td>'}
@@ -4492,7 +4523,7 @@ async function regAbono(){
     const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:metodo==='Transferencia'||metodo==='Depósito'?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
     const asi={fecha:hoy(),referencia:'AST-COB-'+c.numero_poliza?.replace('POL-','').slice(-4)||'0000',descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
     const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);
-    addSaldo('1101',monto);addSaldo('1201',-monto);
+    recalcularSaldosContables();
     const pd2=pend(c);
     if(pd2===0)await API.patch('facturas',`cliente_id=eq.${c.id}&estado=eq.Pendiente`,{estado:'Pagado'});
     else await API.patch('facturas',`cliente_id=eq.${c.id}&estado=eq.Pendiente`,{estado:'Parcial'});
@@ -4569,6 +4600,7 @@ function abrirNuevoCli(){
   document.getElementById('mCliT').textContent='NUEVO CLIENTE';
   ['cNom','cCed','cWA','cTel','cEmail','cDir','cFecIni','cFecFin','cRef','cRefWa'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('cPlan').value='Básico';document.getElementById('cNCF').value='B02';
+  poblarSelectArsCliente();
   const cArsNew=document.getElementById('cARS');if(cArsNew)cArsNew.value='';
   // Día de facturación: por defecto el día configurado del sistema (ej: 20)
   const cDiaNew=document.getElementById('cDiaFact');if(cDiaNew)cDiaNew.value=autoCfg.dia||1;
@@ -4594,13 +4626,21 @@ function editarCli(id){
   document.getElementById('cNom').value=c.nom;document.getElementById('cCed').value=c.cedula||'';
   document.getElementById('cWA').value=c.wa||'';document.getElementById('cTel').value=c.tel||'';
   document.getElementById('cEmail').value=c.email||'';document.getElementById('cPlan').value=c.plan;
-  const cArsEd=document.getElementById('cARS');if(cArsEd)cArsEd.value=c.ars||'';
+  poblarSelectArsCliente();
+  const cArsEd=document.getElementById('cARS');
+  if(cArsEd){
+    // Si la ARS del cliente no está en la lista, agregarla para no perderla
+    if(c.ars&&!_arsList.includes(c.ars)){
+      const op=document.createElement('option');op.value=c.ars;op.textContent=c.ars;cArsEd.appendChild(op);
+    }
+    cArsEd.value=c.ars||'';
+  }
   // Día de facturación: el guardado del cliente, o el del sistema si no tiene
   const cDiaEd=document.getElementById('cDiaFact');if(cDiaEd)cDiaEd.value=c.dia_facturacion||autoCfg.dia||1;
   // Deuda: al editar se muestra la deuda actual pero bloqueada (para no duplicarla).
   // Para cambiar la deuda de un cliente existente se usa el botón Abonar / cobros.
   const cDeudaEd=document.getElementById('cDeudaIni');
-  if(cDeudaEd){cDeudaEd.value=c.deuda_total||0;cDeudaEd.disabled=true;}
+  if(cDeudaEd){cDeudaEd.value=c.deuda_total||0;cDeudaEd.disabled=false;cDeudaEd._deudaOriginal=c.deuda_total||0;}
   document.getElementById('cDir').value=c.dir||'';document.getElementById('cNCF').value=c.tipo_ncf||'B02';
   const cRefEl=document.getElementById('cRef');if(cRefEl)cRefEl.value=c.referencia||'';
   const cRefWaEl=document.getElementById('cRefWa');if(cRefWaEl)cRefWaEl.value=c.referencia_wa||'';
@@ -4663,6 +4703,16 @@ async function guardarCli(){
   }
   try{
     if(editCliId){
+      // Ajuste de deuda: si el usuario cambió el campo de deuda, ajustar deuda_total
+      const cDeudaEl=document.getElementById('cDeudaIni');
+      if(cDeudaEl&&!cDeudaEl.disabled){
+        const deudaNueva=parseFloat(cDeudaEl.value)||0;
+        const deudaOrig=parseFloat(cDeudaEl._deudaOriginal)||0;
+        if(deudaNueva!==deudaOrig){
+          datos.deuda_total=deudaNueva;
+          logAudit('AJUSTE_DEUDA',`${nom} · Deuda ajustada de ${fmt(deudaOrig)} a ${fmt(deudaNueva)}`,'Clientes');
+        }
+      }
       try{
         await API.patch('clientes',`id=eq.${editCliId}`,datos);
       }catch(eCol){
@@ -4701,11 +4751,18 @@ async function guardarCli(){
 function abrirInhab(id){inhabCliId=id;const c=ST.clientes.find(x=>x.id===id);document.getElementById('inhabNom').textContent=`${c.nom} · ${c.numero_poliza||'Sin póliza'}`;document.getElementById('inhabNota').value='';openM('mInhab');}
 async function confirmarInhab(){
   const c=ST.clientes.find(x=>x.id===inhabCliId);if(!c)return;
+  const motivo=document.getElementById('inhabMot').value;
+  const nota=document.getElementById('inhabNota').value.trim();
+  // Si el motivo es "Otro", la nota es obligatoria
+  if(motivo==='Otro'&&!nota){
+    toast('err','Nota requerida','Cuando el motivo es "Otro" debes explicar en la nota');
+    return;
+  }
   const btn=document.getElementById('btnInhab');btn.disabled=true;
   try{
-    await API.patch('clientes',`id=eq.${inhabCliId}`,{activo:false,motivo_inhab:document.getElementById('inhabMot').value,nota_inhab:document.getElementById('inhabNota').value});
-    if(pend(c)>0){const asi={fecha:hoy(),referencia:'AST-BAJA',descripcion:`Baja póliza: ${c.nom} [${c.numero_poliza||'—'}] — ${document.getElementById('inhabMot').value}`,cuenta_dr_cod:'2101',cuenta_dr_nom:'Cuentas por pagar',monto_dr:0,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar',monto_cr:pend(c)};const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);}
-    c.activo=false;logAudit('CLIENTE_INHABILITADO',`${c.nom} · ${c.numero_poliza||'—'}`);
+    await API.patch('clientes',`id=eq.${inhabCliId}`,{activo:false,motivo_inhab:motivo,nota_inhab:nota});
+    if(pend(c)>0){const asi={fecha:hoy(),referencia:'AST-BAJA',descripcion:`Baja póliza: ${c.nom} [${c.numero_poliza||'—'}] — ${motivo}`,cuenta_dr_cod:'2101',cuenta_dr_nom:'Cuentas por pagar',monto_dr:0,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar',monto_cr:pend(c)};const r=await API.post('asientos',asi);if(r&&r[0]){ST.asientos.unshift(r[0]);recalcularSaldosContables();}}
+    c.activo=false;logAudit('CLIENTE_INHABILITADO',`${c.nom} · ${c.numero_poliza||'—'} · Motivo: ${motivo}${nota?' · '+nota:''}`,'Clientes');
     closeM('mInhab');toast('warn','Cliente inhabilitado — póliza cancelada',c.nom);rCli();rDash();actualizarTicker();
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
@@ -4796,17 +4853,110 @@ async function guardarAsientoFn(){
   if(Math.abs(mntDr-mntCr)>0.01){toast('warn','Asiento desbalanceado',`Débito ${fmt(mntDr)} ≠ Crédito ${fmt(mntCr)}`);return;}
   const ctaDr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaDr').value);const ctaCr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaCr').value);
   const btn=document.getElementById('btnAsi');btn.disabled=true;
-  try{const r=await API.post('asientos',{fecha:document.getElementById('asiFecha').value,referencia:document.getElementById('asiRef').value||'AST-MAN',descripcion:desc,cuenta_dr_cod:ctaDr?.cod,cuenta_dr_nom:ctaDr?.nom,monto_dr:mntDr,cuenta_cr_cod:ctaCr?.cod,cuenta_cr_nom:ctaCr?.nom,monto_cr:mntCr});if(r&&r[0])ST.asientos.unshift(r[0]);if(ctaDr)ctaDr.saldo+=mntDr;if(ctaCr)ctaCr.saldo-=mntCr;closeM('mAsiento');toast('ok','Asiento registrado',desc);rAsientos();rMayor();}catch(e){toast('err','Error',e.message);}
+  try{const r=await API.post('asientos',{fecha:document.getElementById('asiFecha').value,referencia:document.getElementById('asiRef').value||'AST-MAN',descripcion:desc,cuenta_dr_cod:ctaDr?.cod,cuenta_dr_nom:ctaDr?.nom,monto_dr:mntDr,cuenta_cr_cod:ctaCr?.cod,cuenta_cr_nom:ctaCr?.nom,monto_cr:mntCr});if(r&&r[0])ST.asientos.unshift(r[0]);recalcularSaldosContables();try{logAudit('ASIENTO_CREADO',`${desc} · DR ${ctaDr?.nom||'—'} ${fmt(mntDr)} / CR ${ctaCr?.nom||'—'} ${fmt(mntCr)}`,'Contabilidad');}catch(e){}closeM('mAsiento');toast('ok','Asiento registrado',desc);rAsientos();rMayor();if(typeof rBalance==='function')rBalance();}catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
 }
 function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f">${a.fecha} · ${a.referencia||''}</div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
 function rBalance(){const act=CUENTAS.filter(c=>c.tipo==='Activo'),pas=CUENTAS.filter(c=>c.tipo==='Pasivo'||c.tipo==='Patrimonio');const tA=act.reduce((s,c)=>s+c.saldo,0),tP=pas.reduce((s,c)=>s+c.saldo,0);const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;document.getElementById('balA').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">ACTIVOS</div>${act.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="border-top:1px solid rgba(0,229,199,.15);margin-top:5px"><span>TOTAL ACTIVOS</span><span class="cdr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tA)}</span></div>`;document.getElementById('balP').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">PASIVOS Y PATRIMONIO</div>${pas.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr"><span>Utilidad del período</span><span style="font-family:var(--mono);color:var(--c4)">${fmt(util)}</span></div><div class="conr" style="border-top:1px solid rgba(244,63,94,.15);margin-top:5px"><span>TOTAL PAS + PAT</span><span class="ccr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tP+util)}</span></div>`;}
-function rPYG(){const ing=CUENTAS.filter(c=>c.tipo==='Ingreso'),gast=CUENTAS.filter(c=>c.tipo==='Gasto');const tI=ing.reduce((s,c)=>s+c.saldo,0),tG=gast.reduce((s,c)=>s+c.saldo,0);const util=tI-tG;document.getElementById('pygC').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">INGRESOS</div>${ing.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="font-weight:700;border-top:1px solid rgba(0,229,199,.1);margin:5px 0"><span>TOTAL INGRESOS</span><span class="cdr" style="font-family:var(--mono)">${fmt(tI)}</span></div><div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin:14px 0 7px">GASTOS</div>${gast.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">(${fmt(c.saldo)})</span></div>`).join('')}<div class="conr" style="font-weight:700;border-top:1px solid rgba(244,63,94,.1);margin:5px 0"><span>TOTAL GASTOS</span><span class="ccr" style="font-family:var(--mono)">(${fmt(tG)})</span></div><div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);border-radius:var(--r10);padding:16px;margin-top:16px;text-align:center"><div style="font-size:8px;font-family:var(--mono);color:var(--tx3);margin-bottom:5px;letter-spacing:.8px">UTILIDAD NETA DEL PERÍODO</div><div style="font-size:24px;font-weight:700;color:${util>=0?'var(--c4)':'var(--c3)'};font-family:var(--mono)">${fmt(util)}</div><div style="font-size:9px;color:var(--tx3);margin-top:4px;font-family:var(--mono)">Margen operativo: ${tI>0?Math.round(util/tI*100):0}%</div></div>`;}
+// Devuelve el rango de fechas [desde, hasta] del período contable 20→19.
+// El período "Mayo 2026" va del 20 may 2026 al 19 jun 2026.
+// (Mismo corte que el historial de pagos, para que todo sea consistente.)
+function periodoContable(mes,anio){
+  const desde=new Date(anio,mes-1,20);  // día 20 del mes
+  let mFin=mes+1,aFin=anio;
+  if(mFin>12){mFin=1;aFin=anio+1;}
+  const hasta=new Date(aFin,mFin-1,19,23,59,59); // día 19 del mes siguiente
+  return {desde,hasta};
+}
+
+function llenarPeriodosPYG(){
+  const sel=document.getElementById('pygPeriodo');
+  if(!sel||sel.options.length)return;
+  const hoy=new Date();
+  let opts='';
+  // Generar los últimos 12 períodos contables
+  for(let i=0;i<12;i++){
+    const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
+    const mes=d.getMonth()+1,anio=d.getFullYear();
+    const mSig=mes===12?1:mes+1;
+    opts+=`<option value="${anio}-${mes}">${MESES[mes-1]} ${anio} (20 ${MESES[mes-1].slice(0,3)} – 19 ${MESES[mSig-1].slice(0,3)})</option>`;
+  }
+  sel.innerHTML=opts;
+}
+
+function rPYG(){
+  llenarPeriodosPYG();
+  const sel=document.getElementById('pygPeriodo');
+  let mes,anio;
+  if(sel&&sel.value){const p=sel.value.split('-');anio=parseInt(p[0]);mes=parseInt(p[1]);}
+  else{const h=new Date();mes=h.getMonth()+1;anio=h.getFullYear();}
+  const {desde,hasta}=periodoContable(mes,anio);
+  // Sumar SOLO los asientos cuya fecha cae dentro del período 16→15
+  const ingPorCta={},gastPorCta={};
+  (ST.asientos||[]).forEach(a=>{
+    if(!a.fecha)return;
+    const f=new Date(a.fecha+'T12:00:00');
+    if(f<desde||f>hasta)return;
+    // Ingreso: cuenta tipo Ingreso acreditada
+    const cr=CUENTAS.find(c=>c.cod===a.cuenta_cr_cod);
+    const dr=CUENTAS.find(c=>c.cod===a.cuenta_dr_cod);
+    if(cr&&cr.tipo==='Ingreso')ingPorCta[cr.cod]=(ingPorCta[cr.cod]||0)+(Number(a.monto_cr)||0);
+    if(dr&&dr.tipo==='Gasto')gastPorCta[dr.cod]=(gastPorCta[dr.cod]||0)+(Number(a.monto_dr)||0);
+  });
+  const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').map(c=>({nom:c.nom,saldo:ingPorCta[c.cod]||0}));
+  const gast=CUENTAS.filter(c=>c.tipo==='Gasto').map(c=>({nom:c.nom,saldo:gastPorCta[c.cod]||0}));
+  const tI=ing.reduce((s,c)=>s+c.saldo,0),tG=gast.reduce((s,c)=>s+c.saldo,0);
+  const util=tI-tG;
+  const fmtF=d=>`${d.getDate()} ${MESES[d.getMonth()].slice(0,3)} ${d.getFullYear()}`;
+  document.getElementById('pygC').innerHTML=`<div style="font-size:9px;color:var(--tx3);font-family:var(--mono);margin-bottom:8px">Período: ${fmtF(desde)} — ${fmtF(hasta)}</div><div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">INGRESOS</div>${ing.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="font-weight:700;border-top:1px solid rgba(0,229,199,.1);margin:5px 0"><span>TOTAL INGRESOS</span><span class="cdr" style="font-family:var(--mono)">${fmt(tI)}</span></div><div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin:14px 0 7px">GASTOS</div>${gast.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">(${fmt(c.saldo)})</span></div>`).join('')}<div class="conr" style="font-weight:700;border-top:1px solid rgba(244,63,94,.1);margin:5px 0"><span>TOTAL GASTOS</span><span class="ccr" style="font-family:var(--mono)">(${fmt(tG)})</span></div><div style="background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);border-radius:var(--r10);padding:16px;margin-top:16px;text-align:center"><div style="font-size:8px;font-family:var(--mono);color:var(--tx3);margin-bottom:5px;letter-spacing:.8px">UTILIDAD NETA DEL PERÍODO</div><div style="font-size:24px;font-weight:700;color:${util>=0?'var(--c4)':'var(--c3)'};font-family:var(--mono)">${fmt(util)}</div><div style="font-size:9px;color:var(--tx3);margin-top:4px;font-family:var(--mono)">Margen operativo: ${tI>0?Math.round(util/tI*100):0}%</div></div>`;
+}
 
 // ── REPORTES ─────────────────────────────────────────────────────────────────
 function rRepAgt(){const act=ST.clientes.filter(c=>c.activo);document.getElementById('rAgt').innerHTML=ST.agentes.map(a=>{const clis=act.filter(c=>c.agente_id===a.id);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pend(c),0);const ef=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const ph=ef>=80?'var(--c1)':ef>=50?'var(--c4)':'var(--c3)';return`<div class="nc p2" style="margin-bottom:8px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><div class="av" style="background:rgba(139,92,246,.1);color:var(--c2);width:34px;height:34px;font-size:12px">${inits(a.nom)}</div><div style="flex:1"><div style="font-weight:700">${a.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${a.cargo||''} · Lic: ${a.licencia||'—'}</div></div><div style="text-align:right"><div style="font-weight:700;color:var(--c1);font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} clientes</div></div><div style="width:36px;height:36px;border-radius:50%;background:${ph}18;border:1px solid ${ph};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${ph};font-family:var(--mono)">${ef}%</div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${ef<50?' d':ef<80?' w':''}" style="width:${ef}%"></div></div></div>`;}).join('')||'<div class="empty">Sin agentes</div>';}
 function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pend(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">PLAN ${p.toUpperCase()}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
 function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e,i)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pend(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const hex=COLS[i%COLS.length];return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%;background:${hex}"></div></div></div>`;}).join('');}
+
+function rRepAging(){
+  const cont=document.getElementById('rAging');
+  if(!cont)return;
+  const hoyD=new Date();
+  const buckets={b1:{lbl:'0 - 30 dias',col:'#10b981',total:0,facs:[]},
+                 b2:{lbl:'31 - 60 dias',col:'#fbbf24',total:0,facs:[]},
+                 b3:{lbl:'61 - 90 dias',col:'#f97316',total:0,facs:[]},
+                 b4:{lbl:'Mas de 90 dias',col:'#f43f5e',total:0,facs:[]}};
+  (ST.facturas||[]).forEach(f=>{
+    if(f.estado==='Pagado'||f.estado==='Anulada')return;
+    const saldo=Number(f.total)||0;
+    if(saldo<=0)return;
+    const femi=f.fecha_emision?new Date(f.fecha_emision+'T12:00:00'):(f.created_at?new Date(f.created_at):hoyD);
+    const dias=Math.floor((hoyD-femi)/(1000*60*60*24));
+    let b;
+    if(dias<=30)b=buckets.b1;else if(dias<=60)b=buckets.b2;else if(dias<=90)b=buckets.b3;else b=buckets.b4;
+    b.total+=saldo;
+    b.facs.push({nom:f.cliente_nom,monto:saldo,dias,ncf:f.ncf||'-',periodo:f.periodo||''});
+  });
+  const granTotal=buckets.b1.total+buckets.b2.total+buckets.b3.total+buckets.b4.total;
+  let html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px">';
+  Object.values(buckets).forEach(b=>{
+    const pct=granTotal>0?Math.round(b.total/granTotal*100):0;
+    html+='<div style="border:1px solid '+b.col+'33;border-left:4px solid '+b.col+';border-radius:var(--r10);padding:12px;background:var(--bg2)"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);letter-spacing:.5px">'+b.lbl+'</div><div style="font-size:18px;font-weight:700;color:'+b.col+';font-family:var(--mono);margin:4px 0">'+fmt(b.total)+'</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">'+b.facs.length+' factura(s) - '+pct+'% del total</div></div>';
+  });
+  html+='</div>';
+  html+='<div style="text-align:center;padding:10px;background:var(--bg3);border-radius:var(--r8);margin-bottom:16px"><span style="font-size:9px;color:var(--tx3);font-family:var(--mono)">DEUDA TOTAL EN CARTERA: </span><span style="font-size:15px;font-weight:700;color:var(--c3);font-family:var(--mono)">'+fmt(granTotal)+'</span></div>';
+  Object.values(buckets).forEach(b=>{
+    if(!b.facs.length)return;
+    b.facs.sort((x,y)=>y.dias-x.dias);
+    html+='<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;color:'+b.col+';font-family:var(--mono);margin-bottom:6px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:'+b.col+'"></span>'+b.lbl.toUpperCase()+' - '+fmt(b.total)+'</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="color:var(--tx3);font-family:var(--mono);font-size:8px"><th style="text-align:left;padding:4px">CLIENTE</th><th style="text-align:left;padding:4px">PERIODO</th><th style="text-align:right;padding:4px">DIAS</th><th style="text-align:right;padding:4px">MONTO</th></tr></thead><tbody>';
+    b.facs.forEach(f=>{
+      html+='<tr style="border-top:1px solid rgba(148,163,184,.1)"><td style="padding:5px 4px;font-weight:600">'+f.nom+'</td><td style="padding:5px 4px;color:var(--tx3);font-family:var(--mono)">'+f.periodo+'</td><td style="padding:5px 4px;text-align:right;font-family:var(--mono);color:'+b.col+'">'+f.dias+'d</td><td style="padding:5px 4px;text-align:right;font-family:var(--mono);font-weight:700">'+fmt(f.monto)+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+  });
+  if(granTotal===0)html='<div class="empty">No hay deuda pendiente en cartera. Todo al dia.</div>';
+  cont.innerHTML=html;
+  try{logAudit('REPORTE_AGING','Reporte de aging de cartera consultado','Reportes');}catch(e){}
+}
 
 // ── DGII / ARS ───────────────────────────────────────────────────────────────
 function rRepNuevos(){
@@ -5013,11 +5163,9 @@ async function eliminarArs(i){
 
 // removeARS es el nombre que usa el botón × — apunta a eliminarArs
 function removeARS(i){ eliminarArs(i); }
-function addARS(){ document.getElementById('newArs')?.focus(); }
 
 async function rArsList(){
   const el=document.getElementById('arsList');
-  if(!el)return;
   // Cargar ARS desde Supabase primero (para que TODOS los usuarios las vean)
   try{
     const supa=await cargarConfigSupabase('ars_list');
@@ -5032,14 +5180,25 @@ async function rArsList(){
     const saved=localStorage.getItem('nx_ars_list');
     if(saved)try{_arsList=JSON.parse(saved);}catch{}
   }
-  el.innerHTML=_arsList.map((a,i)=>`
+  // Pintar los chips de ARS (solo si el elemento existe — pantalla Tarifas)
+  if(el){
+    el.innerHTML=_arsList.map((a,i)=>`
     <div style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:5px 10px">
       <span style="font-size:11px;font-weight:500;color:#1d4ed8">${a}</span>
       <button onclick="removeARS(${i})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:13px;line-height:1;padding:0">×</button>
     </div>`).join('');
+  }
   // Actualizar también el select de clientes
+  poblarSelectArsCliente();
+}
+
+// Llena el selector de ARS del formulario de cliente.
+// Funciona desde cualquier pantalla, no depende de Tarifas.
+function poblarSelectArsCliente(){
   const sel=document.getElementById('cARS');
-  if(sel){const cur=sel.value;sel.innerHTML='<option value="">Seleccionar ARS...</option>'+_arsList.map(a=>`<option ${a===cur?'selected':''}>${a}</option>`).join('');}
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Seleccionar ARS...</option>'+_arsList.map(a=>`<option ${a===cur?'selected':''}>${a}</option>`).join('');
 }
 
 async function guardarTarifas(){
@@ -5074,7 +5233,7 @@ async function guardarAutoConfig(){
   }
   autoCfg.dia=diaVal;
   autoCfg.hora=horaVal;
-  const waEl=document.getElementById('autoWA')||document.getElementById('autoWa');
+  const waEl=document.getElementById('autoWa');
   if(waEl)autoCfg.wa=waEl.value;
   autoCfg.diasCustom=diasCustomVal;
   // Guardar local + Supabase (persistente)
@@ -5109,7 +5268,7 @@ async function rAuto(){
   }catch(e){}
   document.getElementById('autoDia').value=autoCfg.dia;
   document.getElementById('autoHora').value=autoCfg.hora;
-  const waEl=document.getElementById('autoWA')||document.getElementById('autoWa');
+  const waEl=document.getElementById('autoWa');
   if(waEl)waEl.value=autoCfg.wa;
   const dcEl=document.getElementById('autoDiasCustom');
   if(dcEl)dcEl.value=autoCfg.diasCustom||'';
@@ -5273,7 +5432,7 @@ async function confirmarCambiarLogin(id, loginActual, nuevoLogin){
   }
 }
 
-async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:document.getElementById('uPwd').value,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');rUsuarios();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
+async function guardarUsuario(){const nom=document.getElementById('uNom').value.trim(),login=document.getElementById('uLogin').value.trim();if(!nom||!login){toast('err','Campos requeridos','Nombre y usuario obligatorios');return;}const pwdPlano=document.getElementById('uPwd').value;if(!pwdPlano||pwdPlano.length<4){toast('err','Contraseña insegura','La contraseña debe tener al menos 4 caracteres');return;}const btn=document.getElementById('btnUsu');btn.disabled=true;try{const pwdHash=await sha256(pwdPlano);const r=await API.post('usuarios_sistema',{nom,cargo:document.getElementById('uCargo').value.trim(),login,pwd:pwdHash,rol:document.getElementById('uRol').value,activo:true});if(r&&r[0])ST.usuarios.push(r[0]);logAudit('USUARIO_CREADO',`${nom} (@${login}) · Rol: ${document.getElementById('uRol').value}`,'Usuarios');closeM('mUsuario');rUsuarios();toast('ok','Usuario creado',nom);['uNom','uCargo','uLogin','uPwd'].forEach(id=>document.getElementById(id).value='');}catch(e){toast('err','Error',e.message.includes('unique')?'El usuario ya existe':e.message);}btn.disabled=false;}
 async function eliminarUsu(id){if(!confirm('¿Eliminar usuario?'))return;try{await API.del('usuarios_sistema',`id=eq.${id}`);ST.usuarios=ST.usuarios.filter(u=>u.id!==id);rUsuarios();}catch(e){toast('err','Error',e.message);}}
 
 // ── EXPORTAR CSV ─────────────────────────────────────────────────────────────
@@ -5911,7 +6070,7 @@ function exportarCSVFacturas(){
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
   const filtroEst=document.getElementById('fFactEstado')?.value||'activas';
   let lista=ST.facturas.filter(f=>f.periodo===key);
-  if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado');
+  if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada');
   else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
   const rows=[
     ['NEXUS PRO v6 — REPORTE DE FACTURAS'],
