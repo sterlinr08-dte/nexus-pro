@@ -5008,6 +5008,9 @@ function actualizarProgreso(){
   if(otroInp)otroInp.style.display=otroChk?'block':'none';
 }
 async function guardarCli(){
+  // Nombre del cliente (obligatorio)
+  const nom=document.getElementById('cNom').value.trim();
+  if(!nom){toast('err','Campo requerido','Ingrese el nombre del cliente');return;}
   // ── Validar cédula duplicada (activos e inhabilitados) ──
   const cedula=document.getElementById('cCed').value.trim();
   if(cedula){
@@ -5022,7 +5025,11 @@ async function guardarCli(){
     }
   }
   const btn=document.getElementById('btnGCli');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
-  // Precio personalizado (solo si tiene permiso y está activado)
+  // Red de seguridad: si algo se traba, reactivar el botón a los 12 seg
+  const _btnTimeout=setTimeout(()=>{
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
+    toast('err','La operación tardó demasiado','Revisa tu conexión e intenta de nuevo');
+  },12000);
   let precioT=null, precioD=null;
   const customOn=document.getElementById('cPrecioCustomOn')?.checked;
   if(customOn && tienePermiso('modificar_precio')){
@@ -5112,6 +5119,7 @@ async function guardarCli(){
       }
     }catch(e){}
   }catch(e){mostrarError(e.message,'Al guardar cliente: '+JSON.stringify({nom,editCliId}));toast('err','Error guardando',e.message);}
+  clearTimeout(_btnTimeout);
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
 }
 
@@ -5627,7 +5635,7 @@ async function guardarPlantillaWa(){
   try{await guardarConfigSupabase('auto_facturacion',autoCfg);}catch(e){console.log('Plantilla Supabase:',e.message);}
   toast('ok','Plantilla WhatsApp guardada');
 }
-function updWA(){const tpl=document.getElementById('waTpl').value;document.getElementById('waP').textContent=tpl.replace('{{nombre}}','María García').replace('{{plan}}','Superior').replace('{{mes}}','Junio 2026').replace('{{prima}}','5,800').replace('{{deuda}}','*Deuda anterior:* RD$ 5,800').replace('{{total}}','11,600').replace('{{poliza}}','POL-2026-000001').replace('{{vence}}','2026-12-31').replace('{{empresa}}',CFG.empNom);}
+function updWA(){const t=document.getElementById('waTpl');if(!t)return;const tpl=t.value;const wp=document.getElementById('waP');if(!wp)return;wp.textContent=tpl.replace('{{nombre}}','María García').replace('{{plan}}','Superior').replace('{{mes}}','Junio 2026').replace('{{prima}}','5,800').replace('{{deuda}}','*Deuda anterior:* RD$ 5,800').replace('{{total}}','11,600').replace('{{poliza}}','POL-2026-000001').replace('{{vence}}','2026-12-31').replace('{{empresa}}',CFG.empNom);}
 async function rAuto(){
   // Cargar config desde Supabase primero (persistente)
   try{
