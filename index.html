@@ -443,28 +443,28 @@ tbody tr{transition:background .12s ease}
 
 /* ════ SUB-TABS CLIENTES ════ */
 .cli-subtab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--ff)}
-.acc-menu{position:absolute;right:0;top:100%;margin-top:6px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.6);border-radius:20px;box-shadow:0 8px 40px rgba(15,31,61,.22),0 1px 3px rgba(15,31,61,.1),inset 0 1px 0 rgba(255,255,255,.7);z-index:200;min-width:248px;padding:7px;overflow:hidden;transform-origin:top right;animation:accIn .22s cubic-bezier(.34,1.3,.64,1)}
+.acc-menu{position:absolute;right:0;top:100%;margin-top:6px;background:#ffffff;border:1px solid #e8edf3;border-radius:20px;box-shadow:0 10px 44px rgba(15,31,61,.24),0 2px 6px rgba(15,31,61,.12);z-index:200;min-width:248px;padding:7px;overflow:hidden;transform-origin:top right;animation:accIn .22s cubic-bezier(.34,1.3,.64,1)}
 @keyframes accIn{from{opacity:0;transform:scale(.9) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 @keyframes accInUp{from{opacity:0;transform:scale(.95) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .acc-menu-hd{font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.6px;padding:7px 12px 4px;font-family:var(--mono)}
 .acc-menu button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;padding:10px 11px;font-size:12px;font-weight:600;color:#1e293b;cursor:pointer;border-radius:13px;font-family:var(--ff);white-space:nowrap;transition:background .14s,transform .1s}
-.acc-menu button:hover{background:rgba(0,0,0,.05)}
-.acc-menu button:active{transform:scale(.97);background:rgba(0,0,0,.08)}
+.acc-menu button:hover{background:#f1f5f9}
+.acc-menu button:active{transform:scale(.97);background:#e8edf3}
 .acc-menu button i{font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex-shrink:0}
-.acc-menu .am-sep{height:1px;background:rgba(15,23,42,.08);margin:5px 10px}
+.acc-menu .am-sep{height:1px;background:#eef2f7;margin:5px 10px}
 .acc-i-blue i{background:rgba(37,99,235,.13);color:#2563eb}
 .acc-i-green i{background:rgba(16,185,129,.15);color:#059669}
 .acc-i-purple i{background:rgba(124,58,237,.13);color:#7c3aed}
 .acc-i-amber i{background:rgba(245,158,11,.15);color:#d97706}
 .acc-i-red i{background:rgba(239,68,68,.13);color:#ef4444}
 .acc-i-gray i{background:rgba(100,116,139,.13);color:#64748b}
-body.tema-premium .acc-menu{background:rgba(22,33,61,.8);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-color:rgba(255,255,255,.1);box-shadow:0 8px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
+body.tema-premium .acc-menu{background:#16213d;border-color:#2a3a5c;box-shadow:0 10px 44px rgba(0,0,0,.6)}
 body.tema-premium .acc-menu button{color:#e2e8f0}
-body.tema-premium .acc-menu button:hover{background:rgba(255,255,255,.07)}
-body.tema-premium .acc-menu button:active{background:rgba(255,255,255,.12)}
-body.tema-premium .acc-menu .am-sep{background:rgba(255,255,255,.08)}
+body.tema-premium .acc-menu button:hover{background:#243150}
+body.tema-premium .acc-menu button:active{background:#2a3a5c}
+body.tema-premium .acc-menu .am-sep{background:#2a3a5c}
 body.tema-premium .acc-menu-hd{color:#64748b}
-.acc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.3);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:4999;animation:bdIn .2s ease}
+.acc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:4999;animation:bdIn .2s ease}
 @keyframes bdIn{from{opacity:0}to{opacity:1}}
 @media(max-width:640px){
   .acc-menu{min-width:0!important;border-radius:24px;padding:9px;animation:accInUp .26s cubic-bezier(.34,1.2,.64,1)}
