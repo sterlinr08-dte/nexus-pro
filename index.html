@@ -811,7 +811,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <header class="tnav">
         <button class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
         <span class="pttl" id="pttl">// DASHBOARD</span>
-        <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas..." oninput="gSearch(this.value)"/></div>
+        <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas... (Enter para buscar)" onkeydown="if(event.key==='Enter')gSearch(this.value)"/></div>
         <div class="tn-r">
           <button class="tn-b c4" onclick="autoGenerar()"><i class="ti ti-robot"></i> Auto-gen</button>
           <button class="tn-b" onclick="exportarCSV()" title="Exportar"><i class="ti ti-file-spreadsheet"></i></button>
@@ -1158,7 +1158,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div class="nc">
                 <div class="ch"><div class="ct">💰 Primas y comisiones</div></div>
                 <div style="font-size:10px;font-weight:700;color:#1d4ed8;margin-bottom:8px">NUMERACIÓN DE FACTURAS</div>
-                <div class="fr"><label>Número inicial</label><input type="number" id="cfgNumIni" placeholder="Ej: 154820"/></div>
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;margin-bottom:8px">
+                  <div style="font-size:9px;color:#64748b;font-family:var(--mono)">CONTADOR ACTUAL (última póliza generada)</div>
+                  <div id="numContadorActual" style="font-size:20px;font-weight:700;color:#1d4ed8;font-family:var(--mono)">—</div>
+                  <div style="font-size:8px;color:#94a3b8">La próxima factura usará el número siguiente a este.</div>
+                </div>
+                <div class="fr"><label>Cambiar número inicial (la próxima factura empezará desde aquí)</label><input type="number" id="cfgNumIni" placeholder="Ej: 154820"/></div>
+                <button class="btn bsm bc1" onclick="guardarNumeracion()" style="width:100%;margin-bottom:10px"><i class="ti ti-device-floppy"></i> Guardar numeración</button>
                 <div style="font-size:10px;font-weight:700;color:#dc2626;margin:10px 0 8px">COSTOS REALES POR PLAN (RD$)</div>
                 <div class="g3">
                   <div class="fr"><label>Básico</label><input type="number" id="cfgCost1"/></div>
@@ -2973,7 +2979,7 @@ function rNotifs(){
   ST.clientes.filter(c=>c.activo&&c.fecha_fin).forEach(c=>{
     const d=Math.ceil((new Date(c.fecha_fin)-hoyD)/86400000);
     if(d>=0&&d<=30){
-      _notifs.push({id:'pol_'+c.id,icon:'⚠️',ttl:`Póliza por vencer en ${d} días`,sub:c.nom+' · '+c.numero_poliza,ts:hoyD.toISOString(),tipo:'cobros',nav:{tipo:'cliente',id:c.id}});
+      _notifs.push({id:'pol_'+c.id,icon:'⚠️',ttl:`Póliza por vencer en ${d} días`,sub:c.nom+' · '+c.numero_poliza,ts:null,tipo:'cobros',nav:{tipo:'cliente',id:c.id}});
     }
   });
   // Clientes nuevos hoy → navega al cliente
@@ -2984,10 +2990,10 @@ function rNotifs(){
   });
   // Facturas pendientes → navega a facturas
   const pendCount=ST.facturas.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
-  if(pendCount>0)_notifs.push({id:'pend_fac',icon:'💰',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Toca para ir a Facturas',ts:hoyD.toISOString(),tipo:'cobros',nav:{tipo:'facturas'}});
+  if(pendCount>0)_notifs.push({id:'pend_fac',icon:'💰',ttl:`${pendCount} facturas pendientes de cobro`,sub:'Toca para ir a Facturas',ts:null,tipo:'cobros',nav:{tipo:'facturas'}});
   // Errores del sistema → navega a auditoría
   if(window._errorLog&&window._errorLog.length>0){
-    _notifs.push({id:'err_log',icon:'🔴',ttl:`${window._errorLog.length} errores registrados`,sub:'Toca para ver detalles',ts:hoyD.toISOString(),tipo:'errores',nav:{tipo:'auditoria'}});
+    _notifs.push({id:'err_log',icon:'🔴',ttl:`${window._errorLog.length} errores registrados`,sub:'Toca para ver detalles',ts:null,tipo:'errores',nav:{tipo:'auditoria'}});
   }
 
   const badge=document.getElementById('notifBadge');
@@ -3913,6 +3919,34 @@ async function generarNCF(tipo='B02'){
 }
 
 // ── NÚMERO DE PÓLIZA ─────────────────────────────────────────────────────────
+// Guarda solo la numeración de facturas y refresca el contador visible
+async function guardarNumeracion(){
+  const inp=document.getElementById('cfgNumIni');
+  const numIni=parseInt(inp?.value);
+  if(!numIni||numIni<=0){toast('err','Número inválido','Ingrese un número mayor a 0');return;}
+  try{
+    // Guardamos numIni-1 porque la próxima factura suma 1
+    await guardarTexto('seq_poliza',String(numIni-1));
+    ST.config['seq_poliza']=String(numIni-1);
+    toast('ok','Numeración guardada',`La próxima factura será la #${numIni}`);
+    refrescarContadorNum();
+    inp.value='';
+  }catch(e){
+    mostrarError(e.message,'Al guardar la numeración');
+  }
+}
+// Lee el contador actual de Supabase y lo muestra
+async function refrescarContadorNum(){
+  const el=document.getElementById('numContadorActual');
+  if(!el)return;
+  try{
+    const cfg=await API.get('configuracion',`clave=eq.seq_poliza&select=valor`);
+    const actual=cfg&&cfg[0]?parseInt(cfg[0].valor)||0:0;
+    el.textContent=actual>0?'POL-'+new Date().getFullYear()+'-'+String(actual).padStart(6,'0'):'Sin facturas aún';
+  }catch(e){
+    el.textContent='No disponible';
+  }
+}
 async function generarNumPoliza(){
   try{
     const cfg=await API.get('configuracion',`clave=eq.seq_poliza&select=*`);
@@ -3953,7 +3987,7 @@ function rDash(){
     <div class="kpi k2"><i class="ti ti-trending-up ki"></i><div class="kl">PRIMA MENSUAL</div><div class="kv v2" style="font-size:13px">${fmt(prima)}</div><div class="ks">cartera activa</div></div>
     <div class="kpi k3"><i class="ti ti-check ki"></i><div class="kl">COBRADO</div><div class="kv v3" style="font-size:13px">${fmt(cob)}</div><div class="ks">${ef}% efectividad</div></div>
     <div class="kpi k4"><i class="ti ti-clock ki"></i><div class="kl">PENDIENTE</div><div class="kv v4" style="font-size:13px">${fmt(pd)}</div><div class="ks">por cobrar</div></div>
-    <div class="kpi k5"><i class="ti ti-building ki"></i><div class="kl">EMPRESAS</div><div class="kv v5">${ST.empresas.length}</div><div class="ks">${ST.agentes.length} agentes</div></div>`;
+    <div class="kpi k5" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)" style="cursor:pointer"><i class="ti ti-clipboard-list ki"></i><div class="kl">EN PROCESO</div><div class="kv v5">${ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length}</div><div class="ks">clientes en onboarding</div></div>`;
   // KPI de utilidad — SOLO VISIBLE PARA ADMIN
   if((CFG.cost1||CFG.cost2||CFG.cost3) && sesion?.rol==='admin'){
     const costoTotal=act.reduce((s,c)=>{const cost=c.plan==='Básico'?CFG.cost1:c.plan==='Superior'?CFG.cost2:CFG.cost3;return s+cost+((c.deps||[]).length*(cost*0.6));},0);
@@ -5369,7 +5403,8 @@ function rConfig(){
   set('cfgEmpTel',CFG.empTel);
   set('cfgEmpEmail',CFG.empEmail);
   set('cfgEmpDir',CFG.empDir);
-  set('cfgNumIni',CFG.numIni||CFG.seqFactura);
+  set('cfgNumIni','');
+  refrescarContadorNum();
   set('cfgCost1',CFG.cost1);
   set('cfgCost2',CFG.cost2);
   set('cfgCost3',CFG.cost3);
