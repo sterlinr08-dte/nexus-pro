@@ -443,7 +443,7 @@ tbody tr{transition:background .12s ease}
 
 /* ════ SUB-TABS CLIENTES ════ */
 .cli-subtab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--ff)}
-.acc-menu{position:absolute;right:0;top:100%;margin-top:6px;background:#ffffff;border:1px solid #e8edf3;border-radius:20px;box-shadow:0 10px 44px rgba(15,31,61,.24),0 2px 6px rgba(15,31,61,.12);z-index:200;min-width:248px;padding:7px;overflow:hidden;transform-origin:top right;animation:accIn .22s cubic-bezier(.34,1.3,.64,1)}
+.acc-menu{position:absolute;right:0;top:100%;margin-top:6px;background:#ffffff;border:1px solid #e8edf3;border-radius:20px;box-shadow:0 10px 44px rgba(15,31,61,.24),0 2px 6px rgba(15,31,61,.12);z-index:99999;min-width:248px;padding:7px;overflow:hidden;transform-origin:top right;animation:accIn .22s cubic-bezier(.34,1.3,.64,1)}
 @keyframes accIn{from{opacity:0;transform:scale(.9) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
 @keyframes accInUp{from{opacity:0;transform:scale(.95) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .acc-menu-hd{font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.6px;padding:7px 12px 4px;font-family:var(--mono)}
@@ -650,6 +650,31 @@ input[type="text"], input[type="search"]{
 input[type="text"].no-upper, input[type="search"].no-upper{
   text-transform: none !important;
 }
+
+
+/* ═══ FIX DEFINITIVO MENÚ ACCIONES CLIENTES — iPHONE / SAFARI ═══ */
+body.acc-open{overflow:hidden!important;touch-action:none;}
+.acc-backdrop{
+  position:fixed!important;inset:0!important;z-index:2147483600!important;
+  background:rgba(15,23,42,.58)!important;backdrop-filter:blur(4px)!important;-webkit-backdrop-filter:blur(4px)!important;
+}
+.acc-mobile-modal{
+  position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;
+  width:calc(100vw - 48px)!important;max-width:420px!important;max-height:72vh!important;overflow-y:auto!important;
+  z-index:2147483640!important;background:#fff!important;border:1px solid rgba(226,232,240,.95)!important;
+  border-radius:26px!important;padding:14px!important;box-shadow:0 30px 90px rgba(15,23,42,.38)!important;
+  animation:accModalIn .18s cubic-bezier(.2,.9,.2,1)!important;-webkit-overflow-scrolling:touch!important;
+}
+.acc-mobile-modal .acc-grip{width:54px;height:6px;border-radius:99px;background:#cbd5e1;margin:0 auto 12px;}
+.acc-mobile-modal .acc-menu-hd{font-size:10px;font-weight:800;color:#94a3b8;letter-spacing:.9px;padding:8px 12px 6px;font-family:var(--mono);}
+.acc-mobile-modal button{display:flex!important;align-items:center!important;gap:16px!important;width:100%!important;text-align:left!important;background:none!important;border:none!important;padding:14px 12px!important;font-size:15px!important;font-weight:800!important;color:#0f172a!important;cursor:pointer!important;border-radius:16px!important;font-family:var(--ff)!important;white-space:nowrap!important;}
+.acc-mobile-modal button:active{background:#f1f5f9!important;transform:scale(.98)!important;}
+.acc-mobile-modal button i{font-size:20px!important;width:44px!important;height:44px!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:14px!important;flex-shrink:0!important;pointer-events:none!important;}
+.acc-mobile-modal button *{pointer-events:none!important;}
+.acc-mobile-modal .am-sep{height:1px;background:#e2e8f0;margin:8px 12px;}
+@keyframes accModalIn{from{opacity:0;transform:translate(-50%,-46%) scale(.96)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@media(max-width:380px){.acc-mobile-modal{width:calc(100vw - 28px)!important}.acc-mobile-modal button{font-size:14px!important;gap:12px!important}}
+
 </style>
 </head>
 <body>
@@ -4245,47 +4270,50 @@ function switchCliTab(tab){
 // Menú desplegable de acciones del cliente
 function cerrarAccMenus(){
   document.querySelectorAll('.acc-menu').forEach(m=>{m.style.display='none';});
-  document.querySelectorAll('.acc-backdrop').forEach(b=>b.remove());
+  document.querySelectorAll('.acc-backdrop,.acc-mobile-modal').forEach(b=>b.remove());
+  document.body.classList.remove('acc-open');
 }
 function toggleAccMenu(ev,cid){
   ev.stopPropagation();
   const menu=document.getElementById('accMenu_'+cid);
   if(!menu)return;
+  const esMovil=window.innerWidth<=640;
+
+  // En móvil NO usamos el menú dentro de la tabla, porque Safari/iPhone puede dejarlo detrás
+  // de los contenedores con overflow. Creamos un modal limpio pegado al BODY.
+  if(esMovil){
+    cerrarAccMenus();
+    const bd=document.createElement('div');
+    bd.className='acc-backdrop';
+    bd.onclick=()=>cerrarAccMenus();
+
+    const modal=document.createElement('div');
+    modal.className='acc-mobile-modal';
+    modal.innerHTML=`<div class="acc-grip"></div>${menu.innerHTML}`;
+    modal.onclick=(e)=>e.stopPropagation();
+
+    document.body.appendChild(bd);
+    document.body.appendChild(modal);
+    document.body.classList.add('acc-open');
+    return;
+  }
+
   const estaAbierto=menu.style.display==='block';
   cerrarAccMenus();
-  document.querySelectorAll('.acc-backdrop').forEach(b=>b.remove());
   if(estaAbierto)return;
-  const esMovil=window.innerWidth<=640;
-  // Limpiar estilos previos para empezar de cero
   menu.style.cssText='';
   menu.style.display='block';
   menu.style.position='fixed';
-  menu.style.zIndex='5000';
-  if(esMovil){
-    // Móvil: hoja flotante compacta, con márgenes a los lados
-    menu.style.left='14px';
-    menu.style.right='14px';
-    menu.style.bottom='24px';
-    menu.style.top='auto';
-    menu.style.maxHeight='58vh';
-    menu.style.overflowY='auto';
-    // Fondo oscuro con blur detrás
-    const bd=document.createElement('div');
-    bd.className='acc-backdrop';
-    bd.onclick=()=>{cerrarAccMenus();};
-    document.body.appendChild(bd);
-  }else{
-    // PC: menú junto al botón
-    const btn=ev.currentTarget.getBoundingClientRect();
-    menu.style.top=(btn.bottom+6)+'px';
-    const ancho=menu.offsetWidth||230;
-    let left=btn.right-ancho;
-    if(left<8)left=8;
-    menu.style.left=left+'px';
-    menu.style.right='auto';
-    if(btn.bottom+menu.offsetHeight>window.innerHeight-10){
-      menu.style.top=(btn.top-menu.offsetHeight-6)+'px';
-    }
+  menu.style.zIndex='99999';
+  const btn=ev.currentTarget.getBoundingClientRect();
+  menu.style.top=(btn.bottom+6)+'px';
+  const ancho=menu.offsetWidth||248;
+  let left=btn.right-ancho;
+  if(left<8)left=8;
+  menu.style.left=left+'px';
+  menu.style.right='auto';
+  if(btn.bottom+menu.offsetHeight>window.innerHeight-10){
+    menu.style.top=(btn.top-menu.offsetHeight-6)+'px';
   }
 }
 // Cerrar menús al hacer clic fuera o al hacer scroll
