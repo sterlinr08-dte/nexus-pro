@@ -846,19 +846,20 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="qa-g">
             <div class="qa" onclick="abrirNuevoCli()"><span class="qa-i"><i class="ti ti-user-plus"></i></span><div class="qa-l">Nuevo cliente</div></div>
             <div class="qa" onclick="nav('facturas',null);setTimeout(genFacturas,100)"><span class="qa-i"><i class="ti ti-file-plus"></i></span><div class="qa-l">Generar facturas</div></div>
-            <div class="qa" onclick="nav('cobros',null)"><span class="qa-i"><i class="ti ti-wallet"></i></span><div class="qa-l">Registrar cobro</div></div>
+            <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)"><span class="qa-i"><i class="ti ti-wallet"></i></span><div class="qa-l">Registrar cobro</div></div>
             <div class="qa" onclick="nav('comisiones',null)"><span class="qa-i"><i class="ti ti-percentage"></i></span><div class="qa-l">Comisiones</div></div>
             <div class="qa" onclick="nav('dgii',null)"><span class="qa-i"><i class="ti ti-receipt-tax"></i></span><div class="qa-l">Reporte DGII</div></div>
             <div class="qa" onclick="exportarCSV()"><span class="qa-i"><i class="ti ti-file-spreadsheet"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
           <div class="kg" id="kpiG"><div class="loading"><div class="spin"></div>Cargando...</div></div>
           <div class="nc"><div class="ch"><div><div class="ct">Resumen de cobros</div><div class="ct-s">últimos 6 meses</div></div></div><div id="chartCobros" style="padding:8px 4px 4px"></div></div>
+          <div class="nc"><div class="ch"><div><div class="ct">Clientes en proceso</div><div class="ct-s">onboarding y seguimientos</div></div><button class="btn bsm bc1" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)">Ver</button></div><div id="wProceso"></div></div>
           <div class="g2">
             <div class="nc"><div class="ch"><div><div class="ct">Cartera por plan</div><div class="ct-s">prima mensual RD$</div></div></div><div class="br" id="bPlan"></div></div>
             <div class="nc"><div class="ch"><div><div class="ct">Cobro por agente</div><div class="ct-s">efectividad</div></div></div><div class="br" id="bAgt"></div></div>
           </div>
           <div class="nc"><div class="ch"><span class="ct">Pólizas próximas a vencer (30 días)</span><button class="btn bsm bc3" onclick="nav('polizas',null)">Ver todas</button></div><div id="dashVenc"></div></div>
-          <div class="nc"><div class="ch"><span class="ct">Saldos pendientes</span><button class="btn bsm bc4" onclick="nav('cobros',null)">Ver todos</button></div><div id="dashD"></div></div>
+          <div class="nc"><div class="ch"><span class="ct">Saldos pendientes</span><button class="btn bsm bc4" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)">Ver todos</button></div><div id="dashD"></div></div>
         </div>
 
         <!-- CLIENTES -->
@@ -868,23 +869,28 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div><div class="ct">Clientes <span id="cliCnt" style="color:var(--tx3);font-weight:400"></span></div><div class="ct-s">con número de póliza y NCF</div></div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
-                <button class="btn bxl bsm" onclick="abrirNuevoCli()"><i class="ti ti-plus"></i> Nuevo</button>
               </div>
             </div>
-            <!-- Sub-tabs Activos / Inhabilitados -->
-            <div style="display:flex;gap:4px;margin-bottom:12px;background:#f1f5f9;border-radius:10px;padding:4px;width:fit-content">
+            <!-- Botón Nuevo + Sub-tabs en una sola fila, en orden: Nuevo, Activos, En proceso, VIP, Inhabilitados -->
+            <div style="display:flex;gap:4px;margin-bottom:12px;background:#f1f5f9;border-radius:10px;padding:4px;width:fit-content;flex-wrap:wrap">
+              <button class="cli-subtab" style="background:#2563eb;color:#fff" onclick="abrirNuevoCli()">
+                <i class="ti ti-plus"></i> Nuevo
+              </button>
               <button id="cliTabAct" class="cli-subtab active-subtab" onclick="switchCliTab('activos')">
                 <i class="ti ti-users"></i> Activos <span id="cntAct" style="background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
               </button>
-              <button id="cliTabInh" class="cli-subtab" onclick="switchCliTab('inhabilitados')">
-                <i class="ti ti-user-off"></i> Inhabilitados <span id="cntInh" style="background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              <button id="cliTabProc" class="cli-subtab" onclick="switchCliTab('proceso')">
+                <i class="ti ti-clipboard-list"></i> En proceso <span id="cntProc" style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
               </button>
               <button id="cliTabVip" class="cli-subtab" onclick="switchCliTab('vip')">
                 <i class="ti ti-star"></i> VIP <span id="cntVip" style="background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
               </button>
+              <button id="cliTabInh" class="cli-subtab" onclick="switchCliTab('inhabilitados')">
+                <i class="ti ti-user-off"></i> Inhabilitados <span id="cntInh" style="background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              </button>
             </div>
             <div class="frow">
-              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, apodo, cédula, póliza..." id="cliQ" oninput="debouncedRCli()"/></div>
+              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, apodo, cédula, póliza..." id="cliQ" oninput="rCli()"/></div>
               <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
             </div>
@@ -1439,6 +1445,59 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Día de facturación (1-28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" placeholder="Día del mes"/></div>
       <div class="fr"><label>Deuda RD$ (al crear: deuda previa · al editar: ajusta la deuda total)</label><input type="number" id="cDeudaIni" value="0" min="0" step="0.01" placeholder="Ej: 17400" class="no-upper"/></div>
     </div>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin:8px 0">
+      <div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:10px;font-family:var(--mono)">📋 ESTADO Y PROCESO DEL CLIENTE</div>
+      <div class="frow">
+        <div class="fr"><label>Estado del cliente</label>
+          <select id="cEstadoCli" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)">
+            <option value="ACTIVO">🟢 Activo</option>
+            <option value="EN_PROCESO">🟡 En proceso</option>
+            <option value="SUSPENDIDO">🟠 Suspendido</option>
+            <option value="CANCELADO">🔴 Cancelado</option>
+          </select>
+        </div>
+        <div class="fr"><label>Prioridad</label>
+          <select id="cPrioridad" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)">
+            <option value="BAJA">Baja</option>
+            <option value="MEDIA" selected>Media</option>
+            <option value="ALTA">Alta</option>
+            <option value="URGENTE">Urgente</option>
+          </select>
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin:8px 0;background:#eff6ff;padding:8px;border-radius:8px">
+        <input type="checkbox" id="cPermFact" checked style="width:18px;height:18px"/>
+        <span><strong>Permitir facturación automática</strong><br><span style="font-size:9px;color:#64748b">Si está activo, el cliente entra en la facturación automática según su día configurado. Independiente del estado.</span></span>
+      </label>
+      <div style="font-size:9px;color:#64748b;margin:8px 0 4px;font-family:var(--mono)">PENDIENTES DEL CLIENTE (marca los que tiene pendientes):</div>
+      <div id="cPendientes" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="DOCUMENTACION_PENDIENTE" onchange="actualizarProgreso()"/> Documentación</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CEDULA_PENDIENTE" onchange="actualizarProgreso()"/> Cédula</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CARNET_PENDIENTE" onchange="actualizarProgreso()"/> Carnet</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="DEPENDIENTE_PENDIENTE" onchange="actualizarProgreso()"/> Dependiente</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="APROBACION_ARS" onchange="actualizarProgreso()"/> Aprobación ARS</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="PRIMER_PAGO_PENDIENTE" onchange="actualizarProgreso()"/> Primer pago</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="TRASLADO_EN_PROCESO" onchange="actualizarProgreso()"/> Traslado</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CAMBIO_PLAN_EN_PROCESO" onchange="actualizarProgreso()"/> Cambio de plan</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="FIRMA_PENDIENTE" onchange="actualizarProgreso()"/> Firma</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="FOTO_PENDIENTE" onchange="actualizarProgreso()"/> Foto</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CONTRATO_PENDIENTE" onchange="actualizarProgreso()"/> Contrato</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="OTRO" onchange="actualizarProgreso()"/> Otro</label>
+      </div>
+      <input type="text" id="cOtroPend" placeholder="Detalle del otro pendiente..." class="no-upper" style="width:100%;margin-top:6px;display:none;font-size:11px;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px"/>
+      <div style="margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:#64748b;margin-bottom:3px"><span>PROGRESO DE ONBOARDING</span><span id="cProgTxt">100%</span></div>
+        <div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden"><div id="cProgBar" style="height:100%;width:100%;background:#10b981;transition:width .3s"></div></div>
+      </div>
+      <div class="fr" style="margin-top:8px"><label>Nota del proceso</label><input type="text" id="cNotaProc" placeholder="Ej: Cliente enviará cédula mañana" class="no-upper"/></div>
+      <div class="frow">
+        <div class="fr"><label>Fecha de seguimiento</label><input type="date" id="cFechaSeg"/></div>
+        <div class="fr"><label>Agente responsable</label><select id="cRespSeg" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)"><option value="">Sin asignar</option></select></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin-top:8px">
+        <input type="checkbox" id="cVip" style="width:16px;height:16px"/> ⭐ Cliente VIP (importante comercialmente)
+      </label>
+    </div>
     <div class="fr"><label>ARS (Administradora de Riesgos de Salud)</label>
       <select id="cARS" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f8fafc;color:var(--tx1)">
         <option value="">Seleccionar ARS...</option>
@@ -1507,6 +1566,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div id="abonoI" style="background:var(--bg3);border-radius:var(--r6);padding:10px;margin-bottom:12px;border:1px solid rgba(0,229,199,.07)"></div>
     <div class="fr"><label>Monto (RD$) *</label><input type="number" id="aMnt" placeholder="0.00" min="0.01" step="0.01"/></div>
     <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
+    <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="">Sin asignar</option></select></div>
     <div class="fr"><label>Referencia</label><input type="text" id="aRef" placeholder="Número de cheque, ref..."/></div>
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a;display:flex;align-items:center;gap:8px">
       <i class="ti ti-check-circle" style="font-size:16px"></i>
@@ -3630,13 +3690,13 @@ function activarMayusculasGlobales(){
   function esExcluido(el){
     if(!el)return true;
     const t=(el.type||'').toLowerCase();
-    if(t==='email'||t==='password'||t==='url'||t==='number'||t==='date'||t==='time'||t==='tel'||t==='file'||t==='checkbox'||t==='radio')return true;
-    if(el.classList.contains('no-upper')||el.classList.contains('login-input')||el.classList.contains('email-field')||el.classList.contains('tech-field'))return true;
+    if(t==='email'||t==='password'||t==='url'||t==='number'||t==='date'||t==='time'||t==='tel'||t==='file'||t==='checkbox'||t==='radio'||t==='search')return true;
+    if(el.classList.contains('no-upper')||el.classList.contains('login-input')||el.classList.contains('email-field')||el.classList.contains('tech-field')||el.classList.contains('gs-input'))return true;
     if(el.hasAttribute('data-no-upper'))return true;
     const id=(el.id||'').toLowerCase();
     const ph=(el.placeholder||'').toLowerCase();
-    // Excluir por nombre de campo (correos, contraseñas, usuarios técnicos, urls)
-    if(/mail|correo|pass|clave|contra|url|token|key|login|user/.test(id))return true;
+    // Excluir por nombre de campo (correos, contraseñas, usuarios técnicos, urls, buscadores)
+    if(/mail|correo|pass|clave|contra|url|token|key|login|user|buscar|search|query|filtro/.test(id))return true;
     if(/correo|email|contraseña|usuario|@/.test(ph))return true;
     return false;
   }
@@ -3809,7 +3869,14 @@ function actualizarTicker(){
   const pd=act.reduce((s,c)=>s+pend(c),0);
   const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=CFG.alertaDias;}).length;
   document.getElementById('tkr').innerHTML=`<div class="ti">NEXUS PRO v6 <span class="tu">ONLINE</span></div><div class="ti">PRIMA <span class="tu">${fmt(prima)}</span></div><div class="ti">COBRADO <span class="tu">${fmt(cob)}</span></div><div class="ti">PENDIENTE <span class="td">${fmt(pd)}</span></div><div class="ti">ACTIVOS <span class="tu">${act.length}</span></div><div class="ti">INHABILITADOS <span class="${inh?'td':'tu'}">${inh}</span></div>${polVenc?`<div class="ti">PÓLIZAS POR VENCER <span class="td">${polVenc}</span></div>`:''}`;
-  document.getElementById('nb1').textContent=act.filter(c=>pend(c)>0).length;
+  // Badge de Clientes: muestra los clientes nuevos de HOY
+  const hoyStr=new Date().toISOString().slice(0,10);
+  const nuevosHoy=ST.clientes.filter(c=>(c.created_at||'').slice(0,10)===hoyStr).length;
+  const nb1El=document.getElementById('nb1');
+  if(nb1El){
+    if(nuevosHoy>0){nb1El.textContent=nuevosHoy;nb1El.style.display='';}
+    else{nb1El.style.display='none';}
+  }
   if(polVenc>0){document.getElementById('nb2').style.display='';document.getElementById('nb2').textContent=polVenc;document.getElementById('btnAlertas').style.display='';}
 }
 
@@ -3906,6 +3973,53 @@ function rDash(){
   const pends=act.filter(c=>pend(c)>0).slice(0,6);
   document.getElementById('dashD').innerHTML=pends.length?`<div class="tw"><table><thead><tr><th>CLIENTE</th><th>PLAN</th><th>PRIMA</th><th>PENDIENTE</th><th>ESTADO</th></tr></thead><tbody>${pends.map(c=>`<tr><td style="font-weight:700;font-size:11px">${c.nom}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3);font-weight:700">${fmt(pend(c))}</td><td>${estB(c)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><i class="ti ti-circle-check" style="font-size:22px;color:var(--c1);display:block;margin-bottom:6px"></i>TODOS AL DÍA</div>`;
   rChartCobros();
+  rWidgetProceso();
+}
+
+// Widget de dashboard: resumen de clientes en proceso
+function rWidgetProceso(){
+  const cont=document.getElementById('wProceso');
+  if(!cont)return;
+  const cls=ST.clientes||[];
+  const enProc=cls.filter(c=>c.estado_cliente==='EN_PROCESO');
+  const vips=cls.filter(c=>c.vip);
+  const hoy3=new Date();hoy3.setHours(0,0,0,0);
+  // Seguimientos vencidos / hoy
+  let segVenc=0,segHoy=0;
+  enProc.forEach(c=>{
+    if(!c.fecha_seguimiento)return;
+    const fs=new Date(c.fecha_seguimiento+'T12:00:00');
+    const diff=Math.floor((fs-hoy3)/86400000);
+    if(diff<0)segVenc++;else if(diff===0)segHoy++;
+  });
+  // Conteo por tipo de pendiente
+  const labels={CEDULA_PENDIENTE:'Cédula',CARNET_PENDIENTE:'Carnet',PRIMER_PAGO_PENDIENTE:'Primer pago',DEPENDIENTE_PENDIENTE:'Dependiente',APROBACION_ARS:'Aprob. ARS'};
+  const cont2={};
+  enProc.forEach(c=>{
+    let pa=[];try{pa=Array.isArray(c.pendientes_proceso)?c.pendientes_proceso:JSON.parse(c.pendientes_proceso||'[]');}catch(e){}
+    pa.forEach(p=>{if(labels[p])cont2[p]=(cont2[p]||0)+1;});
+  });
+  let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px">';
+  const tarjetas=[
+    ['En proceso',enProc.length,'#2563eb'],
+    ['VIP',vips.length,'#f59e0b'],
+    ['Seguim. vencido',segVenc,'#ef4444'],
+    ['Seguim. hoy',segHoy,'#10b981']
+  ];
+  tarjetas.forEach(([lbl,n,col])=>{
+    html+=`<div style="background:${col}12;border-left:3px solid ${col};border-radius:8px;padding:8px"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono)">${lbl.toUpperCase()}</div><div style="font-size:18px;font-weight:700;color:${col};font-family:var(--mono)">${n}</div></div>`;
+  });
+  html+='</div>';
+  const pends=Object.entries(cont2).sort((a,b)=>b[1]-a[1]);
+  if(pends.length){
+    html+='<div style="padding:0 8px 8px"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);margin-bottom:4px">PENDIENTES MÁS FRECUENTES</div>';
+    pends.forEach(([k,v])=>{
+      html+=`<div style="display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(148,163,184,.1)"><span>${labels[k]}</span><strong style="font-family:var(--mono);color:var(--c4)">${v}</strong></div>`;
+    });
+    html+='</div>';
+  }
+  if(enProc.length===0)html='<div class="empty" style="padding:20px">No hay clientes en proceso. Todo al día.</div>';
+  cont.innerHTML=html;
 }
 
 // Gráfica de líneas: cobros de los últimos 6 meses (SVG, responsive)
@@ -3978,6 +4092,7 @@ function switchCliTab(tab){
   document.getElementById('cliTabAct')?.classList.toggle('active-subtab',tab==='activos');
   document.getElementById('cliTabInh')?.classList.toggle('active-subtab',tab==='inhabilitados');
   document.getElementById('cliTabVip')?.classList.toggle('active-subtab',tab==='vip');
+  document.getElementById('cliTabProc')?.classList.toggle('active-subtab',tab==='proceso');
   rCli();
 }
 
@@ -3985,20 +4100,24 @@ function rCli(){
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
   const fe=document.getElementById('fEst')?.value||'';
+  // Si hay búsqueda activa, mostrar todos los resultados (sin límite de 50)
+  if(q&&!_cliVerTodos)_cliVerTodos=true;
   // Contar activos, inhabilitados y VIP
   const totalAct=ST.clientes.filter(c=>c.activo!==false).length;
   const totalInh=ST.clientes.filter(c=>c.activo===false).length;
   const favs=getFavoritos();
-  const totalVip=ST.clientes.filter(c=>favs.includes(c.id)).length;
+  const totalVip=ST.clientes.filter(c=>favs.includes(c.id)||c.vip).length;
   const cAct=document.getElementById('cntAct');if(cAct)cAct.textContent=totalAct;
   const cInh=document.getElementById('cntInh');if(cInh)cInh.textContent=totalInh;
   const cVip=document.getElementById('cntVip');if(cVip)cVip.textContent=totalVip;
+  const cProc=document.getElementById('cntProc');if(cProc){cProc.textContent=ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length;}
   let list=ST.clientes.filter(c=>{
-    // Filtro principal: activos, inhabilitados o VIP
+    // Filtro principal: activos, inhabilitados, VIP o en proceso
     const esInhabilitado=c.activo===false;
     if(_cliTab==='activos'&&esInhabilitado)return false;
     if(_cliTab==='inhabilitados'&&!esInhabilitado)return false;
-    if(_cliTab==='vip'&&!favs.includes(c.id))return false;
+    if(_cliTab==='vip'&&!(favs.includes(c.id)||c.vip))return false;
+    if(_cliTab==='proceso'&&c.estado_cliente!=='EN_PROCESO')return false;
     if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
     if(fp&&c.plan!==fp)return false;
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}
@@ -4013,8 +4132,39 @@ function rCli(){
     const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);
     const hoy2=new Date(),fin=c.fecha_fin?new Date(c.fecha_fin):null;
     const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar"><i class="ti ti-user-check"></i></button>`;
+    // Info de proceso (visible cuando el cliente está EN_PROCESO)
+    let procInfo='';
+    if(c.estado_cliente==='EN_PROCESO'){
+      const prioCol={BAJA:'#94a3b8',MEDIA:'#2563eb',ALTA:'#f59e0b',URGENTE:'#ef4444'}[c.prioridad_proceso||'MEDIA'];
+      // Contar pendientes del cliente
+      let pendArr=[];
+      try{pendArr=Array.isArray(c.pendientes_proceso)?c.pendientes_proceso:JSON.parse(c.pendientes_proceso||'[]');}catch(e){pendArr=[];}
+      const prog=(typeof c.porcentaje_progreso==='number')?c.porcentaje_progreso:Math.round(((12-pendArr.length)/12)*100);
+      const progCol=prog>=100?'#10b981':prog>=60?'#2563eb':prog>=30?'#f59e0b':'#ef4444';
+      let segTxt='';
+      if(c.fecha_seguimiento){
+        const fs=new Date(c.fecha_seguimiento+'T12:00:00');
+        const diff=Math.floor((fs-hoy2)/86400000);
+        if(diff<0)segTxt=`<span style="color:#ef4444">⚠ Seguimiento vencido</span>`;
+        else if(diff===0)segTxt=`<span style="color:#f59e0b">📅 Seguimiento hoy</span>`;
+        else segTxt=`<span style="color:#64748b">📅 Seguimiento en ${diff}d</span>`;
+      }
+      // Nombre del agente responsable (convertir ID -> nombre)
+      let respTxt='';
+      if(c.responsable_seguimiento){
+        const ag=gAgt(c.responsable_seguimiento);
+        if(ag)respTxt=`<span style="color:#7c3aed">👤 ${ag.nom.split(' ')[0]}</span>`;
+      }
+      procInfo=`<div style="margin-top:3px;font-size:8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+        <span style="background:${prioCol}22;color:${prioCol};padding:1px 6px;border-radius:8px;font-weight:700">${c.prioridad_proceso||'MEDIA'}</span>
+        <span style="background:${progCol}22;color:${progCol};padding:1px 6px;border-radius:8px;font-weight:700">${prog}% listo</span>
+        ${pendArr.length?`<span style="color:#64748b">${pendArr.length} pendiente(s)</span>`:''}
+        ${respTxt}
+        ${segTxt}
+      </div>`;
+    }
     return`<tr style="${!c.activo?'opacity:.5':''}">
-      <td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div></div></div></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div>${procInfo}</div></div></td>
       <td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'<span style="color:var(--tx3)">Sin póliza</span>'}</td>
       <td>${planB(c.plan)}</td>
       <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
@@ -4315,6 +4465,8 @@ function abrirAbono(cid){
   abonoCliId=cid;const c=ST.clientes.find(x=>x.id===cid);
   document.getElementById('abonoI').innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Póliza: <span style="color:var(--c4)">${c.numero_poliza||'—'}</span> · Pendiente: <span style="color:var(--c3);font-weight:700">${fmt(pend(c))}</span></div>`;
   document.getElementById('aMnt').value='';document.getElementById('aRef').value='';
+  // Llenar selector de agente que cobró — preselecciona el agente del cliente si tiene
+  if(document.getElementById('aAgente'))rAgtSel('aAgente',c.agente_id||'');
   const rd=document.getElementById('reciboWAbtn');if(rd)rd.style.display='none';
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
   openM('mAbono');
@@ -4632,8 +4784,15 @@ async function regAbono(){
   try{
     const nuevoP=(c.pagado||0)+monto;
     await API.patch('clientes',`id=eq.${c.id}`,{pagado:nuevoP});c.pagado=nuevoP;
-    await API.post('abonos',{cliente_id:c.id,monto,metodo:document.getElementById('aMet').value,referencia:document.getElementById('aRef').value,fecha:hoy()});
-    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${document.getElementById('aMet').value}`,'Cobros');
+    const agenteCobro=document.getElementById('aAgente')?.value||null;
+    try{
+      await API.post('abonos',{cliente_id:c.id,monto,metodo:document.getElementById('aMet').value,referencia:document.getElementById('aRef').value,fecha:hoy(),agente_cobro:agenteCobro});
+    }catch(eCol){
+      // Si la columna agente_cobro no existe aún, guardar sin ella
+      await API.post('abonos',{cliente_id:c.id,monto,metodo:document.getElementById('aMet').value,referencia:document.getElementById('aRef').value,fecha:hoy()});
+    }
+    const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
+    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${document.getElementById('aMet').value}`+(agNom?` · Cobró: ${agNom}`:''),'Cobros');
     const metodo=document.getElementById('aMet')?.value||'Efectivo';
     const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:metodo==='Transferencia'||metodo==='Depósito'?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
     const asi={fecha:hoy(),referencia:'AST-COB-'+c.numero_poliza?.replace('POL-','').slice(-4)||'0000',descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
@@ -4720,6 +4879,17 @@ function abrirNuevoCli(){
   // Día de facturación: por defecto el día configurado del sistema (ej: 20)
   const cDiaNew=document.getElementById('cDiaFact');if(cDiaNew)cDiaNew.value=autoCfg.dia||1;
   const cDeudaNew=document.getElementById('cDeudaIni');if(cDeudaNew){cDeudaNew.value='0';cDeudaNew.disabled=false;}
+  ['cVip'].forEach(id=>{const e=document.getElementById(id);if(e)e.checked=false;});
+  // Cliente nuevo: estado ACTIVO, facturación activa (factura igual que antes)
+  const cEst=document.getElementById('cEstadoCli');if(cEst)cEst.value='ACTIVO';
+  const cPF=document.getElementById('cPermFact');if(cPF)cPF.checked=true;
+  document.querySelectorAll('.pend-chk').forEach(c=>c.checked=false);
+  const cOtro=document.getElementById('cOtroPend');if(cOtro){cOtro.value='';cOtro.style.display='none';}
+  const cNota=document.getElementById('cNotaProc');if(cNota)cNota.value='';
+  const cFS=document.getElementById('cFechaSeg');if(cFS)cFS.value='';
+  const cRS=document.getElementById('cRespSeg');if(cRS){rAgtSel('cRespSeg','');}
+  const cPri=document.getElementById('cPrioridad');if(cPri)cPri.value='MEDIA';
+  actualizarProgreso();
   rEChips(null);rAgtSel('cAgt','');document.getElementById('depLM').innerHTML='';
   // Default: inicio hoy, fin en 1 año
   document.getElementById('cFecIni').value=hoy();
@@ -4756,6 +4926,19 @@ function editarCli(id){
   // Para cambiar la deuda de un cliente existente se usa el botón Abonar / cobros.
   const cDeudaEd=document.getElementById('cDeudaIni');
   if(cDeudaEd){cDeudaEd.value=c.deuda_total||0;cDeudaEd.disabled=false;cDeudaEd._deudaOriginal=c.deuda_total||0;}
+  const cVipEl=document.getElementById('cVip');if(cVipEl)cVipEl.checked=!!c.vip;
+  const cEstEl=document.getElementById('cEstadoCli');if(cEstEl)cEstEl.value=c.estado_cliente||'ACTIVO';
+  const cPFEl=document.getElementById('cPermFact');if(cPFEl)cPFEl.checked=c.permitir_facturacion!==false;
+  // Cargar pendientes (lista JSON)
+  let pendArr=[];
+  try{pendArr=Array.isArray(c.pendientes_proceso)?c.pendientes_proceso:JSON.parse(c.pendientes_proceso||'[]');}catch(e){pendArr=[];}
+  document.querySelectorAll('.pend-chk').forEach(chk=>{chk.checked=pendArr.includes(chk.value);});
+  const cOtroEl=document.getElementById('cOtroPend');if(cOtroEl)cOtroEl.value=c.otro_pendiente_detalle||'';
+  const cNotaEl=document.getElementById('cNotaProc');if(cNotaEl)cNotaEl.value=c.nota_proceso||'';
+  const cFSEl=document.getElementById('cFechaSeg');if(cFSEl)cFSEl.value=c.fecha_seguimiento||'';
+  const cRSEl=document.getElementById('cRespSeg');if(cRSEl){rAgtSel('cRespSeg',c.responsable_seguimiento||'');}
+  const cPriEl=document.getElementById('cPrioridad');if(cPriEl)cPriEl.value=c.prioridad_proceso||'MEDIA';
+  actualizarProgreso();
   document.getElementById('cDir').value=c.dir||'';document.getElementById('cNCF').value=c.tipo_ncf||'B02';
   const cRefEl=document.getElementById('cRef');if(cRefEl)cRefEl.value=c.referencia||'';
   const cRefWaEl=document.getElementById('cRefWa');if(cRefWaEl)cRefWaEl.value=c.referencia_wa||'';
@@ -4773,8 +4956,24 @@ function editarCli(id){
   actualizarPreciosPlan();
   openM('mCli');
 }
+// Calcula el % de progreso de onboarding y muestra/oculta el campo "Otro"
+const TOTAL_PENDIENTES_POSIBLES=12;
+function actualizarProgreso(){
+  const chks=document.querySelectorAll('.pend-chk:checked');
+  const n=chks.length;
+  const pct=Math.round(((TOTAL_PENDIENTES_POSIBLES-n)/TOTAL_PENDIENTES_POSIBLES)*100);
+  const bar=document.getElementById('cProgBar'),txt=document.getElementById('cProgTxt');
+  if(bar){
+    bar.style.width=pct+'%';
+    bar.style.background=pct>=100?'#10b981':pct>=60?'#2563eb':pct>=30?'#f59e0b':'#ef4444';
+  }
+  if(txt)txt.textContent=pct+'%';
+  // Mostrar campo "Otro" si está marcado
+  const otroChk=[...chks].some(c=>c.value==='OTRO');
+  const otroInp=document.getElementById('cOtroPend');
+  if(otroInp)otroInp.style.display=otroChk?'block':'none';
+}
 async function guardarCli(){
-  const nom=document.getElementById('cNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
   // ── Validar cédula duplicada (activos e inhabilitados) ──
   const cedula=document.getElementById('cCed').value.trim();
   if(cedula){
@@ -4798,7 +4997,7 @@ async function guardarCli(){
     precioT=(vt!==''&&vt!=null)?parseFloat(vt):null;
     precioD=(vd!==''&&vd!=null)?parseFloat(vd):null;
   }
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null};
+  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
   // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
   datos.nom=mayus(datos.nom);
   datos.dir=mayus(datos.dir);
@@ -4835,6 +5034,7 @@ async function guardarCli(){
         const d2={...datos};
         delete d2.created_by_name;delete d2.created_by_user_id;
         delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
+        delete d2.estado_cliente;delete d2.permitir_facturacion;delete d2.pendientes_proceso;delete d2.otro_pendiente_detalle;delete d2.nota_proceso;delete d2.fecha_seguimiento;delete d2.responsable_seguimiento;delete d2.prioridad_proceso;delete d2.porcentaje_progreso;delete d2.vip;
         await API.patch('clientes',`id=eq.${editCliId}`,d2);
       }
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
@@ -4852,6 +5052,7 @@ async function guardarCli(){
         const d2={...datos};
         delete d2.created_by_name;delete d2.created_by_user_id;
         delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
+        delete d2.estado_cliente;delete d2.permitir_facturacion;delete d2.pendientes_proceso;delete d2.otro_pendiente_detalle;delete d2.nota_proceso;delete d2.fecha_seguimiento;delete d2.responsable_seguimiento;delete d2.prioridad_proceso;delete d2.porcentaje_progreso;delete d2.vip;
         res=await API.post('clientes',{...d2,deuda_total:deudaIni,pagado:0,activo:true,numero_poliza:numPol});
       }
       if(res&&res[0]){res[0].deps=tempDeps;ST.clientes.push(res[0]);}
@@ -4859,6 +5060,23 @@ async function guardarCli(){
     toast('ok',`Cliente registrado · Póliza: ${numPol}`,nom);
     }
     closeM('mCli');rCli();rDash();actualizarTicker();verificarAlertas();
+    // Auto-sugerencia: cliente EN_PROCESO sin pendientes -> sugerir ACTIVO
+    try{
+      let pa=[];try{pa=JSON.parse(datos.pendientes_proceso||'[]');}catch(e){}
+      if(datos.estado_cliente==='EN_PROCESO'&&pa.length===0){
+        setTimeout(()=>{
+          if(confirm('Este cliente ya no tiene pendientes marcados.\n\n¿Deseas cambiarlo a estado ACTIVO?')){
+            const cid=editCliId||(ST.clientes[ST.clientes.length-1]||{}).id;
+            if(cid){
+              API.patch('clientes',`id=eq.${cid}`,{estado_cliente:'ACTIVO'}).then(()=>{
+                const cc=ST.clientes.find(x=>x.id===cid);if(cc)cc.estado_cliente='ACTIVO';
+                toast('ok','Cliente cambiado a ACTIVO');rCli();
+              }).catch(()=>{});
+            }
+          }
+        },400);
+      }
+    }catch(e){}
   }catch(e){mostrarError(e.message,'Al guardar cliente: '+JSON.stringify({nom,editCliId}));toast('err','Error guardando',e.message);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
 }
@@ -5978,6 +6196,20 @@ body.tema-premium [style*="color:#1E293B"]{color:#E8EDF7 !important;}
 body.tema-premium [style*="background:#fff"],
 body.tema-premium [style*="background:#FFF"],
 body.tema-premium [style*="background:white"]{background:#1E293B !important;}
+/* Vista de clientes: pestañas, filtros, subtabs */
+body.tema-premium .cli-subtab{background:#0F172A !important;color:#94A3B8 !important;}
+body.tema-premium .cli-subtab.active-subtab{background:#2563EB !important;color:#fff !important;}
+body.tema-premium .sw,
+body.tema-premium .sw input{background:#0F172A !important;color:#E8EDF7 !important;}
+body.tema-premium [style*="background:#f1f5f9"],
+body.tema-premium [style*="background:#f8fafc"],
+body.tema-premium [style*="background:#f8f9fa"],
+body.tema-premium [style*="background:#fafbfc"],
+body.tema-premium [style*="background:#eff6ff"]{background:#0F172A !important;}
+body.tema-premium [style*="color:#64748b"],
+body.tema-premium [style*="color:#1e293b"]{color:#E8EDF7 !important;}
+body.tema-premium .tw,body.tema-premium .tw table{background:transparent !important;}
+body.tema-premium .badge{filter:brightness(1.1);}
 
 /* ═══════ TEMA LIQUID GLASS ═══════ */
 body.tema-glass{
