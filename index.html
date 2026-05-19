@@ -443,32 +443,35 @@ tbody tr{transition:background .12s ease}
 
 /* ════ SUB-TABS CLIENTES ════ */
 .cli-subtab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--ff)}
-.acc-menu{position:absolute;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid #e8edf3;border-radius:14px;box-shadow:0 12px 40px rgba(15,31,61,.18),0 2px 8px rgba(15,31,61,.08);z-index:200;min-width:230px;padding:6px;overflow:hidden;transform-origin:top right;animation:accIn .16s cubic-bezier(.34,1.3,.64,1)}
-@keyframes accIn{from{opacity:0;transform:scale(.92) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.acc-menu-hd{font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.5px;padding:6px 10px 4px;font-family:var(--mono)}
-.acc-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;padding:9px 10px;font-size:11px;font-weight:600;color:#334155;cursor:pointer;border-radius:9px;font-family:var(--ff);white-space:nowrap;transition:background .12s}
-.acc-menu button:hover{background:#f1f5f9}
-.acc-menu button:active{transform:scale(.98)}
-.acc-menu button i{font-size:15px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0}
-.acc-menu .am-sep{height:1px;background:#eef2f7;margin:4px 8px}
-.acc-i-blue i{background:rgba(37,99,235,.1);color:#2563eb}
-.acc-i-green i{background:rgba(16,185,129,.12);color:#10b981}
-.acc-i-purple i{background:rgba(124,58,237,.1);color:#7c3aed}
-.acc-i-amber i{background:rgba(245,158,11,.12);color:#d97706}
-.acc-i-red i{background:rgba(239,68,68,.1);color:#ef4444}
-.acc-i-gray i{background:rgba(100,116,139,.1);color:#64748b}
-body.tema-premium .acc-menu{background:#16213d;border-color:#2a3a5c;box-shadow:0 12px 40px rgba(0,0,0,.5)}
-body.tema-premium .acc-menu button{color:#cbd5e1}
-body.tema-premium .acc-menu button:hover{background:#243150}
-body.tema-premium .acc-menu .am-sep{background:#2a3a5c}
+.acc-menu{position:absolute;right:0;top:100%;margin-top:6px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.6);border-radius:20px;box-shadow:0 8px 40px rgba(15,31,61,.22),0 1px 3px rgba(15,31,61,.1),inset 0 1px 0 rgba(255,255,255,.7);z-index:200;min-width:248px;padding:7px;overflow:hidden;transform-origin:top right;animation:accIn .22s cubic-bezier(.34,1.3,.64,1)}
+@keyframes accIn{from{opacity:0;transform:scale(.9) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes accInUp{from{opacity:0;transform:scale(.95) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.acc-menu-hd{font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.6px;padding:7px 12px 4px;font-family:var(--mono)}
+.acc-menu button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;padding:10px 11px;font-size:12px;font-weight:600;color:#1e293b;cursor:pointer;border-radius:13px;font-family:var(--ff);white-space:nowrap;transition:background .14s,transform .1s}
+.acc-menu button:hover{background:rgba(0,0,0,.05)}
+.acc-menu button:active{transform:scale(.97);background:rgba(0,0,0,.08)}
+.acc-menu button i{font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex-shrink:0}
+.acc-menu .am-sep{height:1px;background:rgba(15,23,42,.08);margin:5px 10px}
+.acc-i-blue i{background:rgba(37,99,235,.13);color:#2563eb}
+.acc-i-green i{background:rgba(16,185,129,.15);color:#059669}
+.acc-i-purple i{background:rgba(124,58,237,.13);color:#7c3aed}
+.acc-i-amber i{background:rgba(245,158,11,.15);color:#d97706}
+.acc-i-red i{background:rgba(239,68,68,.13);color:#ef4444}
+.acc-i-gray i{background:rgba(100,116,139,.13);color:#64748b}
+body.tema-premium .acc-menu{background:rgba(22,33,61,.8);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-color:rgba(255,255,255,.1);box-shadow:0 8px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
+body.tema-premium .acc-menu button{color:#e2e8f0}
+body.tema-premium .acc-menu button:hover{background:rgba(255,255,255,.07)}
+body.tema-premium .acc-menu button:active{background:rgba(255,255,255,.12)}
+body.tema-premium .acc-menu .am-sep{background:rgba(255,255,255,.08)}
 body.tema-premium .acc-menu-hd{color:#64748b}
-.acc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:4999;animation:bdIn .15s ease}
+.acc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.3);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:4999;animation:bdIn .2s ease}
 @keyframes bdIn{from{opacity:0}to{opacity:1}}
 @media(max-width:640px){
-  .acc-menu{min-width:0!important;border-radius:18px;padding:8px}
-  .acc-menu button{padding:13px 12px;font-size:13px}
-  .acc-menu button i{width:34px;height:34px;font-size:17px}
-  .acc-menu-hd{font-size:9px;padding:8px 12px 5px}
+  .acc-menu{min-width:0!important;border-radius:24px;padding:9px;animation:accInUp .26s cubic-bezier(.34,1.2,.64,1)}
+  .acc-menu button{padding:13px 13px;font-size:14px;border-radius:15px}
+  .acc-menu button i{width:36px;height:36px;font-size:18px;border-radius:12px}
+  .acc-menu-hd{font-size:9px;padding:9px 13px 5px}
+  .acc-menu .am-sep{margin:6px 12px}
 }
 .cli-subtab:hover{color:#1e293b}
 .cli-subtab.active-subtab{background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff !important;box-shadow:0 2px 8px rgba(37,99,235,.3)}
@@ -4258,14 +4261,14 @@ function toggleAccMenu(ev,cid){
   menu.style.position='fixed';
   menu.style.zIndex='5000';
   if(esMovil){
-    // Móvil: hoja inferior anclada al fondo de la pantalla
-    menu.style.left='12px';
-    menu.style.right='12px';
-    menu.style.bottom='16px';
+    // Móvil: hoja flotante compacta, con márgenes a los lados
+    menu.style.left='14px';
+    menu.style.right='14px';
+    menu.style.bottom='24px';
     menu.style.top='auto';
-    menu.style.maxHeight='65vh';
+    menu.style.maxHeight='58vh';
     menu.style.overflowY='auto';
-    // Fondo oscuro detrás
+    // Fondo oscuro con blur detrás
     const bd=document.createElement('div');
     bd.className='acc-backdrop';
     bd.onclick=()=>{cerrarAccMenus();};
