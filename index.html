@@ -1133,6 +1133,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <button id="cfgTab10" onclick="switchCfgTab(10)" class="cfg-tab"><i class="ti ti-history"></i><span>Changelog</span></button>
             <button id="cfgTab11" onclick="switchCfgTab(11)" class="cfg-tab"><i class="ti ti-target"></i><span>Metas</span></button>
             <button id="cfgTab12" onclick="switchCfgTab(12)" class="cfg-tab"><i class="ti ti-palette"></i><span>Apariencia</span></button>
+            <button id="cfgTab13" onclick="switchCfgTab(13)" class="cfg-tab"><i class="ti ti-list-check"></i><span>Coberturas</span></button>
           </div>
 
           <!-- Indicador de tab activo -->
@@ -1404,6 +1405,11 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div id="cfgApariencia"></div>
           </div>
 
+          <!-- TAB 13: Coberturas de planes -->
+          <div id="cfgPanel13" class="cfg-panel" style="display:none">
+            <div id="cfgCoberturas"></div>
+          </div>
+
         </div>
 
         <!-- <!-- USUARIOS -->
@@ -1501,7 +1507,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="fr"><label>Agente responsable</label><select id="cRespSeg" style="width:100%;font-size:11px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:var(--tx1)"><option value="">Sin asignar</option></select></div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin-top:8px">
-        <input type="checkbox" id="cVip" style="width:16px;height:16px"/> ⭐ Cliente VIP (importante comercialmente)
+        <input type="checkbox" id="cVip" style="width:16px;height:16px"/> ⭐ Cliente VIP
       </label>
     </div>
     <div class="fr"><label>ARS (Administradora de Riesgos de Salud)</label>
@@ -2400,6 +2406,64 @@ function aplicarTema(tema){
   },50);
 }
 
+// ── MÓDULO DE COBERTURAS DE PLANES ─────────────────────────────────
+const PLANES_COB=[
+  {id:'basico',nom:'BÁSICO',color:'#2563eb'},
+  {id:'superior',nom:'SUPERIOR',color:'#7c3aed'},
+  {id:'esencial',nom:'ESENCIAL PLUS',color:'#0891b2'}
+];
+function rCoberturas(){
+  const cont=document.getElementById('cfgCoberturas');
+  if(!cont)return;
+  let html=`<div class="nc">
+    <div class="ch"><div><div class="ct">📋 Coberturas de los planes</div><div class="ct-s">Escribe una cobertura por línea. Se usan para enviar a los clientes por WhatsApp.</div></div></div>`;
+  PLANES_COB.forEach(p=>{
+    const valor=(ST.config&&ST.config['cobertura_'+p.id])||'';
+    html+=`<div style="margin-bottom:14px;border:1px solid #e2e8f0;border-radius:10px;padding:12px">
+      <div style="font-size:11px;font-weight:700;color:${p.color};margin-bottom:6px">PLAN ${p.nom}</div>
+      <textarea id="cob_${p.id}" rows="7" placeholder="Ej:&#10;Consultas médicas&#10;Emergencias 24 horas&#10;Hospitalización&#10;Laboratorios y estudios" style="width:100%;font-size:11px;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;resize:vertical;color:var(--tx1)">${valor.replace(/</g,'&lt;')}</textarea>
+    </div>`;
+  });
+  html+=`<button class="btn bxl" onclick="guardarCoberturas()" style="width:100%"><i class="ti ti-device-floppy"></i> Guardar coberturas</button>
+  </div>`;
+  cont.innerHTML=html;
+}
+async function guardarCoberturas(){
+  try{
+    for(const p of PLANES_COB){
+      const txt=document.getElementById('cob_'+p.id)?.value||'';
+      await guardarTexto('cobertura_'+p.id,txt);
+      ST.config['cobertura_'+p.id]=txt;
+    }
+    toast('ok','Coberturas guardadas','Ya puedes enviarlas a tus clientes');
+    logAudit('COBERTURAS_ACTUALIZADAS','Coberturas de planes actualizadas','Configuración');
+  }catch(e){
+    mostrarError(e.message,'Al guardar coberturas');
+  }
+}
+// Enviar las coberturas del plan de un cliente por WhatsApp
+function enviarCoberturasWA(cid){
+  const c=ST.clientes.find(x=>x.id===cid);
+  if(!c){toast('err','Cliente no encontrado');return;}
+  if(!c.wa){toast('err','Sin WhatsApp','Este cliente no tiene número de WhatsApp');return;}
+  // Determinar la clave del plan del cliente
+  const planTxt=(c.plan||'').toLowerCase();
+  let planKey='basico';
+  if(planTxt.includes('superior'))planKey='superior';
+  else if(planTxt.includes('esencial'))planKey='esencial';
+  const cob=(ST.config&&ST.config['cobertura_'+planKey])||'';
+  if(!cob.trim()){
+    toast('err','Sin coberturas','Primero escribe las coberturas en Configuración → Coberturas');
+    return;
+  }
+  // Armar mensaje con lista de puntos
+  const lineas=cob.split('\n').filter(l=>l.trim()).map(l=>'✅ '+l.trim()).join('\n');
+  const emp=CFG.empNom||'Nuestra correduría';
+  const msg=`*${emp}*\n\nHola ${c.nom.split(' ')[0]}, te comparto las coberturas de tu *Plan ${c.plan}*:\n\n${lineas}\n\n¿Tienes alguna pregunta? Con gusto te ayudamos. 🤝`;
+  const num=c.wa.replace(/\D/g,'');
+  const numFull=num.length===10?'1'+num:num;
+  window.open(`https://wa.me/${numFull}?text=${encodeURIComponent(msg)}`,'_blank');
+}
 function cargarTemaGuardado(){
   const tema=localStorage.getItem('nx_tema')||'clasico';
   aplicarTema(tema);
@@ -2440,7 +2504,7 @@ function switchCfgTab(n){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
     vCfg.classList.add('on');
   }
-  const total=12;
+  const total=13;
   for(let i=1;i<=total;i++){
     const tab=document.getElementById('cfgTab'+i);
     const panel=document.getElementById('cfgPanel'+i);
@@ -2487,6 +2551,7 @@ function cargarContenidoCfgTab(n){
     else if(n===10){ rChangelogContent(); }
     else if(n===11){ rMetas(); }
     else if(n===12){ rApariencia(); }
+    else if(n===13){ rCoberturas(); }
   }catch(e){
     console.error('Error cargando tab '+n+':',e);
     mostrarEstadoErrorCfg(n,e.message);
@@ -4211,6 +4276,7 @@ function rCli(){
         <button class="btn bsm bghost" onclick="abrirAbono('${c.id}')" title="Registrar cobro"><i class="ti ti-wallet"></i></button>
         <button class="btn bsm bghost" onclick="abrirHistorialCobros('${c.id}')" title="Ver/editar cobros guardados"><i class="ti ti-receipt"></i></button>
         <button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')" title="Certificado PDF"><i class="ti ti-file-certificate"></i></button>
+        <button class="btn bsm bwa" onclick="enviarCoberturasWA('${c.id}')" title="Enviar coberturas del plan por WhatsApp"><i class="ti ti-list-check"></i></button>
         <button class="btn bsm bc2" onclick="abrirDocs('${c.id}')" title="Documentos"><i class="ti ti-folder-open"></i></button>
         ${inhabBtn}
         ${(!c.activo&&sesion?.rol==='admin')?`<button class="btn bsm bc3" onclick="eliminarClienteDef('${c.id}')" title="Eliminar definitivamente"><i class="ti ti-trash"></i></button>`:''}
@@ -5006,6 +5072,11 @@ function actualizarProgreso(){
   const otroChk=[...chks].some(c=>c.value==='OTRO');
   const otroInp=document.getElementById('cOtroPend');
   if(otroInp)otroInp.style.display=otroChk?'block':'none';
+  // Si hay pendientes marcados, cambiar el estado a EN_PROCESO automáticamente
+  const sel=document.getElementById('cEstadoCli');
+  if(sel&&n>0&&sel.value==='ACTIVO'){
+    sel.value='EN_PROCESO';
+  }
 }
 async function guardarCli(){
   // Nombre del cliente (obligatorio)
@@ -5042,6 +5113,12 @@ async function guardarCli(){
   // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
   datos.nom=mayus(datos.nom);
   datos.dir=mayus(datos.dir);
+  // Estado del cliente -> define si está activo: Suspendido/Cancelado pasan a Inhabilitados
+  if(datos.estado_cliente==='SUSPENDIDO'||datos.estado_cliente==='CANCELADO'){
+    datos.activo=false;
+  }else{
+    datos.activo=true;
+  }
   if(datos.referencia)datos.referencia=mayus(datos.referencia);
   // ── TRAZABILIDAD: registrar quién crea / modifica ──
   const usuarioActual=sesion?.nom||'Sistema';
