@@ -852,6 +852,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="qa" onclick="exportarCSV()"><span class="qa-i"><i class="ti ti-file-spreadsheet"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
           <div class="kg" id="kpiG"><div class="loading"><div class="spin"></div>Cargando...</div></div>
+          <div class="nc"><div class="ch"><div><div class="ct">Resumen de cobros</div><div class="ct-s">últimos 6 meses</div></div></div><div id="chartCobros" style="padding:8px 4px 4px"></div></div>
           <div class="g2">
             <div class="nc"><div class="ch"><div><div class="ct">Cartera por plan</div><div class="ct-s">prima mensual RD$</div></div></div><div class="br" id="bPlan"></div></div>
             <div class="nc"><div class="ch"><div><div class="ct">Cobro por agente</div><div class="ct-s">efectividad</div></div></div><div class="br" id="bAgt"></div></div>
@@ -877,6 +878,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </button>
               <button id="cliTabInh" class="cli-subtab" onclick="switchCliTab('inhabilitados')">
                 <i class="ti ti-user-off"></i> Inhabilitados <span id="cntInh" style="background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              </button>
+              <button id="cliTabVip" class="cli-subtab" onclick="switchCliTab('vip')">
+                <i class="ti ti-star"></i> VIP <span id="cntVip" style="background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
               </button>
             </div>
             <div class="frow">
@@ -1835,7 +1839,7 @@ create table if not exists asientos(id uuid default gen_random_uuid() primary ke
 create table if not exists usuarios_sistema(id uuid default gen_random_uuid() primary key,nom text not null,cargo text,login text unique not null,pwd text,rol text default 'agente',activo boolean default true,created_at timestamptz default now());
 create table if not exists secuencias_ncf(tipo text primary key,ultimo_numero integer default 0);
 create table if not exists comisiones(id uuid default gen_random_uuid() primary key,agente_id uuid,agente_nom text,mes integer,anio integer,periodo text,total_primas numeric default 0,porcentaje numeric default 0,monto_bruto numeric default 0,itbis numeric default 0,monto_neto numeric default 0,estado text default 'Pendiente',created_at timestamptz default now());
-create table if not exists configuracion(clave text primary key,valor text,updated_at timestamptz default now());
+create table if not exists configuracion(clave text primary key,valor text,actualizado timestamptz default now());
 
 alter table empresas enable row level security;
 alter table agentes enable row level security;
@@ -2944,7 +2948,7 @@ function rNotifs(){
 
   const filtrosHTML=`<div style="display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap">
     ${[['todas','Todas'],['pendientes','Pendientes'],['leidas','Leídas'],['cobros','Cobros'],['errores','Errores'],['sistema','Sistema']].map(([k,l])=>
-      `<button onclick="filtrarNotifs('${k}')" style="font-size:9px;padding:3px 8px;border-radius:10px;border:none;cursor:pointer;background:${_notifFiltro===k?'#2563eb':'#f1f5f9'};color:${_notifFiltro===k?'#fff':'#64748b'};font-weight:600">${l}</button>`
+      `<button data-notif-filtro="1" onclick="event.stopPropagation();filtrarNotifs('${k}')" style="font-size:9px;padding:3px 8px;border-radius:10px;border:none;cursor:pointer;background:${_notifFiltro===k?'#2563eb':'#f1f5f9'};color:${_notifFiltro===k?'#fff':'#64748b'};font-weight:600">${l}</button>`
     ).join('')}
   </div>`;
 
@@ -2954,12 +2958,25 @@ function rNotifs(){
   }
   list.innerHTML=filtrosHTML+mostrar.map(n=>{
     const leida=_notifLeidas.includes(n.id);
+    // Formatear la hora/fecha de la notificación
+    let horaTxt='';
+    if(n.ts){
+      try{
+        const d=new Date(n.ts);
+        const hoy=new Date();
+        const esHoy=d.toDateString()===hoy.toDateString();
+        const hora=d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});
+        if(esHoy){horaTxt='Hoy '+hora;}
+        else{horaTxt=d.toLocaleDateString('es-DO',{day:'2-digit',month:'short'})+' '+hora;}
+      }catch(e){}
+    }
     return `<div class="notif-item ${leida?'':'unread'}" onclick='abrirNotif(${JSON.stringify(n).replace(/'/g,"&#39;")})' style="cursor:pointer">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <span style="font-size:18px">${n.icon}</span>
         <div style="flex:1">
           <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:2px">${n.ttl}</div>
           <div style="font-size:10px;color:#64748b">${n.sub}</div>
+          ${horaTxt?`<div style="font-size:9px;color:#94a3b8;margin-top:3px;font-family:monospace"><i class="ti ti-clock" style="font-size:9px"></i> ${horaTxt}</div>`:''}
         </div>
         ${!leida?'<span style="width:7px;height:7px;border-radius:50%;background:#2563eb;flex-shrink:0;margin-top:4px"></span>':''}
       </div>
@@ -3004,6 +3021,8 @@ function marcarTodasLeidas(){
 // Cerrar notif al clic afuera
 document.addEventListener('click',e=>{
   const p=document.getElementById('notifPanel');
+  // No cerrar si el clic fue en un botón de filtro de notificaciones
+  if(e.target.closest('[data-notif-filtro]'))return;
   if(p&&!p.contains(e.target)&&!e.target.closest('.notif-bell')){p.classList.remove('show');}
 });
 
@@ -3831,9 +3850,26 @@ async function generarNumPoliza(){
   try{
     const cfg=await API.get('configuracion',`clave=eq.seq_poliza&select=*`);
     const actual=(cfg&&cfg[0]?parseInt(cfg[0].valor):0)+1;
-    await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(actual),updated_at:new Date().toISOString()});
+    // Guardar el nuevo número — usa la columna correcta 'actualizado'
+    if(cfg&&cfg[0]){
+      try{
+        await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(actual),actualizado:new Date().toISOString()});
+      }catch(eCol){
+        // Si la columna 'actualizado' no existe, reintentar sin ella
+        await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(actual)});
+      }
+    }else{
+      // Si no existe la fila seq_poliza, crearla
+      try{
+        await API.post('configuracion',{clave:'seq_poliza',valor:String(actual),actualizado:new Date().toISOString()});
+      }catch(eCol){
+        await API.post('configuracion',{clave:'seq_poliza',valor:String(actual)});
+      }
+    }
     return `POL-${new Date().getFullYear()}-${String(actual).padStart(6,'0')}`;
-  }catch{return `POL-${new Date().getFullYear()}-${String(Date.now()%1000000).padStart(6,'0')}`;}
+  }catch(e){
+    return `POL-${new Date().getFullYear()}-${String(Date.now()%1000000).padStart(6,'0')}`;
+  }
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -3869,14 +3905,79 @@ function rDash(){
   // Saldos pendientes
   const pends=act.filter(c=>pend(c)>0).slice(0,6);
   document.getElementById('dashD').innerHTML=pends.length?`<div class="tw"><table><thead><tr><th>CLIENTE</th><th>PLAN</th><th>PRIMA</th><th>PENDIENTE</th><th>ESTADO</th></tr></thead><tbody>${pends.map(c=>`<tr><td style="font-weight:700;font-size:11px">${c.nom}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3);font-weight:700">${fmt(pend(c))}</td><td>${estB(c)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><i class="ti ti-circle-check" style="font-size:22px;color:var(--c1);display:block;margin-bottom:6px"></i>TODOS AL DÍA</div>`;
+  rChartCobros();
+}
+
+// Gráfica de líneas: cobros de los últimos 6 meses (SVG, responsive)
+async function rChartCobros(){
+  const cont=document.getElementById('chartCobros');
+  if(!cont)return;
+  const hoy=new Date();
+  // Calcular cobros por mes desde los abonos reales
+  const meses=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
+    meses.push({mes:d.getMonth(),anio:d.getFullYear(),lbl:MESES[d.getMonth()].slice(0,3),total:0});
+  }
+  // Cargar abonos desde Supabase
+  let abonos=[];
+  try{abonos=await API.get('abonos','select=fecha,monto')||[];}catch(e){abonos=[];}
+  abonos.forEach(a=>{
+    if(!a.fecha)return;
+    const f=new Date(a.fecha+'T12:00:00');
+    const m=meses.find(x=>x.mes===f.getMonth()&&x.anio===f.getFullYear());
+    if(m)m.total+=(Number(a.monto)||0);
+  });
+  const vals=meses.map(m=>m.total);
+  const max=Math.max(...vals,1);
+  // Dimensiones del SVG
+  const W=600,H=180,padX=10,padY=20;
+  const innerW=W-padX*2,innerH=H-padY*2;
+  // Puntos de la curva
+  const pts=vals.map((v,i)=>{
+    const x=padX+(i*(innerW/(vals.length-1)));
+    const y=padY+innerH-((v/max)*innerH);
+    return {x,y,v};
+  });
+  // Línea suave (curva)
+  let linePath='M '+pts[0].x+' '+pts[0].y;
+  for(let i=1;i<pts.length;i++){
+    const xc=(pts[i-1].x+pts[i].x)/2;
+    linePath+=` Q ${pts[i-1].x} ${pts[i-1].y} ${xc} ${(pts[i-1].y+pts[i].y)/2}`;
+    linePath+=` Q ${pts[i].x} ${pts[i].y} ${pts[i].x} ${pts[i].y}`;
+  }
+  // Área de relleno (degradado)
+  const areaPath=linePath+` L ${pts[pts.length-1].x} ${padY+innerH} L ${pts[0].x} ${padY+innerH} Z`;
+  const ult=pts[pts.length-1];
+  const svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <linearGradient id="gradCob" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2563EB" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#2563EB" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#gradCob)"/>
+    <path d="${linePath}" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="3" fill="#fff" stroke="#2563EB" stroke-width="2"/>`).join('')}
+    <circle cx="${ult.x}" cy="${ult.y}" r="5" fill="#2563EB"/>
+    <circle cx="${ult.x}" cy="${ult.y}" r="9" fill="#2563EB" opacity="0.2"/>
+  </svg>
+  <div style="display:flex;justify-content:space-between;padding:4px 8px 0;font-size:9px;color:var(--tx3);font-family:var(--mono)">
+    ${meses.map(m=>`<span>${m.lbl}</span>`).join('')}
+  </div>
+  <div style="text-align:center;margin-top:6px;font-size:10px;color:var(--tx2)">Último mes: <strong style="color:var(--c1);font-family:var(--mono)">${fmt(vals[vals.length-1])}</strong></div>`;
+  cont.innerHTML=svg;
 }
 
 // ── CLIENTES ─────────────────────────────────────────────────────────────────
 let _cliTab='activos';
+let _cliVerTodos=false;
 function switchCliTab(tab){
   _cliTab=tab;
+  _cliVerTodos=false;
   document.getElementById('cliTabAct')?.classList.toggle('active-subtab',tab==='activos');
   document.getElementById('cliTabInh')?.classList.toggle('active-subtab',tab==='inhabilitados');
+  document.getElementById('cliTabVip')?.classList.toggle('active-subtab',tab==='vip');
   rCli();
 }
 
@@ -3884,16 +3985,20 @@ function rCli(){
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
   const fe=document.getElementById('fEst')?.value||'';
-  // Contar activos e inhabilitados
+  // Contar activos, inhabilitados y VIP
   const totalAct=ST.clientes.filter(c=>c.activo!==false).length;
   const totalInh=ST.clientes.filter(c=>c.activo===false).length;
+  const favs=getFavoritos();
+  const totalVip=ST.clientes.filter(c=>favs.includes(c.id)).length;
   const cAct=document.getElementById('cntAct');if(cAct)cAct.textContent=totalAct;
   const cInh=document.getElementById('cntInh');if(cInh)cInh.textContent=totalInh;
+  const cVip=document.getElementById('cntVip');if(cVip)cVip.textContent=totalVip;
   let list=ST.clientes.filter(c=>{
-    // Filtro principal: activos o inhabilitados
+    // Filtro principal: activos, inhabilitados o VIP
     const esInhabilitado=c.activo===false;
     if(_cliTab==='activos'&&esInhabilitado)return false;
     if(_cliTab==='inhabilitados'&&!esInhabilitado)return false;
+    if(_cliTab==='vip'&&!favs.includes(c.id))return false;
     if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
     if(fp&&c.plan!==fp)return false;
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}
@@ -3902,7 +4007,8 @@ function rCli(){
   document.getElementById('cliCnt').textContent=`(${list.length})`;
   const tb=document.getElementById('tbCli');
   if(!list.length){tb.innerHTML='<tr><td colspan="9"><div class="empty">Sin resultados</div></td></tr>';return;}
-  const PAGE=50,total=list.length;list=list.slice(0,PAGE);
+  const PAGE=50,total=list.length;
+  if(!_cliVerTodos)list=list.slice(0,PAGE);
   tb.innerHTML=list.map(c=>{
     const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);
     const hoy2=new Date(),fin=c.fecha_fin?new Date(c.fecha_fin):null;
@@ -3927,9 +4033,18 @@ function rCli(){
       </td>
     </tr>`;
   }).join('');
-  if(total>PAGE){const extra=document.createElement('tr');extra.innerHTML=`<td colspan="9" style="text-align:center;padding:10px"><button class="btn bsm bc1" onclick="rCliAll()"><i class="ti ti-chevron-down"></i> Ver todos (${total-PAGE} más)</button></td>`;tb.appendChild(extra);}
+  // Botón Ver todos / Ver menos
+  if(total>PAGE){
+    const extra=document.createElement('tr');
+    if(!_cliVerTodos){
+      extra.innerHTML=`<td colspan="9" style="text-align:center;padding:10px"><button class="btn bsm bc1" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-down"></i> Ver todos (${total-PAGE} más)</button></td>`;
+    }else{
+      extra.innerHTML=`<td colspan="9" style="text-align:center;padding:10px"><button class="btn bsm bghost" onclick="toggleCliVerTodos()"><i class="ti ti-chevron-up"></i> Ver menos</button></td>`;
+    }
+    tb.appendChild(extra);
+  }
 }
-function rCliAll(){document.getElementById('fEst').value='';document.getElementById('fPlan').value='';document.getElementById('cliQ').value='';const tb=document.getElementById('tbCli');const list=ST.clientes;tb.innerHTML=list.map(c=>{const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar"><i class="ti ti-user-check"></i></button>`;return`<tr style="${!c.activo?'opacity:.5':''}"><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div></div></div></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td><td><span class="badge ${ep.badge}" style="font-size:8px">${ep.lbl}</span></td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;font-weight:${pd>0?700:400};color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td>${estB(c)}</td><td style="white-space:nowrap;display:flex;gap:2px"><button class="btn bsm bghost" onclick="editarCli('${c.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" onclick="abrirAbono('${c.id}')"><i class="ti ti-wallet"></i></button><button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')"><i class="ti ti-file-certificate"></i></button>${inhabBtn}</td></tr>`;}).join('');document.getElementById('cliCnt').textContent=`(${list.length} — todos)`;}
+function toggleCliVerTodos(){_cliVerTodos=!_cliVerTodos;rCli();}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
 function rPolizas(){
@@ -5096,7 +5211,7 @@ async function guardarDatosEmp(){
 async function guardarConfig(){
   const nom=document.getElementById('cfgEmpNom').value.trim();if(!nom){toast('err','Campo requerido','Ingrese el nombre');return;}
   const datos=[{clave:'empresa_nom',valor:nom},{clave:'empresa_rnc',valor:document.getElementById('cfgEmpRNC').value},{clave:'empresa_tel',valor:document.getElementById('cfgEmpTel').value},{clave:'empresa_email',valor:document.getElementById('cfgEmpEmail').value},{clave:'empresa_dir',valor:document.getElementById('cfgEmpDir').value}];
-  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,updated_at:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();logAudit('CONFIG_EMPRESA',`Empresa actualizada: ${nom}`);toast('ok','Datos de empresa guardados');}catch(e){mostrarError(e.message,'Al guardar configuración de empresa');toast('err','Error',e.message);}
+  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();logAudit('CONFIG_EMPRESA',`Empresa actualizada: ${nom}`);toast('ok','Datos de empresa guardados');}catch(e){mostrarError(e.message,'Al guardar configuración de empresa');toast('err','Error',e.message);}
 }
 // ── Gestión de ARS ───────────────────────────────────────────────────────────
 let _arsList = ['ARS Humano','ARS Reservas','ARS Semma','ARS Universal','ARS Meta Salud','ARS CMD','ARS Yunen','ARS Futuro','ARS Asemap','ARS BHD'];
@@ -5203,7 +5318,7 @@ function poblarSelectArsCliente(){
 
 async function guardarTarifas(){
   const numIni=document.getElementById('cfgNumIni')?.value;
-  if(numIni&&parseInt(numIni)>0){await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(parseInt(numIni)-1),updated_at:new Date().toISOString()});}
+  if(numIni&&parseInt(numIni)>0){await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(parseInt(numIni)-1),actualizado:new Date().toISOString()});}
   const datos=[{clave:'prima_basico',valor:document.getElementById('cfgT1').value},{clave:'prima_superior',valor:document.getElementById('cfgT2').value},{clave:'prima_esencial',valor:document.getElementById('cfgT3').value},{clave:'dep_basico',valor:document.getElementById('cfgD1').value},{clave:'dep_superior',valor:document.getElementById('cfgD2').value},{clave:'dep_esencial',valor:document.getElementById('cfgD3').value},{clave:'comision_basico',valor:document.getElementById('cfgC1').value},{clave:'comision_superior',valor:document.getElementById('cfgC2').value},{clave:'comision_esencial',valor:document.getElementById('cfgC3').value}];
   // Agregar costos si fueron ingresados
   const c1=document.getElementById('cfgCost1')?.value;
@@ -5212,7 +5327,7 @@ async function guardarTarifas(){
   if(c1)datos.push({clave:'costo_basico',valor:c1});
   if(c2)datos.push({clave:'costo_superior',valor:c2});
   if(c3)datos.push({clave:'costo_esencial',valor:c3});
-  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,updated_at:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();logAudit('TARIFAS_ACTUALIZADAS','Primas, costos y comisiones modificadas');toast('ok','Tarifas y comisiones actualizadas');}catch(e){toast('err','Error',e.message);}
+  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();logAudit('TARIFAS_ACTUALIZADAS','Primas, costos y comisiones modificadas');toast('ok','Tarifas y comisiones actualizadas');}catch(e){toast('err','Error',e.message);}
 }
 
 // ── AUTOMATIZACIÓN ────────────────────────────────────────────────────────────
@@ -5817,6 +5932,52 @@ body.tema-premium canvas{filter:brightness(1.08)}
 body.tema-premium ::-webkit-scrollbar-track{background:#0B1220}
 body.tema-premium ::-webkit-scrollbar-thumb{background:#1E293B}
 body.tema-premium ::-webkit-scrollbar-thumb:hover{background:#2563EB}
+
+/* ── Refuerzo: cubrir TODOS los elementos con fondo/texto fijo ── */
+body.tema-premium .tnav,
+body.tema-premium .tn-b,
+body.tema-premium .modal-box,
+body.tema-premium .mbox,
+body.tema-premium .cfg-panel,
+body.tema-premium .cfg-tabs,
+body.tema-premium table,
+body.tema-premium thead,
+body.tema-premium tbody,
+body.tema-premium .notif-panel,
+body.tema-premium .gs-panel,
+body.tema-premium .menu,
+body.tema-premium .dropdown,
+body.tema-premium .card,
+body.tema-premium .box,
+body.tema-premium .panel{
+  background:#1E293B !important;
+  color:#E8EDF7 !important;
+  border-color:rgba(255,255,255,.08) !important;
+}
+body.tema-premium .tn-sr input,
+body.tema-premium input,
+body.tema-premium select,
+body.tema-premium textarea{
+  background:#0F172A !important;
+  color:#E8EDF7 !important;
+  border-color:rgba(255,255,255,.1) !important;
+}
+body.tema-premium input::placeholder,
+body.tema-premium textarea::placeholder{color:#64748B !important;}
+body.tema-premium th{background:#0F172A !important;color:#94A3B8 !important;}
+body.tema-premium td{border-color:rgba(255,255,255,.05) !important;color:#E8EDF7 !important;}
+body.tema-premium tr:hover td{background:rgba(37,99,235,.08) !important;}
+/* Textos oscuros fijos -> claros */
+body.tema-premium h1,body.tema-premium h2,body.tema-premium h3,
+body.tema-premium .ct,body.tema-premium label,body.tema-premium p,
+body.tema-premium span,body.tema-premium div{color:inherit;}
+body.tema-premium [style*="color:#1e293b"],
+body.tema-premium [style*="color:#0f172a"],
+body.tema-premium [style*="color:#1E293B"]{color:#E8EDF7 !important;}
+/* Fondos blancos en estilos en línea */
+body.tema-premium [style*="background:#fff"],
+body.tema-premium [style*="background:#FFF"],
+body.tema-premium [style*="background:white"]{background:#1E293B !important;}
 
 /* ═══════ TEMA LIQUID GLASS ═══════ */
 body.tema-glass{
