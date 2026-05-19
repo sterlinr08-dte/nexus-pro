@@ -450,7 +450,8 @@ tbody tr{transition:background .12s ease}
 .acc-menu button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;padding:10px 11px;font-size:12px;font-weight:600;color:#1e293b;cursor:pointer;border-radius:13px;font-family:var(--ff);white-space:nowrap;transition:background .14s,transform .1s}
 .acc-menu button:hover{background:#f1f5f9}
 .acc-menu button:active{transform:scale(.97);background:#e8edf3}
-.acc-menu button i{font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex-shrink:0}
+.acc-menu button i{font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex-shrink:0;pointer-events:none}
+.acc-menu button *{pointer-events:none}
 .acc-menu .am-sep{height:1px;background:#eef2f7;margin:5px 10px}
 .acc-i-blue i{background:rgba(37,99,235,.13);color:#2563eb}
 .acc-i-green i{background:rgba(16,185,129,.15);color:#059669}
@@ -4288,8 +4289,16 @@ function toggleAccMenu(ev,cid){
   }
 }
 // Cerrar menús al hacer clic fuera o al hacer scroll
-document.addEventListener('click',()=>cerrarAccMenus());
-window.addEventListener('scroll',()=>cerrarAccMenus(),true);
+// Cerrar menús solo si el clic fue FUERA del menú (no dentro)
+document.addEventListener('click',(e)=>{
+  if(e.target.closest('.acc-menu'))return; // clic dentro del menú: no cerrar
+  if(e.target.closest('[onclick*="toggleAccMenu"]'))return; // el botón ⋮ se maneja solo
+  cerrarAccMenus();
+});
+// En PC el scroll cierra el menú; en móvil NO (el menú está fijo abajo)
+window.addEventListener('scroll',()=>{
+  if(window.innerWidth>640)cerrarAccMenus();
+},true);
 function rCli(){
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
