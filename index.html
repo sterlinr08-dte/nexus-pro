@@ -443,6 +443,25 @@ tbody tr{transition:background .12s ease}
 
 /* ════ SUB-TABS CLIENTES ════ */
 .cli-subtab{padding:7px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--ff)}
+.acc-menu{position:absolute;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid #e8edf3;border-radius:14px;box-shadow:0 12px 40px rgba(15,31,61,.18),0 2px 8px rgba(15,31,61,.08);z-index:200;min-width:230px;padding:6px;overflow:hidden;transform-origin:top right;animation:accIn .16s cubic-bezier(.34,1.3,.64,1)}
+@keyframes accIn{from{opacity:0;transform:scale(.92) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.acc-menu-hd{font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.5px;padding:6px 10px 4px;font-family:var(--mono)}
+.acc-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;padding:9px 10px;font-size:11px;font-weight:600;color:#334155;cursor:pointer;border-radius:9px;font-family:var(--ff);white-space:nowrap;transition:background .12s}
+.acc-menu button:hover{background:#f1f5f9}
+.acc-menu button:active{transform:scale(.98)}
+.acc-menu button i{font-size:15px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0}
+.acc-menu .am-sep{height:1px;background:#eef2f7;margin:4px 8px}
+.acc-i-blue i{background:rgba(37,99,235,.1);color:#2563eb}
+.acc-i-green i{background:rgba(16,185,129,.12);color:#10b981}
+.acc-i-purple i{background:rgba(124,58,237,.1);color:#7c3aed}
+.acc-i-amber i{background:rgba(245,158,11,.12);color:#d97706}
+.acc-i-red i{background:rgba(239,68,68,.1);color:#ef4444}
+.acc-i-gray i{background:rgba(100,116,139,.1);color:#64748b}
+body.tema-premium .acc-menu{background:#16213d;border-color:#2a3a5c;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+body.tema-premium .acc-menu button{color:#cbd5e1}
+body.tema-premium .acc-menu button:hover{background:#243150}
+body.tema-premium .acc-menu .am-sep{background:#2a3a5c}
+body.tema-premium .acc-menu-hd{color:#64748b}
 .cli-subtab:hover{color:#1e293b}
 .cli-subtab.active-subtab{background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff !important;box-shadow:0 2px 8px rgba(37,99,235,.3)}
 .cli-subtab.active-subtab i,.cli-subtab.active-subtab span{color:#fff !important}
@@ -791,13 +810,18 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
         <div id="sbConfig" style="overflow:hidden;max-height:0;transition:max-height .3s ease;padding-left:8px">
           <div class="ni" onclick="navConfig(1,this)" style="padding:6px 10px"><i class="ti ti-building ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Empresa y tarifas</span></div>
-          <div class="ni" onclick="navConfig(9,this)" style="padding:6px 10px"><i class="ti ti-database ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Base de datos</span></div>
+          <div class="ni" onclick="navConfig(2,this)" style="padding:6px 10px"><i class="ti ti-mail ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Notificaciones</span></div>
+          <div class="ni" onclick="navConfig(3,this)" style="padding:6px 10px"><i class="ti ti-robot ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Automatización</span></div>
+          <div class="ni" onclick="navConfig(4,this)" style="padding:6px 10px"><i class="ti ti-buildings ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Empresas</span></div>
+          <div class="ni" onclick="navConfig(5,this)" style="padding:6px 10px"><i class="ti ti-id-badge ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Agentes</span></div>
           <div class="ni" onclick="navConfig(6,this)" style="padding:6px 10px"><i class="ti ti-users ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Usuarios</span></div>
           <div class="ni" onclick="navConfig(7,this)" style="padding:6px 10px"><i class="ti ti-shield-lock ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Seguridad / Roles</span></div>
           <div class="ni" onclick="navConfig(8,this)" style="padding:6px 10px"><i class="ti ti-clipboard-list ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Auditoría</span></div>
-          <div class="ni" onclick="navConfig(3,this)" style="padding:6px 10px"><i class="ti ti-robot ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Automatización</span></div>
-          <div class="ni" onclick="navConfig(2,this)" style="padding:6px 10px"><i class="ti ti-mail ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Notificaciones</span></div>
+          <div class="ni" onclick="navConfig(9,this)" style="padding:6px 10px"><i class="ti ti-database ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Base de datos</span></div>
+          <div class="ni" onclick="navConfig(10,this)" style="padding:6px 10px"><i class="ti ti-history ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Changelog</span></div>
           <div class="ni" onclick="navConfig(11,this)" style="padding:6px 10px"><i class="ti ti-target ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Metas</span></div>
+          <div class="ni" onclick="navConfig(12,this)" style="padding:6px 10px"><i class="ti ti-palette ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Apariencia</span></div>
+          <div class="ni" onclick="navConfig(13,this)" style="padding:6px 10px"><i class="ti ti-list-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Coberturas</span></div>
         </div>
 
       <div class="sb-ft">
@@ -2428,6 +2452,17 @@ function rCoberturas(){
   </div>`;
   cont.innerHTML=html;
 }
+// Guarda un valor en la tabla configuracion (global, usado por varios módulos)
+async function guardarTexto(clave,valor){
+  const existe=await API.get('configuracion',`clave=eq.${clave}`);
+  if(existe&&existe.length>0){
+    try{await API.patch('configuracion',`clave=eq.${clave}`,{valor:valor,actualizado:new Date().toISOString()});}
+    catch(e){await API.patch('configuracion',`clave=eq.${clave}`,{valor:valor});}
+  }else{
+    try{await API.post('configuracion',{clave:clave,valor:valor,actualizado:new Date().toISOString()});}
+    catch(e){await API.post('configuracion',{clave:clave,valor:valor});}
+  }
+}
 async function guardarCoberturas(){
   try{
     for(const p of PLANES_COB){
@@ -2655,7 +2690,7 @@ function toggleConfig(){
   _configAbierto=!_configAbierto;
   const sb=document.getElementById('sbConfig');
   const icn=document.getElementById('icnConfig');
-  if(sb)sb.style.maxHeight=_configAbierto?'400px':'0';
+  if(sb)sb.style.maxHeight=_configAbierto?'600px':'0';
   if(icn)icn.style.transform=_configAbierto?'rotate(180deg)':'';
 }
 
@@ -4195,6 +4230,36 @@ function switchCliTab(tab){
   rCli();
 }
 
+// Menú desplegable de acciones del cliente
+function cerrarAccMenus(){
+  document.querySelectorAll('.acc-menu').forEach(m=>{m.style.display='none';});
+}
+function toggleAccMenu(ev,cid){
+  ev.stopPropagation();
+  const menu=document.getElementById('accMenu_'+cid);
+  if(!menu)return;
+  const estaAbierto=menu.style.display==='block';
+  cerrarAccMenus();
+  if(!estaAbierto){
+    // Posicionar como fixed para que no lo corte la tabla
+    const btn=ev.currentTarget.getBoundingClientRect();
+    menu.style.display='block';
+    menu.style.position='fixed';
+    menu.style.top=(btn.bottom+6)+'px';
+    const ancho=menu.offsetWidth||230;
+    let left=btn.right-ancho;
+    if(left<8)left=8;
+    menu.style.left=left+'px';
+    menu.style.right='auto';
+    // Si se sale por abajo, abrirlo hacia arriba
+    if(btn.bottom+menu.offsetHeight>window.innerHeight-10){
+      menu.style.top=(btn.top-menu.offsetHeight-6)+'px';
+    }
+  }
+}
+// Cerrar menús al hacer clic fuera o al hacer scroll
+document.addEventListener('click',()=>cerrarAccMenus());
+window.addEventListener('scroll',()=>cerrarAccMenus(),true);
 function rCli(){
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
@@ -4271,15 +4336,24 @@ function rCli(){
       <td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(getTot(c))}</td>
       <td style="font-family:var(--mono);font-size:9px;font-weight:${pd>0?700:400};color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td>
       <td>${estB(c)}</td>
-      <td style="white-space:nowrap;display:flex;gap:2px">
+      <td style="white-space:nowrap;display:flex;gap:3px;align-items:center">
         <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar"><i class="ti ti-edit"></i></button>
-        <button class="btn bsm bghost" onclick="abrirAbono('${c.id}')" title="Registrar cobro"><i class="ti ti-wallet"></i></button>
-        <button class="btn bsm bghost" onclick="abrirHistorialCobros('${c.id}')" title="Ver/editar cobros guardados"><i class="ti ti-receipt"></i></button>
-        <button class="btn bsm bghost" onclick="verFacturaPDF('${c.id}')" title="Certificado PDF"><i class="ti ti-file-certificate"></i></button>
-        <button class="btn bsm bwa" onclick="enviarCoberturasWA('${c.id}')" title="Enviar coberturas del plan por WhatsApp"><i class="ti ti-list-check"></i></button>
-        <button class="btn bsm bc2" onclick="abrirDocs('${c.id}')" title="Documentos"><i class="ti ti-folder-open"></i></button>
-        ${inhabBtn}
-        ${(!c.activo&&sesion?.rol==='admin')?`<button class="btn bsm bc3" onclick="eliminarClienteDef('${c.id}')" title="Eliminar definitivamente"><i class="ti ti-trash"></i></button>`:''}
+        <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro"><i class="ti ti-wallet"></i></button>
+        <div style="position:relative;display:inline-block">
+          <button class="btn bsm bghost" onclick="toggleAccMenu(event,'${c.id}')" title="Más acciones"><i class="ti ti-dots-vertical"></i></button>
+          <div id="accMenu_${c.id}" class="acc-menu" style="display:none">
+            <div class="acc-menu-hd">GESTIÓN</div>
+            <button class="acc-i-purple" onclick="abrirHistorialCobros('${c.id}');cerrarAccMenus()"><i class="ti ti-receipt"></i> Cobros guardados</button>
+            <button class="acc-i-blue" onclick="verFacturaPDF('${c.id}');cerrarAccMenus()"><i class="ti ti-file-certificate"></i> Certificado PDF</button>
+            <button class="acc-i-amber" onclick="abrirDocs('${c.id}');cerrarAccMenus()"><i class="ti ti-folder-open"></i> Documentos</button>
+            <div class="am-sep"></div>
+            <div class="acc-menu-hd">COMUNICACIÓN</div>
+            <button class="acc-i-green" onclick="enviarCoberturasWA('${c.id}');cerrarAccMenus()"><i class="ti ti-list-check"></i> Enviar coberturas WhatsApp</button>
+            <div class="am-sep"></div>
+            <button class="acc-i-gray" onclick="${c.activo?`abrirInhab('${c.id}')`:`reactivar('${c.id}')`};cerrarAccMenus()"><i class="ti ti-${c.activo?'user-off':'user-check'}"></i> ${c.activo?'Inhabilitar cliente':'Reactivar cliente'}</button>
+            ${(!c.activo&&sesion?.rol==='admin')?`<button class="acc-i-red" onclick="eliminarClienteDef('${c.id}');cerrarAccMenus()" style="color:#dc2626"><i class="ti ti-trash"></i> Eliminar definitivamente</button>`:''}
+          </div>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -5509,15 +5583,8 @@ async function guardarDatosEmp(){
   const nom=get('cfgEmpNom');
   if(!nom){toast('err','Campo requerido','Ingrese el nombre de la correduría');return;}
   // Helper: guarda un valor de TEXTO PLANO en la tabla configuracion
-  const guardarTexto=async(clave,valor)=>{
-    const existe=await API.get('configuracion',`clave=eq.${clave}`);
-    if(existe&&existe.length>0){
-      try{await API.patch('configuracion',`clave=eq.${clave}`,{valor:valor,actualizado:new Date().toISOString()});}
-      catch(e){await API.patch('configuracion',`clave=eq.${clave}`,{valor:valor});}
-    }else{
-      try{await API.post('configuracion',{clave:clave,valor:valor,actualizado:new Date().toISOString()});}
-      catch(e){await API.post('configuracion',{clave:clave,valor:valor});}
-    }
+  const guardarTexto2NoUsar=async(clave,valor)=>{
+    return await guardarTexto(clave,valor);
   };
   try{
     const datos=[
@@ -5798,6 +5865,9 @@ function rAuditoria(){
       <span style="font-size:11px;padding:8px 12px;font-weight:600">${_auditPag} / ${totalPag}</span>
       <button class="btn bsm bghost" onclick="_auditPag=Math.min(${totalPag},_auditPag+1);rAuditoria()" ${_auditPag>=totalPag?'disabled':''} style="width:auto;padding:0 12px">Siguiente <i class="ti ti-chevron-right"></i></button>
     </div>`:''}`;
+  // Sincronizar la copia que se muestra en Configuración (si existe)
+  const elCfg=document.getElementById('auditCfg');
+  if(elCfg&&elCfg!==el)elCfg.innerHTML=el.innerHTML;
 }
 
 function limpiarFiltrosAudit(){
