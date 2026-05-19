@@ -462,6 +462,14 @@ body.tema-premium .acc-menu button{color:#cbd5e1}
 body.tema-premium .acc-menu button:hover{background:#243150}
 body.tema-premium .acc-menu .am-sep{background:#2a3a5c}
 body.tema-premium .acc-menu-hd{color:#64748b}
+.acc-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:4999;animation:bdIn .15s ease}
+@keyframes bdIn{from{opacity:0}to{opacity:1}}
+@media(max-width:640px){
+  .acc-menu{min-width:0!important;border-radius:18px;padding:8px}
+  .acc-menu button{padding:13px 12px;font-size:13px}
+  .acc-menu button i{width:34px;height:34px;font-size:17px}
+  .acc-menu-hd{font-size:9px;padding:8px 12px 5px}
+}
 .cli-subtab:hover{color:#1e293b}
 .cli-subtab.active-subtab{background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff !important;box-shadow:0 2px 8px rgba(37,99,235,.3)}
 .cli-subtab.active-subtab i,.cli-subtab.active-subtab span{color:#fff !important}
@@ -4233,6 +4241,7 @@ function switchCliTab(tab){
 // Menú desplegable de acciones del cliente
 function cerrarAccMenus(){
   document.querySelectorAll('.acc-menu').forEach(m=>{m.style.display='none';});
+  document.querySelectorAll('.acc-backdrop').forEach(b=>b.remove());
 }
 function toggleAccMenu(ev,cid){
   ev.stopPropagation();
@@ -4240,18 +4249,36 @@ function toggleAccMenu(ev,cid){
   if(!menu)return;
   const estaAbierto=menu.style.display==='block';
   cerrarAccMenus();
-  if(!estaAbierto){
-    // Posicionar como fixed para que no lo corte la tabla
+  document.querySelectorAll('.acc-backdrop').forEach(b=>b.remove());
+  if(estaAbierto)return;
+  const esMovil=window.innerWidth<=640;
+  // Limpiar estilos previos para empezar de cero
+  menu.style.cssText='';
+  menu.style.display='block';
+  menu.style.position='fixed';
+  menu.style.zIndex='5000';
+  if(esMovil){
+    // Móvil: hoja inferior anclada al fondo de la pantalla
+    menu.style.left='12px';
+    menu.style.right='12px';
+    menu.style.bottom='16px';
+    menu.style.top='auto';
+    menu.style.maxHeight='65vh';
+    menu.style.overflowY='auto';
+    // Fondo oscuro detrás
+    const bd=document.createElement('div');
+    bd.className='acc-backdrop';
+    bd.onclick=()=>{cerrarAccMenus();};
+    document.body.appendChild(bd);
+  }else{
+    // PC: menú junto al botón
     const btn=ev.currentTarget.getBoundingClientRect();
-    menu.style.display='block';
-    menu.style.position='fixed';
     menu.style.top=(btn.bottom+6)+'px';
     const ancho=menu.offsetWidth||230;
     let left=btn.right-ancho;
     if(left<8)left=8;
     menu.style.left=left+'px';
     menu.style.right='auto';
-    // Si se sale por abajo, abrirlo hacia arriba
     if(btn.bottom+menu.offsetHeight>window.innerHeight-10){
       menu.style.top=(btn.top-menu.offsetHeight-6)+'px';
     }
