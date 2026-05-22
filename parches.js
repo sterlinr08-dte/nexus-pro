@@ -1,1081 +1,826 @@
-// ════════════════════════════════════════════════════════════════
-// NEXUS PRO — SISTEMA DE PARCHES
-// ════════════════════════════════════════════════════════════════
-//
-// Este archivo aplica correcciones y mejoras al sistema SIN tocar
-// el HTML principal. Se carga al final, por lo que puede sobrescribir
-// cualquier función del sistema.
-//
-// REGLAS DE ORO:
-//   1. NUNCA borrar parches viejos sin entender qué hacen
-//   2. Cada parche tiene su sección con fecha y descripción
-//   3. Después de aplicar un parche, validar que el sistema sigue funcionando
-//   4. Si un parche rompe algo, comentarlo (con //) y reportar
-//
-// PARA APLICAR UN PARCHE:
-//   1. Pegar el código del parche en este archivo
-//   2. Subir solo parches.js a GitHub (sin tocar index.html)
-//   3. Ctrl+Shift+R en el navegador para recargar
-//
-// ════════════════════════════════════════════════════════════════
+/* ==========================================================================
+   NEXU PRO - PARCHE MÓVIL APP v3
+   Autorizado: Dashboard móvil tipo app + navegación corregida
+   Alcance: SOLO vista móvil web. No modifica master ni base de datos.
+   ========================================================================== */
 
-(function(){
-  'use strict';
+(function () {
+  "use strict";
 
-  // Esperar a que el sistema esté cargado antes de aplicar parches
-  function aplicarParches(){
-    console.log('%c⚙ Sistema de parches NEXUS PRO cargado','color:#7c3aed;font-weight:bold');
+  const PATCH_ID = "nexu-pro-mobile-app-v3";
+  const MOBILE_MAX = 768;
 
-    // ════════════════════════════════════════════════════════════
-    // PARCHES ACTIVOS
-    // ════════════════════════════════════════════════════════════
+  if (window[PATCH_ID]) return;
+  window[PATCH_ID] = true;
 
-    // ─────────────────────────────────────────────────────────────
-    // PARCHE-001 · 2026-05-22 · v2
-    // Fix modal cliente cortado en iPhone (botón Guardar no funciona)
-    // Causa: barra inferior de Safari iOS tapa el botón.
-    // Solución: CSS con @media query (siempre activo en móvil).
-    // ─────────────────────────────────────────────────────────────
-    try {
-      const css = `
-        @media (max-width: 640px) {
-          /* El modal de cliente con scroll y espacio para el botón */
-          #mCli .mb {
-            padding-bottom: 120px !important;
-            padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
-            max-height: calc(100vh - 60px) !important;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-          }
-          /* El botón Guardar visible y por encima de la barra de Safari */
-          #mCli #btnGCli {
-            position: -webkit-sticky !important;
-            position: sticky !important;
-            bottom: 16px !important;
-            bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
-            z-index: 100 !important;
-            box-shadow: 0 4px 20px rgba(0,0,0,.2) !important;
-            margin-top: 20px !important;
-            background: var(--c1, #2563eb) !important;
-          }
-          /* Asegurar que el overlay/modal no tape el botón */
-          #mCli {
-            padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-          }
-        }
-      `;
-      // Quitar versión vieja si existe
-      const viejo = document.getElementById('patch-001-mcli-mobile');
-      if (viejo) viejo.remove();
-      const style = document.createElement('style');
-      style.id = 'patch-001-mcli-mobile';
-      style.textContent = css;
-      document.head.appendChild(style);
-      console.log('  ✓ PARCHE-001 v2 aplicado: Modal cliente fix iPhone');
-    } catch(e) {
-      console.error('  ✗ PARCHE-001 falló:', e);
-    }
+  const isMobile = () => window.innerWidth <= MOBILE_MAX;
 
-
-    // ── EJEMPLO DE PARCHE (comentado, solo para referencia) ────
-    /*
-    // PARCHE-001 · 2026-05-22 · Corregir cálculo de prima
-    if (typeof window.getTot === 'function') {
-      const _getTotOriginal = window.getTot;
-      window.getTot = function(c) {
-        // Versión corregida aquí
-        return _getTotOriginal(c); // o lógica nueva
-      };
-      console.log('  ✓ PARCHE-001 aplicado: getTot corregido');
-    }
-    */
-
-    // ════════════════════════════════════════════════════════════
-    // FIN DE PARCHES
-    // ════════════════════════════════════════════════════════════
-
-    console.log('%c✓ Parches aplicados correctamente','color:#10b981;font-weight:bold');
+  function q(sel, root = document) {
+    return root.querySelector(sel);
   }
 
-  // Si el sistema ya cargó, aplicar inmediatamente
-  if (document.readyState === 'complete') {
-    setTimeout(aplicarParches, 100);
-  } else {
-    window.addEventListener('load', function(){
-      setTimeout(aplicarParches, 100);
+  function qa(sel, root = document) {
+    return Array.from(root.querySelectorAll(sel));
+  }
+
+  function normalize(txt) {
+    return String(txt || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function safeClick(el) {
+    if (!el) return false;
+    try {
+      el.click();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function findClickableByText(words) {
+    const wanted = words.map(normalize);
+    const candidates = qa("button, a, [onclick], [role='button'], .nav-item, .menu-item, .tab, .card, li, div");
+    return candidates.find(el => {
+      const t = normalize(el.innerText || el.textContent || el.getAttribute("aria-label"));
+      return wanted.some(w => t.includes(w));
     });
   }
-})();
 
-// ─────────────────────────────────────────────────────────────
-// PARCHE-002 · 2026-05-22
-// Fix menú móvil "Más acciones" en Clientes: opciones opacas/no ejecutan.
-// Aplica sin tocar index.html.
-// ─────────────────────────────────────────────────────────────
-(function(){
-  'use strict';
+  function goToModule(names) {
+    const el = findClickableByText(names);
+    if (safeClick(el)) return true;
 
-  function instalarPatchMenuMovil(){
-    try{
-      const css = `
-        @media (max-width: 640px) {
-          .acc-backdrop {
-            position: fixed !important;
-            inset: 0 !important;
-            background: rgba(15, 23, 42, .46) !important;
-            backdrop-filter: blur(2px) !important;
-            -webkit-backdrop-filter: blur(2px) !important;
-            z-index: 2147483000 !important;
-            pointer-events: auto !important;
-          }
-          .acc-menu {
-            position: fixed !important;
-            left: 12px !important;
-            right: 12px !important;
-            bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
-            top: auto !important;
-            z-index: 2147483001 !important;
-            background: #ffffff !important;
-            opacity: 1 !important;
-            filter: none !important;
-            pointer-events: auto !important;
-            max-height: min(68vh, 520px) !important;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-            box-shadow: 0 22px 70px rgba(15, 23, 42, .34), 0 6px 18px rgba(15, 23, 42, .18) !important;
-          }
-          .acc-menu, .acc-menu button {
-            touch-action: manipulation !important;
-            -webkit-tap-highlight-color: transparent !important;
-          }
-          .acc-menu button {
-            pointer-events: auto !important;
-            opacity: 1 !important;
-            color: #0f172a !important;
-            background: transparent !important;
-          }
-          .acc-menu button:active {
-            background: #e8edf3 !important;
-          }
-          body.tema-premium .acc-menu {
-            background: #16213d !important;
-            opacity: 1 !important;
-          }
-          body.tema-premium .acc-menu button {
-            color: #e2e8f0 !important;
-          }
-        }
-      `;
-      const viejo = document.getElementById('patch-002-acc-menu-mobile');
-      if(viejo) viejo.remove();
-      const style = document.createElement('style');
-      style.id = 'patch-002-acc-menu-mobile';
-      style.textContent = css;
-      document.head.appendChild(style);
+    // Fallback para sistemas con función global showSection / mostrarSeccion / navigate
+    const aliases = names.map(normalize);
+    const guess = aliases[0]?.split(" ")[0] || "";
 
-      window.cerrarAccMenus = function(){
-        document.querySelectorAll('.acc-menu').forEach(function(m){
-          m.style.display = 'none';
-          m.classList.remove('acc-menu-open-mobile');
-        });
-        document.querySelectorAll('.acc-backdrop').forEach(function(b){ b.remove(); });
-      };
-
-      window.toggleAccMenu = function(ev, cid){
-        if(ev){
-          ev.preventDefault();
-          ev.stopPropagation();
-        }
-        const menu = document.getElementById('accMenu_' + cid);
-        if(!menu) return;
-
-        const estaAbierto = menu.style.display === 'block';
-        window.cerrarAccMenus();
-        if(estaAbierto) return;
-
-        const esMovil = window.innerWidth <= 640;
-        menu.style.cssText = '';
-        menu.style.display = 'block';
-        menu.style.position = 'fixed';
-        menu.style.zIndex = esMovil ? '2147483001' : '5000';
-        menu.style.opacity = '1';
-        menu.style.pointerEvents = 'auto';
-
-        if(esMovil){
-          // Mover temporalmente al body evita que tablas/contenedores con overflow o transform bloqueen los toques.
-          if(menu.parentElement !== document.body){
-            document.body.appendChild(menu);
-          }
-          menu.classList.add('acc-menu-open-mobile');
-          menu.style.left = '12px';
-          menu.style.right = '12px';
-          menu.style.bottom = 'calc(16px + env(safe-area-inset-bottom, 0px))';
-          menu.style.top = 'auto';
-          menu.style.maxHeight = 'min(68vh, 520px)';
-          menu.style.overflowY = 'auto';
-
-          const bd = document.createElement('div');
-          bd.className = 'acc-backdrop';
-          bd.addEventListener('click', function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            window.cerrarAccMenus();
-          }, {passive:false});
-          document.body.appendChild(bd);
-        }else{
-          const btn = ev && ev.currentTarget ? ev.currentTarget.getBoundingClientRect() : {bottom:80,right:260,top:40};
-          menu.style.top = (btn.bottom + 6) + 'px';
-          const ancho = menu.offsetWidth || 248;
-          let left = btn.right - ancho;
-          if(left < 8) left = 8;
-          menu.style.left = left + 'px';
-          menu.style.right = 'auto';
-          if(btn.bottom + menu.offsetHeight > window.innerHeight - 10){
-            menu.style.top = Math.max(8, btn.top - menu.offsetHeight - 6) + 'px';
-          }
-        }
-      };
-
-      // Evita que un toque dentro del menú sea interpretado como clic fuera en navegadores móviles.
-      document.addEventListener('touchstart', function(e){
-        if(e.target.closest && e.target.closest('.acc-menu')) e.stopPropagation();
-      }, {passive:true, capture:true});
-
-      console.log('  ✓ PARCHE-002 aplicado: Menú móvil de acciones corregido');
-    }catch(e){
-      console.error('  ✗ PARCHE-002 falló:', e);
-    }
-  }
-
-  if(document.readyState === 'complete' || document.readyState === 'interactive'){
-    setTimeout(instalarPatchMenuMovil, 150);
-  }else{
-    window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarPatchMenuMovil, 150); });
-  }
-})();
-
-// ─────────────────────────────────────────────────────────────
-// PARCHE-003 · 2026-05-22
-// Dashboard móvil web tipo app v1.
-// Aplica solo en pantallas móviles. No toca index.html.
-// ─────────────────────────────────────────────────────────────
-(function(){
-  'use strict';
-
-  function instalarDashboardMovilApp(){
-    try{
-      const css = `
-        @media (max-width: 768px) {
-          body.nxp-mobile-app #app {
-            background: #f6f8fc !important;
-          }
-          body.nxp-mobile-app .ticker {
-            display: none !important;
-          }
-          body.nxp-mobile-app .tnav {
-            height: calc(58px + env(safe-area-inset-top, 0px)) !important;
-            padding: env(safe-area-inset-top, 0px) 14px 0 14px !important;
-            background: rgba(255,255,255,.96) !important;
-            backdrop-filter: blur(14px) !important;
-            -webkit-backdrop-filter: blur(14px) !important;
-            border-bottom: 1px solid rgba(226,232,240,.9) !important;
-            box-shadow: 0 8px 24px rgba(15,23,42,.06) !important;
-            position: sticky !important;
-            top: 0 !important;
-            z-index: 90 !important;
-          }
-          body.nxp-mobile-app .pttl {
-            font-size: 0 !important;
-            max-width: none !important;
-            overflow: visible !important;
-          }
-          body.nxp-mobile-app .pttl::after {
-            content: 'NEXU PRO' !important;
-            font-size: 14px !important;
-            font-weight: 800 !important;
-            letter-spacing: .2px !important;
-            color: #0f172a !important;
-          }
-          body.nxp-mobile-app .tn-sr {
-            display: none !important;
-          }
-          body.nxp-mobile-app .tn-r {
-            gap: 8px !important;
-          }
-          body.nxp-mobile-app .tn-r .tn-b:not(.notif-bell) {
-            display: none !important;
-          }
-          body.nxp-mobile-app .tn-b,
-          body.nxp-mobile-app .tn-tog {
-            min-width: 38px !important;
-            width: 38px !important;
-            height: 38px !important;
-            border-radius: 14px !important;
-            background: #f8fafc !important;
-            border: 1px solid #e2e8f0 !important;
-            box-shadow: 0 4px 12px rgba(15,23,42,.06) !important;
-          }
-          body.nxp-mobile-app .content {
-            padding: 14px 14px calc(86px + env(safe-area-inset-bottom, 0px)) !important;
-            background: linear-gradient(180deg,#f8fbff 0%,#f1f5f9 100%) !important;
-          }
-          body.nxp-mobile-app #v-dashboard::before {
-            content: 'Hola, Admin 👋\AResumen general de tu negocio';
-            white-space: pre-line;
-            display: block;
-            font-size: 20px;
-            line-height: 1.35;
-            font-weight: 800;
-            color: #0f172a;
-            margin: 2px 2px 14px;
-          }
-          body.nxp-mobile-app #v-dashboard::after {
-            content: 'Dashboard móvil tipo app · versión de prueba';
-            display: block;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 6px 0 2px;
-          }
-          body.nxp-mobile-app #v-dashboard .qa-g {
-            grid-template-columns: repeat(2, minmax(0,1fr)) !important;
-            gap: 10px !important;
-            margin-bottom: 14px !important;
-          }
-          body.nxp-mobile-app #v-dashboard .qa {
-            min-height: 92px !important;
-            border-radius: 18px !important;
-            border: 1px solid rgba(226,232,240,.96) !important;
-            background: rgba(255,255,255,.98) !important;
-            box-shadow: 0 10px 28px rgba(15,23,42,.08) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 7px !important;
-            -webkit-tap-highlight-color: transparent !important;
-            touch-action: manipulation !important;
-          }
-          body.nxp-mobile-app #v-dashboard .qa:active {
-            transform: scale(.98) !important;
-            background: #eff6ff !important;
-          }
-          body.nxp-mobile-app #v-dashboard .qa-i {
-            width: 38px !important;
-            height: 38px !important;
-            border-radius: 15px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background: #dbeafe !important;
-            color: #2563eb !important;
-            margin: 0 !important;
-            font-size: 21px !important;
-          }
-          body.nxp-mobile-app #v-dashboard .qa:nth-child(2) .qa-i { background:#dcfce7 !important;color:#16a34a !important; }
-          body.nxp-mobile-app #v-dashboard .qa:nth-child(3) .qa-i { background:#dcfce7 !important;color:#16a34a !important; }
-          body.nxp-mobile-app #v-dashboard .qa:nth-child(4) .qa-i { background:#ede9fe !important;color:#7c3aed !important; }
-          body.nxp-mobile-app #v-dashboard .qa:nth-child(5) .qa-i { background:#ffedd5 !important;color:#ea580c !important; }
-          body.nxp-mobile-app #v-dashboard .qa:nth-child(6) .qa-i { background:#fce7f3 !important;color:#db2777 !important; }
-          body.nxp-mobile-app #v-dashboard .qa-l {
-            font-size: 12px !important;
-            color: #0f172a !important;
-            font-weight: 750 !important;
-          }
-          body.nxp-mobile-app #v-dashboard .kg {
-            grid-template-columns: repeat(2, minmax(0,1fr)) !important;
-            gap: 10px !important;
-            margin-bottom: 14px !important;
-          }
-          body.nxp-mobile-app #v-dashboard .kpi {
-            min-height: 130px !important;
-            border-radius: 18px !important;
-            border: 1px solid rgba(226,232,240,.98) !important;
-            background: rgba(255,255,255,.99) !important;
-            box-shadow: 0 12px 30px rgba(15,23,42,.08) !important;
-            padding: 16px 14px !important;
-          }
-          body.nxp-mobile-app #v-dashboard .kpi::after {
-            height: 0 !important;
-          }
-          body.nxp-mobile-app #v-dashboard .ki {
-            opacity: 1 !important;
-            right: 12px !important;
-            top: 12px !important;
-            width: 36px !important;
-            height: 36px !important;
-            border-radius: 14px !important;
-            font-size: 20px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background: #dbeafe !important;
-            color: #2563eb !important;
-          }
-          body.nxp-mobile-app #v-dashboard .k2 .ki { background:#ede9fe !important;color:#7c3aed !important; }
-          body.nxp-mobile-app #v-dashboard .k3 .ki { background:#dcfce7 !important;color:#16a34a !important; }
-          body.nxp-mobile-app #v-dashboard .k4 .ki { background:#fee2e2 !important;color:#dc2626 !important; }
-          body.nxp-mobile-app #v-dashboard .k5 .ki { background:#fef3c7 !important;color:#d97706 !important; }
-          body.nxp-mobile-app #v-dashboard .kl {
-            font-size: 10px !important;
-            color: #475569 !important;
-            letter-spacing: 0 !important;
-            text-transform: none !important;
-            max-width: 90px !important;
-            line-height: 1.25 !important;
-          }
-          body.nxp-mobile-app #v-dashboard .kv {
-            font-size: 22px !important;
-            color: #0f172a !important;
-            margin-top: 28px !important;
-          }
-          body.nxp-mobile-app #v-dashboard .ks {
-            font-size: 10px !important;
-            color: #64748b !important;
-          }
-          body.nxp-mobile-app #v-dashboard .nc {
-            border-radius: 20px !important;
-            border: 1px solid rgba(226,232,240,.96) !important;
-            background: rgba(255,255,255,.98) !important;
-            box-shadow: 0 12px 30px rgba(15,23,42,.07) !important;
-            padding: 14px !important;
-            margin-bottom: 14px !important;
-          }
-          body.nxp-mobile-app #v-dashboard .ct {
-            font-size: 14px !important;
-            color: #0f172a !important;
-          }
-          body.nxp-mobile-app #v-dashboard .ct-s {
-            font-size: 10px !important;
-            color: #64748b !important;
-          }
-          body.nxp-mobile-app .nxp-bottom-nav {
-            position: fixed;
-            left: 10px;
-            right: 10px;
-            bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-            height: 64px;
-            background: rgba(255,255,255,.96);
-            border: 1px solid rgba(226,232,240,.95);
-            border-radius: 24px;
-            box-shadow: 0 18px 45px rgba(15,23,42,.16);
-            display: grid;
-            grid-template-columns: repeat(5,1fr);
-            align-items: center;
-            z-index: 120;
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-          }
-          body.nxp-mobile-app .nxp-bottom-nav button {
-            border: 0;
-            background: transparent;
-            height: 56px;
-            border-radius: 18px;
-            color: #64748b;
-            font-size: 10px;
-            font-weight: 700;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            cursor: pointer;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-          }
-          body.nxp-mobile-app .nxp-bottom-nav button i {
-            font-size: 20px;
-          }
-          body.nxp-mobile-app .nxp-bottom-nav button.on {
-            color: #2563eb;
-            background: #eff6ff;
-          }
-          body.nxp-mobile-app .nxp-fab {
-            position: fixed;
-            right: 18px;
-            bottom: calc(86px + env(safe-area-inset-bottom, 0px));
-            width: 58px;
-            height: 58px;
-            border-radius: 22px;
-            background: linear-gradient(135deg,#2563eb,#3b82f6);
-            color: #fff;
-            border: 0;
-            box-shadow: 0 18px 38px rgba(37,99,235,.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            z-index: 118;
-            cursor: pointer;
-          }
-          body.nxp-mobile-app .nxp-fab:active {
-            transform: scale(.96);
-          }
-          body.nxp-mobile-app.dark .tnav,
-          body.nxp-mobile-app.dark .nxp-bottom-nav,
-          body.nxp-mobile-app.dark #v-dashboard .qa,
-          body.nxp-mobile-app.dark #v-dashboard .kpi,
-          body.nxp-mobile-app.dark #v-dashboard .nc {
-            background: rgba(30,41,59,.96) !important;
-            border-color: rgba(51,65,85,.95) !important;
-          }
-          body.nxp-mobile-app.dark .content {
-            background: linear-gradient(180deg,#0f172a 0%,#111827 100%) !important;
-          }
-          body.nxp-mobile-app.dark .pttl::after,
-          body.nxp-mobile-app.dark #v-dashboard::before,
-          body.nxp-mobile-app.dark #v-dashboard .qa-l,
-          body.nxp-mobile-app.dark #v-dashboard .kv,
-          body.nxp-mobile-app.dark #v-dashboard .ct {
-            color: #e2e8f0 !important;
-          }
-          body.nxp-mobile-app.dark #v-dashboard .kl,
-          body.nxp-mobile-app.dark #v-dashboard .ks,
-          body.nxp-mobile-app.dark #v-dashboard .ct-s,
-          body.nxp-mobile-app.dark .nxp-bottom-nav button {
-            color: #94a3b8 !important;
-          }
-        }
-        @media (min-width: 769px) {
-          .nxp-bottom-nav,
-          .nxp-fab { display: none !important; }
-        }
-      `;
-
-      const viejo = document.getElementById('patch-003-dashboard-mobile-app');
-      if(viejo) viejo.remove();
-      const style = document.createElement('style');
-      style.id = 'patch-003-dashboard-mobile-app';
-      style.textContent = css;
-      document.head.appendChild(style);
-
-      function esMovil(){ return window.matchMedia('(max-width: 768px)').matches; }
-
-      function activarClase(){
-        document.body.classList.toggle('nxp-mobile-app', esMovil());
+    ["showSection", "mostrarSeccion", "openSection", "navigateTo", "irA", "goTo"].forEach(fn => {
+      if (typeof window[fn] === "function") {
+        try { window[fn](guess); } catch (e) {}
       }
+    });
 
-      function crearBottomNav(){
-        if(document.querySelector('.nxp-bottom-nav')) return;
-        const navBox = document.createElement('div');
-        navBox.className = 'nxp-bottom-nav';
-        navBox.innerHTML = `
-          <button data-view="dashboard" onclick="nav('dashboard',null)"><i class="ti ti-home"></i><span>Inicio</span></button>
-          <button data-view="clientes" onclick="nav('clientes',null)"><i class="ti ti-users"></i><span>Clientes</span></button>
-          <button data-view="facturas" onclick="nav('facturas',null)"><i class="ti ti-file-invoice"></i><span>Facturas</span></button>
-          <button data-view="cobros" onclick="nav('clientes',null);setTimeout(function(){ if(typeof switchTab==='function') switchTab('pagos'); },200)"><i class="ti ti-wallet"></i><span>Cobros</span></button>
-          <button data-view="mas" onclick="toggleSidebar()"><i class="ti ti-dots"></i><span>Más</span></button>
+    return false;
+  }
+
+  function injectStyles() {
+    if (q("#nexu-mobile-app-v3-css")) return;
+
+    const css = document.createElement("style");
+    css.id = "nexu-mobile-app-v3-css";
+    css.textContent = `
+      @media (max-width: ${MOBILE_MAX}px) {
+        html, body {
+          max-width: 100%;
+          overflow-x: hidden !important;
+          background: #f6f8fc !important;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+          padding-bottom: 96px !important;
+        }
+
+        .app, .main, main, .content, .page, .section, .container, .dashboard,
+        [class*="content"], [class*="dashboard"], [class*="section"] {
+          max-width: 100% !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+
+        .card, .panel, .box, .widget, .module, .stat-card,
+        [class*="card"], [class*="panel"], [class*="widget"] {
+          border-radius: 22px !important;
+          box-shadow: 0 10px 28px rgba(15, 23, 42, .08) !important;
+          border: 1px solid rgba(148, 163, 184, .22) !important;
+          box-sizing: border-box !important;
+          max-width: 100% !important;
+        }
+
+        table {
+          min-width: 720px;
+        }
+
+        .table-wrap, .table-container, .responsive-table,
+        [class*="table"], [class*="grid"] {
+          max-width: 100% !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+
+        .permissions-grid, .roles-grid, [class*="permission"], [class*="permiso"] {
+          max-width: 100% !important;
+          overflow-x: auto !important;
+        }
+
+        .mobile-bottom-nav-v3 {
+          position: fixed;
+          left: 12px;
+          right: 12px;
+          bottom: 12px;
+          z-index: 99990;
+          height: 72px;
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          align-items: center;
+          gap: 4px;
+          padding: 8px;
+          background: rgba(255,255,255,.96);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(226,232,240,.95);
+          border-radius: 28px;
+          box-shadow: 0 18px 45px rgba(15,23,42,.18);
+        }
+
+        .mobile-bottom-nav-v3 button {
+          border: 0;
+          background: transparent;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 800;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          min-height: 54px;
+          border-radius: 18px;
+          cursor: pointer;
+        }
+
+        .mobile-bottom-nav-v3 button.active {
+          background: #eff6ff;
+          color: #2563eb;
+        }
+
+        .mobile-bottom-nav-v3 .ico {
+          font-size: 21px;
+          line-height: 1;
+        }
+
+        .mobile-more-sheet-v3 {
+          position: fixed;
+          left: 12px;
+          right: 12px;
+          bottom: 92px;
+          z-index: 99991;
+          background: rgba(255,255,255,.98);
+          border: 1px solid #e5e7eb;
+          border-radius: 26px;
+          box-shadow: 0 24px 60px rgba(15,23,42,.2);
+          padding: 14px;
+          display: none;
+        }
+
+        .mobile-more-sheet-v3.open {
+          display: block;
+        }
+
+        .mobile-more-sheet-v3 h3 {
+          margin: 4px 6px 12px;
+          font-size: 14px;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+        }
+
+        .mobile-more-sheet-v3 button {
+          width: 100%;
+          border: 0;
+          background: #fff;
+          border-bottom: 1px solid #eef2f7;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 10px;
+          font-size: 15px;
+          font-weight: 800;
+          color: #0f172a;
+          cursor: pointer;
+          text-align: left;
+        }
+
+        .mobile-more-sheet-v3 button:last-child {
+          border-bottom: 0;
+        }
+
+        .mobile-more-sheet-v3 .more-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 14px;
+          display: grid;
+          place-items: center;
+          background: #eff6ff;
+          color: #2563eb;
+          font-size: 20px;
+          flex: 0 0 auto;
+        }
+
+        .mobile-fab-v3 {
+          position: fixed;
+          right: 20px;
+          bottom: 104px;
+          z-index: 99980;
+          width: 60px;
+          height: 60px;
+          border-radius: 22px;
+          border: 0;
+          background: linear-gradient(135deg, #2563eb, #1d4ed8);
+          color: white;
+          font-size: 34px;
+          line-height: 1;
+          box-shadow: 0 18px 34px rgba(37,99,235,.35);
+          cursor: pointer;
+        }
+
+        .mobile-view-v3 {
+          position: fixed;
+          inset: 0;
+          z-index: 99970;
+          background: #f8fafc;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          padding: env(safe-area-inset-top) 16px 110px;
+          box-sizing: border-box;
+        }
+
+        .mobile-view-v3-header {
+          position: sticky;
+          top: 0;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 0;
+          background: rgba(248,250,252,.96);
+          backdrop-filter: blur(12px);
+        }
+
+        .mobile-view-v3-header button {
+          width: 40px;
+          height: 40px;
+          border-radius: 14px;
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          font-size: 22px;
+          cursor: pointer;
+        }
+
+        .mobile-view-v3-title {
+          font-size: 18px;
+          font-weight: 900;
+          color: #0f172a;
+        }
+
+        .mobile-summary-grid-v3 {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(76px, 1fr));
+          gap: 10px;
+          overflow-x: auto;
+          padding-bottom: 8px;
+        }
+
+        .mobile-mini-card-v3 {
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 20px;
+          padding: 12px 10px;
+          text-align: center;
+          min-width: 76px;
+          box-shadow: 0 8px 22px rgba(15,23,42,.06);
+        }
+
+        .mobile-mini-card-v3 .n {
+          font-size: 19px;
+          font-weight: 900;
+          color: #0f172a;
+          margin-top: 5px;
+        }
+
+        .mobile-mini-card-v3 .l {
+          font-size: 11px;
+          font-weight: 800;
+          color: #64748b;
+        }
+
+        .mobile-search-v3 {
+          display: flex;
+          gap: 10px;
+          margin: 14px 0;
+        }
+
+        .mobile-search-v3 input {
+          flex: 1;
+          height: 48px;
+          border-radius: 18px;
+          border: 1px solid #e2e8f0;
+          padding: 0 14px;
+          font-size: 15px;
+          background: #fff;
+        }
+
+        .mobile-client-list-v3 {
+          background: #fff;
+          border-radius: 24px;
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+          box-shadow: 0 10px 26px rgba(15,23,42,.06);
+        }
+
+        .mobile-client-row-v3 {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px;
+          border-bottom: 1px solid #eef2f7;
+          cursor: pointer;
+        }
+
+        .mobile-client-row-v3:last-child {
+          border-bottom: 0;
+        }
+
+        .mobile-avatar-v3 {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: #dbeafe;
+          display: grid;
+          place-items: center;
+          color: #2563eb;
+          font-weight: 900;
+          flex: 0 0 auto;
+        }
+
+        .mobile-client-main-v3 {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .mobile-client-main-v3 b {
+          display: block;
+          font-size: 14px;
+          color: #0f172a;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .mobile-client-main-v3 span {
+          display: block;
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .mobile-badge-v3 {
+          padding: 5px 9px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 900;
+          background: #dcfce7;
+          color: #15803d;
+        }
+
+        .mobile-badge-v3.warn { background: #ffedd5; color: #ea580c; }
+        .mobile-badge-v3.bad { background: #fee2e2; color: #dc2626; }
+        .mobile-badge-v3.off { background: #e5e7eb; color: #475569; }
+
+        .mobile-payment-row-v3 {
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 20px;
+          padding: 14px;
+          margin-bottom: 10px;
+          box-shadow: 0 8px 22px rgba(15,23,42,.05);
+        }
+
+        .mobile-payment-row-v3 .top {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          font-weight: 900;
+        }
+
+        .mobile-payment-row-v3 .sub {
+          color: #64748b;
+          font-size: 12px;
+          margin-top: 5px;
+        }
+
+        .mobile-filter-pills-v3 {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding: 8px 0 14px;
+        }
+
+        .mobile-filter-pills-v3 button {
+          border: 1px solid #dbeafe;
+          background: #fff;
+          color: #2563eb;
+          font-weight: 900;
+          border-radius: 999px;
+          padding: 9px 13px;
+          white-space: nowrap;
+        }
+      }
+    `;
+    document.head.appendChild(css);
+  }
+
+  function readClientes() {
+    const keys = ["clientes", "clients", "nexu_clientes", "nexuProClientes"];
+    for (const key of keys) {
+      try {
+        const val = JSON.parse(localStorage.getItem(key) || "[]");
+        if (Array.isArray(val) && val.length) return val;
+      } catch (e) {}
+    }
+
+    // Fallback desde variables globales comunes
+    for (const key of ["clientes", "clients", "CLIENTES"]) {
+      if (Array.isArray(window[key])) return window[key];
+    }
+
+    return [];
+  }
+
+  function readPagos() {
+    const keys = ["pagos", "payments", "historialPagos", "nexu_pagos", "cobros"];
+    for (const key of keys) {
+      try {
+        const val = JSON.parse(localStorage.getItem(key) || "[]");
+        if (Array.isArray(val) && val.length) return val;
+      } catch (e) {}
+    }
+
+    for (const key of ["pagos", "payments", "historialPagos", "cobros"]) {
+      if (Array.isArray(window[key])) return window[key];
+    }
+
+    return [];
+  }
+
+  function getClientName(c) {
+    return c.nombre_completo || c.nombreCompleto || c.name || [c.nombre, c.apellido].filter(Boolean).join(" ") || "Cliente";
+  }
+
+  function getClientPhone(c) {
+    return c.whatsapp || c.telefono || c.phone || c.celular || "";
+  }
+
+  function getClientStatus(c) {
+    const raw = normalize(c.estado || c.status || c.estatus);
+    if (raw.includes("moroso")) return "moroso";
+    if (raw.includes("pend")) return "pendiente";
+    if (raw.includes("inactivo")) return "inactivo";
+    return "activo";
+  }
+
+  function money(v) {
+    const n = Number(String(v || 0).replace(/[^\d.-]/g, ""));
+    return "RD$ " + (isNaN(n) ? 0 : n).toLocaleString("es-DO");
+  }
+
+  function closeMobileView() {
+    const view = q(".mobile-view-v3");
+    if (view) view.remove();
+  }
+
+  function showClientesResumido() {
+    if (!isMobile()) return goToModule(["clientes"]);
+    closeMobileView();
+
+    const clientes = readClientes();
+    const activos = clientes.filter(c => getClientStatus(c) === "activo").length || 0;
+    const morosos = clientes.filter(c => getClientStatus(c) === "moroso").length || 0;
+    const pendientes = clientes.filter(c => getClientStatus(c) === "pendiente").length || 0;
+    const inactivos = clientes.filter(c => getClientStatus(c) === "inactivo").length || 0;
+    const nuevos = clientes.filter(c => {
+      const f = c.created_at || c.fechaCreacion || c.fecha || "";
+      return String(f).slice(0,7) === new Date().toISOString().slice(0,7);
+    }).length || 0;
+
+    const view = document.createElement("div");
+    view.className = "mobile-view-v3";
+    view.innerHTML = `
+      <div class="mobile-view-v3-header">
+        <button type="button" data-back>‹</button>
+        <div class="mobile-view-v3-title">Clientes resumido</div>
+        <button type="button" title="Filtro">☰</button>
+      </div>
+
+      <div class="mobile-summary-grid-v3">
+        <div class="mobile-mini-card-v3"><div>👥</div><div class="l">Activos</div><div class="n">${activos}</div></div>
+        <div class="mobile-mini-card-v3"><div>📄</div><div class="l">Nuevos</div><div class="n">${nuevos}</div></div>
+        <div class="mobile-mini-card-v3"><div>⚠️</div><div class="l">Morosos</div><div class="n">${morosos}</div></div>
+        <div class="mobile-mini-card-v3"><div>⏱️</div><div class="l">Pendientes</div><div class="n">${pendientes}</div></div>
+        <div class="mobile-mini-card-v3"><div>👤</div><div class="l">Inactivos</div><div class="n">${inactivos}</div></div>
+      </div>
+
+      <div class="mobile-search-v3">
+        <input type="search" placeholder="Buscar cliente..." data-client-search>
+      </div>
+
+      <h3 style="font-size:16px;margin:12px 2px;color:#0f172a;">Últimos clientes</h3>
+      <div class="mobile-client-list-v3" data-client-list></div>
+
+      <button type="button" data-open-all style="width:100%;margin-top:14px;height:50px;border-radius:18px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;font-weight:900;">
+        Ver todos los clientes (${clientes.length})
+      </button>
+    `;
+
+    document.body.appendChild(view);
+
+    const list = q("[data-client-list]", view);
+    const render = (filter = "") => {
+      const f = normalize(filter);
+      const data = clientes
+        .filter(c => normalize(getClientName(c) + " " + getClientPhone(c)).includes(f))
+        .slice(0, 25);
+
+      list.innerHTML = data.length ? data.map((c, i) => {
+        const name = getClientName(c);
+        const initials = name.split(/\s+/).slice(0,2).map(x => x[0]).join("").toUpperCase() || "CL";
+        const st = getClientStatus(c);
+        const badgeClass = st === "moroso" ? "bad" : st === "pendiente" ? "warn" : st === "inactivo" ? "off" : "";
+        const deuda = c.deuda || c.balance || c.pendiente || c.total_pendiente || 0;
+        return `
+          <div class="mobile-client-row-v3" data-client-index="${i}">
+            <div class="mobile-avatar-v3">${initials}</div>
+            <div class="mobile-client-main-v3">
+              <b>${name}</b>
+              <span>${getClientPhone(c) || "Sin teléfono"}</span>
+            </div>
+            <span class="mobile-badge-v3 ${badgeClass}">${st}</span>
+            <b style="font-size:13px;color:#0f172a;">${money(deuda)}</b>
+            <span style="color:#64748b;">›</span>
+          </div>
         `;
-        document.body.appendChild(navBox);
-      }
-
-      function crearFAB(){
-        if(document.querySelector('.nxp-fab')) return;
-        const fab = document.createElement('button');
-        fab.className = 'nxp-fab';
-        fab.type = 'button';
-        fab.title = 'Nuevo cliente';
-        fab.innerHTML = '<i class="ti ti-plus"></i>';
-        fab.addEventListener('click', function(){
-          if(typeof abrirNuevoCli === 'function') abrirNuevoCli();
-        });
-        document.body.appendChild(fab);
-      }
-
-      function marcarActivo(){
-        const active = document.querySelector('.view.on');
-        const id = active ? active.id.replace('v-','') : 'dashboard';
-        document.querySelectorAll('.nxp-bottom-nav button').forEach(function(b){
-          b.classList.toggle('on', b.dataset.view === id || (id === 'clientes' && b.dataset.view === 'clientes'));
-        });
-      }
-
-      function instalar(){
-        activarClase();
-        crearBottomNav();
-        crearFAB();
-        marcarActivo();
-      }
-
-      instalar();
-      window.addEventListener('resize', activarClase);
-      document.addEventListener('click', function(){ setTimeout(marcarActivo, 80); }, true);
-      const obsTarget = document.getElementById('cnt') || document.body;
-      const obs = new MutationObserver(function(){ marcarActivo(); });
-      obs.observe(obsTarget, {attributes:true, subtree:true, attributeFilter:['class']});
-
-      console.log('  ✓ PARCHE-003 aplicado: Dashboard móvil tipo app v1');
-    }catch(e){
-      console.error('  ✗ PARCHE-003 falló:', e);
-    }
-  }
-
-  if(document.readyState === 'complete' || document.readyState === 'interactive'){
-    setTimeout(instalarDashboardMovilApp, 220);
-  }else{
-    window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarDashboardMovilApp, 220); });
-  }
-})();
-
-
-// ─────────────────────────────────────────────────────────────
-// PARCHE-004 · 2026-05-22
-// Ajuste responsive móvil: cada módulo/card se adapta al ancho real.
-// No toca index.html. Solo mejora CSS en pantallas móviles.
-// ─────────────────────────────────────────────────────────────
-(function(){
-  'use strict';
-
-  function instalarAjusteModulosMovil(){
-    try{
-      const css = `
-        @media (max-width: 768px) {
-          html, body {
-            width: 100% !important;
-            max-width: 100% !important;
-            overflow-x: hidden !important;
-          }
-
-          body.nxp-mobile-app,
-          body.nxp-mobile-app * {
-            box-sizing: border-box !important;
-          }
-
-          body.nxp-mobile-app .app,
-          body.nxp-mobile-app .main,
-          body.nxp-mobile-app .content,
-          body.nxp-mobile-app #cnt,
-          body.nxp-mobile-app .view,
-          body.nxp-mobile-app #v-dashboard {
-            width: 100% !important;
-            max-width: 100vw !important;
-            overflow-x: hidden !important;
-          }
-
-          body.nxp-mobile-app .content {
-            padding-left: 12px !important;
-            padding-right: 12px !important;
-            padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
-          }
-
-          body.nxp-mobile-app #v-dashboard {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-          }
-
-          /* Cualquier módulo interno del dashboard se ajusta a pantalla */
-          body.nxp-mobile-app #v-dashboard > *,
-          body.nxp-mobile-app #v-dashboard .card,
-          body.nxp-mobile-app #v-dashboard .panel,
-          body.nxp-mobile-app #v-dashboard .box,
-          body.nxp-mobile-app #v-dashboard .nc,
-          body.nxp-mobile-app #v-dashboard .qa,
-          body.nxp-mobile-app #v-dashboard .kpi,
-          body.nxp-mobile-app #v-dashboard .chart,
-          body.nxp-mobile-app #v-dashboard .tblwrap {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-          }
-
-          /* Grids fluidos: nunca se salen de la pantalla */
-          body.nxp-mobile-app #v-dashboard .grid,
-          body.nxp-mobile-app #v-dashboard .cards,
-          body.nxp-mobile-app #v-dashboard .kpis,
-          body.nxp-mobile-app #v-dashboard .quick,
-          body.nxp-mobile-app #v-dashboard .quick-actions,
-          body.nxp-mobile-app #v-dashboard [class*="grid"] {
-            display: grid !important;
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 10px !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-
-          body.nxp-mobile-app #v-dashboard .kpi,
-          body.nxp-mobile-app #v-dashboard .qa,
-          body.nxp-mobile-app #v-dashboard .nc,
-          body.nxp-mobile-app #v-dashboard .card,
-          body.nxp-mobile-app #v-dashboard .panel {
-            min-width: 0 !important;
-            overflow: hidden !important;
-            word-break: normal !important;
-          }
-
-          /* Texto y montos largos no rompen el diseño */
-          body.nxp-mobile-app #v-dashboard .kv,
-          body.nxp-mobile-app #v-dashboard .kl,
-          body.nxp-mobile-app #v-dashboard .ks,
-          body.nxp-mobile-app #v-dashboard .ct,
-          body.nxp-mobile-app #v-dashboard .ct-s,
-          body.nxp-mobile-app #v-dashboard h1,
-          body.nxp-mobile-app #v-dashboard h2,
-          body.nxp-mobile-app #v-dashboard h3,
-          body.nxp-mobile-app #v-dashboard p,
-          body.nxp-mobile-app #v-dashboard span {
-            max-width: 100% !important;
-            overflow-wrap: anywhere !important;
-          }
-
-          /* Tablas/reportes: scroll horizontal interno, no rompe la pantalla */
-          body.nxp-mobile-app .tblwrap,
-          body.nxp-mobile-app .table-wrap,
-          body.nxp-mobile-app [class*="table"] {
-            max-width: 100% !important;
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-          }
-
-          body.nxp-mobile-app table {
-            max-width: 100% !important;
-          }
-
-          /* Formularios y filtros en móvil */
-          body.nxp-mobile-app input,
-          body.nxp-mobile-app select,
-          body.nxp-mobile-app textarea,
-          body.nxp-mobile-app button {
-            max-width: 100% !important;
-          }
-
-          body.nxp-mobile-app .row,
-          body.nxp-mobile-app .form-row,
-          body.nxp-mobile-app .filters,
-          body.nxp-mobile-app .toolbar {
-            max-width: 100% !important;
-            flex-wrap: wrap !important;
-            gap: 8px !important;
-          }
-
-          body.nxp-mobile-app .row > *,
-          body.nxp-mobile-app .form-row > *,
-          body.nxp-mobile-app .filters > *,
-          body.nxp-mobile-app .toolbar > * {
-            min-width: 0 !important;
-          }
-        }
-
-        @media (max-width: 420px) {
-          body.nxp-mobile-app .content {
-            padding-left: 10px !important;
-            padding-right: 10px !important;
-          }
-
-          body.nxp-mobile-app #v-dashboard .grid,
-          body.nxp-mobile-app #v-dashboard .cards,
-          body.nxp-mobile-app #v-dashboard .kpis,
-          body.nxp-mobile-app #v-dashboard .quick,
-          body.nxp-mobile-app #v-dashboard .quick-actions,
-          body.nxp-mobile-app #v-dashboard [class*="grid"] {
-            gap: 8px !important;
-          }
-
-          body.nxp-mobile-app #v-dashboard .kv {
-            font-size: clamp(18px, 6vw, 22px) !important;
-          }
-
-          body.nxp-mobile-app #v-dashboard .kl,
-          body.nxp-mobile-app #v-dashboard .ks {
-            font-size: 10px !important;
-          }
-        }
+      }).join("") : `
+        <div style="padding:22px;text-align:center;color:#64748b;font-weight:700;">
+          No hay clientes para mostrar.
+        </div>
       `;
-
-      const viejo = document.getElementById('patch-004-modulos-movil-fluidos');
-      if(viejo) viejo.remove();
-      const style = document.createElement('style');
-      style.id = 'patch-004-modulos-movil-fluidos';
-      style.textContent = css;
-      document.head.appendChild(style);
-
-      console.log('  ✓ PARCHE-004 aplicado: módulos móviles ajustados a pantalla');
-    }catch(e){
-      console.error('  ✗ PARCHE-004 falló:', e);
-    }
-  }
-
-  if(document.readyState === 'complete' || document.readyState === 'interactive'){
-    setTimeout(instalarAjusteModulosMovil, 260);
-  }else{
-    window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarAjusteModulosMovil, 260); });
-  }
-})();
-
-/* ============================================================================
-   PARCHE-005 — MÓVIL APP v2 + NOTIFICACIÓN LOGIN REFRESH + CHANGELOG PATCHES
-   Autorizado: convertir web móvil a experiencia tipo app y registrar mejoras.
-   Alcance: CSS/JS visual y control de notificación. No modifica index.html.
-============================================================================ */
-(function(){
-  'use strict';
-
-  const PATCH_VERSION = 'Móvil App v2';
-  const PATCH_ID = 'patch-005-mobile-app-v2';
-  const PATCH_ITEMS = [
-    'Corrección: al actualizar la página ya no muestra la notificación “Sistema listo / Bienvenido” si la sesión fue restaurada automáticamente.',
-    'Mejora visual global: la web móvil toma estilo tipo app sin afectar escritorio.',
-    'Header, contenido, formularios, tablas, tarjetas y modales con mejor ajuste a pantalla móvil.',
-    'Botones y controles táctiles más cómodos en celular.',
-    'Historial de actualizaciones: se agrega este bloque para que queden visibles las correcciones aplicadas por parches.'
-  ];
-
-  const sesionExistiaAlCargar = !!(sessionStorage.getItem('nx_sesion') || localStorage.getItem('nx_sesion_persist'));
-
-  function instalarControlToastRefresh(){
-    if(window.__nxpToastRefreshPatch)return;
-    window.__nxpToastRefreshPatch = true;
-
-    const envolver = function(){
-      if(typeof window.toast !== 'function' || window.toast.__nxpWrapped)return false;
-      const originalToast = window.toast;
-      const wrapped = function(tp, ttl, msg){
-        try{
-          const titulo = String(ttl || '').toLowerCase();
-          const mensaje = String(msg || '').toLowerCase();
-          const esBienvenida = titulo.includes('sistema listo') || mensaje.includes('bienvenido');
-          const dentroArranque = performance.now() < 9000;
-          const restaurada = sesionExistiaAlCargar && dentroArranque;
-          if(restaurada && esBienvenida){
-            console.log('  ✓ PARCHE-005: bienvenida de sesión restaurada suprimida');
-            return;
-          }
-        }catch(e){}
-        return originalToast.apply(this, arguments);
-      };
-      wrapped.__nxpWrapped = true;
-      wrapped.__nxpOriginal = originalToast;
-      window.toast = wrapped;
-      return true;
     };
 
-    if(!envolver()){
-      const t = setInterval(()=>{ if(envolver()) clearInterval(t); }, 40);
-      setTimeout(()=>clearInterval(t), 5000);
+    render();
+
+    q("[data-back]", view).addEventListener("click", closeMobileView);
+    q("[data-open-all]", view).addEventListener("click", () => {
+      closeMobileView();
+      goToModule(["clientes"]);
+    });
+    q("[data-client-search]", view).addEventListener("input", e => render(e.target.value));
+    list.addEventListener("click", () => {
+      closeMobileView();
+      goToModule(["clientes"]);
+    });
+  }
+
+  function showHistorialPagos() {
+    if (!isMobile()) return goToModule(["historial de pagos", "pagos", "cobros"]);
+    closeMobileView();
+
+    const pagos = readPagos().slice(-30).reverse();
+
+    const view = document.createElement("div");
+    view.className = "mobile-view-v3";
+    view.innerHTML = `
+      <div class="mobile-view-v3-header">
+        <button type="button" data-back>‹</button>
+        <div class="mobile-view-v3-title">Historial de pagos</div>
+        <button type="button">⌕</button>
+      </div>
+      <div class="mobile-search-v3">
+        <input type="search" placeholder="Buscar pagos..." data-pay-search>
+      </div>
+      <div class="mobile-filter-pills-v3">
+        <button>Todos</button><button>Cobrado</button><button>Parcial</button><button>Anulado</button>
+      </div>
+      <div data-payment-list></div>
+      <button type="button" data-open-real style="width:100%;margin-top:14px;height:50px;border-radius:18px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;font-weight:900;">
+        Abrir historial completo
+      </button>
+    `;
+    document.body.appendChild(view);
+
+    const list = q("[data-payment-list]", view);
+    const render = (filter = "") => {
+      const f = normalize(filter);
+      const data = pagos.filter(p => normalize(JSON.stringify(p)).includes(f)).slice(0, 40);
+      list.innerHTML = data.length ? data.map(p => {
+        const name = p.cliente || p.nombre || p.cliente_nombre || "Cliente";
+        const amount = p.monto || p.total || p.valor || 0;
+        const fecha = p.fecha || p.created_at || "";
+        const estado = p.estado || p.status || "Cobrado";
+        return `
+          <div class="mobile-payment-row-v3">
+            <div class="top"><span>${name}</span><span>${money(amount)}</span></div>
+            <div class="sub">${fecha ? String(fecha).slice(0,10) : ""} · ${estado}</div>
+          </div>
+        `;
+      }).join("") : `
+        <div style="padding:22px;background:#fff;border-radius:20px;text-align:center;color:#64748b;font-weight:700;">
+          No hay pagos guardados para mostrar aquí. Puedes abrir el historial completo.
+        </div>
+      `;
+    };
+
+    render();
+    q("[data-back]", view).addEventListener("click", closeMobileView);
+    q("[data-open-real]", view).addEventListener("click", () => {
+      closeMobileView();
+      goToModule(["historial de pagos", "pagos", "cobros"]);
+    });
+    q("[data-pay-search]", view).addEventListener("input", e => render(e.target.value));
+  }
+
+  function showCobrosPendientes() {
+    closeMobileView();
+    goToModule(["cobros", "pendientes", "facturas pendientes"]);
+  }
+
+  function showMoreSheet() {
+    if (!isMobile()) return;
+    let sheet = q(".mobile-more-sheet-v3");
+    if (!sheet) {
+      sheet = document.createElement("div");
+      sheet.className = "mobile-more-sheet-v3";
+      sheet.innerHTML = `
+        <h3>Más opciones</h3>
+        <button type="button" data-go="principal"><span class="more-icon">🏠</span><span><b>Principal</b><br><small>Panel principal del sistema</small></span></button>
+        <button type="button" data-go="sistema"><span class="more-icon">⚙️</span><span><b>Sistema</b><br><small>Configuración y ajustes</small></span></button>
+        <button type="button" data-go="usuarios"><span class="more-icon">👥</span><span><b>Usuarios</b><br><small>Gestionar usuarios</small></span></button>
+        <button type="button" data-go="reportes"><span class="more-icon">📊</span><span><b>Reportes</b><br><small>Ver estadísticas</small></span></button>
+        <button type="button" data-go="actualizaciones"><span class="more-icon">🔄</span><span><b>Historial de actualizaciones</b><br><small>Cambios y correcciones</small></span></button>
+      `;
+      document.body.appendChild(sheet);
+
+      sheet.addEventListener("click", e => {
+        const btn = e.target.closest("[data-go]");
+        if (!btn) return;
+        sheet.classList.remove("open");
+        const go = btn.dataset.go;
+        if (go === "principal") goToModule(["dashboard", "inicio", "principal"]);
+        if (go === "sistema") goToModule(["configuracion", "ajustes", "sistema"]);
+        if (go === "usuarios") goToModule(["usuarios"]);
+        if (go === "reportes") goToModule(["reportes"]);
+        if (go === "actualizaciones") goToModule(["historial de actualizaciones", "changelog", "actualizaciones"]);
+      });
+    }
+    sheet.classList.toggle("open");
+  }
+
+  function buildBottomNav() {
+    if (!isMobile()) return;
+    if (q(".mobile-bottom-nav-v3")) return;
+
+    const nav = document.createElement("nav");
+    nav.className = "mobile-bottom-nav-v3";
+    nav.innerHTML = `
+      <button type="button" class="active" data-nav="inicio"><span class="ico">🏠</span><span>Inicio</span></button>
+      <button type="button" data-nav="clientes"><span class="ico">👥</span><span>Clientes</span></button>
+      <button type="button" data-nav="facturas"><span class="ico">📄</span><span>Facturas</span></button>
+      <button type="button" data-nav="cobros"><span class="ico">💵</span><span>Cobros</span></button>
+      <button type="button" data-nav="mas"><span class="ico">•••</span><span>Más</span></button>
+    `;
+    document.body.appendChild(nav);
+
+    nav.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-nav]");
+      if (!btn) return;
+      qa(".mobile-bottom-nav-v3 button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const n = btn.dataset.nav;
+      if (n === "inicio") goToModule(["dashboard", "inicio", "principal"]);
+      if (n === "clientes") goToModule(["clientes"]);
+      if (n === "facturas") goToModule(["facturas"]);
+      if (n === "cobros") goToModule(["cobros"]);
+      if (n === "mas") showMoreSheet();
+    });
+  }
+
+  function buildFab() {
+    if (!isMobile()) return;
+    if (q(".mobile-fab-v3")) return;
+
+    const fab = document.createElement("button");
+    fab.type = "button";
+    fab.className = "mobile-fab-v3";
+    fab.textContent = "+";
+    fab.title = "Nuevo cliente";
+    fab.addEventListener("click", () => goToModule(["nuevo cliente", "crear cliente", "agregar cliente", "clientes"]));
+    document.body.appendChild(fab);
+  }
+
+  function bindDashboardCards() {
+    if (!isMobile()) return;
+
+    const candidates = qa("button, a, .card, .stat-card, .dashboard-card, [class*='card'], [role='button']");
+    candidates.forEach(el => {
+      if (el.dataset.nexuV3Bound) return;
+      const text = normalize(el.innerText || el.textContent);
+
+      if (text.includes("cobrado")) {
+        el.dataset.nexuV3Bound = "cobrado";
+        el.style.cursor = "pointer";
+        el.addEventListener("click", e => {
+          e.preventDefault();
+          e.stopPropagation();
+          showHistorialPagos();
+        }, true);
+      }
+
+      if (text.includes("pendiente") && !text.includes("historial")) {
+        el.dataset.nexuV3Bound = "pendiente";
+        el.style.cursor = "pointer";
+        el.addEventListener("click", e => {
+          e.preventDefault();
+          e.stopPropagation();
+          showCobrosPendientes();
+        }, true);
+      }
+
+      if (text.includes("clientes") && (text.includes("resumido") || text.includes("activos") || /^\s*clientes/i.test(el.innerText || ""))) {
+        el.dataset.nexuV3Bound = "clientes";
+        el.style.cursor = "pointer";
+        el.addEventListener("click", e => {
+          e.preventDefault();
+          e.stopPropagation();
+          showClientesResumido();
+        }, true);
+      }
+    });
+  }
+
+  function suppressLoginRefreshToast() {
+    // Evita repetir notificación de inicio de sesión cuando solo se refresca.
+    try {
+      const now = Date.now();
+      const last = Number(sessionStorage.getItem("nexu_last_login_toast") || 0);
+      const originalAlert = window.alert;
+
+      window.alert = function (msg) {
+        const t = normalize(msg);
+        if (t.includes("inicio") && t.includes("sesion")) {
+          if (now - last < 15000 || performance.navigation?.type === 1) return;
+          sessionStorage.setItem("nexu_last_login_toast", String(Date.now()));
+        }
+        return originalAlert.apply(window, arguments);
+      };
+    } catch (e) {}
+  }
+
+  function addChangelogEntry() {
+    try {
+      const key = "nexu_patch_changelog";
+      const current = JSON.parse(localStorage.getItem(key) || "[]");
+      if (current.some(x => x.id === PATCH_ID)) return;
+      current.unshift({
+        id: PATCH_ID,
+        version: "v3",
+        fecha: new Date().toISOString(),
+        titulo: "Parche móvil app v3",
+        cambios: [
+          "Cobrado del Dashboard dirige a Historial de pagos.",
+          "Pendiente del Dashboard dirige a Cobros.",
+          "Clientes abre vista Clientes resumido.",
+          "Botón Más abre Principal, Sistema y herramientas.",
+          "Ajustes visuales móviles y módulos mejor adaptados a pantalla."
+        ]
+      });
+      localStorage.setItem(key, JSON.stringify(current));
+    } catch (e) {}
+  }
+
+  function init() {
+    injectStyles();
+    suppressLoginRefreshToast();
+    addChangelogEntry();
+
+    if (isMobile()) {
+      buildBottomNav();
+      buildFab();
+      bindDashboardCards();
     }
   }
 
-  function instalarEstiloMovilGlobal(){
-    try{
-      const css = `
-        @media (max-width: 768px){
-          html, body{
-            width:100% !important;
-            max-width:100% !important;
-            overflow-x:hidden !important;
-            -webkit-tap-highlight-color: transparent !important;
-          }
+  document.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("resize", init);
 
-          body.nxp-mobile-app #app{
-            min-height:100dvh !important;
-            width:100% !important;
-            max-width:100% !important;
-            overflow-x:hidden !important;
-            background:#f4f7fb !important;
-          }
+  // Reintentos por si el dashboard se renderiza después del login
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries++;
+    init();
+    if (tries > 20) clearInterval(timer);
+  }, 700);
 
-          body.nxp-mobile-app .main,
-          body.nxp-mobile-app main,
-          body.nxp-mobile-app .content,
-          body.nxp-mobile-app .view,
-          body.nxp-mobile-app [id^="v-"]{
-            width:100% !important;
-            max-width:100% !important;
-            min-width:0 !important;
-            box-sizing:border-box !important;
-            overflow-x:hidden !important;
-          }
-
-          body.nxp-mobile-app .content,
-          body.nxp-mobile-app main{
-            padding:12px 12px 86px !important;
-          }
-
-          body.nxp-mobile-app .nc,
-          body.nxp-mobile-app .card,
-          body.nxp-mobile-app .panel,
-          body.nxp-mobile-app .box,
-          body.nxp-mobile-app .stat,
-          body.nxp-mobile-app .kpi,
-          body.nxp-mobile-app .cfg-panel,
-          body.nxp-mobile-app .dash-card,
-          body.nxp-mobile-app [class*="card"],
-          body.nxp-mobile-app [class*="panel"]{
-            width:100% !important;
-            max-width:100% !important;
-            min-width:0 !important;
-            box-sizing:border-box !important;
-            border-radius:18px !important;
-            box-shadow:0 10px 28px rgba(15,23,42,.07) !important;
-          }
-
-          body.nxp-mobile-app .g2,
-          body.nxp-mobile-app .g3,
-          body.nxp-mobile-app .g4,
-          body.nxp-mobile-app .grid,
-          body.nxp-mobile-app [class*="grid"]{
-            display:grid !important;
-            grid-template-columns:1fr !important;
-            width:100% !important;
-            max-width:100% !important;
-            gap:10px !important;
-          }
-
-          body.nxp-mobile-app .ch,
-          body.nxp-mobile-app .toolbar,
-          body.nxp-mobile-app .filters,
-          body.nxp-mobile-app .actions,
-          body.nxp-mobile-app .row{
-            width:100% !important;
-            max-width:100% !important;
-            min-width:0 !important;
-            flex-wrap:wrap !important;
-            gap:8px !important;
-          }
-
-          body.nxp-mobile-app input,
-          body.nxp-mobile-app select,
-          body.nxp-mobile-app textarea{
-            width:100% !important;
-            max-width:100% !important;
-            min-height:42px !important;
-            border-radius:12px !important;
-            font-size:16px !important;
-            box-sizing:border-box !important;
-          }
-
-          body.nxp-mobile-app button,
-          body.nxp-mobile-app .btn{
-            min-height:42px !important;
-            border-radius:13px !important;
-            touch-action:manipulation !important;
-          }
-
-          body.nxp-mobile-app .tw,
-          body.nxp-mobile-app .table-wrap,
-          body.nxp-mobile-app [class*="table"],
-          body.nxp-mobile-app [style*="overflow"]{
-            max-width:100% !important;
-            overflow-x:auto !important;
-            -webkit-overflow-scrolling:touch !important;
-          }
-
-          body.nxp-mobile-app table{
-            min-width:640px !important;
-          }
-
-          body.nxp-mobile-app .overlay{
-            padding:10px !important;
-            align-items:flex-end !important;
-          }
-
-          body.nxp-mobile-app .modal{
-            width:100% !important;
-            max-width:100% !important;
-            max-height:88dvh !important;
-            border-radius:22px 22px 0 0 !important;
-            overflow:auto !important;
-            box-sizing:border-box !important;
-          }
-
-          body.nxp-mobile-app .mt{
-            position:sticky !important;
-            top:0 !important;
-            z-index:3 !important;
-            background:#fff !important;
-          }
-
-          body.nxp-mobile-app .sidebar{
-            z-index:8000 !important;
-          }
-
-          body.nxp-mobile-app .topbar,
-          body.nxp-mobile-app header{
-            position:sticky !important;
-            top:0 !important;
-            z-index:60 !important;
-            backdrop-filter:blur(14px) !important;
-          }
-        }
-      `;
-      const old = document.getElementById(PATCH_ID + '-css');
-      if(old) old.remove();
-      const st = document.createElement('style');
-      st.id = PATCH_ID + '-css';
-      st.textContent = css;
-      document.head.appendChild(st);
-      document.body && document.body.classList.add('nxp-mobile-app');
-      console.log('  ✓ PARCHE-005 aplicado: estilo móvil app global');
-    }catch(e){ console.error('  ✗ PARCHE-005 CSS falló:', e); }
-  }
-
-  function registrarPatchEnStorage(){
-    try{
-      const key='nx_changelog_auto';
-      const log = JSON.parse(localStorage.getItem(key) || '[]');
-      const existe = log.some(x => x && x.patch_id === PATCH_ID);
-      if(!existe){
-        log.unshift({
-          patch_id: PATCH_ID,
-          ts: new Date().toISOString(),
-          usuario: (window.sesion && window.sesion.nom) || 'Sistema',
-          version: PATCH_VERSION,
-          descripcion: PATCH_ITEMS.join(' | '),
-          resultado: 'Aplicada correctamente'
-        });
-        localStorage.setItem(key, JSON.stringify(log.slice(0,100)));
-      }
-    }catch(e){}
-  }
-
-  function insertarChangelogPatch(){
-    try{
-      const el = document.getElementById('changelogList');
-      if(!el || document.getElementById('nxpPatchHistoryV2')) return;
-      const card = document.createElement('div');
-      card.id = 'nxpPatchHistoryV2';
-      card.style.cssText = 'border:1px solid #dbeafe;border-radius:14px;margin-bottom:12px;overflow:hidden;background:#fff;box-shadow:0 10px 24px rgba(15,23,42,.06)';
-      card.innerHTML = `
-        <div style="background:linear-gradient(135deg,#eff6ff,#f8fafc);padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #dbeafe;flex-wrap:wrap">
-          <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px">${PATCH_VERSION}</span>
-          <span style="font-size:11px;color:#64748b">Aplicado por parches.js</span>
-          <span style="margin-left:auto;font-size:10px;color:#2563eb;font-weight:800">MÓVIL / UI / CORRECCIÓN</span>
-        </div>
-        <div style="padding:12px 16px">
-          <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:8px">Actualizaciones y correcciones aplicadas</div>
-          <ul style="margin:0;padding-left:18px;font-size:11px;color:#334155;line-height:1.8">
-            ${PATCH_ITEMS.map(i => `<li>${i}</li>`).join('')}
-          </ul>
-        </div>`;
-      el.prepend(card);
-    }catch(e){ console.error('  ✗ PARCHE-005 changelog falló:', e); }
-  }
-
-  function instalarChangelogPersistente(){
-    registrarPatchEnStorage();
-    const correr = ()=>setTimeout(insertarChangelogPatch,80);
-    correr();
-    document.addEventListener('click', function(e){
-      if(e.target && (e.target.closest('#changelogList') || e.target.closest('[onclick*="navConfig(10"]') || e.target.closest('[onclick*="Changelog"]'))){
-        correr();
-      }
-    }, true);
-    const timer = setInterval(insertarChangelogPatch, 1000);
-    setTimeout(()=>clearInterval(timer), 20000);
-  }
-
-  instalarControlToastRefresh();
-
-  function arrancar(){
-    instalarEstiloMovilGlobal();
-    instalarChangelogPersistente();
-  }
-
-  if(document.readyState === 'complete' || document.readyState === 'interactive'){
-    setTimeout(arrancar, 120);
-  }else{
-    window.addEventListener('DOMContentLoaded', function(){ setTimeout(arrancar, 120); });
-  }
 })();
