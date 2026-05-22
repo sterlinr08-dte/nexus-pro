@@ -29,7 +29,42 @@
     // ════════════════════════════════════════════════════════════
     // PARCHES ACTIVOS
     // ════════════════════════════════════════════════════════════
-    // (vacío por ahora - los parches se irán agregando aquí abajo)
+
+    // ─────────────────────────────────────────────────────────────
+    // PARCHE-001 · 2026-05-22
+    // Fix modal cliente cortado en iPhone (botón Guardar no funciona)
+    // Causa: barra inferior de Safari iOS tapa el botón.
+    // Solución: agregar espacio seguro inferior al modal mCli en móvil.
+    // ─────────────────────────────────────────────────────────────
+    try {
+      // Solo aplica en móviles (no afecta PC)
+      if (window.innerWidth <= 640) {
+        const css = `
+          /* Espacio seguro inferior para que botones no queden tapados */
+          #mCli .mb {
+            padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+            max-height: calc(100vh - 80px) !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          /* El botón Guardar siempre visible y por encima de la barra de Safari */
+          #mCli #btnGCli {
+            position: sticky !important;
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+            z-index: 10 !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,.15) !important;
+            margin-top: 16px !important;
+          }
+        `;
+        const style = document.createElement('style');
+        style.id = 'patch-001-mcli-mobile';
+        style.textContent = css;
+        document.head.appendChild(style);
+        console.log('  ✓ PARCHE-001 aplicado: Modal cliente fix iPhone');
+      }
+    } catch(e) {
+      console.error('  ✗ PARCHE-001 falló:', e);
+    }
 
 
     // ── EJEMPLO DE PARCHE (comentado, solo para referencia) ────
