@@ -803,3 +803,279 @@
     window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarAjusteModulosMovil, 260); });
   }
 })();
+
+/* ============================================================================
+   PARCHE-005 — MÓVIL APP v2 + NOTIFICACIÓN LOGIN REFRESH + CHANGELOG PATCHES
+   Autorizado: convertir web móvil a experiencia tipo app y registrar mejoras.
+   Alcance: CSS/JS visual y control de notificación. No modifica index.html.
+============================================================================ */
+(function(){
+  'use strict';
+
+  const PATCH_VERSION = 'Móvil App v2';
+  const PATCH_ID = 'patch-005-mobile-app-v2';
+  const PATCH_ITEMS = [
+    'Corrección: al actualizar la página ya no muestra la notificación “Sistema listo / Bienvenido” si la sesión fue restaurada automáticamente.',
+    'Mejora visual global: la web móvil toma estilo tipo app sin afectar escritorio.',
+    'Header, contenido, formularios, tablas, tarjetas y modales con mejor ajuste a pantalla móvil.',
+    'Botones y controles táctiles más cómodos en celular.',
+    'Historial de actualizaciones: se agrega este bloque para que queden visibles las correcciones aplicadas por parches.'
+  ];
+
+  const sesionExistiaAlCargar = !!(sessionStorage.getItem('nx_sesion') || localStorage.getItem('nx_sesion_persist'));
+
+  function instalarControlToastRefresh(){
+    if(window.__nxpToastRefreshPatch)return;
+    window.__nxpToastRefreshPatch = true;
+
+    const envolver = function(){
+      if(typeof window.toast !== 'function' || window.toast.__nxpWrapped)return false;
+      const originalToast = window.toast;
+      const wrapped = function(tp, ttl, msg){
+        try{
+          const titulo = String(ttl || '').toLowerCase();
+          const mensaje = String(msg || '').toLowerCase();
+          const esBienvenida = titulo.includes('sistema listo') || mensaje.includes('bienvenido');
+          const dentroArranque = performance.now() < 9000;
+          const restaurada = sesionExistiaAlCargar && dentroArranque;
+          if(restaurada && esBienvenida){
+            console.log('  ✓ PARCHE-005: bienvenida de sesión restaurada suprimida');
+            return;
+          }
+        }catch(e){}
+        return originalToast.apply(this, arguments);
+      };
+      wrapped.__nxpWrapped = true;
+      wrapped.__nxpOriginal = originalToast;
+      window.toast = wrapped;
+      return true;
+    };
+
+    if(!envolver()){
+      const t = setInterval(()=>{ if(envolver()) clearInterval(t); }, 40);
+      setTimeout(()=>clearInterval(t), 5000);
+    }
+  }
+
+  function instalarEstiloMovilGlobal(){
+    try{
+      const css = `
+        @media (max-width: 768px){
+          html, body{
+            width:100% !important;
+            max-width:100% !important;
+            overflow-x:hidden !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+
+          body.nxp-mobile-app #app{
+            min-height:100dvh !important;
+            width:100% !important;
+            max-width:100% !important;
+            overflow-x:hidden !important;
+            background:#f4f7fb !important;
+          }
+
+          body.nxp-mobile-app .main,
+          body.nxp-mobile-app main,
+          body.nxp-mobile-app .content,
+          body.nxp-mobile-app .view,
+          body.nxp-mobile-app [id^="v-"]{
+            width:100% !important;
+            max-width:100% !important;
+            min-width:0 !important;
+            box-sizing:border-box !important;
+            overflow-x:hidden !important;
+          }
+
+          body.nxp-mobile-app .content,
+          body.nxp-mobile-app main{
+            padding:12px 12px 86px !important;
+          }
+
+          body.nxp-mobile-app .nc,
+          body.nxp-mobile-app .card,
+          body.nxp-mobile-app .panel,
+          body.nxp-mobile-app .box,
+          body.nxp-mobile-app .stat,
+          body.nxp-mobile-app .kpi,
+          body.nxp-mobile-app .cfg-panel,
+          body.nxp-mobile-app .dash-card,
+          body.nxp-mobile-app [class*="card"],
+          body.nxp-mobile-app [class*="panel"]{
+            width:100% !important;
+            max-width:100% !important;
+            min-width:0 !important;
+            box-sizing:border-box !important;
+            border-radius:18px !important;
+            box-shadow:0 10px 28px rgba(15,23,42,.07) !important;
+          }
+
+          body.nxp-mobile-app .g2,
+          body.nxp-mobile-app .g3,
+          body.nxp-mobile-app .g4,
+          body.nxp-mobile-app .grid,
+          body.nxp-mobile-app [class*="grid"]{
+            display:grid !important;
+            grid-template-columns:1fr !important;
+            width:100% !important;
+            max-width:100% !important;
+            gap:10px !important;
+          }
+
+          body.nxp-mobile-app .ch,
+          body.nxp-mobile-app .toolbar,
+          body.nxp-mobile-app .filters,
+          body.nxp-mobile-app .actions,
+          body.nxp-mobile-app .row{
+            width:100% !important;
+            max-width:100% !important;
+            min-width:0 !important;
+            flex-wrap:wrap !important;
+            gap:8px !important;
+          }
+
+          body.nxp-mobile-app input,
+          body.nxp-mobile-app select,
+          body.nxp-mobile-app textarea{
+            width:100% !important;
+            max-width:100% !important;
+            min-height:42px !important;
+            border-radius:12px !important;
+            font-size:16px !important;
+            box-sizing:border-box !important;
+          }
+
+          body.nxp-mobile-app button,
+          body.nxp-mobile-app .btn{
+            min-height:42px !important;
+            border-radius:13px !important;
+            touch-action:manipulation !important;
+          }
+
+          body.nxp-mobile-app .tw,
+          body.nxp-mobile-app .table-wrap,
+          body.nxp-mobile-app [class*="table"],
+          body.nxp-mobile-app [style*="overflow"]{
+            max-width:100% !important;
+            overflow-x:auto !important;
+            -webkit-overflow-scrolling:touch !important;
+          }
+
+          body.nxp-mobile-app table{
+            min-width:640px !important;
+          }
+
+          body.nxp-mobile-app .overlay{
+            padding:10px !important;
+            align-items:flex-end !important;
+          }
+
+          body.nxp-mobile-app .modal{
+            width:100% !important;
+            max-width:100% !important;
+            max-height:88dvh !important;
+            border-radius:22px 22px 0 0 !important;
+            overflow:auto !important;
+            box-sizing:border-box !important;
+          }
+
+          body.nxp-mobile-app .mt{
+            position:sticky !important;
+            top:0 !important;
+            z-index:3 !important;
+            background:#fff !important;
+          }
+
+          body.nxp-mobile-app .sidebar{
+            z-index:8000 !important;
+          }
+
+          body.nxp-mobile-app .topbar,
+          body.nxp-mobile-app header{
+            position:sticky !important;
+            top:0 !important;
+            z-index:60 !important;
+            backdrop-filter:blur(14px) !important;
+          }
+        }
+      `;
+      const old = document.getElementById(PATCH_ID + '-css');
+      if(old) old.remove();
+      const st = document.createElement('style');
+      st.id = PATCH_ID + '-css';
+      st.textContent = css;
+      document.head.appendChild(st);
+      document.body && document.body.classList.add('nxp-mobile-app');
+      console.log('  ✓ PARCHE-005 aplicado: estilo móvil app global');
+    }catch(e){ console.error('  ✗ PARCHE-005 CSS falló:', e); }
+  }
+
+  function registrarPatchEnStorage(){
+    try{
+      const key='nx_changelog_auto';
+      const log = JSON.parse(localStorage.getItem(key) || '[]');
+      const existe = log.some(x => x && x.patch_id === PATCH_ID);
+      if(!existe){
+        log.unshift({
+          patch_id: PATCH_ID,
+          ts: new Date().toISOString(),
+          usuario: (window.sesion && window.sesion.nom) || 'Sistema',
+          version: PATCH_VERSION,
+          descripcion: PATCH_ITEMS.join(' | '),
+          resultado: 'Aplicada correctamente'
+        });
+        localStorage.setItem(key, JSON.stringify(log.slice(0,100)));
+      }
+    }catch(e){}
+  }
+
+  function insertarChangelogPatch(){
+    try{
+      const el = document.getElementById('changelogList');
+      if(!el || document.getElementById('nxpPatchHistoryV2')) return;
+      const card = document.createElement('div');
+      card.id = 'nxpPatchHistoryV2';
+      card.style.cssText = 'border:1px solid #dbeafe;border-radius:14px;margin-bottom:12px;overflow:hidden;background:#fff;box-shadow:0 10px 24px rgba(15,23,42,.06)';
+      card.innerHTML = `
+        <div style="background:linear-gradient(135deg,#eff6ff,#f8fafc);padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #dbeafe;flex-wrap:wrap">
+          <span style="background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px">${PATCH_VERSION}</span>
+          <span style="font-size:11px;color:#64748b">Aplicado por parches.js</span>
+          <span style="margin-left:auto;font-size:10px;color:#2563eb;font-weight:800">MÓVIL / UI / CORRECCIÓN</span>
+        </div>
+        <div style="padding:12px 16px">
+          <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:8px">Actualizaciones y correcciones aplicadas</div>
+          <ul style="margin:0;padding-left:18px;font-size:11px;color:#334155;line-height:1.8">
+            ${PATCH_ITEMS.map(i => `<li>${i}</li>`).join('')}
+          </ul>
+        </div>`;
+      el.prepend(card);
+    }catch(e){ console.error('  ✗ PARCHE-005 changelog falló:', e); }
+  }
+
+  function instalarChangelogPersistente(){
+    registrarPatchEnStorage();
+    const correr = ()=>setTimeout(insertarChangelogPatch,80);
+    correr();
+    document.addEventListener('click', function(e){
+      if(e.target && (e.target.closest('#changelogList') || e.target.closest('[onclick*="navConfig(10"]') || e.target.closest('[onclick*="Changelog"]'))){
+        correr();
+      }
+    }, true);
+    const timer = setInterval(insertarChangelogPatch, 1000);
+    setTimeout(()=>clearInterval(timer), 20000);
+  }
+
+  instalarControlToastRefresh();
+
+  function arrancar(){
+    instalarEstiloMovilGlobal();
+    instalarChangelogPersistente();
+  }
+
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(arrancar, 120);
+  }else{
+    window.addEventListener('DOMContentLoaded', function(){ setTimeout(arrancar, 120); });
+  }
+})();
