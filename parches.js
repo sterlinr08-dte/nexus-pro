@@ -31,37 +31,47 @@
     // ════════════════════════════════════════════════════════════
 
     // ─────────────────────────────────────────────────────────────
-    // PARCHE-001 · 2026-05-22
+    // PARCHE-001 · 2026-05-22 · v2
     // Fix modal cliente cortado en iPhone (botón Guardar no funciona)
     // Causa: barra inferior de Safari iOS tapa el botón.
-    // Solución: agregar espacio seguro inferior al modal mCli en móvil.
+    // Solución: CSS con @media query (siempre activo en móvil).
     // ─────────────────────────────────────────────────────────────
     try {
-      // Solo aplica en móviles (no afecta PC)
-      if (window.innerWidth <= 640) {
-        const css = `
-          /* Espacio seguro inferior para que botones no queden tapados */
+      const css = `
+        @media (max-width: 640px) {
+          /* El modal de cliente con scroll y espacio para el botón */
           #mCli .mb {
-            padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
-            max-height: calc(100vh - 80px) !important;
+            padding-bottom: 120px !important;
+            padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
+            max-height: calc(100vh - 60px) !important;
             overflow-y: auto !important;
             -webkit-overflow-scrolling: touch !important;
           }
-          /* El botón Guardar siempre visible y por encima de la barra de Safari */
+          /* El botón Guardar visible y por encima de la barra de Safari */
           #mCli #btnGCli {
+            position: -webkit-sticky !important;
             position: sticky !important;
+            bottom: 16px !important;
             bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
-            z-index: 10 !important;
-            box-shadow: 0 4px 20px rgba(0,0,0,.15) !important;
-            margin-top: 16px !important;
+            z-index: 100 !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,.2) !important;
+            margin-top: 20px !important;
+            background: var(--c1, #2563eb) !important;
           }
-        `;
-        const style = document.createElement('style');
-        style.id = 'patch-001-mcli-mobile';
-        style.textContent = css;
-        document.head.appendChild(style);
-        console.log('  ✓ PARCHE-001 aplicado: Modal cliente fix iPhone');
-      }
+          /* Asegurar que el overlay/modal no tape el botón */
+          #mCli {
+            padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+          }
+        }
+      `;
+      // Quitar versión vieja si existe
+      const viejo = document.getElementById('patch-001-mcli-mobile');
+      if (viejo) viejo.remove();
+      const style = document.createElement('style');
+      style.id = 'patch-001-mcli-mobile';
+      style.textContent = css;
+      document.head.appendChild(style);
+      console.log('  ✓ PARCHE-001 v2 aplicado: Modal cliente fix iPhone');
     } catch(e) {
       console.error('  ✗ PARCHE-001 falló:', e);
     }
