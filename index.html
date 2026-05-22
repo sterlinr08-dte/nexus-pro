@@ -1098,7 +1098,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="view" id="v-pyg">
           <div class="nc"><div class="ch"><span class="ct">Estado de Resultados P&amp;G</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:var(--r8)">
-              <span style="font-size:9px;font-weight:700;color:var(--tx2);font-family:var(--mono)">PERÍODO CONTABLE (mes calendario):</span>
+              <span style="font-size:9px;font-weight:700;color:var(--tx2);font-family:var(--mono)">PERÍODO CONTABLE (20 al 19):</span>
               <select id="pygPeriodo" onchange="rPYG()" style="font-size:11px;padding:5px 8px;border:1px solid rgba(0,229,199,.15);border-radius:var(--r6);background:var(--bg2);color:var(--tx1)"></select>
             </div>
             <div id="pygC"></div>
@@ -1527,7 +1527,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="PRIMER_PAGO_PENDIENTE" onchange="actualizarProgreso()"/> Primer pago</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="TRASLADO_EN_PROCESO" onchange="actualizarProgreso()"/> Traslado</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CAMBIO_PLAN_EN_PROCESO" onchange="actualizarProgreso()"/> Cambio de plan</label>
-        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="TSS_PENDIENTE" onchange="actualizarProgreso()"/> TSS</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="FIRMA_PENDIENTE" onchange="actualizarProgreso()"/> Firma</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="FOTO_PENDIENTE" onchange="actualizarProgreso()"/> Foto</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="CONTRATO_PENDIENTE" onchange="actualizarProgreso()"/> Contrato</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer"><input type="checkbox" class="pend-chk" value="OTRO" onchange="actualizarProgreso()"/> Otro</label>
@@ -4700,12 +4700,12 @@ function abrirAbono(cid){
 }
 let _pagosCache=[];
 
-// Período de pagos = MES CALENDARIO COMPLETO: "Mayo 2026" va del 1 al 31 de mayo 2026
+// Período de pagos 20→19: "Mayo 2026" va del 20 may 2026 al 19 jun 2026
 function periodoPagos(mes,anio){
-  // Día 1 del mes
-  const desde=new Date(anio,mes-1,1,0,0,0);
-  // Último día del mes (día 0 del mes siguiente = último día del mes actual)
-  const hasta=new Date(anio,mes,0,23,59,59);
+  const desde=new Date(anio,mes-1,20);
+  let mFin=mes+1,aFin=anio;
+  if(mFin>12){mFin=1;aFin=anio+1;}
+  const hasta=new Date(aFin,mFin-1,19,23,59,59);
   return {desde,hasta};
 }
 
@@ -4717,8 +4717,8 @@ function llenarPeriodosPagos(){
   for(let i=0;i<12;i++){
     const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
     const mes=d.getMonth()+1,anio=d.getFullYear();
-    const ultDia=new Date(anio,mes,0).getDate();
-    opts+=`<option value="${anio}-${mes}">${MESES[mes-1]} ${anio} (1 – ${ultDia} ${MESES[mes-1].slice(0,3)})</option>`;
+    const mSig=mes===12?1:mes+1;
+    opts+=`<option value="${anio}-${mes}">${MESES[mes-1]} ${anio} (20 ${MESES[mes-1].slice(0,3)} – 19 ${MESES[mSig-1].slice(0,3)})</option>`;
   }
   sel.innerHTML=opts;
 }
@@ -5425,64 +5425,26 @@ function rMayor(){
   const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;
   document.getElementById('resumC').innerHTML=`<div class="g3" style="margin-bottom:10px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(CUENTAS.filter(c=>c.tipo==='Activo').reduce((s,c)=>s+c.saldo,0))}</div><div class="sml">ACTIVOS</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(CUENTAS.filter(c=>c.tipo==='Pasivo').reduce((s,c)=>s+c.saldo,0))}</div><div class="sml">PASIVOS</div></div><div class="sm"><div class="smv" style="color:var(--c5);font-size:12px">${fmt(ing)}</div><div class="sml">INGRESOS</div></div></div><div class="conr"><span>Ingresos</span><span class="cdr" style="font-family:var(--mono)">${fmt(ing)}</span></div><div class="conr"><span>Gastos</span><span class="ccr" style="font-family:var(--mono)">(${fmt(gast)})</span></div><div class="conr" style="border-top:1px solid rgba(0,229,199,.1);margin-top:5px;padding-top:5px"><span style="color:var(--c4)">UTILIDAD NETA</span><span class="ctot" style="font-family:var(--mono);font-size:13px">${fmt(util)}</span></div><div style="margin-top:10px"><button class="btn bsm bc2" onclick="abrirAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>`;
 }
-function abrirAsiento(){editAsiId=null;const opts=CUENTAS.map(c=>`<option value="${c.cod}">${c.cod} · ${c.nom}</option>`).join('');document.getElementById('asiCtaDr').innerHTML=opts;document.getElementById('asiCtaCr').innerHTML=opts;document.getElementById('asiFecha').value=hoy();['asiRef','asiDesc','asiMntDr','asiMntCr'].forEach(id=>document.getElementById(id).value='');const btn=document.getElementById('btnAsi');if(btn)btn.innerHTML='<i class="ti ti-check"></i> Registrar';openM('mAsiento');}
-let editAsiId=null;
-function editarAsiento(id){
-  const a=ST.asientos.find(x=>x.id===id);
-  if(!a){toast('err','Asiento no encontrado');return;}
-  editAsiId=id;
-  const opts=CUENTAS.map(c=>`<option value="${c.cod}">${c.cod} · ${c.nom}</option>`).join('');
-  document.getElementById('asiCtaDr').innerHTML=opts;
-  document.getElementById('asiCtaCr').innerHTML=opts;
-  document.getElementById('asiFecha').value=a.fecha||hoy();
-  document.getElementById('asiRef').value=a.referencia||'';
-  document.getElementById('asiDesc').value=a.descripcion||'';
-  document.getElementById('asiCtaDr').value=a.cuenta_dr_cod||'';
-  document.getElementById('asiCtaCr').value=a.cuenta_cr_cod||'';
-  document.getElementById('asiMntDr').value=a.monto_dr||0;
-  document.getElementById('asiMntCr').value=a.monto_cr||0;
-  const btn=document.getElementById('btnAsi');
-  if(btn)btn.innerHTML='<i class="ti ti-device-floppy"></i> Guardar cambios';
-  openM('mAsiento');
-}
+function abrirAsiento(){const opts=CUENTAS.map(c=>`<option value="${c.cod}">${c.cod} · ${c.nom}</option>`).join('');document.getElementById('asiCtaDr').innerHTML=opts;document.getElementById('asiCtaCr').innerHTML=opts;document.getElementById('asiFecha').value=hoy();['asiRef','asiDesc','asiMntDr','asiMntCr'].forEach(id=>document.getElementById(id).value='');openM('mAsiento');}
 async function guardarAsientoFn(){
   const desc=document.getElementById('asiDesc').value.trim();if(!desc){toast('err','Campo requerido','Ingrese descripción');return;}
   const mntDr=parseFloat(document.getElementById('asiMntDr').value)||0;const mntCr=parseFloat(document.getElementById('asiMntCr').value)||0;
   if(Math.abs(mntDr-mntCr)>0.01){toast('warn','Asiento desbalanceado',`Débito ${fmt(mntDr)} ≠ Crédito ${fmt(mntCr)}`);return;}
   const ctaDr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaDr').value);const ctaCr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaCr').value);
   const btn=document.getElementById('btnAsi');btn.disabled=true;
-  const datos={fecha:document.getElementById('asiFecha').value,referencia:document.getElementById('asiRef').value||'AST-MAN',descripcion:desc,cuenta_dr_cod:ctaDr?.cod,cuenta_dr_nom:ctaDr?.nom,monto_dr:mntDr,cuenta_cr_cod:ctaCr?.cod,cuenta_cr_nom:ctaCr?.nom,monto_cr:mntCr};
-  try{
-    if(editAsiId){
-      // Editar asiento existente
-      await API.patch('asientos',`id=eq.${editAsiId}`,datos);
-      const idx=ST.asientos.findIndex(x=>x.id===editAsiId);
-      if(idx>=0)ST.asientos[idx]={...ST.asientos[idx],...datos};
-      try{logAudit('ASIENTO_EDITADO',`${desc} · DR ${ctaDr?.nom||'—'} ${fmt(mntDr)} / CR ${ctaCr?.nom||'—'} ${fmt(mntCr)}`,'Contabilidad');}catch(e){}
-      toast('ok','Asiento actualizado',desc);
-      editAsiId=null;
-    }else{
-      // Crear nuevo asiento
-      const r=await API.post('asientos',datos);
-      if(r&&r[0])ST.asientos.unshift(r[0]);
-      try{logAudit('ASIENTO_CREADO',`${desc} · DR ${ctaDr?.nom||'—'} ${fmt(mntDr)} / CR ${ctaCr?.nom||'—'} ${fmt(mntCr)}`,'Contabilidad');}catch(e){}
-      toast('ok','Asiento registrado',desc);
-    }
-    recalcularSaldosContables();
-    closeM('mAsiento');
-    rAsientos();rMayor();
-    if(typeof rBalance==='function')rBalance();
-  }catch(e){toast('err','Error',e.message);}
+  try{const r=await API.post('asientos',{fecha:document.getElementById('asiFecha').value,referencia:document.getElementById('asiRef').value||'AST-MAN',descripcion:desc,cuenta_dr_cod:ctaDr?.cod,cuenta_dr_nom:ctaDr?.nom,monto_dr:mntDr,cuenta_cr_cod:ctaCr?.cod,cuenta_cr_nom:ctaCr?.nom,monto_cr:mntCr});if(r&&r[0])ST.asientos.unshift(r[0]);recalcularSaldosContables();try{logAudit('ASIENTO_CREADO',`${desc} · DR ${ctaDr?.nom||'—'} ${fmt(mntDr)} / CR ${ctaCr?.nom||'—'} ${fmt(mntCr)}`,'Contabilidad');}catch(e){}closeM('mAsiento');toast('ok','Asiento registrado',desc);rAsientos();rMayor();if(typeof rBalance==='function')rBalance();}catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
 }
-function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f" style="display:flex;justify-content:space-between;align-items:center"><span>${a.fecha} · ${a.referencia||''}</span><button class="btn bsm bghost" onclick="editarAsiento('${a.id}')" title="Editar asiento" style="padding:4px 8px"><i class="ti ti-edit"></i></button></div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
+function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f">${a.fecha} · ${a.referencia||''}</div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
 function rBalance(){const act=CUENTAS.filter(c=>c.tipo==='Activo'),pas=CUENTAS.filter(c=>c.tipo==='Pasivo'||c.tipo==='Patrimonio');const tA=act.reduce((s,c)=>s+c.saldo,0),tP=pas.reduce((s,c)=>s+c.saldo,0);const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;document.getElementById('balA').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">ACTIVOS</div>${act.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="border-top:1px solid rgba(0,229,199,.15);margin-top:5px"><span>TOTAL ACTIVOS</span><span class="cdr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tA)}</span></div>`;document.getElementById('balP').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">PASIVOS Y PATRIMONIO</div>${pas.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr"><span>Utilidad del período</span><span style="font-family:var(--mono);color:var(--c4)">${fmt(util)}</span></div><div class="conr" style="border-top:1px solid rgba(244,63,94,.15);margin-top:5px"><span>TOTAL PAS + PAT</span><span class="ccr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tP+util)}</span></div>`;}
-// Devuelve el rango de fechas [desde, hasta] del período contable: MES CALENDARIO.
-// El período "Mayo 2026" va del 1 al 31 de mayo 2026.
+// Devuelve el rango de fechas [desde, hasta] del período contable 20→19.
+// El período "Mayo 2026" va del 20 may 2026 al 19 jun 2026.
 // (Mismo corte que el historial de pagos, para que todo sea consistente.)
 function periodoContable(mes,anio){
-  const desde=new Date(anio,mes-1,1,0,0,0);          // día 1 del mes
-  const hasta=new Date(anio,mes,0,23,59,59);          // último día del mes
+  const desde=new Date(anio,mes-1,20);  // día 20 del mes
+  let mFin=mes+1,aFin=anio;
+  if(mFin>12){mFin=1;aFin=anio+1;}
+  const hasta=new Date(aFin,mFin-1,19,23,59,59); // día 19 del mes siguiente
   return {desde,hasta};
 }
 
@@ -5495,8 +5457,8 @@ function llenarPeriodosPYG(){
   for(let i=0;i<12;i++){
     const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
     const mes=d.getMonth()+1,anio=d.getFullYear();
-    const ultDia=new Date(anio,mes,0).getDate();
-    opts+=`<option value="${anio}-${mes}">${MESES[mes-1]} ${anio} (1 – ${ultDia} ${MESES[mes-1].slice(0,3)})</option>`;
+    const mSig=mes===12?1:mes+1;
+    opts+=`<option value="${anio}-${mes}">${MESES[mes-1]} ${anio} (20 ${MESES[mes-1].slice(0,3)} – 19 ${MESES[mSig-1].slice(0,3)})</option>`;
   }
   sel.innerHTML=opts;
 }
