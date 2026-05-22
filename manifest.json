@@ -1,80 +1,8 @@
 {
-  "name": "NEXUS PRO — Seguros de Salud RD",
-  "short_name": "NEXUS PRO",
-  "description": "Sistema de gestión de seguros de salud · República Dominicana",
-  "start_url": "/",
+  "name": "NEXUS PRO",
+  "short_name": "NEXUS",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#1e3a6e",
-  "theme_color": "#1e3a6e",
-  "orientation": "any",
-  "lang": "es-DO",
-  "scope": "/",
-  "categories": [
-    "business",
-    "finance"
-  ],
-  "icons": [
-    {
-      "src": "icon-16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-apple-76.png",
-      "sizes": "76x76",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-apple-120.png",
-      "sizes": "120x120",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-apple-152.png",
-      "sizes": "152x152",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-apple-180.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Nuevo Cliente",
-      "short_name": "Cliente",
-      "url": "/?view=clientes",
-      "description": "Registrar nuevo cliente"
-    },
-    {
-      "name": "Facturas",
-      "short_name": "Facturas",
-      "url": "/?view=facturas",
-      "description": "Ver facturas del mes"
-    },
-    {
-      "name": "Cobros",
-      "short_name": "Cobros",
-      "url": "/?view=cobros",
-      "description": "Registrar cobros"
-    }
-  ]
+  "background_color": "#ffffff",
+  "theme_color": "#000000"
 }
