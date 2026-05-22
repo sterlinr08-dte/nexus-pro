@@ -106,3 +106,514 @@
     });
   }
 })();
+
+// ─────────────────────────────────────────────────────────────
+// PARCHE-002 · 2026-05-22
+// Fix menú móvil "Más acciones" en Clientes: opciones opacas/no ejecutan.
+// Aplica sin tocar index.html.
+// ─────────────────────────────────────────────────────────────
+(function(){
+  'use strict';
+
+  function instalarPatchMenuMovil(){
+    try{
+      const css = `
+        @media (max-width: 640px) {
+          .acc-backdrop {
+            position: fixed !important;
+            inset: 0 !important;
+            background: rgba(15, 23, 42, .46) !important;
+            backdrop-filter: blur(2px) !important;
+            -webkit-backdrop-filter: blur(2px) !important;
+            z-index: 2147483000 !important;
+            pointer-events: auto !important;
+          }
+          .acc-menu {
+            position: fixed !important;
+            left: 12px !important;
+            right: 12px !important;
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+            top: auto !important;
+            z-index: 2147483001 !important;
+            background: #ffffff !important;
+            opacity: 1 !important;
+            filter: none !important;
+            pointer-events: auto !important;
+            max-height: min(68vh, 520px) !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            box-shadow: 0 22px 70px rgba(15, 23, 42, .34), 0 6px 18px rgba(15, 23, 42, .18) !important;
+          }
+          .acc-menu, .acc-menu button {
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: transparent !important;
+          }
+          .acc-menu button {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            color: #0f172a !important;
+            background: transparent !important;
+          }
+          .acc-menu button:active {
+            background: #e8edf3 !important;
+          }
+          body.tema-premium .acc-menu {
+            background: #16213d !important;
+            opacity: 1 !important;
+          }
+          body.tema-premium .acc-menu button {
+            color: #e2e8f0 !important;
+          }
+        }
+      `;
+      const viejo = document.getElementById('patch-002-acc-menu-mobile');
+      if(viejo) viejo.remove();
+      const style = document.createElement('style');
+      style.id = 'patch-002-acc-menu-mobile';
+      style.textContent = css;
+      document.head.appendChild(style);
+
+      window.cerrarAccMenus = function(){
+        document.querySelectorAll('.acc-menu').forEach(function(m){
+          m.style.display = 'none';
+          m.classList.remove('acc-menu-open-mobile');
+        });
+        document.querySelectorAll('.acc-backdrop').forEach(function(b){ b.remove(); });
+      };
+
+      window.toggleAccMenu = function(ev, cid){
+        if(ev){
+          ev.preventDefault();
+          ev.stopPropagation();
+        }
+        const menu = document.getElementById('accMenu_' + cid);
+        if(!menu) return;
+
+        const estaAbierto = menu.style.display === 'block';
+        window.cerrarAccMenus();
+        if(estaAbierto) return;
+
+        const esMovil = window.innerWidth <= 640;
+        menu.style.cssText = '';
+        menu.style.display = 'block';
+        menu.style.position = 'fixed';
+        menu.style.zIndex = esMovil ? '2147483001' : '5000';
+        menu.style.opacity = '1';
+        menu.style.pointerEvents = 'auto';
+
+        if(esMovil){
+          // Mover temporalmente al body evita que tablas/contenedores con overflow o transform bloqueen los toques.
+          if(menu.parentElement !== document.body){
+            document.body.appendChild(menu);
+          }
+          menu.classList.add('acc-menu-open-mobile');
+          menu.style.left = '12px';
+          menu.style.right = '12px';
+          menu.style.bottom = 'calc(16px + env(safe-area-inset-bottom, 0px))';
+          menu.style.top = 'auto';
+          menu.style.maxHeight = 'min(68vh, 520px)';
+          menu.style.overflowY = 'auto';
+
+          const bd = document.createElement('div');
+          bd.className = 'acc-backdrop';
+          bd.addEventListener('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            window.cerrarAccMenus();
+          }, {passive:false});
+          document.body.appendChild(bd);
+        }else{
+          const btn = ev && ev.currentTarget ? ev.currentTarget.getBoundingClientRect() : {bottom:80,right:260,top:40};
+          menu.style.top = (btn.bottom + 6) + 'px';
+          const ancho = menu.offsetWidth || 248;
+          let left = btn.right - ancho;
+          if(left < 8) left = 8;
+          menu.style.left = left + 'px';
+          menu.style.right = 'auto';
+          if(btn.bottom + menu.offsetHeight > window.innerHeight - 10){
+            menu.style.top = Math.max(8, btn.top - menu.offsetHeight - 6) + 'px';
+          }
+        }
+      };
+
+      // Evita que un toque dentro del menú sea interpretado como clic fuera en navegadores móviles.
+      document.addEventListener('touchstart', function(e){
+        if(e.target.closest && e.target.closest('.acc-menu')) e.stopPropagation();
+      }, {passive:true, capture:true});
+
+      console.log('  ✓ PARCHE-002 aplicado: Menú móvil de acciones corregido');
+    }catch(e){
+      console.error('  ✗ PARCHE-002 falló:', e);
+    }
+  }
+
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(instalarPatchMenuMovil, 150);
+  }else{
+    window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarPatchMenuMovil, 150); });
+  }
+})();
+
+// ─────────────────────────────────────────────────────────────
+// PARCHE-003 · 2026-05-22
+// Dashboard móvil web tipo app v1.
+// Aplica solo en pantallas móviles. No toca index.html.
+// ─────────────────────────────────────────────────────────────
+(function(){
+  'use strict';
+
+  function instalarDashboardMovilApp(){
+    try{
+      const css = `
+        @media (max-width: 768px) {
+          body.nxp-mobile-app #app {
+            background: #f6f8fc !important;
+          }
+          body.nxp-mobile-app .ticker {
+            display: none !important;
+          }
+          body.nxp-mobile-app .tnav {
+            height: calc(58px + env(safe-area-inset-top, 0px)) !important;
+            padding: env(safe-area-inset-top, 0px) 14px 0 14px !important;
+            background: rgba(255,255,255,.96) !important;
+            backdrop-filter: blur(14px) !important;
+            -webkit-backdrop-filter: blur(14px) !important;
+            border-bottom: 1px solid rgba(226,232,240,.9) !important;
+            box-shadow: 0 8px 24px rgba(15,23,42,.06) !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 90 !important;
+          }
+          body.nxp-mobile-app .pttl {
+            font-size: 0 !important;
+            max-width: none !important;
+            overflow: visible !important;
+          }
+          body.nxp-mobile-app .pttl::after {
+            content: 'NEXU PRO' !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            letter-spacing: .2px !important;
+            color: #0f172a !important;
+          }
+          body.nxp-mobile-app .tn-sr {
+            display: none !important;
+          }
+          body.nxp-mobile-app .tn-r {
+            gap: 8px !important;
+          }
+          body.nxp-mobile-app .tn-r .tn-b:not(.notif-bell) {
+            display: none !important;
+          }
+          body.nxp-mobile-app .tn-b,
+          body.nxp-mobile-app .tn-tog {
+            min-width: 38px !important;
+            width: 38px !important;
+            height: 38px !important;
+            border-radius: 14px !important;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 4px 12px rgba(15,23,42,.06) !important;
+          }
+          body.nxp-mobile-app .content {
+            padding: 14px 14px calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+            background: linear-gradient(180deg,#f8fbff 0%,#f1f5f9 100%) !important;
+          }
+          body.nxp-mobile-app #v-dashboard::before {
+            content: 'Hola, Admin 👋\AResumen general de tu negocio';
+            white-space: pre-line;
+            display: block;
+            font-size: 20px;
+            line-height: 1.35;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 2px 2px 14px;
+          }
+          body.nxp-mobile-app #v-dashboard::after {
+            content: 'Dashboard móvil tipo app · versión de prueba';
+            display: block;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 6px 0 2px;
+          }
+          body.nxp-mobile-app #v-dashboard .qa-g {
+            grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+            gap: 10px !important;
+            margin-bottom: 14px !important;
+          }
+          body.nxp-mobile-app #v-dashboard .qa {
+            min-height: 92px !important;
+            border-radius: 18px !important;
+            border: 1px solid rgba(226,232,240,.96) !important;
+            background: rgba(255,255,255,.98) !important;
+            box-shadow: 0 10px 28px rgba(15,23,42,.08) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 7px !important;
+            -webkit-tap-highlight-color: transparent !important;
+            touch-action: manipulation !important;
+          }
+          body.nxp-mobile-app #v-dashboard .qa:active {
+            transform: scale(.98) !important;
+            background: #eff6ff !important;
+          }
+          body.nxp-mobile-app #v-dashboard .qa-i {
+            width: 38px !important;
+            height: 38px !important;
+            border-radius: 15px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: #dbeafe !important;
+            color: #2563eb !important;
+            margin: 0 !important;
+            font-size: 21px !important;
+          }
+          body.nxp-mobile-app #v-dashboard .qa:nth-child(2) .qa-i { background:#dcfce7 !important;color:#16a34a !important; }
+          body.nxp-mobile-app #v-dashboard .qa:nth-child(3) .qa-i { background:#dcfce7 !important;color:#16a34a !important; }
+          body.nxp-mobile-app #v-dashboard .qa:nth-child(4) .qa-i { background:#ede9fe !important;color:#7c3aed !important; }
+          body.nxp-mobile-app #v-dashboard .qa:nth-child(5) .qa-i { background:#ffedd5 !important;color:#ea580c !important; }
+          body.nxp-mobile-app #v-dashboard .qa:nth-child(6) .qa-i { background:#fce7f3 !important;color:#db2777 !important; }
+          body.nxp-mobile-app #v-dashboard .qa-l {
+            font-size: 12px !important;
+            color: #0f172a !important;
+            font-weight: 750 !important;
+          }
+          body.nxp-mobile-app #v-dashboard .kg {
+            grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+            gap: 10px !important;
+            margin-bottom: 14px !important;
+          }
+          body.nxp-mobile-app #v-dashboard .kpi {
+            min-height: 130px !important;
+            border-radius: 18px !important;
+            border: 1px solid rgba(226,232,240,.98) !important;
+            background: rgba(255,255,255,.99) !important;
+            box-shadow: 0 12px 30px rgba(15,23,42,.08) !important;
+            padding: 16px 14px !important;
+          }
+          body.nxp-mobile-app #v-dashboard .kpi::after {
+            height: 0 !important;
+          }
+          body.nxp-mobile-app #v-dashboard .ki {
+            opacity: 1 !important;
+            right: 12px !important;
+            top: 12px !important;
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 14px !important;
+            font-size: 20px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: #dbeafe !important;
+            color: #2563eb !important;
+          }
+          body.nxp-mobile-app #v-dashboard .k2 .ki { background:#ede9fe !important;color:#7c3aed !important; }
+          body.nxp-mobile-app #v-dashboard .k3 .ki { background:#dcfce7 !important;color:#16a34a !important; }
+          body.nxp-mobile-app #v-dashboard .k4 .ki { background:#fee2e2 !important;color:#dc2626 !important; }
+          body.nxp-mobile-app #v-dashboard .k5 .ki { background:#fef3c7 !important;color:#d97706 !important; }
+          body.nxp-mobile-app #v-dashboard .kl {
+            font-size: 10px !important;
+            color: #475569 !important;
+            letter-spacing: 0 !important;
+            text-transform: none !important;
+            max-width: 90px !important;
+            line-height: 1.25 !important;
+          }
+          body.nxp-mobile-app #v-dashboard .kv {
+            font-size: 22px !important;
+            color: #0f172a !important;
+            margin-top: 28px !important;
+          }
+          body.nxp-mobile-app #v-dashboard .ks {
+            font-size: 10px !important;
+            color: #64748b !important;
+          }
+          body.nxp-mobile-app #v-dashboard .nc {
+            border-radius: 20px !important;
+            border: 1px solid rgba(226,232,240,.96) !important;
+            background: rgba(255,255,255,.98) !important;
+            box-shadow: 0 12px 30px rgba(15,23,42,.07) !important;
+            padding: 14px !important;
+            margin-bottom: 14px !important;
+          }
+          body.nxp-mobile-app #v-dashboard .ct {
+            font-size: 14px !important;
+            color: #0f172a !important;
+          }
+          body.nxp-mobile-app #v-dashboard .ct-s {
+            font-size: 10px !important;
+            color: #64748b !important;
+          }
+          body.nxp-mobile-app .nxp-bottom-nav {
+            position: fixed;
+            left: 10px;
+            right: 10px;
+            bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            height: 64px;
+            background: rgba(255,255,255,.96);
+            border: 1px solid rgba(226,232,240,.95);
+            border-radius: 24px;
+            box-shadow: 0 18px 45px rgba(15,23,42,.16);
+            display: grid;
+            grid-template-columns: repeat(5,1fr);
+            align-items: center;
+            z-index: 120;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+          }
+          body.nxp-mobile-app .nxp-bottom-nav button {
+            border: 0;
+            background: transparent;
+            height: 56px;
+            border-radius: 18px;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+          }
+          body.nxp-mobile-app .nxp-bottom-nav button i {
+            font-size: 20px;
+          }
+          body.nxp-mobile-app .nxp-bottom-nav button.on {
+            color: #2563eb;
+            background: #eff6ff;
+          }
+          body.nxp-mobile-app .nxp-fab {
+            position: fixed;
+            right: 18px;
+            bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+            width: 58px;
+            height: 58px;
+            border-radius: 22px;
+            background: linear-gradient(135deg,#2563eb,#3b82f6);
+            color: #fff;
+            border: 0;
+            box-shadow: 0 18px 38px rgba(37,99,235,.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            z-index: 118;
+            cursor: pointer;
+          }
+          body.nxp-mobile-app .nxp-fab:active {
+            transform: scale(.96);
+          }
+          body.nxp-mobile-app.dark .tnav,
+          body.nxp-mobile-app.dark .nxp-bottom-nav,
+          body.nxp-mobile-app.dark #v-dashboard .qa,
+          body.nxp-mobile-app.dark #v-dashboard .kpi,
+          body.nxp-mobile-app.dark #v-dashboard .nc {
+            background: rgba(30,41,59,.96) !important;
+            border-color: rgba(51,65,85,.95) !important;
+          }
+          body.nxp-mobile-app.dark .content {
+            background: linear-gradient(180deg,#0f172a 0%,#111827 100%) !important;
+          }
+          body.nxp-mobile-app.dark .pttl::after,
+          body.nxp-mobile-app.dark #v-dashboard::before,
+          body.nxp-mobile-app.dark #v-dashboard .qa-l,
+          body.nxp-mobile-app.dark #v-dashboard .kv,
+          body.nxp-mobile-app.dark #v-dashboard .ct {
+            color: #e2e8f0 !important;
+          }
+          body.nxp-mobile-app.dark #v-dashboard .kl,
+          body.nxp-mobile-app.dark #v-dashboard .ks,
+          body.nxp-mobile-app.dark #v-dashboard .ct-s,
+          body.nxp-mobile-app.dark .nxp-bottom-nav button {
+            color: #94a3b8 !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .nxp-bottom-nav,
+          .nxp-fab { display: none !important; }
+        }
+      `;
+
+      const viejo = document.getElementById('patch-003-dashboard-mobile-app');
+      if(viejo) viejo.remove();
+      const style = document.createElement('style');
+      style.id = 'patch-003-dashboard-mobile-app';
+      style.textContent = css;
+      document.head.appendChild(style);
+
+      function esMovil(){ return window.matchMedia('(max-width: 768px)').matches; }
+
+      function activarClase(){
+        document.body.classList.toggle('nxp-mobile-app', esMovil());
+      }
+
+      function crearBottomNav(){
+        if(document.querySelector('.nxp-bottom-nav')) return;
+        const navBox = document.createElement('div');
+        navBox.className = 'nxp-bottom-nav';
+        navBox.innerHTML = `
+          <button data-view="dashboard" onclick="nav('dashboard',null)"><i class="ti ti-home"></i><span>Inicio</span></button>
+          <button data-view="clientes" onclick="nav('clientes',null)"><i class="ti ti-users"></i><span>Clientes</span></button>
+          <button data-view="facturas" onclick="nav('facturas',null)"><i class="ti ti-file-invoice"></i><span>Facturas</span></button>
+          <button data-view="cobros" onclick="nav('clientes',null);setTimeout(function(){ if(typeof switchTab==='function') switchTab('pagos'); },200)"><i class="ti ti-wallet"></i><span>Cobros</span></button>
+          <button data-view="mas" onclick="toggleSidebar()"><i class="ti ti-dots"></i><span>Más</span></button>
+        `;
+        document.body.appendChild(navBox);
+      }
+
+      function crearFAB(){
+        if(document.querySelector('.nxp-fab')) return;
+        const fab = document.createElement('button');
+        fab.className = 'nxp-fab';
+        fab.type = 'button';
+        fab.title = 'Nuevo cliente';
+        fab.innerHTML = '<i class="ti ti-plus"></i>';
+        fab.addEventListener('click', function(){
+          if(typeof abrirNuevoCli === 'function') abrirNuevoCli();
+        });
+        document.body.appendChild(fab);
+      }
+
+      function marcarActivo(){
+        const active = document.querySelector('.view.on');
+        const id = active ? active.id.replace('v-','') : 'dashboard';
+        document.querySelectorAll('.nxp-bottom-nav button').forEach(function(b){
+          b.classList.toggle('on', b.dataset.view === id || (id === 'clientes' && b.dataset.view === 'clientes'));
+        });
+      }
+
+      function instalar(){
+        activarClase();
+        crearBottomNav();
+        crearFAB();
+        marcarActivo();
+      }
+
+      instalar();
+      window.addEventListener('resize', activarClase);
+      document.addEventListener('click', function(){ setTimeout(marcarActivo, 80); }, true);
+      const obsTarget = document.getElementById('cnt') || document.body;
+      const obs = new MutationObserver(function(){ marcarActivo(); });
+      obs.observe(obsTarget, {attributes:true, subtree:true, attributeFilter:['class']});
+
+      console.log('  ✓ PARCHE-003 aplicado: Dashboard móvil tipo app v1');
+    }catch(e){
+      console.error('  ✗ PARCHE-003 falló:', e);
+    }
+  }
+
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(instalarDashboardMovilApp, 220);
+  }else{
+    window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarDashboardMovilApp, 220); });
+  }
+})();
