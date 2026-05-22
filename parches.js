@@ -617,3 +617,189 @@
     window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarDashboardMovilApp, 220); });
   }
 })();
+
+
+// ─────────────────────────────────────────────────────────────
+// PARCHE-004 · 2026-05-22
+// Ajuste responsive móvil: cada módulo/card se adapta al ancho real.
+// No toca index.html. Solo mejora CSS en pantallas móviles.
+// ─────────────────────────────────────────────────────────────
+(function(){
+  'use strict';
+
+  function instalarAjusteModulosMovil(){
+    try{
+      const css = `
+        @media (max-width: 768px) {
+          html, body {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+
+          body.nxp-mobile-app,
+          body.nxp-mobile-app * {
+            box-sizing: border-box !important;
+          }
+
+          body.nxp-mobile-app .app,
+          body.nxp-mobile-app .main,
+          body.nxp-mobile-app .content,
+          body.nxp-mobile-app #cnt,
+          body.nxp-mobile-app .view,
+          body.nxp-mobile-app #v-dashboard {
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+          }
+
+          body.nxp-mobile-app .content {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+            padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+
+          body.nxp-mobile-app #v-dashboard {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+          }
+
+          /* Cualquier módulo interno del dashboard se ajusta a pantalla */
+          body.nxp-mobile-app #v-dashboard > *,
+          body.nxp-mobile-app #v-dashboard .card,
+          body.nxp-mobile-app #v-dashboard .panel,
+          body.nxp-mobile-app #v-dashboard .box,
+          body.nxp-mobile-app #v-dashboard .nc,
+          body.nxp-mobile-app #v-dashboard .qa,
+          body.nxp-mobile-app #v-dashboard .kpi,
+          body.nxp-mobile-app #v-dashboard .chart,
+          body.nxp-mobile-app #v-dashboard .tblwrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+          }
+
+          /* Grids fluidos: nunca se salen de la pantalla */
+          body.nxp-mobile-app #v-dashboard .grid,
+          body.nxp-mobile-app #v-dashboard .cards,
+          body.nxp-mobile-app #v-dashboard .kpis,
+          body.nxp-mobile-app #v-dashboard .quick,
+          body.nxp-mobile-app #v-dashboard .quick-actions,
+          body.nxp-mobile-app #v-dashboard [class*="grid"] {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          body.nxp-mobile-app #v-dashboard .kpi,
+          body.nxp-mobile-app #v-dashboard .qa,
+          body.nxp-mobile-app #v-dashboard .nc,
+          body.nxp-mobile-app #v-dashboard .card,
+          body.nxp-mobile-app #v-dashboard .panel {
+            min-width: 0 !important;
+            overflow: hidden !important;
+            word-break: normal !important;
+          }
+
+          /* Texto y montos largos no rompen el diseño */
+          body.nxp-mobile-app #v-dashboard .kv,
+          body.nxp-mobile-app #v-dashboard .kl,
+          body.nxp-mobile-app #v-dashboard .ks,
+          body.nxp-mobile-app #v-dashboard .ct,
+          body.nxp-mobile-app #v-dashboard .ct-s,
+          body.nxp-mobile-app #v-dashboard h1,
+          body.nxp-mobile-app #v-dashboard h2,
+          body.nxp-mobile-app #v-dashboard h3,
+          body.nxp-mobile-app #v-dashboard p,
+          body.nxp-mobile-app #v-dashboard span {
+            max-width: 100% !important;
+            overflow-wrap: anywhere !important;
+          }
+
+          /* Tablas/reportes: scroll horizontal interno, no rompe la pantalla */
+          body.nxp-mobile-app .tblwrap,
+          body.nxp-mobile-app .table-wrap,
+          body.nxp-mobile-app [class*="table"] {
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+
+          body.nxp-mobile-app table {
+            max-width: 100% !important;
+          }
+
+          /* Formularios y filtros en móvil */
+          body.nxp-mobile-app input,
+          body.nxp-mobile-app select,
+          body.nxp-mobile-app textarea,
+          body.nxp-mobile-app button {
+            max-width: 100% !important;
+          }
+
+          body.nxp-mobile-app .row,
+          body.nxp-mobile-app .form-row,
+          body.nxp-mobile-app .filters,
+          body.nxp-mobile-app .toolbar {
+            max-width: 100% !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+
+          body.nxp-mobile-app .row > *,
+          body.nxp-mobile-app .form-row > *,
+          body.nxp-mobile-app .filters > *,
+          body.nxp-mobile-app .toolbar > * {
+            min-width: 0 !important;
+          }
+        }
+
+        @media (max-width: 420px) {
+          body.nxp-mobile-app .content {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+          }
+
+          body.nxp-mobile-app #v-dashboard .grid,
+          body.nxp-mobile-app #v-dashboard .cards,
+          body.nxp-mobile-app #v-dashboard .kpis,
+          body.nxp-mobile-app #v-dashboard .quick,
+          body.nxp-mobile-app #v-dashboard .quick-actions,
+          body.nxp-mobile-app #v-dashboard [class*="grid"] {
+            gap: 8px !important;
+          }
+
+          body.nxp-mobile-app #v-dashboard .kv {
+            font-size: clamp(18px, 6vw, 22px) !important;
+          }
+
+          body.nxp-mobile-app #v-dashboard .kl,
+          body.nxp-mobile-app #v-dashboard .ks {
+            font-size: 10px !important;
+          }
+        }
+      `;
+
+      const viejo = document.getElementById('patch-004-modulos-movil-fluidos');
+      if(viejo) viejo.remove();
+      const style = document.createElement('style');
+      style.id = 'patch-004-modulos-movil-fluidos';
+      style.textContent = css;
+      document.head.appendChild(style);
+
+      console.log('  ✓ PARCHE-004 aplicado: módulos móviles ajustados a pantalla');
+    }catch(e){
+      console.error('  ✗ PARCHE-004 falló:', e);
+    }
+  }
+
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(instalarAjusteModulosMovil, 260);
+  }else{
+    window.addEventListener('DOMContentLoaded', function(){ setTimeout(instalarAjusteModulosMovil, 260); });
+  }
+})();
