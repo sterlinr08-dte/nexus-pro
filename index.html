@@ -650,34 +650,6 @@ input[type="text"], input[type="search"]{
 input[type="text"].no-upper, input[type="search"].no-upper{
   text-transform: none !important;
 }
-
-/* Optimizaciones Móviles - NEXUS PRO Realista */
-:root {
-  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-@media screen and (max-width: 768px) {
-    .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    input, select, textarea { 
-        font-size: 16px !important; 
-        background: #f2f2f7 !important; 
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-    }
-    .btn.bsm.bghost { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; } 
-    .content { padding: 10px !important; }
-}
-
-.nc {
-    background: #ffffff;
-    border-radius: 20px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: var(--shadow);
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.nc:active { transform: scale(0.98); box-shadow: var(--shadow-sm); }
-
 </style>
 </head>
 <body>
@@ -2266,22 +2238,15 @@ const getPDReal=c=>{
   return(c.precio_dep!=null&&c.precio_dep!==''&&!isNaN(v)&&v>0)?v:getPD(c.plan);
 };
 // getTot ahora respeta precio personalizado si el cliente lo tiene
-const getTot = c => {
-    // 1. Prioridad: Si hay precio manual (Titular > 0), úsalo. Si no, usa catálogo (getPT).
-    const valorTitular = Number(c.precio_titular);
-    const primaT = (c.precio_titular !== null && c.precio_titular !== '' && !isNaN(valorTitular) && valorTitular > 0) 
-                   ? valorTitular 
-                   : getPT(c.plan);
-
-    // 2. Prioridad: Si hay precio manual (Dependientes > 0), úsalo. Si no, usa catálogo (getPD).
-    const valorDep = Number(c.precio_dep);
-    const primaD = (c.precio_dep !== null && c.precio_dep !== '' && !isNaN(valorDep) && valorDep > 0) 
-                   ? valorDep 
-                   : getPD(c.plan);
-
-    // 3. Cálculo total
-    const cantidadDeps = (c.deps && Array.isArray(c.deps)) ? c.deps.length : 0;
-    return primaT + (cantidadDeps * primaD);
+const getTot=c=>{
+  // Precio del titular: usa el personalizado si es válido y mayor a 0, si no el del plan
+  const ptCustom=Number(c.precio_titular);
+  const primaT=(c.precio_titular!=null&&c.precio_titular!==''&&!isNaN(ptCustom)&&ptCustom>0)?ptCustom:getPT(c.plan);
+  // Precio del dependiente: igual. Si quedó en 0 o vacío, usa el del plan
+  // (así los dependientes SIEMPRE suman aunque haya precio especial)
+  const pdCustom=Number(c.precio_dep);
+  const primaD=(c.precio_dep!=null&&c.precio_dep!==''&&!isNaN(pdCustom)&&pdCustom>0)?pdCustom:getPD(c.plan);
+  return primaT+((c.deps||[]).length*primaD);
 };
 const pend=c=>Math.max(0,(c.deuda_total||0)-(c.pagado||0));
 const fmt=n=>'RD$ '+Math.round(n||0).toLocaleString('es-DO');
@@ -4650,35 +4615,7 @@ function verCertificadoPDF(cid){
 function imprimirPDF(){
   const content=document.getElementById('pdfContent').innerHTML;
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>NEXUS PRO · Documento</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#000;font-size:12px}@media print{body{padding:10px}}
-/* Optimizaciones Móviles - NEXUS PRO Realista */
-:root {
-  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-@media screen and (max-width: 768px) {
-    .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    input, select, textarea { 
-        font-size: 16px !important; 
-        background: #f2f2f7 !important; 
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-    }
-    .btn.bsm.bghost { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; } 
-    .content { padding: 10px !important; }
-}
-
-.nc {
-    background: #ffffff;
-    border-radius: 20px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: var(--shadow);
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.nc:active { transform: scale(0.98); box-shadow: var(--shadow-sm); }
-
-</style></head><body>${content}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>NEXUS PRO · Documento</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#000;font-size:12px}@media print{body{padding:10px}}</style></head><body>${content}</body></html>`);
   w.document.close();setTimeout(()=>{w.print();},500);
 }
 
@@ -6557,34 +6494,6 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
 /* Opción seleccionada en panel de temas */
 .tema-opcion.tema-sel{border-color:var(--c1) !important;box-shadow:0 4px 16px rgba(37,99,235,.25)}
 .tema-opcion:hover{transform:translateY(-2px)}
-
-/* Optimizaciones Móviles - NEXUS PRO Realista */
-:root {
-  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-@media screen and (max-width: 768px) {
-    .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    input, select, textarea { 
-        font-size: 16px !important; 
-        background: #f2f2f7 !important; 
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-    }
-    .btn.bsm.bghost { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; } 
-    .content { padding: 10px !important; }
-}
-
-.nc {
-    background: #ffffff;
-    border-radius: 20px;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: var(--shadow);
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.nc:active { transform: scale(0.98); box-shadow: var(--shadow-sm); }
-
 </style></head><body>${contenido}</body></html>`);
   w.document.close();
   setTimeout(()=>{ w.print(); btn.disabled=false; btn.innerHTML='<i class="ti ti-file-type-pdf"></i> Exportar PDF'; }, 1000);
