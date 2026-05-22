@@ -7092,5 +7092,7 @@ setInterval(verificarAutoFacturacion, 60000);
 // También verificar al cargar por si se perdió el momento
 setTimeout(verificarAutoFacturacion, 5000);
 </script>
+<!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══ -->
+<script src="parches.js?v=1" onerror="console.log('parches.js no disponible o aún no creado')"></script>
 </body>
 </html>
