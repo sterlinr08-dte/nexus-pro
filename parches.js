@@ -655,20 +655,19 @@
   setTimeout(setupCobrosValidaciones, 1000);
 
   // ═══════════════════════════════════════════════════════════
-  // 8. MODAL "COBRADO POR AGENTE" - Click en tarjeta del Dashboard
+  // 8. CLICK EN "COBRADO" → REPORTE POR AGENTE ENRIQUECIDO
   // ═══════════════════════════════════════════════════════════
-  function setupModalCobradoAgente() {
+  function setupCobradoToReporte() {
     // Esperar a que el sistema esté cargado
-    if (!window.ST || !window.fmt) {
-      setTimeout(setupModalCobradoAgente, 500);
+    if (!window.ST || !window.fmt || !window.nav) {
+      setTimeout(setupCobradoToReporte, 500);
       return;
     }
-    if (window.__cobradoAgenteFixed) return;
-    window.__cobradoAgenteFixed = true;
+    if (window.__cobradoReporteFixed) return;
+    window.__cobradoReporteFixed = true;
 
-    // Hacer la tarjeta Cobrado clickeable
+    // 1) Hacer clickeable la tarjeta "COBRADO" del Dashboard
     function hacerCobradoClickeable() {
-      // Buscar la tarjeta KPI "COBRADO" en el Dashboard
       const labels = document.querySelectorAll('.kl');
       labels.forEach(function(lbl) {
         if (lbl.textContent.trim().toUpperCase() === 'COBRADO') {
@@ -676,46 +675,58 @@
           if (card && !card.dataset.cobradoBound) {
             card.dataset.cobradoBound = '1';
             card.style.cursor = 'pointer';
-            card.addEventListener('click', abrirModalCobradoAgente);
+            card.title = 'Ver desglose por agente';
+            card.addEventListener('click', function() {
+              // Navegar al reporte de agente
+              if (typeof window.nav === 'function') {
+                window.nav('rep-agente');
+              }
+            });
           }
         }
       });
     }
 
-    // Abrir el modal con el desglose
-    window.abrirModalCobradoAgente = function() {
+    // 2) Sobrescribir rRepAgt para agregar desglose por método/banco
+    if (typeof window.rRepAgt === 'function') {
+      const _rRepAgtOriginal = window.rRepAgt;
+      
+      window.rRepAgt = function() {
+        // Primero ejecutar el original (renderiza la lista base de agentes)
+        _rRepAgtOriginal.apply(this, arguments);
+        
+        // Después agregar nuestro desglose
+        setTimeout(agregarDesgloseAgentes, 100);
+      };
+      console.log('%c✓ rRepAgt sobrescrito con desglose', 'color:#10b981;font-weight:bold');
+    } else {
+      // Si no existe aún, intentar de nuevo
+      setTimeout(setupCobradoToReporte, 500);
+      return;
+    }
+
+    function agregarDesgloseAgentes() {
       const ST = window.ST;
       const fmt = window.fmt;
-      
-      // Calcular datos
       const abonos = ST.abonos || [];
       const agentes = ST.agentes || [];
-      const clientes = ST.clientes || [];
       
-      // Total cobrado general
-      const totalGeneral = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
-      
-      // Agrupar por agente
+      // Calcular desglose por agente
       const porAgente = {};
-      let sinAgente = 0;
       abonos.forEach(function(a) {
         const agId = a.agente_cobro;
-        if (!agId) {
-          sinAgente += Number(a.monto || 0);
-          return;
-        }
+        if (!agId) return;
         if (!porAgente[agId]) {
-          porAgente[agId] = { total: 0, efectivo: 0, banco: 0, cheque: 0, otros: 0, transBancos: {} };
+          porAgente[agId] = { efectivo: 0, banco: 0, cheque: 0, otros: 0, bancos: {} };
         }
         const monto = Number(a.monto || 0);
-        porAgente[agId].total += monto;
         const metodo = (a.metodo || '').toLowerCase();
         if (metodo === 'efectivo') {
           porAgente[agId].efectivo += monto;
         } else if (metodo === 'transferencia' || metodo === 'depósito' || metodo === 'deposito') {
           porAgente[agId].banco += monto;
           const banco = a.banco || 'Sin especificar';
-          porAgente[agId].transBancos[banco] = (porAgente[agId].transBancos[banco] || 0) + monto;
+          porAgente[agId].bancos[banco] = (porAgente[agId].bancos[banco] || 0) + monto;
         } else if (metodo === 'cheque') {
           porAgente[agId].cheque += monto;
         } else {
@@ -723,165 +734,135 @@
         }
       });
       
-      // Agrupar por método global (todos los agentes)
-      let totalEfectivo = 0, totalBanco = 0, totalCheque = 0, totalOtros = 0;
-      const totalPorBanco = {};
-      abonos.forEach(function(a) {
-        const monto = Number(a.monto || 0);
-        const metodo = (a.metodo || '').toLowerCase();
-        if (metodo === 'efectivo') totalEfectivo += monto;
-        else if (metodo === 'transferencia' || metodo === 'depósito' || metodo === 'deposito') {
-          totalBanco += monto;
-          const banco = a.banco || 'Sin especificar';
-          totalPorBanco[banco] = (totalPorBanco[banco] || 0) + monto;
-        }
-        else if (metodo === 'cheque') totalCheque += monto;
-        else totalOtros += monto;
-      });
+      // Inyectar tarjeta de desglose al inicio del contenedor rAgt
+      const rAgtCont = document.getElementById('rAgt');
+      if (!rAgtCont) return;
       
-      // Construir HTML del modal
+      // Si ya existe, quitarla para refrescar
+      const existente = document.getElementById('desgloseCobros');
+      if (existente) existente.remove();
+      
+      // Construir HTML del desglose
+      const desglose = document.createElement('div');
+      desglose.id = 'desgloseCobros';
+      desglose.style.cssText = 'background:linear-gradient(135deg,#f0fdfa 0%,#eff6ff 100%);border:1px solid #bfdbfe;border-radius:14px;padding:14px;margin-bottom:14px';
+      
+      // Totales generales
+      let totEf = 0, totBan = 0, totChq = 0, totOtr = 0;
+      const totBancos = {};
+      Object.values(porAgente).forEach(function(d) {
+        totEf += d.efectivo;
+        totBan += d.banco;
+        totChq += d.cheque;
+        totOtr += d.otros;
+        Object.entries(d.bancos).forEach(([b, m]) => { totBancos[b] = (totBancos[b] || 0) + m; });
+      });
+      const totGen = totEf + totBan + totChq + totOtr;
+      
       let html = `
-        <div style="padding:8px 0">
-          <!-- Total general -->
-          <div style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:14px;border-radius:12px;margin-bottom:14px;text-align:center">
-            <div style="font-size:10px;font-weight:700;letter-spacing:.5px;opacity:.9">TOTAL COBRADO</div>
-            <div style="font-size:22px;font-weight:800;margin-top:4px;font-family:monospace">${fmt(totalGeneral)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:800;color:#0f172a;font-family:var(--mono)">💰 DESGLOSE DE COBROS</div>
+          <div style="font-size:14px;font-weight:800;color:#10b981;font-family:var(--mono)">${fmt(totGen)}</div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">
+          <div style="background:#fff;padding:10px;border-radius:10px;border:1px solid #d1fae5">
+            <div style="font-size:9px;font-weight:700;color:#10b981">💵 EFECTIVO</div>
+            <div style="font-size:14px;font-weight:800;color:#10b981;font-family:var(--mono)">${fmt(totEf)}</div>
           </div>
-          
-          <!-- Resumen por método -->
-          <div style="margin-bottom:14px">
-            <div style="font-size:9px;color:#94a3b8;letter-spacing:.5px;font-weight:700;margin-bottom:8px;font-family:monospace">POR MÉTODO</div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
-              <div style="background:#f0fdf4;padding:10px;border-radius:10px;border:1px solid #bbf7d0">
-                <div style="font-size:9px;color:#16a34a;font-weight:700">💵 EFECTIVO</div>
-                <div style="font-size:14px;font-weight:800;color:#16a34a;font-family:monospace">${fmt(totalEfectivo)}</div>
-              </div>
-              <div style="background:#eff6ff;padding:10px;border-radius:10px;border:1px solid #bfdbfe">
-                <div style="font-size:9px;color:#2563eb;font-weight:700">🏦 BANCO</div>
-                <div style="font-size:14px;font-weight:800;color:#2563eb;font-family:monospace">${fmt(totalBanco)}</div>
-              </div>
-              ${totalCheque > 0 ? `
-              <div style="background:#fef3c7;padding:10px;border-radius:10px;border:1px solid #fde68a">
-                <div style="font-size:9px;color:#d97706;font-weight:700">📝 CHEQUE</div>
-                <div style="font-size:14px;font-weight:800;color:#d97706;font-family:monospace">${fmt(totalCheque)}</div>
-              </div>
-              ` : ''}
-              ${totalOtros > 0 ? `
-              <div style="background:#f3f4f6;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
-                <div style="font-size:9px;color:#6b7280;font-weight:700">⋯ OTROS</div>
-                <div style="font-size:14px;font-weight:800;color:#6b7280;font-family:monospace">${fmt(totalOtros)}</div>
-              </div>
-              ` : ''}
-            </div>
+          <div style="background:#fff;padding:10px;border-radius:10px;border:1px solid #bfdbfe">
+            <div style="font-size:9px;font-weight:700;color:#2563eb">🏦 BANCO</div>
+            <div style="font-size:14px;font-weight:800;color:#2563eb;font-family:var(--mono)">${fmt(totBan)}</div>
           </div>
       `;
       
-      // Desglose por banco
-      if (Object.keys(totalPorBanco).length > 0) {
+      if (totChq > 0) {
         html += `
-          <div style="margin-bottom:14px">
-            <div style="font-size:9px;color:#94a3b8;letter-spacing:.5px;font-weight:700;margin-bottom:8px;font-family:monospace">DESGLOSE POR BANCO</div>
-            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+          <div style="background:#fff;padding:10px;border-radius:10px;border:1px solid #fde68a">
+            <div style="font-size:9px;font-weight:700;color:#d97706">📝 CHEQUE</div>
+            <div style="font-size:14px;font-weight:800;color:#d97706;font-family:var(--mono)">${fmt(totChq)}</div>
+          </div>
         `;
-        const bancosOrdenados = Object.entries(totalPorBanco).sort((a,b) => b[1] - a[1]);
-        bancosOrdenados.forEach(function([banco, monto], idx) {
+      }
+      if (totOtr > 0) {
+        html += `
+          <div style="background:#fff;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+            <div style="font-size:9px;font-weight:700;color:#6b7280">⋯ OTROS</div>
+            <div style="font-size:14px;font-weight:800;color:#6b7280;font-family:var(--mono)">${fmt(totOtr)}</div>
+          </div>
+        `;
+      }
+      
+      html += `</div>`;
+      
+      // Bancos
+      if (Object.keys(totBancos).length > 0) {
+        html += `<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:6px;font-family:var(--mono)">POR BANCO:</div>`;
+        const sorted = Object.entries(totBancos).sort((a,b) => b[1] - a[1]);
+        sorted.forEach(([banco, monto]) => {
           html += `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;${idx > 0 ? 'border-top:1px solid #f1f5f9' : ''}">
-              <span style="font-weight:600;color:#0f172a">${banco}</span>
-              <span style="font-weight:800;color:#2563eb;font-family:monospace">${fmt(monto)}</span>
+            <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#fff;border-radius:8px;margin-bottom:3px;font-size:11px">
+              <span style="color:#475569;font-weight:600">${banco}</span>
+              <span style="color:#2563eb;font-weight:800;font-family:var(--mono)">${fmt(monto)}</span>
             </div>
           `;
         });
-        html += `</div></div>`;
+        html += `</div>`;
       }
       
       // Desglose por agente
-      html += `
-        <div>
-          <div style="font-size:9px;color:#94a3b8;letter-spacing:.5px;font-weight:700;margin-bottom:8px;font-family:monospace">POR AGENTE</div>
-      `;
+      html += `<div style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:6px;font-family:var(--mono)">DETALLE POR AGENTE:</div>`;
       
       const agentesOrdenados = Object.entries(porAgente)
-        .map(([id, datos]) => ({ id, ...datos, nom: (agentes.find(a => a.id === id) || {}).nom || 'Agente desconocido' }))
+        .map(([id, d]) => ({
+          id,
+          nom: (agentes.find(a => a.id === id) || {}).nom || 'Agente desconocido',
+          ...d,
+          total: d.efectivo + d.banco + d.cheque + d.otros
+        }))
         .sort((a, b) => b.total - a.total);
       
-      if (agentesOrdenados.length === 0 && sinAgente === 0) {
-        html += `<div style="padding:20px;text-align:center;color:#94a3b8">Sin cobros registrados</div>`;
+      if (agentesOrdenados.length === 0) {
+        html += `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:11px">Aún no hay cobros con agente asignado</div>`;
       } else {
         agentesOrdenados.forEach(function(ag) {
           html += `
-            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <div style="font-weight:700;color:#0f172a">${ag.nom}</div>
-                <div style="font-weight:800;color:#10b981;font-family:monospace;font-size:14px">${fmt(ag.total)}</div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px;margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <div style="font-weight:700;font-size:12px;color:#0f172a">${ag.nom}</div>
+                <div style="font-weight:800;color:#10b981;font-family:var(--mono);font-size:13px">${fmt(ag.total)}</div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
-                ${ag.efectivo > 0 ? `<div style="color:#16a34a">💵 Efectivo: <b>${fmt(ag.efectivo)}</b></div>` : ''}
-                ${ag.banco > 0 ? `<div style="color:#2563eb">🏦 Banco: <b>${fmt(ag.banco)}</b></div>` : ''}
-                ${ag.cheque > 0 ? `<div style="color:#d97706">📝 Cheque: <b>${fmt(ag.cheque)}</b></div>` : ''}
-                ${ag.otros > 0 ? `<div style="color:#6b7280">⋯ Otros: <b>${fmt(ag.otros)}</b></div>` : ''}
+              <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:10px">
+                ${ag.efectivo > 0 ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:6px;font-weight:700">💵 ${fmt(ag.efectivo)}</span>` : ''}
+                ${ag.banco > 0 ? `<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:6px;font-weight:700">🏦 ${fmt(ag.banco)}</span>` : ''}
+                ${ag.cheque > 0 ? `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:6px;font-weight:700">📝 ${fmt(ag.cheque)}</span>` : ''}
+                ${ag.otros > 0 ? `<span style="background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:6px;font-weight:700">⋯ ${fmt(ag.otros)}</span>` : ''}
               </div>
-              ${Object.keys(ag.transBancos).length > 0 ? `
-                <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0">
-                  <div style="font-size:9px;color:#94a3b8;font-weight:700;margin-bottom:4px">BANCOS:</div>
-                  ${Object.entries(ag.transBancos).map(([b, m]) => `
-                    <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0">
-                      <span style="color:#475569">${b}</span>
-                      <span style="font-weight:700;color:#2563eb;font-family:monospace">${fmt(m)}</span>
-                    </div>
+              ${Object.keys(ag.bancos).length > 0 ? `
+                <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0;font-size:10px">
+                  ${Object.entries(ag.bancos).map(([b, m]) => `
+                    <span style="color:#64748b;margin-right:8px">${b}: <b style="color:#2563eb;font-family:var(--mono)">${fmt(m)}</b></span>
                   `).join('')}
                 </div>
               ` : ''}
             </div>
           `;
         });
-        
-        if (sinAgente > 0) {
-          html += `
-            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:12px;margin-bottom:8px">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;color:#92400e">⚠️ Sin agente asignado</div>
-                <div style="font-weight:800;color:#d97706;font-family:monospace">${fmt(sinAgente)}</div>
-              </div>
-            </div>
-          `;
-        }
       }
       
-      html += `</div></div>`;
+      desglose.innerHTML = html;
       
-      // Crear modal flotante
-      let modal = document.getElementById('mCobradoAgente');
-      if (modal) modal.remove();
-      
-      modal = document.createElement('div');
-      modal.id = 'mCobradoAgente';
-      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;backdrop-filter:blur(4px)';
-      modal.innerHTML = `
-        <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:18px;box-shadow:0 25px 70px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e2e8f0">
-            <div style="font-size:14px;font-weight:800;color:#0f172a;font-family:monospace">// COBRADO POR AGENTE</div>
-            <button onclick="document.getElementById('mCobradoAgente').remove()" style="border:0;background:#f1f5f9;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;color:#64748b">×</button>
-          </div>
-          ${html}
-        </div>
-      `;
-      
-      // Click fuera cierra
-      modal.addEventListener('click', function(e) {
-        if (e.target === modal) modal.remove();
-      });
-      
-      document.body.appendChild(modal);
-    };
+      // Insertar al PRINCIPIO del contenedor rAgt
+      rAgtCont.insertBefore(desglose, rAgtCont.firstChild);
+    }
 
-    // Aplicar cuando se cargue el Dashboard y reintentar
+    // Activar
     hacerCobradoClickeable();
     setInterval(hacerCobradoClickeable, 2000); // por si el Dashboard se re-renderiza
     
-    console.log('%c✓ Modal Cobrado por Agente activado', 'color:#10b981;font-weight:bold');
+    console.log('%c✓ Cobrado → Reporte Agente activado', 'color:#10b981;font-weight:bold');
   }
   
-  setTimeout(setupModalCobradoAgente, 1500);
+  setTimeout(setupCobradoToReporte, 1500);
 
 })();
