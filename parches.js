@@ -164,9 +164,27 @@
           display: none !important;
         }
         
-        /* Menú de acciones del cliente (acc-menu) por encima de TODO */
+        /* ═══ FIX MENÚ DE ACCIONES (⋮) ═══ */
+        /* El menú de 3 puntos del cliente DEBE estar por encima de TODO,
+           incluido el modal de editar/cliente. */
         .acc-menu {
-          z-index: 10001 !important;
+          z-index: 999999 !important;
+          position: fixed !important;
+          pointer-events: auto !important;
+        }
+        
+        /* Si el menú está abierto, asegurar visibilidad */
+        .acc-menu:not([style*="display: none"]),
+        .acc-menu[style*="display: block"],
+        .acc-menu[style*="display:block"] {
+          display: block !important;
+          z-index: 999999 !important;
+          pointer-events: auto !important;
+        }
+        
+        /* También para el backdrop del menú */
+        .acc-backdrop {
+          z-index: 999998 !important;
         }
       }
     `;
