@@ -477,3 +477,104 @@
   setTimeout(init, 3000);
 
 })();
+/* ===== NEXU PRO HOTFIX v3.2 - MENÚ ACCIONES CLIENTES ===== */
+(function () {
+  "use strict";
+
+  if (window.__NEXU_CLIENT_ACTIONS_FIX_V32__) return;
+  window.__NEXU_CLIENT_ACTIONS_FIX_V32__ = true;
+
+  const MOBILE_MAX = 768;
+  const isMobile = () => window.innerWidth <= MOBILE_MAX;
+
+  function injectFix() {
+    if (document.getElementById("nexu-client-actions-v32-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nexu-client-actions-v32-css";
+    style.textContent = `
+      @media (max-width: ${MOBILE_MAX}px) {
+        .acc-menu,
+        .actions-menu,
+        .dropdown-menu,
+        .client-actions-menu,
+        [class*="action-menu"],
+        [class*="acciones"],
+        [class*="dropdown"] {
+          z-index: 2147483647 !important;
+          position: fixed !important;
+          pointer-events: auto !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+        }
+
+        .acc-menu *,
+        .actions-menu *,
+        .dropdown-menu *,
+        .client-actions-menu *,
+        [class*="action-menu"] *,
+        [class*="acciones"] *,
+        [class*="dropdown"] * {
+          pointer-events: auto !important;
+        }
+
+        .acc-backdrop,
+        .modal-backdrop,
+        .dropdown-backdrop,
+        [class*="backdrop"],
+        [class*="overlay"] {
+          pointer-events: none !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function fixClientActionMenus() {
+    if (!isMobile()) return;
+
+    const menus = document.querySelectorAll(
+      ".acc-menu, .actions-menu, .dropdown-menu, .client-actions-menu, [class*='action-menu'], [class*='acciones'], [class*='dropdown']"
+    );
+
+    menus.forEach(menu => {
+      menu.style.zIndex = "2147483647";
+      menu.style.pointerEvents = "auto";
+      menu.style.opacity = "1";
+      menu.style.visibility = "visible";
+
+      menu.querySelectorAll("button, a, [role='button'], [onclick]").forEach(btn => {
+        btn.style.pointerEvents = "auto";
+        btn.style.touchAction = "manipulation";
+
+        if (!btn.dataset.nexuTouchFixed) {
+          btn.dataset.nexuTouchFixed = "1";
+
+          btn.addEventListener("touchend", function (e) {
+            e.stopPropagation();
+            try {
+              this.click();
+            } catch (_) {}
+          }, { passive: true });
+        }
+      });
+    });
+  }
+
+  function init() {
+    injectFix();
+    fixClientActionMenus();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("click", function () {
+    setTimeout(init, 80);
+  }, true);
+
+  document.addEventListener("touchend", function () {
+    setTimeout(init, 80);
+  }, true);
+
+  setInterval(init, 1000);
+})();
