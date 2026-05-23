@@ -1308,127 +1308,187 @@
   });
 })();
 
+
 /* ==========================================================================
-   NEXUS PRO - HOTFIX V55
-   Corrección final:
-   - Expone ST/API directos como window.ST/window.API cuando el sistema los
-     declaró con const/let.
-   - Repara dropdowns vacíos de transferencia entre agentes.
-   - Refresca Reporte por Agente una sola vez, sin parpadeo.
+   NEXUS PRO - HOTFIX V57
+   Corrección de bug visual en Reporte por Agente:
+   - Evita bloques duplicados/apilados.
+   - Limpia reportes viejos de fases anteriores.
+   - Corrige overflow/encimado en móvil.
+   - No agrega todavía desglose avanzado por banco.
    ========================================================================== */
 
 (function () {
   "use strict";
 
-  if (window.__NEXUS_HOTFIX_ST_API_V55__) return;
-  window.__NEXUS_HOTFIX_ST_API_V55__ = true;
+  if (window.__NEXUS_HOTFIX_REPORTE_AGENTES_V57__) return;
+  window.__NEXUS_HOTFIX_REPORTE_AGENTES_V57__ = true;
 
-  function getSTSafe() {
+  let cleaning = false;
+
+  function q(sel, root = document) {
+    return root.querySelector(sel);
+  }
+
+  function qa(sel, root = document) {
+    return Array.from(root.querySelectorAll(sel));
+  }
+
+  function inReporteAgente() {
+    return !!(q("#v-rep-agente.view.on") || q("#rAgt"));
+  }
+
+  function cleanDuplicateReports() {
+    if (cleaning) return;
+    cleaning = true;
+
     try {
-      if (typeof ST !== "undefined" && ST) return ST;
-    } catch (e) {}
-    return window.ST || {};
-  }
+      // Eliminar bloques viejos de pruebas anteriores.
+      qa("#nxDesgloseCobrosAgente, #nxPremiumAgentReport, #nxReporteAgentesV56, #nxReporteAgentesV57").forEach(el => {
+        try { el.remove(); } catch (e) {}
+      });
 
-  function getAPISafe() {
-    try {
-      if (typeof API !== "undefined" && API) return API;
-    } catch (e) {}
-    return window.API || null;
-  }
-
-  function exposeSafeGlobals() {
-    const st = getSTSafe();
-    const api = getAPISafe();
-
-    if (st && !window.ST) {
-      try { window.ST = st; } catch (e) {}
-    }
-
-    if (api && !window.API) {
-      try { window.API = api; } catch (e) {}
-    }
-  }
-
-  function getAgenteName(a) {
-    return String(a?.nom || a?.nombre || a?.name || "Agente");
-  }
-
-  function esc(s) {
-    return String(s ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function repararSelectsAgentes() {
-    exposeSafeGlobals();
-
-    const st = getSTSafe();
-    const agentes = Array.isArray(st.agentes) ? st.agentes : [];
-
-    if (!agentes.length) return;
-
-    const html = '<option value="">Seleccionar...</option>' + agentes.map(a => {
-      return `<option value="${esc(a.id)}">${esc(getAgenteName(a))}</option>`;
-    }).join("");
-
-    ["nxTA2Desde", "nxTA2Hacia", "nxTADesde", "nxTAHacia"].forEach(id => {
-      const sel = document.getElementById(id);
-      if (sel && sel.options.length <= 1) {
-        sel.innerHTML = html;
+      // Si por error existen varios V2, dejar solo el primero.
+      const v2 = qa("#nxReporteAgentesV2");
+      if (v2.length > 1) {
+        v2.slice(1).forEach(el => {
+          try { el.remove(); } catch (e) {}
+        });
       }
-    });
+
+      // Si el reporte premium no aparece estando en Reporte Agente, forzar una sola vez.
+      if (inReporteAgente() && !q("#nxReporteAgentesV2") && typeof window.nxRefrescarReporteAgentesV2 === "function") {
+        setTimeout(() => {
+          if (!q("#nxReporteAgentesV2")) {
+            try { window.nxRefrescarReporteAgentesV2(); } catch (e) {}
+          }
+        }, 250);
+      }
+    } finally {
+      setTimeout(() => { cleaning = false; }, 300);
+    }
   }
 
-  function wrapOpeners() {
-    ["nxAbrirTransferenciaAgenteV2", "nxAbrirTransferenciaAgente"].forEach(fn => {
-      if (typeof window[fn] !== "function") return;
-      if (window[fn].__nexusV55Wrapped) return;
+  function injectCSS() {
+    if (q("#nexus-hotfix-v57-css")) return;
 
-      const original = window[fn];
-      const wrapped = function () {
-        exposeSafeGlobals();
-        const result = original.apply(this, arguments);
-        setTimeout(repararSelectsAgentes, 80);
-        setTimeout(repararSelectsAgentes, 300);
-        return result;
-      };
+    const style = document.createElement("style");
+    style.id = "nexus-hotfix-v57-css";
+    style.textContent = `
+      /* V57: evita tarjetas encimadas / ventanas aparentes */
+      #rAgt,
+      #nxReporteAgentesV2,
+      #nxReporteAgentesV2 *,
+      .nx-report-v2,
+      .nx-agent-card-v2 {
+        box-sizing: border-box !important;
+      }
 
-      wrapped.__nexusV55Wrapped = true;
-      window[fn] = wrapped;
-    });
-  }
+      #nxReporteAgentesV2 {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        contain: layout paint;
+      }
 
-  function refreshReporteOnce() {
-    exposeSafeGlobals();
+      .nx-report-v2 {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+      }
 
-    if (window.__NEXUS_V55_REPORT_REFRESHED__) return;
-    const inReport = document.querySelector("#v-rep-agente.view.on") || document.querySelector("#rAgt");
-    if (!inReport) return;
+      .nx-agents-grid-v2 {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
 
-    window.__NEXUS_V55_REPORT_REFRESHED__ = true;
+      .nx-agent-card-v2 {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+      }
 
-    setTimeout(function () {
-      try {
-        if (typeof window.nxRefrescarReporteAgentesV2 === "function") {
-          window.nxRefrescarReporteAgentesV2();
-        } else if (typeof window.rRepAgt === "function") {
-          window.rRepAgt();
+      .nx-agent-main-money,
+      .nx-agent-methods-v2,
+      .nx-agent-balance-grid,
+      .nx-transfer-mini,
+      .nx-progress-v2 {
+        max-width: 100% !important;
+      }
+
+      @media (max-width: 768px) {
+        #rAgt {
+          overflow-x: hidden !important;
         }
-      } catch (e) {
-        console.warn("NEXUS V55: no se pudo refrescar reporte por agente", e);
+
+        #nxReporteAgentesV2 {
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+        }
+
+        .nx-report-v2 {
+          padding-left: 12px !important;
+          padding-right: 12px !important;
+        }
+
+        .nx-agents-grid-v2 {
+          display: grid !important;
+          grid-template-columns: minmax(0, 1fr) !important;
+          gap: 12px !important;
+        }
+
+        .nx-agent-head-v2 {
+          align-items: flex-start !important;
+        }
+
+        .nx-agent-info-v2 {
+          min-width: 0 !important;
+        }
+
+        .nx-agent-effect-v2 {
+          flex: 0 0 58px !important;
+        }
+
+        .nx-agent-methods-v2 {
+          grid-template-columns: minmax(0, 1fr) !important;
+        }
+
+        .nx-agent-balance-grid {
+          grid-template-columns: minmax(0, 1fr) !important;
+        }
+
+        .nx-two-cols-v2 {
+          grid-template-columns: minmax(0, 1fr) !important;
+        }
+
+        .nx-transfer-table-wrap {
+          overflow-x: auto !important;
+          max-width: 100% !important;
+        }
       }
-    }, 350);
+    `;
+    document.head.appendChild(style);
+  }
+
+  function wrapReportRender() {
+    if (window.__NEXUS_V57_WRAP_RREPAGT__) return;
+    if (typeof window.rRepAgt !== "function") return;
+
+    window.__NEXUS_V57_WRAP_RREPAGT__ = true;
+    const original = window.rRepAgt;
+
+    window.rRepAgt = function () {
+      const result = original.apply(this, arguments);
+      setTimeout(cleanDuplicateReports, 180);
+      setTimeout(cleanDuplicateReports, 600);
+      return result;
+    };
   }
 
   function init() {
-    exposeSafeGlobals();
-    wrapOpeners();
-    repararSelectsAgentes();
-    refreshReporteOnce();
+    injectCSS();
+    wrapReportRender();
+    cleanDuplicateReports();
   }
 
   if (document.readyState === "loading") {
@@ -1438,11 +1498,7 @@
   }
 
   document.addEventListener("click", function () {
-    setTimeout(function () {
-      exposeSafeGlobals();
-      wrapOpeners();
-      repararSelectsAgentes();
-    }, 120);
+    if (inReporteAgente()) setTimeout(cleanDuplicateReports, 180);
   }, true);
 })();
 
