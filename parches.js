@@ -65,6 +65,16 @@
           border-radius: 14px;
           cursor: pointer;
           touch-action: manipulation;
+          overflow: visible !important;
+          min-width: 0;
+        }
+        
+        .mobile-bottom-nav-clean button span {
+          white-space: nowrap;
+          overflow: visible;
+          color: inherit !important;
+          opacity: 1 !important;
+          visibility: visible !important;
         }
         
         .mobile-bottom-nav-clean button.active {
@@ -167,6 +177,25 @@
   // 2. NAVEGACIÓN - usa nav() de NEXUS PRO directamente
   // ═══════════════════════════════════════════════════════════
   function navegar(vista) {
+    // Caso especial: Clientes en proceso
+    if (vista === 'proceso') {
+      if (typeof window.nav === 'function') {
+        try {
+          window.nav('clientes');
+          setTimeout(function() {
+            if (typeof window.switchCliTab === 'function') {
+              window.switchCliTab('proceso');
+            }
+          }, 250);
+          console.log('nav("clientes") → switchCliTab("proceso") ✓');
+          return true;
+        } catch(e) {
+          console.error('proceso falló:', e);
+        }
+      }
+      return false;
+    }
+    
     const mapa = {
       'dashboard': 'dashboard',
       'clientes': 'clientes',
@@ -221,7 +250,7 @@
         <span>Facturas</span>
       </button>
       <button type="button" data-go="cobros">
-        <span class="ico">💵</span>
+        <span class="ico">💰</span>
         <span>Cobros</span>
       </button>
       <button type="button" data-go="mas">
@@ -268,9 +297,9 @@
     sheet.className = 'mobile-more-sheet-clean';
     sheet.innerHTML = `
       <h3>MÁS OPCIONES</h3>
-      <button type="button" data-go="auditoria">
+      <button type="button" data-go="proceso">
         <span class="icon">📋</span>
-        <span><b>Auditoría</b></span>
+        <span><b>Clientes en proceso</b></span>
       </button>
       <button type="button" data-go="sistema">
         <span class="icon">⚙️</span>
