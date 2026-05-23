@@ -464,4 +464,194 @@
     setTimeout(init, 200);
   });
 
+  // ═══════════════════════════════════════════════════════════
+  // 7. COBROS — validaciones y campo Banco
+  // ═══════════════════════════════════════════════════════════
+  function setupCobrosValidaciones() {
+    // Esperar a que regAbono exista
+    if (typeof window.regAbono !== 'function') {
+      setTimeout(setupCobrosValidaciones, 500);
+      return;
+    }
+    if (window.__cobrosFixed) return;
+    window.__cobrosFixed = true;
+
+    // 1) Agregar campo Banco al modal mAbono (después del Método)
+    function agregarCampoBanco() {
+      // Solo si no existe ya
+      if (document.getElementById('aBanco')) return;
+      const aMet = document.getElementById('aMet');
+      if (!aMet) return;
+      
+      const contMet = aMet.closest('.fr');
+      if (!contMet) return;
+      
+      // Crear contenedor del banco
+      const divBanco = document.createElement('div');
+      divBanco.className = 'fr';
+      divBanco.id = 'aBancoCont';
+      divBanco.style.display = 'none';
+      divBanco.innerHTML = `
+        <label>Banco *</label>
+        <select id="aBanco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)">
+          <option value="">Seleccionar banco...</option>
+          <option value="BHD">BHD</option>
+          <option value="Banreservas">Banreservas</option>
+          <option value="Popular">Popular</option>
+          <option value="Otros">Otros</option>
+        </select>
+      `;
+      
+      // Insertar después del campo Método
+      contMet.parentNode.insertBefore(divBanco, contMet.nextSibling);
+      
+      // Contenedor para "Otros" (texto libre)
+      const divOtros = document.createElement('div');
+      divOtros.className = 'fr';
+      divOtros.id = 'aBancoOtrosCont';
+      divOtros.style.display = 'none';
+      divOtros.innerHTML = `
+        <label>Especificar banco *</label>
+        <input type="text" id="aBancoOtros" placeholder="Nombre del banco" style="width:100%"/>
+      `;
+      contMet.parentNode.insertBefore(divOtros, divBanco.nextSibling);
+      
+      // Listener: mostrar/ocultar campo Banco según método
+      aMet.addEventListener('change', actualizarVisibilidadBanco);
+      
+      // Listener: mostrar campo "Otros" si selecciona Otros
+      document.getElementById('aBanco').addEventListener('change', function(e) {
+        const otros = document.getElementById('aBancoOtrosCont');
+        if (e.target.value === 'Otros') {
+          otros.style.display = '';
+        } else {
+          otros.style.display = 'none';
+          document.getElementById('aBancoOtros').value = '';
+        }
+      });
+      
+      // Estado inicial
+      actualizarVisibilidadBanco();
+    }
+    
+    function actualizarVisibilidadBanco() {
+      const met = document.getElementById('aMet')?.value;
+      const cont = document.getElementById('aBancoCont');
+      const otros = document.getElementById('aBancoOtrosCont');
+      if (!cont) return;
+      
+      if (met === 'Transferencia') {
+        cont.style.display = '';
+      } else {
+        cont.style.display = 'none';
+        otros.style.display = 'none';
+        // Limpiar valores cuando no es transferencia
+        const sel = document.getElementById('aBanco');
+        const inp = document.getElementById('aBancoOtros');
+        if (sel) sel.value = '';
+        if (inp) inp.value = '';
+      }
+    }
+    
+    // 2) Observar cuando se abre el modal para agregar el campo
+    // El modal puede abrirse muchas veces, hay que asegurarse de tenerlo siempre
+    const modal = document.getElementById('mAbono');
+    if (modal) {
+      // Observar cambios en el modal (cuando se abre cambia de display:none a display:flex)
+      const obs = new MutationObserver(function() {
+        if (modal.classList.contains('open') || 
+            (modal.style.display && modal.style.display !== 'none')) {
+          setTimeout(agregarCampoBanco, 100);
+        }
+      });
+      obs.observe(modal, { attributes: true, attributeFilter: ['class', 'style'] });
+      // También intentar agregar de una vez
+      agregarCampoBanco();
+    }
+    
+    // 3) Sobrescribir regAbono con validaciones
+    const _regAbonoOriginal = window.regAbono;
+    window.regAbono = async function() {
+      // Validación 1: Agente obligatorio
+      const aAgente = document.getElementById('aAgente');
+      if (!aAgente || !aAgente.value) {
+        if (typeof window.toast === 'function') {
+          window.toast('err', 'Agente requerido', 'Selecciona el agente que cobró');
+        } else {
+          alert('Selecciona el agente que cobró');
+        }
+        return;
+      }
+      
+      // Validación 2: Referencia obligatoria
+      const aRef = document.getElementById('aRef');
+      if (!aRef || !aRef.value || !aRef.value.trim()) {
+        if (typeof window.toast === 'function') {
+          window.toast('err', 'Referencia requerida', 'Escribe una referencia');
+        } else {
+          alert('Escribe una referencia');
+        }
+        return;
+      }
+      
+      // Validación 3: Si es transferencia, banco obligatorio
+      const metodo = document.getElementById('aMet')?.value;
+      if (metodo === 'Transferencia') {
+        const banco = document.getElementById('aBanco')?.value;
+        if (!banco) {
+          if (typeof window.toast === 'function') {
+            window.toast('err', 'Banco requerido', 'Selecciona el banco de la transferencia');
+          } else {
+            alert('Selecciona el banco de la transferencia');
+          }
+          return;
+        }
+        // Si banco es "Otros", validar texto
+        if (banco === 'Otros') {
+          const bancoOtros = document.getElementById('aBancoOtros')?.value;
+          if (!bancoOtros || !bancoOtros.trim()) {
+            if (typeof window.toast === 'function') {
+              window.toast('err', 'Banco requerido', 'Escribe el nombre del banco');
+            } else {
+              alert('Escribe el nombre del banco');
+            }
+            return;
+          }
+        }
+      }
+      
+      // Interceptar API.post para agregar el banco al objeto
+      const apiOriginal = window.API?.post;
+      if (apiOriginal && metodo === 'Transferencia') {
+        window.API.post = async function(tabla, datos) {
+          if (tabla === 'abonos' && datos && !datos.banco) {
+            // Determinar el banco final
+            const bancoSel = document.getElementById('aBanco')?.value;
+            const bancoFinal = bancoSel === 'Otros' 
+              ? document.getElementById('aBancoOtros')?.value?.trim() 
+              : bancoSel;
+            datos.banco = bancoFinal || null;
+          }
+          return apiOriginal.call(this, tabla, datos);
+        };
+      }
+      
+      try {
+        // Llamar al regAbono original
+        const resultado = await _regAbonoOriginal.apply(this, arguments);
+        return resultado;
+      } finally {
+        // Restaurar API.post original
+        if (apiOriginal) {
+          window.API.post = apiOriginal;
+        }
+      }
+    };
+    
+    console.log('%c✓ Cobros: validaciones + Banco aplicados', 'color:#10b981;font-weight:bold');
+  }
+  
+  // Iniciar después de un segundo
+  setTimeout(setupCobrosValidaciones, 1000);
+
 })();
