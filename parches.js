@@ -631,3 +631,56 @@
 
   setInterval(fix, 700);
 })();
+/* ===== NEXU PRO HOTFIX v3.2 - ACCIONES CLIENTES MÓVIL ===== */
+(function () {
+  "use strict";
+
+  if (window.__NEXU_CLIENT_ACTIONS_V32__) return;
+  window.__NEXU_CLIENT_ACTIONS_V32__ = true;
+
+  const MOBILE_MAX = 768;
+  const isMobile = () => window.innerWidth <= MOBILE_MAX;
+
+  function fix() {
+    if (!isMobile()) return;
+
+    document
+      .querySelectorAll(".acc-backdrop, .modal-backdrop, .dropdown-backdrop, [class*='backdrop'], [class*='overlay']")
+      .forEach(el => {
+        el.style.pointerEvents = "none";
+      });
+
+    document
+      .querySelectorAll(".acc-menu, .actions-menu, .dropdown-menu, .client-actions-menu, [class*='acciones'], [class*='action'], [class*='dropdown']")
+      .forEach(menu => {
+        menu.style.position = "fixed";
+        menu.style.zIndex = "2147483647";
+        menu.style.pointerEvents = "auto";
+        menu.style.opacity = "1";
+        menu.style.visibility = "visible";
+
+        menu.querySelectorAll("button, a, [role='button'], [onclick]").forEach(btn => {
+          btn.style.pointerEvents = "auto";
+          btn.style.touchAction = "manipulation";
+        });
+      });
+
+    const openMenu = document.querySelector(
+      ".acc-menu, .actions-menu, .dropdown-menu, .client-actions-menu, [class*='acciones'], [class*='action'], [class*='dropdown']"
+    );
+
+    const bottomNav = document.querySelector(".mobile-bottom-nav-v31");
+
+    if (openMenu && bottomNav) {
+      bottomNav.style.zIndex = "999";
+    } else if (bottomNav) {
+      bottomNav.style.zIndex = "2147483000";
+    }
+  }
+
+  document.addEventListener("click", () => setTimeout(fix, 60), true);
+  document.addEventListener("touchend", () => setTimeout(fix, 60), true);
+  document.addEventListener("DOMContentLoaded", fix);
+
+  setInterval(fix, 700);
+})();
