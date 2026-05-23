@@ -1,3 +1,49 @@
+/* ==========================================================================
+   NEXU PRO - RESCATE MÓVIL v0
+   Desactiva parches móviles inestables en iPhone/Safari.
+   Pegar al INICIO de parches.js.
+   ========================================================================== */
+
+(function () {
+  "use strict";
+
+  const isMobile = window.innerWidth <= 768;
+
+  if (!isMobile) return;
+
+  window.__NEXU_PRO_V31__ = true;
+  window.__NEXU_PRO_MOBILE_APP_V3__ = true;
+  window.__NEXU_MOBILE_FIX_V31__ = true;
+  window["nexu-pro-mobile-app-v3"] = true;
+  window["nexu-pro-mobile-completo-v3-1-corregido"] = true;
+  window["nexu-pro-mobile-v3-2-estable"] = true;
+
+  function cleanBrokenMobilePatch() {
+    document
+      .querySelectorAll(
+        ".mobile-bottom-nav-v3, .mobile-more-sheet-v3, .mobile-bottom-nav-v31, .mobile-more-sheet-v31, .mobile-bottom-nav-nexu, .mobile-more-sheet-nexu, .mobile-view-nexu"
+      )
+      .forEach(el => el.remove());
+
+    document.body.classList.remove("nexu-layer-open");
+
+    document
+      .querySelectorAll(".nexu-hidden-for-layer, .is-blocked")
+      .forEach(el => {
+        el.classList.remove("nexu-hidden-for-layer");
+        el.classList.remove("is-blocked");
+        el.style.pointerEvents = "";
+        el.style.display = "";
+        el.style.zIndex = "";
+        el.style.opacity = "";
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", cleanBrokenMobilePatch);
+
+  setTimeout(cleanBrokenMobilePatch, 300);
+  setTimeout(cleanBrokenMobilePatch, 1000);
+})();
 /* ═══════════════════════════════════════════════════════════════════════
    NEXUS PRO - PARCHES MÓVIL (versión limpia)
    ═══════════════════════════════════════════════════════════════════════
