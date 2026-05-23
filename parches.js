@@ -332,3 +332,244 @@ document.addEventListener("touchend",()=>setTimeout(()=>{init();state();},120),t
 let tries=0;
 const timer=setInterval(()=>{tries++;init();state();if(tries>80)clearInterval(timer);},500);
 })();
+/* ==========================================================================
+   NEXU PRO - HOTFIX MÓVIL v3.4
+   Corrige menú de acciones en Clientes que se ve opaco/detrás y no ejecuta.
+   Aplicar al FINAL de parches.js o usar como parche adicional.
+   Solo afecta web móvil <= 768px.
+   ========================================================================== */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXU_ACTION_MENU_V34__) return;
+  window.__NEXU_ACTION_MENU_V34__ = true;
+
+  const MOBILE_MAX = 768;
+  const isMobile = () => window.innerWidth <= MOBILE_MAX;
+  const qa = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  function normalize(txt) {
+    return String(txt || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function visible(el) {
+    if (!el) return false;
+    const st = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    return st.display !== "none" && st.visibility !== "hidden" && r.width > 0 && r.height > 0;
+  }
+
+  function isActionPanel(el) {
+    if (!el || !visible(el)) return false;
+
+    const txt = normalize(el.innerText || el.textContent || "");
+    const cls = normalize(el.className || "");
+
+    return (
+      txt.includes("cobros guardados") ||
+      txt.includes("certificado pdf") ||
+      txt.includes("documentos") ||
+      txt.includes("enviar coberturas whatsapp") ||
+      txt.includes("inhabilitar cliente") ||
+      cls.includes("acciones") ||
+      cls.includes("action-menu") ||
+      cls.includes("client-actions") ||
+      cls.includes("acc-menu")
+    );
+  }
+
+  function findActionPanel() {
+    const nodes = qa("div, section, article, aside, nav");
+    return nodes.find(isActionPanel) || null;
+  }
+
+  function cleanOverlay() {
+    qa("[class*='overlay'], [class*='backdrop'], .modal-backdrop, .acc-backdrop").forEach(el => {
+      const txt = normalize(el.innerText || "");
+      const cls = normalize(el.className || "");
+
+      if (
+        txt.includes("cobros guardados") ||
+        txt.includes("certificado pdf") ||
+        txt.includes("documentos") ||
+        txt.includes("inhabilitar cliente")
+      ) return;
+
+      el.style.pointerEvents = "none";
+      el.style.zIndex = "1000";
+      el.style.touchAction = "none";
+
+      if (!txt || txt.length < 25 || cls.includes("backdrop") || cls.includes("overlay")) {
+        el.style.opacity = el.style.opacity || "1";
+      }
+    });
+  }
+
+  function closePanel(panel) {
+    if (!panel) return;
+
+    panel.style.display = "none";
+    panel.style.visibility = "hidden";
+    panel.style.pointerEvents = "none";
+
+    qa(".mobile-bottom-nav-nexu").forEach(nav => {
+      nav.classList.remove("nexu-hidden-for-layer");
+      nav.style.display = "";
+      nav.style.pointerEvents = "auto";
+    });
+
+    cleanOverlay();
+  }
+
+  function liftPanel(panel) {
+    if (!panel || !isMobile()) return;
+
+    if (panel.parentElement !== document.body) {
+      try {
+        document.body.appendChild(panel);
+      } catch (e) {}
+    }
+
+    panel.classList.add("nexu-action-panel-v34");
+
+    panel.style.position = "fixed";
+    panel.style.left = "50%";
+    panel.style.top = "50%";
+    panel.style.transform = "translate(-50%, -50%)";
+    panel.style.width = "min(92vw, 520px)";
+    panel.style.maxHeight = "78vh";
+    panel.style.overflowY = "auto";
+    panel.style.zIndex = "2147483647";
+    panel.style.opacity = "1";
+    panel.style.visibility = "visible";
+    panel.style.pointerEvents = "auto";
+    panel.style.filter = "none";
+    panel.style.backdropFilter = "none";
+    panel.style.webkitBackdropFilter = "none";
+    panel.style.background = "#ffffff";
+    panel.style.borderRadius = "26px";
+    panel.style.boxShadow = "0 24px 70px rgba(15, 23, 42, .32)";
+    panel.style.touchAction = "manipulation";
+
+    panel.querySelectorAll("button, a, [role='button'], [onclick]").forEach(btn => {
+      btn.style.pointerEvents = "auto";
+      btn.style.touchAction = "manipulation";
+      btn.style.opacity = "1";
+      btn.style.visibility = "visible";
+
+      if (btn.dataset.nexuV34Bound === "1") return;
+      btn.dataset.nexuV34Bound = "1";
+
+      btn.addEventListener("touchend", function (ev) {
+        ev.stopPropagation();
+        try { this.click(); } catch (e) {}
+      }, { passive: true, capture: true });
+
+      btn.addEventListener("click", function () {
+        setTimeout(() => {
+          closePanel(panel);
+        }, 220);
+      }, true);
+    });
+  }
+
+  function addTapOutside() {
+    if (window.__NEXU_ACTION_MENU_V34_OUTSIDE__) return;
+    window.__NEXU_ACTION_MENU_V34_OUTSIDE__ = true;
+
+    document.addEventListener("touchend", function (ev) {
+      if (!isMobile()) return;
+      const current = findActionPanel();
+      if (!current || !visible(current)) return;
+      if (current.contains(ev.target)) return;
+
+      closePanel(current);
+    }, { passive: true, capture: true });
+  }
+
+  function fix() {
+    if (!isMobile()) return;
+
+    cleanOverlay();
+
+    const panel = findActionPanel();
+
+    if (panel) {
+      liftPanel(panel);
+      addTapOutside();
+
+      qa(".mobile-bottom-nav-nexu").forEach(nav => {
+        nav.classList.add("nexu-hidden-for-layer");
+        nav.style.display = "none";
+        nav.style.pointerEvents = "none";
+      });
+    } else {
+      qa(".mobile-bottom-nav-nexu").forEach(nav => {
+        nav.classList.remove("nexu-hidden-for-layer");
+        nav.style.display = "";
+        nav.style.pointerEvents = "auto";
+      });
+    }
+  }
+
+  function injectCSS() {
+    if (document.getElementById("nexu-action-menu-v34-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nexu-action-menu-v34-css";
+    style.textContent = `
+      @media (max-width: ${MOBILE_MAX}px) {
+        .nexu-action-panel-v34 {
+          color: #0f172a !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+          pointer-events: auto !important;
+          filter: none !important;
+          -webkit-filter: none !important;
+        }
+
+        .nexu-action-panel-v34 * {
+          pointer-events: auto !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+          touch-action: manipulation !important;
+        }
+
+        .nexu-action-panel-v34 button,
+        .nexu-action-panel-v34 a,
+        .nexu-action-panel-v34 [role="button"] {
+          cursor: pointer !important;
+        }
+
+        .mobile-bottom-nav-nexu.nexu-hidden-for-layer {
+          display: none !important;
+          pointer-events: none !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function init() {
+    injectCSS();
+    fix();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("click", () => setTimeout(init, 80), true);
+  document.addEventListener("touchstart", () => setTimeout(init, 40), true);
+  document.addEventListener("touchend", () => setTimeout(init, 120), true);
+
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries++;
+    init();
+    if (tries > 120) clearInterval(timer);
+  }, 500);
+})();
