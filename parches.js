@@ -621,9 +621,11 @@
       }
       
       // Interceptar API.post para agregar el banco al objeto
-      const apiOriginal = window.API?.post;
+      // Acceder a API directamente (no window.API porque está encapsulado)
+      const apiGlobal = (typeof API !== 'undefined') ? API : window.API;
+      const apiOriginal = apiGlobal?.post;
       if (apiOriginal && metodo === 'Transferencia') {
-        window.API.post = async function(tabla, datos) {
+        apiGlobal.post = async function(tabla, datos) {
           if (tabla === 'abonos' && datos && !datos.banco) {
             // Determinar el banco final
             const bancoSel = document.getElementById('aBanco')?.value;
@@ -643,7 +645,7 @@
       } finally {
         // Restaurar API.post original
         if (apiOriginal) {
-          window.API.post = apiOriginal;
+          apiGlobal.post = apiOriginal;
         }
       }
     };
@@ -721,10 +723,26 @@
     else alert(title + "\n" + (msg || ""));
   }
 
-  function st() { return window.ST || {}; }
+  function st() { 
+    // Acceder a ST directamente (variable global del sistema, no window.ST)
+    try { 
+      return (typeof ST !== 'undefined') ? ST : (window.ST || {}); 
+    } catch(e) { 
+      return window.ST || {}; 
+    }
+  }
   function getAgentes() { 
     const agt = Array.isArray(st().agentes) ? st().agentes : [];
     return agt;
+  }
+  
+  // Acceder a API directamente
+  function getAPI() {
+    try {
+      return (typeof API !== 'undefined') ? API : window.API;
+    } catch(e) {
+      return window.API;
+    }
   }
   
   // Cargar agentes desde API si ST está vacío
@@ -740,12 +758,11 @@
     }
     
     // Último recurso: cargar directamente desde API
-    if (window.API && typeof window.API.get === "function") {
+    const api = getAPI();
+    if (api && typeof api.get === "function") {
       try {
-        const data = await window.API.get("agentes", "select=*&order=nom");
+        const data = await api.get("agentes", "select=*&order=nom");
         if (Array.isArray(data) && data.length > 0) {
-          // Guardar en ST para futuras llamadas
-          if (window.ST) window.ST.agentes = data;
           return data;
         }
       } catch (e) {
@@ -759,9 +776,10 @@
 
   async function getAbonos() {
     // SIEMPRE cargar desde API porque ST.abonos no existe en NEXUS PRO
-    if (window.API && typeof window.API.get === "function") {
+    const api = getAPI();
+    if (api && typeof api.get === "function") {
       try {
-        const data = await window.API.get("abonos", "select=*&order=fecha.desc&limit=5000");
+        const data = await api.get("abonos", "select=*&order=fecha.desc&limit=5000");
         return Array.isArray(data) ? data : [];
       } catch (e) {
         console.warn("NEXUS V2: no se pudieron cargar abonos:", e);
@@ -772,9 +790,10 @@
   }
 
   async function getTransferencias() {
-    if (window.API && typeof window.API.get === "function") {
+    const api = getAPI();
+    if (api && typeof api.get === "function") {
       try {
-        const data = await window.API.get(TRANSFER_TABLE, "select=*&order=fecha.desc,created_at.desc&limit=1000");
+        const data = await api.get(TRANSFER_TABLE, "select=*&order=fecha.desc,created_at.desc&limit=1000");
         return Array.isArray(data) ? data : [];
       } catch (e) {
         return [];
@@ -1191,7 +1210,8 @@
       }
     }
 
-    if (!window.API?.post) return toastSafe("err", "API no disponible", "No se encontró API.post");
+    const api = getAPI();
+    if (!api?.post) return toastSafe("err", "API no disponible", "No se encontró API.post");
 
     const btn = q("#nxTA2Btn");
     if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
@@ -1199,7 +1219,7 @@
     const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today() };
 
     try {
-      await window.API.post(TRANSFER_TABLE, payload);
+      await api.post(TRANSFER_TABLE, payload);
       if (typeof window.logAudit === "function") {
         window.logAudit("TRANSFERENCIA_AGENTE", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : ""), "Cobros");
       }
