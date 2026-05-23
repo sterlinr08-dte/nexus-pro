@@ -722,7 +722,38 @@
   }
 
   function st() { return window.ST || {}; }
-  function getAgentes() { return Array.isArray(st().agentes) ? st().agentes : []; }
+  function getAgentes() { 
+    const agt = Array.isArray(st().agentes) ? st().agentes : [];
+    return agt;
+  }
+  
+  // Cargar agentes desde API si ST está vacío
+  async function getAgentesAsync() {
+    let agt = getAgentes();
+    if (agt.length > 0) return agt;
+    
+    // Esperar a que ST.agentes se llene
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 250));
+      agt = getAgentes();
+      if (agt.length > 0) return agt;
+    }
+    
+    // Último recurso: cargar directamente desde API
+    if (window.API && typeof window.API.get === "function") {
+      try {
+        const data = await window.API.get("agentes", "select=*&order=nom");
+        if (Array.isArray(data) && data.length > 0) {
+          // Guardar en ST para futuras llamadas
+          if (window.ST) window.ST.agentes = data;
+          return data;
+        }
+      } catch (e) {
+        console.warn("No se pudieron cargar agentes desde API:", e);
+      }
+    }
+    return [];
+  }
   function getClientes() { return Array.isArray(st().clientes) ? st().clientes : []; }
   function getFacturas() { return Array.isArray(st().facturas) ? st().facturas : []; }
 
@@ -1006,12 +1037,8 @@
       }
       wrap.innerHTML = '<div class="nc p5 nx-loading-v2"><div class="loading"><div class="spin"></div> Cargando reporte premium...</div></div>';
 
-      // ESPERAR a que los agentes estén cargados
-      let intentos = 0;
-      while (getAgentes().length === 0 && intentos < 10) {
-        await new Promise(r => setTimeout(r, 400));
-        intentos++;
-      }
+      // Cargar agentes (con fallback a API si ST está vacío)
+      await getAgentesAsync();
 
       const [abonos, transferencias] = await Promise.all([getAbonos(), getTransferencias()]);
       const stats = buildStats(abonos, transferencias);
@@ -1115,31 +1142,25 @@
     if (q("#nxTA2BancoOtroWrap")) q("#nxTA2BancoOtroWrap").style.display = banco === "Otros" ? "block" : "none";
   }
 
-  window.nxAbrirTransferenciaAgenteV2 = function () {
+  window.nxAbrirTransferenciaAgenteV2 = async function () {
     createTransferModal();
-    // IMPORTANTE: esperar un momento y recargar agentes desde ST 
-    // (puede que no estuvieran cargados al inicio)
-    const tryFill = function(intentos) {
-      const agentes = getAgentes();
-      if (agentes.length > 0) {
-        fillAgentesSelects();
-        toggleBancoTransfer();
-        q("#nxModalTransferAgenteV2")?.classList.add("open");
-        return;
+    
+    // Mostrar modal abierto con loading
+    q("#nxModalTransferAgenteV2")?.classList.add("open");
+    
+    // Cargar agentes (con fallback a API)
+    const agentes = await getAgentesAsync();
+    
+    if (agentes.length === 0) {
+      if (typeof window.toast === 'function') {
+        window.toast('err', 'Sin agentes', 'No hay agentes registrados en el sistema. Crea agentes desde Configuración primero.');
       }
-      if (intentos < 10) {
-        setTimeout(() => tryFill(intentos + 1), 300);
-      } else {
-        // Mostrar modal igual, pero con aviso
-        fillAgentesSelects();
-        toggleBancoTransfer();
-        q("#nxModalTransferAgenteV2")?.classList.add("open");
-        if (typeof window.toast === 'function') {
-          window.toast('err', 'Sin agentes', 'No se encontraron agentes cargados en el sistema');
-        }
-      }
-    };
-    tryFill(0);
+      return;
+    }
+    
+    // Llenar los selects con los agentes cargados
+    fillAgentesSelects();
+    toggleBancoTransfer();
   };
 
   window.nxCerrarTransferenciaAgenteV2 = function () {
