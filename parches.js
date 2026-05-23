@@ -1307,3 +1307,142 @@
     setTimeout(bindDashboardCobrado, 120);
   });
 })();
+
+/* ==========================================================================
+   NEXUS PRO - HOTFIX V55
+   Corrección final:
+   - Expone ST/API directos como window.ST/window.API cuando el sistema los
+     declaró con const/let.
+   - Repara dropdowns vacíos de transferencia entre agentes.
+   - Refresca Reporte por Agente una sola vez, sin parpadeo.
+   ========================================================================== */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_HOTFIX_ST_API_V55__) return;
+  window.__NEXUS_HOTFIX_ST_API_V55__ = true;
+
+  function getSTSafe() {
+    try {
+      if (typeof ST !== "undefined" && ST) return ST;
+    } catch (e) {}
+    return window.ST || {};
+  }
+
+  function getAPISafe() {
+    try {
+      if (typeof API !== "undefined" && API) return API;
+    } catch (e) {}
+    return window.API || null;
+  }
+
+  function exposeSafeGlobals() {
+    const st = getSTSafe();
+    const api = getAPISafe();
+
+    if (st && !window.ST) {
+      try { window.ST = st; } catch (e) {}
+    }
+
+    if (api && !window.API) {
+      try { window.API = api; } catch (e) {}
+    }
+  }
+
+  function getAgenteName(a) {
+    return String(a?.nom || a?.nombre || a?.name || "Agente");
+  }
+
+  function esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function repararSelectsAgentes() {
+    exposeSafeGlobals();
+
+    const st = getSTSafe();
+    const agentes = Array.isArray(st.agentes) ? st.agentes : [];
+
+    if (!agentes.length) return;
+
+    const html = '<option value="">Seleccionar...</option>' + agentes.map(a => {
+      return `<option value="${esc(a.id)}">${esc(getAgenteName(a))}</option>`;
+    }).join("");
+
+    ["nxTA2Desde", "nxTA2Hacia", "nxTADesde", "nxTAHacia"].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel && sel.options.length <= 1) {
+        sel.innerHTML = html;
+      }
+    });
+  }
+
+  function wrapOpeners() {
+    ["nxAbrirTransferenciaAgenteV2", "nxAbrirTransferenciaAgente"].forEach(fn => {
+      if (typeof window[fn] !== "function") return;
+      if (window[fn].__nexusV55Wrapped) return;
+
+      const original = window[fn];
+      const wrapped = function () {
+        exposeSafeGlobals();
+        const result = original.apply(this, arguments);
+        setTimeout(repararSelectsAgentes, 80);
+        setTimeout(repararSelectsAgentes, 300);
+        return result;
+      };
+
+      wrapped.__nexusV55Wrapped = true;
+      window[fn] = wrapped;
+    });
+  }
+
+  function refreshReporteOnce() {
+    exposeSafeGlobals();
+
+    if (window.__NEXUS_V55_REPORT_REFRESHED__) return;
+    const inReport = document.querySelector("#v-rep-agente.view.on") || document.querySelector("#rAgt");
+    if (!inReport) return;
+
+    window.__NEXUS_V55_REPORT_REFRESHED__ = true;
+
+    setTimeout(function () {
+      try {
+        if (typeof window.nxRefrescarReporteAgentesV2 === "function") {
+          window.nxRefrescarReporteAgentesV2();
+        } else if (typeof window.rRepAgt === "function") {
+          window.rRepAgt();
+        }
+      } catch (e) {
+        console.warn("NEXUS V55: no se pudo refrescar reporte por agente", e);
+      }
+    }, 350);
+  }
+
+  function init() {
+    exposeSafeGlobals();
+    wrapOpeners();
+    repararSelectsAgentes();
+    refreshReporteOnce();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  } else {
+    init();
+  }
+
+  document.addEventListener("click", function () {
+    setTimeout(function () {
+      exposeSafeGlobals();
+      wrapOpeners();
+      repararSelectsAgentes();
+    }, 120);
+  }, true);
+})();
+
