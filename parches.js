@@ -355,11 +355,96 @@
     console.log('%c⚙ Parches NEXUS PRO Móvil cargado', 'color:#2563eb;font-weight:bold');
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // 6. FIX MENÚ ⋮ (acc-menu) - sobrescribe la función original
+  // ═══════════════════════════════════════════════════════════
+  function fixToggleAccMenu() {
+    if (typeof window.toggleAccMenu !== 'function') {
+      // Aún no se cargó, reintentar
+      setTimeout(fixToggleAccMenu, 500);
+      return;
+    }
+    
+    if (window.__accMenuFixed) return;
+    window.__accMenuFixed = true;
+    
+    const original = window.toggleAccMenu;
+    
+    window.toggleAccMenu = function(ev, cid) {
+      ev.stopPropagation();
+      const menu = document.getElementById('accMenu_' + cid);
+      if (!menu) return;
+      
+      const estaAbierto = menu.style.display === 'block';
+      
+      // Cerrar otros menús
+      if (typeof window.cerrarAccMenus === 'function') {
+        window.cerrarAccMenus();
+      }
+      document.querySelectorAll('.acc-backdrop').forEach(b => b.remove());
+      
+      if (estaAbierto) return;
+      
+      const esMovil = window.innerWidth <= 768;
+      
+      // Limpiar estilos previos
+      menu.style.cssText = '';
+      menu.style.display = 'block';
+      menu.style.position = 'fixed';
+      menu.style.zIndex = '999999'; // SUPER ALTO para estar por encima de todo
+      
+      if (esMovil) {
+        // Móvil: hoja flotante grande, centrada
+        menu.style.left = '16px';
+        menu.style.right = '16px';
+        menu.style.bottom = '20px';
+        menu.style.top = 'auto';
+        menu.style.maxHeight = '70vh';
+        menu.style.overflowY = 'auto';
+        menu.style.webkitOverflowScrolling = 'touch';
+        menu.style.borderRadius = '20px';
+        menu.style.boxShadow = '0 20px 60px rgba(15,23,42,.3)';
+        menu.style.background = '#ffffff';
+        menu.style.padding = '8px';
+        
+        // Crear backdrop CON z-index MENOR que el menú
+        const bd = document.createElement('div');
+        bd.className = 'acc-backdrop';
+        bd.style.position = 'fixed';
+        bd.style.inset = '0';
+        bd.style.background = 'rgba(15,23,42,.4)';
+        bd.style.zIndex = '999998'; // MENOR que el menú
+        bd.onclick = () => {
+          if (typeof window.cerrarAccMenus === 'function') {
+            window.cerrarAccMenus();
+          }
+        };
+        document.body.appendChild(bd);
+      } else {
+        // PC: menú junto al botón
+        const btn = ev.currentTarget.getBoundingClientRect();
+        menu.style.top = (btn.bottom + 6) + 'px';
+        const ancho = menu.offsetWidth || 230;
+        let left = btn.right - ancho;
+        if (left < 8) left = 8;
+        menu.style.left = left + 'px';
+        menu.style.right = 'auto';
+        if (btn.bottom + menu.offsetHeight > window.innerHeight - 10) {
+          menu.style.top = (btn.top - menu.offsetHeight - 6) + 'px';
+        }
+      }
+    };
+    
+    console.log('%c✓ toggleAccMenu sobrescrito', 'color:#10b981;font-weight:bold');
+  }
+
   // Aplicar al cargar
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', fixToggleAccMenu);
   } else {
     init();
+    fixToggleAccMenu();
   }
 
   // Reaplica al cambiar tamaño (rotar pantalla)
