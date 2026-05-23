@@ -573,3 +573,123 @@ const timer=setInterval(()=>{tries++;init();state();if(tries>80)clearInterval(ti
     if (tries > 120) clearInterval(timer);
   }, 500);
 })();
+/* ==========================================================================
+   NEXU PRO - HOTFIX MÓVIL v3.5
+   Corrige panel de acciones metido debajo de la barra superior en móvil.
+   Aplicar al FINAL de parches.js.
+   Solo móvil web <= 768px.
+   ========================================================================== */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXU_ACTION_PANEL_SAFE_AREA_V35__) return;
+  window.__NEXU_ACTION_PANEL_SAFE_AREA_V35__ = true;
+
+  const MOBILE_MAX = 768;
+  const isMobile = () => window.innerWidth <= MOBILE_MAX;
+  const qa = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  function normalize(txt) {
+    return String(txt || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function visible(el) {
+    if (!el) return false;
+    const st = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    return st.display !== "none" && st.visibility !== "hidden" && r.width > 0 && r.height > 0;
+  }
+
+  function isActionPanel(el) {
+    if (!el || !visible(el)) return false;
+
+    const txt = normalize(el.innerText || el.textContent || "");
+    const cls = normalize(el.className || "");
+
+    return (
+      txt.includes("cobros guardados") ||
+      txt.includes("certificado pdf") ||
+      txt.includes("documentos") ||
+      txt.includes("enviar coberturas whatsapp") ||
+      txt.includes("inhabilitar cliente") ||
+      cls.includes("nexu-action-panel-v34") ||
+      cls.includes("acciones") ||
+      cls.includes("action-menu") ||
+      cls.includes("client-actions") ||
+      cls.includes("acc-menu")
+    );
+  }
+
+  function fixPanelPosition() {
+    if (!isMobile()) return;
+
+    qa("div, section, article, aside, nav").filter(isActionPanel).forEach(panel => {
+      panel.style.position = "fixed";
+      panel.style.left = "50%";
+      panel.style.top = "calc(env(safe-area-inset-top, 0px) + 92px)";
+      panel.style.bottom = "auto";
+      panel.style.transform = "translateX(-50%)";
+      panel.style.width = "min(92vw, 520px)";
+      panel.style.maxHeight = "calc(100dvh - 190px)";
+      panel.style.overflowY = "auto";
+      panel.style.zIndex = "2147483647";
+      panel.style.opacity = "1";
+      panel.style.visibility = "visible";
+      panel.style.pointerEvents = "auto";
+      panel.style.background = "#fff";
+      panel.style.borderRadius = "26px";
+      panel.style.boxShadow = "0 24px 70px rgba(15,23,42,.32)";
+      panel.style.filter = "none";
+      panel.style.backdropFilter = "none";
+      panel.style.webkitBackdropFilter = "none";
+
+      panel.querySelectorAll("*").forEach(child => {
+        child.style.opacity = "1";
+        child.style.visibility = "visible";
+      });
+    });
+  }
+
+  function injectCSS() {
+    if (document.getElementById("nexu-action-panel-v35-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nexu-action-panel-v35-css";
+    style.textContent = `
+      @media (max-width: ${MOBILE_MAX}px) {
+        .nexu-action-panel-v34,
+        .nexu-action-panel-v35 {
+          top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
+          bottom: auto !important;
+          transform: translateX(-50%) !important;
+          max-height: calc(100dvh - 190px) !important;
+          overflow-y: auto !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function init() {
+    injectCSS();
+    fixPanelPosition();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("click", () => setTimeout(init, 80), true);
+  document.addEventListener("touchend", () => setTimeout(init, 120), true);
+  window.addEventListener("resize", init);
+
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries++;
+    init();
+    if (tries > 80) clearInterval(timer);
+  }, 500);
+})();
