@@ -727,16 +727,17 @@
   function getFacturas() { return Array.isArray(st().facturas) ? st().facturas : []; }
 
   async function getAbonos() {
-    if (Array.isArray(st().abonos) && st().abonos.length) return st().abonos;
+    // SIEMPRE cargar desde API porque ST.abonos no existe en NEXUS PRO
     if (window.API && typeof window.API.get === "function") {
       try {
         const data = await window.API.get("abonos", "select=*&order=fecha.desc&limit=5000");
         return Array.isArray(data) ? data : [];
       } catch (e) {
         console.warn("NEXUS V2: no se pudieron cargar abonos:", e);
+        return [];
       }
     }
-    return Array.isArray(st().abonos) ? st().abonos : [];
+    return [];
   }
 
   async function getTransferencias() {
@@ -1005,6 +1006,13 @@
       }
       wrap.innerHTML = '<div class="nc p5 nx-loading-v2"><div class="loading"><div class="spin"></div> Cargando reporte premium...</div></div>';
 
+      // ESPERAR a que los agentes estén cargados
+      let intentos = 0;
+      while (getAgentes().length === 0 && intentos < 10) {
+        await new Promise(r => setTimeout(r, 400));
+        intentos++;
+      }
+
       const [abonos, transferencias] = await Promise.all([getAbonos(), getTransferencias()]);
       const stats = buildStats(abonos, transferencias);
       const general = generalFromStats(stats);
@@ -1109,9 +1117,29 @@
 
   window.nxAbrirTransferenciaAgenteV2 = function () {
     createTransferModal();
-    fillAgentesSelects();
-    toggleBancoTransfer();
-    q("#nxModalTransferAgenteV2")?.classList.add("open");
+    // IMPORTANTE: esperar un momento y recargar agentes desde ST 
+    // (puede que no estuvieran cargados al inicio)
+    const tryFill = function(intentos) {
+      const agentes = getAgentes();
+      if (agentes.length > 0) {
+        fillAgentesSelects();
+        toggleBancoTransfer();
+        q("#nxModalTransferAgenteV2")?.classList.add("open");
+        return;
+      }
+      if (intentos < 10) {
+        setTimeout(() => tryFill(intentos + 1), 300);
+      } else {
+        // Mostrar modal igual, pero con aviso
+        fillAgentesSelects();
+        toggleBancoTransfer();
+        q("#nxModalTransferAgenteV2")?.classList.add("open");
+        if (typeof window.toast === 'function') {
+          window.toast('err', 'Sin agentes', 'No se encontraron agentes cargados en el sistema');
+        }
+      }
+    };
+    tryFill(0);
   };
 
   window.nxCerrarTransferenciaAgenteV2 = function () {
