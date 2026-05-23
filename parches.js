@@ -428,3 +428,184 @@
     if (tries > 30) clearInterval(timer);
   }, 700);
 })();
+
+
+/* ==========================================================================
+   INICIO FASE 1 PEGADA - REPORTE PREMIUM POR AGENTE
+   Pegado automáticamente al final del parches.js actual.
+   ========================================================================== */
+
+/* ===========================================================================
+   NEXUS PRO - FASE 1
+   REPORTE PREMIUM POR AGENTE + DASHBOARD COBRADO
+   Versión: 1.0
+   Solo parches.js. No modifica index.html.
+   =========================================================================== */
+(function () {
+  'use strict';
+  if (window.__NEXUS_FASE1_REPORTE_PREMIUM_AGENTES__) return;
+  window.__NEXUS_FASE1_REPORTE_PREMIUM_AGENTES__ = true;
+
+  const PATCH_ID = 'fase1_reporte_premium_agentes_v1';
+  const q = (s, r = document) => r.querySelector(s);
+  const qa = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  function normalize(txt) {
+    return String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+  }
+  function esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+  function money(v) {
+    if (typeof window.fmt === 'function') return window.fmt(Number(v || 0));
+    return 'RD$ ' + Number(v || 0).toLocaleString('es-DO', { maximumFractionDigits: 2 });
+  }
+
+  function getState() { return window.ST || {}; }
+  function getAgentes() { return Array.isArray(getState().agentes) ? getState().agentes : []; }
+  function getClientes() { return Array.isArray(getState().clientes) ? getState().clientes : []; }
+  function getFacturas() { return Array.isArray(getState().facturas) ? getState().facturas : []; }
+  function getClienteById(id) { return getClientes().find(c => String(c.id) === String(id)); }
+
+  async function getAbonos() {
+    const st = getState();
+    if (Array.isArray(st.abonos) && st.abonos.length) return st.abonos;
+    if (window.API && typeof window.API.get === 'function') {
+      try {
+        const data = await window.API.get('abonos', 'select=*&order=fecha.desc&limit=5000');
+        return Array.isArray(data) ? data : [];
+      } catch (e) { console.warn('NEXUS FASE 1: no se pudieron cargar abonos:', e); }
+    }
+    return Array.isArray(st.abonos) ? st.abonos : [];
+  }
+
+  function getAgenteIdFromAbono(abono) {
+    return abono.agente_cobro || abono.agente_id || abono.agente || getClienteById(abono.cliente_id)?.agente_id || '';
+  }
+  function getAgenteNombre(agente) { return agente.nom || agente.nombre || agente.name || 'Sin nombre'; }
+  function getAgenteRol(agente) { return agente.cargo || agente.rol || agente.tipo || 'Agente / corredor'; }
+  function getAgenteLicencia(agente) { return agente.licencia || agente.lic || agente.codigo || 'Sin licencia'; }
+  function getInitial(name) { return String(name || 'A').trim().charAt(0).toUpperCase() || 'A'; }
+
+  function tipoMetodo(metodo) {
+    const m = normalize(metodo);
+    if (m.includes('efectivo')) return 'efectivo';
+    if (m.includes('transferencia') || m.includes('deposito') || m.includes('depósito')) return 'banco';
+    if (m.includes('cheque')) return 'cheque';
+    return 'otros';
+  }
+  function bancoNombre(abono) {
+    const raw = abono.banco || abono.banco_nombre || abono.banco_otro || abono.bank || '';
+    return String(raw || 'Sin banco').trim() || 'Sin banco';
+  }
+
+  function getFacturaClienteId(f) { return f.cliente_id || f.clienteId || f.id_cliente || ''; }
+  function getFacturaPendiente(f) {
+    const total = Number(f.total || 0), pagado = Number(f.pagado || f.cobrado || 0), estado = normalize(f.estado);
+    if (estado.includes('pagado')) return 0;
+    if (typeof f.pendiente !== 'undefined') return Number(f.pendiente || 0);
+    if (typeof f.balance !== 'undefined') return Number(f.balance || 0);
+    return Math.max(0, total - pagado);
+  }
+  function getClientePendiente(c) { return Number((c.pendiente ?? c.deuda_pendiente ?? c.balance ?? c.deuda_total ?? 0) || 0); }
+  function calcularPendienteAgente(agenteId) {
+    const clientesAgente = getClientes().filter(c => String(c.agente_id || '') === String(agenteId));
+    const ids = new Set(clientesAgente.map(c => String(c.id)));
+    const factPend = getFacturas().filter(f => ids.has(String(getFacturaClienteId(f)))).reduce((s, f) => s + getFacturaPendiente(f), 0);
+    if (factPend > 0) return factPend;
+    return clientesAgente.reduce((s, c) => s + getClientePendiente(c), 0);
+  }
+  function getMetaAgente(a) {
+    const num = Number((a.meta_mensual ?? a.meta ?? a.meta_cobros ?? a.objetivo ?? 0) || 0);
+    return num > 0 ? num : 0;
+  }
+
+  function buildAgentStats(abonos) {
+    const agentes = getAgentes(), clientes = getClientes(), stats = {};
+    agentes.forEach(a => {
+      stats[String(a.id)] = { agente: a, total: 0, efectivo: 0, banco: 0, cheque: 0, otros: 0, bancos: {}, cobros: 0, clientes: clientes.filter(c => String(c.agente_id || '') === String(a.id)).length, pendiente: calcularPendienteAgente(a.id), meta: getMetaAgente(a) };
+    });
+    abonos.forEach(abono => {
+      const agenteId = String(getAgenteIdFromAbono(abono) || 'SIN_AGENTE'), monto = Number(abono.monto || 0);
+      if (!monto) return;
+      if (!stats[agenteId]) stats[agenteId] = { agente: { id: agenteId, nom: agenteId === 'SIN_AGENTE' ? 'Sin agente asignado' : 'Agente no encontrado' }, total: 0, efectivo: 0, banco: 0, cheque: 0, otros: 0, bancos: {}, cobros: 0, clientes: 0, pendiente: 0, meta: 0 };
+      const tipo = tipoMetodo(abono.metodo);
+      stats[agenteId].total += monto; stats[agenteId][tipo] += monto; stats[agenteId].cobros += 1;
+      if (tipo === 'banco') { const banco = bancoNombre(abono); stats[agenteId].bancos[banco] = Number(stats[agenteId].bancos[banco] || 0) + monto; }
+    });
+    return Object.values(stats).sort((a, b) => b.total - a.total);
+  }
+
+  function efectividad(stat) {
+    const base = Number(stat.meta || 0) || Number(stat.total + stat.pendiente || 0);
+    if (!base) return 0;
+    return Math.min(100, Math.round((Number(stat.total || 0) / base) * 100));
+  }
+  function renderMethod(label, value, color) {
+    if (!value) return '';
+    return `<div class="nx-agent-method" style="background:${color.bg};border-color:${color.bd};color:${color.tx}"><span>${label}</span><b>${money(value)}</b></div>`;
+  }
+  function renderBanks(stat) {
+    const bancos = Object.entries(stat.bancos || {}).sort((a, b) => b[1] - a[1]);
+    if (!bancos.length) return `<div class="nx-agent-empty">Sin bancos registrados</div>`;
+    return `<div class="nx-agent-banks">${bancos.map(([banco,total])=>`<span class="nx-bank-pill">🏦 ${esc(banco)} · <b>${money(total)}</b></span>`).join('')}</div>`;
+  }
+  function renderAgentCard(stat) {
+    const a = stat.agente || {}, name = getAgenteNombre(a), pct = efectividad(stat), initials = getInitial(name);
+    let statusColor = '#059669'; if (pct < 40) statusColor = '#dc2626'; else if (pct < 70) statusColor = '#d97706';
+    return `<div class="nx-agent-card">
+      <div class="nx-agent-head"><div class="nx-agent-avatar">${esc(initials)}</div><div class="nx-agent-info"><div class="nx-agent-name">${esc(name)}</div><div class="nx-agent-role">${esc(getAgenteRol(a))}</div><div class="nx-agent-license">Licencia: ${esc(getAgenteLicencia(a))}</div></div><div class="nx-agent-effect"><div class="nx-effect-circle" style="--pct:${pct};--clr:${statusColor}"><span>${pct}%</span></div><small>Efectividad</small></div></div>
+      <div class="nx-agent-meta-row"><div><span>Clientes</span><b>${stat.clientes || 0}</b></div><div><span>Meta mensual</span><b>${stat.meta ? money(stat.meta) : 'Sin meta'}</b></div><div><span>Cobros</span><b>${stat.cobros || 0}</b></div></div>
+      <div class="nx-agent-money-main"><span>COBRADO TOTAL</span><b>${money(stat.total)}</b></div>
+      <div class="nx-agent-method-grid">${renderMethod('💵 EFECTIVO', stat.efectivo, {bg:'#f0fdf4',bd:'#bbf7d0',tx:'#059669'})}${renderMethod('🏦 BANCO', stat.banco, {bg:'#eff6ff',bd:'#bfdbfe',tx:'#2563eb'})}${renderMethod('📝 CHEQUE', stat.cheque, {bg:'#fffbeb',bd:'#fde68a',tx:'#d97706'})}${renderMethod('⋯ OTROS', stat.otros, {bg:'#f8fafc',bd:'#e2e8f0',tx:'#64748b'})}</div>
+      <div class="nx-agent-section-title">Bancos recibidos</div>${renderBanks(stat)}
+      <div class="nx-agent-bottom"><div><span>PENDIENTE</span><b class="danger">${money(stat.pendiente)}</b></div><div><span>PROGRESO</span><div class="nx-progress"><i style="width:${pct}%;background:${statusColor}"></i></div></div></div>
+    </div>`;
+  }
+
+  async function renderPremiumAgentReport() {
+    const cont = q('#rAgt'); if (!cont) return;
+    const old = q('#nxPremiumAgentReport'); if (old) old.remove();
+    const wrap = document.createElement('div'); wrap.id = 'nxPremiumAgentReport';
+    wrap.innerHTML = `<div class="nc p5"><div class="loading"><div class="spin"></div> Cargando reporte premium por agente...</div></div>`;
+    cont.insertAdjacentElement('afterbegin', wrap);
+    const stats = buildAgentStats(await getAbonos());
+    const totalCobrado = stats.reduce((s,x)=>s+Number(x.total||0),0), totalPendiente = stats.reduce((s,x)=>s+Number(x.pendiente||0),0), totalClientes = stats.reduce((s,x)=>s+Number(x.clientes||0),0);
+    wrap.innerHTML = `<div class="nc p5 nx-agent-premium-wrap"><div class="ch"><div><div class="ct">💼 Reporte premium por agente</div><div class="ct-s">Cobrado real, método de pago, bancos, clientes y efectividad</div></div><button class="btn bsm bc1" type="button" onclick="window.nxRefrescarReportePremiumAgentes()"><i class="ti ti-refresh"></i> Actualizar</button></div>
+      <div class="nx-agent-summary"><div class="green"><span>Total cobrado</span><b>${money(totalCobrado)}</b></div><div class="red"><span>Pendiente</span><b>${money(totalPendiente)}</b></div><div class="blue"><span>Clientes asignados</span><b>${totalClientes}</b></div><div class="gray"><span>Agentes</span><b>${stats.length}</b></div></div>
+      <div class="nx-agent-grid">${stats.length ? stats.map(renderAgentCard).join('') : `<div class="nx-agent-empty-card">No hay agentes o cobros registrados todavía.</div>`}</div></div>`;
+  }
+  window.nxRefrescarReportePremiumAgentes = renderPremiumAgentReport;
+
+  function wrapReporteAgente() {
+    if (window.__NEXUS_FASE1_RREPAGT_WRAPPED__) return;
+    if (typeof window.rRepAgt !== 'function') { setTimeout(wrapReporteAgente, 500); return; }
+    window.__NEXUS_FASE1_RREPAGT_WRAPPED__ = true;
+    const original = window.rRepAgt;
+    window.rRepAgt = function () { const result = original.apply(this, arguments); setTimeout(renderPremiumAgentReport, 100); return result; };
+  }
+  function goReporteAgente() {
+    if (typeof window.nav === 'function') { window.nav('rep-agente', null); setTimeout(()=>{ if (typeof window.rRepAgt === 'function') window.rRepAgt(); else renderPremiumAgentReport(); }, 180); return; }
+    const btn = qa('[onclick]').find(el => normalize(el.getAttribute('onclick')).includes('rep-agente')); if (btn) btn.click(); setTimeout(renderPremiumAgentReport, 250);
+  }
+  function bindDashboardCobrado() {
+    qa('.kpi,.card,.stat-card,.dashboard-card,[class*="kpi"],[class*="card"],.qa').forEach(card => {
+      if (card.dataset.nxCobradoPremiumBound === '1') return;
+      const txt = normalize(card.innerText || card.textContent || ''); if (!txt.includes('cobrado')) return;
+      card.dataset.nxCobradoPremiumBound = '1'; card.style.cursor = 'pointer';
+      card.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); goReporteAgente(); }, true);
+    });
+  }
+  function injectStyles() {
+    if (q('#nxPremiumAgentReportCSS')) return;
+    const style = document.createElement('style'); style.id = 'nxPremiumAgentReportCSS';
+    style.textContent = `#nxPremiumAgentReport{margin-bottom:12px}.nx-agent-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px}.nx-agent-summary>div{border-radius:16px;padding:14px;border:1px solid #e2e8f0}.nx-agent-summary span{display:block;font-size:10px;font-weight:900;color:#64748b;letter-spacing:.5px;text-transform:uppercase}.nx-agent-summary b{display:block;font-size:20px;margin-top:5px;color:#0f172a}.nx-agent-summary .green{background:#f0fdf4;border-color:#bbf7d0}.nx-agent-summary .green b{color:#059669}.nx-agent-summary .red{background:#fef2f2;border-color:#fecaca}.nx-agent-summary .red b{color:#dc2626}.nx-agent-summary .blue{background:#eff6ff;border-color:#bfdbfe}.nx-agent-summary .blue b{color:#2563eb}.nx-agent-summary .gray{background:#f8fafc}.nx-agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:12px}.nx-agent-card{background:#fff;border:1px solid #e2e8f0;border-radius:22px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.08);transition:transform .15s ease,box-shadow .15s ease}.nx-agent-card:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(15,23,42,.12)}.nx-agent-head{display:flex;align-items:center;gap:12px}.nx-agent-avatar{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;display:grid;place-items:center;font-size:18px;font-weight:900;box-shadow:0 8px 18px rgba(37,99,235,.28);flex:0 0 auto}.nx-agent-info{min-width:0;flex:1}.nx-agent-name{font-size:14px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nx-agent-role,.nx-agent-license{font-size:10px;color:#64748b;margin-top:2px;font-weight:700}.nx-agent-effect{text-align:center;flex:0 0 auto}.nx-effect-circle{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(closest-side,#fff 72%,transparent 74%),conic-gradient(var(--clr) calc(var(--pct)*1%),#e2e8f0 0)}.nx-effect-circle span{font-size:12px;font-weight:900;color:var(--clr)}.nx-agent-effect small{display:block;margin-top:3px;font-size:8px;color:#64748b;font-weight:900}.nx-agent-meta-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:13px 0}.nx-agent-meta-row>div{background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:9px}.nx-agent-meta-row span{display:block;font-size:8px;color:#64748b;font-weight:900;text-transform:uppercase}.nx-agent-meta-row b{display:block;margin-top:3px;font-size:11px;color:#0f172a;font-weight:900}.nx-agent-money-main{background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:1px solid #bbf7d0;border-radius:18px;padding:14px;margin-bottom:10px}.nx-agent-money-main span{display:block;font-size:10px;color:#059669;font-weight:900;letter-spacing:.6px}.nx-agent-money-main b{display:block;margin-top:4px;font-size:24px;line-height:1;color:#059669;font-weight:900}.nx-agent-method-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}.nx-agent-method{border:1px solid;border-radius:13px;padding:8px;min-height:54px}.nx-agent-method span{display:block;font-size:8px;font-weight:900}.nx-agent-method b{display:block;margin-top:4px;font-size:12px;font-weight:900}.nx-agent-section-title{font-size:9px;color:#64748b;font-weight:900;text-transform:uppercase;margin:6px 0}.nx-agent-banks{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}.nx-bank-pill{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:800}.nx-agent-empty{background:#f8fafc;border:1px dashed #cbd5e1;color:#94a3b8;border-radius:12px;padding:9px;font-size:10px;font-weight:700;margin-bottom:10px}.nx-agent-bottom{display:grid;grid-template-columns:1fr 1.2fr;gap:8px;margin-top:8px}.nx-agent-bottom>div{background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:10px}.nx-agent-bottom span{display:block;font-size:8px;color:#64748b;font-weight:900;text-transform:uppercase}.nx-agent-bottom b{display:block;font-size:13px;margin-top:4px;font-weight:900}.nx-agent-bottom b.danger{color:#dc2626}.nx-progress{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:8px}.nx-progress i{display:block;height:100%;border-radius:999px}.nx-agent-empty-card{background:#f8fafc;border:1px dashed #cbd5e1;color:#64748b;border-radius:18px;padding:24px;text-align:center;font-weight:800}@media(max-width:768px){.nx-agent-grid{grid-template-columns:1fr}.nx-agent-summary{grid-template-columns:repeat(2,1fr)}.nx-agent-method-grid{grid-template-columns:1fr}.nx-agent-bottom{grid-template-columns:1fr}}`;
+    document.head.appendChild(style);
+  }
+  function addChangelog() { try { const key='nexu_patch_changelog'; const list=JSON.parse(localStorage.getItem(key)||'[]'); if(list.some(x=>x.id==='fase1_reporte_premium_agentes_v1'))return; list.unshift({id:'fase1_reporte_premium_agentes_v1',version:'Fase 1',fecha:new Date().toISOString(),titulo:'Reporte premium por agente',cambios:['Dashboard COBRADO abre Reporte por Agente.','Agrega tarjetas premium con cobrado real por agente.','Incluye desglose por efectivo, banco, cheque y otros.','Muestra bancos por agente cuando existen.','Mantiene el reporte original debajo sin romper la lógica base.']}); localStorage.setItem(key,JSON.stringify(list)); } catch(e){} }
+  function init(){ injectStyles(); wrapReporteAgente(); bindDashboardCobrado(); addChangelog(); if(q('#v-rep-agente.view.on')) setTimeout(renderPremiumAgentReport,250); }
+  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('click', () => setTimeout(bindDashboardCobrado, 120), true);
+  window.addEventListener('resize', () => setTimeout(bindDashboardCobrado, 120));
+  let tries=0; const timer=setInterval(()=>{ tries++; init(); if(tries>35) clearInterval(timer); },600);
+})();
