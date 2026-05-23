@@ -1,27 +1,22 @@
 /* ===========================================================================
-   NEXU PRO - PARCHES COMPLETO MÓVIL WEB v3.1 CORREGIDO
+   NEXU PRO - PARCHES COMPLETO MÓVIL WEB v3.2 ESTABLE
    Reemplazo completo de parches.js
 
-   Objetivo:
-   - Mantener look tipo app en móvil web.
-   - Corregir barra inferior.
-   - Corregir botón Más.
-   - Corregir capas de modales y menú de acciones en Clientes.
-   - Evitar que la barra inferior bloquee modales/acciones.
-   - Quitar "Historial de actualizaciones" de Más.
-   - Agregar "Clientes en proceso" en Más.
-   - Restaurar texto Dashboard donde se haya cambiado.
-
-   Alcance:
-   - SOLO móvil web <= 768px.
-   - No toca base de datos.
-   - No modifica lógica master.
+   Corrige:
+   - Barra inferior funcional sin bloquear modales.
+   - Botón Más funcional.
+   - Menú de acciones de Clientes por encima y ejecutable.
+   - Modales cerrables.
+   - Se quita "Historial de actualizaciones" de Más.
+   - Se agrega "Clientes en proceso" en Más.
+   - Se restaura Dashboard donde aplique.
+   - Solo móvil web <= 768px.
    =========================================================================== */
 
 (function () {
   "use strict";
 
-  const PATCH_ID = "nexu-pro-mobile-completo-v3-1-corregido";
+  const PATCH_ID = "nexu-pro-mobile-v3-2-estable";
   const MOBILE_MAX = 768;
 
   if (window[PATCH_ID]) return;
@@ -47,11 +42,13 @@
     return st.display !== "none" && st.visibility !== "hidden" && r.width > 0 && r.height > 0;
   }
 
+  function isOwnPatch(el) {
+    return !!(el.closest(".mobile-bottom-nav-nexu") || el.closest(".mobile-more-sheet-nexu") || el.closest(".mobile-view-nexu"));
+  }
+
   function fireClick(el) {
     if (!el) return false;
     try {
-      el.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
-      el.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, view: window }));
       el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
       if (typeof el.click === "function") el.click();
       return true;
@@ -83,12 +80,7 @@
       "li"
     ].join(",");
 
-    const els = qa(selectors).filter(el => {
-      if (!visible(el)) return false;
-      if (el.closest(".mobile-bottom-nav-nexu")) return false;
-      if (el.closest(".mobile-more-sheet-nexu")) return false;
-      return true;
-    });
+    const els = qa(selectors).filter(el => visible(el) && !isOwnPatch(el));
 
     let found = els.find(el => {
       const txt = normalize(el.innerText || el.textContent || el.getAttribute("aria-label") || el.title || "");
@@ -107,17 +99,9 @@
 
   function callGlobal(section) {
     const functions = [
-      "showSection",
-      "mostrarSeccion",
-      "openSection",
-      "navigateTo",
-      "goTo",
-      "irA",
-      "showPage",
-      "openPage",
-      "switchSection",
-      "cambiarSeccion",
-      "loadSection"
+      "showSection", "mostrarSeccion", "openSection", "navigateTo",
+      "goTo", "irA", "showPage", "openPage", "switchSection",
+      "cambiarSeccion", "loadSection"
     ];
 
     const aliases = {
@@ -142,7 +126,6 @@
         }
       }
     }
-
     return false;
   }
 
@@ -158,6 +141,8 @@
       clientesProceso: ["Clientes en proceso", "En proceso", "Proceso"],
       historialPagos: ["Historial de pagos", "Pagos", "Cobros"]
     };
+
+    closeMoreSheet();
 
     if (fireClick(findOriginalByText(labels[section] || [section]))) return true;
     if (callGlobal(section)) return true;
@@ -183,10 +168,10 @@
   }
 
   function injectCSS() {
-    if (q("#nexu-mobile-completo-css")) return;
+    if (q("#nexu-mobile-v32-css")) return;
 
     const style = document.createElement("style");
-    style.id = "nexu-mobile-completo-css";
+    style.id = "nexu-mobile-v32-css";
     style.textContent = `
       @media (max-width: ${MOBILE_MAX}px) {
         html, body {
@@ -227,11 +212,6 @@
           -webkit-overflow-scrolling: touch !important;
         }
 
-        .permissions-grid, .roles-grid, [class*="permission"], [class*="permiso"] {
-          max-width: 100% !important;
-          overflow-x: auto !important;
-        }
-
         .mobile-bottom-nav-v3,
         .mobile-more-sheet-v3,
         .mobile-bottom-nav-v31,
@@ -245,7 +225,7 @@
           left: 12px !important;
           right: 12px !important;
           bottom: 12px !important;
-          z-index: 1000 !important;
+          z-index: 2000000 !important;
           height: 72px !important;
           display: grid !important;
           grid-template-columns: repeat(5, 1fr) !important;
@@ -261,10 +241,9 @@
           pointer-events: auto !important;
         }
 
-        .mobile-bottom-nav-nexu.is-blocked {
-          opacity: .25 !important;
+        .mobile-bottom-nav-nexu.nexu-hidden-for-layer {
+          display: none !important;
           pointer-events: none !important;
-          z-index: 10 !important;
         }
 
         .mobile-bottom-nav-nexu button {
@@ -282,7 +261,6 @@
           border-radius: 18px !important;
           cursor: pointer !important;
           touch-action: manipulation !important;
-          -webkit-tap-highlight-color: transparent !important;
         }
 
         .mobile-bottom-nav-nexu button.active {
@@ -300,7 +278,7 @@
           left: 12px !important;
           right: 12px !important;
           bottom: 92px !important;
-          z-index: 2147483001 !important;
+          z-index: 2200000 !important;
           background: rgba(255,255,255,.99) !important;
           border: 1px solid #e5e7eb !important;
           border-radius: 26px !important;
@@ -358,7 +336,7 @@
         .mobile-view-nexu {
           position: fixed;
           inset: 0;
-          z-index: 2147482000;
+          z-index: 2100000;
           background: #f8fafc;
           overflow-y: auto;
           -webkit-overflow-scrolling: touch;
@@ -541,21 +519,21 @@
           white-space: nowrap;
         }
 
-        .modal, .modal-content, .dialog, .popup,
-        [class*="modal"], [class*="dialog"], [class*="popup"] {
-          pointer-events: auto !important;
-        }
-
-        .acc-menu, .actions-menu, .dropdown-menu, .client-actions-menu,
-        [class*="acciones"], [class*="action-menu"], [class*="dropdown"] {
-          pointer-events: auto !important;
-          opacity: 1 !important;
-          visibility: visible !important;
+        .nexu-layer-open .mobile-bottom-nav-nexu {
+          display: none !important;
         }
       }
     `;
-
     document.head.appendChild(style);
+  }
+
+  function removeOldPatchUI() {
+    qa(".mobile-bottom-nav-v3, .mobile-more-sheet-v3, .mobile-bottom-nav-v31, .mobile-more-sheet-v31").forEach(el => {
+      el.classList.remove("open");
+      el.style.display = "none";
+      el.style.pointerEvents = "none";
+      el.setAttribute("aria-hidden", "true");
+    });
   }
 
   function readClientes() {
@@ -610,7 +588,7 @@
   function closeMobileView() {
     const view = q(".mobile-view-nexu");
     if (view) view.remove();
-    updateLayerState();
+    setLayerState();
   }
 
   function showClientesResumido() {
@@ -703,7 +681,7 @@
       navigate("clientes");
     });
 
-    updateLayerState();
+    setLayerState();
   }
 
   function showHistorialPagos() {
@@ -763,12 +741,17 @@
     });
     q("[data-pay-search]", view).addEventListener("input", e => render(e.target.value));
 
-    updateLayerState();
+    setLayerState();
   }
 
   function showCobrosPendientes() {
     closeMobileView();
     navigate("cobros");
+  }
+
+  function closeMoreSheet() {
+    const sheet = q(".mobile-more-sheet-nexu");
+    if (sheet) sheet.classList.remove("open");
   }
 
   function buildMoreSheet() {
@@ -814,7 +797,7 @@
       ev.stopPropagation();
       sheet.classList.remove("open");
       navigate(btn.dataset.go);
-      updateLayerState();
+      setLayerState();
     };
 
     sheet.addEventListener("click", handler, true);
@@ -826,12 +809,7 @@
   function buildBottomNav() {
     if (!isMobile()) return;
 
-    qa(".mobile-bottom-nav-v3, .mobile-more-sheet-v3, .mobile-bottom-nav-v31, .mobile-more-sheet-v31").forEach(el => {
-      el.classList.remove("open");
-      el.style.display = "none";
-      el.style.pointerEvents = "none";
-      el.setAttribute("aria-hidden", "true");
-    });
+    removeOldPatchUI();
 
     let nav = q(".mobile-bottom-nav-nexu");
     if (!nav) {
@@ -864,15 +842,13 @@
       if (target === "mas") {
         const sheet = buildMoreSheet();
         sheet.classList.toggle("open");
-        updateLayerState();
+        setLayerState();
         return;
       }
 
-      const sheet = q(".mobile-more-sheet-nexu");
-      if (sheet) sheet.classList.remove("open");
-
+      closeMoreSheet();
       navigate(target);
-      updateLayerState();
+      setLayerState();
     };
 
     nav.addEventListener("click", handler, true);
@@ -888,7 +864,7 @@
       if (root.classList.contains("mobile-bottom-nav-nexu")) return;
 
       qa("a, button, [role='button'], .nav-item, .sidebar-item, li, div, span", root).forEach(el => {
-        if (el.closest(".mobile-bottom-nav-nexu")) return;
+        if (isOwnPatch(el)) return;
 
         const attrs = [
           el.getAttribute("data-section"),
@@ -922,6 +898,7 @@
     const cards = qa("button, a, .card, .stat-card, .dashboard-card, [class*='card'], [role='button']");
 
     cards.forEach(el => {
+      if (isOwnPatch(el)) return;
       if (el.dataset.nexuCardBound === "1") return;
       const text = normalize(el.innerText || el.textContent || "");
 
@@ -933,9 +910,7 @@
           ev.stopPropagation();
           showHistorialPagos();
         }, true);
-      }
-
-      if (text.includes("pendiente") && !text.includes("historial")) {
+      } else if (text.includes("pendiente") && !text.includes("historial")) {
         el.dataset.nexuCardBound = "1";
         el.style.cursor = "pointer";
         el.addEventListener("click", ev => {
@@ -943,9 +918,7 @@
           ev.stopPropagation();
           showCobrosPendientes();
         }, true);
-      }
-
-      if (text.includes("clientes") && (text.includes("resumido") || text.includes("activos") || /^\s*clientes/i.test(el.innerText || ""))) {
+      } else if (text.includes("clientes") && (text.includes("resumido") || text.includes("activos") || /^\s*clientes/i.test(el.innerText || ""))) {
         el.dataset.nexuCardBound = "1";
         el.style.cursor = "pointer";
         el.addEventListener("click", ev => {
@@ -957,18 +930,46 @@
     });
   }
 
-  function isModalOrActionOpen() {
-    const modalSelectors = [
+  function isLayerVisibleByTextOrRole(el) {
+    if (!visible(el)) return false;
+    if (isOwnPatch(el)) return false;
+
+    const txt = normalize(el.innerText || el.textContent || "");
+    const cls = normalize(el.className || "");
+
+    const looksLikeModal =
+      cls.includes("modal") ||
+      cls.includes("dialog") ||
+      cls.includes("popup") ||
+      txt.includes("cobros —") ||
+      txt.includes("cobros -") ||
+      txt.includes("total de cobros") ||
+      txt.includes("este cliente no tiene cobros") ||
+      txt.includes("cerrar") ||
+      txt.includes("guardar");
+
+    const looksLikeActionMenu =
+      cls.includes("acciones") ||
+      cls.includes("action") ||
+      cls.includes("dropdown") ||
+      cls.includes("acc-menu") ||
+      txt.includes("cobros guardados") ||
+      txt.includes("certificado pdf") ||
+      txt.includes("documentos") ||
+      txt.includes("enviar coberturas whatsapp");
+
+    return looksLikeModal || looksLikeActionMenu;
+  }
+
+  function getOpenLayers() {
+    const selectors = [
       ".modal",
       ".modal-content",
       ".dialog",
       ".popup",
       "[class*='modal']",
       "[class*='dialog']",
-      "[class*='popup']"
-    ].join(",");
-
-    const actionSelectors = [
+      "[class*='popup']",
       ".acc-menu",
       ".actions-menu",
       ".dropdown-menu",
@@ -978,54 +979,41 @@
       "[class*='dropdown']"
     ].join(",");
 
-    const modalOpen = qa(modalSelectors).some(el => {
-      if (el.closest(".mobile-bottom-nav-nexu") || el.closest(".mobile-more-sheet-nexu")) return false;
-      return visible(el);
-    });
+    const direct = qa(selectors).filter(el => visible(el) && !isOwnPatch(el));
 
-    const actionOpen = qa(actionSelectors).some(el => {
-      if (el.closest(".mobile-bottom-nav-nexu") || el.closest(".mobile-more-sheet-nexu")) return false;
-      return visible(el);
-    });
+    const byText = qa("div, section, article, aside").filter(isLayerVisibleByTextOrRole);
 
-    return modalOpen || actionOpen;
+    return Array.from(new Set([...direct, ...byText]));
   }
 
-  function fixLayers() {
+  function setLayerState() {
     if (!isMobile()) return;
 
     const bottomNav = q(".mobile-bottom-nav-nexu");
-    const hasOpenLayer = isModalOrActionOpen();
+    const layers = getOpenLayers();
 
     if (bottomNav) {
-      if (hasOpenLayer) bottomNav.classList.add("is-blocked");
-      else bottomNav.classList.remove("is-blocked");
+      if (layers.length) bottomNav.classList.add("nexu-hidden-for-layer");
+      else bottomNav.classList.remove("nexu-hidden-for-layer");
     }
 
-    qa(".modal, .modal-content, .dialog, .popup, [class*='modal'], [class*='dialog'], [class*='popup']").forEach(el => {
-      if (el.closest(".mobile-bottom-nav-nexu") || el.closest(".mobile-more-sheet-nexu")) return;
-      if (!visible(el)) return;
-      el.style.zIndex = "2147483600";
+    layers.forEach(el => {
+      el.style.zIndex = "2147483000";
       el.style.pointerEvents = "auto";
     });
 
     qa(".acc-menu, .actions-menu, .dropdown-menu, .client-actions-menu, [class*='acciones'], [class*='action-menu'], [class*='dropdown']").forEach(el => {
-      if (el.closest(".mobile-bottom-nav-nexu") || el.closest(".mobile-more-sheet-nexu")) return;
-      if (!visible(el)) return;
-      el.style.zIndex = "2147483647";
+      if (isOwnPatch(el) || !visible(el)) return;
+      el.style.zIndex = "2147483600";
       el.style.pointerEvents = "auto";
       el.style.opacity = "1";
       el.style.visibility = "visible";
     });
 
-    qa(".acc-menu button, .actions-menu button, .dropdown-menu button, .client-actions-menu button, [class*='acciones'] button, [class*='dropdown'] button, [class*='action-menu'] button, .modal button, .modal-content button, .dialog button, .popup button, [class*='modal'] button, [class*='dialog'] button").forEach(btn => {
-      btn.style.pointerEvents = "auto";
+    qa("button, a, [role='button'], [onclick]").forEach(btn => {
+      if (!visible(btn)) return;
       btn.style.touchAction = "manipulation";
     });
-  }
-
-  function updateLayerState() {
-    setTimeout(fixLayers, 40);
   }
 
   function suppressLoginRefreshToast() {
@@ -1048,17 +1036,16 @@
       if (list.some(x => x.id === PATCH_ID)) return;
       list.unshift({
         id: PATCH_ID,
-        version: "v3.1 corregido",
+        version: "v3.2 estable",
         fecha: new Date().toISOString(),
-        titulo: "Parche móvil completo corregido",
+        titulo: "Parche móvil estable",
         cambios: [
-          "Barra inferior móvil corregida.",
+          "Barra inferior móvil corregida sin bloquear modales.",
           "Opción Más corregida.",
           "Se quitó Historial de actualizaciones del menú Más.",
           "Se agregó Clientes en proceso al menú Más.",
           "Se corrigieron capas de modales y menú de acciones en Clientes.",
-          "Se restauró Dashboard en navegación lateral.",
-          "Se mantiene vista Clientes resumido e Historial de pagos."
+          "Se restauró Dashboard en navegación lateral."
         ]
       });
       localStorage.setItem(key, JSON.stringify(list));
@@ -1071,11 +1058,12 @@
 
     if (!isMobile()) return;
 
+    removeOldPatchUI();
     buildBottomNav();
     buildMoreSheet();
     restoreDashboardName();
     bindDashboardCards();
-    fixLayers();
+    setLayerState();
     addChangelog();
   }
 
@@ -1085,22 +1073,26 @@
   document.addEventListener("click", () => {
     setTimeout(() => {
       init();
-      fixLayers();
-    }, 80);
+      setLayerState();
+    }, 120);
+  }, true);
+
+  document.addEventListener("touchstart", () => {
+    setTimeout(setLayerState, 40);
   }, true);
 
   document.addEventListener("touchend", () => {
     setTimeout(() => {
       init();
-      fixLayers();
-    }, 80);
+      setLayerState();
+    }, 120);
   }, true);
 
   let tries = 0;
   const timer = setInterval(() => {
     tries++;
     init();
-    fixLayers();
+    setLayerState();
     if (tries > 80) clearInterval(timer);
   }, 500);
 })();
