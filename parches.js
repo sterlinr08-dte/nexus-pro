@@ -217,6 +217,20 @@
       return false;
     }
     
+    // Caso especial: Historial de pagos (va al módulo cobros que tiene el historial)
+    if (vista === 'historial') {
+      if (typeof window.nav === 'function') {
+        try {
+          window.nav('cobros');
+          console.log('nav("cobros") → historial ✓');
+          return true;
+        } catch(e) {
+          console.error('historial falló:', e);
+        }
+      }
+      return false;
+    }
+    
     const mapa = {
       'dashboard': 'dashboard',
       'clientes': 'clientes',
@@ -270,9 +284,9 @@
         <span class="ico">📄</span>
         <span>Facturas</span>
       </button>
-      <button type="button" data-go="cobros">
-        <span class="ico" style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;color:inherit">$</span>
-        <span>Cobros</span>
+      <button type="button" data-go="proceso">
+        <span class="ico">📋</span>
+        <span>En proceso</span>
       </button>
       <button type="button" data-go="mas">
         <span class="ico">⋯</span>
@@ -318,9 +332,13 @@
     sheet.className = 'mobile-more-sheet-clean';
     sheet.innerHTML = `
       <h3>MÁS OPCIONES</h3>
-      <button type="button" data-go="proceso">
-        <span class="icon">📋</span>
-        <span><b>Clientes en proceso</b></span>
+      <button type="button" data-go="cobros">
+        <span class="icon">💰</span>
+        <span><b>Cobros</b></span>
+      </button>
+      <button type="button" data-go="historial">
+        <span class="icon">📜</span>
+        <span><b>Historial de pagos</b></span>
       </button>
       <button type="button" data-go="sistema">
         <span class="icon">⚙️</span>
@@ -346,6 +364,28 @@
       navegar(btn.dataset.go);
     });
   }
+  
+  // ═══════════════════════════════════════════════════════════
+  // 4.5. CERRAR MENÚ "MÁS" AL TOCAR FUERA
+  // ═══════════════════════════════════════════════════════════
+  function setupCierreMenuFuera() {
+    document.addEventListener('click', function(ev) {
+      const sheet = document.querySelector('.mobile-more-sheet-clean');
+      if (!sheet || !sheet.classList.contains('open')) return;
+      // Si el clic NO fue dentro del sheet ni en el botón "Más"
+      if (ev.target.closest('.mobile-more-sheet-clean')) return;
+      if (ev.target.closest('button[data-go="mas"]')) return;
+      sheet.classList.remove('open');
+    }, true);
+    // En móvil también con touchstart para que responda más rápido
+    document.addEventListener('touchstart', function(ev) {
+      const sheet = document.querySelector('.mobile-more-sheet-clean');
+      if (!sheet || !sheet.classList.contains('open')) return;
+      if (ev.target.closest('.mobile-more-sheet-clean')) return;
+      if (ev.target.closest('button[data-go="mas"]')) return;
+      sheet.classList.remove('open');
+    }, true);
+  }
 
   // ═══════════════════════════════════════════════════════════
   // 5. INICIALIZACIÓN
@@ -355,7 +395,51 @@
     if (!isMobile()) return;
     crearBarraInferior();
     crearMenuMas();
+    setupCierreMenuFuera();
     console.log('%c⚙ Parches NEXUS PRO Móvil cargado', 'color:#2563eb;font-weight:bold');
+  }
+  
+  // ═══════════════════════════════════════════════════════════
+  // 5.5. REGISTRO AUTOMÁTICO EN CHANGELOG
+  // ═══════════════════════════════════════════════════════════
+  function registrarEnChangelog() {
+    // Esperar a que el sistema esté cargado
+    if (typeof window.guardarChangelogAuto !== 'function') {
+      setTimeout(registrarEnChangelog, 1000);
+      return;
+    }
+    
+    // ID único de esta versión del parche (para no duplicar)
+    const PARCHE_VERSION = 'parches-mobile-v4-2026-05-23';
+    
+    // Verificar si ya está registrado
+    let registrados = [];
+    try {
+      registrados = JSON.parse(localStorage.getItem('nx_parches_registrados') || '[]');
+    } catch(e) {}
+    
+    if (registrados.includes(PARCHE_VERSION)) return;
+    
+    // Registrar en el changelog
+    try {
+      const descripcion = [
+        '📱 Parche Móvil v4 aplicado',
+        '• Barra inferior: Inicio, Clientes, Facturas, En proceso, Más',
+        '• Menú Más: Cobros, Historial, Configuración, Usuarios, Reportes',
+        '• Menú Más se cierra al tocar fuera',
+        '• Menú ⋮ del cliente blindado (no se puede tocar más)'
+      ].join('\\n');
+      
+      window.guardarChangelogAuto(descripcion);
+      
+      // Marcar como registrado
+      registrados.push(PARCHE_VERSION);
+      localStorage.setItem('nx_parches_registrados', JSON.stringify(registrados));
+      
+      console.log('%c✓ Parche registrado en Changelog', 'color:#10b981;font-weight:bold');
+    } catch(e) {
+      console.error('No se pudo registrar en changelog:', e);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -367,8 +451,12 @@
   // Aplicar al cargar
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(registrarEnChangelog, 2000);
+    });
   } else {
     init();
+    setTimeout(registrarEnChangelog, 2000);
   }
 
   // Reaplica al cambiar tamaño (rotar pantalla)
