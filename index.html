@@ -4265,11 +4265,16 @@ function toggleAccMenu(ev,cid){
   document.querySelectorAll('.acc-backdrop').forEach(b=>b.remove());
   if(estaAbierto)return;
   const esMovil=window.innerWidth<=640;
+  // Mover el menú al BODY para escapar de cualquier contexto de apilamiento (modales, transforms, etc.)
+  if(menu.parentNode!==document.body){
+    menu.dataset.parentRef=menu.parentNode?.id||'';
+    document.body.appendChild(menu);
+  }
   // Limpiar estilos previos para empezar de cero
   menu.style.cssText='';
   menu.style.display='block';
   menu.style.position='fixed';
-  menu.style.zIndex='5000';
+  menu.style.zIndex='2147483647';
   if(esMovil){
     // Móvil: hoja flotante compacta, con márgenes a los lados
     menu.style.left='14px';
@@ -4278,9 +4283,17 @@ function toggleAccMenu(ev,cid){
     menu.style.top='auto';
     menu.style.maxHeight='58vh';
     menu.style.overflowY='auto';
-    // Fondo oscuro con blur detrás
+    menu.style.background='#ffffff';
+    menu.style.borderRadius='20px';
+    menu.style.padding='9px';
+    menu.style.boxShadow='0 20px 60px rgba(15,23,42,.3)';
+    // Fondo oscuro detrás
     const bd=document.createElement('div');
     bd.className='acc-backdrop';
+    bd.style.position='fixed';
+    bd.style.inset='0';
+    bd.style.background='rgba(15,23,42,.4)';
+    bd.style.zIndex='2147483646';
     bd.onclick=()=>{cerrarAccMenus();};
     document.body.appendChild(bd);
   }else{
@@ -4297,6 +4310,8 @@ function toggleAccMenu(ev,cid){
     }
   }
 }
+// PROTECCIÓN: bloquear sobreescritura de esta función desde cualquier parche
+try{Object.defineProperty(window,'toggleAccMenu',{value:toggleAccMenu,writable:false,configurable:false});}catch(e){}
 // Cerrar menús al hacer clic fuera o al hacer scroll
 // Cerrar menús solo si el clic fue FUERA del menú (no dentro)
 document.addEventListener('click',(e)=>{
