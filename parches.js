@@ -2048,3 +2048,751 @@
   obs.observe(document.body, { childList: true, subtree: false });
 
 })();
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - BANCOS V66
+   Corrección final: Bancos como ventana propia dentro de Configuración
+   PEGAR AL FINAL DE parches.js
+   Cargar con: parches.js?v=66
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  'use strict';
+
+  if (window.__NEXUS_BANCOS_CONFIG_V66__) return;
+  window.__NEXUS_BANCOS_CONFIG_V66__ = true;
+
+  let bancosV66 = [];
+  let hiddenV66 = [];
+  let loadingV66 = false;
+
+  const FALLBACK = [
+    { id:'fb_bhd', nombre:'BHD', activo:true },
+    { id:'fb_banreservas', nombre:'Banreservas', activo:true },
+    { id:'fb_popular', nombre:'Popular', activo:true },
+    { id:'fb_asociacion', nombre:'Asociación Cibao', activo:true },
+    { id:'fb_scotiabank', nombre:'Scotiabank', activo:true },
+    { id:'fb_caribe', nombre:'Caribe', activo:true },
+    { id:'fb_santa_cruz', nombre:'Santa Cruz', activo:true },
+    { id:'fb_otros', nombre:'Otros', activo:true }
+  ];
+
+  function q(s, r) { return (r || document).querySelector(s); }
+  function qa(s, r) { return Array.from((r || document).querySelectorAll(s)); }
+
+  function norm(s) {
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getAPI() {
+    try { return (typeof API !== 'undefined' && API) ? API : null; }
+    catch(e) { return null; }
+  }
+
+  function getST() {
+    try { return (typeof ST !== 'undefined' && ST) ? ST : {}; }
+    catch(e) { return {}; }
+  }
+
+  function getUser() {
+    const st = getST();
+    return st.usuario || st.user || st.sessionUser || window.sessionUser || window.user || null;
+  }
+
+  function toastSafe(type, title, msg) {
+    if (typeof toast === 'function') toast(type, title, msg);
+    else alert((title || '') + (msg ? '\n' + msg : ''));
+  }
+
+  function auditSafe(accion, detalle) {
+    try {
+      if (typeof logAudit === 'function') logAudit(accion, detalle, 'Bancos');
+    } catch(e) {}
+  }
+
+  function tienePermiso() {
+    const u = getUser();
+
+    if (!u) return true;
+
+    const rol = norm(u.rol || u.role || u.tipo || u.perfil || u.cargo || '');
+
+    if (
+      rol.includes('admin') ||
+      rol.includes('administrador') ||
+      rol.includes('superadmin') ||
+      rol.includes('super admin')
+    ) {
+      return true;
+    }
+
+    const permisos = u.permisos || u.permissions || u.claims?.permisos || [];
+
+    if (Array.isArray(permisos)) return permisos.map(norm).includes('gestionar_bancos');
+
+    if (typeof permisos === 'object' && permisos) {
+      return permisos.gestionar_bancos === true || permisos.bancos === true;
+    }
+
+    return false;
+  }
+
+  function bloquear() {
+    if (tienePermiso()) return false;
+    toastSafe('err', 'Sin permiso', 'No tienes permiso para gestionar bancos.');
+    return true;
+  }
+
+  function ordenar(arr) {
+    return [...arr].sort((a, b) => {
+      if (norm(a.nombre) === 'otros') return 1;
+      if (norm(b.nombre) === 'otros') return -1;
+      return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es');
+    });
+  }
+
+  async function cargarBancos(force) {
+    if (loadingV66 && !force) return bancosV66.length ? bancosV66 : FALLBACK;
+    if (bancosV66.length && !force) return bancosV66;
+
+    loadingV66 = true;
+
+    const api = getAPI();
+
+    try {
+      if (api && typeof api.get === 'function') {
+        const data = await api.get('bancos', 'select=*&order=nombre.asc');
+
+        if (Array.isArray(data) && data.length) {
+          bancosV66 = ordenar(data.map(b => ({
+            id: b.id,
+            nombre: b.nombre,
+            activo: b.activo !== false
+          })));
+          return bancosV66;
+        }
+      }
+    } catch(e) {
+      console.warn('Bancos V66 fallback:', e);
+    } finally {
+      loadingV66 = false;
+    }
+
+    bancosV66 = ordenar(FALLBACK.map(b => ({...b})));
+    return bancosV66;
+  }
+
+  function duplicado(nombre, excluirId) {
+    const n = norm(nombre);
+    return bancosV66.some(b => norm(b.nombre) === n && String(b.id) !== String(excluirId || ''));
+  }
+
+  async function bancoEnUso(nombre) {
+    const api = getAPI();
+    if (!api || typeof api.get !== 'function') return false;
+
+    try {
+      const data = await api.get('abonos', 'select=id,banco&limit=5000');
+      return Array.isArray(data) && data.some(a => norm(a.banco) === norm(nombre));
+    } catch(e) {
+      return false;
+    }
+  }
+
+  async function refrescarSelectCobros() {
+    if (typeof window.nxActualizarSelectBancoCobros === 'function') {
+      try { await window.nxActualizarSelectBancoCobros(); } catch(e) {}
+    }
+  }
+
+  function rootConfig() {
+    return q('#v-config') || q('#config') || q('[data-view="config"]');
+  }
+
+  function tabsConfig(root) {
+    if (!root) return null;
+
+    return qa('div, nav, section', root).find(el => {
+      const txt = norm(el.textContent || '');
+      const btns = el.querySelectorAll('button').length;
+      return btns >= 2 &&
+        (
+          txt.includes('empresa') ||
+          txt.includes('notificacion') ||
+          txt.includes('apariencia') ||
+          txt.includes('coberturas') ||
+          txt.includes('agentes') ||
+          txt.includes('usuarios') ||
+          txt.includes('roles')
+        );
+    });
+  }
+
+  function hideConfigContent() {
+    const root = rootConfig();
+    if (!root) return;
+
+    hiddenV66.forEach(([el, display]) => { if (el) el.style.display = display; });
+    hiddenV66 = [];
+
+    const panel = q('#nxPanelBancosV66');
+
+    qa(':scope > *', root).forEach(el => {
+      if (el === panel) return;
+      if (el.id === 'nxBancoFallbackTabBarV66') return;
+      if (el.contains(q('#nxConfigTabBancosV66'))) return;
+
+      const txt = norm(el.textContent || '');
+
+      // No ocultar la barra de pestañas.
+      if (
+        txt.includes('bancos') &&
+        (
+          txt.includes('apariencia') ||
+          txt.includes('coberturas') ||
+          txt.includes('empresa') ||
+          txt.includes('notificacion') ||
+          txt.includes('agentes')
+        )
+      ) {
+        return;
+      }
+
+      hiddenV66.push([el, el.style.display || '']);
+      el.style.display = 'none';
+    });
+  }
+
+  function restoreConfigContent() {
+    hiddenV66.forEach(([el, display]) => {
+      if (el && el.style) el.style.display = display;
+    });
+
+    hiddenV66 = [];
+
+    const panel = q('#nxPanelBancosV66');
+    if (panel) panel.style.display = 'none';
+
+    q('#nxConfigTabBancosV66')?.classList.remove('active', 'on');
+  }
+
+  function createTab() {
+    const root = rootConfig();
+    if (!root) return;
+
+    q('#btnGestionarBancos')?.remove();
+    q('#nxBtnConfigBancosV63')?.remove();
+    q('#nxConfigTabBancosV64')?.remove();
+    q('#nxPanelBancosConfigV64')?.remove();
+    q('#nxPanelBancosV65')?.remove();
+    q('#nxConfigTabBancosV65')?.remove();
+
+    if (q('#nxConfigTabBancosV66')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'nxConfigTabBancosV66';
+    btn.type = 'button';
+    btn.className = 'btn bghost';
+    btn.innerHTML = '<i class="ti ti-building-bank"></i> BANCOS';
+    btn.onclick = openPanel;
+
+    const tabs = tabsConfig(root);
+
+    if (tabs) {
+      tabs.appendChild(btn);
+    } else {
+      const bar = document.createElement('div');
+      bar.id = 'nxBancoFallbackTabBarV66';
+      bar.className = 'nc p3';
+      bar.style.marginBottom = '10px';
+      bar.appendChild(btn);
+      root.insertAdjacentElement('afterbegin', bar);
+    }
+  }
+
+  function createPanel() {
+    const root = rootConfig();
+    if (!root) return null;
+
+    let panel = q('#nxPanelBancosV66');
+    if (panel) return panel;
+
+    panel = document.createElement('div');
+    panel.id = 'nxPanelBancosV66';
+    panel.className = 'nc p5';
+    panel.style.display = 'none';
+    panel.innerHTML = `
+      <div class="ch nxBancosHeaderV66">
+        <div>
+          <div class="ct">🏦 GESTIÓN DE BANCOS</div>
+          <div class="ct-s">Administra bancos disponibles para cobros por transferencia o depósito</div>
+        </div>
+        <button class="btn bsm bghost" type="button" onclick="window.nxCerrarPanelBancosV66()">
+          <i class="ti ti-arrow-left"></i> Volver
+        </button>
+      </div>
+
+      <div class="nxBancosInfoV66">
+        Este módulo controla los bancos que aparecen al registrar un cobro.
+      </div>
+
+      <div class="nxBancosFormV66">
+        <div class="fr">
+          <label>Nombre del banco</label>
+          <input type="text" id="nxBancoNombreV66" placeholder="Ej: Banco López">
+        </div>
+        <button class="btn bxl bc1" type="button" onclick="window.nxAgregarBancoV66()">
+          <i class="ti ti-plus"></i> Agregar banco
+        </button>
+      </div>
+
+      <div class="div"></div>
+
+      <div id="nxListaBancosV66"></div>
+    `;
+
+    const tabs = tabsConfig(root);
+    if (tabs) tabs.insertAdjacentElement('afterend', panel);
+    else root.insertAdjacentElement('afterbegin', panel);
+
+    return panel;
+  }
+
+  async function openPanel() {
+    if (bloquear()) return;
+
+    const panel = createPanel();
+    if (!panel) return;
+
+    hideConfigContent();
+
+    panel.style.display = '';
+    q('#nxConfigTabBancosV66')?.classList.add('active');
+
+    await cargarBancos(true);
+    renderList();
+  }
+
+  function renderList() {
+    const cont = q('#nxListaBancosV66');
+    if (!cont) return;
+
+    const puede = tienePermiso();
+
+    if (!bancosV66.length) {
+      cont.innerHTML = '<div class="nxBancosEmptyV66">No hay bancos registrados.</div>';
+      return;
+    }
+
+    cont.innerHTML = `
+      <div class="nxBancosListV66">
+        ${bancosV66.map(b => `
+          <div class="nxBancosRowV66">
+            <div class="nxBancosNameBoxV66">
+              <div class="nxBancosNameV66">🏦 ${esc(b.nombre)}</div>
+              <div class="nxBancosStateV66 ${b.activo ? 'ok' : 'off'}">${b.activo ? 'ACTIVO' : 'INACTIVO'}</div>
+            </div>
+
+            <div class="nxBancosActionsV66">
+              <button class="btn bsm bghost" type="button" ${puede ? '' : 'disabled'} onclick="window.nxEditarBancoV66('${esc(b.id)}')">
+                <i class="ti ti-edit"></i> Editar
+              </button>
+              <button class="btn bsm ${b.activo ? 'bghost' : 'bc1'}" type="button" ${puede ? '' : 'disabled'} onclick="window.nxToggleBancoV66('${esc(b.id)}')">
+                <i class="ti ${b.activo ? 'ti-circle-off' : 'ti-check'}"></i> ${b.activo ? 'Desactivar' : 'Activar'}
+              </button>
+              <button class="btn bsm bghost" type="button" ${puede ? '' : 'disabled'} onclick="window.nxEliminarBancoV66('${esc(b.id)}')">
+                <i class="ti ti-trash"></i> Eliminar
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  async function addBank() {
+    if (bloquear()) return;
+
+    const input = q('#nxBancoNombreV66');
+    const nombre = String(input?.value || '').trim();
+
+    if (!nombre) {
+      toastSafe('err', 'Nombre requerido', 'Escribe el nombre del banco.');
+      return;
+    }
+
+    await cargarBancos(true);
+
+    if (duplicado(nombre)) {
+      toastSafe('err', 'Banco duplicado', 'Ese banco ya existe.');
+      return;
+    }
+
+    const api = getAPI();
+
+    if (!api?.post) {
+      toastSafe('err', 'API no disponible', 'No se pudo guardar.');
+      return;
+    }
+
+    try {
+      await api.post('bancos', { nombre, activo: true });
+      toastSafe('ok', 'Banco agregado', nombre);
+      auditSafe('BANCO_AGREGADO', nombre);
+
+      if (input) input.value = '';
+
+      await cargarBancos(true);
+      await refrescarSelectCobros();
+      renderList();
+    } catch(e) {
+      console.error(e);
+      toastSafe('err', 'No se pudo agregar', 'Verifica duplicado o permisos.');
+    }
+  }
+
+  async function editBank(id) {
+    if (bloquear()) return;
+
+    await cargarBancos(true);
+
+    const banco = bancosV66.find(b => String(b.id) === String(id));
+    if (!banco) return;
+
+    const nuevo = prompt('Nuevo nombre del banco:', banco.nombre);
+    if (nuevo === null) return;
+
+    const nombre = String(nuevo || '').trim();
+
+    if (!nombre) {
+      toastSafe('err', 'Nombre requerido', 'El nombre no puede estar vacío.');
+      return;
+    }
+
+    if (duplicado(nombre, id)) {
+      toastSafe('err', 'Banco duplicado', 'Ya existe un banco con ese nombre.');
+      return;
+    }
+
+    const api = getAPI();
+
+    if (!api?.patch) {
+      toastSafe('err', 'API no disponible', 'No se pudo actualizar.');
+      return;
+    }
+
+    try {
+      await api.patch('bancos', 'id=eq.' + id, { nombre });
+      toastSafe('ok', 'Banco actualizado', nombre);
+      auditSafe('BANCO_EDITADO', banco.nombre + ' → ' + nombre);
+
+      await cargarBancos(true);
+      await refrescarSelectCobros();
+      renderList();
+    } catch(e) {
+      console.error(e);
+      toastSafe('err', 'No se pudo editar', 'Verifica duplicado o permisos.');
+    }
+  }
+
+  async function toggleBank(id) {
+    if (bloquear()) return;
+
+    await cargarBancos(true);
+
+    const banco = bancosV66.find(b => String(b.id) === String(id));
+    if (!banco) return;
+
+    const api = getAPI();
+    const nuevo = !banco.activo;
+
+    if (!api?.patch) {
+      toastSafe('err', 'API no disponible', 'No se pudo actualizar.');
+      return;
+    }
+
+    try {
+      await api.patch('bancos', 'id=eq.' + id, { activo: nuevo });
+      toastSafe('ok', nuevo ? 'Banco activado' : 'Banco desactivado', banco.nombre);
+      auditSafe(nuevo ? 'BANCO_ACTIVADO' : 'BANCO_DESACTIVADO', banco.nombre);
+
+      await cargarBancos(true);
+      await refrescarSelectCobros();
+      renderList();
+    } catch(e) {
+      console.error(e);
+      toastSafe('err', 'No se pudo actualizar', 'Verifica permisos.');
+    }
+  }
+
+  async function deleteBank(id) {
+    if (bloquear()) return;
+
+    await cargarBancos(true);
+
+    const banco = bancosV66.find(b => String(b.id) === String(id));
+    if (!banco) return;
+
+    if (!confirm('¿Seguro que deseas eliminar/desactivar este banco?\n\n' + banco.nombre)) return;
+
+    const api = getAPI();
+
+    if (!api) {
+      toastSafe('err', 'API no disponible', 'No se pudo eliminar.');
+      return;
+    }
+
+    const usado = await bancoEnUso(banco.nombre);
+
+    if (usado) {
+      toastSafe('err', 'Banco en uso', 'Este banco tiene abonos asociados. Se desactivará.');
+      try {
+        await api.patch('bancos', 'id=eq.' + id, { activo: false });
+        auditSafe('BANCO_DESACTIVADO_EN_USO', banco.nombre);
+      } catch(e) {}
+
+      await cargarBancos(true);
+      await refrescarSelectCobros();
+      renderList();
+      return;
+    }
+
+    if (!api.delete) {
+      toastSafe('err', 'API no disponible', 'No se encontró API.delete.');
+      return;
+    }
+
+    try {
+      await api.delete('bancos', 'id=eq.' + id);
+      toastSafe('ok', 'Banco eliminado', banco.nombre);
+      auditSafe('BANCO_ELIMINADO', banco.nombre);
+
+      await cargarBancos(true);
+      await refrescarSelectCobros();
+      renderList();
+    } catch(e) {
+      console.error(e);
+      toastSafe('err', 'No se pudo eliminar', 'Se desactivará en su lugar.');
+
+      try { await api.patch('bancos', 'id=eq.' + id, { activo: false }); } catch(_) {}
+
+      await cargarBancos(true);
+      await refrescarSelectCobros();
+      renderList();
+    }
+  }
+
+  function injectCSS() {
+    if (q('#nx-bancos-v66-css')) return;
+
+    const style = document.createElement('style');
+    style.id = 'nx-bancos-v66-css';
+    style.textContent = `
+      #mAbono #btnGestionarBancos,
+      #nxBtnConfigBancosV63,
+      #nxConfigTabBancosV64,
+      #nxPanelBancosConfigV64,
+      #nxConfigTabBancosV65,
+      #nxPanelBancosV65,
+      #mBancos {
+        display: none !important;
+      }
+
+      #nxConfigTabBancosV66 {
+        white-space: nowrap !important;
+      }
+
+      #nxConfigTabBancosV66.active,
+      #nxConfigTabBancosV66.on {
+        background: #2563eb !important;
+        color: #fff !important;
+        border-color: #2563eb !important;
+      }
+
+      #nxPanelBancosV66 {
+        border-top: 4px solid #d97706 !important;
+      }
+
+      .nxBancosInfoV66 {
+        margin: 12px 0;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        border-radius: 16px;
+        padding: 14px;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .nxBancosFormV66 {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 12px;
+      }
+
+      .nxBancosListV66 {
+        display: grid;
+        gap: 10px;
+      }
+
+      .nxBancosRowV66 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #fff;
+      }
+
+      .nxBancosNameBoxV66 {
+        min-width: 0;
+      }
+
+      .nxBancosNameV66 {
+        color: #0f172a;
+        font-weight: 900;
+        font-size: 14px;
+      }
+
+      .nxBancosStateV66 {
+        font-size: 11px;
+        font-weight: 900;
+        margin-top: 3px;
+      }
+
+      .nxBancosStateV66.ok {
+        color: #059669;
+      }
+
+      .nxBancosStateV66.off {
+        color: #dc2626;
+      }
+
+      .nxBancosActionsV66 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+      }
+
+      .nxBancosActionsV66 button[disabled] {
+        opacity: .45 !important;
+        pointer-events: none !important;
+      }
+
+      .nxBancosEmptyV66 {
+        padding: 18px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        color: #64748b;
+        font-weight: 800;
+        background: #f8fafc;
+      }
+
+      @media(max-width:768px) {
+        #nxPanelBancosV66 .ch,
+        .nxBancosHeaderV66 {
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 10px !important;
+        }
+
+        #nxPanelBancosV66 .btn {
+          min-height: 44px !important;
+        }
+
+        .nxBancosFormV66 {
+          grid-template-columns: 1fr !important;
+        }
+
+        .nxBancosFormV66 .btn {
+          width: 100% !important;
+          justify-content: center !important;
+        }
+
+        .nxBancosRowV66 {
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 10px !important;
+          padding: 14px !important;
+        }
+
+        .nxBancosNameV66 {
+          font-size: 16px !important;
+          line-height: 1.2 !important;
+          white-space: normal !important;
+          overflow-wrap: anywhere !important;
+        }
+
+        .nxBancosActionsV66 {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr 1fr !important;
+          width: 100% !important;
+          gap: 6px !important;
+        }
+
+        .nxBancosActionsV66 .btn {
+          width: 100% !important;
+          min-width: 0 !important;
+          font-size: 10px !important;
+          padding: 6px 4px !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+          justify-content: center !important;
+        }
+
+        #nxBancoNombreV66 {
+          min-height: 44px !important;
+          font-size: 16px !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  window.nxAgregarBancoV66 = addBank;
+  window.nxEditarBancoV66 = editBank;
+  window.nxToggleBancoV66 = toggleBank;
+  window.nxEliminarBancoV66 = deleteBank;
+  window.nxCerrarPanelBancosV66 = restoreConfigContent;
+
+  function init() {
+    injectCSS();
+    q('#btnGestionarBancos')?.remove();
+    createTab();
+    createPanel();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once:true });
+  } else {
+    init();
+  }
+
+  document.addEventListener('click', function () {
+    setTimeout(function () {
+      q('#btnGestionarBancos')?.remove();
+      createTab();
+      createPanel();
+    }, 150);
+  }, true);
+})();
