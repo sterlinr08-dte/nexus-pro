@@ -1719,11 +1719,21 @@
     
     // Crear tab y panel (con reintentos si el sistema no está cargado)
     let intentos = 0;
-    const tryCrear = function() {
+    const tryCrear = async function() {
       intentos++;
       const okTab = crearTab();
       const okPanel = crearPanel();
-      if ((!okTab || !okPanel) && intentos < 20) {
+      
+      if (okTab && okPanel) {
+        // CARGAR bancos inmediatamente al crear el panel
+        await loadBancos(true);
+        renderLista();
+        // Y actualizar el select de cobros (por si ya está abierto)
+        await actualizarSelectBancosCobros();
+        return;
+      }
+      
+      if (intentos < 20) {
         setTimeout(tryCrear, 500);
       }
     };
@@ -1733,11 +1743,16 @@
     hookRegAbono();
     
     // Asegurar campo banco en modal de cobros cuando se abre
+    // También recargar bancos cada vez que se abre el modal
     const mAbono = document.getElementById('mAbono');
     if (mAbono && !mAbono.__nxBancoObs) {
       mAbono.__nxBancoObs = true;
-      const obs = new MutationObserver(function() {
-        setTimeout(asegurarCampoBanco, 100);
+      const obs = new MutationObserver(async function() {
+        setTimeout(async function() {
+          asegurarCampoBanco();
+          // Forzar recarga del select cada vez que se abre el modal
+          await actualizarSelectBancosCobros();
+        }, 150);
       });
       obs.observe(mAbono, { attributes: true, attributeFilter: ['class', 'style'] });
     }
