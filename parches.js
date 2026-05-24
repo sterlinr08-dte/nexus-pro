@@ -993,7 +993,23 @@
   function calcularUltimosCiclos(cantidad) {
     cantidad = cantidad || 6;
     const ciclos = [];
-    const base = calcularPeriodo();
+    const base = calcularPeriodo(); // ciclo cerrado actual
+    
+    // PRIMERO: agregar el ciclo EN CURSO (futuro respecto al cerrado)
+    const cursoIni = new Date(base.inicio);
+    const cursoFin = new Date(base.fin);
+    cursoIni.setMonth(cursoIni.getMonth() + 1);
+    cursoFin.setMonth(cursoFin.getMonth() + 1);
+    const cursoKey = `${cursoIni.getTime()}_${cursoFin.getTime()}`;
+    ciclos.push({
+      inicio: cursoIni,
+      fin: cursoFin,
+      nombre: nombreCiclo({ inicio: cursoIni, fin: cursoFin }) + ' · EN CURSO',
+      key: cursoKey,
+      enCurso: true
+    });
+    
+    // DESPUÉS: ciclos cerrados (del más reciente al más viejo)
     for (let i = 0; i < cantidad; i++) {
       const ini = new Date(base.inicio);
       const fin = new Date(base.fin);
