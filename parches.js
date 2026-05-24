@@ -1800,33 +1800,111 @@
         .nxDC-row-2col { grid-template-columns:1fr; }
       }
 
-      /* ═══ RESPONSIVE MÓVIL (768px) ═══ */
+      /* ═══ RESPONSIVE MÓVIL (768px) — APP-LIKE ═══ */
       @media (max-width: 768px) {
-        .nxDC-head { padding:14px; flex-direction:column; align-items:stretch; }
-        .nxDC-head-left { flex-direction:row; }
-        .nxDC-head-icon { width:42px; height:42px; font-size:18px; border-radius:12px; }
-        .nxDC-head-title { font-size:18px; }
-        .nxDC-head-sub { font-size:11px; }
-        .nxDC-period { width:100%; min-width:0; }
+        /* Espaciado más app-like + padding-bottom para barra inferior flotante */
+        .nxDC-wrap { gap:10px; padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
+
+        /* Header compacto SIN hueco vertical */
+        .nxDC-head {
+          padding:12px;
+          flex-direction:column;
+          align-items:stretch;
+          justify-content:flex-start;
+          gap:10px;
+          border-radius:14px;
+        }
+        .nxDC-head-left { flex-direction:row; gap:10px; align-items:center; flex:0 0 auto; }
+        .nxDC-head-icon {
+          width:38px; height:38px;
+          font-size:16px;
+          border-radius:10px;
+          box-shadow:0 4px 10px rgba(59,130,246,.28);
+        }
+        .nxDC-head-title { font-size:16px; line-height:1.15; }
+        .nxDC-head-sub { font-size:10.5px; margin-top:2px; line-height:1.3; }
+        .nxDC-head-right { width:100%; }
+        .nxDC-period { width:100%; min-width:0; padding:7px 10px; border-radius:10px; }
+        .nxDC-period-label { font-size:9px; margin-bottom:2px; }
+        .nxDC-period-select { font-size:12px; padding:2px; }
+        .nxDC-period-nav { width:26px; height:26px; border-radius:7px; }
+
+        /* KPIs en 2x2 más compactos */
         .nxDC-kpis-row { grid-template-columns:1fr 1fr; gap:8px; }
-        .nxDC-kpi { padding:12px; gap:10px; }
-        .nxDC-kpi-icon { width:38px; height:38px; font-size:17px; }
-        .nxDC-kpi-value { font-size:17px; }
-        .nxDC-kpi-label { font-size:9px; }
-        .nxDC-kpi-sub { font-size:10px; }
-        .nxDC-card { padding:14px; border-radius:14px; }
-        .nxDC-donut-block { grid-template-columns:1fr; gap:14px; }
-        .nxDC-donut-chart { width:140px; height:140px; margin:0 auto; }
+        .nxDC-kpi { padding:11px; gap:9px; border-radius:14px; }
+        .nxDC-kpi-icon { width:34px; height:34px; font-size:15px; border-radius:10px; }
+        .nxDC-kpi-label { font-size:8.5px; line-height:1.25; margin-bottom:3px; }
+        .nxDC-kpi-value { font-size:16px; margin-bottom:2px; }
+        .nxDC-kpi-sub { font-size:9.5px; }
+
+        /* Cards compactas */
+        .nxDC-card { padding:12px; border-radius:14px; }
+        .nxDC-card-title { font-size:10.5px; letter-spacing:.5px; }
+        .nxDC-row-2col { gap:8px; }
+
+        /* Donut centrado */
+        .nxDC-donut-block { grid-template-columns:1fr; gap:12px; }
+        .nxDC-donut-chart { width:130px; height:130px; margin:0 auto; }
+        .nxDC-donut-val { font-size:19px; }
+        .nxDC-legend { gap:8px; }
+        .nxDC-leg-item { font-size:11.5px; gap:8px; }
+        .nxDC-leg-val, .nxDC-leg-pct { font-size:10.5px; }
+        .nxDC-leg-pct { min-width:38px; }
+
+        /* Bancos */
+        .nxDC-banco-row { padding:8px 4px; }
+        .nxDC-banco-cell, .nxDC-banco-monto { font-size:12px; }
+        .nxDC-banco-total > div:last-child { font-size:14px; }
+
+        /* Tabla con scroll horizontal */
         .nxDC-table { min-width:600px; }
-        .nxDC-table thead th, .nxDC-table tbody td, .nxDC-table tfoot td { padding:8px 10px; font-size:11px; }
+        .nxDC-table thead th, .nxDC-table tbody td, .nxDC-table tfoot td {
+          padding:8px 10px; font-size:10.5px;
+        }
         .nxDC-ag-avatar { width:26px; height:26px; font-size:12px; }
-        .nxDC-transf-summary { grid-template-columns:1fr; }
-        .nxDC-transf-val, .nxDC-neto-val { font-size:18px; }
+
+        /* Transferencias compactas (2 cajas lado a lado en vez de stacked) */
+        .nxDC-transf-summary { grid-template-columns:1fr 1fr; gap:8px; }
+        .nxDC-transf-box { padding:11px; border-radius:12px; }
+        .nxDC-transf-val { font-size:17px; }
+        .nxDC-transf-sub { font-size:10px; }
+        .nxDC-neto-val { font-size:20px; }
+
+        /* Botón "Volver al Resumen" estilo app */
+        #nxDCBotonVolver {
+          margin:0 0 6px;
+          padding-top:calc(env(safe-area-inset-top) + 4px);
+        }
+        #nxDCBotonVolver .btn {
+          width:100%;
+          justify-content:center;
+          background:#fff;
+          border:1px solid #e2e8f0;
+          color:#475569;
+          font-weight:700;
+          padding:9px 14px;
+          border-radius:12px;
+          box-shadow:0 1px 3px rgba(0,0,0,.04);
+        }
       }
 
+      /* ═══ MÓVIL PEQUEÑO (480px) ═══ */
       @media (max-width: 480px) {
-        .nxDC-head-title { font-size:16px; }
-        .nxDC-kpi-value { font-size:15px; }
+        .nxDC-head { padding:11px; }
+        .nxDC-head-title { font-size:15px; }
+        .nxDC-head-sub { font-size:10px; }
+        .nxDC-head-icon { width:34px; height:34px; font-size:14px; border-radius:9px; }
+        .nxDC-kpi { padding:10px; gap:8px; }
+        .nxDC-kpi-value { font-size:14.5px; }
+        .nxDC-kpi-icon { width:30px; height:30px; font-size:13px; border-radius:9px; }
+        .nxDC-kpi-label { font-size:8px; }
+        .nxDC-kpi-sub { font-size:9px; }
+        .nxDC-card { padding:11px; }
+        .nxDC-card-title { font-size:10px; }
+        .nxDC-donut-chart { width:120px; height:120px; }
+        .nxDC-donut-val { font-size:17px; }
+        .nxDC-transf-val { font-size:15px; }
+        .nxDC-neto-val { font-size:18px; }
       }
     `;
     document.head.appendChild(style);
