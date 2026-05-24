@@ -981,10 +981,10 @@
   }
   
   function nombreCiclo(periodo) {
-    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const mi = meses[periodo.inicio.getMonth()];
     const mf = meses[periodo.fin.getMonth()];
-    return `20 ${mi} → 20 ${mf} ${periodo.fin.getFullYear()}`;
+    return `Ciclo: 20 ${mi} - 20 ${mf} ${periodo.fin.getFullYear()}`;
   }
   
   // ═══ SELECTOR DE CICLOS ═══
@@ -1457,22 +1457,37 @@
       @keyframes nxDCFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
       
       .nxDC-selector { 
-        display:flex; gap:8px; align-items:center; background:#fff; border:1px solid #e2e8f0; 
-        border-radius:14px; padding:8px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.04); 
+        display:flex; gap:10px; align-items:center; background:#fff; border:1px solid #e2e8f0; 
+        border-radius:16px; padding:10px; margin-bottom:16px; 
+        box-shadow: 0 4px 16px rgba(15,23,42,.08), 0 1px 3px rgba(15,23,42,.04);
         position:sticky; top:0; z-index:100;
+        border-bottom: 1px solid #e2e8f0;
       }
       .nxDC-select { 
-        flex:1; padding:10px 12px; border:1px solid #e2e8f0; border-radius:10px; 
-        font-weight:700; font-size:14px; background:#f8fafc; color:#0f172a; cursor:pointer;
+        flex:1; padding:12px 14px; border:1px solid #cbd5e1; border-radius:12px; 
+        font-weight:700; font-size:14px; background:#fff; color:#0f172a; cursor:pointer;
+        text-align:center; appearance:none; -webkit-appearance:none;
       }
       .nxDC-nav-btn { 
-        width:42px; height:42px; border:1px solid #e2e8f0; border-radius:10px; 
-        background:#fff; cursor:pointer; display:flex; align-items:center; 
-        justify-content:center; color:#0f172a; transition: background 0.2s;
+        width:44px; height:44px; border:1px solid #cbd5e1; border-radius:50%; 
+        background: linear-gradient(145deg, #f1f5f9, #e2e8f0); cursor:pointer; 
+        display:flex; align-items:center; justify-content:center; color:#1e293b; 
+        transition: all 0.2s; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
       }
-      .nxDC-nav-btn:hover:not(:disabled) { background:#f1f5f9; }
-      .nxDC-nav-btn:disabled { opacity:.3; cursor:not-allowed; }
-      @media (max-width: 480px) { .nxDC-selector { padding: 6px; } .nxDC-select { font-size: 13px; } }
+      .nxDC-nav-btn:hover:not(:disabled) { 
+        background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+        transform: translateY(-1px);
+      }
+      .nxDC-nav-btn:active:not(:disabled) {
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        transform: translateY(0);
+      }
+      .nxDC-nav-btn:disabled { opacity:.3; cursor:not-allowed; filter: grayscale(1); }
+      @media (max-width: 480px) { 
+        .nxDC-selector { padding: 8px; gap:6px; } 
+        .nxDC-select { font-size: 13px; padding: 10px; } 
+        .nxDC-nav-btn { width: 40px; height: 40px; }
+      }
       
       .nxDC-kpis { margin-bottom:14px; }
       .nxDC-kpi-big { background:linear-gradient(135deg,#00e5c7,#10b981); color:#fff; border-radius:16px; padding:20px; margin-bottom:10px; box-shadow:0 4px 16px rgba(0,229,199,.25); }
