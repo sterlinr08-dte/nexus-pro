@@ -1113,11 +1113,16 @@
       sum + Number(c.pendiente ?? c.deuda_pendiente ?? c.balance ?? c.deuda_total ?? 0), 0);
   }
 
+  function bancoNombre(a) {
+    const raw = a.banco || a.banco_nombre || a.banco_otro || a.bank || '';
+    return String(raw).trim() || 'Sin banco';
+  }
+
   function calcularPorBanco(abonosPeriodo) {
     const porBanco = {};
     abonosPeriodo.forEach(a => {
       if (normMet(a.metodo) !== 'banco') return;
-      const b = a.banco || 'Sin banco';
+      const b = bancoNombre(a);
       if (!porBanco[b]) porBanco[b] = { monto: 0, cantidad: 0 };
       porBanco[b].monto += Number(a.monto || 0);
       porBanco[b].cantidad += 1;
