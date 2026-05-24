@@ -1,12 +1,7 @@
 (function() {
-  // CRÍTICO: Uso de constantes directas del sistema NEXUS PRO
   const ST = window.ST || {}; 
   const API = window.API || {};
 
-  /**
-   * CAMBIO 1: Formato de nombre de ciclo premium
-   * "Ciclo: 20 Abr - 20 May 2026"
-   */
   function nombreCiclo(periodo) {
     const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const mi = meses[periodo.inicio.getMonth()];
@@ -14,9 +9,6 @@
     return `Ciclo: 20 ${mi} - 20 ${mf} ${periodo.fin.getFullYear()}`;
   }
 
-  /**
-   * Lógica de cálculo de periodos (Regla 20-20)
-   */
   function calcularPeriodo(fechaReferencia) {
     let inicio, fin;
     const dia = fechaReferencia.getDate();
@@ -41,9 +33,6 @@
     return ciclos;
   }
 
-  /**
-   * CAMBIO 2: CSS Actualizado (Estética Premium e Identidad Visual)
-   */
   const injectCSS = () => {
     if (document.getElementById('nxDC-styles')) return;
     const style = document.createElement('style');
@@ -71,7 +60,6 @@
         background: #f1f5f9; color: #0f172a; transform: scale(1.08); border-color: #cbd5e1;
       }
       .nxDC-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
-      #nxDC-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
       @media (max-width: 480px) { 
         .nxDC-selector { padding: 12px; gap: 10px; } 
         .nxDC-select { min-width: 180px; font-size: 14px; } 
@@ -81,20 +69,23 @@
     document.head.appendChild(style);
   };
 
-  /**
-   * FUNCIÓN PRINCIPAL
-   */
+  // Esta es la función que el botón "Detalles de Cobro" busca ejecutar
   window.NEXUS_DETALLES_COBRO_V1 = async function() {
+    console.log("Iniciando módulo Detalles de Cobro...");
     injectCSS();
+    
+    // Asegúrate de que este ID coincida con el contenedor en tu HTML
     const container = document.getElementById('modulo-detalles-cobro');
-    if (!container) return;
+    if (!container) {
+        console.error("Error: No se encontró el contenedor #modulo-detalles-cobro");
+        return;
+    }
 
     const ciclos = calcularUltimosCiclos();
     let indiceActual = 0;
 
     const render = async () => {
       const periodo = ciclos[indiceActual];
-      
       container.innerHTML = `
         <div class="nxDC-selector">
           <button class="nxDC-nav-btn" id="prevCiclo" ${indiceActual === 5 ? 'disabled' : ''}>
@@ -108,11 +99,10 @@
           </button>
         </div>
         <div id="nxDC-content">
-          <div style="text-align:center; padding:40px; color:#64748b;"><i class="fas fa-sync fa-spin"></i> Cargando...</div>
+          <div style="text-align:center; padding:20px;">Cargando datos...</div>
         </div>
       `;
 
-      // Listeners
       document.getElementById('cicloSelect').onchange = (e) => {
         indiceActual = parseInt(e.target.value);
         render();
@@ -123,12 +113,17 @@
       document.getElementById('nextCiclo').onclick = () => {
         if (indiceActual > 0) { indiceActual--; render(); }
       };
-
-      // Aquí conectas con tu API existente pasando el 'periodo'
-      console.log("Nexus Pro Activo:", periodo);
+      
+      // LOGICA DE CARGA DE DATOS (Aquí va tu API)
+      console.log("Cargando ciclo:", periodo);
     };
 
-    render();
+    await render();
   };
+
+  // AUTO-EJECUCIÓN (Si el botón ya está en pantalla, esto lo activa)
+  if (document.getElementById('modulo-detalles-cobro')) {
+      window.NEXUS_DETALLES_COBRO_V1();
+  }
 
 })();
