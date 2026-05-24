@@ -1359,11 +1359,18 @@
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return;
     
+    // Asegurar que la vista Dashboard esté activa (en caso de venir de otra vista)
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+    vDash.classList.add('on');
+    
     // Ocultar todos los hijos del dashboard EXCEPTO nuestro contenedor y el botón volver
     Array.from(vDash.children).forEach(child => {
       if (child.id === 'nxDetallesCobroV1') return;
       if (child.id === 'nxDCBotonVolver') return;
-      child.dataset.nxDCPrevDisplay = child.style.display || '';
+      // Guardar el display previo solo si no se ha guardado antes (para no perderlo)
+      if (child.dataset.nxDCPrevDisplay === undefined) {
+        child.dataset.nxDCPrevDisplay = child.style.display || '';
+      }
       child.style.display = 'none';
     });
     
@@ -1377,6 +1384,9 @@
         </button>
       `;
       vDash.insertBefore(btn, document.getElementById('nxDetallesCobroV1'));
+    } else {
+      // Si ya existe, asegurar que esté visible
+      document.getElementById('nxDCBotonVolver').style.display = '';
     }
     
     // Mostrar nuestro contenedor
@@ -1385,27 +1395,37 @@
       cDetalles.style.display = '';
       renderDetallesCobro();
     }
+    
+    // Scroll arriba para que se vea el selector
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   
   window.nxVolverResumen = function() {
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return;
     
-    // Restaurar todos los hijos
+    // Ocultar nuestro contenedor y botón
+    const cDetalles = document.getElementById('nxDetallesCobroV1');
+    if (cDetalles) cDetalles.style.display = 'none';
+    
+    const btnVolver = document.getElementById('nxDCBotonVolver');
+    if (btnVolver) btnVolver.style.display = 'none';
+    
+    // Restaurar todos los hijos al estado original
     Array.from(vDash.children).forEach(child => {
-      if (child.id === 'nxDetallesCobroV1') {
-        child.style.display = 'none';
-        return;
-      }
-      if (child.id === 'nxDCBotonVolver') {
-        child.style.display = 'none';
-        return;
-      }
+      if (child.id === 'nxDetallesCobroV1') return;
+      if (child.id === 'nxDCBotonVolver') return;
       if (child.dataset.nxDCPrevDisplay !== undefined) {
         child.style.display = child.dataset.nxDCPrevDisplay;
         delete child.dataset.nxDCPrevDisplay;
+      } else {
+        // Si por alguna razón no hay dataset, quitar el display:none
+        child.style.display = '';
       }
     });
+    
+    // Scroll arriba
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   window.nxAbrirDetallesCobro = mostrarDetalles;
