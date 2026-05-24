@@ -1170,6 +1170,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <button id="cfgTab11" onclick="switchCfgTab(11)" class="cfg-tab"><i class="ti ti-target"></i><span>Metas</span></button>
             <button id="cfgTab12" onclick="switchCfgTab(12)" class="cfg-tab"><i class="ti ti-palette"></i><span>Apariencia</span></button>
             <button id="cfgTab13" onclick="switchCfgTab(13)" class="cfg-tab"><i class="ti ti-list-check"></i><span>Coberturas</span></button>
+            <button id="cfgTab14" onclick="switchCfgTab(14)" class="cfg-tab"><i class="ti ti-building-bank"></i><span>Bancos</span></button>
           </div>
 
           <!-- Indicador de tab activo -->
@@ -1446,6 +1447,38 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div id="cfgCoberturas"></div>
           </div>
 
+          <!-- TAB 14: Bancos -->
+          <div id="cfgPanel14" class="cfg-panel" style="display:none">
+            <div class="nc p5">
+              <div class="ch">
+                <div>
+                  <div class="ct">🏦 Gestión de Bancos</div>
+                  <div class="ct-s">Administra los bancos disponibles para cobros por transferencia o depósito</div>
+                </div>
+                <button class="btn bsm bc1" type="button" onclick="renderBancos()">
+                  <i class="ti ti-refresh"></i> Recargar
+                </button>
+              </div>
+
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:12px;margin:12px 0;color:#1e3a8a;font-size:12px;font-weight:600">
+                ℹ️ Los bancos activos aparecerán en el selector al registrar un cobro por transferencia o depósito. Los desactivados se conservan en cobros antiguos pero no aparecen para nuevos cobros.
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-bottom:14px" id="bcoForm">
+                <div class="fr" style="margin:0">
+                  <label>Agregar nuevo banco</label>
+                  <input type="text" id="bcoNuevo" placeholder="Ej: Banco López" style="width:100%">
+                </div>
+                <button class="btn bxl bc1" type="button" onclick="agregarBanco()">
+                  <i class="ti ti-plus"></i> Agregar
+                </button>
+              </div>
+
+              <div class="div"></div>
+              <div id="bcoLista" style="margin-top:10px"></div>
+            </div>
+          </div>
+
         </div>
 
         <!-- <!-- USUARIOS -->
@@ -1613,7 +1646,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="mt"><span>// REGISTRAR ABONO</span><button class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
     <div id="abonoI" style="background:var(--bg3);border-radius:var(--r6);padding:10px;margin-bottom:12px;border:1px solid rgba(0,229,199,.07)"></div>
     <div class="fr"><label>Monto (RD$) *</label><input type="number" id="aMnt" placeholder="0.00" min="0.01" step="0.01"/></div>
-    <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
+    <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
+    <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
+    <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"/></div>
     <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="">Sin asignar</option></select></div>
     <div class="fr"><label>Referencia</label><input type="text" id="aRef" placeholder="Número de cheque, ref..."/></div>
     <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a;display:flex;align-items:center;gap:8px">
@@ -2560,7 +2595,7 @@ function switchCfgTab(n){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
     vCfg.classList.add('on');
   }
-  const total=13;
+  const total=14;
   for(let i=1;i<=total;i++){
     const tab=document.getElementById('cfgTab'+i);
     const panel=document.getElementById('cfgPanel'+i);
@@ -2577,6 +2612,8 @@ function switchCfgTab(n){
   }
   // Limpiar el campo de nueva ARS al cambiar de pestaña
   const newArsEl=document.getElementById('newArs');if(newArsEl)newArsEl.value='';
+  // Si es tab Bancos, cargar la lista
+  if(n===14&&typeof window.renderBancos==='function'){setTimeout(()=>window.renderBancos(),100);}
   // Mover indicador animado
   const tabActive=document.getElementById('cfgTab'+n);
   const ind=document.getElementById('cfgIndicator');
@@ -4703,8 +4740,100 @@ function rCob(){
   if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin clientes</div></td></tr>';return;}
   tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
 }
+// ════════ BANCOS - Módulo nativo ════════
+let _bancosCache=[];
+const _BANCOS_FALLBACK=[
+  {id:'fb1',nombre:'BHD',activo:true},{id:'fb2',nombre:'Banreservas',activo:true},
+  {id:'fb3',nombre:'Popular',activo:true},{id:'fb4',nombre:'Asociación Cibao',activo:true},
+  {id:'fb5',nombre:'Scotiabank',activo:true},{id:'fb6',nombre:'Caribe',activo:true},
+  {id:'fb7',nombre:'Santa Cruz',activo:true},{id:'fb8',nombre:'Otros',activo:true}
+];
+function _normBco(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
+function _sortBcos(arr){return [...arr].sort((a,b)=>{if(_normBco(a.nombre)==='otros')return 1;if(_normBco(b.nombre)==='otros')return -1;return String(a.nombre||'').localeCompare(String(b.nombre||''),'es');});}
+async function cargarBancos(force){
+  if(_bancosCache.length&&!force)return _bancosCache;
+  try{const data=await API.get('bancos','select=*&order=nombre.asc');if(Array.isArray(data)&&data.length){_bancosCache=_sortBcos(data.map(b=>({id:b.id,nombre:b.nombre,activo:b.activo!==false})));return _bancosCache;}}catch(e){console.warn('Bancos fallback:',e);}
+  _bancosCache=_sortBcos(_BANCOS_FALLBACK.map(b=>({...b})));
+  return _bancosCache;
+}
+async function renderBancos(){
+  await cargarBancos(true);
+  const cont=document.getElementById('bcoLista');if(!cont)return;
+  if(!_bancosCache.length){cont.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px">No hay bancos registrados.</div>';return;}
+  cont.innerHTML='<div style="display:grid;gap:8px">'+_bancosCache.map(b=>`<div class="bcoRow" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#fff"><div style="flex:1;min-width:0"><div style="font-weight:700;color:#0f172a;font-size:14px">🏦 ${b.nombre}</div><div style="font-size:11px;font-weight:700;margin-top:3px;color:${b.activo?'#059669':'#dc2626'}">${b.activo?'✓ ACTIVO':'✗ INACTIVO'}</div></div><div class="bcoActions" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end"><button class="btn bsm bghost" type="button" onclick="editarBanco('${b.id}')"><i class="ti ti-edit"></i> Editar</button><button class="btn bsm ${b.activo?'bghost':'bc1'}" type="button" onclick="toggleBanco('${b.id}')"><i class="ti ${b.activo?'ti-circle-off':'ti-check'}"></i> ${b.activo?'Desactivar':'Activar'}</button><button class="btn bsm bghost" type="button" onclick="eliminarBanco('${b.id}')"><i class="ti ti-trash"></i> Eliminar</button></div></div>`).join('')+'</div>';
+  // También actualizar el select de cobros si está abierto
+  llenarSelectBancosCobros();
+}
+async function agregarBanco(){
+  const input=document.getElementById('bcoNuevo');const nombre=String(input?.value||'').trim();
+  if(!nombre){toast('err','Nombre requerido','Escribe el nombre del banco');return;}
+  await cargarBancos(true);
+  if(_bancosCache.some(b=>_normBco(b.nombre)===_normBco(nombre))){toast('err','Banco duplicado','Ese banco ya existe');return;}
+  try{await API.post('bancos',{nombre,activo:true});toast('ok','Banco agregado',nombre);if(input)input.value='';await renderBancos();}catch(e){console.error(e);toast('err','No se pudo agregar','Verifica permisos');}
+}
+async function editarBanco(id){
+  await cargarBancos(true);const banco=_bancosCache.find(b=>String(b.id)===String(id));if(!banco)return;
+  const nuevo=prompt('Nuevo nombre del banco:',banco.nombre);if(nuevo===null)return;
+  const nombre=String(nuevo).trim();if(!nombre){toast('err','Nombre requerido','El nombre no puede estar vacío');return;}
+  if(_bancosCache.some(b=>_normBco(b.nombre)===_normBco(nombre)&&String(b.id)!==String(id))){toast('err','Banco duplicado','Ya existe un banco con ese nombre');return;}
+  try{await API.patch('bancos','id=eq.'+id,{nombre});toast('ok','Banco actualizado',nombre);await renderBancos();}catch(e){console.error(e);toast('err','No se pudo editar','Verifica permisos');}
+}
+async function toggleBanco(id){
+  await cargarBancos(true);const banco=_bancosCache.find(b=>String(b.id)===String(id));if(!banco)return;
+  try{await API.patch('bancos','id=eq.'+id,{activo:!banco.activo});toast('ok',banco.activo?'Banco desactivado':'Banco activado',banco.nombre);await renderBancos();}catch(e){console.error(e);toast('err','No se pudo actualizar','Verifica permisos');}
+}
+async function eliminarBanco(id){
+  await cargarBancos(true);const banco=_bancosCache.find(b=>String(b.id)===String(id));if(!banco)return;
+  if(!confirm('¿Eliminar este banco?\n\n'+banco.nombre+'\n\nSi tiene abonos asociados se desactivará.'))return;
+  // Verificar si está en uso
+  try{const data=await API.get('abonos','select=id,banco&limit=5000');if(Array.isArray(data)&&data.some(x=>_normBco(x.banco)===_normBco(banco.nombre))){toast('err','Banco en uso','Tiene abonos asociados. Se desactivará.');try{await API.patch('bancos','id=eq.'+id,{activo:false});}catch(e){}await renderBancos();return;}}catch(e){}
+  try{await API.delete('bancos','id=eq.'+id);toast('ok','Banco eliminado',banco.nombre);await renderBancos();}catch(e){console.error(e);try{await API.patch('bancos','id=eq.'+id,{activo:false});await renderBancos();}catch(_){}}
+}
+async function llenarSelectBancosCobros(){
+  const sel=document.getElementById('aBanco');if(!sel)return;
+  const lista=await cargarBancos();const activos=lista.filter(b=>b.activo!==false);
+  const valActual=sel.value;
+  const sinOtros=activos.filter(b=>_normBco(b.nombre)!=='otros');
+  sel.innerHTML='<option value="">Seleccionar banco...</option>'+sinOtros.map(b=>`<option value="${b.nombre}">${b.nombre}</option>`).join('')+'<option value="Otros">Otros</option>';
+  if(valActual&&Array.from(sel.options).some(o=>o.value===valActual))sel.value=valActual;
+}
+function cambiarMetodoAbono(){
+  const met=document.getElementById('aMet')?.value||'';
+  const cont=document.getElementById('aBancoCont');
+  const otrosCont=document.getElementById('aBancoOtrosCont');
+  const sel=document.getElementById('aBanco');
+  const inp=document.getElementById('aBancoOtros');
+  const requiere=met==='Transferencia'||met==='Depósito';
+  if(requiere){
+    if(cont)cont.style.display='';
+    llenarSelectBancosCobros();
+  }else{
+    if(cont)cont.style.display='none';
+    if(otrosCont)otrosCont.style.display='none';
+    if(sel)sel.value='';
+    if(inp)inp.value='';
+  }
+}
+function cambiarBancoAbono(){
+  const sel=document.getElementById('aBanco')?.value||'';
+  const otrosCont=document.getElementById('aBancoOtrosCont');
+  const inp=document.getElementById('aBancoOtros');
+  if(sel==='Otros'){
+    if(otrosCont)otrosCont.style.display='';
+  }else{
+    if(otrosCont)otrosCont.style.display='none';
+    if(inp)inp.value='';
+  }
+}
+// BLINDADO: nadie puede sobrescribir estas funciones
+try{Object.defineProperty(window,'cargarBancos',{value:cargarBancos,writable:false,configurable:false});}catch(e){}
+try{Object.defineProperty(window,'renderBancos',{value:renderBancos,writable:false,configurable:false});}catch(e){}
+try{Object.defineProperty(window,'llenarSelectBancosCobros',{value:llenarSelectBancosCobros,writable:false,configurable:false});}catch(e){}
+
 function abrirAbono(cid){
   abonoCliId=cid;const c=ST.clientes.find(x=>x.id===cid);
+  // BLINDADO: cargar bancos en el select cuando se abre el modal
+  if(typeof window.llenarSelectBancosCobros==='function')window.llenarSelectBancosCobros();
   document.getElementById('abonoI').innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Póliza: <span style="color:var(--c4)">${c.numero_poliza||'—'}</span> · Pendiente: <span style="color:var(--c3);font-weight:700">${fmt(pend(c))}</span></div>`;
   document.getElementById('aMnt').value='';document.getElementById('aRef').value='';
   // Llenar selector de agente que cobró — preselecciona el agente del cliente si tiene
@@ -5021,21 +5150,41 @@ async function verHistorialAbonos(clienteId){
 async function regAbono(){
   const monto=parseFloat(document.getElementById('aMnt').value);
   if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');return;}
+  // VALIDACIONES nuevas: agente, referencia, banco (si transferencia/depósito)
+  const agenteCobro=document.getElementById('aAgente')?.value||null;
+  if(!agenteCobro){toast('err','Agente requerido','Selecciona el agente que cobró');return;}
+  const refValor=(document.getElementById('aRef')?.value||'').trim();
+  if(!refValor){toast('err','Referencia requerida','Escribe una referencia');return;}
+  const metodo=document.getElementById('aMet').value;
+  let bancoGuardar=null;
+  if(metodo==='Transferencia'||metodo==='Depósito'){
+    const bSel=document.getElementById('aBanco')?.value||'';
+    if(!bSel){toast('err','Banco requerido','Selecciona el banco');return;}
+    if(bSel==='Otros'){
+      const bOtros=(document.getElementById('aBancoOtros')?.value||'').trim();
+      if(!bOtros){toast('err','Banco requerido','Escribe el nombre del banco');return;}
+      bancoGuardar=bOtros;
+    }else{
+      bancoGuardar=bSel;
+    }
+  }
   const c=ST.clientes.find(x=>x.id===abonoCliId);
   const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
     const nuevoP=(c.pagado||0)+monto;
     await API.patch('clientes',`id=eq.${c.id}`,{pagado:nuevoP});c.pagado=nuevoP;
-    const agenteCobro=document.getElementById('aAgente')?.value||null;
     try{
-      await API.post('abonos',{cliente_id:c.id,monto,metodo:document.getElementById('aMet').value,referencia:document.getElementById('aRef').value,fecha:hoy(),agente_cobro:agenteCobro});
+      await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar});
     }catch(eCol){
-      // Si la columna agente_cobro no existe aún, guardar sin ella
-      await API.post('abonos',{cliente_id:c.id,monto,metodo:document.getElementById('aMet').value,referencia:document.getElementById('aRef').value,fecha:hoy()});
+      // Si alguna columna no existe, guardar sin ella
+      try{
+        await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro});
+      }catch(eCol2){
+        await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy()});
+      }
     }
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
-    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${document.getElementById('aMet').value}`+(agNom?` · Cobró: ${agNom}`:''),'Cobros');
-    const metodo=document.getElementById('aMet')?.value||'Efectivo';
+    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros');
     const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:metodo==='Transferencia'||metodo==='Depósito'?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
     const asi={fecha:hoy(),referencia:'AST-COB-'+c.numero_poliza?.replace('POL-','').slice(-4)||'0000',descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
     const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);
