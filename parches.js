@@ -1095,11 +1095,10 @@
   function init() {
     injectStyles();
     createTransferModal();
-    wrapReporteAgente();
-    bindDashboardCobrado();
-    if (q("#v-rep-agente.view.on") && q("#rAgt")) {
-      setTimeout(() => renderReporteAgentesV2(false), 250);
-    }
+    // DESACTIVADO: el reporte premium viejo. Ahora vive en Detalles de Cobro V1
+    // wrapReporteAgente();
+    // bindDashboardCobrado();
+    // (no se ejecuta el render automático del reporte viejo)
   }
 
   if (document.readyState === "loading") {
@@ -1108,13 +1107,7 @@
     init();
   }
 
-  document.addEventListener("click", function () {
-    setTimeout(bindDashboardCobrado, 120);
-  }, true);
-
-  window.addEventListener("resize", function () {
-    setTimeout(bindDashboardCobrado, 120);
-  });
+  // DESACTIVADO: listeners del reporte premium viejo (ahora en Detalles de Cobro V1)
 })();
 
 
@@ -1463,68 +1456,76 @@
     `;
   }
   
-  // ═══ PESTAÑAS EN DASHBOARD ═══
-  function crearPestañas() {
+  // ═══ INTEGRACIÓN EN DASHBOARD ═══
+  function crearContenedor() {
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return false;
-    if (document.getElementById('nxDCTabs')) return true;
+    if (document.getElementById('nxDetallesCobroV1')) return true;
     
-    // Wrapper para Resumen actual (todos los hijos actuales)
-    const contenidoActual = Array.from(vDash.children);
-    
-    // Crear barra de pestañas
-    const tabsBar = document.createElement('div');
-    tabsBar.id = 'nxDCTabs';
-    tabsBar.className = 'nxDC-tabs';
-    tabsBar.innerHTML = `
-      <button class="nxDC-tab active" data-tab="resumen" onclick="window.nxDashboardTab('resumen')">
-        <i class="ti ti-layout-dashboard"></i> Resumen
-      </button>
-      <button class="nxDC-tab" data-tab="detalles" onclick="window.nxDashboardTab('detalles')">
-        <i class="ti ti-wallet"></i> Detalles de Cobro
-      </button>
-    `;
-    
-    // Crear contenedores
-    const cResumen = document.createElement('div');
-    cResumen.id = 'nxDCResumen';
-    cResumen.className = 'nxDC-pane active';
-    contenidoActual.forEach(child => cResumen.appendChild(child));
-    
+    // Crear contenedor oculto al final del Dashboard
     const cDetalles = document.createElement('div');
     cDetalles.id = 'nxDetallesCobroV1';
-    cDetalles.className = 'nxDC-pane';
-    
-    // Construir nuevo orden
-    vDash.appendChild(tabsBar);
-    vDash.appendChild(cResumen);
+    cDetalles.style.display = 'none';
     vDash.appendChild(cDetalles);
     
+    // Crear botón "Volver al resumen" arriba del contenedor
     return true;
   }
   
-  window.nxDashboardTab = function(tab) {
-    const tabsBar = document.getElementById('nxDCTabs');
-    if (!tabsBar) return;
+  function mostrarDetalles() {
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return;
     
-    tabsBar.querySelectorAll('.nxDC-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.tab === tab);
+    // Ocultar todos los hijos del dashboard EXCEPTO nuestro contenedor y el botón volver
+    Array.from(vDash.children).forEach(child => {
+      if (child.id === 'nxDetallesCobroV1') return;
+      if (child.id === 'nxDCBotonVolver') return;
+      child.dataset.nxDCPrevDisplay = child.style.display || '';
+      child.style.display = 'none';
     });
     
-    const cResumen = document.getElementById('nxDCResumen');
-    const cDetalles = document.getElementById('nxDetallesCobroV1');
-    
-    if (tab === 'detalles') {
-      if (cResumen) cResumen.classList.remove('active');
-      if (cDetalles) {
-        cDetalles.classList.add('active');
-        renderDetallesCobro();
-      }
-    } else {
-      if (cResumen) cResumen.classList.add('active');
-      if (cDetalles) cDetalles.classList.remove('active');
+    // Crear botón volver si no existe
+    if (!document.getElementById('nxDCBotonVolver')) {
+      const btn = document.createElement('div');
+      btn.id = 'nxDCBotonVolver';
+      btn.innerHTML = `
+        <button class="btn bsm bghost" type="button" onclick="window.nxVolverResumen()" style="margin-bottom:12px">
+          <i class="ti ti-arrow-left"></i> Volver al Resumen
+        </button>
+      `;
+      vDash.insertBefore(btn, document.getElementById('nxDetallesCobroV1'));
     }
+    
+    // Mostrar nuestro contenedor
+    const cDetalles = document.getElementById('nxDetallesCobroV1');
+    if (cDetalles) {
+      cDetalles.style.display = '';
+      renderDetallesCobro();
+    }
+  }
+  
+  window.nxVolverResumen = function() {
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return;
+    
+    // Restaurar todos los hijos
+    Array.from(vDash.children).forEach(child => {
+      if (child.id === 'nxDetallesCobroV1') {
+        child.style.display = 'none';
+        return;
+      }
+      if (child.id === 'nxDCBotonVolver') {
+        child.style.display = 'none';
+        return;
+      }
+      if (child.dataset.nxDCPrevDisplay !== undefined) {
+        child.style.display = child.dataset.nxDCPrevDisplay;
+        delete child.dataset.nxDCPrevDisplay;
+      }
+    });
   };
+  
+  window.nxAbrirDetallesCobro = mostrarDetalles;
   
   // ═══ INTERCEPTAR CLICK EN KPI COBRADO ═══
   function bindCobradoKPI() {
@@ -1538,7 +1539,7 @@
       if (vDash && vDash.classList.contains('on')) {
         e.preventDefault();
         e.stopPropagation();
-        window.nxDashboardTab('detalles');
+        mostrarDetalles();
       }
     }, true);
   }
@@ -1549,12 +1550,8 @@
     const style = document.createElement('style');
     style.id = 'nxDC-css';
     style.textContent = `
-      .nxDC-tabs { display:flex; gap:6px; margin-bottom:12px; background:#fff; border-radius:14px; padding:6px; border:1px solid #e2e8f0; }
-      .nxDC-tab { flex:1; padding:10px 14px; border:none; background:transparent; border-radius:10px; font-weight:700; font-size:13px; color:#64748b; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:.2s; }
-      .nxDC-tab:hover { background:#f1f5f9; color:#0f172a; }
-      .nxDC-tab.active { background:linear-gradient(135deg,#00e5c7,#10b981); color:#fff; box-shadow:0 2px 8px rgba(0,229,199,.3); }
-      .nxDC-pane { display:none; }
-      .nxDC-pane.active { display:block; }
+      #nxDetallesCobroV1 { animation:nxDCFade .3s ease-out; }
+      @keyframes nxDCFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
       
       .nxDC-kpis { margin-bottom:14px; }
       .nxDC-kpi-big { background:linear-gradient(135deg,#00e5c7,#10b981); color:#fff; border-radius:16px; padding:20px; margin-bottom:10px; box-shadow:0 4px 16px rgba(0,229,199,.25); }
@@ -1609,8 +1606,6 @@
       .nxDC-transf-meta { grid-column:1/-1; font-size:10px; color:#64748b; font-weight:600; }
       
       @media(max-width:768px) {
-        .nxDC-tab { padding:8px 10px; font-size:11px; }
-        .nxDC-tab span { display:none; }
         .nxDC-kpi-value { font-size:24px; }
         .nxDC-kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
         .nxDC-kpi-num { font-size:13px; }
@@ -1631,7 +1626,7 @@
     let intentos = 0;
     const tryInit = function() {
       intentos++;
-      if (crearPestañas()) {
+      if (crearContenedor()) {
         bindCobradoKPI();
         return;
       }
