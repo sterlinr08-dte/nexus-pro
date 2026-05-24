@@ -1187,6 +1187,58 @@
     return `20 ${mi} → 20 ${mf} ${periodo.fin.getFullYear()}`;
   }
   
+  // ═══ SELECTOR DE CICLOS ═══
+  let cicloSeleccionado = null;
+  
+  function calcularUltimosCiclos(cantidad) {
+    cantidad = cantidad || 6;
+    const ciclos = [];
+    const base = calcularPeriodo();
+    for (let i = 0; i < cantidad; i++) {
+      const ini = new Date(base.inicio);
+      const fin = new Date(base.fin);
+      ini.setMonth(ini.getMonth() - i);
+      fin.setMonth(fin.getMonth() - i);
+      const key = `${ini.getTime()}_${fin.getTime()}`;
+      ciclos.push({ inicio: ini, fin: fin, nombre: nombreCiclo({ inicio: ini, fin: fin }), key: key });
+    }
+    return ciclos;
+  }
+  
+  function handleCambioCiclo(key, ciclos) {
+    const encontrado = ciclos.find(c => c.key === key);
+    if (encontrado) {
+      cicloSeleccionado = encontrado;
+      renderDetallesCobro();
+    }
+  }
+  
+  function navegarCiclo(direccion, ciclos) {
+    const actualKey = cicloSeleccionado ? cicloSeleccionado.key : ciclos[0].key;
+    const index = ciclos.findIndex(c => c.key === actualKey);
+    const nuevoIndex = index + direccion;
+    if (nuevoIndex >= 0 && nuevoIndex < ciclos.length) {
+      cicloSeleccionado = ciclos[nuevoIndex];
+      renderDetallesCobro();
+    }
+  }
+  
+  function crearBarraSelector(ciclos, periodoActivo, indexActual) {
+    return `
+      <div class="nxDC-selector">
+        <button class="nxDC-nav-btn" id="nxDCAnterior" ${indexActual === ciclos.length - 1 ? 'disabled' : ''} title="Ciclo anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <select id="nxDCCicloSelect" class="nxDC-select">
+          ${ciclos.map(c => `<option value="${c.key}" ${c.key === periodoActivo.key ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+        </select>
+        <button class="nxDC-nav-btn" id="nxDCSiguiente" ${indexActual === 0 ? 'disabled' : ''} title="Ciclo más reciente">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+    `;
+  }
+  
   // ═══ CARGAR DATOS ═══
   async function cargarAbonos() {
     const api = getAPI();
@@ -1439,7 +1491,11 @@
     
     cont.innerHTML = '<div class="nc p5"><div class="loading"><div class="spin"></div> Cargando detalles de cobro...</div></div>';
     
-    const periodo = calcularPeriodo();
+    // Selector de ciclos
+    const listaCiclos = calcularUltimosCiclos(6);
+    const periodo = cicloSeleccionado || listaCiclos[0];
+    const indexActual = listaCiclos.findIndex(c => c.key === periodo.key);
+    
     const [abonos, transferencias] = await Promise.all([cargarAbonos(), cargarTransferencias()]);
     
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
@@ -1449,11 +1505,22 @@
     const hayTransferencias = transferenciasPeriodo.length > 0;
     
     cont.innerHTML = `
-      ${renderKPIs(stats, periodo)}
-      ${renderBancosSeccion(porBanco, stats.banco.monto)}
-      ${renderAgentesSeccion(porAgente, hayTransferencias)}
-      ${hayTransferencias ? renderTransferenciasSeccion(transferenciasPeriodo) : ''}
+      ${crearBarraSelector(listaCiclos, periodo, indexActual)}
+      <div id="nxDC-contenido">
+        ${renderKPIs(stats, periodo)}
+        ${renderBancosSeccion(porBanco, stats.banco.monto)}
+        ${renderAgentesSeccion(porAgente, hayTransferencias)}
+        ${hayTransferencias ? renderTransferenciasSeccion(transferenciasPeriodo) : ''}
+      </div>
     `;
+    
+    // Conectar eventos del selector
+    const sel = document.getElementById('nxDCCicloSelect');
+    const btnAnt = document.getElementById('nxDCAnterior');
+    const btnSig = document.getElementById('nxDCSiguiente');
+    if (sel) sel.onchange = (e) => handleCambioCiclo(e.target.value, listaCiclos);
+    if (btnAnt) btnAnt.onclick = () => navegarCiclo(1, listaCiclos);
+    if (btnSig) btnSig.onclick = () => navegarCiclo(-1, listaCiclos);
   }
   
   // ═══ INTEGRACIÓN EN DASHBOARD ═══
@@ -1552,6 +1619,24 @@
     style.textContent = `
       #nxDetallesCobroV1 { animation:nxDCFade .3s ease-out; }
       @keyframes nxDCFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+      
+      .nxDC-selector { 
+        display:flex; gap:8px; align-items:center; background:#fff; border:1px solid #e2e8f0; 
+        border-radius:14px; padding:8px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.04); 
+        position:sticky; top:0; z-index:100;
+      }
+      .nxDC-select { 
+        flex:1; padding:10px 12px; border:1px solid #e2e8f0; border-radius:10px; 
+        font-weight:700; font-size:14px; background:#f8fafc; color:#0f172a; cursor:pointer;
+      }
+      .nxDC-nav-btn { 
+        width:42px; height:42px; border:1px solid #e2e8f0; border-radius:10px; 
+        background:#fff; cursor:pointer; display:flex; align-items:center; 
+        justify-content:center; color:#0f172a; transition: background 0.2s;
+      }
+      .nxDC-nav-btn:hover:not(:disabled) { background:#f1f5f9; }
+      .nxDC-nav-btn:disabled { opacity:.3; cursor:not-allowed; }
+      @media (max-width: 480px) { .nxDC-selector { padding: 6px; } .nxDC-select { font-size: 13px; } }
       
       .nxDC-kpis { margin-bottom:14px; }
       .nxDC-kpi-big { background:linear-gradient(135deg,#00e5c7,#10b981); color:#fff; border-radius:16px; padding:20px; margin-bottom:10px; box-shadow:0 4px 16px rgba(0,229,199,.25); }
