@@ -2566,3 +2566,88 @@
 
   injectCSS();
 })();
+/* FIX FUERTE - SIDEBAR BLANCO SEMI-GLASS */
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_FORCE_WHITE_SIDEBAR__) return;
+  window.__NEXUS_FORCE_WHITE_SIDEBAR__ = true;
+
+  const style = document.createElement("style");
+  style.id = "nx-force-white-sidebar";
+
+  style.textContent = `
+    /* Barra lateral real */
+    body > aside,
+    aside,
+    .sidebar,
+    .side,
+    .sbar,
+    .drawer,
+    .menu-lateral,
+    [class*="sidebar"],
+    [class*="side"],
+    [class*="sbar"] {
+      background:
+        radial-gradient(circle at top left, rgba(96,165,250,.28), transparent 38%),
+        linear-gradient(180deg, rgba(255,255,255,.95), rgba(219,234,254,.82)) !important;
+      backdrop-filter: blur(26px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(26px) saturate(160%) !important;
+      border-right: 1px solid rgba(255,255,255,.95) !important;
+      box-shadow:
+        18px 0 45px rgba(37,99,235,.18),
+        inset 1px 0 0 rgba(255,255,255,.95) !important;
+      color: #0f172a !important;
+    }
+
+    body > aside *,
+    aside *,
+    .sidebar *,
+    .side *,
+    .sbar *,
+    .drawer *,
+    [class*="sidebar"] *,
+    [class*="side"] *,
+    [class*="sbar"] * {
+      color: #1e3a8a !important;
+      border-color: rgba(37,99,235,.16) !important;
+    }
+
+    body > aside .active,
+    aside .active,
+    .sidebar .active,
+    .side .active,
+    .sbar .active,
+    .drawer .active,
+    [class*="sidebar"] .active,
+    [class*="side"] .active,
+    [class*="sbar"] .active {
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.98), rgba(219,234,254,.86)) !important;
+      color: #2563eb !important;
+      box-shadow:
+        0 14px 30px rgba(37,99,235,.22),
+        inset 0 1px 0 rgba(255,255,255,1) !important;
+      border-left: 4px solid #2563eb !important;
+      border-radius: 18px !important;
+    }
+
+    body > aside svg,
+    aside svg,
+    .sidebar svg,
+    .side svg,
+    .sbar svg,
+    .drawer svg,
+    body > aside i,
+    aside i,
+    .sidebar i,
+    .side i,
+    .sbar i,
+    .drawer i {
+      color: #2563eb !important;
+      stroke: #2563eb !important;
+    }
+  `;
+
+  document.head.appendChild(style);
+})();
