@@ -2908,3 +2908,118 @@
     attributeFilter: ["class", "style"]
   });
 })();
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - ICONOS DASHBOARD 3D CENTRALIZADOS
+   Solo visual. No cambia lógica.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_DASHBOARD_ICONS_3D__) return;
+  window.__NEXUS_DASHBOARD_ICONS_3D__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-dashboard-icons-3d-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-dashboard-icons-3d-css";
+
+    style.textContent = `
+      #v-dashboard .ti,
+      #v-dashboard i[class*="ti-"],
+      #v-dashboard .ico,
+      #v-dashboard svg {
+        display: inline-grid !important;
+        place-items: center !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+      }
+
+      #v-dashboard .kpi i,
+      #v-dashboard .kpi .ti,
+      #v-dashboard .sm i,
+      #v-dashboard .sm .ti,
+      #v-dashboard .qa i,
+      #v-dashboard .qa .ti,
+      #v-dashboard .nc i,
+      #v-dashboard .nc .ti {
+        width: 46px !important;
+        height: 46px !important;
+        min-width: 46px !important;
+        border-radius: 16px !important;
+        background:
+          linear-gradient(145deg, rgba(255,255,255,.96), rgba(219,234,254,.86)) !important;
+        color: #2563eb !important;
+        box-shadow:
+          0 12px 24px rgba(37,99,235,.24),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(37,99,235,.10) !important;
+        border: 1px solid rgba(59,130,246,.20) !important;
+        font-size: 22px !important;
+        line-height: 1 !important;
+      }
+
+      #v-dashboard .kpi,
+      #v-dashboard .sm,
+      #v-dashboard .qa {
+        align-items: center !important;
+      }
+
+      #v-dashboard .kpi > *,
+      #v-dashboard .sm > *,
+      #v-dashboard .qa > * {
+        align-self: center !important;
+      }
+
+      #v-dashboard .kpi i::before,
+      #v-dashboard .sm i::before,
+      #v-dashboard .qa i::before,
+      #v-dashboard .nc i::before {
+        display: block !important;
+        line-height: 1 !important;
+      }
+
+      #v-dashboard .kpi:hover i,
+      #v-dashboard .sm:hover i,
+      #v-dashboard .qa:hover i,
+      #v-dashboard .nc:hover i {
+        transform: translateY(-2px) scale(1.04);
+        box-shadow:
+          0 16px 30px rgba(37,99,235,.30),
+          0 6px 14px rgba(15,23,42,.10),
+          inset 0 1px 0 rgba(255,255,255,1),
+          inset 0 -2px 8px rgba(37,99,235,.14) !important;
+      }
+
+      #v-dashboard .kpi i,
+      #v-dashboard .sm i,
+      #v-dashboard .qa i,
+      #v-dashboard .nc i {
+        transition: transform .18s ease, box-shadow .18s ease !important;
+      }
+
+      @media(max-width:768px){
+        #v-dashboard .kpi i,
+        #v-dashboard .kpi .ti,
+        #v-dashboard .sm i,
+        #v-dashboard .sm .ti,
+        #v-dashboard .qa i,
+        #v-dashboard .qa .ti,
+        #v-dashboard .nc i,
+        #v-dashboard .nc .ti {
+          width: 40px !important;
+          height: 40px !important;
+          min-width: 40px !important;
+          border-radius: 14px !important;
+          font-size: 19px !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+})();
