@@ -2394,3 +2394,175 @@
 
   injectCSS();
 })();
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - FIX SIDEBAR SEMI-GLASS BLANCO/AZUL
+   Solo visual. No cambia lógica.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_FIX_SIDEBAR_GLASS_V1__) return;
+  window.__NEXUS_FIX_SIDEBAR_GLASS_V1__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-fix-sidebar-glass-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-fix-sidebar-glass-css";
+
+    style.textContent = `
+      aside,
+      .sidebar,
+      .side,
+      nav.side,
+      .sbar,
+      #sidebar {
+        background:
+          radial-gradient(circle at top left, rgba(96,165,250,.28), transparent 36%),
+          linear-gradient(180deg, rgba(255,255,255,.88), rgba(219,234,254,.72)) !important;
+        backdrop-filter: blur(24px) saturate(150%) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+        border-right: 1px solid rgba(255,255,255,.85) !important;
+        box-shadow:
+          18px 0 45px rgba(37,99,235,.14),
+          inset 1px 0 0 rgba(255,255,255,.95) !important;
+        color: #0f172a !important;
+      }
+
+      aside *,
+      .sidebar *,
+      .side *,
+      nav.side *,
+      .sbar *,
+      #sidebar * {
+        color: #1e3a8a !important;
+      }
+
+      aside .logo,
+      .sidebar .logo,
+      .side .logo,
+      aside .brand,
+      .sidebar .brand,
+      .side .brand {
+        color: #0f172a !important;
+      }
+
+      aside .muted,
+      .sidebar .muted,
+      .side .muted,
+      aside small,
+      .sidebar small,
+      .side small {
+        color: #64748b !important;
+      }
+
+      aside a,
+      .sidebar a,
+      .side a,
+      nav.side a,
+      aside button,
+      .sidebar button,
+      .side button,
+      nav.side button {
+        background: transparent !important;
+        color: #1e3a8a !important;
+        border-radius: 18px !important;
+        transition: all .18s ease !important;
+      }
+
+      aside a:hover,
+      .sidebar a:hover,
+      .side a:hover,
+      nav.side a:hover,
+      aside button:hover,
+      .sidebar button:hover,
+      .side button:hover,
+      nav.side button:hover {
+        background: rgba(255,255,255,.62) !important;
+        box-shadow:
+          0 10px 24px rgba(37,99,235,.12),
+          inset 0 1px 0 rgba(255,255,255,.9) !important;
+        transform: translateY(-1px);
+      }
+
+      aside a.active,
+      .sidebar a.active,
+      .side a.active,
+      nav.side a.active,
+      aside button.active,
+      .sidebar button.active,
+      .side button.active,
+      nav.side button.active,
+      aside .active,
+      .sidebar .active,
+      .side .active {
+        background:
+          linear-gradient(145deg, rgba(255,255,255,.96), rgba(219,234,254,.78)) !important;
+        color: #2563eb !important;
+        border: 1px solid rgba(37,99,235,.22) !important;
+        box-shadow:
+          0 14px 28px rgba(37,99,235,.18),
+          inset 0 1px 0 rgba(255,255,255,.98) !important;
+      }
+
+      aside i,
+      .sidebar i,
+      .side i,
+      nav.side i,
+      aside svg,
+      .sidebar svg,
+      .side svg,
+      nav.side svg {
+        color: #2563eb !important;
+        stroke: #2563eb !important;
+      }
+
+      aside .admin,
+      .sidebar .admin,
+      .side .admin,
+      aside .user,
+      .sidebar .user,
+      .side .user,
+      aside [class*="user"],
+      .sidebar [class*="user"],
+      .side [class*="user"] {
+        background:
+          linear-gradient(145deg, rgba(255,255,255,.92), rgba(219,234,254,.72)) !important;
+        border: 1px solid rgba(59,130,246,.18) !important;
+        border-radius: 22px !important;
+        box-shadow:
+          0 12px 28px rgba(37,99,235,.14),
+          inset 0 1px 0 rgba(255,255,255,.95) !important;
+      }
+
+      aside .badge,
+      .sidebar .badge,
+      .side .badge {
+        background: linear-gradient(145deg, #3b82f6, #2563eb) !important;
+        color: #fff !important;
+        border-radius: 999px !important;
+        box-shadow: 0 8px 18px rgba(37,99,235,.25) !important;
+      }
+
+      @media(max-width: 768px) {
+        aside,
+        .sidebar,
+        .side,
+        nav.side,
+        .sbar,
+        #sidebar {
+          background:
+            linear-gradient(180deg, rgba(255,255,255,.94), rgba(219,234,254,.84)) !important;
+          box-shadow:
+            12px 0 32px rgba(37,99,235,.16),
+            inset 1px 0 0 rgba(255,255,255,.95) !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+})();
