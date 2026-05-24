@@ -2651,3 +2651,260 @@
 
   document.head.appendChild(style);
 })();
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - ANIMACIÓN GLOBAL DE MÓDULOS Y CONTENIDOS
+   Solo visual. No cambia lógica.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_GLOBAL_MOTION_V1__) return;
+  window.__NEXUS_GLOBAL_MOTION_V1__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-global-motion-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-global-motion-css";
+
+    style.textContent = `
+      @keyframes nxFadeSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(.985);
+          filter: blur(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes nxFadeSlideRight {
+        from {
+          opacity: 0;
+          transform: translateX(18px);
+          filter: blur(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+          filter: blur(0);
+        }
+      }
+
+      .view.on {
+        animation: nxFadeSlideRight .34s cubic-bezier(.2,.8,.2,1) both;
+      }
+
+      .view.on .nc,
+      .view.on .card,
+      .view.on .kpi,
+      .view.on .sm,
+      .view.on .qa,
+      .view.on .panel,
+      .view.on .box,
+      .view.on table,
+      .view.on form,
+      #nxDetallesCobroV1 .nxDC-card,
+      #nxDetallesCobroV1 .nxDC-kpi,
+      #nxDetallesCobroV1 .nxDC-head {
+        animation: nxFadeSlideUp .38s cubic-bezier(.2,.8,.2,1) both;
+      }
+
+      .view.on .nc:nth-child(1),
+      .view.on .card:nth-child(1),
+      .view.on .kpi:nth-child(1) { animation-delay: .03s; }
+
+      .view.on .nc:nth-child(2),
+      .view.on .card:nth-child(2),
+      .view.on .kpi:nth-child(2) { animation-delay: .06s; }
+
+      .view.on .nc:nth-child(3),
+      .view.on .card:nth-child(3),
+      .view.on .kpi:nth-child(3) { animation-delay: .09s; }
+
+      .view.on .nc:nth-child(4),
+      .view.on .card:nth-child(4),
+      .view.on .kpi:nth-child(4) { animation-delay: .12s; }
+
+      .view.on .nc:nth-child(5),
+      .view.on .card:nth-child(5),
+      .view.on .kpi:nth-child(5) { animation-delay: .15s; }
+
+      .btn,
+      button,
+      .mobile-bottom-nav-clean button,
+      .mobile-more-sheet-clean button {
+        transition:
+          transform .18s ease,
+          box-shadow .18s ease,
+          background .18s ease,
+          color .18s ease !important;
+      }
+
+      .btn:active,
+      button:active,
+      .mobile-bottom-nav-clean button:active,
+      .mobile-more-sheet-clean button:active {
+        transform: scale(.96) !important;
+      }
+
+      .nc,
+      .card,
+      .kpi,
+      .sm,
+      .qa,
+      .panel,
+      .box {
+        transition:
+          transform .22s ease,
+          box-shadow .22s ease,
+          border-color .22s ease,
+          background .22s ease !important;
+      }
+
+      .nc:hover,
+      .card:hover,
+      .kpi:hover,
+      .sm:hover,
+      .qa:hover {
+        transform: translateY(-2px);
+      }
+
+      .overlay.open .modal,
+      .overlay.on .modal {
+        animation: nxFadeSlideUp .28s cubic-bezier(.2,.8,.2,1) both;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: .01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: .01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+})();
+/* FIX DEFINITIVO - SIDEBAR BLANCO SEMI-GLASS */
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_FORCE_DRAWER_GLASS_V2__) return;
+  window.__NEXUS_FORCE_DRAWER_GLASS_V2__ = true;
+
+  function isDarkBlue(el) {
+    const bg = getComputedStyle(el).backgroundColor || "";
+    return bg.includes("15, 23, 42") || bg.includes("11, 22, 46") || bg.includes("17, 24, 39");
+  }
+
+  function applySidebarGlass() {
+    const candidates = Array.from(document.querySelectorAll("aside, nav, div, section"))
+      .filter(el => {
+        const r = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        return (
+          r.width >= 220 &&
+          r.width <= 520 &&
+          r.height > window.innerHeight * 0.55 &&
+          (r.left <= 8 || cs.position === "fixed") &&
+          (isDarkBlue(el) || cs.zIndex >= 100 || cs.position === "fixed")
+        );
+      });
+
+    candidates.forEach(el => {
+      el.style.setProperty("background", "radial-gradient(circle at top left, rgba(96,165,250,.24), transparent 38%), linear-gradient(180deg, rgba(255,255,255,.96), rgba(219,234,254,.86))", "important");
+      el.style.setProperty("backdrop-filter", "blur(26px) saturate(160%)", "important");
+      el.style.setProperty("-webkit-backdrop-filter", "blur(26px) saturate(160%)", "important");
+      el.style.setProperty("border-right", "1px solid rgba(255,255,255,.95)", "important");
+      el.style.setProperty("box-shadow", "18px 0 45px rgba(37,99,235,.18), inset 1px 0 0 rgba(255,255,255,.95)", "important");
+      el.style.setProperty("color", "#0f172a", "important");
+
+      el.querySelectorAll("*").forEach(child => {
+        child.style.setProperty("color", "#1e3a8a", "important");
+        child.style.setProperty("border-color", "rgba(37,99,235,.14)", "important");
+      });
+
+      el.querySelectorAll("svg, i").forEach(icon => {
+        icon.style.setProperty("color", "#2563eb", "important");
+        icon.style.setProperty("stroke", "#2563eb", "important");
+      });
+
+      el.querySelectorAll(".active, [class*='active'], button, a").forEach(item => {
+        const txt = (item.textContent || "").toLowerCase();
+        if (
+          item.className.toString().toLowerCase().includes("active") ||
+          txt.includes("dashboard") ||
+          txt.includes("facturas") && item.getAttribute("aria-current")
+        ) {
+          item.style.setProperty("background", "linear-gradient(145deg, rgba(255,255,255,.98), rgba(219,234,254,.86))", "important");
+          item.style.setProperty("color", "#2563eb", "important");
+          item.style.setProperty("border-radius", "18px", "important");
+          item.style.setProperty("box-shadow", "0 14px 30px rgba(37,99,235,.22), inset 0 1px 0 rgba(255,255,255,1)", "important");
+        }
+      });
+    });
+  }
+
+  function injectFontFix() {
+    if (document.getElementById("nx-font-size-fix")) return;
+    const style = document.createElement("style");
+    style.id = "nx-font-size-fix";
+    style.textContent = `
+      body { font-size: 14px !important; }
+      .view, .nc, .card, .modal { font-size: 14px !important; }
+      h1 { font-size: clamp(22px, 3vw, 34px) !important; }
+      h2, .ct { font-size: clamp(18px, 2.4vw, 26px) !important; }
+      h3 { font-size: clamp(15px, 2vw, 20px) !important; }
+      label, small, .ct-s { font-size: 12px !important; }
+      button, .btn, input, select, textarea { font-size: 14px !important; }
+      table th { font-size: 11px !important; }
+      table td { font-size: 13px !important; }
+
+      @media(max-width:768px){
+        body { font-size: 13px !important; }
+        h1 { font-size: 20px !important; }
+        h2, .ct { font-size: 17px !important; }
+        h3 { font-size: 15px !important; }
+        button, .btn, input, select, textarea { font-size: 13px !important; }
+        table th { font-size: 10px !important; }
+        table td { font-size: 12px !important; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function run() {
+    injectFontFix();
+    applySidebarGlass();
+  }
+
+  run();
+  setTimeout(run, 300);
+  setTimeout(run, 900);
+  setTimeout(run, 1600);
+
+  document.addEventListener("click", function () {
+    setTimeout(run, 120);
+    setTimeout(run, 500);
+  }, true);
+
+  new MutationObserver(function () {
+    setTimeout(run, 80);
+  }).observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class", "style"]
+  });
+})();
