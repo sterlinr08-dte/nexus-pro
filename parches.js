@@ -1116,3 +1116,533 @@
     setTimeout(bindDashboardCobrado, 120);
   });
 })();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - DETALLES DE COBRO DASHBOARD V1
+   - Pestaña en Dashboard (Resumen / Detalles de Cobro)
+   - Ciclo del 20 al 20
+   - KPIs por método + bancos + agentes + transferencias
+   ════════════════════════════════════════════════════════════════ */
+
+(function() {
+  'use strict';
+  
+  if (window.__NEXUS_DETALLES_COBRO_V1__) return;
+  window.__NEXUS_DETALLES_COBRO_V1__ = true;
+  
+  // ═══ HELPERS ═══
+  function st() {
+    try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); }
+    catch(e) { return window.ST || {}; }
+  }
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
+  }
+  function getFmt() {
+    return (typeof fmt === 'function') ? fmt : (n => 'RD$ ' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+  }
+  function getGAgt(id) {
+    if (typeof gAgt === 'function') return gAgt(id);
+    return (st().agentes || []).find(a => String(a.id) === String(id));
+  }
+  function normMet(m) {
+    const s = String(m||'').toLowerCase();
+    if (s.includes('efectivo')) return 'efectivo';
+    if (s.includes('transferencia') || s.includes('deposito') || s.includes('depósito')) return 'banco';
+    if (s.includes('cheque')) return 'cheque';
+    return 'otros';
+  }
+  function fmtFecha(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-DO', { day:'2-digit', month:'short', year:'numeric' });
+    } catch(e) { return iso; }
+  }
+  
+  // ═══ CICLO 20-20 ═══
+  function calcularPeriodo() {
+    const hoy = new Date();
+    const dia = hoy.getDate();
+    let fin, inicio;
+    if (dia < 20) {
+      // Antes del 20: ciclo cerrado fue del 20 anterior al 20 anterior
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 20);
+    } else {
+      // Después del 20: ciclo cerrado fue del 20 anterior al 20 actual
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 20);
+    }
+    return { inicio, fin };
+  }
+  
+  function enRango(fechaStr, inicio, fin) {
+    if (!fechaStr) return false;
+    try {
+      const f = new Date(fechaStr);
+      return f >= inicio && f < fin;
+    } catch(e) { return false; }
+  }
+  
+  function nombreCiclo(periodo) {
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const mi = meses[periodo.inicio.getMonth()];
+    const mf = meses[periodo.fin.getMonth()];
+    return `20 ${mi} → 20 ${mf} ${periodo.fin.getFullYear()}`;
+  }
+  
+  // ═══ CARGAR DATOS ═══
+  async function cargarAbonos() {
+    const api = getAPI();
+    if (!api || !api.get) return [];
+    try {
+      const data = await api.get('abonos', 'select=*&order=fecha.desc&limit=5000');
+      return Array.isArray(data) ? data : [];
+    } catch(e) {
+      console.warn('No se pudieron cargar abonos:', e);
+      return [];
+    }
+  }
+  
+  async function cargarTransferencias() {
+    const api = getAPI();
+    if (!api || !api.get) return [];
+    try {
+      const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=1000');
+      return Array.isArray(data) ? data : [];
+    } catch(e) {
+      return [];
+    }
+  }
+  
+  // ═══ CÁLCULOS ═══
+  function calcularKPIs(abonos, periodo) {
+    const enPeriodo = abonos.filter(a => enRango(a.fecha, periodo.inicio, periodo.fin));
+    const total = enPeriodo.reduce((s, a) => s + Number(a.monto || 0), 0);
+    const stats = { 
+      total, 
+      cantidad: enPeriodo.length,
+      efectivo: { monto: 0, cantidad: 0 },
+      banco: { monto: 0, cantidad: 0 },
+      cheque: { monto: 0, cantidad: 0 },
+      otros: { monto: 0, cantidad: 0 }
+    };
+    enPeriodo.forEach(a => {
+      const tipo = normMet(a.metodo);
+      stats[tipo].monto += Number(a.monto || 0);
+      stats[tipo].cantidad += 1;
+    });
+    return { stats, abonosPeriodo: enPeriodo };
+  }
+  
+  function calcularPorBanco(abonosPeriodo) {
+    const porBanco = {};
+    abonosPeriodo.forEach(a => {
+      if (normMet(a.metodo) !== 'banco') return;
+      const b = a.banco || 'Sin banco';
+      if (!porBanco[b]) porBanco[b] = { monto: 0, cantidad: 0 };
+      porBanco[b].monto += Number(a.monto || 0);
+      porBanco[b].cantidad += 1;
+    });
+    return Object.entries(porBanco)
+      .map(([nombre, d]) => ({ nombre, ...d }))
+      .sort((x, y) => y.monto - x.monto);
+  }
+  
+  function calcularPorAgente(abonosPeriodo, transferenciasPeriodo) {
+    const agentes = st().agentes || [];
+    return agentes.map(ag => {
+      const propios = abonosPeriodo.filter(a => String(a.agente_cobro) === String(ag.id));
+      const cobrado = propios.reduce((s, a) => s + Number(a.monto || 0), 0);
+      const desglose = { efectivo: 0, banco: 0, cheque: 0, otros: 0 };
+      propios.forEach(a => {
+        desglose[normMet(a.metodo)] += Number(a.monto || 0);
+      });
+      // Transferencias
+      const recibidas = transferenciasPeriodo
+        .filter(t => String(t.hacia_agente) === String(ag.id))
+        .reduce((s, t) => s + Number(t.monto || 0), 0);
+      const entregadas = transferenciasPeriodo
+        .filter(t => String(t.desde_agente) === String(ag.id))
+        .reduce((s, t) => s + Number(t.monto || 0), 0);
+      const enMano = cobrado + recibidas - entregadas;
+      return {
+        id: ag.id,
+        nombre: ag.nom,
+        cargo: ag.cargo || '',
+        cantidad: propios.length,
+        cobrado,
+        desglose,
+        recibidas,
+        entregadas,
+        enMano
+      };
+    }).sort((a, b) => b.cobrado - a.cobrado);
+  }
+  
+  // ═══ HTML RENDER ═══
+  function renderKPIs(stats, periodo) {
+    const F = getFmt();
+    return `
+      <div class="nxDC-kpis">
+        <div class="nxDC-kpi-big">
+          <div class="nxDC-kpi-label">💰 TOTAL COBRADO DEL CICLO</div>
+          <div class="nxDC-kpi-value">${F(stats.total)}</div>
+          <div class="nxDC-kpi-sub">${stats.cantidad} cobros · ${nombreCiclo(periodo)}</div>
+        </div>
+        <div class="nxDC-kpi-grid">
+          <div class="nxDC-kpi nxDC-kpi-ef">
+            <div class="nxDC-kpi-icon">💵</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.efectivo.monto)}</div>
+              <div class="nxDC-kpi-tag">EFECTIVO · ${stats.efectivo.cantidad}</div>
+            </div>
+          </div>
+          <div class="nxDC-kpi nxDC-kpi-bc">
+            <div class="nxDC-kpi-icon">🏦</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.banco.monto)}</div>
+              <div class="nxDC-kpi-tag">BANCO/TRANSF · ${stats.banco.cantidad}</div>
+            </div>
+          </div>
+          <div class="nxDC-kpi nxDC-kpi-ch">
+            <div class="nxDC-kpi-icon">📝</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.cheque.monto)}</div>
+              <div class="nxDC-kpi-tag">CHEQUE · ${stats.cheque.cantidad}</div>
+            </div>
+          </div>
+          <div class="nxDC-kpi nxDC-kpi-ot">
+            <div class="nxDC-kpi-icon">⋯</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.otros.monto)}</div>
+              <div class="nxDC-kpi-tag">OTROS · ${stats.otros.cantidad}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  function renderBancosSeccion(porBanco, totalBanco) {
+    const F = getFmt();
+    if (!porBanco.length) {
+      return `
+        <div class="nc p3 nxDC-section">
+          <div class="ch"><div class="ct">🏦 Dónde está el dinero</div><div class="ct-s">Por banco</div></div>
+          <div class="empty" style="padding:20px;text-align:center">Sin cobros por transferencia en este ciclo</div>
+        </div>
+      `;
+    }
+    return `
+      <div class="nc p3 nxDC-section">
+        <div class="ch">
+          <div><div class="ct">🏦 Dónde está el dinero</div><div class="ct-s">Por banco · Total: ${F(totalBanco)}</div></div>
+        </div>
+        <div class="nxDC-bancos">
+          ${porBanco.map(b => {
+            const pct = totalBanco > 0 ? Math.round((b.monto / totalBanco) * 100) : 0;
+            return `
+              <div class="nxDC-banco">
+                <div class="nxDC-banco-head">
+                  <div class="nxDC-banco-name">🏦 ${b.nombre}</div>
+                  <div class="nxDC-banco-monto">${F(b.monto)}</div>
+                </div>
+                <div class="nxDC-banco-bar"><div class="nxDC-banco-fill" style="width:${pct}%"></div></div>
+                <div class="nxDC-banco-foot">${b.cantidad} cobros · ${pct}% del total</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  function renderAgentesSeccion(porAgente, hayTransferencias) {
+    const F = getFmt();
+    if (!porAgente.length) {
+      return `
+        <div class="nc p3 nxDC-section">
+          <div class="ch"><div class="ct">👥 Detalle por agente</div></div>
+          <div class="empty" style="padding:20px;text-align:center">Sin agentes registrados</div>
+        </div>
+      `;
+    }
+    return `
+      <div class="nc p3 nxDC-section">
+        <div class="ch">
+          <div><div class="ct">👥 Detalle por agente</div><div class="ct-s">Desglose y dinero en mano real</div></div>
+          ${hayTransferencias && typeof window.nxAbrirTransferenciaAgenteV2 === 'function' ? 
+            '<button class="btn bsm bc1" onclick="window.nxAbrirTransferenciaAgenteV2()"><i class="ti ti-transfer"></i> Transferir</button>' : ''}
+        </div>
+        <div class="nxDC-agentes">
+          ${porAgente.map(ag => `
+            <div class="nxDC-agente">
+              <div class="nxDC-agente-head">
+                <div>
+                  <div class="nxDC-agente-name">👤 ${ag.nombre}</div>
+                  <div class="nxDC-agente-cargo">${ag.cargo || ''} · ${ag.cantidad} cobros</div>
+                </div>
+                <div class="nxDC-agente-total">${F(ag.cobrado)}</div>
+              </div>
+              <div class="nxDC-agente-grid">
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.efectivo)}</div><div class="nxDC-mini-l">EFECTIVO</div></div>
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.banco)}</div><div class="nxDC-mini-l">BANCO</div></div>
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.cheque)}</div><div class="nxDC-mini-l">CHEQUE</div></div>
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.otros)}</div><div class="nxDC-mini-l">OTROS</div></div>
+              </div>
+              ${ag.recibidas > 0 || ag.entregadas > 0 ? `
+                <div class="nxDC-transf">
+                  ${ag.recibidas > 0 ? `<span class="nxDC-transf-rec">+ ${F(ag.recibidas)} recibido</span>` : ''}
+                  ${ag.entregadas > 0 ? `<span class="nxDC-transf-ent">− ${F(ag.entregadas)} entregado</span>` : ''}
+                </div>
+              ` : ''}
+              <div class="nxDC-mano">
+                <span class="nxDC-mano-label">💰 EN MANO REAL</span>
+                <span class="nxDC-mano-value">${F(ag.enMano)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  function renderTransferenciasSeccion(transferencias) {
+    if (!transferencias.length) return '';
+    const F = getFmt();
+    return `
+      <div class="nc p3 nxDC-section">
+        <div class="ch"><div><div class="ct">🔄 Transferencias del ciclo</div><div class="ct-s">${transferencias.length} movimientos entre agentes</div></div></div>
+        <div class="nxDC-transf-list">
+          ${transferencias.map(t => {
+            const desde = getGAgt(t.desde_agente)?.nom || 'N/D';
+            const hacia = getGAgt(t.hacia_agente)?.nom || 'N/D';
+            return `
+              <div class="nxDC-transf-row">
+                <div class="nxDC-transf-fecha">${fmtFecha(t.fecha)}</div>
+                <div class="nxDC-transf-flow">
+                  <span class="nxDC-transf-from">${desde}</span>
+                  <span class="nxDC-transf-arrow">→</span>
+                  <span class="nxDC-transf-to">${hacia}</span>
+                </div>
+                <div class="nxDC-transf-monto">${F(t.monto)}</div>
+                <div class="nxDC-transf-meta">${t.metodo || ''} ${t.banco ? '· ' + t.banco : ''} · ${t.referencia || ''}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // ═══ RENDER PRINCIPAL ═══
+  async function renderDetallesCobro() {
+    const cont = document.getElementById('nxDetallesCobroV1');
+    if (!cont) return;
+    
+    cont.innerHTML = '<div class="nc p5"><div class="loading"><div class="spin"></div> Cargando detalles de cobro...</div></div>';
+    
+    const periodo = calcularPeriodo();
+    const [abonos, transferencias] = await Promise.all([cargarAbonos(), cargarTransferencias()]);
+    
+    const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
+    const porBanco = calcularPorBanco(abonosPeriodo);
+    const transferenciasPeriodo = transferencias.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
+    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo);
+    const hayTransferencias = transferenciasPeriodo.length > 0;
+    
+    cont.innerHTML = `
+      ${renderKPIs(stats, periodo)}
+      ${renderBancosSeccion(porBanco, stats.banco.monto)}
+      ${renderAgentesSeccion(porAgente, hayTransferencias)}
+      ${hayTransferencias ? renderTransferenciasSeccion(transferenciasPeriodo) : ''}
+    `;
+  }
+  
+  // ═══ PESTAÑAS EN DASHBOARD ═══
+  function crearPestañas() {
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    if (document.getElementById('nxDCTabs')) return true;
+    
+    // Wrapper para Resumen actual (todos los hijos actuales)
+    const contenidoActual = Array.from(vDash.children);
+    
+    // Crear barra de pestañas
+    const tabsBar = document.createElement('div');
+    tabsBar.id = 'nxDCTabs';
+    tabsBar.className = 'nxDC-tabs';
+    tabsBar.innerHTML = `
+      <button class="nxDC-tab active" data-tab="resumen" onclick="window.nxDashboardTab('resumen')">
+        <i class="ti ti-layout-dashboard"></i> Resumen
+      </button>
+      <button class="nxDC-tab" data-tab="detalles" onclick="window.nxDashboardTab('detalles')">
+        <i class="ti ti-wallet"></i> Detalles de Cobro
+      </button>
+    `;
+    
+    // Crear contenedores
+    const cResumen = document.createElement('div');
+    cResumen.id = 'nxDCResumen';
+    cResumen.className = 'nxDC-pane active';
+    contenidoActual.forEach(child => cResumen.appendChild(child));
+    
+    const cDetalles = document.createElement('div');
+    cDetalles.id = 'nxDetallesCobroV1';
+    cDetalles.className = 'nxDC-pane';
+    
+    // Construir nuevo orden
+    vDash.appendChild(tabsBar);
+    vDash.appendChild(cResumen);
+    vDash.appendChild(cDetalles);
+    
+    return true;
+  }
+  
+  window.nxDashboardTab = function(tab) {
+    const tabsBar = document.getElementById('nxDCTabs');
+    if (!tabsBar) return;
+    
+    tabsBar.querySelectorAll('.nxDC-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    
+    const cResumen = document.getElementById('nxDCResumen');
+    const cDetalles = document.getElementById('nxDetallesCobroV1');
+    
+    if (tab === 'detalles') {
+      if (cResumen) cResumen.classList.remove('active');
+      if (cDetalles) {
+        cDetalles.classList.add('active');
+        renderDetallesCobro();
+      }
+    } else {
+      if (cResumen) cResumen.classList.add('active');
+      if (cDetalles) cDetalles.classList.remove('active');
+    }
+  };
+  
+  // ═══ INTERCEPTAR CLICK EN KPI COBRADO ═══
+  function bindCobradoKPI() {
+    document.addEventListener('click', function(e) {
+      const target = e.target;
+      const kpiKL = target.closest?.('.kl');
+      if (!kpiKL) return;
+      if (kpiKL.textContent.trim().toUpperCase() !== 'COBRADO') return;
+      // Es el KPI COBRADO - asegurar que estamos en Dashboard y abrir detalles
+      const vDash = document.getElementById('v-dashboard');
+      if (vDash && vDash.classList.contains('on')) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.nxDashboardTab('detalles');
+      }
+    }, true);
+  }
+  
+  // ═══ CSS ═══
+  function injectCSS() {
+    if (document.getElementById('nxDC-css')) return;
+    const style = document.createElement('style');
+    style.id = 'nxDC-css';
+    style.textContent = `
+      .nxDC-tabs { display:flex; gap:6px; margin-bottom:12px; background:#fff; border-radius:14px; padding:6px; border:1px solid #e2e8f0; }
+      .nxDC-tab { flex:1; padding:10px 14px; border:none; background:transparent; border-radius:10px; font-weight:700; font-size:13px; color:#64748b; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:.2s; }
+      .nxDC-tab:hover { background:#f1f5f9; color:#0f172a; }
+      .nxDC-tab.active { background:linear-gradient(135deg,#00e5c7,#10b981); color:#fff; box-shadow:0 2px 8px rgba(0,229,199,.3); }
+      .nxDC-pane { display:none; }
+      .nxDC-pane.active { display:block; }
+      
+      .nxDC-kpis { margin-bottom:14px; }
+      .nxDC-kpi-big { background:linear-gradient(135deg,#00e5c7,#10b981); color:#fff; border-radius:16px; padding:20px; margin-bottom:10px; box-shadow:0 4px 16px rgba(0,229,199,.25); }
+      .nxDC-kpi-label { font-size:12px; font-weight:800; opacity:.9; letter-spacing:1px; }
+      .nxDC-kpi-value { font-size:32px; font-weight:900; margin-top:6px; font-family:var(--mono,monospace); }
+      .nxDC-kpi-sub { font-size:12px; opacity:.85; margin-top:4px; }
+      .nxDC-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+      .nxDC-kpi { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+      .nxDC-kpi-ef { border-left:4px solid #10b981; }
+      .nxDC-kpi-bc { border-left:4px solid #3b82f6; }
+      .nxDC-kpi-ch { border-left:4px solid #f59e0b; }
+      .nxDC-kpi-ot { border-left:4px solid #6b7280; }
+      .nxDC-kpi-icon { font-size:24px; }
+      .nxDC-kpi-data { flex:1; min-width:0; }
+      .nxDC-kpi-num { font-size:15px; font-weight:800; color:#0f172a; font-family:var(--mono,monospace); }
+      .nxDC-kpi-tag { font-size:10px; font-weight:700; color:#64748b; letter-spacing:.5px; }
+      
+      .nxDC-section { margin-bottom:12px; }
+      
+      .nxDC-bancos { display:grid; gap:10px; margin-top:10px; }
+      .nxDC-banco { padding:12px; border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc; }
+      .nxDC-banco-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+      .nxDC-banco-name { font-weight:800; color:#0f172a; font-size:13px; }
+      .nxDC-banco-monto { font-weight:800; color:#3b82f6; font-family:var(--mono,monospace); }
+      .nxDC-banco-bar { height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; margin:4px 0; }
+      .nxDC-banco-fill { height:100%; background:linear-gradient(90deg,#3b82f6,#60a5fa); border-radius:3px; }
+      .nxDC-banco-foot { font-size:10px; color:#64748b; font-weight:700; }
+      
+      .nxDC-agentes { display:grid; gap:12px; margin-top:10px; }
+      .nxDC-agente { padding:14px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; }
+      .nxDC-agente-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:10px; }
+      .nxDC-agente-name { font-weight:800; color:#0f172a; font-size:14px; }
+      .nxDC-agente-cargo { font-size:10px; color:#64748b; font-weight:700; margin-top:2px; }
+      .nxDC-agente-total { font-weight:800; color:#10b981; font-size:16px; font-family:var(--mono,monospace); }
+      .nxDC-agente-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:8px; }
+      .nxDC-mini { background:#f8fafc; padding:8px; border-radius:8px; text-align:center; border:1px solid #e2e8f0; }
+      .nxDC-mini-v { font-size:11px; font-weight:800; color:#0f172a; font-family:var(--mono,monospace); }
+      .nxDC-mini-l { font-size:8px; font-weight:700; color:#64748b; letter-spacing:.5px; margin-top:2px; }
+      .nxDC-transf { display:flex; gap:8px; font-size:10px; font-weight:700; margin:6px 0 8px; flex-wrap:wrap; }
+      .nxDC-transf-rec { color:#10b981; background:#d1fae5; padding:4px 8px; border-radius:6px; }
+      .nxDC-transf-ent { color:#dc2626; background:#fee2e2; padding:4px 8px; border-radius:6px; }
+      .nxDC-mano { display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#fff; padding:10px 14px; border-radius:10px; }
+      .nxDC-mano-label { font-size:11px; font-weight:800; letter-spacing:1px; }
+      .nxDC-mano-value { font-size:16px; font-weight:900; font-family:var(--mono,monospace); }
+      
+      .nxDC-transf-list { display:grid; gap:8px; margin-top:10px; }
+      .nxDC-transf-row { padding:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; }
+      .nxDC-transf-fecha { font-size:10px; color:#64748b; font-weight:700; }
+      .nxDC-transf-flow { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#0f172a; }
+      .nxDC-transf-arrow { color:#3b82f6; }
+      .nxDC-transf-monto { font-weight:800; color:#10b981; font-family:var(--mono,monospace); }
+      .nxDC-transf-meta { grid-column:1/-1; font-size:10px; color:#64748b; font-weight:600; }
+      
+      @media(max-width:768px) {
+        .nxDC-tab { padding:8px 10px; font-size:11px; }
+        .nxDC-tab span { display:none; }
+        .nxDC-kpi-value { font-size:24px; }
+        .nxDC-kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
+        .nxDC-kpi-num { font-size:13px; }
+        .nxDC-agente-grid { grid-template-columns:repeat(2,1fr) !important; }
+        .nxDC-banco-monto { font-size:13px; }
+        .nxDC-transf-row { grid-template-columns:1fr; }
+        .nxDC-transf-monto { text-align:right; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  // ═══ INIT ═══
+  function init() {
+    injectCSS();
+    
+    // Esperar a que el dashboard esté listo
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      if (crearPestañas()) {
+        bindCobradoKPI();
+        return;
+      }
+      if (intentos < 30) setTimeout(tryInit, 500);
+    };
+    tryInit();
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
