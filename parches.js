@@ -1938,3 +1938,152 @@
     init();
   }
 })();
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - VISUAL PREMIUM 3D PARA DETALLES DE COBRO
+   Solo mejora visual. No cambia lógica. No agrega botones.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  'use strict';
+
+  if (window.__NEXUS_VISUAL_3D_COBROS__) return;
+  window.__NEXUS_VISUAL_3D_COBROS__ = true;
+
+  function injectCSS() {
+    if (document.getElementById('nx-visual-3d-cobros-css')) return;
+
+    const style = document.createElement('style');
+    style.id = 'nx-visual-3d-cobros-css';
+    style.textContent = `
+      #nxDetallesCobroV1 .nxDC-card,
+      #nxDetallesCobroV1 .nxDC-kpi,
+      #nxDetallesCobroV1 .nxDC-head,
+      #nxDetallesCobroV1 .nxDC-period {
+        background: linear-gradient(145deg, #ffffff, #f8fbff) !important;
+        border: 1px solid rgba(59,130,246,.18) !important;
+        box-shadow:
+          0 14px 30px rgba(37,99,235,.12),
+          0 4px 10px rgba(15,23,42,.06),
+          inset 0 1px 0 rgba(255,255,255,.9) !important;
+      }
+
+      #nxDetallesCobroV1 .nxDC-card:hover,
+      #nxDetallesCobroV1 .nxDC-kpi:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 18px 38px rgba(37,99,235,.18),
+          0 6px 14px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.9) !important;
+      }
+
+      #nxDetallesCobroV1 .nxDC-card,
+      #nxDetallesCobroV1 .nxDC-kpi {
+        transition: all .22s ease;
+      }
+
+      #nxDetallesCobroV1 .nxDC-head {
+        background:
+          radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 38%),
+          linear-gradient(145deg, #ffffff, #f8fbff) !important;
+      }
+
+      #nxDetallesCobroV1 .nxDC-head-icon,
+      #nxDetallesCobroV1 .nxDC-kpi-icon {
+        box-shadow:
+          0 10px 20px rgba(37,99,235,.25),
+          inset 0 1px 0 rgba(255,255,255,.55) !important;
+      }
+
+      #nxDetallesCobroV1 .nxDC-kpi-value,
+      #nxDetallesCobroV1 .nxDC-banco-monto,
+      #nxDetallesCobroV1 .nxDC-num {
+        text-shadow: 0 1px 0 rgba(255,255,255,.8);
+      }
+
+      #nxDetallesCobroV1 .nxDC-banco-row {
+        background: linear-gradient(145deg, #ffffff, #f1f7ff);
+        border: 1px solid rgba(59,130,246,.12);
+        border-radius: 14px;
+        padding: 12px 14px !important;
+        margin-bottom: 8px;
+        box-shadow:
+          0 8px 18px rgba(37,99,235,.10),
+          inset 0 1px 0 rgba(255,255,255,.85);
+      }
+
+      #nxDetallesCobroV1 .nxDC-banco-cell i {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        background: linear-gradient(145deg, #dbeafe, #ffffff);
+        color: #2563eb !important;
+        display: grid;
+        place-items: center;
+        box-shadow:
+          0 8px 16px rgba(37,99,235,.18),
+          inset 0 1px 0 rgba(255,255,255,.9);
+      }
+
+      #nxDetallesCobroV1 .nxDC-banco-cell span {
+        font-weight: 900 !important;
+        color: #0f172a !important;
+      }
+
+      #nxDetallesCobroV1 .nxDC-banco-total {
+        background: linear-gradient(145deg, #eff6ff, #ffffff);
+        border: 1px solid rgba(37,99,235,.18) !important;
+        border-radius: 14px;
+        padding: 14px !important;
+        margin-top: 12px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+      }
+
+      #nxDetallesCobroV1 .nxDC-table thead th {
+        background: linear-gradient(145deg, #eff6ff, #f8fbff) !important;
+        color: #1e3a8a !important;
+      }
+
+      #nxDetallesCobroV1 .nxDC-table tbody tr {
+        transition: background .18s ease;
+      }
+
+      #nxDetallesCobroV1 .nxDC-table tbody tr:hover {
+        background: #f8fbff !important;
+      }
+
+      #nxDetallesCobroV1 .nxDC-ag-avatar {
+        box-shadow:
+          0 8px 18px rgba(37,99,235,.20),
+          inset 0 1px 0 rgba(255,255,255,.35);
+      }
+
+      #nxDetallesCobroV1 .nxDC-donut-chart {
+        filter: drop-shadow(0 12px 18px rgba(37,99,235,.16));
+      }
+
+      #nxDetallesCobroV1 .nxDC-period-nav,
+      #nxDetallesCobroV1 .nxDC-period-select {
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+      }
+
+      @media(max-width:768px) {
+        #nxDetallesCobroV1 .nxDC-card,
+        #nxDetallesCobroV1 .nxDC-kpi,
+        #nxDetallesCobroV1 .nxDC-head {
+          box-shadow:
+            0 10px 22px rgba(37,99,235,.12),
+            0 3px 8px rgba(15,23,42,.05) !important;
+        }
+
+        #nxDetallesCobroV1 .nxDC-banco-row {
+          padding: 10px 12px !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+
+})();
