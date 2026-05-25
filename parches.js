@@ -1142,9 +1142,21 @@
       .sort((x, y) => y.monto - x.monto);
   }
 
-  function calcularPorAgente(abonosPeriodo, transferenciasPeriodo) {
+  function calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonosAll, transferenciasAll, periodoFin) {
     const agentes = Array.isArray(st().agentes) ? st().agentes : [];
+
+    // ACUMULADO: todo lo que pasó ANTES del fin del ciclo seleccionado
+    // (igual a las funciones del periodo pero sin el filtro de inicio)
+    const hasta = periodoFin ? new Date(periodoFin) : new Date();
+    const antesDelFin = (arr) => (Array.isArray(arr) ? arr : []).filter(x => {
+      if (!x.fecha) return false;
+      try { return new Date(x.fecha) < hasta; } catch(e) { return false; }
+    });
+    const abonosAcum = antesDelFin(abonosAll);
+    const transferenciasAcum = antesDelFin(transferenciasAll);
+
     return agentes.map(ag => {
+      // ── DEL CICLO ──
       const propios = abonosPeriodo.filter(a => String(a.agente_cobro) === String(ag.id));
       const cobrado = propios.reduce((s, a) => s + Number(a.monto || 0), 0);
       const desglose = { efectivo: 0, banco: 0, cheque: 0, otros: 0 };
@@ -1156,6 +1168,18 @@
         .filter(t => String(t.desde_agente) === String(ag.id))
         .reduce((s, t) => s + Number(t.monto || 0), 0);
       const enMano = cobrado + recibidas - entregadas;
+
+      // ── ACUMULADO (hasta el fin del ciclo) ──
+      const propiosAcum = abonosAcum.filter(a => String(a.agente_cobro) === String(ag.id));
+      const cobradoAcum = propiosAcum.reduce((s, a) => s + Number(a.monto || 0), 0);
+      const recibidasAcum = transferenciasAcum
+        .filter(t => String(t.hacia_agente) === String(ag.id))
+        .reduce((s, t) => s + Number(t.monto || 0), 0);
+      const entregadasAcum = transferenciasAcum
+        .filter(t => String(t.desde_agente) === String(ag.id))
+        .reduce((s, t) => s + Number(t.monto || 0), 0);
+      const enManoAcumulado = cobradoAcum + recibidasAcum - entregadasAcum;
+
       return {
         id: ag.id,
         nombre: ag.nom,
@@ -1163,9 +1187,10 @@
         color: colorForAgent(ag.nom),
         cantidad: propios.length,
         cobrado, desglose,
-        recibidas, entregadas, enMano
+        recibidas, entregadas, enMano,
+        cobradoAcum, recibidasAcum, entregadasAcum, enManoAcumulado
       };
-    }).filter(a => a.cobrado > 0 || a.recibidas > 0 || a.entregadas > 0)
+    }).filter(a => a.cobrado > 0 || a.recibidas > 0 || a.entregadas > 0 || a.enManoAcumulado !== 0)
       .sort((a, b) => b.cobrado - a.cobrado);
   }
 
@@ -1285,8 +1310,9 @@
   // ═══════════════════════════════════════════════════════════
   // RENDER — 4 KPIs PRINCIPALES
   // ═══════════════════════════════════════════════════════════
-  function renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano) {
+  function renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado) {
     const F = getFmt();
+    const acum = (typeof dineroEnManoAcumulado === 'number') ? dineroEnManoAcumulado : dineroEnMano;
     return `
       <div class="nxDC-kpis-row">
         <div class="nxDC-kpi">
@@ -1325,8 +1351,8 @@
           </div>
           <div class="nxDC-kpi-body">
             <div class="nxDC-kpi-label">DINERO EN MANO REAL</div>
-            <div class="nxDC-kpi-value" style="color:#7c3aed">${F(dineroEnMano)}</div>
-            <div class="nxDC-kpi-sub">Efectivo + Bancos</div>
+            <div class="nxDC-kpi-value" style="color:#7c3aed">${F(acum)}</div>
+            <div class="nxDC-kpi-sub">Acumulado · <strong>${F(dineroEnMano)}</strong> del ciclo</div>
           </div>
         </div>
       </div>
@@ -1395,8 +1421,9 @@
       acc.cheque += a.desglose.cheque;
       acc.otros += a.desglose.otros;
       acc.enMano += a.enMano;
+      acc.enManoAcumulado += (a.enManoAcumulado || 0);
       return acc;
-    }, {cobrado:0, efectivo:0, banco:0, cheque:0, otros:0, enMano:0});
+    }, {cobrado:0, efectivo:0, banco:0, cheque:0, otros:0, enMano:0, enManoAcumulado:0});
 
     const filas = porAgente.map(a => `
       <tr>
@@ -1409,7 +1436,10 @@
         <td class="nxDC-num">${F(a.desglose.banco)}</td>
         <td class="nxDC-num">${F(a.desglose.cheque)}</td>
         <td class="nxDC-num">${F(a.desglose.otros)}</td>
-        <td class="nxDC-num nxDC-num-blue">${F(a.enMano)}</td>
+        <td class="nxDC-num nxDC-num-stack">
+          <div class="nxDC-stack-big nxDC-num-blue">${F(a.enManoAcumulado || 0)}</div>
+          <div class="nxDC-stack-small">+ ${F(a.enMano)} <span class="nxDC-muted-xs">ciclo</span></div>
+        </td>
       </tr>
     `).join('');
 
@@ -1430,7 +1460,7 @@
                 <th class="nxDC-num">BANCO</th>
                 <th class="nxDC-num">CHEQUE</th>
                 <th class="nxDC-num">OTROS</th>
-                <th class="nxDC-num">DINERO EN<br>MANO REAL</th>
+                <th class="nxDC-num">DINERO EN MANO<br><span class="nxDC-muted-sm">acumulado / ciclo</span></th>
               </tr>
             </thead>
             <tbody>${filas}</tbody>
@@ -1442,7 +1472,10 @@
                 <td class="nxDC-num nxDC-num-green"><strong>${F(totales.banco)}</strong></td>
                 <td class="nxDC-num nxDC-num-green"><strong>${F(totales.cheque)}</strong></td>
                 <td class="nxDC-num nxDC-num-green"><strong>${F(totales.otros)}</strong></td>
-                <td class="nxDC-num nxDC-num-blue"><strong>${F(totales.enMano)}</strong></td>
+                <td class="nxDC-num nxDC-num-stack">
+                  <div class="nxDC-stack-big nxDC-num-blue"><strong>${F(totales.enManoAcumulado)}</strong></div>
+                  <div class="nxDC-stack-small">+ ${F(totales.enMano)} <span class="nxDC-muted-xs">ciclo</span></div>
+                </td>
               </tr>
             </tfoot>
           </table>
@@ -1559,16 +1592,17 @@
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
     const transferenciasPeriodo = transferencias.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
-    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo);
+    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin);
     const hayTransferencias = transferenciasPeriodo.length > 0;
     const pendiente = calcularPendienteTotal();
     const totalTransferido = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
     const dineroEnMano = porAgente.reduce((s, a) => s + Number(a.enMano || 0), 0);
+    const dineroEnManoAcumulado = porAgente.reduce((s, a) => s + Number(a.enManoAcumulado || 0), 0);
 
     cont.innerHTML = `
       <div class="nxDC-wrap">
         ${renderHeader(listaCiclos, periodo, indexActual)}
-        ${renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano)}
+        ${renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado)}
         <div class="nxDC-row-2col">
           <div class="nxDC-card">
             <div class="nxDC-card-title">RESUMEN POR MÉTODO DE COBRO</div>
@@ -1778,6 +1812,11 @@
       .nxDC-table th.nxDC-num { text-align:right; }
       .nxDC-num-green { color:#059669; font-weight:700; }
       .nxDC-num-blue { color:#2563eb; font-weight:700; }
+      .nxDC-num-stack { text-align:right; vertical-align:middle; }
+      .nxDC-stack-big { font-weight:700; font-size:13px; line-height:1.15; font-family:var(--mono,monospace); }
+      .nxDC-stack-small { font-size:10px; color:#64748b; font-weight:500; margin-top:3px; font-family:var(--mono,monospace); }
+      .nxDC-muted-xs { color:#94a3b8; font-size:9px; font-family:inherit; }
+      .nxDC-muted-sm { color:#94a3b8; font-size:8.5px; font-weight:600; letter-spacing:.3px; display:block; margin-top:2px; }
       .nxDC-ag-name-cell { display:flex; align-items:center; gap:10px; min-width:140px; }
       .nxDC-ag-avatar { width:30px; height:30px; border-radius:50%; color:#fff; display:grid; place-items:center; font-weight:800; font-size:13px; flex:0 0 auto; }
 
@@ -2405,261 +2444,172 @@
   injectCSS();
 })();
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - FIX SIDEBAR SEMI-GLASS BLANCO/AZUL
-   Solo visual. No cambia lógica.
+   NEXUS PRO - SIDEBAR V3 BLANCO/GLASS + TICKER BLANCO + ADMIN AZUL
+   Reemplaza los 3 bloques anteriores que fallaban (apuntaban a
+   aside/.sidebar/.side cuando el HTML usa nav.sb).
+   - Items del menú estilo card flotante con box-shadow suave
+   - Activo: fondo azul claro con sombra premium
+   - Ticker: blanco/glass igualando el tono del sidebar
+   - Badge ADMIN: morado → azul
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
 
-  if (window.__NEXUS_FIX_SIDEBAR_GLASS_V1__) return;
-  window.__NEXUS_FIX_SIDEBAR_GLASS_V1__ = true;
+  if (window.__NEXUS_SIDEBAR_V3__) return;
+  window.__NEXUS_SIDEBAR_V3__ = true;
 
   function injectCSS() {
-    if (document.getElementById("nx-fix-sidebar-glass-css")) return;
+    if (document.getElementById("nx-sidebar-v3-css")) return;
+
+    // Limpiar restos de versiones anteriores si quedaron sueltos
+    ['nx-fix-sidebar-glass-css', 'nx-force-white-sidebar', 'nx-force-drawer-glass-v2',
+     'nx-force-white-sidebar-fuerte', 'nx-force-drawer-glass-v2-css'].forEach(id => {
+      const old = document.getElementById(id);
+      if (old) old.remove();
+    });
 
     const style = document.createElement("style");
-    style.id = "nx-fix-sidebar-glass-css";
-
+    style.id = "nx-sidebar-v3-css";
     style.textContent = `
-      aside,
-      .sidebar,
-      .side,
-      nav.side,
-      .sbar,
-      #sidebar {
+      /* ═══ SIDEBAR nav.sb — fondo blanco/glass ═══ */
+      nav.sb {
         background:
-          radial-gradient(circle at top left, rgba(96,165,250,.28), transparent 36%),
-          linear-gradient(180deg, rgba(255,255,255,.88), rgba(219,234,254,.72)) !important;
-        backdrop-filter: blur(24px) saturate(150%) !important;
-        -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
-        border-right: 1px solid rgba(255,255,255,.85) !important;
+          radial-gradient(circle at top left, rgba(96,165,250,.18), transparent 45%),
+          linear-gradient(180deg, #ffffff, #f1f5f9) !important;
+        backdrop-filter: blur(24px) saturate(160%);
+        -webkit-backdrop-filter: blur(24px) saturate(160%);
+        border-right: 1px solid rgba(59,130,246,.18) !important;
         box-shadow:
-          18px 0 45px rgba(37,99,235,.14),
+          8px 0 28px rgba(37,99,235,.10),
           inset 1px 0 0 rgba(255,255,255,.95) !important;
-        color: #0f172a !important;
       }
 
-      aside *,
-      .sidebar *,
-      .side *,
-      nav.side *,
-      .sbar *,
-      #sidebar * {
-        color: #1e3a8a !important;
+      /* Header del sidebar (logo + nombre) */
+      nav.sb .sb-top {
+        border-bottom: 1px solid rgba(59,130,246,.12) !important;
       }
-
-      aside .logo,
-      .sidebar .logo,
-      .side .logo,
-      aside .brand,
-      .sidebar .brand,
-      .side .brand {
-        color: #0f172a !important;
-      }
-
-      aside .muted,
-      .sidebar .muted,
-      .side .muted,
-      aside small,
-      .sidebar small,
-      .side small {
-        color: #64748b !important;
-      }
-
-      aside a,
-      .sidebar a,
-      .side a,
-      nav.side a,
-      aside button,
-      .sidebar button,
-      .side button,
-      nav.side button {
-        background: transparent !important;
-        color: #1e3a8a !important;
-        border-radius: 18px !important;
-        transition: all .18s ease !important;
-      }
-
-      aside a:hover,
-      .sidebar a:hover,
-      .side a:hover,
-      nav.side a:hover,
-      aside button:hover,
-      .sidebar button:hover,
-      .side button:hover,
-      nav.side button:hover {
-        background: rgba(255,255,255,.62) !important;
+      nav.sb .sb-mk {
         box-shadow:
-          0 10px 24px rgba(37,99,235,.12),
-          inset 0 1px 0 rgba(255,255,255,.9) !important;
+          0 6px 16px rgba(59,130,246,.35),
+          inset 0 1px 0 rgba(255,255,255,.4) !important;
+      }
+      nav.sb .sb-nm { color: #0f172a !important; }
+      nav.sb .sb-sm { color: #64748b !important; }
+
+      /* Subtítulos de sección (PRINCIPAL, SISTEMA) */
+      nav.sb .ss { color: #94a3b8 !important; }
+
+      /* ═══ ITEMS DEL MENÚ — estilo card flotante ═══ */
+      nav.sb .ni {
+        color: #475569;
+        background: #ffffff;
+        border: 1px solid rgba(59,130,246,.08);
+        box-shadow:
+          0 1px 3px rgba(15,23,42,.04),
+          0 1px 2px rgba(15,23,42,.02);
+        transition: all .18s ease;
+      }
+      nav.sb .ni:hover {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+        border-color: rgba(59,130,246,.25);
+        box-shadow:
+          0 4px 12px rgba(37,99,235,.12),
+          0 2px 4px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.9);
         transform: translateY(-1px);
       }
 
-      aside a.active,
-      .sidebar a.active,
-      .side a.active,
-      nav.side a.active,
-      aside button.active,
-      .sidebar button.active,
-      .side button.active,
-      nav.side button.active,
-      aside .active,
-      .sidebar .active,
-      .side .active {
-        background:
-          linear-gradient(145deg, rgba(255,255,255,.96), rgba(219,234,254,.78)) !important;
-        color: #2563eb !important;
-        border: 1px solid rgba(37,99,235,.22) !important;
+      /* Item activo */
+      nav.sb .ni.on {
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+        border-color: rgba(37,99,235,.35);
         box-shadow:
-          0 14px 28px rgba(37,99,235,.18),
-          inset 0 1px 0 rgba(255,255,255,.98) !important;
+          0 6px 16px rgba(37,99,235,.18),
+          0 2px 6px rgba(15,23,42,.06),
+          inset 0 1px 0 rgba(255,255,255,.7) !important;
+      }
+      nav.sb .ni.on::before {
+        background: #2563eb !important;
       }
 
-      aside i,
-      .sidebar i,
-      .side i,
-      nav.side i,
-      aside svg,
-      .sidebar svg,
-      .side svg,
-      nav.side svg {
-        color: #2563eb !important;
-        stroke: #2563eb !important;
+      /* Íconos y labels */
+      nav.sb .ni-i { color: #64748b !important; }
+      nav.sb .ni:hover .ni-i,
+      nav.sb .ni.on   .ni-i { color: #2563eb !important; }
+
+      nav.sb .ni-l { color: #475569 !important; }
+      nav.sb .ni:hover .ni-l { color: #0f172a !important; font-weight: 600; }
+      nav.sb .ni.on   .ni-l { color: #0f172a !important; font-weight: 700; }
+
+      /* Chevrons de Contabilidad/Configuración */
+      nav.sb .ni i.ti-chevron-down { color: #94a3b8 !important; }
+
+      /* Badges rojos (Clientes/Pólizas pendientes) */
+      nav.sb .ni-b {
+        box-shadow: 0 2px 6px rgba(239,68,68,.35);
       }
 
-      aside .admin,
-      .sidebar .admin,
-      .side .admin,
-      aside .user,
-      .sidebar .user,
-      .side .user,
-      aside [class*="user"],
-      .sidebar [class*="user"],
-      .side [class*="user"] {
-        background:
-          linear-gradient(145deg, rgba(255,255,255,.92), rgba(219,234,254,.72)) !important;
-        border: 1px solid rgba(59,130,246,.18) !important;
-        border-radius: 22px !important;
+      /* Badge ADMIN (morado → azul) */
+      nav.sb #niAdmin2 > span:not(.ni-l) {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        box-shadow: 0 2px 6px rgba(37,99,235,.35) !important;
+      }
+
+      /* ═══ FOOTER (perfil de usuario) ═══ */
+      nav.sb .sb-ft {
+        border-top: 1px solid rgba(59,130,246,.12) !important;
+      }
+      nav.sb .sb-u {
+        background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+        border: 1px solid rgba(59,130,246,.12);
         box-shadow:
-          0 12px 28px rgba(37,99,235,.14),
-          inset 0 1px 0 rgba(255,255,255,.95) !important;
+          0 2px 8px rgba(15,23,42,.05),
+          inset 0 1px 0 rgba(255,255,255,.9);
+        transition: all .18s ease;
       }
-
-      aside .badge,
-      .sidebar .badge,
-      .side .badge {
-        background: linear-gradient(145deg, #3b82f6, #2563eb) !important;
-        color: #fff !important;
-        border-radius: 999px !important;
-        box-shadow: 0 8px 18px rgba(37,99,235,.25) !important;
+      nav.sb .sb-u:hover {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+        box-shadow:
+          0 4px 14px rgba(37,99,235,.15),
+          inset 0 1px 0 rgba(255,255,255,.9) !important;
       }
+      nav.sb .sb-av {
+        box-shadow:
+          0 4px 10px rgba(59,130,246,.35),
+          inset 0 1px 0 rgba(255,255,255,.4) !important;
+      }
+      nav.sb .sb-un { color: #0f172a !important; }
+      nav.sb .sb-ur { color: #64748b !important; }
 
-      @media(max-width: 768px) {
-        aside,
-        .sidebar,
-        .side,
-        nav.side,
-        .sbar,
-        #sidebar {
-          background:
-            linear-gradient(180deg, rgba(255,255,255,.94), rgba(219,234,254,.84)) !important;
-          box-shadow:
-            12px 0 32px rgba(37,99,235,.16),
-            inset 1px 0 0 rgba(255,255,255,.95) !important;
-        }
+      /* ═══ TICKER (barra superior con PRIMA/COBRADO/PENDIENTE) ═══ */
+      .ticker {
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.92), rgba(241,245,249,.88)) !important;
+        backdrop-filter: blur(20px) saturate(160%);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+        border-bottom: 1px solid rgba(59,130,246,.15) !important;
+        color: #475569 !important;
+        box-shadow: 0 1px 3px rgba(15,23,42,.04) !important;
+      }
+      .ticker .ti { color: #475569 !important; }
+      .ticker .tu { color: #059669 !important; }  /* verdes: ONLINE, COBRADO, ACTIVOS */
+      .ticker .td { color: #dc2626 !important; }  /* rojos: PENDIENTE, PÓLIZAS POR VENCER */
+
+      /* Ajuste móvil: padding para que los items-card respiren */
+      @media (max-width: 768px) {
+        nav.sb .sb-nav { padding: 8px 8px; }
+        nav.sb .ni { padding: 9px 11px; margin-bottom: 4px; }
       }
     `;
-
     document.head.appendChild(style);
   }
 
-  injectCSS();
-})();
-/* FIX FUERTE - SIDEBAR BLANCO SEMI-GLASS */
-(function () {
-  "use strict";
-
-  if (window.__NEXUS_FORCE_WHITE_SIDEBAR__) return;
-  window.__NEXUS_FORCE_WHITE_SIDEBAR__ = true;
-
-  const style = document.createElement("style");
-  style.id = "nx-force-white-sidebar";
-
-  style.textContent = `
-    /* Barra lateral real */
-    body > aside,
-    aside,
-    .sidebar,
-    .side,
-    .sbar,
-    .drawer,
-    .menu-lateral,
-    [class*="sidebar"],
-    [class*="side"],
-    [class*="sbar"] {
-      background:
-        radial-gradient(circle at top left, rgba(96,165,250,.28), transparent 38%),
-        linear-gradient(180deg, rgba(255,255,255,.95), rgba(219,234,254,.82)) !important;
-      backdrop-filter: blur(26px) saturate(160%) !important;
-      -webkit-backdrop-filter: blur(26px) saturate(160%) !important;
-      border-right: 1px solid rgba(255,255,255,.95) !important;
-      box-shadow:
-        18px 0 45px rgba(37,99,235,.18),
-        inset 1px 0 0 rgba(255,255,255,.95) !important;
-      color: #0f172a !important;
-    }
-
-    body > aside *,
-    aside *,
-    .sidebar *,
-    .side *,
-    .sbar *,
-    .drawer *,
-    [class*="sidebar"] *,
-    [class*="side"] *,
-    [class*="sbar"] * {
-      color: #1e3a8a !important;
-      border-color: rgba(37,99,235,.16) !important;
-    }
-
-    body > aside .active,
-    aside .active,
-    .sidebar .active,
-    .side .active,
-    .sbar .active,
-    .drawer .active,
-    [class*="sidebar"] .active,
-    [class*="side"] .active,
-    [class*="sbar"] .active {
-      background:
-        linear-gradient(145deg, rgba(255,255,255,.98), rgba(219,234,254,.86)) !important;
-      color: #2563eb !important;
-      box-shadow:
-        0 14px 30px rgba(37,99,235,.22),
-        inset 0 1px 0 rgba(255,255,255,1) !important;
-      border-left: 4px solid #2563eb !important;
-      border-radius: 18px !important;
-    }
-
-    body > aside svg,
-    aside svg,
-    .sidebar svg,
-    .side svg,
-    .sbar svg,
-    .drawer svg,
-    body > aside i,
-    aside i,
-    .sidebar i,
-    .side i,
-    .sbar i,
-    .drawer i {
-      color: #2563eb !important;
-      stroke: #2563eb !important;
-    }
-  `;
-
-  document.head.appendChild(style);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", injectCSS, { once: true });
+  } else {
+    injectCSS();
+  }
 })();
 /* ════════════════════════════════════════════════════════════════
    NEXUS PRO - ANIMACIÓN GLOBAL DE MÓDULOS Y CONTENIDOS
@@ -2805,118 +2755,6 @@
   }
 
   injectCSS();
-})();
-/* FIX DEFINITIVO - SIDEBAR BLANCO SEMI-GLASS */
-(function () {
-  "use strict";
-
-  if (window.__NEXUS_FORCE_DRAWER_GLASS_V2__) return;
-  window.__NEXUS_FORCE_DRAWER_GLASS_V2__ = true;
-
-  function isDarkBlue(el) {
-    const bg = getComputedStyle(el).backgroundColor || "";
-    return bg.includes("15, 23, 42") || bg.includes("11, 22, 46") || bg.includes("17, 24, 39");
-  }
-
-  function applySidebarGlass() {
-    const candidates = Array.from(document.querySelectorAll("aside, nav, div, section"))
-      .filter(el => {
-        const r = el.getBoundingClientRect();
-        const cs = getComputedStyle(el);
-        return (
-          r.width >= 220 &&
-          r.width <= 520 &&
-          r.height > window.innerHeight * 0.55 &&
-          (r.left <= 8 || cs.position === "fixed") &&
-          (isDarkBlue(el) || cs.zIndex >= 100 || cs.position === "fixed")
-        );
-      });
-
-    candidates.forEach(el => {
-      el.style.setProperty("background", "radial-gradient(circle at top left, rgba(96,165,250,.24), transparent 38%), linear-gradient(180deg, rgba(255,255,255,.96), rgba(219,234,254,.86))", "important");
-      el.style.setProperty("backdrop-filter", "blur(26px) saturate(160%)", "important");
-      el.style.setProperty("-webkit-backdrop-filter", "blur(26px) saturate(160%)", "important");
-      el.style.setProperty("border-right", "1px solid rgba(255,255,255,.95)", "important");
-      el.style.setProperty("box-shadow", "18px 0 45px rgba(37,99,235,.18), inset 1px 0 0 rgba(255,255,255,.95)", "important");
-      el.style.setProperty("color", "#0f172a", "important");
-
-      el.querySelectorAll("*").forEach(child => {
-        child.style.setProperty("color", "#1e3a8a", "important");
-        child.style.setProperty("border-color", "rgba(37,99,235,.14)", "important");
-      });
-
-      el.querySelectorAll("svg, i").forEach(icon => {
-        icon.style.setProperty("color", "#2563eb", "important");
-        icon.style.setProperty("stroke", "#2563eb", "important");
-      });
-
-      el.querySelectorAll(".active, [class*='active'], button, a").forEach(item => {
-        const txt = (item.textContent || "").toLowerCase();
-        if (
-          item.className.toString().toLowerCase().includes("active") ||
-          txt.includes("dashboard") ||
-          txt.includes("facturas") && item.getAttribute("aria-current")
-        ) {
-          item.style.setProperty("background", "linear-gradient(145deg, rgba(255,255,255,.98), rgba(219,234,254,.86))", "important");
-          item.style.setProperty("color", "#2563eb", "important");
-          item.style.setProperty("border-radius", "18px", "important");
-          item.style.setProperty("box-shadow", "0 14px 30px rgba(37,99,235,.22), inset 0 1px 0 rgba(255,255,255,1)", "important");
-        }
-      });
-    });
-  }
-
-  function injectFontFix() {
-    if (document.getElementById("nx-font-size-fix")) return;
-    const style = document.createElement("style");
-    style.id = "nx-font-size-fix";
-    style.textContent = `
-      body { font-size: 14px !important; }
-      .view, .nc, .card, .modal { font-size: 14px !important; }
-      h1 { font-size: clamp(22px, 3vw, 34px) !important; }
-      h2, .ct { font-size: clamp(18px, 2.4vw, 26px) !important; }
-      h3 { font-size: clamp(15px, 2vw, 20px) !important; }
-      label, small, .ct-s { font-size: 12px !important; }
-      button, .btn, input, select, textarea { font-size: 14px !important; }
-      table th { font-size: 11px !important; }
-      table td { font-size: 13px !important; }
-
-      @media(max-width:768px){
-        body { font-size: 13px !important; }
-        h1 { font-size: 20px !important; }
-        h2, .ct { font-size: 17px !important; }
-        h3 { font-size: 15px !important; }
-        button, .btn, input, select, textarea { font-size: 13px !important; }
-        table th { font-size: 10px !important; }
-        table td { font-size: 12px !important; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function run() {
-    injectFontFix();
-    applySidebarGlass();
-  }
-
-  run();
-  setTimeout(run, 300);
-  setTimeout(run, 900);
-  setTimeout(run, 1600);
-
-  document.addEventListener("click", function () {
-    setTimeout(run, 120);
-    setTimeout(run, 500);
-  }, true);
-
-  new MutationObserver(function () {
-    setTimeout(run, 80);
-  }).observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["class", "style"]
-  });
 })();
 /* ════════════════════════════════════════════════════════════════
    NEXUS PRO - ICONOS DASHBOARD 3D CENTRALIZADOS
