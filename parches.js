@@ -2029,20 +2029,148 @@
     crearModalEntregaAdmin();
   }
 
-  // Hook al KPI "COBRADO" del Dashboard
+  // Hook al KPI "COBRADO" del Dashboard - rotación de períodos + long press para Detalles
   function bindCobradoKPI() {
-    document.addEventListener('click', function(e) {
-      const target = e.target;
-      const kpiKL = target.closest?.('.kl');
-      if (!kpiKL) return;
-      if (kpiKL.textContent.trim().toUpperCase() !== 'COBRADO') return;
-      const vDash = document.getElementById('v-dashboard');
-      if (vDash && vDash.classList.contains('on')) {
-        e.preventDefault();
-        e.stopPropagation();
-        mostrarDetalles();
+    // Estado: período actual del KPI
+    if (typeof window.__nxKPIPeriodo === 'undefined') {
+      window.__nxKPIPeriodo = 0; // 0=día, 1=semana, 2=quincena, 3=mes
+    }
+    const periodos = ['HOY', 'SEMANA', 'QUINCENA', 'MES'];
+    
+    // Calcula el total cobrado en un período
+    async function calcularPeriodoKPI(idx) {
+      const abonos = await cargarAbonos();
+      const ahora = new Date();
+      let inicio, fin;
+      
+      if (idx === 0) {
+        // HOY: 00:00 a 23:59 de hoy
+        inicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        fin = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1);
+      } else if (idx === 1) {
+        // SEMANA: últimos 7 días
+        inicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 6);
+        fin = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1);
+      } else if (idx === 2) {
+        // QUINCENA: últimos 15 días
+        inicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - 14);
+        fin = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1);
+      } else {
+        // MES: ciclo 20-20
+        const periodo = calcularPeriodo();
+        inicio = periodo.inicio;
+        fin = periodo.fin;
       }
-    }, true);
+      
+      const total = abonos
+        .filter(a => {
+          if (!a.fecha) return false;
+          try {
+            const f = new Date(a.fecha);
+            return f >= inicio && f < fin;
+          } catch(e) { return false; }
+        })
+        .reduce((s, a) => s + Number(a.monto || 0), 0);
+      
+      return total;
+    }
+    
+    // Actualiza el KPI con el período actual
+    async function actualizarKPI() {
+      const labels = document.querySelectorAll('.kl');
+      let kpiKL = null;
+      for (const l of labels) {
+        if (l.textContent.trim().toUpperCase().includes('COBRADO')) {
+          kpiKL = l;
+          break;
+        }
+      }
+      if (!kpiKL) return;
+      
+      const idx = window.__nxKPIPeriodo;
+      const total = await calcularPeriodoKPI(idx);
+      
+      // Cambiar label
+      kpiKL.textContent = 'COBRADO ' + periodos[idx];
+      
+      // Buscar el valor (suele estar arriba/abajo del label)
+      const kpi = kpiKL.closest('.kpi, .nc, .qa, [class*="kpi"]') || kpiKL.parentElement;
+      if (kpi) {
+        // Buscar el span del valor (números grandes)
+        const valor = kpi.querySelector('.kv, .nx-kpi-val, [class*="val"], strong, b');
+        if (valor) {
+          const F = getFmt();
+          valor.textContent = F(total);
+        }
+      }
+    }
+    
+    // Variables para detectar press
+    let pressTimer = null;
+    let isLongPress = false;
+    
+    // Función para encontrar el KPI cobrado
+    function findCobradoKPI(el) {
+      const kpiKL = el.closest?.('.kl');
+      if (!kpiKL) return null;
+      if (!kpiKL.textContent.trim().toUpperCase().includes('COBRADO')) return null;
+      const vDash = document.getElementById('v-dashboard');
+      if (!vDash || !vDash.classList.contains('on')) return null;
+      return kpiKL;
+    }
+    
+    // MOUSEDOWN/TOUCHSTART: iniciar timer para long press
+    function onPressStart(e) {
+      const kpi = findCobradoKPI(e.target);
+      if (!kpi) return;
+      isLongPress = false;
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        // Vibrar si el dispositivo lo soporta
+        if (navigator.vibrate) navigator.vibrate(50);
+        // Abrir Detalles de Cobro
+        if (typeof mostrarDetalles === 'function') mostrarDetalles();
+      }, 500);
+    }
+    
+    // MOUSEUP/TOUCHEND: cancelar timer o ejecutar click corto
+    function onPressEnd(e) {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    }
+    
+    // CLICK: ejecutar rotación SOLO si NO fue long press
+    function onClick(e) {
+      const kpi = findCobradoKPI(e.target);
+      if (!kpi) return;
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (isLongPress) {
+        // Ya se ejecutó el long press, no hacer nada más
+        isLongPress = false;
+        return;
+      }
+      
+      // Click corto: rotar período
+      window.__nxKPIPeriodo = (window.__nxKPIPeriodo + 1) % 4;
+      actualizarKPI();
+    }
+    
+    // Listeners (touch + mouse)
+    document.addEventListener('mousedown', onPressStart, true);
+    document.addEventListener('touchstart', onPressStart, true);
+    document.addEventListener('mouseup', onPressEnd, true);
+    document.addEventListener('touchend', onPressEnd, true);
+    document.addEventListener('click', onClick, true);
+    
+    // Inicializar el KPI con el período actual al cargar
+    setTimeout(actualizarKPI, 1500);
+    
+    // Refrescar cada 30 segundos
+    setInterval(actualizarKPI, 30000);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -2062,6 +2190,19 @@
       @keyframes nxDCFade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
       .nxDC-wrap { display:flex; flex-direction:column; gap:14px; }
       .nxDC-loading { display:flex; align-items:center; gap:10px; padding:30px; justify-content:center; color:#64748b; font-weight:600; }
+      
+      /* ═══ KPI COBRADO ROTATIVO (click corto rota / largo abre Detalles) ═══ */
+      #v-dashboard .kpi:has(.kl),
+      #v-dashboard [class*="kpi"]:has(.kl) {
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        transition: transform 0.1s ease;
+      }
+      #v-dashboard .kpi:active:has(.kl) {
+        transform: scale(0.97);
+      }
 
       /* ═══ HEADER PREMIUM ═══ */
       .nxDC-head { background:#fff; border:1px solid #e2e8f0; border-radius:18px; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; box-shadow:0 1px 3px rgba(0,0,0,.03); }
