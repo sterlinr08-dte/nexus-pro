@@ -3275,6 +3275,24 @@
     try { return (typeof sesion !== 'undefined') && sesion?.rol === 'admin'; }
     catch(e) { try { return window.sesion?.rol === 'admin'; } catch(_) { return false; } }
   }
+  // Obtiene el ID del agente del usuario actual (no admin)
+  function getMiAgenteId() {
+    try {
+      const s = (typeof sesion !== 'undefined') ? sesion : window.sesion;
+      if (!s) return null;
+      // Intentar varios campos posibles
+      return s.agente_id || s.agenteId || s.usuario_id || s.id || null;
+    } catch(e) { return null; }
+  }
+  // Filtra solicitudes según el rol (admin ve todo, agente ve solo suyas)
+  function filtrarPorRol(items, campoAgente) {
+    if (esAdmin()) return items;
+    const miId = getMiAgenteId();
+    if (!miId) return [];
+    // campoAgente puede ser string (un campo) o array (varios)
+    const campos = Array.isArray(campoAgente) ? campoAgente : [campoAgente];
+    return items.filter(it => campos.some(c => String(it[c]) === String(miId)));
+  }
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -3296,12 +3314,12 @@
     if (document.getElementById('niSolicit')) return true;
     const sbNav = document.querySelector('nav.sb .sb-nav');
     if (!sbNav) return false;
-    // Insertar después del último item de PRINCIPAL (niPol) o al inicio si no existe
-    const anchor = document.getElementById('niPol') || document.getElementById('niCli');
+    // Insertar después de CLIENTES
+    const anchor = document.getElementById('niCli') || document.getElementById('niPol');
     const item = document.createElement('div');
     item.className = 'ni';
     item.id = 'niSolicit';
-    item.style.display = esAdmin() ? '' : 'none';
+    // Visible para TODOS los roles
     item.setAttribute('onclick', "nav('solicitudes', this); window.nxRenderSolicitudes && window.nxRenderSolicitudes()");
     item.innerHTML = `
       <i class="ti ti-inbox ni-i"></i>
@@ -3331,10 +3349,9 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // BOTÓN EN DASHBOARD (acceso rápido)
+  // BOTÓN EN DASHBOARD (acceso rápido) - visible para todos los roles
   // ═══════════════════════════════════════════════════════════════
   function inyectarBotonDashboard() {
-    if (!esAdmin()) return true; // No hace falta para no-admin
     if (document.getElementById('qaSolicit')) return true;
     
     // Buscar el grid de accesos rápidos del Dashboard
@@ -3412,21 +3429,31 @@
   // BADGE DE PENDIENTES (siempre visible en sidebar)
   // ═══════════════════════════════════════════════════════════════
   async function actualizarBadge() {
-    if (!esAdmin()) {
-      const it = document.getElementById('niSolicit');
-      if (it) it.style.display = 'none';
-      const dashBadge = document.getElementById('qaSolicitBadge');
-      if (dashBadge) dashBadge.style.display = 'none';
-      return;
-    }
     const it = document.getElementById('niSolicit');
-    if (it) it.style.display = '';
+    if (it) it.style.display = ''; // Visible para todos
     const badge = document.getElementById('niSolicitBadge');
     const dashBadge = document.getElementById('qaSolicitBadge');
     try {
       const entregas = await cargarEntregas();
       _entregasCache = entregas;
-      const pend = entregas.filter(e => !e.confirmado).length;
+      const transferencias = await cargarTransferencias();
+      _transferenciasCache = transferencias;
+      
+      let pend = 0;
+      if (esAdmin()) {
+        // Admin: cuenta TODAS las entregas pendientes de confirmar
+        pend = entregas.filter(e => !e.confirmado).length;
+      } else {
+        // Agente: cuenta solo las transferencias entrantes pendientes hacia él
+        const miId = getMiAgenteId();
+        if (miId) {
+          pend = transferencias.filter(t => 
+            String(t.hacia_agente) === String(miId) && 
+            t.estado === 'pendiente'
+          ).length;
+        }
+      }
+      
       // Badge sidebar
       if (badge) {
         if (pend > 0) {
@@ -3457,22 +3484,38 @@
   async function renderSolicitudes() {
     const view = document.getElementById('v-solicitudes');
     if (!view) return;
-    if (!esAdmin()) {
-      view.innerHTML = '<div class="nxSL-empty">Solo el administrador puede ver Solicitudes.</div>';
-      return;
-    }
     view.innerHTML = '<div class="nxSL-loading">Cargando...</div>';
 
     const [entregas, transferencias] = await Promise.all([cargarEntregas(), cargarTransferencias()]);
-    _entregasCache = entregas;
+    
+    // FILTRAR según rol
+    let entregasView = entregas;
+    let transferenciasView = transferencias;
+    if (!esAdmin()) {
+      const miId = getMiAgenteId();
+      if (miId) {
+        // Agente: solo sus entregas (donde él entregó)
+        entregasView = entregas.filter(e => String(e.agente_id) === String(miId));
+        // Agente: solo transferencias donde él participa (desde o hacia)
+        transferenciasView = transferencias.filter(t => 
+          String(t.desde_agente) === String(miId) || 
+          String(t.hacia_agente) === String(miId)
+        );
+      } else {
+        entregasView = [];
+        transferenciasView = [];
+      }
+    }
+    
+    _entregasCache = entregas; // cache global completo (para admin)
     _transferenciasCache = transferencias;
 
     view.innerHTML = `
       <div class="nxSL-wrap">
-        ${renderHeaderSolicitudes(entregas, transferencias)}
-        ${renderSeccionEntregasPendientes(entregas)}
-        ${renderSeccionTransferencias(transferencias)}
-        ${renderSeccionHistorial(entregas, transferencias)}
+        ${renderHeaderSolicitudes(entregasView, transferenciasView)}
+        ${renderSeccionEntregasPendientes(entregasView)}
+        ${renderSeccionTransferencias(transferenciasView)}
+        ${renderSeccionHistorial(entregasView, transferenciasView)}
         ${renderSeccionRecibirEntrega()}
       </div>
     `;
@@ -3526,6 +3569,11 @@
       const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
       const nomAg = ag?.nom || '—';
       const directoBadge = e.es_directo ? '<span class="nxSL-tag nxSL-tag-direct"><i class="ti ti-arrow-down"></i> DIRECTO</span>' : '<span class="nxSL-tag nxSL-tag-fisico"><i class="ti ti-cash"></i> FÍSICO</span>';
+      // Botones según rol: confirmar y anular SOLO admin
+      const accionesPend = esAdmin() ? `
+            <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" title="Confirmar"><i class="ti ti-check"></i> Confirmar</button>
+            <button class="nxSL-btn nxSL-btn-anu" onclick="window.nxAnularEntregaAdmin('${esc(e.id)}')" title="Anular"><i class="ti ti-x"></i> Anular</button>
+      ` : '<span class="nxSL-muted">Esperando confirmación del admin</span>';
       return `
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
@@ -3534,10 +3582,7 @@
           <td>${esc(e.metodo || '')}${e.banco ? `<br><span class="nxSL-muted">${esc(e.banco)}</span>` : ''}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
           <td>${directoBadge}</td>
-          <td class="nxSL-actions">
-            <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" title="Confirmar"><i class="ti ti-check"></i> Confirmar</button>
-            <button class="nxSL-btn nxSL-btn-anu" onclick="window.nxAnularEntregaAdmin('${esc(e.id)}')" title="Anular"><i class="ti ti-x"></i> Anular</button>
-          </td>
+          <td class="nxSL-actions">${accionesPend}</td>
         </tr>
       `;
     }).join('');
@@ -3545,6 +3590,12 @@
     const depRows = confirmadasNoDep.map(e => {
       const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
       const nomAg = ag?.nom || '—';
+      // Depositar: admin SIEMPRE, agente solo si es SU propia entrega
+      const miId = getMiAgenteId();
+      const puedeDepositar = esAdmin() || (miId && String(e.agente_id) === String(miId));
+      const accionesDep = puedeDepositar ? `
+            <button class="nxSL-btn nxSL-btn-dep" onclick="window.nxDepositarEntregaAdmin('${esc(e.id)}')" title="Marcar como depositado"><i class="ti ti-building-bank"></i> Depositar</button>
+      ` : '<span class="nxSL-muted">—</span>';
       return `
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
@@ -3552,9 +3603,7 @@
           <td class="nxSL-num">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
-          <td class="nxSL-actions">
-            <button class="nxSL-btn nxSL-btn-dep" onclick="window.nxDepositarEntregaAdmin('${esc(e.id)}')" title="Marcar como depositado"><i class="ti ti-building-bank"></i> Depositar</button>
-          </td>
+          <td class="nxSL-actions">${accionesDep}</td>
         </tr>
       `;
     }).join('');
@@ -3614,8 +3663,22 @@
 
   function renderSeccionTransferencias(transferencias) {
     const F = getFmt();
-    const ultimas = transferencias.slice(0, 10);
-    const totalMes = transferencias
+    
+    // Separar pendientes (las que el usuario actual debe aprobar/rechazar)
+    const miId = getMiAgenteId();
+    let pendientesEntrantes = [];
+    if (esAdmin()) {
+      pendientesEntrantes = transferencias.filter(t => t.estado === 'pendiente');
+    } else if (miId) {
+      pendientesEntrantes = transferencias.filter(t => 
+        t.estado === 'pendiente' && String(t.hacia_agente) === String(miId)
+      );
+    }
+    
+    // Resto: confirmadas o historial
+    const historial = transferencias.filter(t => !t.estado || t.estado === 'aceptada');
+    const ultimas = historial.slice(0, 10);
+    const totalMes = historial
       .filter(t => {
         if (!t.fecha) return false;
         try {
@@ -3625,6 +3688,27 @@
         } catch(e) { return false; }
       })
       .reduce((s, t) => s + Number(t.monto || 0), 0);
+    
+    // Filas de PENDIENTES con botones de Aceptar/Rechazar
+    const filasPendientes = pendientesEntrantes.map(t => {
+      const desde = (st().agentes || []).find(a => String(a.id) === String(t.desde_agente))?.nom || '—';
+      const hacia = (st().agentes || []).find(a => String(a.id) === String(t.hacia_agente))?.nom || '—';
+      return `
+        <tr>
+          <td class="nxSL-tx-fecha">${fmtFecha(t.fecha)}</td>
+          <td>${esc(desde)}</td>
+          <td><i class="ti ti-arrow-right" style="color:#f59e0b"></i></td>
+          <td><strong>${esc(hacia)}</strong></td>
+          <td class="nxSL-num">${F(t.monto)}</td>
+          <td>${esc(t.metodo || '')}${t.banco ? `<br><span class="nxSL-muted">${esc(t.banco)}</span>` : ''}</td>
+          <td class="nxSL-tx-ref">${esc(t.referencia || '—')}</td>
+          <td class="nxSL-actions">
+            <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxAceptarTransferencia('${esc(t.id)}')" title="Aceptar"><i class="ti ti-check"></i> Aceptar</button>
+            <button class="nxSL-btn nxSL-btn-anu" onclick="window.nxRechazarTransferencia('${esc(t.id)}')" title="Rechazar"><i class="ti ti-x"></i> Rechazar</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
     const filas = ultimas.map(t => {
       const desde = (st().agentes || []).find(a => String(a.id) === String(t.desde_agente))?.nom || '—';
@@ -3641,6 +3725,28 @@
         </tr>
       `;
     }).join('');
+    
+    // Bloque de pendientes (si hay)
+    const bloquePendientes = pendientesEntrantes.length > 0 ? `
+      <div class="nxSL-transfer-hist-title" style="color:#d97706">⚠️ TRANSFERENCIAS PENDIENTES DE TU APROBACIÓN (${pendientesEntrantes.length})</div>
+      <div class="nxSL-table-wrap">
+        <table class="nxSL-table">
+          <thead>
+            <tr>
+              <th>FECHA</th>
+              <th>DESDE</th>
+              <th></th>
+              <th>HACIA</th>
+              <th class="nxSL-num">MONTO</th>
+              <th>MÉTODO</th>
+              <th>REF</th>
+              <th>ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>${filasPendientes}</tbody>
+        </table>
+      </div>
+    ` : '';
 
     return `
       <div class="nxSL-section nxSL-section-transfer">
@@ -3650,6 +3756,7 @@
             <i class="ti ti-plus"></i> Nueva transferencia
           </button>
         </div>
+        ${bloquePendientes}
         <div class="nxSL-transfer-stats">
           <div class="nxSL-transfer-stat">
             <div class="nxSL-transfer-stat-lbl">TRANSFERIDO ESTE MES</div>
@@ -3657,7 +3764,7 @@
           </div>
           <div class="nxSL-transfer-stat">
             <div class="nxSL-transfer-stat-lbl">MOVIMIENTOS TOTALES</div>
-            <div class="nxSL-transfer-stat-val">${transferencias.length}</div>
+            <div class="nxSL-transfer-stat-val">${historial.length}</div>
           </div>
         </div>
         ${ultimas.length === 0 ?
@@ -3804,22 +3911,29 @@
   };
 
   function renderSeccionRecibirEntrega() {
+    const titulo = esAdmin() ? 'RECIBIR ENTREGA DE AGENTE' : 'ENTREGAR DINERO AL ADMIN';
+    const texto = esAdmin() 
+      ? 'Cuando un agente te entrega <strong>efectivo en mano</strong> o te hace una <strong>transferencia bancaria</strong>, regístralo aquí. Esto reduce el "Dinero en Mano" del agente y suma a tu Caja Central.'
+      : 'Cuando vayas a entregar <strong>efectivo en mano</strong> o hacer una <strong>transferencia bancaria</strong> al administrador, regístralo aquí. El admin debe confirmarlo para que se efectúe.';
+    const textoBoton = esAdmin() ? 'Registrar nueva entrega' : 'Crear nueva entrega';
+    const nota = esAdmin()
+      ? 'Tip: si el cliente depositó directo a tu cuenta al momento de cobrar, el agente puede marcar el checkbox <strong>"Depositado directo a mi cuenta"</strong> en el modal de registrar cobro. Esa entrega aparecerá automáticamente arriba en "PENDIENTES DE CONFIRMAR".'
+      : 'Tip: si al cobrar el cliente depositó directo a la cuenta del admin, puedes marcar el checkbox <strong>"Depositado directo a cuenta admin"</strong> en el modal de registrar cobro. Esa entrega aparecerá automáticamente arriba en "PENDIENTES DE CONFIRMAR".';
+    
     return `
       <div class="nxSL-section nxSL-section-recibir">
         <div class="nxSL-section-head">
-          <div class="nxSL-section-title"><i class="ti ti-cash"></i> RECIBIR ENTREGA DE AGENTE</div>
+          <div class="nxSL-section-title"><i class="ti ti-cash"></i> ${titulo}</div>
         </div>
         <div class="nxSL-recibir-body">
-          <div class="nxSL-recibir-text">
-            Cuando un agente te entrega <strong>efectivo en mano</strong> o te hace una <strong>transferencia bancaria</strong>, regístralo aquí. Esto reduce el "Dinero en Mano" del agente y suma a tu Caja Central.
-          </div>
+          <div class="nxSL-recibir-text">${texto}</div>
           <button class="nxSL-action-btn nxSL-action-green" onclick="window.nxAbrirEntregaAdmin && window.nxAbrirEntregaAdmin()">
-            <i class="ti ti-cash"></i> Registrar nueva entrega
+            <i class="ti ti-cash"></i> ${textoBoton}
           </button>
         </div>
         <div class="nxSL-recibir-note">
           <i class="ti ti-info-circle"></i>
-          Tip: si el cliente depositó directo a tu cuenta al momento de cobrar, el agente puede marcar el checkbox <strong>"Depositado directo a mi cuenta"</strong> en el modal de registrar cobro. Esa entrega aparecerá automáticamente arriba en "PENDIENTES DE CONFIRMAR".
+          ${nota}
         </div>
       </div>
     `;
@@ -4128,6 +4242,52 @@
   // API PÚBLICA
   // ═══════════════════════════════════════════════════════════════
   window.nxRenderSolicitudes = renderSolicitudes;
+  
+  // Aceptar transferencia entrante (admin o agente que recibe)
+  window.nxAceptarTransferencia = async function(id) {
+    const api = getAPI();
+    if (!api?.patch) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
+      return;
+    }
+    if (!confirm('¿Aceptar esta transferencia? Se efectuará el movimiento.')) return;
+    try {
+      await api.patch('transferencias_agentes', `id=eq.${id}`, {
+        estado: 'aceptada'
+      });
+      if (typeof window.logAudit === 'function') {
+        window.logAudit('TRANSFERENCIA_ACEPTADA', 'ID: ' + id, 'Cobros');
+      }
+      if (typeof window.toast === 'function') window.toast('ok', 'Aceptada', 'La transferencia se efectuó');
+      await renderSolicitudes();
+    } catch(e) {
+      console.error('Error al aceptar:', e);
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo aceptar', e.message || '');
+    }
+  };
+  
+  // Rechazar transferencia entrante
+  window.nxRechazarTransferencia = async function(id) {
+    const api = getAPI();
+    if (!api?.patch) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
+      return;
+    }
+    if (!confirm('¿Rechazar esta transferencia? El dinero NO se moverá.')) return;
+    try {
+      await api.patch('transferencias_agentes', `id=eq.${id}`, {
+        estado: 'rechazada'
+      });
+      if (typeof window.logAudit === 'function') {
+        window.logAudit('TRANSFERENCIA_RECHAZADA', 'ID: ' + id, 'Cobros');
+      }
+      if (typeof window.toast === 'function') window.toast('ok', 'Rechazada', 'La transferencia se rechazó');
+      await renderSolicitudes();
+    } catch(e) {
+      console.error('Error al rechazar:', e);
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo rechazar', e.message || '');
+    }
+  };
   window.nxRefrescarSolicitudes = async function() {
     await actualizarBadge();
     if (document.getElementById('v-solicitudes')?.classList.contains('on')) {
