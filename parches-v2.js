@@ -4078,3 +4078,63 @@
     init();
   }
 })();
+/* FIX SOLICITUDES - abrir sin romper nav() */
+(function () {
+  "use strict";
+
+  if (window.__NX_FIX_SOLICITUDES_NAV__) return;
+  window.__NX_FIX_SOLICITUDES_NAV__ = true;
+
+  function abrirSolicitudesSeguro(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+
+    let view = document.getElementById("v-solicitudes");
+    const cnt = document.getElementById("cnt");
+
+    if (!view && cnt) {
+      view = document.createElement("div");
+      view.className = "view";
+      view.id = "v-solicitudes";
+      view.innerHTML = '<div class="nxSL-loading">Cargando solicitudes...</div>';
+      cnt.appendChild(view);
+    }
+
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("on"));
+    if (view) view.classList.add("on");
+
+    document.querySelectorAll("nav.sb .ni").forEach(i => i.classList.remove("on"));
+    const item = document.getElementById("niSolicit");
+    if (item) item.classList.add("on");
+
+    const title = document.querySelector(".topbar .ttl, .tb-title, #viewTitle");
+    if (title) title.textContent = "SOLICITUDES";
+
+    if (typeof window.nxRenderSolicitudes === "function") {
+      window.nxRenderSolicitudes();
+    }
+  }
+
+  function aplicarFix() {
+    const item = document.getElementById("niSolicit");
+    if (!item) {
+      setTimeout(aplicarFix, 500);
+      return;
+    }
+
+    item.removeAttribute("onclick");
+    item.onclick = null;
+    item.addEventListener("click", abrirSolicitudesSeguro, true);
+
+    window.nxAbrirSolicitudes = abrirSolicitudesSeguro;
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", aplicarFix);
+  } else {
+    aplicarFix();
+  }
+})();
