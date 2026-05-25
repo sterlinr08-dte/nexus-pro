@@ -3331,6 +3331,64 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // BOTÓN EN DASHBOARD (acceso rápido)
+  // ═══════════════════════════════════════════════════════════════
+  function inyectarBotonDashboard() {
+    if (!esAdmin()) return true; // No hace falta para no-admin
+    if (document.getElementById('qaSolicit')) return true;
+    
+    // Buscar el grid de accesos rápidos del Dashboard
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    
+    // Buscar el primer .qa para clonar la estructura
+    const qaExistente = vDash.querySelector('.qa');
+    if (!qaExistente) return false;
+    
+    const qaGrid = qaExistente.parentElement;
+    if (!qaGrid) return false;
+    
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaSolicit';
+    btn.setAttribute('onclick', "window.nxAbrirSolicitudes && window.nxAbrirSolicitudes()");
+    btn.style.position = 'relative';
+    btn.innerHTML = `
+      <span class="qa-i" style="position:relative">
+        <i class="ti ti-inbox"></i>
+        <span class="qaSolicitBadge" id="qaSolicitBadge" style="display:none"></span>
+      </span>
+      <div class="qa-l">Solicitudes</div>
+    `;
+    
+    // Insertar al inicio del grid para que sea visible
+    qaGrid.insertBefore(btn, qaGrid.firstChild);
+    
+    // Actualizar badge del Dashboard
+    actualizarBadgeDashboard();
+    return true;
+  }
+  
+  async function actualizarBadgeDashboard() {
+    const badge = document.getElementById('qaSolicitBadge');
+    if (!badge) return;
+    if (!esAdmin()) {
+      badge.style.display = 'none';
+      return;
+    }
+    try {
+      const entregas = _entregasCache.length ? _entregasCache : await cargarEntregas();
+      const pend = entregas.filter(e => !e.confirmado).length;
+      if (pend > 0) {
+        badge.textContent = pend > 9 ? '9+' : String(pend);
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch(e) {}
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // CARGA DE DATOS
   // ═══════════════════════════════════════════════════════════════
   async function cargarEntregas() {
@@ -3357,24 +3415,39 @@
     if (!esAdmin()) {
       const it = document.getElementById('niSolicit');
       if (it) it.style.display = 'none';
+      const dashBadge = document.getElementById('qaSolicitBadge');
+      if (dashBadge) dashBadge.style.display = 'none';
       return;
     }
     const it = document.getElementById('niSolicit');
     if (it) it.style.display = '';
     const badge = document.getElementById('niSolicitBadge');
-    if (!badge) return;
+    const dashBadge = document.getElementById('qaSolicitBadge');
     try {
       const entregas = await cargarEntregas();
       _entregasCache = entregas;
       const pend = entregas.filter(e => !e.confirmado).length;
-      if (pend > 0) {
-        badge.textContent = pend > 99 ? '99+' : String(pend);
-        badge.style.display = '';
-      } else {
-        badge.style.display = 'none';
+      // Badge sidebar
+      if (badge) {
+        if (pend > 0) {
+          badge.textContent = pend > 99 ? '99+' : String(pend);
+          badge.style.display = '';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+      // Badge dashboard
+      if (dashBadge) {
+        if (pend > 0) {
+          dashBadge.textContent = pend > 9 ? '9+' : String(pend);
+          dashBadge.style.display = '';
+        } else {
+          dashBadge.style.display = 'none';
+        }
       }
     } catch(e) {
-      badge.style.display = 'none';
+      if (badge) badge.style.display = 'none';
+      if (dashBadge) dashBadge.style.display = 'none';
     }
   }
 
@@ -3399,6 +3472,7 @@
         ${renderHeaderSolicitudes(entregas, transferencias)}
         ${renderSeccionEntregasPendientes(entregas)}
         ${renderSeccionTransferencias(transferencias)}
+        ${renderSeccionHistorial(entregas, transferencias)}
         ${renderSeccionRecibirEntrega()}
       </div>
     `;
@@ -3609,6 +3683,125 @@
       </div>
     `;
   }
+
+  function renderSeccionHistorial(entregas, transferencias) {
+    const F = getFmt();
+    
+    // Entregas: confirmadas (depositadas o no)
+    const entregasHist = entregas.filter(e => e.confirmado)
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+      .slice(0, 30); // Últimas 30
+    
+    // Transferencias: aceptadas o rechazadas (no pendientes)
+    const transfHist = transferencias.filter(t => t.estado === 'aceptada' || t.estado === 'rechazada')
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+      .slice(0, 30);
+    
+    const totalHist = entregasHist.length + transfHist.length;
+    
+    if (totalHist === 0) {
+      return `
+        <div class="nxSL-section nxSL-section-historial">
+          <div class="nxSL-section-head">
+            <div class="nxSL-section-title"><i class="ti ti-history"></i> HISTORIAL DE SOLICITUDES</div>
+            <div class="nxSL-section-badge nxSL-badge-gray">0</div>
+          </div>
+          <div class="nxSL-empty-soft">Aún no hay solicitudes procesadas en el historial.</div>
+        </div>
+      `;
+    }
+    
+    // Filas de entregas confirmadas
+    const filasEntregas = entregasHist.map(e => {
+      const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
+      const nomAg = ag?.nom || '—';
+      const estado = e.depositado ? 'DEPOSITADO' : 'CONFIRMADO';
+      const estadoClass = e.depositado ? 'nxSL-hist-dep' : 'nxSL-hist-conf';
+      const fechaProc = e.confirmado_at || e.depositado_at || e.fecha;
+      return `
+        <tr>
+          <td class="nxSL-hist-fecha">${fmtFecha(fechaProc)}</td>
+          <td><span class="nxSL-hist-tipo nxSL-hist-tipo-entrega">Entrega</span></td>
+          <td>${esc(nomAg)}</td>
+          <td class="nxSL-hist-monto">${F(e.monto)}</td>
+          <td>${esc(e.metodo || '')}</td>
+          <td class="nxSL-hist-ref">${esc(e.referencia || '—')}</td>
+          <td><span class="nxSL-hist-estado ${estadoClass}">${estado}</span></td>
+        </tr>
+      `;
+    }).join('');
+    
+    // Filas de transferencias
+    const filasTransf = transfHist.map(t => {
+      const desde = (st().agentes || []).find(a => String(a.id) === String(t.desde_agente))?.nom || '—';
+      const hacia = (st().agentes || []).find(a => String(a.id) === String(t.hacia_agente))?.nom || '—';
+      const estadoClass = t.estado === 'aceptada' ? 'nxSL-hist-acept' : 'nxSL-hist-rech';
+      const estadoTxt = t.estado === 'aceptada' ? 'ACEPTADA' : 'RECHAZADA';
+      return `
+        <tr>
+          <td class="nxSL-hist-fecha">${fmtFecha(t.fecha)}</td>
+          <td><span class="nxSL-hist-tipo nxSL-hist-tipo-transf">Transfer</span></td>
+          <td>${esc(desde)} → ${esc(hacia)}</td>
+          <td class="nxSL-hist-monto">${F(t.monto)}</td>
+          <td>${esc(t.metodo || '')}</td>
+          <td class="nxSL-hist-ref">${esc(t.referencia || '—')}</td>
+          <td><span class="nxSL-hist-estado ${estadoClass}">${estadoTxt}</span></td>
+        </tr>
+      `;
+    }).join('');
+    
+    return `
+      <div class="nxSL-section nxSL-section-historial">
+        <div class="nxSL-section-head">
+          <div class="nxSL-section-title"><i class="ti ti-history"></i> HISTORIAL DE SOLICITUDES</div>
+          <div class="nxSL-section-badge nxSL-badge-gray">${totalHist}</div>
+        </div>
+        <div class="nxSL-section-sub">Últimas solicitudes procesadas (confirmadas, rechazadas o depositadas)</div>
+        <div class="nxSL-hist-tabs">
+          <button class="nxSL-hist-tab nxSL-hist-tab-active" onclick="window.nxFiltrarHistorial('todos', this)" type="button">Todos (${totalHist})</button>
+          <button class="nxSL-hist-tab" onclick="window.nxFiltrarHistorial('entregas', this)" type="button">Entregas (${entregasHist.length})</button>
+          <button class="nxSL-hist-tab" onclick="window.nxFiltrarHistorial('transf', this)" type="button">Transferencias (${transfHist.length})</button>
+        </div>
+        <div class="nxSL-hist-table-wrap">
+          <table class="nxSL-hist-table" id="nxSL-hist-table">
+            <thead>
+              <tr>
+                <th>FECHA</th>
+                <th>TIPO</th>
+                <th>AGENTE / RUTA</th>
+                <th class="nxSL-hist-monto">MONTO</th>
+                <th>MÉTODO</th>
+                <th>REFERENCIA</th>
+                <th>ESTADO</th>
+              </tr>
+            </thead>
+            <tbody>${filasEntregas}${filasTransf}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // Filtrar historial por tipo
+  window.nxFiltrarHistorial = function(tipo, btn) {
+    const tabla = document.getElementById('nxSL-hist-table');
+    if (!tabla) return;
+    // Cambiar tab activo
+    document.querySelectorAll('.nxSL-hist-tab').forEach(t => t.classList.remove('nxSL-hist-tab-active'));
+    if (btn) btn.classList.add('nxSL-hist-tab-active');
+    // Filtrar filas
+    const rows = tabla.querySelectorAll('tbody tr');
+    rows.forEach(r => {
+      const tipoCell = r.querySelector('.nxSL-hist-tipo');
+      if (!tipoCell) { r.style.display = ''; return; }
+      const esEntrega = tipoCell.classList.contains('nxSL-hist-tipo-entrega');
+      const esTransf = tipoCell.classList.contains('nxSL-hist-tipo-transf');
+      if (tipo === 'todos') r.style.display = '';
+      else if (tipo === 'entregas' && esEntrega) r.style.display = '';
+      else if (tipo === 'transf' && esTransf) r.style.display = '';
+      else r.style.display = 'none';
+    });
+  };
 
   function renderSeccionRecibirEntrega() {
     return `
@@ -3842,6 +4035,91 @@
         .nxSL-actions { flex-direction: column; gap: 4px; }
         .nxSL-btn { width: 100%; justify-content: center; }
       }
+      
+      /* ═══ HISTORIAL ═══ */
+      .nxSL-section-historial { border-left: 4px solid #64748b; }
+      .nxSL-section-historial .nxSL-section-title i { color:#64748b; }
+      .nxSL-section-sub {
+        font-size: 11px; color: #64748b; margin-bottom: 12px; font-weight: 500;
+      }
+      .nxSL-badge-gray {
+        background: #e2e8f0; color: #475569;
+        font-size: 12px; font-weight: 900;
+        padding: 4px 10px; border-radius: 999px;
+        min-width: 28px; text-align: center;
+      }
+      .nxSL-empty-soft {
+        padding: 24px; text-align: center; color: #94a3b8;
+        font-size: 12px; font-weight: 600;
+        background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;
+      }
+      .nxSL-hist-tabs {
+        display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+      }
+      .nxSL-hist-tab {
+        background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569;
+        padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        cursor: pointer; transition: all .15s;
+      }
+      .nxSL-hist-tab:hover { background: #e2e8f0; }
+      .nxSL-hist-tab-active {
+        background: #2563eb !important; color: #fff !important; border-color: #2563eb !important;
+        box-shadow: 0 2px 6px rgba(37,99,235,.25);
+      }
+      .nxSL-hist-table-wrap {
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        border-radius: 12px; border: 1px solid #e2e8f0;
+      }
+      .nxSL-hist-table {
+        width: 100%; border-collapse: collapse; font-size: 12px; background: #fff;
+      }
+      .nxSL-hist-table thead th {
+        background: #f8fafc; padding: 10px 12px; text-align: left;
+        font-size: 9px; font-weight: 800; color: #64748b; letter-spacing: .5px;
+        border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+      }
+      .nxSL-hist-table th.nxSL-hist-monto { text-align: right; }
+      .nxSL-hist-table tbody td {
+        padding: 10px 12px; border-bottom: 1px solid #f1f5f9; color: #0f172a;
+        font-weight: 600;
+      }
+      .nxSL-hist-table tbody tr:last-child td { border-bottom: 0; }
+      .nxSL-hist-table tbody tr:hover { background: #f8fafc; }
+      .nxSL-hist-fecha { font-family: var(--mono, monospace); color: #64748b; font-size: 11px; }
+      .nxSL-hist-ref { font-family: var(--mono, monospace); color: #64748b; font-size: 11px; }
+      .nxSL-hist-monto { text-align: right; font-family: var(--mono, monospace); font-weight: 700; color: #059669; white-space: nowrap; }
+      .nxSL-hist-tipo {
+        display: inline-block; padding: 3px 8px; border-radius: 6px;
+        font-size: 10px; font-weight: 800;
+      }
+      .nxSL-hist-tipo-entrega { background: #dcfce7; color: #059669; }
+      .nxSL-hist-tipo-transf  { background: #ede9fe; color: #7c3aed; }
+      .nxSL-hist-estado {
+        display: inline-block; padding: 3px 8px; border-radius: 6px;
+        font-size: 10px; font-weight: 800;
+      }
+      .nxSL-hist-conf  { background: #dbeafe; color: #2563eb; }
+      .nxSL-hist-dep   { background: #dcfce7; color: #059669; }
+      .nxSL-hist-acept { background: #dcfce7; color: #059669; }
+      .nxSL-hist-rech  { background: #fee2e2; color: #dc2626; }
+      
+      /* ═══ BADGE EN DASHBOARD ═══ */
+      .qaSolicitBadge {
+        position: absolute; top: -4px; right: -4px;
+        background: #dc2626; color: #fff;
+        min-width: 18px; height: 18px; padding: 0 5px;
+        border-radius: 9px; font-size: 10px; font-weight: 900;
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2);
+        z-index: 5;
+      }
+      
+      @media (max-width: 768px) {
+        .nxSL-hist-table { min-width: 700px; font-size: 11px; }
+        .nxSL-hist-table thead th, .nxSL-hist-table tbody td { padding: 8px 10px; }
+        .nxSL-hist-tabs { gap: 4px; }
+        .nxSL-hist-tab { padding: 5px 10px; font-size: 10px; }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -3874,13 +4152,14 @@
       intentos++;
       const ok1 = inyectarSidebarItem();
       const ok2 = inyectarVistaContainer();
+      const ok3 = inyectarBotonDashboard();
       if (ok1 && ok2) {
         actualizarBadge();
         // Refrescar badge cada 60 segundos
         setInterval(actualizarBadge, 60000);
         return;
       }
-      if (intentos < 30) setTimeout(tryInit, 500);
+      if (intentos < 60) setTimeout(tryInit, 100);
     };
     tryInit();
   }
