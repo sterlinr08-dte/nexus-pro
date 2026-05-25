@@ -1,4 +1,50 @@
-/* ═══════════════════════════════════════════════════════════════════════
+/* FIX TEMPRANO AUTO-GEN rAuto NULL */
+(function () {
+  "use strict";
+
+  if (window.__NX_FIX_RAUTO_EARLY__) return;
+  window.__NX_FIX_RAUTO_EARLY__ = true;
+
+  function ensureAutoHistorial() {
+    if (document.getElementById("autoHistorial")) return;
+
+    const div = document.createElement("div");
+    div.id = "autoHistorial";
+    div.style.display = "none";
+
+    const padre =
+      document.getElementById("v-dashboard") ||
+      document.getElementById("cnt") ||
+      document.body;
+
+    if (padre) padre.appendChild(div);
+  }
+
+  ensureAutoHistorial();
+
+  document.addEventListener("DOMContentLoaded", ensureAutoHistorial);
+
+  const timer = setInterval(function () {
+    ensureAutoHistorial();
+
+    if (typeof window.rAuto === "function" && !window.rAuto.__nxSafe) {
+      const original = window.rAuto;
+
+      window.rAuto = function () {
+        ensureAutoHistorial();
+        try {
+          return original.apply(this, arguments);
+        } catch (e) {
+          console.warn("rAuto protegido:", e);
+          ensureAutoHistorial();
+        }
+      };
+
+      window.rAuto.__nxSafe = true;
+      clearInterval(timer);
+    }
+  }, 100);
+})();/* ═══════════════════════════════════════════════════════════════════════
    NEXUS PRO - PARCHES MÓVIL (versión limpia)
    ═══════════════════════════════════════════════════════════════════════
    
