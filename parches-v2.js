@@ -4184,3 +4184,40 @@
     aplicarFix();
   }
 })();
+/* MOVER SOLICITUDES DEBAJO DE CLIENTES */
+(function () {
+  "use strict";
+
+  if (window.__NX_SOLICITUDES_POSICION__) return;
+  window.__NX_SOLICITUDES_POSICION__ = true;
+
+  function moverSolicitudes() {
+    const itemSolicitudes =
+      document.getElementById("niSolicit") ||
+      document.querySelector('[data-view="solicitudes"]') ||
+      document.querySelector('[onclick*="solicitudes"]');
+
+    const itemClientes =
+      document.querySelector('[onclick*="clientes"]') ||
+      document.querySelector('[data-view="clientes"]') ||
+      Array.from(document.querySelectorAll(".ni")).find(el =>
+        el.textContent.trim().toUpperCase().includes("CLIENTES")
+      );
+
+    if (!itemSolicitudes || !itemClientes) {
+      setTimeout(moverSolicitudes, 500);
+      return;
+    }
+
+    itemClientes.insertAdjacentElement("afterend", itemSolicitudes);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", moverSolicitudes);
+  } else {
+    moverSolicitudes();
+  }
+
+  setTimeout(moverSolicitudes, 1000);
+  setTimeout(moverSolicitudes, 3000);
+})();
