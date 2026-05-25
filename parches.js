@@ -1091,6 +1091,27 @@
     } catch(e) { return []; }
   }
 
+  async function cargarEntregasAdmin() {
+    const api = getAPI();
+    if (!api || !api.get) return [];
+    try {
+      const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=2000');
+      return Array.isArray(data) ? data : [];
+    } catch(e) {
+      console.warn('No se pudieron cargar entregas_admin:', e);
+      return [];
+    }
+  }
+
+  // Verifica si el usuario actual es admin (mismo patrón que aplicarRolSidebar)
+  function esAdmin() {
+    try {
+      return (typeof sesion !== 'undefined') && sesion?.rol === 'admin';
+    } catch(e) {
+      try { return window.sesion?.rol === 'admin'; } catch(_) { return false; }
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════
   // CÁLCULOS
   // ═══════════════════════════════════════════════════════════
@@ -1142,7 +1163,7 @@
       .sort((x, y) => y.monto - x.monto);
   }
 
-  function calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonosAll, transferenciasAll, periodoFin) {
+  function calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonosAll, transferenciasAll, periodoFin, entregasAll) {
     const agentes = Array.isArray(st().agentes) ? st().agentes : [];
 
     // ACUMULADO: todo lo que pasó ANTES del fin del ciclo seleccionado
@@ -1154,6 +1175,10 @@
     });
     const abonosAcum = antesDelFin(abonosAll);
     const transferenciasAcum = antesDelFin(transferenciasAll);
+    const entregasAcum = antesDelFin(entregasAll || []);
+    const entregasPeriodo = (entregasAll || []).filter(e =>
+      enRango(e.fecha, periodoFin ? new Date(new Date(periodoFin).getTime() - 31*24*60*60*1000) : new Date(0), new Date(periodoFin))
+    );
 
     return agentes.map(ag => {
       // ── DEL CICLO ──
@@ -1167,7 +1192,10 @@
       const entregadas = transferenciasPeriodo
         .filter(t => String(t.desde_agente) === String(ag.id))
         .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const enMano = cobrado + recibidas - entregadas;
+      const entregadasAdmin = entregasPeriodo
+        .filter(e => String(e.agente_id) === String(ag.id))
+        .reduce((s, e) => s + Number(e.monto || 0), 0);
+      const enMano = cobrado + recibidas - entregadas - entregadasAdmin;
 
       // ── ACUMULADO (hasta el fin del ciclo) ──
       const propiosAcum = abonosAcum.filter(a => String(a.agente_cobro) === String(ag.id));
@@ -1178,7 +1206,13 @@
       const entregadasAcum = transferenciasAcum
         .filter(t => String(t.desde_agente) === String(ag.id))
         .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const enManoAcumulado = cobradoAcum + recibidasAcum - entregadasAcum;
+      const entregadasAdminAcum = entregasAcum
+        .filter(e => String(e.agente_id) === String(ag.id))
+        .reduce((s, e) => s + Number(e.monto || 0), 0);
+      const entregasAdminPendientes = entregasAcum
+        .filter(e => String(e.agente_id) === String(ag.id) && !e.confirmado)
+        .reduce((s, e) => s + Number(e.monto || 0), 0);
+      const enManoAcumulado = cobradoAcum + recibidasAcum - entregadasAcum - entregadasAdminAcum;
 
       return {
         id: ag.id,
@@ -1187,10 +1221,12 @@
         color: colorForAgent(ag.nom),
         cantidad: propios.length,
         cobrado, desglose,
-        recibidas, entregadas, enMano,
-        cobradoAcum, recibidasAcum, entregadasAcum, enManoAcumulado
+        recibidas, entregadas, entregadasAdmin, enMano,
+        cobradoAcum, recibidasAcum, entregadasAcum, entregadasAdminAcum,
+        entregasAdminPendientes, enManoAcumulado
       };
-    }).filter(a => a.cobrado > 0 || a.recibidas > 0 || a.entregadas > 0 || a.enManoAcumulado !== 0)
+    }).filter(a => a.cobrado > 0 || a.recibidas > 0 || a.entregadas > 0 ||
+                   a.entregadasAdmin > 0 || a.enManoAcumulado !== 0)
       .sort((a, b) => b.cobrado - a.cobrado);
   }
 
@@ -1587,12 +1623,17 @@
     const periodo = cicloSeleccionado || listaCiclos[0];
     const indexActual = listaCiclos.findIndex(c => c.key === periodo.key);
 
-    const [abonos, transferencias] = await Promise.all([cargarAbonos(), cargarTransferencias()]);
+    const [abonos, transferencias, entregas] = await Promise.all([
+      cargarAbonos(),
+      cargarTransferencias(),
+      cargarEntregasAdmin()
+    ]);
 
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
     const transferenciasPeriodo = transferencias.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
-    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin);
+    const entregasPeriodo = entregas.filter(e => enRango(e.fecha, periodo.inicio, periodo.fin));
+    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin, entregas);
     const hayTransferencias = transferenciasPeriodo.length > 0;
     const pendiente = calcularPendienteTotal();
     const totalTransferido = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
@@ -1611,6 +1652,7 @@
           ${renderBancos(porBanco, stats.banco)}
         </div>
         ${renderTablaAgentes(porAgente, hayTransferencias)}
+        ${esAdmin() ? renderCajaCentral(entregas, entregasPeriodo) : ''}
         <div class="nxDC-row-2col">
           ${renderTransferenciasResumen(transferenciasPeriodo)}
           ${renderHistorialTransferencias(transferenciasPeriodo)}
@@ -1703,6 +1745,304 @@
   };
 
   window.nxAbrirDetallesCobro = mostrarDetalles;
+
+  // ═══════════════════════════════════════════════════════════════
+  // ENTREGAS A ADMIN — Caja Central
+  // ═══════════════════════════════════════════════════════════════
+
+  function renderCajaCentral(entregasAll, entregasPeriodo) {
+    const F = getFmt();
+    const all = Array.isArray(entregasAll) ? entregasAll : [];
+
+    const recibidoTotal     = all.reduce((s, e) => s + Number(e.monto || 0), 0);
+    const pendienteConfirmar = all.filter(e => !e.confirmado).reduce((s, e) => s + Number(e.monto || 0), 0);
+    const enCajaCentral     = all.filter(e => e.confirmado && !e.depositado).reduce((s, e) => s + Number(e.monto || 0), 0);
+    const yaDepositado      = all.filter(e => e.depositado).reduce((s, e) => s + Number(e.monto || 0), 0);
+    const recibidoPeriodo   = (entregasPeriodo || []).reduce((s, e) => s + Number(e.monto || 0), 0);
+
+    const filas = all.slice(0, 20).map(e => {
+      const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
+      const nomAg = ag?.nom || '—';
+      const estado = e.depositado ? 'DEPOSITADO' : (e.confirmado ? 'CONFIRMADO' : 'PENDIENTE');
+      const estadoClass = e.depositado ? 'nxDC-tag-dep' : (e.confirmado ? 'nxDC-tag-conf' : 'nxDC-tag-pend');
+      const acciones = [];
+      if (!e.confirmado) acciones.push(`<button class="nxDC-mini-btn nxDC-mini-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" type="button" title="Confirmar"><i class="ti ti-check"></i></button>`);
+      if (e.confirmado && !e.depositado) acciones.push(`<button class="nxDC-mini-btn nxDC-mini-dep" onclick="window.nxDepositarEntregaAdmin('${esc(e.id)}')" type="button" title="Marcar como depositado"><i class="ti ti-building-bank"></i></button>`);
+      return `
+        <tr>
+          <td class="nxDC-tx-fecha">${fmtFecha(e.fecha)}</td>
+          <td>${esc(nomAg)}</td>
+          <td class="nxDC-num">${F(e.monto)}</td>
+          <td>${esc(e.metodo || '')}</td>
+          <td class="nxDC-tx-ref">${esc(e.referencia || '—')}</td>
+          <td><span class="nxDC-tx-tag ${estadoClass}">${estado}</span></td>
+          <td class="nxDC-actions-cell">${acciones.join('') || '<span class="nxDC-muted">—</span>'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return `
+      <div class="nxDC-card nxDC-caja-card">
+        <div class="nxDC-card-head">
+          <div class="nxDC-card-title">CAJA CENTRAL <span class="nxDC-muted">(ADMIN)</span></div>
+          <button class="btn bsm bc1" onclick="window.nxAbrirEntregaAdmin()" type="button">
+            <i class="ti ti-cash"></i> Recibir entrega
+          </button>
+        </div>
+
+        <div class="nxDC-caja-mini-kpis">
+          <div class="nxDC-caja-mini nxDC-caja-cash">
+            <div class="nxDC-caja-mini-lbl">EN CAJA CENTRAL</div>
+            <div class="nxDC-caja-mini-val">${F(enCajaCentral)}</div>
+            <div class="nxDC-caja-mini-sub">Confirmado, no depositado</div>
+          </div>
+          <div class="nxDC-caja-mini nxDC-caja-pend">
+            <div class="nxDC-caja-mini-lbl">PENDIENTE CONFIRMAR</div>
+            <div class="nxDC-caja-mini-val">${F(pendienteConfirmar)}</div>
+            <div class="nxDC-caja-mini-sub">Falta verificar</div>
+          </div>
+          <div class="nxDC-caja-mini nxDC-caja-dep">
+            <div class="nxDC-caja-mini-lbl">DEPOSITADO AL BANCO</div>
+            <div class="nxDC-caja-mini-val">${F(yaDepositado)}</div>
+            <div class="nxDC-caja-mini-sub">Histórico total</div>
+          </div>
+          <div class="nxDC-caja-mini nxDC-caja-cic">
+            <div class="nxDC-caja-mini-lbl">RECIBIDO DEL CICLO</div>
+            <div class="nxDC-caja-mini-val">${F(recibidoPeriodo)}</div>
+            <div class="nxDC-caja-mini-sub">Total ciclo · ${F(recibidoTotal)} histórico</div>
+          </div>
+        </div>
+
+        <div class="nxDC-caja-hist-title">HISTORIAL DE ENTREGAS RECIBIDAS</div>
+        ${all.length === 0 ? '<div class="nxDC-empty-soft">Aún no has recibido entregas. Usa el botón "Recibir entrega" para registrar la primera.</div>' :
+        `<div class="nxDC-table-wrap">
+          <table class="nxDC-table nxDC-tx-table">
+            <thead>
+              <tr>
+                <th>FECHA</th>
+                <th>AGENTE</th>
+                <th class="nxDC-num">MONTO</th>
+                <th>MÉTODO</th>
+                <th>REFERENCIA</th>
+                <th>ESTADO</th>
+                <th>ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>`}
+      </div>
+    `;
+  }
+
+  function crearModalEntregaAdmin() {
+    if (document.getElementById('nxModalEntregaAdmin')) return;
+    const modal = document.createElement('div');
+    modal.className = 'overlay';
+    modal.id = 'nxModalEntregaAdmin';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:460px">
+        <div class="mt">
+          <span>// RECIBIR ENTREGA DEL AGENTE</span>
+          <button class="btn bghost bsm" type="button" onclick="window.nxCerrarEntregaAdmin()"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="gf2">
+          <div class="fr"><label>Agente que entrega *</label><select id="nxEA_Agente"></select></div>
+          <div class="fr"><label>Monto RD$ *</label><input type="number" id="nxEA_Monto" min="0.01" step="0.01" placeholder="0.00"></div>
+          <div class="fr"><label>Método *</label>
+            <select id="nxEA_Metodo">
+              <option>Efectivo</option>
+              <option>Transferencia</option>
+              <option>Depósito</option>
+              <option>Cheque</option>
+            </select>
+          </div>
+          <div class="fr"><label>Fecha *</label><input type="date" id="nxEA_Fecha"></div>
+          <div class="fr" id="nxEA_BancoWrap" style="display:none"><label>Banco</label>
+            <select id="nxEA_Banco">
+              <option value="">Seleccionar...</option>
+              <option>BHD</option><option>Banreservas</option><option>Popular</option>
+              <option>Scotiabank</option><option>Otros</option>
+            </select>
+          </div>
+          <div class="fr" id="nxEA_BancoOtroWrap" style="display:none"><label>Otro banco</label><input type="text" id="nxEA_BancoOtro" placeholder="Nombre del banco"></div>
+          <div class="fr" style="grid-column:1/-1"><label>Referencia / # recibo *</label><input type="text" id="nxEA_Ref" placeholder="Ej: REC-001, # transferencia"></div>
+          <div class="fr" style="grid-column:1/-1"><label>Nota</label><input type="text" id="nxEA_Nota" placeholder="Opcional"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin-top:10px;background:#f0fdf4;padding:10px;border-radius:8px;border:1px solid #bbf7d0">
+          <input type="checkbox" id="nxEA_Confirmar" style="width:16px;height:16px;accent-color:#059669"/>
+          <span><strong>Confirmar al guardar</strong> · marca esta entrega como verificada físicamente</span>
+        </label>
+        <div class="nx-info-box-v2" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:11px;color:#1e3a6e;margin-top:8px">
+          Esta entrega reduce el "Dinero en Mano" del agente al instante.
+        </div>
+        <div class="fe">
+          <button class="btn" type="button" onclick="window.nxCerrarEntregaAdmin()">Cancelar</button>
+          <button class="btn bxl" type="button" onclick="window.nxGuardarEntregaAdmin()" id="nxEA_Btn"><i class="ti ti-check"></i> Registrar entrega</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Listeners del modal
+    document.getElementById('nxEA_Metodo')?.addEventListener('change', () => {
+      const m = document.getElementById('nxEA_Metodo').value || '';
+      const show = (m === 'Transferencia' || m === 'Depósito');
+      const bw = document.getElementById('nxEA_BancoWrap');
+      if (bw) bw.style.display = show ? 'block' : 'none';
+      if (!show) {
+        document.getElementById('nxEA_Banco').value = '';
+        document.getElementById('nxEA_BancoOtro').value = '';
+        document.getElementById('nxEA_BancoOtroWrap').style.display = 'none';
+      }
+    });
+    document.getElementById('nxEA_Banco')?.addEventListener('change', () => {
+      const b = document.getElementById('nxEA_Banco').value || '';
+      document.getElementById('nxEA_BancoOtroWrap').style.display = (b === 'Otros') ? 'block' : 'none';
+    });
+  }
+
+  window.nxAbrirEntregaAdmin = function() {
+    if (!esAdmin()) {
+      if (typeof window.toast === 'function') window.toast('err', 'Sin permisos', 'Solo el administrador puede registrar entregas');
+      return;
+    }
+    crearModalEntregaAdmin();
+    const agentes = Array.isArray(st().agentes) ? st().agentes : [];
+    const opts = '<option value="">Seleccionar...</option>' +
+      agentes.map(a => `<option value="${esc(a.id)}">${esc(a.nom || 'Sin nombre')}</option>`).join('');
+    const selAg = document.getElementById('nxEA_Agente');
+    if (selAg) selAg.innerHTML = opts;
+    const fechaIn = document.getElementById('nxEA_Fecha');
+    if (fechaIn) fechaIn.value = new Date().toISOString().slice(0, 10);
+    document.getElementById('nxModalEntregaAdmin')?.classList.add('open');
+  };
+
+  window.nxCerrarEntregaAdmin = function() {
+    document.getElementById('nxModalEntregaAdmin')?.classList.remove('open');
+    // Reset campos
+    ['nxEA_Monto','nxEA_Ref','nxEA_Nota','nxEA_Banco','nxEA_BancoOtro'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const conf = document.getElementById('nxEA_Confirmar');
+    if (conf) conf.checked = false;
+  };
+
+  window.nxGuardarEntregaAdmin = async function() {
+    if (!esAdmin()) return;
+    const agente_id = document.getElementById('nxEA_Agente')?.value || '';
+    const monto = Number(document.getElementById('nxEA_Monto')?.value || 0);
+    const metodo = document.getElementById('nxEA_Metodo')?.value || 'Efectivo';
+    const fecha = document.getElementById('nxEA_Fecha')?.value || new Date().toISOString().slice(0, 10);
+    const ref = (document.getElementById('nxEA_Ref')?.value || '').trim();
+    const nota = (document.getElementById('nxEA_Nota')?.value || '').trim();
+    const confirmarAhora = !!document.getElementById('nxEA_Confirmar')?.checked;
+    let banco = '';
+
+    const toastSafe = (t, ti, m) => {
+      if (typeof window.toast === 'function') window.toast(t, ti, m); else alert(ti + '\n' + (m||''));
+    };
+
+    if (!agente_id) return toastSafe('err', 'Agente requerido', 'Selecciona el agente que entrega');
+    if (!monto || monto <= 0) return toastSafe('err', 'Monto inválido', 'Escribe un monto mayor a cero');
+    if (!ref) return toastSafe('err', 'Referencia requerida', 'Escribe una referencia o # de recibo');
+
+    if (metodo === 'Transferencia' || metodo === 'Depósito') {
+      banco = document.getElementById('nxEA_Banco')?.value || '';
+      if (!banco) return toastSafe('err', 'Banco requerido', 'Selecciona el banco');
+      if (banco === 'Otros') {
+        banco = (document.getElementById('nxEA_BancoOtro')?.value || '').trim();
+        if (!banco) return toastSafe('err', 'Banco requerido', 'Escribe el nombre del banco');
+      }
+    }
+
+    const api = getAPI();
+    if (!api?.post) return toastSafe('err', 'API no disponible', 'No se encontró API.post');
+
+    const btn = document.getElementById('nxEA_Btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
+
+    const payload = {
+      agente_id, monto, metodo,
+      banco: banco || null,
+      referencia: ref,
+      nota: nota || null,
+      fecha,
+      confirmado: confirmarAhora,
+      confirmado_at: confirmarAhora ? new Date().toISOString() : null,
+      confirmado_por: confirmarAhora ? (window.sesion?.usuario || 'admin') : null,
+      created_by: window.sesion?.usuario || 'admin'
+    };
+
+    try {
+      await api.post('entregas_admin', payload);
+      const nombreAg = (st().agentes || []).find(a => String(a.id) === String(agente_id))?.nom || agente_id;
+      if (typeof window.logAudit === 'function') {
+        window.logAudit('ENTREGA_ADMIN', `Recibido de ${nombreAg}: RD$ ${monto.toLocaleString()} · ${metodo}${banco ? ' · ' + banco : ''}${confirmarAhora ? ' · CONFIRMADO' : ''}`, 'Cobros');
+      }
+      toastSafe('ok', 'Entrega registrada', `${nombreAg} entregó RD$ ${monto.toLocaleString()}`);
+      window.nxCerrarEntregaAdmin();
+      if (typeof renderDetallesCobro === 'function') await renderDetallesCobro();
+    } catch (e) {
+      console.error('Error guardando entrega_admin:', e);
+      toastSafe('err', 'No se pudo guardar', 'Verifica que exista la tabla entregas_admin en Supabase');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Registrar entrega'; }
+    }
+  };
+
+  window.nxConfirmarEntregaAdmin = async function(id) {
+    if (!esAdmin()) return;
+    if (!confirm('¿Confirmar esta entrega? Esto verifica que recibiste físicamente el dinero.')) return;
+    const api = getAPI();
+    if (!api?.patch) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.patch');
+      return;
+    }
+    try {
+      await api.patch('entregas_admin', `id=eq.${id}`, {
+        confirmado: true,
+        confirmado_at: new Date().toISOString(),
+        confirmado_por: window.sesion?.usuario || 'admin'
+      });
+      if (typeof window.toast === 'function') window.toast('ok', 'Confirmado', 'Entrega marcada como verificada');
+      await renderDetallesCobro();
+    } catch (e) {
+      console.error('Error confirmando entrega:', e);
+      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo confirmar');
+    }
+  };
+
+  window.nxDepositarEntregaAdmin = async function(id) {
+    if (!esAdmin()) return;
+    const banco = prompt('¿En qué banco depositaste este dinero?\n(Ej: BHD, Banreservas, Popular)');
+    if (!banco || !banco.trim()) return;
+    const api = getAPI();
+    if (!api?.patch) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.patch');
+      return;
+    }
+    try {
+      await api.patch('entregas_admin', `id=eq.${id}`, {
+        depositado: true,
+        depositado_at: new Date().toISOString(),
+        depositado_banco: banco.trim()
+      });
+      if (typeof window.toast === 'function') window.toast('ok', 'Depositado', `Marcado como depositado en ${banco.trim()}`);
+      await renderDetallesCobro();
+    } catch (e) {
+      console.error('Error depositando entrega:', e);
+      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo marcar como depositado');
+    }
+  };
+
+  // Crear el modal al cargar (queda oculto hasta que se llame nxAbrirEntregaAdmin)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', crearModalEntregaAdmin, { once: true });
+  } else {
+    crearModalEntregaAdmin();
+  }
 
   // Hook al KPI "COBRADO" del Dashboard
   function bindCobradoKPI() {
@@ -1817,6 +2157,47 @@
       .nxDC-stack-small { font-size:10px; color:#64748b; font-weight:500; margin-top:3px; font-family:var(--mono,monospace); }
       .nxDC-muted-xs { color:#94a3b8; font-size:9px; font-family:inherit; }
       .nxDC-muted-sm { color:#94a3b8; font-size:8.5px; font-weight:600; letter-spacing:.3px; display:block; margin-top:2px; }
+
+      /* ═══ CAJA CENTRAL (ADMIN) ═══ */
+      .nxDC-caja-card { border:1px solid #bfdbfe; background:linear-gradient(180deg,#f8fbff,#ffffff); }
+      .nxDC-caja-mini-kpis {
+        display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;
+      }
+      .nxDC-caja-mini {
+        padding:12px; border-radius:12px; border:1px solid #e2e8f0; background:#fff;
+        box-shadow:0 1px 3px rgba(0,0,0,.04);
+      }
+      .nxDC-caja-cash { background:linear-gradient(135deg,#ecfdf5,#dcfce7); border-color:#bbf7d0; }
+      .nxDC-caja-pend { background:linear-gradient(135deg,#fffbeb,#fef3c7); border-color:#fde68a; }
+      .nxDC-caja-dep  { background:linear-gradient(135deg,#eff6ff,#dbeafe); border-color:#bfdbfe; }
+      .nxDC-caja-cic  { background:linear-gradient(135deg,#f8fafc,#f1f5f9); border-color:#e2e8f0; }
+      .nxDC-caja-mini-lbl { font-size:9.5px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:6px; }
+      .nxDC-caja-cash .nxDC-caja-mini-lbl { color:#059669; }
+      .nxDC-caja-pend .nxDC-caja-mini-lbl { color:#d97706; }
+      .nxDC-caja-dep  .nxDC-caja-mini-lbl { color:#2563eb; }
+      .nxDC-caja-mini-val { font-size:18px; font-weight:900; line-height:1.1; font-family:var(--mono,monospace); color:#0f172a; }
+      .nxDC-caja-cash .nxDC-caja-mini-val { color:#059669; }
+      .nxDC-caja-pend .nxDC-caja-mini-val { color:#d97706; }
+      .nxDC-caja-dep  .nxDC-caja-mini-val { color:#2563eb; }
+      .nxDC-caja-mini-sub { font-size:9.5px; color:#94a3b8; font-weight:500; margin-top:4px; line-height:1.3; }
+      .nxDC-caja-hist-title { font-size:10.5px; font-weight:800; color:#475569; letter-spacing:.6px; margin:14px 0 10px; }
+
+      /* Badges de estado */
+      .nxDC-tag-pend { background:#fef3c7; color:#d97706; }
+      .nxDC-tag-conf { background:#dbeafe; color:#2563eb; }
+      .nxDC-tag-dep  { background:#dcfce7; color:#059669; }
+
+      /* Botones mini de acciones */
+      .nxDC-actions-cell { white-space:nowrap; }
+      .nxDC-mini-btn {
+        width:26px; height:26px; border:0; border-radius:7px; cursor:pointer;
+        display:inline-flex; align-items:center; justify-content:center; margin-right:4px;
+        font-size:13px; transition:all .15s; padding:0;
+      }
+      .nxDC-mini-conf { background:#dbeafe; color:#2563eb; }
+      .nxDC-mini-conf:hover { background:#bfdbfe; transform:translateY(-1px); }
+      .nxDC-mini-dep { background:#dcfce7; color:#059669; }
+      .nxDC-mini-dep:hover { background:#bbf7d0; transform:translateY(-1px); }
       .nxDC-ag-name-cell { display:flex; align-items:center; gap:10px; min-width:140px; }
       .nxDC-ag-avatar { width:30px; height:30px; border-radius:50%; color:#fff; display:grid; place-items:center; font-weight:800; font-size:13px; flex:0 0 auto; }
 
@@ -1919,6 +2300,10 @@
 
         /* Transferencias compactas (2 cajas lado a lado en vez de stacked) */
         .nxDC-transf-summary { grid-template-columns:1fr 1fr; gap:8px; }
+        .nxDC-caja-mini-kpis { grid-template-columns:1fr 1fr; gap:8px; }
+        .nxDC-caja-mini { padding:10px; }
+        .nxDC-caja-mini-val { font-size:15px; }
+        .nxDC-mini-btn { width:24px; height:24px; font-size:12px; }
         .nxDC-transf-box { padding:11px; border-radius:12px; }
         .nxDC-transf-val { font-size:17px; }
         .nxDC-transf-sub { font-size:10px; }
