@@ -4221,3 +4221,33 @@
   setTimeout(moverSolicitudes, 1000);
   setTimeout(moverSolicitudes, 3000);
 })();
+/* REFRESCAR SOLICITUDES RÁPIDO */
+(function () {
+  "use strict";
+
+  if (window.__NX_REFRESH_SOLICITUDES_FAST__) return;
+  window.__NX_REFRESH_SOLICITUDES_FAST__ = true;
+
+  function refrescarSolicitudes() {
+    const vistaSolicitudes = document.getElementById("v-solicitudes");
+    const estaAbierta = vistaSolicitudes && vistaSolicitudes.classList.contains("on");
+
+    if (!estaAbierta) return;
+
+    if (typeof window.nxRenderSolicitudes === "function") {
+      window.nxRenderSolicitudes();
+      return;
+    }
+
+    if (typeof window.cargarSolicitudes === "function") {
+      window.cargarSolicitudes();
+    }
+  }
+
+  window.nxRefrescarSolicitudesAhora = refrescarSolicitudes;
+
+  document.addEventListener("click", function () {
+    setTimeout(refrescarSolicitudes, 400);
+    setTimeout(refrescarSolicitudes, 1200);
+  }, true);
+})();
