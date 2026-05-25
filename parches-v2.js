@@ -3896,19 +3896,23 @@
   // API PÚBLICA
   // ═══════════════════════════════════════════════════════════════
   window.nxRenderSolicitudes = renderSolicitudes;
-  window.nxRefrescarSolicitudes = async function() {
-    await actualizarBadge();
-    if (document.getElementById('v-solicitudes')?.classList.contains('on')) {
-      await renderSolicitudes();
-    }
-  };
-  window.nxAbrirSolicitudes = function() {
-    if (typeof window.nav === 'function') {
-      const item = document.getElementById('niSolicit');
-      window.nav('solicitudes', item);
-      renderSolicitudes();
-    }
-  };
+  window.nxRefrescarSolicitudes = async function(force = false) {
+  await actualizarBadge();
+
+  const view = document.getElementById('v-solicitudes');
+  if (!view) return;
+
+  if (force || view.offsetParent !== null) {
+    await renderSolicitudes();
+  }
+};
+  window.nxAbrirSolicitudes = async function() {
+  if (typeof window.nav === 'function') {
+    const item = document.getElementById('niSolicit');
+    window.nav('solicitudes', item);
+    await window.nxRefrescarSolicitudes(true);
+  }
+};
 
   // ═══════════════════════════════════════════════════════════════
   // INIT
