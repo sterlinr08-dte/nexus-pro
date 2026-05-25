@@ -9290,3 +9290,174 @@
     init();
   }
 })();
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - PARCHES_6.JS
+   ════════════════════════════════════════════════════════════════
+   Este archivo es ADITIVO. NO modifica parches_5.js.
+   Se carga DESPUÉS de parches_5.js y agrega 3 cosas:
+
+     1. Handler nxAnularEntregaAdmin (nuevo — no existía en V2)
+     2. Wrappers de handlers existentes para refrescar Solicitudes
+        sin tocar el código de V2
+     3. Módulo Solicitudes (sidebar item con badge + vista nueva)
+     4. Cobro directo a cuenta admin (checkbox en modal de cobro)
+
+   Orden en index.html (importante):
+     <script src="parches_5.js"></script>
+     <script src="parches_6.js"></script>
+
+   Requisitos previos:
+     - SQL ya ejecutado en Supabase (tabla entregas_admin +
+       columnas es_directo y cobro_id)
+     - parches_5.js cargado antes (define los handlers base)
+   ════════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════════
+   BLOQUE 1 - nxAnularEntregaAdmin + Wrappers de handlers V2
+   ════════════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  if (window.__NEXUS_SOLICIT_WRAPPERS_V1__) return;
+  window.__NEXUS_SOLICIT_WRAPPERS_V1__ = true;
+
+  // ── Helpers ──
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
+  }
+  function esAdmin() {
+    try { return (typeof sesion !== 'undefined') && sesion?.rol === 'admin'; }
+    catch(e) { try { return window.sesion?.rol === 'admin'; } catch(_) { return false; } }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // NUEVO HANDLER: nxAnularEntregaAdmin
+  // Elimina la entrega_admin. El cobro NO se afecta (factura sigue
+  // pagada). El "Dinero en Mano" del agente sube automáticamente
+  // → el agente queda responsable de ese monto.
+  // ═══════════════════════════════════════════════════════════════
+  window.nxAnularEntregaAdmin = async function(id) {
+    if (!esAdmin()) return;
+    if (!confirm('¿Anular esta entrega?\n\n• La entrega se borrará\n• El cobro del cliente NO se afecta (la factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto (queda responsable)\n\n¿Continuar?')) return;
+
+    const api = getAPI();
+    if (!api?.delete) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.delete');
+      return;
+    }
+    try {
+      await api.delete('entregas_admin', `id=eq.${id}`);
+      if (typeof window.toast === 'function') window.toast('ok', 'Anulada', 'La entrega fue eliminada. Investiga con el agente.');
+      if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id}`, 'Cobros');
+      // Refrescar Solicitudes
+      if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
+      // Refrescar Detalles de Cobro si está visible (la V2 expone esta función al hacer renderDetallesCobro internamente)
+      if (typeof window.nxAbrirDetallesCobro === 'function') {
+        const v = document.getElementById('nxDetallesCobroV1');
+        if (v && v.style.display !== 'none') window.nxAbrirDetallesCobro();
+      }
+    } catch (e) {
+      console.error('Error anulando entrega:', e);
+      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo anular');
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // WRAPPERS para refrescar Solicitudes después de acciones V2
+  // (Sin modificar el código original de V2)
+  // ═══════════════════════════════════════════════════════════════
+  function wrapPostHook(nombreFn) {
+    const tryWrap = function(intentos) {
+      const orig = window[nombreFn];
+      if (typeof orig !== 'function') {
+        if (intentos < 40) setTimeout(() => tryWrap(intentos + 1), 250);
+        return;
+      }
+      if (orig.__wrappedBySolicit) return; // ya envuelto
+      const wrapper = async function() {
+        const result = await orig.apply(this, arguments);
+        if (typeof window.nxRefrescarSolicitudes === 'function') {
+          try { await window.nxRefrescarSolicitudes(); } catch(e) { /* silencio */ }
+        }
+        return result;
+      };
+      wrapper.__wrappedBySolicit = true;
+      window[nombreFn] = wrapper;
+    };
+    tryWrap(0);
+  }
+
+  function aplicarWrappers() {
+    wrapPostHook('nxConfirmarEntregaAdmin');
+    wrapPostHook('nxDepositarEntregaAdmin');
+    wrapPostHook('nxGuardarEntregaAdmin');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', aplicarWrappers, { once: true });
+  } else {
+    aplicarWrappers();
+  }
+})();
+
+
+/* ════════════════════════════════════════════════════════════════
+   BLOQUE 2 - MÓDULO SOLICITUDES (sidebar + vista)
+   ════════════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  if (window.__NEXUS_SOLICITUDES_V1__) return;
+  window.__NEXUS_SOLICITUDES_V1__ = true;
+
+  // ── Helpers compartidos ──
+  function st() {
+    try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); }
+    catch(e) { return window.ST || {}; }
+  }
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
+  }
+  function getFmt() {
+    return (typeof fmt === 'function') ? fmt :
+      (n => 'RD$ ' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}));
+  }
+  function esAdmin() {
+    try { return (typeof sesion !== 'undefined') && sesion?.rol === 'admin'; }
+    catch(e) { try { return window.sesion?.rol === 'admin'; } catch(_) { return false; } }
+  }
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function fmtFecha(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleDateString('es-DO', {day:'2-digit', month:'2-digit', year:'numeric'}); }
+    catch(e) { return iso; }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // INYECCIÓN: sidebar item + view container
+  // ═══════════════════════════════════════════════════════════════
+  function inyectarSidebarItem() {
+    if (document.getElementById('niSolicit')) return true;
+    const sbNav = document.querySelector('nav.sb .sb-nav');
+    if (!sbNav) return false;
+    const anchor = document.getElementById('niPol') || document.getElementById('niCli') || document.getElementById('niFact');
+    const item = document.createElement('div');
+    item.className = 'ni';
+    item.id = 'niSolicit';
+    item.style.display = esAdmin() ? '' : 'none';
+    item.setAttribute('onclick', "nav('solicitudes', this); window.nxRenderSolicitudes && window.nxRenderSolicitudes()");
+    item.innerHTML = `
+      <i class="ti ti-inbox ni-i"></i>
+      <span class="ni-l">SOLICITUDES</span>
+      <span class="ni-b" id="niSolicitBadge" style="display:none">0</span>
+    `;
+    if (anchor && anchor.nextSibling) {
+      sbNav.insertBefore(item, anchor.nextSibling);
+    } else {
+      sbNav.appendChild(item);
