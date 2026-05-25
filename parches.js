@@ -55,7 +55,7 @@
           border: 0;
           background: transparent;
           color: #64748b;
-          font-size: 9.5px;
+          font-size: 10px;
           font-weight: 700;
           display: flex;
           flex-direction: column;
@@ -65,26 +65,16 @@
           border-radius: 14px;
           cursor: pointer;
           touch-action: manipulation;
-          overflow: hidden !important;
+          overflow: visible !important;
           min-width: 0;
-          padding: 0 2px;
-          line-height: 1.1;
         }
         
         .mobile-bottom-nav-clean button span {
           white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 100%;
-          display: block;
+          overflow: visible;
           color: inherit !important;
           opacity: 1 !important;
           visibility: visible !important;
-        }
-        
-        .mobile-bottom-nav-clean button span.ico {
-          overflow: visible;
-          text-overflow: clip;
         }
         
         .mobile-bottom-nav-clean button.active {
@@ -296,7 +286,7 @@
       </button>
       <button type="button" data-go="proceso">
         <span class="ico">📋</span>
-        <span>Proceso</span>
+        <span>En proceso</span>
       </button>
       <button type="button" data-go="mas">
         <span class="ico">⋯</span>
@@ -784,7 +774,7 @@
         <div class="nx-info-box-v2">Este movimiento ajusta el control interno para saber qué agente tiene el dinero.</div>
         <div class="fe">
           <button class="btn" type="button" onclick="window.nxCerrarTransferenciaAgenteV2()">Cancelar</button>
-          <button class="btn bxl" type="button" onclick="window.nxGuardarTransferenciaAgenteV2()" id="nxTA2Btn"><i class="ti ti-check"></i> Guardar transferencia</button>
+          <button class="btn bxl" type="button" onclick="window.nxGuardarTransferenciaAgenteV2()" id="nxTA2Btn"><i class="ti ti-check"></i> Crear solicitud</button>
         </div>
       </div>
     `;
@@ -873,27 +863,22 @@
     const btn = q("#nxTA2Btn");
     if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
 
-    const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today() };
+    const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today(), estado: 'pendiente' };
 
     try {
       await api.post(TRANSFER_TABLE, payload);
       if (typeof window.logAudit === "function") {
-        window.logAudit("TRANSFERENCIA_AGENTE", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : ""), "Cobros");
+        window.logAudit("SOLICITUD_TRANSFERENCIA_CREADA", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : ""), "Cobros");
       }
-      toastSafe("ok", "Transferencia registrada", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto));
+      toastSafe("ok", "Solicitud creada", getAgenteNombreById(hacia) + " debe confirmar para que se efectúe");
       window.nxCerrarTransferenciaAgenteV2();
-      // Refrescar Detalles de Cobro si está visible
-      if (typeof window.nxAbrirDetallesCobro === 'function') {
-        const cDet = document.getElementById('nxDetallesCobroV1');
-        if (cDet && cDet.style.display !== 'none') {
-          window.nxAbrirDetallesCobro();
-        }
-      }
+      // Refrescar la vista de solicitudes si existe
+      if (typeof window.nxRenderSolicitudes === 'function') window.nxRenderSolicitudes();
     } catch (e) {
-      console.error("Error guardando transferencia:", e);
-      toastSafe("err", "No se pudo guardar", "Verifica que exista la tabla transferencias_agentes en Supabase");
+      console.error("Error guardando solicitud:", e);
+      toastSafe("err", "No se pudo guardar", "Verifica que la tabla transferencias_agentes tenga columna 'estado'");
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Guardar transferencia'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Crear solicitud'; }
     }
   };
 
@@ -911,7 +896,7 @@
   function init() {
     injectStyles();
     createTransferModal();
-    // DESACTIVADO: el reporte premium viejo. Ahora vive en Detalles de Cobro V2
+    // DESACTIVADO: el reporte premium viejo. Ahora vive en Detalles de Cobro V1
     // wrapReporteAgente();
     // bindDashboardCobrado();
     // (no se ejecuta el render automático del reporte viejo)
@@ -923,26 +908,24 @@
     init();
   }
 
-  // DESACTIVADO: listeners del reporte premium viejo (ahora en Detalles de Cobro V2)
+  // DESACTIVADO: listeners del reporte premium viejo (ahora en Detalles de Cobro V1)
 })();
 
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - DETALLES DE COBRO DASHBOARD V2 PREMIUM
-   - Diseño 1:1 con la referencia (KPIs en fila, donut SVG, tabla agentes)
-   - Mantiene: ciclos 20-20, selector 7 ciclos, botón Volver,
-              hook KPI COBRADO, botón Transferir, ST/API directos
+   NEXUS PRO - DETALLES DE COBRO DASHBOARD V1
+   - Pestaña en Dashboard (Resumen / Detalles de Cobro)
+   - Ciclo del 20 al 20
+   - KPIs por método + bancos + agentes + transferencias
    ════════════════════════════════════════════════════════════════ */
 
 (function() {
   'use strict';
-
-  if (window.__NEXUS_DETALLES_COBRO_V2__) return;
-  window.__NEXUS_DETALLES_COBRO_V2__ = true;
-
-  // ═══════════════════════════════════════════════════════════
-  // HELPERS — ST y API directos (sin window.ST / window.API)
-  // ═══════════════════════════════════════════════════════════
+  
+  if (window.__NEXUS_DETALLES_COBRO_V1__) return;
+  window.__NEXUS_DETALLES_COBRO_V1__ = true;
+  
+  // ═══ HELPERS ═══
   function st() {
     try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); }
     catch(e) { return window.ST || {}; }
@@ -952,15 +935,7 @@
     catch(e) { return window.API; }
   }
   function getFmt() {
-    return (typeof fmt === 'function') ? fmt :
-      (n => 'RD$ ' + Number(n||0).toLocaleString('en-US',
-        {minimumFractionDigits: 0, maximumFractionDigits: 0}));
-  }
-  function fmtCorto(n) {
-    n = Number(n || 0);
-    if (n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'') + 'M';
-    if (n >= 1000) return Math.round(n/1000) + 'K';
-    return n.toFixed(0);
+    return (typeof fmt === 'function') ? fmt : (n => 'RD$ ' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
   }
   function getGAgt(id) {
     if (typeof gAgt === 'function') return gAgt(id);
@@ -977,23 +952,27 @@
     if (!iso) return '—';
     try {
       const d = new Date(iso);
-      return d.toLocaleDateString('es-DO', { day:'2-digit', month:'2-digit', year:'numeric' });
+      return d.toLocaleDateString('es-DO', { day:'2-digit', month:'short', year:'numeric' });
     } catch(e) { return iso; }
   }
-  function esc(s) {
-    return String(s ?? "").replace(/[&<>"']/g, c =>
-      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // CICLOS 20-20
-  // ═══════════════════════════════════════════════════════════
+  
+  // ═══ CICLO 20-20 ═══
   function calcularPeriodo() {
     const hoy = new Date();
-    const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
-    const inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 20);
+    const dia = hoy.getDate();
+    let fin, inicio;
+    if (dia < 20) {
+      // Antes del 20: ciclo cerrado fue del 20 anterior al 20 anterior
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 20);
+    } else {
+      // Después del 20: ciclo cerrado fue del 20 anterior al 20 actual
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 20);
+    }
     return { inicio, fin };
   }
+  
   function enRango(fechaStr, inicio, fin) {
     if (!fechaStr) return false;
     try {
@@ -1001,76 +980,83 @@
       return f >= inicio && f < fin;
     } catch(e) { return false; }
   }
+  
   function nombreCiclo(periodo) {
-    const meses = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-    const di = String(periodo.inicio.getDate()).padStart(2,'0');
-    const df = String(periodo.fin.getDate()).padStart(2,'0');
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const mi = meses[periodo.inicio.getMonth()];
     const mf = meses[periodo.fin.getMonth()];
-    const yf = periodo.fin.getFullYear();
-    return `${di} ${mi} – ${df} ${mf} ${yf}`;
+    return `Ciclo: 20 ${mi} - 20 ${mf} ${periodo.fin.getFullYear()}`;
   }
-
+  
+  // ═══ SELECTOR DE CICLOS ═══
   let cicloSeleccionado = null;
-
+  
   function calcularUltimosCiclos(cantidad) {
     cantidad = cantidad || 6;
     const ciclos = [];
-    const base = calcularPeriodo();
-
-    // Ciclo EN CURSO (siguiente al cerrado actual)
+    const base = calcularPeriodo(); // ciclo cerrado actual
+    
+    // PRIMERO: agregar el ciclo EN CURSO (futuro respecto al cerrado)
     const cursoIni = new Date(base.inicio);
     const cursoFin = new Date(base.fin);
     cursoIni.setMonth(cursoIni.getMonth() + 1);
     cursoFin.setMonth(cursoFin.getMonth() + 1);
+    const cursoKey = `${cursoIni.getTime()}_${cursoFin.getTime()}`;
     ciclos.push({
-      inicio: cursoIni, fin: cursoFin,
-      nombre: nombreCiclo({inicio: cursoIni, fin: cursoFin}) + ' · EN CURSO',
-      key: `${cursoIni.getTime()}_${cursoFin.getTime()}`,
+      inicio: cursoIni,
+      fin: cursoFin,
+      nombre: nombreCiclo({ inicio: cursoIni, fin: cursoFin }) + ' · EN CURSO',
+      key: cursoKey,
       enCurso: true
     });
-
-    // 6 ciclos cerrados (del más reciente al más antiguo)
+    
+    // DESPUÉS: ciclos cerrados (del más reciente al más viejo)
     for (let i = 0; i < cantidad; i++) {
-      const ini = new Date(base.inicio); ini.setMonth(ini.getMonth() - i);
-      const fin = new Date(base.fin); fin.setMonth(fin.getMonth() - i);
-      ciclos.push({
-        inicio: ini, fin: fin,
-        nombre: nombreCiclo({inicio: ini, fin: fin}),
-        key: `${ini.getTime()}_${fin.getTime()}`
-      });
+      const ini = new Date(base.inicio);
+      const fin = new Date(base.fin);
+      ini.setMonth(ini.getMonth() - i);
+      fin.setMonth(fin.getMonth() - i);
+      const key = `${ini.getTime()}_${fin.getTime()}`;
+      ciclos.push({ inicio: ini, fin: fin, nombre: nombreCiclo({ inicio: ini, fin: fin }), key: key });
     }
     return ciclos;
   }
-
+  
   function handleCambioCiclo(key, ciclos) {
-    const c = ciclos.find(x => x.key === key);
-    if (c) { cicloSeleccionado = c; renderDetallesCobro(); }
-  }
-  function navegarCiclo(direccion, ciclos) {
-    const actualKey = cicloSeleccionado ? cicloSeleccionado.key : ciclos[0].key;
-    const idx = ciclos.findIndex(c => c.key === actualKey);
-    const nuevoIdx = idx + direccion;
-    if (nuevoIdx >= 0 && nuevoIdx < ciclos.length) {
-      cicloSeleccionado = ciclos[nuevoIdx];
+    const encontrado = ciclos.find(c => c.key === key);
+    if (encontrado) {
+      cicloSeleccionado = encontrado;
       renderDetallesCobro();
     }
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // COLORES DE AGENTE (hash estable por nombre)
-  // ═══════════════════════════════════════════════════════════
-  const AGENT_COLORS = ['#a855f7','#06b6d4','#ef4444','#f97316','#ec4899','#10b981','#3b82f6','#f59e0b','#8b5cf6','#14b8a6'];
-  function colorForAgent(nombre) {
-    let hash = 0;
-    const s = String(nombre || '');
-    for (let i = 0; i < s.length; i++) hash = ((hash << 5) - hash) + s.charCodeAt(i);
-    return AGENT_COLORS[Math.abs(hash) % AGENT_COLORS.length];
+  
+  function navegarCiclo(direccion, ciclos) {
+    const actualKey = cicloSeleccionado ? cicloSeleccionado.key : ciclos[0].key;
+    const index = ciclos.findIndex(c => c.key === actualKey);
+    const nuevoIndex = index + direccion;
+    if (nuevoIndex >= 0 && nuevoIndex < ciclos.length) {
+      cicloSeleccionado = ciclos[nuevoIndex];
+      renderDetallesCobro();
+    }
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // CARGA DE DATOS (API directa)
-  // ═══════════════════════════════════════════════════════════
+  
+  function crearBarraSelector(ciclos, periodoActivo, indexActual) {
+    return `
+      <div class="nxDC-selector">
+        <button class="nxDC-nav-btn" id="nxDCAnterior" ${indexActual === ciclos.length - 1 ? 'disabled' : ''} title="Ciclo anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <select id="nxDCCicloSelect" class="nxDC-select">
+          ${ciclos.map(c => `<option value="${c.key}" ${c.key === periodoActivo.key ? 'selected' : ''}>${c.nombre}</option>`).join('')}
+        </select>
+        <button class="nxDC-nav-btn" id="nxDCSiguiente" ${indexActual === 0 ? 'disabled' : ''} title="Ciclo más reciente">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+    `;
+  }
+  
+  // ═══ CARGAR DATOS ═══
   async function cargarAbonos() {
     const api = getAPI();
     if (!api || !api.get) return [];
@@ -1082,585 +1068,274 @@
       return [];
     }
   }
+  
   async function cargarTransferencias() {
     const api = getAPI();
     if (!api || !api.get) return [];
     try {
       const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=1000');
       return Array.isArray(data) ? data : [];
-    } catch(e) { return []; }
-  }
-
-  async function cargarEntregasAdmin() {
-    const api = getAPI();
-    if (!api || !api.get) return [];
-    try {
-      const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=2000');
-      return Array.isArray(data) ? data : [];
     } catch(e) {
-      console.warn('No se pudieron cargar entregas_admin:', e);
       return [];
     }
   }
-
-  // Verifica si el usuario actual es admin (mismo patrón que aplicarRolSidebar)
-  function esAdmin() {
-    try {
-      return (typeof sesion !== 'undefined') && sesion?.rol === 'admin';
-    } catch(e) {
-      try { return window.sesion?.rol === 'admin'; } catch(_) { return false; }
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // CÁLCULOS
-  // ═══════════════════════════════════════════════════════════
+  
+  // ═══ CÁLCULOS ═══
   function calcularKPIs(abonos, periodo) {
     const enPeriodo = abonos.filter(a => enRango(a.fecha, periodo.inicio, periodo.fin));
     const total = enPeriodo.reduce((s, a) => s + Number(a.monto || 0), 0);
-    const stats = {
-      total, cantidad: enPeriodo.length,
-      efectivo: 0, banco: 0, cheque: 0, otros: 0
+    const stats = { 
+      total, 
+      cantidad: enPeriodo.length,
+      efectivo: { monto: 0, cantidad: 0 },
+      banco: { monto: 0, cantidad: 0 },
+      cheque: { monto: 0, cantidad: 0 },
+      otros: { monto: 0, cantidad: 0 }
     };
-    enPeriodo.forEach(a => { stats[normMet(a.metodo)] += Number(a.monto || 0); });
+    enPeriodo.forEach(a => {
+      const tipo = normMet(a.metodo);
+      stats[tipo].monto += Number(a.monto || 0);
+      stats[tipo].cantidad += 1;
+    });
     return { stats, abonosPeriodo: enPeriodo };
   }
-
-  function calcularPendienteTotal() {
-    const facturas = Array.isArray(st().facturas) ? st().facturas : [];
-    const clientes = Array.isArray(st().clientes) ? st().clientes : [];
-    const factPend = facturas.reduce((sum, f) => {
-      const estado = String(f.estado||'').toLowerCase();
-      if (estado.includes('pagado')) return sum;
-      const total = Number(f.total || 0);
-      const pagado = Number(f.pagado || f.cobrado || 0);
-      const pend = (f.pendiente != null) ? Number(f.pendiente) :
-                   (f.balance != null)   ? Number(f.balance) :
-                   Math.max(0, total - pagado);
-      return sum + pend;
-    }, 0);
-    if (factPend > 0) return factPend;
-    return clientes.reduce((sum, c) =>
-      sum + Number(c.pendiente ?? c.deuda_pendiente ?? c.balance ?? c.deuda_total ?? 0), 0);
-  }
-
-  function bancoNombre(a) {
-    const raw = a.banco || a.banco_nombre || a.banco_otro || a.bank || '';
-    return String(raw).trim() || 'Sin banco';
-  }
-
+  
   function calcularPorBanco(abonosPeriodo) {
     const porBanco = {};
     abonosPeriodo.forEach(a => {
       if (normMet(a.metodo) !== 'banco') return;
-      const b = bancoNombre(a);
+      const b = a.banco || 'Sin banco';
       if (!porBanco[b]) porBanco[b] = { monto: 0, cantidad: 0 };
       porBanco[b].monto += Number(a.monto || 0);
       porBanco[b].cantidad += 1;
     });
     return Object.entries(porBanco)
-      .map(([nombre, d]) => ({nombre, ...d}))
+      .map(([nombre, d]) => ({ nombre, ...d }))
       .sort((x, y) => y.monto - x.monto);
   }
-
-  function calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonosAll, transferenciasAll, periodoFin, entregasAll) {
-    const agentes = Array.isArray(st().agentes) ? st().agentes : [];
-
-    // ACUMULADO: todo lo que pasó ANTES del fin del ciclo seleccionado
-    // (igual a las funciones del periodo pero sin el filtro de inicio)
-    const hasta = periodoFin ? new Date(periodoFin) : new Date();
-    const antesDelFin = (arr) => (Array.isArray(arr) ? arr : []).filter(x => {
-      if (!x.fecha) return false;
-      try { return new Date(x.fecha) < hasta; } catch(e) { return false; }
-    });
-    const abonosAcum = antesDelFin(abonosAll);
-    const transferenciasAcum = antesDelFin(transferenciasAll);
-    const entregasAcum = antesDelFin(entregasAll || []);
-    const entregasPeriodo = (entregasAll || []).filter(e =>
-      enRango(e.fecha, periodoFin ? new Date(new Date(periodoFin).getTime() - 31*24*60*60*1000) : new Date(0), new Date(periodoFin))
-    );
-
+  
+  function calcularPorAgente(abonosPeriodo, transferenciasPeriodo) {
+    // Solo contar transferencias ACEPTADAS (las pendientes/rechazadas no afectan el saldo real)
+    const trAceptadas = transferenciasPeriodo.filter(t => !t.estado || t.estado === 'aceptada');
+    const agentes = st().agentes || [];
     return agentes.map(ag => {
-      // ── DEL CICLO ──
       const propios = abonosPeriodo.filter(a => String(a.agente_cobro) === String(ag.id));
       const cobrado = propios.reduce((s, a) => s + Number(a.monto || 0), 0);
       const desglose = { efectivo: 0, banco: 0, cheque: 0, otros: 0 };
-      propios.forEach(a => { desglose[normMet(a.metodo)] += Number(a.monto || 0); });
-      const recibidas = transferenciasPeriodo
+      propios.forEach(a => {
+        desglose[normMet(a.metodo)] += Number(a.monto || 0);
+      });
+      // Transferencias (solo aceptadas)
+      const recibidas = trAceptadas
         .filter(t => String(t.hacia_agente) === String(ag.id))
         .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const entregadas = transferenciasPeriodo
+      const entregadas = trAceptadas
         .filter(t => String(t.desde_agente) === String(ag.id))
         .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const entregadasAdmin = entregasPeriodo
-        .filter(e => String(e.agente_id) === String(ag.id))
-        .reduce((s, e) => s + Number(e.monto || 0), 0);
-      const enMano = cobrado + recibidas - entregadas - entregadasAdmin;
-
-      // ── ACUMULADO (hasta el fin del ciclo) ──
-      const propiosAcum = abonosAcum.filter(a => String(a.agente_cobro) === String(ag.id));
-      const cobradoAcum = propiosAcum.reduce((s, a) => s + Number(a.monto || 0), 0);
-      const recibidasAcum = transferenciasAcum
-        .filter(t => String(t.hacia_agente) === String(ag.id))
-        .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const entregadasAcum = transferenciasAcum
-        .filter(t => String(t.desde_agente) === String(ag.id))
-        .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const entregadasAdminAcum = entregasAcum
-        .filter(e => String(e.agente_id) === String(ag.id))
-        .reduce((s, e) => s + Number(e.monto || 0), 0);
-      const entregasAdminPendientes = entregasAcum
-        .filter(e => String(e.agente_id) === String(ag.id) && !e.confirmado)
-        .reduce((s, e) => s + Number(e.monto || 0), 0);
-      const enManoAcumulado = cobradoAcum + recibidasAcum - entregadasAcum - entregadasAdminAcum;
-
+      const enMano = cobrado + recibidas - entregadas;
       return {
         id: ag.id,
         nombre: ag.nom,
-        inicial: String(ag.nom || 'A').trim().charAt(0).toUpperCase() || 'A',
-        color: colorForAgent(ag.nom),
+        cargo: ag.cargo || '',
         cantidad: propios.length,
-        cobrado, desglose,
-        recibidas, entregadas, entregadasAdmin, enMano,
-        cobradoAcum, recibidasAcum, entregadasAcum, entregadasAdminAcum,
-        entregasAdminPendientes, enManoAcumulado
+        cobrado,
+        desglose,
+        recibidas,
+        entregadas,
+        enMano
       };
-    }).filter(a => a.cobrado > 0 || a.recibidas > 0 || a.entregadas > 0 ||
-                   a.entregadasAdmin > 0 || a.enManoAcumulado !== 0)
-      .sort((a, b) => b.cobrado - a.cobrado);
+    }).sort((a, b) => b.cobrado - a.cobrado);
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // RENDER — DONUT SVG
-  // ═══════════════════════════════════════════════════════════
-  function renderDonut(stats) {
-    const total = stats.total;
+  
+  // ═══ HTML RENDER ═══
+  function renderKPIs(stats, periodo) {
     const F = getFmt();
-
-    if (total === 0) {
-      return `
-        <div class="nxDC-donut-block">
-          <div class="nxDC-donut-chart">
-            <svg viewBox="0 0 200 200" class="nxDC-donut-svg" aria-hidden="true">
-              <circle cx="100" cy="100" r="70" fill="none" stroke="#e2e8f0" stroke-width="24"/>
-            </svg>
-            <div class="nxDC-donut-center">
-              <div class="nxDC-donut-lbl">Sin datos</div>
+    return `
+      <div class="nxDC-kpis">
+        <div class="nxDC-kpi-big">
+          <div class="nxDC-kpi-label">💰 TOTAL COBRADO DEL CICLO</div>
+          <div class="nxDC-kpi-value">${F(stats.total)}</div>
+          <div class="nxDC-kpi-sub">${stats.cantidad} cobros · ${nombreCiclo(periodo)}</div>
+        </div>
+        <div class="nxDC-kpi-grid">
+          <div class="nxDC-kpi nxDC-kpi-ef">
+            <div class="nxDC-kpi-icon">💵</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.efectivo.monto)}</div>
+              <div class="nxDC-kpi-tag">EFECTIVO · ${stats.efectivo.cantidad}</div>
             </div>
           </div>
-          <div class="nxDC-legend"><div class="nxDC-leg-empty">Sin cobros en este ciclo</div></div>
-        </div>
-      `;
-    }
-
-    const radius = 70, cx = 100, cy = 100;
-    const circumference = 2 * Math.PI * radius;
-    let offset = 0;
-
-    const segmentos = [
-      { color: '#10b981', value: stats.efectivo, label: 'Efectivo' },
-      { color: '#3b82f6', value: stats.banco,    label: 'Banco / Transferencia' },
-      { color: '#f59e0b', value: stats.cheque,   label: 'Cheque' },
-      { color: '#a855f7', value: stats.otros,    label: 'Otros' }
-    ];
-
-    const paths = segmentos.map(s => {
-      if (s.value === 0) return '';
-      const pct = s.value / total;
-      const len = pct * circumference;
-      const seg = `<circle cx="${cx}" cy="${cy}" r="${radius}"
-        fill="none" stroke="${s.color}" stroke-width="24"
-        stroke-dasharray="${len.toFixed(2)} ${circumference.toFixed(2)}"
-        stroke-dashoffset="${(-offset).toFixed(2)}"
-        transform="rotate(-90 ${cx} ${cy})"
-        style="transition:stroke-dasharray .4s ease"/>`;
-      offset += len;
-      return seg;
-    }).join('');
-
-    const leyenda = segmentos.map(s => {
-      const pct = total > 0 ? ((s.value/total)*100).toFixed(1) : '0.0';
-      return `
-        <div class="nxDC-leg-item">
-          <div class="nxDC-leg-dot" style="background:${s.color}"></div>
-          <div class="nxDC-leg-name">${s.label}</div>
-          <div class="nxDC-leg-val">${F(s.value)}</div>
-          <div class="nxDC-leg-pct">${pct}%</div>
-        </div>
-      `;
-    }).join('');
-
-    return `
-      <div class="nxDC-donut-block">
-        <div class="nxDC-donut-chart">
-          <svg viewBox="0 0 200 200" class="nxDC-donut-svg" aria-hidden="true">
-            <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" stroke-width="24"/>
-            ${paths}
-          </svg>
-          <div class="nxDC-donut-center">
-            <div class="nxDC-donut-amt">RD$</div>
-            <div class="nxDC-donut-val">${fmtCorto(total)}</div>
-            <div class="nxDC-donut-lbl">Total</div>
+          <div class="nxDC-kpi nxDC-kpi-bc">
+            <div class="nxDC-kpi-icon">🏦</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.banco.monto)}</div>
+              <div class="nxDC-kpi-tag">BANCO/TRANSF · ${stats.banco.cantidad}</div>
+            </div>
           </div>
-        </div>
-        <div class="nxDC-legend">${leyenda}</div>
-      </div>
-    `;
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // RENDER — HEADER PREMIUM
-  // ═══════════════════════════════════════════════════════════
-  function renderHeader(ciclos, periodoActivo, indexActual) {
-    const opts = ciclos.map(c =>
-      `<option value="${c.key}" ${c.key === periodoActivo.key ? 'selected' : ''}>${esc(c.nombre)}</option>`
-    ).join('');
-
-    return `
-      <div class="nxDC-head">
-        <div class="nxDC-head-left">
-          <div class="nxDC-head-icon"><i class="ti ti-currency-dollar"></i></div>
-          <div>
-            <h1 class="nxDC-head-title">DETALLES DE COBRO</h1>
-            <div class="nxDC-head-sub">Control financiero por agente, método, banco y transferencias internas</div>
+          <div class="nxDC-kpi nxDC-kpi-ch">
+            <div class="nxDC-kpi-icon">📝</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.cheque.monto)}</div>
+              <div class="nxDC-kpi-tag">CHEQUE · ${stats.cheque.cantidad}</div>
+            </div>
           </div>
-        </div>
-        <div class="nxDC-head-right">
-          <div class="nxDC-period">
-            <div class="nxDC-period-label">Período de facturación</div>
-            <div class="nxDC-period-controls">
-              <button class="nxDC-period-nav" id="nxDCAnterior" ${indexActual === ciclos.length - 1 ? 'disabled' : ''} title="Ciclo anterior" type="button">
-                <i class="ti ti-chevron-left"></i>
-              </button>
-              <select id="nxDCCicloSelect" class="nxDC-period-select">${opts}</select>
-              <button class="nxDC-period-nav" id="nxDCSiguiente" ${indexActual === 0 ? 'disabled' : ''} title="Ciclo más reciente" type="button">
-                <i class="ti ti-chevron-right"></i>
-              </button>
+          <div class="nxDC-kpi nxDC-kpi-ot">
+            <div class="nxDC-kpi-icon">⋯</div>
+            <div class="nxDC-kpi-data">
+              <div class="nxDC-kpi-num">${F(stats.otros.monto)}</div>
+              <div class="nxDC-kpi-tag">OTROS · ${stats.otros.cantidad}</div>
             </div>
           </div>
         </div>
       </div>
     `;
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // RENDER — 4 KPIs PRINCIPALES
-  // ═══════════════════════════════════════════════════════════
-  function renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado) {
-    const F = getFmt();
-    const acum = (typeof dineroEnManoAcumulado === 'number') ? dineroEnManoAcumulado : dineroEnMano;
-    return `
-      <div class="nxDC-kpis-row">
-        <div class="nxDC-kpi">
-          <div class="nxDC-kpi-icon" style="background:#dcfce7;color:#059669">
-            <i class="ti ti-currency-dollar"></i>
-          </div>
-          <div class="nxDC-kpi-body">
-            <div class="nxDC-kpi-label">TOTAL COBRADO DEL CICLO</div>
-            <div class="nxDC-kpi-value" style="color:#059669">${F(stats.total)}</div>
-            <div class="nxDC-kpi-sub">Acumulado del período actual</div>
-          </div>
-        </div>
-        <div class="nxDC-kpi">
-          <div class="nxDC-kpi-icon" style="background:#ffedd5;color:#ea580c">
-            <i class="ti ti-trophy"></i>
-          </div>
-          <div class="nxDC-kpi-body">
-            <div class="nxDC-kpi-label">TOTAL PENDIENTE DEL MES</div>
-            <div class="nxDC-kpi-value" style="color:#ea580c">${F(pendiente)}</div>
-            <div class="nxDC-kpi-sub">Pendiente por cobrar</div>
-          </div>
-        </div>
-        <div class="nxDC-kpi">
-          <div class="nxDC-kpi-icon" style="background:#dbeafe;color:#2563eb">
-            <i class="ti ti-transfer"></i>
-          </div>
-          <div class="nxDC-kpi-body">
-            <div class="nxDC-kpi-label">TRANSFERIDO ENTRE AGENTES</div>
-            <div class="nxDC-kpi-value" style="color:#2563eb">${F(totalTransferido)}</div>
-            <div class="nxDC-kpi-sub">Envíos entre agentes</div>
-          </div>
-        </div>
-        <div class="nxDC-kpi">
-          <div class="nxDC-kpi-icon" style="background:#f3e8ff;color:#7c3aed">
-            <i class="ti ti-wallet"></i>
-          </div>
-          <div class="nxDC-kpi-body">
-            <div class="nxDC-kpi-label">DINERO EN MANO REAL</div>
-            <div class="nxDC-kpi-value" style="color:#7c3aed">${F(acum)}</div>
-            <div class="nxDC-kpi-sub">Acumulado · <strong>${F(dineroEnMano)}</strong> del ciclo</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // RENDER — BANCOS (lista limpia con total)
-  // ═══════════════════════════════════════════════════════════
-  function renderBancos(porBanco, totalBanco) {
+  
+  function renderBancosSeccion(porBanco, totalBanco) {
     const F = getFmt();
     if (!porBanco.length) {
       return `
-        <div class="nxDC-card">
-          <div class="nxDC-card-title">DÓNDE ESTÁ EL DINERO (BANCOS)</div>
-          <div class="nxDC-empty-soft">Sin cobros por transferencia/depósito en este ciclo</div>
+        <div class="nc p3 nxDC-section">
+          <div class="ch"><div class="ct">🏦 Dónde está el dinero</div><div class="ct-s">Por banco</div></div>
+          <div class="empty" style="padding:20px;text-align:center">Sin cobros por transferencia en este ciclo</div>
         </div>
       `;
     }
-    const rows = porBanco.map(b => `
-      <div class="nxDC-banco-row">
-        <div class="nxDC-banco-cell">
-          <i class="ti ti-building-bank"></i>
-          <span>${esc(b.nombre)}</span>
-        </div>
-        <div class="nxDC-banco-monto">${F(b.monto)}</div>
-      </div>
-    `).join('');
-
     return `
-      <div class="nxDC-card">
-        <div class="nxDC-card-title">DÓNDE ESTÁ EL DINERO (BANCOS)</div>
-        <div class="nxDC-bancos-list">
-          ${rows}
-          <div class="nxDC-banco-total">
-            <div>Total en bancos</div>
-            <div>${F(totalBanco)}</div>
-          </div>
+      <div class="nc p3 nxDC-section">
+        <div class="ch">
+          <div><div class="ct">🏦 Dónde está el dinero</div><div class="ct-s">Por banco · Total: ${F(totalBanco)}</div></div>
+        </div>
+        <div class="nxDC-bancos">
+          ${porBanco.map(b => {
+            const pct = totalBanco > 0 ? Math.round((b.monto / totalBanco) * 100) : 0;
+            return `
+              <div class="nxDC-banco">
+                <div class="nxDC-banco-head">
+                  <div class="nxDC-banco-name">🏦 ${b.nombre}</div>
+                  <div class="nxDC-banco-monto">${F(b.monto)}</div>
+                </div>
+                <div class="nxDC-banco-bar"><div class="nxDC-banco-fill" style="width:${pct}%"></div></div>
+                <div class="nxDC-banco-foot">${b.cantidad} cobros · ${pct}% del total</div>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
     `;
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // RENDER — TABLA DE AGENTES
-  // ═══════════════════════════════════════════════════════════
-  function renderTablaAgentes(porAgente, hayTransferencias) {
+  
+  function renderAgentesSeccion(porAgente, hayTransferencias) {
     const F = getFmt();
     if (!porAgente.length) {
       return `
-        <div class="nxDC-card">
-          <div class="nxDC-card-head">
-            <div class="nxDC-card-title">DETALLE POR AGENTE</div>
-            ${typeof window.nxAbrirTransferenciaAgenteV2 === 'function' ?
-              '<button class="btn bsm bc1" onclick="window.nxAbrirTransferenciaAgenteV2()" type="button"><i class="ti ti-transfer"></i> Transferir</button>' : ''}
-          </div>
-          <div class="nxDC-empty-soft">Sin actividad de agentes en este ciclo</div>
+        <div class="nc p3 nxDC-section">
+          <div class="ch"><div class="ct">👥 Detalle por agente</div></div>
+          <div class="empty" style="padding:20px;text-align:center">Sin agentes registrados</div>
         </div>
       `;
     }
-
-    const totales = porAgente.reduce((acc, a) => {
-      acc.cobrado += a.cobrado;
-      acc.efectivo += a.desglose.efectivo;
-      acc.banco += a.desglose.banco;
-      acc.cheque += a.desglose.cheque;
-      acc.otros += a.desglose.otros;
-      acc.enMano += a.enMano;
-      acc.enManoAcumulado += (a.enManoAcumulado || 0);
-      return acc;
-    }, {cobrado:0, efectivo:0, banco:0, cheque:0, otros:0, enMano:0, enManoAcumulado:0});
-
-    const filas = porAgente.map(a => `
-      <tr>
-        <td class="nxDC-ag-name-cell">
-          <div class="nxDC-ag-avatar" style="background:${a.color}">${esc(a.inicial)}</div>
-          <span>${esc(a.nombre)}</span>
-        </td>
-        <td class="nxDC-num nxDC-num-green">${F(a.cobrado)}</td>
-        <td class="nxDC-num">${F(a.desglose.efectivo)}</td>
-        <td class="nxDC-num">${F(a.desglose.banco)}</td>
-        <td class="nxDC-num">${F(a.desglose.cheque)}</td>
-        <td class="nxDC-num">${F(a.desglose.otros)}</td>
-        <td class="nxDC-num nxDC-num-stack">
-          <div class="nxDC-stack-big nxDC-num-blue">${F(a.enManoAcumulado || 0)}</div>
-          <div class="nxDC-stack-small">+ ${F(a.enMano)} <span class="nxDC-muted-xs">ciclo</span></div>
-        </td>
-      </tr>
-    `).join('');
-
     return `
-      <div class="nxDC-card">
-        <div class="nxDC-card-head">
-          <div class="nxDC-card-title">DETALLE POR AGENTE</div>
-          ${typeof window.nxAbrirTransferenciaAgenteV2 === 'function' ?
-            '<button class="btn bsm bc1" onclick="window.nxAbrirTransferenciaAgenteV2()" type="button"><i class="ti ti-transfer"></i> Transferir</button>' : ''}
+      <div class="nc p3 nxDC-section">
+        <div class="ch">
+          <div><div class="ct">👥 Detalle por agente</div><div class="ct-s">Desglose y dinero en mano real</div></div>
+          ${hayTransferencias && typeof window.nxAbrirTransferenciaAgenteV2 === 'function' ? 
+            '<button class="btn bsm bc1" onclick="window.nxAbrirTransferenciaAgenteV2()"><i class="ti ti-transfer"></i> Transferir</button>' : ''}
         </div>
-        <div class="nxDC-table-wrap">
-          <table class="nxDC-table">
-            <thead>
-              <tr>
-                <th>AGENTE</th>
-                <th class="nxDC-num">TOTAL COBRADO<br>DEL CICLO</th>
-                <th class="nxDC-num">EFECTIVO</th>
-                <th class="nxDC-num">BANCO</th>
-                <th class="nxDC-num">CHEQUE</th>
-                <th class="nxDC-num">OTROS</th>
-                <th class="nxDC-num">DINERO EN MANO<br><span class="nxDC-muted-sm">acumulado / ciclo</span></th>
-              </tr>
-            </thead>
-            <tbody>${filas}</tbody>
-            <tfoot>
-              <tr>
-                <td><strong>TOTAL GENERAL</strong></td>
-                <td class="nxDC-num nxDC-num-green"><strong>${F(totales.cobrado)}</strong></td>
-                <td class="nxDC-num nxDC-num-green"><strong>${F(totales.efectivo)}</strong></td>
-                <td class="nxDC-num nxDC-num-green"><strong>${F(totales.banco)}</strong></td>
-                <td class="nxDC-num nxDC-num-green"><strong>${F(totales.cheque)}</strong></td>
-                <td class="nxDC-num nxDC-num-green"><strong>${F(totales.otros)}</strong></td>
-                <td class="nxDC-num nxDC-num-stack">
-                  <div class="nxDC-stack-big nxDC-num-blue"><strong>${F(totales.enManoAcumulado)}</strong></div>
-                  <div class="nxDC-stack-small">+ ${F(totales.enMano)} <span class="nxDC-muted-xs">ciclo</span></div>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // RENDER — TRANSFERENCIAS: resumen + historial
-  // ═══════════════════════════════════════════════════════════
-  function renderTransferenciasResumen(transferenciasPeriodo) {
-    const F = getFmt();
-    const totalEnviado = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
-    const totalRecibido = totalEnviado;
-    const neto = Math.abs(totalEnviado - totalRecibido);
-
-    return `
-      <div class="nxDC-card">
-        <div class="nxDC-card-title">TRANSFERENCIAS ENTRE AGENTES <span class="nxDC-muted">(RESUMEN)</span></div>
-        <div class="nxDC-transf-summary">
-          <div class="nxDC-transf-box nxDC-transf-out">
-            <div class="nxDC-transf-head">
-              <i class="ti ti-arrow-up"></i>
-              <span>ENVIADO</span>
+        <div class="nxDC-agentes">
+          ${porAgente.map(ag => `
+            <div class="nxDC-agente">
+              <div class="nxDC-agente-head">
+                <div>
+                  <div class="nxDC-agente-name">👤 ${ag.nombre}</div>
+                  <div class="nxDC-agente-cargo">${ag.cargo || ''} · ${ag.cantidad} cobros</div>
+                </div>
+                <div class="nxDC-agente-total">${F(ag.cobrado)}</div>
+              </div>
+              <div class="nxDC-agente-grid">
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.efectivo)}</div><div class="nxDC-mini-l">EFECTIVO</div></div>
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.banco)}</div><div class="nxDC-mini-l">BANCO</div></div>
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.cheque)}</div><div class="nxDC-mini-l">CHEQUE</div></div>
+                <div class="nxDC-mini"><div class="nxDC-mini-v">${F(ag.desglose.otros)}</div><div class="nxDC-mini-l">OTROS</div></div>
+              </div>
+              ${ag.recibidas > 0 || ag.entregadas > 0 ? `
+                <div class="nxDC-transf">
+                  ${ag.recibidas > 0 ? `<span class="nxDC-transf-rec">+ ${F(ag.recibidas)} recibido</span>` : ''}
+                  ${ag.entregadas > 0 ? `<span class="nxDC-transf-ent">− ${F(ag.entregadas)} entregado</span>` : ''}
+                </div>
+              ` : ''}
+              <div class="nxDC-mano">
+                <span class="nxDC-mano-label">💰 EN MANO REAL</span>
+                <span class="nxDC-mano-value">${F(ag.enMano)}</span>
+              </div>
             </div>
-            <div class="nxDC-transf-val">${F(totalEnviado)}</div>
-            <div class="nxDC-transf-sub">Total enviado</div>
-          </div>
-          <div class="nxDC-transf-box nxDC-transf-in">
-            <div class="nxDC-transf-head">
-              <i class="ti ti-arrow-down"></i>
-              <span>RECIBIDO</span>
-            </div>
-            <div class="nxDC-transf-val">${F(totalRecibido)}</div>
-            <div class="nxDC-transf-sub">Total recibido</div>
-          </div>
-        </div>
-        <div class="nxDC-neto">
-          <div class="nxDC-neto-label">NETO ENTRE AGENTES</div>
-          <div class="nxDC-neto-val">${F(neto)}</div>
-          <div class="nxDC-neto-sub">Envíos − Recibidos</div>
+          `).join('')}
         </div>
       </div>
     `;
   }
-
-  function renderHistorialTransferencias(transferencias) {
-    if (!transferencias.length) {
-      return `
-        <div class="nxDC-card">
-          <div class="nxDC-card-title">HISTORIAL DE TRANSFERENCIAS</div>
-          <div class="nxDC-empty-soft">Sin transferencias en este ciclo</div>
-        </div>
-      `;
-    }
+  
+  function renderTransferenciasSeccion(transferencias) {
+    if (!transferencias.length) return '';
     const F = getFmt();
-    const filas = transferencias.slice(0, 15).map((t, idx) => {
-      const desde = getGAgt(t.desde_agente)?.nom || '—';
-      const hacia = getGAgt(t.hacia_agente)?.nom || '—';
-      const ref = t.referencia || `TRF-${String(idx+1).padStart(4,'0')}`;
-      return `
-        <tr>
-          <td class="nxDC-tx-fecha">${fmtFecha(t.fecha)}</td>
-          <td>${esc(desde)}</td>
-          <td>${esc(hacia)}</td>
-          <td class="nxDC-num">${F(t.monto)}</td>
-          <td><span class="nxDC-tx-tag nxDC-tx-out">Envío</span></td>
-          <td class="nxDC-tx-ref">${esc(ref)}</td>
-        </tr>
-      `;
-    }).join('');
-
     return `
-      <div class="nxDC-card">
-        <div class="nxDC-card-head">
-          <div class="nxDC-card-title">HISTORIAL DE TRANSFERENCIAS</div>
-          ${transferencias.length > 15 ? `<a class="nxDC-link" href="#" onclick="event.preventDefault()">Ver todas</a>` : ''}
-        </div>
-        <div class="nxDC-table-wrap">
-          <table class="nxDC-table nxDC-tx-table">
-            <thead>
-              <tr>
-                <th>FECHA</th>
-                <th>DESDE</th>
-                <th>HACIA</th>
-                <th class="nxDC-num">MONTO</th>
-                <th>TIPO</th>
-                <th>REFERENCIA</th>
-              </tr>
-            </thead>
-            <tbody>${filas}</tbody>
-          </table>
+      <div class="nc p3 nxDC-section">
+        <div class="ch"><div><div class="ct">🔄 Transferencias del ciclo</div><div class="ct-s">${transferencias.length} movimientos entre agentes</div></div></div>
+        <div class="nxDC-transf-list">
+          ${transferencias.map(t => {
+            const desde = getGAgt(t.desde_agente)?.nom || 'N/D';
+            const hacia = getGAgt(t.hacia_agente)?.nom || 'N/D';
+            return `
+              <div class="nxDC-transf-row">
+                <div class="nxDC-transf-fecha">${fmtFecha(t.fecha)}</div>
+                <div class="nxDC-transf-flow">
+                  <span class="nxDC-transf-from">${desde}</span>
+                  <span class="nxDC-transf-arrow">→</span>
+                  <span class="nxDC-transf-to">${hacia}</span>
+                </div>
+                <div class="nxDC-transf-monto">${F(t.monto)}</div>
+                <div class="nxDC-transf-meta">${t.metodo || ''} ${t.banco ? '· ' + t.banco : ''} · ${t.referencia || ''}</div>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
     `;
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // RENDER PRINCIPAL
-  // ═══════════════════════════════════════════════════════════
+  
+  // ═══ RENDER PRINCIPAL ═══
   async function renderDetallesCobro() {
     const cont = document.getElementById('nxDetallesCobroV1');
     if (!cont) return;
-
-    cont.innerHTML = '<div class="nxDC-loading"><div class="spin"></div><span>Cargando detalles de cobro...</span></div>';
-
+    
+    cont.innerHTML = '<div class="nc p5"><div class="loading"><div class="spin"></div> Cargando detalles de cobro...</div></div>';
+    
+    // Selector de ciclos
     const listaCiclos = calcularUltimosCiclos(6);
     const periodo = cicloSeleccionado || listaCiclos[0];
     const indexActual = listaCiclos.findIndex(c => c.key === periodo.key);
-
-    const [abonos, transferencias, entregas] = await Promise.all([
-      cargarAbonos(),
-      cargarTransferencias(),
-      cargarEntregasAdmin()
-    ]);
-
+    
+    const [abonos, transferencias] = await Promise.all([cargarAbonos(), cargarTransferencias()]);
+    
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
     const transferenciasPeriodo = transferencias.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
-    const entregasPeriodo = entregas.filter(e => enRango(e.fecha, periodo.inicio, periodo.fin));
-    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin, entregas);
-    const hayTransferencias = transferenciasPeriodo.length > 0;
-    const pendiente = calcularPendienteTotal();
-    const totalTransferido = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
-    const dineroEnMano = porAgente.reduce((s, a) => s + Number(a.enMano || 0), 0);
-    const dineroEnManoAcumulado = porAgente.reduce((s, a) => s + Number(a.enManoAcumulado || 0), 0);
-
+    // Solo mostrar las ACEPTADAS en la sección de transferencias del periodo
+    const transfAceptadas = transferenciasPeriodo.filter(t => !t.estado || t.estado === 'aceptada');
+    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo);
+    const hayTransferencias = transfAceptadas.length > 0;
+    
     cont.innerHTML = `
-      <div class="nxDC-wrap">
-        ${renderHeader(listaCiclos, periodo, indexActual)}
-        ${renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado)}
-        <div class="nxDC-row-2col">
-          <div class="nxDC-card">
-            <div class="nxDC-card-title">RESUMEN POR MÉTODO DE COBRO</div>
-            ${renderDonut(stats)}
-          </div>
-          ${renderBancos(porBanco, stats.banco)}
-        </div>
-        ${renderTablaAgentes(porAgente, hayTransferencias)}
-        ${esAdmin() ? renderCajaCentral(entregas, entregasPeriodo) : ''}
-        <div class="nxDC-row-2col">
-          ${renderTransferenciasResumen(transferenciasPeriodo)}
-          ${renderHistorialTransferencias(transferenciasPeriodo)}
-        </div>
+      ${crearBarraSelector(listaCiclos, periodo, indexActual)}
+      <div id="nxDC-contenido">
+        ${renderKPIs(stats, periodo)}
+        ${renderBancosSeccion(porBanco, stats.banco.monto)}
+        ${renderAgentesSeccion(porAgente, hayTransferencias)}
+        ${hayTransferencias ? renderTransferenciasSeccion(transfAceptadas) : ''}
       </div>
     `;
-
-    // Eventos del selector
+    
+    // Conectar eventos del selector
     const sel = document.getElementById('nxDCCicloSelect');
     const btnAnt = document.getElementById('nxDCAnterior');
     const btnSig = document.getElementById('nxDCSiguiente');
@@ -1668,40 +1343,43 @@
     if (btnAnt) btnAnt.onclick = () => navegarCiclo(1, listaCiclos);
     if (btnSig) btnSig.onclick = () => navegarCiclo(-1, listaCiclos);
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // INTEGRACIÓN EN DASHBOARD
-  // ═══════════════════════════════════════════════════════════
+  
+  // ═══ INTEGRACIÓN EN DASHBOARD ═══
   function crearContenedor() {
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return false;
     if (document.getElementById('nxDetallesCobroV1')) return true;
-    const cont = document.createElement('div');
-    cont.id = 'nxDetallesCobroV1';
-    cont.style.display = 'none';
-    vDash.appendChild(cont);
+    
+    // Crear contenedor oculto al final del Dashboard
+    const cDetalles = document.createElement('div');
+    cDetalles.id = 'nxDetallesCobroV1';
+    cDetalles.style.display = 'none';
+    vDash.appendChild(cDetalles);
+    
+    // Crear botón "Volver al resumen" arriba del contenedor
     return true;
   }
-
+  
   function mostrarDetalles() {
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return;
-
-    // Asegurar que estamos en Dashboard
+    
+    // Asegurar que la vista Dashboard esté activa (en caso de venir de otra vista)
     document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
     vDash.classList.add('on');
-
-    // Ocultar todo el contenido del dashboard excepto nuestro módulo y el botón volver
+    
+    // Ocultar todos los hijos del dashboard EXCEPTO nuestro contenedor y el botón volver
     Array.from(vDash.children).forEach(child => {
       if (child.id === 'nxDetallesCobroV1') return;
       if (child.id === 'nxDCBotonVolver') return;
+      // Guardar el display previo solo si no se ha guardado antes (para no perderlo)
       if (child.dataset.nxDCPrevDisplay === undefined) {
         child.dataset.nxDCPrevDisplay = child.style.display || '';
       }
       child.style.display = 'none';
     });
-
-    // Botón volver
+    
+    // Crear botón volver si no existe
     if (!document.getElementById('nxDCBotonVolver')) {
       const btn = document.createElement('div');
       btn.id = 'nxDCBotonVolver';
@@ -1712,25 +1390,33 @@
       `;
       vDash.insertBefore(btn, document.getElementById('nxDetallesCobroV1'));
     } else {
+      // Si ya existe, asegurar que esté visible
       document.getElementById('nxDCBotonVolver').style.display = '';
     }
-
-    // Mostrar y renderizar
+    
+    // Mostrar nuestro contenedor
     const cDetalles = document.getElementById('nxDetallesCobroV1');
     if (cDetalles) {
       cDetalles.style.display = '';
       renderDetallesCobro();
     }
+    
+    // Scroll arriba para que se vea el selector
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-
+  
   window.nxVolverResumen = function() {
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return;
+    
+    // Ocultar nuestro contenedor y botón
     const cDetalles = document.getElementById('nxDetallesCobroV1');
     if (cDetalles) cDetalles.style.display = 'none';
+    
     const btnVolver = document.getElementById('nxDCBotonVolver');
     if (btnVolver) btnVolver.style.display = 'none';
+    
+    // Restaurar todos los hijos al estado original
     Array.from(vDash.children).forEach(child => {
       if (child.id === 'nxDetallesCobroV1') return;
       if (child.id === 'nxDCBotonVolver') return;
@@ -1738,319 +1424,25 @@
         child.style.display = child.dataset.nxDCPrevDisplay;
         delete child.dataset.nxDCPrevDisplay;
       } else {
+        // Si por alguna razón no hay dataset, quitar el display:none
         child.style.display = '';
       }
     });
+    
+    // Scroll arriba
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
+  
   window.nxAbrirDetallesCobro = mostrarDetalles;
-
-  // ═══════════════════════════════════════════════════════════════
-  // ENTREGAS A ADMIN — Caja Central
-  // ═══════════════════════════════════════════════════════════════
-
-  function renderCajaCentral(entregasAll, entregasPeriodo) {
-    const F = getFmt();
-    const all = Array.isArray(entregasAll) ? entregasAll : [];
-
-    const recibidoTotal     = all.reduce((s, e) => s + Number(e.monto || 0), 0);
-    const pendienteConfirmar = all.filter(e => !e.confirmado).reduce((s, e) => s + Number(e.monto || 0), 0);
-    const enCajaCentral     = all.filter(e => e.confirmado && !e.depositado).reduce((s, e) => s + Number(e.monto || 0), 0);
-    const yaDepositado      = all.filter(e => e.depositado).reduce((s, e) => s + Number(e.monto || 0), 0);
-    const recibidoPeriodo   = (entregasPeriodo || []).reduce((s, e) => s + Number(e.monto || 0), 0);
-
-    const filas = all.slice(0, 20).map(e => {
-      const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
-      const nomAg = ag?.nom || '—';
-      const estado = e.depositado ? 'DEPOSITADO' : (e.confirmado ? 'CONFIRMADO' : 'PENDIENTE');
-      const estadoClass = e.depositado ? 'nxDC-tag-dep' : (e.confirmado ? 'nxDC-tag-conf' : 'nxDC-tag-pend');
-      const acciones = [];
-      if (!e.confirmado) acciones.push(`<button class="nxDC-mini-btn nxDC-mini-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" type="button" title="Confirmar"><i class="ti ti-check"></i></button>`);
-      if (e.confirmado && !e.depositado) acciones.push(`<button class="nxDC-mini-btn nxDC-mini-dep" onclick="window.nxDepositarEntregaAdmin('${esc(e.id)}')" type="button" title="Marcar como depositado"><i class="ti ti-building-bank"></i></button>`);
-      return `
-        <tr>
-          <td class="nxDC-tx-fecha">${fmtFecha(e.fecha)}</td>
-          <td>${esc(nomAg)}</td>
-          <td class="nxDC-num">${F(e.monto)}</td>
-          <td>${esc(e.metodo || '')}</td>
-          <td class="nxDC-tx-ref">${esc(e.referencia || '—')}</td>
-          <td><span class="nxDC-tx-tag ${estadoClass}">${estado}</span></td>
-          <td class="nxDC-actions-cell">${acciones.join('') || '<span class="nxDC-muted">—</span>'}</td>
-        </tr>
-      `;
-    }).join('');
-
-    return `
-      <div class="nxDC-card nxDC-caja-card">
-        <div class="nxDC-card-head">
-          <div class="nxDC-card-title">CAJA CENTRAL <span class="nxDC-muted">(ADMIN)</span></div>
-          <button class="btn bsm bc1" onclick="window.nxAbrirEntregaAdmin()" type="button">
-            <i class="ti ti-cash"></i> Recibir entrega
-          </button>
-        </div>
-
-        <div class="nxDC-caja-mini-kpis">
-          <div class="nxDC-caja-mini nxDC-caja-cash">
-            <div class="nxDC-caja-mini-lbl">EN CAJA CENTRAL</div>
-            <div class="nxDC-caja-mini-val">${F(enCajaCentral)}</div>
-            <div class="nxDC-caja-mini-sub">Confirmado, no depositado</div>
-          </div>
-          <div class="nxDC-caja-mini nxDC-caja-pend">
-            <div class="nxDC-caja-mini-lbl">PENDIENTE CONFIRMAR</div>
-            <div class="nxDC-caja-mini-val">${F(pendienteConfirmar)}</div>
-            <div class="nxDC-caja-mini-sub">Falta verificar</div>
-          </div>
-          <div class="nxDC-caja-mini nxDC-caja-dep">
-            <div class="nxDC-caja-mini-lbl">DEPOSITADO AL BANCO</div>
-            <div class="nxDC-caja-mini-val">${F(yaDepositado)}</div>
-            <div class="nxDC-caja-mini-sub">Histórico total</div>
-          </div>
-          <div class="nxDC-caja-mini nxDC-caja-cic">
-            <div class="nxDC-caja-mini-lbl">RECIBIDO DEL CICLO</div>
-            <div class="nxDC-caja-mini-val">${F(recibidoPeriodo)}</div>
-            <div class="nxDC-caja-mini-sub">Total ciclo · ${F(recibidoTotal)} histórico</div>
-          </div>
-        </div>
-
-        <div class="nxDC-caja-hist-title">HISTORIAL DE ENTREGAS RECIBIDAS</div>
-        ${all.length === 0 ? '<div class="nxDC-empty-soft">Aún no has recibido entregas. Usa el botón "Recibir entrega" para registrar la primera.</div>' :
-        `<div class="nxDC-table-wrap">
-          <table class="nxDC-table nxDC-tx-table">
-            <thead>
-              <tr>
-                <th>FECHA</th>
-                <th>AGENTE</th>
-                <th class="nxDC-num">MONTO</th>
-                <th>MÉTODO</th>
-                <th>REFERENCIA</th>
-                <th>ESTADO</th>
-                <th>ACCIONES</th>
-              </tr>
-            </thead>
-            <tbody>${filas}</tbody>
-          </table>
-        </div>`}
-      </div>
-    `;
-  }
-
-  function crearModalEntregaAdmin() {
-    if (document.getElementById('nxModalEntregaAdmin')) return;
-    const modal = document.createElement('div');
-    modal.className = 'overlay';
-    modal.id = 'nxModalEntregaAdmin';
-    modal.innerHTML = `
-      <div class="modal" style="max-width:460px">
-        <div class="mt">
-          <span>// RECIBIR ENTREGA DEL AGENTE</span>
-          <button class="btn bghost bsm" type="button" onclick="window.nxCerrarEntregaAdmin()"><i class="ti ti-x"></i></button>
-        </div>
-        <div class="gf2">
-          <div class="fr"><label>Agente que entrega *</label><select id="nxEA_Agente"></select></div>
-          <div class="fr"><label>Monto RD$ *</label><input type="number" id="nxEA_Monto" min="0.01" step="0.01" placeholder="0.00"></div>
-          <div class="fr"><label>Método *</label>
-            <select id="nxEA_Metodo">
-              <option>Efectivo</option>
-              <option>Transferencia</option>
-              <option>Depósito</option>
-              <option>Cheque</option>
-            </select>
-          </div>
-          <div class="fr"><label>Fecha *</label><input type="date" id="nxEA_Fecha"></div>
-          <div class="fr" id="nxEA_BancoWrap" style="display:none"><label>Banco</label>
-            <select id="nxEA_Banco">
-              <option value="">Seleccionar...</option>
-              <option>BHD</option><option>Banreservas</option><option>Popular</option>
-              <option>Scotiabank</option><option>Otros</option>
-            </select>
-          </div>
-          <div class="fr" id="nxEA_BancoOtroWrap" style="display:none"><label>Otro banco</label><input type="text" id="nxEA_BancoOtro" placeholder="Nombre del banco"></div>
-          <div class="fr" style="grid-column:1/-1"><label>Referencia / # recibo *</label><input type="text" id="nxEA_Ref" placeholder="Ej: REC-001, # transferencia"></div>
-          <div class="fr" style="grid-column:1/-1"><label>Nota</label><input type="text" id="nxEA_Nota" placeholder="Opcional"></div>
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin-top:10px;background:#f0fdf4;padding:10px;border-radius:8px;border:1px solid #bbf7d0">
-          <input type="checkbox" id="nxEA_Confirmar" style="width:16px;height:16px;accent-color:#059669"/>
-          <span><strong>Confirmar al guardar</strong> · marca esta entrega como verificada físicamente</span>
-        </label>
-        <div class="nx-info-box-v2" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:11px;color:#1e3a6e;margin-top:8px">
-          Esta entrega reduce el "Dinero en Mano" del agente al instante.
-        </div>
-        <div class="fe">
-          <button class="btn" type="button" onclick="window.nxCerrarEntregaAdmin()">Cancelar</button>
-          <button class="btn bxl" type="button" onclick="window.nxGuardarEntregaAdmin()" id="nxEA_Btn"><i class="ti ti-check"></i> Registrar entrega</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-
-    // Listeners del modal
-    document.getElementById('nxEA_Metodo')?.addEventListener('change', () => {
-      const m = document.getElementById('nxEA_Metodo').value || '';
-      const show = (m === 'Transferencia' || m === 'Depósito');
-      const bw = document.getElementById('nxEA_BancoWrap');
-      if (bw) bw.style.display = show ? 'block' : 'none';
-      if (!show) {
-        document.getElementById('nxEA_Banco').value = '';
-        document.getElementById('nxEA_BancoOtro').value = '';
-        document.getElementById('nxEA_BancoOtroWrap').style.display = 'none';
-      }
-    });
-    document.getElementById('nxEA_Banco')?.addEventListener('change', () => {
-      const b = document.getElementById('nxEA_Banco').value || '';
-      document.getElementById('nxEA_BancoOtroWrap').style.display = (b === 'Otros') ? 'block' : 'none';
-    });
-  }
-
-  window.nxAbrirEntregaAdmin = function() {
-    if (!esAdmin()) {
-      if (typeof window.toast === 'function') window.toast('err', 'Sin permisos', 'Solo el administrador puede registrar entregas');
-      return;
-    }
-    crearModalEntregaAdmin();
-    const agentes = Array.isArray(st().agentes) ? st().agentes : [];
-    const opts = '<option value="">Seleccionar...</option>' +
-      agentes.map(a => `<option value="${esc(a.id)}">${esc(a.nom || 'Sin nombre')}</option>`).join('');
-    const selAg = document.getElementById('nxEA_Agente');
-    if (selAg) selAg.innerHTML = opts;
-    const fechaIn = document.getElementById('nxEA_Fecha');
-    if (fechaIn) fechaIn.value = new Date().toISOString().slice(0, 10);
-    document.getElementById('nxModalEntregaAdmin')?.classList.add('open');
-  };
-
-  window.nxCerrarEntregaAdmin = function() {
-    document.getElementById('nxModalEntregaAdmin')?.classList.remove('open');
-    // Reset campos
-    ['nxEA_Monto','nxEA_Ref','nxEA_Nota','nxEA_Banco','nxEA_BancoOtro'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    const conf = document.getElementById('nxEA_Confirmar');
-    if (conf) conf.checked = false;
-  };
-
-  window.nxGuardarEntregaAdmin = async function() {
-    if (!esAdmin()) return;
-    const agente_id = document.getElementById('nxEA_Agente')?.value || '';
-    const monto = Number(document.getElementById('nxEA_Monto')?.value || 0);
-    const metodo = document.getElementById('nxEA_Metodo')?.value || 'Efectivo';
-    const fecha = document.getElementById('nxEA_Fecha')?.value || new Date().toISOString().slice(0, 10);
-    const ref = (document.getElementById('nxEA_Ref')?.value || '').trim();
-    const nota = (document.getElementById('nxEA_Nota')?.value || '').trim();
-    const confirmarAhora = !!document.getElementById('nxEA_Confirmar')?.checked;
-    let banco = '';
-
-    const toastSafe = (t, ti, m) => {
-      if (typeof window.toast === 'function') window.toast(t, ti, m); else alert(ti + '\n' + (m||''));
-    };
-
-    if (!agente_id) return toastSafe('err', 'Agente requerido', 'Selecciona el agente que entrega');
-    if (!monto || monto <= 0) return toastSafe('err', 'Monto inválido', 'Escribe un monto mayor a cero');
-    if (!ref) return toastSafe('err', 'Referencia requerida', 'Escribe una referencia o # de recibo');
-
-    if (metodo === 'Transferencia' || metodo === 'Depósito') {
-      banco = document.getElementById('nxEA_Banco')?.value || '';
-      if (!banco) return toastSafe('err', 'Banco requerido', 'Selecciona el banco');
-      if (banco === 'Otros') {
-        banco = (document.getElementById('nxEA_BancoOtro')?.value || '').trim();
-        if (!banco) return toastSafe('err', 'Banco requerido', 'Escribe el nombre del banco');
-      }
-    }
-
-    const api = getAPI();
-    if (!api?.post) return toastSafe('err', 'API no disponible', 'No se encontró API.post');
-
-    const btn = document.getElementById('nxEA_Btn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
-
-    const payload = {
-      agente_id, monto, metodo,
-      banco: banco || null,
-      referencia: ref,
-      nota: nota || null,
-      fecha,
-      confirmado: confirmarAhora,
-      confirmado_at: confirmarAhora ? new Date().toISOString() : null,
-      confirmado_por: confirmarAhora ? (window.sesion?.usuario || 'admin') : null,
-      created_by: window.sesion?.usuario || 'admin'
-    };
-
-    try {
-      await api.post('entregas_admin', payload);
-      const nombreAg = (st().agentes || []).find(a => String(a.id) === String(agente_id))?.nom || agente_id;
-      if (typeof window.logAudit === 'function') {
-        window.logAudit('ENTREGA_ADMIN', `Recibido de ${nombreAg}: RD$ ${monto.toLocaleString()} · ${metodo}${banco ? ' · ' + banco : ''}${confirmarAhora ? ' · CONFIRMADO' : ''}`, 'Cobros');
-      }
-      toastSafe('ok', 'Entrega registrada', `${nombreAg} entregó RD$ ${monto.toLocaleString()}`);
-      window.nxCerrarEntregaAdmin();
-      if (typeof renderDetallesCobro === 'function') await renderDetallesCobro();
-    } catch (e) {
-      console.error('Error guardando entrega_admin:', e);
-      toastSafe('err', 'No se pudo guardar', 'Verifica que exista la tabla entregas_admin en Supabase');
-    } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Registrar entrega'; }
-    }
-  };
-
-  window.nxConfirmarEntregaAdmin = async function(id) {
-    if (!esAdmin()) return;
-    if (!confirm('¿Confirmar esta entrega? Esto verifica que recibiste físicamente el dinero.')) return;
-    const api = getAPI();
-    if (!api?.patch) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.patch');
-      return;
-    }
-    try {
-      await api.patch('entregas_admin', `id=eq.${id}`, {
-        confirmado: true,
-        confirmado_at: new Date().toISOString(),
-        confirmado_por: window.sesion?.usuario || 'admin'
-      });
-      if (typeof window.toast === 'function') window.toast('ok', 'Confirmado', 'Entrega marcada como verificada');
-      await renderDetallesCobro();
-    } catch (e) {
-      console.error('Error confirmando entrega:', e);
-      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo confirmar');
-    }
-  };
-
-  window.nxDepositarEntregaAdmin = async function(id) {
-    if (!esAdmin()) return;
-    const banco = prompt('¿En qué banco depositaste este dinero?\n(Ej: BHD, Banreservas, Popular)');
-    if (!banco || !banco.trim()) return;
-    const api = getAPI();
-    if (!api?.patch) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.patch');
-      return;
-    }
-    try {
-      await api.patch('entregas_admin', `id=eq.${id}`, {
-        depositado: true,
-        depositado_at: new Date().toISOString(),
-        depositado_banco: banco.trim()
-      });
-      if (typeof window.toast === 'function') window.toast('ok', 'Depositado', `Marcado como depositado en ${banco.trim()}`);
-      await renderDetallesCobro();
-    } catch (e) {
-      console.error('Error depositando entrega:', e);
-      if (typeof window.toast === 'function') window.toast('err', 'Error', 'No se pudo marcar como depositado');
-    }
-  };
-
-  // Crear el modal al cargar (queda oculto hasta que se llame nxAbrirEntregaAdmin)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', crearModalEntregaAdmin, { once: true });
-  } else {
-    crearModalEntregaAdmin();
-  }
-
-  // Hook al KPI "COBRADO" del Dashboard
+  
+  // ═══ INTERCEPTAR CLICK EN KPI COBRADO ═══
   function bindCobradoKPI() {
     document.addEventListener('click', function(e) {
       const target = e.target;
       const kpiKL = target.closest?.('.kl');
       if (!kpiKL) return;
       if (kpiKL.textContent.trim().toUpperCase() !== 'COBRADO') return;
+      // Es el KPI COBRADO - asegurar que estamos en Dashboard y abrir detalles
       const vDash = document.getElementById('v-dashboard');
       if (vDash && vDash.classList.contains('on')) {
         e.preventDefault();
@@ -2059,301 +1451,119 @@
       }
     }, true);
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // CSS PREMIUM
-  // ═══════════════════════════════════════════════════════════
+  
+  // ═══ CSS ═══
   function injectCSS() {
-    if (document.getElementById('nxDC-css-v2')) return;
-    // Eliminar CSS viejo de V1 si existe
-    const oldCss = document.getElementById('nxDC-css');
-    if (oldCss) oldCss.remove();
-
+    if (document.getElementById('nxDC-css')) return;
     const style = document.createElement('style');
-    style.id = 'nxDC-css-v2';
+    style.id = 'nxDC-css';
     style.textContent = `
-      /* ═══ ESTRUCTURA GENERAL ═══ */
-      #nxDetallesCobroV1 { animation: nxDCFade .3s ease-out; }
-      @keyframes nxDCFade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-      .nxDC-wrap { display:flex; flex-direction:column; gap:14px; }
-      .nxDC-loading { display:flex; align-items:center; gap:10px; padding:30px; justify-content:center; color:#64748b; font-weight:600; }
-
-      /* ═══ HEADER PREMIUM ═══ */
-      .nxDC-head { background:#fff; border:1px solid #e2e8f0; border-radius:18px; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; box-shadow:0 1px 3px rgba(0,0,0,.03); }
-      .nxDC-head-left { display:flex; align-items:center; gap:14px; min-width:0; flex:1 1 320px; }
-      .nxDC-head-icon { width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; display:grid; place-items:center; font-size:22px; flex:0 0 auto; box-shadow:0 6px 16px rgba(59,130,246,.32); }
-      .nxDC-head-title { margin:0; font-size:22px; font-weight:900; color:#0f172a; letter-spacing:.3px; line-height:1.1; }
-      .nxDC-head-sub { font-size:12px; color:#64748b; margin-top:3px; font-weight:500; }
-      .nxDC-head-right { flex:0 0 auto; }
-      .nxDC-period { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:8px 12px; min-width:280px; }
-      .nxDC-period-label { font-size:10px; color:#64748b; font-weight:700; letter-spacing:.4px; margin-bottom:4px; }
-      .nxDC-period-controls { display:flex; align-items:center; gap:6px; }
-      .nxDC-period-select { flex:1; border:0; background:transparent; font-size:13px; font-weight:700; color:#0f172a; cursor:pointer; outline:none; padding:4px; min-width:0; }
-      .nxDC-period-nav { width:28px; height:28px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; color:#475569; cursor:pointer; display:grid; place-items:center; transition:all .15s; flex:0 0 auto; }
-      .nxDC-period-nav:hover:not(:disabled) { background:#eff6ff; border-color:#3b82f6; color:#2563eb; }
-      .nxDC-period-nav:disabled { opacity:.35; cursor:not-allowed; }
-
-      /* ═══ 4 KPIs PRINCIPALES ═══ */
-      .nxDC-kpis-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
-      .nxDC-kpi { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; display:flex; gap:12px; align-items:flex-start; box-shadow:0 1px 3px rgba(0,0,0,.03); }
-      .nxDC-kpi-icon { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:20px; flex:0 0 auto; }
-      .nxDC-kpi-body { min-width:0; flex:1; }
-      .nxDC-kpi-label { font-size:10px; font-weight:800; color:#64748b; letter-spacing:.5px; line-height:1.3; margin-bottom:5px; }
-      .nxDC-kpi-value { font-size:22px; font-weight:900; line-height:1.1; margin-bottom:3px; font-family:var(--mono,'SF Mono',monospace); letter-spacing:-.3px; }
-      .nxDC-kpi-sub { font-size:11px; color:#94a3b8; font-weight:500; }
-
-      /* ═══ ROW 2 COL ═══ */
-      .nxDC-row-2col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-
-      /* ═══ CARDS GENÉRICAS ═══ */
-      .nxDC-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,.03); }
-      .nxDC-card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
-      .nxDC-card-title { font-size:11px; font-weight:800; color:#475569; letter-spacing:.7px; }
-      .nxDC-card-head .nxDC-card-title { margin:0; }
-      .nxDC-muted { color:#94a3b8; font-weight:600; }
-      .nxDC-empty-soft { padding:24px; text-align:center; color:#94a3b8; font-size:12px; font-weight:600; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; }
-      .nxDC-link { color:#2563eb; font-size:11px; font-weight:700; text-decoration:none; }
-
-      /* ═══ DONUT ═══ */
-      .nxDC-donut-block { display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:center; }
-      .nxDC-donut-chart { position:relative; width:160px; height:160px; flex:0 0 auto; }
-      .nxDC-donut-svg { width:100%; height:100%; }
-      .nxDC-donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
-      .nxDC-donut-amt { font-size:11px; color:#64748b; font-weight:700; }
-      .nxDC-donut-val { font-size:22px; font-weight:900; color:#0f172a; font-family:var(--mono,monospace); line-height:1; margin:2px 0; }
-      .nxDC-donut-lbl { font-size:10px; color:#94a3b8; font-weight:700; letter-spacing:.5px; }
-      .nxDC-legend { display:flex; flex-direction:column; gap:10px; min-width:0; }
-      .nxDC-leg-item { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:10px; font-size:12px; }
-      .nxDC-leg-dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
-      .nxDC-leg-name { color:#475569; font-weight:600; }
-      .nxDC-leg-val { color:#0f172a; font-weight:700; font-family:var(--mono,monospace); font-size:11px; }
-      .nxDC-leg-pct { color:#64748b; font-weight:700; font-size:11px; min-width:42px; text-align:right; }
-      .nxDC-leg-empty { color:#94a3b8; font-size:12px; padding:10px; text-align:center; }
-
-      /* ═══ BANCOS ═══ */
-      .nxDC-bancos-list { display:flex; flex-direction:column; gap:2px; }
-      .nxDC-banco-row { display:flex; justify-content:space-between; align-items:center; padding:10px 4px; border-bottom:1px solid #f1f5f9; }
-      .nxDC-banco-row:last-of-type { border-bottom:0; }
-      .nxDC-banco-cell { display:flex; align-items:center; gap:10px; color:#0f172a; font-weight:600; font-size:13px; }
-      .nxDC-banco-cell i { font-size:18px; color:#64748b; }
-      .nxDC-banco-monto { font-weight:700; color:#0f172a; font-family:var(--mono,monospace); font-size:13px; }
-      .nxDC-banco-total { display:flex; justify-content:space-between; align-items:center; padding:12px 4px 4px; border-top:1px solid #e2e8f0; margin-top:8px; }
-      .nxDC-banco-total > div:first-child { font-weight:800; color:#0f172a; font-size:13px; }
-      .nxDC-banco-total > div:last-child { font-weight:800; color:#2563eb; font-family:var(--mono,monospace); font-size:15px; }
-
-      /* ═══ TABLA AGENTES + TRANSFERENCIAS ═══ */
-      .nxDC-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-      .nxDC-table { width:100%; border-collapse:collapse; font-size:12px; }
-      .nxDC-table thead th { padding:10px 12px; text-align:left; font-size:9px; font-weight:800; color:#64748b; letter-spacing:.6px; background:#f8fafc; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
-      .nxDC-table tbody td { padding:12px; border-bottom:1px solid #f1f5f9; color:#0f172a; font-weight:600; }
-      .nxDC-table tbody tr:last-child td { border-bottom:0; }
-      .nxDC-table tfoot td { padding:12px; background:#f8fafc; border-top:2px solid #e2e8f0; font-size:13px; }
-      .nxDC-table .nxDC-num { text-align:right; font-family:var(--mono,monospace); white-space:nowrap; }
-      .nxDC-table th.nxDC-num { text-align:right; }
-      .nxDC-num-green { color:#059669; font-weight:700; }
-      .nxDC-num-blue { color:#2563eb; font-weight:700; }
-      .nxDC-num-stack { text-align:right; vertical-align:middle; }
-      .nxDC-stack-big { font-weight:700; font-size:13px; line-height:1.15; font-family:var(--mono,monospace); }
-      .nxDC-stack-small { font-size:10px; color:#64748b; font-weight:500; margin-top:3px; font-family:var(--mono,monospace); }
-      .nxDC-muted-xs { color:#94a3b8; font-size:9px; font-family:inherit; }
-      .nxDC-muted-sm { color:#94a3b8; font-size:8.5px; font-weight:600; letter-spacing:.3px; display:block; margin-top:2px; }
-
-      /* ═══ CAJA CENTRAL (ADMIN) ═══ */
-      .nxDC-caja-card { border:1px solid #bfdbfe; background:linear-gradient(180deg,#f8fbff,#ffffff); }
-      .nxDC-caja-mini-kpis {
-        display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;
+      #nxDetallesCobroV1 { animation:nxDCFade .3s ease-out; }
+      @keyframes nxDCFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+      
+      .nxDC-selector { 
+        display:flex; gap:10px; align-items:center; background:#fff; border:1px solid #e2e8f0; 
+        border-radius:16px; padding:10px; margin-bottom:16px; 
+        box-shadow: 0 4px 16px rgba(15,23,42,.08), 0 1px 3px rgba(15,23,42,.04);
+        position:sticky; top:0; z-index:100;
+        border-bottom: 1px solid #e2e8f0;
       }
-      .nxDC-caja-mini {
-        padding:12px; border-radius:12px; border:1px solid #e2e8f0; background:#fff;
-        box-shadow:0 1px 3px rgba(0,0,0,.04);
+      .nxDC-select { 
+        flex:1; padding:12px 14px; border:1px solid #cbd5e1; border-radius:12px; 
+        font-weight:700; font-size:14px; background:#fff; color:#0f172a; cursor:pointer;
+        text-align:center; appearance:none; -webkit-appearance:none;
       }
-      .nxDC-caja-cash { background:linear-gradient(135deg,#ecfdf5,#dcfce7); border-color:#bbf7d0; }
-      .nxDC-caja-pend { background:linear-gradient(135deg,#fffbeb,#fef3c7); border-color:#fde68a; }
-      .nxDC-caja-dep  { background:linear-gradient(135deg,#eff6ff,#dbeafe); border-color:#bfdbfe; }
-      .nxDC-caja-cic  { background:linear-gradient(135deg,#f8fafc,#f1f5f9); border-color:#e2e8f0; }
-      .nxDC-caja-mini-lbl { font-size:9.5px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:6px; }
-      .nxDC-caja-cash .nxDC-caja-mini-lbl { color:#059669; }
-      .nxDC-caja-pend .nxDC-caja-mini-lbl { color:#d97706; }
-      .nxDC-caja-dep  .nxDC-caja-mini-lbl { color:#2563eb; }
-      .nxDC-caja-mini-val { font-size:18px; font-weight:900; line-height:1.1; font-family:var(--mono,monospace); color:#0f172a; }
-      .nxDC-caja-cash .nxDC-caja-mini-val { color:#059669; }
-      .nxDC-caja-pend .nxDC-caja-mini-val { color:#d97706; }
-      .nxDC-caja-dep  .nxDC-caja-mini-val { color:#2563eb; }
-      .nxDC-caja-mini-sub { font-size:9.5px; color:#94a3b8; font-weight:500; margin-top:4px; line-height:1.3; }
-      .nxDC-caja-hist-title { font-size:10.5px; font-weight:800; color:#475569; letter-spacing:.6px; margin:14px 0 10px; }
-
-      /* Badges de estado */
-      .nxDC-tag-pend { background:#fef3c7; color:#d97706; }
-      .nxDC-tag-conf { background:#dbeafe; color:#2563eb; }
-      .nxDC-tag-dep  { background:#dcfce7; color:#059669; }
-
-      /* Botones mini de acciones */
-      .nxDC-actions-cell { white-space:nowrap; }
-      .nxDC-mini-btn {
-        width:26px; height:26px; border:0; border-radius:7px; cursor:pointer;
-        display:inline-flex; align-items:center; justify-content:center; margin-right:4px;
-        font-size:13px; transition:all .15s; padding:0;
+      .nxDC-nav-btn { 
+        width:44px; height:44px; border:1px solid #cbd5e1; border-radius:50%; 
+        background: linear-gradient(145deg, #f1f5f9, #e2e8f0); cursor:pointer; 
+        display:flex; align-items:center; justify-content:center; color:#1e293b; 
+        transition: all 0.2s; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
       }
-      .nxDC-mini-conf { background:#dbeafe; color:#2563eb; }
-      .nxDC-mini-conf:hover { background:#bfdbfe; transform:translateY(-1px); }
-      .nxDC-mini-dep { background:#dcfce7; color:#059669; }
-      .nxDC-mini-dep:hover { background:#bbf7d0; transform:translateY(-1px); }
-      .nxDC-ag-name-cell { display:flex; align-items:center; gap:10px; min-width:140px; }
-      .nxDC-ag-avatar { width:30px; height:30px; border-radius:50%; color:#fff; display:grid; place-items:center; font-weight:800; font-size:13px; flex:0 0 auto; }
-
-      /* ═══ TRANSFERENCIAS RESUMEN ═══ */
-      .nxDC-transf-summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-      .nxDC-transf-box { padding:14px; border-radius:14px; border:1px solid; }
-      .nxDC-transf-out { background:#ecfdf5; border-color:#bbf7d0; }
-      .nxDC-transf-in  { background:#eff6ff; border-color:#bfdbfe; }
-      .nxDC-transf-head { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:.5px; margin-bottom:6px; }
-      .nxDC-transf-out .nxDC-transf-head { color:#059669; }
-      .nxDC-transf-in  .nxDC-transf-head { color:#2563eb; }
-      .nxDC-transf-head i { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:14px; }
-      .nxDC-transf-out .nxDC-transf-head i { background:#bbf7d0; }
-      .nxDC-transf-in  .nxDC-transf-head i { background:#bfdbfe; }
-      .nxDC-transf-val { font-size:20px; font-weight:900; font-family:var(--mono,monospace); }
-      .nxDC-transf-out .nxDC-transf-val { color:#059669; }
-      .nxDC-transf-in  .nxDC-transf-val { color:#2563eb; }
-      .nxDC-transf-sub { font-size:11px; color:#94a3b8; font-weight:500; margin-top:4px; }
-      .nxDC-neto { padding-top:14px; border-top:1px solid #e2e8f0; }
-      .nxDC-neto-label { font-size:11px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:6px; }
-      .nxDC-neto-val { font-size:24px; font-weight:900; color:#2563eb; font-family:var(--mono,monospace); }
-      .nxDC-neto-sub { font-size:11px; color:#94a3b8; font-weight:500; margin-top:3px; }
-
-      /* ═══ HISTORIAL TRANSFERENCIAS ═══ */
-      .nxDC-tx-table tbody td { font-size:12px; }
-      .nxDC-tx-fecha { font-family:var(--mono,monospace); color:#64748b; font-size:11px; }
-      .nxDC-tx-ref { font-family:var(--mono,monospace); color:#64748b; font-size:11px; }
-      .nxDC-tx-tag { display:inline-block; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:800; letter-spacing:.4px; }
-      .nxDC-tx-out { background:#fee2e2; color:#dc2626; }
-      .nxDC-tx-in  { background:#dcfce7; color:#059669; }
-
-      /* ═══ RESPONSIVE TABLET (1024px) ═══ */
-      @media (max-width: 1024px) {
-        .nxDC-kpis-row { grid-template-columns:repeat(2,1fr); }
-        .nxDC-row-2col { grid-template-columns:1fr; }
+      .nxDC-nav-btn:hover:not(:disabled) { 
+        background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+        transform: translateY(-1px);
       }
-
-      /* ═══ RESPONSIVE MÓVIL (768px) — APP-LIKE ═══ */
-      @media (max-width: 768px) {
-        /* Espaciado más app-like + padding-bottom para barra inferior flotante */
-        .nxDC-wrap { gap:10px; padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
-
-        /* Header compacto SIN hueco vertical */
-        .nxDC-head {
-          padding:12px;
-          flex-direction:column;
-          align-items:stretch;
-          justify-content:flex-start;
-          gap:10px;
-          border-radius:14px;
-        }
-        .nxDC-head-left { flex-direction:row; gap:10px; align-items:center; flex:0 0 auto; }
-        .nxDC-head-icon {
-          width:38px; height:38px;
-          font-size:16px;
-          border-radius:10px;
-          box-shadow:0 4px 10px rgba(59,130,246,.28);
-        }
-        .nxDC-head-title { font-size:16px; line-height:1.15; }
-        .nxDC-head-sub { font-size:10.5px; margin-top:2px; line-height:1.3; }
-        .nxDC-head-right { width:100%; }
-        .nxDC-period { width:100%; min-width:0; padding:7px 10px; border-radius:10px; }
-        .nxDC-period-label { font-size:9px; margin-bottom:2px; }
-        .nxDC-period-select { font-size:12px; padding:2px; }
-        .nxDC-period-nav { width:26px; height:26px; border-radius:7px; }
-
-        /* KPIs en 2x2 más compactos */
-        .nxDC-kpis-row { grid-template-columns:1fr 1fr; gap:8px; }
-        .nxDC-kpi { padding:11px; gap:9px; border-radius:14px; }
-        .nxDC-kpi-icon { width:34px; height:34px; font-size:15px; border-radius:10px; }
-        .nxDC-kpi-label { font-size:8.5px; line-height:1.25; margin-bottom:3px; }
-        .nxDC-kpi-value { font-size:16px; margin-bottom:2px; }
-        .nxDC-kpi-sub { font-size:9.5px; }
-
-        /* Cards compactas */
-        .nxDC-card { padding:12px; border-radius:14px; }
-        .nxDC-card-title { font-size:10.5px; letter-spacing:.5px; }
-        .nxDC-row-2col { gap:8px; }
-
-        /* Donut centrado */
-        .nxDC-donut-block { grid-template-columns:1fr; gap:12px; }
-        .nxDC-donut-chart { width:130px; height:130px; margin:0 auto; }
-        .nxDC-donut-val { font-size:19px; }
-        .nxDC-legend { gap:8px; }
-        .nxDC-leg-item { font-size:11.5px; gap:8px; }
-        .nxDC-leg-val, .nxDC-leg-pct { font-size:10.5px; }
-        .nxDC-leg-pct { min-width:38px; }
-
-        /* Bancos */
-        .nxDC-banco-row { padding:8px 4px; }
-        .nxDC-banco-cell, .nxDC-banco-monto { font-size:12px; }
-        .nxDC-banco-total > div:last-child { font-size:14px; }
-
-        /* Tabla con scroll horizontal */
-        .nxDC-table { min-width:600px; }
-        .nxDC-table thead th, .nxDC-table tbody td, .nxDC-table tfoot td {
-          padding:8px 10px; font-size:10.5px;
-        }
-        .nxDC-ag-avatar { width:26px; height:26px; font-size:12px; }
-
-        /* Transferencias compactas (2 cajas lado a lado en vez de stacked) */
-        .nxDC-transf-summary { grid-template-columns:1fr 1fr; gap:8px; }
-        .nxDC-caja-mini-kpis { grid-template-columns:1fr 1fr; gap:8px; }
-        .nxDC-caja-mini { padding:10px; }
-        .nxDC-caja-mini-val { font-size:15px; }
-        .nxDC-mini-btn { width:24px; height:24px; font-size:12px; }
-        .nxDC-transf-box { padding:11px; border-radius:12px; }
-        .nxDC-transf-val { font-size:17px; }
-        .nxDC-transf-sub { font-size:10px; }
-        .nxDC-neto-val { font-size:20px; }
-
-        /* Botón "Volver al Resumen" estilo app */
-        #nxDCBotonVolver {
-          margin:0 0 6px;
-          padding-top:calc(env(safe-area-inset-top) + 4px);
-        }
-        #nxDCBotonVolver .btn {
-          width:100%;
-          justify-content:center;
-          background:#fff;
-          border:1px solid #e2e8f0;
-          color:#475569;
-          font-weight:700;
-          padding:9px 14px;
-          border-radius:12px;
-          box-shadow:0 1px 3px rgba(0,0,0,.04);
-        }
+      .nxDC-nav-btn:active:not(:disabled) {
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        transform: translateY(0);
       }
-
-      /* ═══ MÓVIL PEQUEÑO (480px) ═══ */
-      @media (max-width: 480px) {
-        .nxDC-head { padding:11px; }
-        .nxDC-head-title { font-size:15px; }
-        .nxDC-head-sub { font-size:10px; }
-        .nxDC-head-icon { width:34px; height:34px; font-size:14px; border-radius:9px; }
-        .nxDC-kpi { padding:10px; gap:8px; }
-        .nxDC-kpi-value { font-size:14.5px; }
-        .nxDC-kpi-icon { width:30px; height:30px; font-size:13px; border-radius:9px; }
-        .nxDC-kpi-label { font-size:8px; }
-        .nxDC-kpi-sub { font-size:9px; }
-        .nxDC-card { padding:11px; }
-        .nxDC-card-title { font-size:10px; }
-        .nxDC-donut-chart { width:120px; height:120px; }
-        .nxDC-donut-val { font-size:17px; }
-        .nxDC-transf-val { font-size:15px; }
-        .nxDC-neto-val { font-size:18px; }
+      .nxDC-nav-btn:disabled { opacity:.3; cursor:not-allowed; filter: grayscale(1); }
+      @media (max-width: 480px) { 
+        .nxDC-selector { padding: 8px; gap:6px; } 
+        .nxDC-select { font-size: 13px; padding: 10px; } 
+        .nxDC-nav-btn { width: 40px; height: 40px; }
+      }
+      
+      .nxDC-kpis { margin-bottom:14px; }
+      .nxDC-kpi-big { background:linear-gradient(135deg,#00e5c7,#10b981); color:#fff; border-radius:16px; padding:20px; margin-bottom:10px; box-shadow:0 4px 16px rgba(0,229,199,.25); }
+      .nxDC-kpi-label { font-size:12px; font-weight:800; opacity:.9; letter-spacing:1px; }
+      .nxDC-kpi-value { font-size:32px; font-weight:900; margin-top:6px; font-family:var(--mono,monospace); }
+      .nxDC-kpi-sub { font-size:12px; opacity:.85; margin-top:4px; }
+      .nxDC-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+      .nxDC-kpi { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+      .nxDC-kpi-ef { border-left:4px solid #10b981; }
+      .nxDC-kpi-bc { border-left:4px solid #3b82f6; }
+      .nxDC-kpi-ch { border-left:4px solid #f59e0b; }
+      .nxDC-kpi-ot { border-left:4px solid #6b7280; }
+      .nxDC-kpi-icon { font-size:24px; }
+      .nxDC-kpi-data { flex:1; min-width:0; }
+      .nxDC-kpi-num { font-size:15px; font-weight:800; color:#0f172a; font-family:var(--mono,monospace); }
+      .nxDC-kpi-tag { font-size:10px; font-weight:700; color:#64748b; letter-spacing:.5px; }
+      
+      .nxDC-section { margin-bottom:12px; }
+      
+      .nxDC-bancos { display:grid; gap:10px; margin-top:10px; }
+      .nxDC-banco { padding:12px; border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc; }
+      .nxDC-banco-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+      .nxDC-banco-name { font-weight:800; color:#0f172a; font-size:13px; }
+      .nxDC-banco-monto { font-weight:800; color:#3b82f6; font-family:var(--mono,monospace); }
+      .nxDC-banco-bar { height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; margin:4px 0; }
+      .nxDC-banco-fill { height:100%; background:linear-gradient(90deg,#3b82f6,#60a5fa); border-radius:3px; }
+      .nxDC-banco-foot { font-size:10px; color:#64748b; font-weight:700; }
+      
+      .nxDC-agentes { display:grid; gap:12px; margin-top:10px; }
+      .nxDC-agente { padding:14px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; }
+      .nxDC-agente-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:10px; }
+      .nxDC-agente-name { font-weight:800; color:#0f172a; font-size:14px; }
+      .nxDC-agente-cargo { font-size:10px; color:#64748b; font-weight:700; margin-top:2px; }
+      .nxDC-agente-total { font-weight:800; color:#10b981; font-size:16px; font-family:var(--mono,monospace); }
+      .nxDC-agente-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:8px; }
+      .nxDC-mini { background:#f8fafc; padding:8px; border-radius:8px; text-align:center; border:1px solid #e2e8f0; }
+      .nxDC-mini-v { font-size:11px; font-weight:800; color:#0f172a; font-family:var(--mono,monospace); }
+      .nxDC-mini-l { font-size:8px; font-weight:700; color:#64748b; letter-spacing:.5px; margin-top:2px; }
+      .nxDC-transf { display:flex; gap:8px; font-size:10px; font-weight:700; margin:6px 0 8px; flex-wrap:wrap; }
+      .nxDC-transf-rec { color:#10b981; background:#d1fae5; padding:4px 8px; border-radius:6px; }
+      .nxDC-transf-ent { color:#dc2626; background:#fee2e2; padding:4px 8px; border-radius:6px; }
+      .nxDC-mano { display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#fff; padding:10px 14px; border-radius:10px; }
+      .nxDC-mano-label { font-size:11px; font-weight:800; letter-spacing:1px; }
+      .nxDC-mano-value { font-size:16px; font-weight:900; font-family:var(--mono,monospace); }
+      
+      .nxDC-transf-list { display:grid; gap:8px; margin-top:10px; }
+      .nxDC-transf-row { padding:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; }
+      .nxDC-transf-fecha { font-size:10px; color:#64748b; font-weight:700; }
+      .nxDC-transf-flow { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#0f172a; }
+      .nxDC-transf-arrow { color:#3b82f6; }
+      .nxDC-transf-monto { font-weight:800; color:#10b981; font-family:var(--mono,monospace); }
+      .nxDC-transf-meta { grid-column:1/-1; font-size:10px; color:#64748b; font-weight:600; }
+      
+      @media(max-width:768px) {
+        .nxDC-kpi-value { font-size:24px; }
+        .nxDC-kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
+        .nxDC-kpi-num { font-size:13px; }
+        .nxDC-agente-grid { grid-template-columns:repeat(2,1fr) !important; }
+        .nxDC-banco-monto { font-size:13px; }
+        .nxDC-transf-row { grid-template-columns:1fr; }
+        .nxDC-transf-monto { text-align:right; }
       }
     `;
     document.head.appendChild(style);
   }
-
-  // ═══════════════════════════════════════════════════════════
-  // INIT
-  // ═══════════════════════════════════════════════════════════
+  
+  // ═══ INIT ═══
   function init() {
     injectCSS();
+    
+    // Esperar a que el dashboard esté listo
     let intentos = 0;
     const tryInit = function() {
       intentos++;
@@ -2365,967 +1575,380 @@
     };
     tryInit();
   }
-
+  
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init, { once: true });
   } else {
     init();
   }
 })();
+
+
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - VISUAL PREMIUM 3D PARA DETALLES DE COBRO
-   Solo mejora visual. No cambia lógica. No agrega botones.
+   NEXUS PRO - SOLICITUDES DE TRANSFERENCIA
+   - Vista de solicitudes pendientes con aceptar/rechazar
+   - Botón en menú Más + Dashboard
    ════════════════════════════════════════════════════════════════ */
 
-(function () {
+(function() {
   'use strict';
-
-  if (window.__NEXUS_VISUAL_3D_COBROS__) return;
-  window.__NEXUS_VISUAL_3D_COBROS__ = true;
-
-  function injectCSS() {
-    if (document.getElementById('nx-visual-3d-cobros-css')) return;
-
-    const style = document.createElement('style');
-    style.id = 'nx-visual-3d-cobros-css';
-    style.textContent = `
-      #nxDetallesCobroV1 .nxDC-card,
-      #nxDetallesCobroV1 .nxDC-kpi,
-      #nxDetallesCobroV1 .nxDC-head,
-      #nxDetallesCobroV1 .nxDC-period {
-        background: linear-gradient(145deg, #ffffff, #f8fbff) !important;
-        border: 1px solid rgba(59,130,246,.18) !important;
-        box-shadow:
-          0 14px 30px rgba(37,99,235,.12),
-          0 4px 10px rgba(15,23,42,.06),
-          inset 0 1px 0 rgba(255,255,255,.9) !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-card:hover,
-      #nxDetallesCobroV1 .nxDC-kpi:hover {
-        transform: translateY(-2px);
-        box-shadow:
-          0 18px 38px rgba(37,99,235,.18),
-          0 6px 14px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.9) !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-card,
-      #nxDetallesCobroV1 .nxDC-kpi {
-        transition: all .22s ease;
-      }
-
-      #nxDetallesCobroV1 .nxDC-head {
-        background:
-          radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 38%),
-          linear-gradient(145deg, #ffffff, #f8fbff) !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-head-icon,
-      #nxDetallesCobroV1 .nxDC-kpi-icon {
-        box-shadow:
-          0 10px 20px rgba(37,99,235,.25),
-          inset 0 1px 0 rgba(255,255,255,.55) !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-kpi-value,
-      #nxDetallesCobroV1 .nxDC-banco-monto,
-      #nxDetallesCobroV1 .nxDC-num {
-        text-shadow: 0 1px 0 rgba(255,255,255,.8);
-      }
-
-      #nxDetallesCobroV1 .nxDC-banco-row {
-        background: linear-gradient(145deg, #ffffff, #f1f7ff);
-        border: 1px solid rgba(59,130,246,.12);
-        border-radius: 14px;
-        padding: 12px 14px !important;
-        margin-bottom: 8px;
-        box-shadow:
-          0 8px 18px rgba(37,99,235,.10),
-          inset 0 1px 0 rgba(255,255,255,.85);
-      }
-
-      #nxDetallesCobroV1 .nxDC-banco-cell i {
-        width: 34px;
-        height: 34px;
-        border-radius: 12px;
-        background: linear-gradient(145deg, #dbeafe, #ffffff);
-        color: #2563eb !important;
-        display: grid;
-        place-items: center;
-        box-shadow:
-          0 8px 16px rgba(37,99,235,.18),
-          inset 0 1px 0 rgba(255,255,255,.9);
-      }
-
-      #nxDetallesCobroV1 .nxDC-banco-cell span {
-        font-weight: 900 !important;
-        color: #0f172a !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-banco-total {
-        background: linear-gradient(145deg, #eff6ff, #ffffff);
-        border: 1px solid rgba(37,99,235,.18) !important;
-        border-radius: 14px;
-        padding: 14px !important;
-        margin-top: 12px !important;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
-      }
-
-      #nxDetallesCobroV1 .nxDC-table thead th {
-        background: linear-gradient(145deg, #eff6ff, #f8fbff) !important;
-        color: #1e3a8a !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-table tbody tr {
-        transition: background .18s ease;
-      }
-
-      #nxDetallesCobroV1 .nxDC-table tbody tr:hover {
-        background: #f8fbff !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-ag-avatar {
-        box-shadow:
-          0 8px 18px rgba(37,99,235,.20),
-          inset 0 1px 0 rgba(255,255,255,.35);
-      }
-
-      #nxDetallesCobroV1 .nxDC-donut-chart {
-        filter: drop-shadow(0 12px 18px rgba(37,99,235,.16));
-      }
-
-      #nxDetallesCobroV1 .nxDC-period-nav,
-      #nxDetallesCobroV1 .nxDC-period-select {
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
-      }
-
-      @media(max-width:768px) {
-        #nxDetallesCobroV1 .nxDC-card,
-        #nxDetallesCobroV1 .nxDC-kpi,
-        #nxDetallesCobroV1 .nxDC-head {
-          box-shadow:
-            0 10px 22px rgba(37,99,235,.12),
-            0 3px 8px rgba(15,23,42,.05) !important;
-        }
-
-        #nxDetallesCobroV1 .nxDC-banco-row {
-          padding: 10px 12px !important;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
+  
+  if (window.__NEXUS_SOLICITUDES_V1__) return;
+  window.__NEXUS_SOLICITUDES_V1__ = true;
+  
+  function st() {
+    try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); }
+    catch(e) { return window.ST || {}; }
   }
-
-  injectCSS();
-
-})();
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - THEME GLOBAL SEMI-GLASS AZUL PREMIUM
-   Solo visual. No cambia lógica. No agrega botones.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-
-  if (window.__NEXUS_SEMI_GLASS_GLOBAL_V1__) return;
-  window.__NEXUS_SEMI_GLASS_GLOBAL_V1__ = true;
-
-  function injectCSS() {
-    if (document.getElementById("nx-semi-glass-global-css")) return;
-
-    const style = document.createElement("style");
-    style.id = "nx-semi-glass-global-css";
-
-    style.textContent = `
-      :root{
-        --nx-bg1:#eef7ff;
-        --nx-bg2:#dbeafe;
-        --nx-blue:#2563eb;
-        --nx-blue2:#3b82f6;
-        --nx-blue3:#60a5fa;
-        --nx-text:#0f172a;
-        --nx-muted:#64748b;
-        --nx-glass:rgba(255,255,255,.72);
-        --nx-glass-strong:rgba(255,255,255,.88);
-        --nx-border:rgba(59,130,246,.20);
-        --nx-shadow:0 18px 45px rgba(37,99,235,.14),0 6px 16px rgba(15,23,42,.06),inset 0 1px 0 rgba(255,255,255,.92);
-        --nx-shadow-soft:0 10px 28px rgba(37,99,235,.12),0 3px 10px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.88);
-      }
-
-      html,body{
-        background:
-          radial-gradient(circle at 18% 8%, rgba(96,165,250,.34), transparent 32%),
-          radial-gradient(circle at 85% 18%, rgba(37,99,235,.18), transparent 34%),
-          linear-gradient(135deg,var(--nx-bg1),var(--nx-bg2)) !important;
-        color:var(--nx-text) !important;
-      }
-
-      body::before{
-        content:"";
-        position:fixed;
-        inset:0;
-        pointer-events:none;
-        background:
-          linear-gradient(135deg, rgba(255,255,255,.45), transparent 35%),
-          radial-gradient(circle at 50% 0%, rgba(255,255,255,.65), transparent 30%);
-        z-index:-1;
-      }
-
-      .view,
-      main,
-      .main,
-      .content,
-      .page,
-      .wrap{
-        background:transparent !important;
-      }
-
-      aside,
-      .sidebar,
-      .side,
-      nav.side,
-      .nav{
-        background:rgba(255,255,255,.62) !important;
-        backdrop-filter:blur(22px) saturate(145%) !important;
-        -webkit-backdrop-filter:blur(22px) saturate(145%) !important;
-        border:1px solid rgba(255,255,255,.75) !important;
-        box-shadow:var(--nx-shadow) !important;
-      }
-
-      .topbar,
-      header,
-      .bar,
-      .appbar{
-        background:rgba(255,255,255,.60) !important;
-        backdrop-filter:blur(20px) saturate(140%) !important;
-        -webkit-backdrop-filter:blur(20px) saturate(140%) !important;
-        border-bottom:1px solid rgba(59,130,246,.16) !important;
-        box-shadow:0 10px 28px rgba(37,99,235,.10) !important;
-      }
-
-      .nc,
-      .card,
-      .kpi,
-      .sm,
-      .qa,
-      .box,
-      .panel,
-      .modal,
-      .dropdown,
-      .menu,
-      .acc-menu,
-      .mobile-more-sheet-clean,
-      #nxDetallesCobroV1 .nxDC-card,
-      #nxDetallesCobroV1 .nxDC-kpi,
-      #nxDetallesCobroV1 .nxDC-head,
-      #nxDetallesCobroV1 .nxDC-period{
-        background:
-          linear-gradient(145deg, rgba(255,255,255,.86), rgba(241,248,255,.68)) !important;
-        backdrop-filter:blur(18px) saturate(145%) !important;
-        -webkit-backdrop-filter:blur(18px) saturate(145%) !important;
-        border:1px solid var(--nx-border) !important;
-        box-shadow:var(--nx-shadow-soft) !important;
-      }
-
-      .nc,
-      .card,
-      .kpi,
-      .sm,
-      .qa,
-      .box,
-      .panel,
-      #nxDetallesCobroV1 .nxDC-card,
-      #nxDetallesCobroV1 .nxDC-kpi{
-        border-radius:22px !important;
-        transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
-      }
-
-      .nc:hover,
-      .card:hover,
-      .kpi:hover,
-      .sm:hover,
-      .qa:hover,
-      #nxDetallesCobroV1 .nxDC-card:hover,
-      #nxDetallesCobroV1 .nxDC-kpi:hover{
-        transform:translateY(-2px);
-        border-color:rgba(37,99,235,.30) !important;
-        box-shadow:0 20px 46px rgba(37,99,235,.18),0 8px 18px rgba(15,23,42,.07),inset 0 1px 0 rgba(255,255,255,.95) !important;
-      }
-
-      .btn,
-      button,
-      .bsm,
-      .bxl{
-        border-radius:14px !important;
-        border:1px solid rgba(59,130,246,.20) !important;
-        box-shadow:0 8px 18px rgba(37,99,235,.12),inset 0 1px 0 rgba(255,255,255,.90) !important;
-      }
-
-      .btn.bc1,
-      .btn.bxl,
-      .bc1{
-        background:linear-gradient(145deg,#3b82f6,#2563eb) !important;
-        color:#fff !important;
-        border-color:rgba(255,255,255,.35) !important;
-        box-shadow:0 14px 28px rgba(37,99,235,.28),inset 0 1px 0 rgba(255,255,255,.45) !important;
-      }
-
-      input,
-      select,
-      textarea{
-        background:rgba(255,255,255,.78) !important;
-        border:1px solid rgba(59,130,246,.20) !important;
-        border-radius:14px !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 16px rgba(37,99,235,.07) !important;
-      }
-
-      input:focus,
-      select:focus,
-      textarea:focus{
-        border-color:rgba(37,99,235,.55) !important;
-        box-shadow:0 0 0 4px rgba(59,130,246,.13),inset 0 1px 0 rgba(255,255,255,.95) !important;
-        outline:none !important;
-      }
-
-      table{
-        border-collapse:separate !important;
-        border-spacing:0 !important;
-      }
-
-      thead th{
-        background:linear-gradient(145deg,rgba(239,246,255,.95),rgba(255,255,255,.85)) !important;
-        color:#1e3a8a !important;
-      }
-
-      tbody tr{
-        transition:background .16s ease, transform .16s ease !important;
-      }
-
-      tbody tr:hover{
-        background:rgba(239,246,255,.75) !important;
-      }
-
-      .ct,
-      h1,h2,h3{
-        color:#0f172a !important;
-        letter-spacing:.2px;
-      }
-
-      .ct-s,
-      label,
-      small,
-      .muted{
-        color:var(--nx-muted) !important;
-      }
-
-      .av,
-      .avatar,
-      .ico,
-      .nxDC-head-icon,
-      .nxDC-kpi-icon,
-      .nxDC-ag-avatar{
-        box-shadow:0 10px 22px rgba(37,99,235,.20),inset 0 1px 0 rgba(255,255,255,.55) !important;
-      }
-
-      .mobile-bottom-nav-clean{
-        background:rgba(255,255,255,.78) !important;
-        backdrop-filter:blur(22px) saturate(150%) !important;
-        -webkit-backdrop-filter:blur(22px) saturate(150%) !important;
-        border:1px solid rgba(255,255,255,.85) !important;
-        box-shadow:0 20px 45px rgba(37,99,235,.18),inset 0 1px 0 rgba(255,255,255,.90) !important;
-      }
-
-      .mobile-bottom-nav-clean button.active{
-        background:linear-gradient(145deg,#eff6ff,#dbeafe) !important;
-        color:#2563eb !important;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 18px rgba(37,99,235,.14) !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-wrap{
-        gap:16px !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-head{
-        background:
-          radial-gradient(circle at top left, rgba(96,165,250,.22), transparent 38%),
-          linear-gradient(145deg, rgba(255,255,255,.88), rgba(239,246,255,.70)) !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-banco-row{
-        background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(239,246,255,.70)) !important;
-        border:1px solid rgba(59,130,246,.16) !important;
-        border-radius:16px !important;
-        margin-bottom:8px !important;
-        box-shadow:0 8px 18px rgba(37,99,235,.10),inset 0 1px 0 rgba(255,255,255,.92) !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-banco-cell i{
-        width:34px;
-        height:34px;
-        border-radius:12px;
-        display:grid;
-        place-items:center;
-        background:linear-gradient(145deg,#dbeafe,#ffffff) !important;
-        color:#2563eb !important;
-      }
-
-      #nxDetallesCobroV1 .nxDC-donut-chart{
-        filter:drop-shadow(0 14px 18px rgba(37,99,235,.18)) !important;
-      }
-
-      .overlay.on,
-      .overlay.open{
-        background:rgba(15,23,42,.18) !important;
-        backdrop-filter:blur(8px) !important;
-        -webkit-backdrop-filter:blur(8px) !important;
-      }
-
-      .modal{
-        border-radius:24px !important;
-      }
-
-      ::-webkit-scrollbar{
-        width:10px;
-        height:10px;
-      }
-
-      ::-webkit-scrollbar-track{
-        background:rgba(219,234,254,.55);
-      }
-
-      ::-webkit-scrollbar-thumb{
-        background:linear-gradient(180deg,#93c5fd,#3b82f6);
-        border-radius:999px;
-        border:2px solid rgba(255,255,255,.75);
-      }
-
-      @media(max-width:768px){
-        .nc,
-        .card,
-        .kpi,
-        .sm,
-        .qa,
-        .box,
-        .panel,
-        #nxDetallesCobroV1 .nxDC-card,
-        #nxDetallesCobroV1 .nxDC-kpi{
-          border-radius:18px !important;
-          box-shadow:0 10px 24px rgba(37,99,235,.12),0 3px 8px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.88) !important;
-        }
-
-        body{
-          background:
-            radial-gradient(circle at 20% 0%, rgba(96,165,250,.32), transparent 36%),
-            linear-gradient(135deg,#f2f8ff,#dbeafe) !important;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
   }
-
-  injectCSS();
-})();
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - SIDEBAR V3 BLANCO/GLASS + TICKER BLANCO + ADMIN AZUL
-   Reemplaza los 3 bloques anteriores que fallaban (apuntaban a
-   aside/.sidebar/.side cuando el HTML usa nav.sb).
-   - Items del menú estilo card flotante con box-shadow suave
-   - Activo: fondo azul claro con sombra premium
-   - Ticker: blanco/glass igualando el tono del sidebar
-   - Badge ADMIN: morado → azul
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-
-  if (window.__NEXUS_SIDEBAR_V3__) return;
-  window.__NEXUS_SIDEBAR_V3__ = true;
-
-  function injectCSS() {
-    if (document.getElementById("nx-sidebar-v3-css")) return;
-
-    // Limpiar restos de versiones anteriores si quedaron sueltos
-    ['nx-fix-sidebar-glass-css', 'nx-force-white-sidebar', 'nx-force-drawer-glass-v2',
-     'nx-force-white-sidebar-fuerte', 'nx-force-drawer-glass-v2-css'].forEach(id => {
-      const old = document.getElementById(id);
-      if (old) old.remove();
+  function fmtMoney(n) {
+    return 'RD$ ' + Number(n||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+  function gAgtNom(id) {
+    const agt = (st().agentes || []).find(a => String(a.id) === String(id));
+    return agt ? agt.nom : 'N/D';
+  }
+  function fmtFecha(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-DO', { day:'2-digit', month:'short', year:'numeric' });
+    } catch(e) { return iso; }
+  }
+  function toastSafe(t, ti, m) {
+    if (typeof toast === 'function') toast(t, ti, m);
+    else alert(ti + (m ? '\n' + m : ''));
+  }
+  
+  // ═══ CARGAR SOLICITUDES PENDIENTES ═══
+  async function cargarSolicitudes() {
+    const api = getAPI();
+    if (!api?.get) return [];
+    try {
+      const data = await api.get('transferencias_agentes', 'estado=eq.pendiente&order=created_at.desc&limit=200');
+      return Array.isArray(data) ? data : [];
+    } catch(e) {
+      console.warn('No se pudieron cargar solicitudes:', e);
+      return [];
+    }
+  }
+  
+  // ═══ CONTAR PENDIENTES (para badge) ═══
+  async function contarPendientes() {
+    const lista = await cargarSolicitudes();
+    return lista.length;
+  }
+  
+  // ═══ ACEPTAR SOLICITUD ═══
+  window.nxAceptarSolicitud = async function(id) {
+    if (!confirm('¿Aceptar esta solicitud? Se efectuará la transferencia.')) return;
+    const api = getAPI();
+    if (!api?.patch) {
+      toastSafe('err', 'API no disponible', '');
+      return;
+    }
+    try {
+      await api.patch('transferencias_agentes', 'id=eq.' + id, { estado: 'aceptada' });
+      if (typeof window.logAudit === 'function') {
+        window.logAudit('SOLICITUD_ACEPTADA', 'ID: ' + id, 'Cobros');
+      }
+      toastSafe('ok', 'Solicitud aceptada', 'La transferencia se efectuó');
+      await renderSolicitudes();
+    } catch(e) {
+      console.error('Error al aceptar:', e);
+      toastSafe('err', 'No se pudo aceptar', e.message || '');
+    }
+  };
+  
+  // ═══ RECHAZAR SOLICITUD ═══
+  window.nxRechazarSolicitud = async function(id) {
+    if (!confirm('¿Rechazar esta solicitud? No se efectuará la transferencia.')) return;
+    const api = getAPI();
+    if (!api?.patch) {
+      toastSafe('err', 'API no disponible', '');
+      return;
+    }
+    try {
+      await api.patch('transferencias_agentes', 'id=eq.' + id, { estado: 'rechazada' });
+      if (typeof window.logAudit === 'function') {
+        window.logAudit('SOLICITUD_RECHAZADA', 'ID: ' + id, 'Cobros');
+      }
+      toastSafe('ok', 'Solicitud rechazada', '');
+      await renderSolicitudes();
+    } catch(e) {
+      console.error('Error al rechazar:', e);
+      toastSafe('err', 'No se pudo rechazar', e.message || '');
+    }
+  };
+  
+  // ═══ RENDER LISTA DE SOLICITUDES ═══
+  async function renderSolicitudes() {
+    const cont = document.getElementById('nxSolicitudesV1');
+    if (!cont) return;
+    
+    cont.innerHTML = '<div class="nc p5"><div class="loading"><div class="spin"></div> Cargando solicitudes...</div></div>';
+    
+    const solicitudes = await cargarSolicitudes();
+    
+    if (solicitudes.length === 0) {
+      cont.innerHTML = `
+        <div class="nc p5" style="text-align:center;padding:40px">
+          <div style="font-size:48px;margin-bottom:10px">✅</div>
+          <div style="font-weight:800;color:#059669;font-size:16px">No hay solicitudes pendientes</div>
+          <div style="color:#64748b;font-size:13px;margin-top:6px">Todas las transferencias están al día</div>
+        </div>
+      `;
+      return;
+    }
+    
+    cont.innerHTML = `
+      <div class="nc p3" style="margin-bottom:12px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;color:#92400e;border-radius:14px;padding:14px;font-weight:800">
+        ⚠️ ${solicitudes.length} solicitud${solicitudes.length>1?'es':''} pendiente${solicitudes.length>1?'s':''} de confirmar
+      </div>
+      <div style="display:grid;gap:10px">
+        ${solicitudes.map(s => `
+          <div class="nxSol-card" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)">
+            <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;margin-bottom:10px">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;color:#64748b;font-weight:700;margin-bottom:4px">${fmtFecha(s.fecha)} · ${s.metodo}</div>
+                <div style="font-weight:800;color:#0f172a;font-size:14px">
+                  ${gAgtNom(s.desde_agente)} <span style="color:#3b82f6">→</span> ${gAgtNom(s.hacia_agente)}
+                </div>
+                ${s.banco ? `<div style="font-size:11px;color:#64748b;margin-top:4px">🏦 ${s.banco}</div>` : ''}
+                <div style="font-size:11px;color:#64748b;margin-top:2px">Ref: ${s.referencia || '—'}</div>
+                ${s.nota ? `<div style="font-size:11px;color:#64748b;margin-top:2px;font-style:italic">"${s.nota}"</div>` : ''}
+              </div>
+              <div style="font-weight:900;color:#10b981;font-size:18px;font-family:var(--mono,monospace);white-space:nowrap">${fmtMoney(s.monto)}</div>
+            </div>
+            <div class="nxSol-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button class="btn bsm bc1" type="button" onclick="window.nxAceptarSolicitud('${s.id}')" style="background:#10b981;border-color:#10b981;color:#fff">
+                <i class="ti ti-check"></i> Aceptar
+              </button>
+              <button class="btn bsm bghost" type="button" onclick="window.nxRechazarSolicitud('${s.id}')" style="border-color:#dc2626;color:#dc2626">
+                <i class="ti ti-x"></i> Rechazar
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  window.nxRenderSolicitudes = renderSolicitudes;
+  
+  // ═══ MOSTRAR VISTA DE SOLICITUDES ═══
+  window.nxAbrirSolicitudes = function() {
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return;
+    
+    // Asegurar que estamos en Dashboard
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+    vDash.classList.add('on');
+    
+    // Cerrar otras vistas si están abiertas
+    if (typeof window.nxVolverResumen === 'function') window.nxVolverResumen();
+    
+    // Ocultar hijos del dashboard
+    Array.from(vDash.children).forEach(child => {
+      if (child.id === 'nxSolicitudesV1') return;
+      if (child.id === 'nxSolBotonVolver') return;
+      if (child.dataset.nxSolPrevDisplay === undefined) {
+        child.dataset.nxSolPrevDisplay = child.style.display || '';
+      }
+      child.style.display = 'none';
     });
-
-    const style = document.createElement("style");
-    style.id = "nx-sidebar-v3-css";
+    
+    // Crear contenedor si no existe
+    let cont = document.getElementById('nxSolicitudesV1');
+    if (!cont) {
+      cont = document.createElement('div');
+      cont.id = 'nxSolicitudesV1';
+      vDash.appendChild(cont);
+    }
+    cont.style.display = '';
+    
+    // Crear botón volver
+    if (!document.getElementById('nxSolBotonVolver')) {
+      const btn = document.createElement('div');
+      btn.id = 'nxSolBotonVolver';
+      btn.innerHTML = `
+        <button class="btn bsm bghost" type="button" onclick="window.nxVolverDeSolicitudes()" style="margin-bottom:12px">
+          <i class="ti ti-arrow-left"></i> Volver al Dashboard
+        </button>
+      `;
+      vDash.insertBefore(btn, cont);
+    } else {
+      document.getElementById('nxSolBotonVolver').style.display = '';
+    }
+    
+    renderSolicitudes();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  window.nxVolverDeSolicitudes = function() {
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return;
+    
+    const cont = document.getElementById('nxSolicitudesV1');
+    if (cont) cont.style.display = 'none';
+    
+    const btn = document.getElementById('nxSolBotonVolver');
+    if (btn) btn.style.display = 'none';
+    
+    Array.from(vDash.children).forEach(child => {
+      if (child.id === 'nxSolicitudesV1') return;
+      if (child.id === 'nxSolBotonVolver') return;
+      if (child.dataset.nxSolPrevDisplay !== undefined) {
+        child.style.display = child.dataset.nxSolPrevDisplay;
+        delete child.dataset.nxSolPrevDisplay;
+      } else {
+        child.style.display = '';
+      }
+    });
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  // ═══ AGREGAR BOTÓN AL DASHBOARD (accesos rápidos) ═══
+  function agregarBotonDashboard() {
+    if (document.getElementById('nxBtnSolicitudes')) return;
+    
+    const qaGrid = document.querySelector('.qa-grid') || document.querySelector('[class*="qa"]')?.parentElement;
+    if (!qaGrid) return;
+    
+    // Buscar el botón "Detalles de Cobro" para ponerse cerca
+    const btnDC = Array.from(qaGrid.querySelectorAll('.qa')).find(q => q.textContent.includes('Detalles de Cobro'));
+    if (!btnDC) return;
+    
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'nxBtnSolicitudes';
+    btn.onclick = window.nxAbrirSolicitudes;
+    btn.innerHTML = '<span class="qa-i"><i class="ti ti-inbox"></i><span class="nxSolBadge" id="nxSolBadge" style="display:none"></span></span><div class="qa-l">Solicitudes</div>';
+    
+    btnDC.insertAdjacentElement('afterend', btn);
+    
+    actualizarBadge();
+  }
+  
+  // ═══ ACTUALIZAR BADGE DE NOTIFICACIÓN ═══
+  async function actualizarBadge() {
+    const badge = document.getElementById('nxSolBadge');
+    if (!badge) return;
+    
+    const count = await contarPendientes();
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  
+  // ═══ CSS ═══
+  function injectCSS() {
+    if (document.getElementById('nxSol-css')) return;
+    const style = document.createElement('style');
+    style.id = 'nxSol-css';
     style.textContent = `
-      /* ═══ SIDEBAR nav.sb — fondo blanco/glass ═══ */
-      nav.sb {
-        background:
-          radial-gradient(circle at top left, rgba(96,165,250,.18), transparent 45%),
-          linear-gradient(180deg, #ffffff, #f1f5f9) !important;
-        backdrop-filter: blur(24px) saturate(160%);
-        -webkit-backdrop-filter: blur(24px) saturate(160%);
-        border-right: 1px solid rgba(59,130,246,.18) !important;
-        box-shadow:
-          8px 0 28px rgba(37,99,235,.10),
-          inset 1px 0 0 rgba(255,255,255,.95) !important;
+      .nxSolBadge {
+        position:absolute; top:-4px; right:-4px;
+        background:#dc2626; color:#fff;
+        min-width:18px; height:18px; padding:0 5px;
+        border-radius:9px; font-size:10px; font-weight:900;
+        display:flex; align-items:center; justify-content:center;
+        border:2px solid #fff; box-shadow:0 2px 4px rgba(0,0,0,.2);
       }
-
-      /* Header del sidebar (logo + nombre) */
-      nav.sb .sb-top {
-        border-bottom: 1px solid rgba(59,130,246,.12) !important;
-      }
-      nav.sb .sb-mk {
-        box-shadow:
-          0 6px 16px rgba(59,130,246,.35),
-          inset 0 1px 0 rgba(255,255,255,.4) !important;
-      }
-      nav.sb .sb-nm { color: #0f172a !important; }
-      nav.sb .sb-sm { color: #64748b !important; }
-
-      /* Subtítulos de sección (PRINCIPAL, SISTEMA) */
-      nav.sb .ss { color: #94a3b8 !important; }
-
-      /* ═══ ITEMS DEL MENÚ — estilo card flotante ═══ */
-      nav.sb .ni {
-        color: #475569;
-        background: #ffffff;
-        border: 1px solid rgba(59,130,246,.08);
-        box-shadow:
-          0 1px 3px rgba(15,23,42,.04),
-          0 1px 2px rgba(15,23,42,.02);
-        transition: all .18s ease;
-      }
-      nav.sb .ni:hover {
-        background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
-        border-color: rgba(59,130,246,.25);
-        box-shadow:
-          0 4px 12px rgba(37,99,235,.12),
-          0 2px 4px rgba(15,23,42,.05),
-          inset 0 1px 0 rgba(255,255,255,.9);
-        transform: translateY(-1px);
-      }
-
-      /* Item activo */
-      nav.sb .ni.on {
-        background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
-        border-color: rgba(37,99,235,.35);
-        box-shadow:
-          0 6px 16px rgba(37,99,235,.18),
-          0 2px 6px rgba(15,23,42,.06),
-          inset 0 1px 0 rgba(255,255,255,.7) !important;
-      }
-      nav.sb .ni.on::before {
-        background: #2563eb !important;
-      }
-
-      /* Íconos y labels */
-      nav.sb .ni-i { color: #64748b !important; }
-      nav.sb .ni:hover .ni-i,
-      nav.sb .ni.on   .ni-i { color: #2563eb !important; }
-
-      nav.sb .ni-l { color: #475569 !important; }
-      nav.sb .ni:hover .ni-l { color: #0f172a !important; font-weight: 600; }
-      nav.sb .ni.on   .ni-l { color: #0f172a !important; font-weight: 700; }
-
-      /* Chevrons de Contabilidad/Configuración */
-      nav.sb .ni i.ti-chevron-down { color: #94a3b8 !important; }
-
-      /* Badges rojos (Clientes/Pólizas pendientes) */
-      nav.sb .ni-b {
-        box-shadow: 0 2px 6px rgba(239,68,68,.35);
-      }
-
-      /* Badge ADMIN (morado → azul) */
-      nav.sb #niAdmin2 > span:not(.ni-l) {
-        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-        box-shadow: 0 2px 6px rgba(37,99,235,.35) !important;
-      }
-
-      /* ═══ FOOTER (perfil de usuario) ═══ */
-      nav.sb .sb-ft {
-        border-top: 1px solid rgba(59,130,246,.12) !important;
-      }
-      nav.sb .sb-u {
-        background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
-        border: 1px solid rgba(59,130,246,.12);
-        box-shadow:
-          0 2px 8px rgba(15,23,42,.05),
-          inset 0 1px 0 rgba(255,255,255,.9);
-        transition: all .18s ease;
-      }
-      nav.sb .sb-u:hover {
-        background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
-        box-shadow:
-          0 4px 14px rgba(37,99,235,.15),
-          inset 0 1px 0 rgba(255,255,255,.9) !important;
-      }
-      nav.sb .sb-av {
-        box-shadow:
-          0 4px 10px rgba(59,130,246,.35),
-          inset 0 1px 0 rgba(255,255,255,.4) !important;
-      }
-      nav.sb .sb-un { color: #0f172a !important; }
-      nav.sb .sb-ur { color: #64748b !important; }
-
-      /* ═══ TICKER (barra superior con PRIMA/COBRADO/PENDIENTE) ═══ */
-      .ticker {
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.92), rgba(241,245,249,.88)) !important;
-        backdrop-filter: blur(20px) saturate(160%);
-        -webkit-backdrop-filter: blur(20px) saturate(160%);
-        border-bottom: 1px solid rgba(59,130,246,.15) !important;
-        color: #475569 !important;
-        box-shadow: 0 1px 3px rgba(15,23,42,.04) !important;
-      }
-      .ticker .ti { color: #475569 !important; }
-      .ticker .tu { color: #059669 !important; }  /* verdes: ONLINE, COBRADO, ACTIVOS */
-      .ticker .td { color: #dc2626 !important; }  /* rojos: PENDIENTE, PÓLIZAS POR VENCER */
-
-      /* Ajuste móvil: padding para que los items-card respiren */
-      @media (max-width: 768px) {
-        nav.sb .sb-nav { padding: 8px 8px; }
-        nav.sb .ni { padding: 9px 11px; margin-bottom: 4px; }
+      #nxBtnSolicitudes .qa-i { position:relative; }
+      .nxSol-card { transition: all 0.2s; }
+      .nxSol-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); transform: translateY(-1px); }
+      @media(max-width:768px) {
+        .nxSol-actions { grid-template-columns: 1fr 1fr !important; }
+        .nxSol-actions .btn { min-height: 44px !important; justify-content: center !important; }
       }
     `;
     document.head.appendChild(style);
   }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", injectCSS, { once: true });
-  } else {
+  
+  // ═══ AGREGAR AL MENÚ MÁS DEL MÓVIL ═══
+  function agregarAMenuMas() {
+    // El menú "Más" móvil se crea desde parches.js - lo hookeamos
+    const intervalo = setInterval(() => {
+      const sheet = document.querySelector('.mobile-more-sheet-clean');
+      if (!sheet) return;
+      if (document.getElementById('nxSolMobileBtn')) {
+        clearInterval(intervalo);
+        return;
+      }
+      
+      // Crear botón en el menú Más
+      const btn = document.createElement('div');
+      btn.id = 'nxSolMobileBtn';
+      btn.className = 'more-item';
+      btn.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border-bottom:1px solid #f1f5f9;cursor:pointer;position:relative';
+      btn.innerHTML = `
+        <i class="ti ti-inbox" style="font-size:22px;color:#dc2626"></i>
+        <span style="font-weight:700;color:#0f172a;flex:1">Solicitudes</span>
+        <span class="nxSolBadge" id="nxSolBadgeMobile" style="display:none;position:static"></span>
+      `;
+      btn.onclick = function() {
+        // Cerrar el sheet móvil
+        sheet.classList.remove('open');
+        setTimeout(() => window.nxAbrirSolicitudes(), 200);
+      };
+      
+      sheet.insertBefore(btn, sheet.firstChild);
+      clearInterval(intervalo);
+      
+      // Actualizar badge del menú móvil
+      actualizarBadgeMobile();
+    }, 500);
+    
+    // Detener después de 30 segundos
+    setTimeout(() => clearInterval(intervalo), 30000);
+  }
+  
+  async function actualizarBadgeMobile() {
+    const badge = document.getElementById('nxSolBadgeMobile');
+    if (!badge) return;
+    const count = await contarPendientes();
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  
+  // ═══ INIT ═══
+  function init() {
     injectCSS();
+    
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      agregarBotonDashboard();
+      agregarAMenuMas();
+      
+      if (intentos < 20 && !document.getElementById('nxBtnSolicitudes')) {
+        setTimeout(tryInit, 800);
+      }
+    };
+    tryInit();
+    
+    // Actualizar badges cada 2 minutos
+    setInterval(() => {
+      actualizarBadge();
+      actualizarBadgeMobile();
+    }, 120000);
   }
-})();
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - ANIMACIÓN GLOBAL DE MÓDULOS Y CONTENIDOS
-   Solo visual. No cambia lógica.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-
-  if (window.__NEXUS_GLOBAL_MOTION_V1__) return;
-  window.__NEXUS_GLOBAL_MOTION_V1__ = true;
-
-  function injectCSS() {
-    if (document.getElementById("nx-global-motion-css")) return;
-
-    const style = document.createElement("style");
-    style.id = "nx-global-motion-css";
-
-    style.textContent = `
-      @keyframes nxFadeSlideUp {
-        from {
-          opacity: 0;
-          transform: translateY(14px) scale(.985);
-          filter: blur(4px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-          filter: blur(0);
-        }
-      }
-
-      @keyframes nxFadeSlideRight {
-        from {
-          opacity: 0;
-          transform: translateX(18px);
-          filter: blur(4px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-          filter: blur(0);
-        }
-      }
-
-      .view.on {
-        animation: nxFadeSlideRight .34s cubic-bezier(.2,.8,.2,1) both;
-      }
-
-      .view.on .nc,
-      .view.on .card,
-      .view.on .kpi,
-      .view.on .sm,
-      .view.on .qa,
-      .view.on .panel,
-      .view.on .box,
-      .view.on table,
-      .view.on form,
-      #nxDetallesCobroV1 .nxDC-card,
-      #nxDetallesCobroV1 .nxDC-kpi,
-      #nxDetallesCobroV1 .nxDC-head {
-        animation: nxFadeSlideUp .38s cubic-bezier(.2,.8,.2,1) both;
-      }
-
-      .view.on .nc:nth-child(1),
-      .view.on .card:nth-child(1),
-      .view.on .kpi:nth-child(1) { animation-delay: .03s; }
-
-      .view.on .nc:nth-child(2),
-      .view.on .card:nth-child(2),
-      .view.on .kpi:nth-child(2) { animation-delay: .06s; }
-
-      .view.on .nc:nth-child(3),
-      .view.on .card:nth-child(3),
-      .view.on .kpi:nth-child(3) { animation-delay: .09s; }
-
-      .view.on .nc:nth-child(4),
-      .view.on .card:nth-child(4),
-      .view.on .kpi:nth-child(4) { animation-delay: .12s; }
-
-      .view.on .nc:nth-child(5),
-      .view.on .card:nth-child(5),
-      .view.on .kpi:nth-child(5) { animation-delay: .15s; }
-
-      .btn,
-      button,
-      .mobile-bottom-nav-clean button,
-      .mobile-more-sheet-clean button {
-        transition:
-          transform .18s ease,
-          box-shadow .18s ease,
-          background .18s ease,
-          color .18s ease !important;
-      }
-
-      .btn:active,
-      button:active,
-      .mobile-bottom-nav-clean button:active,
-      .mobile-more-sheet-clean button:active {
-        transform: scale(.96) !important;
-      }
-
-      .nc,
-      .card,
-      .kpi,
-      .sm,
-      .qa,
-      .panel,
-      .box {
-        transition:
-          transform .22s ease,
-          box-shadow .22s ease,
-          border-color .22s ease,
-          background .22s ease !important;
-      }
-
-      .nc:hover,
-      .card:hover,
-      .kpi:hover,
-      .sm:hover,
-      .qa:hover {
-        transform: translateY(-2px);
-      }
-
-      .overlay.open .modal,
-      .overlay.on .modal {
-        animation: nxFadeSlideUp .28s cubic-bezier(.2,.8,.2,1) both;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-          animation-duration: .01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: .01ms !important;
-          scroll-behavior: auto !important;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
   }
-
-  injectCSS();
-})();
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - ICONOS DASHBOARD 3D CENTRALIZADOS
-   Solo visual. No cambia lógica.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-
-  if (window.__NEXUS_DASHBOARD_ICONS_3D__) return;
-  window.__NEXUS_DASHBOARD_ICONS_3D__ = true;
-
-  function injectCSS() {
-    if (document.getElementById("nx-dashboard-icons-3d-css")) return;
-
-    const style = document.createElement("style");
-    style.id = "nx-dashboard-icons-3d-css";
-
-    style.textContent = `
-      #v-dashboard .ti,
-      #v-dashboard i[class*="ti-"],
-      #v-dashboard .ico,
-      #v-dashboard svg {
-        display: inline-grid !important;
-        place-items: center !important;
-        text-align: center !important;
-        vertical-align: middle !important;
-      }
-
-      #v-dashboard .kpi i,
-      #v-dashboard .kpi .ti,
-      #v-dashboard .sm i,
-      #v-dashboard .sm .ti,
-      #v-dashboard .qa i,
-      #v-dashboard .qa .ti,
-      #v-dashboard .nc i,
-      #v-dashboard .nc .ti {
-        width: 46px !important;
-        height: 46px !important;
-        min-width: 46px !important;
-        border-radius: 16px !important;
-        background:
-          linear-gradient(145deg, rgba(255,255,255,.96), rgba(219,234,254,.86)) !important;
-        color: #2563eb !important;
-        box-shadow:
-          0 12px 24px rgba(37,99,235,.24),
-          0 4px 10px rgba(15,23,42,.08),
-          inset 0 1px 0 rgba(255,255,255,.95),
-          inset 0 -2px 6px rgba(37,99,235,.10) !important;
-        border: 1px solid rgba(59,130,246,.20) !important;
-        font-size: 22px !important;
-        line-height: 1 !important;
-      }
-
-      #v-dashboard .kpi,
-      #v-dashboard .sm,
-      #v-dashboard .qa {
-        align-items: center !important;
-      }
-
-      #v-dashboard .kpi > *,
-      #v-dashboard .sm > *,
-      #v-dashboard .qa > * {
-        align-self: center !important;
-      }
-
-      #v-dashboard .kpi i::before,
-      #v-dashboard .sm i::before,
-      #v-dashboard .qa i::before,
-      #v-dashboard .nc i::before {
-        display: block !important;
-        line-height: 1 !important;
-      }
-
-      #v-dashboard .kpi:hover i,
-      #v-dashboard .sm:hover i,
-      #v-dashboard .qa:hover i,
-      #v-dashboard .nc:hover i {
-        transform: translateY(-2px) scale(1.04);
-        box-shadow:
-          0 16px 30px rgba(37,99,235,.30),
-          0 6px 14px rgba(15,23,42,.10),
-          inset 0 1px 0 rgba(255,255,255,1),
-          inset 0 -2px 8px rgba(37,99,235,.14) !important;
-      }
-
-      #v-dashboard .kpi i,
-      #v-dashboard .sm i,
-      #v-dashboard .qa i,
-      #v-dashboard .nc i {
-        transition: transform .18s ease, box-shadow .18s ease !important;
-      }
-
-      @media(max-width:768px){
-        #v-dashboard .kpi i,
-        #v-dashboard .kpi .ti,
-        #v-dashboard .sm i,
-        #v-dashboard .sm .ti,
-        #v-dashboard .qa i,
-        #v-dashboard .qa .ti,
-        #v-dashboard .nc i,
-        #v-dashboard .nc .ti {
-          width: 40px !important;
-          height: 40px !important;
-          min-width: 40px !important;
-          border-radius: 14px !important;
-          font-size: 19px !important;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
-  }
-
-  injectCSS();
-})();
-/* AUTO OCULTAR BARRA INFERIOR MÓVIL AL HACER SCROLL */
-(function () {
-  "use strict";
-
-  if (window.__NEXUS_BOTTOM_NAV_AUTO_HIDE_V1__) return;
-  window.__NEXUS_BOTTOM_NAV_AUTO_HIDE_V1__ = true;
-
-  let lastScrollY = window.scrollY || 0;
-  let ticking = false;
-
-  function getBottomNav() {
-    return document.querySelector(
-      ".mobile-bottom-nav-clean, .mobile-bottom-nav, [class*='mobile-bottom-nav']"
-    );
-  }
-
-  function showNav(nav) {
-    nav.style.setProperty("transform", "translateY(0)", "important");
-    nav.style.setProperty("opacity", "1", "important");
-    nav.style.setProperty("pointer-events", "auto", "important");
-  }
-
-  function hideNav(nav) {
-    nav.style.setProperty("transform", "translateY(135%)", "important");
-    nav.style.setProperty("opacity", ".18", "important");
-    nav.style.setProperty("pointer-events", "none", "important");
-  }
-
-  function setupNav(nav) {
-    if (!nav || nav.dataset.nxAutoHideReady === "1") return;
-    nav.dataset.nxAutoHideReady = "1";
-    nav.style.setProperty(
-      "transition",
-      "transform .32s cubic-bezier(.22,1,.36,1), opacity .22s ease",
-      "important"
-    );
-    nav.style.setProperty("will-change", "transform, opacity", "important");
-  }
-
-  function update() {
-    const nav = getBottomNav();
-    if (!nav) return;
-
-    setupNav(nav);
-
-    const currentY = window.scrollY || document.documentElement.scrollTop || 0;
-    const diff = currentY - lastScrollY;
-
-    if (currentY <= 25) {
-      showNav(nav);
-    } else if (diff > 6) {
-      hideNav(nav);
-    } else if (diff < -6) {
-      showNav(nav);
-    }
-
-    lastScrollY = currentY;
-    ticking = false;
-  }
-
-  function onScroll() {
-    if (!ticking) {
-      window.requestAnimationFrame(update);
-      ticking = true;
-    }
-  }
-
-  window.addEventListener("scroll", onScroll, { passive: true });
-  document.addEventListener("touchmove", onScroll, { passive: true });
-
-  setTimeout(update, 300);
-  setTimeout(update, 1000);
 })();
