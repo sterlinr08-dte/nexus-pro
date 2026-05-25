@@ -3256,3 +3256,76 @@
 
   injectCSS();
 })();
+/* AUTO OCULTAR BARRA INFERIOR MÓVIL AL HACER SCROLL */
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_BOTTOM_NAV_AUTO_HIDE_V1__) return;
+  window.__NEXUS_BOTTOM_NAV_AUTO_HIDE_V1__ = true;
+
+  let lastScrollY = window.scrollY || 0;
+  let ticking = false;
+
+  function getBottomNav() {
+    return document.querySelector(
+      ".mobile-bottom-nav-clean, .mobile-bottom-nav, [class*='mobile-bottom-nav']"
+    );
+  }
+
+  function showNav(nav) {
+    nav.style.setProperty("transform", "translateY(0)", "important");
+    nav.style.setProperty("opacity", "1", "important");
+    nav.style.setProperty("pointer-events", "auto", "important");
+  }
+
+  function hideNav(nav) {
+    nav.style.setProperty("transform", "translateY(135%)", "important");
+    nav.style.setProperty("opacity", ".18", "important");
+    nav.style.setProperty("pointer-events", "none", "important");
+  }
+
+  function setupNav(nav) {
+    if (!nav || nav.dataset.nxAutoHideReady === "1") return;
+    nav.dataset.nxAutoHideReady = "1";
+    nav.style.setProperty(
+      "transition",
+      "transform .32s cubic-bezier(.22,1,.36,1), opacity .22s ease",
+      "important"
+    );
+    nav.style.setProperty("will-change", "transform, opacity", "important");
+  }
+
+  function update() {
+    const nav = getBottomNav();
+    if (!nav) return;
+
+    setupNav(nav);
+
+    const currentY = window.scrollY || document.documentElement.scrollTop || 0;
+    const diff = currentY - lastScrollY;
+
+    if (currentY <= 25) {
+      showNav(nav);
+    } else if (diff > 6) {
+      hideNav(nav);
+    } else if (diff < -6) {
+      showNav(nav);
+    }
+
+    lastScrollY = currentY;
+    ticking = false;
+  }
+
+  function onScroll() {
+    if (!ticking) {
+      window.requestAnimationFrame(update);
+      ticking = true;
+    }
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  document.addEventListener("touchmove", onScroll, { passive: true });
+
+  setTimeout(update, 300);
+  setTimeout(update, 1000);
+})();
