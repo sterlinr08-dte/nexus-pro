@@ -4658,3 +4658,55 @@
     init();
   }
 })();
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_NUMERIC_KEYBOARD__) return;
+  window.__NEXUS_NUMERIC_KEYBOARD__ = true;
+
+  function aplicarTecladoNumerico() {
+    document.querySelectorAll('input').forEach(input => {
+      const ph = (input.placeholder || '').toLowerCase();
+      const name = (input.name || '').toLowerCase();
+      const id = (input.id || '').toLowerCase();
+
+      const texto = ph + ' ' + name + ' ' + id;
+
+      if (
+        texto.includes('monto') ||
+        texto.includes('precio') ||
+        texto.includes('rd$') ||
+        texto.includes('total') ||
+        texto.includes('prima') ||
+        texto.includes('cobro') ||
+        texto.includes('balance')
+      ) {
+        input.setAttribute('inputmode', 'decimal');
+      }
+
+      if (
+        texto.includes('telefono') ||
+        texto.includes('whatsapp') ||
+        texto.includes('celular')
+      ) {
+        input.setAttribute('type', 'tel');
+      }
+
+      if (
+        texto.includes('cedula') ||
+        texto.includes('cantidad') ||
+        texto.includes('numero')
+      ) {
+        input.setAttribute('inputmode', 'numeric');
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', aplicarTecladoNumerico);
+  } else {
+    aplicarTecladoNumerico();
+  }
+
+  setInterval(aplicarTecladoNumerico, 2000);
+})();
