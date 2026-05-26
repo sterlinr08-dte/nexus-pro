@@ -7269,5 +7269,98 @@ setTimeout(verificarAutoFacturacion, 5000);
 </script>
 <!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══ -->
 <script src="parches.js?v=1" onerror="console.log('parches.js no disponible o aún no creado')"></script>
+<script>
+(function(){
+  if(window.__UI_PREMIUM_DASH_TOP_BTNS__) return;
+  window.__UI_PREMIUM_DASH_TOP_BTNS__ = true;
+
+  const css = `
+  :root{--premium-blue:#2563eb;--premium-blue2:#60a5fa;--premium-soft:#eef6ff}
+
+  #v-dashboard .kpi,
+  #v-dashboard .nc,
+  .qa,
+  .tn-b,
+  .tn-tog,
+  .btn{
+    box-shadow:
+      0 10px 24px rgba(37,99,235,.14),
+      inset 0 1px 0 rgba(255,255,255,.9) !important;
+    border-color:rgba(37,99,235,.14) !important;
+  }
+
+  #v-dashboard .kpi,
+  #v-dashboard .nc{
+    background:linear-gradient(145deg,#ffffff,#f3f8ff) !important;
+    border-radius:20px !important;
+  }
+
+  #v-dashboard .kpi:hover,
+  .qa:hover,
+  .tn-b:hover,
+  .tn-tog:hover,
+  .btn:hover{
+    transform:translateY(-2px);
+    box-shadow:
+      0 16px 34px rgba(37,99,235,.22),
+      inset 0 1px 0 rgba(255,255,255,1) !important;
+  }
+
+  .qa{
+    border-radius:22px !important;
+    background:linear-gradient(145deg,#ffffff,#eaf3ff) !important;
+  }
+
+  .qa-i{
+    width:42px;
+    height:42px;
+    margin:0 auto 8px;
+    border-radius:16px;
+    display:grid !important;
+    place-items:center;
+    color:#2563eb !important;
+    background:linear-gradient(145deg,#ffffff,#dbeafe);
+    box-shadow:
+      0 8px 18px rgba(37,99,235,.25),
+      inset 0 2px 3px rgba(255,255,255,.95);
+  }
+
+  .tnav{
+    background:rgba(255,255,255,.92) !important;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 8px 26px rgba(37,99,235,.10) !important;
+  }
+
+  .tn-b,.tn-tog,.btn{
+    border-radius:14px !important;
+    background:linear-gradient(145deg,#ffffff,#eef6ff) !important;
+    transition:all .18s ease !important;
+  }
+
+  .bxl,.bc1{
+    background:linear-gradient(145deg,#2563eb,#60a5fa) !important;
+    color:#fff !important;
+    border:none !important;
+  }
+
+  .bxl i,.bc1 i{color:#fff !important}
+
+  #v-dashboard .ct{
+    color:#12345f !important;
+    font-weight:800 !important;
+  }
+
+  #v-dashboard .kv{
+    text-shadow:0 4px 14px rgba(37,99,235,.16);
+  }
+  `;
+
+  const s=document.createElement('style');
+  s.id='ui-premium-dashboard-topbar-botones';
+  s.textContent=css;
+  document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>
