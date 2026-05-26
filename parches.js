@@ -4471,3 +4471,186 @@
     init();
   }
 })();
+ ═══ NEXUS PRO - TECLADO NUMÉRICO MÓVIL V2 ═══ */
+
+(function () {
+
+  "use strict";
+
+  if (window.__NEXUS_MOBILE_KEYBOARD_V2__) return;
+
+  window.__NEXUS_MOBILE_KEYBOARD_V2__ = true;
+
+  function textoDelInput(input) {
+
+    var txt = [
+
+      input.id || "",
+
+      input.name || "",
+
+      input.placeholder || "",
+
+      input.getAttribute("aria-label") || "",
+
+      input.getAttribute("data-label") || ""
+
+    ].join(" ").toLowerCase();
+
+    try {
+
+      var label = input.id ? document.querySelector('label[for="' + input.id + '"]') : null;
+
+      if (label) txt += " " + (label.textContent || "").toLowerCase();
+
+    } catch (e) {}
+
+    return txt.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  }
+
+  function aplicarTeclados() {
+
+    document.querySelectorAll("input").forEach(function (input) {
+
+      var type = (input.getAttribute("type") || "text").toLowerCase();
+
+      if (
+
+        type === "password" ||
+
+        type === "file" ||
+
+        type === "checkbox" ||
+
+        type === "radio" ||
+
+        type === "date" ||
+
+        type === "time" ||
+
+        type === "datetime-local" ||
+
+        type === "color"
+
+      ) return;
+
+      var txt = textoDelInput(input);
+
+      if (
+
+        txt.includes("monto") ||
+
+        txt.includes("precio") ||
+
+        txt.includes("prima") ||
+
+        txt.includes("total") ||
+
+        txt.includes("balance") ||
+
+        txt.includes("cobro") ||
+
+        txt.includes("pago") ||
+
+        txt.includes("abono") ||
+
+        txt.includes("deuda") ||
+
+        txt.includes("rd$")
+
+      ) {
+
+        input.setAttribute("inputmode", "decimal");
+
+        input.setAttribute("autocomplete", "off");
+
+        return;
+
+      }
+
+      if (
+
+        txt.includes("telefono") ||
+
+        txt.includes("whatsapp") ||
+
+        txt.includes("celular") ||
+
+        txt.includes("movil")
+
+      ) {
+
+        input.setAttribute("type", "tel");
+
+        input.setAttribute("inputmode", "tel");
+
+        input.setAttribute("autocomplete", "tel");
+
+        return;
+
+      }
+
+      if (
+
+        txt.includes("cedula") ||
+
+        txt.includes("cantidad") ||
+
+        txt.includes("numero") ||
+
+        txt.includes("no.") ||
+
+        txt.includes("dependiente")
+
+      ) {
+
+        input.setAttribute("inputmode", "numeric");
+
+        input.setAttribute("autocomplete", "off");
+
+      }
+
+    });
+
+  }
+
+  function iniciar() {
+
+    aplicarTeclados();
+
+    setTimeout(aplicarTeclados, 500);
+
+    setTimeout(aplicarTeclados, 1500);
+
+  }
+
+  if (document.readyState === "loading") {
+
+    document.addEventListener("DOMContentLoaded", iniciar, { once: true });
+
+  } else {
+
+    iniciar();
+
+  }
+
+  document.addEventListener("focusin", function () {
+
+    setTimeout(aplicarTeclados, 100);
+
+  });
+
+  new MutationObserver(function () {
+
+    aplicarTeclados();
+
+  }).observe(document.documentElement, {
+
+    childList: true,
+
+    subtree: true
+
+  });
+
+})();
