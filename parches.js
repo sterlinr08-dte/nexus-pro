@@ -1619,11 +1619,41 @@
     const periodo = cicloSeleccionado || listaCiclos[0];
     const indexActual = listaCiclos.findIndex(c => c.key === periodo.key);
 
-    const [abonos, transferencias, entregas] = await Promise.all([
-      cargarAbonos(),
-      cargarTransferencias(),
-      cargarEntregasAdmin()
-    ]);
+    // Helper: timeout para cualquier promesa
+    function withTimeout(promise, ms, fallback) {
+      return Promise.race([
+        promise.catch(e => { console.warn('Carga falló:', e); return fallback; }),
+        new Promise(resolve => setTimeout(() => {
+          console.warn('Timeout después de ' + ms + 'ms');
+          resolve(fallback);
+        }, ms))
+      ]);
+    }
+
+    let abonos = [], transferencias = [], entregas = [];
+    try {
+      const resultados = await Promise.all([
+        withTimeout(cargarAbonos(), 15000, []),
+        withTimeout(cargarTransferencias(), 15000, []),
+        withTimeout(cargarEntregasAdmin(), 15000, [])
+      ]);
+      abonos = resultados[0] || [];
+      transferencias = resultados[1] || [];
+      entregas = resultados[2] || [];
+    } catch(err) {
+      console.error('Error al cargar Detalles de Cobro:', err);
+      cont.innerHTML = `
+        <div style="padding:30px;text-align:center;background:#fff;border:1px solid #fecaca;border-radius:14px;color:#dc2626">
+          <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+          <div style="font-weight:800;font-size:16px;margin-bottom:6px">Error al cargar</div>
+          <div style="font-size:13px;color:#64748b;margin-bottom:14px">Hubo un problema cargando los datos. Verifica tu conexión.</div>
+          <button class="btn bsm bc1" onclick="window.nxAbrirDetallesCobro && window.nxAbrirDetallesCobro()" style="cursor:pointer">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+      `;
+      return;
+    }
 
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
@@ -3627,7 +3657,39 @@
     if (!view) return;
     view.innerHTML = '<div class="nxSL-loading">Cargando...</div>';
 
-    const [entregas, transferencias] = await Promise.all([cargarEntregas(), cargarTransferencias()]);
+    // Helper: timeout para cualquier promesa
+    function withTimeout(promise, ms, fallback) {
+      return Promise.race([
+        promise.catch(e => { console.warn('Carga falló:', e); return fallback; }),
+        new Promise(resolve => setTimeout(() => {
+          console.warn('Timeout después de ' + ms + 'ms');
+          resolve(fallback);
+        }, ms))
+      ]);
+    }
+
+    let entregas = [], transferencias = [];
+    try {
+      const resultados = await Promise.all([
+        withTimeout(cargarEntregas(), 15000, []),
+        withTimeout(cargarTransferencias(), 15000, [])
+      ]);
+      entregas = resultados[0] || [];
+      transferencias = resultados[1] || [];
+    } catch(err) {
+      console.error('Error al cargar Solicitudes:', err);
+      view.innerHTML = `
+        <div style="padding:30px;text-align:center;background:#fff;border:1px solid #fecaca;border-radius:14px;color:#dc2626;margin:20px">
+          <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+          <div style="font-weight:800;font-size:16px;margin-bottom:6px">Error al cargar</div>
+          <div style="font-size:13px;color:#64748b;margin-bottom:14px">Hubo un problema cargando los datos. Verifica tu conexión.</div>
+          <button class="btn bsm bc1" onclick="window.nxRefrescarSolicitudes && window.nxRefrescarSolicitudes()" style="cursor:pointer">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+      `;
+      return;
+    }
     
     // FILTRAR según rol
     let entregasView = entregas;
@@ -3651,18 +3713,33 @@
     _entregasCache = entregas; // cache global completo (para admin)
     _transferenciasCache = transferencias;
 
-    view.innerHTML = `
-      <div class="nxSL-wrap">
-        ${renderHeaderSolicitudes(entregasView, transferenciasView)}
-        ${renderSeccionEntregasPendientes(entregasView)}
-        ${renderSeccionTransferencias(transferenciasView)}
-        ${renderSeccionHistorial(entregasView, transferenciasView)}
-        ${renderSeccionRecibirEntrega()}
-      </div>
-    `;
+    try {
+      view.innerHTML = `
+        <div class="nxSL-wrap">
+          ${renderHeaderSolicitudes(entregasView, transferenciasView)}
+          ${renderSeccionEntregasPendientes(entregasView)}
+          ${renderSeccionTransferencias(transferenciasView)}
+          ${renderSeccionHistorial(entregasView, transferenciasView)}
+          ${renderSeccionRecibirEntrega()}
+        </div>
+      `;
+    } catch(err) {
+      console.error('Error al renderizar Solicitudes:', err);
+      view.innerHTML = `
+        <div style="padding:30px;text-align:center;background:#fff;border:1px solid #fecaca;border-radius:14px;color:#dc2626;margin:20px">
+          <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+          <div style="font-weight:800;font-size:16px;margin-bottom:6px">Error al mostrar</div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:14px;font-family:monospace;text-align:left;background:#fef2f2;padding:8px;border-radius:6px;overflow-x:auto">${(err.message || err).toString().substring(0,300)}</div>
+          <button class="btn bsm bc1" onclick="window.nxRefrescarSolicitudes && window.nxRefrescarSolicitudes()" style="cursor:pointer">
+            <i class="ti ti-refresh"></i> Reintentar
+          </button>
+        </div>
+      `;
+      return;
+    }
 
     // Refrescar badge en sidebar
-    actualizarBadge();
+    try { actualizarBadge(); } catch(e) {}
   }
 
   function renderHeaderSolicitudes(entregas, transferencias) {
@@ -4470,4 +4547,447 @@
   } else {
     init();
   }
+})();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - COBRO DIRECTO A CUENTA DEL ADMIN
+   Inyecta un checkbox en el modal #mAbono "Depositado directo a mi
+   cuenta" (solo si método = Transferencia/Depósito). Al guardar,
+   adicionalmente crea una entrega_admin con es_directo=true,
+   depositado=true, confirmado=false → aparece en Solicitudes para
+   que el admin verifique en su estado de cuenta y confirme o anule.
+   ════════════════════════════════════════════════════════════════ */
+
+(function() {
+  'use strict';
+
+  if (window.__NEXUS_COBRO_DIRECTO_ADMIN__) return;
+  window.__NEXUS_COBRO_DIRECTO_ADMIN__ = true;
+
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
+  }
+  function st() {
+    try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); }
+    catch(e) { return window.ST || {}; }
+  }
+
+  function actualizarVisibilidad() {
+    const met = document.getElementById('aMet')?.value || '';
+    const wrap = document.getElementById('aDirectoWrap');
+    if (!wrap) return;
+    const show = (met === 'Transferencia' || met === 'Depósito');
+    wrap.style.display = show ? 'block' : 'none';
+    if (!show) {
+      const chk = document.getElementById('aDirectoAdmin');
+      if (chk) chk.checked = false;
+    }
+  }
+
+  function inyectarCheckbox() {
+    if (document.getElementById('aDirectoAdmin')) return true;
+    const modal = document.getElementById('mAbono');
+    if (!modal) return false;
+    const refField = modal.querySelector('input#aRef')?.closest('.fr');
+    if (!refField) return false;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'aDirectoWrap';
+    wrap.style.cssText = 'display:none;margin:8px 0;padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px';
+    wrap.innerHTML = `
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:11px;cursor:pointer;line-height:1.4">
+        <input type="checkbox" id="aDirectoAdmin" style="width:18px;height:18px;accent-color:#2563eb;margin-top:1px;flex:0 0 auto"/>
+        <span>
+          <strong style="color:#1e3a6e;display:block;margin-bottom:3px">Depositado directo a mi cuenta (admin)</strong>
+          <span style="font-size:10px;color:#475569">
+            El cliente depositó/transfirió directo a la cuenta del administrador.
+            NO se le suma al "Dinero en Mano" del agente.
+            Aparecerá en Solicitudes como PENDIENTE DE CONFIRMAR hasta que verifiques el depósito en tu estado de cuenta.
+          </span>
+        </span>
+      </label>
+    `;
+    refField.parentElement.insertBefore(wrap, refField.nextSibling);
+
+    const aMet = document.getElementById('aMet');
+    if (aMet) aMet.addEventListener('change', actualizarVisibilidad);
+
+    actualizarVisibilidad();
+    return true;
+  }
+
+  function envolverRegAbono() {
+    if (typeof window.regAbono !== 'function') return false;
+    if (window.__regAbonoEnvuelto) return true;
+    window.__regAbonoEnvuelto = true;
+
+    const original = window.regAbono;
+
+    window.regAbono = async function() {
+      const chk = document.getElementById('aDirectoAdmin');
+      const esDirecto = chk?.checked || false;
+
+      // Capturar datos ANTES (el original puede modificar el DOM al final)
+      let snapshot = null;
+      if (esDirecto) {
+        const monto = parseFloat(document.getElementById('aMnt')?.value || 0);
+        const metodo = document.getElementById('aMet')?.value || '';
+        const ref = (document.getElementById('aRef')?.value || '').trim();
+        const agente = document.getElementById('aAgente')?.value || '';
+        let banco = null;
+        const bSel = document.getElementById('aBanco')?.value || '';
+        if (bSel === 'Otros') {
+          banco = (document.getElementById('aBancoOtros')?.value || '').trim();
+        } else if (bSel) {
+          banco = bSel;
+        }
+        const clienteId = window.abonoCliId || null;
+        snapshot = { monto, metodo, ref, agente, banco, clienteId };
+      }
+
+      const reciboDiv = document.getElementById('reciboWAbtn');
+      const wasReciboVisible = reciboDiv?.style.display === 'flex';
+      const btnAbo = document.getElementById('btnAbo');
+      const wasBtnVisible = btnAbo?.style.display !== 'none';
+
+      // Ejecutar el regAbono original
+      const result = await original.apply(this, arguments);
+
+      // Detectar éxito: reciboWA visible o btnAbo oculto
+      const ahoraReciboVisible = reciboDiv?.style.display === 'flex';
+      const ahoraBtnOculto = btnAbo?.style.display === 'none';
+      const exitoso = (!wasReciboVisible && ahoraReciboVisible) ||
+                      (wasBtnVisible && ahoraBtnOculto);
+
+      // Si fue exitoso Y directo → crear entrega_admin
+      if (exitoso && esDirecto && snapshot && snapshot.agente && snapshot.monto > 0) {
+        try {
+          const cliente = (st().clientes || []).find(c => c.id === snapshot.clienteId);
+          const nomCli = cliente?.nom || snapshot.clienteId;
+          const usr = (typeof sesion !== 'undefined' ? sesion : window.sesion)?.usuario || 'admin';
+          const api = getAPI();
+
+          const payload = {
+            agente_id: snapshot.agente,
+            monto: snapshot.monto,
+            metodo: snapshot.metodo,
+            banco: snapshot.banco,
+            referencia: snapshot.ref,
+            nota: `Depósito directo de cliente ${nomCli}`,
+            fecha: (typeof hoy === 'function' ? hoy() : new Date().toISOString().slice(0,10)),
+            confirmado: false,
+            depositado: true,
+            depositado_at: new Date().toISOString(),
+            depositado_banco: snapshot.banco,
+            es_directo: true,
+            cobro_id: snapshot.clienteId,
+            created_by: usr
+          };
+
+          await api.post('entregas_admin', payload);
+
+          if (typeof window.toast === 'function') {
+            window.toast('ok', 'Pendiente de confirmar',
+              'Verifica el depósito en tu cuenta y confírmalo en Solicitudes');
+          }
+          if (typeof window.logAudit === 'function') {
+            window.logAudit('COBRO_DIRECTO_ADMIN',
+              `${nomCli} depositó RD$ ${snapshot.monto.toLocaleString()} directo a cuenta admin · ${snapshot.banco || ''} · ${snapshot.ref}`,
+              'Cobros');
+          }
+          if (typeof window.nxRefrescarSolicitudes === 'function') {
+            await window.nxRefrescarSolicitudes();
+          }
+        } catch(e) {
+          console.error('Error creando entrega_admin para depósito directo:', e);
+          if (typeof window.toast === 'function') {
+            window.toast('err', 'Aviso',
+              'Cobro guardado, pero no se creó la entrega admin. Verifica que la tabla entregas_admin tenga las columnas es_directo y cobro_id.');
+          }
+        }
+        // Reset checkbox
+        if (chk) chk.checked = false;
+      }
+
+      return result;
+    };
+
+    return true;
+  }
+
+  function init() {
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      const ok1 = inyectarCheckbox();
+      const ok2 = envolverRegAbono();
+      if (ok1 && ok2) return;
+      if (intentos < 30) setTimeout(tryInit, 500);
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - ICONOS SEMÁNTICOS COLOR 3D VIBRANTE
+   Asigna colores automáticamente según el tipo de icono Tabler.
+   Solo visual. No cambia lógica.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_ICONOS_SEMANTICOS_V1__) return;
+  window.__NEXUS_ICONOS_SEMANTICOS_V1__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-iconos-semanticos-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-iconos-semanticos-css";
+
+    style.textContent = `
+      /* ═══ PALETA SEMÁNTICA VIBRANTE 3D ═══
+         Cada icono Tabler obtiene un color según su significado.
+         Aplica fondo gradiente + sombra del color + glow sutil.
+      */
+      
+      /* Helper: base 3D vibrante */
+      i[class*="ti-"], .ti {
+        transition: all 0.18s ease;
+      }
+      
+      /* ═══ VERDE VIBRANTE - Dinero, Cobros, Ingresos, Positivo ═══ */
+      .kpi i.ti-currency-dollar, .qa i.ti-currency-dollar, .sm i.ti-currency-dollar, .nc i.ti-currency-dollar,
+      .kpi i.ti-cash, .qa i.ti-cash, .sm i.ti-cash, .nc i.ti-cash,
+      .kpi i.ti-coin, .qa i.ti-coin, .sm i.ti-coin, .nc i.ti-coin,
+      .kpi i.ti-receipt, .qa i.ti-receipt, .sm i.ti-receipt, .nc i.ti-receipt,
+      .kpi i.ti-receipt-2, .qa i.ti-receipt-2, .sm i.ti-receipt-2, .nc i.ti-receipt-2,
+      .kpi i.ti-wallet, .qa i.ti-wallet, .sm i.ti-wallet, .nc i.ti-wallet,
+      .kpi i.ti-pig-money, .qa i.ti-pig-money, .sm i.ti-pig-money, .nc i.ti-pig-money,
+      .kpi i.ti-moneybag, .qa i.ti-moneybag, .sm i.ti-moneybag, .nc i.ti-moneybag {
+        background: linear-gradient(145deg, #d1fae5, #6ee7b7) !important;
+        color: #047857 !important;
+        box-shadow:
+          0 10px 24px rgba(16,185,129,.30),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(5,150,105,.18) !important;
+      }
+      
+      /* ═══ AZUL VIBRANTE - Info, Reportes, Datos, Gráficos ═══ */
+      .kpi i.ti-chart-bar, .qa i.ti-chart-bar, .sm i.ti-chart-bar, .nc i.ti-chart-bar,
+      .kpi i.ti-chart-line, .qa i.ti-chart-line, .sm i.ti-chart-line, .nc i.ti-chart-line,
+      .kpi i.ti-chart-pie, .qa i.ti-chart-pie, .sm i.ti-chart-pie, .nc i.ti-chart-pie,
+      .kpi i.ti-chart-donut, .qa i.ti-chart-donut, .sm i.ti-chart-donut, .nc i.ti-chart-donut,
+      .kpi i.ti-chart-area, .qa i.ti-chart-area, .sm i.ti-chart-area, .nc i.ti-chart-area,
+      .kpi i.ti-report, .qa i.ti-report, .sm i.ti-report, .nc i.ti-report,
+      .kpi i.ti-report-analytics, .qa i.ti-report-analytics, .sm i.ti-report-analytics, .nc i.ti-report-analytics,
+      .kpi i.ti-info-circle, .qa i.ti-info-circle, .sm i.ti-info-circle, .nc i.ti-info-circle,
+      .kpi i.ti-eye, .qa i.ti-eye, .sm i.ti-eye, .nc i.ti-eye,
+      .kpi i.ti-presentation-analytics, .qa i.ti-presentation-analytics {
+        background: linear-gradient(145deg, #dbeafe, #93c5fd) !important;
+        color: #1e40af !important;
+        box-shadow:
+          0 10px 24px rgba(59,130,246,.30),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(37,99,235,.20) !important;
+      }
+      
+      /* ═══ MORADO VIBRANTE - Personas, Agentes, Clientes, Equipo ═══ */
+      .kpi i.ti-user, .qa i.ti-user, .sm i.ti-user, .nc i.ti-user,
+      .kpi i.ti-users, .qa i.ti-users, .sm i.ti-users, .nc i.ti-users,
+      .kpi i.ti-user-circle, .qa i.ti-user-circle, .sm i.ti-user-circle, .nc i.ti-user-circle,
+      .kpi i.ti-user-plus, .qa i.ti-user-plus, .sm i.ti-user-plus, .nc i.ti-user-plus,
+      .kpi i.ti-users-group, .qa i.ti-users-group, .sm i.ti-users-group, .nc i.ti-users-group,
+      .kpi i.ti-id-badge, .qa i.ti-id-badge, .sm i.ti-id-badge, .nc i.ti-id-badge,
+      .kpi i.ti-address-book, .qa i.ti-address-book, .sm i.ti-address-book, .nc i.ti-address-book {
+        background: linear-gradient(145deg, #ede9fe, #c4b5fd) !important;
+        color: #6d28d9 !important;
+        box-shadow:
+          0 10px 24px rgba(124,58,237,.30),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(109,40,217,.20) !important;
+      }
+      
+      /* ═══ AZUL OSCURO - Bancos, Edificios, Cuentas ═══ */
+      .kpi i.ti-building-bank, .qa i.ti-building-bank, .sm i.ti-building-bank, .nc i.ti-building-bank,
+      .kpi i.ti-building, .qa i.ti-building, .sm i.ti-building, .nc i.ti-building,
+      .kpi i.ti-credit-card, .qa i.ti-credit-card, .sm i.ti-credit-card, .nc i.ti-credit-card,
+      .kpi i.ti-cash-banknote, .qa i.ti-cash-banknote, .sm i.ti-cash-banknote, .nc i.ti-cash-banknote {
+        background: linear-gradient(145deg, #c7d2fe, #6366f1) !important;
+        color: #ffffff !important;
+        box-shadow:
+          0 10px 24px rgba(79,70,229,.40),
+          0 4px 10px rgba(15,23,42,.10),
+          inset 0 1px 0 rgba(255,255,255,.40),
+          inset 0 -2px 6px rgba(67,56,202,.30) !important;
+      }
+      
+      /* ═══ NARANJA VIBRANTE - Pendiente, Atención, Trofeos ═══ */
+      .kpi i.ti-trophy, .qa i.ti-trophy, .sm i.ti-trophy, .nc i.ti-trophy,
+      .kpi i.ti-clock, .qa i.ti-clock, .sm i.ti-clock, .nc i.ti-clock,
+      .kpi i.ti-clock-hour-4, .qa i.ti-clock-hour-4, .sm i.ti-clock-hour-4, .nc i.ti-clock-hour-4,
+      .kpi i.ti-alert-circle, .qa i.ti-alert-circle, .sm i.ti-alert-circle, .nc i.ti-alert-circle,
+      .kpi i.ti-alert-triangle, .qa i.ti-alert-triangle, .sm i.ti-alert-triangle, .nc i.ti-alert-triangle,
+      .kpi i.ti-flame, .qa i.ti-flame, .sm i.ti-flame, .nc i.ti-flame,
+      .kpi i.ti-bell, .qa i.ti-bell, .sm i.ti-bell, .nc i.ti-bell,
+      .kpi i.ti-hourglass, .qa i.ti-hourglass, .sm i.ti-hourglass, .nc i.ti-hourglass {
+        background: linear-gradient(145deg, #fed7aa, #fb923c) !important;
+        color: #9a3412 !important;
+        box-shadow:
+          0 10px 24px rgba(249,115,22,.32),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(234,88,12,.22) !important;
+      }
+      
+      /* ═══ ROJO VIBRANTE - Eliminar, Anular, Rechazar, Negativo ═══ */
+      .kpi i.ti-trash, .qa i.ti-trash, .sm i.ti-trash, .nc i.ti-trash,
+      .kpi i.ti-x, .qa i.ti-x, .sm i.ti-x, .nc i.ti-x,
+      .kpi i.ti-circle-x, .qa i.ti-circle-x, .sm i.ti-circle-x, .nc i.ti-circle-x,
+      .kpi i.ti-ban, .qa i.ti-ban, .sm i.ti-ban, .nc i.ti-ban,
+      .kpi i.ti-power, .qa i.ti-power, .sm i.ti-power, .nc i.ti-power,
+      .kpi i.ti-logout, .qa i.ti-logout, .sm i.ti-logout, .nc i.ti-logout,
+      .kpi i.ti-flag, .qa i.ti-flag, .sm i.ti-flag, .nc i.ti-flag {
+        background: linear-gradient(145deg, #fecaca, #f87171) !important;
+        color: #991b1b !important;
+        box-shadow:
+          0 10px 24px rgba(239,68,68,.32),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(220,38,38,.22) !important;
+      }
+      
+      /* ═══ VERDE FLUORESCENTE - Confirmado, Check, OK ═══ */
+      .kpi i.ti-check, .qa i.ti-check, .sm i.ti-check, .nc i.ti-check,
+      .kpi i.ti-circle-check, .qa i.ti-circle-check, .sm i.ti-circle-check, .nc i.ti-circle-check,
+      .kpi i.ti-shield-check, .qa i.ti-shield-check, .sm i.ti-shield-check, .nc i.ti-shield-check,
+      .kpi i.ti-thumb-up, .qa i.ti-thumb-up, .sm i.ti-thumb-up, .nc i.ti-thumb-up {
+        background: linear-gradient(145deg, #bbf7d0, #4ade80) !important;
+        color: #14532d !important;
+        box-shadow:
+          0 10px 24px rgba(34,197,94,.35),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(22,163,74,.25) !important;
+      }
+      
+      /* ═══ CYAN VIBRANTE - Mensajes, Notificaciones, Solicitudes ═══ */
+      .kpi i.ti-inbox, .qa i.ti-inbox, .sm i.ti-inbox, .nc i.ti-inbox,
+      .kpi i.ti-mail, .qa i.ti-mail, .sm i.ti-mail, .nc i.ti-mail,
+      .kpi i.ti-message, .qa i.ti-message, .sm i.ti-message, .nc i.ti-message,
+      .kpi i.ti-message-circle, .qa i.ti-message-circle, .sm i.ti-message-circle, .nc i.ti-message-circle,
+      .kpi i.ti-bell-ringing, .qa i.ti-bell-ringing, .sm i.ti-bell-ringing, .nc i.ti-bell-ringing,
+      .kpi i.ti-brand-whatsapp, .qa i.ti-brand-whatsapp, .sm i.ti-brand-whatsapp, .nc i.ti-brand-whatsapp,
+      .kpi i.ti-send, .qa i.ti-send, .sm i.ti-send, .nc i.ti-send {
+        background: linear-gradient(145deg, #cffafe, #67e8f9) !important;
+        color: #155e75 !important;
+        box-shadow:
+          0 10px 24px rgba(6,182,212,.32),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(8,145,178,.22) !important;
+      }
+      
+      /* ═══ ROSA VIBRANTE - Pólizas, Documentos, Archivos ═══ */
+      .kpi i.ti-file, .qa i.ti-file, .sm i.ti-file, .nc i.ti-file,
+      .kpi i.ti-file-text, .qa i.ti-file-text, .sm i.ti-file-text, .nc i.ti-file-text,
+      .kpi i.ti-file-plus, .qa i.ti-file-plus, .sm i.ti-file-plus, .nc i.ti-file-plus,
+      .kpi i.ti-file-invoice, .qa i.ti-file-invoice, .sm i.ti-file-invoice, .nc i.ti-file-invoice,
+      .kpi i.ti-clipboard, .qa i.ti-clipboard, .sm i.ti-clipboard, .nc i.ti-clipboard,
+      .kpi i.ti-clipboard-text, .qa i.ti-clipboard-text, .sm i.ti-clipboard-text, .nc i.ti-clipboard-text,
+      .kpi i.ti-shield, .qa i.ti-shield, .sm i.ti-shield, .nc i.ti-shield,
+      .kpi i.ti-certificate, .qa i.ti-certificate, .sm i.ti-certificate, .nc i.ti-certificate {
+        background: linear-gradient(145deg, #fce7f3, #f9a8d4) !important;
+        color: #9d174d !important;
+        box-shadow:
+          0 10px 24px rgba(236,72,153,.30),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(219,39,119,.22) !important;
+      }
+      
+      /* ═══ AMARILLO VIBRANTE - Estrellas, Premium, Destacados ═══ */
+      .kpi i.ti-star, .qa i.ti-star, .sm i.ti-star, .nc i.ti-star,
+      .kpi i.ti-crown, .qa i.ti-crown, .sm i.ti-crown, .nc i.ti-crown,
+      .kpi i.ti-medal, .qa i.ti-medal, .sm i.ti-medal, .nc i.ti-medal,
+      .kpi i.ti-diamond, .qa i.ti-diamond, .sm i.ti-diamond, .nc i.ti-diamond,
+      .kpi i.ti-bolt, .qa i.ti-bolt, .sm i.ti-bolt, .nc i.ti-bolt {
+        background: linear-gradient(145deg, #fef3c7, #fbbf24) !important;
+        color: #78350f !important;
+        box-shadow:
+          0 10px 24px rgba(245,158,11,.32),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(217,119,6,.25) !important;
+      }
+      
+      /* ═══ TEAL - Transferencias, Movimientos, Cambios ═══ */
+      .kpi i.ti-transfer, .qa i.ti-transfer, .sm i.ti-transfer, .nc i.ti-transfer,
+      .kpi i.ti-arrows-exchange, .qa i.ti-arrows-exchange, .sm i.ti-arrows-exchange, .nc i.ti-arrows-exchange,
+      .kpi i.ti-arrow-right, .qa i.ti-arrow-right, .sm i.ti-arrow-right, .nc i.ti-arrow-right,
+      .kpi i.ti-refresh, .qa i.ti-refresh, .sm i.ti-refresh, .nc i.ti-refresh,
+      .kpi i.ti-arrows-up-down, .qa i.ti-arrows-up-down, .sm i.ti-arrows-up-down, .nc i.ti-arrows-up-down {
+        background: linear-gradient(145deg, #ccfbf1, #5eead4) !important;
+        color: #115e59 !important;
+        box-shadow:
+          0 10px 24px rgba(20,184,166,.30),
+          0 4px 10px rgba(15,23,42,.08),
+          inset 0 1px 0 rgba(255,255,255,.95),
+          inset 0 -2px 6px rgba(13,148,136,.20) !important;
+      }
+      
+      /* ═══ GRIS OSCURO - Configuración, Sistema, Engranaje ═══ */
+      .kpi i.ti-settings, .qa i.ti-settings, .sm i.ti-settings, .nc i.ti-settings,
+      .kpi i.ti-adjustments, .qa i.ti-adjustments, .sm i.ti-adjustments, .nc i.ti-adjustments,
+      .kpi i.ti-tool, .qa i.ti-tool, .sm i.ti-tool, .nc i.ti-tool,
+      .kpi i.ti-tools, .qa i.ti-tools, .sm i.ti-tools, .nc i.ti-tools,
+      .kpi i.ti-database, .qa i.ti-database, .sm i.ti-database, .nc i.ti-database {
+        background: linear-gradient(145deg, #cbd5e1, #64748b) !important;
+        color: #ffffff !important;
+        box-shadow:
+          0 10px 24px rgba(71,85,105,.32),
+          0 4px 10px rgba(15,23,42,.10),
+          inset 0 1px 0 rgba(255,255,255,.40),
+          inset 0 -2px 6px rgba(51,65,85,.30) !important;
+      }
+      
+      /* ═══ HOVER 3D LIFT (todos los iconos coloreados) ═══ */
+      .kpi:hover i[class*="ti-"],
+      .qa:hover i[class*="ti-"],
+      .sm:hover i[class*="ti-"],
+      .nc:hover i[class*="ti-"] {
+        transform: translateY(-3px) scale(1.06) !important;
+        filter: brightness(1.05);
+      }
+      
+      /* ═══ MÓVIL: mantener color pero reducir profundidad de sombra ═══ */
+      @media (max-width: 768px) {
+        .kpi i[class*="ti-"],
+        .qa i[class*="ti-"],
+        .sm i[class*="ti-"],
+        .nc i[class*="ti-"] {
+          box-shadow:
+            0 6px 14px rgba(15,23,42,.18),
+            0 2px 5px rgba(15,23,42,.06),
+            inset 0 1px 0 rgba(255,255,255,.85) !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
 })();
