@@ -5362,38 +5362,132 @@
   // por cambios en la BD a través de polling cada 60 segundos.
   // (Esto es opcional; lo dejo desactivado por defecto para no gastar API calls)
   
-  // ═══ BOTÓN EN EL DASHBOARD ═══
-  function inyectarBotonNotif() {
-    if (document.getElementById('qaNotificaciones')) return true;
-    const vDash = document.getElementById('v-dashboard');
-    if (!vDash) return false;
-    const qaExistente = vDash.querySelector('.qa');
-    if (!qaExistente) return false;
-    const qaGrid = qaExistente.parentElement;
-    if (!qaGrid) return false;
-
-    const btn = document.createElement('div');
-    btn.className = 'qa';
-    btn.id = 'qaNotificaciones';
-    btn.setAttribute('onclick', "window.nxAbrirConfigNotificaciones && window.nxAbrirConfigNotificaciones()");
-    btn.innerHTML = `
-      <span class="qa-i"><i class="ti ti-bell"></i></span>
-      <div class="qa-l">Notificaciones</div>
+  // ═══ INYECTAR EN EL TAB "NOTIFICACIONES" DE CONFIGURACIÓN ═══
+  function inyectarEnTabConfig() {
+    // Buscar el contenido del tab cfgTab2 (Notificaciones)
+    // Está en algún div que se muestra cuando se aprieta cfgTab2
+    if (document.getElementById('nxNotifBrowserPanel')) return true;
+    
+    // Buscar el botón del tab
+    const tabBtn = document.getElementById('cfgTab2');
+    if (!tabBtn) return false;
+    
+    // Buscar el panel del tab (suele estar con id similar o tener clase 'cfg-content')
+    // Probamos varios selectores comunes
+    let panel = document.getElementById('cfgContent2') || 
+                document.getElementById('cfgPanel2') ||
+                document.getElementById('cfg-content-2') ||
+                document.querySelector('[data-cfg-content="2"]');
+    
+    // Si no encontramos panel específico, buscamos contenedor general de configuración
+    if (!panel) {
+      const vCfg = document.getElementById('v-configuracion') || document.getElementById('v-config');
+      if (!vCfg) return false;
+      panel = vCfg;
+    }
+    
+    // Crear nuestro panel de notificaciones de navegador
+    const div = document.createElement('div');
+    div.id = 'nxNotifBrowserPanel';
+    div.style.cssText = 'margin-top:18px;padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e2e8f0">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#1e40af);display:grid;place-items:center;color:#fff">
+          <i class="ti ti-bell" style="font-size:18px"></i>
+        </div>
+        <div>
+          <div style="font-weight:800;color:#0f172a;font-size:14px">Notificaciones del navegador</div>
+          <div style="font-size:11px;color:#64748b">Avisos tipo app cuando ocurren eventos importantes</div>
+        </div>
+      </div>
+      <div id="nxNotifEstadoInline" style="padding:10px;border-radius:10px;margin-bottom:12px;font-weight:600;font-size:12px;text-align:center"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bc1" type="button" onclick="window.nxAbrirConfigNotificaciones && window.nxAbrirConfigNotificaciones()" style="flex:1;min-width:140px">
+          <i class="ti ti-settings"></i> Configurar
+        </button>
+        <button class="btn" type="button" onclick="window.nxProbarNotificacion && window.nxProbarNotificacion()" style="flex:1;min-width:140px">
+          <i class="ti ti-bell-ringing"></i> Probar
+        </button>
+      </div>
+      <div style="margin-top:10px;padding:8px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:10px;color:#1e3a6e">
+        <i class="ti ti-info-circle"></i> Solo funcionan con el navegador abierto. Para 24/7 usa el email automático.
+      </div>
     `;
-    // Insertar al final del grid
-    qaGrid.appendChild(btn);
+    
+    panel.appendChild(div);
+    
+    // Actualizar estado inline
+    actualizarEstadoInline();
+    return true;
+  }
+  
+  function actualizarEstadoInline() {
+    const estadoDiv = document.getElementById('nxNotifEstadoInline');
+    if (!estadoDiv) return;
+    const perm = permisoActual();
+    if (perm === 'granted') {
+      estadoDiv.innerHTML = '✅ Notificaciones activadas';
+      estadoDiv.style.background = '#d1fae5';
+      estadoDiv.style.color = '#047857';
+    } else if (perm === 'denied') {
+      estadoDiv.innerHTML = '❌ Bloqueadas (activar desde navegador)';
+      estadoDiv.style.background = '#fecaca';
+      estadoDiv.style.color = '#991b1b';
+    } else if (perm === 'no-soportado') {
+      estadoDiv.innerHTML = '⚠️ Navegador no compatible';
+      estadoDiv.style.background = '#fed7aa';
+      estadoDiv.style.color = '#92400e';
+    } else {
+      estadoDiv.innerHTML = '🔔 No activadas — Toca "Configurar" para activar';
+      estadoDiv.style.background = '#fef3c7';
+      estadoDiv.style.color = '#92400e';
+    }
+  }
+  
+  // ═══ CLICK EN "NEXUS PRO" DEL SIDEBAR → DASHBOARD ═══
+  function hacerClickeableNexusBrand() {
+    // Selectores que probamos
+    const sbTop = document.querySelector('.sb-top');
+    if (!sbTop) return false;
+    if (sbTop.dataset.nxClickable === '1') return true;
+    
+    sbTop.dataset.nxClickable = '1';
+    sbTop.style.cursor = 'pointer';
+    sbTop.title = 'Ir al Dashboard';
+    
+    sbTop.addEventListener('click', function(e) {
+      // Evitar conflicto con botones internos
+      if (e.target.closest('button') || e.target.closest('input')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Navegar al dashboard
+      if (typeof window.nav === 'function') {
+        const dashItem = document.querySelector('.ni[onclick*="dashboard"]');
+        window.nav('dashboard', dashItem || null);
+      }
+    });
     return true;
   }
 
   // ═══ INIT ═══
   function init() {
     let intentos = 0;
+    let listoConfig = false;
+    let listoBrand = false;
     const tryInit = function() {
       intentos++;
-      if (inyectarBotonNotif()) return;
-      if (intentos < 60) setTimeout(tryInit, 100);
+      if (!listoBrand) listoBrand = hacerClickeableNexusBrand();
+      if (!listoConfig) listoConfig = inyectarEnTabConfig();
+      if (listoBrand && listoConfig) return;
+      if (intentos < 80) setTimeout(tryInit, 150);
     };
     tryInit();
+    
+    // Re-check estado cuando se vuelve visible la pestaña
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) actualizarEstadoInline();
+    });
   }
 
   if (document.readyState === 'loading') {
