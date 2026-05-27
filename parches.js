@@ -5876,3 +5876,156 @@
     console.log('%c⚡ Modo liviano móvil activado', 'color:#059669;font-weight:bold');
   }
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - OCULTAR TICKER + HAMBURGUESA VERDE ONLINE
+   - Oculta la barra superior (ticker con NEXUS PRO ONLINE...)
+   - Pinta el botón hamburguesa de verde cuando hay conexión
+   - Pinta de rojo cuando se pierde conexión
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_HEADER_LIMPIO_V1__) return;
+  window.__NEXUS_HEADER_LIMPIO_V1__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-header-limpio-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-header-limpio-css";
+    style.textContent = `
+      /* ═══ 1. OCULTAR TICKER (barra superior con info) ═══ */
+      .ticker, #tkr {
+        display: none !important;
+      }
+      
+      /* ═══ 2. HAMBURGUESA - ESTADO ONLINE (VERDE) ═══ */
+      .tn-tog {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255,255,255,0.25) !important;
+        box-shadow:
+          0 4px 12px rgba(16, 185, 129, 0.35),
+          0 2px 4px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.40) !important;
+        transition: all 0.2s ease !important;
+        position: relative;
+      }
+      
+      .tn-tog i {
+        color: #ffffff !important;
+        font-size: 22px !important;
+      }
+      
+      /* Punto verde animado tipo "online" */
+      .tn-tog::after {
+        content: '';
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 8px;
+        height: 8px;
+        background: #34d399;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+        animation: nxPulseOnline 2s infinite;
+      }
+      
+      @keyframes nxPulseOnline {
+        0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+      }
+      
+      /* ═══ 3. HAMBURGUESA - ESTADO OFFLINE (ROJO) ═══ */
+      .tn-tog.nx-offline {
+        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        box-shadow:
+          0 4px 12px rgba(239, 68, 68, 0.35),
+          0 2px 4px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.40) !important;
+      }
+      
+      .tn-tog.nx-offline::after {
+        background: #fca5a5;
+        animation: none;
+        box-shadow: none;
+      }
+      
+      /* ═══ 4. HOVER (PC) ═══ */
+      .tn-tog:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08);
+      }
+      
+      .tn-tog:active {
+        transform: scale(0.95);
+      }
+      
+      /* ═══ 5. EN MÓVIL - mantener verde pero más simple ═══ */
+      @media (max-width: 768px) {
+        .tn-tog {
+          box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25) !important;
+        }
+        .tn-tog.nx-offline {
+          box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25) !important;
+        }
+        /* En móvil, reducir el animation que es pesado */
+        .tn-tog::after {
+          animation: none !important;
+          box-shadow: none !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  // ═══ DETECTAR ONLINE/OFFLINE Y APLICAR CLASE ═══
+  function actualizarEstadoConexion() {
+    const btn = document.querySelector('.tn-tog');
+    if (!btn) return;
+    
+    if (navigator.onLine) {
+      btn.classList.remove('nx-offline');
+      btn.title = 'Sistema ONLINE - Toca para abrir menú';
+    } else {
+      btn.classList.add('nx-offline');
+      btn.title = 'Sistema OFFLINE - Sin conexión';
+    }
+  }
+
+  // ═══ INIT ═══
+  function init() {
+    injectCSS();
+    
+    // Aplicar estado inicial cuando el botón exista
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      const btn = document.querySelector('.tn-tog');
+      if (btn) {
+        actualizarEstadoConexion();
+        return;
+      }
+      if (intentos < 60) setTimeout(tryInit, 100);
+    };
+    tryInit();
+    
+    // Listeners para cambio de conexión
+    window.addEventListener('online', actualizarEstadoConexion);
+    window.addEventListener('offline', actualizarEstadoConexion);
+    
+    // Re-check cada 30 segundos por si algo se mete
+    setInterval(actualizarEstadoConexion, 30000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
