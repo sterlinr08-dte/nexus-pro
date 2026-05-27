@@ -5126,3 +5126,279 @@
     init();
   }
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - NOTIFICACIONES DEL NAVEGADOR
+   Muestra notificaciones tipo app cuando ocurren eventos clave.
+   Funciona si el navegador está abierto (cualquier pestaña).
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_NOTIFICACIONES_V1__) return;
+  window.__NEXUS_NOTIFICACIONES_V1__ = true;
+
+  const STORAGE_KEY = 'nx_notif_permiso';
+  const STORAGE_TIPOS = 'nx_notif_tipos';
+  const STORAGE_ULTIMO_CHECK = 'nx_notif_ultimo_check';
+
+  // ═══ HELPERS ═══
+  function permisoActual() {
+    if (!('Notification' in window)) return 'no-soportado';
+    return Notification.permission; // 'default', 'granted', 'denied'
+  }
+
+  function obtenerTiposActivos() {
+    try {
+      const v = localStorage.getItem(STORAGE_TIPOS);
+      if (!v) return { factura: true, pago: true, error: true, reporte: false };
+      return JSON.parse(v);
+    } catch(e) { return { factura: true, pago: true, error: true, reporte: false }; }
+  }
+
+  function guardarTipos(tipos) {
+    try { localStorage.setItem(STORAGE_TIPOS, JSON.stringify(tipos)); } catch(e) {}
+  }
+
+  // ═══ MOSTRAR NOTIFICACIÓN ═══
+  function mostrarNotificacion(titulo, mensaje, opts = {}) {
+    if (permisoActual() !== 'granted') return false;
+    try {
+      const notif = new Notification(titulo, {
+        body: mensaje,
+        icon: opts.icon || 'https://api.iconify.design/ph/shield-check-fill.svg?color=%23059669',
+        badge: opts.badge,
+        tag: opts.tag || 'nexus-pro',
+        requireInteraction: opts.requireInteraction || false,
+        silent: opts.silent || false
+      });
+      
+      // Auto-cerrar después de 8 segundos (si no requiere interacción)
+      if (!opts.requireInteraction) {
+        setTimeout(() => { try { notif.close(); } catch(e) {} }, 8000);
+      }
+      
+      // Click en la notificación: enfocar la ventana
+      notif.onclick = function() {
+        window.focus();
+        notif.close();
+      };
+      
+      return true;
+    } catch(e) {
+      console.error('Error mostrando notificación:', e);
+      return false;
+    }
+  }
+
+  // ═══ SOLICITAR PERMISO ═══
+  async function solicitarPermiso() {
+    if (!('Notification' in window)) {
+      if (typeof window.toast === 'function') window.toast('err', 'No soportado', 'Tu navegador no soporta notificaciones');
+      return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+      if (typeof window.toast === 'function') window.toast('ok', 'Ya activadas', 'Ya tienes permiso de notificaciones');
+      return true;
+    }
+    
+    if (Notification.permission === 'denied') {
+      if (typeof window.toast === 'function') {
+        window.toast('err', 'Permiso denegado', 'Debes activarlas manualmente desde configuración del navegador');
+      }
+      return false;
+    }
+    
+    try {
+      const resultado = await Notification.requestPermission();
+      if (resultado === 'granted') {
+        // Mostrar notificación de bienvenida
+        mostrarNotificacion('🎉 Notificaciones activadas', 'NEXUS PRO te avisará de eventos importantes', {
+          tag: 'welcome'
+        });
+        if (typeof window.toast === 'function') window.toast('ok', 'Activadas', 'Ya recibirás notificaciones');
+        return true;
+      } else {
+        if (typeof window.toast === 'function') window.toast('warn', 'No activadas', 'Puedes activarlas después desde configuración');
+        return false;
+      }
+    } catch(e) {
+      console.error('Error solicitando permiso:', e);
+      return false;
+    }
+  }
+
+  // ═══ API PÚBLICA ═══
+  window.nxNotificar = function(tipo, titulo, mensaje, opts = {}) {
+    const tipos = obtenerTiposActivos();
+    if (tipos[tipo] === false) return false; // tipo desactivado
+    return mostrarNotificacion(titulo, mensaje, opts);
+  };
+  
+  window.nxNotificarFactura = function(cliente, monto) {
+    return window.nxNotificar('factura', '📄 Factura generada', `${cliente}: RD$ ${monto}`);
+  };
+  
+  window.nxNotificarPago = function(cliente, monto) {
+    return window.nxNotificar('pago', '💰 Pago recibido', `${cliente}: RD$ ${monto}`);
+  };
+  
+  window.nxNotificarError = function(titulo, detalle) {
+    return window.nxNotificar('error', `⚠️ ${titulo}`, detalle, { requireInteraction: true });
+  };
+
+  window.nxSolicitarPermisoNotificaciones = solicitarPermiso;
+
+  // ═══ MODAL DE CONFIGURACIÓN ═══
+  window.nxAbrirConfigNotificaciones = function() {
+    let modal = document.getElementById('nxModalNotif');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'overlay';
+      modal.id = 'nxModalNotif';
+      modal.innerHTML = `
+        <div class="modal" style="max-width:480px">
+          <div class="mt">
+            <span><i class="ti ti-bell"></i> NOTIFICACIONES</span>
+            <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalNotif').classList.remove('open')"><i class="ti ti-x"></i></button>
+          </div>
+          <div style="padding:8px 0">
+            <div id="nxNotifEstado" style="padding:12px;border-radius:10px;margin-bottom:14px;font-weight:700;text-align:center"></div>
+            
+            <div style="font-size:12px;color:#475569;font-weight:700;margin-bottom:10px;letter-spacing:0.5px">QUÉ NOTIFICACIONES QUIERES RECIBIR</div>
+            
+            <label style="display:flex;align-items:center;gap:10px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer">
+              <input type="checkbox" id="nxNotifTipoFactura" style="width:20px;height:20px;cursor:pointer">
+              <div>
+                <div style="font-weight:700;color:#0f172a">📄 Facturas generadas</div>
+                <div style="font-size:11px;color:#64748b">Cuando se crea una factura nueva</div>
+              </div>
+            </label>
+            
+            <label style="display:flex;align-items:center;gap:10px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer">
+              <input type="checkbox" id="nxNotifTipoPago" style="width:20px;height:20px;cursor:pointer">
+              <div>
+                <div style="font-weight:700;color:#0f172a">💰 Pagos recibidos</div>
+                <div style="font-size:11px;color:#64748b">Cuando se registra un cobro</div>
+              </div>
+            </label>
+            
+            <label style="display:flex;align-items:center;gap:10px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer">
+              <input type="checkbox" id="nxNotifTipoError" style="width:20px;height:20px;cursor:pointer">
+              <div>
+                <div style="font-weight:700;color:#0f172a">⚠️ Errores del sistema</div>
+                <div style="font-size:11px;color:#64748b">Avisos importantes que requieren atención</div>
+              </div>
+            </label>
+            
+            <div style="margin-top:14px;padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:11px;color:#1e3a6e">
+              <i class="ti ti-info-circle" style="color:#3b82f6"></i>
+              <strong>Importante:</strong> Las notificaciones solo funcionan si tienes el navegador abierto. Si quieres recibir avisos con el navegador cerrado, usa el email automático o WhatsApp.
+            </div>
+          </div>
+          <div class="fe" style="margin-top:14px;gap:8px">
+            <button class="btn" type="button" onclick="window.nxProbarNotificacion()"><i class="ti ti-bell-ringing"></i> Probar</button>
+            <button class="btn bxl bc1" type="button" onclick="window.nxGuardarConfigNotif()"><i class="ti ti-check"></i> Guardar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    
+    // Actualizar estado del permiso
+    const perm = permisoActual();
+    const estadoDiv = document.getElementById('nxNotifEstado');
+    if (perm === 'granted') {
+      estadoDiv.innerHTML = '✅ <span style="color:#047857">Notificaciones activadas</span>';
+      estadoDiv.style.background = '#d1fae5';
+    } else if (perm === 'denied') {
+      estadoDiv.innerHTML = '❌ <span style="color:#991b1b">Bloqueadas. Activa desde configuración del navegador</span>';
+      estadoDiv.style.background = '#fecaca';
+    } else if (perm === 'no-soportado') {
+      estadoDiv.innerHTML = '⚠️ <span style="color:#92400e">Tu navegador no soporta notificaciones</span>';
+      estadoDiv.style.background = '#fed7aa';
+    } else {
+      estadoDiv.innerHTML = `
+        <div style="margin-bottom:8px">🔔 No activadas todavía</div>
+        <button class="btn bsm bc1" type="button" onclick="window.nxSolicitarPermisoNotificaciones().then(() => window.nxAbrirConfigNotificaciones())"><i class="ti ti-bell"></i> Activar ahora</button>
+      `;
+      estadoDiv.style.background = '#fef3c7';
+    }
+    
+    // Cargar tipos activos
+    const tipos = obtenerTiposActivos();
+    document.getElementById('nxNotifTipoFactura').checked = tipos.factura !== false;
+    document.getElementById('nxNotifTipoPago').checked = tipos.pago !== false;
+    document.getElementById('nxNotifTipoError').checked = tipos.error !== false;
+    
+    modal.classList.add('open');
+  };
+
+  window.nxGuardarConfigNotif = function() {
+    const tipos = {
+      factura: document.getElementById('nxNotifTipoFactura').checked,
+      pago: document.getElementById('nxNotifTipoPago').checked,
+      error: document.getElementById('nxNotifTipoError').checked
+    };
+    guardarTipos(tipos);
+    document.getElementById('nxModalNotif').classList.remove('open');
+    if (typeof window.toast === 'function') window.toast('ok', 'Guardado', 'Configuración actualizada');
+  };
+
+  window.nxProbarNotificacion = function() {
+    if (permisoActual() !== 'granted') {
+      window.nxSolicitarPermisoNotificaciones();
+      return;
+    }
+    mostrarNotificacion('🔔 Notificación de prueba', 'NEXUS PRO está listo para avisarte', {
+      tag: 'test'
+    });
+  };
+
+  // ═══ HOOK AUTOMÁTICO: Detectar eventos del sistema ═══
+  // Cuando se registra un cobro/pago en el sistema, intentar detectarlo
+  // por cambios en la BD a través de polling cada 60 segundos.
+  // (Esto es opcional; lo dejo desactivado por defecto para no gastar API calls)
+  
+  // ═══ BOTÓN EN EL DASHBOARD ═══
+  function inyectarBotonNotif() {
+    if (document.getElementById('qaNotificaciones')) return true;
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    const qaExistente = vDash.querySelector('.qa');
+    if (!qaExistente) return false;
+    const qaGrid = qaExistente.parentElement;
+    if (!qaGrid) return false;
+
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaNotificaciones';
+    btn.setAttribute('onclick', "window.nxAbrirConfigNotificaciones && window.nxAbrirConfigNotificaciones()");
+    btn.innerHTML = `
+      <span class="qa-i"><i class="ti ti-bell"></i></span>
+      <div class="qa-l">Notificaciones</div>
+    `;
+    // Insertar al final del grid
+    qaGrid.appendChild(btn);
+    return true;
+  }
+
+  // ═══ INIT ═══
+  function init() {
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      if (inyectarBotonNotif()) return;
+      if (intentos < 60) setTimeout(tryInit, 100);
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
