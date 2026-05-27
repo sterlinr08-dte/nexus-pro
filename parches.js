@@ -5730,3 +5730,149 @@
 
   injectCSS();
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - MODO LIVIANO EN MÓVIL
+   Detecta móvil y desactiva efectos pesados que ralentizan Safari iPhone.
+   PC sigue viéndose igual de bonito.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_MODO_LIVIANO_MOVIL__) return;
+  window.__NEXUS_MODO_LIVIANO_MOVIL__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-modo-liviano-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-modo-liviano-css";
+    style.textContent = `
+      /* ═══════════════════════════════════════════════════════════
+         MODO LIVIANO - SOLO EN MÓVIL (max-width: 768px)
+         Mejora velocidad en iPhone Safari quitando efectos pesados.
+         ═══════════════════════════════════════════════════════════ */
+      
+      @media (max-width: 768px) {
+        
+        /* ─── 1. QUITAR BACKDROP-FILTER (cristal/blur) ─── */
+        /* Es el efecto MÁS pesado en Safari iPhone */
+        .btn,
+        .btn::before,
+        .modal,
+        .overlay,
+        .sb,
+        .nc,
+        .kpi,
+        .qa,
+        .sm,
+        .nxSL-section,
+        .nxDC-section,
+        [class*="glass"] {
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+        
+        /* ─── 2. REDUCIR SOMBRAS COMPLEJAS A SIMPLES ─── */
+        .btn {
+          box-shadow: 0 2px 6px rgba(15,23,42,0.10) !important;
+          transition: opacity 0.1s ease !important;
+        }
+        
+        .btn:active {
+          opacity: 0.6;
+          transform: none !important;
+          box-shadow: 0 1px 3px rgba(15,23,42,0.08) !important;
+        }
+        
+        .btn::before {
+          display: none !important;
+        }
+        
+        /* ─── 3. ICONOS SIN MÚLTIPLES SOMBRAS ─── */
+        .kpi i[class*="ti-"],
+        .qa i[class*="ti-"],
+        .sm i[class*="ti-"],
+        .nc i[class*="ti-"] {
+          box-shadow: 0 4px 8px rgba(15,23,42,0.12) !important;
+          transition: none !important;
+        }
+        
+        /* ─── 4. QUITAR HOVER (no existe en móvil pero algunos navegadores lo simulan) ─── */
+        .btn:hover,
+        .kpi:hover,
+        .qa:hover,
+        .nc:hover,
+        .sm:hover,
+        .kpi:hover i,
+        .qa:hover i {
+          transform: none !important;
+          filter: none !important;
+          box-shadow: 0 2px 6px rgba(15,23,42,0.10) !important;
+        }
+        
+        /* ─── 5. SIMPLIFICAR ANIMACIONES DE ENTRADA ─── */
+        .v.on {
+          animation: none !important;
+          opacity: 1 !important;
+        }
+        
+        /* ─── 6. TABLAS - QUITAR SOMBRAS DE TEXTO MULTIPLE ─── */
+        table td,
+        table th,
+        .nxSL-table td,
+        .nxSL-table th,
+        .nxDC-table td,
+        .nxDC-table th {
+          text-shadow: 0 1px 0 rgba(255,255,255,0.5) !important;
+        }
+        
+        /* ─── 7. MODALES - SIN BLUR DEL FONDO ─── */
+        .overlay {
+          background: rgba(15,23,42,0.7) !important;
+          backdrop-filter: none !important;
+        }
+        
+        /* ─── 8. SIDEBAR - SOMBRA SIMPLE ─── */
+        .sb {
+          box-shadow: 2px 0 8px rgba(15,23,42,0.10) !important;
+        }
+        
+        /* ─── 9. SCROLL SUAVE (mejor performance en Safari) ─── */
+        body, .v {
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        /* ─── 10. WILL-CHANGE - hint para el navegador ─── */
+        .btn:active,
+        .v.on {
+          will-change: auto;
+        }
+        
+        /* ─── 11. REDUCIR PSEUDO-ELEMENTOS PESADOS ─── */
+        .kpi::before,
+        .kpi::after,
+        .nc::before,
+        .nc::after {
+          display: none !important;
+        }
+      }
+      
+      /* ─── PC (>768px) - Todo se ve normal ─── */
+      @media (min-width: 769px) {
+        /* No tocar nada, mantener todos los efectos bonitos */
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+  
+  // Log para confirmar
+  const esMovil = window.matchMedia('(max-width: 768px)').matches;
+  if (esMovil) {
+    console.log('%c⚡ Modo liviano móvil activado', 'color:#059669;font-weight:bold');
+  }
+})();
