@@ -4991,3 +4991,138 @@
 
   injectCSS();
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - BOTÓN "CONSULTAR COBERTURA"
+   Abre plataforma externa de ARS en pestaña nueva.
+   URL configurable desde Configuración.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_CONSULTAR_COBERTURA_V1__) return;
+  window.__NEXUS_CONSULTAR_COBERTURA_V1__ = true;
+
+  const URL_DEFAULT = 'http://186.148.94.28:96/FrmNoLoginExpired.aspx?p=FrmRegistro_Afiliados.aspx';
+  const STORAGE_KEY = 'nx_url_cobertura';
+
+  function getUrl() {
+    try {
+      return localStorage.getItem(STORAGE_KEY) || URL_DEFAULT;
+    } catch(e) { return URL_DEFAULT; }
+  }
+
+  function setUrl(url) {
+    try { localStorage.setItem(STORAGE_KEY, url); } catch(e) {}
+  }
+
+  // ═══ ABRIR PLATAFORMA EN NUEVA PESTAÑA ═══
+  window.nxAbrirConsultarCobertura = function() {
+    const url = getUrl();
+    if (!url || !url.trim()) {
+      if (typeof window.toast === 'function') {
+        window.toast('err', 'URL no configurada', 'Ve a Configuración para agregar la URL de la plataforma');
+      } else {
+        alert('No hay URL configurada. Ve a Configuración.');
+      }
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  // ═══ MODAL PARA CONFIGURAR URL ═══
+  window.nxAbrirConfigCobertura = function() {
+    let modal = document.getElementById('nxModalConfigCobertura');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'overlay';
+      modal.id = 'nxModalConfigCobertura';
+      modal.innerHTML = `
+        <div class="modal" style="max-width:520px">
+          <div class="mt">
+            <span>// URL DE CONSULTAR COBERTURA</span>
+            <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalConfigCobertura').classList.remove('open')"><i class="ti ti-x"></i></button>
+          </div>
+          <div style="padding:8px 0">
+            <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px">URL de la plataforma</label>
+            <input type="text" id="nxConfigCoberturaURL" placeholder="http://..." style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;font-family:monospace">
+            <div style="font-size:11px;color:#64748b;margin-top:6px">
+              <i class="ti ti-info-circle" style="color:#3b82f6"></i>
+              Esta URL se abrirá en una nueva pestaña al tocar "Consultar Cobertura".
+            </div>
+            <div style="margin-top:14px;padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:11px;color:#1e3a6e">
+              <strong>Plataforma actual:</strong><br>
+              <span id="nxConfigCoberturaActual" style="font-family:monospace;word-break:break-all;color:#2563eb"></span>
+            </div>
+          </div>
+          <div class="fe" style="margin-top:14px">
+            <button class="btn" type="button" onclick="document.getElementById('nxModalConfigCobertura').classList.remove('open')">Cancelar</button>
+            <button class="btn bxl bc1" type="button" onclick="window.nxGuardarConfigCobertura()"><i class="ti ti-check"></i> Guardar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    // Mostrar URL actual
+    document.getElementById('nxConfigCoberturaURL').value = getUrl();
+    document.getElementById('nxConfigCoberturaActual').textContent = getUrl();
+    modal.classList.add('open');
+  };
+
+  window.nxGuardarConfigCobertura = function() {
+    const url = document.getElementById('nxConfigCoberturaURL')?.value?.trim();
+    if (!url) {
+      if (typeof window.toast === 'function') window.toast('err', 'URL vacía', 'Escribe la URL');
+      return;
+    }
+    setUrl(url);
+    document.getElementById('nxModalConfigCobertura').classList.remove('open');
+    if (typeof window.toast === 'function') window.toast('ok', 'URL guardada', 'Plataforma actualizada');
+  };
+
+  // ═══ AGREGAR BOTÓN AL DASHBOARD ═══
+  function inyectarBoton() {
+    if (document.getElementById('qaConsultarCobertura')) return true;
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    const qaExistente = vDash.querySelector('.qa');
+    if (!qaExistente) return false;
+    const qaGrid = qaExistente.parentElement;
+    if (!qaGrid) return false;
+
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaConsultarCobertura';
+    btn.setAttribute('onclick', "window.nxAbrirConsultarCobertura && window.nxAbrirConsultarCobertura()");
+    btn.innerHTML = `
+      <span class="qa-i"><i class="ti ti-shield-check"></i></span>
+      <div class="qa-l">Consultar Cobertura</div>
+    `;
+    
+    // Insertar como segundo (después del primer qa)
+    qaGrid.insertBefore(btn, qaExistente.nextSibling);
+    return true;
+  }
+
+  // ═══ AGREGAR ITEM AL SIDEBAR (configurar URL) ═══
+  // Por ahora solo se accede el modal config con: window.nxAbrirConfigCobertura()
+  // Más adelante se podría agregar al menú Configuración nativo
+
+  // ═══ INIT ═══
+  function init() {
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      if (inyectarBoton()) return;
+      if (intentos < 60) setTimeout(tryInit, 100);
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
