@@ -5652,3 +5652,81 @@
 
   injectCSS();
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - LETRAS NEGRAS CON SOMBRA 3D EN TABLAS
+   Cambia texto gris a negro con sombra solo en tablas.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_TABLAS_TEXTO_3D__) return;
+  window.__NEXUS_TABLAS_TEXTO_3D__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-tablas-texto-3d-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-tablas-texto-3d-css";
+    style.textContent = `
+      /* ═══ TEXTO NEGRO CON SOMBRA 3D - SOLO EN TABLAS ═══ */
+      
+      /* Aplica a todas las tablas del sistema */
+      table td,
+      table th,
+      .nxSL-table td,
+      .nxSL-table th,
+      .nxDC-table td,
+      .nxDC-table th {
+        color: #0f172a !important; /* negro con leve tinte azul */
+        text-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.7),
+          0 2px 4px rgba(0, 0, 0, 0.10) !important;
+        font-weight: 600 !important;
+      }
+      
+      /* Headers de tabla más fuertes */
+      table th,
+      .nxSL-table th,
+      .nxDC-table th {
+        color: #0a0f1e !important; /* negro más profundo */
+        text-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.8),
+          0 2px 6px rgba(0, 0, 0, 0.15) !important;
+        font-weight: 800 !important;
+      }
+      
+      /* Excepción: si tiene su propio color (rojo, verde, azul vibrante), respetarlo */
+      table td[style*="color:#"],
+      table td[style*="color: #"],
+      table th[style*="color:#"],
+      table th[style*="color: #"],
+      .nxSL-table [style*="color:#"],
+      .nxDC-table [style*="color:#"] {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+      }
+      
+      /* Excepción: badges/tags con fondo de color, mantener su texto */
+      table .nxSL-tag,
+      table .nxDC-tag,
+      table .badge,
+      table .tag {
+        text-shadow: none !important;
+      }
+      
+      /* Textos secundarios (clase muted) también más oscuros pero suaves */
+      table .nxSL-muted,
+      table .nxDC-muted,
+      .nxSL-table .nxSL-muted,
+      .nxDC-table .nxDC-muted {
+        color: #334155 !important; /* gris-azul oscuro, no totalmente negro */
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+})();
