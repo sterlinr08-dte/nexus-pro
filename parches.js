@@ -5496,3 +5496,159 @@
     init();
   }
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - BOTONES GLASSMORPHISM SUTIL
+   Efecto cristal/vidrio en todos los .btn conservando colores.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_BTN_GLASS_V1__) return;
+  window.__NEXUS_BTN_GLASS_V1__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-btn-glass-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-btn-glass-css";
+    style.textContent = `
+      /* ═══ GLASSMORPHISM BASE PARA TODOS LOS .btn ═══ */
+      .btn {
+        position: relative;
+        backdrop-filter: blur(10px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(10px) saturate(180%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        box-shadow:
+          0 4px 14px rgba(15, 23, 42, 0.10),
+          0 1px 3px rgba(15, 23, 42, 0.06),
+          inset 0 1px 0 rgba(255, 255, 255, 0.45),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.06) !important;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        overflow: hidden;
+      }
+      
+      /* Highlight superior tipo vidrio */
+      .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(180deg, rgba(255,255,255,0.22), transparent);
+        pointer-events: none;
+        border-radius: inherit;
+        z-index: 1;
+      }
+      
+      /* Contenido siempre encima del highlight */
+      .btn > * {
+        position: relative;
+        z-index: 2;
+      }
+      
+      /* ═══ HOVER LIFT (PC) ═══ */
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 8px 22px rgba(15, 23, 42, 0.14),
+          0 2px 6px rgba(15, 23, 42, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.55),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.08) !important;
+          filter: brightness(1.04);
+      }
+      
+      /* ═══ ACTIVE (cuando lo aprietas) ═══ */
+      .btn:active {
+        transform: translateY(0px) scale(0.97);
+        transition: all 0.08s ease !important;
+        box-shadow:
+          0 2px 8px rgba(15, 23, 42, 0.10),
+          inset 0 2px 4px rgba(0, 0, 0, 0.10) !important;
+      }
+      
+      /* ═══ BOTONES CON COLOR (bc1, bc2, bc3, bc4, bc5) ═══ */
+      /* Mantienen su color pero con efecto cristal arriba */
+      .btn.bc1, .btn.bc2, .btn.bc3, .btn.bc4, .btn.bc5 {
+        position: relative;
+      }
+      
+      .btn.bc1::before, .btn.bc2::before, .btn.bc3::before,
+      .btn.bc4::before, .btn.bc5::before {
+        background: linear-gradient(180deg, rgba(255,255,255,0.30), transparent);
+      }
+      
+      /* ═══ BOTÓN GHOST (transparente) ═══ */
+      .btn.bghost {
+        background: rgba(255, 255, 255, 0.55) !important;
+        border: 1px solid rgba(255, 255, 255, 0.28) !important;
+      }
+      
+      .btn.bghost:hover {
+        background: rgba(255, 255, 255, 0.75) !important;
+      }
+      
+      /* ═══ BOTÓN PEQUEÑO (bsm) ═══ */
+      .btn.bsm {
+        box-shadow:
+          0 2px 8px rgba(15, 23, 42, 0.08),
+          0 1px 2px rgba(15, 23, 42, 0.04),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.04) !important;
+      }
+      
+      .btn.bsm:hover {
+        transform: translateY(-1px);
+      }
+      
+      /* ═══ BOTÓN EXTRA LARGE (bxl) ═══ */
+      .btn.bxl {
+        box-shadow:
+          0 6px 18px rgba(15, 23, 42, 0.12),
+          0 2px 5px rgba(15, 23, 42, 0.06),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.08) !important;
+      }
+      
+      .btn.bxl:hover {
+        transform: translateY(-3px);
+        box-shadow:
+          0 12px 28px rgba(15, 23, 42, 0.18),
+          0 4px 10px rgba(15, 23, 42, 0.10),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.10) !important;
+      }
+      
+      /* ═══ MÓVIL: efecto active más visible (sin hover) ═══ */
+      @media (max-width: 768px) {
+        .btn:active {
+          transform: scale(0.94);
+          transition: all 0.08s ease !important;
+        }
+        .btn::before {
+          background: linear-gradient(180deg, rgba(255,255,255,0.28), transparent);
+        }
+      }
+      
+      /* ═══ Disabled (no cristal en desactivados) ═══ */
+      .btn:disabled,
+      .btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      
+      .btn:disabled::before,
+      .btn.disabled::before {
+        display: none;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+})();
