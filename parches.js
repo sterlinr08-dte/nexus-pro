@@ -6614,102 +6614,338 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - CAMPO CORREOS EMPLEADOS PARA REPORTE
-   Agrega un campo en el tab Notificaciones para configurar a qué
-   correos (empleados) llega el reporte diario. Guarda en configuracion.
+   NEXUS PRO - GESTIÓN DESTINATARIOS DE REPORTE (por empleado + secciones)
+   Panel en tab Notificaciones para agregar empleados y elegir qué
+   secciones del reporte recibe cada uno. Guarda en reporte_destinatarios.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
 
-  if (window.__NEXUS_CORREOS_REPORTE_V1__) return;
-  window.__NEXUS_CORREOS_REPORTE_V1__ = true;
+  if (window.__NEXUS_REPORTE_DEST_V1__) return;
+  window.__NEXUS_REPORTE_DEST_V1__ = true;
 
   function getAPI() {
     try { return (typeof API !== 'undefined') ? API : window.API; }
     catch(e) { return window.API; }
   }
-
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   }
 
-  async function cargarCorreos() {
+  // Las 11 secciones disponibles
+  const SECCIONES = [
+    { id: 'resumen', nom: '📊 Resumen general' },
+    { id: 'proceso', nom: '📋 Clientes en proceso' },
+    { id: 'cobros_hoy', nom: '💵 Cobros de hoy' },
+    { id: 'quien_debe', nom: '📕 Quién debe' },
+    { id: 'nuevos', nom: '🆕 Clientes nuevos del día' },
+    { id: 'vencer', nom: '⚠️ Pólizas por vencer' },
+    { id: 'facturas_hoy', nom: '📄 Facturas generadas hoy' },
+    { id: 'comisiones', nom: '💼 Agentes/comisiones' },
+    { id: 'transferencias', nom: '🔄 Transferencias del día' },
+    { id: 'inhabilitados', nom: '🚫 Inhabilitados/cancelados' },
+    { id: 'top_deudores', nom: '🔝 Top 5 deudores' }
+  ];
+
+  let _destCache = [];
+
+  async function cargarDest() {
     const api = getAPI();
-    if (!api?.get) return '';
+    if (!api?.get) return [];
     try {
-      const data = await api.get('configuracion', "select=valor&clave=eq.reporte_correos");
-      if (data && data[0]) return data[0].valor || '';
-    } catch(e) {}
-    return '';
+      const data = await api.get('reporte_destinatarios', 'select=*&order=created_at.asc');
+      _destCache = data || [];
+      return _destCache;
+    } catch(e) { return []; }
   }
 
-  window.nxGuardarCorreosReporte = async function() {
-    const input = document.getElementById('nxReporteCorreos');
-    if (!input) return;
-    const valor = input.value.trim();
-    const api = getAPI();
-    if (!api) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
+  function getSecs(d) {
+    try { return Array.isArray(d.secciones) ? d.secciones : JSON.parse(d.secciones || '[]'); }
+    catch(e) { return []; }
+  }
+
+  // ═══ ABRIR MODAL GESTIÓN ═══
+  window.nxAbrirDestinatarios = async function() {
+    let modal = document.getElementById('nxModalDest');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'overlay';
+      modal.id = 'nxModalDest';
+      modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div class="modal" style="max-width:560px"><div style="padding:40px;text-align:center;color:#64748b">Cargando...</div></div>';
+    modal.classList.add('open');
+    await cargarDest();
+    renderDestModal(modal);
+  };
+
+  function renderDestModal(modal) {
+    const lista = _destCache.length === 0
+      ? '<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">No hay empleados configurados.<br>Agrega uno abajo. 👇</div>'
+      : _destCache.map(d => {
+          const secs = getSecs(d);
+          return `
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <div style="flex:1">
+                  <div style="font-weight:800;font-size:13px;color:#0f172a">${esc(d.nombre)}</div>
+                  <div style="font-size:11px;color:#64748b">${esc(d.correo)}</div>
+                </div>
+                <span style="background:${d.activo?'#dcfce7':'#fee2e2'};color:${d.activo?'#059669':'#dc2626'};font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px">${d.activo?'ACTIVO':'INACTIVO'}</span>
+              </div>
+              <div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Recibe: ${secs.length} sección(es)</div>
+              <div style="display:flex;gap:6px">
+                <button class="btn bsm bc1" style="flex:1" onclick="window.nxEditarDest('${esc(d.id)}')"><i class="ti ti-pencil"></i> Editar</button>
+                <button class="btn bsm bghost" style="color:#dc2626" onclick="window.nxEliminarDest('${esc(d.id)}')"><i class="ti ti-trash"></i></button>
+              </div>
+            </div>`;
+        }).join('');
+
+    modal.innerHTML = `
+      <div class="modal" style="max-width:560px;max-height:82vh;display:flex;flex-direction:column;margin-bottom:80px">
+        <div class="mt" style="display:flex;align-items:center;gap:8px">
+          <button class="btn bghost bsm" onclick="document.getElementById('nxModalDest').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
+          <span style="flex:1;text-align:center"><i class="ti ti-mail-cog"></i> REPORTES POR EMPLEADO</span>
+          <button class="btn bghost bsm" onclick="document.getElementById('nxModalDest').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:8px 4px">${lista}</div>
+        <div style="padding-top:12px;border-top:1px solid #e2e8f0">
+          <button class="btn bxl bc1" style="width:100%" onclick="window.nxFormDest('')"><i class="ti ti-plus"></i> Agregar empleado</button>
+        </div>
+      </div>`;
+  }
+
+  // ═══ FORM AGREGAR/EDITAR ═══
+  window.nxFormDest = function(id) {
+    const d = id ? _destCache.find(x => String(x.id) === String(id)) : { nombre:'', correo:'', secciones:[], activo:true };
+    if (!d) return;
+    const secsActuales = getSecs(d);
+
+    const checks = SECCIONES.map(s => `
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:5px;cursor:pointer;font-size:12px">
+        <input type="checkbox" class="nx-sec-chk" value="${s.id}" ${secsActuales.includes(s.id)?'checked':''} style="width:16px;height:16px">
+        <span>${s.nom}</span>
+      </label>`).join('');
+
+    let fm = document.getElementById('nxFormDestModal');
+    if (!fm) {
+      fm = document.createElement('div');
+      fm.className = 'overlay';
+      fm.id = 'nxFormDestModal';
+      document.body.appendChild(fm);
+    }
+    fm.innerHTML = `
+      <div class="modal" style="max-width:480px;max-height:88vh;display:flex;flex-direction:column;margin-bottom:80px">
+        <div class="mt" style="display:flex;align-items:center;gap:8px">
+          <button class="btn bghost bsm" onclick="document.getElementById('nxFormDestModal').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
+          <span style="flex:1;text-align:center">${id?'EDITAR':'NUEVO'} EMPLEADO</span>
+          <button class="btn bghost bsm" onclick="document.getElementById('nxFormDestModal').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:8px 2px">
+          <div class="fr"><label>Nombre del empleado</label><input type="text" id="nxDestNom" value="${esc(d.nombre)}" placeholder="Ej: María"></div>
+          <div class="fr"><label>Correo</label><input type="email" id="nxDestCorreo" value="${esc(d.correo)}" placeholder="empleado@gmail.com"></div>
+          <div class="fr"><label>Activo</label><select id="nxDestActivo"><option value="si" ${d.activo!==false?'selected':''}>Sí</option><option value="no" ${d.activo===false?'selected':''}>No</option></select></div>
+          <div style="font-size:11px;font-weight:700;margin:12px 0 8px;text-transform:uppercase;color:#1e293b">Secciones que recibe</div>
+          ${checks}
+        </div>
+        <div class="fe" style="padding-top:12px;border-top:1px solid #e2e8f0;gap:8px">
+          <button class="btn" onclick="document.getElementById('nxFormDestModal').classList.remove('open')">Cancelar</button>
+          <button class="btn bxl bc1" onclick="window.nxGuardarDest('${esc(id||'')}')"><i class="ti ti-check"></i> Guardar</button>
+        </div>
+      </div>`;
+    fm.classList.add('open');
+  };
+
+  window.nxGuardarDest = async function(id) {
+    const nombre = document.getElementById('nxDestNom')?.value?.trim() || '';
+    const correo = document.getElementById('nxDestCorreo')?.value?.trim() || '';
+    const activo = document.getElementById('nxDestActivo')?.value === 'si';
+    const secs = [...document.querySelectorAll('.nx-sec-chk:checked')].map(c => c.value);
+
+    if (!nombre || !correo || !correo.includes('@')) {
+      if (typeof window.toast === 'function') window.toast('err', 'Faltan datos', 'Nombre y correo válido obligatorios');
       return;
     }
+    const api = getAPI();
+    if (!api) { if (typeof window.toast==='function') window.toast('err','API no disponible',''); return; }
+
+    const payload = { nombre, correo, secciones: JSON.stringify(secs), activo };
     try {
-      // Upsert en configuracion
-      await api.post('configuracion', { clave: 'reporte_correos', valor: valor }, { 
-        headers: { 'Prefer': 'resolution=merge-duplicates' } 
-      });
-      if (typeof window.toast === 'function') window.toast('ok', 'Guardado', 'Correos actualizados');
-    } catch(e) {
-      // Si falla el post, intentar patch
-      try {
-        await api.patch('configuracion', 'clave=eq.reporte_correos', { valor: valor });
-        if (typeof window.toast === 'function') window.toast('ok', 'Guardado', 'Correos actualizados');
-      } catch(e2) {
-        if (typeof window.toast === 'function') window.toast('err', 'No se pudo guardar', e2.message || '');
+      if (id) {
+        await api.patch('reporte_destinatarios', `id=eq.${id}`, payload);
+      } else {
+        await api.post('reporte_destinatarios', payload);
       }
+      document.getElementById('nxFormDestModal').classList.remove('open');
+      await cargarDest();
+      const m = document.getElementById('nxModalDest');
+      if (m) renderDestModal(m);
+      if (typeof window.toast === 'function') window.toast('ok', 'Guardado', '');
+    } catch(e) {
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo guardar', e.message || '');
     }
   };
 
-  async function inyectarCampo() {
-    if (document.getElementById('nxReporteCorreosPanel')) return true;
-    
-    // Buscar el panel del tab Notificaciones (cfgPanel2)
+  window.nxEditarDest = function(id) { window.nxFormDest(id); };
+
+  window.nxEliminarDest = async function(id) {
+    if (!confirm('¿Eliminar este empleado de los reportes?')) return;
+    const api = getAPI();
+    if (!api?.del) return;
+    try {
+      await api.del('reporte_destinatarios', `id=eq.${id}`);
+      await cargarDest();
+      const m = document.getElementById('nxModalDest');
+      if (m) renderDestModal(m);
+      if (typeof window.toast === 'function') window.toast('ok', 'Eliminado', '');
+    } catch(e) {
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo eliminar', '');
+    }
+  };
+
+  // ═══ INYECTAR BOTÓN EN TAB NOTIFICACIONES ═══
+  function inyectarBoton() {
+    if (document.getElementById('nxDestBtnPanel')) return true;
     const panel = document.getElementById('cfgPanel2');
     if (!panel) return false;
-    
     const nc = panel.querySelector('.nc');
     if (!nc) return false;
-    
-    const correosActuales = await cargarCorreos();
-    
+
     const div = document.createElement('div');
-    div.id = 'nxReporteCorreosPanel';
+    div.id = 'nxDestBtnPanel';
     div.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9';
     div.innerHTML = `
       <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;color:#1e293b">
-        <i class="ti ti-users"></i> Correos de empleados (reporte diario)
+        <i class="ti ti-users"></i> Reportes por empleado
       </div>
       <div style="background:#eff6ff;border-radius:8px;padding:9px 11px;font-size:10px;color:#1e3a6e;margin-bottom:10px;line-height:1.5">
-        💡 El reporte diario llegará también a estos correos. Sepáralos por coma. Tu correo principal siempre lo recibe.
+        💡 Agrega empleados y elige qué secciones del reporte recibe cada uno. Tú (admin) siempre recibes todo.
       </div>
-      <div class="fr">
-        <textarea id="nxReporteCorreos" placeholder="empleado1@gmail.com, empleado2@gmail.com" rows="2" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;resize:vertical;font-family:inherit">${esc(correosActuales)}</textarea>
-      </div>
-      <button class="btn bxl bc1" onclick="window.nxGuardarCorreosReporte()" style="margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar correos</button>
+      <button class="btn bxl bc1" style="width:100%" onclick="window.nxAbrirDestinatarios()"><i class="ti ti-mail-cog"></i> Gestionar empleados y secciones</button>
     `;
-    
     nc.appendChild(div);
     return true;
   }
 
   function init() {
     let intentos = 0;
-    const tryInit = function() {
+    const tryInit = () => {
       intentos++;
-      inyectarCampo().then(ok => {
-        if (!ok && intentos < 80) setTimeout(tryInit, 200);
-      });
+      if (inyectarBoton()) return;
+      if (intentos < 80) setTimeout(tryInit, 200);
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - SELECTOR DE HORAS DEL REPORTE
+   Panel en tab Notificaciones para elegir a qué horas llega el reporte.
+   Guarda en configuracion.reporte_horas (array de horas RD 0-23).
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_REPORTE_HORAS_V1__) return;
+  window.__NEXUS_REPORTE_HORAS_V1__ = true;
+
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
+  }
+
+  // Horas predefinidas elegibles (formato 24h, RD)
+  const HORAS = [
+    { h: 6, lbl: '6:00 AM' }, { h: 7, lbl: '7:00 AM' }, { h: 8, lbl: '8:00 AM' },
+    { h: 9, lbl: '9:00 AM' }, { h: 12, lbl: '12:00 PM' }, { h: 13, lbl: '1:00 PM' },
+    { h: 14, lbl: '2:00 PM' }, { h: 17, lbl: '5:00 PM' }, { h: 18, lbl: '6:00 PM' },
+    { h: 19, lbl: '7:00 PM' }, { h: 20, lbl: '8:00 PM' }, { h: 21, lbl: '9:00 PM' }
+  ];
+
+  async function cargarHoras() {
+    const api = getAPI();
+    if (!api?.get) return [7, 18];
+    try {
+      const data = await api.get('configuracion', "select=valor&clave=eq.reporte_horas");
+      if (data && data[0] && data[0].valor) {
+        const arr = JSON.parse(data[0].valor);
+        if (Array.isArray(arr)) return arr;
+      }
+    } catch(e) {}
+    return [7, 18];
+  }
+
+  window.nxGuardarHorasReporte = async function() {
+    const elegidas = [...document.querySelectorAll('.nx-hora-chk:checked')].map(c => parseInt(c.value));
+    if (elegidas.length === 0) {
+      if (typeof window.toast === 'function') window.toast('err', 'Elige al menos 1 hora', '');
+      return;
+    }
+    const api = getAPI();
+    if (!api) { if (typeof window.toast==='function') window.toast('err','API no disponible',''); return; }
+    const valor = JSON.stringify(elegidas.sort((a,b)=>a-b));
+    try {
+      await api.patch('configuracion', 'clave=eq.reporte_horas', { valor });
+      if (typeof window.toast === 'function') window.toast('ok', 'Guardado', elegidas.length + ' hora(s) configurada(s)');
+    } catch(e) {
+      try {
+        await api.post('configuracion', { clave: 'reporte_horas', valor });
+        if (typeof window.toast === 'function') window.toast('ok', 'Guardado', '');
+      } catch(e2) {
+        if (typeof window.toast === 'function') window.toast('err', 'No se pudo guardar', '');
+      }
+    }
+  };
+
+  async function inyectarPanel() {
+    if (document.getElementById('nxHorasPanel')) return true;
+    const panel = document.getElementById('cfgPanel2');
+    if (!panel) return false;
+    const nc = panel.querySelector('.nc');
+    if (!nc) return false;
+
+    const horasActuales = await cargarHoras();
+
+    const checks = HORAS.map(x => `
+      <label style="display:flex;align-items:center;gap:6px;padding:7px 9px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:11px">
+        <input type="checkbox" class="nx-hora-chk" value="${x.h}" ${horasActuales.includes(x.h)?'checked':''} style="width:15px;height:15px">
+        <span>${x.lbl}</span>
+      </label>`).join('');
+
+    const div = document.createElement('div');
+    div.id = 'nxHorasPanel';
+    div.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9';
+    div.innerHTML = `
+      <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;color:#1e293b">
+        <i class="ti ti-clock"></i> Horas del reporte
+      </div>
+      <div style="background:#eff6ff;border-radius:8px;padding:9px 11px;font-size:10px;color:#1e3a6e;margin-bottom:10px;line-height:1.5">
+        💡 Elige a qué horas (hora RD) llega el reporte. Puedes marcar varias.
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
+        ${checks}
+      </div>
+      <button class="btn bxl bc1" style="width:100%" onclick="window.nxGuardarHorasReporte()"><i class="ti ti-device-floppy"></i> Guardar horas</button>
+    `;
+    nc.appendChild(div);
+    return true;
+  }
+
+  function init() {
+    let intentos = 0;
+    const tryInit = () => {
+      intentos++;
+      inyectarPanel().then(ok => { if (!ok && intentos < 80) setTimeout(tryInit, 200); });
     };
     tryInit();
   }
