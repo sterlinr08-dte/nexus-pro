@@ -6957,7 +6957,11 @@
   };
 
   async function inyectarPanel() {
-    if (document.getElementById('nxProgPanel')) return true;
+    if (document.getElementById('nxProgPanel')) {
+      // Ya existe, solo refrescar los datos
+      await refrescarPanel();
+      return true;
+    }
     const panel = document.getElementById('cfgPanel2');
     if (!panel) return false;
     const nc = panel.querySelector('.nc');
@@ -6986,7 +6990,7 @@
       </div>
 
       <div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:6px">📅 DÍAS</div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px">${diasChecks}</div>
+      <div id="nxDiasGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px">${diasChecks}</div>
 
       <button class="btn bxl bc1" style="width:100%;margin-bottom:8px" onclick="window.nxGuardarProgramacion()"><i class="ti ti-device-floppy"></i> Guardar programación</button>
       <button class="btn bxl" style="width:100%;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none" onclick="window.nxProbarReporte()"><i class="ti ti-send"></i> Probar reporte ahora</button>
@@ -6996,10 +7000,33 @@
     return true;
   }
 
+  // Refrescar panel con datos frescos de la BD
+  async function refrescarPanel() {
+    await cargarConfig();
+    renderHorasList();
+    // Actualizar checkboxes de días
+    const grid = document.getElementById('nxDiasGrid');
+    if (grid) {
+      grid.querySelectorAll('.nx-dia-chk').forEach(chk => {
+        chk.checked = _dias.includes(parseInt(chk.value));
+      });
+    }
+  }
+  window.nxRefrescarProgramacion = refrescarPanel;
+
   function init() {
     let intentos = 0;
     const tryInit = () => { intentos++; inyectarPanel().then(ok => { if(!ok && intentos<80) setTimeout(tryInit,200); }); };
     tryInit();
+    
+    // Cuando se toca el tab Notificaciones, refrescar la programación
+    const tabBtn = document.getElementById('cfgTab2');
+    if (tabBtn && !tabBtn.dataset.nxProgRefresh) {
+      tabBtn.dataset.nxProgRefresh = '1';
+      tabBtn.addEventListener('click', () => {
+        setTimeout(() => { if (window.nxRefrescarProgramacion) window.nxRefrescarProgramacion(); }, 350);
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
