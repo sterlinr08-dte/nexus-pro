@@ -6031,21 +6031,22 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - MIS CUENTAS BANCARIAS
-   Módulo privado para guardar tus cuentas bancarias y copiar fácil.
-   Uso interno, no se muestra a clientes.
+   NEXUS PRO - MIS CUENTAS BANCARIAS V2 (SUPABASE)
+   Guardadas en tabla mis_cuentas_bancarias.
+   Migración automática desde localStorage si existe.
+   Botón copiar grande + campo notas.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
 
-  if (window.__NEXUS_MIS_CUENTAS_V1__) return;
-  window.__NEXUS_MIS_CUENTAS_V1__ = true;
+  if (window.__NEXUS_MIS_CUENTAS_V2__) return;
+  window.__NEXUS_MIS_CUENTAS_V2__ = true;
 
-  const STORAGE_KEY = 'nx_mis_cuentas_bancarias';
+  const STORAGE_KEY_VIEJO = 'nx_mis_cuentas_bancarias';
+  let _cuentasCache = [];
 
   // ═══ BANCOS PRINCIPALES RD ═══
-  // logoUrl puede ser null → fallback a iniciales con color
   const BANCOS = [
     { id: 'popular', nom: 'Banco Popular Dominicano', color: '#0066b3', logoUrl: 'https://www.popularenlinea.com/Style%20Library/PWeb/img/logo-popular.svg' },
     { id: 'bhd', nom: 'BHD', color: '#e85a00', logoUrl: 'https://www.bhd.com.do/wps/wcm/connect/bhdleon/Site/header/logo-bhd.svg' },
@@ -6056,25 +6057,24 @@
     { id: 'caribe', nom: 'Banco Caribe', color: '#0099d4', logoUrl: null },
     { id: 'santacruz', nom: 'Banco Santa Cruz', color: '#1a5490', logoUrl: null },
     { id: 'vimenca', nom: 'Banco Vimenca', color: '#003c71', logoUrl: null },
-    { id: 'apap', nom: 'APAP', color: '#00a89c', logoUrl: null }
+    { id: 'apap', nom: 'APAP', color: '#00a89c', logoUrl: null },
+    { id: 'otro', nom: 'Otro Banco', color: '#64748b', logoUrl: null }
   ];
 
+  // ═══ API HELPER ═══
+  function getAPI() {
+    return (typeof window.API !== 'undefined') ? window.API : null;
+  }
+
   // ═══ HELPERS ═══
-  function getCuentas() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch(e) { return []; }
-  }
-  function saveCuentas(arr) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(e) {}
-  }
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   }
   function getBanco(id) {
-    return BANCOS.find(b => b.id === id) || { id: 'otro', nom: 'Otro', color: '#64748b', logoUrl: null };
+    return BANCOS.find(b => b.id === id) || BANCOS.find(b => b.id === 'otro');
   }
-  function renderLogoBanco(bancoId, size = 40) {
+  function renderLogoBanco(bancoId, size = 44) {
     const b = getBanco(bancoId);
     if (b.logoUrl) {
       return `<div style="width:${size}px;height:${size}px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;display:grid;place-items:center;overflow:hidden;flex-shrink:0">
@@ -6084,16 +6084,69 @@
     return `<div style="width:${size}px;height:${size}px;border-radius:10px;background:${b.color};color:#fff;display:grid;place-items:center;font-weight:900;font-size:${Math.floor(size*0.5)}px;flex-shrink:0;box-shadow:0 2px 6px rgba(15,23,42,.15)">${b.nom[0]}</div>`;
   }
 
-  // ═══ COPIAR AL PORTAPAPELES ═══
-  async function copiarCuenta(idx) {
-    const cuentas = getCuentas();
-    const c = cuentas[idx];
+  // ═══ CARGAR DE SUPABASE ═══
+  async function cargarCuentas() {
+    const api = getAPI();
+    if (!api?.get) return [];
+    try {
+      const data = await api.get('mis_cuentas_bancarias', 'select=*&order=orden.asc,created_at.asc');
+      _cuentasCache = data || [];
+      return _cuentasCache;
+    } catch(e) {
+      console.error('Error cargando cuentas:', e);
+      return [];
+    }
+  }
+
+  // ═══ MIGRACIÓN desde localStorage (una sola vez) ═══
+  async function migrarDeLocalStorage() {
+    const yaMigrado = localStorage.getItem('nx_cuentas_migradas_v2');
+    if (yaMigrado === '1') return;
+    
+    try {
+      const viejas = JSON.parse(localStorage.getItem(STORAGE_KEY_VIEJO) || '[]');
+      if (!viejas.length) {
+        localStorage.setItem('nx_cuentas_migradas_v2', '1');
+        return;
+      }
+      const api = getAPI();
+      if (!api?.post) return;
+      
+      for (const c of viejas) {
+        try {
+          await api.post('mis_cuentas_bancarias', {
+            banco: c.banco || 'otro',
+            tipo: c.tipo || 'Ahorros',
+            numero: c.numero || '',
+            titular: c.titular || '',
+            cedula: c.cedula || '',
+            notas: ''
+          });
+        } catch(e) { console.warn('No se pudo migrar:', c, e); }
+      }
+      localStorage.setItem('nx_cuentas_migradas_v2', '1');
+      // Limpiar el viejo localStorage
+      localStorage.removeItem(STORAGE_KEY_VIEJO);
+      if (typeof window.toast === 'function') window.toast('ok', '✅ Migrado', viejas.length + ' cuenta(s) salvada(s) a Supabase');
+    } catch(e) {
+      console.error('Error en migración:', e);
+    }
+  }
+
+  // ═══ COPIAR AL PORTAPAPELES + ABRIR WHATSAPP ═══
+  async function copiarCuenta(id) {
+    const c = _cuentasCache.find(x => String(x.id) === String(id));
     if (!c) return;
     const b = getBanco(c.banco);
-    const texto = `🏦 *${b.nom}*\n📋 ${c.tipo}\n💳 ${c.numero}\n👤 ${c.titular}\n🆔 ${c.cedula}`;
+    let texto = `🏦 *${b.nom}*\n📋 ${c.tipo}\n💳 ${c.numero}\n👤 ${c.titular}`;
+    if (c.cedula) texto += `\n🆔 ${c.cedula}`;
+    if (c.notas) texto += `\n📝 ${c.notas}`;
+    
+    let copiadoOK = false;
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(texto);
+        copiadoOK = true;
       } else {
         // Fallback antiguo
         const ta = document.createElement('textarea');
@@ -6102,18 +6155,46 @@
         ta.style.opacity = '0';
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        copiadoOK = document.execCommand('copy');
         document.body.removeChild(ta);
       }
-      if (typeof window.toast === 'function') window.toast('ok', '✅ Copiado', 'Listo para pegar en WhatsApp');
     } catch(e) {
-      if (typeof window.toast === 'function') window.toast('err', 'No se pudo copiar', '');
+      console.error('Error copiar:', e);
     }
+    
+    if (copiadoOK) {
+      if (typeof window.toast === 'function') window.toast('ok', '✅ Copiado', 'Abriendo WhatsApp...');
+    } else {
+      if (typeof window.toast === 'function') window.toast('warn', 'No se copió', 'Abriendo WhatsApp igual');
+    }
+    
+    // Abrir WhatsApp después de copiar
+    // En móvil intenta abrir la app, en PC abre WhatsApp Web
+    setTimeout(() => {
+      try {
+        // Detectar si es móvil
+        const esMovil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (esMovil) {
+          // Móvil: intenta abrir la app de WhatsApp
+          window.location.href = 'whatsapp://send';
+          // Fallback a wa.me si no se abre
+          setTimeout(() => {
+            window.open('https://wa.me/', '_blank', 'noopener,noreferrer');
+          }, 500);
+        } else {
+          // PC: abre WhatsApp Web
+          window.open('https://web.whatsapp.com/', '_blank', 'noopener,noreferrer');
+        }
+      } catch(e) {
+        console.error('Error abriendo WhatsApp:', e);
+        window.open('https://wa.me/', '_blank', 'noopener,noreferrer');
+      }
+    }, 400);
   }
   window.nxCopiarCuenta = copiarCuenta;
 
   // ═══ MODAL ═══
-  function abrirModal() {
+  async function abrirModal() {
     let modal = document.getElementById('nxModalCuentas');
     if (!modal) {
       modal = document.createElement('div');
@@ -6121,30 +6202,34 @@
       modal.id = 'nxModalCuentas';
       document.body.appendChild(modal);
     }
-    renderModal(modal);
+    modal.innerHTML = '<div class="modal" style="max-width:560px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando cuentas...</div></div></div>';
     modal.classList.add('open');
+    
+    await cargarCuentas();
+    renderModal(modal);
   }
   window.nxAbrirMisCuentas = abrirModal;
 
   function renderModal(modal) {
-    const cuentas = getCuentas();
+    const cuentas = _cuentasCache;
     const lista = cuentas.length === 0
-      ? '<div style="text-align:center;padding:40px 20px;color:#64748b;font-size:13px">No tienes cuentas registradas. Agrega tu primera abajo.</div>'
-      : cuentas.map((c, i) => {
+      ? '<div style="text-align:center;padding:40px 20px;color:#64748b;font-size:13px">No tienes cuentas registradas.<br>Agrega tu primera abajo. 👇</div>'
+      : cuentas.map((c) => {
           const b = getBanco(c.banco);
           return `
-            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:8px">
-              ${renderLogoBanco(c.banco, 44)}
+            <div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+              ${renderLogoBanco(c.banco, 48)}
               <div style="flex:1;min-width:0">
                 <div style="font-weight:800;color:#0f172a;font-size:13px">${esc(b.nom)}</div>
-                <div style="font-size:11px;color:#64748b">${esc(c.tipo)} · ${esc(c.numero)}</div>
-                <div style="font-size:11px;color:#64748b">${esc(c.titular)}</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px">${esc(c.tipo)} · <strong style="color:#1e3a8a">${esc(c.numero)}</strong></div>
+                <div style="font-size:11px;color:#64748b">${esc(c.titular)}${c.cedula ? ' · ' + esc(c.cedula) : ''}</div>
+                ${c.notas ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px;font-style:italic">📝 ${esc(c.notas)}</div>` : ''}
               </div>
-              <div style="display:flex;flex-direction:column;gap:4px">
-                <button class="btn bsm bc1" onclick="window.nxCopiarCuenta(${i})" title="Copiar"><i class="ti ti-copy"></i></button>
-                <button class="btn bsm bghost" onclick="window.nxEditarCuenta(${i})" title="Editar"><i class="ti ti-pencil"></i></button>
-                <button class="btn bsm bghost" onclick="window.nxEliminarCuenta(${i})" title="Eliminar" style="color:#dc2626"><i class="ti ti-trash"></i></button>
-              </div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:12px">
+              <button class="btn bxl bc1" style="flex:1;font-weight:800;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff" onclick="window.nxCopiarCuenta('${esc(c.id)}')"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> COPIAR + WHATSAPP</button>
+              <button class="btn bsm bghost" onclick="window.nxEditarCuenta('${esc(c.id)}')" title="Editar"><i class="ti ti-pencil"></i></button>
+              <button class="btn bsm bghost" onclick="window.nxEliminarCuenta('${esc(c.id)}')" title="Eliminar" style="color:#dc2626"><i class="ti ti-trash"></i></button>
             </div>
           `;
         }).join('');
@@ -6159,16 +6244,15 @@
           ${lista}
         </div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">
-          <button class="btn bxl bc1" style="width:100%" onclick="window.nxAbrirFormCuenta(-1)"><i class="ti ti-plus"></i> Agregar nueva cuenta</button>
+          <button class="btn bxl bc1" style="width:100%" onclick="window.nxAbrirFormCuenta('')"><i class="ti ti-plus"></i> Agregar nueva cuenta</button>
         </div>
       </div>
     `;
   }
 
   // ═══ FORMULARIO AGREGAR/EDITAR ═══
-  window.nxAbrirFormCuenta = function(idx) {
-    const cuentas = getCuentas();
-    const c = idx >= 0 ? cuentas[idx] : { banco: 'popular', tipo: 'Ahorros', numero: '', titular: '', cedula: '' };
+  window.nxAbrirFormCuenta = function(id) {
+    const c = id ? _cuentasCache.find(x => String(x.id) === String(id)) : { banco: 'popular', tipo: 'Ahorros', numero: '', titular: '', cedula: '', notas: '' };
     if (!c) return;
     
     const opcionesBanco = BANCOS.map(b => `<option value="${b.id}" ${b.id === c.banco ? 'selected' : ''}>${esc(b.nom)}</option>`).join('');
@@ -6181,9 +6265,9 @@
       document.body.appendChild(formModal);
     }
     formModal.innerHTML = `
-      <div class="modal" style="max-width:480px">
+      <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
         <div class="mt">
-          <span><i class="ti ti-edit"></i> ${idx >= 0 ? 'EDITAR' : 'NUEVA'} CUENTA</span>
+          <span><i class="ti ti-edit"></i> ${id ? 'EDITAR' : 'NUEVA'} CUENTA</span>
           <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxFormCuenta').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         <div style="padding:8px 0">
@@ -6202,57 +6286,79 @@
           <div class="fr"><label>Titular</label>
             <input type="text" id="nxCntTitular" value="${esc(c.titular)}" placeholder="Nombre completo">
           </div>
-          <div class="fr"><label>Cédula</label>
-            <input type="text" id="nxCntCedula" value="${esc(c.cedula)}" placeholder="000-0000000-0">
+          <div class="fr"><label>Cédula (opcional)</label>
+            <input type="text" id="nxCntCedula" value="${esc(c.cedula || '')}" placeholder="000-0000000-0">
+          </div>
+          <div class="fr"><label>Notas adicionales (opcional)</label>
+            <textarea id="nxCntNotas" placeholder="Ej: Para pagos hasta RD$ 50,000..." rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;resize:vertical;font-family:inherit">${esc(c.notas || '')}</textarea>
           </div>
         </div>
         <div class="fe" style="margin-top:14px;gap:8px">
           <button class="btn" type="button" onclick="document.getElementById('nxFormCuenta').classList.remove('open')">Cancelar</button>
-          <button class="btn bxl bc1" type="button" onclick="window.nxGuardarCuenta(${idx})"><i class="ti ti-check"></i> Guardar</button>
+          <button class="btn bxl bc1" type="button" onclick="window.nxGuardarCuenta('${esc(id || '')}')"><i class="ti ti-check"></i> Guardar</button>
         </div>
       </div>
     `;
     formModal.classList.add('open');
   };
 
-  window.nxGuardarCuenta = function(idx) {
-    const get = id => document.getElementById(id)?.value?.trim() || '';
+  window.nxGuardarCuenta = async function(id) {
+    const get = elId => document.getElementById(elId)?.value?.trim() || '';
     const cuenta = {
       banco: document.getElementById('nxCntBanco')?.value || 'popular',
       tipo: document.getElementById('nxCntTipo')?.value || 'Ahorros',
       numero: get('nxCntNumero'),
       titular: get('nxCntTitular'),
-      cedula: get('nxCntCedula')
+      cedula: get('nxCntCedula'),
+      notas: get('nxCntNotas')
     };
     if (!cuenta.numero || !cuenta.titular) {
       if (typeof window.toast === 'function') window.toast('err', 'Faltan datos', 'Número y titular son obligatorios');
       return;
     }
-    const cuentas = getCuentas();
-    if (idx >= 0) {
-      cuentas[idx] = cuenta;
-    } else {
-      cuentas.push(cuenta);
+    
+    const api = getAPI();
+    if (!api) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
+      return;
     }
-    saveCuentas(cuentas);
-    document.getElementById('nxFormCuenta').classList.remove('open');
-    const modalPrincipal = document.getElementById('nxModalCuentas');
-    if (modalPrincipal) renderModal(modalPrincipal);
-    if (typeof window.toast === 'function') window.toast('ok', 'Guardado', '');
+    
+    try {
+      if (id) {
+        // Editar
+        await api.patch('mis_cuentas_bancarias', `id=eq.${id}`, cuenta);
+      } else {
+        // Crear
+        await api.post('mis_cuentas_bancarias', cuenta);
+      }
+      document.getElementById('nxFormCuenta').classList.remove('open');
+      await cargarCuentas();
+      const modalPrincipal = document.getElementById('nxModalCuentas');
+      if (modalPrincipal) renderModal(modalPrincipal);
+      if (typeof window.toast === 'function') window.toast('ok', 'Guardado', '');
+    } catch(e) {
+      console.error('Error guardando:', e);
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo guardar', e.message || '');
+    }
   };
 
-  window.nxEditarCuenta = function(idx) {
-    window.nxAbrirFormCuenta(idx);
+  window.nxEditarCuenta = function(id) {
+    window.nxAbrirFormCuenta(id);
   };
 
-  window.nxEliminarCuenta = function(idx) {
+  window.nxEliminarCuenta = async function(id) {
     if (!confirm('¿Eliminar esta cuenta?')) return;
-    const cuentas = getCuentas();
-    cuentas.splice(idx, 1);
-    saveCuentas(cuentas);
-    const modalPrincipal = document.getElementById('nxModalCuentas');
-    if (modalPrincipal) renderModal(modalPrincipal);
-    if (typeof window.toast === 'function') window.toast('ok', 'Eliminada', '');
+    const api = getAPI();
+    if (!api?.del) return;
+    try {
+      await api.del('mis_cuentas_bancarias', `id=eq.${id}`);
+      await cargarCuentas();
+      const modalPrincipal = document.getElementById('nxModalCuentas');
+      if (modalPrincipal) renderModal(modalPrincipal);
+      if (typeof window.toast === 'function') window.toast('ok', 'Eliminada', '');
+    } catch(e) {
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo eliminar', e.message || '');
+    }
   };
 
   // ═══ BOTÓN EN DASHBOARD ═══
@@ -6282,7 +6388,11 @@
     let intentos = 0;
     const tryInit = function() {
       intentos++;
-      if (inyectarBoton()) return;
+      if (inyectarBoton()) {
+        // Después de inyectar, intentar migrar (solo una vez)
+        setTimeout(migrarDeLocalStorage, 2000);
+        return;
+      }
       if (intentos < 60) setTimeout(tryInit, 100);
     };
     tryInit();
