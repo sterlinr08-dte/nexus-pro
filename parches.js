@@ -5919,19 +5919,9 @@
         font-size: 22px !important;
       }
       
-      /* Punto verde animado tipo "online" */
+      /* Punto verde animado tipo "online" - DESACTIVADO por preferencia del usuario */
       .tn-tog::after {
-        content: '';
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 8px;
-        height: 8px;
-        background: #34d399;
-        border-radius: 50%;
-        border: 2px solid #ffffff;
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
-        animation: nxPulseOnline 2s infinite;
+        display: none !important;
       }
       
       @keyframes nxPulseOnline {
@@ -6063,7 +6053,8 @@
 
   // ═══ API HELPER ═══
   function getAPI() {
-    return (typeof window.API !== 'undefined') ? window.API : null;
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
   }
 
   // ═══ HELPERS ═══
