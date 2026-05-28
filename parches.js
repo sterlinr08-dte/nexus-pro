@@ -6612,3 +6612,111 @@
     init();
   }
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - CAMPO CORREOS EMPLEADOS PARA REPORTE
+   Agrega un campo en el tab Notificaciones para configurar a qué
+   correos (empleados) llega el reporte diario. Guarda en configuracion.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_CORREOS_REPORTE_V1__) return;
+  window.__NEXUS_CORREOS_REPORTE_V1__ = true;
+
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+
+  async function cargarCorreos() {
+    const api = getAPI();
+    if (!api?.get) return '';
+    try {
+      const data = await api.get('configuracion', "select=valor&clave=eq.reporte_correos");
+      if (data && data[0]) return data[0].valor || '';
+    } catch(e) {}
+    return '';
+  }
+
+  window.nxGuardarCorreosReporte = async function() {
+    const input = document.getElementById('nxReporteCorreos');
+    if (!input) return;
+    const valor = input.value.trim();
+    const api = getAPI();
+    if (!api) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
+      return;
+    }
+    try {
+      // Upsert en configuracion
+      await api.post('configuracion', { clave: 'reporte_correos', valor: valor }, { 
+        headers: { 'Prefer': 'resolution=merge-duplicates' } 
+      });
+      if (typeof window.toast === 'function') window.toast('ok', 'Guardado', 'Correos actualizados');
+    } catch(e) {
+      // Si falla el post, intentar patch
+      try {
+        await api.patch('configuracion', 'clave=eq.reporte_correos', { valor: valor });
+        if (typeof window.toast === 'function') window.toast('ok', 'Guardado', 'Correos actualizados');
+      } catch(e2) {
+        if (typeof window.toast === 'function') window.toast('err', 'No se pudo guardar', e2.message || '');
+      }
+    }
+  };
+
+  async function inyectarCampo() {
+    if (document.getElementById('nxReporteCorreosPanel')) return true;
+    
+    // Buscar el panel del tab Notificaciones (cfgPanel2)
+    const panel = document.getElementById('cfgPanel2');
+    if (!panel) return false;
+    
+    const nc = panel.querySelector('.nc');
+    if (!nc) return false;
+    
+    const correosActuales = await cargarCorreos();
+    
+    const div = document.createElement('div');
+    div.id = 'nxReporteCorreosPanel';
+    div.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9';
+    div.innerHTML = `
+      <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;color:#1e293b">
+        <i class="ti ti-users"></i> Correos de empleados (reporte diario)
+      </div>
+      <div style="background:#eff6ff;border-radius:8px;padding:9px 11px;font-size:10px;color:#1e3a6e;margin-bottom:10px;line-height:1.5">
+        💡 El reporte diario llegará también a estos correos. Sepáralos por coma. Tu correo principal siempre lo recibe.
+      </div>
+      <div class="fr">
+        <textarea id="nxReporteCorreos" placeholder="empleado1@gmail.com, empleado2@gmail.com" rows="2" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;resize:vertical;font-family:inherit">${esc(correosActuales)}</textarea>
+      </div>
+      <button class="btn bxl bc1" onclick="window.nxGuardarCorreosReporte()" style="margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar correos</button>
+    `;
+    
+    nc.appendChild(div);
+    return true;
+  }
+
+  function init() {
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      inyectarCampo().then(ok => {
+        if (!ok && intentos < 80) setTimeout(tryInit, 200);
+      });
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
