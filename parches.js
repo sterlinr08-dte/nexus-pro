@@ -6848,111 +6848,161 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - SELECTOR DE HORAS DEL REPORTE
-   Panel en tab Notificaciones para elegir a qué horas llega el reporte.
-   Guarda en configuracion.reporte_horas (array de horas RD 0-23).
+   NEXUS PRO - PROGRAMACIÓN REPORTE V2 (hora libre + días + prueba)
+   Hora exacta HH:MM, días de la semana, y botón de prueba inmediata.
+   Guarda en configuracion.reporte_horas (["HH:MM"]) y reporte_dias ([0-6]).
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
 
-  if (window.__NEXUS_REPORTE_HORAS_V1__) return;
-  window.__NEXUS_REPORTE_HORAS_V1__ = true;
+  if (window.__NEXUS_REPORTE_PROG_V2__) return;
+  window.__NEXUS_REPORTE_PROG_V2__ = true;
 
   function getAPI() {
     try { return (typeof API !== 'undefined') ? API : window.API; }
     catch(e) { return window.API; }
   }
+  function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
 
-  // Horas predefinidas elegibles (formato 24h, RD)
-  const HORAS = [
-    { h: 6, lbl: '6:00 AM' }, { h: 7, lbl: '7:00 AM' }, { h: 8, lbl: '8:00 AM' },
-    { h: 9, lbl: '9:00 AM' }, { h: 12, lbl: '12:00 PM' }, { h: 13, lbl: '1:00 PM' },
-    { h: 14, lbl: '2:00 PM' }, { h: 17, lbl: '5:00 PM' }, { h: 18, lbl: '6:00 PM' },
-    { h: 19, lbl: '7:00 PM' }, { h: 20, lbl: '8:00 PM' }, { h: 21, lbl: '9:00 PM' }
+  const DIAS = [
+    { n: 1, lbl: 'Lun' }, { n: 2, lbl: 'Mar' }, { n: 3, lbl: 'Mié' },
+    { n: 4, lbl: 'Jue' }, { n: 5, lbl: 'Vie' }, { n: 6, lbl: 'Sáb' }, { n: 0, lbl: 'Dom' }
   ];
 
-  async function cargarHoras() {
+  let _horas = ['07:00', '18:00'];
+  let _dias = [0,1,2,3,4,5,6];
+
+  async function cargarConfig() {
     const api = getAPI();
-    if (!api?.get) return [7, 18];
+    if (!api?.get) return;
     try {
-      const data = await api.get('configuracion', "select=valor&clave=eq.reporte_horas");
-      if (data && data[0] && data[0].valor) {
-        const arr = JSON.parse(data[0].valor);
-        if (Array.isArray(arr)) return arr;
+      const dH = await api.get('configuracion', "select=valor&clave=eq.reporte_horas");
+      if (dH && dH[0] && dH[0].valor) {
+        const arr = JSON.parse(dH[0].valor);
+        if (Array.isArray(arr)) _horas = arr.map(x => typeof x === 'number' ? String(x).padStart(2,'0')+':00' : x);
       }
     } catch(e) {}
-    return [7, 18];
+    try {
+      const dD = await api.get('configuracion', "select=valor&clave=eq.reporte_dias");
+      if (dD && dD[0] && dD[0].valor) {
+        const arr = JSON.parse(dD[0].valor);
+        if (Array.isArray(arr)) _dias = arr;
+      }
+    } catch(e) {}
   }
 
-  window.nxGuardarHorasReporte = async function() {
-    const elegidas = [...document.querySelectorAll('.nx-hora-chk:checked')].map(c => parseInt(c.value));
-    if (elegidas.length === 0) {
-      if (typeof window.toast === 'function') window.toast('err', 'Elige al menos 1 hora', '');
-      return;
-    }
+  function renderHorasList() {
+    const cont = document.getElementById('nxHorasList');
+    if (!cont) return;
+    cont.innerHTML = _horas.length === 0
+      ? '<div style="color:#94a3b8;font-size:11px;padding:6px">Sin horas. Agrega abajo.</div>'
+      : _horas.map((h, i) => `
+          <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;margin-bottom:5px">
+            <i class="ti ti-clock" style="color:#2563eb"></i>
+            <span style="flex:1;font-weight:700;font-size:13px">${esc(h)}</span>
+            <button class="btn bsm bghost" style="color:#dc2626;padding:2px 8px" onclick="window.nxQuitarHora(${i})"><i class="ti ti-x"></i></button>
+          </div>`).join('');
+  }
+
+  window.nxAgregarHora = function() {
+    const input = document.getElementById('nxNuevaHora');
+    if (!input || !input.value) return;
+    const h = input.value; // formato HH:MM
+    if (!_horas.includes(h)) { _horas.push(h); _horas.sort(); }
+    renderHorasList();
+    input.value = '';
+  };
+  window.nxQuitarHora = function(i) {
+    _horas.splice(i, 1);
+    renderHorasList();
+  };
+
+  window.nxGuardarProgramacion = async function() {
+    const dias = [...document.querySelectorAll('.nx-dia-chk:checked')].map(c => parseInt(c.value));
+    if (_horas.length === 0) { if(window.toast) window.toast('err','Agrega al menos 1 hora',''); return; }
+    if (dias.length === 0) { if(window.toast) window.toast('err','Elige al menos 1 día',''); return; }
     const api = getAPI();
-    if (!api) { if (typeof window.toast==='function') window.toast('err','API no disponible',''); return; }
-    const valor = JSON.stringify(elegidas.sort((a,b)=>a-b));
+    if (!api) { if(window.toast) window.toast('err','API no disponible',''); return; }
     try {
-      await api.patch('configuracion', 'clave=eq.reporte_horas', { valor });
-      if (typeof window.toast === 'function') window.toast('ok', 'Guardado', elegidas.length + ' hora(s) configurada(s)');
+      await api.patch('configuracion', 'clave=eq.reporte_horas', { valor: JSON.stringify(_horas) });
+      await api.patch('configuracion', 'clave=eq.reporte_dias', { valor: JSON.stringify(dias.sort()) });
+      if(window.toast) window.toast('ok','Guardado', _horas.length+' hora(s), '+dias.length+' día(s)');
     } catch(e) {
-      try {
-        await api.post('configuracion', { clave: 'reporte_horas', valor });
-        if (typeof window.toast === 'function') window.toast('ok', 'Guardado', '');
-      } catch(e2) {
-        if (typeof window.toast === 'function') window.toast('err', 'No se pudo guardar', '');
+      if(window.toast) window.toast('err','No se pudo guardar', e.message||'');
+    }
+  };
+
+  // BOTÓN DE PRUEBA
+  window.nxProbarReporte = async function() {
+    const api = getAPI();
+    if (!api) { if(window.toast) window.toast('err','API no disponible',''); return; }
+    if(window.toast) window.toast('ok','📨 Enviando prueba...','Espera unos segundos');
+    try {
+      // Llamar a la Edge Function con forzar:true
+      const url = (api.url || '') + '/functions/v1/enviar-reporte-email';
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (api.key || '') },
+        body: JSON.stringify({ forzar: true })
+      });
+      if (resp.ok) {
+        if(window.toast) window.toast('ok','✅ Reporte de prueba enviado','Revisa tu correo');
+      } else {
+        if(window.toast) window.toast('err','Error al enviar prueba','Código '+resp.status);
       }
+    } catch(e) {
+      if(window.toast) window.toast('err','Error al enviar', e.message||'');
     }
   };
 
   async function inyectarPanel() {
-    if (document.getElementById('nxHorasPanel')) return true;
+    if (document.getElementById('nxProgPanel')) return true;
     const panel = document.getElementById('cfgPanel2');
     if (!panel) return false;
     const nc = panel.querySelector('.nc');
     if (!nc) return false;
 
-    const horasActuales = await cargarHoras();
+    await cargarConfig();
 
-    const checks = HORAS.map(x => `
-      <label style="display:flex;align-items:center;gap:6px;padding:7px 9px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:11px">
-        <input type="checkbox" class="nx-hora-chk" value="${x.h}" ${horasActuales.includes(x.h)?'checked':''} style="width:15px;height:15px">
-        <span>${x.lbl}</span>
+    const diasChecks = DIAS.map(d => `
+      <label style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:10px">
+        <input type="checkbox" class="nx-dia-chk" value="${d.n}" ${_dias.includes(d.n)?'checked':''} style="width:15px;height:15px">
+        <span>${d.lbl}</span>
       </label>`).join('');
 
     const div = document.createElement('div');
-    div.id = 'nxHorasPanel';
+    div.id = 'nxProgPanel';
     div.style.cssText = 'margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9';
     div.innerHTML = `
-      <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;color:#1e293b">
-        <i class="ti ti-clock"></i> Horas del reporte
+      <div style="font-size:11px;font-weight:700;margin-bottom:8px;text-transform:uppercase;color:#1e293b"><i class="ti ti-calendar-clock"></i> Programación del reporte</div>
+      <div style="background:#eff6ff;border-radius:8px;padding:9px 11px;font-size:10px;color:#1e3a6e;margin-bottom:12px;line-height:1.5">💡 Elige hora exacta (HH:MM) y los días. Tú (admin) siempre recibes todo.</div>
+      
+      <div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:6px">⏰ HORAS</div>
+      <div id="nxHorasList" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <input type="time" id="nxNuevaHora" style="flex:1;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+        <button class="btn bc1" onclick="window.nxAgregarHora()"><i class="ti ti-plus"></i> Agregar</button>
       </div>
-      <div style="background:#eff6ff;border-radius:8px;padding:9px 11px;font-size:10px;color:#1e3a6e;margin-bottom:10px;line-height:1.5">
-        💡 Elige a qué horas (hora RD) llega el reporte. Puedes marcar varias.
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
-        ${checks}
-      </div>
-      <button class="btn bxl bc1" style="width:100%" onclick="window.nxGuardarHorasReporte()"><i class="ti ti-device-floppy"></i> Guardar horas</button>
+
+      <div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:6px">📅 DÍAS</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px">${diasChecks}</div>
+
+      <button class="btn bxl bc1" style="width:100%;margin-bottom:8px" onclick="window.nxGuardarProgramacion()"><i class="ti ti-device-floppy"></i> Guardar programación</button>
+      <button class="btn bxl" style="width:100%;background:linear-gradient(135deg,#059669,#047857);color:#fff;border:none" onclick="window.nxProbarReporte()"><i class="ti ti-send"></i> Probar reporte ahora</button>
     `;
     nc.appendChild(div);
+    renderHorasList();
     return true;
   }
 
   function init() {
     let intentos = 0;
-    const tryInit = () => {
-      intentos++;
-      inyectarPanel().then(ok => { if (!ok && intentos < 80) setTimeout(tryInit, 200); });
-    };
+    const tryInit = () => { intentos++; inyectarPanel().then(ok => { if(!ok && intentos<80) setTimeout(tryInit,200); }); };
     tryInit();
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init, { once: true });
-  } else {
-    init();
-  }
+  } else { init(); }
 })();
