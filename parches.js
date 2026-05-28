@@ -2189,12 +2189,12 @@
       actualizarKPI();
     }
     
-    // Listeners (touch + mouse)
-    document.addEventListener('mousedown', onPressStart, true);
-    document.addEventListener('touchstart', onPressStart, true);
-    document.addEventListener('mouseup', onPressEnd, true);
-    document.addEventListener('touchend', onPressEnd, true);
-    document.addEventListener('click', onClick, true);
+    // Listeners (touch + mouse) - capture:false para NO bloquear multi-touch
+    document.addEventListener('mousedown', onPressStart, false);
+    document.addEventListener('touchstart', onPressStart, false);
+    document.addEventListener('mouseup', onPressEnd, false);
+    document.addEventListener('touchend', onPressEnd, false);
+    document.addEventListener('click', onClick, false);
     
     // Inicializar el KPI con el período actual al cargar
     setTimeout(actualizarKPI, 1500);
@@ -6468,52 +6468,67 @@
     document.head.appendChild(style);
   }
 
-  // ═══ 1. BARRA INFERIOR AUTO-OCULTAR ═══
+  // ═══ 1. BARRA INFERIOR: oculta tras 5s + reaparece al deslizar dedo abajo ═══
   function setupAutoHideBar() {
-    let lastScrollY = 0;
-    let ticking = false;
     let bar = null;
+    let timer = null;
+    let touchStartY = 0;
     
     const findBar = () => {
       bar = document.querySelector('.mobile-bottom-nav-clean');
       return bar;
     };
     
-    const onScroll = () => {
-      if (!bar && !findBar()) return;
-      const currentY = window.scrollY || document.documentElement.scrollTop;
-      const diff = currentY - lastScrollY;
-      
-      if (Math.abs(diff) > 6) {
-        if (diff > 0 && currentY > 80) {
-          // Scroll abajo = ocultar
-          bar.classList.add('nx-hidden');
-        } else {
-          // Scroll arriba o casi arriba = mostrar
-          bar.classList.remove('nx-hidden');
-        }
-        lastScrollY = currentY;
-      }
-      ticking = false;
-    };
-    
-    // Throttle con requestAnimationFrame
-    const onScrollEvent = () => {
-      if (!ticking) {
-        requestAnimationFrame(onScroll);
-        ticking = true;
-      }
-    };
-    
-    // Listen scroll en ventana y en .content
-    window.addEventListener('scroll', onScrollEvent, { passive: true });
-    const cnt = document.getElementById('cnt');
-    if (cnt) cnt.addEventListener('scroll', onScrollEvent, { passive: true });
-    
-    // Si tocan/mueven el dedo, mostrar
-    document.addEventListener('touchstart', () => {
+    const mostrarBarra = () => {
       if (!bar && !findBar()) return;
       bar.classList.remove('nx-hidden');
+      reiniciarTimer();
+    };
+    
+    const ocultarBarra = () => {
+      if (!bar && !findBar()) return;
+      bar.classList.add('nx-hidden');
+    };
+    
+    const reiniciarTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(ocultarBarra, 5000);
+    };
+    
+    // Iniciar el timer cuando carga
+    const iniciar = () => {
+      if (!findBar()) {
+        setTimeout(iniciar, 500);
+        return;
+      }
+      reiniciarTimer();
+    };
+    iniciar();
+    
+    // Detectar deslizar el dedo HACIA ABAJO (solo con 1 dedo)
+    document.addEventListener('touchstart', (e) => {
+      // Si hay más de 1 dedo, no interferir (multi-touch)
+      if (e.touches.length > 1) return;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', (e) => {
+      // Si hay más de 1 dedo, no interferir (multi-touch)
+      if (e.touches.length > 1) return;
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - touchStartY;
+      // Deslizar hacia abajo (diff positivo) = mostrar barra
+      if (diff > 30) {
+        mostrarBarra();
+        touchStartY = currentY;
+      }
+    }, { passive: true });
+    
+    // En PC: mover mouse hacia abajo de la pantalla = mostrar
+    document.addEventListener('mousemove', (e) => {
+      if (e.clientY > window.innerHeight - 100) {
+        mostrarBarra();
+      }
     }, { passive: true });
   }
   
