@@ -6029,3 +6029,268 @@
     init();
   }
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - MIS CUENTAS BANCARIAS
+   Módulo privado para guardar tus cuentas bancarias y copiar fácil.
+   Uso interno, no se muestra a clientes.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_MIS_CUENTAS_V1__) return;
+  window.__NEXUS_MIS_CUENTAS_V1__ = true;
+
+  const STORAGE_KEY = 'nx_mis_cuentas_bancarias';
+
+  // ═══ BANCOS PRINCIPALES RD ═══
+  // logoUrl puede ser null → fallback a iniciales con color
+  const BANCOS = [
+    { id: 'popular', nom: 'Banco Popular Dominicano', color: '#0066b3', logoUrl: 'https://www.popularenlinea.com/Style%20Library/PWeb/img/logo-popular.svg' },
+    { id: 'bhd', nom: 'BHD', color: '#e85a00', logoUrl: 'https://www.bhd.com.do/wps/wcm/connect/bhdleon/Site/header/logo-bhd.svg' },
+    { id: 'reservas', nom: 'Banreservas', color: '#c8102e', logoUrl: null },
+    { id: 'scotiabank', nom: 'Scotiabank', color: '#e1141d', logoUrl: null },
+    { id: 'bdi', nom: 'Banco BDI', color: '#003876', logoUrl: null },
+    { id: 'banesco', nom: 'Banesco', color: '#00a652', logoUrl: null },
+    { id: 'caribe', nom: 'Banco Caribe', color: '#0099d4', logoUrl: null },
+    { id: 'santacruz', nom: 'Banco Santa Cruz', color: '#1a5490', logoUrl: null },
+    { id: 'vimenca', nom: 'Banco Vimenca', color: '#003c71', logoUrl: null },
+    { id: 'apap', nom: 'APAP', color: '#00a89c', logoUrl: null }
+  ];
+
+  // ═══ HELPERS ═══
+  function getCuentas() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch(e) { return []; }
+  }
+  function saveCuentas(arr) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(e) {}
+  }
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+  function getBanco(id) {
+    return BANCOS.find(b => b.id === id) || { id: 'otro', nom: 'Otro', color: '#64748b', logoUrl: null };
+  }
+  function renderLogoBanco(bancoId, size = 40) {
+    const b = getBanco(bancoId);
+    if (b.logoUrl) {
+      return `<div style="width:${size}px;height:${size}px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;display:grid;place-items:center;overflow:hidden;flex-shrink:0">
+        <img src="${b.logoUrl}" alt="${esc(b.nom)}" style="max-width:75%;max-height:75%;object-fit:contain" onerror="this.parentElement.innerHTML='<div style=&quot;width:100%;height:100%;background:${b.color};color:#fff;font-weight:900;display:grid;place-items:center;font-size:${Math.floor(size*0.5)}px&quot;>${b.nom[0]}</div>'">
+      </div>`;
+    }
+    return `<div style="width:${size}px;height:${size}px;border-radius:10px;background:${b.color};color:#fff;display:grid;place-items:center;font-weight:900;font-size:${Math.floor(size*0.5)}px;flex-shrink:0;box-shadow:0 2px 6px rgba(15,23,42,.15)">${b.nom[0]}</div>`;
+  }
+
+  // ═══ COPIAR AL PORTAPAPELES ═══
+  async function copiarCuenta(idx) {
+    const cuentas = getCuentas();
+    const c = cuentas[idx];
+    if (!c) return;
+    const b = getBanco(c.banco);
+    const texto = `🏦 *${b.nom}*\n📋 ${c.tipo}\n💳 ${c.numero}\n👤 ${c.titular}\n🆔 ${c.cedula}`;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(texto);
+      } else {
+        // Fallback antiguo
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      if (typeof window.toast === 'function') window.toast('ok', '✅ Copiado', 'Listo para pegar en WhatsApp');
+    } catch(e) {
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo copiar', '');
+    }
+  }
+  window.nxCopiarCuenta = copiarCuenta;
+
+  // ═══ MODAL ═══
+  function abrirModal() {
+    let modal = document.getElementById('nxModalCuentas');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'overlay';
+      modal.id = 'nxModalCuentas';
+      document.body.appendChild(modal);
+    }
+    renderModal(modal);
+    modal.classList.add('open');
+  }
+  window.nxAbrirMisCuentas = abrirModal;
+
+  function renderModal(modal) {
+    const cuentas = getCuentas();
+    const lista = cuentas.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:#64748b;font-size:13px">No tienes cuentas registradas. Agrega tu primera abajo.</div>'
+      : cuentas.map((c, i) => {
+          const b = getBanco(c.banco);
+          return `
+            <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:8px">
+              ${renderLogoBanco(c.banco, 44)}
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:800;color:#0f172a;font-size:13px">${esc(b.nom)}</div>
+                <div style="font-size:11px;color:#64748b">${esc(c.tipo)} · ${esc(c.numero)}</div>
+                <div style="font-size:11px;color:#64748b">${esc(c.titular)}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <button class="btn bsm bc1" onclick="window.nxCopiarCuenta(${i})" title="Copiar"><i class="ti ti-copy"></i></button>
+                <button class="btn bsm bghost" onclick="window.nxEditarCuenta(${i})" title="Editar"><i class="ti ti-pencil"></i></button>
+                <button class="btn bsm bghost" onclick="window.nxEliminarCuenta(${i})" title="Eliminar" style="color:#dc2626"><i class="ti ti-trash"></i></button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+    modal.innerHTML = `
+      <div class="modal" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt">
+          <span><i class="ti ti-building-bank"></i> MIS CUENTAS BANCARIAS</span>
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalCuentas').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:8px 4px">
+          ${lista}
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">
+          <button class="btn bxl bc1" style="width:100%" onclick="window.nxAbrirFormCuenta(-1)"><i class="ti ti-plus"></i> Agregar nueva cuenta</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ═══ FORMULARIO AGREGAR/EDITAR ═══
+  window.nxAbrirFormCuenta = function(idx) {
+    const cuentas = getCuentas();
+    const c = idx >= 0 ? cuentas[idx] : { banco: 'popular', tipo: 'Ahorros', numero: '', titular: '', cedula: '' };
+    if (!c) return;
+    
+    const opcionesBanco = BANCOS.map(b => `<option value="${b.id}" ${b.id === c.banco ? 'selected' : ''}>${esc(b.nom)}</option>`).join('');
+    
+    let formModal = document.getElementById('nxFormCuenta');
+    if (!formModal) {
+      formModal = document.createElement('div');
+      formModal.className = 'overlay';
+      formModal.id = 'nxFormCuenta';
+      document.body.appendChild(formModal);
+    }
+    formModal.innerHTML = `
+      <div class="modal" style="max-width:480px">
+        <div class="mt">
+          <span><i class="ti ti-edit"></i> ${idx >= 0 ? 'EDITAR' : 'NUEVA'} CUENTA</span>
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxFormCuenta').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="padding:8px 0">
+          <div class="fr"><label>Banco</label>
+            <select id="nxCntBanco">${opcionesBanco}</select>
+          </div>
+          <div class="fr"><label>Tipo de cuenta</label>
+            <select id="nxCntTipo">
+              <option value="Ahorros" ${c.tipo === 'Ahorros' ? 'selected' : ''}>Ahorros</option>
+              <option value="Corriente" ${c.tipo === 'Corriente' ? 'selected' : ''}>Corriente</option>
+            </select>
+          </div>
+          <div class="fr"><label>Número de cuenta</label>
+            <input type="text" id="nxCntNumero" value="${esc(c.numero)}" placeholder="Ej: 1234567890" inputmode="numeric">
+          </div>
+          <div class="fr"><label>Titular</label>
+            <input type="text" id="nxCntTitular" value="${esc(c.titular)}" placeholder="Nombre completo">
+          </div>
+          <div class="fr"><label>Cédula</label>
+            <input type="text" id="nxCntCedula" value="${esc(c.cedula)}" placeholder="000-0000000-0">
+          </div>
+        </div>
+        <div class="fe" style="margin-top:14px;gap:8px">
+          <button class="btn" type="button" onclick="document.getElementById('nxFormCuenta').classList.remove('open')">Cancelar</button>
+          <button class="btn bxl bc1" type="button" onclick="window.nxGuardarCuenta(${idx})"><i class="ti ti-check"></i> Guardar</button>
+        </div>
+      </div>
+    `;
+    formModal.classList.add('open');
+  };
+
+  window.nxGuardarCuenta = function(idx) {
+    const get = id => document.getElementById(id)?.value?.trim() || '';
+    const cuenta = {
+      banco: document.getElementById('nxCntBanco')?.value || 'popular',
+      tipo: document.getElementById('nxCntTipo')?.value || 'Ahorros',
+      numero: get('nxCntNumero'),
+      titular: get('nxCntTitular'),
+      cedula: get('nxCntCedula')
+    };
+    if (!cuenta.numero || !cuenta.titular) {
+      if (typeof window.toast === 'function') window.toast('err', 'Faltan datos', 'Número y titular son obligatorios');
+      return;
+    }
+    const cuentas = getCuentas();
+    if (idx >= 0) {
+      cuentas[idx] = cuenta;
+    } else {
+      cuentas.push(cuenta);
+    }
+    saveCuentas(cuentas);
+    document.getElementById('nxFormCuenta').classList.remove('open');
+    const modalPrincipal = document.getElementById('nxModalCuentas');
+    if (modalPrincipal) renderModal(modalPrincipal);
+    if (typeof window.toast === 'function') window.toast('ok', 'Guardado', '');
+  };
+
+  window.nxEditarCuenta = function(idx) {
+    window.nxAbrirFormCuenta(idx);
+  };
+
+  window.nxEliminarCuenta = function(idx) {
+    if (!confirm('¿Eliminar esta cuenta?')) return;
+    const cuentas = getCuentas();
+    cuentas.splice(idx, 1);
+    saveCuentas(cuentas);
+    const modalPrincipal = document.getElementById('nxModalCuentas');
+    if (modalPrincipal) renderModal(modalPrincipal);
+    if (typeof window.toast === 'function') window.toast('ok', 'Eliminada', '');
+  };
+
+  // ═══ BOTÓN EN DASHBOARD ═══
+  function inyectarBoton() {
+    if (document.getElementById('qaMisCuentas')) return true;
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    const qaExistente = vDash.querySelector('.qa');
+    if (!qaExistente) return false;
+    const qaGrid = qaExistente.parentElement;
+    if (!qaGrid) return false;
+
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaMisCuentas';
+    btn.setAttribute('onclick', 'window.nxAbrirMisCuentas && window.nxAbrirMisCuentas()');
+    btn.innerHTML = `
+      <span class="qa-i"><i class="ti ti-building-bank"></i></span>
+      <div class="qa-l">Mis Cuentas</div>
+    `;
+    qaGrid.appendChild(btn);
+    return true;
+  }
+
+  // ═══ INIT ═══
+  function init() {
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      if (inyectarBoton()) return;
+      if (intentos < 60) setTimeout(tryInit, 100);
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
