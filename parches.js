@@ -6124,8 +6124,8 @@
     }
   }
 
-  // ═══ COPIAR AL PORTAPAPELES + ABRIR WHATSAPP ═══
-  async function copiarCuenta(id) {
+  // ═══ COPIAR AL PORTAPAPELES (sin WhatsApp) ═══
+  async function copiarSoloCuenta(id) {
     const c = _cuentasCache.find(x => String(x.id) === String(id));
     if (!c) return;
     const b = getBanco(c.banco);
@@ -6133,56 +6133,62 @@
     if (c.cedula) texto += `\n🆔 ${c.cedula}`;
     if (c.notas) texto += `\n📝 ${c.notas}`;
     
-    let copiadoOK = false;
+    // Vibración táctil (haptic feedback)
+    try { if (navigator.vibrate) navigator.vibrate(35); } catch(e) {}
+    
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(texto);
-        copiadoOK = true;
       } else {
-        // Fallback antiguo
         const ta = document.createElement('textarea');
         ta.value = texto;
         ta.style.position = 'fixed';
         ta.style.opacity = '0';
         document.body.appendChild(ta);
         ta.select();
-        copiadoOK = document.execCommand('copy');
+        document.execCommand('copy');
         document.body.removeChild(ta);
       }
+      if (typeof window.toast === 'function') window.toast('ok', '✅ Info copiada', '');
     } catch(e) {
-      console.error('Error copiar:', e);
+      if (typeof window.toast === 'function') window.toast('err', 'No se pudo copiar', '');
     }
+  }
+  window.nxCopiarSoloCuenta = copiarSoloCuenta;
+  
+  // ═══ ENVIAR POR WHATSAPP (copia + abre WA) ═══
+  async function enviarPorWhatsApp(id) {
+    const c = _cuentasCache.find(x => String(x.id) === String(id));
+    if (!c) return;
+    const b = getBanco(c.banco);
+    let texto = `🏦 *${b.nom}*\n📋 ${c.tipo}\n💳 ${c.numero}\n👤 ${c.titular}`;
+    if (c.cedula) texto += `\n🆔 ${c.cedula}`;
+    if (c.notas) texto += `\n📝 ${c.notas}`;
     
-    if (copiadoOK) {
-      if (typeof window.toast === 'function') window.toast('ok', '✅ Copiado', 'Abriendo WhatsApp...');
-    } else {
-      if (typeof window.toast === 'function') window.toast('warn', 'No se copió', 'Abriendo WhatsApp igual');
-    }
+    // Vibración
+    try { if (navigator.vibrate) navigator.vibrate(35); } catch(e) {}
     
-    // Abrir WhatsApp después de copiar
-    // En móvil intenta abrir la app, en PC abre WhatsApp Web
+    // Copiar también al portapapeles
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(texto);
+      }
+    } catch(e) {}
+    
+    if (typeof window.toast === 'function') window.toast('ok', '✅ Abriendo WhatsApp', '');
+    
+    // Abrir WhatsApp con texto pre-cargado
     setTimeout(() => {
       try {
-        // Detectar si es móvil
-        const esMovil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (esMovil) {
-          // Móvil: intenta abrir la app de WhatsApp
-          window.location.href = 'whatsapp://send';
-          // Fallback a wa.me si no se abre
-          setTimeout(() => {
-            window.open('https://wa.me/', '_blank', 'noopener,noreferrer');
-          }, 500);
-        } else {
-          // PC: abre WhatsApp Web
-          window.open('https://web.whatsapp.com/', '_blank', 'noopener,noreferrer');
-        }
+        const textoCodificado = encodeURIComponent(texto);
+        const url = `https://wa.me/?text=${textoCodificado}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
       } catch(e) {
-        console.error('Error abriendo WhatsApp:', e);
         window.open('https://wa.me/', '_blank', 'noopener,noreferrer');
       }
-    }, 400);
+    }, 300);
   }
-  window.nxCopiarCuenta = copiarCuenta;
+  window.nxEnviarPorWhatsApp = enviarPorWhatsApp;
 
   // ═══ MODAL ═══
   async function abrirModal() {
@@ -6208,19 +6214,25 @@
       : cuentas.map((c) => {
           const b = getBanco(c.banco);
           return `
-            <div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
-              ${renderLogoBanco(c.banco, 48)}
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:800;color:#0f172a;font-size:13px">${esc(b.nom)}</div>
-                <div style="font-size:11px;color:#64748b;margin-top:2px">${esc(c.tipo)} · <strong style="color:#1e3a8a">${esc(c.numero)}</strong></div>
-                <div style="font-size:11px;color:#64748b">${esc(c.titular)}${c.cedula ? ' · ' + esc(c.cedula) : ''}</div>
-                ${c.notas ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px;font-style:italic">📝 ${esc(c.notas)}</div>` : ''}
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:0;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden">
+              <div onclick="window.nxCopiarSoloCuenta('${esc(c.id)}')" style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;transition:background .12s ease,transform .08s ease" onmousedown="this.style.transform='scale(0.98)';this.style.background='#f1f5f9'" onmouseup="this.style.transform='';this.style.background=''" ontouchstart="this.style.transform='scale(0.98)';this.style.background='#f1f5f9'" ontouchend="this.style.transform='';this.style.background=''">
+                ${renderLogoBanco(c.banco, 48)}
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:800;color:#0f172a;font-size:13px">${esc(b.nom)}</div>
+                  <div style="font-size:11px;color:#64748b;margin-top:2px">${esc(c.tipo)} · <strong style="color:#1e3a8a">${esc(c.numero)}</strong></div>
+                  <div style="font-size:11px;color:#64748b">${esc(c.titular)}${c.cedula ? ' · ' + esc(c.cedula) : ''}</div>
+                  ${c.notas ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px;font-style:italic">📝 ${esc(c.notas)}</div>` : ''}
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;color:#2563eb">
+                  <i class="ti ti-copy" style="font-size:22px"></i>
+                  <span style="font-size:8px;font-weight:700;letter-spacing:.5px">TOCA</span>
+                </div>
               </div>
-            </div>
-            <div style="display:flex;gap:6px;margin-bottom:12px">
-              <button class="btn bxl bc1" style="flex:1;font-weight:800;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff" onclick="window.nxCopiarCuenta('${esc(c.id)}')"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> COPIAR + WHATSAPP</button>
-              <button class="btn bsm bghost" onclick="window.nxEditarCuenta('${esc(c.id)}')" title="Editar"><i class="ti ti-pencil"></i></button>
-              <button class="btn bsm bghost" onclick="window.nxEliminarCuenta('${esc(c.id)}')" title="Eliminar" style="color:#dc2626"><i class="ti ti-trash"></i></button>
+              <div style="display:flex;gap:6px;padding:8px 10px;background:#f8fafc;border-top:1px solid #e2e8f0">
+                <button class="btn bxl" style="flex:1;font-weight:800;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none" onclick="window.nxEnviarPorWhatsApp('${esc(c.id)}')"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> ENVIAR POR WHATSAPP</button>
+                <button class="btn bsm bghost" onclick="window.nxEditarCuenta('${esc(c.id)}')" title="Editar"><i class="ti ti-pencil"></i></button>
+                <button class="btn bsm bghost" onclick="window.nxEliminarCuenta('${esc(c.id)}')" title="Eliminar" style="color:#dc2626"><i class="ti ti-trash"></i></button>
+              </div>
             </div>
           `;
         }).join('');
