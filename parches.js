@@ -6197,6 +6197,10 @@
       modal = document.createElement('div');
       modal.className = 'overlay';
       modal.id = 'nxModalCuentas';
+      // Tap fuera del modal = cerrar
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.classList.remove('open');
+      });
       document.body.appendChild(modal);
     }
     modal.innerHTML = '<div class="modal" style="max-width:560px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando cuentas...</div></div></div>';
@@ -6238,15 +6242,16 @@
         }).join('');
 
     modal.innerHTML = `
-      <div class="modal" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt">
-          <span><i class="ti ti-building-bank"></i> MIS CUENTAS BANCARIAS</span>
+      <div class="modal" style="max-width:560px;max-height:78vh;display:flex;flex-direction:column;margin-bottom:80px">
+        <div class="mt" style="display:flex;align-items:center;gap:8px">
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalCuentas').classList.remove('open')" title="Volver"><i class="ti ti-arrow-left"></i></button>
+          <span style="flex:1;text-align:center"><i class="ti ti-building-bank"></i> MIS CUENTAS BANCARIAS</span>
           <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalCuentas').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
-        <div style="overflow-y:auto;flex:1;padding:8px 4px">
+        <div style="overflow-y:auto;flex:1;padding:8px 4px;-webkit-overflow-scrolling:touch">
           ${lista}
         </div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0">
+        <div style="padding-top:12px;border-top:1px solid #e2e8f0;padding-bottom:8px">
           <button class="btn bxl bc1" style="width:100%" onclick="window.nxAbrirFormCuenta('')"><i class="ti ti-plus"></i> Agregar nueva cuenta</button>
         </div>
       </div>
@@ -6401,6 +6406,191 @@
     tryInit();
   }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - BARRA INFERIOR AUTO-OCULTAR + BOTÓN VOLVER/X EN MODALES + TAP FUERA
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_UX_EXTRAS_V1__) return;
+  window.__NEXUS_UX_EXTRAS_V1__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-ux-extras-css")) return;
+    const style = document.createElement("style");
+    style.id = "nx-ux-extras-css";
+    style.textContent = `
+      /* ═══ BARRA INFERIOR AUTO-OCULTAR ═══ */
+      .mobile-bottom-nav-clean {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+      .mobile-bottom-nav-clean.nx-hidden {
+        transform: translate(-50%, 100%) translateY(20px) !important;
+      }
+      
+      /* ═══ BOTÓN VOLVER EN MODALES ═══ */
+      .modal .mt {
+        position: relative;
+        padding-left: 44px !important;
+      }
+      .modal .mt .nx-volver-btn {
+        position: absolute;
+        left: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(15,23,42,0.06);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        color: #1e3a8a;
+        font-size: 18px;
+        transition: background 0.15s ease;
+      }
+      .modal .mt .nx-volver-btn:hover {
+        background: rgba(15,23,42,0.12);
+      }
+      .modal .mt .nx-volver-btn:active {
+        transform: translateY(-50%) scale(0.92);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // ═══ 1. BARRA INFERIOR AUTO-OCULTAR ═══
+  function setupAutoHideBar() {
+    let lastScrollY = 0;
+    let ticking = false;
+    let bar = null;
+    
+    const findBar = () => {
+      bar = document.querySelector('.mobile-bottom-nav-clean');
+      return bar;
+    };
+    
+    const onScroll = () => {
+      if (!bar && !findBar()) return;
+      const currentY = window.scrollY || document.documentElement.scrollTop;
+      const diff = currentY - lastScrollY;
+      
+      if (Math.abs(diff) > 6) {
+        if (diff > 0 && currentY > 80) {
+          // Scroll abajo = ocultar
+          bar.classList.add('nx-hidden');
+        } else {
+          // Scroll arriba o casi arriba = mostrar
+          bar.classList.remove('nx-hidden');
+        }
+        lastScrollY = currentY;
+      }
+      ticking = false;
+    };
+    
+    // Throttle con requestAnimationFrame
+    const onScrollEvent = () => {
+      if (!ticking) {
+        requestAnimationFrame(onScroll);
+        ticking = true;
+      }
+    };
+    
+    // Listen scroll en ventana y en .content
+    window.addEventListener('scroll', onScrollEvent, { passive: true });
+    const cnt = document.getElementById('cnt');
+    if (cnt) cnt.addEventListener('scroll', onScrollEvent, { passive: true });
+    
+    // Si tocan/mueven el dedo, mostrar
+    document.addEventListener('touchstart', () => {
+      if (!bar && !findBar()) return;
+      bar.classList.remove('nx-hidden');
+    }, { passive: true });
+  }
+  
+  // ═══ 2. INYECTAR BOTÓN VOLVER EN MODALES + TAP FUERA = CERRAR ═══
+  function setupModalEnhancements() {
+    // Observer para detectar modales nuevos
+    const observer = new MutationObserver(() => {
+      // Buscar todos los overlay abiertos
+      document.querySelectorAll('.overlay.open').forEach(overlay => {
+        // Tap fuera = cerrar
+        if (!overlay.dataset.nxTapFueraOk) {
+          overlay.dataset.nxTapFueraOk = '1';
+          overlay.addEventListener('click', function(e) {
+            // Solo si tocas en el overlay mismo, no en el modal
+            if (e.target === overlay) {
+              overlay.classList.remove('open');
+              // También buscar y llamar funciones closeM si existe
+              try {
+                const id = overlay.id;
+                if (id && typeof window.closeM === 'function') {
+                  window.closeM(id);
+                }
+              } catch(e) {}
+            }
+          });
+        }
+        
+        // Botón Volver en el .mt si no existe
+        const mt = overlay.querySelector('.modal > .mt, .mh');
+        if (mt && !mt.querySelector('.nx-volver-btn') && !mt.dataset.nxVolverIgnore) {
+          // No agregar si ya tiene un botón con icono arrow-left
+          const haArrowLeft = mt.querySelector('.ti-arrow-left, [class*="arrow-left"]');
+          if (haArrowLeft) {
+            mt.dataset.nxVolverIgnore = '1';
+            return;
+          }
+          
+          const btnVolver = document.createElement('button');
+          btnVolver.className = 'nx-volver-btn';
+          btnVolver.type = 'button';
+          btnVolver.title = 'Volver';
+          btnVolver.innerHTML = '<i class="ti ti-arrow-left"></i>';
+          btnVolver.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Buscar la X o cerrar overlay
+            overlay.classList.remove('open');
+            // Si hay función closeM, usarla
+            try {
+              const id = overlay.id;
+              if (id && typeof window.closeM === 'function') {
+                window.closeM(id);
+              }
+            } catch(e) {}
+          });
+          
+          // Insertar al inicio del mt
+          mt.insertBefore(btnVolver, mt.firstChild);
+        }
+      });
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+  
+  // ═══ INIT ═══
+  function init() {
+    injectCSS();
+    setupAutoHideBar();
+    setupModalEnhancements();
+  }
+  
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init, { once: true });
   } else {
