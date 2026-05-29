@@ -7178,3 +7178,58 @@
     });
   };
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - ICONOS DASHBOARD LIMPIOS (sin cuadrado de color)
+   Anula el efecto 3D de cuadrados coloreados de los .qa-i del Dashboard.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_ICONOS_LIMPIOS__) return;
+  window.__NEXUS_ICONOS_LIMPIOS__ = true;
+
+  const style = document.createElement('style');
+  style.id = 'nx-iconos-limpios';
+  style.textContent = `
+    /* Quitar fondo cuadrado, gradientes y sombras de iconos Dashboard */
+    .qa .qa-i,
+    .qa-i {
+      background: transparent !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      border: none !important;
+      width: auto !important;
+      height: auto !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+    }
+    .qa .qa-i i,
+    .qa-i i {
+      font-size: 32px !important;
+      color: #2563eb !important;
+      background: none !important;
+      -webkit-background-clip: initial !important;
+      background-clip: initial !important;
+      -webkit-text-fill-color: initial !important;
+      text-shadow: none !important;
+    }
+    /* Quitar pseudo-elementos decorativos */
+    .qa .qa-i::before,
+    .qa .qa-i::after,
+    .qa-i::before,
+    .qa-i::after {
+      display: none !important;
+      content: none !important;
+    }
+    /* Mantener color semántico si tiene clase específica */
+    .qa[data-go="clientes"] .qa-i i { color: #2563eb !important; }
+    .qa[data-go="cobros"] .qa-i i { color: #059669 !important; }
+    .qa[data-go="facturas"] .qa-i i { color: #7c3aed !important; }
+    .qa[data-go="agentes"] .qa-i i { color: #ea580c !important; }
+    .qa[data-go="reportes"] .qa-i i { color: #0891b2 !important; }
+    .qa[data-go="configuracion"] .qa-i i { color: #475569 !important; }
+    .qa[data-go="solicitudes"] .qa-i i { color: #db2777 !important; }
+  `;
+  document.head.appendChild(style);
+})();
