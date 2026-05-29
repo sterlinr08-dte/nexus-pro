@@ -1984,7 +1984,7 @@
 
   window.nxConfirmarEntregaAdmin = async function(id) {
     if (!esAdmin()) return;
-    if (!confirm('¿Confirmar esta entrega? Esto verifica que recibiste físicamente el dinero.')) return;
+    if (!(await window.nxConfirm('¿Confirmar entrega?', 'Esto verifica que recibiste físicamente el dinero.', { ok: 'Sí, confirmar', tipo: 'info' }))) return;
     const api = getAPI();
     if (!api?.patch) {
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.patch');
@@ -2034,7 +2034,7 @@
   // El "Dinero en Mano" del agente vuelve a subir automáticamente.
   window.nxAnularEntregaAdmin = async function(id) {
     if (!esAdmin()) return;
-    if (!confirm('¿Anular esta entrega?\n\n• La entrega se borrará\n• El cobro del cliente NO se afecta (la factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto (queda responsable)\n\n¿Continuar?')) return;
+    if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro del cliente NO se afecta (factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto', { ok: 'Sí, anular', tipo: 'danger' }))) return;
     const api = getAPI();
     if (!api?.delete) {
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.delete');
@@ -4471,7 +4471,7 @@
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
       return;
     }
-    if (!confirm('¿Aceptar esta transferencia? Se efectuará el movimiento.')) return;
+    if (!(await window.nxConfirm('¿Aceptar transferencia?', 'Se efectuará el movimiento de dinero.', { ok: 'Sí, aceptar', tipo: 'info' }))) return;
     try {
       await api.patch('transferencias_agentes', `id=eq.${id}`, {
         estado: 'aceptada'
@@ -4494,7 +4494,7 @@
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', '');
       return;
     }
-    if (!confirm('¿Rechazar esta transferencia? El dinero NO se moverá.')) return;
+    if (!(await window.nxConfirm('¿Rechazar transferencia?', 'El dinero NO se moverá.', { ok: 'Sí, rechazar', tipo: 'danger' }))) return;
     try {
       await api.patch('transferencias_agentes', `id=eq.${id}`, {
         estado: 'rechazada'
@@ -6364,7 +6364,7 @@
   };
 
   window.nxEliminarCuenta = async function(id) {
-    if (!confirm('¿Eliminar esta cuenta?')) return;
+    if (!(await window.nxConfirm('¿Eliminar esta cuenta?', 'Esta acción no se puede deshacer.', { ok: 'Sí, eliminar', tipo: 'danger' }))) return;
     const api = getAPI();
     if (!api?.del) return;
     try {
@@ -6801,7 +6801,7 @@
   window.nxEditarDest = function(id) { window.nxFormDest(id); };
 
   window.nxEliminarDest = async function(id) {
-    if (!confirm('¿Eliminar este empleado de los reportes?')) return;
+    if (!(await window.nxConfirm('¿Eliminar empleado?', 'Ya no recibirá reportes por correo.', { ok: 'Sí, eliminar', tipo: 'danger' }))) return;
     const api = getAPI();
     if (!api?.del) return;
     try {
@@ -7113,4 +7113,68 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init, { once: true });
   } else { init(); }
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - MODAL DE CONFIRMACIÓN BONITO (Bug #4 del análisis)
+   Reemplaza confirm() nativo del navegador por un modal elegante.
+   Uso: const ok = await nxConfirm('¿Eliminar?', 'Esto no se puede deshacer');
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_CONFIRM_MODAL__) return;
+  window.__NEXUS_CONFIRM_MODAL__ = true;
+
+  // Modal de confirmación bonito que devuelve Promise<boolean>
+  window.nxConfirm = function(titulo, mensaje, opciones) {
+    opciones = opciones || {};
+    const txtOk = opciones.ok || 'Confirmar';
+    const txtCancel = opciones.cancel || 'Cancelar';
+    const tipo = opciones.tipo || 'warning'; // 'warning', 'danger', 'info'
+
+    return new Promise(resolve => {
+      // Crear o reutilizar overlay
+      let modal = document.getElementById('nxConfirmModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'overlay';
+        modal.id = 'nxConfirmModal';
+        document.body.appendChild(modal);
+      }
+
+      const colores = {
+        warning: { bg: '#fef3c7', border: '#fbbf24', icon: '#d97706', iconName: 'alert-triangle' },
+        danger:  { bg: '#fee2e2', border: '#f87171', icon: '#dc2626', iconName: 'alert-octagon' },
+        info:    { bg: '#dbeafe', border: '#60a5fa', icon: '#2563eb', iconName: 'info-circle' }
+      };
+      const c = colores[tipo] || colores.warning;
+
+      modal.innerHTML = `
+        <div class="modal" style="max-width:420px;padding:0;overflow:hidden">
+          <div style="padding:24px 22px 18px;text-align:center">
+            <div style="width:56px;height:56px;border-radius:50%;background:${c.bg};border:2px solid ${c.border};display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+              <i class="ti ti-${c.iconName}" style="font-size:28px;color:${c.icon}"></i>
+            </div>
+            <div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:8px;line-height:1.3">${(titulo||'').replace(/</g,'&lt;')}</div>
+            ${mensaje ? `<div style="font-size:13px;color:#64748b;line-height:1.5;white-space:pre-line">${(mensaje).replace(/</g,'&lt;')}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;padding:14px 20px 20px;border-top:1px solid #f1f5f9;background:#f8fafc">
+            <button id="nxConfirmCancel" class="btn bxl" style="flex:1;background:#fff;border:1.5px solid #e2e8f0;color:#475569">${txtCancel}</button>
+            <button id="nxConfirmOk" class="btn bxl bc1" style="flex:1">${txtOk}</button>
+          </div>
+        </div>`;
+
+      modal.classList.add('open');
+
+      const close = (val) => {
+        modal.classList.remove('open');
+        resolve(val);
+      };
+      document.getElementById('nxConfirmOk').onclick = () => close(true);
+      document.getElementById('nxConfirmCancel').onclick = () => close(false);
+      // Click fuera del modal = cancelar
+      modal.onclick = (e) => { if (e.target === modal) close(false); };
+    });
+  };
 })();
