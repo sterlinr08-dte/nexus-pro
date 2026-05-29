@@ -218,7 +218,7 @@
               window.switchCliTab('proceso');
             }
           }, 250);
-          console.log('nav("clientes") → switchCliTab("proceso") ✓');
+          /* console.log('nav("clientes") → switchCliTab("proceso") ✓') */;
           return true;
         } catch(e) {
           console.error('proceso falló:', e);
@@ -232,7 +232,7 @@
       if (typeof window.nav === 'function') {
         try {
           window.nav('cobros');
-          console.log('nav("cobros") → historial ✓');
+          /* console.log('nav("cobros") → historial ✓') */;
           return true;
         } catch(e) {
           console.error('historial falló:', e);
@@ -257,7 +257,7 @@
     if (typeof window.nav === 'function') {
       try {
         window.nav(v);
-        console.log('nav("' + v + '") ✓');
+        /* console.log('nav("' + v + '") ✓') */;
         return true;
       } catch(e) {
         console.error('nav() falló:', e);
@@ -406,7 +406,7 @@
     crearBarraInferior();
     crearMenuMas();
     setupCierreMenuFuera();
-    console.log('%c⚙ Parches NEXUS PRO Móvil cargado', 'color:#2563eb;font-weight:bold');
+    /* console.log('%c⚙ Parches NEXUS PRO Móvil cargado', 'color:#2563eb;font-weight:bold') */;
   }
   
   // ═══════════════════════════════════════════════════════════
@@ -446,7 +446,7 @@
       registrados.push(PARCHE_VERSION);
       localStorage.setItem('nx_parches_registrados', JSON.stringify(registrados));
       
-      console.log('%c✓ Parche registrado en Changelog', 'color:#10b981;font-weight:bold');
+      /* console.log('%c✓ Parche registrado en Changelog', 'color:#10b981;font-weight:bold') */;
     } catch(e) {
       console.error('No se pudo registrar en changelog:', e);
     }
@@ -2199,8 +2199,11 @@
     // Inicializar el KPI con el período actual al cargar
     setTimeout(actualizarKPI, 1500);
     
-    // Refrescar cada 30 segundos
-    setInterval(actualizarKPI, 30000);
+    // Refrescar cada 30 segundos (solo cuando página visible, evita leaks)
+    if (window.__nxKPIInterval) clearInterval(window.__nxKPIInterval);
+    window.__nxKPIInterval = setInterval(() => {
+      if (!document.hidden) actualizarKPI();
+    }, 30000);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -4533,8 +4536,11 @@
       const ok3 = inyectarBotonDashboard();
       if (ok1 && ok2) {
         actualizarBadge();
-        // Refrescar badge cada 60 segundos
-        setInterval(actualizarBadge, 60000);
+        // Refrescar badge cada 60 segundos (solo si visible, sin duplicados)
+        if (window.__nxBadgeInterval) clearInterval(window.__nxBadgeInterval);
+        window.__nxBadgeInterval = setInterval(() => {
+          if (!document.hidden) actualizarBadge();
+        }, 60000);
         return;
       }
       if (intentos < 60) setTimeout(tryInit, 100);
@@ -5873,7 +5879,7 @@
   // Log para confirmar
   const esMovil = window.matchMedia('(max-width: 768px)').matches;
   if (esMovil) {
-    console.log('%c⚡ Modo liviano móvil activado', 'color:#059669;font-weight:bold');
+    /* console.log('%c⚡ Modo liviano móvil activado', 'color:#059669;font-weight:bold') */;
   }
 })();
 
@@ -6009,8 +6015,11 @@
     window.addEventListener('online', actualizarEstadoConexion);
     window.addEventListener('offline', actualizarEstadoConexion);
     
-    // Re-check cada 30 segundos por si algo se mete
-    setInterval(actualizarEstadoConexion, 30000);
+    // Re-check cada 30 segundos (solo visible, sin duplicados)
+    if (window.__nxConexInterval) clearInterval(window.__nxConexInterval);
+    window.__nxConexInterval = setInterval(() => {
+      if (!document.hidden) actualizarEstadoConexion();
+    }, 30000);
   }
 
   if (document.readyState === 'loading') {
@@ -6876,15 +6885,18 @@
   async function cargarConfig() {
     const api = getAPI();
     if (!api?.get) return;
+    // Cargar horas y días EN PARALELO (Promise.all)
+    const [dH, dD] = await Promise.all([
+      api.get('configuracion', "select=valor&clave=eq.reporte_horas").catch(() => null),
+      api.get('configuracion', "select=valor&clave=eq.reporte_dias").catch(() => null)
+    ]);
     try {
-      const dH = await api.get('configuracion', "select=valor&clave=eq.reporte_horas");
       if (dH && dH[0] && dH[0].valor) {
         const arr = JSON.parse(dH[0].valor);
         if (Array.isArray(arr)) _horas = arr.map(x => typeof x === 'number' ? String(x).padStart(2,'0')+':00' : x);
       }
     } catch(e) {}
     try {
-      const dD = await api.get('configuracion', "select=valor&clave=eq.reporte_dias");
       if (dD && dD[0] && dD[0].valor) {
         const arr = JSON.parse(dD[0].valor);
         if (Array.isArray(arr)) _dias = arr;
@@ -7026,6 +7038,75 @@
       tabBtn.addEventListener('click', () => {
         setTimeout(() => { if (window.nxRefrescarProgramacion) window.nxRefrescarProgramacion(); }, 350);
       });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else { init(); }
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - OCULTAR EmailJS VIEJO (Bug #8 del análisis)
+   El bloque viejo de EmailJS en HTML confunde. Lo oculto desde aquí.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_OCULTAR_EMAILJS__) return;
+  window.__NEXUS_OCULTAR_EMAILJS__ = true;
+
+  function ocultar() {
+    // Selectores de los inputs viejos
+    const idsViejos = ['ejPublicKey', 'ejServiceId', 'ejTemplateId', 'ejEmail', 'ejHora'];
+    idsViejos.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        // Subir hasta encontrar el div.g2 o cfgPanel2 padre que tiene todo el bloque
+        let parent = el;
+        for (let i = 0; i < 6; i++) {
+          if (!parent.parentElement) break;
+          parent = parent.parentElement;
+          if (parent.classList && parent.classList.contains('g2')) {
+            parent.style.display = 'none';
+            break;
+          }
+        }
+      }
+    });
+    // También ocultar el bloque de explicación EmailJS y el historial viejo
+    const preview = document.getElementById('emailPreview');
+    if (preview) {
+      let p = preview;
+      for (let i = 0; i < 4; i++) { if (p.parentElement) p = p.parentElement; }
+      if (p && p.classList && p.classList.contains('g2')) p.style.display = 'none';
+    }
+    // Ocultar el div con texto "Configuración EmailJS:"
+    document.querySelectorAll('strong').forEach(s => {
+      if (s.textContent && s.textContent.includes('Configuración EmailJS')) {
+        const cont = s.closest('div');
+        if (cont) cont.style.display = 'none';
+      }
+    });
+    // Ocultar historial viejo
+    const hist = document.getElementById('emailHistorial');
+    if (hist) {
+      const titulo = hist.previousElementSibling;
+      if (titulo) titulo.style.display = 'none';
+      hist.parentElement && (hist.parentElement.style.display = 'none');
+    }
+  }
+
+  function init() {
+    ocultar();
+    // Reintentar por si carga lento
+    setTimeout(ocultar, 500);
+    setTimeout(ocultar, 1500);
+    // Cuando se entra al tab Notificaciones, asegurar que esté oculto
+    const tab = document.getElementById('cfgTab2');
+    if (tab && !tab.dataset.nxOcultEjs) {
+      tab.dataset.nxOcultEjs = '1';
+      tab.addEventListener('click', () => setTimeout(ocultar, 200));
     }
   }
 
