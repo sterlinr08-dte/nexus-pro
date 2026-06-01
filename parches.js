@@ -7178,3 +7178,242 @@
     });
   };
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - ICONOS DASHBOARD LIMPIOS (sin cuadrado de color)
+   Anula el efecto 3D de cuadrados coloreados de los .qa-i del Dashboard.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_ICONOS_LIMPIOS__) return;
+  window.__NEXUS_ICONOS_LIMPIOS__ = true;
+
+  const style = document.createElement('style');
+  style.id = 'nx-iconos-limpios';
+  style.textContent = `
+    /* Quitar fondo cuadrado, gradientes y sombras de iconos Dashboard */
+    .qa .qa-i,
+    .qa-i {
+      background: transparent !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      border: none !important;
+      width: auto !important;
+      height: auto !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+    }
+    .qa .qa-i i,
+    .qa-i i {
+      font-size: 32px !important;
+      color: #2563eb !important;
+      background: none !important;
+      -webkit-background-clip: initial !important;
+      background-clip: initial !important;
+      -webkit-text-fill-color: initial !important;
+      text-shadow: none !important;
+    }
+    /* Quitar pseudo-elementos decorativos */
+    .qa .qa-i::before,
+    .qa .qa-i::after,
+    .qa-i::before,
+    .qa-i::after {
+      display: none !important;
+      content: none !important;
+    }
+    /* Mantener color semántico si tiene clase específica */
+    .qa[data-go="clientes"] .qa-i i { color: #2563eb !important; }
+    .qa[data-go="cobros"] .qa-i i { color: #059669 !important; }
+    .qa[data-go="facturas"] .qa-i i { color: #7c3aed !important; }
+    .qa[data-go="agentes"] .qa-i i { color: #ea580c !important; }
+    .qa[data-go="reportes"] .qa-i i { color: #0891b2 !important; }
+    .qa[data-go="configuracion"] .qa-i i { color: #475569 !important; }
+    .qa[data-go="solicitudes"] .qa-i i { color: #db2777 !important; }
+  `;
+  document.head.appendChild(style);
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - FILAS TIPO TARJETA (CARD ROWS)
+   Convierte todas las filas de tablas en tarjetas separadas
+   con sombra y espacio. Aplica a Clientes, Facturas, Cobros,
+   Pólizas, Historial y cualquier .tw table del sistema.
+   Solo visual. No cambia lógica.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_CARD_ROWS_V1__) return;
+  window.__NEXUS_CARD_ROWS_V1__ = true;
+
+  function injectCSS() {
+    if (document.getElementById("nx-card-rows-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "nx-card-rows-css";
+    style.textContent = `
+
+      /* ═══ CONTENEDOR: quitar borde del .tw para dar espacio a las tarjetas ═══ */
+      .tw {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* ═══ TABLA: sin colapso de bordes (necesario para gap entre filas) ═══ */
+      .tw table {
+        border-collapse: separate !important;
+        border-spacing: 0 8px !important;
+        width: 100%;
+      }
+
+      /* ═══ HEADER: fijo, flotante, elegante ═══ */
+      .tw thead tr {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      .tw thead th {
+        background: transparent !important;
+        border-bottom: none !important;
+        padding: 4px 14px 6px !important;
+        font-size: 9.5px !important;
+        font-weight: 800 !important;
+        color: #94a3b8 !important;
+        letter-spacing: 0.6px !important;
+        text-transform: uppercase !important;
+        white-space: nowrap;
+      }
+
+      /* ═══ FILAS: tarjeta con sombra ═══ */
+      .tw tbody tr {
+        background: #ffffff !important;
+        border-radius: 14px !important;
+        box-shadow:
+          0 2px 8px rgba(15, 23, 42, 0.06),
+          0 1px 3px rgba(15, 23, 42, 0.04),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+        transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+      }
+
+      /* ═══ HOVER: levitar ═══ */
+      .tw tbody tr:hover {
+        transform: translateY(-2px) !important;
+        box-shadow:
+          0 8px 20px rgba(37, 99, 235, 0.12),
+          0 3px 8px rgba(15, 23, 42, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+        background: #ffffff !important;
+      }
+
+      /* ═══ CELDAS: más padding, sin bordes entre celdas ═══ */
+      .tw tbody td {
+        padding: 14px 14px !important;
+        border-bottom: none !important;
+        border-top: none !important;
+        vertical-align: middle !important;
+        color: #0f172a !important;
+        font-weight: 600 !important;
+        background: transparent !important;
+      }
+
+      /* ═══ PRIMERA y ÚLTIMA celda: esquinas redondeadas ═══ */
+      .tw tbody td:first-child {
+        border-radius: 14px 0 0 14px !important;
+        padding-left: 16px !important;
+      }
+      .tw tbody td:last-child {
+        border-radius: 0 14px 14px 0 !important;
+        padding-right: 16px !important;
+      }
+
+      /* ═══ FILA VACÍA / LOADING: sin tarjeta ═══ */
+      .tw tbody tr:has(.loading),
+      .tw tbody tr:has(.empty),
+      .tw tbody tr td[colspan] {
+        background: transparent !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      .tw tbody tr:has(td[colspan]) {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      /* Fallback para Safari que no soporta :has() */
+      .tw tbody tr.nx-empty-row {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+
+      /* ═══ FILA ACTIVA / SELECTED ═══ */
+      .tw tbody tr.selected td,
+      .tw tbody tr[aria-selected="true"] td {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+        color: #1e3a8a !important;
+      }
+      .tw tbody tr.selected {
+        box-shadow:
+          0 6px 16px rgba(37, 99, 235, 0.18),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+      }
+
+      /* ═══ ÚLTIMA FILA: quitar margen extra ═══ */
+      .tw tbody tr:last-child td {
+        border-bottom: none !important;
+      }
+
+      /* ═══ DARK MODE (si lo tienes) ═══ */
+      body.dark .tw tbody tr {
+        background: rgba(30, 41, 59, 0.9) !important;
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+      }
+      body.dark .tw tbody td {
+        color: #e2e8f0 !important;
+      }
+      body.dark .tw tbody tr:hover {
+        background: rgba(37, 99, 235, 0.15) !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+      }
+
+      /* ═══ MÓVIL: tarjetas más compactas ═══ */
+      @media (max-width: 768px) {
+        .tw table {
+          border-spacing: 0 6px !important;
+          min-width: 520px;
+        }
+        .tw tbody td {
+          padding: 11px 10px !important;
+        }
+        .tw tbody td:first-child {
+          padding-left: 12px !important;
+        }
+        .tw tbody td:last-child {
+          padding-right: 12px !important;
+        }
+        .tw tbody tr {
+          border-radius: 12px !important;
+          box-shadow:
+            0 2px 6px rgba(15, 23, 42, 0.07),
+            0 1px 2px rgba(15, 23, 42, 0.04) !important;
+        }
+        .tw tbody tr:hover {
+          transform: none !important;
+        }
+        .tw thead th {
+          padding: 3px 10px 5px !important;
+          font-size: 8.5px !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  injectCSS();
+})();
