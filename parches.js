@@ -7497,3 +7497,264 @@
   setTimeout(aplicarTemaDefault, 100);
   setTimeout(aplicarTemaDefault, 600);
 })();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — BUSCADOR EN FACTURAS Y COBROS
+   
+   Agrega un input de búsqueda que filtra mientras escribes en:
+   - Panel Facturas (filtra por nombre de cliente o NCF)
+   - Panel Cobros (filtra por nombre de cliente o póliza)
+   Mismo estilo visual que el buscador de Clientes (.sw / .si).
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_BUSCADOR_FACT_COB__) return;
+  window.__NEXUS_BUSCADOR_FACT_COB__ = true;
+
+  /* ─── CSS idéntico al buscador de Clientes ─── */
+  function inyectarCSS() {
+    if (document.getElementById('nx-search-factcob-css')) return;
+    const s = document.createElement('style');
+    s.id = 'nx-search-factcob-css';
+    s.textContent = `
+      .nx-frow-search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0 4px 0;
+        flex-wrap: wrap;
+      }
+      .nx-sw {
+        position: relative;
+        flex: 1;
+        min-width: 160px;
+      }
+      .nx-sw .nx-si {
+        position: absolute;
+        left: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--tx3);
+        font-size: 13px;
+        pointer-events: none;
+      }
+      .nx-sw input {
+        width: 100%;
+        height: 32px;
+        border: 1.5px solid rgba(0,229,199,.15);
+        border-radius: var(--r6, 10px);
+        background: var(--bg2, #fff);
+        color: var(--tx1, #0f172a);
+        font-size: 11px;
+        padding: 0 10px 0 30px;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color .15s;
+      }
+      .nx-sw input:focus {
+        border-color: var(--c1, #2563eb);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.08);
+      }
+      /* Tema premium */
+      body.tema-premium .nx-sw input {
+        background: #0F172A !important;
+        color: #E8EDF7 !important;
+        border-color: rgba(255,255,255,.1) !important;
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  /* ─── Buscador de FACTURAS ─── */
+  function agregarBuscadorFacturas() {
+    const panelFact = document.getElementById('panelFact');
+    if (!panelFact || document.getElementById('nx-fact-search')) return;
+
+    const ch = panelFact.querySelector('.ch');
+    if (!ch) return;
+
+    // Crear fila de búsqueda debajo del ch
+    const frow = document.createElement('div');
+    frow.className = 'nx-frow-search';
+    frow.innerHTML = `
+      <div class="nx-sw">
+        <i class="ti ti-search nx-si"></i>
+        <input type="text" id="nx-fact-search"
+          placeholder="Buscar cliente, NCF..."
+          oninput="window.nxFiltrarFacturas(this.value)"/>
+      </div>`;
+
+    // Insertar después del ch
+    ch.insertAdjacentElement('afterend', frow);
+    return true;
+  }
+
+  /* ─── Buscador de COBROS ─── */
+  function agregarBuscadorCobros() {
+    const panelCob = document.getElementById('panelCob');
+    if (!panelCob || document.getElementById('nx-cob-search')) return;
+
+    const ch = panelCob.querySelector('.ch');
+    if (!ch) return;
+
+    const frow = document.createElement('div');
+    frow.className = 'nx-frow-search';
+    frow.innerHTML = `
+      <div class="nx-sw">
+        <i class="ti ti-search nx-si"></i>
+        <input type="text" id="nx-cob-search"
+          placeholder="Buscar cliente, póliza..."
+          oninput="window.nxFiltrarCobros(this.value)"/>
+      </div>`;
+
+    ch.insertAdjacentElement('afterend', frow);
+    return true;
+  }
+
+  /* ─── Lógica de filtrado FACTURAS ─── */
+  window.nxFiltrarFacturas = function(q) {
+    const ql = (q || '').toLowerCase().trim();
+    const filas = document.querySelectorAll('#tbFact tr');
+    let visibles = 0;
+
+    filas.forEach(tr => {
+      if (!ql) {
+        tr.style.display = '';
+        visibles++;
+        return;
+      }
+      const texto = tr.textContent.toLowerCase();
+      const mostrar = texto.includes(ql);
+      tr.style.display = mostrar ? '' : 'none';
+      if (mostrar) visibles++;
+    });
+
+    // Mensaje sin resultados
+    const existeMsgFact = document.getElementById('nx-fact-empty');
+    if (!ql || visibles > 0) {
+      if (existeMsgFact) existeMsgFact.remove();
+    } else if (!existeMsgFact && filas.length > 0) {
+      const tr = document.createElement('tr');
+      tr.id = 'nx-fact-empty';
+      tr.innerHTML = `<td colspan="10" style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">
+        Sin resultados para "<strong>${q}</strong>"
+      </td>`;
+      document.getElementById('tbFact').appendChild(tr);
+    }
+  };
+
+  /* ─── Lógica de filtrado COBROS ─── */
+  window.nxFiltrarCobros = function(q) {
+    const ql = (q || '').toLowerCase().trim();
+    const filas = document.querySelectorAll('#tbCob tr');
+    let visibles = 0;
+
+    filas.forEach(tr => {
+      if (!ql) {
+        tr.style.display = '';
+        visibles++;
+        return;
+      }
+      const texto = tr.textContent.toLowerCase();
+      const mostrar = texto.includes(ql);
+      tr.style.display = mostrar ? '' : 'none';
+      if (mostrar) visibles++;
+    });
+
+    const existeMsgCob = document.getElementById('nx-cob-empty-search');
+    if (!ql || visibles > 0) {
+      if (existeMsgCob) existeMsgCob.remove();
+    } else if (!existeMsgCob && filas.length > 0) {
+      const tr = document.createElement('tr');
+      tr.id = 'nx-cob-empty-search';
+      tr.innerHTML = `<td colspan="8" style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">
+        Sin resultados para "<strong>${q}</strong>"
+      </td>`;
+      document.getElementById('tbCob').appendChild(tr);
+    }
+  };
+
+  /* ─── Limpiar buscadores al cambiar de tab ─── */
+  function hookTabs() {
+    ['tabFact', 'tabCob', 'tabPagos'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn && !btn.dataset.nxSearchHook) {
+        btn.dataset.nxSearchHook = '1';
+        btn.addEventListener('click', () => {
+          // Limpiar ambos buscadores y restaurar filas al cambiar tab
+          setTimeout(() => {
+            const fs = document.getElementById('nx-fact-search');
+            const cs = document.getElementById('nx-cob-search');
+            if (fs) { fs.value = ''; window.nxFiltrarFacturas(''); }
+            if (cs) { cs.value = ''; window.nxFiltrarCobros(''); }
+          }, 50);
+        });
+      }
+    });
+  }
+
+  /* ─── También limpiar el buscador al regenerar las tablas ─── */
+  function hookRFact() {
+    const orig = window.rFact;
+    if (typeof orig !== 'function' || orig._nxSearchHooked) return;
+    window.rFact = function() {
+      const resultado = orig.apply(this, arguments);
+      // Reaplicar filtro si hay texto escrito
+      const input = document.getElementById('nx-fact-search');
+      if (input && input.value.trim()) {
+        setTimeout(() => window.nxFiltrarFacturas(input.value), 50);
+      }
+      return resultado;
+    };
+    window.rFact._nxSearchHooked = true;
+  }
+
+  function hookRCob() {
+    const orig = window.rCob;
+    if (typeof orig !== 'function' || orig._nxSearchHooked) return;
+    window.rCob = function() {
+      const resultado = orig.apply(this, arguments);
+      const input = document.getElementById('nx-cob-search');
+      if (input && input.value.trim()) {
+        setTimeout(() => window.nxFiltrarCobros(input.value), 50);
+      }
+      return resultado;
+    };
+    window.rCob._nxSearchHooked = true;
+  }
+
+  /* ─── INIT ─── */
+  function init() {
+    inyectarCSS();
+
+    let factListo = false;
+    let cobListo = false;
+    let intentos = 0;
+
+    const tryInject = function() {
+      intentos++;
+      if (!factListo) factListo = !!agregarBuscadorFacturas();
+      if (!cobListo)  cobListo  = !!agregarBuscadorCobros();
+      hookTabs();
+      hookRFact();
+      hookRCob();
+
+      if ((!factListo || !cobListo) && intentos < 30) {
+        setTimeout(tryInject, 400);
+      } else {
+        console.log('✅ NEXUS: Buscador Facturas/Cobros activo');
+      }
+    };
+
+    tryInject();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
