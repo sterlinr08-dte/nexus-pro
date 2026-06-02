@@ -196,15 +196,12 @@ input,select,textarea,button{font-family:var(--ff)}
 .bwa{border-color:#bbf7d0;color:#16a34a;background:#f0fdf4}.bwa:hover{background:#dcfce7;color:#16a34a}
 
 /* ── TABLES ── */
-.tw{overflow-x:auto;border-radius:12px;border:none;box-shadow:none;background:transparent;padding:4px 2px}
-table{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:11px}
-thead th{background:transparent;padding:2px 14px 6px;text-align:left;font-weight:800;font-size:9px;color:#94a3b8;border:none;white-space:nowrap;letter-spacing:.6px;text-transform:uppercase}
-tbody tr{background:#fff;border-radius:14px;box-shadow:0 2px 6px rgba(15,23,42,.06),0 6px 18px rgba(15,23,42,.08),0 10px 28px rgba(37,99,235,.06);transition:box-shadow .18s ease,transform .18s ease}
-tbody tr:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(15,23,42,.08),0 10px 26px rgba(37,99,235,.13),0 16px 36px rgba(37,99,235,.08);background:#fafcff}
-tbody td{padding:12px 14px;border:none;color:#1e293b;vertical-align:middle;background:transparent;font-weight:600}
-tbody td:first-child{border-radius:14px 0 0 14px;padding-left:16px}
-tbody td:last-child{border-radius:0 14px 14px 0;padding-right:14px}
+.tw{overflow-x:auto;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:#f8fafc;padding:10px 12px;text-align:left;font-weight:700;font-size:10px;color:#64748b;border-bottom:2px solid var(--border);white-space:nowrap;letter-spacing:.3px}
+tbody td{padding:9px 12px;border-bottom:1px solid #f1f5f9;color:var(--tx1);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f8fafc}
 
 /* ── BADGES ── */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;white-space:nowrap}
@@ -317,13 +314,10 @@ tbody tr:last-child td{border-bottom:none}
   .g4{grid-template-columns:repeat(2,1fr)}
   .qa-g{grid-template-columns:repeat(3,1fr);gap:6px}
   /* Tablas scroll horizontal */
-  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:3px 1px}
-  table{min-width:560px;font-size:10px;border-spacing:0 6px}
-  thead th{padding:0 10px 4px;font-size:8px}
-  tbody td{padding:10px 10px}
-  tbody td:first-child{padding-left:12px}
-  tbody td:last-child{padding-right:10px}
-  tbody tr{border-radius:12px;box-shadow:0 2px 8px rgba(15,23,42,.07),0 6px 16px rgba(15,23,42,.08)}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:600px;font-size:10px}
+  thead th{padding:6px 8px;font-size:8px}
+  tbody td{padding:5px 8px}
   /* Cards */
   .nc{padding:10px 12px}
   /* KPIs */
@@ -406,9 +400,8 @@ html{scroll-behavior:smooth}
 /* KPIs con mejor jerarquía */
 .kpi{transition:transform .15s ease,box-shadow .2s ease}
 .kpi:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
-/* Filas de tabla - flotantes con sombra */
-tbody tr{transition:transform .18s ease,box-shadow .18s ease}
-tbody tr.nx-row-span{box-shadow:none !important;background:transparent !important;transform:none !important}
+/* Filas de tabla con hover suave */
+tbody tr{transition:background .12s ease}
 /* Inputs con focus elegante */
 .fr input:focus,.fr select:focus,.fr textarea:focus{
   border-color:#2563eb !important;
@@ -952,7 +945,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
             </div>
             <div class="tw"><table>
-              <thead><tr><th style="width:20%">CLIENTE</th><th style="width:11%">PÓLIZA</th><th style="width:9%">PLAN</th><th style="width:14%">EMPRESA</th><th style="width:10%">VIGENCIA</th><th style="width:9%">PRIMA</th><th style="width:9%">PENDIENTE</th><th style="width:8%">ESTADO</th><th style="width:10%">ACCIONES</th></tr></thead>
+              <thead><tr><th style="width:20%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:9%">PLAN</th><th style="width:14%">EMPRESA</th><th style="width:10%">VIGENCIA</th><th style="width:9%">PRIMA</th><th style="width:9%">PENDIENTE</th><th style="width:8%">ESTADO</th><th style="width:10%">ACCIONES</th></tr></thead>
               <tbody id="tbCli"><tr><td colspan="9"><div class="loading"><div class="spin"></div>Cargando...</div></td></tr></tbody>
             </table></div>
           </div>
@@ -1003,7 +996,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </div>
             </div>
             <div class="tw"><table>
-              <thead><tr><th style="width:15%">CLIENTE</th><th style="width:11%">NCF</th><th style="width:9%">PLAN</th><th style="width:11%">EMPRESA</th><th style="width:9%">PRIMA</th><th style="width:8%">DEPS</th><th style="width:9%">DEU.ANT</th><th style="width:10%">TOTAL</th><th style="width:8%">ESTADO</th><th style="width:10%">ACCIONES</th></tr></thead>
+              <thead><tr><th style="width:15%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:9%">PLAN</th><th style="width:11%">EMPRESA</th><th style="width:9%">PRIMA</th><th style="width:8%">DEPS</th><th style="width:9%">DEU.ANT</th><th style="width:10%">TOTAL</th><th style="width:8%">ESTADO</th><th style="width:10%">ACCIONES</th></tr></thead>
               <tbody id="tbFact"><tr><td colspan="10"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
           </div>
@@ -1013,7 +1006,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="nc">
             <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
             <div class="tw"><table>
-              <thead><tr><th style="width:22%">CLIENTE</th><th style="width:11%">PÓLIZA</th><th style="width:10%">PLAN</th><th style="width:13%">DEUDA</th><th style="width:11%">COBRADO</th><th style="width:11%">PENDIENTE</th><th style="width:12%">PROGRESO</th><th style="width:10%"></th></tr></thead>
+              <thead><tr><th style="width:22%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:10%">PLAN</th><th style="width:13%">DEUDA</th><th style="width:11%">COBRADO</th><th style="width:11%">PENDIENTE</th><th style="width:12%">PROGRESO</th><th style="width:10%"></th></tr></thead>
               <tbody id="tbCob"><tr><td colspan="8"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
           </div>
@@ -4447,7 +4440,7 @@ function rCli(){
     }
     return`<tr style="${!c.activo?'opacity:.5':''}">
       <td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div>${procInfo}</div></div></td>
-      <td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'<span style="color:var(--tx3)">Sin póliza</span>'}</td>
+      <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
       <td>${planB(c.plan)}</td>
       <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
       <td><span class="badge ${ep.badge}" style="font-size:8px">${ep.lbl}</span></td>
@@ -4591,7 +4584,7 @@ function rFact(){
   if(!lista.length){tb.innerHTML='<tr><td colspan="10"><div class="empty">Sin facturas · Presiona "Generar + NCF"</div></td></tr>';return;}
   tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
     <td style="font-weight:700;font-size:10px">${f.cliente_nom}</td>
-    <td><span class="ncf-badge">${f.ncf||'—'}</span></td>
+    <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
     <td>${planB(f.plan)}</td>
     <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
     <td style="font-family:var(--mono);font-size:9px">${fmt(f.prima_base)}</td>
@@ -4632,19 +4625,6 @@ async function anularFactura(facturaId){
   }catch(e){
     mostrarError(e.message,'Al anular la factura');
   }
-}
-function rFactFiltro(q){
-  const ql=(q||'').toLowerCase().trim();
-  rFact();
-  if(!ql)return;
-  setTimeout(()=>{
-    document.querySelectorAll('#tbFact tr').forEach(tr=>{
-      if(tr.querySelector('td[colspan]')){tr.style.display='';return;}
-      tr.style.display=tr.textContent.toLowerCase().includes(ql)?'':'none';
-    });
-    const el=document.getElementById('factQ');
-    if(el)el.value=q;
-  },20);
 }
 
 function cobrarDesdeFact(cid){
@@ -4769,31 +4749,7 @@ function rCob(){
   const tb=document.getElementById('tbCob');
   const activos=ST.clientes.filter(c=>c.activo);
   if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin clientes</div></td></tr>';return;}
-  tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div></td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
-}
-function rCobFiltro(q){
-  const ql=(q||'').toLowerCase().trim();
-  const el=document.getElementById('cobQ');
-  if(!ql){rCob();if(el)el.value=q;return;}
-  const tb=document.getElementById('tbCob');
-  const activos=ST.clientes.filter(c=>c.activo&&(
-    (c.nom||'').toLowerCase().includes(ql)||
-    (c.numero_poliza||'').toLowerCase().includes(ql)||
-    (c.plan||'').toLowerCase().includes(ql)||
-    (c.referencia||'').toLowerCase().includes(ql)||
-    (c.cedula||'').includes(ql)
-  ));
-  if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin resultados</div></td></tr>';return;}
-  const tmpQ=document.getElementById('cobQ');
-  rCob();
-  // Filtrar visualmente las filas ya renderizadas
-  setTimeout(()=>{
-    document.querySelectorAll('#tbCob tr').forEach(tr=>{
-      if(tr.querySelector('td[colspan]')){tr.style.display='';return;}
-      tr.style.display=tr.textContent.toLowerCase().includes(ql)?'':'none';
-    });
-    if(tmpQ)tmpQ.value=q;
-  },10);
+  tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div></td><td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
 }
 // ════════ BANCOS - Módulo nativo ════════
 let _bancosCache=[];
