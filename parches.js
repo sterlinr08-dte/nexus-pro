@@ -3722,6 +3722,7 @@
           ${renderHeaderSolicitudes(entregasView, transferenciasView)}
           ${renderSeccionEntregasPendientes(entregasView)}
           ${renderSeccionTransferencias(transferenciasView)}
+          ${renderSeccionReporteAgentes()}
           ${renderSeccionHistorial(entregasView, transferenciasView)}
           ${renderSeccionRecibirEntrega()}
         </div>
@@ -4010,6 +4011,69 @@
         }
       </div>
     `;
+  }
+
+  function renderSeccionReporteAgentes() {
+    const agentes = st().agentes || [];
+    const clientes = (st().clientes || []).filter(c => c.activo);
+    const F = getFmt();
+
+    if (!agentes.length) return '';
+
+    function initsLocal(nom) {
+      return (nom || '').split(' ').slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
+    }
+
+    const filas = agentes.map(a => {
+      const clis = clientes.filter(c => String(c.agente_id) === String(a.id));
+      const prima = clis.reduce((s, c) => s + Math.max(0, (c.deuda_total || 0)), 0);
+      const cob   = clis.reduce((s, c) => s + (c.pagado || 0), 0);
+      const pd    = clis.reduce((s, c) => s + Math.max(0, (c.deuda_total || 0) - (c.pagado || 0)), 0);
+      const ef    = prima > 0 ? Math.round(cob / prima * 100) : 0;
+      const ph    = ef >= 80 ? '#10b981' : ef >= 50 ? '#f59e0b' : '#ef4444';
+
+      return `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(124,58,237,.12);color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;flex-shrink:0">${initsLocal(a.nom)}</div>
+            <span style="font-weight:700;font-size:11px">${a.nom}</span>
+          </div>
+        </td>
+        <td style="text-align:center;font-weight:700;font-size:12px">${clis.length}</td>
+        <td style="font-family:monospace;font-size:10px;color:#2563eb;font-weight:700">${F(prima)}</td>
+        <td style="font-family:monospace;font-size:10px;color:#10b981;font-weight:700">${F(cob)}</td>
+        <td style="font-family:monospace;font-size:10px;color:#ef4444;font-weight:700">${F(pd)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:5px">
+            <div style="flex:1;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${ef}%;background:${ph};border-radius:3px"></div>
+            </div>
+            <span style="font-size:10px;font-weight:700;color:${ph};font-family:monospace">${ef}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="nxSL-section" style="margin-bottom:16px">
+        <div class="nxSL-section-head">
+          <div class="nxSL-section-title"><i class="ti ti-users"></i> REPORTE POR AGENTE</div>
+          <div class="nxSL-section-count nxSL-count-blue">${agentes.length}</div>
+        </div>
+        <div class="nxSL-table-wrap">
+          <table class="nxSL-table">
+            <thead><tr>
+              <th>AGENTE</th>
+              <th style="text-align:center">CLIENTES</th>
+              <th>PRIMA TOTAL</th>
+              <th>COBRADO</th>
+              <th>PENDIENTE</th>
+              <th>EFICIENCIA</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+      </div>`;
   }
 
   function renderSeccionHistorial(entregas, transferencias) {
@@ -8516,3 +8580,4 @@
     ? document.addEventListener('DOMContentLoaded', init, { once: true })
     : init();
 })();
+
