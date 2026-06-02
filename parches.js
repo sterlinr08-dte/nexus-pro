@@ -7915,3 +7915,93 @@
     init();
   }
 })();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — FIX cobro_id NULL en entregas
+   
+   PROBLEMA: El snapshot del cobro directo lee window.abonoCliId
+   pero abonoCliId está declarada con "let" en el HTML (no en window).
+   Resultado: cobro_id siempre queda null.
+   
+   SOLUCIÓN: Interceptar el guardado de entregas_admin para inyectar
+   el cobro_id correcto leyendo abonoCliId desde el scope global.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_FIX_COBRO_ID__) return;
+  window.__NEXUS_FIX_COBRO_ID__ = true;
+
+  function fixCobroId() {
+    const api = window.API;
+    if (!api?.post || api.post._nxCobroIdFixed) return;
+
+    const origPost = api.post.bind(api);
+
+    api.post = async function(tabla, datos, ...args) {
+      // Solo actuar en entregas_admin con es_directo=true
+      if (tabla === 'entregas_admin' && datos?.es_directo === true) {
+        // Si cobro_id está null, intentar obtenerlo de abonoCliId
+        if (!datos.cobro_id) {
+          let cliId = null;
+          // Intentar leer la variable del scope del HTML
+          try { cliId = (typeof abonoCliId !== 'undefined') ? abonoCliId : null; } catch(e) {}
+          // Fallback: buscar el modal de abono abierto y leer el cliente activo
+          if (!cliId) {
+            try {
+              const mAbono = document.getElementById('mAbono');
+              if (mAbono?.classList.contains('open')) {
+                // El cliente activo es el que tiene el modal abierto
+                // Se puede inferir del nombre mostrado en el modal
+                const nomEl = mAbono.querySelector('.mt span, .mt .ct');
+                if (nomEl) {
+                  const nom = nomEl.textContent.trim();
+                  const cli = (window.ST?.clientes || []).find(c =>
+                    c.nom && nom.includes(c.nom.split(' ')[0])
+                  );
+                  if (cli) cliId = cli.id;
+                }
+              }
+            } catch(e) {}
+          }
+          if (cliId) {
+            datos = { ...datos, cobro_id: cliId };
+          }
+        }
+
+        // Si hay cobro_id, asegurar que la nota tenga el nombre correcto
+        if (datos.cobro_id && (!datos.nota || datos.nota.includes('null'))) {
+          const cli = (window.ST?.clientes || []).find(c =>
+            String(c.id) === String(datos.cobro_id)
+          );
+          if (cli?.nom) {
+            datos = { ...datos, nota: `Depósito directo de cliente ${cli.nom}` };
+          }
+        }
+      }
+      return await origPost(tabla, datos, ...args);
+    };
+    api.post._nxCobroIdFixed = true;
+    console.log('✅ NEXUS: Fix cobro_id activo');
+  }
+
+  function init() {
+    let intentos = 0;
+    const tryFix = function() {
+      intentos++;
+      if (window.API?.post) {
+        fixCobroId();
+      } else if (intentos < 20) {
+        setTimeout(tryFix, 500);
+      }
+    };
+    tryFix();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
