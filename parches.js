@@ -7758,3 +7758,160 @@
     init();
   }
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — CLIENTE AUTOMÁTICO EN SOLICITUDES v3
+   
+   Cuando el agente cobra a un cliente y marca "depósito directo",
+   la entrega ya se crea con cobro_id = cliente.id
+   Este parche cruza ese cobro_id con ST.clientes y muestra
+   el nombre automáticamente en la tabla de Solicitudes.
+   Sin selector manual. Sin cambios en la BD.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_CLIENTE_AUTO_SOL__) return;
+  window.__NEXUS_CLIENTE_AUTO_SOL__ = true;
+
+  /* Obtener nombre del cliente de una entrega */
+  function getNomCliente(e) {
+    // cobro_id = cliente.id (depósito directo desde cobro)
+    if (e.cobro_id) {
+      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(e.cobro_id));
+      if (cli?.nom) return cli.nom + (cli.referencia ? ` (${cli.referencia})` : '');
+    }
+    // cliente_id (si se guardó con el campo nuevo del SQL)
+    if (e.cliente_id) {
+      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(e.cliente_id));
+      if (cli?.nom) return cli.nom + (cli.referencia ? ` (${cli.referencia})` : '');
+    }
+    // Fallback: extraer de la nota
+    if (e.nota) {
+      const m = e.nota.match(/[Dd]ep[oó]sito directo de cliente\s+(.+)/);
+      if (m?.[1]) return m[1].trim();
+    }
+    return null;
+  }
+
+  /* Cache de entregas crudas */
+  let _entregasCache = [];
+
+  /* Capturar datos de entregas cuando se cargan de Supabase */
+  function hookAPI() {
+    const api = window.API;
+    if (!api?.get || api.get._nxCliAutoHook) return;
+    const orig = api.get.bind(api);
+    api.get = async function(tabla, ...args) {
+      const res = await orig(tabla, ...args);
+      if (tabla === 'entregas_admin' && Array.isArray(res)) {
+        _entregasCache = res;
+      }
+      return res;
+    };
+    api.get._nxCliAutoHook = true;
+  }
+
+  /* Inyectar columna CLIENTE en las tablas de Solicitudes */
+  function inyectarColumna() {
+    const view = document.getElementById('v-solicitudes');
+    if (!view) return;
+
+    view.querySelectorAll('.nxSL-table').forEach(tabla => {
+      if (tabla.dataset.nxCliAuto) return;
+      tabla.dataset.nxCliAuto = '1';
+
+      const thead = tabla.querySelector('thead tr');
+      const tbody = tabla.querySelector('tbody');
+      if (!thead || !tbody) return;
+
+      // Agregar <th> CLIENTE después de AGENTE
+      const thAgente = thead.children[1];
+      if (!thAgente) return;
+      const th = document.createElement('th');
+      th.textContent = 'CLIENTE';
+      th.style.minWidth = '130px';
+      thAgente.insertAdjacentElement('afterend', th);
+
+      // Agregar <td> en cada fila
+      tbody.querySelectorAll('tr').forEach(tr => {
+        if (tr.children.length < 2) return;
+
+        // Buscar id de la entrega en el botón de acción
+        let entregaId = null;
+        const btn = tr.querySelector('button[onclick]');
+        if (btn) {
+          const m = btn.getAttribute('onclick').match(/'([^']+)'/);
+          if (m) entregaId = m[1];
+        }
+
+        let nomCli = null;
+        if (entregaId && _entregasCache.length) {
+          const e = _entregasCache.find(x => String(x.id) === String(entregaId));
+          if (e) nomCli = getNomCliente(e);
+        }
+
+        const td = document.createElement('td');
+        td.style.minWidth = '130px';
+        td.innerHTML = nomCli
+          ? `<span style="font-size:11px;font-weight:700;color:#2563eb">
+               <i class="ti ti-user" style="font-size:10px;color:#94a3b8;margin-right:3px"></i>${nomCli}
+             </span>`
+          : `<span style="color:#94a3b8;font-size:11px">—</span>`;
+
+        const tdAgente = tr.children[1];
+        if (tdAgente) tdAgente.insertAdjacentElement('afterend', td);
+      });
+    });
+  }
+
+  /* Reinyectar cada vez que se refresca Solicitudes */
+  function hookRefrescar() {
+    const orig = window.nxRefrescarSolicitudes;
+    if (typeof orig !== 'function' || orig._nxCliAutoHook) return;
+    window.nxRefrescarSolicitudes = async function() {
+      const r = await orig.apply(this, arguments);
+      setTimeout(inyectarColumna, 350);
+      return r;
+    };
+    window.nxRefrescarSolicitudes._nxCliAutoHook = true;
+  }
+
+  function hookRender() {
+    const orig = window.nxRenderSolicitudes;
+    if (typeof orig !== 'function' || orig._nxCliAutoHook) return;
+    window.nxRenderSolicitudes = async function() {
+      const r = await orig.apply(this, arguments);
+      setTimeout(inyectarColumna, 400);
+      return r;
+    };
+    window.nxRenderSolicitudes._nxCliAutoHook = true;
+  }
+
+  /* INIT */
+  function init() {
+    hookAPI();
+
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      hookRefrescar();
+      hookRender();
+
+      // Si ya está en Solicitudes, inyectar ahora
+      const view = document.getElementById('v-solicitudes');
+      if (view?.classList.contains('on') && _entregasCache.length) {
+        inyectarColumna();
+      }
+      if (intentos < 30) setTimeout(tryInit, 500);
+    };
+    setTimeout(tryInit, 800);
+    console.log('✅ NEXUS: Cliente automático en Solicitudes activo');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
