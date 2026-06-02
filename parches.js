@@ -7236,9 +7236,9 @@
 
 
 
+
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - FILAS FLOTANTES V3
-   Sombra fuerte y pronunciada. Cada fila flota visiblemente.
+   NEXUS PRO - FILAS FLOTANTES V4 + BUSCADOR COBROS/FACTURAS
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -7247,91 +7247,90 @@
   if (window.__NEXUS_CARD_ROWS_V1__) return;
   window.__NEXUS_CARD_ROWS_V1__ = true;
 
+  /* ══════════════════════════════════════════
+     PARTE 1 — CSS FILAS FLOTANTES
+     Padding compacto, sombra bien visible
+  ══════════════════════════════════════════ */
   function injectCSS() {
     if (document.getElementById("nx-card-rows-css")) return;
     const style = document.createElement("style");
     style.id = "nx-card-rows-css";
     style.textContent = `
 
-      /* ── Quitar el borde/sombra del contenedor .tw ── */
+      /* Contenedor sin borde propio */
       .tw {
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 6px 4px !important;
+        padding: 4px 2px !important;
       }
 
-      /* ── Separación real entre filas ── */
+      /* Separación entre filas — no más que esto */
       .tw table {
         border-collapse: separate !important;
-        border-spacing: 0 10px !important;
+        border-spacing: 0 8px !important;
         width: 100%;
       }
 
-      /* ── Headers limpios ── */
+      /* Headers limpios */
       .tw thead th {
         background: transparent !important;
         border: none !important;
-        padding: 0 18px 6px !important;
+        box-shadow: none !important;
+        padding: 0 14px 4px !important;
         font-size: 9px !important;
         font-weight: 800 !important;
         color: #94a3b8 !important;
-        letter-spacing: 0.8px !important;
+        letter-spacing: 0.7px !important;
         text-transform: uppercase !important;
         white-space: nowrap;
-        box-shadow: none !important;
       }
 
-      /* ══ FILA FLOTANTE — sombra bien visible ══ */
+      /* ══ TARJETA FLOTANTE — sombra bien pronunciada ══ */
       .tw tbody tr {
         background: #ffffff !important;
-        border-radius: 16px !important;
-        border: 1px solid rgba(59, 130, 246, 0.14) !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(226, 232, 240, 0.9) !important;
         box-shadow:
-          0 4px 16px rgba(15, 23, 42, 0.10),
-          0 8px 24px rgba(37, 99, 235, 0.08),
-          0 1px 4px rgba(15, 23, 42, 0.06),
-          inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-        transition: all 0.20s ease !important;
-        position: relative;
+          0 2px 4px rgba(15, 23, 42, 0.05),
+          0 6px 16px rgba(15, 23, 42, 0.09),
+          0 12px 28px rgba(37, 99, 235, 0.07) !important;
+        transition: box-shadow 0.18s ease, transform 0.18s ease !important;
       }
 
-      /* ══ HOVER — flota más alto ══ */
+      /* Hover — flota más, sombra azul */
       .tw tbody tr:hover {
-        background: linear-gradient(135deg, #f0f7ff, #e8f2ff) !important;
-        border-color: rgba(37, 99, 235, 0.30) !important;
+        background: #fafcff !important;
+        border-color: rgba(59, 130, 246, 0.25) !important;
         box-shadow:
-          0 10px 32px rgba(37, 99, 235, 0.18),
-          0 4px 12px rgba(15, 23, 42, 0.10),
-          0 1px 4px rgba(15, 23, 42, 0.06),
-          inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-        transform: translateY(-3px) !important;
+          0 4px 8px rgba(15, 23, 42, 0.07),
+          0 10px 28px rgba(37, 99, 235, 0.14),
+          0 18px 40px rgba(37, 99, 235, 0.09) !important;
+        transform: translateY(-2px) !important;
       }
 
-      /* ── Celdas: sin bordes, padding generoso ── */
+      /* Celdas — padding compacto (no gigante) */
       .tw tbody td {
-        padding: 15px 16px !important;
+        padding: 11px 13px !important;
         border: none !important;
         vertical-align: middle !important;
         background: transparent !important;
         color: #0f172a !important;
         font-weight: 600 !important;
         font-size: 12px !important;
-        line-height: 1.4;
       }
-
       .tw tbody td:first-child {
-        border-radius: 16px 0 0 16px !important;
-        padding-left: 18px !important;
+        border-radius: 14px 0 0 14px !important;
+        padding-left: 16px !important;
       }
       .tw tbody td:last-child {
-        border-radius: 0 16px 16px 0 !important;
-        padding-right: 16px !important;
+        border-radius: 0 14px 14px 0 !important;
+        padding-right: 14px !important;
       }
 
-      /* ── Fila con colspan (loading/vacío): sin tarjeta ── */
+      /* Fila vacía / loading — sin sombra */
       .tw tbody tr.nx-row-span {
         background: transparent !important;
         border: none !important;
@@ -7339,43 +7338,181 @@
         transform: none !important;
       }
       .tw tbody tr.nx-row-span td {
-        padding: 20px !important;
+        padding: 18px !important;
+        border-radius: 0 !important;
       }
 
-      /* ── Dark mode ── */
+      /* Dark mode */
       body.dark .tw tbody tr {
-        background: rgba(30, 41, 59, 0.92) !important;
-        border-color: rgba(148, 163, 184, 0.15) !important;
-        box-shadow:
-          0 4px 16px rgba(0,0,0,0.30),
-          0 8px 24px rgba(0,0,0,0.20) !important;
+        background: rgba(30,41,59,.92) !important;
+        border-color: rgba(148,163,184,.15) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,.28), 0 12px 32px rgba(0,0,0,.18) !important;
       }
-      body.dark .tw tbody tr:hover {
-        background: rgba(37, 99, 235, 0.20) !important;
-      }
-      body.dark .tw tbody td {
-        color: #e2e8f0 !important;
-      }
+      body.dark .tw tbody tr:hover { background: rgba(37,99,235,.18) !important; }
+      body.dark .tw tbody td { color: #e2e8f0 !important; }
 
-      /* ── Móvil ── */
+      /* ── Buscador en Cobros/Facturas ── */
+      .nx-panel-search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 0 10px;
+        flex-wrap: wrap;
+      }
+      .nx-search-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 180px;
+      }
+      .nx-search-wrap i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 15px;
+        pointer-events: none;
+      }
+      .nx-search-input {
+        width: 100%;
+        padding: 8px 10px 8px 32px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        background: #fff !important;
+        color: #0f172a !important;
+        font-size: 12px !important;
+        outline: none;
+        box-shadow: 0 1px 4px rgba(15,23,42,.06) !important;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .nx-search-input:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.12) !important;
+      }
+      .nx-search-input::placeholder { color: #94a3b8; }
+
+      /* Móvil */
       @media (max-width: 768px) {
-        .tw table  { border-spacing: 0 8px !important; min-width: 500px; }
-        .tw tbody td { padding: 13px 12px !important; font-size: 11px !important; }
-        .tw tbody td:first-child { padding-left: 14px !important; border-radius: 14px 0 0 14px !important; }
-        .tw tbody td:last-child  { padding-right: 12px !important; border-radius: 0 14px 14px 0 !important; }
-        .tw tbody tr { border-radius: 14px !important;
+        .tw table  { border-spacing: 0 7px !important; min-width: 480px; }
+        .tw tbody td { padding: 10px 10px !important; font-size: 11px !important; }
+        .tw tbody td:first-child { padding-left: 12px !important; }
+        .tw tbody td:last-child  { padding-right: 10px !important; }
+        .tw tbody tr {
+          border-radius: 12px !important;
           box-shadow:
-            0 4px 14px rgba(15, 23, 42, 0.10),
-            0 6px 18px rgba(37, 99, 235, 0.08) !important;
+            0 2px 6px rgba(15,23,42,.07),
+            0 6px 16px rgba(15,23,42,.09) !important;
         }
         .tw tbody tr:hover { transform: none !important; }
-        .tw thead th { padding: 0 12px 5px !important; font-size: 8px !important; }
+        .tw thead th { padding: 0 10px 4px !important; font-size: 8px !important; }
+        .nx-search-input { font-size: 14px !important; }
       }
     `;
     document.head.appendChild(style);
   }
 
-  /* Marcar filas con colspan para que no tengan sombra */
+  /* ══════════════════════════════════════════
+     PARTE 2 — BUSCADOR EN COBROS Y FACTURAS
+  ══════════════════════════════════════════ */
+
+  // Filtra la tabla de cobros por texto
+  function filtrarCobros(q) {
+    const ql = q.toLowerCase().trim();
+    const filas = document.querySelectorAll('#tbCob tr');
+    filas.forEach(tr => {
+      if (tr.querySelector('td[colspan]')) { tr.style.display = ''; return; }
+      const txt = tr.textContent.toLowerCase();
+      tr.style.display = (!ql || txt.includes(ql)) ? '' : 'none';
+    });
+  }
+
+  // Filtra la tabla de facturas por texto
+  function filtrarFacturas(q) {
+    const ql = q.toLowerCase().trim();
+    const filas = document.querySelectorAll('#tbFact tr');
+    filas.forEach(tr => {
+      if (tr.querySelector('td[colspan]')) { tr.style.display = ''; return; }
+      const txt = tr.textContent.toLowerCase();
+      tr.style.display = (!ql || txt.includes(ql)) ? '' : 'none';
+    });
+  }
+
+  // Inyecta buscador encima de la tabla del panelCob
+  function inyectarBuscadorCobros() {
+    if (document.getElementById('nxCobQ')) return;
+    const panel = document.getElementById('panelCob');
+    if (!panel) return;
+    const ch = panel.querySelector('.ch');
+    if (!ch) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'nx-panel-search';
+    wrap.innerHTML = `
+      <div class="nx-search-wrap">
+        <i class="ti ti-search"></i>
+        <input
+          type="text"
+          id="nxCobQ"
+          class="nx-search-input"
+          placeholder="Buscar cliente, póliza, plan..."
+          oninput="window.__nxFiltrarCobros && window.__nxFiltrarCobros(this.value)"
+        />
+      </div>
+    `;
+    // Insertar después del .ch
+    ch.parentNode.insertBefore(wrap, ch.nextSibling);
+    window.__nxFiltrarCobros = filtrarCobros;
+  }
+
+  // Inyecta buscador encima de la tabla del panelFact
+  function inyectarBuscadorFacturas() {
+    if (document.getElementById('nxFactQ')) return;
+    const panel = document.getElementById('panelFact');
+    if (!panel) return;
+    const ch = panel.querySelector('.ch');
+    if (!ch) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'nx-panel-search';
+    wrap.innerHTML = `
+      <div class="nx-search-wrap">
+        <i class="ti ti-search"></i>
+        <input
+          type="text"
+          id="nxFactQ"
+          class="nx-search-input"
+          placeholder="Buscar cliente, NCF, estado..."
+          oninput="window.__nxFiltrarFacturas && window.__nxFiltrarFacturas(this.value)"
+        />
+      </div>
+    `;
+    ch.parentNode.insertBefore(wrap, ch.nextSibling);
+    window.__nxFiltrarFacturas = filtrarFacturas;
+  }
+
+  // Limpiar buscadores al cambiar de tab
+  function hookSwitchTab() {
+    const orig = window.switchTab;
+    if (!orig || window.__nxSwitchTabHooked) return;
+    window.__nxSwitchTabHooked = true;
+    window.switchTab = function(tab) {
+      orig.apply(this, arguments);
+      // Limpiar y re-inyectar al cambiar tab
+      setTimeout(() => {
+        inyectarBuscadorCobros();
+        inyectarBuscadorFacturas();
+        // Limpiar filtro activo del tab que se abandona
+        const qCob = document.getElementById('nxCobQ');
+        const qFact = document.getElementById('nxFactQ');
+        if (tab === 'cob' && qFact) { qFact.value = ''; filtrarFacturas(''); }
+        if (tab === 'fact' && qCob) { qCob.value = ''; filtrarCobros(''); }
+      }, 80);
+    };
+  }
+
+  /* ══════════════════════════════════════════
+     PARTE 3 — MARCAR FILAS VACÍAS (sin sombra)
+  ══════════════════════════════════════════ */
   function marcarFilasVacias() {
     document.querySelectorAll('.tw tbody tr').forEach(tr => {
       const tds = tr.querySelectorAll('td');
@@ -7395,12 +7532,32 @@
     marcarFilasVacias();
   }
 
-  injectCSS();
+  /* ══════════════════════════════════════════
+     INIT
+  ══════════════════════════════════════════ */
+  function init() {
+    injectCSS();
+    setupObserver();
+    hookSwitchTab();
+
+    // Intentar inyectar buscadores (puede que los paneles no existan aún)
+    let intentos = 0;
+    const tryInject = () => {
+      intentos++;
+      inyectarBuscadorCobros();
+      inyectarBuscadorFacturas();
+      // Si aún no existen los paneles, reintentar
+      if (!document.getElementById('nxCobQ') || !document.getElementById('nxFactQ')) {
+        if (intentos < 40) setTimeout(tryInject, 300);
+      }
+    };
+    tryInject();
+  }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupObserver, { once: true });
+    document.addEventListener('DOMContentLoaded', init, { once: true });
   } else {
-    setupObserver();
+    init();
   }
 
 })();
