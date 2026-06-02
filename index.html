@@ -201,7 +201,7 @@ table{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:11px}
 thead th{background:transparent;padding:2px 14px 6px;text-align:left;font-weight:800;font-size:9px;color:#94a3b8;border:none;white-space:nowrap;letter-spacing:.6px;text-transform:uppercase}
 tbody tr{background:#fff;border-radius:14px;box-shadow:0 2px 6px rgba(15,23,42,.06),0 6px 18px rgba(15,23,42,.08),0 10px 28px rgba(37,99,235,.06);transition:box-shadow .18s ease,transform .18s ease}
 tbody tr:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(15,23,42,.08),0 10px 26px rgba(37,99,235,.13),0 16px 36px rgba(37,99,235,.08);background:#fafcff}
-tbody td{padding:12px 14px;border:none;color:var(--tx1);vertical-align:middle;background:transparent}
+tbody td{padding:12px 14px;border:none;color:#1e293b;vertical-align:middle;background:transparent;font-weight:600}
 tbody td:first-child{border-radius:14px 0 0 14px;padding-left:16px}
 tbody td:last-child{border-radius:0 14px 14px 0;padding-right:14px}
 tbody tr:last-child td{border-bottom:none}
@@ -987,7 +987,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="ch">
               <div><div class="ct">Facturas del mes</div><div class="ct-s">Comprobante Fiscal DGII</div></div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                <div class="sw" style="min-width:160px;flex:1"><i class="ti ti-search si"></i><input type="text" id="factQ" placeholder="Buscar cliente, NCF..." oninput="rFactFiltro(this.value)"/></div>
                 <select id="fMes" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"></select>
                 <select id="fAnio" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px;width:68px"></select>
                 <select id="fFactEstado" onchange="rFact()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px">
@@ -1013,7 +1012,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div id="panelCob" style="display:none">
           <div class="nc">
             <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
-            <div class="sw" style="margin-bottom:10px"><i class="ti ti-search si"></i><input type="text" id="cobQ" placeholder="Buscar cliente, póliza, plan..." oninput="rCobFiltro(this.value)"/></div>
             <div class="tw"><table>
               <thead><tr><th style="width:22%">CLIENTE</th><th style="width:11%">PÓLIZA</th><th style="width:10%">PLAN</th><th style="width:13%">DEUDA</th><th style="width:11%">COBRADO</th><th style="width:11%">PENDIENTE</th><th style="width:12%">PROGRESO</th><th style="width:10%"></th></tr></thead>
               <tbody id="tbCob"><tr><td colspan="8"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
