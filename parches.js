@@ -8177,18 +8177,27 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — COLUMNA AGENTE v3
-   Reemplaza rCli, rFact y rCob con versiones que incluyen agente.
-   Estrategia: wrappear las funciones originales y post-procesar
-   el innerHTML insertado, usando data-cid en cada <tr>.
+   NEXUS PRO — COLUMNA AGENTE v4
+   
+   Estrategia definitiva: esperar a que rCli/rFact/rCob escriban
+   al DOM usando MutationObserver en el tbody, luego reemplazar
+   td[1] usando el atributo data-cid que agregaremos mediante
+   postprocesado del innerHTML.
+   
+   Sabemos exactamente qué tiene cada td[1]:
+   - tbCli:  style contiene "var(--c4)" con numero_poliza
+   - tbFact: contiene <span class="ncf-badge">
+   - tbCob:  style contiene "var(--c4)" con numero_poliza
+   
+   Y el cliente_id viene del onclick de los botones de acción.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
-  if (window.__NEXUS_COL_AGENTE_V3__) return;
-  window.__NEXUS_COL_AGENTE_V3__ = true;
+  if (window.__NEXUS_AGT_V4__) return;
+  window.__NEXUS_AGT_V4__ = true;
 
-  function nomAgente(agenteId) {
+  function nomAgt(agenteId) {
     if (!agenteId) return '<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>';
     const ag = (window.ST?.agentes || []).find(a => String(a.id) === String(agenteId));
     return ag
@@ -8196,137 +8205,129 @@
       : '<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>';
   }
 
-  /* Parchear thead: cambiar texto de th por índice */
-  function fixHeader(tbodyId, colIndex, newText) {
-    const tb = document.getElementById(tbodyId);
-    if (!tb) return;
-    const th = tb.closest('table')?.querySelectorAll('thead tr th')[colIndex];
-    if (th) th.textContent = newText;
+  /* Cambiar texto de un <th> por índice en la tabla que contiene el tbody */
+  function fixTh(tbodyId, idx, txt) {
+    const el = document.getElementById(tbodyId);
+    if (!el) return;
+    const ths = el.closest('table')?.querySelectorAll('thead th');
+    if (ths && ths[idx]) ths[idx].textContent = txt;
   }
 
-  /* ── CLIENTES tbCli ──
-     rCli genera: td[0]=cliente, td[1]=poliza, td[2]=plan, ...
-     Los botones de cada fila son: editarCli('ID'), abrirInhab('ID') o reactivar('ID')
-     El ID del cliente aparece en: onclick="editarCli('UUID')" */
-  function patchTbCli() {
-    fixHeader('tbCli', 1, 'AGENTE');
-    document.querySelectorAll('#tbCli tr').forEach(tr => {
-      if (tr.dataset.nxv3) return;
+  /* Parchear tbCli: td[1] tiene style con --c4 y numero_poliza */
+  function doCli() {
+    fixTh('tbCli', 1, 'AGENTE');
+    document.querySelectorAll('#tbCli tr:not([data-nxv4])').forEach(tr => {
       const tds = tr.querySelectorAll('td');
-      if (tds.length < 2) return;
+      if (tds.length < 9) return; // fila real tiene 9 columnas
 
-      // Buscar onclick con UUID en cualquier botón de la fila
-      let cid = null;
-      tr.querySelectorAll('[onclick]').forEach(el => {
-        if (cid) return;
-        const m = el.getAttribute('onclick').match(/['"]([0-9a-f-]{36})['"]/);
-        if (m) cid = m[1];
-      });
-      if (!cid) return;
+      // Obtener cliente_id del botón editarCli
+      const btn = tr.querySelector('button[onclick^="editarCli("]') ||
+                  tr.querySelector('button[onclick^="abrirAbono("]');
+      if (!btn) return;
+      const m = btn.getAttribute('onclick').match(/'([^']+)'/);
+      if (!m) return;
 
-      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
+      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(m[1]));
       if (!cli) return;
 
-      tds[1].innerHTML = nomAgente(cli.agente_id);
-      tr.dataset.nxv3 = '1';
+      tds[1].innerHTML = nomAgt(cli.agente_id);
+      tds[1].removeAttribute('style'); // quitar style de monospace
+      tds[1].style.padding = '0 8px';
+      tr.dataset.nxv4 = '1';
     });
   }
 
-  /* ── FACTURAS tbFact ──
-     td[0]=cliente_nom, td[1]=ncf, td[2]=plan, ...
-     botón: cobrarDesdeFact('cliente_id') */
-  function patchTbFact() {
-    fixHeader('tbFact', 1, 'AGENTE');
-    document.querySelectorAll('#tbFact tr').forEach(tr => {
-      if (tr.dataset.nxv3) return;
+  /* Parchear tbFact: td[1] tiene <span class="ncf-badge"> */
+  function doFact() {
+    fixTh('tbFact', 1, 'AGENTE');
+    document.querySelectorAll('#tbFact tr:not([data-nxv4])').forEach(tr => {
       const tds = tr.querySelectorAll('td');
-      if (tds.length < 2) return;
+      if (tds.length < 9) return;
 
+      // En facturas, cobrarDesdeFact('cliente_id') tiene el cliente_id
+      const btn = tr.querySelector('button[onclick^="cobrarDesdeFact("]');
       let cid = null;
-      tr.querySelectorAll('[onclick]').forEach(el => {
-        if (cid) return;
-        const m = el.getAttribute('onclick').match(/['"]([0-9a-f-]{36})['"]/);
+      if (btn) {
+        const m = btn.getAttribute('onclick').match(/'([^']+)'/);
         if (m) cid = m[1];
-      });
-      if (!cid) return;
-
-      // En facturas, el ID puede ser cliente_id o factura_id — verificar en clientes
-      let cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
-      // Si no es un cliente_id directo, buscar por factura
-      if (!cli) {
-        const f = (window.ST?.facturas || []).find(x => String(x.id) === String(cid));
-        if (f) cli = (window.ST?.clientes || []).find(c => String(c.id) === String(f.cliente_id));
       }
-
-      tds[1].innerHTML = cli ? nomAgente(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
-      tr.dataset.nxv3 = '1';
-    });
-  }
-
-  /* ── COBROS tbCob ──
-     td[0]=cliente, td[1]=poliza, td[2]=plan, ...
-     botón: abrirAbono('cliente_id') */
-  function patchTbCob() {
-    fixHeader('tbCob', 1, 'AGENTE');
-    document.querySelectorAll('#tbCob tr').forEach(tr => {
-      if (tr.dataset.nxv3) return;
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 2) return;
-
-      let cid = null;
-      tr.querySelectorAll('[onclick]').forEach(el => {
-        if (cid) return;
-        const m = el.getAttribute('onclick').match(/['"]([0-9a-f-]{36})['"]/);
-        if (m) cid = m[1];
-      });
+      // Fallback: verFacturaPDF_id tiene el factura_id → buscar en ST.facturas
+      if (!cid) {
+        const btnPDF = tr.querySelector('button[onclick^="verFacturaPDF_id("]');
+        if (btnPDF) {
+          const m2 = btnPDF.getAttribute('onclick').match(/'([^']+)'/);
+          if (m2) {
+            const fac = (window.ST?.facturas || []).find(f => String(f.id) === String(m2[1]));
+            if (fac) cid = fac.cliente_id;
+          }
+        }
+      }
       if (!cid) return;
 
       const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
-      tds[1].innerHTML = cli ? nomAgente(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
-      tr.dataset.nxv3 = '1';
+      tds[1].innerHTML = cli ? nomAgt(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
+      tr.dataset.nxv4 = '1';
     });
   }
 
-  /* Correr los 3 patches */
-  function runAll() {
-    patchTbCli();
-    patchTbFact();
-    patchTbCob();
+  /* Parchear tbCob: td[1] tiene numero_poliza, botón abrirAbono */
+  function doCob() {
+    fixTh('tbCob', 1, 'AGENTE');
+    document.querySelectorAll('#tbCob tr:not([data-nxv4])').forEach(tr => {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 7) return;
+
+      const btn = tr.querySelector('button[onclick^="abrirAbono("]');
+      if (!btn) return;
+      const m = btn.getAttribute('onclick').match(/'([^']+)'/);
+      if (!m) return;
+
+      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(m[1]));
+      if (!cli) return;
+
+      tds[1].innerHTML = nomAgt(cli.agente_id);
+      tds[1].removeAttribute('style');
+      tr.dataset.nxv4 = '1';
+    });
   }
 
-  /* MutationObserver en cada tbody */
-  function observar(id, fn) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    new MutationObserver(() => setTimeout(fn, 40)).observe(el, { childList: true, subtree: false });
-  }
+  function runAll() { doCli(); doFact(); doCob(); }
 
   function init() {
+    // Esperar a que ST.clientes y ST.agentes estén cargados
     let tries = 0;
     const go = () => {
       tries++;
-      if (window.ST?.clientes?.length && window.ST?.agentes) {
-        observar('tbCli',  patchTbCli);
-        observar('tbFact', patchTbFact);
-        observar('tbCob',  patchTbCob);
-        runAll();
-        // Re-parchear al navegar
-        const origNav = window.nav;
-        if (typeof origNav === 'function' && !origNav._nxv3) {
-          window.nav = function() {
-            const r = origNav.apply(this, arguments);
-            setTimeout(runAll, 300);
-            setTimeout(runAll, 800);
-            return r;
-          };
-          window.nav._nxv3 = true;
-        }
-        console.log('✅ NEXUS: Columna Agente v3 activa');
-      } else if (tries < 40) {
-        setTimeout(go, 400);
+      const ready = window.ST?.clientes?.length > 0 && Array.isArray(window.ST?.agentes);
+      if (!ready && tries < 50) { setTimeout(go, 300); return; }
+
+      // MutationObserver en cada tbody
+      ['tbCli', 'tbFact', 'tbCob'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        new MutationObserver(() => {
+          // Cuando el tbody cambia, esperar 50ms y parchear
+          setTimeout(runAll, 50);
+        }).observe(el, { childList: true });
+      });
+
+      // Hook nav() para reaplicar al cambiar de sección
+      const origNav = window.nav;
+      if (typeof origNav === 'function' && !origNav._nxAgtV4) {
+        window.nav = function() {
+          const r = origNav.apply(this, arguments);
+          setTimeout(runAll, 250);
+          setTimeout(runAll, 700);
+          return r;
+        };
+        window.nav._nxAgtV4 = true;
       }
+
+      // Aplicar ya si hay contenido
+      runAll();
+      console.log('✅ NEXUS: Columna Agente v4 activa');
     };
-    setTimeout(go, 800);
+    setTimeout(go, 1000);
   }
 
   document.readyState === 'loading'
