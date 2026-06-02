@@ -7235,12 +7235,10 @@
 })();
 
 
+
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - FILAS TIPO TARJETA V2 (estilo sidebar)
-   Cada fila se ve como los items del menú lateral:
-   fondo blanco, borde suave, sombra definida, bien separadas.
-   Aplica a todas las tablas (.tw) del sistema.
-   Solo visual. No cambia lógica.
+   NEXUS PRO - FILAS FLOTANTES V3
+   Sombra fuerte y pronunciada. Cada fila flota visiblemente.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
@@ -7251,167 +7249,148 @@
 
   function injectCSS() {
     if (document.getElementById("nx-card-rows-css")) return;
-
     const style = document.createElement("style");
     style.id = "nx-card-rows-css";
     style.textContent = `
 
-      /* ═══ CONTENEDOR: sin borde propio, deja respirar las tarjetas ═══ */
+      /* ── Quitar el borde/sombra del contenedor .tw ── */
       .tw {
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 4px 2px !important;
+        padding: 6px 4px !important;
       }
 
-      /* ═══ TABLA: separación real entre filas ═══ */
+      /* ── Separación real entre filas ── */
       .tw table {
         border-collapse: separate !important;
-        border-spacing: 0 7px !important;
+        border-spacing: 0 10px !important;
         width: 100%;
       }
 
-      /* ═══ HEADER: limpio, letras grises pequeñas (igual al sidebar) ═══ */
-      .tw thead tr {
-        background: transparent !important;
-        box-shadow: none !important;
-      }
+      /* ── Headers limpios ── */
       .tw thead th {
         background: transparent !important;
-        border-bottom: none !important;
-        padding: 2px 16px 8px !important;
+        border: none !important;
+        padding: 0 18px 6px !important;
         font-size: 9px !important;
         font-weight: 800 !important;
         color: #94a3b8 !important;
-        letter-spacing: 0.7px !important;
+        letter-spacing: 0.8px !important;
         text-transform: uppercase !important;
         white-space: nowrap;
+        box-shadow: none !important;
       }
 
-      /* ═══ FILA = TARJETA (igual a .ni del sidebar) ═══ */
+      /* ══ FILA FLOTANTE — sombra bien visible ══ */
       .tw tbody tr {
         background: #ffffff !important;
-        border-radius: 14px !important;
-        border: 1px solid rgba(59, 130, 246, 0.10) !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(59, 130, 246, 0.14) !important;
         box-shadow:
-          0 2px 8px rgba(15, 23, 42, 0.06),
-          0 1px 3px rgba(15, 23, 42, 0.04),
+          0 4px 16px rgba(15, 23, 42, 0.10),
+          0 8px 24px rgba(37, 99, 235, 0.08),
+          0 1px 4px rgba(15, 23, 42, 0.06),
           inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-        transition: all 0.18s ease !important;
+        transition: all 0.20s ease !important;
+        position: relative;
       }
 
-      /* Borde izquierdo azul sutil — exactamente como el item activo del sidebar */
-      .tw tbody tr::before {
-        display: none !important;
-      }
-
-      /* ═══ HOVER: levitar + borde azul (igual al sidebar hover) ═══ */
+      /* ══ HOVER — flota más alto ══ */
       .tw tbody tr:hover {
         background: linear-gradient(135deg, #f0f7ff, #e8f2ff) !important;
-        border-color: rgba(37, 99, 235, 0.28) !important;
+        border-color: rgba(37, 99, 235, 0.30) !important;
         box-shadow:
-          0 6px 18px rgba(37, 99, 235, 0.13),
-          0 2px 6px rgba(15, 23, 42, 0.06),
+          0 10px 32px rgba(37, 99, 235, 0.18),
+          0 4px 12px rgba(15, 23, 42, 0.10),
+          0 1px 4px rgba(15, 23, 42, 0.06),
           inset 0 1px 0 rgba(255, 255, 255, 1) !important;
-        transform: translateY(-1px) !important;
+        transform: translateY(-3px) !important;
       }
 
-      /* ═══ CELDAS: padding generoso, sin bordes entre ellas ═══ */
+      /* ── Celdas: sin bordes, padding generoso ── */
       .tw tbody td {
-        padding: 13px 14px !important;
-        border-bottom: none !important;
-        border-top: none !important;
+        padding: 15px 16px !important;
+        border: none !important;
         vertical-align: middle !important;
         background: transparent !important;
-        color: #1e293b !important;
+        color: #0f172a !important;
         font-weight: 600 !important;
         font-size: 12px !important;
+        line-height: 1.4;
       }
 
-      /* Esquinas redondeadas en primera y última celda */
       .tw tbody td:first-child {
-        border-radius: 14px 0 0 14px !important;
-        padding-left: 16px !important;
+        border-radius: 16px 0 0 16px !important;
+        padding-left: 18px !important;
       }
       .tw tbody td:last-child {
-        border-radius: 0 14px 14px 0 !important;
-        padding-right: 14px !important;
+        border-radius: 0 16px 16px 0 !important;
+        padding-right: 16px !important;
       }
 
-      /* ═══ FILA CON SOLO UNA CELDA (loading / empty) — sin tarjeta ═══ */
-      .tw tbody tr:has(td[colspan]) {
+      /* ── Fila con colspan (loading/vacío): sin tarjeta ── */
+      .tw tbody tr.nx-row-span {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
         transform: none !important;
       }
-      /* Fallback Safari */
-      .tw tbody tr.nx-row-full {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
+      .tw tbody tr.nx-row-span td {
+        padding: 20px !important;
       }
 
-      /* ═══ DARK MODE ═══ */
+      /* ── Dark mode ── */
       body.dark .tw tbody tr {
-        background: rgba(30, 41, 59, 0.85) !important;
-        border-color: rgba(148, 163, 184, 0.12) !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+        background: rgba(30, 41, 59, 0.92) !important;
+        border-color: rgba(148, 163, 184, 0.15) !important;
+        box-shadow:
+          0 4px 16px rgba(0,0,0,0.30),
+          0 8px 24px rgba(0,0,0,0.20) !important;
       }
       body.dark .tw tbody tr:hover {
-        background: rgba(37, 99, 235, 0.18) !important;
+        background: rgba(37, 99, 235, 0.20) !important;
       }
       body.dark .tw tbody td {
         color: #e2e8f0 !important;
       }
 
-      /* ═══ MÓVIL: un poco más compacto ═══ */
+      /* ── Móvil ── */
       @media (max-width: 768px) {
-        .tw table {
-          border-spacing: 0 6px !important;
-          min-width: 500px;
+        .tw table  { border-spacing: 0 8px !important; min-width: 500px; }
+        .tw tbody td { padding: 13px 12px !important; font-size: 11px !important; }
+        .tw tbody td:first-child { padding-left: 14px !important; border-radius: 14px 0 0 14px !important; }
+        .tw tbody td:last-child  { padding-right: 12px !important; border-radius: 0 14px 14px 0 !important; }
+        .tw tbody tr { border-radius: 14px !important;
+          box-shadow:
+            0 4px 14px rgba(15, 23, 42, 0.10),
+            0 6px 18px rgba(37, 99, 235, 0.08) !important;
         }
-        .tw tbody td {
-          padding: 11px 10px !important;
-          font-size: 11px !important;
-        }
-        .tw tbody td:first-child { padding-left: 12px !important; }
-        .tw tbody td:last-child  { padding-right: 10px !important; }
-        .tw tbody tr {
-          border-radius: 12px !important;
-        }
-        .tw tbody tr:hover {
-          transform: none !important;
-        }
-        .tw thead th {
-          padding: 2px 12px 6px !important;
-          font-size: 8px !important;
-        }
+        .tw tbody tr:hover { transform: none !important; }
+        .tw thead th { padding: 0 12px 5px !important; font-size: 8px !important; }
       }
     `;
-
     document.head.appendChild(style);
   }
 
-  /* ═══ JS: marcar filas con colspan para que Safari también las vea sin tarjeta ═══ */
+  /* Marcar filas con colspan para que no tengan sombra */
   function marcarFilasVacias() {
     document.querySelectorAll('.tw tbody tr').forEach(tr => {
       const tds = tr.querySelectorAll('td');
       if (tds.length === 1 && tds[0].hasAttribute('colspan')) {
-        tr.classList.add('nx-row-full');
+        tr.classList.add('nx-row-span');
+      } else {
+        tr.classList.remove('nx-row-span');
       }
     });
   }
 
-  /* Observar cambios en tbCli, tbFact, tbCob, tbPol, tbPagos */
   function setupObserver() {
-    const targets = ['tbCli','tbFact','tbCob','tbPol','tbPagos','tbUsu','tbAgt'];
-    const obs = new MutationObserver(() => marcarFilasVacias());
-    targets.forEach(id => {
+    ['tbCli','tbFact','tbCob','tbPol','tbPagos','tbUsu','tbAgt','tbAud'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) obs.observe(el, { childList: true, subtree: true });
+      if (el) new MutationObserver(marcarFilasVacias).observe(el, { childList: true });
     });
     marcarFilasVacias();
   }
@@ -7423,4 +7402,5 @@
   } else {
     setupObserver();
   }
+
 })();
