@@ -8024,7 +8024,7 @@
   if (window.__NEXUS_RESTRICCION_COBRO__) return;
   window.__NEXUS_RESTRICCION_COBRO__ = true;
 
-  const ROLES_LIBRES = ['admin', 'supervisor'];
+  const ROLES_LIBRES = ['admin']; // Solo admin puede cobrar clientes de cualquier agente
 
   /* Obtener el agente_id del usuario actual por nombre */
   function getMiAgenteId() {
@@ -8060,6 +8060,9 @@
     const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(clienteId));
     if (!cliente) return false;
 
+    // Si el cliente no tiene agente asignado → bloquear (temporalmente)
+    if (!cliente.agente_id) return false;
+
     // El cliente debe pertenecer al agente del usuario
     return String(cliente.agente_id) === String(miAgenteId);
   }
@@ -8084,10 +8087,14 @@
         const nomCli = cliente?.nom || 'este cliente';
 
         // Mostrar mensaje de bloqueo
+        const sinAgente = !cliente?.agente_id;
+        const msg = sinAgente
+          ? `${nomCli} no tiene agente asignado — contacta al administrador`
+          : `${nomCli} está asignado a otro agente`;
         if (typeof window.toast === 'function') {
-          window.toast('err', 'Acceso denegado', `No puedes cobrar a ${nomCli} — está asignado a otro agente`);
+          window.toast('err', 'Acceso denegado', msg);
         } else {
-          alert(`No tienes permiso para cobrar a ${nomCli}.\nEste cliente está asignado a otro agente.`);
+          alert(`No tienes permiso para cobrar a ${nomCli}.\n${msg}`);
         }
         return; // Bloquear — NO abrir el modal
       }
@@ -8328,6 +8335,181 @@
       console.log('✅ NEXUS: Columna Agente v4 activa');
     };
     setTimeout(go, 1000);
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
+})();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — REPORTE AGENTES EN SOLICITUDES
+   Agrega una sección de resumen por agente en el módulo
+   Solicitudes, justo antes del Historial.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_REP_AGT_SOL__) return;
+  window.__NEXUS_REP_AGT_SOL__ = true;
+
+  function F(n) {
+    return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+  function inits(nom) {
+    return (nom || '').split(' ').slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
+  }
+  function pend(c) {
+    return Math.max(0, (c.deuda_total || 0) - (c.pagado || 0));
+  }
+  function getTot(c) {
+    return (c.deuda_total || 0);
+  }
+
+  function renderRepAgt() {
+    const agentes = window.ST?.agentes || [];
+    const clientes = (window.ST?.clientes || []).filter(c => c.activo);
+
+    if (!agentes.length) return '';
+
+    const filas = agentes.map(a => {
+      const clis = clientes.filter(c => String(c.agente_id) === String(a.id));
+      const prima = clis.reduce((s, c) => s + getTot(c), 0);
+      const cob   = clis.reduce((s, c) => s + (c.pagado || 0), 0);
+      const pd    = clis.reduce((s, c) => s + pend(c), 0);
+      const ef    = prima > 0 ? Math.round(cob / prima * 100) : 0;
+      const ph    = ef >= 80 ? '#10b981' : ef >= 50 ? '#f59e0b' : '#ef4444';
+
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.12);color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">${inits(a.nom)}</div>
+              <div>
+                <div style="font-weight:700;font-size:11px">${a.nom}</div>
+                <div style="font-size:9px;color:#94a3b8">${a.cargo || 'Agente'}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-family:monospace;font-size:11px;font-weight:700;text-align:center">${clis.length}</td>
+          <td style="font-family:monospace;font-size:10px;color:#2563eb;font-weight:700">${F(prima)}</td>
+          <td style="font-family:monospace;font-size:10px;color:#10b981;font-weight:700">${F(cob)}</td>
+          <td style="font-family:monospace;font-size:10px;color:#ef4444;font-weight:700">${F(pd)}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden">
+                <div style="height:100%;width:${ef}%;background:${ph};border-radius:3px;transition:width .3s"></div>
+              </div>
+              <span style="font-size:10px;font-weight:700;color:${ph};font-family:monospace;min-width:30px">${ef}%</span>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+
+    return `
+      <div class="nxSL-section" style="margin-bottom:16px">
+        <div class="nxSL-section-head">
+          <div class="nxSL-section-title"><i class="ti ti-users"></i> REPORTE POR AGENTE</div>
+          <div class="nxSL-section-count nxSL-count-blue">${agentes.length}</div>
+        </div>
+        <div class="nxSL-table-wrap">
+          <table class="nxSL-table">
+            <thead><tr>
+              <th style="width:22%">AGENTE</th>
+              <th style="width:10%;text-align:center">CLIENTES</th>
+              <th style="width:18%">PRIMA TOTAL</th>
+              <th style="width:16%">COBRADO</th>
+              <th style="width:16%">PENDIENTE</th>
+              <th style="width:18%">EFICIENCIA</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  /* Interceptar nxRenderSolicitudes para inyectar la sección */
+  function hookRender() {
+    const orig = window.nxRenderSolicitudes;
+    if (typeof orig !== 'function' || orig._nxRepAgt) return;
+
+    window.nxRenderSolicitudes = async function() {
+      const r = await orig.apply(this, arguments);
+      // Buscar la sección de historial e inyectar el reporte antes
+      setTimeout(() => {
+        const view = document.getElementById('v-solicitudes');
+        if (!view) return;
+        // Si ya está, no duplicar
+        if (view.querySelector('.nx-rep-agt-sec')) return;
+
+        const historial = view.querySelector('.nxSL-section-historial') ||
+                          [...view.querySelectorAll('.nxSL-section')].find(s =>
+                            s.textContent.includes('HISTORIAL')
+                          );
+
+        if (historial) {
+          const div = document.createElement('div');
+          div.className = 'nx-rep-agt-sec';
+          div.innerHTML = renderRepAgt();
+          historial.insertAdjacentElement('beforebegin', div);
+        }
+      }, 300);
+      return r;
+    };
+    window.nxRenderSolicitudes._nxRepAgt = true;
+  }
+
+  function hookRefrescar() {
+    const orig = window.nxRefrescarSolicitudes;
+    if (typeof orig !== 'function' || orig._nxRepAgt) return;
+
+    window.nxRefrescarSolicitudes = async function() {
+      const r = await orig.apply(this, arguments);
+      setTimeout(() => {
+        const view = document.getElementById('v-solicitudes');
+        if (!view) return;
+        // Remover y re-inyectar para que se actualice
+        view.querySelector('.nx-rep-agt-sec')?.remove();
+        const historial = [...view.querySelectorAll('.nxSL-section')].find(s =>
+          s.textContent.includes('HISTORIAL')
+        );
+        if (historial) {
+          const div = document.createElement('div');
+          div.className = 'nx-rep-agt-sec';
+          div.innerHTML = renderRepAgt();
+          historial.insertAdjacentElement('beforebegin', div);
+        }
+      }, 400);
+      return r;
+    };
+    window.nxRefrescarSolicitudes._nxRepAgt = true;
+  }
+
+  function init() {
+    let tries = 0;
+    const go = () => {
+      tries++;
+      hookRender();
+      hookRefrescar();
+      // Si Solicitudes ya está abierto, inyectar ahora
+      const view = document.getElementById('v-solicitudes');
+      if (view?.classList.contains('on') && window.ST?.agentes?.length) {
+        view.querySelector('.nx-rep-agt-sec')?.remove();
+        const historial = [...view.querySelectorAll('.nxSL-section')].find(s =>
+          s.textContent.includes('HISTORIAL')
+        );
+        if (historial) {
+          const div = document.createElement('div');
+          div.className = 'nx-rep-agt-sec';
+          div.innerHTML = renderRepAgt();
+          historial.insertAdjacentElement('beforebegin', div);
+        }
+      }
+      if (tries < 20) setTimeout(go, 500);
+    };
+    setTimeout(go, 800);
+    console.log('✅ NEXUS: Reporte Agentes en Solicitudes activo');
   }
 
   document.readyState === 'loading'
