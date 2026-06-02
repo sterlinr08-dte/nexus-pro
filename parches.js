@@ -7234,11 +7234,12 @@
   document.head.appendChild(style);
 })();
 
+
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - FILAS TIPO TARJETA (CARD ROWS)
-   Convierte todas las filas de tablas en tarjetas separadas
-   con sombra y espacio. Aplica a Clientes, Facturas, Cobros,
-   Pólizas, Historial y cualquier .tw table del sistema.
+   NEXUS PRO - FILAS TIPO TARJETA V2 (estilo sidebar)
+   Cada fila se ve como los items del menú lateral:
+   fondo blanco, borde suave, sombra definida, bien separadas.
+   Aplica a todas las tablas (.tw) del sistema.
    Solo visual. No cambia lógica.
    ════════════════════════════════════════════════════════════════ */
 
@@ -7255,23 +7256,24 @@
     style.id = "nx-card-rows-css";
     style.textContent = `
 
-      /* ═══ CONTENEDOR: quitar borde del .tw para dar espacio a las tarjetas ═══ */
+      /* ═══ CONTENEDOR: sin borde propio, deja respirar las tarjetas ═══ */
       .tw {
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        padding: 4px 2px !important;
       }
 
-      /* ═══ TABLA: sin colapso de bordes (necesario para gap entre filas) ═══ */
+      /* ═══ TABLA: separación real entre filas ═══ */
       .tw table {
         border-collapse: separate !important;
-        border-spacing: 0 8px !important;
+        border-spacing: 0 7px !important;
         width: 100%;
       }
 
-      /* ═══ HEADER: fijo, flotante, elegante ═══ */
+      /* ═══ HEADER: limpio, letras grises pequeñas (igual al sidebar) ═══ */
       .tw thead tr {
         background: transparent !important;
         box-shadow: none !important;
@@ -7279,135 +7281,113 @@
       .tw thead th {
         background: transparent !important;
         border-bottom: none !important;
-        padding: 4px 14px 6px !important;
-        font-size: 9.5px !important;
+        padding: 2px 16px 8px !important;
+        font-size: 9px !important;
         font-weight: 800 !important;
         color: #94a3b8 !important;
-        letter-spacing: 0.6px !important;
+        letter-spacing: 0.7px !important;
         text-transform: uppercase !important;
         white-space: nowrap;
       }
 
-      /* ═══ FILAS: tarjeta con sombra ═══ */
+      /* ═══ FILA = TARJETA (igual a .ni del sidebar) ═══ */
       .tw tbody tr {
         background: #ffffff !important;
         border-radius: 14px !important;
+        border: 1px solid rgba(59, 130, 246, 0.10) !important;
         box-shadow:
           0 2px 8px rgba(15, 23, 42, 0.06),
           0 1px 3px rgba(15, 23, 42, 0.04),
-          inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-        transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+          inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+        transition: all 0.18s ease !important;
       }
 
-      /* ═══ HOVER: levitar ═══ */
+      /* Borde izquierdo azul sutil — exactamente como el item activo del sidebar */
+      .tw tbody tr::before {
+        display: none !important;
+      }
+
+      /* ═══ HOVER: levitar + borde azul (igual al sidebar hover) ═══ */
       .tw tbody tr:hover {
-        transform: translateY(-2px) !important;
+        background: linear-gradient(135deg, #f0f7ff, #e8f2ff) !important;
+        border-color: rgba(37, 99, 235, 0.28) !important;
         box-shadow:
-          0 8px 20px rgba(37, 99, 235, 0.12),
-          0 3px 8px rgba(15, 23, 42, 0.08),
-          inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
-        background: #ffffff !important;
+          0 6px 18px rgba(37, 99, 235, 0.13),
+          0 2px 6px rgba(15, 23, 42, 0.06),
+          inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+        transform: translateY(-1px) !important;
       }
 
-      /* ═══ CELDAS: más padding, sin bordes entre celdas ═══ */
+      /* ═══ CELDAS: padding generoso, sin bordes entre ellas ═══ */
       .tw tbody td {
-        padding: 14px 14px !important;
+        padding: 13px 14px !important;
         border-bottom: none !important;
         border-top: none !important;
         vertical-align: middle !important;
-        color: #0f172a !important;
-        font-weight: 600 !important;
         background: transparent !important;
+        color: #1e293b !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
       }
 
-      /* ═══ PRIMERA y ÚLTIMA celda: esquinas redondeadas ═══ */
+      /* Esquinas redondeadas en primera y última celda */
       .tw tbody td:first-child {
         border-radius: 14px 0 0 14px !important;
         padding-left: 16px !important;
       }
       .tw tbody td:last-child {
         border-radius: 0 14px 14px 0 !important;
-        padding-right: 16px !important;
+        padding-right: 14px !important;
       }
 
-      /* ═══ FILA VACÍA / LOADING: sin tarjeta ═══ */
-      .tw tbody tr:has(.loading),
-      .tw tbody tr:has(.empty),
-      .tw tbody tr td[colspan] {
+      /* ═══ FILA CON SOLO UNA CELDA (loading / empty) — sin tarjeta ═══ */
+      .tw tbody tr:has(td[colspan]) {
         background: transparent !important;
+        border: none !important;
         box-shadow: none !important;
         transform: none !important;
       }
-      .tw tbody tr:has(td[colspan]) {
+      /* Fallback Safari */
+      .tw tbody tr.nx-row-full {
         background: transparent !important;
-        box-shadow: none !important;
-      }
-      /* Fallback para Safari que no soporta :has() */
-      .tw tbody tr.nx-empty-row {
-        background: transparent !important;
+        border: none !important;
         box-shadow: none !important;
       }
 
-      /* ═══ FILA ACTIVA / SELECTED ═══ */
-      .tw tbody tr.selected td,
-      .tw tbody tr[aria-selected="true"] td {
-        background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
-        color: #1e3a8a !important;
-      }
-      .tw tbody tr.selected {
-        box-shadow:
-          0 6px 16px rgba(37, 99, 235, 0.18),
-          inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-        border: 1px solid rgba(59, 130, 246, 0.3) !important;
-      }
-
-      /* ═══ ÚLTIMA FILA: quitar margen extra ═══ */
-      .tw tbody tr:last-child td {
-        border-bottom: none !important;
-      }
-
-      /* ═══ DARK MODE (si lo tienes) ═══ */
+      /* ═══ DARK MODE ═══ */
       body.dark .tw tbody tr {
-        background: rgba(30, 41, 59, 0.9) !important;
-        box-shadow:
-          0 2px 8px rgba(0, 0, 0, 0.25),
-          inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        background: rgba(30, 41, 59, 0.85) !important;
+        border-color: rgba(148, 163, 184, 0.12) !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+      }
+      body.dark .tw tbody tr:hover {
+        background: rgba(37, 99, 235, 0.18) !important;
       }
       body.dark .tw tbody td {
         color: #e2e8f0 !important;
       }
-      body.dark .tw tbody tr:hover {
-        background: rgba(37, 99, 235, 0.15) !important;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
-      }
 
-      /* ═══ MÓVIL: tarjetas más compactas ═══ */
+      /* ═══ MÓVIL: un poco más compacto ═══ */
       @media (max-width: 768px) {
         .tw table {
           border-spacing: 0 6px !important;
-          min-width: 520px;
+          min-width: 500px;
         }
         .tw tbody td {
           padding: 11px 10px !important;
+          font-size: 11px !important;
         }
-        .tw tbody td:first-child {
-          padding-left: 12px !important;
-        }
-        .tw tbody td:last-child {
-          padding-right: 12px !important;
-        }
+        .tw tbody td:first-child { padding-left: 12px !important; }
+        .tw tbody td:last-child  { padding-right: 10px !important; }
         .tw tbody tr {
           border-radius: 12px !important;
-          box-shadow:
-            0 2px 6px rgba(15, 23, 42, 0.07),
-            0 1px 2px rgba(15, 23, 42, 0.04) !important;
         }
         .tw tbody tr:hover {
           transform: none !important;
         }
         .tw thead th {
-          padding: 3px 10px 5px !important;
-          font-size: 8.5px !important;
+          padding: 2px 12px 6px !important;
+          font-size: 8px !important;
         }
       }
     `;
@@ -7415,5 +7395,32 @@
     document.head.appendChild(style);
   }
 
+  /* ═══ JS: marcar filas con colspan para que Safari también las vea sin tarjeta ═══ */
+  function marcarFilasVacias() {
+    document.querySelectorAll('.tw tbody tr').forEach(tr => {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length === 1 && tds[0].hasAttribute('colspan')) {
+        tr.classList.add('nx-row-full');
+      }
+    });
+  }
+
+  /* Observar cambios en tbCli, tbFact, tbCob, tbPol, tbPagos */
+  function setupObserver() {
+    const targets = ['tbCli','tbFact','tbCob','tbPol','tbPagos','tbUsu','tbAgt'];
+    const obs = new MutationObserver(() => marcarFilasVacias());
+    targets.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) obs.observe(el, { childList: true, subtree: true });
+    });
+    marcarFilasVacias();
+  }
+
   injectCSS();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupObserver, { once: true });
+  } else {
+    setupObserver();
+  }
 })();
