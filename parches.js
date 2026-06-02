@@ -8177,172 +8177,159 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — COLUMNA AGENTE EN CLIENTES / FACTURAS / COBROS v2
-   
-   Estrategia: MutationObserver en cada tbody para detectar
-   cuando se renderizan las filas y aplicar el cambio en ese momento.
-   También modifica el thead directamente por selector exacto.
+   NEXUS PRO — COLUMNA AGENTE v3
+   Reemplaza rCli, rFact y rCob con versiones que incluyen agente.
+   Estrategia: wrappear las funciones originales y post-procesar
+   el innerHTML insertado, usando data-cid en cada <tr>.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
-  if (window.__NEXUS_COL_AGENTE_V2__) return;
-  window.__NEXUS_COL_AGENTE_V2__ = true;
+  if (window.__NEXUS_COL_AGENTE_V3__) return;
+  window.__NEXUS_COL_AGENTE_V3__ = true;
 
   function nomAgente(agenteId) {
-    if (!agenteId) return '<span style="color:#ef4444;font-weight:700;font-size:9px">⚠ SIN AGENTE</span>';
+    if (!agenteId) return '<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>';
     const ag = (window.ST?.agentes || []).find(a => String(a.id) === String(agenteId));
     return ag
       ? `<span style="font-size:10px;font-weight:700;color:#7c3aed">${ag.nom}</span>`
-      : `<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>`;
+      : '<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>';
   }
 
-  function getCliId(tr) {
-    for (const sel of [
-      '[onclick^="abrirAbono("]',
-      '[onclick^="editarCli("]',
-      '[onclick^="cobrarDesdeFact("]',
-      '[onclick*="abrirAbono("]',
-      '[onclick*="editarCli("]'
-    ]) {
-      const btn = tr.querySelector(sel);
-      if (btn) {
-        const m = btn.getAttribute('onclick').match(/'([^']+)'/);
-        if (m) return m[1];
-      }
-    }
-    return null;
+  /* Parchear thead: cambiar texto de th por índice */
+  function fixHeader(tbodyId, colIndex, newText) {
+    const tb = document.getElementById(tbodyId);
+    if (!tb) return;
+    const th = tb.closest('table')?.querySelectorAll('thead tr th')[colIndex];
+    if (th) th.textContent = newText;
   }
 
-  /* ── Parchear headers de las 3 tablas ── */
-  function patchHeaders() {
-    // tbCli: th[1] = PÓLIZA → AGENTE
-    const thCli = document.querySelector('#tbCli')?.closest('table')
-                    ?.querySelector('thead tr th:nth-child(2)');
-    if (thCli && thCli.textContent.trim() === 'PÓLIZA') {
-      thCli.textContent = 'AGENTE';
-    }
-
-    // tbFact: th[2] = NCF → AGENTE
-    const thFact = document.querySelector('#tbFact')?.closest('table')
-                     ?.querySelector('thead tr th:nth-child(2)');
-    if (thFact && thFact.textContent.trim() === 'NCF') {
-      thFact.textContent = 'AGENTE';
-    }
-
-    // tbCob: th[2] = PÓLIZA → AGENTE
-    const thCob = document.querySelector('#tbCob')?.closest('table')
-                    ?.querySelector('thead tr th:nth-child(2)');
-    if (thCob && thCob.textContent.trim() === 'PÓLIZA') {
-      thCob.textContent = 'AGENTE';
-    }
-  }
-
-  /* ── Parchear filas de tbCli ── */
-  function patchCli() {
-    patchHeaders();
-    document.querySelectorAll('#tbCli tr[style], #tbCli tr:not([style])').forEach(tr => {
-      if (tr.dataset.nxAgt) return;
+  /* ── CLIENTES tbCli ──
+     rCli genera: td[0]=cliente, td[1]=poliza, td[2]=plan, ...
+     Los botones de cada fila son: editarCli('ID'), abrirInhab('ID') o reactivar('ID')
+     El ID del cliente aparece en: onclick="editarCli('UUID')" */
+  function patchTbCli() {
+    fixHeader('tbCli', 1, 'AGENTE');
+    document.querySelectorAll('#tbCli tr').forEach(tr => {
+      if (tr.dataset.nxv3) return;
       const tds = tr.querySelectorAll('td');
       if (tds.length < 2) return;
-      const cid = getCliId(tr);
+
+      // Buscar onclick con UUID en cualquier botón de la fila
+      let cid = null;
+      tr.querySelectorAll('[onclick]').forEach(el => {
+        if (cid) return;
+        const m = el.getAttribute('onclick').match(/['"]([0-9a-f-]{36})['"]/);
+        if (m) cid = m[1];
+      });
       if (!cid) return;
+
       const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
       if (!cli) return;
+
       tds[1].innerHTML = nomAgente(cli.agente_id);
-      tr.dataset.nxAgt = '1';
+      tr.dataset.nxv3 = '1';
     });
   }
 
-  /* ── Parchear filas de tbFact ── */
-  function patchFact() {
-    patchHeaders();
+  /* ── FACTURAS tbFact ──
+     td[0]=cliente_nom, td[1]=ncf, td[2]=plan, ...
+     botón: cobrarDesdeFact('cliente_id') */
+  function patchTbFact() {
+    fixHeader('tbFact', 1, 'AGENTE');
     document.querySelectorAll('#tbFact tr').forEach(tr => {
-      if (tr.dataset.nxAgt) return;
+      if (tr.dataset.nxv3) return;
       const tds = tr.querySelectorAll('td');
       if (tds.length < 2) return;
-      const cid = getCliId(tr);
+
+      let cid = null;
+      tr.querySelectorAll('[onclick]').forEach(el => {
+        if (cid) return;
+        const m = el.getAttribute('onclick').match(/['"]([0-9a-f-]{36})['"]/);
+        if (m) cid = m[1];
+      });
       if (!cid) return;
-      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
+
+      // En facturas, el ID puede ser cliente_id o factura_id — verificar en clientes
+      let cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
+      // Si no es un cliente_id directo, buscar por factura
+      if (!cli) {
+        const f = (window.ST?.facturas || []).find(x => String(x.id) === String(cid));
+        if (f) cli = (window.ST?.clientes || []).find(c => String(c.id) === String(f.cliente_id));
+      }
+
       tds[1].innerHTML = cli ? nomAgente(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
-      tr.dataset.nxAgt = '1';
+      tr.dataset.nxv3 = '1';
     });
   }
 
-  /* ── Parchear filas de tbCob ── */
-  function patchCob() {
-    patchHeaders();
+  /* ── COBROS tbCob ──
+     td[0]=cliente, td[1]=poliza, td[2]=plan, ...
+     botón: abrirAbono('cliente_id') */
+  function patchTbCob() {
+    fixHeader('tbCob', 1, 'AGENTE');
     document.querySelectorAll('#tbCob tr').forEach(tr => {
-      if (tr.dataset.nxAgt) return;
+      if (tr.dataset.nxv3) return;
       const tds = tr.querySelectorAll('td');
       if (tds.length < 2) return;
-      const cid = getCliId(tr);
+
+      let cid = null;
+      tr.querySelectorAll('[onclick]').forEach(el => {
+        if (cid) return;
+        const m = el.getAttribute('onclick').match(/['"]([0-9a-f-]{36})['"]/);
+        if (m) cid = m[1];
+      });
       if (!cid) return;
+
       const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
       tds[1].innerHTML = cli ? nomAgente(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
-      tr.dataset.nxAgt = '1';
+      tr.dataset.nxv3 = '1';
     });
   }
 
-  /* ── MutationObserver: detectar cuando se renderizan las tablas ── */
-  function observarTabla(tbodyId, patchFn) {
-    const tbody = document.getElementById(tbodyId);
-    if (!tbody) return false;
-
-    const obs = new MutationObserver(() => {
-      setTimeout(patchFn, 30);
-    });
-    obs.observe(tbody, { childList: true, subtree: true });
-
-    // Aplicar ya si hay filas
-    setTimeout(patchFn, 100);
-    return true;
+  /* Correr los 3 patches */
+  function runAll() {
+    patchTbCli();
+    patchTbFact();
+    patchTbCob();
   }
 
-  /* ── INIT ── */
+  /* MutationObserver en cada tbody */
+  function observar(id, fn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new MutationObserver(() => setTimeout(fn, 40)).observe(el, { childList: true, subtree: false });
+  }
+
   function init() {
-    let intentos = 0;
-    const tryInit = function() {
-      intentos++;
-
-      const tbCli  = document.getElementById('tbCli');
-      const tbFact = document.getElementById('tbFact');
-      const tbCob  = document.getElementById('tbCob');
-
-      if (tbCli && tbFact && tbCob) {
-        observarTabla('tbCli',  patchCli);
-        observarTabla('tbFact', patchFact);
-        observarTabla('tbCob',  patchCob);
-
-        // Aplicar inmediato si las tablas ya tienen contenido
-        patchCli();
-        patchFact();
-        patchCob();
-
-        // Reaplicar headers cada vez que se navega (el header no cambia con MutationObserver)
+    let tries = 0;
+    const go = () => {
+      tries++;
+      if (window.ST?.clientes?.length && window.ST?.agentes) {
+        observar('tbCli',  patchTbCli);
+        observar('tbFact', patchTbFact);
+        observar('tbCob',  patchTbCob);
+        runAll();
+        // Re-parchear al navegar
         const origNav = window.nav;
-        if (typeof origNav === 'function' && !origNav._nxAgtNav) {
+        if (typeof origNav === 'function' && !origNav._nxv3) {
           window.nav = function() {
             const r = origNav.apply(this, arguments);
-            setTimeout(patchHeaders, 200);
-            setTimeout(patchHeaders, 600);
+            setTimeout(runAll, 300);
+            setTimeout(runAll, 800);
             return r;
           };
-          window.nav._nxAgtNav = true;
+          window.nav._nxv3 = true;
         }
-
-        console.log('✅ NEXUS: Columna Agente v2 activa (MutationObserver)');
-      } else if (intentos < 30) {
-        setTimeout(tryInit, 400);
+        console.log('✅ NEXUS: Columna Agente v3 activa');
+      } else if (tries < 40) {
+        setTimeout(go, 400);
       }
     };
-
-    setTimeout(tryInit, 500);
+    setTimeout(go, 800);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
-  } else {
-    init();
-  }
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
 })();
