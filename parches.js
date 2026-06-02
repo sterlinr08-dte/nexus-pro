@@ -8176,216 +8176,168 @@
   }
 })();
 
-
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — COLUMNA AGENTE EN CLIENTES / FACTURAS / COBROS
+   NEXUS PRO — COLUMNA AGENTE EN CLIENTES / FACTURAS / COBROS v2
    
-   1. Tabla CLIENTES: reemplaza columna PÓLIZA → AGENTE
-   2. Tabla FACTURAS: reemplaza columna NCF → AGENTE  
-   3. Tabla COBROS: reemplaza columna PÓLIZA → AGENTE
-   4. Validación: campo agente obligatorio al crear/editar cliente
+   Estrategia: MutationObserver en cada tbody para detectar
+   cuando se renderizan las filas y aplicar el cambio en ese momento.
+   También modifica el thead directamente por selector exacto.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
-  if (window.__NEXUS_COLUMNA_AGENTE__) return;
-  window.__NEXUS_COLUMNA_AGENTE__ = true;
+  if (window.__NEXUS_COL_AGENTE_V2__) return;
+  window.__NEXUS_COL_AGENTE_V2__ = true;
 
-  /* Obtener nombre del agente por ID */
   function nomAgente(agenteId) {
     if (!agenteId) return '<span style="color:#ef4444;font-weight:700;font-size:9px">⚠ SIN AGENTE</span>';
     const ag = (window.ST?.agentes || []).find(a => String(a.id) === String(agenteId));
     return ag
       ? `<span style="font-size:10px;font-weight:700;color:#7c3aed">${ag.nom}</span>`
-      : `<span style="color:#94a3b8;font-size:9px">—</span>`;
+      : `<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>`;
   }
 
-  /* ─── 1. CLIENTES: interceptar rCli ─── */
-  function hookRCli() {
-    const orig = window.rCli;
-    if (typeof orig !== 'function' || orig._nxAgtCol) return;
-
-    window.rCli = function() {
-      const r = orig.apply(this, arguments);
-      setTimeout(() => patchTablaClientes(), 50);
-      return r;
-    };
-    window.rCli._nxAgtCol = true;
+  function getCliId(tr) {
+    for (const sel of [
+      '[onclick^="abrirAbono("]',
+      '[onclick^="editarCli("]',
+      '[onclick^="cobrarDesdeFact("]',
+      '[onclick*="abrirAbono("]',
+      '[onclick*="editarCli("]'
+    ]) {
+      const btn = tr.querySelector(sel);
+      if (btn) {
+        const m = btn.getAttribute('onclick').match(/'([^']+)'/);
+        if (m) return m[1];
+      }
+    }
+    return null;
   }
 
-  function patchTablaClientes() {
-    // Cambiar header PÓLIZA → AGENTE
-    const thead = document.querySelector('#tbCli')?.closest('table')?.querySelector('thead tr');
-    if (thead) {
-      const ths = thead.querySelectorAll('th');
-      ths.forEach(th => {
-        if (th.textContent.trim() === 'PÓLIZA') th.textContent = 'AGENTE';
-      });
+  /* ── Parchear headers de las 3 tablas ── */
+  function patchHeaders() {
+    // tbCli: th[1] = PÓLIZA → AGENTE
+    const thCli = document.querySelector('#tbCli')?.closest('table')
+                    ?.querySelector('thead tr th:nth-child(2)');
+    if (thCli && thCli.textContent.trim() === 'PÓLIZA') {
+      thCli.textContent = 'AGENTE';
     }
 
-    // Cambiar celdas: la columna PÓLIZA es la 2da (índice 1)
-    const filas = document.querySelectorAll('#tbCli tr');
-    filas.forEach(tr => {
-      if (tr.dataset.nxAgtDone) return;
+    // tbFact: th[2] = NCF → AGENTE
+    const thFact = document.querySelector('#tbFact')?.closest('table')
+                     ?.querySelector('thead tr th:nth-child(2)');
+    if (thFact && thFact.textContent.trim() === 'NCF') {
+      thFact.textContent = 'AGENTE';
+    }
+
+    // tbCob: th[2] = PÓLIZA → AGENTE
+    const thCob = document.querySelector('#tbCob')?.closest('table')
+                    ?.querySelector('thead tr th:nth-child(2)');
+    if (thCob && thCob.textContent.trim() === 'PÓLIZA') {
+      thCob.textContent = 'AGENTE';
+    }
+  }
+
+  /* ── Parchear filas de tbCli ── */
+  function patchCli() {
+    patchHeaders();
+    document.querySelectorAll('#tbCli tr[style], #tbCli tr:not([style])').forEach(tr => {
+      if (tr.dataset.nxAgt) return;
       const tds = tr.querySelectorAll('td');
       if (tds.length < 2) return;
-
-      // Buscar el cliente de esta fila
-      const btnAbono = tr.querySelector('[onclick^="abrirAbono("]');
-      const btnEdit  = tr.querySelector('[onclick^="editarCli("]');
-      const btn = btnAbono || btnEdit;
-      if (!btn) return;
-
-      const m = btn.getAttribute('onclick').match(/'([^']+)'/);
-      if (!m) return;
-      const cid = m[1];
+      const cid = getCliId(tr);
+      if (!cid) return;
       const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
       if (!cli) return;
-
-      // td[1] = PÓLIZA → reemplazar con AGENTE
       tds[1].innerHTML = nomAgente(cli.agente_id);
-      tr.dataset.nxAgtDone = '1';
+      tr.dataset.nxAgt = '1';
     });
   }
 
-  /* ─── 2. FACTURAS: interceptar rFact ─── */
-  function hookRFact() {
-    const orig = window.rFact;
-    if (typeof orig !== 'function' || orig._nxAgtCol) return;
-
-    window.rFact = function() {
-      const r = orig.apply(this, arguments);
-      setTimeout(() => patchTablaFacturas(), 50);
-      return r;
-    };
-    window.rFact._nxAgtCol = true;
-  }
-
-  function patchTablaFacturas() {
-    // Header NCF → AGENTE
-    const thead = document.querySelector('#tbFact')?.closest('table')?.querySelector('thead tr');
-    if (thead) {
-      const ths = thead.querySelectorAll('th');
-      ths.forEach(th => {
-        if (th.textContent.trim() === 'NCF') th.textContent = 'AGENTE';
-      });
-    }
-
-    // Celdas: NCF es la 2da columna (índice 1)
-    const filas = document.querySelectorAll('#tbFact tr');
-    filas.forEach(tr => {
-      if (tr.dataset.nxAgtDone) return;
+  /* ── Parchear filas de tbFact ── */
+  function patchFact() {
+    patchHeaders();
+    document.querySelectorAll('#tbFact tr').forEach(tr => {
+      if (tr.dataset.nxAgt) return;
       const tds = tr.querySelectorAll('td');
       if (tds.length < 2) return;
-
-      // Obtener cliente_id desde el botón COBRAR
-      const btnCob = tr.querySelector('[onclick^="cobrarDesdeFact("]');
-      if (!btnCob) return;
-      const m = btnCob.getAttribute('onclick').match(/'([^']+)'/);
-      if (!m) return;
-      const cid = m[1];
+      const cid = getCliId(tr);
+      if (!cid) return;
       const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
-
-      // td[1] = NCF → AGENTE
       tds[1].innerHTML = cli ? nomAgente(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
-      tr.dataset.nxAgtDone = '1';
+      tr.dataset.nxAgt = '1';
     });
   }
 
-  /* ─── 3. COBROS: interceptar rCob ─── */
-  function hookRCob() {
-    const orig = window.rCob;
-    if (typeof orig !== 'function' || orig._nxAgtCol) return;
-
-    window.rCob = function() {
-      const r = orig.apply(this, arguments);
-      setTimeout(() => patchTablaCobros(), 50);
-      return r;
-    };
-    window.rCob._nxAgtCol = true;
-  }
-
-  function patchTablaCobros() {
-    // Header PÓLIZA → AGENTE en tabla cobros
-    const thead = document.querySelector('#tbCob')?.closest('table')?.querySelector('thead tr');
-    if (thead) {
-      const ths = thead.querySelectorAll('th');
-      ths.forEach(th => {
-        if (th.textContent.trim() === 'PÓLIZA') th.textContent = 'AGENTE';
-      });
-    }
-
-    // Celdas: PÓLIZA es la 2da columna (índice 1)
-    const filas = document.querySelectorAll('#tbCob tr');
-    filas.forEach(tr => {
-      if (tr.dataset.nxAgtDone) return;
+  /* ── Parchear filas de tbCob ── */
+  function patchCob() {
+    patchHeaders();
+    document.querySelectorAll('#tbCob tr').forEach(tr => {
+      if (tr.dataset.nxAgt) return;
       const tds = tr.querySelectorAll('td');
       if (tds.length < 2) return;
-
-      const btnAb = tr.querySelector('[onclick^="abrirAbono("]');
-      if (!btnAb) return;
-      const m = btnAb.getAttribute('onclick').match(/'([^']+)'/);
-      if (!m) return;
-      const cid = m[1];
+      const cid = getCliId(tr);
+      if (!cid) return;
       const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
-
       tds[1].innerHTML = cli ? nomAgente(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
-      tr.dataset.nxAgtDone = '1';
+      tr.dataset.nxAgt = '1';
     });
   }
 
-  /* ─── 4. VALIDAR AGENTE OBLIGATORIO al guardar cliente ─── */
-  function hookGuardarCliente() {
-    // Interceptar el submit del formulario de cliente (nuevo y editar)
-    const origGuardar = window.guardarCli;
-    if (typeof origGuardar !== 'function' || origGuardar._nxAgtVal) return;
+  /* ── MutationObserver: detectar cuando se renderizan las tablas ── */
+  function observarTabla(tbodyId, patchFn) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return false;
 
-    window.guardarCli = async function() {
-      // Verificar que hay agente seleccionado
-      const selAgente = document.getElementById('cliAgente') ||
-                        document.querySelector('select[name="agente_id"]') ||
-                        document.querySelector('#mCli select[id*="gte"]');
+    const obs = new MutationObserver(() => {
+      setTimeout(patchFn, 30);
+    });
+    obs.observe(tbody, { childList: true, subtree: true });
 
-      if (selAgente && !selAgente.value) {
-        if (typeof window.toast === 'function') {
-          window.toast('err', 'Agente requerido', 'Debes asignar un agente al cliente');
-        } else {
-          alert('Debes asignar un agente al cliente');
-        }
-        selAgente.style.borderColor = '#ef4444';
-        selAgente.focus();
-        return; // Bloquear guardado
-      }
-
-      return await origGuardar.apply(this, arguments);
-    };
-    window.guardarCli._nxAgtVal = true;
+    // Aplicar ya si hay filas
+    setTimeout(patchFn, 100);
+    return true;
   }
 
-  /* ─── INIT ─── */
+  /* ── INIT ── */
   function init() {
     let intentos = 0;
     const tryInit = function() {
       intentos++;
-      const listo = window.ST?.agentes?.length > 0 &&
-                    typeof window.rCli === 'function';
 
-      if (listo) {
-        hookRCli();
-        hookRFact();
-        hookRCob();
-        hookGuardarCliente();
+      const tbCli  = document.getElementById('tbCli');
+      const tbFact = document.getElementById('tbFact');
+      const tbCob  = document.getElementById('tbCob');
 
-        // Aplicar en la vista que esté activa ahora
-        patchTablaClientes();
-        patchTablaFacturas();
-        patchTablaCobros();
-        console.log('✅ NEXUS: Columna Agente en tablas activa');
+      if (tbCli && tbFact && tbCob) {
+        observarTabla('tbCli',  patchCli);
+        observarTabla('tbFact', patchFact);
+        observarTabla('tbCob',  patchCob);
+
+        // Aplicar inmediato si las tablas ya tienen contenido
+        patchCli();
+        patchFact();
+        patchCob();
+
+        // Reaplicar headers cada vez que se navega (el header no cambia con MutationObserver)
+        const origNav = window.nav;
+        if (typeof origNav === 'function' && !origNav._nxAgtNav) {
+          window.nav = function() {
+            const r = origNav.apply(this, arguments);
+            setTimeout(patchHeaders, 200);
+            setTimeout(patchHeaders, 600);
+            return r;
+          };
+          window.nav._nxAgtNav = true;
+        }
+
+        console.log('✅ NEXUS: Columna Agente v2 activa (MutationObserver)');
       } else if (intentos < 30) {
         setTimeout(tryInit, 400);
       }
     };
-    setTimeout(tryInit, 800);
+
+    setTimeout(tryInit, 500);
   }
 
   if (document.readyState === 'loading') {
