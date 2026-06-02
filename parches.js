@@ -8005,3 +8005,173 @@
     init();
   }
 })();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — RESTRICCIÓN DE COBRO POR AGENTE
+   
+   REGLA: Un usuario que NO sea admin ni supervisor solo puede
+   cobrar a los clientes asignados a su propio agente.
+   
+   LÓGICA:
+   - sesion.nom se compara con agentes[].nom (mismo nombre)
+   - Si el cliente.agente_id ≠ agente del usuario → BLOQUEADO
+   - Admin y supervisor: sin restricción
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_RESTRICCION_COBRO__) return;
+  window.__NEXUS_RESTRICCION_COBRO__ = true;
+
+  const ROLES_LIBRES = ['admin', 'supervisor'];
+
+  /* Obtener el agente_id del usuario actual por nombre */
+  function getMiAgenteId() {
+    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
+    if (!sesion) return null;
+
+    const rol = (sesion.rol || '').toLowerCase();
+    if (ROLES_LIBRES.includes(rol)) return null; // Sin restricción
+
+    const miNom = (sesion.nom || sesion.usuario || '').toUpperCase().trim();
+    if (!miNom) return null;
+
+    const agentes = window.ST?.agentes || [];
+    const agente = agentes.find(a =>
+      (a.nom || '').toUpperCase().trim() === miNom
+    );
+    return agente?.id || null;
+  }
+
+  /* Verificar si puede cobrar a un cliente */
+  function puedeCobraCliente(clienteId) {
+    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
+    const rol = (sesion?.rol || '').toLowerCase();
+
+    // Admin y supervisor: siempre pueden
+    if (ROLES_LIBRES.includes(rol)) return true;
+
+    const miAgenteId = getMiAgenteId();
+
+    // Si no se puede identificar el agente del usuario, bloquear por seguridad
+    if (!miAgenteId) return false;
+
+    const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(clienteId));
+    if (!cliente) return false;
+
+    // El cliente debe pertenecer al agente del usuario
+    return String(cliente.agente_id) === String(miAgenteId);
+  }
+
+  /* Interceptar abrirAbono para bloquear si no tiene permiso */
+  function hookAbrirAbono() {
+    const orig = window.abrirAbono;
+    if (typeof orig !== 'function' || orig._nxRestriccion) return;
+
+    window.abrirAbono = function(cid) {
+      const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
+      const rol = (sesion?.rol || '').toLowerCase();
+
+      // Admin y supervisor pasan directo
+      if (ROLES_LIBRES.includes(rol)) {
+        return orig.apply(this, arguments);
+      }
+
+      // Verificar si puede cobrar este cliente
+      if (!puedeCobraCliente(cid)) {
+        const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
+        const nomCli = cliente?.nom || 'este cliente';
+
+        // Mostrar mensaje de bloqueo
+        if (typeof window.toast === 'function') {
+          window.toast('err', 'Acceso denegado', `No puedes cobrar a ${nomCli} — está asignado a otro agente`);
+        } else {
+          alert(`No tienes permiso para cobrar a ${nomCli}.\nEste cliente está asignado a otro agente.`);
+        }
+        return; // Bloquear — NO abrir el modal
+      }
+
+      // Es su cliente → permitir
+      return orig.apply(this, arguments);
+    };
+    window.abrirAbono._nxRestriccion = true;
+    console.log('✅ NEXUS: Restricción cobro por agente activa');
+  }
+
+  /* Ocultar botón COBRAR en la tabla de clientes si no le pertenece */
+  function ocultarBotonesCobro() {
+    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
+    const rol = (sesion?.rol || '').toLowerCase();
+    if (ROLES_LIBRES.includes(rol)) return; // Admin/supervisor: no tocar nada
+
+    const miAgenteId = getMiAgenteId();
+    if (!miAgenteId) return;
+
+    // Buscar todos los botones de cobro en la tabla de clientes
+    document.querySelectorAll('[onclick^="abrirAbono("]').forEach(btn => {
+      const match = btn.getAttribute('onclick').match(/abrirAbono\('([^']+)'\)/);
+      if (!match) return;
+      const cid = match[1];
+      const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
+      if (!cliente) return;
+
+      if (String(cliente.agente_id) !== String(miAgenteId)) {
+        // No es su cliente: deshabilitar visualmente
+        btn.disabled = true;
+        btn.style.opacity = '0.3';
+        btn.style.cursor = 'not-allowed';
+        btn.title = 'Cliente de otro agente';
+      } else {
+        // Es su cliente: asegurar que esté habilitado
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.title = 'Registrar cobro';
+      }
+    });
+  }
+
+  /* Interceptar rCli para aplicar restricción cada vez que se recarga la tabla */
+  function hookRCli() {
+    const orig = window.rCli;
+    if (typeof orig !== 'function' || orig._nxRestriccion) return;
+    window.rCli = function() {
+      const r = orig.apply(this, arguments);
+      // Aplicar después de que se renderice la tabla
+      if (r && typeof r.then === 'function') {
+        r.then(() => setTimeout(ocultarBotonesCobro, 200));
+      } else {
+        setTimeout(ocultarBotonesCobro, 200);
+      }
+      return r;
+    };
+    window.rCli._nxRestriccion = true;
+  }
+
+  /* INIT */
+  function init() {
+    let intentos = 0;
+    const tryInit = function() {
+      intentos++;
+      const listo = typeof window.abrirAbono === 'function' &&
+                    typeof window.rCli === 'function' &&
+                    window.ST?.clientes?.length > 0;
+
+      if (listo) {
+        hookAbrirAbono();
+        hookRCli();
+        ocultarBotonesCobro(); // Aplicar al cargar si ya hay tabla visible
+      } else if (intentos < 30) {
+        setTimeout(tryInit, 500);
+      }
+    };
+    setTimeout(tryInit, 800);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
