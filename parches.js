@@ -8145,6 +8145,11 @@
         return orig.apply(this, arguments);
       }
 
+      // Si tiene permiso de cobrar todos → saltarse la restricción
+      if (window.__nxSkipRestriccion__) {
+        return orig.apply(this, arguments);
+      }
+
       // Verificar si puede cobrar este cliente
       if (!puedeCobraCliente(cid)) {
         const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
@@ -8574,6 +8579,557 @@
     };
     setTimeout(go, 800);
     console.log('✅ NEXUS: Reporte Agentes en Solicitudes activo');
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
+})();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — COMPROBANTE DE PAGO (BAUCHE)
+   
+   Requiere SQL: SQL_comprobantes.sql
+   
+   1. Al seleccionar Transferencia o Depósito en el modal de cobro
+      → aparece botón "📎 Adjuntar bauche" automáticamente
+   2. Al tocar el botón → abre selector de imagen (cámara o galería)
+   3. La imagen se sube a Supabase Storage (bucket: comprobantes)
+   4. La URL se guarda en abonos.comprobante_url
+   5. En Solicitudes → icono 🖼 para ver el comprobante
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_COMPROBANTE__) return;
+  window.__NEXUS_COMPROBANTE__ = true;
+
+  let _comprobanteFile  = null; // archivo seleccionado
+  let _comprobanteURL   = null; // URL después de subir
+
+  /* ─── Obtener URL base de Supabase para Storage ─── */
+  function getStorageURL() {
+    // Intentar obtener del API configurado
+    const url = window.API?._url || window.SUPABASE_URL ||
+                window._supabaseUrl || window.__NEXUS_SB_URL__;
+    if (url) return url.replace(/\/$/, '');
+    // Fallback: construir desde el proyecto conocido
+    return 'https://mrtqkhachhvsczltwakt.supabase.co';
+  }
+
+  function getAnonKey() {
+    return window.API?._key || window.SUPABASE_ANON_KEY ||
+           window._supabaseKey || window.__NEXUS_SB_KEY__ || '';
+  }
+
+  /* ─── Subir imagen a Supabase Storage ─── */
+  async function subirImagen(file) {
+    const ext  = file.name.split('.').pop() || 'jpg';
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const url  = `${getStorageURL()}/storage/v1/object/comprobantes/${path}`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getAnonKey()}`,
+        'Content-Type': file.type,
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Error al subir imagen: ${err}`);
+    }
+
+    // URL pública
+    return `${getStorageURL()}/storage/v1/object/public/comprobantes/${path}`;
+  }
+
+  /* ─── Inyectar CSS ─── */
+  function inyectarCSS() {
+    if (document.getElementById('nx-comp-css')) return;
+    const s = document.createElement('style');
+    s.id = 'nx-comp-css';
+    s.textContent = `
+      #nx-bauche-wrap {
+        margin-bottom: 10px;
+        transition: all .2s;
+      }
+      #nx-bauche-btn {
+        width: 100%;
+        padding: 9px 12px;
+        border: 2px dashed #cbd5e1;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        transition: all .2s;
+      }
+      #nx-bauche-btn:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+        background: #eff6ff;
+      }
+      #nx-bauche-btn.nx-cargando {
+        border-color: #f59e0b;
+        color: #f59e0b;
+        background: #fffbeb;
+        pointer-events: none;
+      }
+      #nx-bauche-btn.nx-listo {
+        border-color: #10b981;
+        color: #10b981;
+        background: #f0fdf4;
+      }
+      #nx-bauche-preview {
+        margin-top: 6px;
+        border-radius: 8px;
+        overflow: hidden;
+        max-height: 120px;
+        display: none;
+        position: relative;
+      }
+      #nx-bauche-preview img {
+        width: 100%;
+        max-height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      #nx-bauche-preview .nx-quitar {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(0,0,0,.6);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  /* ─── Crear el bloque de bauche en el modal ─── */
+  function crearBloqueBauche() {
+    if (document.getElementById('nx-bauche-wrap')) return;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'nx-bauche-wrap';
+    wrap.style.display = 'none';
+    wrap.innerHTML = `
+      <input type="file" id="nx-bauche-input" accept="image/*" capture="environment" style="display:none">
+      <button type="button" id="nx-bauche-btn" onclick="document.getElementById('nx-bauche-input').click()">
+        <i class="ti ti-camera"></i> Adjuntar bauche de pago
+      </button>
+      <div id="nx-bauche-preview">
+        <img id="nx-bauche-img" src="" alt="Bauche">
+        <button class="nx-quitar" onclick="window.nxQuitarBauche()" title="Quitar imagen">✕</button>
+      </div>
+    `;
+
+    // Insertar antes del div de recibo WA o antes del fe (botones finales)
+    const reciboDiv = document.getElementById('reciboWAbtn');
+    const fe        = document.querySelector('#mAbono .fe');
+    const ref       = reciboDiv || fe;
+    if (ref) ref.insertAdjacentElement('beforebegin', wrap);
+
+    // Evento al seleccionar archivo
+    document.getElementById('nx-bauche-input').addEventListener('change', async function() {
+      const file = this.files[0];
+      if (!file) return;
+
+      _comprobanteFile = file;
+      _comprobanteURL  = null;
+
+      // Mostrar preview
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img     = document.getElementById('nx-bauche-img');
+        const preview = document.getElementById('nx-bauche-preview');
+        const btn     = document.getElementById('nx-bauche-btn');
+        if (img)     img.src = e.target.result;
+        if (preview) preview.style.display = 'block';
+        if (btn) {
+          btn.className = 'nx-cargando';
+          btn.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite"></i> Subiendo...';
+        }
+      };
+      reader.readAsDataURL(file);
+
+      // Subir a Supabase
+      try {
+        _comprobanteURL = await subirImagen(file);
+        const btn = document.getElementById('nx-bauche-btn');
+        if (btn) {
+          btn.className = 'nx-listo';
+          btn.innerHTML = '<i class="ti ti-check"></i> Bauche adjuntado ✓';
+        }
+      } catch(e) {
+        const btn = document.getElementById('nx-bauche-btn');
+        if (btn) {
+          btn.className = '';
+          btn.innerHTML = '<i class="ti ti-camera"></i> Error — reintentar';
+        }
+        if (typeof window.toast === 'function') {
+          window.toast('err', 'Error al subir bauche', e.message);
+        }
+        _comprobanteFile = null;
+        _comprobanteURL  = null;
+      }
+    });
+  }
+
+  /* ─── Quitar bauche seleccionado ─── */
+  window.nxQuitarBauche = function() {
+    _comprobanteFile = null;
+    _comprobanteURL  = null;
+    const input   = document.getElementById('nx-bauche-input');
+    const preview = document.getElementById('nx-bauche-preview');
+    const btn     = document.getElementById('nx-bauche-btn');
+    if (input)   input.value = '';
+    if (preview) { preview.style.display = 'none'; }
+    if (btn) {
+      btn.className = '';
+      btn.innerHTML = '<i class="ti ti-camera"></i> Adjuntar bauche de pago';
+    }
+  };
+
+  /* ─── Mostrar/ocultar bauche al cambiar método ─── */
+  function hookCambiarMetodo() {
+    const orig = window.cambiarMetodoAbono;
+    if (typeof orig !== 'function' || orig._nxComp) return;
+
+    window.cambiarMetodoAbono = function() {
+      orig.apply(this, arguments);
+
+      const met  = document.getElementById('aMet')?.value || '';
+      const wrap = document.getElementById('nx-bauche-wrap');
+
+      if (!wrap) { crearBloqueBauche(); return; }
+
+      if (met === 'Transferencia' || met === 'Depósito') {
+        wrap.style.display = 'block';
+      } else {
+        wrap.style.display = 'none';
+        window.nxQuitarBauche();
+      }
+    };
+    window.cambiarMetodoAbono._nxComp = true;
+  }
+
+  /* ─── Interceptar regAbono para incluir comprobante_url ─── */
+  function hookRegAbono() {
+    const api = window.API;
+    if (!api?.post || api.post._nxCompHook) return;
+
+    const origPost = api.post.bind(api);
+    api.post = async function(tabla, datos, ...args) {
+      if (tabla === 'abonos' && _comprobanteURL) {
+        datos = { ...datos, comprobante_url: _comprobanteURL };
+        // Limpiar después de guardar
+        setTimeout(() => {
+          _comprobanteURL  = null;
+          _comprobanteFile = null;
+        }, 500);
+      }
+      return await origPost(tabla, datos, ...args);
+    };
+    api.post._nxCompHook = true;
+  }
+
+  /* ─── Mostrar comprobante en Solicitudes ─── */
+  function hookVerComprobante() {
+    window.nxVerComprobante = function(url) {
+      if (!url) return;
+      // Abrir en modal simple
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position:fixed;inset:0;background:rgba(0,0,0,.85);
+        z-index:99999;display:flex;align-items:center;
+        justify-content:center;padding:20px;cursor:pointer
+      `;
+      overlay.innerHTML = `
+        <div style="position:relative;max-width:90vw;max-height:90vh">
+          <img src="${url}" style="max-width:100%;max-height:85vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+          <button onclick="this.closest('[style*=fixed]').remove()" style="
+            position:absolute;top:-10px;right:-10px;width:28px;height:28px;
+            border-radius:50%;background:#ef4444;color:#fff;border:none;
+            font-size:14px;cursor:pointer;font-weight:700;
+            display:flex;align-items:center;justify-content:center
+          ">✕</button>
+        </div>`;
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+    };
+  }
+
+  /* ─── Parchear las tablas de Solicitudes para mostrar ícono de comprobante ─── */
+  function patchTablasSolicitudes() {
+    if (!window.__nxEntregasData__?.length) return;
+
+    document.querySelectorAll('.nxSL-table tbody tr').forEach(tr => {
+      if (tr.dataset.nxComp) return;
+
+      // Buscar el ID de la entrega en los botones
+      const btn = tr.querySelector('button[onclick*="EntregaAdmin("]');
+      if (!btn) return;
+      const m = btn.getAttribute('onclick').match(/'([^']+)'/);
+      if (!m) return;
+
+      const entrega = window.__nxEntregasData__.find(e => String(e.id) === String(m[1]));
+      if (!entrega) return;
+      tr.dataset.nxComp = '1';
+
+      // Si tiene comprobante, agregar ícono en la última celda
+      if (entrega.comprobante_url) {
+        const lastTd = tr.querySelector('td:last-child');
+        if (lastTd) {
+          const btnVer = document.createElement('button');
+          btnVer.style.cssText = 'background:#2563eb;border:none;color:#fff;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer;margin-left:4px';
+          btnVer.innerHTML = '<i class="ti ti-photo"></i>';
+          btnVer.title = 'Ver bauche';
+          btnVer.onclick = () => window.nxVerComprobante(entrega.comprobante_url);
+          lastTd.appendChild(btnVer);
+        }
+      }
+    });
+  }
+
+  /* ─── INIT ─── */
+  function init() {
+    inyectarCSS();
+    hookVerComprobante();
+    hookRegAbono();
+
+    let tries = 0;
+    const go = () => {
+      tries++;
+      hookCambiarMetodo();
+
+      // Crear bloque si el modal ya existe
+      const modal = document.getElementById('mAbono');
+      if (modal && !document.getElementById('nx-bauche-wrap')) {
+        crearBloqueBauche();
+      }
+
+      // Patch tablas solicitudes si hay datos
+      patchTablasSolicitudes();
+
+      if (tries < 30) setTimeout(go, 500);
+    };
+    setTimeout(go, 600);
+
+    // Observar solicitudes para inyectar botones de comprobante
+    const observer = new MutationObserver(() => setTimeout(patchTablasSolicitudes, 200));
+    const tryObserve = () => {
+      const v = document.getElementById('v-solicitudes');
+      if (v) observer.observe(v, { childList: true, subtree: true });
+      else setTimeout(tryObserve, 500);
+    };
+    tryObserve();
+
+    console.log('✅ NEXUS: Comprobantes de pago activo');
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
+})();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — PERMISO: COBRAR CLIENTES DE CUALQUIER AGENTE
+   
+   Requiere SQL: SQL_cobrar_todos.sql
+   
+   Agrega un toggle en la tabla de Usuarios (Configuración)
+   para que el admin pueda activar/desactivar por usuario el
+   permiso de cobrar clientes de cualquier agente.
+   
+   Si puede_cobrar_todos = true → sin restricción de agente.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_COBRAR_TODOS__) return;
+  window.__NEXUS_COBRAR_TODOS__ = true;
+
+  /* ─── Verificar si el usuario actual tiene el permiso ─── */
+  function tienePosPermiso() {
+    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
+    if (!sesion) return false;
+    // Admin siempre puede
+    if ((sesion.rol || '').toLowerCase() === 'admin') return true;
+    // Buscar en ST.usuarios por login
+    const u = (window.ST?.usuarios || []).find(x =>
+      x.login === sesion.usuario || x.login === sesion.login
+    );
+    return u?.puede_cobrar_todos === true;
+  }
+
+  /* ─── Actualizar la restricción de cobro existente ─── */
+  function patchRestriccion() {
+    // La función puedeCobraCliente ya existe en __NEXUS_RESTRICCION_COBRO__
+    // La envolvemos para añadir la verificación del permiso nuevo
+    const origFn = window.__nxPuedeCobraCliente__;
+    if (origFn) return; // Ya parcheado
+
+    // Guardar referencia a la función original del parche de restricción
+    // El parche de restricción define puedeCobraCliente dentro de su IIFE
+    // Necesitamos hookearlo a nivel de abrirAbono que ya existe
+    const origAbono = window.abrirAbono;
+    if (typeof origAbono !== 'function') return;
+    if (origAbono._nxCobTodos) return;
+
+    window.abrirAbono = function(cid) {
+      // Si tiene permiso de cobrar todos → saltar la restricción de agente
+      if (tienePosPermiso()) {
+        // Llamar al original de ANTES del parche de restricción
+        // El parche de restricción también wrapeó abrirAbono
+        // Necesitamos saltar SU validación
+        window.__nxSkipRestriccion__ = true;
+      }
+      const r = origAbono.apply(this, arguments);
+      window.__nxSkipRestriccion__ = false;
+      return r;
+    };
+    window.abrirAbono._nxCobTodos = true;
+    window.__nxPuedeCobraCliente__ = true;
+  }
+
+  /* ─── Toggle en la tabla de usuarios ─── */
+  window.nxToggleCobrarTodos = async function(userId, valor) {
+    try {
+      await window.API.patch('usuarios_sistema', `id=eq.${userId}`, {
+        puede_cobrar_todos: valor
+      });
+      const u = (window.ST?.usuarios || []).find(x => x.id === userId);
+      if (u) u.puede_cobrar_todos = valor;
+      if (typeof window.toast === 'function') {
+        window.toast('ok',
+          valor ? 'Permiso activado' : 'Permiso desactivado',
+          valor ? 'Puede cobrar clientes de cualquier agente' : 'Solo puede cobrar sus propios clientes'
+        );
+      }
+    } catch(e) {
+      if (typeof window.toast === 'function') {
+        window.toast('err', 'Error', e.message);
+      }
+    }
+  };
+
+  /* ─── Agregar columna "COBRAR TODOS" en la tabla de usuarios ─── */
+  function patchTablaUsuarios() {
+    const tbUsu = document.getElementById('tbUsu');
+    if (!tbUsu || tbUsu.dataset.nxCobTodosCol) return;
+    tbUsu.dataset.nxCobTodosCol = '1';
+
+    // Agregar th en el thead
+    const thead = tbUsu.closest('table')?.querySelector('thead tr');
+    if (thead && !thead.querySelector('.nx-cob-todos-th')) {
+      const th = document.createElement('th');
+      th.className = 'nx-cob-todos-th';
+      th.style.cssText = 'font-size:9px;white-space:nowrap';
+      th.textContent = 'COBRAR TODOS';
+      // Insertar antes de la última columna (ACCIONES)
+      const lastTh = thead.querySelector('th:last-child');
+      if (lastTh) lastTh.insertAdjacentElement('beforebegin', th);
+    }
+
+    // Agregar td en cada fila
+    tbUsu.querySelectorAll('tr').forEach(tr => {
+      if (tr.dataset.nxCobTd) return;
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 3) return;
+
+      // Obtener ID del usuario desde el botón de editar/eliminar
+      let uid = null;
+      tr.querySelectorAll('[onclick]').forEach(el => {
+        if (uid) return;
+        const m = el.getAttribute('onclick').match(/'([^']+)'/);
+        if (m) uid = m[1];
+      });
+      if (!uid) return;
+
+      const u = (window.ST?.usuarios || []).find(x => String(x.id) === String(uid));
+      if (!u) return;
+
+      // No mostrar para admin
+      const esCobrarTodos = u.puede_cobrar_todos === true;
+      const esAdmin = (u.rol || '').toLowerCase() === 'admin';
+
+      const td = document.createElement('td');
+      td.dataset.nxCobTd = '1';
+      td.style.textAlign = 'center';
+
+      if (esAdmin) {
+        td.innerHTML = '<span style="font-size:9px;color:#94a3b8">Admin</span>';
+      } else {
+        td.innerHTML = `
+          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="checkbox" 
+              ${esCobrarTodos ? 'checked' : ''}
+              onchange="window.nxToggleCobrarTodos('${uid}', this.checked)"
+              style="width:14px;height:14px;cursor:pointer;accent-color:#2563eb">
+            <span style="font-size:9px;color:${esCobrarTodos ? '#2563eb' : '#94a3b8'}">
+              ${esCobrarTodos ? 'Sí' : 'No'}
+            </span>
+          </label>`;
+      }
+
+      // Insertar antes del último td (acciones)
+      const lastTd = tr.querySelector('td:last-child');
+      if (lastTd) lastTd.insertAdjacentElement('beforebegin', td);
+      tr.dataset.nxCobTd = '1';
+    });
+  }
+
+  /* ─── Hook rUsuarios para reaplicar columna ─── */
+  function hookRUsuarios() {
+    const orig = window.rUsuarios;
+    if (typeof orig !== 'function' || orig._nxCobTodos) return;
+    window.rUsuarios = function() {
+      const r = orig.apply(this, arguments);
+      setTimeout(() => {
+        document.getElementById('tbUsu')?.removeAttribute('data-nx-cob-todos-col');
+        document.querySelectorAll('#tbUsu tr').forEach(tr => tr.removeAttribute('data-nx-cob-td'));
+        patchTablaUsuarios();
+      }, 100);
+      return r;
+    };
+    window.rUsuarios._nxCobTodos = true;
+  }
+
+  /* ─── INIT ─── */
+  function init() {
+    let tries = 0;
+    const go = () => {
+      tries++;
+      patchRestriccion();
+      hookRUsuarios();
+      // Si la tabla de usuarios ya está visible
+      if (document.getElementById('tbUsu')?.querySelector('tr')) {
+        patchTablaUsuarios();
+      }
+      if (tries < 30) setTimeout(go, 500);
+    };
+    setTimeout(go, 800);
+    console.log('✅ NEXUS: Permiso cobrar todos activo');
   }
 
   document.readyState === 'loading'
