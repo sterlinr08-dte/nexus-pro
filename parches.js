@@ -8982,7 +8982,7 @@
 
   /* ─── Verificar si el usuario actual tiene el permiso ─── */
   function tienePosPermiso() {
-    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
+    const sesion = window.sesion || null;
     if (!sesion) return false;
     // Admin siempre puede
     if ((sesion.rol || '').toLowerCase() === 'admin') return true;
@@ -9147,4 +9147,3 @@
     ? document.addEventListener('DOMContentLoaded', init, { once: true })
     : init();
 })();
-
