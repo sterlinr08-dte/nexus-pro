@@ -8732,7 +8732,7 @@
     wrap.id = 'nx-bauche-wrap';
     wrap.style.display = 'none';
     wrap.innerHTML = `
-      <input type="file" id="nx-bauche-input" accept="image/*" capture="environment" style="display:none">
+      <input type="file" id="nx-bauche-input" accept="image/*" style="display:none">
       <button type="button" id="nx-bauche-btn" onclick="document.getElementById('nx-bauche-input').click()">
         <i class="ti ti-camera"></i> Adjuntar bauche de pago
       </button>
@@ -9147,3 +9147,4 @@
     ? document.addEventListener('DOMContentLoaded', init, { once: true })
     : init();
 })();
+
