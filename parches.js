@@ -8733,12 +8733,28 @@
     wrap.style.display = 'none';
     wrap.innerHTML = `
       <input type="file" id="nx-bauche-input" accept="image/*" style="display:none">
-      <button type="button" id="nx-bauche-btn" onclick="document.getElementById('nx-bauche-input').click()">
-        <i class="ti ti-camera"></i> Adjuntar bauche de pago
-      </button>
-      <div id="nx-bauche-preview">
-        <img id="nx-bauche-img" src="" alt="Bauche">
-        <button class="nx-quitar" onclick="window.nxQuitarBauche()" title="Quitar imagen">✕</button>
+      <div id="nx-bauche-drop" style="
+        border:2px dashed #cbd5e1;border-radius:10px;background:#f8fafc;
+        padding:10px;cursor:pointer;transition:all .2s;
+      "
+        onclick="document.getElementById('nx-bauche-input').click()"
+        title="Toca para elegir imagen, o pega con Ctrl+V / Cmd+V"
+      >
+        <div id="nx-bauche-btn" style="
+          color:#64748b;font-size:11px;font-weight:600;
+          display:flex;align-items:center;gap:8px;justify-content:center;
+          pointer-events:none;
+        ">
+          <i class="ti ti-camera"></i> Adjuntar bauche &nbsp;·&nbsp; <i class="ti ti-clipboard"></i> Pegar imagen (Ctrl+V)
+        </div>
+        <div id="nx-bauche-preview" style="display:none;margin-top:6px;position:relative">
+          <img id="nx-bauche-img" src="" alt="Bauche" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px">
+          <button class="nx-quitar" onclick="event.stopPropagation();window.nxQuitarBauche()" title="Quitar imagen" style="
+            position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);
+            color:#fff;border:none;border-radius:50%;width:20px;height:20px;
+            font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center
+          ">✕</button>
+        </div>
       </div>
     `;
 
@@ -8748,49 +8764,60 @@
     const ref       = reciboDiv || fe;
     if (ref) ref.insertAdjacentElement('beforebegin', wrap);
 
-    // Evento al seleccionar archivo
-    document.getElementById('nx-bauche-input').addEventListener('change', async function() {
-      const file = this.files[0];
+    // Función compartida para procesar cualquier imagen (galería o portapapeles)
+    window.nxProcesarBauche = async function(file) {
       if (!file) return;
-
       _comprobanteFile = file;
       _comprobanteURL  = null;
+
+      const btn     = document.getElementById('nx-bauche-btn');
+      const img     = document.getElementById('nx-bauche-img');
+      const preview = document.getElementById('nx-bauche-preview');
+      const drop    = document.getElementById('nx-bauche-drop');
 
       // Mostrar preview
       const reader = new FileReader();
       reader.onload = e => {
-        const img     = document.getElementById('nx-bauche-img');
-        const preview = document.getElementById('nx-bauche-preview');
-        const btn     = document.getElementById('nx-bauche-btn');
         if (img)     img.src = e.target.result;
         if (preview) preview.style.display = 'block';
-        if (btn) {
-          btn.className = 'nx-cargando';
-          btn.innerHTML = '<i class="ti ti-loader" style="animation:spin 1s linear infinite"></i> Subiendo...';
-        }
+        if (btn)     btn.innerHTML = '<i class="ti ti-loader"></i> Subiendo...';
+        if (drop)    drop.style.borderColor = '#f59e0b';
       };
       reader.readAsDataURL(file);
 
       // Subir a Supabase
       try {
         _comprobanteURL = await subirImagen(file);
-        const btn = document.getElementById('nx-bauche-btn');
-        if (btn) {
-          btn.className = 'nx-listo';
-          btn.innerHTML = '<i class="ti ti-check"></i> Bauche adjuntado ✓';
-        }
-      } catch(e) {
-        const btn = document.getElementById('nx-bauche-btn');
-        if (btn) {
-          btn.className = '';
-          btn.innerHTML = '<i class="ti ti-camera"></i> Error — reintentar';
-        }
-        if (typeof window.toast === 'function') {
-          window.toast('err', 'Error al subir bauche', e.message);
-        }
+        if (btn)  btn.innerHTML = '<i class="ti ti-check"></i> Bauche adjuntado ✓';
+        if (drop) drop.style.borderColor = '#10b981';
+        if (typeof window.toast === 'function') window.toast('ok', 'Bauche cargado', 'Imagen lista para guardar');
+      } catch(err) {
+        if (btn)  btn.innerHTML = '<i class="ti ti-camera"></i> Error — reintentar';
+        if (drop) drop.style.borderColor = '#ef4444';
+        if (typeof window.toast === 'function') window.toast('err', 'Error al subir bauche', err.message);
         _comprobanteFile = null;
         _comprobanteURL  = null;
       }
+    };
+
+    // Pegar imagen desde portapapeles (Ctrl+V / Cmd+V)
+    document.addEventListener('paste', async function(e) {
+      const wrap = document.getElementById('nx-bauche-wrap');
+      if (!wrap || wrap.style.display === 'none') return; // Solo si el bauche está visible
+      const items = e.clipboardData?.items || [];
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) await window.nxProcesarBauche(file);
+          break;
+        }
+      }
+    });
+
+    // Evento al seleccionar archivo
+    document.getElementById('nx-bauche-input').addEventListener('change', async function() {
+      const file = this.files[0];
+      if (file) await window.nxProcesarBauche(file);
     });
   }
 
