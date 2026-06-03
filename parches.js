@@ -8834,22 +8834,33 @@
 
   /* ─── Interceptar regAbono para incluir comprobante_url ─── */
   function hookRegAbono() {
-    const api = window.API;
-    if (!api?.post || api.post._nxCompHook) return;
+    // Interceptar regAbono directamente (más seguro que hookear API.post)
+    const orig = window.regAbono;
+    if (typeof orig !== 'function' || orig._nxCompHook) return;
 
-    const origPost = api.post.bind(api);
-    api.post = async function(tabla, datos, ...args) {
-      if (tabla === 'abonos' && _comprobanteURL) {
-        datos = { ...datos, comprobante_url: _comprobanteURL };
-        // Limpiar después de guardar
-        setTimeout(() => {
-          _comprobanteURL  = null;
-          _comprobanteFile = null;
-        }, 500);
+    window.regAbono = async function() {
+      // Si hay comprobante subido, inyectarlo en API.post temporalmente
+      if (_comprobanteURL) {
+        const api = window.API;
+        if (api?.post && !api.post._nxCompTmp) {
+          const origPost = api.post.bind(api);
+          api.post = async function(tabla, datos, ...args) {
+            // Restaurar inmediatamente para no afectar otras llamadas
+            api.post = origPost;
+            api.post._nxCompTmp = false;
+            if (tabla === 'abonos') {
+              datos = { ...datos, comprobante_url: _comprobanteURL };
+              _comprobanteURL  = null;
+              _comprobanteFile = null;
+            }
+            return await origPost(tabla, datos, ...args);
+          };
+          api.post._nxCompTmp = true;
+        }
       }
-      return await origPost(tabla, datos, ...args);
+      return await orig.apply(this, arguments);
     };
-    api.post._nxCompHook = true;
+    window.regAbono._nxCompHook = true;
   }
 
   /* ─── Mostrar comprobante en Solicitudes ─── */
