@@ -3790,16 +3790,32 @@
     const pendRows = pend.map(e => {
       const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
       const nomAg = ag?.nom || '—';
+      // Obtener nombre del cliente por cobro_id o nota
+      let nomCli = '—';
+      if (e.cobro_id) {
+        const cli = (st().clientes || []).find(c => String(c.id) === String(e.cobro_id));
+        if (cli?.nom) nomCli = cli.nom;
+      } else if (e.cliente_id) {
+        const cli = (st().clientes || []).find(c => String(c.id) === String(e.cliente_id));
+        if (cli?.nom) nomCli = cli.nom;
+      } else if (e.nota) {
+        const m = e.nota.match(/[Dd]ep[oó]sito directo de cliente\s+(.+)/);
+        if (m?.[1] && !m[1].includes('null')) nomCli = m[1].trim();
+      }
       const directoBadge = e.es_directo ? '<span class="nxSL-tag nxSL-tag-direct"><i class="ti ti-arrow-down"></i> DIRECTO</span>' : '<span class="nxSL-tag nxSL-tag-fisico"><i class="ti ti-cash"></i> FÍSICO</span>';
+      // Botón bauche si existe
+      const baucheBtn = e.comprobante_url ? `<button onclick="window.nxVerComprobante('${e.comprobante_url}')" style="background:#2563eb;border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;margin-left:4px" title="Ver bauche">🖼 Bauche</button>` : '';
       // Botones según rol: confirmar y anular SOLO admin
       const accionesPend = esAdmin() ? `
             <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" title="Confirmar"><i class="ti ti-check"></i> Confirmar</button>
             <button class="nxSL-btn nxSL-btn-anu" onclick="window.nxAnularEntregaAdmin('${esc(e.id)}')" title="Anular"><i class="ti ti-x"></i> Anular</button>
+            ${baucheBtn}
       ` : '<span class="nxSL-muted">Esperando confirmación del admin</span>';
       return `
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
           <td><strong>${esc(nomAg)}</strong></td>
+          <td style="font-size:10px;font-weight:600;color:#2563eb">${esc(nomCli)}</td>
           <td class="nxSL-num">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}${e.banco ? `<br><span class="nxSL-muted">${esc(e.banco)}</span>` : ''}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
@@ -3844,6 +3860,7 @@
                 <tr>
                   <th>FECHA</th>
                   <th>AGENTE</th>
+                  <th>CLIENTE</th>
                   <th class="nxSL-num">MONTO</th>
                   <th>MÉTODO / BANCO</th>
                   <th>REFERENCIA</th>
@@ -8627,10 +8644,12 @@
     const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const url  = `${getStorageURL()}/storage/v1/object/comprobantes/${path}`;
 
+    const key = getAnonKey();
     const res = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${getAnonKey()}`,
+        'Authorization': `Bearer ${key}`,
+        'apikey': key,
         'Content-Type': file.type,
         'x-upsert': 'true'
       },
