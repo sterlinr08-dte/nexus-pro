@@ -9803,57 +9803,57 @@
 
   /* ─── Tarjeta del Centro en el Dashboard ─── */
   function inyectarTarjetaCentro() {
-    // DIAGNÓSTICO: temporalmente sin restricción de admin
-    const vDash = document.getElementById('v-dashboard');
-    if (!vDash) return;
-    if (document.getElementById('nx-centro-card')) return; // ya existe
+    try {
+      const vDash = document.getElementById('v-dashboard');
+      if (!vDash) return;
+      if (document.getElementById('nx-centro-card')) return; // ya existe
 
-    const d = analizar();
-    const sem = d.pctCobranza >= 80 ? '#10b981' : d.pctCobranza >= 50 ? '#f59e0b' : '#ef4444';
-    const totalAlertas = (d.sinAgente.length ? 1 : 0) + (d.morosos.length ? 1 : 0) + (d.pendientes ? 1 : 0) + (d.porVencer.length ? 1 : 0);
+      let d;
+      try { d = analizar(); } catch(e) {
+        // Si analizar falla, usar valores por defecto para no bloquear
+        d = { pctCobranza: 0, sinAgente: [], morosos: [], pendientes: 0, porVencer: [], cobrosHoy: 0, mesAct: 0 };
+      }
 
-    const card = document.createElement('div');
-    card.id = 'nx-centro-card';
-    card.style.cssText = `
-      background: linear-gradient(135deg,#1e293b,#0f172a);
-      border-radius: 16px; padding: 18px; margin-bottom: 14px;
-      cursor: pointer; color: #fff;
-      box-shadow: 0 4px 20px rgba(15,23,42,.25);
-      transition: transform .15s, box-shadow .15s;
-    `;
-    card.onmouseover = () => { card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 28px rgba(15,23,42,.35)'; };
-    card.onmouseout = () => { card.style.transform = ''; card.style.boxShadow = '0 4px 20px rgba(15,23,42,.25)'; };
-    card.onclick = () => window.nxAbrirCentro();
+      const sem = d.pctCobranza >= 80 ? '#10b981' : d.pctCobranza >= 50 ? '#f59e0b' : '#ef4444';
+      const totalAlertas = (d.sinAgente.length ? 1 : 0) + (d.morosos.length ? 1 : 0) + (d.pendientes ? 1 : 0) + (d.porVencer.length ? 1 : 0);
 
-    card.innerHTML = `
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 4px 12px rgba(37,99,235,.4)">🧠</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:16px;font-weight:800">Centro Inteligente</div>
-          <div style="font-size:11px;opacity:.7;margin-top:2px">Salud del negocio · Toca para abrir</div>
+      const card = document.createElement('div');
+      card.id = 'nx-centro-card';
+      card.style.cssText = `
+        background: linear-gradient(135deg,#1e293b,#0f172a);
+        border-radius: 16px; padding: 18px; margin-bottom: 14px;
+        cursor: pointer; color: #fff;
+        box-shadow: 0 4px 20px rgba(15,23,42,.25);
+        transition: transform .15s, box-shadow .15s;
+      `;
+      card.onmouseover = () => { card.style.transform = 'translateY(-2px)'; };
+      card.onmouseout = () => { card.style.transform = ''; };
+      card.onclick = () => window.nxAbrirCentro();
+
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🧠</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:16px;font-weight:800">Centro Inteligente</div>
+            <div style="font-size:11px;opacity:.7;margin-top:2px">Salud del negocio · Toca para abrir</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:26px;font-weight:800;color:${sem};line-height:1">${d.pctCobranza}%</div>
+            <div style="font-size:9px;opacity:.6">cobranza</div>
+          </div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:26px;font-weight:800;color:${sem};line-height:1">${d.pctCobranza}%</div>
-          <div style="font-size:9px;opacity:.6">cobranza</div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          ${totalAlertas ? `<div style="flex:1;background:rgba(239,68,68,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#fca5a5">${totalAlertas}</div><div style="font-size:8px;opacity:.7">alertas</div></div>` : ''}
+          <div style="flex:1;background:rgba(16,185,129,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#6ee7b7">${d.cobrosHoy}</div><div style="font-size:8px;opacity:.7">cobros hoy</div></div>
+          <div style="flex:1;background:rgba(59,130,246,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:800;color:#93c5fd">${Fk(d.mesAct)}</div><div style="font-size:8px;opacity:.7">RD$ mes</div></div>
+          ${d.sinAgente.length ? `<div style="flex:1;background:rgba(245,158,11,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#fcd34d">${d.sinAgente.length}</div><div style="font-size:8px;opacity:.7">sin agente</div></div>` : ''}
         </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:14px">
-        ${totalAlertas ? `<div style="flex:1;background:rgba(239,68,68,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#fca5a5">${totalAlertas}</div><div style="font-size:8px;opacity:.7">alertas</div></div>` : ''}
-        <div style="flex:1;background:rgba(16,185,129,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#6ee7b7">${d.cobrosHoy}</div><div style="font-size:8px;opacity:.7">cobros hoy</div></div>
-        <div style="flex:1;background:rgba(59,130,246,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:800;color:#93c5fd">${Fk(d.mesAct)}</div><div style="font-size:8px;opacity:.7">RD$ mes</div></div>
-        ${d.sinAgente.length ? `<div style="flex:1;background:rgba(245,158,11,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#fcd34d">${d.sinAgente.length}</div><div style="font-size:8px;opacity:.7">sin agente</div></div>` : ''}
-      </div>
-    `;
+      `;
 
-    // Insertar después del banner de alertas, antes de las acciones rápidas
-    const banner = vDash.querySelector('#alertasBanner');
-    const qaG = vDash.querySelector('.qa-g');
-    if (qaG) {
-      qaG.insertAdjacentElement('beforebegin', card);
-    } else if (banner) {
-      banner.insertAdjacentElement('afterend', card);
-    } else {
+      // Insertar SIEMPRE al inicio del dashboard (garantizado)
       vDash.insertBefore(card, vDash.firstChild);
+    } catch(e) {
+      console.warn('NEXUS Centro card:', e);
     }
   }
 
