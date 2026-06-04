@@ -2036,12 +2036,12 @@
     if (!esAdmin()) return;
     if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro del cliente NO se afecta (factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto', { ok: 'Sí, anular', tipo: 'danger' }))) return;
     const api = getAPI();
-    if (!api?.delete) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.delete');
+    if (!api?.del) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.del');
       return;
     }
     try {
-      await api.delete('entregas_admin', `id=eq.${id}`);
+      await api.del('entregas_admin', `id=eq.${id}`);
       if (typeof window.toast === 'function') window.toast('ok', 'Anulada', 'La entrega fue eliminada. Investiga con el agente.');
       if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id}`, 'Cobros');
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
@@ -3803,13 +3803,12 @@
         if (m?.[1] && !m[1].includes('null')) nomCli = m[1].trim();
       }
       const directoBadge = e.es_directo ? '<span class="nxSL-tag nxSL-tag-direct"><i class="ti ti-arrow-down"></i> DIRECTO</span>' : '<span class="nxSL-tag nxSL-tag-fisico"><i class="ti ti-cash"></i> FÍSICO</span>';
-      // Botón bauche si existe
-      const baucheBtn = e.comprobante_url ? `<button onclick="window.nxVerComprobante('${e.comprobante_url}')" style="background:#2563eb;border:none;color:#fff;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;margin-left:4px" title="Ver bauche">🖼 Bauche</button>` : '';
+      // Botón VER bauche al lado del tipo
+      const baucheBtn = e.comprobante_url ? `<button onclick="window.nxVerComprobante('${e.comprobante_url}')" style="background:#10b981;border:none;color:#fff;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;display:inline-flex;align-items:center;gap:3px" title="Ver bauche de pago"><i class="ti ti-eye"></i> VER</button>` : '';
       // Botones según rol: confirmar y anular SOLO admin
       const accionesPend = esAdmin() ? `
             <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" title="Confirmar"><i class="ti ti-check"></i> Confirmar</button>
             <button class="nxSL-btn nxSL-btn-anu" onclick="window.nxAnularEntregaAdmin('${esc(e.id)}')" title="Anular"><i class="ti ti-x"></i> Anular</button>
-            ${baucheBtn}
       ` : '<span class="nxSL-muted">Esperando confirmación del admin</span>';
       return `
         <tr>
@@ -3819,7 +3818,7 @@
           <td class="nxSL-num">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}${e.banco ? `<br><span class="nxSL-muted">${esc(e.banco)}</span>` : ''}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
-          <td>${directoBadge}</td>
+          <td style="white-space:nowrap">${directoBadge}${baucheBtn}</td>
           <td class="nxSL-actions">${accionesPend}</td>
         </tr>
       `;
@@ -9005,22 +9004,21 @@
 
   /* ─── Interceptar regAbono para incluir comprobante_url ─── */
   function hookRegAbono() {
-    // Interceptar regAbono directamente (más seguro que hookear API.post)
     const orig = window.regAbono;
     if (typeof orig !== 'function' || orig._nxCompHook) return;
 
     window.regAbono = async function() {
-      // Si hay comprobante subido, inyectarlo en API.post temporalmente
       if (_comprobanteURL) {
         const api = window.API;
         if (api?.post && !api.post._nxCompTmp) {
+          const urlGuardar = _comprobanteURL;
           const origPost = api.post.bind(api);
           api.post = async function(tabla, datos, ...args) {
-            // Restaurar inmediatamente para no afectar otras llamadas
             api.post = origPost;
             api.post._nxCompTmp = false;
-            if (tabla === 'abonos') {
-              datos = { ...datos, comprobante_url: _comprobanteURL };
+            // Guardar en abonos Y en entregas_admin
+            if (tabla === 'abonos' || tabla === 'entregas_admin') {
+              datos = { ...datos, comprobante_url: urlGuardar };
               _comprobanteURL  = null;
               _comprobanteFile = null;
             }
