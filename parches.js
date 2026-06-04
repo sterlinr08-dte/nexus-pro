@@ -2034,49 +2034,17 @@
   // El "Dinero en Mano" del agente vuelve a subir automáticamente.
   window.nxAnularEntregaAdmin = async function(id) {
     if (!esAdmin()) return;
-    if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro se revierte: la factura del cliente vuelve a PENDIENTE\n• El abono asociado se elimina', { ok: 'Sí, anular y revertir', tipo: 'danger' }))) return;
+    if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro del cliente NO se afecta (factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto', { ok: 'Sí, anular', tipo: 'danger' }))) return;
     const api = getAPI();
-    if (!api?.del) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.del');
+    if (!api?.delete) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.delete');
       return;
     }
     try {
-      // 1. Obtener la entrega para saber a qué cliente y monto revertir
-      const entregas = await api.get('entregas_admin', `id=eq.${id}&select=*`);
-      const entrega = entregas?.[0];
-
-      // 2. Si tiene cliente asociado, revertir el cobro
-      const clienteId = entrega?.cobro_id || entrega?.cliente_id;
-      if (entrega && clienteId) {
-        const cli = (st().clientes || []).find(c => String(c.id) === String(clienteId));
-        if (cli) {
-          // Restar el monto del pagado del cliente
-          const nuevoPagado = Math.max(0, (cli.pagado || 0) - (entrega.monto || 0));
-          await api.patch('clientes', `id=eq.${clienteId}`, { pagado: nuevoPagado });
-          cli.pagado = nuevoPagado;
-
-          // Eliminar el abono asociado (mismo monto, mismo cliente, depósito directo)
-          try {
-            const abonos = await api.get('abonos', `cliente_id=eq.${clienteId}&order=fecha.desc&limit=20`);
-            const abonoMatch = (abonos || []).find(a =>
-              Number(a.monto) === Number(entrega.monto) &&
-              (a.metodo === entrega.metodo || a.comprobante_url === entrega.comprobante_url)
-            );
-            if (abonoMatch) {
-              await api.del('abonos', `id=eq.${abonoMatch.id}`);
-            }
-          } catch(e) { console.warn('No se encontró abono para eliminar:', e); }
-        }
-      }
-
-      // 3. Eliminar la entrega
-      await api.del('entregas_admin', `id=eq.${id}`);
-
-      if (typeof window.toast === 'function') window.toast('ok', 'Anulada y revertida', clienteId ? 'El cobro se revirtió. La factura volvió a pendiente.' : 'La entrega fue eliminada.');
-      if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id} · Cobro revertido`, 'Cobros');
+      await api.delete('entregas_admin', `id=eq.${id}`);
+      if (typeof window.toast === 'function') window.toast('ok', 'Anulada', 'La entrega fue eliminada. Investiga con el agente.');
+      if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id}`, 'Cobros');
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
-      if (typeof window.rCob === 'function') window.rCob();
-      if (typeof window.rDash === 'function') window.rDash();
       if (document.getElementById('nxDetallesCobroV1')?.style.display !== 'none') await renderDetallesCobro();
     } catch (e) {
       console.error('Error anulando entrega:', e);
@@ -3512,22 +3480,6 @@
   // ── Estado local ──
   let _entregasCache = [];
   let _transferenciasCache = [];
-  // Promesas en curso (request coalescing) — evita la race condition:
-  // si ya hay una consulta corriendo, las demás esperan ESA misma promesa
-  let _entregasEnCurso = null;
-  let _transferenciasEnCurso = null;
-  let _ultimaCargaEntregas = 0;
-  const _CACHE_TTL = 3000; // 3 seg: reusar cache reciente sin reconsultar
-
-  // Invalidar cache: forzar recarga fresca en la próxima consulta
-  // (llamar después de registrar/confirmar/anular para evitar datos viejos)
-  window.nxInvalidarCacheEntregas = function() {
-    _entregasCache = [];
-    _ultimaCargaEntregas = 0;
-    _entregasEnCurso = null;
-    _transferenciasCache = [];
-    _transferenciasEnCurso = null;
-  };
 
   // ═══════════════════════════════════════════════════════════════
   // INYECCIÓN: sidebar item + view container
@@ -3631,51 +3583,20 @@
   // CARGA DE DATOS
   // ═══════════════════════════════════════════════════════════════
   async function cargarEntregas() {
-    // Si hay cache reciente, usarlo (evita reconsultar en cascada)
-    const ahora = Date.now();
-    if (_entregasCache.length && (ahora - _ultimaCargaEntregas) < _CACHE_TTL) {
-      return _entregasCache;
-    }
-    // Si ya hay una consulta en curso, esperar ESA (no lanzar otra)
-    if (_entregasEnCurso) return _entregasEnCurso;
-
     const api = getAPI();
     if (!api || !api.get) return [];
-
-    _entregasEnCurso = (async () => {
-      try {
-        const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=500');
-        const arr = Array.isArray(data) ? data : [];
-        _entregasCache = arr;
-        _ultimaCargaEntregas = Date.now();
-        return arr;
-      } catch(e) {
-        return _entregasCache.length ? _entregasCache : [];
-      } finally {
-        _entregasEnCurso = null;
-      }
-    })();
-    return _entregasEnCurso;
+    try {
+      const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=500');
+      return Array.isArray(data) ? data : [];
+    } catch(e) { return []; }
   }
   async function cargarTransferencias() {
-    if (_transferenciasEnCurso) return _transferenciasEnCurso;
-
     const api = getAPI();
     if (!api || !api.get) return [];
-
-    _transferenciasEnCurso = (async () => {
-      try {
-        const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=500');
-        const arr = Array.isArray(data) ? data : [];
-        _transferenciasCache = arr;
-        return arr;
-      } catch(e) {
-        return _transferenciasCache.length ? _transferenciasCache : [];
-      } finally {
-        _transferenciasEnCurso = null;
-      }
-    })();
-    return _transferenciasEnCurso;
+    try {
+      const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=500');
+      return Array.isArray(data) ? data : [];
+    } catch(e) { return []; }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -3801,7 +3722,6 @@
           ${renderHeaderSolicitudes(entregasView, transferenciasView)}
           ${renderSeccionEntregasPendientes(entregasView)}
           ${renderSeccionTransferencias(transferenciasView)}
-          ${renderSeccionReporteAgentes()}
           ${renderSeccionHistorial(entregasView, transferenciasView)}
           ${renderSeccionRecibirEntrega()}
         </div>
@@ -3869,21 +3789,7 @@
     const pendRows = pend.map(e => {
       const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
       const nomAg = ag?.nom || '—';
-      // Obtener nombre del cliente por cobro_id o nota
-      let nomCli = '—';
-      if (e.cobro_id) {
-        const cli = (st().clientes || []).find(c => String(c.id) === String(e.cobro_id));
-        if (cli?.nom) nomCli = cli.nom;
-      } else if (e.cliente_id) {
-        const cli = (st().clientes || []).find(c => String(c.id) === String(e.cliente_id));
-        if (cli?.nom) nomCli = cli.nom;
-      } else if (e.nota) {
-        const m = e.nota.match(/[Dd]ep[oó]sito directo de cliente\s+(.+)/);
-        if (m?.[1] && !m[1].includes('null')) nomCli = m[1].trim();
-      }
       const directoBadge = e.es_directo ? '<span class="nxSL-tag nxSL-tag-direct"><i class="ti ti-arrow-down"></i> DIRECTO</span>' : '<span class="nxSL-tag nxSL-tag-fisico"><i class="ti ti-cash"></i> FÍSICO</span>';
-      // Botón VER bauche al lado del tipo
-      const baucheBtn = e.comprobante_url ? `<button onclick="window.nxVerComprobante('${e.comprobante_url}')" style="background:#10b981;border:none;color:#fff;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;display:inline-flex;align-items:center;gap:3px" title="Ver bauche de pago"><i class="ti ti-eye"></i> VER</button>` : '';
       // Botones según rol: confirmar y anular SOLO admin
       const accionesPend = esAdmin() ? `
             <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" title="Confirmar"><i class="ti ti-check"></i> Confirmar</button>
@@ -3893,11 +3799,10 @@
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
           <td><strong>${esc(nomAg)}</strong></td>
-          <td style="font-size:10px;font-weight:600;color:#2563eb">${esc(nomCli)}</td>
           <td class="nxSL-num">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}${e.banco ? `<br><span class="nxSL-muted">${esc(e.banco)}</span>` : ''}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
-          <td style="white-space:nowrap">${directoBadge}${baucheBtn}</td>
+          <td>${directoBadge}</td>
           <td class="nxSL-actions">${accionesPend}</td>
         </tr>
       `;
@@ -3938,7 +3843,6 @@
                 <tr>
                   <th>FECHA</th>
                   <th>AGENTE</th>
-                  <th>CLIENTE</th>
                   <th class="nxSL-num">MONTO</th>
                   <th>MÉTODO / BANCO</th>
                   <th>REFERENCIA</th>
@@ -4106,69 +4010,6 @@
         }
       </div>
     `;
-  }
-
-  function renderSeccionReporteAgentes() {
-    const agentes = st().agentes || [];
-    const clientes = (st().clientes || []).filter(c => c.activo);
-    const F = getFmt();
-
-    if (!agentes.length) return '';
-
-    function initsLocal(nom) {
-      return (nom || '').split(' ').slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
-    }
-
-    const filas = agentes.map(a => {
-      const clis = clientes.filter(c => String(c.agente_id) === String(a.id));
-      const prima = clis.reduce((s, c) => s + Math.max(0, (c.deuda_total || 0)), 0);
-      const cob   = clis.reduce((s, c) => s + (c.pagado || 0), 0);
-      const pd    = clis.reduce((s, c) => s + Math.max(0, (c.deuda_total || 0) - (c.pagado || 0)), 0);
-      const ef    = prima > 0 ? Math.round(cob / prima * 100) : 0;
-      const ph    = ef >= 80 ? '#10b981' : ef >= 50 ? '#f59e0b' : '#ef4444';
-
-      return `<tr>
-        <td>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:28px;height:28px;border-radius:50%;background:rgba(124,58,237,.12);color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;flex-shrink:0">${initsLocal(a.nom)}</div>
-            <span style="font-weight:700;font-size:11px">${a.nom}</span>
-          </div>
-        </td>
-        <td style="text-align:center;font-weight:700;font-size:12px">${clis.length}</td>
-        <td style="font-family:monospace;font-size:10px;color:#2563eb;font-weight:700">${F(prima)}</td>
-        <td style="font-family:monospace;font-size:10px;color:#10b981;font-weight:700">${F(cob)}</td>
-        <td style="font-family:monospace;font-size:10px;color:#ef4444;font-weight:700">${F(pd)}</td>
-        <td>
-          <div style="display:flex;align-items:center;gap:5px">
-            <div style="flex:1;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden">
-              <div style="height:100%;width:${ef}%;background:${ph};border-radius:3px"></div>
-            </div>
-            <span style="font-size:10px;font-weight:700;color:${ph};font-family:monospace">${ef}%</span>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
-
-    return `
-      <div class="nxSL-section" style="margin-bottom:16px">
-        <div class="nxSL-section-head">
-          <div class="nxSL-section-title"><i class="ti ti-users"></i> REPORTE POR AGENTE</div>
-          <div class="nxSL-section-count nxSL-count-blue">${agentes.length}</div>
-        </div>
-        <div class="nxSL-table-wrap">
-          <table class="nxSL-table">
-            <thead><tr>
-              <th>AGENTE</th>
-              <th style="text-align:center">CLIENTES</th>
-              <th>PRIMA TOTAL</th>
-              <th>COBRADO</th>
-              <th>PENDIENTE</th>
-              <th>EFICIENCIA</th>
-            </tr></thead>
-            <tbody>${filas}</tbody>
-          </table>
-        </div>
-      </div>`;
   }
 
   function renderSeccionHistorial(entregas, transferencias) {
@@ -4512,15 +4353,14 @@
 
       /* Móvil */
       @media (max-width: 768px) {
-        .nxSL-head { padding: 12px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .nxSL-head-icon { width: 38px; height: 38px; font-size: 17px; border-radius: 10px; }
-        .nxSL-head-body { flex: 1 1 auto; }
-        .nxSL-title { font-size: 15px; }
-        .nxSL-sub { font-size: 10px; margin-top: 1px; }
-        .nxSL-head-stats { grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1 1 100%; margin-top: 4px; }
-        .nxSL-stat { padding: 8px 4px; border-radius: 10px; }
-        .nxSL-stat-val { font-size: 15px; }
-        .nxSL-stat-lbl { font-size: 7.5px; margin-top: 3px; }
+        .nxSL-head { padding: 14px; flex-direction: column; align-items: stretch; }
+        .nxSL-head-icon { width: 42px; height: 42px; font-size: 19px; border-radius: 12px; }
+        .nxSL-title { font-size: 17px; }
+        .nxSL-sub { font-size: 11px; }
+        .nxSL-head-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .nxSL-stat { padding: 10px; }
+        .nxSL-stat-val { font-size: 17px; }
+        .nxSL-stat-lbl { font-size: 8.5px; }
         .nxSL-section { padding: 14px; border-radius: 14px; }
         .nxSL-section-title { font-size: 11px; }
         .nxSL-transfer-stats { grid-template-columns: 1fr; }
@@ -4670,10 +4510,6 @@
     }
   };
   window.nxRefrescarSolicitudes = async function() {
-    // Invalidar cache para traer datos frescos (después de cambios)
-    if (typeof window.nxInvalidarCacheEntregas === 'function') {
-      window.nxInvalidarCacheEntregas();
-    }
     await actualizarBadge();
     if (document.getElementById('v-solicitudes')?.classList.contains('on')) {
       await renderSolicitudes();
@@ -4705,14 +4541,6 @@
         window.__nxBadgeInterval = setInterval(() => {
           if (!document.hidden) actualizarBadge();
         }, 60000);
-        // FIX: si la vista de solicitudes ya está activa al cargar
-        // (por "recordar vista"), renderizarla para que no quede en "Cargando..."
-        setTimeout(() => {
-          const v = document.getElementById('v-solicitudes');
-          if (v && v.classList.contains('on')) {
-            renderSolicitudes();
-          }
-        }, 1200);
         return;
       }
       if (intentos < 60) setTimeout(tryInit, 100);
@@ -4822,9 +4650,7 @@
           banco = bSel;
         }
         const clienteId = window.abonoCliId || null;
-        // Capturar el bauche subido (si existe) desde la variable global del módulo comprobante
-        const comprobanteUrl = window.__nxComprobanteURLActual || null;
-        snapshot = { monto, metodo, ref, agente, banco, clienteId, comprobanteUrl };
+        snapshot = { monto, metodo, ref, agente, banco, clienteId };
       }
 
       const reciboDiv = document.getElementById('reciboWAbtn');
@@ -4863,14 +4689,10 @@
             depositado_banco: snapshot.banco,
             es_directo: true,
             cobro_id: snapshot.clienteId,
-            comprobante_url: snapshot.comprobanteUrl || null,
             created_by: usr
           };
 
           await api.post('entregas_admin', payload);
-
-          // Limpiar el bauche global para que el próximo cobro no lo reuse
-          window.__nxComprobanteURLActual = null;
 
           if (typeof window.toast === 'function') {
             window.toast('ok', 'Pendiente de confirmar',
@@ -7358,596 +7180,220 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO - ICONOS DASHBOARD LIMPIOS (sin cuadrado de color)
-   Anula el efecto 3D de cuadrados coloreados de los .qa-i del Dashboard.
+   NEXUS PRO - CENTRO SMART CON IA (Claude API)
+   Botón en Dashboard + modal con chat conversacional.
+   Conecta a la Edge Function nexus-smart que llama a Claude Haiku 4.5.
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
-  if (window.__NEXUS_ICONOS_LIMPIOS__) return;
-  window.__NEXUS_ICONOS_LIMPIOS__ = true;
+  if (window.__NEXUS_SMART_V1__) return;
+  window.__NEXUS_SMART_V1__ = true;
 
-  const style = document.createElement('style');
-  style.id = 'nx-iconos-limpios';
-  style.textContent = `
-    /* Quitar fondo cuadrado, gradientes y sombras de iconos Dashboard */
-    .qa .qa-i,
-    .qa-i {
-      background: transparent !important;
-      background-image: none !important;
-      box-shadow: none !important;
-      border: none !important;
-      width: auto !important;
-      height: auto !important;
-      padding: 0 !important;
-      border-radius: 0 !important;
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch(e) { return window.API; }
+  }
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  }
+
+  // Sugerencias rápidas
+  const SUGERENCIAS = [
+    '¿Cuántos clientes activos tengo?',
+    '¿Quiénes son mis top 5 deudores?',
+    '¿Cómo voy con cobros hoy?',
+    '¿Qué clientes están en proceso?',
+    'Resumen del mes actual',
+    'Sugiere mensaje para cobrar a Carlos'
+  ];
+
+  let _historial = []; // mensajes de la conversación actual
+
+  // ═══ ABRIR MODAL ═══
+  window.nxAbrirSmart = function() {
+    let modal = document.getElementById('nxSmartModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'overlay';
+      modal.id = 'nxSmartModal';
+      modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+      document.body.appendChild(modal);
     }
-    .qa .qa-i i,
-    .qa-i i {
-      font-size: 32px !important;
-      color: #2563eb !important;
-      background: none !important;
-      -webkit-background-clip: initial !important;
-      background-clip: initial !important;
-      -webkit-text-fill-color: initial !important;
-      text-shadow: none !important;
-    }
-    /* Quitar pseudo-elementos decorativos */
-    .qa .qa-i::before,
-    .qa .qa-i::after,
-    .qa-i::before,
-    .qa-i::after {
-      display: none !important;
-      content: none !important;
-    }
-    /* Mantener color semántico si tiene clase específica */
-    .qa[data-go="clientes"] .qa-i i { color: #2563eb !important; }
-    .qa[data-go="cobros"] .qa-i i { color: #059669 !important; }
-    .qa[data-go="facturas"] .qa-i i { color: #7c3aed !important; }
-    .qa[data-go="agentes"] .qa-i i { color: #ea580c !important; }
-    .qa[data-go="reportes"] .qa-i i { color: #0891b2 !important; }
-    .qa[data-go="configuracion"] .qa-i i { color: #475569 !important; }
-    .qa[data-go="solicitudes"] .qa-i i { color: #db2777 !important; }
-  `;
-  document.head.appendChild(style);
-})();
+    renderModal(modal);
+    modal.classList.add('open');
+    // Focus en input
+    setTimeout(() => {
+      const inp = document.getElementById('nxSmartInput');
+      if (inp) inp.focus();
+    }, 300);
+  };
 
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — FIX BUSCADOR COBROS (Bug: aparece al escribir en header)
-   
-   PROBLEMA: El buscador del header (tn-sr) tiene onkeydown que llama
-   a gSearch() al presionar Enter. gSearch() llama nav('clientes') y
-   dentro de nav() se limpian TODOS los inputs incluyendo el panel de
-   cobros. El usuario ve que "el buscador desaparece" porque nav()
-   cambia de sección.
-   
-   SOLUCIÓN: Interceptar gSearch() para que NO cambie de sección
-   si el usuario está actualmente en la vista de facturas/cobros.
-   En su lugar, filtra la tabla de cobros directamente si está ahí.
-   ════════════════════════════════════════════════════════════════ */
+  function renderModal(modal) {
+    const sugBtns = SUGERENCIAS.map(s => 
+      `<button class="btn bsm" style="background:#eff6ff;color:#1e40af;border:1px solid #dbeafe;font-size:11px;text-align:left;padding:8px 10px;justify-content:flex-start" onclick="window.nxSmartPreguntar(${JSON.stringify(s).replace(/"/g,'&quot;')})">💡 ${esc(s)}</button>`
+    ).join('');
 
-(function () {
-  "use strict";
-  if (window.__NEXUS_FIX_BUSCADOR_COBROS__) return;
-  window.__NEXUS_FIX_BUSCADOR_COBROS__ = true;
-
-  function init() {
-    // Esperar a que gSearch exista
-    if (typeof window.gSearch !== 'function') {
-      setTimeout(init, 300);
-      return;
-    }
-
-    const _gSearchOrig = window.gSearch;
-
-    window.gSearch = function(q) {
-      if (!q) return;
-
-      // ¿Está el usuario actualmente en la vista de facturas (que incluye cobros)?
-      const vistaActiva = document.getElementById('v-facturas');
-      const estaEnFacturas = vistaActiva && vistaActiva.classList.contains('on');
-
-      // ¿El panel de cobros está visible ahora mismo?
-      const panelCob = document.getElementById('panelCob');
-      const cobrosVisible = panelCob && panelCob.style.display !== 'none';
-
-      if (estaEnFacturas && cobrosVisible) {
-        // Estamos en Cobros: filtrar la tabla directamente sin cambiar de vista
-        const ql = q.toLowerCase();
-        const filas = document.querySelectorAll('#tbCob tr');
-        let visibles = 0;
-
-        filas.forEach(tr => {
-          const texto = tr.textContent.toLowerCase();
-          if (texto.includes(ql)) {
-            tr.style.display = '';
-            visibles++;
-          } else {
-            tr.style.display = 'none';
+    const mensajes = _historial.length === 0 
+      ? `<div style="text-align:center;padding:30px 20px;color:#64748b">
+          <div style="font-size:42px;margin-bottom:12px">🤖</div>
+          <div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:6px">NEXUS Smart</div>
+          <div style="font-size:12px;line-height:1.5;margin-bottom:16px">Tu asistente inteligente. Pregúntame lo que quieras sobre tu correduría.</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px;text-align:left">${sugBtns}</div>
+        </div>`
+      : _historial.map(m => {
+          if (m.tipo === 'pregunta') {
+            return `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+              <div style="max-width:80%;background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;padding:10px 14px;border-radius:18px 18px 4px 18px;font-size:13px;line-height:1.4">${esc(m.texto)}</div>
+            </div>`;
+          } else if (m.tipo === 'respuesta') {
+            // Convertir markdown básico (**) a HTML bold
+            const html = esc(m.texto)
+              .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\n/g, '<br>');
+            return `<div style="display:flex;justify-content:flex-start;margin-bottom:10px">
+              <div style="max-width:88%;background:#fff;border:1px solid #e2e8f0;color:#0f172a;padding:10px 14px;border-radius:4px 18px 18px 18px;font-size:13px;line-height:1.5">${html}</div>
+            </div>`;
+          } else if (m.tipo === 'cargando') {
+            return `<div style="display:flex;justify-content:flex-start;margin-bottom:10px" id="nxSmartCargando">
+              <div style="background:#fff;border:1px solid #e2e8f0;color:#64748b;padding:10px 14px;border-radius:4px 18px 18px 18px;font-size:12px;font-style:italic">
+                <span style="display:inline-block;animation:nxPulse 1s infinite">●</span> Pensando...
+              </div>
+            </div>`;
+          } else if (m.tipo === 'error') {
+            return `<div style="display:flex;justify-content:flex-start;margin-bottom:10px">
+              <div style="background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:12px">❌ ${esc(m.texto)}</div>
+            </div>`;
           }
-        });
+          return '';
+        }).join('');
 
-        // Mostrar mensaje si no hay resultados
-        if (visibles === 0 && filas.length > 0) {
-          // Si ya hay una fila de "sin resultados", no duplicar
-          const yaMsg = document.getElementById('nx-cob-empty-search');
-          if (!yaMsg) {
-            const tr = document.createElement('tr');
-            tr.id = 'nx-cob-empty-search';
-            tr.innerHTML = `<td colspan="8" style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">
-              Sin resultados para "<strong>${q}</strong>"
-            </td>`;
-            document.getElementById('tbCob').appendChild(tr);
-          }
-        } else {
-          // Limpiar mensaje de "sin resultados" si había
-          const yaMsg = document.getElementById('nx-cob-empty-search');
-          if (yaMsg) yaMsg.remove();
-        }
-        return; // NO llamar al original — evita nav('clientes')
-      }
-
-      // En cualquier otra vista: comportamiento original
-      _gSearchOrig(q);
-    };
-
-    // También: limpiar el filtro de cobros cuando el buscador se vacíe
-    const tnInput = document.querySelector('.tn-sr input');
-    if (tnInput && !tnInput.dataset.nxCobFix) {
-      tnInput.dataset.nxCobFix = '1';
-      tnInput.addEventListener('input', function() {
-        if (!this.value.trim()) {
-          // Buscador vaciado: restaurar todas las filas de cobros
-          document.querySelectorAll('#tbCob tr').forEach(tr => {
-            tr.style.display = '';
-          });
-          const yaMsg = document.getElementById('nx-cob-empty-search');
-          if (yaMsg) yaMsg.remove();
-        }
-      });
-    }
-
-    console.log('✅ NEXUS: Fix buscador cobros activo');
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
-  } else {
-    setTimeout(init, 500); // Dar tiempo a que gSearch se defina
-  }
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — FIX RECORDAR POSICIÓN AL RECARGAR
-   
-   PROBLEMA: Al recargar, cargarTodo() llama nav(lastView) pero antes
-   ejecuta rAuto() y rConfig() sincrónicamente, y hay setTimeouts de
-   aplicarRolSidebar (200ms) y rNotifs (500ms) que pueden disparar
-   lógica que pisa la vista. Además, si lastView es 'facturas', el
-   tab interno (Facturas/Cobros/Historial) no se recuerda.
-   
-   SOLUCIÓN:
-   1. Interceptar cargarTodo para forzar la vista guardada DESPUÉS
-      de todos los setTimeouts (600ms), garantizando que nada la pise.
-   2. Guardar también el tab activo dentro de Facturas/Cobros.
-   3. Restaurar el tab al volver a esa vista.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_FIX_RECORDAR_VISTA__) return;
-  window.__NEXUS_FIX_RECORDAR_VISTA__ = true;
-
-  // ── Guardar tab activo de Facturas cuando cambia ──
-  function hookTabFacturas() {
-    const tabs = ['tabFact', 'tabCob', 'tabPagos'];
-    tabs.forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn && !btn.dataset.nxVistaHook) {
-        btn.dataset.nxVistaHook = '1';
-        btn.addEventListener('click', function() {
-          const tabNom = id === 'tabFact' ? 'fact' : id === 'tabCob' ? 'cob' : 'pagos';
-          try { localStorage.setItem('nx_last_tab_facturas', tabNom); } catch(e) {}
-        });
-      }
-    });
-  }
-
-  // ── Restaurar vista y tab con prioridad máxima ──
-  function restaurarVista() {
-    // Si el HTML ya restauró la vista (versión nueva), no duplicar
-    if (window.__nxHtmlRestauroVista) {
-      // Solo asegurar que solicitudes se renderice si quedó en cargando
-      const lv = localStorage.getItem('nx_last_view');
-      if (lv === 'solicitudes') {
-        setTimeout(() => {
-          if (typeof window.nxRenderSolicitudes === 'function') window.nxRenderSolicitudes();
-        }, 300);
-      }
-      return;
-    }
-    const lastView = localStorage.getItem('nx_last_view');
-    if (!lastView || lastView === 'dashboard') return; // Dashboard es el default, no forzar
-
-    const nav = window.nav;
-    if (typeof nav !== 'function') return;
-
-    // Restaurar la vista
-    try {
-      nav(lastView, null);
-    } catch(e) {
-      console.warn('NEXUS: Error restaurando vista', e);
-      return;
-    }
-
-    // Si era la vista de facturas, restaurar el tab interno
-    if (lastView === 'facturas') {
-      const lastTab = localStorage.getItem('nx_last_tab_facturas') || 'fact';
-      setTimeout(() => {
-        if (typeof window.switchTab === 'function') {
-          try { window.switchTab(lastTab); } catch(e) {}
-        }
-        hookTabFacturas();
-      }, 150);
-    }
-
-    // Si era solicitudes, renderizar para que no quede en "Cargando..."
-    if (lastView === 'solicitudes') {
-      setTimeout(() => {
-        if (typeof window.nxRenderSolicitudes === 'function') {
-          window.nxRenderSolicitudes();
-        }
-      }, 200);
-    }
-  }
-
-  // ── Interceptar cargarTodo para actuar después de sus setTimeouts ──
-  function hookCargarTodo() {
-    const orig = window.cargarTodo;
-    if (typeof orig !== 'function') {
-      setTimeout(hookCargarTodo, 200);
-      return;
-    }
-    if (orig._nxVistaHooked) return; // Ya interceptado
-
-    window.cargarTodo = async function() {
-      await orig.apply(this, arguments);
-      // Los setTimeouts de cargarTodo son: 200ms (aplicarRolSidebar),
-      // 500ms (rNotifs), 800ms (cargarAuditoria).
-      // Esperamos 650ms para ir justo después del más crítico (500ms).
-      setTimeout(restaurarVista, 650);
-    };
-    window.cargarTodo._nxVistaHooked = true;
-    console.log('✅ NEXUS: Fix recordar vista activo');
-  }
-
-  // ── Hook a los tabs de facturas cuando el DOM esté listo ──
-  function initTabs() {
-    hookTabFacturas();
-    // Reintentar por si los tabs cargan tarde
-    setTimeout(hookTabFacturas, 1000);
-    setTimeout(hookTabFacturas, 2500);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      hookCargarTodo();
-      initTabs();
-    }, { once: true });
-  } else {
-    hookCargarTodo();
-    initTabs();
-  }
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — RESTAURAR TEMA LIQUID GLASS POR DEFECTO
-   
-   PROBLEMA: Al cambiar el key de Supabase el localStorage se resetea
-   y nx_tema queda vacío. El sistema carga sin clase de tema = fondo
-   gris plano. El visual original era Liquid Glass (fondo lavanda/azul).
-   
-   SOLUCIÓN: Si no hay tema guardado, aplicar 'glass' como default.
-   Si ya hay uno guardado, respetarlo.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_TEMA_DEFAULT_GLASS__) return;
-  window.__NEXUS_TEMA_DEFAULT_GLASS__ = true;
-
-  function aplicarTemaDefault() {
-    // Si no hay tema guardado → poner glass como default
-    const temaGuardado = localStorage.getItem('nx_tema');
-    if (!temaGuardado) {
-      localStorage.setItem('nx_tema', 'glass');
-    }
-
-    // Aplicar el tema correcto ahora mismo
-    const tema = localStorage.getItem('nx_tema') || 'glass';
-    const body = document.body;
-
-    body.classList.remove('tema-clasico', 'tema-premium', 'tema-glass');
-
-    let temaReal = tema;
-    if (tema === 'auto') {
-      const oscuro = window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches;
-      temaReal = oscuro ? 'premium' : 'glass';
-    }
-
-    if (temaReal === 'premium') body.classList.add('tema-premium');
-    else if (temaReal === 'glass') body.classList.add('tema-glass');
-    // clasico = sin clase
-  }
-
-  // Aplicar inmediatamente (antes de que el sistema cargue)
-  if (document.readyState === 'loading') {
-    // Lo antes posible — apenas el <body> exista
-    document.addEventListener('DOMContentLoaded', aplicarTemaDefault, { once: true });
-  } else {
-    aplicarTemaDefault();
-  }
-
-  // También asegurar que se aplica después de cargarTemaGuardado()
-  // por si el sistema lo sobreescribe
-  setTimeout(aplicarTemaDefault, 100);
-  setTimeout(aplicarTemaDefault, 600);
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — BUSCADOR EN FACTURAS Y COBROS
-   
-   Agrega un input de búsqueda que filtra mientras escribes en:
-   - Panel Facturas (filtra por nombre de cliente o NCF)
-   - Panel Cobros (filtra por nombre de cliente o póliza)
-   Mismo estilo visual que el buscador de Clientes (.sw / .si).
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_BUSCADOR_FACT_COB__) return;
-  window.__NEXUS_BUSCADOR_FACT_COB__ = true;
-
-  /* ─── CSS idéntico al buscador de Clientes ─── */
-  function inyectarCSS() {
-    if (document.getElementById('nx-search-factcob-css')) return;
-    const s = document.createElement('style');
-    s.id = 'nx-search-factcob-css';
-    s.textContent = `
-      .nx-frow-search {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 0 4px 0;
-        flex-wrap: wrap;
-      }
-      .nx-sw {
-        position: relative;
-        flex: 1;
-        min-width: 160px;
-      }
-      .nx-sw .nx-si {
-        position: absolute;
-        left: 9px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--tx3);
-        font-size: 13px;
-        pointer-events: none;
-      }
-      .nx-sw input {
-        width: 100%;
-        height: 32px;
-        border: 1.5px solid rgba(0,229,199,.15);
-        border-radius: var(--r6, 10px);
-        background: var(--bg2, #fff);
-        color: var(--tx1, #0f172a);
-        font-size: 11px;
-        padding: 0 10px 0 30px;
-        outline: none;
-        box-sizing: border-box;
-        transition: border-color .15s;
-      }
-      .nx-sw input:focus {
-        border-color: var(--c1, #2563eb);
-        background: #fff;
-        box-shadow: 0 0 0 3px rgba(59,130,246,.08);
-      }
-      /* Tema premium */
-      body.tema-premium .nx-sw input {
-        background: #0F172A !important;
-        color: #E8EDF7 !important;
-        border-color: rgba(255,255,255,.1) !important;
-      }
-    `;
-    document.head.appendChild(s);
-  }
-
-  /* ─── Buscador de FACTURAS ─── */
-  function agregarBuscadorFacturas() {
-    const panelFact = document.getElementById('panelFact');
-    if (!panelFact || document.getElementById('nx-fact-search')) return;
-
-    const ch = panelFact.querySelector('.ch');
-    if (!ch) return;
-
-    // Crear fila de búsqueda debajo del ch
-    const frow = document.createElement('div');
-    frow.className = 'nx-frow-search';
-    frow.innerHTML = `
-      <div class="nx-sw">
-        <i class="ti ti-search nx-si"></i>
-        <input type="text" id="nx-fact-search"
-          placeholder="Buscar cliente, NCF..."
-          oninput="window.nxFiltrarFacturas(this.value)"/>
+    modal.innerHTML = `
+      <style>@keyframes nxPulse{0%,100%{opacity:0.3}50%{opacity:1}}</style>
+      <div class="modal" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+        <div class="mt" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1e40af,#7c3aed);color:#fff;border-radius:0">
+          <button class="btn bghost bsm" style="color:#fff" onclick="document.getElementById('nxSmartModal').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
+          <span style="flex:1;text-align:center;color:#fff"><i class="ti ti-sparkles"></i> NEXUS SMART</span>
+          <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartLimpiar()" title="Nueva conversación"><i class="ti ti-refresh"></i></button>
+        </div>
+        <div id="nxSmartMensajes" style="flex:1;overflow-y:auto;padding:14px;background:#f8fafc">
+          ${mensajes}
+        </div>
+        <div style="padding:10px 12px;border-top:1px solid #e2e8f0;background:#fff;display:flex;gap:6px">
+          <input type="text" id="nxSmartInput" placeholder="Escribe tu pregunta..." style="flex:1;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:24px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter'){window.nxSmartEnviar()}">
+          <button class="btn bxl bc1" style="border-radius:50%;width:42px;height:42px;padding:0;flex-shrink:0" onclick="window.nxSmartEnviar()"><i class="ti ti-send"></i></button>
+        </div>
       </div>`;
+    
+    // Scroll al fondo
+    setTimeout(() => {
+      const cont = document.getElementById('nxSmartMensajes');
+      if (cont) cont.scrollTop = cont.scrollHeight;
+    }, 50);
+  }
 
-    // Insertar después del ch
-    ch.insertAdjacentElement('afterend', frow);
+  window.nxSmartLimpiar = function() {
+    _historial = [];
+    const modal = document.getElementById('nxSmartModal');
+    if (modal) renderModal(modal);
+  };
+
+  window.nxSmartPreguntar = function(texto) {
+    const inp = document.getElementById('nxSmartInput');
+    if (inp) inp.value = texto;
+    window.nxSmartEnviar();
+  };
+
+  window.nxSmartEnviar = async function() {
+    const inp = document.getElementById('nxSmartInput');
+    if (!inp) return;
+    const pregunta = inp.value.trim();
+    if (!pregunta) return;
+    
+    inp.value = '';
+    _historial.push({ tipo: 'pregunta', texto: pregunta });
+    _historial.push({ tipo: 'cargando' });
+    
+    const modal = document.getElementById('nxSmartModal');
+    if (modal) renderModal(modal);
+
+    try {
+      const api = getAPI();
+      const baseUrl = (api?.url || 'https://mrtqkhachhvsczltwakt.supabase.co');
+      const anonKey = api?.key || '';
+      
+      const resp = await fetch(baseUrl + '/functions/v1/nexus-smart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + anonKey
+        },
+        body: JSON.stringify({ pregunta })
+      });
+
+      // Remover cargando
+      _historial = _historial.filter(m => m.tipo !== 'cargando');
+
+      if (!resp.ok) {
+        const err = await resp.text();
+        _historial.push({ tipo: 'error', texto: 'No pude conectar: ' + err.slice(0, 100) });
+      } else {
+        const data = await resp.json();
+        if (data.ok && data.respuesta) {
+          _historial.push({ tipo: 'respuesta', texto: data.respuesta });
+        } else {
+          _historial.push({ tipo: 'error', texto: data.error || 'Sin respuesta' });
+        }
+      }
+    } catch(e) {
+      _historial = _historial.filter(m => m.tipo !== 'cargando');
+      _historial.push({ tipo: 'error', texto: 'Error de conexión: ' + (e.message || e) });
+    }
+    
+    if (modal) renderModal(modal);
+  };
+
+  // ═══ INYECTAR BOTÓN EN DASHBOARD ═══
+  function inyectarBoton() {
+    if (document.getElementById('qaNexusSmart')) return true;
+    // Buscar grid de Dashboard
+    const dash = document.querySelector('#v-dashboard, .v-dashboard');
+    if (!dash) return false;
+    
+    // Buscar contenedor de botones QA
+    const qaCont = dash.querySelector('.qaGrid, .qa-grid, [class*="qa"]');
+    if (!qaCont) return false;
+    
+    // Buscar el primer .qa para copiar su estructura
+    const ref = qaCont.querySelector('.qa');
+    if (!ref) return false;
+
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaNexusSmart';
+    btn.style.cssText = 'cursor:pointer;position:relative';
+    btn.setAttribute('data-go', 'smart');
+    btn.onclick = () => window.nxAbrirSmart();
+    btn.innerHTML = `
+      <span class="qa-i" style="background:linear-gradient(135deg,#7c3aed,#2563eb);box-shadow:0 4px 14px rgba(124,58,237,0.4)">
+        <i class="ti ti-sparkles" style="color:#fff"></i>
+      </span>
+      <span class="qa-l">NEXUS Smart</span>
+      <span style="position:absolute;top:6px;right:8px;background:#7c3aed;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px">IA</span>
+    `;
+    qaCont.appendChild(btn);
     return true;
   }
 
-  /* ─── Buscador de COBROS ─── */
-  function agregarBuscadorCobros() {
-    const panelCob = document.getElementById('panelCob');
-    if (!panelCob || document.getElementById('nx-cob-search')) return;
-
-    const ch = panelCob.querySelector('.ch');
-    if (!ch) return;
-
-    const frow = document.createElement('div');
-    frow.className = 'nx-frow-search';
-    frow.innerHTML = `
-      <div class="nx-sw">
-        <i class="ti ti-search nx-si"></i>
-        <input type="text" id="nx-cob-search"
-          placeholder="Buscar cliente, póliza..."
-          oninput="window.nxFiltrarCobros(this.value)"/>
-      </div>`;
-
-    ch.insertAdjacentElement('afterend', frow);
-    return true;
-  }
-
-  /* ─── Lógica de filtrado FACTURAS ─── */
-  window.nxFiltrarFacturas = function(q) {
-    const ql = (q || '').toLowerCase().trim();
-    const filas = document.querySelectorAll('#tbFact tr');
-    let visibles = 0;
-
-    filas.forEach(tr => {
-      if (!ql) {
-        tr.style.display = '';
-        visibles++;
-        return;
-      }
-      const texto = tr.textContent.toLowerCase();
-      const mostrar = texto.includes(ql);
-      tr.style.display = mostrar ? '' : 'none';
-      if (mostrar) visibles++;
-    });
-
-    // Mensaje sin resultados
-    const existeMsgFact = document.getElementById('nx-fact-empty');
-    if (!ql || visibles > 0) {
-      if (existeMsgFact) existeMsgFact.remove();
-    } else if (!existeMsgFact && filas.length > 0) {
-      const tr = document.createElement('tr');
-      tr.id = 'nx-fact-empty';
-      tr.innerHTML = `<td colspan="10" style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">
-        Sin resultados para "<strong>${q}</strong>"
-      </td>`;
-      document.getElementById('tbFact').appendChild(tr);
-    }
-  };
-
-  /* ─── Lógica de filtrado COBROS ─── */
-  window.nxFiltrarCobros = function(q) {
-    const ql = (q || '').toLowerCase().trim();
-    const filas = document.querySelectorAll('#tbCob tr');
-    let visibles = 0;
-
-    filas.forEach(tr => {
-      if (!ql) {
-        tr.style.display = '';
-        visibles++;
-        return;
-      }
-      const texto = tr.textContent.toLowerCase();
-      const mostrar = texto.includes(ql);
-      tr.style.display = mostrar ? '' : 'none';
-      if (mostrar) visibles++;
-    });
-
-    const existeMsgCob = document.getElementById('nx-cob-empty-search');
-    if (!ql || visibles > 0) {
-      if (existeMsgCob) existeMsgCob.remove();
-    } else if (!existeMsgCob && filas.length > 0) {
-      const tr = document.createElement('tr');
-      tr.id = 'nx-cob-empty-search';
-      tr.innerHTML = `<td colspan="8" style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">
-        Sin resultados para "<strong>${q}</strong>"
-      </td>`;
-      document.getElementById('tbCob').appendChild(tr);
-    }
-  };
-
-  /* ─── Limpiar buscadores al cambiar de tab ─── */
-  function hookTabs() {
-    ['tabFact', 'tabCob', 'tabPagos'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn && !btn.dataset.nxSearchHook) {
-        btn.dataset.nxSearchHook = '1';
-        btn.addEventListener('click', () => {
-          // Limpiar ambos buscadores y restaurar filas al cambiar tab
-          setTimeout(() => {
-            const fs = document.getElementById('nx-fact-search');
-            const cs = document.getElementById('nx-cob-search');
-            if (fs) { fs.value = ''; window.nxFiltrarFacturas(''); }
-            if (cs) { cs.value = ''; window.nxFiltrarCobros(''); }
-          }, 50);
-        });
-      }
-    });
-  }
-
-  /* ─── También limpiar el buscador al regenerar las tablas ─── */
-  function hookRFact() {
-    const orig = window.rFact;
-    if (typeof orig !== 'function' || orig._nxSearchHooked) return;
-    window.rFact = function() {
-      const resultado = orig.apply(this, arguments);
-      // Reaplicar filtro si hay texto escrito
-      const input = document.getElementById('nx-fact-search');
-      if (input && input.value.trim()) {
-        setTimeout(() => window.nxFiltrarFacturas(input.value), 50);
-      }
-      return resultado;
-    };
-    window.rFact._nxSearchHooked = true;
-  }
-
-  function hookRCob() {
-    const orig = window.rCob;
-    if (typeof orig !== 'function' || orig._nxSearchHooked) return;
-    window.rCob = function() {
-      const resultado = orig.apply(this, arguments);
-      const input = document.getElementById('nx-cob-search');
-      if (input && input.value.trim()) {
-        setTimeout(() => window.nxFiltrarCobros(input.value), 50);
-      }
-      return resultado;
-    };
-    window.rCob._nxSearchHooked = true;
-  }
-
-  /* ─── INIT ─── */
   function init() {
-    inyectarCSS();
-
-    let factListo = false;
-    let cobListo = false;
     let intentos = 0;
-
-    const tryInject = function() {
+    const tryInit = () => {
       intentos++;
-      if (!factListo) factListo = !!agregarBuscadorFacturas();
-      if (!cobListo)  cobListo  = !!agregarBuscadorCobros();
-      hookTabs();
-      hookRFact();
-      hookRCob();
-
-      if ((!factListo || !cobListo) && intentos < 30) {
-        setTimeout(tryInject, 400);
-      } else {
-        console.log('✅ NEXUS: Buscador Facturas/Cobros activo');
-      }
+      if (inyectarBoton()) return;
+      if (intentos < 80) setTimeout(tryInit, 200);
     };
-
-    tryInject();
+    tryInit();
   }
 
   if (document.readyState === 'loading') {
@@ -7956,1976 +7402,3 @@
     init();
   }
 })();
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — FIX cobro_id NULL en entregas
-   
-   PROBLEMA: El snapshot del cobro directo lee window.abonoCliId
-   pero abonoCliId está declarada con "let" en el HTML (no en window).
-   Resultado: cobro_id siempre queda null.
-   
-   SOLUCIÓN: Interceptar el guardado de entregas_admin para inyectar
-   el cobro_id correcto leyendo abonoCliId desde el scope global.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_FIX_COBRO_ID__) return;
-  window.__NEXUS_FIX_COBRO_ID__ = true;
-
-  function fixCobroId() {
-    const api = window.API;
-    if (!api?.post || api.post._nxCobroIdFixed) return;
-
-    const origPost = api.post.bind(api);
-
-    api.post = async function(tabla, datos, ...args) {
-      // Solo actuar en entregas_admin con es_directo=true
-      if (tabla === 'entregas_admin' && datos?.es_directo === true) {
-        // Si cobro_id está null, intentar obtenerlo de abonoCliId
-        if (!datos.cobro_id) {
-          let cliId = null;
-          // Intentar leer la variable del scope del HTML
-          try { cliId = (typeof abonoCliId !== 'undefined') ? abonoCliId : null; } catch(e) {}
-          // Fallback: buscar el modal de abono abierto y leer el cliente activo
-          if (!cliId) {
-            try {
-              const mAbono = document.getElementById('mAbono');
-              if (mAbono?.classList.contains('open')) {
-                // El cliente activo es el que tiene el modal abierto
-                // Se puede inferir del nombre mostrado en el modal
-                const nomEl = mAbono.querySelector('.mt span, .mt .ct');
-                if (nomEl) {
-                  const nom = nomEl.textContent.trim();
-                  const cli = (window.ST?.clientes || []).find(c =>
-                    c.nom && nom.includes(c.nom.split(' ')[0])
-                  );
-                  if (cli) cliId = cli.id;
-                }
-              }
-            } catch(e) {}
-          }
-          if (cliId) {
-            datos = { ...datos, cobro_id: cliId };
-          }
-        }
-
-        // Si hay cobro_id, asegurar que la nota tenga el nombre correcto
-        if (datos.cobro_id && (!datos.nota || datos.nota.includes('null'))) {
-          const cli = (window.ST?.clientes || []).find(c =>
-            String(c.id) === String(datos.cobro_id)
-          );
-          if (cli?.nom) {
-            datos = { ...datos, nota: `Depósito directo de cliente ${cli.nom}` };
-          }
-        }
-      }
-      return await origPost(tabla, datos, ...args);
-    };
-    api.post._nxCobroIdFixed = true;
-    console.log('✅ NEXUS: Fix cobro_id activo');
-  }
-
-  function init() {
-    let intentos = 0;
-    const tryFix = function() {
-      intentos++;
-      if (window.API?.post) {
-        fixCobroId();
-      } else if (intentos < 20) {
-        setTimeout(tryFix, 500);
-      }
-    };
-    tryFix();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
-  } else {
-    init();
-  }
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — RESTRICCIÓN DE COBRO POR AGENTE
-   
-   REGLA: Un usuario que NO sea admin ni supervisor solo puede
-   cobrar a los clientes asignados a su propio agente.
-   
-   LÓGICA:
-   - sesion.nom se compara con agentes[].nom (mismo nombre)
-   - Si el cliente.agente_id ≠ agente del usuario → BLOQUEADO
-   - Admin y supervisor: sin restricción
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_RESTRICCION_COBRO__) return;
-  window.__NEXUS_RESTRICCION_COBRO__ = true;
-
-  const ROLES_LIBRES = ['admin']; // Solo admin puede cobrar clientes de cualquier agente
-
-  /* Obtener el agente_id del usuario actual por nombre */
-  function getMiAgenteId() {
-    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
-    if (!sesion) return null;
-
-    const rol = (sesion.rol || '').toLowerCase();
-    if (ROLES_LIBRES.includes(rol)) return null; // Sin restricción
-
-    const miNom = (sesion.nom || sesion.usuario || '').toUpperCase().trim();
-    if (!miNom) return null;
-
-    const agentes = window.ST?.agentes || [];
-    const agente = agentes.find(a =>
-      (a.nom || '').toUpperCase().trim() === miNom
-    );
-    return agente?.id || null;
-  }
-
-  /* Verificar si puede cobrar a un cliente */
-  function puedeCobraCliente(clienteId) {
-    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
-    const rol = (sesion?.rol || '').toLowerCase();
-
-    // Admin y supervisor: siempre pueden
-    if (ROLES_LIBRES.includes(rol)) return true;
-
-    const miAgenteId = getMiAgenteId();
-
-    // Si no se puede identificar el agente del usuario, bloquear por seguridad
-    if (!miAgenteId) return false;
-
-    const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(clienteId));
-    if (!cliente) return false;
-
-    // Si el cliente no tiene agente asignado → bloquear (temporalmente)
-    if (!cliente.agente_id) return false;
-
-    // El cliente debe pertenecer al agente del usuario
-    return String(cliente.agente_id) === String(miAgenteId);
-  }
-
-  /* Interceptar abrirAbono para bloquear si no tiene permiso */
-  function hookAbrirAbono() {
-    const orig = window.abrirAbono;
-    if (typeof orig !== 'function' || orig._nxRestriccion) return;
-
-    window.abrirAbono = function(cid) {
-      // Exponer el cliente actual para que el fix de cobro_id lo capture
-      window.abonoCliId = cid;
-      const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
-      const rol = (sesion?.rol || '').toLowerCase();
-
-      // Admin y supervisor pasan directo
-      if (ROLES_LIBRES.includes(rol)) {
-        return orig.apply(this, arguments);
-      }
-
-      // Si tiene permiso de cobrar todos → saltarse la restricción
-      if (window.__nxSkipRestriccion__) {
-        return orig.apply(this, arguments);
-      }
-
-      // Verificar si puede cobrar este cliente
-      if (!puedeCobraCliente(cid)) {
-        const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
-        const nomCli = cliente?.nom || 'este cliente';
-
-        // Mostrar mensaje de bloqueo
-        const sinAgente = !cliente?.agente_id;
-        const msg = sinAgente
-          ? `${nomCli} no tiene agente asignado — contacta al administrador`
-          : `${nomCli} está asignado a otro agente`;
-        if (typeof window.toast === 'function') {
-          window.toast('err', 'Acceso denegado', msg);
-        } else {
-          alert(`No tienes permiso para cobrar a ${nomCli}.\n${msg}`);
-        }
-        return; // Bloquear — NO abrir el modal
-      }
-
-      // Es su cliente → permitir
-      return orig.apply(this, arguments);
-    };
-    window.abrirAbono._nxRestriccion = true;
-    console.log('✅ NEXUS: Restricción cobro por agente activa');
-  }
-
-  /* Ocultar botón COBRAR en la tabla de clientes si no le pertenece */
-  function ocultarBotonesCobro() {
-    const sesion = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
-    const rol = (sesion?.rol || '').toLowerCase();
-    if (ROLES_LIBRES.includes(rol)) return; // Admin/supervisor: no tocar nada
-
-    const miAgenteId = getMiAgenteId();
-    if (!miAgenteId) return;
-
-    // Buscar todos los botones de cobro en la tabla de clientes
-    document.querySelectorAll('[onclick^="abrirAbono("]').forEach(btn => {
-      const match = btn.getAttribute('onclick').match(/abrirAbono\('([^']+)'\)/);
-      if (!match) return;
-      const cid = match[1];
-      const cliente = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
-      if (!cliente) return;
-
-      if (String(cliente.agente_id) !== String(miAgenteId)) {
-        // No es su cliente: deshabilitar visualmente
-        btn.disabled = true;
-        btn.style.opacity = '0.3';
-        btn.style.cursor = 'not-allowed';
-        btn.title = 'Cliente de otro agente';
-      } else {
-        // Es su cliente: asegurar que esté habilitado
-        btn.disabled = false;
-        btn.style.opacity = '';
-        btn.style.cursor = '';
-        btn.title = 'Registrar cobro';
-      }
-    });
-  }
-
-  /* Interceptar rCli para aplicar restricción cada vez que se recarga la tabla */
-  function hookRCli() {
-    const orig = window.rCli;
-    if (typeof orig !== 'function' || orig._nxRestriccion) return;
-    window.rCli = function() {
-      const r = orig.apply(this, arguments);
-      // Aplicar después de que se renderice la tabla
-      if (r && typeof r.then === 'function') {
-        r.then(() => setTimeout(ocultarBotonesCobro, 200));
-      } else {
-        setTimeout(ocultarBotonesCobro, 200);
-      }
-      return r;
-    };
-    window.rCli._nxRestriccion = true;
-  }
-
-  /* INIT */
-  function init() {
-    let intentos = 0;
-    const tryInit = function() {
-      intentos++;
-      const listo = typeof window.abrirAbono === 'function' &&
-                    typeof window.rCli === 'function' &&
-                    window.ST?.clientes?.length > 0;
-
-      if (listo) {
-        hookAbrirAbono();
-        hookRCli();
-        ocultarBotonesCobro(); // Aplicar al cargar si ya hay tabla visible
-      } else if (intentos < 30) {
-        setTimeout(tryInit, 500);
-      }
-    };
-    setTimeout(tryInit, 800);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once: true });
-  } else {
-    init();
-  }
-})();
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — COLUMNA AGENTE v4
-   
-   Estrategia definitiva: esperar a que rCli/rFact/rCob escriban
-   al DOM usando MutationObserver en el tbody, luego reemplazar
-   td[1] usando el atributo data-cid que agregaremos mediante
-   postprocesado del innerHTML.
-   
-   Sabemos exactamente qué tiene cada td[1]:
-   - tbCli:  style contiene "var(--c4)" con numero_poliza
-   - tbFact: contiene <span class="ncf-badge">
-   - tbCob:  style contiene "var(--c4)" con numero_poliza
-   
-   Y el cliente_id viene del onclick de los botones de acción.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_AGT_V4__) return;
-  window.__NEXUS_AGT_V4__ = true;
-
-  function nomAgt(agenteId) {
-    if (!agenteId) return '<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>';
-    const ag = (window.ST?.agentes || []).find(a => String(a.id) === String(agenteId));
-    return ag
-      ? `<span style="font-size:10px;font-weight:700;color:#7c3aed">${ag.nom}</span>`
-      : '<span style="color:#ef4444;font-size:9px;font-weight:700">⚠ SIN AGENTE</span>';
-  }
-
-  /* Cambiar texto de un <th> por índice en la tabla que contiene el tbody */
-  function fixTh(tbodyId, idx, txt) {
-    const el = document.getElementById(tbodyId);
-    if (!el) return;
-    const ths = el.closest('table')?.querySelectorAll('thead th');
-    if (ths && ths[idx]) ths[idx].textContent = txt;
-  }
-
-  /* Parchear tbCli: td[1] tiene style con --c4 y numero_poliza */
-  function doCli() {
-    fixTh('tbCli', 1, 'AGENTE');
-    document.querySelectorAll('#tbCli tr:not([data-nxv4])').forEach(tr => {
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 9) return; // fila real tiene 9 columnas
-
-      // Obtener cliente_id del botón editarCli
-      const btn = tr.querySelector('button[onclick^="editarCli("]') ||
-                  tr.querySelector('button[onclick^="abrirAbono("]');
-      if (!btn) return;
-      const m = btn.getAttribute('onclick').match(/'([^']+)'/);
-      if (!m) return;
-
-      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(m[1]));
-      if (!cli) return;
-
-      tds[1].innerHTML = nomAgt(cli.agente_id);
-      tds[1].removeAttribute('style'); // quitar style de monospace
-      tds[1].style.padding = '0 8px';
-      tr.dataset.nxv4 = '1';
-    });
-  }
-
-  /* Parchear tbFact: td[1] tiene <span class="ncf-badge"> */
-  function doFact() {
-    fixTh('tbFact', 1, 'AGENTE');
-    document.querySelectorAll('#tbFact tr:not([data-nxv4])').forEach(tr => {
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 9) return;
-
-      // En facturas, cobrarDesdeFact('cliente_id') tiene el cliente_id
-      const btn = tr.querySelector('button[onclick^="cobrarDesdeFact("]');
-      let cid = null;
-      if (btn) {
-        const m = btn.getAttribute('onclick').match(/'([^']+)'/);
-        if (m) cid = m[1];
-      }
-      // Fallback: verFacturaPDF_id tiene el factura_id → buscar en ST.facturas
-      if (!cid) {
-        const btnPDF = tr.querySelector('button[onclick^="verFacturaPDF_id("]');
-        if (btnPDF) {
-          const m2 = btnPDF.getAttribute('onclick').match(/'([^']+)'/);
-          if (m2) {
-            const fac = (window.ST?.facturas || []).find(f => String(f.id) === String(m2[1]));
-            if (fac) cid = fac.cliente_id;
-          }
-        }
-      }
-      if (!cid) return;
-
-      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(cid));
-      tds[1].innerHTML = cli ? nomAgt(cli.agente_id) : '<span style="color:#94a3b8;font-size:9px">—</span>';
-      tr.dataset.nxv4 = '1';
-    });
-  }
-
-  /* Parchear tbCob: td[1] tiene numero_poliza, botón abrirAbono */
-  function doCob() {
-    fixTh('tbCob', 1, 'AGENTE');
-    document.querySelectorAll('#tbCob tr:not([data-nxv4])').forEach(tr => {
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 7) return;
-
-      const btn = tr.querySelector('button[onclick^="abrirAbono("]');
-      if (!btn) return;
-      const m = btn.getAttribute('onclick').match(/'([^']+)'/);
-      if (!m) return;
-
-      const cli = (window.ST?.clientes || []).find(c => String(c.id) === String(m[1]));
-      if (!cli) return;
-
-      tds[1].innerHTML = nomAgt(cli.agente_id);
-      tds[1].removeAttribute('style');
-      tr.dataset.nxv4 = '1';
-    });
-  }
-
-  function runAll() { doCli(); doFact(); doCob(); }
-
-  function init() {
-    // Esperar a que ST.clientes y ST.agentes estén cargados
-    let tries = 0;
-    const go = () => {
-      tries++;
-      const ready = window.ST?.clientes?.length > 0 && Array.isArray(window.ST?.agentes);
-      if (!ready && tries < 50) { setTimeout(go, 300); return; }
-
-      // MutationObserver en cada tbody
-      ['tbCli', 'tbFact', 'tbCob'].forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        new MutationObserver(() => {
-          // Cuando el tbody cambia, esperar 50ms y parchear
-          setTimeout(runAll, 50);
-        }).observe(el, { childList: true });
-      });
-
-      // Hook nav() para reaplicar al cambiar de sección
-      const origNav = window.nav;
-      if (typeof origNav === 'function' && !origNav._nxAgtV4) {
-        window.nav = function() {
-          const r = origNav.apply(this, arguments);
-          setTimeout(runAll, 250);
-          setTimeout(runAll, 700);
-          return r;
-        };
-        window.nav._nxAgtV4 = true;
-      }
-
-      // Aplicar ya si hay contenido
-      runAll();
-      console.log('✅ NEXUS: Columna Agente v4 activa');
-    };
-    setTimeout(go, 1000);
-  }
-
-  document.readyState === 'loading'
-    ? document.addEventListener('DOMContentLoaded', init, { once: true })
-    : init();
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — REPORTE AGENTES EN SOLICITUDES
-   Agrega una sección de resumen por agente en el módulo
-   Solicitudes, justo antes del Historial.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_REP_AGT_SOL__) return;
-  window.__NEXUS_REP_AGT_SOL__ = true;
-
-  function F(n) {
-    return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-  }
-  function inits(nom) {
-    return (nom || '').split(' ').slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
-  }
-  function pend(c) {
-    return Math.max(0, (c.deuda_total || 0) - (c.pagado || 0));
-  }
-  function getTot(c) {
-    return (c.deuda_total || 0);
-  }
-
-  function renderRepAgt() {
-    const agentes = window.ST?.agentes || [];
-    const clientes = (window.ST?.clientes || []).filter(c => c.activo);
-
-    if (!agentes.length) return '';
-
-    const filas = agentes.map(a => {
-      const clis = clientes.filter(c => String(c.agente_id) === String(a.id));
-      const prima = clis.reduce((s, c) => s + getTot(c), 0);
-      const cob   = clis.reduce((s, c) => s + (c.pagado || 0), 0);
-      const pd    = clis.reduce((s, c) => s + pend(c), 0);
-      const ef    = prima > 0 ? Math.round(cob / prima * 100) : 0;
-      const ph    = ef >= 80 ? '#10b981' : ef >= 50 ? '#f59e0b' : '#ef4444';
-
-      return `
-        <tr>
-          <td>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.12);color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">${inits(a.nom)}</div>
-              <div>
-                <div style="font-weight:700;font-size:11px">${a.nom}</div>
-                <div style="font-size:9px;color:#94a3b8">${a.cargo || 'Agente'}</div>
-              </div>
-            </div>
-          </td>
-          <td style="font-family:monospace;font-size:11px;font-weight:700;text-align:center">${clis.length}</td>
-          <td style="font-family:monospace;font-size:10px;color:#2563eb;font-weight:700">${F(prima)}</td>
-          <td style="font-family:monospace;font-size:10px;color:#10b981;font-weight:700">${F(cob)}</td>
-          <td style="font-family:monospace;font-size:10px;color:#ef4444;font-weight:700">${F(pd)}</td>
-          <td>
-            <div style="display:flex;align-items:center;gap:6px">
-              <div style="flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden">
-                <div style="height:100%;width:${ef}%;background:${ph};border-radius:3px;transition:width .3s"></div>
-              </div>
-              <span style="font-size:10px;font-weight:700;color:${ph};font-family:monospace;min-width:30px">${ef}%</span>
-            </div>
-          </td>
-        </tr>`;
-    }).join('');
-
-    return `
-      <div class="nxSL-section" style="margin-bottom:16px">
-        <div class="nxSL-section-head">
-          <div class="nxSL-section-title"><i class="ti ti-users"></i> REPORTE POR AGENTE</div>
-          <div class="nxSL-section-count nxSL-count-blue">${agentes.length}</div>
-        </div>
-        <div class="nxSL-table-wrap">
-          <table class="nxSL-table">
-            <thead><tr>
-              <th style="width:22%">AGENTE</th>
-              <th style="width:10%;text-align:center">CLIENTES</th>
-              <th style="width:18%">PRIMA TOTAL</th>
-              <th style="width:16%">COBRADO</th>
-              <th style="width:16%">PENDIENTE</th>
-              <th style="width:18%">EFICIENCIA</th>
-            </tr></thead>
-            <tbody>${filas}</tbody>
-          </table>
-        </div>
-      </div>`;
-  }
-
-  /* Interceptar nxRenderSolicitudes para inyectar la sección */
-  function hookRender() {
-    const orig = window.nxRenderSolicitudes;
-    if (typeof orig !== 'function' || orig._nxRepAgt) return;
-
-    window.nxRenderSolicitudes = async function() {
-      const r = await orig.apply(this, arguments);
-      // Buscar la sección de historial e inyectar el reporte antes
-      setTimeout(() => {
-        const view = document.getElementById('v-solicitudes');
-        if (!view) return;
-        // Si ya está, no duplicar
-        if (view.querySelector('.nx-rep-agt-sec')) return;
-
-        const historial = view.querySelector('.nxSL-section-historial') ||
-                          [...view.querySelectorAll('.nxSL-section')].find(s =>
-                            s.textContent.includes('HISTORIAL')
-                          );
-
-        if (historial) {
-          const div = document.createElement('div');
-          div.className = 'nx-rep-agt-sec';
-          div.innerHTML = renderRepAgt();
-          historial.insertAdjacentElement('beforebegin', div);
-        }
-      }, 300);
-      return r;
-    };
-    window.nxRenderSolicitudes._nxRepAgt = true;
-  }
-
-  function hookRefrescar() {
-    const orig = window.nxRefrescarSolicitudes;
-    if (typeof orig !== 'function' || orig._nxRepAgt) return;
-
-    window.nxRefrescarSolicitudes = async function() {
-      const r = await orig.apply(this, arguments);
-      setTimeout(() => {
-        const view = document.getElementById('v-solicitudes');
-        if (!view) return;
-        // Remover y re-inyectar para que se actualice
-        view.querySelector('.nx-rep-agt-sec')?.remove();
-        const historial = [...view.querySelectorAll('.nxSL-section')].find(s =>
-          s.textContent.includes('HISTORIAL')
-        );
-        if (historial) {
-          const div = document.createElement('div');
-          div.className = 'nx-rep-agt-sec';
-          div.innerHTML = renderRepAgt();
-          historial.insertAdjacentElement('beforebegin', div);
-        }
-      }, 400);
-      return r;
-    };
-    window.nxRefrescarSolicitudes._nxRepAgt = true;
-  }
-
-  function init() {
-    let tries = 0;
-    const go = () => {
-      tries++;
-      hookRender();
-      hookRefrescar();
-      // Si Solicitudes ya está abierto, inyectar ahora
-      const view = document.getElementById('v-solicitudes');
-      if (view?.classList.contains('on') && window.ST?.agentes?.length) {
-        view.querySelector('.nx-rep-agt-sec')?.remove();
-        const historial = [...view.querySelectorAll('.nxSL-section')].find(s =>
-          s.textContent.includes('HISTORIAL')
-        );
-        if (historial) {
-          const div = document.createElement('div');
-          div.className = 'nx-rep-agt-sec';
-          div.innerHTML = renderRepAgt();
-          historial.insertAdjacentElement('beforebegin', div);
-        }
-      }
-      if (tries < 20) setTimeout(go, 500);
-    };
-    setTimeout(go, 800);
-    console.log('✅ NEXUS: Reporte Agentes en Solicitudes activo');
-  }
-
-  document.readyState === 'loading'
-    ? document.addEventListener('DOMContentLoaded', init, { once: true })
-    : init();
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — COMPROBANTE DE PAGO (BAUCHE)
-   
-   Requiere SQL: SQL_comprobantes.sql
-   
-   1. Al seleccionar Transferencia o Depósito en el modal de cobro
-      → aparece botón "📎 Adjuntar bauche" automáticamente
-   2. Al tocar el botón → abre selector de imagen (cámara o galería)
-   3. La imagen se sube a Supabase Storage (bucket: comprobantes)
-   4. La URL se guarda en abonos.comprobante_url
-   5. En Solicitudes → icono 🖼 para ver el comprobante
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_COMPROBANTE__) return;
-  window.__NEXUS_COMPROBANTE__ = true;
-
-  let _comprobanteFile  = null; // archivo seleccionado
-  let _comprobanteURL   = null; // URL después de subir
-
-  /* ─── Obtener URL base de Supabase para Storage ─── */
-  function getStorageURL() {
-    const url = window.API?.url || window.API?._url || window.SUPABASE_URL ||
-                window._supabaseUrl || window.__NEXUS_SB_URL__;
-    if (url) return url.replace(/\/$/, '');
-    return 'https://mrtqkhachhvsczltwakt.supabase.co';
-  }
-
-  // JWT clásico (anon legacy) — Storage REST API lo requiere.
-  // La publishable key (sb_publishable_...) NO funciona con Storage.
-  const _NX_STORAGE_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ydHFraGFjaGh2c2N6bHR3YWt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2OTg0MzYsImV4cCI6MjA5NDI3NDQzNn0.K75-M9Dui7aGuccBqFUDoh1IpHcZhJ-J97t-mcA54Xg';
-
-  function getAnonKey() {
-    const k = window.API?.key || window.API?._key || window.SUPABASE_ANON_KEY ||
-              window._supabaseKey || window.__NEXUS_SB_KEY__ || '';
-    // Si el key configurado es publishable (no sirve para Storage), usar el JWT clásico
-    if (!k || k.startsWith('sb_publishable_') || k.startsWith('sb_secret_')) {
-      return _NX_STORAGE_JWT;
-    }
-    // Si ya es un JWT (empieza con eyJ), usarlo
-    if (k.startsWith('eyJ')) return k;
-    // Cualquier otro caso, usar el JWT clásico por seguridad
-    return _NX_STORAGE_JWT;
-  }
-
-  /* ─── Subir imagen a Supabase Storage ─── */
-  async function subirImagen(file) {
-    const ext  = file.name.split('.').pop() || 'jpg';
-    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    const url  = `${getStorageURL()}/storage/v1/object/comprobantes/${path}`;
-
-    const key = getAnonKey();
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${key}`,
-        'apikey': key,
-        'Content-Type': file.type,
-        'x-upsert': 'true'
-      },
-      body: file
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Error al subir imagen: ${err}`);
-    }
-
-    // URL pública
-    return `${getStorageURL()}/storage/v1/object/public/comprobantes/${path}`;
-  }
-
-  /* ─── Inyectar CSS ─── */
-  function inyectarCSS() {
-    if (document.getElementById('nx-comp-css')) return;
-    const s = document.createElement('style');
-    s.id = 'nx-comp-css';
-    s.textContent = `
-      #nx-bauche-menu {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        background: #fff;
-        border-radius: 16px 16px 0 0;
-        padding: 12px 0 30px 0;
-        z-index: 99999;
-        box-shadow: 0 -4px 30px rgba(0,0,0,.18);
-        animation: nxSlideUp .2s ease;
-      }
-      @keyframes nxSlideUp {
-        from { transform: translateY(100%); }
-        to   { transform: translateY(0); }
-      }
-      #nx-bauche-menu-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,.4);
-        z-index: 99998;
-      }
-      .nx-bauche-opcion {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 22px;
-        font-size: 14px;
-        font-weight: 500;
-        color: #1e293b;
-        cursor: pointer;
-        border: none;
-        background: none;
-        width: 100%;
-        text-align: left;
-        transition: background .1s;
-      }
-      .nx-bauche-opcion:active {
-        background: #f1f5f9;
-      }
-      .nx-bauche-opcion i {
-        font-size: 18px;
-        width: 24px;
-        text-align: center;
-        color: #2563eb;
-      }
-      .nx-bauche-separador {
-        height: 1px;
-        background: #f1f5f9;
-        margin: 4px 0;
-      }
-      #nx-bauche-wrap {
-        margin-bottom: 10px;
-        transition: all .2s;
-      }
-      #nx-bauche-btn {
-        width: 100%;
-        padding: 9px 12px;
-        border: 2px dashed #cbd5e1;
-        border-radius: 10px;
-        background: #f8fafc;
-        color: #64748b;
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        justify-content: center;
-        transition: all .2s;
-      }
-      #nx-bauche-btn:hover {
-        border-color: #2563eb;
-        color: #2563eb;
-        background: #eff6ff;
-      }
-      #nx-bauche-btn.nx-cargando {
-        border-color: #f59e0b;
-        color: #f59e0b;
-        background: #fffbeb;
-        pointer-events: none;
-      }
-      #nx-bauche-btn.nx-listo {
-        border-color: #10b981;
-        color: #10b981;
-        background: #f0fdf4;
-      }
-      #nx-bauche-preview {
-        margin-top: 6px;
-        border-radius: 8px;
-        overflow: hidden;
-        max-height: 120px;
-        display: none;
-        position: relative;
-      }
-      #nx-bauche-preview img {
-        width: 100%;
-        max-height: 120px;
-        object-fit: cover;
-        border-radius: 8px;
-      }
-      #nx-bauche-preview .nx-quitar {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        background: rgba(0,0,0,.6);
-        color: #fff;
-        border: none;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-    `;
-    document.head.appendChild(s);
-  }
-
-  /* ─── Crear el bloque de bauche en el modal ─── */
-  function crearBloqueBauche() {
-    if (document.getElementById('nx-bauche-wrap')) return;
-
-    const wrap = document.createElement('div');
-    wrap.id = 'nx-bauche-wrap';
-    wrap.style.display = 'none';
-    wrap.innerHTML = `
-      <input type="file" id="nx-bauche-input" accept="image/*" style="display:none">
-      <div id="nx-bauche-drop" style="
-        border:2px dashed #cbd5e1;border-radius:10px;background:#f8fafc;
-        padding:10px;cursor:pointer;transition:all .2s;
-      "
-        onclick="window.nxAbrirMenuBauche(event)"
-        title="Toca para adjuntar bauche"
-      >
-        <div id="nx-bauche-btn" style="
-          color:#64748b;font-size:11px;font-weight:600;
-          display:flex;align-items:center;gap:8px;justify-content:center;
-          pointer-events:none;
-        ">
-          <i class="ti ti-camera"></i> Adjuntar bauche de pago
-        </div>
-        <div id="nx-bauche-preview" style="display:none;margin-top:6px;position:relative">
-          <img id="nx-bauche-img" src="" alt="Bauche" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px">
-          <button class="nx-quitar" onclick="event.stopPropagation();window.nxQuitarBauche()" title="Quitar imagen" style="
-            position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);
-            color:#fff;border:none;border-radius:50%;width:20px;height:20px;
-            font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center
-          ">✕</button>
-        </div>
-      </div>
-    `;
-
-    // Insertar antes del div de recibo WA o antes del fe (botones finales)
-    const reciboDiv = document.getElementById('reciboWAbtn');
-    const fe        = document.querySelector('#mAbono .fe');
-    const ref       = reciboDiv || fe;
-    if (ref) ref.insertAdjacentElement('beforebegin', wrap);
-
-    // Menú de opciones para adjuntar bauche
-    window.nxAbrirMenuBauche = function(e) {
-      e.stopPropagation();
-      // Quitar menú anterior si existe
-      document.getElementById('nx-bauche-menu')?.remove();
-      document.getElementById('nx-bauche-menu-overlay')?.remove();
-
-      const overlay = document.createElement('div');
-      overlay.id = 'nx-bauche-menu-overlay';
-      overlay.onclick = () => {
-        overlay.remove();
-        document.getElementById('nx-bauche-menu')?.remove();
-      };
-
-      const menu = document.createElement('div');
-      menu.id = 'nx-bauche-menu';
-
-      // Título
-      const titulo = document.createElement('div');
-      titulo.style.cssText = 'text-align:center;padding:4px 0 12px;font-size:12px;color:#94a3b8;font-weight:600;letter-spacing:.5px';
-      titulo.textContent = 'ADJUNTAR BAUCHE';
-      menu.appendChild(titulo);
-
-      // Opciones
-      const opciones = [
-        { icon: 'ti-photo', label: 'Fototeca',          accion: () => { cerrar(); document.getElementById('nx-bauche-input').click(); } },
-        { icon: 'ti-camera', label: 'Tomar foto',        accion: () => { cerrar(); const inp = document.getElementById('nx-bauche-input'); inp.setAttribute('capture','environment'); inp.click(); setTimeout(()=>inp.removeAttribute('capture'),500); } },
-        { icon: 'ti-folder', label: 'Seleccionar archivo', accion: () => { cerrar(); document.getElementById('nx-bauche-input').click(); } },
-      ];
-
-      // Opción Pegar (solo si hay imagen en el portapapeles)
-      opciones.push({
-        icon: 'ti-clipboard',
-        label: 'Pegar imagen',
-        accion: async () => {
-          cerrar();
-          try {
-            const items = await navigator.clipboard.read();
-            for (const item of items) {
-              for (const type of item.types) {
-                if (type.startsWith('image/')) {
-                  const blob = await item.getType(type);
-                  const file = new File([blob], `bauche_${Date.now()}.png`, { type });
-                  await window.nxProcesarBauche(file);
-                  return;
-                }
-              }
-            }
-            if (typeof window.toast === 'function') window.toast('warn', 'Sin imagen', 'No hay imagen en el portapapeles');
-          } catch(err) {
-            // Fallback: pedir al usuario que pegue con Ctrl+V
-            if (typeof window.toast === 'function') window.toast('info', 'Pega con Ctrl+V', 'Toca el área del bauche y pega');
-          }
-        }
-      });
-
-      function cerrar() {
-        overlay.remove();
-        menu.remove();
-      }
-
-      opciones.forEach((op, i) => {
-        if (i > 0) {
-          const sep = document.createElement('div');
-          sep.className = 'nx-bauche-separador';
-          menu.appendChild(sep);
-        }
-        const btn = document.createElement('button');
-        btn.className = 'nx-bauche-opcion';
-        btn.innerHTML = `<i class="ti ${op.icon}"></i> ${op.label}`;
-        btn.onclick = op.accion;
-        menu.appendChild(btn);
-      });
-
-      document.body.appendChild(overlay);
-      document.body.appendChild(menu);
-    };
-
-    // Función compartida para procesar cualquier imagen (galería o portapapeles)
-    window.nxProcesarBauche = async function(file) {
-      if (!file) return;
-      _comprobanteFile = file;
-      _comprobanteURL  = null;
-
-      const btn     = document.getElementById('nx-bauche-btn');
-      const img     = document.getElementById('nx-bauche-img');
-      const preview = document.getElementById('nx-bauche-preview');
-      const drop    = document.getElementById('nx-bauche-drop');
-
-      // Mostrar preview
-      const reader = new FileReader();
-      reader.onload = e => {
-        if (img)     img.src = e.target.result;
-        if (preview) preview.style.display = 'block';
-        if (btn)     btn.innerHTML = '<i class="ti ti-loader"></i> Subiendo...';
-        if (drop)    drop.style.borderColor = '#f59e0b';
-      };
-      reader.readAsDataURL(file);
-
-      // Subir a Supabase
-      try {
-        _comprobanteURL = await subirImagen(file);
-        window.__nxComprobanteURLActual = _comprobanteURL; // exponer para flujo de depósito directo
-        if (btn)  btn.innerHTML = '<i class="ti ti-check"></i> Bauche adjuntado ✓';
-        if (drop) drop.style.borderColor = '#10b981';
-        if (typeof window.toast === 'function') window.toast('ok', 'Bauche cargado', 'Imagen lista para guardar');
-      } catch(err) {
-        if (btn)  btn.innerHTML = '<i class="ti ti-camera"></i> Error — reintentar';
-        if (drop) drop.style.borderColor = '#ef4444';
-        if (typeof window.toast === 'function') window.toast('err', 'Error al subir bauche', err.message);
-        _comprobanteFile = null;
-        _comprobanteURL  = null;
-      }
-    };
-
-    // Pegar imagen desde portapapeles (Ctrl+V / Cmd+V)
-    document.addEventListener('paste', async function(e) {
-      const wrap = document.getElementById('nx-bauche-wrap');
-      if (!wrap || wrap.style.display === 'none') return; // Solo si el bauche está visible
-      const items = e.clipboardData?.items || [];
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          const file = item.getAsFile();
-          if (file) await window.nxProcesarBauche(file);
-          break;
-        }
-      }
-    });
-
-    // Evento al seleccionar archivo
-    document.getElementById('nx-bauche-input').addEventListener('change', async function() {
-      const file = this.files[0];
-      if (file) await window.nxProcesarBauche(file);
-    });
-  }
-
-  /* ─── Quitar bauche seleccionado ─── */
-  window.nxQuitarBauche = function() {
-    _comprobanteFile = null;
-    _comprobanteURL  = null;
-    window.__nxComprobanteURLActual = null; // limpiar global también
-    const input   = document.getElementById('nx-bauche-input');
-    const preview = document.getElementById('nx-bauche-preview');
-    const btn     = document.getElementById('nx-bauche-btn');
-    if (input)   input.value = '';
-    if (preview) { preview.style.display = 'none'; }
-    if (btn) {
-      btn.className = '';
-      btn.innerHTML = '<i class="ti ti-camera"></i> Adjuntar bauche de pago';
-    }
-  };
-
-  /* ─── Mostrar/ocultar bauche al cambiar método ─── */
-  function hookCambiarMetodo() {
-    const orig = window.cambiarMetodoAbono;
-    if (typeof orig !== 'function' || orig._nxComp) return;
-
-    window.cambiarMetodoAbono = function() {
-      orig.apply(this, arguments);
-
-      const met  = document.getElementById('aMet')?.value || '';
-      const wrap = document.getElementById('nx-bauche-wrap');
-
-      if (!wrap) { crearBloqueBauche(); return; }
-
-      if (met === 'Transferencia' || met === 'Depósito') {
-        wrap.style.display = 'block';
-      } else {
-        wrap.style.display = 'none';
-        window.nxQuitarBauche();
-      }
-    };
-    window.cambiarMetodoAbono._nxComp = true;
-  }
-
-  /* ─── Interceptar regAbono para incluir comprobante_url ─── */
-  function hookRegAbono() {
-    const orig = window.regAbono;
-    if (typeof orig !== 'function' || orig._nxCompHook) return;
-
-    window.regAbono = async function() {
-      if (_comprobanteURL) {
-        const api = window.API;
-        if (api?.post && !api.post._nxCompTmp) {
-          const urlGuardar = _comprobanteURL;
-          const origPost = api.post.bind(api);
-          api.post = async function(tabla, datos, ...args) {
-            api.post = origPost;
-            api.post._nxCompTmp = false;
-            // Guardar en abonos Y en entregas_admin
-            if (tabla === 'abonos' || tabla === 'entregas_admin') {
-              datos = { ...datos, comprobante_url: urlGuardar };
-              _comprobanteURL  = null;
-              _comprobanteFile = null;
-            }
-            return await origPost(tabla, datos, ...args);
-          };
-          api.post._nxCompTmp = true;
-        }
-      }
-      return await orig.apply(this, arguments);
-    };
-    window.regAbono._nxCompHook = true;
-  }
-
-  /* ─── Mostrar comprobante en Solicitudes ─── */
-  function hookVerComprobante() {
-    window.nxVerComprobante = function(url) {
-      if (!url) return;
-      // Abrir en modal simple
-      const overlay = document.createElement('div');
-      overlay.style.cssText = `
-        position:fixed;inset:0;background:rgba(0,0,0,.85);
-        z-index:99999;display:flex;align-items:center;
-        justify-content:center;padding:20px;cursor:pointer
-      `;
-      overlay.innerHTML = `
-        <div style="position:relative;max-width:90vw;max-height:90vh">
-          <img src="${url}" style="max-width:100%;max-height:85vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-          <button onclick="this.closest('[style*=fixed]').remove()" style="
-            position:absolute;top:-10px;right:-10px;width:28px;height:28px;
-            border-radius:50%;background:#ef4444;color:#fff;border:none;
-            font-size:14px;cursor:pointer;font-weight:700;
-            display:flex;align-items:center;justify-content:center
-          ">✕</button>
-        </div>`;
-      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-      document.body.appendChild(overlay);
-    };
-  }
-
-  /* ─── Parchear las tablas de Solicitudes para mostrar ícono de comprobante ─── */
-  function patchTablasSolicitudes() {
-    if (!window.__nxEntregasData__?.length) return;
-
-    document.querySelectorAll('.nxSL-table tbody tr').forEach(tr => {
-      if (tr.dataset.nxComp) return;
-
-      // Buscar el ID de la entrega en los botones
-      const btn = tr.querySelector('button[onclick*="EntregaAdmin("]');
-      if (!btn) return;
-      const m = btn.getAttribute('onclick').match(/'([^']+)'/);
-      if (!m) return;
-
-      const entrega = window.__nxEntregasData__.find(e => String(e.id) === String(m[1]));
-      if (!entrega) return;
-      tr.dataset.nxComp = '1';
-
-      // Si tiene comprobante, agregar ícono en la última celda
-      if (entrega.comprobante_url) {
-        const lastTd = tr.querySelector('td:last-child');
-        if (lastTd) {
-          const btnVer = document.createElement('button');
-          btnVer.style.cssText = 'background:#2563eb;border:none;color:#fff;border-radius:6px;padding:3px 7px;font-size:10px;cursor:pointer;margin-left:4px';
-          btnVer.innerHTML = '<i class="ti ti-photo"></i>';
-          btnVer.title = 'Ver bauche';
-          btnVer.onclick = () => window.nxVerComprobante(entrega.comprobante_url);
-          lastTd.appendChild(btnVer);
-        }
-      }
-    });
-  }
-
-  /* ─── INIT ─── */
-  function init() {
-    inyectarCSS();
-    hookVerComprobante();
-    hookRegAbono();
-
-    let tries = 0;
-    const go = () => {
-      tries++;
-      hookCambiarMetodo();
-
-      // Crear bloque si el modal ya existe
-      const modal = document.getElementById('mAbono');
-      if (modal && !document.getElementById('nx-bauche-wrap')) {
-        crearBloqueBauche();
-      }
-
-      // Patch tablas solicitudes si hay datos
-      patchTablasSolicitudes();
-
-      if (tries < 30) setTimeout(go, 500);
-    };
-    setTimeout(go, 600);
-
-    // Observar solicitudes para inyectar botones de comprobante
-    const observer = new MutationObserver(() => setTimeout(patchTablasSolicitudes, 200));
-    const tryObserve = () => {
-      const v = document.getElementById('v-solicitudes');
-      if (v) observer.observe(v, { childList: true, subtree: true });
-      else setTimeout(tryObserve, 500);
-    };
-    tryObserve();
-
-    console.log('✅ NEXUS: Comprobantes de pago activo');
-  }
-
-  document.readyState === 'loading'
-    ? document.addEventListener('DOMContentLoaded', init, { once: true })
-    : init();
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — PERMISO: COBRAR CLIENTES DE CUALQUIER AGENTE
-   
-   Requiere SQL: SQL_cobrar_todos.sql
-   
-   Agrega un toggle en la tabla de Usuarios (Configuración)
-   para que el admin pueda activar/desactivar por usuario el
-   permiso de cobrar clientes de cualquier agente.
-   
-   Si puede_cobrar_todos = true → sin restricción de agente.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_COBRAR_TODOS__) return;
-  window.__NEXUS_COBRAR_TODOS__ = true;
-
-  /* ─── Verificar si el usuario actual tiene el permiso ─── */
-  function tienePosPermiso() {
-    const sesion = window.sesion || null;
-    if (!sesion) return false;
-    // Admin siempre puede
-    if ((sesion.rol || '').toLowerCase() === 'admin') return true;
-    // Buscar en ST.usuarios por login
-    const u = (window.ST?.usuarios || []).find(x =>
-      x.login === sesion.usuario || x.login === sesion.login
-    );
-    return u?.puede_cobrar_todos === true;
-  }
-
-  /* ─── Actualizar la restricción de cobro existente ─── */
-  function patchRestriccion() {
-    // La función puedeCobraCliente ya existe en __NEXUS_RESTRICCION_COBRO__
-    // La envolvemos para añadir la verificación del permiso nuevo
-    const origFn = window.__nxPuedeCobraCliente__;
-    if (origFn) return; // Ya parcheado
-
-    // Guardar referencia a la función original del parche de restricción
-    // El parche de restricción define puedeCobraCliente dentro de su IIFE
-    // Necesitamos hookearlo a nivel de abrirAbono que ya existe
-    const origAbono = window.abrirAbono;
-    if (typeof origAbono !== 'function') return;
-    if (origAbono._nxCobTodos) return;
-
-    window.abrirAbono = function(cid) {
-      // Si tiene permiso de cobrar todos → saltar la restricción de agente
-      if (tienePosPermiso()) {
-        // Llamar al original de ANTES del parche de restricción
-        // El parche de restricción también wrapeó abrirAbono
-        // Necesitamos saltar SU validación
-        window.__nxSkipRestriccion__ = true;
-      }
-      const r = origAbono.apply(this, arguments);
-      window.__nxSkipRestriccion__ = false;
-      return r;
-    };
-    window.abrirAbono._nxCobTodos = true;
-    window.__nxPuedeCobraCliente__ = true;
-  }
-
-  /* ─── Toggle en la tabla de usuarios ─── */
-  window.nxToggleCobrarTodos = async function(userId, valor) {
-    try {
-      await window.API.patch('usuarios_sistema', `id=eq.${userId}`, {
-        puede_cobrar_todos: valor
-      });
-      const u = (window.ST?.usuarios || []).find(x => x.id === userId);
-      if (u) u.puede_cobrar_todos = valor;
-      if (typeof window.toast === 'function') {
-        window.toast('ok',
-          valor ? 'Permiso activado' : 'Permiso desactivado',
-          valor ? 'Puede cobrar clientes de cualquier agente' : 'Solo puede cobrar sus propios clientes'
-        );
-      }
-    } catch(e) {
-      if (typeof window.toast === 'function') {
-        window.toast('err', 'Error', e.message);
-      }
-    }
-  };
-
-  /* ─── Agregar columna "COBRAR TODOS" en la tabla de usuarios ─── */
-  function patchTablaUsuarios() {
-    const tbUsu = document.getElementById('tbUsu');
-    if (!tbUsu || tbUsu.dataset.nxCobTodosCol) return;
-    tbUsu.dataset.nxCobTodosCol = '1';
-
-    // Agregar th en el thead
-    const thead = tbUsu.closest('table')?.querySelector('thead tr');
-    if (thead && !thead.querySelector('.nx-cob-todos-th')) {
-      const th = document.createElement('th');
-      th.className = 'nx-cob-todos-th';
-      th.style.cssText = 'font-size:9px;white-space:nowrap';
-      th.textContent = 'COBRAR TODOS';
-      // Insertar antes de la última columna (ACCIONES)
-      const lastTh = thead.querySelector('th:last-child');
-      if (lastTh) lastTh.insertAdjacentElement('beforebegin', th);
-    }
-
-    // Agregar td en cada fila
-    tbUsu.querySelectorAll('tr').forEach(tr => {
-      if (tr.dataset.nxCobTd) return;
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 3) return;
-
-      // Obtener ID del usuario desde el botón de editar/eliminar
-      let uid = null;
-      tr.querySelectorAll('[onclick]').forEach(el => {
-        if (uid) return;
-        const m = el.getAttribute('onclick').match(/'([^']+)'/);
-        if (m) uid = m[1];
-      });
-      if (!uid) return;
-
-      const u = (window.ST?.usuarios || []).find(x => String(x.id) === String(uid));
-      if (!u) return;
-
-      // No mostrar para admin
-      const esCobrarTodos = u.puede_cobrar_todos === true;
-      const esAdmin = (u.rol || '').toLowerCase() === 'admin';
-
-      const td = document.createElement('td');
-      td.dataset.nxCobTd = '1';
-      td.style.textAlign = 'center';
-
-      if (esAdmin) {
-        td.innerHTML = '<span style="font-size:9px;color:#94a3b8">Admin</span>';
-      } else {
-        td.innerHTML = `
-          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer">
-            <input type="checkbox" 
-              ${esCobrarTodos ? 'checked' : ''}
-              onchange="window.nxToggleCobrarTodos('${uid}', this.checked)"
-              style="width:14px;height:14px;cursor:pointer;accent-color:#2563eb">
-            <span style="font-size:9px;color:${esCobrarTodos ? '#2563eb' : '#94a3b8'}">
-              ${esCobrarTodos ? 'Sí' : 'No'}
-            </span>
-          </label>`;
-      }
-
-      // Insertar antes del último td (acciones)
-      const lastTd = tr.querySelector('td:last-child');
-      if (lastTd) lastTd.insertAdjacentElement('beforebegin', td);
-      tr.dataset.nxCobTd = '1';
-    });
-  }
-
-  /* ─── Hook rUsuarios para reaplicar columna ─── */
-  function hookRUsuarios() {
-    const orig = window.rUsuarios;
-    if (typeof orig !== 'function' || orig._nxCobTodos) return;
-    window.rUsuarios = function() {
-      const r = orig.apply(this, arguments);
-      setTimeout(() => {
-        document.getElementById('tbUsu')?.removeAttribute('data-nx-cob-todos-col');
-        document.querySelectorAll('#tbUsu tr').forEach(tr => tr.removeAttribute('data-nx-cob-td'));
-        patchTablaUsuarios();
-      }, 100);
-      return r;
-    };
-    window.rUsuarios._nxCobTodos = true;
-  }
-
-  /* ─── INIT ─── */
-  function init() {
-    let tries = 0;
-    const go = () => {
-      tries++;
-      patchRestriccion();
-      hookRUsuarios();
-      // Si la tabla de usuarios ya está visible
-      if (document.getElementById('tbUsu')?.querySelector('tr')) {
-        patchTablaUsuarios();
-      }
-      if (tries < 30) setTimeout(go, 500);
-    };
-    setTimeout(go, 800);
-    console.log('✅ NEXUS: Permiso cobrar todos activo');
-  }
-
-  document.readyState === 'loading'
-    ? document.addEventListener('DOMContentLoaded', init, { once: true })
-    : init();
-})();
-
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — MENÚ UNIVERSAL DE CARGA EN DOCUMENTOS
-   
-   Reemplaza el click directo en las doc-cards por el mismo menú
-   de 4 opciones: Fototeca, Tomar foto, Seleccionar archivo, Pegar.
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_DOC_MENU__) return;
-  window.__NEXUS_DOC_MENU__ = true;
-
-  /* Menú universal reutilizable para cualquier input de archivo */
-  window.nxMenuArchivo = function(inputId, e) {
-    if (e) e.stopPropagation();
-
-    const input = document.getElementById(inputId);
-    if (!input) return;
-
-    // Quitar menú anterior
-    document.getElementById('nx-doc-menu')?.remove();
-    document.getElementById('nx-doc-overlay')?.remove();
-
-    function cerrar() {
-      document.getElementById('nx-doc-menu')?.remove();
-      document.getElementById('nx-doc-overlay')?.remove();
-    }
-
-    const overlay = document.createElement('div');
-    overlay.id = 'nx-doc-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99998';
-    overlay.onclick = cerrar;
-
-    const menu = document.createElement('div');
-    menu.id = 'nx-doc-menu';
-    menu.style.cssText = `
-      position:fixed;bottom:0;left:0;right:0;
-      background:#fff;border-radius:16px 16px 0 0;
-      padding:8px 0 34px;z-index:99999;
-      box-shadow:0 -4px 30px rgba(0,0,0,.18);
-      animation:nxSlideUp .2s ease;
-    `;
-
-    // Título
-    menu.innerHTML = `<div style="text-align:center;padding:4px 0 10px;font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:.5px">CARGAR DOCUMENTO</div>`;
-
-    const opciones = [
-      {
-        icon: '🖼️', label: 'Fototeca',
-        accion: () => { cerrar(); input.removeAttribute('capture'); input.click(); }
-      },
-      {
-        icon: '📸', label: 'Tomar foto',
-        accion: () => { cerrar(); input.setAttribute('capture', 'environment'); input.click(); setTimeout(() => input.removeAttribute('capture'), 500); }
-      },
-      {
-        icon: '📁', label: 'Seleccionar archivo',
-        accion: () => { cerrar(); input.removeAttribute('capture'); input.click(); }
-      },
-      {
-        icon: '📋', label: 'Pegar imagen',
-        accion: async () => {
-          cerrar();
-          try {
-            const items = await navigator.clipboard.read();
-            for (const item of items) {
-              for (const type of item.types) {
-                if (type.startsWith('image/')) {
-                  const blob = await item.getType(type);
-                  const file = new File([blob], `doc_${Date.now()}.png`, { type });
-                  // Simular selección en el input
-                  const dt = new DataTransfer();
-                  dt.items.add(file);
-                  input.files = dt.files;
-                  input.dispatchEvent(new Event('change', { bubbles: true }));
-                  return;
-                }
-              }
-            }
-            if (typeof window.toast === 'function') window.toast('warn', 'Sin imagen', 'No hay imagen en el portapapeles');
-          } catch(err) {
-            if (typeof window.toast === 'function') window.toast('info', 'Pega con Ctrl+V', 'No se pudo leer el portapapeles');
-          }
-        }
-      }
-    ];
-
-    opciones.forEach((op, i) => {
-      if (i > 0) {
-        const sep = document.createElement('div');
-        sep.style.cssText = 'height:1px;background:#f1f5f9;margin:2px 0';
-        menu.appendChild(sep);
-      }
-      const btn = document.createElement('button');
-      btn.style.cssText = `
-        display:flex;align-items:center;gap:14px;
-        padding:13px 22px;font-size:15px;font-weight:500;
-        color:#1e293b;cursor:pointer;border:none;
-        background:none;width:100%;text-align:left;
-      `;
-      btn.innerHTML = `<span style="font-size:20px;width:28px">${op.icon}</span> ${op.label}`;
-      btn.onclick = op.accion;
-      menu.appendChild(btn);
-    });
-
-    document.body.appendChild(overlay);
-    document.body.appendChild(menu);
-  };
-
-  /* Interceptar cargarDocs para reemplazar onclick de cada card */
-  function hookCargarDocs() {
-    const orig = window.cargarDocs;
-    if (typeof orig !== 'function' || orig._nxDocMenu) return;
-
-    window.cargarDocs = async function(cliId) {
-      const r = await orig.apply(this, arguments);
-      // Reemplazar onclick de cada doc-card
-      setTimeout(() => {
-        document.querySelectorAll('.doc-card').forEach(card => {
-          if (card.dataset.nxMenu) return;
-          card.dataset.nxMenu = '1';
-          // Encontrar el input asociado
-          const input = card.querySelector('.doc-upload-input');
-          if (!input) return;
-          const inputId = input.id;
-          // Reemplazar el onclick
-          card.onclick = (e) => window.nxMenuArchivo(inputId, e);
-        });
-      }, 100);
-      return r;
-    };
-    window.cargarDocs._nxDocMenu = true;
-  }
-
-  function init() {
-    let tries = 0;
-    const go = () => {
-      tries++;
-      hookCargarDocs();
-      if (tries < 20) setTimeout(go, 500);
-    };
-    setTimeout(go, 600);
-    console.log('✅ NEXUS: Menú universal documentos activo');
-  }
-
-  document.readyState === 'loading'
-    ? document.addEventListener('DOMContentLoaded', init, { once: true })
-    : init();
-})();
-
-/* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — CENTRO INTELIGENTE SUPER SMART (v2)
-   
-   Panel completo al tocar la campana 🔔:
-   - Salud de cobranza (semáforo)
-   - Pulso de hoy + tendencia semanal/mensual
-   - Proyección de cierre de mes
-   - Alertas priorizadas (sin agente, morosos, pendientes, vencimientos)
-   - Ranking de agentes en vivo
-   - Top morosos + acciones rápidas
-   ════════════════════════════════════════════════════════════════ */
-
-(function () {
-  "use strict";
-  if (window.__NEXUS_CENTRO_SMART2__) return;
-  window.__NEXUS_CENTRO_SMART2__ = true;
-
-  const DIAS_MORA = 30;
-  const F = n => 'RD$ ' + Math.round(n || 0).toLocaleString('es-DO');
-  const Fk = n => Math.round(n || 0).toLocaleString('es-DO');
-
-  // Solo el administrador puede ver el Centro Inteligente
-  function esAdminCentro() {
-    try {
-      // Leer de sessionStorage (más confiable que la variable global)
-      const s = sessionStorage.getItem('nx_sesion');
-      if (s) {
-        const ses = JSON.parse(s);
-        return (ses?.rol || '').toLowerCase() === 'admin';
-      }
-      // Fallback: variable global window.sesion
-      const sg = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
-      return (sg?.rol || '').toLowerCase() === 'admin';
-    } catch(_) { return false; }
-  }
-
-  function analizar() {
-    const clientes = (window.ST?.clientes || []);
-    const facturas = (window.ST?.facturas || []);
-    const abonos = (window.ST?.abonos || []);
-    const agentes = (window.ST?.agentes || []);
-    const hoy = new Date();
-    const hoyStr = hoy.toISOString().slice(0, 10);
-    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-
-    const activos = clientes.filter(c => c.activo);
-    const deudaTotal = activos.reduce((s, c) => s + (c.deuda_total || 0), 0);
-    const cobradoTotal = activos.reduce((s, c) => s + (c.pagado || 0), 0);
-    const pctCobranza = deudaTotal > 0 ? Math.round(cobradoTotal / deudaTotal * 100) : 100;
-    const faltaCobrar = Math.max(0, deudaTotal - cobradoTotal);
-
-    // Sin agente
-    const sinAgente = activos.filter(c => !c.agente_id);
-
-    // Morosos
-    const morososMap = {};
-    facturas.forEach(f => {
-      const e = (f.estado || '').toLowerCase();
-      if ((e !== 'pendiente' && e !== 'parcial') || !f.fecha_emision) return;
-      const dias = Math.floor((hoy - new Date(f.fecha_emision)) / 86400000);
-      if (dias <= DIAS_MORA) return;
-      const cli = clientes.find(c => String(c.id) === String(f.cliente_id));
-      if (!cli || !cli.activo) return;
-      if (!morososMap[cli.id]) morososMap[cli.id] = { id: cli.id, nom: cli.nom, deuda: 0, dias: 0 };
-      morososMap[cli.id].deuda += Number(f.total || 0);
-      morososMap[cli.id].dias = Math.max(morososMap[cli.id].dias, dias);
-    });
-    const morosos = Object.values(morososMap).sort((a, b) => b.dias - a.dias);
-
-    // Pendientes
-    const pendientes = facturas.filter(f => {
-      const e = (f.estado || '').toLowerCase();
-      return e === 'pendiente' || e === 'parcial';
-    });
-    const montoPendiente = pendientes.reduce((s, f) => s + Number(f.total || 0), 0);
-
-    // Cobros hoy / semana / mes
-    const cobrosHoy = abonos.filter(a => a.fecha === hoyStr);
-    const montoHoy = cobrosHoy.reduce((s, a) => s + Number(a.monto || 0), 0);
-
-    const hace7 = new Date(hoy.getTime() - 7 * 86400000).toISOString().slice(0, 10);
-    const hace14 = new Date(hoy.getTime() - 14 * 86400000).toISOString().slice(0, 10);
-    const semActual = abonos.filter(a => a.fecha >= hace7).reduce((s, a) => s + Number(a.monto || 0), 0);
-    const semPasada = abonos.filter(a => a.fecha >= hace14 && a.fecha < hace7).reduce((s, a) => s + Number(a.monto || 0), 0);
-
-    const mesActualStr = inicioMes.toISOString().slice(0, 10);
-    const inicioMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).toISOString().slice(0, 10);
-    const mesAct = abonos.filter(a => a.fecha >= mesActualStr).reduce((s, a) => s + Number(a.monto || 0), 0);
-    const mesPas = abonos.filter(a => a.fecha >= inicioMesPasado && a.fecha < mesActualStr).reduce((s, a) => s + Number(a.monto || 0), 0);
-
-    const tendSemana = semPasada > 0 ? Math.round((semActual - semPasada) / semPasada * 100) : (semActual > 0 ? 100 : 0);
-    const tendMes = mesPas > 0 ? Math.round((mesAct - mesPas) / mesPas * 100) : (mesAct > 0 ? 100 : 0);
-
-    // Pólizas por vencer
-    const porVencer = [];
-    activos.forEach(c => {
-      if (!c.fecha_fin) return;
-      const dias = Math.floor((new Date(c.fecha_fin) - hoy) / 86400000);
-      if (dias >= 0 && dias <= 30) porVencer.push({ nom: c.nom, dias, id: c.id });
-    });
-    porVencer.sort((a, b) => a.dias - b.dias);
-
-    const nuevosHoy = clientes.filter(c => c.created_at && c.created_at.slice(0, 10) === hoyStr).length;
-    const enProceso = clientes.filter(c => c.estado_cliente === 'EN_PROCESO').length;
-
-    // Ranking de agentes
-    const ranking = agentes.map(a => {
-      const clis = activos.filter(c => String(c.agente_id) === String(a.id));
-      const cartera = clis.reduce((s, c) => s + (c.deuda_total || 0), 0);
-      const cobrado = clis.reduce((s, c) => s + (c.pagado || 0), 0);
-      const ef = cartera > 0 ? Math.round(cobrado / cartera * 100) : 0;
-      return { nom: a.nom, clientes: clis.length, cobrado, ef };
-    }).filter(a => a.clientes > 0).sort((a, b) => b.cobrado - a.cobrado);
-
-    return {
-      totalActivos: activos.length, deudaTotal, cobradoTotal, pctCobranza, faltaCobrar,
-      sinAgente, morosos, pendientes: pendientes.length, montoPendiente,
-      cobrosHoy: cobrosHoy.length, montoHoy, semActual, semPasada, tendSemana,
-      mesAct, mesPas, tendMes, porVencer, nuevosHoy, enProceso, ranking
-    };
-  }
-
-  function inyectarCSS() {
-    if (document.getElementById('nx-centro-css')) return;
-    const s = document.createElement('style');
-    s.id = 'nx-centro-css';
-    s.textContent = `
-      #nx-centro-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.5); backdrop-filter: blur(4px); z-index: 99990; display: flex; justify-content: flex-end; animation: nxFadeIn .2s ease; }
-      @keyframes nxFadeIn { from { opacity: 0 } to { opacity: 1 } }
-      #nx-centro { width: 440px; max-width: 94vw; height: 100%; background: #f8fafc; overflow-y: auto; box-shadow: -8px 0 40px rgba(0,0,0,.2); animation: nxSlideLeft .25s ease; }
-      @keyframes nxSlideLeft { from { transform: translateX(100%) } to { transform: translateX(0) } }
-      .nxC-head { background: linear-gradient(135deg,#1e293b,#0f172a); color: #fff; padding: 18px 20px; position: sticky; top: 0; z-index: 2; }
-      .nxC-head-top { display: flex; justify-content: space-between; align-items: center; }
-      .nxC-close { background: rgba(255,255,255,.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; }
-      .nxC-body { padding: 14px; }
-      .nxC-card { background: #fff; border-radius: 14px; padding: 15px; margin-bottom: 11px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-      .nxC-card-title { font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 11px; display: flex; align-items: center; gap: 6px; }
-      .nxC-gauge { text-align: center; padding: 6px 0; }
-      .nxC-gauge-num { font-size: 40px; font-weight: 800; line-height: 1; }
-      .nxC-gauge-lbl { font-size: 11px; color: #94a3b8; margin-top: 4px; }
-      .nxC-bar { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin: 11px 0 4px; }
-      .nxC-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
-      .nxC-stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-      .nxC-stats-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-      .nxC-stat { background: #f8fafc; border-radius: 10px; padding: 11px; text-align: center; }
-      .nxC-stat-val { font-size: 18px; font-weight: 800; }
-      .nxC-stat-lbl { font-size: 8.5px; color: #94a3b8; text-transform: uppercase; margin-top: 3px; }
-      .nxC-tend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 8px; }
-      .nxC-alert { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; }
-      .nxC-alert:active { opacity: .7; }
-      .nxC-alert-ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-      .nxC-alert-body { flex: 1; min-width: 0; }
-      .nxC-alert-ttl { font-size: 12px; font-weight: 700; }
-      .nxC-alert-sub { font-size: 10px; color: #64748b; margin-top: 1px; }
-      .nxC-mini-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 5px; }
-      .nxC-rank { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: #f8fafc; border-radius: 10px; margin-bottom: 6px; }
-      .nxC-rank-pos { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
-      .nxC-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .nxC-qbtn { padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-      .nxC-empty { text-align: center; color: #cbd5e1; font-size: 12px; padding: 14px; }
-      @media (max-width: 480px) { #nx-centro { width: 100%; max-width: 100%; } }
-    `;
-    document.head.appendChild(s);
-  }
-
-  window.nxAbrirCentro = function() {
-    if (!esAdminCentro()) return; // Solo admin
-    inyectarCSS();
-    document.getElementById('nx-centro-overlay')?.remove();
-
-    const d = analizar();
-    const sem = d.pctCobranza >= 80 ? '#10b981' : d.pctCobranza >= 50 ? '#f59e0b' : '#ef4444';
-    const semE = d.pctCobranza >= 80 ? '🟢' : d.pctCobranza >= 50 ? '🟡' : '🔴';
-    const semT = d.pctCobranza >= 80 ? 'Excelente' : d.pctCobranza >= 50 ? 'Regular' : 'Atención';
-
-    const tendBadge = (v) => {
-      const up = v >= 0;
-      const col = up ? '#10b981' : '#ef4444';
-      const bg = up ? '#f0fdf4' : '#fef2f2';
-      const ar = up ? '↑' : '↓';
-      return `<span class="nxC-tend" style="color:${col};background:${bg}">${ar} ${Math.abs(v)}%</span>`;
-    };
-
-    const cerrar = "document.getElementById('nx-centro-overlay').remove();";
-    const goFact = `onclick="${cerrar}window.nav&&window.nav('facturas',null)"`;
-    const goCli = (id) => `onclick="${cerrar}window.verCliente&&window.verCliente('${id}')"`;
-    const goClientes = `onclick="${cerrar}window.nav&&window.nav('clientes',null)"`;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'nx-centro-overlay';
-    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
-
-    overlay.innerHTML = `
-      <div id="nx-centro">
-        <div class="nxC-head">
-          <div class="nxC-head-top">
-            <div>
-              <div style="font-size:18px;font-weight:800">Centro Inteligente</div>
-              <div style="font-size:11px;opacity:.7">Salud del negocio en tiempo real</div>
-            </div>
-            <button class="nxC-close" onclick="${cerrar}">✕</button>
-          </div>
-        </div>
-        <div class="nxC-body">
-
-          <!-- SALUD -->
-          <div class="nxC-card">
-            <div class="nxC-card-title">💚 Salud de cobranza</div>
-            <div class="nxC-gauge">
-              <div class="nxC-gauge-num" style="color:${sem}">${d.pctCobranza}%</div>
-              <div class="nxC-gauge-lbl">${semE} ${semT} · ${F(d.cobradoTotal)} de ${F(d.deudaTotal)}</div>
-            </div>
-            <div class="nxC-bar"><div class="nxC-bar-fill" style="width:${d.pctCobranza}%;background:${sem}"></div></div>
-            ${d.faltaCobrar > 0 ? `<div style="text-align:center;font-size:11px;color:#64748b;margin-top:8px">🎯 Faltan <strong style="color:${sem}">${F(d.faltaCobrar)}</strong> para el 100%</div>` : ''}
-          </div>
-
-          <!-- PULSO + TENDENCIA -->
-          <div class="nxC-card">
-            <div class="nxC-card-title">⚡ Pulso y tendencia</div>
-            <div class="nxC-stats-row-3">
-              <div class="nxC-stat">
-                <div class="nxC-stat-val" style="color:#10b981">${d.cobrosHoy}</div>
-                <div class="nxC-stat-lbl">Cobros hoy</div>
-              </div>
-              <div class="nxC-stat">
-                <div class="nxC-stat-val" style="color:#2563eb;font-size:14px">${Fk(d.montoHoy)}</div>
-                <div class="nxC-stat-lbl">RD$ hoy</div>
-              </div>
-              <div class="nxC-stat">
-                <div class="nxC-stat-val" style="color:#7c3aed;font-size:14px">${Fk(d.mesAct)}</div>
-                <div class="nxC-stat-lbl">RD$ mes</div>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 10px;background:#f8fafc;border-radius:8px">
-              <span style="font-size:11px;color:#64748b">📈 Esta semana vs anterior</span>
-              ${tendBadge(d.tendSemana)}
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding:8px 10px;background:#f8fafc;border-radius:8px">
-              <span style="font-size:11px;color:#64748b">📅 Este mes vs anterior</span>
-              ${tendBadge(d.tendMes)}
-            </div>
-          </div>
-
-          <!-- ALERTAS -->
-          <div class="nxC-card">
-            <div class="nxC-card-title">🔔 Alertas que requieren acción</div>
-
-            ${d.sinAgente.length ? `
-              <div class="nxC-alert" style="background:#fef2f2" ${goClientes}>
-                <div class="nxC-alert-ico" style="background:#fee2e2">👤</div>
-                <div class="nxC-alert-body">
-                  <div class="nxC-alert-ttl" style="color:#991b1b">${d.sinAgente.length} clientes SIN agente asignado</div>
-                  <div class="nxC-alert-sub">Asígnales un agente — toca para ver</div>
-                </div>
-                <span style="color:#dc2626">→</span>
-              </div>` : ''}
-
-            ${d.morosos.length ? `
-              <div class="nxC-alert" style="background:#fef2f2" ${goFact}>
-                <div class="nxC-alert-ico" style="background:#fee2e2">⚠️</div>
-                <div class="nxC-alert-body">
-                  <div class="nxC-alert-ttl" style="color:#991b1b">${d.morosos.length} en mora (+30 días)</div>
-                  <div class="nxC-alert-sub">${F(d.morosos.reduce((s,m)=>s+m.deuda,0))} pendiente</div>
-                </div>
-                <span style="color:#dc2626">→</span>
-              </div>` : ''}
-
-            ${d.pendientes ? `
-              <div class="nxC-alert" style="background:#fffbeb" ${goFact}>
-                <div class="nxC-alert-ico" style="background:#fef3c7">💰</div>
-                <div class="nxC-alert-body">
-                  <div class="nxC-alert-ttl" style="color:#92400e">${d.pendientes} facturas pendientes</div>
-                  <div class="nxC-alert-sub">${F(d.montoPendiente)} por cobrar</div>
-                </div>
-                <span style="color:#f59e0b">→</span>
-              </div>` : ''}
-
-            ${d.porVencer.length ? `
-              <div class="nxC-alert" style="background:#eff6ff">
-                <div class="nxC-alert-ico" style="background:#dbeafe">📅</div>
-                <div class="nxC-alert-body">
-                  <div class="nxC-alert-ttl" style="color:#1e40af">${d.porVencer.length} pólizas por vencer</div>
-                  <div class="nxC-alert-sub">Próximos 30 días</div>
-                </div>
-              </div>` : ''}
-
-            ${(!d.sinAgente.length && !d.morosos.length && !d.pendientes && !d.porVencer.length) ?
-              '<div class="nxC-empty">✅ Todo al día, sin alertas</div>' : ''}
-          </div>
-
-          <!-- RANKING AGENTES -->
-          ${d.ranking.length ? `
-          <div class="nxC-card">
-            <div class="nxC-card-title">🏆 Ranking de agentes (este mes)</div>
-            ${d.ranking.map((a, i) => {
-              const medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1);
-              const posBg = i === 0 ? '#fef3c7' : i === 1 ? '#f1f5f9' : '#fff7ed';
-              const efCol = a.ef >= 80 ? '#10b981' : a.ef >= 50 ? '#f59e0b' : '#ef4444';
-              return `
-                <div class="nxC-rank">
-                  <div class="nxC-rank-pos" style="background:${posBg}">${medalla}</div>
-                  <div style="flex:1">
-                    <div style="font-size:12px;font-weight:700;color:#1e293b">${a.nom}</div>
-                    <div style="font-size:10px;color:#94a3b8">${a.clientes} clientes · ${F(a.cobrado)} cobrado</div>
-                  </div>
-                  <span style="font-size:13px;font-weight:800;color:${efCol}">${a.ef}%</span>
-                </div>`;
-            }).join('')}
-          </div>` : ''}
-
-          <!-- TOP MOROSOS -->
-          ${d.morosos.length ? `
-          <div class="nxC-card">
-            <div class="nxC-card-title">🚨 Top morosos (prioridad)</div>
-            ${d.morosos.slice(0,5).map(m => `
-              <div class="nxC-mini-row" ${goCli(m.id)} style="cursor:pointer">
-                <span style="font-size:11px;font-weight:700;color:#1e293b">${m.nom}</span>
-                <span style="font-size:10px;color:#dc2626;font-weight:700">${m.dias}d · ${F(m.deuda)}</span>
-              </div>
-            `).join('')}
-            ${d.morosos.length > 5 ? `<div style="text-align:center;font-size:10px;color:#94a3b8;padding-top:4px">+ ${d.morosos.length-5} más</div>` : ''}
-          </div>` : ''}
-
-          <!-- RESUMEN -->
-          <div class="nxC-card">
-            <div class="nxC-card-title">📊 Resumen general</div>
-            <div class="nxC-stats-row-3">
-              <div class="nxC-stat">
-                <div class="nxC-stat-val" style="color:#1e293b">${d.totalActivos}</div>
-                <div class="nxC-stat-lbl">Activos</div>
-              </div>
-              <div class="nxC-stat">
-                <div class="nxC-stat-val" style="color:#10b981">${d.nuevosHoy}</div>
-                <div class="nxC-stat-lbl">Nuevos hoy</div>
-              </div>
-              <div class="nxC-stat">
-                <div class="nxC-stat-val" style="color:#7c3aed">${d.enProceso}</div>
-                <div class="nxC-stat-lbl">En proceso</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ACCIONES RÁPIDAS -->
-          <div class="nxC-card">
-            <div class="nxC-card-title">⚡ Acciones rápidas</div>
-            <div class="nxC-quick">
-              <button class="nxC-qbtn" style="background:#eff6ff;color:#2563eb" onclick="${cerrar}window.nav&&window.nav('facturas',null)">💰<span>Cobros</span></button>
-              <button class="nxC-qbtn" style="background:#f0fdf4;color:#10b981" onclick="${cerrar}window.nav&&window.nav('clientes',null)">👥<span>Clientes</span></button>
-            </div>
-          </div>
-
-        </div>
-      </div>`;
-
-    document.body.appendChild(overlay);
-  };
-
-  /* ─── Tarjeta del Centro en el Dashboard ─── */
-  function inyectarTarjetaCentro() {
-    try {
-      if (!esAdminCentro()) return; // Solo admin ve la tarjeta
-      const vDash = document.getElementById('v-dashboard');
-      if (!vDash) return;
-      if (document.getElementById('nx-centro-card')) return; // ya existe
-
-      let d;
-      try { d = analizar(); } catch(e) {
-        // Si analizar falla, usar valores por defecto para no bloquear
-        d = { pctCobranza: 0, sinAgente: [], morosos: [], pendientes: 0, porVencer: [], cobrosHoy: 0, mesAct: 0 };
-      }
-
-      const sem = d.pctCobranza >= 80 ? '#10b981' : d.pctCobranza >= 50 ? '#f59e0b' : '#ef4444';
-      const totalAlertas = (d.sinAgente.length ? 1 : 0) + (d.morosos.length ? 1 : 0) + (d.pendientes ? 1 : 0) + (d.porVencer.length ? 1 : 0);
-
-      const card = document.createElement('div');
-      card.id = 'nx-centro-card';
-      card.style.cssText = `
-        background: linear-gradient(135deg,#1e293b,#0f172a);
-        border-radius: 16px; padding: 18px; margin-bottom: 14px;
-        cursor: pointer; color: #fff;
-        box-shadow: 0 4px 20px rgba(15,23,42,.25);
-        transition: transform .15s, box-shadow .15s;
-      `;
-      card.onmouseover = () => { card.style.transform = 'translateY(-2px)'; };
-      card.onmouseout = () => { card.style.transform = ''; };
-      card.onclick = () => window.nxAbrirCentro();
-
-      card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🧠</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:16px;font-weight:800">Centro Inteligente</div>
-            <div style="font-size:11px;opacity:.7;margin-top:2px">Salud del negocio · Toca para abrir</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:26px;font-weight:800;color:${sem};line-height:1">${d.pctCobranza}%</div>
-            <div style="font-size:9px;opacity:.6">cobranza</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:14px">
-          ${totalAlertas ? `<div style="flex:1;background:rgba(239,68,68,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#fca5a5">${totalAlertas}</div><div style="font-size:8px;opacity:.7">alertas</div></div>` : ''}
-          <div style="flex:1;background:rgba(16,185,129,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#6ee7b7">${d.cobrosHoy}</div><div style="font-size:8px;opacity:.7">cobros hoy</div></div>
-          <div style="flex:1;background:rgba(59,130,246,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:13px;font-weight:800;color:#93c5fd">${Fk(d.mesAct)}</div><div style="font-size:8px;opacity:.7">RD$ mes</div></div>
-          ${d.sinAgente.length ? `<div style="flex:1;background:rgba(245,158,11,.15);border-radius:9px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#fcd34d">${d.sinAgente.length}</div><div style="font-size:8px;opacity:.7">sin agente</div></div>` : ''}
-        </div>
-      `;
-
-      // Insertar SIEMPRE al inicio del dashboard (garantizado)
-      vDash.insertBefore(card, vDash.firstChild);
-    } catch(e) {
-      console.warn('NEXUS Centro card:', e);
-    }
-  }
-
-  /* Hook nav para inyectar la tarjeta al entrar al dashboard */
-  function hookNavCentro() {
-    const orig = window.nav;
-    if (typeof orig !== 'function' || orig._nxCentroCard) return;
-    window.nav = function(vista) {
-      const r = orig.apply(this, arguments);
-      if (vista === 'dashboard' || vista === undefined) {
-        setTimeout(inyectarTarjetaCentro, 300);
-        setTimeout(inyectarTarjetaCentro, 900);
-      }
-      return r;
-    };
-    window.nav._nxCentroCard = true;
-  }
-
-  function hookToggle() {
-    if (window.toggleNotif && window.toggleNotif._nxCentro) return;
-    const origToggle = window.toggleNotif; // campana normal original
-    window.toggleNotif = function() {
-      if (esAdminCentro()) {
-        window.nxAbrirCentro(); // admin → Centro Inteligente
-      } else if (typeof origToggle === 'function') {
-        origToggle.apply(this, arguments); // agente → campana normal
-      }
-    };
-    window.toggleNotif._nxCentro = true;
-  }
-
-  /* Observer permanente: mantiene la tarjeta viva en el dashboard */
-  function vigilarDashboard() {
-    const vDash = document.getElementById('v-dashboard');
-    if (!vDash) { setTimeout(vigilarDashboard, 500); return; }
-
-    // Inyectar ahora
-    inyectarTarjetaCentro();
-
-    // Observar cambios: si el dashboard se redibuja y borra la tarjeta, reinyectar
-    const obs = new MutationObserver(() => {
-      // Solo reinyectar si el dashboard está visible y la tarjeta no está
-      if (vDash.classList.contains('on') && !document.getElementById('nx-centro-card')) {
-        setTimeout(inyectarTarjetaCentro, 50);
-      }
-    });
-    obs.observe(vDash, { childList: true });
-  }
-
-  function init() {
-    let tries = 0;
-    const go = () => {
-      tries++;
-      // Esperar solo a que exista el dashboard y la sesión (no a ST.clientes que puede fallar)
-      const haySesion = !!sessionStorage.getItem('nx_sesion');
-      const hayDash = !!document.getElementById('v-dashboard');
-      if (hayDash && haySesion) {
-        hookToggle();
-        hookNavCentro();
-        vigilarDashboard();
-        // Reintentos extra por si los datos cargan tarde
-        setTimeout(inyectarTarjetaCentro, 1500);
-        setTimeout(inyectarTarjetaCentro, 3500);
-        console.log('✅ NEXUS: Centro Super Smart activo · admin=' + esAdminCentro());
-      } else if (tries < 60) setTimeout(go, 400);
-    };
-    setTimeout(go, 600);
-  }
-
-  document.readyState === 'loading'
-    ? document.addEventListener('DOMContentLoaded', init, { once: true })
-    : init();
-})();
-
