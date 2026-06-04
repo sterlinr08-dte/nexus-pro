@@ -3952,7 +3952,8 @@ async function cargarTodo(){
     actualizarTicker();
     verificarAlertas();
     initMesSel();initComSel();initDGIISel();rAuto();rConfig();
-    toast('ok','Sistema listo · NEXUS PRO','Bienvenido, '+sesion.nom.split(' ')[0]);
+    // Toast de bienvenida solo en login real, no en cada recarga (ver más abajo)
+    if(!sessionStorage.getItem('nx_ya_saludo')){toast('ok','Sistema listo · NEXUS PRO','Bienvenido, '+sesion.nom.split(' ')[0]);sessionStorage.setItem('nx_ya_saludo','1');}
     logError('info','Sistema iniciado correctamente','Usuario: '+sesion.nom+' | Rol: '+sesion.rol,'Sistema');
     setTimeout(aplicarRolSidebar, 200);
     setTimeout(()=>{rNotifs();},500);
@@ -3962,8 +3963,11 @@ async function cargarTodo(){
     // Restaurar la pantalla exacta donde estaba el usuario (sin parpadeo).
     // Se hace de inmediato, sin timeout, para no mostrar el dashboard primero.
     const lastView=localStorage.getItem('nx_last_view');
+    window.__nxHtmlRestauroVista = true; // avisar al parche que ya restauramos
     if(lastView){
       nav(lastView,null);
+      // Si es solicitudes, renderizar de inmediato
+      if(lastView==='solicitudes'){setTimeout(()=>{if(window.nxRenderSolicitudes)window.nxRenderSolicitudes();},300);}
     }else{
       nav('dashboard',null);
     }
@@ -7269,7 +7273,6 @@ setTimeout(verificarAutoFacturacion, 5000);
 </script>
 <!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══ -->
 <script>
-  // Carga parches.js siempre fresco (sin caché) usando timestamp automático
   (function(){
     var s = document.createElement('script');
     s.src = 'parches.js?v=' + Date.now();
