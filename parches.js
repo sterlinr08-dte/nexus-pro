@@ -9444,3 +9444,203 @@
     : init();
 })();
 
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — ALERTAS DE CLIENTES MOROSOS (+30 días)
+   
+   Moroso = cliente con factura Pendiente/Parcial cuya fecha_emision
+   tiene más de 30 días.
+   
+   1. Tarjeta en el Dashboard (visible al entrar)
+   2. Notificación en la campana 🔔
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_ALERTAS_MOROSOS__) return;
+  window.__NEXUS_ALERTAS_MOROSOS__ = true;
+
+  const DIAS_MORA = 30;
+
+  function F(n) {
+    return 'RD$ ' + Math.round(n || 0).toLocaleString('es-DO');
+  }
+
+  /* Calcular lista de clientes morosos (+30 días) */
+  function getMorosos() {
+    const facturas = window.ST?.facturas || [];
+    const clientes = window.ST?.clientes || [];
+    const hoy = new Date();
+
+    // Agrupar facturas vencidas +30 días por cliente
+    const morososMap = {};
+    facturas.forEach(f => {
+      const estado = (f.estado || '').toLowerCase();
+      if (estado !== 'pendiente' && estado !== 'parcial') return;
+      if (!f.fecha_emision) return;
+
+      const dias = Math.floor((hoy - new Date(f.fecha_emision)) / 86400000);
+      if (dias <= DIAS_MORA) return;
+
+      const cli = clientes.find(c => String(c.id) === String(f.cliente_id));
+      if (!cli || !cli.activo) return;
+
+      if (!morososMap[cli.id]) {
+        morososMap[cli.id] = {
+          id: cli.id,
+          nom: cli.nom,
+          agente_id: cli.agente_id,
+          totalDeuda: 0,
+          diasMax: 0,
+          facturas: 0
+        };
+      }
+      morososMap[cli.id].totalDeuda += Number(f.total || 0);
+      morososMap[cli.id].diasMax = Math.max(morososMap[cli.id].diasMax, dias);
+      morososMap[cli.id].facturas++;
+    });
+
+    return Object.values(morososMap).sort((a, b) => b.diasMax - a.diasMax);
+  }
+
+  /* ─── 1. TARJETA EN EL DASHBOARD ─── */
+  function inyectarTarjetaDashboard() {
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash || !vDash.classList.contains('on')) return;
+    if (document.getElementById('nx-morosos-card')) return; // ya existe
+
+    const morosos = getMorosos();
+    if (!morosos.length) return; // no hay morosos, no mostrar nada
+
+    const totalDeuda = morosos.reduce((s, m) => s + m.totalDeuda, 0);
+
+    // Crear la tarjeta
+    const card = document.createElement('div');
+    card.id = 'nx-morosos-card';
+    card.style.cssText = `
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border: 1.5px solid #fecaca;
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin: 0 0 16px 0;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+    `;
+    card.onmouseover = () => { card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 20px rgba(220,38,38,.12)'; };
+    card.onmouseout = () => { card.style.transform = ''; card.style.boxShadow = ''; };
+    card.onclick = () => { if (typeof window.nav === 'function') window.nav('facturas', null); };
+
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:48px;height:48px;border-radius:12px;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">⚠️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:800;color:#991b1b">${morosos.length} cliente${morosos.length === 1 ? '' : 's'} en mora (+30 días)</div>
+          <div style="font-size:12px;color:#b91c1c;margin-top:2px">Total pendiente: <strong>${F(totalDeuda)}</strong> · Toca para ver</div>
+        </div>
+        <div style="color:#dc2626;font-size:20px">→</div>
+      </div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+        ${morosos.slice(0, 3).map(m => `
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.6);border-radius:8px;padding:7px 10px">
+            <span style="font-size:11px;font-weight:700;color:#1e293b">${m.nom}</span>
+            <span style="font-size:10px;color:#dc2626;font-weight:700">${m.diasMax} días · ${F(m.totalDeuda)}</span>
+          </div>
+        `).join('')}
+        ${morosos.length > 3 ? `<div style="text-align:center;font-size:10px;color:#b91c1c;font-weight:600;padding-top:2px">+ ${morosos.length - 3} más</div>` : ''}
+      </div>
+    `;
+
+    // Insertar al principio de la vista dashboard (después de quick actions si existen)
+    const primerHijo = vDash.querySelector('.dash-grid, .kpi-grid, .nc, [class*="grid"]');
+    if (primerHijo) {
+      primerHijo.insertAdjacentElement('beforebegin', card);
+    } else {
+      vDash.insertBefore(card, vDash.firstChild);
+    }
+  }
+
+  /* ─── 2. NOTIFICACIÓN EN LA CAMPANA ─── */
+  function hookNotifs() {
+    const orig = window.rNotifs;
+    if (typeof orig !== 'function' || orig._nxMorosos) return;
+
+    window.rNotifs = function() {
+      const r = orig.apply(this, arguments);
+
+      // Agregar morosos a la lista de notificaciones
+      try {
+        const morosos = getMorosos();
+        if (morosos.length && Array.isArray(window._notifs)) {
+          const totalDeuda = morosos.reduce((s, m) => s + m.totalDeuda, 0);
+          // Insertar al inicio (prioridad alta)
+          window._notifs.unshift({
+            id: 'morosos_30',
+            icon: '⚠️',
+            ttl: `${morosos.length} cliente${morosos.length === 1 ? '' : 's'} en mora (+30 días)`,
+            sub: `${F(totalDeuda)} pendiente · Toca para ver`,
+            ts: null,
+            tipo: 'cobros',
+            nav: { tipo: 'facturas' }
+          });
+
+          // Actualizar el badge de la campana
+          const badge = document.getElementById('notifBadge');
+          const noLeidas = window._notifs.filter(n => !(window._notifLeidas || []).includes(n.id));
+          if (badge) {
+            if (noLeidas.length > 0) { badge.style.display = 'flex'; badge.textContent = noLeidas.length; }
+          }
+
+          // Re-renderizar la lista de notificaciones si el panel está construido
+          const list = document.getElementById('notifList');
+          if (list && typeof window.renderNotifList === 'function') {
+            try { window.renderNotifList(); } catch(e) {}
+          }
+        }
+      } catch(e) { console.warn('NEXUS morosos notif:', e); }
+
+      return r;
+    };
+    window.rNotifs._nxMorosos = true;
+  }
+
+  /* ─── Hook a nav() para inyectar tarjeta al entrar al dashboard ─── */
+  function hookNav() {
+    const orig = window.nav;
+    if (typeof orig !== 'function' || orig._nxMorosos) return;
+    window.nav = function(vista) {
+      const r = orig.apply(this, arguments);
+      if (vista === 'dashboard') {
+        setTimeout(inyectarTarjetaDashboard, 300);
+        setTimeout(inyectarTarjetaDashboard, 800);
+      }
+      return r;
+    };
+    window.nav._nxMorosos = true;
+  }
+
+  /* ─── INIT ─── */
+  function init() {
+    let tries = 0;
+    const go = () => {
+      tries++;
+      const listo = window.ST?.facturas && window.ST?.clientes && typeof window.rNotifs === 'function';
+      if (listo) {
+        hookNotifs();
+        hookNav();
+        // Aplicar ya si estamos en dashboard
+        inyectarTarjetaDashboard();
+        // Refrescar notifs para que incluya morosos
+        try { window.rNotifs(); } catch(e) {}
+        console.log('✅ NEXUS: Alertas de morosos activas');
+      } else if (tries < 40) {
+        setTimeout(go, 500);
+      }
+    };
+    setTimeout(go, 1000);
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
+})();
+
