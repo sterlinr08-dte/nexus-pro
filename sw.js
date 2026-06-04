@@ -1,22 +1,31 @@
-// NEXUS PRO v7 — Service Worker
+// NEXUS PRO v8 — Service Worker
 // Permite uso offline y mejora velocidad de carga
 
-const CACHE_NAME = 'nexus-pro-v7';
+const CACHE_NAME = 'nexus-pro-v8';
 const ASSETS = [
   '/',
   '/index.html',
+];
+// Opcionales: se cachean si existen, no rompen si faltan
+const ASSETS_OPCIONALES = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
   '/icon-apple-180.png',
 ];
 
-// Instalar: cachear recursos esenciales
+// Instalar: cachear recursos esenciales (tolerante a fallos)
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(async cache => {
+      // Esenciales: si fallan, igual continuamos
+      try { await cache.addAll(ASSETS); } catch(err) { console.log('SW: algunos esenciales fallaron', err); }
+      // Opcionales: uno por uno, ignorando los que no existen
+      await Promise.all(ASSETS_OPCIONALES.map(url =>
+        cache.add(url).catch(() => console.log('SW: opcional no encontrado:', url))
+      ));
+      return self.skipWaiting();
+    })
   );
 });
 
@@ -33,16 +42,17 @@ self.addEventListener('activate', e => {
 
 // Fetch: Network first, cache fallback
 self.addEventListener('fetch', e => {
-  // Solo manejar requests GET del mismo origen
   if(e.request.method !== 'GET') return;
-  
-  // Para Supabase API: solo network (datos siempre frescos)
+
+  // Supabase API: solo network (datos siempre frescos)
   if(e.request.url.includes('supabase.co')) return;
+
+  // parches.js: siempre network (nunca cachear, para que cargue lo último)
+  if(e.request.url.includes('parches.js')) return;
 
   e.respondWith(
     fetch(e.request)
       .then(resp => {
-        // Si la respuesta es válida, actualizamos el cache
         if(resp && resp.status === 200 && resp.type === 'basic') {
           const respClone = resp.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, respClone));
@@ -50,7 +60,6 @@ self.addEventListener('fetch', e => {
         return resp;
       })
       .catch(() => {
-        // Sin red: usar cache
         return caches.match(e.request)
           .then(cached => cached || caches.match('/index.html'));
       })
