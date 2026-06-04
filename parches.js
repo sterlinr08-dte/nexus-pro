@@ -9468,8 +9468,15 @@
   // Solo el administrador puede ver el Centro Inteligente
   function esAdminCentro() {
     try {
-      const s = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
-      return (s?.rol || '').toLowerCase() === 'admin';
+      // Leer de sessionStorage (más confiable que la variable global)
+      const s = sessionStorage.getItem('nx_sesion');
+      if (s) {
+        const ses = JSON.parse(s);
+        return (ses?.rol || '').toLowerCase() === 'admin';
+      }
+      // Fallback: variable global window.sesion
+      const sg = window.sesion || (typeof sesion !== 'undefined' ? sesion : null);
+      return (sg?.rol || '').toLowerCase() === 'admin';
     } catch(_) { return false; }
   }
 
@@ -9886,7 +9893,11 @@
         hookToggle();
         hookNavCentro();
         inyectarTarjetaCentro();
-        console.log('✅ NEXUS: Centro Super Smart activo');
+        // Reintentar la inyección varias veces (el dashboard ya está visible al cargar)
+        setTimeout(inyectarTarjetaCentro, 1500);
+        setTimeout(inyectarTarjetaCentro, 3000);
+        setTimeout(inyectarTarjetaCentro, 5000);
+        console.log('✅ NEXUS: Centro Super Smart activo · admin=' + esAdminCentro());
       } else if (tries < 40) setTimeout(go, 500);
     };
     setTimeout(go, 1000);
