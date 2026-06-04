@@ -7211,8 +7211,92 @@
 
   let _historial = []; // mensajes de la conversación actual
 
+  // ═══ PERSISTENCIA EN NAVEGADOR ═══
+  const NX_CHAT_ACTUAL = 'nx_smart_chat_actual';
+  const NX_CHAT_HISTORIAL = 'nx_smart_historial';
+
+  // Guardar la conversación actual (se mantiene al recargar)
+  function guardarChatActual() {
+    try {
+      // Guardar solo mensajes reales (no los de "cargando")
+      const limpio = _historial.filter(m => m.tipo !== 'cargando');
+      localStorage.setItem(NX_CHAT_ACTUAL, JSON.stringify(limpio));
+    } catch(e) {}
+  }
+
+  // Cargar la conversación actual al abrir
+  function cargarChatActual() {
+    try {
+      const s = localStorage.getItem(NX_CHAT_ACTUAL);
+      if (s) _historial = JSON.parse(s) || [];
+    } catch(e) { _historial = []; }
+  }
+
+  // Archivar la conversación actual al historial (cuando empiezas una nueva)
+  function archivarChat() {
+    try {
+      const limpio = _historial.filter(m => m.tipo !== 'cargando' && m.tipo !== 'error');
+      if (!limpio.length) return; // no archivar vacíos
+      const hist = JSON.parse(localStorage.getItem(NX_CHAT_HISTORIAL) || '[]');
+      // Tomar la primera pregunta como título
+      const primera = limpio.find(m => m.tipo === 'pregunta');
+      hist.unshift({
+        fecha: new Date().toISOString(),
+        titulo: primera ? primera.texto.slice(0, 50) : 'Conversación',
+        mensajes: limpio
+      });
+      // Mantener solo las últimas 20 conversaciones
+      const recortado = hist.slice(0, 20);
+      localStorage.setItem(NX_CHAT_HISTORIAL, JSON.stringify(recortado));
+    } catch(e) {}
+  }
+
+  // Ver el historial de conversaciones pasadas
+  window.nxSmartHistorial = function() {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(NX_CHAT_HISTORIAL) || '[]'); } catch(e) {}
+
+    const modal = document.getElementById('nxSmartModal');
+    if (!modal) return;
+
+    const lista = hist.length === 0
+      ? '<div style="text-align:center;color:#94a3b8;padding:30px;font-size:13px">No hay conversaciones guardadas todavía</div>'
+      : hist.map((c, i) => {
+          const fecha = new Date(c.fecha).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+          return `<div onclick="window.nxSmartCargarVieja(${i})" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer">
+            <div style="font-size:12px;font-weight:700;color:#1e293b">${c.titulo}</div>
+            <div style="font-size:10px;color:#94a3b8;margin-top:3px">📅 ${fecha} · ${c.mensajes.length} mensajes</div>
+          </div>`;
+        }).join('');
+
+    const cont = document.getElementById('nxSmartMensajes');
+    if (cont) {
+      cont.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-size:13px;font-weight:800;color:#1e293b">📚 Conversaciones guardadas</span>
+          <button onclick="window.nxAbrirSmart()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;font-weight:700">+ Nueva</button>
+        </div>
+        ${lista}`;
+    }
+  };
+
+  // Cargar una conversación vieja del historial
+  window.nxSmartCargarVieja = function(idx) {
+    try {
+      const hist = JSON.parse(localStorage.getItem(NX_CHAT_HISTORIAL) || '[]');
+      if (hist[idx]) {
+        _historial = hist[idx].mensajes || [];
+        guardarChatActual();
+        const modal = document.getElementById('nxSmartModal');
+        if (modal) renderModal(modal);
+      }
+    } catch(e) {}
+  };
+
+
   // ═══ ABRIR MODAL ═══
   window.nxAbrirSmart = function() {
+    cargarChatActual(); // recuperar conversación guardada
     let modal = document.getElementById('nxSmartModal');
     if (!modal) {
       modal = document.createElement('div');
@@ -7275,6 +7359,7 @@
         <div class="mt" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1e40af,#7c3aed);color:#fff;border-radius:0">
           <button class="btn bghost bsm" style="color:#fff" onclick="document.getElementById('nxSmartModal').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
           <span style="flex:1;text-align:center;color:#fff"><i class="ti ti-sparkles"></i> NEXUS SMART</span>
+          <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartHistorial()" title="Ver conversaciones guardadas"><i class="ti ti-history"></i></button>
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartLimpiar()" title="Nueva conversación"><i class="ti ti-refresh"></i></button>
         </div>
         <div id="nxSmartMensajes" style="flex:1;overflow-y:auto;padding:14px;background:#f8fafc">
@@ -7294,7 +7379,9 @@
   }
 
   window.nxSmartLimpiar = function() {
+    archivarChat(); // guardar la conversación actual al historial
     _historial = [];
+    guardarChatActual(); // limpiar la guardada
     const modal = document.getElementById('nxSmartModal');
     if (modal) renderModal(modal);
   };
@@ -7352,11 +7439,14 @@
     }
     
     if (modal) renderModal(modal);
+    guardarChatActual(); // persistir tras cada respuesta
   };
 
   // ═══ INYECTAR BOTÓN EN DASHBOARD ═══
   function inyectarBoton() {
     if (document.getElementById('qaNexusSmart')) return true;
+    // Solo admin ve el botón
+    if (!esAdminSmart()) return true;
     // Buscar grid de Dashboard
     const dash = document.querySelector('#v-dashboard, .v-dashboard');
     if (!dash) return false;
@@ -7376,14 +7466,23 @@
     btn.setAttribute('data-go', 'smart');
     btn.onclick = () => window.nxAbrirSmart();
     btn.innerHTML = `
-      <span class="qa-i" style="background:linear-gradient(135deg,#7c3aed,#2563eb);box-shadow:0 4px 14px rgba(124,58,237,0.4)">
-        <i class="ti ti-sparkles" style="color:#fff"></i>
+      <span class="qa-i" style="background:#fff;box-shadow:0 0 0 2px rgba(124,58,237,0.25), 0 4px 18px rgba(124,58,237,0.45)">
+        <i class="ti ti-sparkles" style="color:#7c3aed"></i>
       </span>
       <span class="qa-l">NEXUS Smart</span>
       <span style="position:absolute;top:6px;right:8px;background:#7c3aed;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px">IA</span>
     `;
     qaCont.appendChild(btn);
     return true;
+  }
+
+  // Solo el administrador puede ver el botón NEXUS Smart
+  function esAdminSmart() {
+    try {
+      const s = sessionStorage.getItem('nx_sesion');
+      if (s) return (JSON.parse(s)?.rol || '').toLowerCase() === 'admin';
+      return false;
+    } catch(_) { return false; }
   }
 
   function init() {
@@ -7402,3 +7501,225 @@
     init();
   }
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — CIERRE DE MES (con histórico)
+   
+   Botón en el dashboard (solo admin) que abre una ventana con:
+   - Resumen del mes actual (cobrado, cobros, pendiente, nuevos)
+   - Cobro por agente
+   - Histórico de meses con comparativa
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_CIERRE_MES__) return;
+  window.__NEXUS_CIERRE_MES__ = true;
+
+  const F = n => 'RD$ ' + Math.round(n || 0).toLocaleString('es-DO');
+  const MESES_NOM = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  function esAdminCierre() {
+    try {
+      const s = sessionStorage.getItem('nx_sesion');
+      return s ? (JSON.parse(s)?.rol || '').toLowerCase() === 'admin' : false;
+    } catch(_) { return false; }
+  }
+
+  function nomMes(ym) {
+    // ym = "2026-06" → "Junio 2026"
+    const [a, m] = ym.split('-');
+    return MESES_NOM[parseInt(m) - 1] + ' ' + a;
+  }
+
+  /* Calcular datos del cierre por mes desde ST */
+  // Dado una fecha, devuelve a qué "período de cierre" pertenece (corte día 20)
+  // Período va del 20 del mes anterior al 19 del mes actual.
+  // Si el cobro es día >=20, cuenta para el mes SIGUIENTE.
+  function periodoDeCierre(fechaStr) {
+    const f = new Date(fechaStr + 'T00:00:00');
+    let anio = f.getFullYear();
+    let mes = f.getMonth(); // 0-11
+    if (f.getDate() >= 20) {
+      // Pasa al mes siguiente
+      mes += 1;
+      if (mes > 11) { mes = 0; anio += 1; }
+    }
+    // Devolver "YYYY-MM" del período
+    return anio + '-' + String(mes + 1).padStart(2, '0');
+  }
+
+  function calcularHistorico() {
+    const abonos = window.ST?.abonos || [];
+    const agentes = window.ST?.agentes || [];
+    const clientes = window.ST?.clientes || [];
+
+    // Agrupar cobros por PERÍODO DE CIERRE (20 al 19)
+    const meses = {};
+    abonos.forEach(a => {
+      if (!a.fecha) return;
+      const ym = periodoDeCierre(a.fecha); // período según corte día 20
+      if (!meses[ym]) meses[ym] = { mes: ym, total: 0, num: 0, porAgente: {} };
+      meses[ym].total += Number(a.monto || 0);
+      meses[ym].num++;
+      const cli = clientes.find(c => String(c.id) === String(a.cliente_id));
+      if (cli?.agente_id) {
+        const ag = agentes.find(x => String(x.id) === String(cli.agente_id));
+        const nomA = ag?.nom || 'Sin agente';
+        meses[ym].porAgente[nomA] = (meses[ym].porAgente[nomA] || 0) + Number(a.monto || 0);
+      }
+    });
+
+    return Object.values(meses).sort((a, b) => b.mes.localeCompare(a.mes));
+  }
+
+  window.nxAbrirCierre = function() {
+    if (!esAdminCierre()) return;
+
+    const historico = calcularHistorico();
+    const facturas = window.ST?.facturas || [];
+    const clientes = window.ST?.clientes || [];
+
+    const pendientes = facturas.filter(f => {
+      const e = (f.estado || '').toLowerCase();
+      return e === 'pendiente' || e === 'parcial';
+    });
+    const montoPendiente = pendientes.reduce((s, f) => s + Number(f.total || 0), 0);
+
+    const mesActual = historico[0] || { total: 0, num: 0, porAgente: {} };
+    const mesAnterior = historico[1] || { total: 0 };
+    const tend = mesAnterior.total > 0 ? Math.round((mesActual.total - mesAnterior.total) / mesAnterior.total * 100) : (mesActual.total > 0 ? 100 : 0);
+
+    const hoy = new Date();
+    const ymActual = periodoDeCierre(hoy.toISOString().slice(0, 10));
+    const nuevosMes = clientes.filter(c => c.created_at && periodoDeCierre(c.created_at.slice(0, 10)) === ymActual).length;
+
+    // CSS
+    if (!document.getElementById('nx-cierre-css')) {
+      const st = document.createElement('style');
+      st.id = 'nx-cierre-css';
+      st.textContent = `
+        #nx-cierre-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:99990;display:flex;justify-content:center;align-items:flex-start;padding:20px;overflow-y:auto}
+        #nx-cierre-box{background:#f8fafc;border-radius:18px;max-width:560px;width:100%;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+        .nxCi-head{background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:20px;display:flex;justify-content:space-between;align-items:center}
+        .nxCi-body{padding:16px}
+        .nxCi-card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+        .nxCi-title{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+        .nxCi-big{font-size:34px;font-weight:800;color:#059669;line-height:1}
+        .nxCi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .nxCi-stat{background:#f8fafc;border-radius:10px;padding:12px;text-align:center}
+        .nxCi-stat b{font-size:18px;font-weight:800;display:block}
+        .nxCi-stat span{font-size:9px;color:#94a3b8;text-transform:uppercase}
+        .nxCi-mes{display:flex;justify-content:space-between;align-items:center;padding:11px;background:#f8fafc;border-radius:10px;margin-bottom:7px}
+        @media(max-width:480px){#nx-cierre-box{margin:0}}
+      `;
+      document.head.appendChild(st);
+    }
+
+    const cerrar = "document.getElementById('nx-cierre-overlay').remove()";
+
+    const overlay = document.createElement('div');
+    overlay.id = 'nx-cierre-overlay';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+      <div id="nx-cierre-box">
+        <div class="nxCi-head">
+          <div>
+            <div style="font-size:18px;font-weight:800">📊 Cierre de Mes</div>
+            <div style="font-size:12px;opacity:.85">${nomMes(ymActual)}</div>
+            <div style="font-size:10px;opacity:.7;margin-top:2px">📆 Período: 20 al 19 de cada mes</div>
+          </div>
+          <button onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+        </div>
+        <div class="nxCi-body">
+
+          <div class="nxCi-card">
+            <div class="nxCi-title">💰 Cobrado este mes</div>
+            <div class="nxCi-big">${F(mesActual.total)}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:6px">
+              ${mesActual.num} cobros ·
+              <span style="color:${tend >= 0 ? '#10b981' : '#ef4444'};font-weight:700">${tend >= 0 ? '↑' : '↓'} ${Math.abs(tend)}%</span>
+              vs mes anterior
+            </div>
+          </div>
+
+          <div class="nxCi-card">
+            <div class="nxCi-title">📈 Resumen</div>
+            <div class="nxCi-grid">
+              <div class="nxCi-stat"><b style="color:#ef4444">${F(montoPendiente).replace('RD$ ','')}</b><span>Pendiente RD$</span></div>
+              <div class="nxCi-stat"><b style="color:#f59e0b">${pendientes.length}</b><span>Facturas pend.</span></div>
+              <div class="nxCi-stat"><b style="color:#10b981">${nuevosMes}</b><span>Clientes nuevos</span></div>
+              <div class="nxCi-stat"><b style="color:#2563eb">${mesActual.num}</b><span>Cobros</span></div>
+            </div>
+          </div>
+
+          ${Object.keys(mesActual.porAgente).length ? `
+          <div class="nxCi-card">
+            <div class="nxCi-title">👥 Cobro por agente (este mes)</div>
+            ${Object.entries(mesActual.porAgente).sort((a,b)=>b[1]-a[1]).map(([nom, monto]) => `
+              <div class="nxCi-mes">
+                <span style="font-size:12px;font-weight:700;color:#1e293b">${nom}</span>
+                <span style="font-size:13px;font-weight:800;color:#059669">${F(monto)}</span>
+              </div>
+            `).join('')}
+          </div>` : ''}
+
+          <div class="nxCi-card">
+            <div class="nxCi-title">📅 Histórico de meses</div>
+            ${historico.map(m => `
+              <div class="nxCi-mes">
+                <span style="font-size:12px;font-weight:700;color:#1e293b">${nomMes(m.mes)}</span>
+                <span style="font-size:11px;color:#64748b">${m.num} cobros</span>
+                <span style="font-size:13px;font-weight:800;color:#059669">${F(m.total)}</span>
+              </div>
+            `).join('')}
+          </div>
+
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+  };
+
+  /* Inyectar botón en el dashboard */
+  function inyectarBotonCierre() {
+    if (!esAdminCierre()) return true;
+    if (document.getElementById('qaCierreMes')) return true;
+    const dash = document.querySelector('#v-dashboard, .v-dashboard');
+    if (!dash) return false;
+    const qaCont = dash.querySelector('.qaGrid, .qa-grid, [class*="qa"]');
+    if (!qaCont) return false;
+    const ref = qaCont.querySelector('.qa');
+    if (!ref) return false;
+
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaCierreMes';
+    btn.style.cssText = 'cursor:pointer;position:relative';
+    btn.onclick = () => window.nxAbrirCierre();
+    btn.innerHTML = `
+      <span class="qa-i" style="background:#fff;box-shadow:0 0 0 2px rgba(5,150,105,0.25), 0 4px 18px rgba(5,150,105,0.45)">
+        <i class="ti ti-calendar-stats" style="color:#059669"></i>
+      </span>
+      <span class="qa-l">Cierre de Mes</span>
+    `;
+    qaCont.appendChild(btn);
+    return true;
+  }
+
+  function init() {
+    let intentos = 0;
+    const tryInit = () => {
+      intentos++;
+      if (inyectarBotonCierre()) return;
+      if (intentos < 80) setTimeout(tryInit, 250);
+    };
+    setTimeout(tryInit, 800);
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
+})();
+
