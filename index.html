@@ -6052,8 +6052,8 @@ async function rAuto(){
     const cfgSupa=await cargarConfigSupabase('auto_facturacion');
     if(cfgSupa){Object.assign(autoCfg,cfgSupa);localStorage.setItem('nx_auto',JSON.stringify(autoCfg));}
   }catch(e){}
-  document.getElementById('autoDia').value=autoCfg.dia;
-  document.getElementById('autoHora').value=autoCfg.hora;
+  const _adEl=document.getElementById('autoDia');if(_adEl)_adEl.value=autoCfg.dia;
+  const _ahEl=document.getElementById('autoHora');if(_ahEl)_ahEl.value=autoCfg.hora;
   const waEl=document.getElementById('autoWa');
   if(waEl)waEl.value=autoCfg.wa;
   const dcEl=document.getElementById('autoDiasCustom');
@@ -6063,7 +6063,7 @@ async function rAuto(){
   const tplEl2=document.getElementById('waPlantilla');
   if(tplEl2)tplEl2.value=autoCfg.tpl||'';
   if(typeof updWA==='function')updWA();
-  setTimeout(rHistorialAuto,100);const now=new Date(),dia=autoCfg.dia;const prox=[];for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()+i+(now.getDate()>=dia?1:0),dia);if(d>now)prox.push(`${MESES[d.getMonth()]} ${d.getFullYear()}`);}document.getElementById('proxE').innerHTML=prox.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--bg3);border-radius:var(--r6);border:1px solid rgba(0,229,199,.06);margin-bottom:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:${i===0?'var(--c1)':'var(--tx3)'};${i===0?'box-shadow:0 0 6px var(--c1)':''}"></div><span style="font-size:11px;font-family:var(--mono)">${p}</span></div><span style="font-size:9px;color:var(--tx3)">Día ${autoCfg.dia} · ${autoCfg.hora}</span></div>`).join('');}
+  setTimeout(rHistorialAuto,100);const now=new Date(),dia=autoCfg.dia;const prox=[];for(let i=0;i<3;i++){const d=new Date(now.getFullYear(),now.getMonth()+i+(now.getDate()>=dia?1:0),dia);if(d>now)prox.push(`${MESES[d.getMonth()]} ${d.getFullYear()}`);}const _proxEl=document.getElementById('proxE');if(_proxEl)_proxEl.innerHTML=prox.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--bg3);border-radius:var(--r6);border:1px solid rgba(0,229,199,.06);margin-bottom:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:50%;background:${i===0?'var(--c1)':'var(--tx3)'};${i===0?'box-shadow:0 0 6px var(--c1)':''}"></div><span style="font-size:11px;font-family:var(--mono)">${p}</span></div><span style="font-size:9px;color:var(--tx3)">Día ${autoCfg.dia} · ${autoCfg.hora}</span></div>`).join('');}
 
 // ── USUARIOS ─────────────────────────────────────────────────────────────────
 let _auditPag=1;
