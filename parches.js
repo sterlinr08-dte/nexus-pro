@@ -2034,17 +2034,49 @@
   // El "Dinero en Mano" del agente vuelve a subir automáticamente.
   window.nxAnularEntregaAdmin = async function(id) {
     if (!esAdmin()) return;
-    if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro del cliente NO se afecta (factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto', { ok: 'Sí, anular', tipo: 'danger' }))) return;
+    if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro se revierte: la factura del cliente vuelve a PENDIENTE\n• El abono asociado se elimina', { ok: 'Sí, anular y revertir', tipo: 'danger' }))) return;
     const api = getAPI();
     if (!api?.del) {
       if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.del');
       return;
     }
     try {
+      // 1. Obtener la entrega para saber a qué cliente y monto revertir
+      const entregas = await api.get('entregas_admin', `id=eq.${id}&select=*`);
+      const entrega = entregas?.[0];
+
+      // 2. Si tiene cliente asociado, revertir el cobro
+      const clienteId = entrega?.cobro_id || entrega?.cliente_id;
+      if (entrega && clienteId) {
+        const cli = (st().clientes || []).find(c => String(c.id) === String(clienteId));
+        if (cli) {
+          // Restar el monto del pagado del cliente
+          const nuevoPagado = Math.max(0, (cli.pagado || 0) - (entrega.monto || 0));
+          await api.patch('clientes', `id=eq.${clienteId}`, { pagado: nuevoPagado });
+          cli.pagado = nuevoPagado;
+
+          // Eliminar el abono asociado (mismo monto, mismo cliente, depósito directo)
+          try {
+            const abonos = await api.get('abonos', `cliente_id=eq.${clienteId}&order=fecha.desc&limit=20`);
+            const abonoMatch = (abonos || []).find(a =>
+              Number(a.monto) === Number(entrega.monto) &&
+              (a.metodo === entrega.metodo || a.comprobante_url === entrega.comprobante_url)
+            );
+            if (abonoMatch) {
+              await api.del('abonos', `id=eq.${abonoMatch.id}`);
+            }
+          } catch(e) { console.warn('No se encontró abono para eliminar:', e); }
+        }
+      }
+
+      // 3. Eliminar la entrega
       await api.del('entregas_admin', `id=eq.${id}`);
-      if (typeof window.toast === 'function') window.toast('ok', 'Anulada', 'La entrega fue eliminada. Investiga con el agente.');
-      if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id}`, 'Cobros');
+
+      if (typeof window.toast === 'function') window.toast('ok', 'Anulada y revertida', clienteId ? 'El cobro se revirtió. La factura volvió a pendiente.' : 'La entrega fue eliminada.');
+      if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id} · Cobro revertido`, 'Cobros');
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
+      if (typeof window.rCob === 'function') window.rCob();
+      if (typeof window.rDash === 'function') window.rDash();
       if (document.getElementById('nxDetallesCobroV1')?.style.display !== 'none') await renderDetallesCobro();
     } catch (e) {
       console.error('Error anulando entrega:', e);
