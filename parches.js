@@ -9804,6 +9804,7 @@
   /* ─── Tarjeta del Centro en el Dashboard ─── */
   function inyectarTarjetaCentro() {
     try {
+      if (!esAdminCentro()) return; // Solo admin ve la tarjeta
       const vDash = document.getElementById('v-dashboard');
       if (!vDash) return;
       if (document.getElementById('nx-centro-card')) return; // ya existe
@@ -9885,22 +9886,42 @@
     window.toggleNotif._nxCentro = true;
   }
 
+  /* Observer permanente: mantiene la tarjeta viva en el dashboard */
+  function vigilarDashboard() {
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) { setTimeout(vigilarDashboard, 500); return; }
+
+    // Inyectar ahora
+    inyectarTarjetaCentro();
+
+    // Observar cambios: si el dashboard se redibuja y borra la tarjeta, reinyectar
+    const obs = new MutationObserver(() => {
+      // Solo reinyectar si el dashboard está visible y la tarjeta no está
+      if (vDash.classList.contains('on') && !document.getElementById('nx-centro-card')) {
+        setTimeout(inyectarTarjetaCentro, 50);
+      }
+    });
+    obs.observe(vDash, { childList: true });
+  }
+
   function init() {
     let tries = 0;
     const go = () => {
       tries++;
-      if (window.ST?.clientes && typeof window.toggleNotif === 'function') {
+      // Esperar solo a que exista el dashboard y la sesión (no a ST.clientes que puede fallar)
+      const haySesion = !!sessionStorage.getItem('nx_sesion');
+      const hayDash = !!document.getElementById('v-dashboard');
+      if (hayDash && haySesion) {
         hookToggle();
         hookNavCentro();
-        inyectarTarjetaCentro();
-        // Reintentar la inyección varias veces (el dashboard ya está visible al cargar)
+        vigilarDashboard();
+        // Reintentos extra por si los datos cargan tarde
         setTimeout(inyectarTarjetaCentro, 1500);
-        setTimeout(inyectarTarjetaCentro, 3000);
-        setTimeout(inyectarTarjetaCentro, 5000);
+        setTimeout(inyectarTarjetaCentro, 3500);
         console.log('✅ NEXUS: Centro Super Smart activo · admin=' + esAdminCentro());
-      } else if (tries < 40) setTimeout(go, 500);
+      } else if (tries < 60) setTimeout(go, 400);
     };
-    setTimeout(go, 1000);
+    setTimeout(go, 600);
   }
 
   document.readyState === 'loading'
