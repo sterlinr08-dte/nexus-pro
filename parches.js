@@ -7549,6 +7549,17 @@
 
   // ── Restaurar vista y tab con prioridad máxima ──
   function restaurarVista() {
+    // Si el HTML ya restauró la vista (versión nueva), no duplicar
+    if (window.__nxHtmlRestauroVista) {
+      // Solo asegurar que solicitudes se renderice si quedó en cargando
+      const lv = localStorage.getItem('nx_last_view');
+      if (lv === 'solicitudes') {
+        setTimeout(() => {
+          if (typeof window.nxRenderSolicitudes === 'function') window.nxRenderSolicitudes();
+        }, 300);
+      }
+      return;
+    }
     const lastView = localStorage.getItem('nx_last_view');
     if (!lastView || lastView === 'dashboard') return; // Dashboard es el default, no forzar
 
