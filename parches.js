@@ -9444,197 +9444,361 @@
     : init();
 })();
 
-
 /* ════════════════════════════════════════════════════════════════
-   NEXUS PRO — ALERTAS DE CLIENTES MOROSOS (+30 días)
+   NEXUS PRO — CENTRO INTELIGENTE SUPER SMART (v2)
    
-   Moroso = cliente con factura Pendiente/Parcial cuya fecha_emision
-   tiene más de 30 días.
-   
-   1. Tarjeta en el Dashboard (visible al entrar)
-   2. Notificación en la campana 🔔
+   Panel completo al tocar la campana 🔔:
+   - Salud de cobranza (semáforo)
+   - Pulso de hoy + tendencia semanal/mensual
+   - Proyección de cierre de mes
+   - Alertas priorizadas (sin agente, morosos, pendientes, vencimientos)
+   - Ranking de agentes en vivo
+   - Top morosos + acciones rápidas
    ════════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
-  if (window.__NEXUS_ALERTAS_MOROSOS__) return;
-  window.__NEXUS_ALERTAS_MOROSOS__ = true;
+  if (window.__NEXUS_CENTRO_SMART2__) return;
+  window.__NEXUS_CENTRO_SMART2__ = true;
 
   const DIAS_MORA = 30;
+  const F = n => 'RD$ ' + Math.round(n || 0).toLocaleString('es-DO');
+  const Fk = n => Math.round(n || 0).toLocaleString('es-DO');
 
-  function F(n) {
-    return 'RD$ ' + Math.round(n || 0).toLocaleString('es-DO');
-  }
-
-  /* Calcular lista de clientes morosos (+30 días) */
-  function getMorosos() {
-    const facturas = window.ST?.facturas || [];
-    const clientes = window.ST?.clientes || [];
+  function analizar() {
+    const clientes = (window.ST?.clientes || []);
+    const facturas = (window.ST?.facturas || []);
+    const abonos = (window.ST?.abonos || []);
+    const agentes = (window.ST?.agentes || []);
     const hoy = new Date();
+    const hoyStr = hoy.toISOString().slice(0, 10);
+    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
-    // Agrupar facturas vencidas +30 días por cliente
+    const activos = clientes.filter(c => c.activo);
+    const deudaTotal = activos.reduce((s, c) => s + (c.deuda_total || 0), 0);
+    const cobradoTotal = activos.reduce((s, c) => s + (c.pagado || 0), 0);
+    const pctCobranza = deudaTotal > 0 ? Math.round(cobradoTotal / deudaTotal * 100) : 100;
+    const faltaCobrar = Math.max(0, deudaTotal - cobradoTotal);
+
+    // Sin agente
+    const sinAgente = activos.filter(c => !c.agente_id);
+
+    // Morosos
     const morososMap = {};
     facturas.forEach(f => {
-      const estado = (f.estado || '').toLowerCase();
-      if (estado !== 'pendiente' && estado !== 'parcial') return;
-      if (!f.fecha_emision) return;
-
+      const e = (f.estado || '').toLowerCase();
+      if ((e !== 'pendiente' && e !== 'parcial') || !f.fecha_emision) return;
       const dias = Math.floor((hoy - new Date(f.fecha_emision)) / 86400000);
       if (dias <= DIAS_MORA) return;
-
       const cli = clientes.find(c => String(c.id) === String(f.cliente_id));
       if (!cli || !cli.activo) return;
-
-      if (!morososMap[cli.id]) {
-        morososMap[cli.id] = {
-          id: cli.id,
-          nom: cli.nom,
-          agente_id: cli.agente_id,
-          totalDeuda: 0,
-          diasMax: 0,
-          facturas: 0
-        };
-      }
-      morososMap[cli.id].totalDeuda += Number(f.total || 0);
-      morososMap[cli.id].diasMax = Math.max(morososMap[cli.id].diasMax, dias);
-      morososMap[cli.id].facturas++;
+      if (!morososMap[cli.id]) morososMap[cli.id] = { id: cli.id, nom: cli.nom, deuda: 0, dias: 0 };
+      morososMap[cli.id].deuda += Number(f.total || 0);
+      morososMap[cli.id].dias = Math.max(morososMap[cli.id].dias, dias);
     });
+    const morosos = Object.values(morososMap).sort((a, b) => b.dias - a.dias);
 
-    return Object.values(morososMap).sort((a, b) => b.diasMax - a.diasMax);
+    // Pendientes
+    const pendientes = facturas.filter(f => {
+      const e = (f.estado || '').toLowerCase();
+      return e === 'pendiente' || e === 'parcial';
+    });
+    const montoPendiente = pendientes.reduce((s, f) => s + Number(f.total || 0), 0);
+
+    // Cobros hoy / semana / mes
+    const cobrosHoy = abonos.filter(a => a.fecha === hoyStr);
+    const montoHoy = cobrosHoy.reduce((s, a) => s + Number(a.monto || 0), 0);
+
+    const hace7 = new Date(hoy.getTime() - 7 * 86400000).toISOString().slice(0, 10);
+    const hace14 = new Date(hoy.getTime() - 14 * 86400000).toISOString().slice(0, 10);
+    const semActual = abonos.filter(a => a.fecha >= hace7).reduce((s, a) => s + Number(a.monto || 0), 0);
+    const semPasada = abonos.filter(a => a.fecha >= hace14 && a.fecha < hace7).reduce((s, a) => s + Number(a.monto || 0), 0);
+
+    const mesActualStr = inicioMes.toISOString().slice(0, 10);
+    const inicioMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).toISOString().slice(0, 10);
+    const mesAct = abonos.filter(a => a.fecha >= mesActualStr).reduce((s, a) => s + Number(a.monto || 0), 0);
+    const mesPas = abonos.filter(a => a.fecha >= inicioMesPasado && a.fecha < mesActualStr).reduce((s, a) => s + Number(a.monto || 0), 0);
+
+    const tendSemana = semPasada > 0 ? Math.round((semActual - semPasada) / semPasada * 100) : (semActual > 0 ? 100 : 0);
+    const tendMes = mesPas > 0 ? Math.round((mesAct - mesPas) / mesPas * 100) : (mesAct > 0 ? 100 : 0);
+
+    // Pólizas por vencer
+    const porVencer = [];
+    activos.forEach(c => {
+      if (!c.fecha_fin) return;
+      const dias = Math.floor((new Date(c.fecha_fin) - hoy) / 86400000);
+      if (dias >= 0 && dias <= 30) porVencer.push({ nom: c.nom, dias, id: c.id });
+    });
+    porVencer.sort((a, b) => a.dias - b.dias);
+
+    const nuevosHoy = clientes.filter(c => c.created_at && c.created_at.slice(0, 10) === hoyStr).length;
+    const enProceso = clientes.filter(c => c.estado_cliente === 'EN_PROCESO').length;
+
+    // Ranking de agentes
+    const ranking = agentes.map(a => {
+      const clis = activos.filter(c => String(c.agente_id) === String(a.id));
+      const cartera = clis.reduce((s, c) => s + (c.deuda_total || 0), 0);
+      const cobrado = clis.reduce((s, c) => s + (c.pagado || 0), 0);
+      const ef = cartera > 0 ? Math.round(cobrado / cartera * 100) : 0;
+      return { nom: a.nom, clientes: clis.length, cobrado, ef };
+    }).filter(a => a.clientes > 0).sort((a, b) => b.cobrado - a.cobrado);
+
+    return {
+      totalActivos: activos.length, deudaTotal, cobradoTotal, pctCobranza, faltaCobrar,
+      sinAgente, morosos, pendientes: pendientes.length, montoPendiente,
+      cobrosHoy: cobrosHoy.length, montoHoy, semActual, semPasada, tendSemana,
+      mesAct, mesPas, tendMes, porVencer, nuevosHoy, enProceso, ranking
+    };
   }
 
-  /* ─── 1. TARJETA EN EL DASHBOARD ─── */
-  function inyectarTarjetaDashboard() {
-    const vDash = document.getElementById('v-dashboard');
-    if (!vDash || !vDash.classList.contains('on')) return;
-    if (document.getElementById('nx-morosos-card')) return; // ya existe
-
-    const morosos = getMorosos();
-    if (!morosos.length) return; // no hay morosos, no mostrar nada
-
-    const totalDeuda = morosos.reduce((s, m) => s + m.totalDeuda, 0);
-
-    // Crear la tarjeta
-    const card = document.createElement('div');
-    card.id = 'nx-morosos-card';
-    card.style.cssText = `
-      background: linear-gradient(135deg, #fef2f2, #fee2e2);
-      border: 1.5px solid #fecaca;
-      border-radius: 16px;
-      padding: 16px 18px;
-      margin: 0 0 16px 0;
-      cursor: pointer;
-      transition: transform .15s, box-shadow .15s;
+  function inyectarCSS() {
+    if (document.getElementById('nx-centro-css')) return;
+    const s = document.createElement('style');
+    s.id = 'nx-centro-css';
+    s.textContent = `
+      #nx-centro-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.5); backdrop-filter: blur(4px); z-index: 99990; display: flex; justify-content: flex-end; animation: nxFadeIn .2s ease; }
+      @keyframes nxFadeIn { from { opacity: 0 } to { opacity: 1 } }
+      #nx-centro { width: 440px; max-width: 94vw; height: 100%; background: #f8fafc; overflow-y: auto; box-shadow: -8px 0 40px rgba(0,0,0,.2); animation: nxSlideLeft .25s ease; }
+      @keyframes nxSlideLeft { from { transform: translateX(100%) } to { transform: translateX(0) } }
+      .nxC-head { background: linear-gradient(135deg,#1e293b,#0f172a); color: #fff; padding: 18px 20px; position: sticky; top: 0; z-index: 2; }
+      .nxC-head-top { display: flex; justify-content: space-between; align-items: center; }
+      .nxC-close { background: rgba(255,255,255,.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+      .nxC-body { padding: 14px; }
+      .nxC-card { background: #fff; border-radius: 14px; padding: 15px; margin-bottom: 11px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+      .nxC-card-title { font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 11px; display: flex; align-items: center; gap: 6px; }
+      .nxC-gauge { text-align: center; padding: 6px 0; }
+      .nxC-gauge-num { font-size: 40px; font-weight: 800; line-height: 1; }
+      .nxC-gauge-lbl { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+      .nxC-bar { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin: 11px 0 4px; }
+      .nxC-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+      .nxC-stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+      .nxC-stats-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+      .nxC-stat { background: #f8fafc; border-radius: 10px; padding: 11px; text-align: center; }
+      .nxC-stat-val { font-size: 18px; font-weight: 800; }
+      .nxC-stat-lbl { font-size: 8.5px; color: #94a3b8; text-transform: uppercase; margin-top: 3px; }
+      .nxC-tend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 8px; }
+      .nxC-alert { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; }
+      .nxC-alert:active { opacity: .7; }
+      .nxC-alert-ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+      .nxC-alert-body { flex: 1; min-width: 0; }
+      .nxC-alert-ttl { font-size: 12px; font-weight: 700; }
+      .nxC-alert-sub { font-size: 10px; color: #64748b; margin-top: 1px; }
+      .nxC-mini-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 5px; }
+      .nxC-rank { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: #f8fafc; border-radius: 10px; margin-bottom: 6px; }
+      .nxC-rank-pos { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+      .nxC-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .nxC-qbtn { padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+      .nxC-empty { text-align: center; color: #cbd5e1; font-size: 12px; padding: 14px; }
+      @media (max-width: 480px) { #nx-centro { width: 100%; max-width: 100%; } }
     `;
-    card.onmouseover = () => { card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 8px 20px rgba(220,38,38,.12)'; };
-    card.onmouseout = () => { card.style.transform = ''; card.style.boxShadow = ''; };
-    card.onclick = () => { if (typeof window.nav === 'function') window.nav('facturas', null); };
+    document.head.appendChild(s);
+  }
 
-    card.innerHTML = `
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:48px;height:48px;border-radius:12px;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">⚠️</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:800;color:#991b1b">${morosos.length} cliente${morosos.length === 1 ? '' : 's'} en mora (+30 días)</div>
-          <div style="font-size:12px;color:#b91c1c;margin-top:2px">Total pendiente: <strong>${F(totalDeuda)}</strong> · Toca para ver</div>
-        </div>
-        <div style="color:#dc2626;font-size:20px">→</div>
-      </div>
-      <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
-        ${morosos.slice(0, 3).map(m => `
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.6);border-radius:8px;padding:7px 10px">
-            <span style="font-size:11px;font-weight:700;color:#1e293b">${m.nom}</span>
-            <span style="font-size:10px;color:#dc2626;font-weight:700">${m.diasMax} días · ${F(m.totalDeuda)}</span>
+  window.nxAbrirCentro = function() {
+    inyectarCSS();
+    document.getElementById('nx-centro-overlay')?.remove();
+
+    const d = analizar();
+    const sem = d.pctCobranza >= 80 ? '#10b981' : d.pctCobranza >= 50 ? '#f59e0b' : '#ef4444';
+    const semE = d.pctCobranza >= 80 ? '🟢' : d.pctCobranza >= 50 ? '🟡' : '🔴';
+    const semT = d.pctCobranza >= 80 ? 'Excelente' : d.pctCobranza >= 50 ? 'Regular' : 'Atención';
+
+    const tendBadge = (v) => {
+      const up = v >= 0;
+      const col = up ? '#10b981' : '#ef4444';
+      const bg = up ? '#f0fdf4' : '#fef2f2';
+      const ar = up ? '↑' : '↓';
+      return `<span class="nxC-tend" style="color:${col};background:${bg}">${ar} ${Math.abs(v)}%</span>`;
+    };
+
+    const cerrar = "document.getElementById('nx-centro-overlay').remove();";
+    const goFact = `onclick="${cerrar}window.nav&&window.nav('facturas',null)"`;
+    const goCli = (id) => `onclick="${cerrar}window.verCliente&&window.verCliente('${id}')"`;
+    const goClientes = `onclick="${cerrar}window.nav&&window.nav('clientes',null)"`;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'nx-centro-overlay';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+      <div id="nx-centro">
+        <div class="nxC-head">
+          <div class="nxC-head-top">
+            <div>
+              <div style="font-size:18px;font-weight:800">Centro Inteligente</div>
+              <div style="font-size:11px;opacity:.7">Salud del negocio en tiempo real</div>
+            </div>
+            <button class="nxC-close" onclick="${cerrar}">✕</button>
           </div>
-        `).join('')}
-        ${morosos.length > 3 ? `<div style="text-align:center;font-size:10px;color:#b91c1c;font-weight:600;padding-top:2px">+ ${morosos.length - 3} más</div>` : ''}
-      </div>
-    `;
+        </div>
+        <div class="nxC-body">
 
-    // Insertar al principio de la vista dashboard (después de quick actions si existen)
-    const primerHijo = vDash.querySelector('.dash-grid, .kpi-grid, .nc, [class*="grid"]');
-    if (primerHijo) {
-      primerHijo.insertAdjacentElement('beforebegin', card);
-    } else {
-      vDash.insertBefore(card, vDash.firstChild);
-    }
+          <!-- SALUD -->
+          <div class="nxC-card">
+            <div class="nxC-card-title">💚 Salud de cobranza</div>
+            <div class="nxC-gauge">
+              <div class="nxC-gauge-num" style="color:${sem}">${d.pctCobranza}%</div>
+              <div class="nxC-gauge-lbl">${semE} ${semT} · ${F(d.cobradoTotal)} de ${F(d.deudaTotal)}</div>
+            </div>
+            <div class="nxC-bar"><div class="nxC-bar-fill" style="width:${d.pctCobranza}%;background:${sem}"></div></div>
+            ${d.faltaCobrar > 0 ? `<div style="text-align:center;font-size:11px;color:#64748b;margin-top:8px">🎯 Faltan <strong style="color:${sem}">${F(d.faltaCobrar)}</strong> para el 100%</div>` : ''}
+          </div>
+
+          <!-- PULSO + TENDENCIA -->
+          <div class="nxC-card">
+            <div class="nxC-card-title">⚡ Pulso y tendencia</div>
+            <div class="nxC-stats-row-3">
+              <div class="nxC-stat">
+                <div class="nxC-stat-val" style="color:#10b981">${d.cobrosHoy}</div>
+                <div class="nxC-stat-lbl">Cobros hoy</div>
+              </div>
+              <div class="nxC-stat">
+                <div class="nxC-stat-val" style="color:#2563eb;font-size:14px">${Fk(d.montoHoy)}</div>
+                <div class="nxC-stat-lbl">RD$ hoy</div>
+              </div>
+              <div class="nxC-stat">
+                <div class="nxC-stat-val" style="color:#7c3aed;font-size:14px">${Fk(d.mesAct)}</div>
+                <div class="nxC-stat-lbl">RD$ mes</div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 10px;background:#f8fafc;border-radius:8px">
+              <span style="font-size:11px;color:#64748b">📈 Esta semana vs anterior</span>
+              ${tendBadge(d.tendSemana)}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding:8px 10px;background:#f8fafc;border-radius:8px">
+              <span style="font-size:11px;color:#64748b">📅 Este mes vs anterior</span>
+              ${tendBadge(d.tendMes)}
+            </div>
+          </div>
+
+          <!-- ALERTAS -->
+          <div class="nxC-card">
+            <div class="nxC-card-title">🔔 Alertas que requieren acción</div>
+
+            ${d.sinAgente.length ? `
+              <div class="nxC-alert" style="background:#fef2f2" ${goClientes}>
+                <div class="nxC-alert-ico" style="background:#fee2e2">👤</div>
+                <div class="nxC-alert-body">
+                  <div class="nxC-alert-ttl" style="color:#991b1b">${d.sinAgente.length} clientes SIN agente asignado</div>
+                  <div class="nxC-alert-sub">Asígnales un agente — toca para ver</div>
+                </div>
+                <span style="color:#dc2626">→</span>
+              </div>` : ''}
+
+            ${d.morosos.length ? `
+              <div class="nxC-alert" style="background:#fef2f2" ${goFact}>
+                <div class="nxC-alert-ico" style="background:#fee2e2">⚠️</div>
+                <div class="nxC-alert-body">
+                  <div class="nxC-alert-ttl" style="color:#991b1b">${d.morosos.length} en mora (+30 días)</div>
+                  <div class="nxC-alert-sub">${F(d.morosos.reduce((s,m)=>s+m.deuda,0))} pendiente</div>
+                </div>
+                <span style="color:#dc2626">→</span>
+              </div>` : ''}
+
+            ${d.pendientes ? `
+              <div class="nxC-alert" style="background:#fffbeb" ${goFact}>
+                <div class="nxC-alert-ico" style="background:#fef3c7">💰</div>
+                <div class="nxC-alert-body">
+                  <div class="nxC-alert-ttl" style="color:#92400e">${d.pendientes} facturas pendientes</div>
+                  <div class="nxC-alert-sub">${F(d.montoPendiente)} por cobrar</div>
+                </div>
+                <span style="color:#f59e0b">→</span>
+              </div>` : ''}
+
+            ${d.porVencer.length ? `
+              <div class="nxC-alert" style="background:#eff6ff">
+                <div class="nxC-alert-ico" style="background:#dbeafe">📅</div>
+                <div class="nxC-alert-body">
+                  <div class="nxC-alert-ttl" style="color:#1e40af">${d.porVencer.length} pólizas por vencer</div>
+                  <div class="nxC-alert-sub">Próximos 30 días</div>
+                </div>
+              </div>` : ''}
+
+            ${(!d.sinAgente.length && !d.morosos.length && !d.pendientes && !d.porVencer.length) ?
+              '<div class="nxC-empty">✅ Todo al día, sin alertas</div>' : ''}
+          </div>
+
+          <!-- RANKING AGENTES -->
+          ${d.ranking.length ? `
+          <div class="nxC-card">
+            <div class="nxC-card-title">🏆 Ranking de agentes (este mes)</div>
+            ${d.ranking.map((a, i) => {
+              const medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1);
+              const posBg = i === 0 ? '#fef3c7' : i === 1 ? '#f1f5f9' : '#fff7ed';
+              const efCol = a.ef >= 80 ? '#10b981' : a.ef >= 50 ? '#f59e0b' : '#ef4444';
+              return `
+                <div class="nxC-rank">
+                  <div class="nxC-rank-pos" style="background:${posBg}">${medalla}</div>
+                  <div style="flex:1">
+                    <div style="font-size:12px;font-weight:700;color:#1e293b">${a.nom}</div>
+                    <div style="font-size:10px;color:#94a3b8">${a.clientes} clientes · ${F(a.cobrado)} cobrado</div>
+                  </div>
+                  <span style="font-size:13px;font-weight:800;color:${efCol}">${a.ef}%</span>
+                </div>`;
+            }).join('')}
+          </div>` : ''}
+
+          <!-- TOP MOROSOS -->
+          ${d.morosos.length ? `
+          <div class="nxC-card">
+            <div class="nxC-card-title">🚨 Top morosos (prioridad)</div>
+            ${d.morosos.slice(0,5).map(m => `
+              <div class="nxC-mini-row" ${goCli(m.id)} style="cursor:pointer">
+                <span style="font-size:11px;font-weight:700;color:#1e293b">${m.nom}</span>
+                <span style="font-size:10px;color:#dc2626;font-weight:700">${m.dias}d · ${F(m.deuda)}</span>
+              </div>
+            `).join('')}
+            ${d.morosos.length > 5 ? `<div style="text-align:center;font-size:10px;color:#94a3b8;padding-top:4px">+ ${d.morosos.length-5} más</div>` : ''}
+          </div>` : ''}
+
+          <!-- RESUMEN -->
+          <div class="nxC-card">
+            <div class="nxC-card-title">📊 Resumen general</div>
+            <div class="nxC-stats-row-3">
+              <div class="nxC-stat">
+                <div class="nxC-stat-val" style="color:#1e293b">${d.totalActivos}</div>
+                <div class="nxC-stat-lbl">Activos</div>
+              </div>
+              <div class="nxC-stat">
+                <div class="nxC-stat-val" style="color:#10b981">${d.nuevosHoy}</div>
+                <div class="nxC-stat-lbl">Nuevos hoy</div>
+              </div>
+              <div class="nxC-stat">
+                <div class="nxC-stat-val" style="color:#7c3aed">${d.enProceso}</div>
+                <div class="nxC-stat-lbl">En proceso</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACCIONES RÁPIDAS -->
+          <div class="nxC-card">
+            <div class="nxC-card-title">⚡ Acciones rápidas</div>
+            <div class="nxC-quick">
+              <button class="nxC-qbtn" style="background:#eff6ff;color:#2563eb" onclick="${cerrar}window.nav&&window.nav('facturas',null)">💰<span>Cobros</span></button>
+              <button class="nxC-qbtn" style="background:#f0fdf4;color:#10b981" onclick="${cerrar}window.nav&&window.nav('clientes',null)">👥<span>Clientes</span></button>
+            </div>
+          </div>
+
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+  };
+
+  function hookToggle() {
+    if (window.toggleNotif && window.toggleNotif._nxCentro) return;
+    window.toggleNotif = function() { window.nxAbrirCentro(); };
+    window.toggleNotif._nxCentro = true;
   }
 
-  /* ─── 2. NOTIFICACIÓN EN LA CAMPANA ─── */
-  function hookNotifs() {
-    const orig = window.rNotifs;
-    if (typeof orig !== 'function' || orig._nxMorosos) return;
-
-    window.rNotifs = function() {
-      const r = orig.apply(this, arguments);
-
-      // Agregar morosos a la lista de notificaciones
-      try {
-        const morosos = getMorosos();
-        if (morosos.length && Array.isArray(window._notifs)) {
-          const totalDeuda = morosos.reduce((s, m) => s + m.totalDeuda, 0);
-          // Insertar al inicio (prioridad alta)
-          window._notifs.unshift({
-            id: 'morosos_30',
-            icon: '⚠️',
-            ttl: `${morosos.length} cliente${morosos.length === 1 ? '' : 's'} en mora (+30 días)`,
-            sub: `${F(totalDeuda)} pendiente · Toca para ver`,
-            ts: null,
-            tipo: 'cobros',
-            nav: { tipo: 'facturas' }
-          });
-
-          // Actualizar el badge de la campana
-          const badge = document.getElementById('notifBadge');
-          const noLeidas = window._notifs.filter(n => !(window._notifLeidas || []).includes(n.id));
-          if (badge) {
-            if (noLeidas.length > 0) { badge.style.display = 'flex'; badge.textContent = noLeidas.length; }
-          }
-
-          // Re-renderizar la lista de notificaciones si el panel está construido
-          const list = document.getElementById('notifList');
-          if (list && typeof window.renderNotifList === 'function') {
-            try { window.renderNotifList(); } catch(e) {}
-          }
-        }
-      } catch(e) { console.warn('NEXUS morosos notif:', e); }
-
-      return r;
-    };
-    window.rNotifs._nxMorosos = true;
-  }
-
-  /* ─── Hook a nav() para inyectar tarjeta al entrar al dashboard ─── */
-  function hookNav() {
-    const orig = window.nav;
-    if (typeof orig !== 'function' || orig._nxMorosos) return;
-    window.nav = function(vista) {
-      const r = orig.apply(this, arguments);
-      if (vista === 'dashboard') {
-        setTimeout(inyectarTarjetaDashboard, 300);
-        setTimeout(inyectarTarjetaDashboard, 800);
-      }
-      return r;
-    };
-    window.nav._nxMorosos = true;
-  }
-
-  /* ─── INIT ─── */
   function init() {
     let tries = 0;
     const go = () => {
       tries++;
-      const listo = window.ST?.facturas && window.ST?.clientes && typeof window.rNotifs === 'function';
-      if (listo) {
-        hookNotifs();
-        hookNav();
-        // Aplicar ya si estamos en dashboard
-        inyectarTarjetaDashboard();
-        // Refrescar notifs para que incluya morosos
-        try { window.rNotifs(); } catch(e) {}
-        console.log('✅ NEXUS: Alertas de morosos activas');
-      } else if (tries < 40) {
-        setTimeout(go, 500);
-      }
+      if (window.ST?.clientes && typeof window.toggleNotif === 'function') {
+        hookToggle();
+        console.log('✅ NEXUS: Centro Super Smart activo');
+      } else if (tries < 40) setTimeout(go, 500);
     };
     setTimeout(go, 1000);
   }
