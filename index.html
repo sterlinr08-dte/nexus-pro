@@ -4975,9 +4975,10 @@ function aplicarFiltrosPagos(){
     <td style="font-size:10px">${p.metodo||'—'}</td>
     <td style="font-size:10px">${p.referencia||'—'}</td>
     <td style="white-space:nowrap">
+      ${p.comprobante_url?`<button class="btn bsm" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${p.comprobante_url}')" title="Ver bauche"><i class="ti ti-eye"></i></button>`:''}
       ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar"><i class="ti ti-edit"></i></button>`:''}
       ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
-      ${(!puedeEdit&&!puedeDel)?'<span style="font-size:9px;color:#94a3b8">Solo lectura</span>':''}
+      ${(!puedeEdit&&!puedeDel&&!p.comprobante_url)?'<span style="font-size:9px;color:#94a3b8">Solo lectura</span>':''}
     </td>
   </tr>`).join('');
 }
