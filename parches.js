@@ -4512,14 +4512,15 @@
 
       /* Móvil */
       @media (max-width: 768px) {
-        .nxSL-head { padding: 14px; flex-direction: column; align-items: stretch; }
-        .nxSL-head-icon { width: 42px; height: 42px; font-size: 19px; border-radius: 12px; }
-        .nxSL-title { font-size: 17px; }
-        .nxSL-sub { font-size: 11px; }
-        .nxSL-head-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
-        .nxSL-stat { padding: 10px; }
-        .nxSL-stat-val { font-size: 17px; }
-        .nxSL-stat-lbl { font-size: 8.5px; }
+        .nxSL-head { padding: 12px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .nxSL-head-icon { width: 38px; height: 38px; font-size: 17px; border-radius: 10px; }
+        .nxSL-head-body { flex: 1 1 auto; }
+        .nxSL-title { font-size: 15px; }
+        .nxSL-sub { font-size: 10px; margin-top: 1px; }
+        .nxSL-head-stats { grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1 1 100%; margin-top: 4px; }
+        .nxSL-stat { padding: 8px 4px; border-radius: 10px; }
+        .nxSL-stat-val { font-size: 15px; }
+        .nxSL-stat-lbl { font-size: 7.5px; margin-top: 3px; }
         .nxSL-section { padding: 14px; border-radius: 14px; }
         .nxSL-section-title { font-size: 11px; }
         .nxSL-transfer-stats { grid-template-columns: 1fr; }
