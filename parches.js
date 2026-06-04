@@ -7354,20 +7354,23 @@
         }).join('');
 
     modal.innerHTML = `
-      <style>@keyframes nxPulse{0%,100%{opacity:0.3}50%{opacity:1}}</style>
-      <div class="modal" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-        <div class="mt" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1e40af,#7c3aed);color:#fff;border-radius:0">
-          <button class="btn bghost bsm" style="color:#fff" onclick="document.getElementById('nxSmartModal').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
-          <span style="flex:1;text-align:center;color:#fff"><i class="ti ti-sparkles"></i> NEXUS SMART</span>
-          <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartHistorial()" title="Ver conversaciones guardadas"><i class="ti ti-history"></i></button>
+      <style>@keyframes nxPulse{0%,100%{opacity:0.3}50%{opacity:1}}
+      #nxSmartModal.open{display:flex !important;align-items:stretch;justify-content:center}
+      .nx-smart-full{max-width:600px;width:100%;height:100%;height:100dvh;display:flex;flex-direction:column;background:#f8fafc;padding:0;overflow:hidden;border-radius:0}
+      </style>
+      <div class="nx-smart-full">
+        <div class="mt" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1e40af,#7c3aed);color:#fff;border-radius:0;padding:14px 12px;flex-shrink:0">
+          <span style="flex:1;color:#fff;font-weight:700;font-size:15px"><i class="ti ti-sparkles"></i> NEXUS SMART</span>
+          <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartHistorial()" title="Conversaciones guardadas"><i class="ti ti-history"></i></button>
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartLimpiar()" title="Nueva conversación"><i class="ti ti-refresh"></i></button>
+          <button style="background:rgba(255,255,255,.25);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;flex-shrink:0;margin-left:4px" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Cerrar">✕</button>
         </div>
-        <div id="nxSmartMensajes" style="flex:1;overflow-y:auto;padding:14px;background:#f8fafc">
+        <div id="nxSmartMensajes" style="flex:1;overflow-y:auto;padding:14px;background:#f8fafc;-webkit-overflow-scrolling:touch">
           ${mensajes}
         </div>
-        <div style="padding:10px 12px;border-top:1px solid #e2e8f0;background:#fff;display:flex;gap:6px">
-          <input type="text" id="nxSmartInput" placeholder="Escribe tu pregunta..." style="flex:1;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:24px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter'){window.nxSmartEnviar()}">
-          <button class="btn bxl bc1" style="border-radius:50%;width:42px;height:42px;padding:0;flex-shrink:0" onclick="window.nxSmartEnviar()"><i class="ti ti-send"></i></button>
+        <div style="padding:10px 12px;border-top:1px solid #e2e8f0;background:#fff;display:flex;gap:6px;flex-shrink:0;padding-bottom:max(10px,env(safe-area-inset-bottom))">
+          <input type="text" id="nxSmartInput" placeholder="Escribe tu pregunta..." style="flex:1;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:24px;font-size:15px;outline:none" onkeydown="if(event.key==='Enter'){window.nxSmartEnviar()}">
+          <button class="btn bxl bc1" style="border-radius:50%;width:44px;height:44px;padding:0;flex-shrink:0" onclick="window.nxSmartEnviar()"><i class="ti ti-send"></i></button>
         </div>
       </div>`;
     
@@ -7716,6 +7719,127 @@
       if (intentos < 80) setTimeout(tryInit, 250);
     };
     setTimeout(tryInit, 800);
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
+})();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — VALIDACIÓN Y AVISO DE CÉDULA
+   
+   En el campo de cédula del formulario de cliente:
+   1. Avisa al instante si la cédula ya existe (sin esperar a guardar)
+   2. Valida el formato de cédula dominicana (11 dígitos + verificador)
+   3. Formatea automáticamente con guiones (000-0000000-0)
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_CEDULA_VALIDA__) return;
+  window.__NEXUS_CEDULA_VALIDA__ = true;
+
+  // Validar cédula dominicana (algoritmo módulo 10 - Luhn de la JCE)
+  function cedulaValida(ced) {
+    const c = ced.replace(/[\s-]/g, '');
+    if (!/^\d{11}$/.test(c)) return false;
+    let suma = 0;
+    for (let i = 0; i < 10; i++) {
+      let mult = c[i] * ((i % 2) + 1); // alterna x1, x2
+      if (mult > 9) mult -= 9;
+      suma += mult;
+    }
+    const verif = (10 - (suma % 10)) % 10;
+    return verif === parseInt(c[10]);
+  }
+
+  // Formatear con guiones: 000-0000000-0
+  function formatearCedula(v) {
+    const c = v.replace(/\D/g, '').slice(0, 11);
+    if (c.length <= 3) return c;
+    if (c.length <= 10) return c.slice(0, 3) + '-' + c.slice(3);
+    return c.slice(0, 3) + '-' + c.slice(3, 10) + '-' + c.slice(10);
+  }
+
+  function init() {
+    let tries = 0;
+    const go = () => {
+      tries++;
+      const input = document.getElementById('cCed');
+      if (!input) { if (tries < 60) setTimeout(go, 500); return; }
+      if (input.dataset.nxCedula) return;
+      input.dataset.nxCedula = '1';
+
+      // Crear elemento de aviso debajo del campo
+      let aviso = document.getElementById('nx-cedula-aviso');
+      if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.id = 'nx-cedula-aviso';
+        aviso.style.cssText = 'font-size:10px;margin-top:4px;font-weight:600;display:none';
+        input.parentElement.appendChild(aviso);
+      }
+
+      function revisar() {
+        const valor = input.value.trim();
+        const limpio = valor.replace(/[\s-]/g, '');
+
+        if (!limpio) { aviso.style.display = 'none'; input.style.borderColor = ''; return; }
+
+        // 1. ¿Ya existe en el sistema?
+        const editId = window.editCliId || (typeof editCliId !== 'undefined' ? editCliId : null);
+        const dup = (window.ST?.clientes || []).find(c =>
+          (c.cedula || '').replace(/[\s-]/g, '') === limpio && c.id !== editId
+        );
+        if (dup) {
+          const estado = dup.activo === false ? 'inhabilitado' : 'activo';
+          aviso.style.display = 'block';
+          aviso.style.color = '#dc2626';
+          aviso.innerHTML = `⚠️ Esta cédula ya es de <strong>${dup.nom}</strong> (${estado}). <a href="#" onclick="event.preventDefault();document.getElementById('nxSmartModal');window.verCliente&&window.verCliente('${dup.id}')" style="color:#2563eb;text-decoration:underline">Ver cliente</a>`;
+          input.style.borderColor = '#dc2626';
+          return;
+        }
+
+        // 2. Validar formato (solo si tiene 11 dígitos completos)
+        if (limpio.length === 11) {
+          if (cedulaValida(limpio)) {
+            aviso.style.display = 'block';
+            aviso.style.color = '#10b981';
+            aviso.innerHTML = '✓ Cédula válida y disponible';
+            input.style.borderColor = '#10b981';
+          } else {
+            aviso.style.display = 'block';
+            aviso.style.color = '#f59e0b';
+            aviso.innerHTML = '⚠️ El número de cédula no parece válido (verifica los dígitos)';
+            input.style.borderColor = '#f59e0b';
+          }
+        } else if (limpio.length > 0) {
+          // Incompleta
+          aviso.style.display = 'block';
+          aviso.style.color = '#94a3b8';
+          aviso.innerHTML = `${limpio.length}/11 dígitos`;
+          input.style.borderColor = '';
+        }
+      }
+
+      // Al escribir: formatear y revisar
+      input.addEventListener('input', function() {
+        const pos = this.selectionStart;
+        const antes = this.value;
+        const formateado = formatearCedula(this.value);
+        if (formateado !== antes) {
+          this.value = formateado;
+        }
+        revisar();
+      });
+
+      // Al perder foco, revisar de nuevo
+      input.addEventListener('blur', revisar);
+
+      console.log('✅ NEXUS: Validación de cédula activa');
+    };
+    setTimeout(go, 1000);
   }
 
   document.readyState === 'loading'
