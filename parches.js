@@ -8594,9 +8594,21 @@
     return 'https://mrtqkhachhvsczltwakt.supabase.co';
   }
 
+  // JWT clásico (anon legacy) — Storage REST API lo requiere.
+  // La publishable key (sb_publishable_...) NO funciona con Storage.
+  const _NX_STORAGE_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ydHFraGFjaGh2c2N6bHR3YWt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2OTg0MzYsImV4cCI6MjA5NDI3NDQzNn0.K75-M9Dui7aGuccBqFUDoh1IpHcZhJ-J97t-mcA54Xg';
+
   function getAnonKey() {
-    return window.API?.key || window.API?._key || window.SUPABASE_ANON_KEY ||
-           window._supabaseKey || window.__NEXUS_SB_KEY__ || '';
+    const k = window.API?.key || window.API?._key || window.SUPABASE_ANON_KEY ||
+              window._supabaseKey || window.__NEXUS_SB_KEY__ || '';
+    // Si el key configurado es publishable (no sirve para Storage), usar el JWT clásico
+    if (!k || k.startsWith('sb_publishable_') || k.startsWith('sb_secret_')) {
+      return _NX_STORAGE_JWT;
+    }
+    // Si ya es un JWT (empieza con eyJ), usarlo
+    if (k.startsWith('eyJ')) return k;
+    // Cualquier otro caso, usar el JWT clásico por seguridad
+    return _NX_STORAGE_JWT;
   }
 
   /* ─── Subir imagen a Supabase Storage ─── */
