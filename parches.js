@@ -8610,16 +8610,14 @@
 
   /* ─── Obtener URL base de Supabase para Storage ─── */
   function getStorageURL() {
-    // Intentar obtener del API configurado
-    const url = window.API?._url || window.SUPABASE_URL ||
+    const url = window.API?.url || window.API?._url || window.SUPABASE_URL ||
                 window._supabaseUrl || window.__NEXUS_SB_URL__;
     if (url) return url.replace(/\/$/, '');
-    // Fallback: construir desde el proyecto conocido
     return 'https://mrtqkhachhvsczltwakt.supabase.co';
   }
 
   function getAnonKey() {
-    return window.API?._key || window.SUPABASE_ANON_KEY ||
+    return window.API?.key || window.API?._key || window.SUPABASE_ANON_KEY ||
            window._supabaseKey || window.__NEXUS_SB_KEY__ || '';
   }
 
@@ -8654,6 +8652,55 @@
     const s = document.createElement('style');
     s.id = 'nx-comp-css';
     s.textContent = `
+      #nx-bauche-menu {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: #fff;
+        border-radius: 16px 16px 0 0;
+        padding: 12px 0 30px 0;
+        z-index: 99999;
+        box-shadow: 0 -4px 30px rgba(0,0,0,.18);
+        animation: nxSlideUp .2s ease;
+      }
+      @keyframes nxSlideUp {
+        from { transform: translateY(100%); }
+        to   { transform: translateY(0); }
+      }
+      #nx-bauche-menu-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.4);
+        z-index: 99998;
+      }
+      .nx-bauche-opcion {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1e293b;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        transition: background .1s;
+      }
+      .nx-bauche-opcion:active {
+        background: #f1f5f9;
+      }
+      .nx-bauche-opcion i {
+        font-size: 18px;
+        width: 24px;
+        text-align: center;
+        color: #2563eb;
+      }
+      .nx-bauche-separador {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 4px 0;
+      }
       #nx-bauche-wrap {
         margin-bottom: 10px;
         transition: all .2s;
@@ -8737,15 +8784,15 @@
         border:2px dashed #cbd5e1;border-radius:10px;background:#f8fafc;
         padding:10px;cursor:pointer;transition:all .2s;
       "
-        onclick="document.getElementById('nx-bauche-input').click()"
-        title="Toca para elegir imagen, o pega con Ctrl+V / Cmd+V"
+        onclick="window.nxAbrirMenuBauche(event)"
+        title="Toca para adjuntar bauche"
       >
         <div id="nx-bauche-btn" style="
           color:#64748b;font-size:11px;font-weight:600;
           display:flex;align-items:center;gap:8px;justify-content:center;
           pointer-events:none;
         ">
-          <i class="ti ti-camera"></i> Adjuntar bauche &nbsp;·&nbsp; <i class="ti ti-clipboard"></i> Pegar imagen (Ctrl+V)
+          <i class="ti ti-camera"></i> Adjuntar bauche de pago
         </div>
         <div id="nx-bauche-preview" style="display:none;margin-top:6px;position:relative">
           <img id="nx-bauche-img" src="" alt="Bauche" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px">
@@ -8763,6 +8810,84 @@
     const fe        = document.querySelector('#mAbono .fe');
     const ref       = reciboDiv || fe;
     if (ref) ref.insertAdjacentElement('beforebegin', wrap);
+
+    // Menú de opciones para adjuntar bauche
+    window.nxAbrirMenuBauche = function(e) {
+      e.stopPropagation();
+      // Quitar menú anterior si existe
+      document.getElementById('nx-bauche-menu')?.remove();
+      document.getElementById('nx-bauche-menu-overlay')?.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'nx-bauche-menu-overlay';
+      overlay.onclick = () => {
+        overlay.remove();
+        document.getElementById('nx-bauche-menu')?.remove();
+      };
+
+      const menu = document.createElement('div');
+      menu.id = 'nx-bauche-menu';
+
+      // Título
+      const titulo = document.createElement('div');
+      titulo.style.cssText = 'text-align:center;padding:4px 0 12px;font-size:12px;color:#94a3b8;font-weight:600;letter-spacing:.5px';
+      titulo.textContent = 'ADJUNTAR BAUCHE';
+      menu.appendChild(titulo);
+
+      // Opciones
+      const opciones = [
+        { icon: 'ti-photo', label: 'Fototeca',          accion: () => { cerrar(); document.getElementById('nx-bauche-input').click(); } },
+        { icon: 'ti-camera', label: 'Tomar foto',        accion: () => { cerrar(); const inp = document.getElementById('nx-bauche-input'); inp.setAttribute('capture','environment'); inp.click(); setTimeout(()=>inp.removeAttribute('capture'),500); } },
+        { icon: 'ti-folder', label: 'Seleccionar archivo', accion: () => { cerrar(); document.getElementById('nx-bauche-input').click(); } },
+      ];
+
+      // Opción Pegar (solo si hay imagen en el portapapeles)
+      opciones.push({
+        icon: 'ti-clipboard',
+        label: 'Pegar imagen',
+        accion: async () => {
+          cerrar();
+          try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+              for (const type of item.types) {
+                if (type.startsWith('image/')) {
+                  const blob = await item.getType(type);
+                  const file = new File([blob], `bauche_${Date.now()}.png`, { type });
+                  await window.nxProcesarBauche(file);
+                  return;
+                }
+              }
+            }
+            if (typeof window.toast === 'function') window.toast('warn', 'Sin imagen', 'No hay imagen en el portapapeles');
+          } catch(err) {
+            // Fallback: pedir al usuario que pegue con Ctrl+V
+            if (typeof window.toast === 'function') window.toast('info', 'Pega con Ctrl+V', 'Toca el área del bauche y pega');
+          }
+        }
+      });
+
+      function cerrar() {
+        overlay.remove();
+        menu.remove();
+      }
+
+      opciones.forEach((op, i) => {
+        if (i > 0) {
+          const sep = document.createElement('div');
+          sep.className = 'nx-bauche-separador';
+          menu.appendChild(sep);
+        }
+        const btn = document.createElement('button');
+        btn.className = 'nx-bauche-opcion';
+        btn.innerHTML = `<i class="ti ${op.icon}"></i> ${op.label}`;
+        btn.onclick = op.accion;
+        menu.appendChild(btn);
+      });
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(menu);
+    };
 
     // Función compartida para procesar cualquier imagen (galería o portapapeles)
     window.nxProcesarBauche = async function(file) {
@@ -9168,6 +9293,157 @@
     };
     setTimeout(go, 800);
     console.log('✅ NEXUS: Permiso cobrar todos activo');
+  }
+
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init, { once: true })
+    : init();
+})();
+
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — MENÚ UNIVERSAL DE CARGA EN DOCUMENTOS
+   
+   Reemplaza el click directo en las doc-cards por el mismo menú
+   de 4 opciones: Fototeca, Tomar foto, Seleccionar archivo, Pegar.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_DOC_MENU__) return;
+  window.__NEXUS_DOC_MENU__ = true;
+
+  /* Menú universal reutilizable para cualquier input de archivo */
+  window.nxMenuArchivo = function(inputId, e) {
+    if (e) e.stopPropagation();
+
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    // Quitar menú anterior
+    document.getElementById('nx-doc-menu')?.remove();
+    document.getElementById('nx-doc-overlay')?.remove();
+
+    function cerrar() {
+      document.getElementById('nx-doc-menu')?.remove();
+      document.getElementById('nx-doc-overlay')?.remove();
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'nx-doc-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99998';
+    overlay.onclick = cerrar;
+
+    const menu = document.createElement('div');
+    menu.id = 'nx-doc-menu';
+    menu.style.cssText = `
+      position:fixed;bottom:0;left:0;right:0;
+      background:#fff;border-radius:16px 16px 0 0;
+      padding:8px 0 34px;z-index:99999;
+      box-shadow:0 -4px 30px rgba(0,0,0,.18);
+      animation:nxSlideUp .2s ease;
+    `;
+
+    // Título
+    menu.innerHTML = `<div style="text-align:center;padding:4px 0 10px;font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:.5px">CARGAR DOCUMENTO</div>`;
+
+    const opciones = [
+      {
+        icon: '🖼️', label: 'Fototeca',
+        accion: () => { cerrar(); input.removeAttribute('capture'); input.click(); }
+      },
+      {
+        icon: '📸', label: 'Tomar foto',
+        accion: () => { cerrar(); input.setAttribute('capture', 'environment'); input.click(); setTimeout(() => input.removeAttribute('capture'), 500); }
+      },
+      {
+        icon: '📁', label: 'Seleccionar archivo',
+        accion: () => { cerrar(); input.removeAttribute('capture'); input.click(); }
+      },
+      {
+        icon: '📋', label: 'Pegar imagen',
+        accion: async () => {
+          cerrar();
+          try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+              for (const type of item.types) {
+                if (type.startsWith('image/')) {
+                  const blob = await item.getType(type);
+                  const file = new File([blob], `doc_${Date.now()}.png`, { type });
+                  // Simular selección en el input
+                  const dt = new DataTransfer();
+                  dt.items.add(file);
+                  input.files = dt.files;
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
+                  return;
+                }
+              }
+            }
+            if (typeof window.toast === 'function') window.toast('warn', 'Sin imagen', 'No hay imagen en el portapapeles');
+          } catch(err) {
+            if (typeof window.toast === 'function') window.toast('info', 'Pega con Ctrl+V', 'No se pudo leer el portapapeles');
+          }
+        }
+      }
+    ];
+
+    opciones.forEach((op, i) => {
+      if (i > 0) {
+        const sep = document.createElement('div');
+        sep.style.cssText = 'height:1px;background:#f1f5f9;margin:2px 0';
+        menu.appendChild(sep);
+      }
+      const btn = document.createElement('button');
+      btn.style.cssText = `
+        display:flex;align-items:center;gap:14px;
+        padding:13px 22px;font-size:15px;font-weight:500;
+        color:#1e293b;cursor:pointer;border:none;
+        background:none;width:100%;text-align:left;
+      `;
+      btn.innerHTML = `<span style="font-size:20px;width:28px">${op.icon}</span> ${op.label}`;
+      btn.onclick = op.accion;
+      menu.appendChild(btn);
+    });
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(menu);
+  };
+
+  /* Interceptar cargarDocs para reemplazar onclick de cada card */
+  function hookCargarDocs() {
+    const orig = window.cargarDocs;
+    if (typeof orig !== 'function' || orig._nxDocMenu) return;
+
+    window.cargarDocs = async function(cliId) {
+      const r = await orig.apply(this, arguments);
+      // Reemplazar onclick de cada doc-card
+      setTimeout(() => {
+        document.querySelectorAll('.doc-card').forEach(card => {
+          if (card.dataset.nxMenu) return;
+          card.dataset.nxMenu = '1';
+          // Encontrar el input asociado
+          const input = card.querySelector('.doc-upload-input');
+          if (!input) return;
+          const inputId = input.id;
+          // Reemplazar el onclick
+          card.onclick = (e) => window.nxMenuArchivo(inputId, e);
+        });
+      }, 100);
+      return r;
+    };
+    window.cargarDocs._nxDocMenu = true;
+  }
+
+  function init() {
+    let tries = 0;
+    const go = () => {
+      tries++;
+      hookCargarDocs();
+      if (tries < 20) setTimeout(go, 500);
+    };
+    setTimeout(go, 600);
+    console.log('✅ NEXUS: Menú universal documentos activo');
   }
 
   document.readyState === 'loading'
