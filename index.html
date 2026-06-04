@@ -7268,6 +7268,14 @@ setInterval(verificarAutoFacturacion, 60000);
 setTimeout(verificarAutoFacturacion, 5000);
 </script>
 <!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══ -->
-<script src="parches.js?v=1" onerror="console.log('parches.js no disponible o aún no creado')"></script>
+<script>
+  // Carga parches.js siempre fresco (sin caché) usando timestamp automático
+  (function(){
+    var s = document.createElement('script');
+    s.src = 'parches.js?v=' + Date.now();
+    s.onerror = function(){ console.log('parches.js no disponible o aún no creado'); };
+    document.head.appendChild(s);
+  })();
+</script>
 </body>
 </html>
