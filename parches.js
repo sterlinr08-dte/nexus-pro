@@ -9803,7 +9803,7 @@
 
   /* ─── Tarjeta del Centro en el Dashboard ─── */
   function inyectarTarjetaCentro() {
-    if (!esAdminCentro()) return; // Solo admin ve la tarjeta
+    // DIAGNÓSTICO: temporalmente sin restricción de admin
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return;
     if (document.getElementById('nx-centro-card')) return; // ya existe
