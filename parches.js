@@ -4821,7 +4821,9 @@
           banco = bSel;
         }
         const clienteId = window.abonoCliId || null;
-        snapshot = { monto, metodo, ref, agente, banco, clienteId };
+        // Capturar el bauche subido (si existe) desde la variable global del módulo comprobante
+        const comprobanteUrl = window.__nxComprobanteURLActual || null;
+        snapshot = { monto, metodo, ref, agente, banco, clienteId, comprobanteUrl };
       }
 
       const reciboDiv = document.getElementById('reciboWAbtn');
@@ -4860,10 +4862,14 @@
             depositado_banco: snapshot.banco,
             es_directo: true,
             cobro_id: snapshot.clienteId,
+            comprobante_url: snapshot.comprobanteUrl || null,
             created_by: usr
           };
 
           await api.post('entregas_admin', payload);
+
+          // Limpiar el bauche global para que el próximo cobro no lo reuse
+          window.__nxComprobanteURLActual = null;
 
           if (typeof window.toast === 'function') {
             window.toast('ok', 'Pendiente de confirmar',
@@ -8886,6 +8892,7 @@
       // Subir a Supabase
       try {
         _comprobanteURL = await subirImagen(file);
+        window.__nxComprobanteURLActual = _comprobanteURL; // exponer para flujo de depósito directo
         if (btn)  btn.innerHTML = '<i class="ti ti-check"></i> Bauche adjuntado ✓';
         if (drop) drop.style.borderColor = '#10b981';
         if (typeof window.toast === 'function') window.toast('ok', 'Bauche cargado', 'Imagen lista para guardar');
@@ -8923,6 +8930,7 @@
   window.nxQuitarBauche = function() {
     _comprobanteFile = null;
     _comprobanteURL  = null;
+    window.__nxComprobanteURLActual = null; // limpiar global también
     const input   = document.getElementById('nx-bauche-input');
     const preview = document.getElementById('nx-bauche-preview');
     const btn     = document.getElementById('nx-bauche-btn');
