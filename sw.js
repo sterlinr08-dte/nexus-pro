@@ -1,12 +1,7 @@
-// NEXUS PRO v8 — Service Worker
-// Permite uso offline y mejora velocidad de carga
+// NEXUS PRO v9 — Service Worker
+// Cachea SOLO archivos estáticos. No toca datos ni peticiones dinámicas.
 
-const CACHE_NAME = 'nexus-pro-v8';
-const ASSETS = [
-  '/',
-  '/index.html',
-];
-// Opcionales: se cachean si existen, no rompen si faltan
+const CACHE_NAME = 'nexus-pro-v9';
 const ASSETS_OPCIONALES = [
   '/manifest.json',
   '/icon-192.png',
@@ -14,15 +9,12 @@ const ASSETS_OPCIONALES = [
   '/icon-apple-180.png',
 ];
 
-// Instalar: cachear recursos esenciales (tolerante a fallos)
+// Instalar: cachear opcionales uno por uno (tolerante a fallos)
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
-      // Esenciales: si fallan, igual continuamos
-      try { await cache.addAll(ASSETS); } catch(err) { console.log('SW: algunos esenciales fallaron', err); }
-      // Opcionales: uno por uno, ignorando los que no existen
       await Promise.all(ASSETS_OPCIONALES.map(url =>
-        cache.add(url).catch(() => console.log('SW: opcional no encontrado:', url))
+        cache.add(url).catch(() => {})
       ));
       return self.skipWaiting();
     })
@@ -33,40 +25,42 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
-// Fetch: Network first, cache fallback
+// Fetch: SOLO interceptar imágenes/iconos estáticos.
+// TODO lo demás (HTML, JS, Supabase, APIs) pasa directo sin tocar.
 self.addEventListener('fetch', e => {
-  if(e.request.method !== 'GET') return;
+  if (e.request.method !== 'GET') return;
 
-  // Supabase API: solo network (datos siempre frescos)
-  if(e.request.url.includes('supabase.co')) return;
+  const url = e.request.url;
 
-  // parches.js: siempre network (nunca cachear, para que cargue lo último)
-  if(e.request.url.includes('parches.js')) return;
+  // NUNCA interceptar: Supabase, parches.js, index.html, ni JS dinámico
+  if (url.includes('supabase.co')) return;
+  if (url.includes('parches.js')) return;
+  if (url.includes('.html')) return;
+  if (url.includes('?')) return; // peticiones con query (datos) pasan directo
+
+  // Solo cachear imágenes/iconos estáticos
+  const esImagen = /\.(png|jpg|jpeg|webp|gif|svg|ico)$/i.test(url);
+  if (!esImagen) return; // todo lo demás pasa directo
 
   e.respondWith(
-    fetch(e.request)
-      .then(resp => {
-        if(resp && resp.status === 200 && resp.type === 'basic') {
-          const respClone = resp.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, respClone));
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
         }
         return resp;
-      })
-      .catch(() => {
-        return caches.match(e.request)
-          .then(cached => cached || caches.match('/index.html'));
-      })
+      }).catch(() => cached);
+    })
   );
 });
 
-// Mensaje de versión
 self.addEventListener('message', e => {
-  if(e.data === 'version') e.ports[0].postMessage(CACHE_NAME);
+  if (e.data === 'version') e.ports[0].postMessage(CACHE_NAME);
 });
