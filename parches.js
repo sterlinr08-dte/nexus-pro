@@ -3512,6 +3512,22 @@
   // ── Estado local ──
   let _entregasCache = [];
   let _transferenciasCache = [];
+  // Promesas en curso (request coalescing) — evita la race condition:
+  // si ya hay una consulta corriendo, las demás esperan ESA misma promesa
+  let _entregasEnCurso = null;
+  let _transferenciasEnCurso = null;
+  let _ultimaCargaEntregas = 0;
+  const _CACHE_TTL = 3000; // 3 seg: reusar cache reciente sin reconsultar
+
+  // Invalidar cache: forzar recarga fresca en la próxima consulta
+  // (llamar después de registrar/confirmar/anular para evitar datos viejos)
+  window.nxInvalidarCacheEntregas = function() {
+    _entregasCache = [];
+    _ultimaCargaEntregas = 0;
+    _entregasEnCurso = null;
+    _transferenciasCache = [];
+    _transferenciasEnCurso = null;
+  };
 
   // ═══════════════════════════════════════════════════════════════
   // INYECCIÓN: sidebar item + view container
@@ -3615,20 +3631,51 @@
   // CARGA DE DATOS
   // ═══════════════════════════════════════════════════════════════
   async function cargarEntregas() {
+    // Si hay cache reciente, usarlo (evita reconsultar en cascada)
+    const ahora = Date.now();
+    if (_entregasCache.length && (ahora - _ultimaCargaEntregas) < _CACHE_TTL) {
+      return _entregasCache;
+    }
+    // Si ya hay una consulta en curso, esperar ESA (no lanzar otra)
+    if (_entregasEnCurso) return _entregasEnCurso;
+
     const api = getAPI();
     if (!api || !api.get) return [];
-    try {
-      const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=500');
-      return Array.isArray(data) ? data : [];
-    } catch(e) { return []; }
+
+    _entregasEnCurso = (async () => {
+      try {
+        const data = await api.get('entregas_admin', 'select=*&order=fecha.desc,created_at.desc&limit=500');
+        const arr = Array.isArray(data) ? data : [];
+        _entregasCache = arr;
+        _ultimaCargaEntregas = Date.now();
+        return arr;
+      } catch(e) {
+        return _entregasCache.length ? _entregasCache : [];
+      } finally {
+        _entregasEnCurso = null;
+      }
+    })();
+    return _entregasEnCurso;
   }
   async function cargarTransferencias() {
+    if (_transferenciasEnCurso) return _transferenciasEnCurso;
+
     const api = getAPI();
     if (!api || !api.get) return [];
-    try {
-      const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=500');
-      return Array.isArray(data) ? data : [];
-    } catch(e) { return []; }
+
+    _transferenciasEnCurso = (async () => {
+      try {
+        const data = await api.get('transferencias_agentes', 'select=*&order=fecha.desc&limit=500');
+        const arr = Array.isArray(data) ? data : [];
+        _transferenciasCache = arr;
+        return arr;
+      } catch(e) {
+        return _transferenciasCache.length ? _transferenciasCache : [];
+      } finally {
+        _transferenciasEnCurso = null;
+      }
+    })();
+    return _transferenciasEnCurso;
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -4622,6 +4669,10 @@
     }
   };
   window.nxRefrescarSolicitudes = async function() {
+    // Invalidar cache para traer datos frescos (después de cambios)
+    if (typeof window.nxInvalidarCacheEntregas === 'function') {
+      window.nxInvalidarCacheEntregas();
+    }
     await actualizarBadge();
     if (document.getElementById('v-solicitudes')?.classList.contains('on')) {
       await renderSolicitudes();
@@ -4653,6 +4704,14 @@
         window.__nxBadgeInterval = setInterval(() => {
           if (!document.hidden) actualizarBadge();
         }, 60000);
+        // FIX: si la vista de solicitudes ya está activa al cargar
+        // (por "recordar vista"), renderizarla para que no quede en "Cargando..."
+        setTimeout(() => {
+          const v = document.getElementById('v-solicitudes');
+          if (v && v.classList.contains('on')) {
+            renderSolicitudes();
+          }
+        }, 1200);
         return;
       }
       if (intentos < 60) setTimeout(tryInit, 100);
@@ -7513,6 +7572,15 @@
         }
         hookTabFacturas();
       }, 150);
+    }
+
+    // Si era solicitudes, renderizar para que no quede en "Cargando..."
+    if (lastView === 'solicitudes') {
+      setTimeout(() => {
+        if (typeof window.nxRenderSolicitudes === 'function') {
+          window.nxRenderSolicitudes();
+        }
+      }, 200);
     }
   }
 
