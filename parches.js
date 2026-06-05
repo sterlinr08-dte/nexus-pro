@@ -8502,8 +8502,10 @@
             .map(p => `<span style="display:inline-block;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px 3px 0 0">${esc(p.label)} · ${fmt(p.monto)}</span>`).join('');
           const num = waNumero(cli);
           const idSafe = esc(String(cli.id || i));
+          const cid = cli.id ? esc(String(cli.id)) : '';
+          const nomData = esc((cli.nom || '').toLowerCase());
           return `
-            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+            <div class="nxPendCard" data-nom="${nomData}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
               <div style="display:flex;align-items:center;gap:10px">
                 <div style="width:38px;height:38px;border-radius:10px;background:#fee2e2;color:#dc2626;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
                 <div style="flex:1;min-width:0">
@@ -8512,7 +8514,10 @@
                 </div>
                 <div style="text-align:right;flex-shrink:0">
                   <div style="font-weight:900;color:#dc2626;font-size:15px;white-space:nowrap">${fmt(x.total)}</div>
-                  ${num ? `<button class="btn bsm" style="margin-top:4px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;font-weight:800" onclick="window.nxRecordarPago('${idSafe}','${num}',${x.total})"><i class="ti ti-brand-whatsapp"></i> Recordar</button>` : '<span style="font-size:9px;color:#cbd5e1">Sin WhatsApp</span>'}
+                  <div style="display:flex;flex-direction:column;gap:4px;margin-top:5px">
+                    ${cid ? `<button class="btn bsm" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;font-weight:800" onclick="window.nxCobrarPend('${cid}')"><i class="ti ti-wallet"></i> Cobrar</button>` : ''}
+                    ${num ? `<button class="btn bsm" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;font-weight:800" onclick="window.nxRecordarPago('${idSafe}','${num}',${x.total})"><i class="ti ti-brand-whatsapp"></i> Recordar</button>` : '<span style="font-size:9px;color:#cbd5e1">Sin WhatsApp</span>'}
+                  </div>
                 </div>
               </div>
               <div style="margin-top:8px">${chips}</div>
@@ -8531,11 +8536,35 @@
           <div style="font-size:22px;font-weight:900;color:#991b1b;margin-top:2px">${fmt(totalGeneral)}</div>
           <div style="font-size:10px;color:#ef4444;font-weight:600">${lista.length} cliente(s) con atraso</div>
         </div>` : ''}
+        ${lista.length ? `<div style="position:relative;margin:0 2px 10px">
+          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
+          <input type="text" id="nxPendBuscar" placeholder="Buscar cliente..." autocomplete="off" oninput="window.nxFiltrarPend(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
+        </div>` : ''}
         <div style="overflow-y:auto;flex:1;padding:2px 2px;-webkit-overflow-scrolling:touch">
           ${filas}
         </div>
       </div>`;
   }
+
+  // Filtrar la lista de pendientes por nombre de cliente
+  window.nxFiltrarPend = function (q) {
+    const t = String(q || '').trim().toLowerCase();
+    document.querySelectorAll('#nxModalPendPrev .nxPendCard').forEach(c => {
+      const nom = c.getAttribute('data-nom') || '';
+      c.style.display = (!t || nom.includes(t)) ? '' : 'none';
+    });
+  };
+
+  // Cobrar: abre el modal de cobro/abono del cliente (reusa la función del sistema)
+  window.nxCobrarPend = function (clienteId) {
+    const modal = document.getElementById('nxModalPendPrev');
+    if (modal) modal.classList.remove('open'); // cerrar para no encimar ventanas
+    try {
+      if (typeof window.abrirAbono === 'function') { window.abrirAbono(clienteId); return; }
+      if (typeof abrirAbono === 'function') { abrirAbono(clienteId); return; }
+    } catch (e) {}
+    notify('err', 'No se pudo abrir el cobro', '');
+  };
 
   // Abrir WhatsApp con un recordatorio de pago
   window.nxRecordarPago = function (clienteId, numero, monto) {
