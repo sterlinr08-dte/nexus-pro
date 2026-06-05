@@ -9312,6 +9312,43 @@
       </div>`);
   }
 
+  // Convierte texto pegado (de Excel, CSV, o una lista) en una matriz de filas
+  function matrizDeTexto(txt) {
+    const lines = txt.replace(/\r/g, '').split('\n').filter(l => l.trim() !== '');
+    return lines.map(l => {
+      if (l.indexOf('\t') >= 0) return l.split('\t').map(c => c.trim());
+      if (l.indexOf(';') >= 0) return l.split(';').map(c => c.trim());
+      // Coma: solo separar si hay una cédula (dígitos largos) en la línea (CSV);
+      // así los nombres "APELLIDOS, NOMBRES" no se parten.
+      if (/\d{5,}/.test(l) && l.indexOf(',') >= 0) return l.split(',').map(c => c.trim());
+      return [l.trim()];
+    });
+  }
+
+  // Compara a partir de lo PEGADO en el textarea (detecta cédulas → por cédula; si no → por nombre)
+  function compararPegado() {
+    const txt = document.getElementById('nxTssPegar')?.value || '';
+    if (!txt.trim()) { _rows = []; _titulares = []; _modo = 'cedula'; setArea('nxTssMapeo', ''); comparar(); return; }
+    const matrix = matrizDeTexto(txt);
+    let headerIdx = matrix.findIndex(row => row.some(c => /c[eé]dula|nombre|documento|empleado|afiliado|nss/i.test(String(c))));
+    let header, dataRows;
+    if (headerIdx >= 0) { header = matrix[headerIdx].map(h => String(h || '').trim()); dataRows = matrix.slice(headerIdx + 1); }
+    else { const w = Math.max(1, ...matrix.map(r => r.length)); header = Array.from({ length: w }, (_, i) => 'Columna ' + (i + 1)); dataRows = matrix; }
+    dataRows = dataRows.filter(r => r.some(c => String(c).trim() !== ''));
+    const det = detectarColumnas(header, dataRows);
+    const hayCed = dataRows.some(r => normCedula(r[det.colCed]).length >= 9);
+    if (hayCed) {
+      _modo = 'cedula'; _header = header; _rows = dataRows; _colCed = det.colCed; _colNom = det.colNom; _titulares = [];
+      renderMapeo();
+    } else {
+      _modo = 'nombre'; _rows = []; _depCount = 0;
+      _titulares = dataRows.map(r => r.slice().sort((a, b) => String(b).replace(/[^A-Za-zñÑ]/g, '').length - String(a).replace(/[^A-Za-zñÑ]/g, '').length)[0]).map(s => String(s || '').trim()).filter(Boolean);
+      setArea('nxTssMapeo', `<div style="margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:12px;color:#1e40af">Pegaste <b>${_titulares.length} nombres</b> (sin cédula) → comparo <b>por nombre</b>.</div>`);
+    }
+    comparar();
+  }
+  window.nxTssPegar = compararPegado;
+
   function renderMapeo() {
     if (!_header.length) { setArea('nxTssMapeo', ''); return; }
     const opts = sel => _header.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${esc(h || ('Columna ' + (i + 1)))}</option>`).join('');
@@ -9489,13 +9526,18 @@
           <button type="button" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo (Excel, CSV o PDF)</button>
           <input type="file" id="nxTssFile" accept=".xlsx,.xls,.csv,.pdf" style="display:none">
 
+          <div style="text-align:center;color:#94a3b8;font-size:11px;margin:9px 0;font-weight:700">— o pega los datos —</div>
+          <textarea id="nxTssPegar" placeholder="Pega aquí lo copiado de Excel (cédula y nombre), o una lista de cédulas o nombres…" style="width:100%;min-height:64px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box"></textarea>
+
           <div id="nxTssMapeo"></div>
           <div id="nxTssResultado"></div>
         </div>
       </div>`;
     document.body.appendChild(ov);
     const fileInp = document.getElementById('nxTssFile');
-    if (fileInp) fileInp.addEventListener('change', function () { if (this.files && this.files[0]) onArchivo(this.files[0]); });
+    if (fileInp) fileInp.addEventListener('change', function () { if (this.files && this.files[0]) { const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; onArchivo(this.files[0]); } });
+    const pegarTa = document.getElementById('nxTssPegar');
+    if (pegarTa) pegarTa.addEventListener('input', function () { if (fileInp) fileInp.value = ''; compararPegado(); });
     comparar();
   };
 
