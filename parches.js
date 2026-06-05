@@ -9294,7 +9294,7 @@
       <div style="background:#f8fafc;border-radius:18px;max-width:620px;width:100%;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
         <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:18px 18px;display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:17px;font-weight:800">🔍 Cuadre TSS</div>
+            <div style="font-size:17px;font-weight:800">🔍 Tabla Comparativa</div>
             <div style="font-size:11px;opacity:.85;margin-top:2px">Compara tus clientes con el archivo de la TSS (por cédula)</div>
           </div>
           <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
@@ -9329,7 +9329,7 @@
     btn.className = 'qa';
     btn.id = 'qaCuadreTSS';
     btn.setAttribute('onclick', 'window.nxAbrirCuadreTSS && window.nxAbrirCuadreTSS()');
-    btn.innerHTML = `<span class="qa-i"><i class="ti ti-file-search"></i></span><div class="qa-l">Cuadre TSS</div>`;
+    btn.innerHTML = `<span class="qa-i"><i class="ti ti-file-search"></i></span><div class="qa-l">Tabla Comparativa</div>`;
     qa.parentElement.appendChild(btn);
     return true;
   }
