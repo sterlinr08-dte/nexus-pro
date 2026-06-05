@@ -9158,11 +9158,25 @@
 
   function setArea(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
 
-  // Convierte el archivo en una matriz (array de filas). Soporta:
+  // Lee el archivo como ArrayBuffer de forma robusta: intenta file.arrayBuffer()
+  // y, si falla (archivo bloqueado por Excel, OneDrive, etc.), reintenta con FileReader.
+  function leerBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error || new Error('NotReadable'));
+      try { fr.readAsArrayBuffer(file); } catch (e) { reject(e); }
+    });
+  }
+  async function leerBufferRobusto(file) {
+    try { return await file.arrayBuffer(); }
+    catch (e1) { return await leerBuffer(file); }
+  }
+
+  // Convierte un ArrayBuffer en una matriz (array de filas). Soporta:
   //  - Tabla HTML disfrazada de .xls (caso típico TSS, suele venir en UTF-16)
   //  - Excel real (.xlsx/.xls) y CSV (vía SheetJS)
-  async function obtenerMatriz(file) {
-    const buf = await file.arrayBuffer();
+  async function obtenerMatriz(buf) {
     const bytes = new Uint8Array(buf);
     let texto;
     if (bytes[0] === 0xFF && bytes[1] === 0xFE) texto = new TextDecoder('utf-16le').decode(buf);
@@ -9245,8 +9259,14 @@
     setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo archivo...</div></div>');
     setArea('nxTssMapeo', '');
     _rows = []; _titulares = []; _depCount = 0;
+    let buf;
     try {
-      const buf = await file.arrayBuffer();
+      buf = await leerBufferRobusto(file);
+    } catch (e) {
+      setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">⚠️ No se pudo leer el archivo.<br><span style="font-size:12px;color:#64748b">Si está <b>abierto en Excel</b> u otro programa, ciérralo y vuelve a intentarlo.<br>Si está en <b>OneDrive/Drive</b>, descárgalo primero a tu PC.</span></div>');
+      return;
+    }
+    try {
       const u8 = new Uint8Array(buf.slice(0, 5));
       const esPDF = (file.name || '').toLowerCase().endsWith('.pdf') ||
         (u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46); // %PDF
@@ -9264,7 +9284,7 @@
         return;
       }
       _modo = 'cedula';
-      const matrix = await obtenerMatriz(file);
+      const matrix = await obtenerMatriz(buf);
       let headerIdx = matrix.findIndex(row => row.some(c => /c[eé]dula|nombre|documento|empleado|trabajador|afiliado|cedula|nss/i.test(String(c))));
       if (headerIdx < 0) headerIdx = 0;
       _header = (matrix[headerIdx] || []).map(h => String(h || '').trim());
@@ -9274,7 +9294,12 @@
       renderMapeo();
       comparar();
     } catch (e) {
-      setArea('nxTssResultado', `<div style="color:#dc2626;padding:16px;text-align:center">No se pudo leer el archivo.<br><span style="font-size:11px;color:#94a3b8">${esc(e.message || '')}</span></div>`);
+      const txt = String(e?.name || '') + ' ' + String(e?.message || '');
+      const bloqueo = /NotReadable|could not be read|permission/i.test(txt);
+      const detalle = bloqueo
+        ? 'Si está <b>abierto en Excel</b> u otro programa, ciérralo y vuelve a intentarlo.<br>Si está en <b>OneDrive/Drive</b>, descárgalo primero a tu PC.'
+        : esc(e?.message || '');
+      setArea('nxTssResultado', `<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">⚠️ No se pudo leer el archivo.<br><span style="font-size:12px;color:#64748b">${detalle}</span></div>`);
     }
   }
 
