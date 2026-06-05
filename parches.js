@@ -4663,7 +4663,7 @@
         } else if (bSel) {
           banco = bSel;
         }
-        const clienteId = window.abonoCliId || null;
+        const clienteId = (typeof abonoCliId !== 'undefined' ? abonoCliId : window.abonoCliId) || null;
         snapshot = { monto, metodo, ref, agente, banco, clienteId };
       }
 
@@ -8848,7 +8848,7 @@
     let ext = '';
     if (file.name && file.name.includes('.')) ext = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
     if (!ext) ext = (file.type && file.type.includes('png')) ? 'png' : (file.type && file.type.includes('pdf')) ? 'pdf' : 'jpg';
-    const cid = window.abonoCliId || 'sin';
+    const cid = (typeof abonoCliId !== 'undefined' ? abonoCliId : window.abonoCliId) || 'sin';
     const path = `abonos/${cid}/${Date.now()}.${ext}`;
     const fd = new FormData();
     fd.append('', file, 'bauche.' + ext);
@@ -8996,7 +8996,7 @@
     const orig = window.regAbono;
     window.regAbono = async function () {
       const url = window._nxBaucheURL || null;
-      const cid = window.abonoCliId || null;
+      const cid = (typeof abonoCliId !== 'undefined' ? abonoCliId : window.abonoCliId) || null;
       const before = ultimoAbonoRef();
       const r = await orig.apply(this, arguments);
       const after = ultimoAbonoRef();
