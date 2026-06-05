@@ -2036,12 +2036,12 @@
     if (!esAdmin()) return;
     if (!(await window.nxConfirm('¿Anular esta entrega?', '• La entrega se borrará\n• El cobro del cliente NO se afecta (factura sigue pagada)\n• El "Dinero en Mano" del agente subirá por ese monto', { ok: 'Sí, anular', tipo: 'danger' }))) return;
     const api = getAPI();
-    if (!api?.delete) {
-      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.delete');
+    if (!api?.del) {
+      if (typeof window.toast === 'function') window.toast('err', 'API no disponible', 'No se encontró API.del');
       return;
     }
     try {
-      await api.delete('entregas_admin', `id=eq.${id}`);
+      await api.del('entregas_admin', `id=eq.${id}`);
       if (typeof window.toast === 'function') window.toast('ok', 'Anulada', 'La entrega fue eliminada. Investiga con el agente.');
       if (typeof window.logAudit === 'function') window.logAudit('ENTREGA_ADMIN_ANULADA', `ID: ${id}`, 'Cobros');
       if (typeof window.nxRefrescarSolicitudes === 'function') await window.nxRefrescarSolicitudes();
