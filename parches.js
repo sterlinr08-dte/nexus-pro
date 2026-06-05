@@ -7566,36 +7566,43 @@
     return anio + '-' + String(mes + 1).padStart(2, '0');
   }
 
-  function calcularHistorico() {
-    const abonos = window.ST?.abonos || [];
-    const agentes = window.ST?.agentes || [];
-    const clientes = window.ST?.clientes || [];
+  function abonoActivoCi(a) {
+    const e = String(a.estado || 'ACTIVO').toUpperCase();
+    return e !== 'ANULADO' && e !== 'ELIMINADO' && e !== 'INACTIVO';
+  }
+  function getAPI_ci() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function getST_ci() { try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); } catch (e) { return window.ST || {}; } }
 
-    // Agrupar cobros por PERÍODO DE CIERRE (20 al 19)
+  function calcularHistorico(abonos, agentes, clientes) {
     const meses = {};
-    abonos.forEach(a => {
-      if (!a.fecha) return;
-      const ym = periodoDeCierre(a.fecha); // período según corte día 20
+    (abonos || []).forEach(a => {
+      if (!a.fecha || !abonoActivoCi(a)) return;
+      const ym = periodoDeCierre(a.fecha);
       if (!meses[ym]) meses[ym] = { mes: ym, total: 0, num: 0, porAgente: {} };
       meses[ym].total += Number(a.monto || 0);
       meses[ym].num++;
-      const cli = clientes.find(c => String(c.id) === String(a.cliente_id));
-      if (cli?.agente_id) {
-        const ag = agentes.find(x => String(x.id) === String(cli.agente_id));
-        const nomA = ag?.nom || 'Sin agente';
-        meses[ym].porAgente[nomA] = (meses[ym].porAgente[nomA] || 0) + Number(a.monto || 0);
-      }
+      const cli = (clientes || []).find(c => String(c.id) === String(a.cliente_id));
+      const nomA = (cli && cli.agente_id)
+        ? ((agentes || []).find(x => String(x.id) === String(cli.agente_id))?.nom || 'Sin agente')
+        : 'Sin agente';
+      meses[ym].porAgente[nomA] = (meses[ym].porAgente[nomA] || 0) + Number(a.monto || 0);
     });
-
     return Object.values(meses).sort((a, b) => b.mes.localeCompare(a.mes));
   }
 
-  window.nxAbrirCierre = function() {
+  window.nxAbrirCierre = async function() {
     if (!esAdminCierre()) return;
 
-    const historico = calcularHistorico();
-    const facturas = window.ST?.facturas || [];
-    const clientes = window.ST?.clientes || [];
+    const api = getAPI_ci();
+    const ST_ = getST_ci();
+    let abonos = [], egresos = [];
+    try { abonos = (await api.get('abonos', 'select=cliente_id,monto,fecha,estado')) || []; } catch (e) {}
+    try { egresos = (await api.get('egresos', 'select=monto,fecha')) || []; } catch (e) {}
+    const facturas = Array.isArray(ST_.facturas) ? ST_.facturas : [];
+    const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
+    const agentes = Array.isArray(ST_.agentes) ? ST_.agentes : [];
+
+    const historico = calcularHistorico(abonos, agentes, clientes);
 
     const pendientes = facturas.filter(f => {
       const e = (f.estado || '').toLowerCase();
@@ -7603,13 +7610,17 @@
     });
     const montoPendiente = pendientes.reduce((s, f) => s + Number(f.total || 0), 0);
 
-    const mesActual = historico[0] || { total: 0, num: 0, porAgente: {} };
-    const mesAnterior = historico[1] || { total: 0 };
-    const tend = mesAnterior.total > 0 ? Math.round((mesActual.total - mesAnterior.total) / mesAnterior.total * 100) : (mesActual.total > 0 ? 100 : 0);
-
     const hoy = new Date();
     const ymActual = periodoDeCierre(hoy.toISOString().slice(0, 10));
+    const mesActual = historico.find(m => m.mes === ymActual) || { mes: ymActual, total: 0, num: 0, porAgente: {} };
+    const mesAnterior = historico.find(m => m.mes < ymActual) || { total: 0 };
+    const tend = mesAnterior.total > 0 ? Math.round((mesActual.total - mesAnterior.total) / mesAnterior.total * 100) : (mesActual.total > 0 ? 100 : 0);
     const nuevosMes = clientes.filter(c => c.created_at && periodoDeCierre(c.created_at.slice(0, 10)) === ymActual).length;
+
+    const egresoCiclo = (egresos || []).filter(e => e.fecha && periodoDeCierre(e.fecha) === ymActual).reduce((s, e) => s + Number(e.monto || 0), 0);
+    const balance = mesActual.total - egresoCiclo;
+    const maxHist = Math.max(1, ...historico.map(m => m.total));
+    const maxAg = Math.max(1, ...Object.values(mesActual.porAgente), 0);
 
     // CSS
     if (!document.getElementById('nx-cierre-css')) {
@@ -7628,6 +7639,10 @@
         .nxCi-stat b{font-size:18px;font-weight:800;display:block}
         .nxCi-stat span{font-size:9px;color:#94a3b8;text-transform:uppercase}
         .nxCi-mes{display:flex;justify-content:space-between;align-items:center;padding:11px;background:#f8fafc;border-radius:10px;margin-bottom:7px}
+        .nxCi-row{padding:9px 2px;border-bottom:1px solid #f1f5f9}
+        .nxCi-row:last-child{border-bottom:none}
+        .nxCi-bar-bg{height:7px;background:#f1f5f9;border-radius:5px;overflow:hidden;margin-top:6px}
+        .nxCi-bar-fill{height:100%;border-radius:5px;transition:width .5s ease}
         @media(max-width:480px){#nx-cierre-box{margin:0}}
       `;
       document.head.appendChild(st);
@@ -7662,35 +7677,51 @@
           </div>
 
           <div class="nxCi-card">
-            <div class="nxCi-title">📈 Resumen</div>
+            <div class="nxCi-title">📈 Resumen del ciclo</div>
             <div class="nxCi-grid">
               <div class="nxCi-stat"><b style="color:#ef4444">${F(montoPendiente).replace('RD$ ','')}</b><span>Pendiente RD$</span></div>
               <div class="nxCi-stat"><b style="color:#f59e0b">${pendientes.length}</b><span>Facturas pend.</span></div>
               <div class="nxCi-stat"><b style="color:#10b981">${nuevosMes}</b><span>Clientes nuevos</span></div>
-              <div class="nxCi-stat"><b style="color:#2563eb">${mesActual.num}</b><span>Cobros</span></div>
+              <div class="nxCi-stat"><b style="color:#dc2626">${F(egresoCiclo).replace('RD$ ','')}</b><span>Egresos RD$</span></div>
+            </div>
+          </div>
+
+          <div class="nxCi-card" style="background:linear-gradient(135deg,#ecfdf5,#eff6ff)">
+            <div class="nxCi-title">⚖️ Balance del ciclo</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="text-align:center;flex:1"><div style="font-size:9px;color:#10b981;font-weight:800;letter-spacing:.3px">ENTRÓ</div><div style="font-size:14px;font-weight:900;color:#059669;margin-top:2px">${F(mesActual.total)}</div></div>
+              <div style="color:#cbd5e1;font-size:16px;font-weight:700">−</div>
+              <div style="text-align:center;flex:1"><div style="font-size:9px;color:#ef4444;font-weight:800;letter-spacing:.3px">SALIÓ</div><div style="font-size:14px;font-weight:900;color:#dc2626;margin-top:2px">${F(egresoCiclo)}</div></div>
+              <div style="color:#cbd5e1;font-size:16px;font-weight:700">=</div>
+              <div style="text-align:center;flex:1"><div style="font-size:9px;color:${balance>=0?'#1d4ed8':'#b45309'};font-weight:800;letter-spacing:.3px">QUEDA</div><div style="font-size:14px;font-weight:900;color:${balance>=0?'#1e3a8a':'#92400e'};margin-top:2px">${F(balance)}</div></div>
             </div>
           </div>
 
           ${Object.keys(mesActual.porAgente).length ? `
           <div class="nxCi-card">
-            <div class="nxCi-title">👥 Cobro por agente (este mes)</div>
+            <div class="nxCi-title">👥 Cobro por agente (este ciclo)</div>
             ${Object.entries(mesActual.porAgente).sort((a,b)=>b[1]-a[1]).map(([nom, monto]) => `
-              <div class="nxCi-mes">
-                <span style="font-size:12px;font-weight:700;color:#1e293b">${nom}</span>
-                <span style="font-size:13px;font-weight:800;color:#059669">${F(monto)}</span>
+              <div class="nxCi-row">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:12px;font-weight:700;color:#1e293b">${nom}</span>
+                  <span style="font-size:13px;font-weight:800;color:#059669">${F(monto)}</span>
+                </div>
+                <div class="nxCi-bar-bg"><div class="nxCi-bar-fill" style="width:${Math.round(monto/maxAg*100)}%;background:linear-gradient(90deg,#34d399,#059669)"></div></div>
               </div>
             `).join('')}
           </div>` : ''}
 
           <div class="nxCi-card">
-            <div class="nxCi-title">📅 Histórico de meses</div>
-            ${historico.map(m => `
-              <div class="nxCi-mes">
-                <span style="font-size:12px;font-weight:700;color:#1e293b">${nomMes(m.mes)}</span>
-                <span style="font-size:11px;color:#64748b">${m.num} cobros</span>
-                <span style="font-size:13px;font-weight:800;color:#059669">${F(m.total)}</span>
+            <div class="nxCi-title">📅 Histórico de ciclos</div>
+            ${historico.length ? historico.slice(0,6).map(m => `
+              <div class="nxCi-row">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:12px;font-weight:700;color:#1e293b">${nomMes(m.mes)}${m.mes===ymActual?' <span style="font-size:8px;background:#dbeafe;color:#1d4ed8;padding:1px 5px;border-radius:6px;font-weight:800">ACTUAL</span>':''}</span>
+                  <span style="font-size:13px;font-weight:800;color:#059669">${F(m.total)}<span style="font-size:9px;color:#94a3b8;font-weight:600"> · ${m.num}</span></span>
+                </div>
+                <div class="nxCi-bar-bg"><div class="nxCi-bar-fill" style="width:${Math.round(m.total/maxHist*100)}%;background:${m.mes===ymActual?'linear-gradient(90deg,#60a5fa,#1d4ed8)':'linear-gradient(90deg,#a7f3d0,#10b981)'}"></div></div>
               </div>
-            `).join('')}
+            `).join('') : '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:14px">Aún no hay cobros registrados</div>'}
           </div>
 
         </div>
