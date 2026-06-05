@@ -9072,3 +9072,255 @@
   }
 })();
 
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - CUADRE TSS (comparar clientes del sistema vs archivo TSS)
+   ────────────────────────────────────────────────────────────────
+   Ventana (solo admin) para importar un Excel/CSV de la TSS y compararlo,
+   por CÉDULA, con los clientes de una EMPRESA del sistema. Alerta:
+   • Clientes del sistema que NO están en el archivo (faltan en TSS).
+   • Personas del archivo que NO están en el sistema (extras).
+   Lee .xlsx/.xls/.csv (carga SheetJS bajo demanda). No toca index.html.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+  if (window.__NEXUS_CUADRE_TSS__) return;
+  window.__NEXUS_CUADRE_TSS__ = true;
+
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function getST() { try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); } catch (e) { return window.ST || {}; } }
+  function esAdmin() {
+    try { return (typeof sesion !== 'undefined') && sesion?.rol === 'admin'; }
+    catch (e) { try { return window.sesion?.rol === 'admin'; } catch (_) { return false; } }
+  }
+  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  function normCedula(x) { return String(x ?? '').replace(/\D/g, ''); }
+  function fmtCed(x) { const d = normCedula(x); return d.length === 11 ? `${d.slice(0,3)}-${d.slice(3,10)}-${d.slice(10)}` : (d || '—'); }
+
+  // Estado del módulo
+  let _rows = [];      // filas de datos (arrays)
+  let _header = [];    // encabezados (array)
+  let _colCed = -1;
+  let _colNom = -1;
+
+  // Carga SheetJS (lector de Excel) bajo demanda
+  function cargarSheetJS() {
+    return new Promise((resolve, reject) => {
+      if (window.XLSX) return resolve(window.XLSX);
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error('No cargó el lector'));
+      s.onerror = () => reject(new Error('No se pudo descargar el lector de Excel'));
+      document.head.appendChild(s);
+    });
+  }
+
+  function detectarColumnas(header, rows) {
+    let colCed = -1, colNom = -1;
+    header.forEach((h, i) => {
+      const t = String(h).toLowerCase();
+      if (colCed < 0 && /c[eé]dula|documento|identificaci|nss|seguro|cedula/.test(t)) colCed = i;
+      if (colNom < 0 && /nombre|empleado|trabajador|afiliado|raz[oó]n|apellido/.test(t)) colNom = i;
+    });
+    // Si no detectó cédula por título, buscar por patrón (columna con muchos números de 9-11 dígitos)
+    if (colCed < 0 && header.length) {
+      for (let i = 0; i < header.length; i++) {
+        let hits = 0, tot = 0;
+        rows.slice(0, 25).forEach(r => { const v = normCedula(r[i]); if (v) { tot++; if (v.length >= 9 && v.length <= 11) hits++; } });
+        if (tot > 0 && hits / tot > 0.6) { colCed = i; break; }
+      }
+    }
+    if (colNom < 0) colNom = colCed >= 0 ? (colCed === 0 ? 1 : 0) : 0;
+    if (colCed < 0) colCed = 0;
+    return { colCed, colNom };
+  }
+
+  function setArea(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+
+  async function onArchivo(file) {
+    if (!file) return;
+    setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo archivo...</div></div>');
+    setArea('nxTssMapeo', '');
+    try {
+      const XLSX = await cargarSheetJS();
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+      let headerIdx = matrix.findIndex(row => row.some(c => /c[eé]dula|nombre|documento|empleado|trabajador|afiliado|cedula/i.test(String(c))));
+      if (headerIdx < 0) headerIdx = 0;
+      _header = (matrix[headerIdx] || []).map(h => String(h || '').trim());
+      _rows = matrix.slice(headerIdx + 1).filter(r => r.some(c => String(c).trim() !== ''));
+      const det = detectarColumnas(_header, _rows);
+      _colCed = det.colCed; _colNom = det.colNom;
+      renderMapeo();
+      comparar();
+    } catch (e) {
+      setArea('nxTssResultado', `<div style="color:#dc2626;padding:16px;text-align:center">No se pudo leer el archivo.<br><span style="font-size:11px;color:#94a3b8">${esc(e.message || '')}</span></div>`);
+    }
+  }
+
+  function renderMapeo() {
+    if (!_header.length) { setArea('nxTssMapeo', ''); return; }
+    const opts = sel => _header.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${esc(h || ('Columna ' + (i + 1)))}</option>`).join('');
+    setArea('nxTssMapeo', `
+      <div style="display:flex;gap:8px;margin-top:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px">
+        <div style="flex:1"><label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Columna de CÉDULA</label>
+          <select id="nxTssColCed" onchange="window.nxTssRemap()" style="width:100%;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px">${opts(_colCed)}</select></div>
+        <div style="flex:1"><label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Columna de NOMBRE</label>
+          <select id="nxTssColNom" onchange="window.nxTssRemap()" style="width:100%;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px">${opts(_colNom)}</select></div>
+      </div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:4px">Si las columnas no son correctas, cámbialas aquí.</div>`);
+  }
+  window.nxTssRemap = function () {
+    _colCed = parseInt(document.getElementById('nxTssColCed')?.value || 0);
+    _colNom = parseInt(document.getElementById('nxTssColNom')?.value || 0);
+    comparar();
+  };
+
+  function chip(color, bg, label, val) {
+    return `<div style="background:${bg};border-radius:10px;padding:9px;text-align:center;flex:1;min-width:90px">
+      <div style="font-size:17px;font-weight:900;color:${color}">${val}</div>
+      <div style="font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px">${label}</div></div>`;
+  }
+  function listaPersonas(items, color, vacio) {
+    if (!items.length) return `<div style="text-align:center;color:#10b981;font-size:12px;padding:14px;font-weight:600">✓ ${vacio}</div>`;
+    return items.map(it => `
+      <div style="display:flex;align-items:center;gap:10px;padding:9px;border-bottom:1px solid #f1f5f9">
+        <div style="width:30px;height:30px;border-radius:8px;background:${color}1a;color:${color};display:grid;place-items:center;font-weight:800;flex-shrink:0;font-size:13px">${esc((it.nom || '?').trim().charAt(0).toUpperCase())}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;color:#0f172a;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nom || '(sin nombre)')}</div>
+          <div style="font-size:10.5px;color:#64748b">${fmtCed(it.ced)}${it.extra ? ` · <span style="color:#d97706">${esc(it.extra)}</span>` : ''}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function comparar() {
+    const empSel = document.getElementById('nxTssEmpresa');
+    const empId = empSel?.value || '';
+    if (!_rows.length) { setArea('nxTssResultado', '<div style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">📄 Sube un archivo de la TSS para comparar.</div>'); return; }
+    if (!empId) { setArea('nxTssResultado', '<div style="text-align:center;color:#f59e0b;padding:24px;font-size:13px">🏢 Elige una empresa arriba para comparar.</div>'); return; }
+
+    const ST_ = getST();
+    const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
+    const sysCli = clientes.filter(c => String(c.empresa_id) === String(empId));
+
+    const fileEntries = _rows.map(r => ({ ced: normCedula(r[_colCed]), nom: String(r[_colNom] || '').trim() })).filter(e => e.ced);
+    const fileSet = new Set(fileEntries.map(e => e.ced));
+
+    const sysCed = sysCli.map(c => ({ nom: c.nom, ced: normCedula(c.cedula) }));
+    const sysSet = new Set(sysCed.filter(c => c.ced).map(c => c.ced));
+
+    // Índice de TODOS los clientes por cédula (para avisar si un "extra" existe en otra empresa)
+    const allByCed = {};
+    clientes.forEach(c => { const k = normCedula(c.cedula); if (k) allByCed[k] = c; });
+    const empresas = Array.isArray(ST_.empresas) ? ST_.empresas : [];
+    const nomEmpresa = id => empresas.find(e => String(e.id) === String(id))?.nom || '';
+
+    const faltanEnTSS = sysCed.filter(c => c.ced && !fileSet.has(c.ced));
+    const sinCedula = sysCed.filter(c => !c.ced);
+    const coinciden = sysCed.filter(c => c.ced && fileSet.has(c.ced)).length;
+    // dedup extras por cédula
+    const vistos = new Set();
+    const extras = [];
+    fileEntries.forEach(e => {
+      if (sysSet.has(e.ced) || vistos.has(e.ced)) return;
+      vistos.add(e.ced);
+      const otro = allByCed[e.ced];
+      extras.push({ ced: e.ced, nom: e.nom, extra: otro ? `En sistema bajo empresa: ${nomEmpresa(otro.empresa_id) || 'otra'}` : '' });
+    });
+
+    setArea('nxTssResultado', `
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
+        ${chip('#1e293b', '#f1f5f9', 'Sistema', sysCli.length)}
+        ${chip('#1e293b', '#f1f5f9', 'En archivo', fileEntries.length)}
+        ${chip('#059669', '#ecfdf5', 'Coinciden', coinciden)}
+        ${chip('#dc2626', '#fef2f2', 'Faltan TSS', faltanEnTSS.length)}
+        ${chip('#d97706', '#fffbeb', 'Extras', extras.length)}
+      </div>
+
+      <div style="background:#fff;border:1px solid #fecaca;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fef2f2;padding:9px 12px;font-size:11px;font-weight:800;color:#b91c1c">⚠️ TUS CLIENTES QUE FALTAN EN LA TSS (${faltanEnTSS.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(faltanEnTSS, '#dc2626', 'Todos tus clientes están en el archivo')}</div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #fde68a;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fffbeb;padding:9px 12px;font-size:11px;font-weight:800;color:#b45309">📋 EN EL ARCHIVO PERO NO EN EL SISTEMA (${extras.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(extras, '#d97706', 'No hay personas de más en el archivo')}</div>
+      </div>
+
+      ${sinCedula.length ? `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div style="background:#f8fafc;padding:9px 12px;font-size:11px;font-weight:800;color:#64748b">❔ CLIENTES SIN CÉDULA (no se pueden comparar) (${sinCedula.length})</div>
+        <div style="max-height:160px;overflow-y:auto">${listaPersonas(sinCedula, '#64748b', '')}</div>
+      </div>` : ''}
+    `);
+  }
+  window.nxTssComparar = comparar;
+
+  window.nxAbrirCuadreTSS = function () {
+    if (!esAdmin()) return;
+    let ov = document.getElementById('nxTssOverlay');
+    if (ov) ov.remove();
+    _rows = []; _header = []; _colCed = -1; _colNom = -1;
+
+    const ST_ = getST();
+    const empresas = (Array.isArray(ST_.empresas) ? ST_.empresas : []).slice().sort((a, b) => String(a.nom).localeCompare(String(b.nom)));
+    const opcEmp = '<option value="">— Elegir empresa —</option>' + empresas.map(e => `<option value="${esc(e.id)}">${esc(e.nom)}</option>`).join('');
+
+    ov = document.createElement('div');
+    ov.id = 'nxTssOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:99990;display:flex;justify-content:center;align-items:flex-start;padding:16px;overflow-y:auto';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div style="background:#f8fafc;border-radius:18px;max-width:620px;width:100%;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:18px 18px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:17px;font-weight:800">🔍 Cuadre TSS</div>
+            <div style="font-size:11px;opacity:.85;margin-top:2px">Compara tus clientes con el archivo de la TSS (por cédula)</div>
+          </div>
+          <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+        </div>
+        <div style="padding:16px">
+          <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">1. Empresa a comparar</label>
+          <select id="nxTssEmpresa" onchange="window.nxTssComparar()" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;background:#fff;margin-bottom:12px">${opcEmp}</select>
+
+          <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">2. Archivo de la TSS</label>
+          <button type="button" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo (Excel o CSV)</button>
+          <input type="file" id="nxTssFile" accept=".xlsx,.xls,.csv" style="display:none">
+
+          <div id="nxTssMapeo"></div>
+          <div id="nxTssResultado"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    const fileInp = document.getElementById('nxTssFile');
+    if (fileInp) fileInp.addEventListener('change', function () { if (this.files && this.files[0]) onArchivo(this.files[0]); });
+    comparar();
+  };
+
+  // Botón en el dashboard (solo admin)
+  function inyectarBoton() {
+    if (document.getElementById('qaCuadreTSS')) return true;
+    if (!esAdmin()) return true;
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    const qa = vDash.querySelector('.qa');
+    if (!qa || !qa.parentElement) return false;
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaCuadreTSS';
+    btn.setAttribute('onclick', 'window.nxAbrirCuadreTSS && window.nxAbrirCuadreTSS()');
+    btn.innerHTML = `<span class="qa-i"><i class="ti ti-file-search"></i></span><div class="qa-l">Cuadre TSS</div>`;
+    qa.parentElement.appendChild(btn);
+    return true;
+  }
+
+  function init() {
+    let n = 0;
+    const t = function () { n++; if (inyectarBoton()) return; if (n < 80) setTimeout(t, 150); };
+    t();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
+
