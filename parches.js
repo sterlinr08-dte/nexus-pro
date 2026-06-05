@@ -7912,7 +7912,8 @@
 
   // ── Estado local ──
   let _egresos = [];
-  let _totalEntro = 0;
+  let _abonos = [];
+  let _periodo = 'todos'; // 'todos' o 'YYYY-MM'
 
   // ═══ CARGA DE DATOS ═══
   async function cargarEgresos() {
@@ -7924,24 +7925,49 @@
     return _egresos;
   }
 
-  async function cargarEntradas() {
+  async function cargarAbonos() {
     const api = getAPI();
-    if (!api?.get) { _totalEntro = 0; return 0; }
+    if (!api?.get) { _abonos = []; return; }
     try {
       // Cobros de clientes = abonos activos (se excluyen anulados/eliminados)
-      const abonos = await api.get('abonos', 'select=monto,estado') || [];
-      _totalEntro = abonos.reduce((sum, a) => {
-        const est = String(a.estado || 'ACTIVO').toUpperCase();
-        if (est === 'ANULADO' || est === 'ELIMINADO' || est === 'INACTIVO') return sum;
-        return sum + Number(a.monto || 0);
-      }, 0);
-    } catch (e) { console.error('Error cargando abonos:', e); _totalEntro = 0; }
-    return _totalEntro;
+      _abonos = await api.get('abonos', 'select=monto,estado,fecha') || [];
+    } catch (e) { console.error('Error cargando abonos:', e); _abonos = []; }
   }
 
-  function totalSalio() {
-    return _egresos.reduce((s, e) => s + Number(e.monto || 0), 0);
+  // ── Helpers de periodo (filtro por mes) ──
+  function mesDe(fecha) { return fecha ? String(fecha).slice(0, 7) : ''; } // YYYY-MM
+  function nombreMes(ym) {
+    if (!ym) return '';
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const [y, m] = ym.split('-');
+    return (meses[Number(m) - 1] || '') + ' ' + y;
   }
+  function abonosActivos() {
+    return _abonos.filter(a => {
+      const est = String(a.estado || 'ACTIVO').toUpperCase();
+      return est !== 'ANULADO' && est !== 'ELIMINADO' && est !== 'INACTIVO';
+    });
+  }
+  function enPeriodo(fecha) { return _periodo === 'todos' || mesDe(fecha) === _periodo; }
+  function totalEntro() {
+    return abonosActivos().filter(a => enPeriodo(a.fecha)).reduce((s, a) => s + Number(a.monto || 0), 0);
+  }
+  function egresosFiltrados() { return _egresos.filter(e => enPeriodo(e.fecha)); }
+  function totalSalio() { return egresosFiltrados().reduce((s, e) => s + Number(e.monto || 0), 0); }
+  function periodosDisponibles() {
+    const set = new Set();
+    abonosActivos().forEach(a => { if (a.fecha) set.add(mesDe(a.fecha)); });
+    _egresos.forEach(e => { if (e.fecha) set.add(mesDe(e.fecha)); });
+    set.add(new Date().toISOString().slice(0, 7)); // siempre incluir el mes actual
+    return Array.from(set).filter(Boolean).sort().reverse();
+  }
+
+  // Cambiar el mes que se está viendo
+  window.nxContabFiltrar = function (val) {
+    _periodo = val || 'todos';
+    const mp = document.getElementById('nxModalContab');
+    if (mp) renderModal(mp);
+  };
 
   // ═══ MODAL PRINCIPAL ═══
   async function abrirModal() {
@@ -7958,27 +7984,33 @@
     modal.innerHTML = '<div class="modal" style="max-width:620px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando contabilidad...</div></div></div>';
     modal.classList.add('open');
 
-    await Promise.all([cargarEgresos(), cargarEntradas()]);
+    await Promise.all([cargarEgresos(), cargarAbonos()]);
     renderModal(modal);
   }
   window.nxAbrirContabilidad = abrirModal;
 
   function renderModal(modal) {
-    const entro = _totalEntro;
+    const egs = egresosFiltrados();
+    const entro = totalEntro();
     const salio = totalSalio();
     const queda = entro - salio;
 
+    // Selector de mes
+    const periodos = periodosDisponibles();
+    const optPeriodo = `<option value="todos" ${_periodo === 'todos' ? 'selected' : ''}>📅 Todo el tiempo</option>`
+      + periodos.map(p => `<option value="${p}" ${p === _periodo ? 'selected' : ''}>${esc(nombreMes(p))}</option>`).join('');
+
     // Desglose de egresos por tipo
     const porTipo = {};
-    _egresos.forEach(e => { const t = e.tipo || 'GASTO'; porTipo[t] = (porTipo[t] || 0) + Number(e.monto || 0); });
+    egs.forEach(e => { const t = e.tipo || 'GASTO'; porTipo[t] = (porTipo[t] || 0) + Number(e.monto || 0); });
     const chips = Object.keys(porTipo).map(t => {
       const ti = tipoInfo(t);
       return `<span style="display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:3px 10px;font-size:10.5px;font-weight:700;color:#475569"><i class="ti ${ti.icon}" style="color:${ti.color}"></i>${esc(ti.label)}: ${fmt(porTipo[t])}</span>`;
     }).join('');
 
-    const lista = _egresos.length === 0
-      ? '<div style="text-align:center;padding:36px 20px;color:#94a3b8;font-size:13px">No hay egresos registrados.<br>Registra el primero abajo. 👇</div>'
-      : _egresos.map(e => {
+    const lista = egs.length === 0
+      ? '<div style="text-align:center;padding:36px 20px;color:#94a3b8;font-size:13px">No hay egresos en este periodo.<br>Registra uno abajo. 👇</div>'
+      : egs.map(e => {
           const ti = tipoInfo(e.tipo);
           return `
             <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-bottom:9px;display:flex;align-items:center;gap:11px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
@@ -8006,6 +8038,11 @@
           <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalContab').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
 
+        <!-- FILTRO DE MES -->
+        <div style="padding:6px 2px 8px">
+          <select id="nxContabPeriodo" onchange="window.nxContabFiltrar(this.value)" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:700;color:#1e293b;background:#fff;outline:none">${optPeriodo}</select>
+        </div>
+
         <!-- BALANCE -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 2px 10px">
           <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:14px;padding:12px 10px;text-align:center">
@@ -8028,7 +8065,7 @@
         ${chips ? `<div style="display:flex;flex-wrap:wrap;gap:5px;padding:0 2px 8px">${chips}</div>` : ''}
 
         <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px">
-          <span style="font-size:11px;font-weight:800;color:#475569;letter-spacing:.3px">EGRESOS REGISTRADOS (${_egresos.length})</span>
+          <span style="font-size:11px;font-weight:800;color:#475569;letter-spacing:.3px">EGRESOS REGISTRADOS (${egs.length})</span>
         </div>
 
         <div style="overflow-y:auto;flex:1;padding:2px 2px;-webkit-overflow-scrolling:touch">
