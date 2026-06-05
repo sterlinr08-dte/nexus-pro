@@ -9349,6 +9349,36 @@
   }
   window.nxTssPegar = compararPegado;
 
+  // Pegar un ARCHIVO copiado (PDF/Excel) usando la API moderna del portapapeles
+  window.nxTssPegarArchivo = async function () {
+    const aviso = (txt, color) => setArea('nxTssResultado', `<div style="color:${color || '#dc2626'};padding:16px;text-align:center;font-size:13px">${txt}</div>`);
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.read) {
+        aviso('Tu navegador no permite pegar archivos. Usa <b>"Seleccionar archivo"</b> para el PDF.'); return;
+      }
+      const items = await navigator.clipboard.read();
+      for (const it of items) {
+        const tipo = (it.types || []).find(t => /pdf|sheet|excel|csv|officedocument|octet-stream/i.test(t));
+        if (tipo) {
+          const blob = await it.getType(tipo);
+          const nombre = /pdf/i.test(tipo) ? 'pegado.pdf' : (/csv/i.test(tipo) ? 'pegado.csv' : 'pegado.xlsx');
+          const file = new File([blob], nombre, { type: blob.type || tipo });
+          const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = '';
+          const fi = document.getElementById('nxTssFile'); if (fi) fi.value = '';
+          onArchivo(file);
+          return;
+        }
+      }
+      // Si no había archivo, intentar como texto
+      let txt = '';
+      try { txt = await navigator.clipboard.readText(); } catch (_) {}
+      if (txt && txt.trim()) { const ta = document.getElementById('nxTssPegar'); if (ta) { ta.value = txt; compararPegado(); } return; }
+      aviso('No encontré un archivo en el portapapeles.<br><span style="color:#64748b;font-size:12px">En iPhone, para el PDF usa <b>"Seleccionar archivo" → "Elegir archivo"</b>.</span>', '#b45309');
+    } catch (e) {
+      aviso('No se pudo leer el portapapeles.<br><span style="color:#64748b;font-size:12px">Usa <b>"Seleccionar archivo"</b> para el PDF (en iPhone: "Elegir archivo").</span>', '#b45309');
+    }
+  };
+
   function renderMapeo() {
     if (!_header.length) { setArea('nxTssMapeo', ''); return; }
     const opts = sel => _header.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${esc(h || ('Columna ' + (i + 1)))}</option>`).join('');
@@ -9527,7 +9557,8 @@
           <input type="file" id="nxTssFile" accept=".xlsx,.xls,.csv,.pdf,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
 
           <div style="text-align:center;color:#94a3b8;font-size:11px;margin:9px 0;font-weight:700">— o pega los datos —</div>
-          <textarea id="nxTssPegar" placeholder="Pega aquí lo copiado de Excel (cédula y nombre), o una lista de cédulas o nombres… (el PDF NO se pega: súbelo arriba)" style="width:100%;min-height:64px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box"></textarea>
+          <button type="button" onclick="window.nxTssPegarArchivo()" style="width:100%;border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:8px"><i class="ti ti-clipboard"></i> Pegar archivo copiado (PDF/Excel)</button>
+          <textarea id="nxTssPegar" placeholder="…o pega aquí lo copiado de Excel (cédula y nombre), o una lista de cédulas o nombres" style="width:100%;min-height:64px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box"></textarea>
 
           <div id="nxTssMapeo"></div>
           <div id="nxTssResultado"></div>
