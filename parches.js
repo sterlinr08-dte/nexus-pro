@@ -7847,3 +7847,372 @@
     : init();
 })();
 
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - CONTABILIDAD (EGRESOS + BALANCE)  ·  SOLO ADMIN
+   ────────────────────────────────────────────────────────────────
+   Botón en el Dashboard (solo rol admin) que abre una ventana para:
+     • Registrar pagos que SALEN:
+         - ARS / aseguradoras
+         - Salarios de empleados
+         - Gastos generales
+     • Ver un balance:
+         - Entró  = cobros de clientes (tabla "abonos" de Supabase)
+         - Salió  = egresos registrados (tabla "egresos" de Supabase)
+         - Queda  = Entró - Salió
+   Los egresos se guardan en la tabla "egresos" (ya existente).
+   Todo vive en parches.js. No se modifica el index.html.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_CONTABILIDAD_V1__) return;
+  window.__NEXUS_CONTABILIDAD_V1__ = true;
+
+  // ── Helpers compartidos (mismo patrón que el resto de parches.js) ──
+  function getAPI() {
+    try { return (typeof API !== 'undefined') ? API : window.API; }
+    catch (e) { return window.API; }
+  }
+  function esAdmin() {
+    try { return (typeof sesion !== 'undefined') && sesion?.rol === 'admin'; }
+    catch (e) { try { return window.sesion?.rol === 'admin'; } catch (_) { return false; } }
+  }
+  function usuarioActual() {
+    try {
+      const s = (typeof sesion !== 'undefined') ? sesion : window.sesion;
+      return s?.usuario || s?.nom || s?.login || 'admin';
+    } catch (e) { return 'admin'; }
+  }
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
+  }
+  function fmt(n) {
+    return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+  function fmtFecha(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso + (String(iso).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+    catch (e) { return iso; }
+  }
+  function notify(tipo, titulo, msg) {
+    if (typeof window.toast === 'function') window.toast(tipo, titulo, msg || '');
+  }
+
+  // ── Tipos de egreso ──
+  const TIPOS = {
+    ARS:     { label: 'Aseguradora (ARS)', benef: 'Aseguradora / ARS',  icon: 'ti-building-hospital', color: '#7c3aed' },
+    SALARIO: { label: 'Salario empleado',  benef: 'Empleado',            icon: 'ti-user-dollar',       color: '#0891b2' },
+    GASTO:   { label: 'Gasto general',     benef: 'Proveedor / detalle', icon: 'ti-receipt-2',         color: '#d97706' }
+  };
+  function tipoInfo(t) { return TIPOS[t] || { label: t || 'Egreso', benef: 'Beneficiario', icon: 'ti-cash', color: '#64748b' }; }
+
+  const METODOS = ['Efectivo', 'Transferencia', 'Cheque', 'Tarjeta', 'Otro'];
+
+  // ── Estado local ──
+  let _egresos = [];
+  let _totalEntro = 0;
+
+  // ═══ CARGA DE DATOS ═══
+  async function cargarEgresos() {
+    const api = getAPI();
+    if (!api?.get) return [];
+    try {
+      _egresos = await api.get('egresos', 'select=*&order=fecha.desc,created_at.desc') || [];
+    } catch (e) { console.error('Error cargando egresos:', e); _egresos = []; }
+    return _egresos;
+  }
+
+  async function cargarEntradas() {
+    const api = getAPI();
+    if (!api?.get) { _totalEntro = 0; return 0; }
+    try {
+      // Cobros de clientes = abonos activos (se excluyen anulados/eliminados)
+      const abonos = await api.get('abonos', 'select=monto,estado') || [];
+      _totalEntro = abonos.reduce((sum, a) => {
+        const est = String(a.estado || 'ACTIVO').toUpperCase();
+        if (est === 'ANULADO' || est === 'ELIMINADO' || est === 'INACTIVO') return sum;
+        return sum + Number(a.monto || 0);
+      }, 0);
+    } catch (e) { console.error('Error cargando abonos:', e); _totalEntro = 0; }
+    return _totalEntro;
+  }
+
+  function totalSalio() {
+    return _egresos.reduce((s, e) => s + Number(e.monto || 0), 0);
+  }
+
+  // ═══ MODAL PRINCIPAL ═══
+  async function abrirModal() {
+    if (!esAdmin()) { notify('err', 'Acceso restringido', 'Solo el administrador puede ver Contabilidad'); return; }
+
+    let modal = document.getElementById('nxModalContab');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'overlay';
+      modal.id = 'nxModalContab';
+      modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div class="modal" style="max-width:620px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando contabilidad...</div></div></div>';
+    modal.classList.add('open');
+
+    await Promise.all([cargarEgresos(), cargarEntradas()]);
+    renderModal(modal);
+  }
+  window.nxAbrirContabilidad = abrirModal;
+
+  function renderModal(modal) {
+    const entro = _totalEntro;
+    const salio = totalSalio();
+    const queda = entro - salio;
+
+    // Desglose de egresos por tipo
+    const porTipo = {};
+    _egresos.forEach(e => { const t = e.tipo || 'GASTO'; porTipo[t] = (porTipo[t] || 0) + Number(e.monto || 0); });
+    const chips = Object.keys(porTipo).map(t => {
+      const ti = tipoInfo(t);
+      return `<span style="display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:3px 10px;font-size:10.5px;font-weight:700;color:#475569"><i class="ti ${ti.icon}" style="color:${ti.color}"></i>${esc(ti.label)}: ${fmt(porTipo[t])}</span>`;
+    }).join('');
+
+    const lista = _egresos.length === 0
+      ? '<div style="text-align:center;padding:36px 20px;color:#94a3b8;font-size:13px">No hay egresos registrados.<br>Registra el primero abajo. 👇</div>'
+      : _egresos.map(e => {
+          const ti = tipoInfo(e.tipo);
+          return `
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-bottom:9px;display:flex;align-items:center;gap:11px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+              <div style="width:40px;height:40px;border-radius:10px;background:${ti.color}18;color:${ti.color};display:grid;place-items:center;flex-shrink:0"><i class="ti ${ti.icon}" style="font-size:20px"></i></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.concepto || ti.label)}</div>
+                <div style="font-size:11px;color:#64748b;margin-top:1px">${esc(ti.label)}${e.beneficiario ? ' · ' + esc(e.beneficiario) : ''}</div>
+                <div style="font-size:10.5px;color:#94a3b8;margin-top:1px">${fmtFecha(e.fecha)}${e.metodo ? ' · ' + esc(e.metodo) : ''}${e.banco ? ' · ' + esc(e.banco) : ''}${e.referencia ? ' · Ref: ' + esc(e.referencia) : ''}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-weight:900;color:#dc2626;font-size:14px;white-space:nowrap">- ${fmt(e.monto)}</div>
+                <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:4px">
+                  <button class="btn bsm bghost" onclick="window.nxEditarEgreso('${esc(e.id)}')" title="Editar"><i class="ti ti-pencil"></i></button>
+                  <button class="btn bsm bghost" onclick="window.nxEliminarEgreso('${esc(e.id)}')" title="Eliminar" style="color:#dc2626"><i class="ti ti-trash"></i></button>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+
+    modal.innerHTML = `
+      <div class="modal" style="max-width:620px;max-height:82vh;display:flex;flex-direction:column;margin-bottom:80px">
+        <div class="mt" style="display:flex;align-items:center;gap:8px">
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalContab').classList.remove('open')" title="Volver"><i class="ti ti-arrow-left"></i></button>
+          <span style="flex:1;text-align:center"><i class="ti ti-calculator"></i> CONTABILIDAD</span>
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalContab').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+
+        <!-- BALANCE -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 2px 10px">
+          <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:14px;padding:12px 10px;text-align:center">
+            <div style="font-size:10px;font-weight:800;color:#047857;letter-spacing:.4px"><i class="ti ti-arrow-down-circle"></i> ENTRÓ</div>
+            <div style="font-size:16px;font-weight:900;color:#065f46;margin-top:3px">${fmt(entro)}</div>
+            <div style="font-size:9px;color:#10b981;font-weight:600;margin-top:1px">Cobros de clientes</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1px solid #fecaca;border-radius:14px;padding:12px 10px;text-align:center">
+            <div style="font-size:10px;font-weight:800;color:#b91c1c;letter-spacing:.4px"><i class="ti ti-arrow-up-circle"></i> SALIÓ</div>
+            <div style="font-size:16px;font-weight:900;color:#991b1b;margin-top:3px">${fmt(salio)}</div>
+            <div style="font-size:9px;color:#ef4444;font-weight:600;margin-top:1px">Egresos</div>
+          </div>
+          <div style="background:linear-gradient(135deg,${queda >= 0 ? '#eff6ff,#dbeafe' : '#fffbeb,#fef3c7'});border:1px solid ${queda >= 0 ? '#bfdbfe' : '#fde68a'};border-radius:14px;padding:12px 10px;text-align:center">
+            <div style="font-size:10px;font-weight:800;color:${queda >= 0 ? '#1d4ed8' : '#b45309'};letter-spacing:.4px"><i class="ti ti-wallet"></i> QUEDA</div>
+            <div style="font-size:16px;font-weight:900;color:${queda >= 0 ? '#1e3a8a' : '#92400e'};margin-top:3px">${fmt(queda)}</div>
+            <div style="font-size:9px;color:${queda >= 0 ? '#3b82f6' : '#d97706'};font-weight:600;margin-top:1px">Balance neto</div>
+          </div>
+        </div>
+
+        ${chips ? `<div style="display:flex;flex-wrap:wrap;gap:5px;padding:0 2px 8px">${chips}</div>` : ''}
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 6px">
+          <span style="font-size:11px;font-weight:800;color:#475569;letter-spacing:.3px">EGRESOS REGISTRADOS (${_egresos.length})</span>
+        </div>
+
+        <div style="overflow-y:auto;flex:1;padding:2px 2px;-webkit-overflow-scrolling:touch">
+          ${lista}
+        </div>
+
+        <div style="padding-top:12px;border-top:1px solid #e2e8f0;padding-bottom:8px">
+          <button class="btn bxl bc1" style="width:100%" onclick="window.nxAbrirFormEgreso('')"><i class="ti ti-plus"></i> Registrar egreso</button>
+        </div>
+      </div>`;
+  }
+
+  // ═══ FORMULARIO EGRESO (nuevo / editar) ═══
+  window.nxAbrirFormEgreso = function (id) {
+    if (!esAdmin()) return;
+    const e = id
+      ? _egresos.find(x => String(x.id) === String(id))
+      : { tipo: 'ARS', concepto: '', beneficiario: '', monto: '', metodo: 'Transferencia', banco: '', referencia: '', nota: '', fecha: new Date().toISOString().slice(0, 10) };
+    if (!e) return;
+
+    const optTipo = Object.keys(TIPOS).map(k => `<option value="${k}" ${k === e.tipo ? 'selected' : ''}>${esc(TIPOS[k].label)}</option>`).join('');
+    const optMetodo = METODOS.map(m => `<option value="${m}" ${m === (e.metodo || '') ? 'selected' : ''}>${esc(m)}</option>`).join('');
+    const benefLabel = tipoInfo(e.tipo).benef;
+
+    let f = document.getElementById('nxFormEgreso');
+    if (!f) {
+      f = document.createElement('div');
+      f.className = 'overlay';
+      f.id = 'nxFormEgreso';
+      f.addEventListener('click', ev => { if (ev.target === f) f.classList.remove('open'); });
+      document.body.appendChild(f);
+    }
+    f.innerHTML = `
+      <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
+        <div class="mt">
+          <span><i class="ti ti-cash-banknote"></i> ${id ? 'EDITAR' : 'NUEVO'} EGRESO</span>
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxFormEgreso').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="padding:8px 0">
+          <div class="fr"><label>Tipo de egreso</label>
+            <select id="nxEgTipo" onchange="window.nxEgTipoChange()">${optTipo}</select>
+          </div>
+          <div class="fr"><label>Concepto *</label>
+            <input type="text" id="nxEgConcepto" value="${esc(e.concepto || '')}" placeholder="Ej: Pago mensual póliza colectiva">
+          </div>
+          <div class="fr"><label id="nxEgBenefLabel">${esc(benefLabel)}</label>
+            <input type="text" id="nxEgBenef" value="${esc(e.beneficiario || '')}" placeholder="Nombre del beneficiario">
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="fr" style="flex:1"><label>Monto *</label>
+              <input type="number" id="nxEgMonto" value="${esc(e.monto || '')}" placeholder="0" inputmode="decimal" min="0" step="0.01">
+            </div>
+            <div class="fr" style="flex:1"><label>Fecha</label>
+              <input type="date" id="nxEgFecha" value="${esc(e.fecha || new Date().toISOString().slice(0, 10))}">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="fr" style="flex:1"><label>Método</label>
+              <select id="nxEgMetodo">${optMetodo}</select>
+            </div>
+            <div class="fr" style="flex:1"><label>Banco (opcional)</label>
+              <input type="text" id="nxEgBanco" value="${esc(e.banco || '')}" placeholder="Ej: Popular">
+            </div>
+          </div>
+          <div class="fr"><label>Referencia (opcional)</label>
+            <input type="text" id="nxEgRef" value="${esc(e.referencia || '')}" placeholder="No. de transferencia / cheque">
+          </div>
+          <div class="fr"><label>Nota (opcional)</label>
+            <textarea id="nxEgNota" rows="2" placeholder="Detalle adicional..." style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;resize:vertical;font-family:inherit">${esc(e.nota || '')}</textarea>
+          </div>
+        </div>
+        <div class="fe" style="margin-top:14px;gap:8px">
+          <button class="btn" type="button" onclick="document.getElementById('nxFormEgreso').classList.remove('open')">Cancelar</button>
+          <button class="btn bxl bc1" type="button" onclick="window.nxGuardarEgreso('${esc(id || '')}')"><i class="ti ti-check"></i> Guardar</button>
+        </div>
+      </div>`;
+    f.classList.add('open');
+  };
+
+  // Actualiza la etiqueta del beneficiario según el tipo seleccionado
+  window.nxEgTipoChange = function () {
+    const t = document.getElementById('nxEgTipo')?.value;
+    const lbl = document.getElementById('nxEgBenefLabel');
+    if (lbl) lbl.textContent = tipoInfo(t).benef;
+  };
+
+  window.nxGuardarEgreso = async function (id) {
+    if (!esAdmin()) return;
+    const val = elId => document.getElementById(elId)?.value?.trim() || '';
+    const egreso = {
+      tipo: document.getElementById('nxEgTipo')?.value || 'GASTO',
+      concepto: val('nxEgConcepto'),
+      beneficiario: val('nxEgBenef'),
+      monto: Number(document.getElementById('nxEgMonto')?.value || 0),
+      metodo: document.getElementById('nxEgMetodo')?.value || '',
+      banco: val('nxEgBanco'),
+      referencia: val('nxEgRef'),
+      nota: val('nxEgNota'),
+      fecha: val('nxEgFecha') || new Date().toISOString().slice(0, 10)
+    };
+
+    if (!egreso.concepto) { notify('err', 'Falta el concepto', 'Describe el egreso'); return; }
+    if (!(egreso.monto > 0)) { notify('err', 'Monto inválido', 'El monto debe ser mayor que 0'); return; }
+
+    const api = getAPI();
+    if (!api) { notify('err', 'API no disponible', ''); return; }
+
+    try {
+      if (id) {
+        await api.patch('egresos', `id=eq.${id}`, egreso);
+      } else {
+        egreso.created_by = usuarioActual();
+        await api.post('egresos', egreso);
+      }
+      document.getElementById('nxFormEgreso')?.classList.remove('open');
+      await cargarEgresos();
+      const mp = document.getElementById('nxModalContab');
+      if (mp) renderModal(mp);
+      notify('ok', 'Egreso guardado', '');
+    } catch (err) {
+      console.error('Error guardando egreso:', err);
+      notify('err', 'No se pudo guardar', err.message || '');
+    }
+  };
+
+  window.nxEditarEgreso = function (id) { window.nxAbrirFormEgreso(id); };
+
+  window.nxEliminarEgreso = async function (id) {
+    if (!esAdmin()) return;
+    const ok = (typeof window.nxConfirm === 'function')
+      ? await window.nxConfirm('¿Eliminar este egreso?', 'Esta acción no se puede deshacer.', { ok: 'Sí, eliminar', tipo: 'danger' })
+      : window.confirm('¿Eliminar este egreso?');
+    if (!ok) return;
+    const api = getAPI();
+    if (!api?.del) return;
+    try {
+      await api.del('egresos', `id=eq.${id}`);
+      await cargarEgresos();
+      const mp = document.getElementById('nxModalContab');
+      if (mp) renderModal(mp);
+      notify('ok', 'Egreso eliminado', '');
+    } catch (err) {
+      notify('err', 'No se pudo eliminar', err.message || '');
+    }
+  };
+
+  // ═══ BOTÓN EN DASHBOARD (solo admin) ═══
+  function inyectarBoton() {
+    if (document.getElementById('qaContab')) return true;
+    if (!esAdmin()) return true; // no es admin: no inyectar, pero detener reintentos
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    const qaExistente = vDash.querySelector('.qa');
+    if (!qaExistente) return false;
+    const qaGrid = qaExistente.parentElement;
+    if (!qaGrid) return false;
+
+    const btn = document.createElement('div');
+    btn.className = 'qa';
+    btn.id = 'qaContab';
+    btn.setAttribute('onclick', 'window.nxAbrirContabilidad && window.nxAbrirContabilidad()');
+    btn.innerHTML = `
+      <span class="qa-i"><i class="ti ti-calculator"></i></span>
+      <div class="qa-l">Contabilidad</div>
+    `;
+    qaGrid.appendChild(btn);
+    return true;
+  }
+
+  // ═══ INIT ═══
+  function init() {
+    let intentos = 0;
+    const tryInit = function () {
+      intentos++;
+      if (inyectarBoton()) return;
+      if (intentos < 80) setTimeout(tryInit, 150);
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
