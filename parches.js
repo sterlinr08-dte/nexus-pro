@@ -3790,6 +3790,10 @@
       const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
       const nomAg = ag?.nom || '—';
       const directoBadge = e.es_directo ? '<span class="nxSL-tag nxSL-tag-direct"><i class="ti ti-arrow-down"></i> DIRECTO</span>' : '<span class="nxSL-tag nxSL-tag-fisico"><i class="ti ti-cash"></i> FÍSICO</span>';
+      const cliEntP = (st().clientes || []).find(c => String(c.id) === String(e.cobro_id || e.cliente_id || ''));
+      let nomCliP = cliEntP?.nom || '';
+      if (!nomCliP && e.nota) { const mm = /cliente\s+(.+)$/i.exec(e.nota); if (mm) nomCliP = mm[1].trim(); }
+      nomCliP = nomCliP || '—';
       // Botones según rol: confirmar y anular SOLO admin
       const accionesPend = esAdmin() ? `
             <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" title="Confirmar"><i class="ti ti-check"></i> Confirmar</button>
@@ -3800,6 +3804,7 @@
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
           <td><strong>${esc(nomAg)}</strong></td>
+          <td>${esc(nomCliP)}</td>
           <td class="nxSL-num">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}${e.banco ? `<br><span class="nxSL-muted">${esc(e.banco)}</span>` : ''}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
@@ -3812,6 +3817,10 @@
     const depRows = confirmadasNoDep.map(e => {
       const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
       const nomAg = ag?.nom || '—';
+      const cliEntD = (st().clientes || []).find(c => String(c.id) === String(e.cobro_id || e.cliente_id || ''));
+      let nomCliD = cliEntD?.nom || '';
+      if (!nomCliD && e.nota) { const mm = /cliente\s+(.+)$/i.exec(e.nota); if (mm) nomCliD = mm[1].trim(); }
+      nomCliD = nomCliD || '—';
       // Depositar: admin SIEMPRE, agente solo si es SU propia entrega
       const miId = getMiAgenteId();
       const puedeDepositar = esAdmin() || (miId && String(e.agente_id) === String(miId));
@@ -3823,6 +3832,7 @@
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
           <td><strong>${esc(nomAg)}</strong></td>
+          <td>${esc(nomCliD)}</td>
           <td class="nxSL-num">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
@@ -3845,6 +3855,7 @@
                 <tr>
                   <th>FECHA</th>
                   <th>AGENTE</th>
+                  <th>CLIENTE</th>
                   <th class="nxSL-num">MONTO</th>
                   <th>MÉTODO / BANCO</th>
                   <th>REFERENCIA</th>
@@ -3870,6 +3881,7 @@
               <tr>
                 <th>FECHA</th>
                 <th>AGENTE</th>
+                <th>CLIENTE</th>
                 <th class="nxSL-num">MONTO</th>
                 <th>MÉTODO</th>
                 <th>REFERENCIA</th>
