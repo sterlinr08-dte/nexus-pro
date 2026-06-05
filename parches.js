@@ -9137,17 +9137,36 @@
 
   function setArea(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
 
+  // Convierte el archivo en una matriz (array de filas). Soporta:
+  //  - Tabla HTML disfrazada de .xls (caso típico TSS, suele venir en UTF-16)
+  //  - Excel real (.xlsx/.xls) y CSV (vía SheetJS)
+  async function obtenerMatriz(file) {
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let texto;
+    if (bytes[0] === 0xFF && bytes[1] === 0xFE) texto = new TextDecoder('utf-16le').decode(buf);
+    else if (bytes[0] === 0xFE && bytes[1] === 0xFF) texto = new TextDecoder('utf-16be').decode(buf);
+    else texto = new TextDecoder('utf-8').decode(buf);
+
+    if (/<\s*(table|tr)[\s>]/i.test(texto)) {
+      const doc = new DOMParser().parseFromString(texto, 'text/html');
+      const trs = Array.from(doc.querySelectorAll('tr'));
+      const matrix = trs.map(tr => Array.from(tr.querySelectorAll('td,th')).map(td => (td.textContent || '').replace(/\s+/g, ' ').trim()));
+      if (matrix.length) return matrix;
+    }
+    const XLSX = await cargarSheetJS();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+  }
+
   async function onArchivo(file) {
     if (!file) return;
     setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo archivo...</div></div>');
     setArea('nxTssMapeo', '');
     try {
-      const XLSX = await cargarSheetJS();
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
-      let headerIdx = matrix.findIndex(row => row.some(c => /c[eé]dula|nombre|documento|empleado|trabajador|afiliado|cedula/i.test(String(c))));
+      const matrix = await obtenerMatriz(file);
+      let headerIdx = matrix.findIndex(row => row.some(c => /c[eé]dula|nombre|documento|empleado|trabajador|afiliado|cedula|nss/i.test(String(c))));
       if (headerIdx < 0) headerIdx = 0;
       _header = (matrix[headerIdx] || []).map(h => String(h || '').trim());
       _rows = matrix.slice(headerIdx + 1).filter(r => r.some(c => String(c).trim() !== ''));
