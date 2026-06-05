@@ -8024,40 +8024,81 @@
     } catch (e) { console.error('Error cargando abonos:', e); _abonos = []; }
   }
 
-  // ── Helpers de periodo (filtro por mes) ──
-  function mesDe(fecha) { return fecha ? String(fecha).slice(0, 7) : ''; } // YYYY-MM
-  function nombreMes(ym) {
-    if (!ym) return '';
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const [y, m] = ym.split('-');
-    return (meses[Number(m) - 1] || '') + ' ' + y;
+  // ── Helpers de CICLO CONTABLE (cierre del día 20 al 20) ──
+  // El día 20 ABRE el ciclo. Un pago del 20-may cae en el ciclo "20 may – 19 jun".
+  const MES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function cicloInicioDeFecha(fecha) {
+    // Día 20 que abre el ciclo al que pertenece 'fecha'
+    const d = new Date(String(fecha) + (String(fecha).length === 10 ? 'T12:00:00' : ''));
+    let y = d.getFullYear(), m = d.getMonth();
+    if (d.getDate() < 20) { m -= 1; if (m < 0) { m = 11; y -= 1; } }
+    return new Date(y, m, 20);
   }
+  function finDeCiclo(inicio) { return new Date(inicio.getFullYear(), inicio.getMonth() + 1, 19); }
+  function claveCiclo(inicio) { return inicio.getFullYear() + '-' + String(inicio.getMonth() + 1).padStart(2, '0'); }
+  function cicloDeFecha(fecha) { return claveCiclo(cicloInicioDeFecha(fecha)); }
+  function etiquetaCiclo(inicio, fin) {
+    const ya = inicio.getFullYear(), yb = fin.getFullYear();
+    const a = `20 ${MES_CORTO[inicio.getMonth()]}`, b = `19 ${MES_CORTO[fin.getMonth()]}`;
+    return ya === yb ? `${a} – ${b} ${yb}` : `${a} ${ya} – ${b} ${yb}`;
+  }
+  function nombreCiclo(clave) {
+    const [y, m] = clave.split('-').map(Number);
+    const inicio = new Date(y, m - 1, 20);
+    return etiquetaCiclo(inicio, finDeCiclo(inicio));
+  }
+
   function abonosActivos() {
     return _abonos.filter(a => {
       const est = String(a.estado || 'ACTIVO').toUpperCase();
       return est !== 'ANULADO' && est !== 'ELIMINADO' && est !== 'INACTIVO';
     });
   }
-  function enPeriodo(fecha) { return _periodo === 'todos' || mesDe(fecha) === _periodo; }
+  function enPeriodo(fecha) { return _periodo === 'todos' || cicloDeFecha(fecha) === _periodo; }
   function totalEntro() {
-    return abonosActivos().filter(a => enPeriodo(a.fecha)).reduce((s, a) => s + Number(a.monto || 0), 0);
+    return abonosActivos().filter(a => a.fecha && enPeriodo(a.fecha)).reduce((s, a) => s + Number(a.monto || 0), 0);
   }
   function egresosFiltrados() { return _egresos.filter(e => enPeriodo(e.fecha)); }
   function totalSalio() { return egresosFiltrados().reduce((s, e) => s + Number(e.monto || 0), 0); }
   function periodosDisponibles() {
     const set = new Set();
-    abonosActivos().forEach(a => { if (a.fecha) set.add(mesDe(a.fecha)); });
-    _egresos.forEach(e => { if (e.fecha) set.add(mesDe(e.fecha)); });
-    set.add(new Date().toISOString().slice(0, 7)); // siempre incluir el mes actual
+    abonosActivos().forEach(a => { if (a.fecha) set.add(cicloDeFecha(a.fecha)); });
+    _egresos.forEach(e => { if (e.fecha) set.add(cicloDeFecha(e.fecha)); });
+    set.add(cicloDeFecha(new Date().toISOString().slice(0, 10))); // siempre incluir el ciclo actual
     return Array.from(set).filter(Boolean).sort().reverse();
   }
 
-  // Cambiar el mes que se está viendo
+  // Cambiar el ciclo que se está viendo
   window.nxContabFiltrar = function (val) {
     _periodo = val || 'todos';
     const mp = document.getElementById('nxModalContab');
     if (mp) renderModal(mp);
   };
+
+  // ── Aplica el ciclo 20→20 también al Estado de Resultados FORMAL (P&G) ──
+  function instalarCicloContable() {
+    try {
+      // (mes, anio) = mes/año del día 20 que ABRE el ciclo
+      window.periodoContable = function (mes, anio) {
+        const desde = new Date(anio, mes - 1, 20, 0, 0, 0, 0);
+        const hasta = new Date(anio, mes, 19, 23, 59, 59, 999);
+        return { desde, hasta };
+      };
+      // Llena el selector de períodos del P&G con los ciclos 20→20
+      window.llenarPeriodosPYG = function () {
+        const sel = document.getElementById('pygPeriodo');
+        if (!sel || sel.dataset.ciclo20 === '1') return;
+        const actual = cicloInicioDeFecha(new Date().toISOString().slice(0, 10));
+        let opts = '';
+        for (let i = 0; i < 12; i++) {
+          const ini = new Date(actual.getFullYear(), actual.getMonth() - i, 20);
+          opts += `<option value="${ini.getFullYear()}-${ini.getMonth() + 1}">${etiquetaCiclo(ini, finDeCiclo(ini))}</option>`;
+        }
+        sel.innerHTML = opts;
+        sel.dataset.ciclo20 = '1';
+      };
+    } catch (e) { console.warn('No se pudo instalar el ciclo contable 20→20:', e); }
+  }
 
   // ═══ MODAL PRINCIPAL ═══
   async function abrirModal() {
@@ -8089,7 +8130,7 @@
     // Selector de mes
     const periodos = periodosDisponibles();
     const optPeriodo = `<option value="todos" ${_periodo === 'todos' ? 'selected' : ''}>📅 Todo el tiempo</option>`
-      + periodos.map(p => `<option value="${p}" ${p === _periodo ? 'selected' : ''}>${esc(nombreMes(p))}</option>`).join('');
+      + periodos.map(p => `<option value="${p}" ${p === _periodo ? 'selected' : ''}>${esc(nombreCiclo(p))}</option>`).join('');
 
     // Desglose de egresos por tipo
     const porTipo = {};
@@ -8334,6 +8375,7 @@
 
   // ═══ INIT ═══
   function init() {
+    instalarCicloContable(); // aplica el ciclo 20→20 al Estado de Resultados formal
     let intentos = 0;
     const tryInit = function () {
       intentos++;
