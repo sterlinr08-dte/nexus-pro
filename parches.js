@@ -8580,3 +8580,76 @@
   }
 })();
 
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - ARREGLO DEL BUSCADOR EN MÓVIL
+   ────────────────────────────────────────────────────────────────
+   En el celular, el cuadro de búsqueda pequeño de la barra superior
+   es difícil de usar. Este parche hace que al tocarlo se abra directo
+   la BÚSQUEDA GLOBAL de pantalla completa (clientes, facturas, etc.).
+   En PC se deja el comportamiento normal. No se toca index.html.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_FIX_BUSCADOR__) return;
+  window.__NEXUS_FIX_BUSCADOR__ = true;
+
+  const esMovil = () => window.innerWidth <= 768;
+
+  // Abre la búsqueda global de forma robusta (con respaldo si la función no está)
+  function abrirBusqueda() {
+    try {
+      if (typeof window.abrirGlobalSearch === 'function') { window.abrirGlobalSearch(); return; }
+    } catch (e) {}
+    const ov = document.getElementById('gsOverlay');
+    if (ov) {
+      ov.classList.add('show');
+      const inp = document.getElementById('gsInput');
+      if (inp) setTimeout(() => { try { inp.focus(); } catch (e) {} }, 120);
+    }
+  }
+
+  function enlazar() {
+    const sr = document.querySelector('.tn-sr');
+    if (!sr) return false;
+    if (sr.dataset.nxFixBuscador === '1') return true;
+    sr.dataset.nxFixBuscador = '1';
+
+    // Tocar el cuadro de búsqueda en móvil → abrir la búsqueda global completa
+    sr.addEventListener('click', function (ev) {
+      if (!esMovil()) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      abrirBusqueda();
+    }, true);
+
+    // Si el input intenta enfocarse en móvil, mejor abrir la búsqueda completa
+    const inp = sr.querySelector('input');
+    if (inp) {
+      inp.addEventListener('focus', function () {
+        if (!esMovil()) return;
+        try { inp.blur(); } catch (e) {}
+        abrirBusqueda();
+      });
+    }
+    return true;
+  }
+
+  function init() {
+    let n = 0;
+    const t = function () {
+      n++;
+      if (enlazar()) return;
+      if (n < 100) setTimeout(t, 200);
+    };
+    t();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
