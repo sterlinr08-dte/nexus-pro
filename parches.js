@@ -7910,6 +7910,96 @@
 
   const METODOS = ['Efectivo', 'Transferencia', 'Cheque', 'Tarjeta', 'Otro'];
 
+  // ════════════════════════════════════════════════════════════════
+  // ENLACE CON LA CONTABILIDAD FORMAL (asientos / Estado de Resultados)
+  // Cada egreso genera un asiento de doble entrada:
+  //   DEBE  = cuenta de gasto (sube el gasto)
+  //   HABER = 1101 Efectivo y equivalentes (baja el efectivo)
+  // El asiento se enlaza con el egreso por la referencia "EGR-<id>".
+  // ════════════════════════════════════════════════════════════════
+  function getST() {
+    try { return (typeof ST !== 'undefined') ? ST : (window.ST || null); }
+    catch (e) { return window.ST || null; }
+  }
+  function recalcContab() {
+    try {
+      if (typeof recalcularSaldosContables === 'function') recalcularSaldosContables();
+      else if (typeof window.recalcularSaldosContables === 'function') window.recalcularSaldosContables();
+    } catch (e) {}
+  }
+  // Cuenta de gasto según el tipo de egreso (usa el catálogo CUENTAS existente)
+  function cuentaGasto(tipo) {
+    if (tipo === 'SALARIO') return { cod: '5201', nom: 'Nómina agentes' };
+    return { cod: '5101', nom: 'Gastos operativos' }; // ARS y GASTO general
+  }
+  function asientoDeEgreso(e) {
+    const cta = cuentaGasto(e.tipo);
+    return {
+      fecha: e.fecha || new Date().toISOString().slice(0, 10),
+      referencia: 'EGR-' + e.id,
+      descripcion: 'Egreso ' + tipoInfo(e.tipo).label + ': ' + (e.concepto || '') + (e.beneficiario ? ' — ' + e.beneficiario : ''),
+      cuenta_dr_cod: cta.cod,
+      cuenta_dr_nom: cta.nom,
+      monto_dr: Number(e.monto || 0),
+      cuenta_cr_cod: '1101',
+      cuenta_cr_nom: 'Efectivo y equivalentes',
+      monto_cr: Number(e.monto || 0)
+    };
+  }
+  // Recarga los asientos en memoria para que los reportes formales se actualicen al instante
+  async function sincronizarContabilidad() {
+    try {
+      const stRef = getST();
+      const api = getAPI();
+      if (!stRef || !api?.get) return;
+      stRef.asientos = await api.get('asientos', 'select=*&order=created_at.desc') || [];
+      recalcContab();
+    } catch (e) { console.warn('No se pudo sincronizar contabilidad:', e); }
+  }
+  // Crea el asiento de un egreso recién guardado (no rompe el guardado si falla)
+  async function crearAsientoEgreso(e) {
+    const api = getAPI();
+    if (!api?.post || !e?.id) return;
+    try { await api.post('asientos', asientoDeEgreso(e)); }
+    catch (err) { console.warn('No se pudo crear el asiento del egreso:', err); }
+  }
+  // Actualiza (o crea si no existe) el asiento enlazado a un egreso editado
+  async function actualizarAsientoEgreso(e) {
+    const api = getAPI();
+    if (!api?.patch || !e?.id) return;
+    const cta = cuentaGasto(e.tipo);
+    const cambios = {
+      fecha: e.fecha,
+      descripcion: 'Egreso ' + tipoInfo(e.tipo).label + ': ' + (e.concepto || '') + (e.beneficiario ? ' — ' + e.beneficiario : ''),
+      cuenta_dr_cod: cta.cod, cuenta_dr_nom: cta.nom, monto_dr: Number(e.monto || 0),
+      cuenta_cr_cod: '1101', cuenta_cr_nom: 'Efectivo y equivalentes', monto_cr: Number(e.monto || 0)
+    };
+    try {
+      const upd = await api.patch('asientos', `referencia=eq.EGR-${e.id}`, cambios);
+      if (!upd || !upd.length) await crearAsientoEgreso(e); // egreso viejo sin asiento: lo crea
+    } catch (err) { console.warn('No se pudo actualizar el asiento del egreso:', err); }
+  }
+  // Borra el asiento enlazado a un egreso eliminado
+  async function borrarAsientoEgreso(id) {
+    const api = getAPI();
+    if (!api?.del || !id) return;
+    try { await api.del('asientos', `referencia=eq.EGR-${id}`); }
+    catch (err) { console.warn('No se pudo borrar el asiento del egreso:', err); }
+  }
+  // Crea los asientos que falten para egresos anteriores (auto-conexión, no duplica)
+  async function asegurarAsientos() {
+    const api = getAPI();
+    if (!api?.get || !api?.post || !_egresos.length) return;
+    let existentes = [];
+    try { existentes = await api.get('asientos', 'select=referencia&referencia=like.EGR-*') || []; }
+    catch (e) { return; }
+    const set = new Set(existentes.map(a => a.referencia));
+    const faltan = _egresos.filter(e => e.id && !set.has('EGR-' + e.id));
+    if (!faltan.length) return;
+    for (const e of faltan) await crearAsientoEgreso(e);
+    await sincronizarContabilidad();
+  }
+
   // ── Estado local ──
   let _egresos = [];
   let _abonos = [];
@@ -7985,6 +8075,7 @@
     modal.classList.add('open');
 
     await Promise.all([cargarEgresos(), cargarAbonos()]);
+    asegurarAsientos(); // conecta egresos anteriores con la contabilidad formal (en segundo plano)
     renderModal(modal);
   }
   window.nxAbrirContabilidad = abrirModal;
@@ -8176,15 +8267,19 @@
     try {
       if (id) {
         await api.patch('egresos', `id=eq.${id}`, egreso);
+        await actualizarAsientoEgreso({ ...egreso, id });   // actualiza su apunte contable
       } else {
         egreso.created_by = usuarioActual();
-        await api.post('egresos', egreso);
+        const res = await api.post('egresos', egreso);
+        const nuevo = Array.isArray(res) ? res[0] : res;
+        await crearAsientoEgreso({ ...egreso, id: nuevo?.id }); // crea su apunte contable
       }
+      await sincronizarContabilidad();                         // refresca el Estado de Resultados
       document.getElementById('nxFormEgreso')?.classList.remove('open');
       await cargarEgresos();
       const mp = document.getElementById('nxModalContab');
       if (mp) renderModal(mp);
-      notify('ok', 'Egreso guardado', '');
+      notify('ok', 'Egreso guardado', 'También se registró en tu contabilidad');
     } catch (err) {
       console.error('Error guardando egreso:', err);
       notify('err', 'No se pudo guardar', err.message || '');
@@ -8203,6 +8298,8 @@
     if (!api?.del) return;
     try {
       await api.del('egresos', `id=eq.${id}`);
+      await borrarAsientoEgreso(id);      // borra también su apunte contable
+      await sincronizarContabilidad();    // refresca el Estado de Resultados
       await cargarEgresos();
       const mp = document.getElementById('nxModalContab');
       if (mp) renderModal(mp);
