@@ -3795,6 +3795,7 @@
             <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxConfirmarEntregaAdmin('${esc(e.id)}')" title="Confirmar"><i class="ti ti-check"></i> Confirmar</button>
             <button class="nxSL-btn nxSL-btn-anu" onclick="window.nxAnularEntregaAdmin('${esc(e.id)}')" title="Anular"><i class="ti ti-x"></i> Anular</button>
       ` : '<span class="nxSL-muted">Esperando confirmación del admin</span>';
+      const baucheBtnP = e.comprobante_url ? `<button class="nxSL-btn" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${esc(e.comprobante_url)}')" title="Ver bauche"><i class="ti ti-photo"></i> Bauche</button> ` : '';
       return `
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
@@ -3803,7 +3804,7 @@
           <td>${esc(e.metodo || '')}${e.banco ? `<br><span class="nxSL-muted">${esc(e.banco)}</span>` : ''}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
           <td>${directoBadge}</td>
-          <td class="nxSL-actions">${accionesPend}</td>
+          <td class="nxSL-actions">${baucheBtnP}${accionesPend}</td>
         </tr>
       `;
     }).join('');
@@ -3817,6 +3818,7 @@
       const accionesDep = puedeDepositar ? `
             <button class="nxSL-btn nxSL-btn-dep" onclick="window.nxDepositarEntregaAdmin('${esc(e.id)}')" title="Marcar como depositado"><i class="ti ti-building-bank"></i> Depositar</button>
       ` : '<span class="nxSL-muted">—</span>';
+      const baucheBtnD = e.comprobante_url ? `<button class="nxSL-btn" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${esc(e.comprobante_url)}')" title="Ver bauche"><i class="ti ti-photo"></i> Bauche</button> ` : '';
       return `
         <tr>
           <td class="nxSL-tx-fecha">${fmtFecha(e.fecha)}</td>
@@ -3824,7 +3826,7 @@
           <td class="nxSL-num">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}</td>
           <td class="nxSL-tx-ref">${esc(e.referencia || '—')}</td>
-          <td class="nxSL-actions">${accionesDep}</td>
+          <td class="nxSL-actions">${baucheBtnD}${accionesDep}</td>
         </tr>
       `;
     }).join('');
@@ -8761,6 +8763,233 @@
       let faltan = false;
       MODULOS.forEach(cfg => { if (!montar(cfg)) faltan = true; });
       if (!faltan) return;
+      if (n < 120) setTimeout(t, 250);
+    };
+    t();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - BAUCHE / COMPROBANTE DE PAGO
+   ────────────────────────────────────────────────────────────────
+   Al registrar un cobro/abono permite SUBIR o PEGAR la imagen del
+   bauche. Se guarda en el bucket público "comprobantes" de Supabase
+   (con la llave de servicio) y se enlaza al abono (y a la entrega
+   directa). Se puede VER en Historial de pago y en Solicitudes.
+   No se toca index.html.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_BAUCHE_V1__) return;
+  window.__NEXUS_BAUCHE_V1__ = true;
+
+  const BUCKET = 'comprobantes';
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function notify(t, ti, m) { if (typeof window.toast === 'function') window.toast(t, ti, m || ''); }
+  function ultimoAbonoRef() { try { return (typeof _ultimoAbono !== 'undefined') ? _ultimoAbono : window._ultimoAbono; } catch (e) { return window._ultimoAbono; } }
+
+  window._nxBaucheURL = null;
+  let _subiendo = false;
+
+  // ════ VISOR DEL BAUCHE ════
+  window.nxVerComprobante = function (url) {
+    if (!url) return;
+    let ov = document.getElementById('nxVisorBauche');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.className = 'overlay';
+      ov.id = 'nxVisorBauche';
+      ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+      document.body.appendChild(ov);
+    }
+    const esPdf = /\.pdf($|\?)/i.test(url);
+    ov.innerHTML = `
+      <div class="modal" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt" style="display:flex;align-items:center;gap:8px">
+          <span style="flex:1;text-align:center"><i class="ti ti-photo"></i> BAUCHE / COMPROBANTE</span>
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxVisorBauche').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="flex:1;overflow:auto;text-align:center;padding:6px">
+          ${esPdf
+            ? `<iframe src="${url}" style="width:100%;height:60vh;border:none;border-radius:8px"></iframe>`
+            : `<img src="${url}" style="max-width:100%;border-radius:10px" alt="bauche">`}
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px">
+          <a class="btn bxl bc1" href="${url}" target="_blank" rel="noopener" style="text-decoration:none"><i class="ti ti-external-link"></i> Abrir / Descargar</a>
+        </div>
+      </div>`;
+    ov.classList.add('open');
+  };
+
+  // ════ SUBIR LA IMAGEN AL BUCKET ════
+  async function subirBauche(file) {
+    const api = getAPI();
+    if (!api || !api.url || !api.key) throw new Error('Sin conexión');
+    let ext = '';
+    if (file.name && file.name.includes('.')) ext = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!ext) ext = (file.type && file.type.includes('png')) ? 'png' : (file.type && file.type.includes('pdf')) ? 'pdf' : 'jpg';
+    const cid = window.abonoCliId || 'sin';
+    const path = `abonos/${cid}/${Date.now()}.${ext}`;
+    const fd = new FormData();
+    fd.append('', file, 'bauche.' + ext);
+    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key };
+    let resp = await fetch(`${api.url}/storage/v1/object/${BUCKET}/${path}`, { method: 'POST', headers, body: fd });
+    if (!resp.ok && resp.status === 400) {
+      resp = await fetch(`${api.url}/storage/v1/object/${BUCKET}/${path}`, { method: 'PUT', headers, body: fd });
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + (await resp.text()).slice(0, 120));
+    return `${api.url}/storage/v1/object/public/${BUCKET}/${path}`;
+  }
+
+  async function procesarArchivo(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type) && !/pdf$/i.test(file.type || '')) { notify('err', 'Archivo no válido', 'Sube una imagen o PDF'); return; }
+    if (_subiendo) return;
+    _subiendo = true;
+    let prevUrl = '';
+    try { prevUrl = URL.createObjectURL(file); } catch (e) {}
+    pintarEstado('subiendo', prevUrl);
+    try {
+      const url = await subirBauche(file);
+      window._nxBaucheURL = url;
+      pintarEstado('listo', url);
+      notify('ok', 'Bauche cargado', '');
+    } catch (e) {
+      window._nxBaucheURL = null;
+      pintarEstado('error', null);
+      notify('err', 'No se pudo subir el bauche', (e.message || '').slice(0, 80));
+    }
+    _subiendo = false;
+  }
+
+  function pintarEstado(estado, src) {
+    const box = document.getElementById('nxBaucheBox');
+    const prev = document.getElementById('nxBauchePreview');
+    if (!box || !prev) return;
+    if (estado === 'vacio') { box.style.display = 'block'; prev.style.display = 'none'; prev.innerHTML = ''; return; }
+    box.style.display = 'none';
+    prev.style.display = 'flex';
+    if (estado === 'subiendo') {
+      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#475569">Subiendo bauche...</div></div><div class="spin"></div></div>`;
+    } else if (estado === 'listo') {
+      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer" onclick="window.nxVerComprobante('${src}')"><div style="flex:1"><div style="font-size:11px;font-weight:800;color:#059669"><i class="ti ti-check"></i> Bauche listo</div><div style="font-size:9px;color:#94a3b8">Toca la imagen para verla</div></div><button type="button" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxQuitarBauche()"><i class="ti ti-trash"></i></button></div>`;
+    } else if (estado === 'error') {
+      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><div style="flex:1;font-size:11px;font-weight:700;color:#dc2626"><i class="ti ti-alert-triangle"></i> No se pudo subir</div><button type="button" class="btn bsm bghost" onclick="window.nxQuitarBauche()">Reintentar</button></div>`;
+    }
+  }
+
+  window.nxQuitarBauche = function () {
+    window._nxBaucheURL = null;
+    const inp = document.getElementById('nxBaucheInput');
+    if (inp) inp.value = '';
+    pintarEstado('vacio');
+  };
+
+  // ════ INYECTAR EL CARGADOR EN EL MODAL #mAbono ════
+  function inyectarCargador() {
+    if (document.getElementById('nxBaucheWrap')) return true;
+    const modal = document.getElementById('mAbono');
+    if (!modal) return false;
+    const fe = modal.querySelector('.fe');
+    if (!fe || !fe.parentElement) return false;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'nxBaucheWrap';
+    wrap.style.cssText = 'margin:10px 0';
+    wrap.innerHTML = `
+      <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:5px">Bauche / comprobante (opcional)</label>
+      <div id="nxBaucheBox" style="border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;text-align:center;background:#f8fafc;cursor:pointer" onclick="document.getElementById('nxBaucheInput').click()">
+        <div style="font-size:12px;font-weight:700;color:#2563eb"><i class="ti ti-camera"></i> Adjuntar o pegar imagen</div>
+        <div style="font-size:9.5px;color:#94a3b8;margin-top:3px">Foto, captura o pega desde el portapapeles</div>
+      </div>
+      <div id="nxBauchePreview" style="display:none;align-items:center;gap:10px;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#fff"></div>
+      <input type="file" id="nxBaucheInput" accept="image/*,.pdf" style="display:none">
+    `;
+    fe.parentElement.insertBefore(wrap, fe);
+
+    const inp = wrap.querySelector('#nxBaucheInput');
+    inp.addEventListener('change', function () { if (this.files && this.files[0]) procesarArchivo(this.files[0]); });
+    return true;
+  }
+
+  // Pegar imagen del portapapeles mientras el modal de abono está abierto
+  document.addEventListener('paste', function (ev) {
+    const modal = document.getElementById('mAbono');
+    if (!modal || !modal.classList.contains('open')) return;
+    const items = (ev.clipboardData || window.clipboardData) && (ev.clipboardData || window.clipboardData).items;
+    if (!items) return;
+    for (const it of items) {
+      if (it.type && it.type.indexOf('image') !== -1) {
+        const file = it.getAsFile();
+        if (file) { ev.preventDefault(); procesarArchivo(file); break; }
+      }
+    }
+  });
+
+  // Resetear el cargador cada vez que se abre el modal de abono
+  function envolverAbrirAbono() {
+    if (window.__nxAbrirAbonoBauche) return true;
+    if (typeof window.abrirAbono !== 'function') return false;
+    window.__nxAbrirAbonoBauche = true;
+    const orig = window.abrirAbono;
+    window.abrirAbono = function () {
+      const r = orig.apply(this, arguments);
+      window._nxBaucheURL = null;
+      setTimeout(() => { inyectarCargador(); const inp = document.getElementById('nxBaucheInput'); if (inp) inp.value = ''; pintarEstado('vacio'); }, 60);
+      return r;
+    };
+    return true;
+  }
+
+  // ════ ENLAZAR LA URL DEL BAUCHE AL ABONO (y a la entrega directa) ════
+  function envolverRegAbono() {
+    if (window.__nxRegAbonoBauche) return true;
+    if (typeof window.regAbono !== 'function') return false;
+    window.__nxRegAbonoBauche = true;
+    const orig = window.regAbono;
+    window.regAbono = async function () {
+      const url = window._nxBaucheURL || null;
+      const cid = window.abonoCliId || null;
+      const before = ultimoAbonoRef();
+      const r = await orig.apply(this, arguments);
+      const after = ultimoAbonoRef();
+      const exito = after && after !== before;
+      if (url && exito && cid) {
+        const api = getAPI();
+        try {
+          const ab = await api.get('abonos', `cliente_id=eq.${cid}&order=created_at.desc&limit=1`);
+          if (ab && ab[0]) await api.patch('abonos', `id=eq.${ab[0].id}`, { comprobante_url: url });
+        } catch (e) { console.warn('No se pudo enlazar bauche al abono:', e); }
+        try {
+          const ent = await api.get('entregas_admin', `cobro_id=eq.${cid}&order=created_at.desc&limit=1`);
+          if (ent && ent[0] && !ent[0].comprobante_url) {
+            const edad = Date.now() - new Date(ent[0].created_at).getTime();
+            if (edad < 90000) await api.patch('entregas_admin', `id=eq.${ent[0].id}`, { comprobante_url: url });
+          }
+        } catch (e) {}
+        window._nxBaucheURL = null;
+      }
+      return r;
+    };
+    return true;
+  }
+
+  function init() {
+    let n = 0;
+    const t = function () {
+      n++;
+      const a = inyectarCargador();
+      const b = envolverAbrirAbono();
+      const c = (window.__regAbonoEnvuelto || n > 12) ? envolverRegAbono() : false;
+      if (a && b && c) return;
       if (n < 120) setTimeout(t, 250);
     };
     t();
