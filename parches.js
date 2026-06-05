@@ -9098,10 +9098,31 @@
   function fmtCed(x) { const d = normCedula(x); return d.length === 11 ? `${d.slice(0,3)}-${d.slice(3,10)}-${d.slice(10)}` : (d || '—'); }
 
   // Estado del módulo
+  let _modo = 'cedula'; // 'cedula' (TSS/Excel) | 'nombre' (PDF Humano)
   let _rows = [];      // filas de datos (arrays)
   let _header = [];    // encabezados (array)
   let _colCed = -1;
   let _colNom = -1;
+  let _titulares = []; // PDF Humano: nombres de titulares (sin dependientes)
+  let _depCount = 0;   // PDF Humano: cantidad de dependientes ignorados
+
+  // --- Helpers para match por NOMBRE (cuando no hay cédula, ej. Humano) ---
+  function quitaAcentos(s) { return String(s ?? '').normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'), ''); }
+  function tokensNom(s) {
+    return quitaAcentos(s).replace(/[^A-Za-zñÑ\s]/g, ' ').toUpperCase()
+      .split(/\s+/).filter(t => t.length > 1);
+  }
+  // 2 = coincide fuerte (igual o uno contenido en el otro) · 1 = dudoso (≥2 tokens en común) · 0 = no
+  function tierNombre(aTok, bTok) {
+    if (!aTok.length || !bTok.length) return 0;
+    const A = new Set(aTok), B = new Set(bTok);
+    let inter = 0; A.forEach(t => { if (B.has(t)) inter++; });
+    const subA = aTok.every(t => B.has(t));
+    const subB = bTok.every(t => A.has(t));
+    if (subA || subB) return 2;
+    if (inter >= 2) return 1;
+    return 0;
+  }
 
   // Carga SheetJS (lector de Excel) bajo demanda
   function cargarSheetJS() {
@@ -9160,11 +9181,89 @@
     return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
   }
 
+  // --- Lector de PDF (factura Humano) sin dependencias externas ---
+  function bytesALatin1(u8) {
+    let r = ''; const CH = 0x8000;
+    for (let i = 0; i < u8.length; i += CH) r += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+    return r;
+  }
+  async function inflar(u8) {
+    for (const fmt of ['deflate', 'deflate-raw']) {
+      try {
+        const ds = new DecompressionStream(fmt);
+        const ab = await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();
+        return new Uint8Array(ab);
+      } catch (e) { /* probar siguiente */ }
+    }
+    return null;
+  }
+  // Extrae el texto de un PDF: descomprime streams Flate y junta las cadenas (...) de los operadores Tj/TJ
+  async function pdfATexto(buf) {
+    if (typeof DecompressionStream === 'undefined') throw new Error('Tu navegador no soporta leer PDF (actualízalo).');
+    const u8 = new Uint8Array(buf);
+    const lat = bytesALatin1(u8);
+    const chunks = [];
+    const re = /stream\r?\n/g; let m;
+    while ((m = re.exec(lat))) {
+      const start = m.index + m[0].length;
+      let end = lat.indexOf('endstream', start);
+      if (end < 0) continue;
+      while (end > start && (u8[end - 1] === 0x0A || u8[end - 1] === 0x0D)) end--;
+      const inf = await inflar(u8.slice(start, end));
+      if (!inf) continue;
+      const ds = bytesALatin1(inf);
+      const txt = [];
+      const tre = /\((?:[^()\\]|\\.)*\)/g; let tm;
+      while ((tm = tre.exec(ds))) txt.push(tm[0].slice(1, -1).replace(/\\([()\\])/g, '$1'));
+      if (txt.length) chunks.push(txt.join(' '));
+    }
+    return chunks.join(' ').replace(/\s+/g, ' ');
+  }
+  // Separa titulares (código -000) de dependientes en el detalle de la factura Humano
+  function parsearHumano(texto) {
+    const planSet = new Set();
+    let pm; const pre = /Total\s+Plan\s+([A-Za-zñÑ]+)/g;
+    while ((pm = pre.exec(texto))) planSet.add(quitaAcentos(pm[1]).toUpperCase());
+    const re = /([A-ZÑ][A-ZÑ ,]+?)\s+(\d{1,3})\s+(\d{6,7})-(\d{3})\s+[A-ZÑ]+/g;
+    const titMap = new Map(); const deps = [];
+    let m;
+    while ((m = re.exec(texto))) {
+      let nom = m[1].replace(/\s+/g, ' ').trim();
+      const toks = nom.split(' ');
+      if (toks.length > 1 && planSet.has(quitaAcentos(toks[0]).toUpperCase())) nom = toks.slice(1).join(' ');
+      nom = nom.replace(/\s+,/g, ',').replace(/\s+/g, ' ').trim();
+      if (m[4] === '000') {
+        const k = tokensNom(nom).slice().sort().join(' ');
+        if (k && !titMap.has(k)) titMap.set(k, nom);
+      } else deps.push(nom);
+    }
+    return { titulares: Array.from(titMap.values()), dependientes: deps };
+  }
+
   async function onArchivo(file) {
     if (!file) return;
     setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo archivo...</div></div>');
     setArea('nxTssMapeo', '');
+    _rows = []; _titulares = []; _depCount = 0;
     try {
+      const buf = await file.arrayBuffer();
+      const u8 = new Uint8Array(buf.slice(0, 5));
+      const esPDF = (file.name || '').toLowerCase().endsWith('.pdf') ||
+        (u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46); // %PDF
+      if (esPDF) {
+        _modo = 'nombre';
+        const texto = await pdfATexto(buf);
+        const { titulares, dependientes } = parsearHumano(texto);
+        _titulares = titulares; _depCount = dependientes.length;
+        if (!titulares.length) {
+          setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center">No encontré titulares en el PDF.<br><span style="font-size:11px;color:#94a3b8">¿Es una factura de plan voluntario de Humano?</span></div>');
+          return;
+        }
+        renderInfoPDF();
+        comparar();
+        return;
+      }
+      _modo = 'cedula';
       const matrix = await obtenerMatriz(file);
       let headerIdx = matrix.findIndex(row => row.some(c => /c[eé]dula|nombre|documento|empleado|trabajador|afiliado|cedula|nss/i.test(String(c))));
       if (headerIdx < 0) headerIdx = 0;
@@ -9177,6 +9276,15 @@
     } catch (e) {
       setArea('nxTssResultado', `<div style="color:#dc2626;padding:16px;text-align:center">No se pudo leer el archivo.<br><span style="font-size:11px;color:#94a3b8">${esc(e.message || '')}</span></div>`);
     }
+  }
+
+  function renderInfoPDF() {
+    setArea('nxTssMapeo', `
+      <div style="display:flex;gap:8px;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:12px;color:#1e40af">
+        <i class="ti ti-file-text" style="font-size:16px"></i>
+        <div>PDF de Humano detectado · <b>${_titulares.length} titulares</b> · ${_depCount} dependientes ignorados.
+        <div style="font-size:10px;color:#64748b;margin-top:2px">Sin cédula en el PDF → la comparación es <b>por nombre</b>.</div></div>
+      </div>`);
   }
 
   function renderMapeo() {
@@ -9204,22 +9312,31 @@
   }
   function listaPersonas(items, color, vacio) {
     if (!items.length) return `<div style="text-align:center;color:#10b981;font-size:12px;padding:14px;font-weight:600">✓ ${vacio}</div>`;
-    return items.map(it => `
+    return items.map(it => {
+      const sub = [];
+      if (it.ced) sub.push(esc(fmtCed(it.ced)));
+      if (it.extra) sub.push(`<span style="color:#d97706">${esc(it.extra)}</span>`);
+      return `
       <div style="display:flex;align-items:center;gap:10px;padding:9px;border-bottom:1px solid #f1f5f9">
         <div style="width:30px;height:30px;border-radius:8px;background:${color}1a;color:${color};display:grid;place-items:center;font-weight:800;flex-shrink:0;font-size:13px">${esc((it.nom || '?').trim().charAt(0).toUpperCase())}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;color:#0f172a;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nom || '(sin nombre)')}</div>
-          <div style="font-size:10.5px;color:#64748b">${fmtCed(it.ced)}${it.extra ? ` · <span style="color:#d97706">${esc(it.extra)}</span>` : ''}</div>
+          ${sub.length ? `<div style="font-size:10.5px;color:#64748b">${sub.join(' · ')}</div>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   function comparar() {
-    const empSel = document.getElementById('nxTssEmpresa');
-    const empId = empSel?.value || '';
-    if (!_rows.length) { setArea('nxTssResultado', '<div style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">📄 Sube un archivo de la TSS para comparar.</div>'); return; }
+    const empId = document.getElementById('nxTssEmpresa')?.value || '';
+    const hayArchivo = _modo === 'nombre' ? _titulares.length : _rows.length;
+    if (!hayArchivo) { setArea('nxTssResultado', '<div style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">📄 Sube un archivo (TSS Excel/CSV o PDF de Humano) para comparar.</div>'); return; }
     if (!empId) { setArea('nxTssResultado', '<div style="text-align:center;color:#f59e0b;padding:24px;font-size:13px">🏢 Elige una empresa arriba para comparar.</div>'); return; }
+    if (_modo === 'nombre') return compararNombre(empId);
+    return compararCedula(empId);
+  }
 
+  function compararCedula(empId) {
     const ST_ = getST();
     const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
     const sysCli = clientes.filter(c => String(c.empresa_id) === String(empId));
@@ -9274,13 +9391,53 @@
       </div>` : ''}
     `);
   }
+  function compararNombre(empId) {
+    const ST_ = getST();
+    const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
+    const sysCli = clientes.filter(c => String(c.empresa_id) === String(empId)).map(c => ({ nom: c.nom, tok: tokensNom(c.nom) }));
+    const tit = _titulares.map(n => ({ nom: n, tok: tokensNom(n) }));
+
+    const usados = new Set();
+    const coinciden = [], dudosos = [], soloArchivo = [], pend = [];
+    const buscar = (t, tier) => { let best = -1; sysCli.forEach((c, i) => { if (best < 0 && !usados.has(i) && tierNombre(t.tok, c.tok) === tier) best = i; }); return best; };
+    // 1ª pasada: coincidencias fuertes (tienen prioridad sobre las dudosas)
+    tit.forEach(t => { const b = buscar(t, 2); if (b >= 0) { coinciden.push({ nom: t.nom }); usados.add(b); } else pend.push(t); });
+    // 2ª pasada: coincidencias dudosas sobre lo que sobra
+    pend.forEach(t => { const b = buscar(t, 1); if (b >= 0) { dudosos.push({ nom: t.nom, extra: `en sistema: ${sysCli[b].nom}` }); usados.add(b); } else soloArchivo.push({ nom: t.nom }); });
+    const soloSistema = sysCli.filter((c, i) => !usados.has(i)).map(c => ({ nom: c.nom }));
+
+    setArea('nxTssResultado', `
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
+        ${chip('#1e293b', '#f1f5f9', 'Titulares PDF', tit.length)}
+        ${chip('#1e293b', '#f1f5f9', 'Sistema', sysCli.length)}
+        ${chip('#059669', '#ecfdf5', 'Coinciden', coinciden.length)}
+        ${chip('#d97706', '#fffbeb', 'Dudosos', dudosos.length)}
+        ${chip('#dc2626', '#fef2f2', 'No están', soloArchivo.length)}
+      </div>
+
+      ${dudosos.length ? `<div style="background:#fff;border:1px solid #fde68a;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fffbeb;padding:9px 12px;font-size:11px;font-weight:800;color:#b45309">❓ POSIBLE COINCIDENCIA — REVISAR (${dudosos.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(dudosos, '#d97706', '')}</div>
+      </div>` : ''}
+
+      <div style="background:#fff;border:1px solid #fecaca;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fef2f2;padding:9px 12px;font-size:11px;font-weight:800;color:#b91c1c">⚠️ EN EL PDF PERO NO EN EL SISTEMA (${soloArchivo.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(soloArchivo, '#dc2626', 'Todos los titulares están en el sistema')}</div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div style="background:#f8fafc;padding:9px 12px;font-size:11px;font-weight:800;color:#64748b">📋 EN EL SISTEMA PERO NO EN EL PDF (${soloSistema.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(soloSistema, '#64748b', 'Todos tus clientes están en el PDF')}</div>
+      </div>
+    `);
+  }
   window.nxTssComparar = comparar;
 
   window.nxAbrirCuadreTSS = function () {
     if (!esAdmin()) return;
     let ov = document.getElementById('nxTssOverlay');
     if (ov) ov.remove();
-    _rows = []; _header = []; _colCed = -1; _colNom = -1;
+    _modo = 'cedula'; _rows = []; _header = []; _colCed = -1; _colNom = -1; _titulares = []; _depCount = 0;
 
     const ST_ = getST();
     const empresas = (Array.isArray(ST_.empresas) ? ST_.empresas : []).slice().sort((a, b) => String(a.nom).localeCompare(String(b.nom)));
@@ -9295,7 +9452,7 @@
         <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:18px 18px;display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-size:17px;font-weight:800">🔍 Tabla Comparativa</div>
-            <div style="font-size:11px;opacity:.85;margin-top:2px">Compara tus clientes con el archivo de la TSS (por cédula)</div>
+            <div style="font-size:11px;opacity:.85;margin-top:2px">Compara tus clientes con la TSS (Excel, por cédula) o Humano (PDF, por nombre)</div>
           </div>
           <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
         </div>
@@ -9303,9 +9460,9 @@
           <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">1. Empresa a comparar</label>
           <select id="nxTssEmpresa" onchange="window.nxTssComparar()" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;background:#fff;margin-bottom:12px">${opcEmp}</select>
 
-          <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">2. Archivo de la TSS</label>
-          <button type="button" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo (Excel o CSV)</button>
-          <input type="file" id="nxTssFile" accept=".xlsx,.xls,.csv" style="display:none">
+          <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">2. Archivo (TSS o Humano)</label>
+          <button type="button" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo (Excel, CSV o PDF)</button>
+          <input type="file" id="nxTssFile" accept=".xlsx,.xls,.csv,.pdf" style="display:none">
 
           <div id="nxTssMapeo"></div>
           <div id="nxTssResultado"></div>
