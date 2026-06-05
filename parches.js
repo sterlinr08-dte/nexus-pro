@@ -8392,3 +8392,191 @@
   }
 })();
 
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - AVISO: CLIENTES CON FACTURA PENDIENTE DE MESES ANTERIORES
+   ────────────────────────────────────────────────────────────────
+   Botón dentro de la sección FACTURAS que abre una lista de los
+   clientes que cerraron meses anteriores con su factura sin pagar
+   (estado Pendiente o Parcial y de un período más viejo que el último).
+   Muestra cliente, períodos que debe, monto pendiente y botón WhatsApp.
+   Todo en parches.js. No se toca index.html.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_FACT_PENDIENTES_PREV__) return;
+  window.__NEXUS_FACT_PENDIENTES_PREV__ = true;
+
+  const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function getST() { try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); } catch (e) { return window.ST || {}; } }
+  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  function fmt(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+  function notify(t, ti, m) { if (typeof window.toast === 'function') window.toast(t, ti, m || ''); }
+
+  function periodoNum(f) { return (Number(f.anio) || 0) * 12 + (Number(f.mes) || 0); }
+  function periodoLabel(f) {
+    if (f.mes && f.anio) return (MESES[Number(f.mes) - 1] || '') + ' ' + f.anio;
+    return f.periodo || '—';
+  }
+  function esPendiente(f) {
+    const e = String(f.estado || '').toLowerCase();
+    return e === 'pendiente' || e === 'parcial';
+  }
+
+  // Número de WhatsApp en formato internacional (RD = 1 + 10 dígitos)
+  function waNumero(cli) {
+    let d = String(cli?.wa || cli?.tel || '').replace(/\D/g, '');
+    if (!d) return '';
+    if (d.length === 10) d = '1' + d;       // 809/829/849 → 1809...
+    return d;
+  }
+
+  // ═══ ABRIR LISTA ═══
+  window.nxAbrirPendientesPrev = async function () {
+    const ST_ = getST();
+    const facturas = Array.isArray(ST_.facturas) ? ST_.facturas : [];
+    const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
+    const agentes = Array.isArray(ST_.agentes) ? ST_.agentes : [];
+
+    let modal = document.getElementById('nxModalPendPrev');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.className = 'overlay';
+      modal.id = 'nxModalPendPrev';
+      modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = '<div class="modal" style="max-width:600px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Revisando facturas...</div></div></div>';
+    modal.classList.add('open');
+
+    // Cobros aplicados a cada factura (para descontar lo ya pagado)
+    let pagadoPorFactura = {};
+    try {
+      const abonos = await getAPI().get('abonos', 'select=factura_id,monto,estado') || [];
+      abonos.forEach(a => {
+        if (!a.factura_id) return;
+        const est = String(a.estado || 'ACTIVO').toUpperCase();
+        if (est === 'ANULADO' || est === 'ELIMINADO' || est === 'INACTIVO') return;
+        pagadoPorFactura[a.factura_id] = (pagadoPorFactura[a.factura_id] || 0) + Number(a.monto || 0);
+      });
+    } catch (e) { console.warn('No se pudieron cargar abonos:', e); }
+
+    const pendienteDe = f => Math.max(0, Number(f.total || 0) - (pagadoPorFactura[f.id] || 0));
+
+    // "Mes actual" = mes de calendario de hoy. Todo mes anterior a hoy que siga
+    // pendiente cuenta como atraso de meses anteriores.
+    const hoy = new Date();
+    const periodoActual = hoy.getFullYear() * 12 + (hoy.getMonth() + 1);
+
+    // Facturas pendientes de meses ANTERIORES al mes actual
+    const atrasadas = facturas.filter(f => esPendiente(f) && periodoNum(f) > 0 && periodoNum(f) < periodoActual && pendienteDe(f) > 0);
+
+    // Agrupar por cliente
+    const porCliente = {};
+    atrasadas.forEach(f => {
+      const cid = String(f.cliente_id || f.cliente_nom || 'sin');
+      if (!porCliente[cid]) {
+        const cli = clientes.find(c => String(c.id) === String(f.cliente_id)) || { nom: f.cliente_nom };
+        const ag = agentes.find(a => String(a.id) === String(cli.agente_id));
+        porCliente[cid] = { cli, agente: ag?.nom || '—', total: 0, periodos: [] };
+      }
+      porCliente[cid].total += pendienteDe(f);
+      porCliente[cid].periodos.push({ label: periodoLabel(f), num: periodoNum(f), monto: pendienteDe(f) });
+    });
+
+    const lista = Object.values(porCliente).sort((a, b) => b.total - a.total);
+    const totalGeneral = lista.reduce((s, x) => s + x.total, 0);
+
+    renderPendPrev(modal, lista, totalGeneral);
+  };
+
+  function renderPendPrev(modal, lista, totalGeneral) {
+    const filas = lista.length === 0
+      ? '<div style="text-align:center;padding:40px 20px;color:#10b981;font-size:14px;font-weight:600">✓ ¡Todo al día!<br><span style="color:#94a3b8;font-weight:400;font-size:12px">Ningún cliente debe facturas de meses anteriores.</span></div>'
+      : lista.map((x, i) => {
+          const cli = x.cli || {};
+          const chips = x.periodos.sort((a, b) => a.num - b.num)
+            .map(p => `<span style="display:inline-block;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px 3px 0 0">${esc(p.label)} · ${fmt(p.monto)}</span>`).join('');
+          const num = waNumero(cli);
+          const idSafe = esc(String(cli.id || i));
+          return `
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:38px;height:38px;border-radius:10px;background:#fee2e2;color:#dc2626;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cli.nom || 'Cliente')}</div>
+                  <div style="font-size:11px;color:#64748b">Agente: ${esc(x.agente)} · ${x.periodos.length} factura(s)</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0">
+                  <div style="font-weight:900;color:#dc2626;font-size:15px;white-space:nowrap">${fmt(x.total)}</div>
+                  ${num ? `<button class="btn bsm" style="margin-top:4px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;font-weight:800" onclick="window.nxRecordarPago('${idSafe}','${num}',${x.total})"><i class="ti ti-brand-whatsapp"></i> Recordar</button>` : '<span style="font-size:9px;color:#cbd5e1">Sin WhatsApp</span>'}
+                </div>
+              </div>
+              <div style="margin-top:8px">${chips}</div>
+            </div>`;
+        }).join('');
+
+    modal.innerHTML = `
+      <div class="modal" style="max-width:600px;max-height:82vh;display:flex;flex-direction:column;margin-bottom:80px">
+        <div class="mt" style="display:flex;align-items:center;gap:8px">
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalPendPrev').classList.remove('open')" title="Volver"><i class="ti ti-arrow-left"></i></button>
+          <span style="flex:1;text-align:center"><i class="ti ti-alert-triangle"></i> PENDIENTES DE MESES ANTERIORES</span>
+          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalPendPrev').classList.remove('open')"><i class="ti ti-x"></i></button>
+        </div>
+        ${lista.length ? `<div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1px solid #fecaca;border-radius:12px;padding:12px;text-align:center;margin:6px 2px 10px">
+          <div style="font-size:10px;font-weight:800;color:#b91c1c;letter-spacing:.4px">TOTAL POR COBRAR DE MESES ANTERIORES</div>
+          <div style="font-size:22px;font-weight:900;color:#991b1b;margin-top:2px">${fmt(totalGeneral)}</div>
+          <div style="font-size:10px;color:#ef4444;font-weight:600">${lista.length} cliente(s) con atraso</div>
+        </div>` : ''}
+        <div style="overflow-y:auto;flex:1;padding:2px 2px;-webkit-overflow-scrolling:touch">
+          ${filas}
+        </div>
+      </div>`;
+  }
+
+  // Abrir WhatsApp con un recordatorio de pago
+  window.nxRecordarPago = function (clienteId, numero, monto) {
+    const ST_ = getST();
+    const cli = (Array.isArray(ST_.clientes) ? ST_.clientes : []).find(c => String(c.id) === String(clienteId));
+    const nom = cli?.nom ? cli.nom.split(' ')[0] : '';
+    const msg = `Hola ${nom}, le saludamos de la correduría. Le recordamos que tiene un saldo pendiente de meses anteriores por ${fmt(monto)}. Agradecemos su pago. ¡Gracias!`;
+    try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) {}
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  // ═══ BOTÓN AL LADO DE LA PESTAÑA "COBROS" ═══
+  function inyectarBoton() {
+    if (document.getElementById('nxBtnPendPrev')) return true;
+    const tabCob = document.getElementById('tabCob');
+    if (!tabCob || !tabCob.parentElement) return false;
+
+    const btn = document.createElement('button');
+    btn.id = 'nxBtnPendPrev';
+    btn.type = 'button';
+    btn.style.cssText = 'padding:7px 14px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.3);transition:all .15s';
+    btn.setAttribute('onclick', 'window.nxAbrirPendientesPrev && window.nxAbrirPendientesPrev()');
+    btn.innerHTML = '<i class="ti ti-alert-triangle"></i> Pendientes';
+    tabCob.insertAdjacentElement('afterend', btn); // queda justo al lado de "Cobros"
+    return true;
+  }
+
+  function init() {
+    let intentos = 0;
+    const tryInit = function () {
+      intentos++;
+      if (inyectarBoton()) return;
+      if (intentos < 100) setTimeout(tryInit, 200);
+    };
+    tryInit();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
