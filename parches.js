@@ -9523,11 +9523,11 @@
           <select id="nxTssEmpresa" onchange="window.nxTssComparar()" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;background:#fff;margin-bottom:12px">${opcEmp}</select>
 
           <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">2. Archivo (TSS o Humano)</label>
-          <button type="button" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo (Excel, CSV o PDF)</button>
+          <button type="button" id="nxTssBtnFile" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo (Excel, CSV o PDF)<div style="font-size:10px;font-weight:600;color:#64748b;margin-top:3px">o arrastra el archivo aquí · el PDF de Humano va por aquí</div></button>
           <input type="file" id="nxTssFile" accept=".xlsx,.xls,.csv,.pdf" style="display:none">
 
           <div style="text-align:center;color:#94a3b8;font-size:11px;margin:9px 0;font-weight:700">— o pega los datos —</div>
-          <textarea id="nxTssPegar" placeholder="Pega aquí lo copiado de Excel (cédula y nombre), o una lista de cédulas o nombres…" style="width:100%;min-height:64px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box"></textarea>
+          <textarea id="nxTssPegar" placeholder="Pega aquí lo copiado de Excel (cédula y nombre), o una lista de cédulas o nombres… (el PDF NO se pega: súbelo arriba)" style="width:100%;min-height:64px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box"></textarea>
 
           <div id="nxTssMapeo"></div>
           <div id="nxTssResultado"></div>
@@ -9536,8 +9536,27 @@
     document.body.appendChild(ov);
     const fileInp = document.getElementById('nxTssFile');
     if (fileInp) fileInp.addEventListener('change', function () { if (this.files && this.files[0]) { const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; onArchivo(this.files[0]); } });
+    // Arrastrar y soltar el archivo sobre el botón
+    const btnFile = document.getElementById('nxTssBtnFile');
+    if (btnFile) {
+      ['dragenter', 'dragover'].forEach(ev => btnFile.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); btnFile.style.background = '#dbeafe'; }));
+      ['dragleave', 'drop'].forEach(ev => btnFile.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); btnFile.style.background = '#eff6ff'; }));
+      btnFile.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if (f) { if (fileInp) fileInp.value = ''; const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; onArchivo(f); } });
+    }
     const pegarTa = document.getElementById('nxTssPegar');
-    if (pegarTa) pegarTa.addEventListener('input', function () { if (fileInp) fileInp.value = ''; compararPegado(); });
+    if (pegarTa) {
+      pegarTa.addEventListener('input', function () { if (fileInp) fileInp.value = ''; compararPegado(); });
+      // Permitir PEGAR un archivo (PDF/Excel) copiado desde el explorador
+      pegarTa.addEventListener('paste', function (ev) {
+        const cd = ev.clipboardData || window.clipboardData;
+        if (cd && cd.files && cd.files.length) {
+          ev.preventDefault();
+          if (fileInp) fileInp.value = '';
+          this.value = '';
+          onArchivo(cd.files[0]);
+        }
+      });
+    }
     comparar();
   };
 
