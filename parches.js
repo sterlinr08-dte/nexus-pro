@@ -8870,6 +8870,30 @@
     _subiendo = false;
   }
 
+  // Pegar la imagen copiada (p. ej. desde WhatsApp) usando el portapapeles
+  window.nxPegarBauche = async function () {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.read) {
+        notify('err', 'Pegar no disponible', 'Usa "Foto / archivo" para subir la imagen');
+        return;
+      }
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const tipo = (item.types || []).find(t => t.indexOf('image/') === 0);
+        if (tipo) {
+          const blob = await item.getType(tipo);
+          const ext = (tipo.split('/')[1] || 'png').replace(/[^a-z0-9]/g, '');
+          const file = new File([blob], 'bauche.' + ext, { type: tipo });
+          procesarArchivo(file);
+          return;
+        }
+      }
+      notify('err', 'No hay imagen copiada', 'Copia el bauche primero y vuelve a tocar "Pegar"');
+    } catch (e) {
+      notify('err', 'No se pudo pegar', 'Permite el acceso al portapapeles o usa "Foto / archivo"');
+    }
+  };
+
   function pintarEstado(estado, src) {
     const box = document.getElementById('nxBaucheBox');
     const prev = document.getElementById('nxBauchePreview');
@@ -8906,9 +8930,12 @@
     wrap.style.cssText = 'margin:10px 0';
     wrap.innerHTML = `
       <label style="display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:5px">Bauche / comprobante (opcional)</label>
-      <div id="nxBaucheBox" style="border:1.5px dashed #cbd5e1;border-radius:10px;padding:12px;text-align:center;background:#f8fafc;cursor:pointer" onclick="document.getElementById('nxBaucheInput').click()">
-        <div style="font-size:12px;font-weight:700;color:#2563eb"><i class="ti ti-camera"></i> Adjuntar o pegar imagen</div>
-        <div style="font-size:9.5px;color:#94a3b8;margin-top:3px">Foto, captura o pega desde el portapapeles</div>
+      <div id="nxBaucheBox" style="border:1.5px dashed #cbd5e1;border-radius:10px;padding:10px;background:#f8fafc">
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn bsm" style="flex:1;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-weight:800" onclick="document.getElementById('nxBaucheInput').click()"><i class="ti ti-camera"></i> Foto / archivo</button>
+          <button type="button" class="btn bsm" style="flex:1;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-weight:800" onclick="window.nxPegarBauche()"><i class="ti ti-clipboard"></i> Pegar</button>
+        </div>
+        <div style="font-size:9.5px;color:#94a3b8;margin-top:6px;text-align:center">Copia el bauche en WhatsApp y toca <strong>"Pegar"</strong></div>
       </div>
       <div id="nxBauchePreview" style="display:none;align-items:center;gap:10px;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#fff"></div>
       <input type="file" id="nxBaucheInput" accept="image/*,.pdf" style="display:none">
