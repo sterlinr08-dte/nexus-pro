@@ -8653,3 +8653,94 @@
   }
 })();
 
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - BUSCADOR EN CADA MÓDULO
+   ────────────────────────────────────────────────────────────────
+   Agrega una barra de búsqueda a los módulos que mostraban listas
+   sin buscador: Facturas, Cobros, Empresas, Agentes, Usuarios y
+   Asientos. Filtra las filas/tarjetas al escribir y se vuelve a
+   aplicar solo cuando la lista se recarga. No se toca index.html.
+   ════════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  if (window.__NEXUS_BUSCADOR_MODULOS__) return;
+  window.__NEXUS_BUSCADOR_MODULOS__ = true;
+
+  // Módulos a los que se les agrega buscador
+  const MODULOS = [
+    { key: 'fact',  antesDe: '#panelFact .tw', cont: '#tbFact',  fila: ':scope > tr',  ph: 'Buscar factura o cliente...' },
+    { key: 'cob',   antesDe: '#panelCob .tw',  cont: '#tbCob',   fila: ':scope > tr',  ph: 'Buscar cliente...' },
+    { key: 'emp',   antesDe: '#empGrd',        cont: '#empGrd',  fila: ':scope > div', ph: 'Buscar empresa...' },
+    { key: 'agt',   antesDe: '#v-agentes .tw', cont: '#tbAgt',   fila: ':scope > tr',  ph: 'Buscar agente...' },
+    { key: 'usu',   antesDe: '#v-usuarios .tw',cont: '#tbUsu',   fila: ':scope > tr',  ph: 'Buscar usuario...' },
+    { key: 'asi',   antesDe: '#asientosC',     cont: '#asientosC', fila: ':scope > .ai', ph: 'Buscar asiento...' }
+  ];
+
+  // ¿La fila es un encabezado o un mensaje de "cargando/vacío"? → no se filtra
+  function esFijo(r) {
+    return r.querySelector && (r.querySelector('th') || r.querySelector('.loading') || r.querySelector('.empty'))
+      || (r.classList && (r.classList.contains('empty') || r.classList.contains('loading')));
+  }
+
+  function aplicar(cont, filaSel, q) {
+    const filas = cont.querySelectorAll(filaSel);
+    filas.forEach(r => {
+      if (esFijo(r)) { r.style.display = ''; return; }
+      const txt = (r.textContent || '').toLowerCase();
+      r.style.display = (!q || txt.includes(q)) ? '' : 'none';
+    });
+  }
+
+  function montar(cfg) {
+    if (document.getElementById('nxBus_' + cfg.key)) return true;
+    const anchor = document.querySelector(cfg.antesDe);
+    const cont = document.querySelector(cfg.cont);
+    if (!anchor || !cont || !anchor.parentElement) return false;
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;margin:0 0 10px';
+    const ico = document.createElement('i');
+    ico.className = 'ti ti-search';
+    ico.style.cssText = 'position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.id = 'nxBus_' + cfg.key;
+    inp.placeholder = cfg.ph;
+    inp.autocomplete = 'off';
+    inp.style.cssText = 'width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b';
+    wrap.appendChild(ico);
+    wrap.appendChild(inp);
+    anchor.parentElement.insertBefore(wrap, anchor);
+
+    inp.addEventListener('input', () => aplicar(cont, cfg.fila, inp.value.trim().toLowerCase()));
+
+    // Re-aplicar el filtro cuando la lista se vuelve a generar
+    const obs = new MutationObserver(() => {
+      const q = inp.value.trim().toLowerCase();
+      if (q) aplicar(cont, cfg.fila, q);
+    });
+    obs.observe(cont, { childList: true });
+    return true;
+  }
+
+  function init() {
+    let n = 0;
+    const t = function () {
+      n++;
+      let faltan = false;
+      MODULOS.forEach(cfg => { if (!montar(cfg)) faltan = true; });
+      if (!faltan) return;
+      if (n < 120) setTimeout(t, 250);
+    };
+    t();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+
