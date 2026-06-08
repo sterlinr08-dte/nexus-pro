@@ -9617,3 +9617,102 @@
   else init();
 })();
 
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - LOADER (indicador de carga: logo girando + resplandor azul)
+   ────────────────────────────────────────────────────────────────
+   Overlay a pantalla completa con el logo (escudo azul) girando y un
+   resplandor azul pulsante. Se muestra durante la carga de datos
+   (cargarTodo) tras el login y al refrescar. Reutilizable vía
+   window.nxLoader.show(texto) / window.nxLoader.hide().
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  if (window.__NEXUS_LOADER__) return;
+  window.__NEXUS_LOADER__ = true;
+
+  function inyectarCSS() {
+    if (document.getElementById('nxLoaderCSS')) return;
+    const st = document.createElement('style');
+    st.id = 'nxLoaderCSS';
+    st.textContent = `
+      @keyframes nxLoaderSpin { to { transform: rotate(360deg); } }
+      @keyframes nxLoaderGlow {
+        0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,.45), 0 10px 26px rgba(30,58,110,.55); }
+        50%     { box-shadow: 0 0 30px 9px rgba(37,99,235,.70), 0 10px 26px rgba(30,58,110,.55); }
+      }
+      @keyframes nxLoaderRing { 0%{transform:rotate(0);opacity:.9} 100%{transform:rotate(360deg);opacity:.9} }
+      #nxLoaderOv{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+        background:radial-gradient(circle at 50% 40%, rgba(30,58,110,.55), rgba(8,14,30,.72));backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);opacity:0;transition:opacity .25s ease}
+      #nxLoaderOv.show{opacity:1}
+      .nxLoader-wrap{position:relative;width:92px;height:92px;display:flex;align-items:center;justify-content:center}
+      .nxLoader-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(59,130,246,.18);border-top-color:#3b82f6;animation:nxLoaderRing 1s linear infinite}
+      .nxLoader-mk{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#1e3a6e,#3b82f6);display:flex;align-items:center;justify-content:center;
+        color:#fff;font-size:30px;animation:nxLoaderSpin 1.15s cubic-bezier(.6,.1,.3,.9) infinite, nxLoaderGlow 1.7s ease-in-out infinite}
+      .nxLoader-tx{font-weight:800;color:#fff;font-size:15px;letter-spacing:1px;text-align:center}
+      .nxLoader-sub{font-size:11px;color:#bcd2ff;text-align:center;margin-top:3px;font-weight:600}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function asegurar() {
+    inyectarCSS();
+    let ov = document.getElementById('nxLoaderOv');
+    if (ov) return ov;
+    ov = document.createElement('div');
+    ov.id = 'nxLoaderOv';
+    ov.innerHTML = `
+      <div class="nxLoader-wrap">
+        <div class="nxLoader-ring"></div>
+        <div class="nxLoader-mk"><i class="ti ti-shield-check"></i></div>
+      </div>
+      <div><div class="nxLoader-tx">NEXUS PRO</div><div class="nxLoader-sub" id="nxLoaderSub">Cargando…</div></div>`;
+    (document.body || document.documentElement).appendChild(ov);
+    return ov;
+  }
+
+  let _t;
+  window.nxLoader = {
+    show(texto) {
+      const ov = asegurar();
+      const sub = document.getElementById('nxLoaderSub');
+      if (sub) sub.textContent = texto || 'Cargando…';
+      clearTimeout(_t);
+      ov.style.display = 'flex';
+      requestAnimationFrame(() => ov.classList.add('show'));
+    },
+    hide() {
+      const ov = document.getElementById('nxLoaderOv');
+      if (!ov) return;
+      ov.classList.remove('show');
+      clearTimeout(_t);
+      _t = setTimeout(() => { ov.style.display = 'none'; }, 280);
+    }
+  };
+
+  // Envolver cargarTodo para mostrar el loader durante la carga de datos
+  function envolver() {
+    if (window.__nxLoaderWrapCT) return true;
+    if (typeof window.cargarTodo !== 'function') return false;
+    const orig = window.cargarTodo;
+    window.cargarTodo = async function (...args) {
+      const t0 = Date.now();
+      try { window.nxLoader.show('Cargando datos…'); } catch (e) {}
+      try { return await orig.apply(this, args); }
+      finally {
+        const restante = 650 - (Date.now() - t0); // tiempo mínimo visible para que no parpadee
+        setTimeout(() => { try { window.nxLoader.hide(); } catch (e) {} }, Math.max(0, restante));
+      }
+    };
+    window.__nxLoaderWrapCT = true;
+    return true;
+  }
+
+  function init() {
+    let n = 0;
+    const t = function () { n++; if (envolver()) return; if (n < 200) setTimeout(t, 120); };
+    t();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
