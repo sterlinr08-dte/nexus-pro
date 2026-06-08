@@ -2030,8 +2030,8 @@ insert into configuracion values
 on conflict(clave) do nothing;`;
 
 // ── Credenciales hardcodeadas (funcionan en cualquier dispositivo) ──────────
-const SUPABASE_URL_FIXED = 'https://mrtqkhachhvsczltwakt.supabase.co';
-const SUPABASE_KEY_FIXED = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ydHFraGFjaGh2c2N6bHR3YWt0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODY5ODQzNiwiZXhwIjoyMDk0Mjc0NDM2fQ.TEeBARnMMVga_gVJG_9cKa9mth25XmHzZJCi9lyRRmc';
+const SUPABASE_URL_FIXED = 'https://tnwsgcxurfyuszxsewsn.supabase.co';
+const SUPABASE_KEY_FIXED = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRud3NnY3h1cmZ5dXN6eHNld3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDM3NzIsImV4cCI6MjA5NjUxOTc3Mn0.G7hRg4Cdki0jilRMg2hUZ6dVJsqvXWXOPFQOdGVbR1k';
 
 // ── Seguridad ────────────────────────────────────────────────────────────────
 async function sha256(str){const b=new TextEncoder().encode(str);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}

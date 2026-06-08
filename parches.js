@@ -7424,7 +7424,7 @@
 
     try {
       const api = getAPI();
-      const baseUrl = (api?.url || 'https://mrtqkhachhvsczltwakt.supabase.co');
+      const baseUrl = (api?.url || 'https://tnwsgcxurfyuszxsewsn.supabase.co');
       const anonKey = api?.key || '';
       
       const resp = await fetch(baseUrl + '/functions/v1/nexus-smart', {
