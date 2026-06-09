@@ -3938,17 +3938,22 @@ function activarMayusculasGlobales(){
     if(/correo|email|contraseña|usuario|@/.test(ph))return true;
     return false;
   }
-  // Listener global: cualquier input/textarea que se escriba
-  document.addEventListener('input',function(e){
+  // Pedir al teclado que escriba en MAYÚSCULAS sin reescribir el texto en
+  // cada tecla — así las sugerencias/autocorrección del teclado SÍ funcionan.
+  document.addEventListener('focusin',function(e){
     const el=e.target;
     if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'))return;
     if(esExcluido(el))return;
-    const pos=el.selectionStart;
-    const arriba=el.value.toUpperCase();
-    if(el.value!==arriba){
-      el.value=arriba;
-      try{el.setSelectionRange(pos,pos);}catch(e){}
-    }
+    if(!el.getAttribute('autocapitalize'))el.setAttribute('autocapitalize','characters');
+  },true);
+  // Al salir del campo, dejar el valor en MAYÚSCULAS (cubre escritorio y
+  // cualquier formulario que no use mayus() al guardar).
+  document.addEventListener('blur',function(e){
+    const el=e.target;
+    if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'))return;
+    if(esExcluido(el))return;
+    const up=String(el.value||'').toUpperCase();
+    if(el.value!==up)el.value=up;
   },true);
 }
 
