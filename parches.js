@@ -322,6 +322,62 @@
     fab.innerHTML = '<i class="ti ti-menu-2"></i>';
     document.body.appendChild(fab);
 
+    // ── Posición guardada + ARRASTRAR para ponerlo donde el usuario quiera ──
+    try {
+      const sp = JSON.parse(localStorage.getItem('nx_fab_pos') || 'null');
+      if (sp && typeof sp.left === 'number') {
+        fab.style.left = sp.left + 'px';
+        fab.style.top = sp.top + 'px';
+        fab.style.right = 'auto';
+        fab.style.bottom = 'auto';
+      }
+    } catch (e) {}
+
+    let drag = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    let suppressClick = false;
+    function dragStart(e) {
+      const p = e.touches ? e.touches[0] : e;
+      drag = true; moved = false;
+      sx = p.clientX; sy = p.clientY;
+      const r = fab.getBoundingClientRect();
+      ox = r.left; oy = r.top;
+      document.addEventListener('touchmove', dragMove, { passive: false });
+      document.addEventListener('mousemove', dragMove);
+      document.addEventListener('touchend', dragEnd);
+      document.addEventListener('mouseup', dragEnd);
+    }
+    function dragMove(e) {
+      if (!drag) return;
+      const p = e.touches ? e.touches[0] : e;
+      const dx = p.clientX - sx, dy = p.clientY - sy;
+      if (!moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) moved = true;
+      if (moved) {
+        if (e.cancelable) e.preventDefault();
+        const sz = fab.offsetWidth || 58;
+        const nl = Math.max(6, Math.min(window.innerWidth - sz - 6, ox + dx));
+        const nt = Math.max(6, Math.min(window.innerHeight - sz - 6, oy + dy));
+        fab.style.left = nl + 'px';
+        fab.style.top = nt + 'px';
+        fab.style.right = 'auto';
+        fab.style.bottom = 'auto';
+      }
+    }
+    function dragEnd() {
+      document.removeEventListener('touchmove', dragMove);
+      document.removeEventListener('mousemove', dragMove);
+      document.removeEventListener('touchend', dragEnd);
+      document.removeEventListener('mouseup', dragEnd);
+      if (moved) {
+        suppressClick = true;
+        setTimeout(function () { suppressClick = false; }, 350);
+        const r = fab.getBoundingClientRect();
+        try { localStorage.setItem('nx_fab_pos', JSON.stringify({ left: r.left, top: r.top })); } catch (e) {}
+      }
+      drag = false;
+    }
+    fab.addEventListener('touchstart', dragStart, { passive: true });
+    fab.addEventListener('mousedown', dragStart);
+
     function toggleMenu(forceClose) {
       const sheet = document.querySelector('.mobile-more-sheet-clean');
       const willOpen = forceClose ? false : !(sheet && sheet.classList.contains('open'));
@@ -334,6 +390,7 @@
 
     fab.addEventListener('click', function (ev) {
       ev.preventDefault(); ev.stopPropagation();
+      if (suppressClick) { suppressClick = false; return; }
       toggleMenu();
     });
     backdrop.addEventListener('click', function () { toggleMenu(true); });

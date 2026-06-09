@@ -3941,13 +3941,17 @@ function activarMayusculasGlobales(){
     if(/correo|email|contraseña|usuario|@/.test(ph))return true;
     return false;
   }
-  // Pedir al teclado que escriba en MAYÚSCULAS sin reescribir el texto en
-  // cada tecla — así las sugerencias/autocorrección del teclado SÍ funcionan.
+  // Teclado NORMAL: dejar que aparezcan y se puedan TOCAR las sugerencias y
+  // la autocorrección. (No forzamos mayúsculas al teclear; el texto se pasa a
+  // mayúsculas al salir del campo y al guardar.)
   document.addEventListener('focusin',function(e){
     const el=e.target;
     if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'))return;
     if(esExcluido(el))return;
-    if(!el.getAttribute('autocapitalize'))el.setAttribute('autocapitalize','characters');
+    el.setAttribute('autocapitalize','sentences');
+    el.setAttribute('autocorrect','on');
+    el.setAttribute('spellcheck','true');
+    if(el.getAttribute('autocomplete')==='off')el.removeAttribute('autocomplete');
   },true);
   // Al salir del campo, dejar el valor en MAYÚSCULAS (cubre escritorio y
   // cualquier formulario que no use mayus() al guardar).
