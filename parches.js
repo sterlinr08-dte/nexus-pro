@@ -153,6 +153,38 @@
           place-items: center;
           font-size: 18px;
         }
+
+        /* ═══ BOTÓN FLOTANTE (FAB) + MENÚ ═══ */
+        .nx-fab {
+          position: fixed; right: 18px; bottom: 18px; z-index: 9000;
+          width: 58px; height: 58px; border-radius: 50%; border: 0;
+          background: linear-gradient(135deg,#1e3a6e,#2563eb);
+          color: #fff; font-size: 26px;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 10px 26px rgba(37,99,235,.45);
+          cursor: pointer; touch-action: manipulation;
+          transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .nx-fab:active { transform: scale(.92); }
+        .nx-fab.open { transform: rotate(90deg); }
+        .nx-fab i { pointer-events: none; }
+        .nx-menu-backdrop {
+          position: fixed; inset: 0; z-index: 8999;
+          background: rgba(15,23,42,.35);
+          backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+          opacity: 0; pointer-events: none; transition: opacity .2s ease;
+        }
+        .nx-menu-backdrop.open { opacity: 1; pointer-events: auto; }
+        /* El menú flota encima del FAB y es desplazable si hay muchas opciones */
+        .mobile-more-sheet-clean {
+          bottom: 88px; max-height: 66vh;
+          overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        .mobile-more-sheet-clean.open { animation: nxSheetUp .22s ease; }
+        @keyframes nxSheetUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         
         /* ═══ FIX MODAL CLIENTE ═══ */
         /* El modal mCli con scroll completo y botón Guardar visible */
@@ -168,8 +200,10 @@
           z-index: 10000 !important;
         }
         
-        /* Cuando hay overlay abierto, ocultar barra inferior */
+        /* Cuando hay overlay abierto, ocultar el botón flotante y su menú */
         body:has(.overlay.on) .mobile-bottom-nav-clean,
+        body:has(.overlay.on) .nx-fab,
+        body:has(.overlay.on) .nx-menu-backdrop,
         body:has(.overlay.on) .mobile-more-sheet-clean {
           display: none !important;
         }
@@ -269,7 +303,44 @@
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 3. BARRA INFERIOR
+  // 3. BOTÓN FLOTANTE (FAB) + MENÚ DE NAVEGACIÓN
+  // ═══════════════════════════════════════════════════════════
+  function crearFAB() {
+    if (!isMobile()) return;
+    if (document.querySelector('.nx-fab')) return;
+    // Quitar cualquier barra inferior vieja
+    document.querySelectorAll('.mobile-bottom-nav-clean, .mobile-bottom-nav-nexu, .mobile-bottom-nav-v3, .mobile-bottom-nav-v31').forEach(el => el.remove());
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'nx-menu-backdrop';
+    document.body.appendChild(backdrop);
+
+    const fab = document.createElement('button');
+    fab.type = 'button';
+    fab.className = 'nx-fab';
+    fab.setAttribute('aria-label', 'Menú');
+    fab.innerHTML = '<i class="ti ti-menu-2"></i>';
+    document.body.appendChild(fab);
+
+    function toggleMenu(forceClose) {
+      const sheet = document.querySelector('.mobile-more-sheet-clean');
+      const willOpen = forceClose ? false : !(sheet && sheet.classList.contains('open'));
+      if (sheet) sheet.classList.toggle('open', willOpen);
+      backdrop.classList.toggle('open', willOpen);
+      fab.classList.toggle('open', willOpen);
+      fab.innerHTML = willOpen ? '<i class="ti ti-x"></i>' : '<i class="ti ti-menu-2"></i>';
+    }
+    window.__nxToggleMenu = toggleMenu;
+
+    fab.addEventListener('click', function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      toggleMenu();
+    });
+    backdrop.addEventListener('click', function () { toggleMenu(true); });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 3b. (Legacy · ya no se usa) Barra inferior de 5 botones
   // ═══════════════════════════════════════════════════════════
   function crearBarraInferior() {
     if (!isMobile()) return;
@@ -341,27 +412,17 @@
     const sheet = document.createElement('div');
     sheet.className = 'mobile-more-sheet-clean';
     sheet.innerHTML = `
-      <h3>MÁS OPCIONES</h3>
-      <button type="button" data-go="cobros">
-        <span class="icon">💰</span>
-        <span><b>Cobros</b></span>
-      </button>
-      <button type="button" data-go="historial">
-        <span class="icon">📜</span>
-        <span><b>Historial de pagos</b></span>
-      </button>
-      <button type="button" data-go="sistema">
-        <span class="icon">⚙️</span>
-        <span><b>Configuración</b></span>
-      </button>
-      <button type="button" data-go="usuarios">
-        <span class="icon">👤</span>
-        <span><b>Usuarios</b></span>
-      </button>
-      <button type="button" data-go="reportes">
-        <span class="icon">📊</span>
-        <span><b>Reportes</b></span>
-      </button>
+      <h3>MENÚ</h3>
+      <button type="button" data-go="dashboard"><span class="icon">🏠</span><span><b>Inicio</b></span></button>
+      <button type="button" data-go="clientes"><span class="icon">👥</span><span><b>Clientes</b></span></button>
+      <button type="button" data-go="proceso"><span class="icon">📋</span><span><b>Clientes en proceso</b></span></button>
+      <button type="button" data-go="polizas"><span class="icon">📜</span><span><b>Pólizas</b></span></button>
+      <button type="button" data-go="facturas"><span class="icon">📄</span><span><b>Facturas</b></span></button>
+      <button type="button" data-go="cobros"><span class="icon">💰</span><span><b>Cobros</b></span></button>
+      <button type="button" data-go="historial"><span class="icon">🧾</span><span><b>Historial de pagos</b></span></button>
+      <button type="button" data-go="reportes"><span class="icon">📊</span><span><b>Reportes</b></span></button>
+      <button type="button" data-go="sistema"><span class="icon">⚙️</span><span><b>Configuración</b></span></button>
+      <button type="button" data-go="usuarios"><span class="icon">👤</span><span><b>Usuarios</b></span></button>
     `;
     document.body.appendChild(sheet);
 
@@ -370,7 +431,7 @@
       if (!btn) return;
       ev.preventDefault();
       ev.stopPropagation();
-      sheet.classList.remove('open');
+      if (window.__nxToggleMenu) window.__nxToggleMenu(true); else sheet.classList.remove('open');
       navegar(btn.dataset.go);
     });
   }
@@ -379,22 +440,17 @@
   // 4.5. CERRAR MENÚ "MÁS" AL TOCAR FUERA
   // ═══════════════════════════════════════════════════════════
   function setupCierreMenuFuera() {
-    document.addEventListener('click', function(ev) {
+    function maybeClose(ev) {
       const sheet = document.querySelector('.mobile-more-sheet-clean');
       if (!sheet || !sheet.classList.contains('open')) return;
-      // Si el clic NO fue dentro del sheet ni en el botón "Más"
+      // Si el clic NO fue dentro del menú ni en el botón flotante
       if (ev.target.closest('.mobile-more-sheet-clean')) return;
-      if (ev.target.closest('button[data-go="mas"]')) return;
-      sheet.classList.remove('open');
-    }, true);
+      if (ev.target.closest('.nx-fab')) return;
+      if (window.__nxToggleMenu) window.__nxToggleMenu(true); else sheet.classList.remove('open');
+    }
+    document.addEventListener('click', maybeClose, true);
     // En móvil también con touchstart para que responda más rápido
-    document.addEventListener('touchstart', function(ev) {
-      const sheet = document.querySelector('.mobile-more-sheet-clean');
-      if (!sheet || !sheet.classList.contains('open')) return;
-      if (ev.target.closest('.mobile-more-sheet-clean')) return;
-      if (ev.target.closest('button[data-go="mas"]')) return;
-      sheet.classList.remove('open');
-    }, true);
+    document.addEventListener('touchstart', maybeClose, true);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -403,7 +459,7 @@
   function init() {
     injectCSS();
     if (!isMobile()) return;
-    crearBarraInferior();
+    crearFAB();
     crearMenuMas();
     setupCierreMenuFuera();
     /* console.log('%c⚙ Parches NEXUS PRO Móvil cargado', 'color:#2563eb;font-weight:bold') */;
