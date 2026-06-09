@@ -111,11 +111,8 @@ input,select,textarea,button{font-family:var(--ff)}
 /* ── LOADER (spinner breve en recargas) ── */
 #nxLoader{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(15,31,61,.18);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 #nxLoader.nxl-out{opacity:0;pointer-events:none;transition:opacity .35s ease}
-.nxl-dots{display:flex;gap:10px;align-items:flex-end;height:30px}
-.nxl-dots span{width:13px;height:13px;border-radius:50%;background:#3b82f6;box-shadow:0 3px 8px rgba(37,99,235,.4);animation:nxlBounce .6s ease-in-out infinite}
-.nxl-dots span:nth-child(2){animation-delay:.15s}
-.nxl-dots span:nth-child(3){animation-delay:.3s}
-@keyframes nxlBounce{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-15px);opacity:1}}
+.nxl-logo{width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,#1e3a6e,#3b82f6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;animation:nxlLogoOrbit 1.6s linear infinite}
+@keyframes nxlLogoOrbit{0%{box-shadow:0 13px 32px rgba(37,99,235,.6)}25%{box-shadow:15px 0 32px rgba(96,165,250,.7)}50%{box-shadow:0 -13px 32px rgba(37,99,235,.6)}75%{box-shadow:-15px 0 32px rgba(96,165,250,.7)}100%{box-shadow:0 13px 32px rgba(37,99,235,.6)}}
 
 /* ── SETUP ── */
 #setupScreen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:1rem;background:linear-gradient(135deg,#1e3a6e 0%,#2d5a9e 50%,#1a2d5a 100%)}
@@ -716,7 +713,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="nxs-bar"><span></span></div>
   </div>
 </div>
-<div id="nxLoader" style="display:none" aria-hidden="true"><div class="nxl-dots"><span></span><span></span><span></span></div></div>
+<div id="nxLoader" style="display:none" aria-hidden="true"><div class="nxl-logo"><i class="ti ti-shield-check"></i></div></div>
 <script>
 (function(){var s=document.getElementById('nxSplash');if(!s)return;
   try{
