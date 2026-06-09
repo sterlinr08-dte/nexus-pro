@@ -3941,9 +3941,10 @@ function activarMayusculasGlobales(){
     if(/correo|email|contraseña|usuario|@/.test(ph))return true;
     return false;
   }
-  // Teclado NORMAL: dejar que aparezcan y se puedan TOCAR las sugerencias y
-  // la autocorrección. (No forzamos mayúsculas al teclear; el texto se pasa a
-  // mayúsculas al salir del campo y al guardar.)
+  // Teclado 100% NATIVO: dejar que aparezcan y se puedan TOCAR las sugerencias
+  // y la autocorrección. NO reescribimos el valor del campo en ningún momento
+  // (eso es lo que rompía las sugerencias en iOS). El texto se pasa a
+  // MAYÚSCULAS al guardar (mayus()) y se ve en mayúsculas por CSS.
   document.addEventListener('focusin',function(e){
     const el=e.target;
     if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'))return;
@@ -3952,15 +3953,6 @@ function activarMayusculasGlobales(){
     el.setAttribute('autocorrect','on');
     el.setAttribute('spellcheck','true');
     if(el.getAttribute('autocomplete')==='off')el.removeAttribute('autocomplete');
-  },true);
-  // Al salir del campo, dejar el valor en MAYÚSCULAS (cubre escritorio y
-  // cualquier formulario que no use mayus() al guardar).
-  document.addEventListener('blur',function(e){
-    const el=e.target;
-    if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'))return;
-    if(esExcluido(el))return;
-    const up=String(el.value||'').toUpperCase();
-    if(el.value!==up)el.value=up;
   },true);
 }
 
