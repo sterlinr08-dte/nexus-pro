@@ -105,6 +105,12 @@ input,select,textarea,button{font-family:var(--ff)}
   .nxs-badge,.nxs-badge i,.nxs-brand,.nxs-tag,.nxs-bar,.nxs-bar span,.nxs-badge::after{animation-duration:.01ms!important;animation-iteration-count:1!important;opacity:1}
 }
 
+/* ── LOADER (spinner breve en recargas) ── */
+#nxLoader{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(15,31,61,.18);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#nxLoader.nxl-out{opacity:0;pointer-events:none;transition:opacity .35s ease}
+.nxl-spin{width:46px;height:46px;border-radius:50%;border:4px solid rgba(59,130,246,.22);border-top-color:#3b82f6;animation:nxlSpin .75s linear infinite}
+@keyframes nxlSpin{to{transform:rotate(360deg)}}
+
 /* ── SETUP ── */
 #setupScreen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:1rem;background:linear-gradient(135deg,#1e3a6e 0%,#2d5a9e 50%,#1a2d5a 100%)}
 .sbox{background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -704,12 +710,20 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="nxs-bar"><span></span></div>
   </div>
 </div>
+<div id="nxLoader" style="display:none" aria-hidden="true"><div class="nxl-spin"></div></div>
 <script>
 (function(){var s=document.getElementById('nxSplash');if(!s)return;
-  // Mostrar el splash SOLO una vez por sesión (al abrir la app), no en recargas
-  // ni al "Actualizar" — así no parece que la sesión sale y entra de nuevo.
   try{
-    if(sessionStorage.getItem('nx_splash_shown')){ s.remove(); return; }
+    if(sessionStorage.getItem('nx_splash_shown')){
+      // Recarga / "Actualizar": sin bienvenida completa, solo un spinner breve de carga
+      s.remove();
+      var L=document.getElementById('nxLoader');
+      if(L){
+        L.style.display='flex';
+        setTimeout(function(){L.classList.add('nxl-out');setTimeout(function(){try{L.remove();}catch(e){L.style.display='none';}},400);},900);
+      }
+      return;
+    }
     sessionStorage.setItem('nx_splash_shown','1');
   }catch(e){}
   setTimeout(function(){try{s.remove();}catch(e){s.style.display='none';}},2800);
