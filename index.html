@@ -706,6 +706,12 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 </div>
 <script>
 (function(){var s=document.getElementById('nxSplash');if(!s)return;
+  // Mostrar el splash SOLO una vez por sesión (al abrir la app), no en recargas
+  // ni al "Actualizar" — así no parece que la sesión sale y entra de nuevo.
+  try{
+    if(sessionStorage.getItem('nx_splash_shown')){ s.remove(); return; }
+    sessionStorage.setItem('nx_splash_shown','1');
+  }catch(e){}
   setTimeout(function(){try{s.remove();}catch(e){s.style.display='none';}},2800);
 })();
 </script>
