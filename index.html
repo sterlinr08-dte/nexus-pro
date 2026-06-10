@@ -4025,6 +4025,13 @@ async function cargarTodo(){
     setTimeout(aplicarRolSidebar, 200);
     setTimeout(()=>{rNotifs();},500);
     setTimeout(()=>{cargarAuditoriaSupabase();},800);
+    // Re-inyectar los módulos de parches.js ahora que la sesión está lista
+    // (resuelve que Contabilidad/Tabla Comparativa/Nexus Smart/Cierre de mes
+    //  no aparezcan hasta darle Actualizar).
+    [250,1200,2600].forEach(ms=>setTimeout(()=>{
+      try{aplicarRolSidebar();}catch(e){}
+      try{window.dispatchEvent(new Event('nexus:reinit'));}catch(e){}
+    },ms));
     // Cargar log guardado
     try{const sl=localStorage.getItem('nx_err_log');if(sl){const p=JSON.parse(sl);p.forEach(e=>{if(!ERR_LOG.find(x=>x.id===e.id))ERR_LOG.push(e);});ERR_LOG.sort((a,b)=>b.id-a.id);}}catch(le){}
     // Restaurar la pantalla exacta donde estaba el usuario (sin parpadeo).

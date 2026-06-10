@@ -2643,6 +2643,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 /* ════════════════════════════════════════════════════════════════
    NEXUS PRO - VISUAL PREMIUM 3D PARA DETALLES DE COBRO
@@ -4680,6 +4681,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 
@@ -4867,6 +4869,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -5258,6 +5261,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -5628,6 +5632,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -6154,6 +6159,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -6547,6 +6553,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -6747,6 +6754,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -6981,6 +6989,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -7630,6 +7639,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -8548,6 +8558,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -8765,6 +8776,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -8838,6 +8850,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -8929,6 +8942,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -9183,6 +9197,7 @@
   } else {
     init();
   }
+  try { window.addEventListener('nexus:reinit', init); } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
