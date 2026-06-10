@@ -8683,7 +8683,7 @@
             <div class="nxPendCard" data-nom="${nomData}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
               <div style="display:flex;align-items:center;gap:10px">
                 <div style="width:38px;height:38px;border-radius:10px;background:#fee2e2;color:#dc2626;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
-                <div style="flex:1;min-width:0">
+                <div style="flex:1;min-width:0;cursor:pointer" ${cid ? `onclick="window.nxEditarPend('${cid}')"` : ''} title="Editar cliente">
                   <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cli.nom || 'Cliente')}</div>
                   <div style="font-size:11px;color:#64748b">Agente: ${esc(x.agente)} · ${x.periodos.length} factura(s)</div>
                 </div>
@@ -8739,6 +8739,18 @@
       if (typeof abrirAbono === 'function') { abrirAbono(clienteId); return; }
     } catch (e) {}
     notify('err', 'No se pudo abrir el cobro', '');
+  };
+
+  // Editar: abre el modal de editar cliente (al tocar el nombre en la tarjeta)
+  window.nxEditarPend = function (clienteId) {
+    if (!clienteId) return;
+    const modal = document.getElementById('nxModalPendPrev');
+    if (modal) modal.classList.remove('open'); // cerrar para no encimar ventanas
+    try {
+      if (typeof window.editarCli === 'function') { window.editarCli(clienteId); return; }
+      if (typeof editarCli === 'function') { editarCli(clienteId); return; }
+    } catch (e) {}
+    notify('err', 'No se pudo abrir el cliente', '');
   };
 
   // Abrir WhatsApp con un recordatorio de pago
