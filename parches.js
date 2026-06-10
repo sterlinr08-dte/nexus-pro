@@ -8683,9 +8683,10 @@
             <div class="nxPendCard" data-nom="${nomData}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
               <div style="display:flex;align-items:center;gap:10px">
                 <div style="width:38px;height:38px;border-radius:10px;background:#fee2e2;color:#dc2626;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
-                <div style="flex:1;min-width:0">
+                <div style="flex:1;min-width:0;cursor:pointer" ${cid ? `onclick="window.nxVerClientePend('${cid}')"` : ''} title="Ver resumen del cliente">
                   <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cli.nom || 'Cliente')}</div>
                   <div style="font-size:11px;color:#64748b">Agente: ${esc(x.agente)} · ${x.periodos.length} factura(s)</div>
+                  ${cid ? '<div style="font-size:9px;color:#7c3aed;font-weight:700;margin-top:1px"><i class="ti ti-user-search"></i> Toca para ver resumen</div>' : ''}
                 </div>
                 <div style="text-align:right;flex-shrink:0">
                   <div style="font-weight:900;color:#dc2626;font-size:15px;white-space:nowrap">${fmt(x.total)}</div>
@@ -8728,6 +8729,17 @@
       const nom = c.getAttribute('data-nom') || '';
       c.style.display = (!t || nom.includes(t)) ? '' : 'none';
     });
+  };
+
+  // Ver resumen del cliente: cierra este modal y abre la ficha completa (con botón Editar)
+  window.nxVerClientePend = function (clienteId) {
+    const modal = document.getElementById('nxModalPendPrev');
+    if (modal) modal.classList.remove('open'); // cerrar para no encimar ventanas
+    try {
+      if (typeof window.verCliente === 'function') { window.verCliente(clienteId); return; }
+      if (typeof verCliente === 'function') { verCliente(clienteId); return; }
+    } catch (e) {}
+    notify('err', 'No se pudo abrir el resumen', '');
   };
 
   // Cobrar: abre el modal de cobro/abono del cliente (reusa la función del sistema)
