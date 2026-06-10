@@ -963,7 +963,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="qa" onclick="nav('facturas',null);setTimeout(genFacturas,100)"><span class="qa-i"><i class="ti ti-file-plus"></i></span><div class="qa-l">Generar facturas</div></div>
             <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><span class="qa-i"><i class="ti ti-wallet"></i></span><div class="qa-l">CLIENTES</div></div>
             <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><span class="qa-i"><i class="ti ti-chart-pie"></i></span><div class="qa-l">Detalles de Cobro</div></div>
-            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='Pendiente';rFact();}},200)"><span class="qa-i"><i class="ti ti-file-alert"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
+            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><span class="qa-i"><i class="ti ti-file-alert"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
             <div class="qa" onclick="nav('dgii',null)"><span class="qa-i"><i class="ti ti-receipt-tax"></i></span><div class="qa-l">Reporte DGII</div></div>
             <div class="qa" onclick="exportarCSV()"><span class="qa-i"><i class="ti ti-file-spreadsheet"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
@@ -1050,6 +1050,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                 <select id="fAnio" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px;width:68px"></select>
                 <select id="fFactEstado" onchange="rFact()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px">
                   <option value="activas">Pendientes</option>
+                  <option value="atrasadas">Pendientes meses anteriores</option>
                   <option value="todas">Todas</option>
                   <option value="Pagado">Pagadas</option>
                   <option value="Pendiente">Solo pendientes</option>
@@ -4654,13 +4655,20 @@ function rFact(){
   const anio=parseInt(document.getElementById('fAnio')?.value||new Date().getFullYear());
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
   const filtroEst=document.getElementById('fFactEstado')?.value||'activas';
-  let lista=ST.facturas.filter(f=>f.periodo===key);
-  if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada');
-  else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
+  const atrasadas=filtroEst==='atrasadas';
+  let lista;
+  if(atrasadas){
+    const hoyKey=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    lista=ST.facturas.filter(f=>f.periodo<hoyKey&&f.estado!=='Pagado'&&f.estado!=='Anulada').sort((a,b)=>a.periodo<b.periodo?-1:a.periodo>b.periodo?1:0);
+  }else{
+    lista=ST.facturas.filter(f=>f.periodo===key);
+    if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada');
+    else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
+  }
   const tb=document.getElementById('tbFact');
-  if(!lista.length){tb.innerHTML='<tr><td colspan="10"><div class="empty">Sin facturas · Presiona "Generar + NCF"</div></td></tr>';return;}
+  if(!lista.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar + NCF"'}</div></td></tr>`;return;}
   tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
-    <td style="font-weight:700;font-size:10px;cursor:pointer;color:#7c3aed;text-decoration:underline" onclick="verCliente('${f.cliente_id}')" title="Ver resumen del cliente">${f.cliente_nom}</td>
+    <td style="font-weight:700;font-size:10px;cursor:pointer;color:#7c3aed;text-decoration:underline" onclick="verCliente('${f.cliente_id}')" title="Ver resumen del cliente">${f.cliente_nom}${atrasadas?`<div style="font-size:8px;color:#92400e;font-weight:700;text-decoration:none">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}</td>
     <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
     <td>${planB(f.plan)}</td>
     <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
