@@ -4660,7 +4660,7 @@ function rFact(){
   const tb=document.getElementById('tbFact');
   if(!lista.length){tb.innerHTML='<tr><td colspan="10"><div class="empty">Sin facturas · Presiona "Generar + NCF"</div></td></tr>';return;}
   tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
-    <td style="font-weight:700;font-size:10px">${f.cliente_nom}</td>
+    <td style="font-weight:700;font-size:10px;cursor:pointer;color:#7c3aed;text-decoration:underline" onclick="verCliente('${f.cliente_id}')" title="Ver resumen del cliente">${f.cliente_nom}</td>
     <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
     <td>${planB(f.plan)}</td>
     <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
