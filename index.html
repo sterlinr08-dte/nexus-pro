@@ -963,7 +963,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="qa" onclick="nav('facturas',null);setTimeout(genFacturas,100)"><span class="qa-i"><i class="ti ti-file-plus"></i></span><div class="qa-l">Generar facturas</div></div>
             <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><span class="qa-i"><i class="ti ti-wallet"></i></span><div class="qa-l">CLIENTES</div></div>
             <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><span class="qa-i"><i class="ti ti-chart-pie"></i></span><div class="qa-l">Detalles de Cobro</div></div>
-            <div class="qa" onclick="nav('comisiones',null)"><span class="qa-i"><i class="ti ti-percentage"></i></span><div class="qa-l">Comisiones</div></div>
+            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='Pendiente';rFact();}},200)"><span class="qa-i"><i class="ti ti-file-alert"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
             <div class="qa" onclick="nav('dgii',null)"><span class="qa-i"><i class="ti ti-receipt-tax"></i></span><div class="qa-l">Reporte DGII</div></div>
             <div class="qa" onclick="exportarCSV()"><span class="qa-i"><i class="ti ti-file-spreadsheet"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
