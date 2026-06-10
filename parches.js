@@ -6678,7 +6678,9 @@
   // ═══ 2. INYECTAR BOTÓN VOLVER EN MODALES + TAP FUERA = CERRAR ═══
   function setupModalEnhancements() {
     // Observer para detectar modales nuevos
-    const observer = new MutationObserver(() => {
+    let _nxModalPend = false;
+    const _procesarOverlays = () => {
+      _nxModalPend = false;
       // Buscar todos los overlay abiertos
       document.querySelectorAll('.overlay.open').forEach(overlay => {
         // Tap fuera = cerrar
@@ -6732,8 +6734,12 @@
           mt.insertBefore(btnVolver, mt.firstChild);
         }
       });
+    };
+    const observer = new MutationObserver(() => {
+      if (_nxModalPend) return;
+      _nxModalPend = true;
+      requestAnimationFrame(_procesarOverlays);
     });
-    
     observer.observe(document.body, {
       childList: true,
       subtree: true,
