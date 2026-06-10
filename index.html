@@ -4695,6 +4695,18 @@ async function anularFactura(facturaId){
   try{
     await API.patch('facturas',`id=eq.${facturaId}`,{estado:'Anulada'});
     f.estado='Anulada';
+    // Revertir contablemente: restar la prima de la deuda del cliente y crear asiento de reversa
+    try{
+      const cl=ST.clientes.find(x=>x.id===f.cliente_id);
+      const primaRev=(Number(f.prima_base)||0)+(Number(f.prima_deps)||0);
+      if(cl&&primaRev>0){
+        const nuevaDeuda=Math.max(0,(Number(cl.deuda_total)||0)-primaRev);
+        await API.patch('clientes',`id=eq.${cl.id}`,{deuda_total:nuevaDeuda});cl.deuda_total=nuevaDeuda;
+        const asiRev={fecha:hoy(),referencia:'AST-ANUL-'+(((f.ncf||'').replace(/\D/g,'').slice(-4))||'0000'),descripcion:`Anulación factura ${f.ncf||f.periodo||''} — ${f.cliente_nom} · ${motivo.trim()}`,cuenta_dr_cod:'4101',cuenta_dr_nom:'Ingresos por primas',monto_dr:primaRev,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:primaRev};
+        const rr=await API.post('asientos',asiRev);if(rr&&rr[0])ST.asientos.unshift(rr[0]);
+        try{recalcularSaldosContables();}catch(_){}
+      }
+    }catch(eRev){console.warn('No se pudo revertir contablemente la anulación:',eRev);}
     logAudit('FACTURA_ANULADA',`Factura ${f.ncf||f.periodo||''} de ${f.cliente_nom} · ${fmt(f.total)} · Motivo: ${motivo.trim()}`,'Facturas');
     rFact();
     if(typeof rDash==='function')rDash();
@@ -4760,7 +4772,7 @@ function imprimirPDF(){
 }
 
 function generarHTMLFactura(f,c,emp){
-  const lineas=(c?.deps||[]).map(d=>`<tr><td style="padding:4px 8px;color:#666;font-size:11px">&nbsp;&nbsp;&nbsp;Dep: ${d.nom} (${d.rel})</td><td style="padding:4px 8px;text-align:right">RD$ ${fmtN(f.plan?getPD(f.plan):0)}</td></tr>`).join('');
+  const lineas=(c?.deps||[]).map(d=>`<tr><td style="padding:4px 8px;color:#666;font-size:11px">&nbsp;&nbsp;&nbsp;Dep: ${d.nom} (${d.rel})</td><td style="padding:4px 8px;text-align:right">RD$ ${fmtN(getPDReal(c))}</td></tr>`).join('');
   return`<div style="border-bottom:3px solid #0C447C;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start">
     <div><div style="font-size:18px;font-weight:700;color:#0C447C">${CFG.empNom}</div><div style="font-size:11px;color:#666;margin-top:3px">RNC: ${CFG.empRNC}</div><div style="font-size:11px;color:#666">${CFG.empTel} | ${CFG.empEmail}</div><div style="font-size:11px;color:#666">${CFG.empDir}</div></div>
     <div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#0C447C">FACTURA</div><div style="font-size:11px;color:#666;margin-top:3px">Período: ${MESES[(f.mes||1)-1]} ${f.anio}</div><div style="font-size:11px;color:#666">Emitida: ${f.fecha_emision||hoy()}</div><div style="margin-top:6px;background:#FFF3CD;border:1px solid #ffc107;padding:4px 10px;border-radius:4px;display:inline-block"><strong>NCF: ${f.ncf||'—'}</strong></div></div>
@@ -5164,6 +5176,18 @@ async function editarAbono(abonoId,clienteId){
     await API.patch('abonos',`id=eq.${abonoId}`,{monto:montoNum});
     await API.patch('clientes',`id=eq.${clienteId}`,{pagado:nuevoP});
     c.pagado=nuevoP;
+    // Asiento de ajuste contable por la diferencia del cobro
+    try{
+      if(Math.abs(diferencia)>0.001){
+        const cta=abono.metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:(abono.metodo==='Transferencia'||abono.metodo==='Depósito')?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
+        const m=Math.abs(diferencia);
+        const asiAdj=diferencia>0
+          ?{fecha:hoy(),referencia:'AST-COB-AJU',descripcion:`Ajuste cobro (+) — ${c.nom}`,cuenta_dr_cod:cta.cod,cuenta_dr_nom:cta.nom,monto_dr:m,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:m}
+          :{fecha:hoy(),referencia:'AST-COB-AJU',descripcion:`Ajuste cobro (-) — ${c.nom}`,cuenta_dr_cod:'1201',cuenta_dr_nom:'Cuentas por cobrar — Clientes',monto_dr:m,cuenta_cr_cod:cta.cod,cuenta_cr_nom:cta.nom,monto_cr:m};
+        const rr=await API.post('asientos',asiAdj);if(rr&&rr[0])ST.asientos.unshift(rr[0]);
+        try{recalcularSaldosContables();}catch(_){}
+      }
+    }catch(_){}
     // Auditoría detallada
     logAudit('PAGO_EDITADO',`Cliente: ${c.nom} · Abono modificado · Valor anterior: RD$${valorAnterior} · Valor nuevo: RD$${montoNum}`,'Cobros');
     toast('ok','Abono editado',`${fmt(valorAnterior)} → ${fmt(montoNum)}`);
@@ -5194,6 +5218,14 @@ async function eliminarAbono(abonoId,clienteId){
     await API.del('abonos',`id=eq.${abonoId}`);
     await API.patch('clientes',`id=eq.${clienteId}`,{pagado:nuevoP});
     c.pagado=nuevoP;
+    // Asiento de reversa del cobro eliminado (DR Cuentas por cobrar / CR caja-banco)
+    try{
+      const cta=abono.metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:(abono.metodo==='Transferencia'||abono.metodo==='Depósito')?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
+      const m=Number(abono.monto)||0;
+      const asiRev={fecha:hoy(),referencia:'AST-COB-REV',descripcion:`Reversa cobro eliminado — ${c.nom} · RD$ ${abono.monto}`,cuenta_dr_cod:'1201',cuenta_dr_nom:'Cuentas por cobrar — Clientes',monto_dr:m,cuenta_cr_cod:cta.cod,cuenta_cr_nom:cta.nom,monto_cr:m};
+      const rr=await API.post('asientos',asiRev);if(rr&&rr[0])ST.asientos.unshift(rr[0]);
+      try{recalcularSaldosContables();}catch(_){}
+    }catch(_){}
     logAudit('PAGO_ELIMINADO',`Cliente: ${c.nom} · Abono eliminado · Valor: RD$${abono.monto} · Fecha original: ${abono.fecha}`,'Cobros');
     toast('ok','Abono eliminado',c.nom);
     rCob();rDash();
@@ -5258,6 +5290,9 @@ async function regAbono(){
     }
   }
   const c=ST.clientes.find(x=>x.id===abonoCliId);
+  if(!c){toast('err','Cliente no encontrado');return;}
+  const pendActual=pend(c);
+  if(monto>pendActual+0.01&&!confirm(`El monto ${fmt(monto)} excede lo pendiente (${fmt(pendActual)}).\n\n¿Es un pago por adelantado? Aceptar para continuar.`))return;
   const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
   try{
     const nuevoP=(c.pagado||0)+monto;
