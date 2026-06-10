@@ -2331,6 +2331,7 @@ const TITLES={dashboard:'DASHBOARD',email:'NOTIFICACIONES POR CORREO',auditoria:
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
+function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 let CFG={t1:3500,t2:5800,t3:8200,d1:2100,d2:3480,d3:4920,com1:5,com2:7,com3:10,alertaDias:30,empNom:'Correduría de Seguros',empRNC:'000-00000-0',empTel:'',empDir:'',empEmail:''};
 let sesion=null;
 let editCliId=null,abonoCliId=null,inhabCliId=null,editEmpId=null,editAgtId=null;
@@ -2397,7 +2398,7 @@ function getEstPol(c){
   const hoyD=new Date(),fin=new Date(c.fecha_fin);
   const diffDays=Math.ceil((fin-hoyD)/86400000);
   if(diffDays<0)return{est:'vencida',lbl:'Vencida',cls:'pol-vencida',badge:'bC3'};
-  if(diffDays<=30)return{est:'gracia',lbl:`Vence en ${diffDays}d`,cls:'pol-gracia',badge:'bC4'};
+  if(diffDays<=(CFG.alertaDias||30))return{est:'gracia',lbl:`Vence en ${diffDays}d`,cls:'pol-gracia',badge:'bC4'};
   return{est:'vigente',lbl:`Vigente ${diffDays}d`,cls:'pol-vigente',badge:'bC1'};
 }
 
@@ -2438,7 +2439,7 @@ async function doLogin(){
     if(tenant){ API.url=tenant.url; API.key=tenant.key;
       localStorage.setItem('nx_url',tenant.url); localStorage.setItem('nx_key',tenant.key);
     } else if(baseNom){
-      err.innerHTML=`Base de datos "<strong>${baseNom}</strong>" no encontrada.<br>Verifica el nombre o usa solo tu usuario.`;
+      err.innerHTML=`Base de datos "<strong>${escHtml(baseNom)}</strong>" no encontrada.<br>Verifica el nombre o usa solo tu usuario.`;
       err.style.display='block'; return;
     }
   }
@@ -3830,7 +3831,7 @@ function generarEmailPreview(){
   const prima=act.reduce((s,c)=>s+getTot(c),0);
   const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
   const pend2=act.reduce((s,c)=>s+pend(c),0);
-  const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=30;}).length;
+  const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=(CFG.alertaDias||30);}).length;
   const facHoy=ST.facturas.filter(f=>f.created_at?.slice(0,10)===hoyD).length;
 
   document.getElementById('emailPreview').innerHTML=`
@@ -3869,7 +3870,7 @@ function generarParamsEmail(){
   const prima=act.reduce((s,c)=>s+getTot(c),0);
   const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
   const pend2=act.reduce((s,c)=>s+pend(c),0);
-  const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=30;}).length;
+  const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=(CFG.alertaDias||30);}).length;
   return{
     to_email:_emailCfg.email,
     empresa:CFG.empNom,
@@ -4014,6 +4015,8 @@ async function cargarTodo(){
       }catch(e){}
     });
     ST.clientes.forEach(c=>{if(typeof c.deps==='string')try{c.deps=JSON.parse(c.deps);}catch{c.deps=[];}});
+    // Coerción defensiva: Supabase devuelve numéricos como texto
+    ST.clientes.forEach(c=>{['deuda_total','pagado','precio_titular','precio_dep','saldo_inicial','saldo_inicial_pagado'].forEach(k=>{if(c[k]!=null&&c[k]!=='')c[k]=Number(c[k]);});});
     // Cargar auto config
     const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
     actualizarTicker();
@@ -4697,7 +4700,7 @@ async function anularFactura(facturaId){
     await API.patch('facturas',`id=eq.${facturaId}`,{estado:'Anulada'});
     f.estado='Anulada';
     logAudit('FACTURA_ANULADA',`Factura ${f.ncf||f.periodo||''} de ${f.cliente_nom} · ${fmt(f.total)} · Motivo: ${motivo.trim()}`,'Facturas');
-    rFacturas();
+    rFact();
     if(typeof rDash==='function')rDash();
     toast('ok','Factura anulada',f.cliente_nom);
   }catch(e){
@@ -7070,7 +7073,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('app').style.display = 'flex';
       document.getElementById('sbAv').textContent = inits(sesion.nom);
       document.getElementById('sbNom').textContent = sesion.nom.split(' ')[0];
-      document.getElementById('sbRol').textContent = (sesion.rol||'agente').toUpperCase()+'::ROOT';
+      document.getElementById('sbRol').textContent = (sesion.rol||'agente').toUpperCase()+'::'+((CFG.empNom||'NEXUS').split(' ')[0].toUpperCase());
+      try{activarMayusculasGlobales();}catch(e){}
       cargarTodo(); return;
     }catch{ sessionStorage.removeItem('nx_sesion'); }
   }

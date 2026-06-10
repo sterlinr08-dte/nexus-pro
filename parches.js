@@ -7964,7 +7964,7 @@
           const estado = dup.activo === false ? 'inhabilitado' : 'activo';
           aviso.style.display = 'block';
           aviso.style.color = '#dc2626';
-          aviso.innerHTML = `⚠️ Esta cédula ya es de <strong>${dup.nom}</strong> (${estado}). <a href="#" onclick="event.preventDefault();document.getElementById('nxSmartModal');window.verCliente&&window.verCliente('${dup.id}')" style="color:#2563eb;text-decoration:underline">Ver cliente</a>`;
+          aviso.innerHTML = `⚠️ Esta cédula ya es de <strong>${(window.escHtml?window.escHtml(dup.nom):String(dup.nom||''))}</strong> (${estado}). <a href="#" onclick="event.preventDefault();document.getElementById('nxSmartModal');window.verCliente&&window.verCliente('${dup.id}')" style="color:#2563eb;text-decoration:underline">Ver cliente</a>`;
           input.style.borderColor = '#dc2626';
           return;
         }
