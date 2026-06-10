@@ -4157,15 +4157,11 @@ function estB(c){const e=getEst(c),m={'Al día':'bC1','Parcial':'bC4','Pendiente
 // ── NCF ──────────────────────────────────────────────────────────────────────
 async function generarNCF(tipo='B02'){
   if(!tipo||tipo==='SIN')return null; // Sin comprobante fiscal
-  try{
-    const seq=await API.get('secuencias_ncf',`tipo=eq.${tipo}&select=*`);
-    const actual=(seq&&seq[0]?seq[0].ultimo_numero:0)+1;
-    await API.patch('secuencias_ncf',`tipo=eq.${tipo}`,{ultimo_numero:actual});
-    return `${tipo}-${String(actual).padStart(8,'0')}`;
-  }catch(e){
-    const ts=Date.now()%100000000;
-    return `${tipo}-${String(ts).padStart(8,'0')}`;
-  }
+  // Atómico vía función SQL (evita NCF duplicados por condición de carrera).
+  // Si falla, lanza el error en vez de inventar un NCF fuera de secuencia.
+  const r=await API.post('rpc/siguiente_ncf',{p_tipo:tipo});
+  if(!r)throw new Error('No se pudo generar el NCF para '+tipo);
+  return r;
 }
 
 // ── NÚMERO DE PÓLIZA ─────────────────────────────────────────────────────────
