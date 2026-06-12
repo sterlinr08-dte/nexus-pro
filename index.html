@@ -3469,10 +3469,10 @@ function verCliente(id){
       </div>
     </div>
     
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn bc1" style="flex:1" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
-      <button class="btn bc4" style="flex:1" onclick="abrirDocs('${id}');cerrarClientSummary()"><i class="ti ti-folder"></i> Documentos</button>
-      <button class="btn bc5" style="flex:1" onclick="verFacturaPDF('${id}');cerrarClientSummary()"><i class="ti ti-file-certificate"></i> PDF</button>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px">
+      <button class="btn bc1" style="width:100%" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
+      <button class="btn bc4" style="width:100%" onclick="abrirDocs('${id}');cerrarClientSummary()"><i class="ti ti-folder"></i> Documentos</button>
+      <button class="btn bc5" style="width:100%" onclick="verFacturaPDF('${id}');cerrarClientSummary()"><i class="ti ti-file-certificate"></i> PDF</button>
     </div>
     <button class="btn bc2" style="width:100%;margin-top:6px" onclick="verHistorialAbonos('${id}')"><i class="ti ti-history"></i> Ver historial de abonos</button>`;
   document.getElementById('csPanel').classList.add('open');
