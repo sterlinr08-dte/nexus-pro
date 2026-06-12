@@ -5071,7 +5071,7 @@
         transition: all 0.18s ease;
       }
 
-      /* Los íconos DENTRO de botones NO llevan el cuadro de color: solo el ícono limpio */
+      /* Los íconos DENTRO de botones NO llevan el cuadro de color: solo el ícono limpio. */
       .kpi .btn i[class*="ti-"], .qa .btn i[class*="ti-"],
       .sm .btn i[class*="ti-"], .nc .btn i[class*="ti-"],
       td .btn i[class*="ti-"], .tw .btn i[class*="ti-"],
@@ -5084,6 +5084,13 @@
         height: auto !important;
         min-width: 0 !important;
         padding: 0 !important;
+      }
+
+      /* En botones SÓLIDOS (azul .bc1 / .bxl) el ícono va BLANCO para que contraste
+         y no se pierda el color semántico (p.ej. wallet verde sobre azul). */
+      .btn.bc1 i[class*="ti-"], .btn.bxl i[class*="ti-"],
+      .btn.bc1 .ti, .btn.bxl .ti {
+        color: #ffffff !important;
       }
 
       /* ═══ VERDE VIBRANTE - Dinero, Cobros, Ingresos, Positivo ═══ */
