@@ -337,8 +337,8 @@ tbody tr:hover td{background:#f8fafc}
   /* Main ocupa todo el ancho */
   .main{width:100%;min-width:0}
   .abody{position:relative}
-  /* Topnav móvil */
-  .tnav{padding:0 10px;height:52px}
+  /* Topnav móvil — conservar el espacio de la barra de estado (notch/isla dinámica) en iOS */
+  .tnav{padding:0 10px;padding-top:env(safe-area-inset-top,0);height:52px}
   .pttl{font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis}
   .tn-sr{max-width:160px}
   .tn-sr input{font-size:11px}
