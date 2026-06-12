@@ -2950,7 +2950,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='10.0';
+const APP_VERSION='10.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4107,12 +4107,45 @@ async function refrescarDatos(btn){
     verificarAlertas();
     if(typeof refrescarVistaActual==='function')refrescarVistaActual();
     toast('ok','Datos actualizados','Información recargada');
+    // Además de los datos, revisar si hay correcciones de código nuevas publicadas
+    chequearVersionApp();
   }catch(e){
     console.error('refrescarDatos:',e);
     toast('err','No se pudo actualizar',e&&e.message?e.message:'Revisa la conexión');
   }finally{
     if(btn)btn.classList.remove('loading');
   }
+}
+
+// Revisa version.json en GitHub; si hay una versión nueva, ofrece aplicarla (recarga limpia)
+async function chequearVersionApp(){
+  try{
+    const resp=await fetch(URL_VERSION+'?t='+Date.now());
+    if(!resp.ok)return;
+    const data=await resp.json();
+    if(compararVersiones(data.version,APP_VERSION)>0){
+      const cambios=(data.cambios||[]).slice(0,6).map(c=>'• '+c).join('\n');
+      if(confirm('🎉 NEXUS PRO v'+data.version+' disponible\n\nNovedades:\n'+(cambios||'(correcciones varias)')+'\n\n¿Actualizar la app ahora? Se recargará.')){
+        toast('info','Actualizando app...','Aplicando la versión nueva');
+        const url=data.url||'https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html';
+        try{
+          // Limpiar la caché del service worker para no servir lo viejo
+          if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}
+          const r=await fetch(url+'?t='+Date.now());
+          if(r.ok){
+            const html=await r.text();
+            if(html.length>10000){
+              try{logAudit('ACTUALIZACION_APLICADA','Actualizado a v'+data.version,'Sistema');}catch(e){}
+              document.open();document.write(html);document.close();
+              return;
+            }
+          }
+        }catch(e){}
+        // Respaldo: recarga limpia con cache-bust
+        location.replace(location.pathname+'?v='+Date.now());
+      }
+    }
+  }catch(e){/* silencioso: si no hay red o version.json, no molestar */}
 }
 
 function nav(view,el){
