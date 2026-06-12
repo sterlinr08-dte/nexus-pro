@@ -5305,6 +5305,21 @@
             inset 0 1px 0 rgba(255,255,255,.85) !important;
         }
       }
+
+      /* ───────────────────────────────────────────────────────────────
+         El CUADRO de color (fondo + sombra) queda SOLO para los íconos
+         grandes de display del dashboard (#v-dashboard, regla aparte con
+         mayor especificidad). En CUALQUIER otro contexto el ícono conserva
+         su color pero SIN recuadro: botones, enlaces, celdas de tabla,
+         badges, encabezados, texto, etc. Va al final para ganar por orden
+         de cascada; el dashboard la sobreescribe por su #id.
+         ─────────────────────────────────────────────────────────────── */
+      .kpi i[class*="ti-"], .qa i[class*="ti-"], .sm i[class*="ti-"], .nc i[class*="ti-"],
+      .kpi .ti, .qa .ti, .sm .ti, .nc .ti {
+        background: none !important;
+        box-shadow: none !important;
+        border: 0 !important;
+      }
     `;
 
     document.head.appendChild(style);
