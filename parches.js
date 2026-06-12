@@ -460,30 +460,77 @@
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 4. MENÚ "MÁS"
+  // 4. MENÚ "MÁS" (personalizable por el usuario)
   // ═══════════════════════════════════════════════════════════
+  // Catálogo de TODAS las opciones disponibles para el menú
+  const NX_MENU_CATALOG = [
+    { go:'dashboard', icon:'🏠', label:'Inicio' },
+    { go:'clientes',  icon:'👥', label:'Clientes' },
+    { go:'proceso',   icon:'📋', label:'Clientes en proceso' },
+    { go:'polizas',   icon:'📜', label:'Pólizas' },
+    { go:'facturas',  icon:'📄', label:'Facturas' },
+    { go:'cobros',    icon:'💰', label:'Cobros' },
+    { go:'historial', icon:'🧾', label:'Historial de pagos' },
+    { go:'reportes',  icon:'📊', label:'Reportes' },
+    { go:'sistema',   icon:'⚙️', label:'Configuración' },
+    { go:'usuarios',  icon:'👤', label:'Usuarios' }
+  ];
+  const NX_MENU_KEY = 'nx_menu_cfg';
+
+  function nxCatalogItem(go){ return NX_MENU_CATALOG.find(i => i.go === go); }
+
+  // Lista ordenada de claves visibles (por defecto: todas)
+  function getMenuCfg(){
+    try {
+      const raw = JSON.parse(localStorage.getItem(NX_MENU_KEY) || 'null');
+      if (Array.isArray(raw)) {
+        const valid = raw.filter(go => nxCatalogItem(go));
+        if (valid.length) return valid;
+      }
+    } catch(e){}
+    return NX_MENU_CATALOG.map(i => i.go);
+  }
+  function setMenuCfg(arr){
+    try { localStorage.setItem(NX_MENU_KEY, JSON.stringify(arr)); } catch(e){}
+  }
+
+  // HTML de los botones del menú según la configuración guardada
+  function buildMenuHTML(){
+    const items = getMenuCfg().map(go => nxCatalogItem(go)).filter(Boolean);
+    return `
+      <div class="nx-menu-head">
+        <h3>MENÚ</h3>
+        <button type="button" class="nx-menu-edit-btn" data-action="edit-menu"><i class="ti ti-pencil"></i> Editar</button>
+      </div>
+      ${items.map(it => `<button type="button" data-go="${it.go}"><span class="icon">${it.icon}</span><span><b>${it.label}</b></span></button>`).join('')}
+    `;
+  }
+
+  function renderMenuSheet(){
+    const sheet = document.querySelector('.mobile-more-sheet-clean');
+    if (!sheet) return;
+    const wasOpen = sheet.classList.contains('open');
+    sheet.innerHTML = buildMenuHTML();
+    if (wasOpen) sheet.classList.add('open');
+  }
+
   function crearMenuMas() {
     if (!isMobile()) return;
+    injectMenuEditorCSS();
     if (document.querySelector('.mobile-more-sheet-clean')) return;
 
     const sheet = document.createElement('div');
     sheet.className = 'mobile-more-sheet-clean';
-    sheet.innerHTML = `
-      <h3>MENÚ</h3>
-      <button type="button" data-go="dashboard"><span class="icon">🏠</span><span><b>Inicio</b></span></button>
-      <button type="button" data-go="clientes"><span class="icon">👥</span><span><b>Clientes</b></span></button>
-      <button type="button" data-go="proceso"><span class="icon">📋</span><span><b>Clientes en proceso</b></span></button>
-      <button type="button" data-go="polizas"><span class="icon">📜</span><span><b>Pólizas</b></span></button>
-      <button type="button" data-go="facturas"><span class="icon">📄</span><span><b>Facturas</b></span></button>
-      <button type="button" data-go="cobros"><span class="icon">💰</span><span><b>Cobros</b></span></button>
-      <button type="button" data-go="historial"><span class="icon">🧾</span><span><b>Historial de pagos</b></span></button>
-      <button type="button" data-go="reportes"><span class="icon">📊</span><span><b>Reportes</b></span></button>
-      <button type="button" data-go="sistema"><span class="icon">⚙️</span><span><b>Configuración</b></span></button>
-      <button type="button" data-go="usuarios"><span class="icon">👤</span><span><b>Usuarios</b></span></button>
-    `;
+    sheet.innerHTML = buildMenuHTML();
     document.body.appendChild(sheet);
 
     sheet.addEventListener('click', function(ev) {
+      const editBtn = ev.target.closest('[data-action="edit-menu"]');
+      if (editBtn) {
+        ev.preventDefault(); ev.stopPropagation();
+        abrirEditorMenu();
+        return;
+      }
       const btn = ev.target.closest('button[data-go]');
       if (!btn) return;
       ev.preventDefault();
@@ -491,6 +538,110 @@
       if (window.__nxToggleMenu) window.__nxToggleMenu(true); else sheet.classList.remove('open');
       navegar(btn.dataset.go);
     });
+  }
+
+  // ── Editor del menú: elegir qué opciones aparecen y en qué orden ──
+  function abrirEditorMenu(){
+    if (window.__nxToggleMenu) window.__nxToggleMenu(true); // cerrar el menú flotante
+
+    const visibles = getMenuCfg();
+    const ocultas = NX_MENU_CATALOG.map(i => i.go).filter(go => !visibles.includes(go));
+    let work = visibles.map(go => ({ go, on:true }))
+                       .concat(ocultas.map(go => ({ go, on:false })));
+
+    const old = document.querySelector('.nx-menu-editor');
+    if (old) old.remove();
+
+    const ov = document.createElement('div');
+    ov.className = 'nx-menu-editor';
+    document.body.appendChild(ov);
+
+    function render(){
+      ov.innerHTML = `
+        <div class="nx-me-card">
+          <div class="nx-me-head">
+            <span>Editar menú</span>
+            <button type="button" class="nx-me-x" data-me="cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="nx-me-hint">Marca lo que quieres ver y usa las flechas para ordenar.</div>
+          <div class="nx-me-list">
+            ${work.map((w, idx) => {
+              const it = nxCatalogItem(w.go); if (!it) return '';
+              return `
+              <div class="nx-me-row${w.on ? '' : ' off'}">
+                <button type="button" class="nx-me-check" data-me="toggle" data-idx="${idx}" aria-label="Mostrar u ocultar"><i class="ti ti-check"></i></button>
+                <span class="nx-me-ico">${it.icon}</span>
+                <span class="nx-me-label">${it.label}</span>
+                <span class="nx-me-arrows">
+                  <button type="button" data-me="up" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} aria-label="Subir"><i class="ti ti-chevron-up"></i></button>
+                  <button type="button" data-me="down" data-idx="${idx}" ${idx === work.length - 1 ? 'disabled' : ''} aria-label="Bajar"><i class="ti ti-chevron-down"></i></button>
+                </span>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="nx-me-actions">
+            <button type="button" class="nx-me-reset" data-me="reset">Restaurar todo</button>
+            <button type="button" class="nx-me-save" data-me="guardar">Guardar</button>
+          </div>
+        </div>`;
+    }
+    render();
+
+    function cerrar(){ ov.classList.remove('open'); setTimeout(() => ov.remove(), 180); }
+
+    ov.addEventListener('click', function(ev){
+      const t = ev.target.closest('[data-me]');
+      if (!t) { if (ev.target === ov) cerrar(); return; }
+      const action = t.dataset.me;
+      const idx = parseInt(t.dataset.idx, 10);
+      if (action === 'cerrar') return cerrar();
+      if (action === 'toggle') { work[idx].on = !work[idx].on; render(); return; }
+      if (action === 'up'   && idx > 0)               { const tmp = work[idx-1]; work[idx-1] = work[idx]; work[idx] = tmp; render(); return; }
+      if (action === 'down' && idx < work.length - 1) { const tmp = work[idx+1]; work[idx+1] = work[idx]; work[idx] = tmp; render(); return; }
+      if (action === 'reset')   { setMenuCfg(NX_MENU_CATALOG.map(i => i.go)); renderMenuSheet(); cerrar(); return; }
+      if (action === 'guardar') {
+        const sel = work.filter(w => w.on).map(w => w.go);
+        setMenuCfg(sel.length ? sel : NX_MENU_CATALOG.map(i => i.go));
+        renderMenuSheet();
+        cerrar();
+        return;
+      }
+    });
+
+    requestAnimationFrame(() => ov.classList.add('open'));
+  }
+
+  // CSS del editor + botón "Editar" (se inyecta una sola vez)
+  function injectMenuEditorCSS(){
+    if (document.getElementById('nx-menu-editor-css')) return;
+    const st = document.createElement('style');
+    st.id = 'nx-menu-editor-css';
+    st.textContent = `
+      .mobile-more-sheet-clean .nx-menu-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+      .mobile-more-sheet-clean .nx-menu-head h3{margin:4px 6px 8px}
+      .mobile-more-sheet-clean button.nx-menu-edit-btn{width:auto!important;padding:6px 12px!important;margin:0 4px 8px 0!important;font-size:12px!important;font-weight:700!important;color:#2563eb!important;background:#eff6ff!important;border-radius:999px!important;gap:5px!important;border-top:0!important}
+      .nx-menu-editor{position:fixed;inset:0;z-index:10001;background:rgba(15,23,42,.45);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s ease}
+      .nx-menu-editor.open{opacity:1}
+      .nx-me-card{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0));max-height:84vh;display:flex;flex-direction:column;transform:translateY(20px);transition:transform .2s ease;box-shadow:0 -10px 40px rgba(15,23,42,.25)}
+      .nx-menu-editor.open .nx-me-card{transform:translateY(0)}
+      .nx-me-head{display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:800;color:#0f172a;margin-bottom:4px}
+      .nx-me-x{width:34px;height:34px;border-radius:50%;border:0;background:#f1f5f9;color:#475569;display:grid;place-items:center;cursor:pointer;font-size:16px}
+      .nx-me-hint{font-size:12px;color:#94a3b8;margin-bottom:10px}
+      .nx-me-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;margin:0 -4px}
+      .nx-me-row{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #f1f5f9}
+      .nx-me-row.off{opacity:.45}
+      .nx-me-check{width:26px;height:26px;flex-shrink:0;border-radius:8px;border:2px solid #2563eb;background:#2563eb;color:#fff;display:grid;place-items:center;cursor:pointer;font-size:14px;padding:0}
+      .nx-me-row.off .nx-me-check{background:#fff;border-color:#cbd5e1;color:transparent}
+      .nx-me-ico{font-size:18px;width:24px;text-align:center}
+      .nx-me-label{flex:1;font-size:14px;font-weight:600;color:#0f172a}
+      .nx-me-arrows{display:flex;gap:4px}
+      .nx-me-arrows button{width:32px;height:32px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;display:grid;place-items:center;cursor:pointer;font-size:15px;padding:0}
+      .nx-me-arrows button:disabled{opacity:.3}
+      .nx-me-actions{display:flex;gap:8px;margin-top:12px}
+      .nx-me-reset{flex:0 0 auto;padding:12px 16px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-weight:700;cursor:pointer}
+      .nx-me-save{flex:1;padding:12px;border-radius:12px;border:0;background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+    `;
+    document.head.appendChild(st);
   }
   
   // ═══════════════════════════════════════════════════════════
