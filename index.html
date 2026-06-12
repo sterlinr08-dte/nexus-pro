@@ -4755,14 +4755,12 @@ function rFact(){
     <td style="font-family:var(--mono);font-size:9px;color:var(--c3)">${f.deuda_ant>0?fmt(f.deuda_ant):'—'}</td>
     <td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c4)">${fmt(f.total)}</td>
     <td><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
-    <td style="white-space:normal;min-width:122px;vertical-align:middle">
-      <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
-        ${f.estado!=='Anulada'?`<button style="background:linear-gradient(135deg,#059669,#10b981);border:none;color:#fff;font-weight:700;font-size:11px;padding:7px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 6px rgba(16,185,129,.3);width:100%" onclick="cobrarDesdeFact('${f.cliente_id}')"><i class="ti ti-wallet"></i> COBRAR</button>`:''}
-        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
-          <button class="btn bsm bghost" onclick="verFacturaPDF_id('${f.id}')" title="Ver factura PDF"><i class="ti ti-file-invoice"></i></button>
-          ${f.estado!=='Anulada'?`<button class="btn bsm bwa" onclick="enviarWA('${f.id}')" title="Enviar por WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>`:''}
-          ${(f.estado!=='Anulada'&&f.estado!=='Pagado')?`<button class="btn bsm bc3" onclick="anularFactura('${f.id}')" title="Anular factura"><i class="ti ti-ban"></i></button>`:''}
-        </div>
+    <td style="white-space:normal;min-width:128px;vertical-align:middle">
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:stretch">
+        ${f.estado!=='Anulada'?`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:11px;padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(16,185,129,.3);background:linear-gradient(135deg,#059669,#10b981)"><i class="ti ti-wallet" style="color:#fff!important"></i> COBRAR</button>`:''}
+        <button onclick="verFacturaPDF_id('${f.id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:11px;padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(37,99,235,.25);background:linear-gradient(135deg,#2563eb,#3b82f6)"><i class="ti ti-file-invoice" style="color:#fff!important"></i> FACTURA</button>
+        ${f.estado!=='Anulada'?`<button onclick="enviarWA('${f.id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:11px;padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(37,211,102,.3);background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important"></i> WHATSAPP</button>`:''}
+        ${(f.estado!=='Anulada'&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:11px;padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(220,38,38,.25);background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important"></i> ANULAR</button>`:''}
       </div>
     </td>
   </tr>`;}).join('');
