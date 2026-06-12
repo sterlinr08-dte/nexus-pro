@@ -1999,9 +1999,14 @@
       const btn = document.createElement('div');
       btn.id = 'nxDCBotonVolver';
       btn.innerHTML = `
-        <button class="btn bsm bghost" type="button" onclick="window.nxVolverResumen()" style="margin-bottom:12px">
-          <i class="ti ti-arrow-left"></i> Volver al Resumen
-        </button>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <button class="btn bsm bghost" type="button" onclick="window.nxVolverResumen()">
+            <i class="ti ti-arrow-left"></i> Volver al Resumen
+          </button>
+          <button class="btn bsm bghost" type="button" onclick="window.nxVolverResumen()" title="Cerrar">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
       `;
       vDash.insertBefore(btn, document.getElementById('nxDetallesCobroV1'));
     } else {
@@ -4036,6 +4041,10 @@
     const montoPend = pendientes.reduce((s, e) => s + Number(e.monto || 0), 0);
 
     return `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <button class="btn bsm bghost" type="button" onclick="window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+        <button class="btn bsm bghost" type="button" onclick="window.nav('dashboard',null)" title="Cerrar"><i class="ti ti-x"></i></button>
+      </div>
       <div class="nxSL-head">
         <div class="nxSL-head-icon"><i class="ti ti-inbox"></i></div>
         <div class="nxSL-head-body">
