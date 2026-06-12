@@ -312,6 +312,7 @@ tbody tr:hover td{background:#f8fafc}
 .av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
 .loading{display:flex;align-items:center;justify-content:center;padding:2rem;color:var(--tx3);font-family:var(--mono);font-size:10px;gap:8px}
 .spin{width:14px;height:14px;border:2px solid rgba(0,229,199,.2);border-top-color:var(--c1);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+.tn-b.loading{pointer-events:none;opacity:.7}.tn-b.loading i{animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .empty{text-align:center;padding:2rem;color:var(--tx3);font-size:10px;font-family:var(--mono)}
 /* Alert banner */
@@ -939,7 +940,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas... (Enter para buscar)" onkeydown="if(event.key==='Enter')gSearch(this.value)"/></div>
         <div class="tn-r">
           <button class="tn-b c4" onclick="autoGenerar()"><i class="ti ti-robot"></i> Auto-gen</button>
-          <button class="tn-b" onclick="exportarCSV()" title="Exportar"><i class="ti ti-file-spreadsheet"></i></button>
+          <button class="tn-b" id="btnRefrescar" onclick="refrescarDatos(this)" title="Actualizar datos"><i class="ti ti-refresh"></i></button>
           <button class="tn-b" id="btnAlertas" onclick="nav('polizas',null)" title="Alertas" style="display:none"><i class="ti ti-bell" style="color:var(--c3)"></i><div class="ndot"></div></button>
           <div class="err-badge" id="errBadge" onclick="abrirLog()" title="Ver errores">
             <div class="err-badge-dot"></div>
@@ -3987,49 +3988,54 @@ async function iniciarApp(){
   await cargarTodo();
 }
 
+// ── NÚCLEO: solo carga datos desde Supabase y los vuelca en ST (reutilizable) ──
+async function cargarDatosNucleo(){
+  const [emp,agt,cli,fac,asi,usu,cfg]=await Promise.all([
+    API.get('empresas','select=*&order=nom'),
+    API.get('agentes','select=*&order=nom'),
+    API.get('clientes','select=*&order=nom'),
+    API.get('facturas','select=*&order=created_at.desc'),
+    API.get('asientos','select=*&order=created_at.desc'),
+    API.get('usuarios_sistema','select=*&order=nom'),
+    API.get('configuracion','select=*'),
+  ]);
+  ST.empresas=emp||[];ST.agentes=agt||[];ST.clientes=cli||[];
+  ST.facturas=fac||[];ST.asientos=asi||[];ST.usuarios=usu||[];
+  recalcularSaldosContables();
+  // Cargar config
+  (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});
+  actualizarCFG();
+  // ── Cargar ARS, roles/permisos y configs desde Supabase (para TODOS los usuarios) ──
+  (cfg||[]).forEach(c=>{
+    try{
+      if(c.clave==='ars_list'&&c.valor){
+        const arr=JSON.parse(c.valor);
+        if(Array.isArray(arr)){_arsList=arr;localStorage.setItem('nx_ars_list',c.valor);}
+      }
+      if(c.clave==='roles_perms'&&c.valor){
+        const rp=JSON.parse(c.valor);
+        if(rp){Object.assign(ROLES_PERMS,rp);localStorage.setItem('nx_roles_perms',c.valor);}
+      }
+      if(c.clave==='emailjs'&&c.valor){
+        Object.assign(_emailCfg,JSON.parse(c.valor));
+        localStorage.setItem('nx_email_cfg',c.valor);
+      }
+      if(c.clave==='auto_facturacion'&&c.valor){
+        Object.assign(autoCfg,JSON.parse(c.valor));
+        localStorage.setItem('nx_auto',c.valor);
+      }
+    }catch(e){}
+  });
+  ST.clientes.forEach(c=>{if(typeof c.deps==='string')try{c.deps=JSON.parse(c.deps);}catch{c.deps=[];}});
+  // Coerción defensiva: Supabase devuelve numéricos como texto
+  ST.clientes.forEach(c=>{['deuda_total','pagado','precio_titular','precio_dep','saldo_inicial','saldo_inicial_pagado'].forEach(k=>{if(c[k]!=null&&c[k]!=='')c[k]=Number(c[k]);});});
+  // Cargar auto config
+  const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
+}
+
 async function cargarTodo(){
   try{
-    const [emp,agt,cli,fac,asi,usu,cfg]=await Promise.all([
-      API.get('empresas','select=*&order=nom'),
-      API.get('agentes','select=*&order=nom'),
-      API.get('clientes','select=*&order=nom'),
-      API.get('facturas','select=*&order=created_at.desc'),
-      API.get('asientos','select=*&order=created_at.desc'),
-      API.get('usuarios_sistema','select=*&order=nom'),
-      API.get('configuracion','select=*'),
-    ]);
-    ST.empresas=emp||[];ST.agentes=agt||[];ST.clientes=cli||[];
-    ST.facturas=fac||[];ST.asientos=asi||[];ST.usuarios=usu||[];
-    recalcularSaldosContables();
-    // Cargar config
-    (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});
-    actualizarCFG();
-    // ── Cargar ARS, roles/permisos y configs desde Supabase (para TODOS los usuarios) ──
-    (cfg||[]).forEach(c=>{
-      try{
-        if(c.clave==='ars_list'&&c.valor){
-          const arr=JSON.parse(c.valor);
-          if(Array.isArray(arr)){_arsList=arr;localStorage.setItem('nx_ars_list',c.valor);}
-        }
-        if(c.clave==='roles_perms'&&c.valor){
-          const rp=JSON.parse(c.valor);
-          if(rp){Object.assign(ROLES_PERMS,rp);localStorage.setItem('nx_roles_perms',c.valor);}
-        }
-        if(c.clave==='emailjs'&&c.valor){
-          Object.assign(_emailCfg,JSON.parse(c.valor));
-          localStorage.setItem('nx_email_cfg',c.valor);
-        }
-        if(c.clave==='auto_facturacion'&&c.valor){
-          Object.assign(autoCfg,JSON.parse(c.valor));
-          localStorage.setItem('nx_auto',c.valor);
-        }
-      }catch(e){}
-    });
-    ST.clientes.forEach(c=>{if(typeof c.deps==='string')try{c.deps=JSON.parse(c.deps);}catch{c.deps=[];}});
-    // Coerción defensiva: Supabase devuelve numéricos como texto
-    ST.clientes.forEach(c=>{['deuda_total','pagado','precio_titular','precio_dep','saldo_inicial','saldo_inicial_pagado'].forEach(k=>{if(c[k]!=null&&c[k]!=='')c[k]=Number(c[k]);});});
-    // Cargar auto config
-    const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
+    await cargarDatosNucleo();
     actualizarTicker();
     verificarAlertas();
     initMesSel();initComSel();initDGIISel();rAuto();rConfig();
@@ -4092,6 +4098,22 @@ function closeMobSB(){
 }
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
+// Botón "Actualizar": recarga datos desde Supabase y re-renderiza la vista actual
+async function refrescarDatos(btn){
+  if(btn)btn.classList.add('loading');
+  try{
+    await cargarDatosNucleo();
+    actualizarTicker();
+    verificarAlertas();
+    if(typeof refrescarVistaActual==='function')refrescarVistaActual();
+    toast('ok','Datos actualizados','Información recargada');
+  }catch(e){
+    console.error('refrescarDatos:',e);
+    toast('err','No se pudo actualizar',e&&e.message?e.message:'Revisa la conexión');
+  }finally{
+    if(btn)btn.classList.remove('loading');
+  }
+}
 
 function nav(view,el){
   // ── Control de acceso a Contabilidad ──
