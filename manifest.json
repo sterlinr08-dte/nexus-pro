@@ -1,8 +1,20 @@
 {
-  "name": "NEXUS PRO",
-  "short_name": "NEXUS",
+  "id": "/index.html",
+  "name": "NEXUS PRO — Seguros de Salud RD",
+  "short_name": "NEXUS PRO",
+  "description": "Sistema de gestión para correduría de seguros de salud: clientes, facturación, cobros, comisiones y contabilidad.",
   "start_url": "index.html",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000"
+  "orientation": "portrait",
+  "lang": "es-DO",
+  "dir": "ltr",
+  "background_color": "#1e3a6e",
+  "theme_color": "#1e3a6e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }
