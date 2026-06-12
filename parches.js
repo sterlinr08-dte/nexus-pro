@@ -7712,6 +7712,7 @@
           <span style="flex:1;color:#fff;font-weight:700;font-size:15px"><i class="ti ti-sparkles"></i> NEXUS SMART</span>
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartHistorial()" title="Conversaciones guardadas"><i class="ti ti-history"></i></button>
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartLimpiar()" title="Nueva conversación"><i class="ti ti-refresh"></i></button>
+          <button style="background:rgba(255,255,255,.18);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0;margin-left:4px;display:inline-flex;align-items:center;justify-content:center" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Volver"><i class="ti ti-arrow-left"></i></button>
           <button style="background:rgba(255,255,255,.25);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;flex-shrink:0;margin-left:4px" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Cerrar">✕</button>
         </div>
         <div id="nxSmartMensajes" style="flex:1;overflow-y:auto;padding:14px;background:#f8fafc;-webkit-overflow-scrolling:touch">
@@ -7996,7 +7997,10 @@
             <div style="font-size:12px;opacity:.85">${nomMes(ymActual)}</div>
             <div style="font-size:10px;opacity:.7;margin-top:2px">📆 Período: 20 al 19 de cada mes</div>
           </div>
-          <button onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+            <button onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center" title="Volver"><i class="ti ti-arrow-left"></i></button>
+            <button onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" title="Cerrar">✕</button>
+          </div>
         </div>
         <div class="nxCi-body">
 
@@ -8553,7 +8557,7 @@
         </div>
 
         <!-- BALANCE -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 2px 10px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin:6px 2px 10px">
           <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:14px;padding:12px 10px;text-align:center">
             <div style="font-size:10px;font-weight:800;color:#047857;letter-spacing:.4px"><i class="ti ti-arrow-down-circle"></i> ENTRÓ</div>
             <div style="font-size:16px;font-weight:900;color:#065f46;margin-top:3px">${fmt(entro)}</div>
@@ -9895,7 +9899,10 @@
             <div style="font-size:17px;font-weight:800">🔍 Tabla Comparativa</div>
             <div style="font-size:11px;opacity:.85;margin-top:2px">Compara tus clientes con la TSS (Excel, por cédula) o Humano (PDF, por nombre)</div>
           </div>
-          <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+            <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center" title="Volver"><i class="ti ti-arrow-left"></i></button>
+            <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" title="Cerrar">✕</button>
+          </div>
         </div>
         <div style="padding:16px">
           <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">1. Empresa a comparar</label>
