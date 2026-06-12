@@ -583,7 +583,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .fav-star:hover{transform:scale(1.2)}
 
 /* ════ CLIENT SUMMARY PANEL ════ */
-.cs-panel{position:fixed;top:0;right:-450px;width:min(440px,100vw);height:100vh;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.15);z-index:600;transition:right .3s ease;overflow-y:auto;overflow-x:hidden;border-left:1px solid #e2e8f0}
+.cs-panel{position:fixed;top:0;right:-450px;width:min(440px,100vw);height:100vh;height:100dvh;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.15);z-index:600;transition:right .3s ease;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;border-left:1px solid #e2e8f0;padding-bottom:env(safe-area-inset-bottom,0)}
 .cs-panel.open{right:0}
 .cs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:599;display:none}
 .cs-overlay.show{display:block}
