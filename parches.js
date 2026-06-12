@@ -7766,7 +7766,7 @@
     btn.setAttribute('data-go', 'smart');
     btn.onclick = () => window.nxAbrirSmart();
     btn.innerHTML = `
-      <span class="qa-i"><i class="ti ti-sparkles"></i></span>
+      <span class="qa-i"><i class="ti ti-sparkles" style="background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(221,214,254,.92))!important;color:#7c3aed!important;box-shadow:0 12px 26px rgba(124,58,237,.42),0 4px 10px rgba(124,58,237,.22),inset 0 1px 0 rgba(255,255,255,.95)!important;border:1px solid rgba(124,58,237,.30)!important"></i></span>
       <span class="qa-l">NEXUS Smart</span>
       <span style="position:absolute;top:6px;right:8px;background:#7c3aed;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px">IA</span>
     `;
