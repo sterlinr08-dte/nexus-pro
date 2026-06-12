@@ -4692,7 +4692,7 @@ async function anularFactura(facturaId){
   if(f.estado==='Anulada'){toast('warn','Esta factura ya está anulada');return;}
   if(f.estado==='Pagado'){toast('err','No se puede anular','Una factura pagada no se puede anular');return;}
   // Permiso
-  if(typeof tienePermiso==='function'&&!tienePermiso('billing_edit')&&(sesion?.rol||'')!=='admin'){
+  if(typeof tienePermiso==='function'&&!tienePermiso('editar_facturas')&&(sesion?.rol||'')!=='admin'){
     toast('err','Acceso denegado','No tienes permiso para anular facturas');
     logAudit('ACCESO_DENEGADO','Intento de anular factura sin permiso','Facturas');
     return;
@@ -4895,7 +4895,7 @@ async function eliminarBanco(id){
   if(!confirm('¿Eliminar este banco?\n\n'+banco.nombre+'\n\nSi tiene abonos asociados se desactivará.'))return;
   // Verificar si está en uso
   try{const data=await API.get('abonos','select=id,banco&limit=5000');if(Array.isArray(data)&&data.some(x=>_normBco(x.banco)===_normBco(banco.nombre))){toast('err','Banco en uso','Tiene abonos asociados. Se desactivará.');try{await API.patch('bancos','id=eq.'+id,{activo:false});}catch(e){}await renderBancos();return;}}catch(e){}
-  try{await API.delete('bancos','id=eq.'+id);toast('ok','Banco eliminado',banco.nombre);await renderBancos();}catch(e){console.error(e);try{await API.patch('bancos','id=eq.'+id,{activo:false});await renderBancos();}catch(_){}}
+  try{await API.del('bancos','id=eq.'+id);toast('ok','Banco eliminado',banco.nombre);await renderBancos();}catch(e){console.error(e);try{await API.patch('bancos','id=eq.'+id,{activo:false});await renderBancos();}catch(_){}}
 }
 async function llenarSelectBancosCobros(){
   const sel=document.getElementById('aBanco');if(!sel)return;
@@ -5318,7 +5318,7 @@ async function regAbono(){
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
     logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros');
     const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:metodo==='Transferencia'||metodo==='Depósito'?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
-    const asi={fecha:hoy(),referencia:'AST-COB-'+c.numero_poliza?.replace('POL-','').slice(-4)||'0000',descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
+    const asi={fecha:hoy(),referencia:'AST-COB-'+((c.numero_poliza?.replace('POL-','').slice(-4))||'0000'),descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
     const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);
     recalcularSaldosContables();
     const pd2=pend(c);
@@ -5696,7 +5696,7 @@ async function calcularComisiones(){
     </div>
     <div class="tw"><table>
       <thead><tr><th style="width:28%">AGENTE</th><th style="width:10%">CLIENTES</th><th style="width:15%">PRIMA TOTAL</th><th style="width:10%">% COM.</th><th style="width:14%">COM. BRUTA</th><th style="width:11%">ITBIS 18%</th><th style="width:14%">NETO A PAGAR</th></tr></thead>
-      <tbody>${resultados.map(r=>{const pct=r.clis>0?(r.comBruta/r.primaTotal*100).toFixed(1):'0';return`<tr><td style="font-weight:700">${r.agente.nom}</td><td style="text-align:center">${r.clis}</td><td style="font-family:var(--mono);font-size:9px">${fmt(r.primaTotal)}</td><td style="text-align:center;font-family:var(--mono)">${pct}%</td><td style="font-family:var(--mono);font-size:9px;color:var(--c5)">${fmt(r.comBruta)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3)">(${fmt(r.itbis)})</td><td style="font-size:11px;font-weight:700;color:var(--c1)">${fmt(r.comNeta)}</td></tr>`;}).join('')}
+      <tbody>${resultados.map(r=>{const pct=r.primaTotal>0?(r.comBruta/r.primaTotal*100).toFixed(1):'0';return`<tr><td style="font-weight:700">${r.agente.nom}</td><td style="text-align:center">${r.clis}</td><td style="font-family:var(--mono);font-size:9px">${fmt(r.primaTotal)}</td><td style="text-align:center;font-family:var(--mono)">${pct}%</td><td style="font-family:var(--mono);font-size:9px;color:var(--c5)">${fmt(r.comBruta)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3)">(${fmt(r.itbis)})</td><td style="font-size:11px;font-weight:700;color:var(--c1)">${fmt(r.comNeta)}</td></tr>`;}).join('')}
       <tr style="background:var(--bg3)"><td style="font-weight:700">TOTAL</td><td style="text-align:center">${resultados.reduce((s,r)=>s+r.clis,0)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(resultados.reduce((s,r)=>s+r.primaTotal,0))}</td><td></td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c5)">${fmt(totalBruto)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c3)">(${fmt(totalITBIS)})</td><td style="font-size:11px;font-weight:700;color:var(--c1)">${fmt(totalNeto)}</td></tr>
       </tbody>
     </table></div>
@@ -5707,7 +5707,7 @@ async function calcularComisiones(){
 
 function exportarComisionesCsv(resultados,mes,anio){
   const rows=[['NEXUS PRO — Liquidación de Comisiones'],['Período: '+MESES[mes-1]+' '+anio],['Correduría: '+CFG.empNom,'RNC: '+CFG.empRNC],[''],['Agente','Clientes','Prima Total (RD$)','% Comisión','Comisión Bruta (RD$)','ITBIS 18% (RD$)','Neto a Pagar (RD$)']];
-  resultados.forEach(r=>{const pct=r.clis>0?(r.comBruta/r.primaTotal*100).toFixed(1):'0';rows.push([r.agente.nom,r.clis,r.primaTotal,pct+'%',r.comBruta.toFixed(2),r.itbis.toFixed(2),r.comNeta.toFixed(2)]);});
+  resultados.forEach(r=>{const pct=r.primaTotal>0?(r.comBruta/r.primaTotal*100).toFixed(1):'0';rows.push([r.agente.nom,r.clis,r.primaTotal,pct+'%',r.comBruta.toFixed(2),r.itbis.toFixed(2),r.comNeta.toFixed(2)]);});
   rows.push(['TOTALES',resultados.reduce((s,r)=>s+r.clis,0),resultados.reduce((s,r)=>s+r.primaTotal,0),'',resultados.reduce((s,r)=>s+r.comBruta,0).toFixed(2),resultados.reduce((s,r)=>s+r.itbis,0).toFixed(2),resultados.reduce((s,r)=>s+r.comNeta,0).toFixed(2)]);
   descCSV(rows,`Comisiones_${MESES[mes-1]}_${anio}.csv`);
 }
@@ -5910,7 +5910,7 @@ function generarIT1(){
   const anio=parseInt(document.getElementById('dgiiAnio').value);
   const periodo=`${anio}-${String(mes).padStart(2,'0')}`;
   const facs=ST.facturas.filter(f=>f.periodo===periodo);
-  const ingresos=facs.reduce((s,f)=>s+f.total,0);
+  const ingresos=facs.reduce((s,f)=>s+(Number(f.total)||0),0);
   const itbisComisiones=ST.agentes.reduce((s,a)=>{const clis=ST.clientes.filter(c=>c.agente_id===a.id&&c.activo);const com=clis.reduce((ss,c)=>ss+(getTot(c)*(c.plan==='Básico'?CFG.com1:c.plan==='Superior'?CFG.com2:CFG.com3)/100),0);return s+(com*0.18);},0);
   const rows=[
     ['IT-1 — DECLARACIÓN MENSUAL DGII'],['Correduría: '+CFG.empNom,'RNC: '+CFG.empRNC],['Período: '+MESES[mes-1]+' '+anio,'Fecha: '+hoy()],[''],
@@ -5920,7 +5920,7 @@ function generarIT1(){
     ['ITBIS retenido a agentes','ITBIS sobre comisiones pagadas',itbisComisiones.toFixed(2)],
     ['Nómina de asegurados',`Clientes activos al ${hoy()}`,ST.clientes.filter(c=>c.activo).length],
     [''],['DESGLOSE POR NCF','',''],
-    ...Object.entries(facs.reduce((s,f)=>{const t=f.tipo_ncf||'B02';s[t]=(s[t]||0)+f.total;return s;},{})).map(([t,v])=>[t,t==='B01'?'Crédito Fiscal':t==='B02'?'Consumidor Final':'Régimen Especial',v.toFixed(2)]),
+    ...Object.entries(facs.reduce((s,f)=>{const t=f.tipo_ncf||'B02';s[t]=(s[t]||0)+(Number(f.total)||0);return s;},{})).map(([t,v])=>[t,t==='B01'?'Crédito Fiscal':t==='B02'?'Consumidor Final':'Régimen Especial',v.toFixed(2)]),
   ];
   descCSV(rows,`IT1_${MESES[mes-1]}_${anio}_${CFG.empRNC}.csv`);
   toast('ok','IT-1 generado','Archivo CSV descargado — presenta a la DGII');
