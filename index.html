@@ -395,12 +395,12 @@ tbody tr:hover td{background:#f8fafc}
   /* Check de rol */
   .ch{gap:4px}
   .ch .btn{font-size:9px;padding:4px 8px}
-  /* ── Barra superior móvil: solo buscador, Actualizar (izquierda, más grande) y notificaciones ── */
+  /* ── Barra superior móvil: solo buscador, notificaciones y Actualizar (a la derecha, más grande) ── */
   .pttl{display:none}
   .tn-r > .tn-b,.tn-r > .err-badge,.tn-r > #btnInstalar{display:none !important}
-  .tn-r > .notif-bell{display:flex !important}
-  .tn-refresh-mob{display:flex !important;width:40px;height:40px;padding:0;flex-shrink:0}
-  .tn-refresh-mob i{font-size:19px}
+  .tn-r > .notif-bell{display:flex !important;order:1}
+  .tn-r > #btnRefrescar{display:flex !important;order:2;width:40px;height:40px;padding:0;flex-shrink:0}
+  .tn-r > #btnRefrescar i{font-size:19px}
 }
 @media(max-width:480px){
   .kg{grid-template-columns:1fr 1fr}
@@ -942,7 +942,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="main">
       <header class="tnav">
         <button class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
-        <button class="tn-b tn-refresh-mob" style="display:none" onclick="refrescarDatos(this)" title="Actualizar datos"><i class="ti ti-refresh"></i></button>
         <span class="pttl" id="pttl">// DASHBOARD</span>
         <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas... (Enter para buscar)" onkeydown="if(event.key==='Enter')gSearch(this.value)"/></div>
         <div class="tn-r">
