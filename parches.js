@@ -3621,6 +3621,21 @@
         line-height: 1 !important;
       }
 
+      /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
+      #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
+      #v-dashboard .nc button i, #v-dashboard .nc button .ti,
+      #v-dashboard .nc td i, #v-dashboard .nc td .ti {
+        width: auto !important;
+        height: auto !important;
+        min-width: 0 !important;
+        border-radius: 0 !important;
+        background: none !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        font-size: 14px !important;
+        padding: 0 !important;
+      }
+
       #v-dashboard .kpi,
       #v-dashboard .sm,
       #v-dashboard .qa {
