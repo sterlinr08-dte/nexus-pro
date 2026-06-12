@@ -4635,11 +4635,12 @@
 
       /* Móvil */
       @media (max-width: 768px) {
-        .nxSL-head { padding: 14px; flex-direction: column; align-items: stretch; }
+        .nxSL-head { padding: 14px; flex-direction: column; align-items: stretch; gap: 12px; }
         .nxSL-head-icon { width: 42px; height: 42px; font-size: 19px; border-radius: 12px; }
+        .nxSL-head-body { flex: 0 0 auto; }
         .nxSL-title { font-size: 17px; }
         .nxSL-sub { font-size: 11px; }
-        .nxSL-head-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .nxSL-head-stats { flex: 0 0 auto; grid-template-columns: 1fr 1fr; gap: 8px; }
         .nxSL-stat { padding: 10px; }
         .nxSL-stat-val { font-size: 17px; }
         .nxSL-stat-lbl { font-size: 8.5px; }
