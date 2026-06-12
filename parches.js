@@ -7766,9 +7766,7 @@
     btn.setAttribute('data-go', 'smart');
     btn.onclick = () => window.nxAbrirSmart();
     btn.innerHTML = `
-      <span class="qa-i" style="background:#fff;box-shadow:0 0 0 2px rgba(124,58,237,0.25), 0 4px 18px rgba(124,58,237,0.45)">
-        <i class="ti ti-sparkles" style="color:#7c3aed"></i>
-      </span>
+      <span class="qa-i"><i class="ti ti-sparkles"></i></span>
       <span class="qa-l">NEXUS Smart</span>
       <span style="position:absolute;top:6px;right:8px;background:#7c3aed;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px">IA</span>
     `;
@@ -8031,9 +8029,7 @@
     btn.style.cssText = 'cursor:pointer;position:relative';
     btn.onclick = () => window.nxAbrirCierre();
     btn.innerHTML = `
-      <span class="qa-i" style="background:#fff;box-shadow:0 0 0 2px rgba(5,150,105,0.25), 0 4px 18px rgba(5,150,105,0.45)">
-        <i class="ti ti-calendar-stats" style="color:#059669"></i>
-      </span>
+      <span class="qa-i"><i class="ti ti-calendar-stats"></i></span>
       <span class="qa-l">Cierre de Mes</span>
     `;
     qaCont.appendChild(btn);
