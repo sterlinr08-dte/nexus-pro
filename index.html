@@ -939,7 +939,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <span class="pttl" id="pttl">// DASHBOARD</span>
         <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas... (Enter para buscar)" onkeydown="if(event.key==='Enter')gSearch(this.value)"/></div>
         <div class="tn-r">
-          <button class="tn-b c4" onclick="autoGenerar()"><i class="ti ti-robot"></i> Auto-gen</button>
           <button class="tn-b" id="btnRefrescar" onclick="refrescarDatos(this)" title="Actualizar datos"><i class="ti ti-refresh"></i></button>
           <button class="tn-b" id="btnAlertas" onclick="nav('polizas',null)" title="Alertas" style="display:none"><i class="ti ti-bell" style="color:var(--c3)"></i><div class="ndot"></div></button>
           <div class="err-badge" id="errBadge" onclick="abrirLog()" title="Ver errores">
@@ -1382,6 +1381,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                   💡 Solo genera facturas de <strong>clientes activos</strong> y evita duplicar el mismo período. La generación ocurre cuando el sistema está abierto en el día y hora configurados.
                 </div>
                 <button class="btn bxl" onclick="guardarAuto()"><i class="ti ti-device-floppy"></i> Guardar</button>
+                <button class="btn bxl bc1" onclick="genFacturasConfirm()" style="margin-top:8px"><i class="ti ti-file-plus"></i> Generar facturas del mes ahora</button>
               </div>
               <div class="nc">
                 <div class="ch"><div class="ct">📜 Historial de auto-facturación</div><button class="btn bsm bghost" onclick="rHistorialAuto()" style="width:auto;padding:0 12px"><i class="ti ti-refresh"></i></button></div>
@@ -4714,6 +4714,13 @@ async function _genFacturasInterno(){
 }
 
 function autoGenerar(){nav('facturas',null);setTimeout(()=>{initMesSel();genFacturas();},100);}
+// Generación manual y CONFIRMADA desde Configuración (evita pulsarlo por error)
+function genFacturasConfirm(){
+  const m=new Date();
+  if(confirm('¿Generar las facturas del mes actual ('+MESES[m.getMonth()]+' '+m.getFullYear()+') para todos los clientes activos?\n\nEsto crea las facturas y sus asientos contables. Las que ya existan NO se duplican.')){
+    autoGenerar();
+  }
+}
 
 function rFact(){
   const mes=parseInt(document.getElementById('fMes')?.value||new Date().getMonth()+1);
