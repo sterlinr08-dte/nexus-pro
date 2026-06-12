@@ -197,7 +197,7 @@ input,select,textarea,button{font-family:var(--ff)}
 .tn-b:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
 .tn-b.c4{border-color:#fde68a;color:#d97706;background:#fffbeb;font-weight:600}
 .ndot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--c3);border:2px solid #fff}
-.content{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(37,99,235,.15) transparent;background:var(--bg0)}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px;scrollbar-width:thin;scrollbar-color:rgba(37,99,235,.15) transparent;background:var(--bg0)}
 .content::-webkit-scrollbar{width:5px}.content::-webkit-scrollbar-thumb{background:rgba(59,130,246,.2);border-radius:4px}
 
 /* ── VIEWS ── */
@@ -356,6 +356,10 @@ tbody tr:hover td{background:#f8fafc}
   .g3{grid-template-columns:repeat(2,1fr)}
   .g4{grid-template-columns:repeat(2,1fr)}
   .qa-g{grid-template-columns:repeat(3,1fr);gap:6px}
+  /* Roles y permisos: 2 columnas legibles en móvil */
+  .role-perms{grid-template-columns:1fr 1fr}
+  .role-perm{min-width:0}
+  .role-perm span{overflow-wrap:anywhere}
   /* Tablas scroll horizontal */
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   table{min-width:600px;font-size:10px}
