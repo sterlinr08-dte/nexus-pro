@@ -1,7 +1,7 @@
-// NEXUS PRO v9 — Service Worker
+// NEXUS PRO v10 — Service Worker
 // Cachea SOLO archivos estáticos. No toca datos ni peticiones dinámicas.
 
-const CACHE_NAME = 'nexus-pro-v9';
+const CACHE_NAME = 'nexus-pro-v10';
 const ASSETS_OPCIONALES = [
   '/manifest.json',
   '/icon-192.png',
