@@ -261,25 +261,28 @@
       return false;
     }
     
-    // Caso especial: Historial de pagos (va al módulo cobros que tiene el historial)
-    if (vista === 'historial') {
+    // Caso especial: Cobros e Historial son PESTAÑAS dentro de la vista Facturas.
+    // No existe una vista #v-cobros propia → hay que abrir Facturas y cambiar de pestaña.
+    if (vista === 'cobros' || vista === 'historial') {
       if (typeof window.nav === 'function') {
         try {
-          window.nav('cobros');
-          /* console.log('nav("cobros") → historial ✓') */;
+          window.nav('facturas');
+          const tab = (vista === 'historial') ? 'pagos' : 'cob';
+          setTimeout(function() {
+            if (typeof window.switchTab === 'function') window.switchTab(tab);
+          }, 200);
           return true;
         } catch(e) {
-          console.error('historial falló:', e);
+          console.error(vista + ' falló:', e);
         }
       }
       return false;
     }
-    
+
     const mapa = {
       'dashboard': 'dashboard',
       'clientes': 'clientes',
       'facturas': 'facturas',
-      'cobros': 'cobros',
       'sistema': 'config',
       'usuarios': 'usuarios',
       'reportes': 'rep-agente',
