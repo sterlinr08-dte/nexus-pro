@@ -5070,7 +5070,22 @@
       i[class*="ti-"], .ti {
         transition: all 0.18s ease;
       }
-      
+
+      /* Los íconos DENTRO de botones NO llevan el cuadro de color: solo el ícono limpio */
+      .kpi .btn i[class*="ti-"], .qa .btn i[class*="ti-"],
+      .sm .btn i[class*="ti-"], .nc .btn i[class*="ti-"],
+      td .btn i[class*="ti-"], .tw .btn i[class*="ti-"],
+      .kpi .btn .ti, .qa .btn .ti, .sm .btn .ti, .nc .btn .ti,
+      td .btn .ti, .tw .btn .ti {
+        background: none !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+      }
+
       /* ═══ VERDE VIBRANTE - Dinero, Cobros, Ingresos, Positivo ═══ */
       .kpi i.ti-currency-dollar, .qa i.ti-currency-dollar, .sm i.ti-currency-dollar, .nc i.ti-currency-dollar,
       .kpi i.ti-cash, .qa i.ti-cash, .sm i.ti-cash, .nc i.ti-cash,
