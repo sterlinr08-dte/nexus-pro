@@ -9949,7 +9949,7 @@
   function compararCedula(empId) {
     const ST_ = getST();
     const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
-    const sysCli = clientes.filter(c => String(c.empresa_id) === String(empId));
+    const sysCli = empId === '__TODAS__' ? clientes.slice() : clientes.filter(c => String(c.empresa_id) === String(empId));
 
     const fileEntries = (_acumCed && _acumCed.length)
       ? _acumCed.map(e => ({ ced: e.ced, nom: e.nom }))
@@ -10000,7 +10000,7 @@
     const totalDeuda = conDeuda.reduce((s, c) => s + c.deuda, 0);
     const fmtRD = (x) => 'RD$ ' + Number(x || 0).toLocaleString('es-DO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     const coincidenList = sysCed.filter(c => c.ced && fileSet.has(c.ced));
-    _ultimoCuadre = { empresaNom: nomEmpresa(empId) || '', coincidenList, faltanEnTSS, extras, inhabEnTSS, conDeuda, totalDeuda };
+    _ultimoCuadre = { empresaNom: empId === '__TODAS__' ? 'Todas las empresas' : (nomEmpresa(empId) || ''), coincidenList, faltanEnTSS, extras, inhabEnTSS, conDeuda, totalDeuda };
 
     setArea('nxTssResultado', `
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
@@ -10044,7 +10044,7 @@
   function compararNombre(empId) {
     const ST_ = getST();
     const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
-    const sysCli = clientes.filter(c => String(c.empresa_id) === String(empId)).map(c => ({ nom: c.nom, tok: tokensNom(c.nom) }));
+    const sysCli = (empId === '__TODAS__' ? clientes.slice() : clientes.filter(c => String(c.empresa_id) === String(empId))).map(c => ({ nom: c.nom, tok: tokensNom(c.nom) }));
     const tit = _titulares.map(n => ({ nom: n, tok: tokensNom(n) }));
 
     const usados = new Set();
@@ -10092,7 +10092,7 @@
 
     const ST_ = getST();
     const empresas = (Array.isArray(ST_.empresas) ? ST_.empresas : []).slice().sort((a, b) => String(a.nom).localeCompare(String(b.nom)));
-    const opcEmp = '<option value="">— Elegir empresa —</option>' + empresas.map(e => `<option value="${esc(e.id)}">${esc(e.nom)}</option>`).join('');
+    const opcEmp = '<option value="">— Elegir empresa —</option><option value="__TODAS__">★ Todas las empresas (cuadre combinado)</option>' + empresas.map(e => `<option value="${esc(e.id)}">${esc(e.nom)}</option>`).join('');
 
     ov = document.createElement('div');
     ov.id = 'nxTssOverlay';
