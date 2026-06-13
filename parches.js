@@ -9783,6 +9783,24 @@
     try {
       const _api = (typeof API !== 'undefined') ? API : (window.API || null);
       if (!_api || typeof _api.post !== 'function') throw new Error('No se pudo acceder a la base de datos.');
+      // Evitar duplicados: mismo período + misma empresa
+      const empNom = rec.empresa_nom || '';
+      let existentes = [];
+      try {
+        existentes = await _api.get('cuadre_tss_historial', 'select=id&periodo=eq.' + encodeURIComponent(periodo) + '&empresa_nom=eq.' + encodeURIComponent(empNom));
+      } catch (e) { existentes = []; }
+      if (Array.isArray(existentes) && existentes.length) {
+        const reemplazar = confirm('⚠️ Ya fue guardada esta empresa en ' + etiquetaPeriodo(periodo) + '.\n\n¿Deseas reemplazar el cuadre anterior con este nuevo?');
+        if (!reemplazar) {
+          if (typeof window.toast === 'function') window.toast('warn', 'Ya fue guardada', etiquetaPeriodo(periodo) + ' · ' + empNom);
+          else alert('⚠️ Ya fue guardada — no se duplicó.');
+          return;
+        }
+        // Reemplazar: borrar el/los anteriores antes de insertar
+        if (typeof _api.del === 'function') {
+          try { await _api.del('cuadre_tss_historial', 'periodo=eq.' + encodeURIComponent(periodo) + '&empresa_nom=eq.' + encodeURIComponent(empNom)); } catch (e) { }
+        }
+      }
       await _api.post('cuadre_tss_historial', rec);
       if (typeof window.toast === 'function') window.toast('ok', 'Cuadre guardado', etiquetaPeriodo(periodo));
       else alert('✅ Cuadre guardado (' + periodo + ')');
