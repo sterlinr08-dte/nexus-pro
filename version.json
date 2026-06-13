@@ -1,10 +1,10 @@
 {
-  "version": "10.3",
+  "version": "10.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Ahora puedes guardar y descargar el cuadre también del PDF de Humano (Plan Voluntario)",
-    "Resumen ejecutivo y clientes con deuda también en el cuadre por nombre",
-    "Tabla Comparativa: ficha al tocar cada persona y acciones sugeridas",
-    "Nuevo permiso para dar acceso a la Tabla Comparativa a otros roles"
+    "Ahora se ve la notificación al guardar un cuadre (antes quedaba detrás de la ventana)",
+    "Confirmación verde dentro de la ventana con empresa y período al guardar",
+    "Las notificaciones ahora se ven por encima de cualquier ventana del sistema",
+    "Guardar/descargar el cuadre también funciona con el PDF de Plan Voluntario"
   ]
 }
