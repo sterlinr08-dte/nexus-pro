@@ -9808,8 +9808,20 @@
         }
       }
       await _api.post('cuadre_tss_historial', rec);
-      if (typeof window.toast === 'function') window.toast('ok', 'Cuadre guardado', etiquetaPeriodo(periodo));
-      else alert('✅ Cuadre guardado (' + periodo + ')');
+      const detalle = (empNom ? empNom + ' · ' : '') + etiquetaPeriodo(periodo);
+      if (typeof window.toast === 'function') window.toast('ok', '✅ Cuadre guardado', detalle);
+      else alert('✅ Cuadre guardado\n' + detalle);
+      // Confirmación visible dentro de la ventana (banner verde arriba del resultado)
+      try {
+        const cont = document.getElementById('nxTssResultado');
+        if (cont) {
+          const banner = document.createElement('div');
+          banner.style.cssText = 'background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;margin:10px 0;display:flex;align-items:center;gap:8px;animation:tIn .2s ease';
+          banner.innerHTML = '<span style="font-size:16px">💾</span><div>Cuadre guardado en el historial<div style="font-size:10.5px;font-weight:600;color:#047857;margin-top:1px">' + esc(detalle) + '</div></div>';
+          cont.prepend(banner);
+          setTimeout(() => { try { banner.remove(); } catch (e) { } }, 6000);
+        }
+      } catch (e) { }
       try { if (typeof window.logAudit === 'function') window.logAudit('CUADRE_TSS_GUARDADO', (rec.empresa_nom || '') + ' · ' + periodo, 'Reportes'); } catch (e) { }
     } catch (e) { alert('No se pudo guardar el cuadre: ' + (e && e.message ? e.message : '')); }
   };
