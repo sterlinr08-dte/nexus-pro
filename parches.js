@@ -9730,17 +9730,20 @@
     let XLSX;
     try { XLSX = await cargarSheetJS(); } catch (e) { alert('No se pudo cargar el generador de Excel.'); return; }
     const m2 = (x) => Number(x || 0).toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Fuente: TSS (Excel por cédula) o Humano/Plan Voluntario (PDF por nombre)
+    const esHumano = _modo === 'nombre';
+    const F = esHumano ? (/voluntario/i.test(c.empresaNom || '') ? 'Plan Voluntario Humano' : 'Humano') : 'TSS';
     const rows = [['ESTADO', 'NOMBRE', 'CÉDULA', 'EMPRESA', 'DEUDA (RD$)', 'NOTA']];
-    (c.coincidenList || []).forEach(p => rows.push(['Pagado (en TSS y en sistema)', p.nom || '', p.ced || '', c.empresaNom, '', '']));
-    (c.faltanEnTSS || []).forEach(p => rows.push(['Falta en TSS', p.nom || '', p.ced || '', c.empresaNom, '', '']));
-    (c.extras || []).forEach(p => rows.push(['En TSS pero no en sistema', p.nom || '', p.ced || '', '', '', p.extra || '']));
-    (c.inhabEnTSS || []).forEach(p => rows.push(['Inhabilitado en TSS (no debería)', p.nom || '', p.ced || '', c.empresaNom, '', p.extra || '']));
-    (c.conDeuda || []).forEach(p => rows.push(['En TSS con deuda pendiente', p.nom || '', p.ced || '', c.empresaNom, m2(p.deuda), '']));
+    (c.coincidenList || []).forEach(p => rows.push(['Coincide (en ' + F + ' y en sistema)', p.nom || '', p.ced || '', c.empresaNom, '', '']));
+    (c.faltanEnTSS || []).forEach(p => rows.push(['Falta en ' + F, p.nom || '', p.ced || '', c.empresaNom, '', '']));
+    (c.extras || []).forEach(p => rows.push(['En ' + F + ' pero no en sistema', p.nom || '', p.ced || '', '', '', p.extra || '']));
+    (c.inhabEnTSS || []).forEach(p => rows.push(['Inhabilitado en ' + F + ' (no debería)', p.nom || '', p.ced || '', c.empresaNom, '', p.extra || '']));
+    (c.conDeuda || []).forEach(p => rows.push(['En ' + F + ' con deuda pendiente', p.nom || '', p.ced || '', c.empresaNom, m2(p.deuda), '']));
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 30 }, { wch: 34 }, { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 32 }];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Cuadre TSS');
-    const nombre = 'Cuadre_TSS_' + String(c.empresaNom || 'empresa').replace(/[^\w]+/g, '_') + '.xlsx';
+    XLSX.utils.book_append_sheet(wb, ws, ('Cuadre ' + F).slice(0, 31));
+    const nombre = 'Cuadre_' + (esHumano ? 'Humano' : 'TSS') + '_' + String(c.empresaNom || 'empresa').replace(/[^\w]+/g, '_') + '.xlsx';
     try { XLSX.writeFile(wb, nombre); } catch (e) { alert('No se pudo descargar el Excel: ' + (e && e.message ? e.message : '')); }
   }
   window.nxTssExportarExcel = exportarExcelCuadre;
@@ -9778,6 +9781,7 @@
       periodo, empresa_nom: _ultimoCuadre.empresaNom || '', usuario,
       total_deuda: _ultimoCuadre.totalDeuda || 0,
       resumen: {
+        fuente: (_modo === 'nombre' ? 'humano' : 'tss'),
         coinciden: (_ultimoCuadre.coincidenList || []).length,
         faltanTSS: (_ultimoCuadre.faltanEnTSS || []).map(p => ({ nom: p.nom, ced: p.ced })),
         extras: (_ultimoCuadre.extras || []).map(p => ({ nom: p.nom, ced: p.ced, extra: p.extra || '' })),
@@ -9843,6 +9847,9 @@
   window.nxTssVerSnapshot = function (i) {
     const r = (_histData || [])[i]; if (!r) return;
     const res = r.resumen || {};
+    // Fuente del cuadre: TSS (Excel por cédula) o Humano/Plan Voluntario (PDF por nombre)
+    const esHumano = res.fuente ? res.fuente === 'humano' : /voluntario|humano/i.test(r.empresa_nom || '');
+    const F = esHumano ? (/voluntario/i.test(r.empresa_nom || '') ? 'PLAN VOLUNTARIO HUMANO' : 'HUMANO') : 'TSS';
     const sec = (titulo, color, bg, arr, deuda) => {
       const lista = (arr || []).map(p => '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600">' + esc(p.nom || '') + '</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">' + esc(p.ced || '') + '</div></div>' + (deuda ? '<div style="font-weight:800;color:#b91c1c;flex-shrink:0">RD$ ' + Number(p.deuda || 0).toLocaleString('es-DO') + '</div>' : (p.extra ? '<div style="font-size:10px;color:#94a3b8;flex-shrink:0">' + esc(p.extra) + '</div>' : '')) + '</div>').join('') || '<div style="padding:10px 12px;color:#94a3b8;font-size:11px">—</div>';
       return '<div style="border:1px solid ' + color + '33;border-radius:10px;margin-bottom:8px;overflow:hidden"><div style="background:' + bg + ';padding:8px 12px;font-size:11px;font-weight:800;color:' + color + '">' + titulo + ' (' + (arr || []).length + ')</div><div style="max-height:180px;overflow-y:auto">' + lista + '</div></div>';
@@ -9851,10 +9858,10 @@
       '<button type="button" onclick="window.nxTssVerHistorial()" style="border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 12px;font-weight:700;font-size:11px;cursor:pointer;margin:10px 0"><i class="ti ti-arrow-left"></i> Volver al historial</button>'
       + '<div style="font-size:13px;font-weight:800;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div>'
       + '<div style="font-size:11px;color:#64748b;margin-bottom:10px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + (r.created_at ? ' · ' + esc(new Date(r.created_at).toLocaleString('es-DO')) : '') + '</div>'
-      + sec('⚠️ FALTAN EN LA TSS', '#dc2626', '#fef2f2', res.faltanTSS)
-      + sec('📋 EN TSS PERO NO EN SISTEMA', '#b45309', '#fffbeb', res.extras)
-      + sec('⛔ INHABILITADOS EN TSS', '#9f1239', '#fff1f2', res.inhabEnTSS)
-      + sec('💰 EN TSS CON DEUDA', '#9a3412', '#fff7ed', res.conDeuda, true)
+      + sec('⚠️ FALTAN EN ' + F, '#dc2626', '#fef2f2', res.faltanTSS)
+      + sec('📋 EN ' + F + ' PERO NO EN SISTEMA', '#b45309', '#fffbeb', res.extras)
+      + sec('⛔ INHABILITADOS EN ' + F, '#9f1239', '#fff1f2', res.inhabEnTSS)
+      + sec('💰 EN ' + F + ' CON DEUDA', '#9a3412', '#fff7ed', res.conDeuda, true)
     );
   };
 
