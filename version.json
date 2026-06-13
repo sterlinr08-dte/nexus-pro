@@ -1,10 +1,10 @@
 {
-  "version": "10.4",
+  "version": "10.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Ahora se ve la notificación al guardar un cuadre (antes quedaba detrás de la ventana)",
-    "Confirmación verde dentro de la ventana con empresa y período al guardar",
-    "Las notificaciones ahora se ven por encima de cualquier ventana del sistema",
+    "Cuando el cuadre es de Plan Voluntario Humano, ya no dice TSS sino Plan Voluntario Humano",
+    "Etiquetas correctas también en el historial y en el Excel descargado",
+    "Notificación visible al guardar un cuadre",
     "Guardar/descargar el cuadre también funciona con el PDF de Plan Voluntario"
   ]
 }
