@@ -9470,6 +9470,7 @@
   let _acumCed = [];   // VARIOS archivos Excel: cédulas acumuladas {ced,nom,archivo}
   let _acumArchivos = []; // VARIOS archivos: resumen de archivos cargados
   let _ultimoCuadre = null; // último resultado (para descargar Excel)
+  let _histData = [];       // historial cargado desde Supabase
 
   // --- Helpers para match por NOMBRE (cuando no hay cédula, ej. Humano) ---
   function quitaAcentos(s) { return String(s ?? '').normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'), ''); }
@@ -9737,6 +9738,87 @@
     try { XLSX.writeFile(wb, nombre); } catch (e) { alert('No se pudo descargar el Excel: ' + (e && e.message ? e.message : '')); }
   }
   window.nxTssExportarExcel = exportarExcelCuadre;
+
+  // ── HISTORIAL POR PERÍODO (ciclo 20 → 19) ──
+  const _MESES_TSS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const _MESC_TSS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function periodoCierreActual() {
+    const f = new Date(); let y = f.getFullYear(), m = f.getMonth();
+    if (f.getDate() >= 20) { m += 1; if (m > 11) { m = 0; y += 1; } }
+    return y + '-' + String(m + 1).padStart(2, '0');
+  }
+  function etiquetaPeriodo(clave) {
+    const p = String(clave || '').split('-').map(Number); const y = p[0], m = p[1];
+    if (!y || !m) return String(clave || '');
+    return _MESES_TSS[m - 1] + ' ' + y + ' (20 ' + _MESC_TSS[(m - 2 + 12) % 12] + ' – 19 ' + _MESC_TSS[m - 1] + ')';
+  }
+  function opcionesPeriodo() {
+    const actual = periodoCierreActual(); let pa = actual.split('-').map(Number), y = pa[0], m = pa[1];
+    const opts = [];
+    for (let i = 0; i < 13; i++) {
+      const clave = y + '-' + String(m).padStart(2, '0');
+      opts.push('<option value="' + clave + '"' + (clave === actual ? ' selected' : '') + '>' + etiquetaPeriodo(clave) + '</option>');
+      m--; if (m < 1) { m = 12; y--; }
+    }
+    return opts.join('');
+  }
+  window.nxTssOpcionesPeriodo = opcionesPeriodo;
+
+  window.nxTssGuardarHistorial = async function () {
+    if (!_ultimoCuadre) { alert('Primero haz un cuadre: elige la empresa y sube el archivo de TSS.'); return; }
+    const periodo = document.getElementById('nxTssPeriodo')?.value || periodoCierreActual();
+    let usuario = 'Sistema'; try { const s = JSON.parse(sessionStorage.getItem('nx_sesion') || 'null'); if (s && s.nom) usuario = s.nom; } catch (e) { }
+    const rec = {
+      periodo, empresa_nom: _ultimoCuadre.empresaNom || '', usuario,
+      total_deuda: _ultimoCuadre.totalDeuda || 0,
+      resumen: {
+        coinciden: (_ultimoCuadre.coincidenList || []).length,
+        faltanTSS: (_ultimoCuadre.faltanEnTSS || []).map(p => ({ nom: p.nom, ced: p.ced })),
+        extras: (_ultimoCuadre.extras || []).map(p => ({ nom: p.nom, ced: p.ced, extra: p.extra || '' })),
+        inhabEnTSS: (_ultimoCuadre.inhabEnTSS || []).map(p => ({ nom: p.nom, ced: p.ced, extra: p.extra || '' })),
+        conDeuda: (_ultimoCuadre.conDeuda || []).map(p => ({ nom: p.nom, ced: p.ced, deuda: p.deuda })),
+        totalDeuda: _ultimoCuadre.totalDeuda || 0
+      }
+    };
+    try {
+      await window.API.post('cuadre_tss_historial', rec);
+      if (typeof window.toast === 'function') window.toast('ok', 'Cuadre guardado', etiquetaPeriodo(periodo));
+      else alert('✅ Cuadre guardado (' + periodo + ')');
+      try { if (typeof window.logAudit === 'function') window.logAudit('CUADRE_TSS_GUARDADO', (rec.empresa_nom || '') + ' · ' + periodo, 'Reportes'); } catch (e) { }
+    } catch (e) { alert('No se pudo guardar el cuadre: ' + (e && e.message ? e.message : '')); }
+  };
+
+  window.nxTssVerHistorial = async function () {
+    setArea('nxTssResultado', '<div style="text-align:center;padding:20px;color:#64748b"><div class="spin"></div><div style="margin-top:6px">Cargando historial...</div></div>');
+    let data = [];
+    try { data = await window.API.get('cuadre_tss_historial', 'select=*&order=created_at.desc&limit=300'); } catch (e) { setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">No se pudo cargar el historial.</div>'); return; }
+    if (!Array.isArray(data) || !data.length) { setArea('nxTssResultado', '<div style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">📜 Aún no hay cuadres guardados.<br><span style="font-size:11px">Haz un cuadre y toca "Guardar cuadre".</span></div>'); return; }
+    _histData = data;
+    const items = data.map((r, i) => {
+      const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-DO') : '';
+      const res = r.resumen || {};
+      return '<div onclick="window.nxTssVerSnapshot(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:6px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:12.5px;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div><div style="font-size:10px;color:#94a3b8">' + esc(fecha) + '</div></div><div style="font-size:11px;color:#475569;margin-top:3px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + '</div><div style="font-size:10px;color:#64748b;margin-top:2px">✅ ' + (res.coinciden || 0) + ' coinciden · ⚠️ ' + ((res.faltanTSS || []).length) + ' faltan · 💰 ' + ((res.conDeuda || []).length) + ' con deuda</div></div>';
+    }).join('');
+    setArea('nxTssResultado', '<div style="margin:12px 0"><div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:8px">📜 HISTORIAL DE CUADRES (' + data.length + ')</div>' + items + '</div>');
+  };
+
+  window.nxTssVerSnapshot = function (i) {
+    const r = (_histData || [])[i]; if (!r) return;
+    const res = r.resumen || {};
+    const sec = (titulo, color, bg, arr, deuda) => {
+      const lista = (arr || []).map(p => '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600">' + esc(p.nom || '') + '</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">' + esc(p.ced || '') + '</div></div>' + (deuda ? '<div style="font-weight:800;color:#b91c1c;flex-shrink:0">RD$ ' + Number(p.deuda || 0).toLocaleString('es-DO') + '</div>' : (p.extra ? '<div style="font-size:10px;color:#94a3b8;flex-shrink:0">' + esc(p.extra) + '</div>' : '')) + '</div>').join('') || '<div style="padding:10px 12px;color:#94a3b8;font-size:11px">—</div>';
+      return '<div style="border:1px solid ' + color + '33;border-radius:10px;margin-bottom:8px;overflow:hidden"><div style="background:' + bg + ';padding:8px 12px;font-size:11px;font-weight:800;color:' + color + '">' + titulo + ' (' + (arr || []).length + ')</div><div style="max-height:180px;overflow-y:auto">' + lista + '</div></div>';
+    };
+    setArea('nxTssResultado',
+      '<button type="button" onclick="window.nxTssVerHistorial()" style="border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 12px;font-weight:700;font-size:11px;cursor:pointer;margin:10px 0"><i class="ti ti-arrow-left"></i> Volver al historial</button>'
+      + '<div style="font-size:13px;font-weight:800;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div>'
+      + '<div style="font-size:11px;color:#64748b;margin-bottom:10px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + (r.created_at ? ' · ' + esc(new Date(r.created_at).toLocaleString('es-DO')) : '') + '</div>'
+      + sec('⚠️ FALTAN EN LA TSS', '#dc2626', '#fef2f2', res.faltanTSS)
+      + sec('📋 EN TSS PERO NO EN SISTEMA', '#b45309', '#fffbeb', res.extras)
+      + sec('⛔ INHABILITADOS EN TSS', '#9f1239', '#fff1f2', res.inhabEnTSS)
+      + sec('💰 EN TSS CON DEUDA', '#9a3412', '#fff7ed', res.conDeuda, true)
+    );
+  };
 
   function renderInfoPDF() {
     setArea('nxTssMapeo', `
@@ -10041,6 +10123,13 @@
           <textarea id="nxTssPegar" placeholder="…o pega aquí lo copiado de Excel (cédula y nombre), o una lista de cédulas o nombres" style="width:100%;min-height:64px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box"></textarea>
 
           <div id="nxTssMapeo"></div>
+
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:stretch;margin:12px 0">
+            <select id="nxTssPeriodo" title="Período (ciclo 20 → 19)" style="flex:1 1 100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;font-weight:600;background:#fff;color:#1e293b">${opcionesPeriodo()}</select>
+            <button type="button" onclick="window.nxTssGuardarHistorial()" style="flex:1 1 120px;border:none;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:10px;padding:11px;font-weight:700;font-size:12px;cursor:pointer"><i class="ti ti-device-floppy" style="color:#fff!important"></i> Guardar cuadre</button>
+            <button type="button" onclick="window.nxTssVerHistorial()" style="flex:1 1 100px;border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:10px;padding:11px;font-weight:700;font-size:12px;cursor:pointer"><i class="ti ti-history"></i> Historial</button>
+          </div>
+
           <div id="nxTssResultado"></div>
         </div>
       </div>`;
