@@ -1,10 +1,10 @@
 {
-  "version": "10.5",
+  "version": "10.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Cuando el cuadre es de Plan Voluntario Humano, ya no dice TSS sino Plan Voluntario Humano",
-    "Etiquetas correctas también en el historial y en el Excel descargado",
-    "Notificación visible al guardar un cuadre",
-    "Guardar/descargar el cuadre también funciona con el PDF de Plan Voluntario"
+    "Reporte por agente: elige un agente y ve TODOS sus clientes y sus totales",
+    "Lista de clientes del agente con deuda, plan y empresa (toca para abrir el cliente)",
+    "Toca cualquier tarjeta de agente para ver su detalle",
+    "Etiquetas correctas de Plan Voluntario Humano en cuadres y notificación al guardar"
   ]
 }
