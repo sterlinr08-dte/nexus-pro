@@ -1,10 +1,10 @@
 {
-  "version": "10.1",
+  "version": "10.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "El botón Actualizar ahora también trae las correcciones nuevas del sistema",
-    "Ventanas grandes con botón Volver y X",
-    "Pestañas de Facturas y rejillas adaptables en el celular",
-    "Íconos más limpios y mejor contraste en botones"
+    "Tabla Comparativa: resumen ejecutivo con % que cuadra y acciones sugeridas",
+    "Toca cualquier persona del cuadre para ver su ficha (plan, deuda, dependientes)",
+    "Nuevo permiso para dar acceso a la Tabla Comparativa a otros roles",
+    "El botón Actualizar también trae las correcciones nuevas del sistema"
   ]
 }

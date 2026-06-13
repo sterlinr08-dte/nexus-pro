@@ -9455,6 +9455,12 @@
     try { return (typeof sesion !== 'undefined') && sesion?.rol === 'admin'; }
     catch (e) { try { return window.sesion?.rol === 'admin'; } catch (_) { return false; } }
   }
+  // Admin SIEMPRE, o cualquier rol al que se le haya dado el permiso 'tabla_comparativa'
+  function puedeVerTSS() {
+    if (esAdmin()) return true;
+    try { return (typeof window.tienePermiso === 'function') && window.tienePermiso('tabla_comparativa'); }
+    catch (e) { return false; }
+  }
   function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
   function normCedula(x) { return String(x ?? '').replace(/\D/g, ''); }
   function fmtCed(x) { const d = normCedula(x); return d.length === 11 ? `${d.slice(0,3)}-${d.slice(3,10)}-${d.slice(10)}` : (d || '—'); }
@@ -9946,16 +9952,76 @@
       const sub = [];
       if (it.ced) sub.push(esc(fmtCed(it.ced)));
       if (it.extra) sub.push(`<span style="color:#d97706">${esc(it.extra)}</span>`);
+      const clic = it.ced ? `onclick="window.nxTssFicha('${esc(it.ced)}')" style="cursor:pointer"` : '';
       return `
-      <div style="display:flex;align-items:center;gap:10px;padding:9px;border-bottom:1px solid #f1f5f9">
+      <div ${clic} class="nxtss-row" style="display:flex;align-items:center;gap:10px;padding:9px;border-bottom:1px solid #f1f5f9">
         <div style="width:30px;height:30px;border-radius:8px;background:${color}1a;color:${color};display:grid;place-items:center;font-weight:800;flex-shrink:0;font-size:13px">${esc((it.nom || '?').trim().charAt(0).toUpperCase())}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;color:#0f172a;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nom || '(sin nombre)')}</div>
           ${sub.length ? `<div style="font-size:10.5px;color:#64748b">${sub.join(' · ')}</div>` : ''}
         </div>
+        ${it.ced ? '<i class="ti ti-chevron-right" style="color:#cbd5e1;flex-shrink:0;font-size:16px"></i>' : ''}
       </div>`;
     }).join('');
   }
+
+  // Ficha detallada del cliente (al tocar una fila del cuadre)
+  window.nxTssFicha = function (ced) {
+    const ST_ = getST();
+    const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
+    const empresas = Array.isArray(ST_.empresas) ? ST_.empresas : [];
+    const k = normCedula(ced);
+    const c = clientes.find(x => normCedula(x.cedula) === k);
+    const nomEmp = id => empresas.find(e => String(e.id) === String(id))?.nom || '—';
+    const fmtRD = (x) => 'RD$ ' + Number(x || 0).toLocaleString('es-DO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const pendDe = (cl) => (typeof window.pend === 'function' ? Number(window.pend(cl) || 0) : Math.max(0, Number(cl.deuda_total || 0) - Number(cl.pagado || 0)));
+
+    let ov = document.getElementById('nxTssFichaOv');
+    if (ov) ov.remove();
+    ov = document.createElement('div');
+    ov.id = 'nxTssFichaOv';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);z-index:99995;display:flex;justify-content:center;align-items:center;padding:18px';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+
+    let cuerpo;
+    if (!c) {
+      cuerpo = `<div style="padding:22px;text-align:center;color:#64748b;font-size:13px">
+        <div style="font-size:30px;margin-bottom:6px">🔎</div>
+        <div style="font-weight:700;color:#0f172a">No está en el sistema</div>
+        <div style="font-size:11px;margin-top:4px">Cédula ${esc(fmtCed(k))} aparece en la TSS pero no la tienes registrada como cliente.</div>
+      </div>`;
+    } else {
+      const deuda = pendDe(c);
+      const deps = Array.isArray(c.deps) ? c.deps : [];
+      const inhab = c.activo === false;
+      const fila = (icono, etq, val) => `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9"><div style="width:20px;text-align:center;flex-shrink:0">${icono}</div><div style="font-size:11px;color:#64748b;width:78px;flex-shrink:0">${etq}</div><div style="font-size:12.5px;color:#0f172a;font-weight:600;flex:1;min-width:0;word-break:break-word">${val}</div></div>`;
+      const tel = c.tel || c.wa || '';
+      cuerpo = `
+        <div style="padding:16px">
+          ${inhab ? `<div style="background:#fff1f2;border:1px solid #fecdd3;color:#9f1239;border-radius:9px;padding:8px 10px;font-size:11px;font-weight:700;margin-bottom:10px">⛔ Inhabilitado en el sistema${c.motivo_inhab ? ' · ' + esc(c.motivo_inhab) : ''} — no debería estar en la TSS</div>` : ''}
+          ${fila('🏢', 'Empresa', esc(nomEmp(c.empresa_id)))}
+          ${fila('📋', 'Plan', esc(c.plan || '—'))}
+          ${fila('🪪', 'Póliza', esc(c.numero_poliza || '—'))}
+          ${fila('📞', 'Teléfono', tel ? esc(tel) : '—')}
+          ${fila('👥', 'Dependientes', String(deps.length))}
+          ${fila('💰', 'Deuda', `<span style="color:${deuda > 0 ? '#b91c1c' : '#059669'};font-weight:800">${fmtRD(deuda)}</span>`)}
+          ${deps.length ? `<div style="margin-top:10px;background:#f8fafc;border-radius:9px;padding:8px 10px"><div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Dependientes</div>${deps.map(d => `<div style="font-size:11.5px;color:#334155;padding:2px 0">• ${esc(d.nom || d.nombre || '—')}${d.rel ? ` <span style="color:#94a3b8">— ${esc(d.rel)}</span>` : ''}</div>`).join('')}</div>` : ''}
+        </div>`;
+    }
+
+    ov.innerHTML = `
+      <div style="background:#fff;border-radius:18px;max-width:380px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35)" onclick="event.stopPropagation()">
+        <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div style="min-width:0">
+            <div style="font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((c && c.nom) || 'Cédula no registrada')}</div>
+            <div style="font-size:11px;opacity:.85;font-family:var(--mono,monospace)">${esc(fmtCed(k))}</div>
+          </div>
+          <button onclick="document.getElementById('nxTssFichaOv').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0">✕</button>
+        </div>
+        ${cuerpo}
+      </div>`;
+    document.body.appendChild(ov);
+  };
 
   function comparar() {
     const empId = document.getElementById('nxTssEmpresa')?.value || '';
@@ -10022,6 +10088,27 @@
     const coincidenList = sysCed.filter(c => c.ced && fileSet.has(c.ced));
     _ultimoCuadre = { empresaNom: empId === '__TODAS__' ? 'Todas las empresas' : (nomEmpresa(empId) || ''), coincidenList, faltanEnTSS, extras, inhabEnTSS, conDeuda, totalDeuda };
 
+    // ── RESUMEN EJECUTIVO + ACCIONES SUGERIDAS ──
+    const pct = sysCli.length ? Math.round(coinciden / sysCli.length * 100) : 0;
+    const acciones = [];
+    if (inhabEnTSS.length) acciones.push({ ic: '⛔', col: '#9f1239', bg: '#fff1f2', txt: `Dar de baja en la TSS a <b>${inhabEnTSS.length}</b> inhabilitado(s) que no deberían estar.` });
+    if (conDeuda.length) acciones.push({ ic: '💰', col: '#9a3412', bg: '#fff7ed', txt: `Cobrar <b>${fmtRD(totalDeuda)}</b> a <b>${conDeuda.length}</b> cliente(s) con deuda pendiente.` });
+    if (faltanEnTSS.length) acciones.push({ ic: '⚠️', col: '#b91c1c', bg: '#fef2f2', txt: `Verificar/incluir en la TSS a <b>${faltanEnTSS.length}</b> cliente(s) tuyo(s) que no aparecen.` });
+    if (extras.length) acciones.push({ ic: '📋', col: '#b45309', bg: '#fffbeb', txt: `Revisar <b>${extras.length}</b> persona(s) que están en la TSS pero no en tu sistema.` });
+    const todoOk = !acciones.length;
+    const resumenHTML = `
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:800;color:#1e293b">📊 RESUMEN EJECUTIVO</div>
+          <div style="font-size:11px;font-weight:800;color:${pct >= 90 ? '#059669' : pct >= 70 ? '#d97706' : '#dc2626'}">${pct}% cuadra</div>
+        </div>
+        <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-bottom:11px"><div style="height:100%;width:${pct}%;background:${pct >= 90 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'};border-radius:6px"></div></div>
+        ${todoOk
+        ? `<div style="display:flex;gap:8px;align-items:center;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 12px"><span style="font-size:18px">✅</span><div style="font-size:12px;font-weight:700;color:#065f46">Todo cuadra. No hay acciones pendientes para esta empresa.</div></div>`
+        : `<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px">Acciones sugeridas (${acciones.length})</div>
+           ${acciones.map(a => `<div style="display:flex;gap:9px;align-items:flex-start;background:${a.bg};border-radius:10px;padding:9px 11px;margin-bottom:6px"><span style="font-size:15px;flex-shrink:0;line-height:1.2">${a.ic}</span><div style="font-size:12px;color:${a.col};line-height:1.4">${a.txt}</div></div>`).join('')}`}
+      </div>`;
+
     setArea('nxTssResultado', `
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
         ${chip('#1e293b', '#f1f5f9', 'Sistema', sysCli.length)}
@@ -10032,6 +10119,10 @@
         ${inhabEnTSS.length ? chip('#9f1239', '#fff1f2', 'Inhab. en TSS', inhabEnTSS.length) : ''}
         ${conDeuda.length ? chip('#9a3412', '#fff7ed', 'Con deuda', conDeuda.length) : ''}
       </div>
+
+      ${resumenHTML}
+
+      <div style="font-size:10.5px;color:#94a3b8;text-align:center;margin:-4px 0 10px">👆 Toca cualquier persona para ver su ficha</div>
 
       <button onclick="window.nxTssExportarExcel && window.nxTssExportarExcel()" style="width:100%;border:none;background:linear-gradient(135deg,#047857,#10b981);color:#fff;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-file-spreadsheet" style="color:#fff!important"></i> Descargar Excel del cuadre</button>
 
@@ -10104,7 +10195,7 @@
   window.nxTssComparar = comparar;
 
   window.nxAbrirCuadreTSS = function () {
-    if (!esAdmin()) return;
+    if (!puedeVerTSS()) return;
     let ov = document.getElementById('nxTssOverlay');
     if (ov) ov.remove();
     _modo = 'cedula'; _rows = []; _header = []; _colCed = -1; _colNom = -1; _titulares = []; _depCount = 0;
@@ -10180,10 +10271,10 @@
     comparar();
   };
 
-  // Botón en el dashboard (solo admin)
+  // Botón en el dashboard (admin o rol con permiso 'tabla_comparativa')
   function inyectarBoton() {
     if (document.getElementById('qaCuadreTSS')) return true;
-    if (!esAdmin()) return false; // aún no logueado/admin: seguir reintentando hasta que lo sea
+    if (!puedeVerTSS()) return false; // aún no logueado / sin permiso: seguir reintentando
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return false;
     const qa = vDash.querySelector('.qa');
