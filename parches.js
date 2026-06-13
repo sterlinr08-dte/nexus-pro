@@ -9873,6 +9873,18 @@
       extras.push({ ced: e.ced, nom: e.nom, extra: otro ? `En sistema bajo empresa: ${nomEmpresa(otro.empresa_id) || 'otra'}` : '' });
     });
 
+    // ⛔ Inhabilitados que aparecen en la TSS (no deberían estar)
+    const vistosInh = new Set();
+    const inhabEnTSS = [];
+    fileEntries.forEach(e => {
+      if (vistosInh.has(e.ced)) return;
+      const cli = allByCed[e.ced];
+      if (cli && cli.activo === false) {
+        vistosInh.add(e.ced);
+        inhabEnTSS.push({ ced: e.ced, nom: cli.nom || e.nom, extra: 'Inhabilitado en el sistema' + (cli.motivo_inhab ? ' · ' + cli.motivo_inhab : '') });
+      }
+    });
+
     setArea('nxTssResultado', `
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
         ${chip('#1e293b', '#f1f5f9', 'Sistema', sysCli.length)}
@@ -9880,7 +9892,13 @@
         ${chip('#059669', '#ecfdf5', 'Coinciden', coinciden)}
         ${chip('#dc2626', '#fef2f2', 'Faltan TSS', faltanEnTSS.length)}
         ${chip('#d97706', '#fffbeb', 'Extras', extras.length)}
+        ${inhabEnTSS.length ? chip('#9f1239', '#fff1f2', 'Inhab. en TSS', inhabEnTSS.length) : ''}
       </div>
+
+      ${inhabEnTSS.length ? `<div style="background:#fff;border:2px solid #fecdd3;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fff1f2;padding:9px 12px;font-size:11px;font-weight:800;color:#9f1239">⛔ INHABILITADOS QUE APARECEN EN TSS — NO DEBERÍAN (${inhabEnTSS.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(inhabEnTSS, '#e11d48', '')}</div>
+      </div>` : ''}
 
       <div style="background:#fff;border:1px solid #fecaca;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <div style="background:#fef2f2;padding:9px 12px;font-size:11px;font-weight:800;color:#b91c1c">⚠️ TUS CLIENTES QUE FALTAN EN LA TSS (${faltanEnTSS.length})</div>
