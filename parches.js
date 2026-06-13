@@ -10013,7 +10013,7 @@
   // Botón en el dashboard (solo admin)
   function inyectarBoton() {
     if (document.getElementById('qaCuadreTSS')) return true;
-    if (!esAdmin()) return true;
+    if (!esAdmin()) return false; // aún no logueado/admin: seguir reintentando hasta que lo sea
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return false;
     const qa = vDash.querySelector('.qa');
@@ -10034,6 +10034,8 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
+  // Reinyectar el mosaico tras iniciar sesión (cuando ya se detecta el admin)
+  window.addEventListener('nexus:reinit', function(){ try{ inyectarBoton(); }catch(e){} });
 })();
 
 
