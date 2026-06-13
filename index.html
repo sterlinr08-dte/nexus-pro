@@ -205,6 +205,9 @@ input,select,textarea,button{font-family:var(--ff)}
 
 /* ── CARDS ── */
 .nc{background:#fff;border-radius:var(--r14);border:1px solid var(--border);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+/* Separación clara entre filas (clientes) en la tabla de facturas */
+#tbFact>tr>td{border-bottom:2px solid #e2e8f0;padding-top:9px;padding-bottom:9px}
+#tbFact>tr:nth-child(even){background:#f6f8fb}
 .nc.p2{border-top:3px solid var(--c2)}.nc.p3{border-top:3px solid var(--c3)}.nc.p4{border-top:3px solid var(--c4)}.nc.p5{border-top:3px solid var(--c5)}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
 .ct{font-size:13px;font-weight:700;color:#1e293b;letter-spacing:.1px}.ct-s{font-size:10px;color:var(--tx3);margin-top:2px}
