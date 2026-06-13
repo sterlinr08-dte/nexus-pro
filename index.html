@@ -593,7 +593,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .fav-star:hover{transform:scale(1.2)}
 
 /* ════ CLIENT SUMMARY PANEL ════ */
-.cs-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.97);opacity:0;visibility:hidden;width:min(440px,94vw);max-height:90vh;background:#fff;border-radius:24px;box-shadow:0 25px 60px rgba(0,0,0,.35);z-index:600;display:flex;flex-direction:column;overflow:hidden;transition:opacity .22s ease,transform .22s ease}
+.cs-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.97);opacity:0;visibility:hidden;width:min(400px,86vw);max-height:80vh;background:#fff;border-radius:28px;box-shadow:0 25px 60px rgba(0,0,0,.4);z-index:600;display:flex;flex-direction:column;overflow:hidden;transition:opacity .22s ease,transform .22s ease}
 .cs-panel.open{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
 .cs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:599;display:none}
 .cs-overlay.show{display:block}
@@ -840,7 +840,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div style="font-size:9px;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Resumen del cliente</div>
       <div id="csNom" style="font-size:16px;font-weight:700;margin-top:2px"></div>
     </div>
-    <button onclick="cerrarClientSummary()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center">✕</button>
+    <button onclick="cerrarClientSummary()" style="background:rgba(255,255,255,.3);border:1.5px solid rgba(255,255,255,.6);color:#fff;width:42px;height:42px;border-radius:12px;cursor:pointer;font-size:20px;font-weight:700;flex-shrink:0;display:flex;align-items:center;justify-content:center">✕</button>
   </div>
   <div class="cs-body" id="csBody"></div>
 </div>
