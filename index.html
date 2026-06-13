@@ -2877,7 +2877,7 @@ function toggleContab(){
 
 // ── ROLES Y PERMISOS ───────────────────────────────────────────────
 const ROLES_PERMS = {
-  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio','can_view_accounting','payments_edit','payments_delete']},
+  admin:{nom:'Administrador',color:'#dc2626',perms:['ver_todo','crear','editar','eliminar','config','usuarios','reportes','contabilidad','exportar','eliminar_clientes','ver_utilidad','exportar_datos','gestionar_backup','ver_auditoria','editar_facturas','modificar_precio','can_view_accounting','payments_edit','payments_delete','tabla_comparativa']},
   supervisor:{nom:'Supervisor',color:'#7c3aed',perms:['ver_todo','crear','editar','reportes','exportar','ver_utilidad','exportar_datos','ver_auditoria','can_view_accounting']},
   cajero:{nom:'Cajero',color:'#f59e0b',perms:['ver_clientes','ver_facturas','cobrar']},
   cobros:{nom:'Cobros',color:'#059669',perms:['ver_clientes','ver_facturas','cobrar','reportes']},
@@ -2908,6 +2908,7 @@ const PERMS_LIST = [
   {key:'can_view_accounting',lbl:'Ver módulo de Contabilidad'},
   {key:'payments_edit',lbl:'Editar pagos y abonos'},
   {key:'payments_delete',lbl:'Eliminar pagos y abonos'},
+  {key:'tabla_comparativa',lbl:'Ver Tabla Comparativa (TSS)'},
 ];
 
 async function rRolesContent(){
