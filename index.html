@@ -979,7 +979,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div id="alertasBanner"></div>
           <div class="qa-g">
             <div class="qa" onclick="nav('facturas',null)"><span class="qa-i"><i class="ti ti-file-invoice"></i></span><div class="qa-l">Facturas</div></div>
-            <div class="qa" onclick="nav('facturas',null);setTimeout(genFacturas,100)"><span class="qa-i"><i class="ti ti-file-plus"></i></span><div class="qa-l">Generar facturas</div></div>
             <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><span class="qa-i"><i class="ti ti-wallet"></i></span><div class="qa-l">CLIENTES</div></div>
             <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><span class="qa-i"><i class="ti ti-chart-pie"></i></span><div class="qa-l">Detalles de Cobro</div></div>
             <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><span class="qa-i"><i class="ti ti-file-alert"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
