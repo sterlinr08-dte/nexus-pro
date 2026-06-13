@@ -593,12 +593,12 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .fav-star:hover{transform:scale(1.2)}
 
 /* ════ CLIENT SUMMARY PANEL ════ */
-.cs-panel{position:fixed;top:0;right:-450px;width:min(440px,100vw);height:100vh;height:100dvh;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.15);z-index:600;transition:right .3s ease;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;border-left:1px solid #e2e8f0;padding-bottom:env(safe-area-inset-bottom,0)}
-.cs-panel.open{right:0}
-.cs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:599;display:none}
+.cs-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.97);opacity:0;visibility:hidden;width:min(440px,94vw);max-height:90vh;background:#fff;border-radius:18px;box-shadow:0 25px 60px rgba(0,0,0,.35);z-index:600;display:flex;flex-direction:column;overflow:hidden;transition:opacity .22s ease,transform .22s ease}
+.cs-panel.open{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+.cs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:599;display:none}
 .cs-overlay.show{display:block}
-.cs-h{padding:18px 20px;padding-top:calc(18px + env(safe-area-inset-top,0));background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2}
-.cs-body{padding:18px 20px}
+.cs-h{padding:16px 18px;background:linear-gradient(135deg,#1e3a6e,#2563eb);color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px}
+.cs-body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding-bottom:calc(18px + env(safe-area-inset-bottom,0))}
 .cs-section{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f1f5f9}
 .cs-section-ttl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:8px}
 
