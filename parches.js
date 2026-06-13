@@ -9469,6 +9469,7 @@
   let _depCount = 0;   // PDF Humano: cantidad de dependientes ignorados
   let _acumCed = [];   // VARIOS archivos Excel: cédulas acumuladas {ced,nom,archivo}
   let _acumArchivos = []; // VARIOS archivos: resumen de archivos cargados
+  let _ultimoCuadre = null; // último resultado (para descargar Excel)
 
   // --- Helpers para match por NOMBRE (cuando no hay cédula, ej. Humano) ---
   function quitaAcentos(s) { return String(s ?? '').normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'), ''); }
@@ -9715,6 +9716,28 @@
   }
   window.nxTssVariosArchivos = onVariosArchivos;
 
+  // Descarga el cuadre actual en un Excel bien organizado
+  async function exportarExcelCuadre() {
+    const c = _ultimoCuadre;
+    if (!c) { return; }
+    let XLSX;
+    try { XLSX = await cargarSheetJS(); } catch (e) { alert('No se pudo cargar el generador de Excel.'); return; }
+    const m2 = (x) => Number(x || 0).toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const rows = [['ESTADO', 'NOMBRE', 'CÉDULA', 'EMPRESA', 'DEUDA (RD$)', 'NOTA']];
+    (c.coincidenList || []).forEach(p => rows.push(['Pagado (en TSS y en sistema)', p.nom || '', p.ced || '', c.empresaNom, '', '']));
+    (c.faltanEnTSS || []).forEach(p => rows.push(['Falta en TSS', p.nom || '', p.ced || '', c.empresaNom, '', '']));
+    (c.extras || []).forEach(p => rows.push(['En TSS pero no en sistema', p.nom || '', p.ced || '', '', '', p.extra || '']));
+    (c.inhabEnTSS || []).forEach(p => rows.push(['Inhabilitado en TSS (no debería)', p.nom || '', p.ced || '', c.empresaNom, '', p.extra || '']));
+    (c.conDeuda || []).forEach(p => rows.push(['En TSS con deuda pendiente', p.nom || '', p.ced || '', c.empresaNom, m2(p.deuda), '']));
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 30 }, { wch: 34 }, { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 32 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cuadre TSS');
+    const nombre = 'Cuadre_TSS_' + String(c.empresaNom || 'empresa').replace(/[^\w]+/g, '_') + '.xlsx';
+    try { XLSX.writeFile(wb, nombre); } catch (e) { alert('No se pudo descargar el Excel: ' + (e && e.message ? e.message : '')); }
+  }
+  window.nxTssExportarExcel = exportarExcelCuadre;
+
   function renderInfoPDF() {
     setArea('nxTssMapeo', `
       <div style="display:flex;gap:8px;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:12px;color:#1e40af">
@@ -9885,6 +9908,18 @@
       }
     });
 
+    // 💰 Clientes que están en la TSS y tienen deuda pendiente
+    const pendDe = (c) => (typeof window.pend === 'function' ? Number(window.pend(c) || 0) : Math.max(0, Number(c.deuda_total || 0) - Number(c.pagado || 0)));
+    const conDeuda = sysCli
+      .filter(c => { const k = normCedula(c.cedula); return k && fileSet.has(k); })
+      .map(c => ({ nom: c.nom, ced: normCedula(c.cedula), deuda: pendDe(c) }))
+      .filter(c => c.deuda > 0)
+      .sort((a, b) => b.deuda - a.deuda);
+    const totalDeuda = conDeuda.reduce((s, c) => s + c.deuda, 0);
+    const fmtRD = (x) => 'RD$ ' + Number(x || 0).toLocaleString('es-DO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const coincidenList = sysCed.filter(c => c.ced && fileSet.has(c.ced));
+    _ultimoCuadre = { empresaNom: nomEmpresa(empId) || '', coincidenList, faltanEnTSS, extras, inhabEnTSS, conDeuda, totalDeuda };
+
     setArea('nxTssResultado', `
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
         ${chip('#1e293b', '#f1f5f9', 'Sistema', sysCli.length)}
@@ -9893,7 +9928,15 @@
         ${chip('#dc2626', '#fef2f2', 'Faltan TSS', faltanEnTSS.length)}
         ${chip('#d97706', '#fffbeb', 'Extras', extras.length)}
         ${inhabEnTSS.length ? chip('#9f1239', '#fff1f2', 'Inhab. en TSS', inhabEnTSS.length) : ''}
+        ${conDeuda.length ? chip('#9a3412', '#fff7ed', 'Con deuda', conDeuda.length) : ''}
       </div>
+
+      <button onclick="window.nxTssExportarExcel && window.nxTssExportarExcel()" style="width:100%;border:none;background:linear-gradient(135deg,#047857,#10b981);color:#fff;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-file-spreadsheet" style="color:#fff!important"></i> Descargar Excel del cuadre</button>
+
+      ${conDeuda.length ? `<div style="background:#fff;border:1px solid #fed7aa;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fff7ed;padding:9px 12px;font-size:11px;font-weight:800;color:#9a3412;display:flex;justify-content:space-between;gap:8px"><span>💰 EN TSS CON DEUDA PENDIENTE (${conDeuda.length})</span><span>Total: ${fmtRD(totalDeuda)}</span></div>
+        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">${esc(c.ced)}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
+      </div>` : ''}
 
       ${inhabEnTSS.length ? `<div style="background:#fff;border:2px solid #fecdd3;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <div style="background:#fff1f2;padding:9px 12px;font-size:11px;font-weight:800;color:#9f1239">⛔ INHABILITADOS QUE APARECEN EN TSS — NO DEBERÍAN (${inhabEnTSS.length})</div>
