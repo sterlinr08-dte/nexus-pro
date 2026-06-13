@@ -1027,6 +1027,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, apodo, cédula, póliza..." id="cliQ" oninput="rCli()"/></div>
               <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
+              <select id="fAgenteCli" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los agentes</option></select>
             </div>
             <div class="tw"><table>
               <thead><tr><th style="width:20%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:9%">PLAN</th><th style="width:14%">EMPRESA</th><th style="width:10%">VIGENCIA</th><th style="width:9%">PRIMA</th><th style="width:9%">PENDIENTE</th><th style="width:8%">ESTADO</th><th style="width:10%">ACCIONES</th></tr></thead>
@@ -1075,6 +1076,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                   <option value="Parcial">Parciales</option>
                   <option value="Anulada">Anuladas</option>
                 </select>
+                <select id="fAgenteFact" onchange="rFact()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
                 <button class="btn bsm bc1" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
                 <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
                 <button class="btn bsm bc4" onclick="exportarCSVFacturas()"><i class="ti ti-file-spreadsheet"></i></button>
@@ -1090,6 +1092,11 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div id="panelCob" style="display:none">
           <div class="nc">
             <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
+            <div class="frow">
+              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar cliente..." id="cobQ" oninput="rCob()"/></div>
+              <select id="fAgenteCob" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
+              <select id="fCobEst" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
+            </div>
             <div class="tw"><table>
               <thead><tr><th style="width:22%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:10%">PLAN</th><th style="width:13%">DEUDA</th><th style="width:11%">COBRADO</th><th style="width:11%">PENDIENTE</th><th style="width:12%">PROGRESO</th><th style="width:10%"></th></tr></thead>
               <tbody id="tbCob"><tr><td colspan="8"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
@@ -4523,10 +4530,18 @@ document.addEventListener('click',(e)=>{
 window.addEventListener('scroll',()=>{
   if(window.innerWidth>640)cerrarAccMenus();
 },true);
+// Llena un <select> de filtro por agente (una sola vez), conservando "Todos los agentes"
+function llenarFiltroAgentes(id){
+  const sel=document.getElementById(id);
+  if(!sel||sel.options.length>1)return;
+  ST.agentes.slice().sort((a,b)=>String(a.nom).localeCompare(String(b.nom))).forEach(a=>{sel.innerHTML+=`<option value="${a.id}">${a.nom}</option>`;});
+}
 function rCli(){
+  llenarFiltroAgentes('fAgenteCli');
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
   const fe=document.getElementById('fEst')?.value||'';
+  const fa=document.getElementById('fAgenteCli')?.value||'';
   // Si hay búsqueda activa, mostrar todos los resultados (sin límite de 50)
   if(q&&!_cliVerTodos)_cliVerTodos=true;
   // Contar activos, inhabilitados y VIP
@@ -4547,6 +4562,7 @@ function rCli(){
     if(_cliTab==='proceso'&&c.estado_cliente!=='EN_PROCESO')return false;
     if(q&&!c.nom.toLowerCase().includes(q)&&!(c.cedula||'').includes(q)&&!(c.numero_poliza||'').toLowerCase().includes(q)&&!(c.referencia||'').toLowerCase().includes(q)&&!(c.tel||'').includes(q)&&!(c.wa||'').includes(q)&&!(c.referencia_wa||'').includes(q))return false;
     if(fp&&c.plan!==fp)return false;
+    if(fa&&String(c.agente_id)!==fa)return false;
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}
     return true;
   });
@@ -4732,10 +4748,12 @@ function genFacturasConfirm(){
 }
 
 function rFact(){
+  llenarFiltroAgentes('fAgenteFact');
   const mes=parseInt(document.getElementById('fMes')?.value||new Date().getMonth()+1);
   const anio=parseInt(document.getElementById('fAnio')?.value||new Date().getFullYear());
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
   const filtroEst=document.getElementById('fFactEstado')?.value||'activas';
+  const fa=document.getElementById('fAgenteFact')?.value||'';
   const atrasadas=filtroEst==='atrasadas';
   let lista;
   if(atrasadas){
@@ -4746,6 +4764,7 @@ function rFact(){
     if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada');
     else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
   }
+  if(fa){const idsAg=new Set(ST.clientes.filter(c=>String(c.agente_id)===fa).map(c=>String(c.id)));lista=lista.filter(f=>idsAg.has(String(f.cliente_id)));}
   const tb=document.getElementById('tbFact');
   if(!lista.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar + NCF"'}</div></td></tr>`;return;}
   tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
@@ -4926,9 +4945,17 @@ function generarHTMLCertificado(c){
 
 // ── COBROS ───────────────────────────────────────────────────────────────────
 function rCob(){
+  llenarFiltroAgentes('fAgenteCob');
   const tb=document.getElementById('tbCob');
-  const activos=ST.clientes.filter(c=>c.activo);
-  if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin clientes</div></td></tr>';return;}
+  const q=(document.getElementById('cobQ')?.value||'').toLowerCase();
+  const fa=document.getElementById('fAgenteCob')?.value||'';
+  const fest=document.getElementById('fCobEst')?.value||'';
+  let activos=ST.clientes.filter(c=>c.activo);
+  if(fa)activos=activos.filter(c=>String(c.agente_id)===fa);
+  if(q)activos=activos.filter(c=>c.nom.toLowerCase().includes(q)||(c.cedula||'').includes(q)||(c.referencia||'').toLowerCase().includes(q)||(c.numero_poliza||'').toLowerCase().includes(q));
+  if(fest==='deuda')activos=activos.filter(c=>pend(c)>0);
+  else if(fest==='aldia')activos=activos.filter(c=>pend(c)<=0);
+  if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin resultados</div></td></tr>';return;}
   tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div></td><td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
 }
 // ════════ BANCOS - Módulo nativo ════════
