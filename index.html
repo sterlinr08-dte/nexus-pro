@@ -1030,7 +1030,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <select id="fAgenteCli" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los agentes</option></select>
             </div>
             <div class="tw"><table>
-              <thead><tr><th style="width:20%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:9%">PLAN</th><th style="width:14%">EMPRESA</th><th style="width:10%">VIGENCIA</th><th style="width:9%">PRIMA</th><th style="width:9%">PENDIENTE</th><th style="width:8%">ESTADO</th><th style="width:10%">ACCIONES</th></tr></thead>
+              <thead><tr><th style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')">CLIENTE <span id="scNom" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')">AGENTE <span id="scAgente" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')">PLAN <span id="scPlan" style="color:#2563eb"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')">EMPRESA <span id="scEmpresa" style="color:#2563eb"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')">VIGENCIA <span id="scVigencia" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')">PRIMA <span id="scPrima" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')">PENDIENTE <span id="scPendiente" style="color:#2563eb"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')">ESTADO <span id="scEstado" style="color:#2563eb"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
               <tbody id="tbCli"><tr><td colspan="9"><div class="loading"><div class="spin"></div>Cargando...</div></td></tr></tbody>
             </table></div>
           </div>
@@ -4536,6 +4536,32 @@ function llenarFiltroAgentes(id){
   if(!sel||sel.options.length>1)return;
   ST.agentes.slice().sort((a,b)=>String(a.nom).localeCompare(String(b.nom))).forEach(a=>{sel.innerHTML+=`<option value="${a.id}">${a.nom}</option>`;});
 }
+// ── Orden de la tabla de clientes al tocar las cabeceras ──
+let _cliSort={col:'',dir:1};
+function sortCli(col){
+  if(_cliSort.col===col)_cliSort.dir=-_cliSort.dir; // mismo: invertir
+  else{_cliSort.col=col;_cliSort.dir=1;}           // nuevo: ascendente
+  rCli();
+}
+function _cliSortVal(c,col){
+  switch(col){
+    case 'nom':return (c.nom||'').toLowerCase();
+    case 'agente':return (gAgt(c.agente_id)?.nom||'').toLowerCase();
+    case 'plan':return (c.plan||'').toLowerCase();
+    case 'empresa':return (gEmp(c.empresa_id)?.nom||'').toLowerCase();
+    case 'vigencia':return c.fecha_fin||'';
+    case 'prima':return Number(getTot(c)||0);
+    case 'pendiente':return Number(pend(c)||0);
+    case 'estado':return (getEst(c)||'').toLowerCase();
+  }
+  return '';
+}
+function pintarFlechasCli(){
+  ['Nom','Agente','Plan','Empresa','Vigencia','Prima','Pendiente','Estado'].forEach(C=>{
+    const el=document.getElementById('sc'+C);
+    if(el)el.textContent=(_cliSort.col===C.toLowerCase())?(_cliSort.dir===1?'▲':'▼'):'';
+  });
+}
 function rCli(){
   llenarFiltroAgentes('fAgenteCli');
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
@@ -4566,6 +4592,9 @@ function rCli(){
     if(fe){const e=getEst(c);if(fe==='Inhabilitado'&&e!=='Inhabilitado')return false;if(fe==='Al día'&&e!=='Al día')return false;if(fe==='Pendiente'&&(e==='Al día'||e==='Inhabilitado'))return false;}
     return true;
   });
+  // Orden según la cabecera tocada
+  pintarFlechasCli();
+  if(_cliSort.col){const col=_cliSort.col,dir=_cliSort.dir;list.sort((a,b)=>{const va=_cliSortVal(a,col),vb=_cliSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
   document.getElementById('cliCnt').textContent=`(${list.length})`;
   const tb=document.getElementById('tbCli');
   if(!list.length){tb.innerHTML='<tr><td colspan="9"><div class="empty">Sin resultados</div></td></tr>';return;}
