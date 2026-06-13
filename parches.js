@@ -9467,6 +9467,8 @@
   let _colNom = -1;
   let _titulares = []; // PDF Humano: nombres de titulares (sin dependientes)
   let _depCount = 0;   // PDF Humano: cantidad de dependientes ignorados
+  let _acumCed = [];   // VARIOS archivos Excel: cédulas acumuladas {ced,nom,archivo}
+  let _acumArchivos = []; // VARIOS archivos: resumen de archivos cargados
 
   // --- Helpers para match por NOMBRE (cuando no hay cédula, ej. Humano) ---
   function quitaAcentos(s) { return String(s ?? '').normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]','g'), ''); }
@@ -9621,6 +9623,7 @@
     setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo archivo...</div></div>');
     setArea('nxTssMapeo', '');
     _rows = []; _titulares = []; _depCount = 0;
+    _acumCed = []; _acumArchivos = [];
     let buf;
     try {
       buf = await leerBufferRobusto(file);
@@ -9665,6 +9668,53 @@
     }
   }
 
+  // Lee un Excel/CSV (buffer) y devuelve sus cédulas {ced,nom,archivo}
+  async function cedEntriesDeBuffer(buf, nombreArch) {
+    const matrix = await obtenerMatriz(buf);
+    let headerIdx = matrix.findIndex(row => row.some(c => /c[eé]dula|nombre|documento|empleado|trabajador|afiliado|cedula|nss/i.test(String(c))));
+    if (headerIdx < 0) headerIdx = 0;
+    const header = (matrix[headerIdx] || []).map(h => String(h || '').trim());
+    const rows = matrix.slice(headerIdx + 1).filter(r => r.some(c => String(c).trim() !== ''));
+    const det = detectarColumnas(header, rows);
+    return rows
+      .map(r => ({ ced: normCedula(r[det.colCed]), nom: String(r[det.colNom] || '').trim(), archivo: nombreArch || '' }))
+      .filter(e => e.ced);
+  }
+
+  // Procesa VARIOS archivos Excel/CSV a la vez y acumula sus cédulas (sin repetir)
+  async function onVariosArchivos(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    _modo = 'cedula'; _rows = []; _titulares = []; _depCount = 0;
+    _acumCed = []; _acumArchivos = [];
+    setArea('nxTssMapeo', '');
+    setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo ' + files.length + ' archivo(s)...</div></div>');
+    const errores = [];
+    for (const file of files) {
+      try {
+        const buf = await leerBufferRobusto(file);
+        const u8 = new Uint8Array(buf.slice(0, 4));
+        const esPDF = (file.name || '').toLowerCase().endsWith('.pdf') || (u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46);
+        if (esPDF) { errores.push((file.name || 'PDF') + ' (PDF: súbelo solo)'); continue; }
+        const entries = await cedEntriesDeBuffer(buf, file.name);
+        if (entries.length) { _acumCed.push(...entries); _acumArchivos.push((file.name || 'archivo') + ' (' + entries.length + ')'); }
+        else errores.push((file.name || 'archivo') + ' (sin cédulas)');
+      } catch (e) {
+        errores.push((file.name || 'archivo') + ' (no se pudo leer)');
+      }
+    }
+    // dedup por cédula
+    const vistos = new Set();
+    _acumCed = _acumCed.filter(e => { if (vistos.has(e.ced)) return false; vistos.add(e.ced); return true; });
+    const okHtml = _acumArchivos.length
+      ? '<div style="font-size:11px;color:#166534;font-weight:700">✓ ' + _acumArchivos.length + ' archivo(s) · ' + _acumCed.length + ' cédulas (sin repetir)</div><div style="font-size:10px;color:#64748b;margin-top:3px">' + _acumArchivos.map(esc).join(' · ') + '</div>'
+      : '<div style="font-size:11px;color:#b91c1c;font-weight:700">No se leyeron cédulas de los archivos.</div>';
+    const errHtml = errores.length ? '<div style="font-size:10px;color:#b91c1c;margin-top:5px">⚠️ ' + errores.map(esc).join(' · ') + '</div>' : '';
+    setArea('nxTssMapeo', '<div style="margin-top:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px">' + okHtml + errHtml + '</div>');
+    comparar();
+  }
+  window.nxTssVariosArchivos = onVariosArchivos;
+
   function renderInfoPDF() {
     setArea('nxTssMapeo', `
       <div style="display:flex;gap:8px;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:12px;color:#1e40af">
@@ -9689,6 +9739,7 @@
 
   // Compara a partir de lo PEGADO en el textarea (detecta cédulas → por cédula; si no → por nombre)
   function compararPegado() {
+    _acumCed = []; _acumArchivos = [];
     const txt = document.getElementById('nxTssPegar')?.value || '';
     if (!txt.trim()) { _rows = []; _titulares = []; _modo = 'cedula'; setArea('nxTssMapeo', ''); comparar(); return; }
     const matrix = matrizDeTexto(txt);
@@ -9783,7 +9834,7 @@
 
   function comparar() {
     const empId = document.getElementById('nxTssEmpresa')?.value || '';
-    const hayArchivo = _modo === 'nombre' ? _titulares.length : _rows.length;
+    const hayArchivo = _modo === 'nombre' ? _titulares.length : (_acumCed.length || _rows.length);
     if (!hayArchivo) { setArea('nxTssResultado', '<div style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">📄 Sube un archivo (TSS Excel/CSV o PDF de Humano) para comparar.</div>'); return; }
     if (!empId) { setArea('nxTssResultado', '<div style="text-align:center;color:#f59e0b;padding:24px;font-size:13px">🏢 Elige una empresa arriba para comparar.</div>'); return; }
     if (_modo === 'nombre') return compararNombre(empId);
@@ -9795,7 +9846,9 @@
     const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
     const sysCli = clientes.filter(c => String(c.empresa_id) === String(empId));
 
-    const fileEntries = _rows.map(r => ({ ced: normCedula(r[_colCed]), nom: String(r[_colNom] || '').trim() })).filter(e => e.ced);
+    const fileEntries = (_acumCed && _acumCed.length)
+      ? _acumCed.map(e => ({ ced: e.ced, nom: e.nom }))
+      : _rows.map(r => ({ ced: normCedula(r[_colCed]), nom: String(r[_colNom] || '').trim() })).filter(e => e.ced);
     const fileSet = new Set(fileEntries.map(e => e.ced));
 
     const sysCed = sysCli.map(c => ({ nom: c.nom, ced: normCedula(c.cedula) }));
@@ -9892,6 +9945,7 @@
     let ov = document.getElementById('nxTssOverlay');
     if (ov) ov.remove();
     _modo = 'cedula'; _rows = []; _header = []; _colCed = -1; _colNom = -1; _titulares = []; _depCount = 0;
+    _acumCed = []; _acumArchivos = [];
 
     const ST_ = getST();
     const empresas = (Array.isArray(ST_.empresas) ? ST_.empresas : []).slice().sort((a, b) => String(a.nom).localeCompare(String(b.nom)));
@@ -9918,8 +9972,8 @@
           <select id="nxTssEmpresa" onchange="window.nxTssComparar()" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;background:#fff;margin-bottom:12px">${opcEmp}</select>
 
           <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">2. Archivo (TSS o Humano)</label>
-          <button type="button" id="nxTssBtnFile" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo (Excel, CSV o PDF)<div style="font-size:10px;font-weight:600;color:#64748b;margin-top:3px">o arrastra el archivo aquí · el PDF de Humano va por aquí</div></button>
-          <input type="file" id="nxTssFile" accept=".xlsx,.xls,.csv,.pdf,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
+          <button type="button" id="nxTssBtnFile" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo(s) (Excel, CSV o PDF)<div style="font-size:10px;font-weight:600;color:#64748b;margin-top:3px">puedes elegir VARIOS Excel a la vez (titulares + dependientes) · el PDF de Humano va solo</div></button>
+          <input type="file" id="nxTssFile" multiple accept=".xlsx,.xls,.csv,.pdf,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
 
           <div style="text-align:center;color:#94a3b8;font-size:11px;margin:9px 0;font-weight:700">— o pega los datos —</div>
           <button type="button" onclick="window.nxTssPegarArchivo()" style="width:100%;border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:8px"><i class="ti ti-clipboard"></i> Pegar archivo copiado (PDF/Excel)</button>
@@ -9931,13 +9985,13 @@
       </div>`;
     document.body.appendChild(ov);
     const fileInp = document.getElementById('nxTssFile');
-    if (fileInp) fileInp.addEventListener('change', function () { if (this.files && this.files[0]) { const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; onArchivo(this.files[0]); } });
+    if (fileInp) fileInp.addEventListener('change', function () { if (this.files && this.files.length) { const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; if (this.files.length > 1) onVariosArchivos(this.files); else onArchivo(this.files[0]); } });
     // Arrastrar y soltar el archivo sobre el botón
     const btnFile = document.getElementById('nxTssBtnFile');
     if (btnFile) {
       ['dragenter', 'dragover'].forEach(ev => btnFile.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); btnFile.style.background = '#dbeafe'; }));
       ['dragleave', 'drop'].forEach(ev => btnFile.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); btnFile.style.background = '#eff6ff'; }));
-      btnFile.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if (f) { if (fileInp) fileInp.value = ''; const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; onArchivo(f); } });
+      btnFile.addEventListener('drop', e => { const fs = e.dataTransfer?.files; if (fs && fs.length) { if (fileInp) fileInp.value = ''; const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; if (fs.length > 1) onVariosArchivos(fs); else onArchivo(fs[0]); } });
     }
     const pegarTa = document.getElementById('nxTssPegar');
     if (pegarTa) {
