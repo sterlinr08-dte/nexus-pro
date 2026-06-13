@@ -9888,7 +9888,7 @@
     setArea('nxTssResultado', `
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
         ${chip('#1e293b', '#f1f5f9', 'Sistema', sysCli.length)}
-        ${chip('#1e293b', '#f1f5f9', 'En archivo', fileEntries.length)}
+        ${chip('#1e293b', '#f1f5f9', 'En TSS', fileEntries.length)}
         ${chip('#059669', '#ecfdf5', 'Coinciden', coinciden)}
         ${chip('#dc2626', '#fef2f2', 'Faltan TSS', faltanEnTSS.length)}
         ${chip('#d97706', '#fffbeb', 'Extras', extras.length)}
@@ -9902,11 +9902,11 @@
 
       <div style="background:#fff;border:1px solid #fecaca;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <div style="background:#fef2f2;padding:9px 12px;font-size:11px;font-weight:800;color:#b91c1c">⚠️ TUS CLIENTES QUE FALTAN EN LA TSS (${faltanEnTSS.length})</div>
-        <div style="max-height:200px;overflow-y:auto">${listaPersonas(faltanEnTSS, '#dc2626', 'Todos tus clientes están en el archivo')}</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(faltanEnTSS, '#dc2626', 'Todos tus clientes están en la TSS')}</div>
       </div>
 
       <div style="background:#fff;border:1px solid #fde68a;border-radius:12px;margin-bottom:10px;overflow:hidden">
-        <div style="background:#fffbeb;padding:9px 12px;font-size:11px;font-weight:800;color:#b45309">📋 EN EL ARCHIVO PERO NO EN EL SISTEMA (${extras.length})</div>
+        <div style="background:#fffbeb;padding:9px 12px;font-size:11px;font-weight:800;color:#b45309">📋 EN LA TSS PERO NO EN EL SISTEMA (${extras.length})</div>
         <div style="max-height:200px;overflow-y:auto">${listaPersonas(extras, '#d97706', 'No hay personas de más en el archivo')}</div>
       </div>
 
