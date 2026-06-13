@@ -1,10 +1,10 @@
 {
-  "version": "10.7",
+  "version": "10.8",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Filtro por agente en Clientes, Facturas y Cobros (elige un agente y se filtra todo lo suyo)",
-    "Cobros ahora tiene buscador y filtro por deuda/al día",
-    "Reporte por agente con la lista de clientes del agente",
-    "Etiquetas correctas de Plan Voluntario Humano y notificación al guardar cuadres"
+    "En Clientes: toca una columna (CLIENTE, AGENTE, PLAN, EMPRESA, PRIMA, PENDIENTE...) para ordenar",
+    "Toca de nuevo la misma columna para invertir el orden (▲/▼)",
+    "Filtro por agente en Clientes, Facturas y Cobros",
+    "Reporte por agente con la lista de clientes del agente"
   ]
 }
