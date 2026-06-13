@@ -10155,17 +10155,59 @@
   function compararNombre(empId) {
     const ST_ = getST();
     const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
-    const sysCli = (empId === '__TODAS__' ? clientes.slice() : clientes.filter(c => String(c.empresa_id) === String(empId))).map(c => ({ nom: c.nom, tok: tokensNom(c.nom) }));
+    const empresas = Array.isArray(ST_.empresas) ? ST_.empresas : [];
+    const nomEmpresa = id => empresas.find(e => String(e.id) === String(id))?.nom || '';
+    const fmtRD = (x) => 'RD$ ' + Number(x || 0).toLocaleString('es-DO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    const pendDe = (cl) => (typeof window.pend === 'function' ? Number(window.pend(cl) || 0) : Math.max(0, Number(cl.deuda_total || 0) - Number(cl.pagado || 0)));
+    const sysCli = (empId === '__TODAS__' ? clientes.slice() : clientes.filter(c => String(c.empresa_id) === String(empId))).map(c => ({ nom: c.nom, tok: tokensNom(c.nom), c }));
     const tit = _titulares.map(n => ({ nom: n, tok: tokensNom(n) }));
 
     const usados = new Set();
-    const coinciden = [], dudosos = [], soloArchivo = [], pend = [];
+    const coinciden = [], dudosos = [], soloArchivo = [], pend = [], matchCli = [];
     const buscar = (t, tier) => { let best = -1; sysCli.forEach((c, i) => { if (best < 0 && !usados.has(i) && tierNombre(t.tok, c.tok) === tier) best = i; }); return best; };
     // 1ª pasada: coincidencias fuertes (tienen prioridad sobre las dudosas)
-    tit.forEach(t => { const b = buscar(t, 2); if (b >= 0) { coinciden.push({ nom: t.nom }); usados.add(b); } else pend.push(t); });
+    tit.forEach(t => { const b = buscar(t, 2); if (b >= 0) { const cl = sysCli[b].c; coinciden.push({ nom: t.nom, ced: normCedula(cl.cedula) }); matchCli.push(cl); usados.add(b); } else pend.push(t); });
     // 2ª pasada: coincidencias dudosas sobre lo que sobra
-    pend.forEach(t => { const b = buscar(t, 1); if (b >= 0) { dudosos.push({ nom: t.nom, extra: `en sistema: ${sysCli[b].nom}` }); usados.add(b); } else soloArchivo.push({ nom: t.nom }); });
-    const soloSistema = sysCli.filter((c, i) => !usados.has(i)).map(c => ({ nom: c.nom }));
+    pend.forEach(t => { const b = buscar(t, 1); if (b >= 0) { const cl = sysCli[b].c; dudosos.push({ nom: t.nom, ced: normCedula(cl.cedula), extra: `en sistema: ${sysCli[b].nom}` }); matchCli.push(cl); usados.add(b); } else soloArchivo.push({ nom: t.nom }); });
+    const soloSistema = sysCli.filter((c, i) => !usados.has(i)).map(c => ({ nom: c.nom, ced: normCedula(c.c.cedula) }));
+
+    // Deuda e inhabilitados sobre los que SÍ aparecen en el PDF (coinciden + dudosos)
+    const conDeuda = matchCli
+      .map(c => ({ nom: c.nom, ced: normCedula(c.cedula), deuda: pendDe(c) }))
+      .filter(c => c.deuda > 0)
+      .sort((a, b) => b.deuda - a.deuda);
+    const totalDeuda = conDeuda.reduce((s, c) => s + c.deuda, 0);
+    const inhabEnTSS = matchCli.filter(c => c.activo === false).map(c => ({ nom: c.nom, ced: normCedula(c.cedula), extra: 'Inhabilitado en el sistema' + (c.motivo_inhab ? ' · ' + c.motivo_inhab : '') }));
+
+    _ultimoCuadre = {
+      empresaNom: empId === '__TODAS__' ? 'Todas las empresas' : (nomEmpresa(empId) || ''),
+      coincidenList: coinciden.concat(dudosos),
+      faltanEnTSS: soloSistema,   // tus clientes que NO aparecen en el PDF
+      extras: soloArchivo,        // en el PDF pero NO en tu sistema
+      inhabEnTSS, conDeuda, totalDeuda
+    };
+
+    // Resumen ejecutivo + acciones
+    const baseCuadre = coinciden.length + dudosos.length;
+    const pct = sysCli.length ? Math.round(baseCuadre / sysCli.length * 100) : 0;
+    const acciones = [];
+    if (inhabEnTSS.length) acciones.push({ ic: '⛔', col: '#9f1239', bg: '#fff1f2', txt: `Dar de baja en Humano a <b>${inhabEnTSS.length}</b> inhabilitado(s) que aparecen en el PDF.` });
+    if (conDeuda.length) acciones.push({ ic: '💰', col: '#9a3412', bg: '#fff7ed', txt: `Cobrar <b>${fmtRD(totalDeuda)}</b> a <b>${conDeuda.length}</b> cliente(s) con deuda pendiente.` });
+    if (soloArchivo.length) acciones.push({ ic: '⚠️', col: '#b91c1c', bg: '#fef2f2', txt: `Registrar en el sistema a <b>${soloArchivo.length}</b> titular(es) del PDF que no tienes.` });
+    if (dudosos.length) acciones.push({ ic: '❓', col: '#b45309', bg: '#fffbeb', txt: `Revisar <b>${dudosos.length}</b> posible(s) coincidencia(s) por nombre.` });
+    const todoOk = !acciones.length;
+    const resumenHTML = `
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:800;color:#1e293b">📊 RESUMEN EJECUTIVO</div>
+          <div style="font-size:11px;font-weight:800;color:${pct >= 90 ? '#059669' : pct >= 70 ? '#d97706' : '#dc2626'}">${pct}% cuadra</div>
+        </div>
+        <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-bottom:11px"><div style="height:100%;width:${pct}%;background:${pct >= 90 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'};border-radius:6px"></div></div>
+        ${todoOk
+        ? `<div style="display:flex;gap:8px;align-items:center;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 12px"><span style="font-size:18px">✅</span><div style="font-size:12px;font-weight:700;color:#065f46">Todo cuadra. No hay acciones pendientes.</div></div>`
+        : `<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px">Acciones sugeridas (${acciones.length})</div>
+           ${acciones.map(a => `<div style="display:flex;gap:9px;align-items:flex-start;background:${a.bg};border-radius:10px;padding:9px 11px;margin-bottom:6px"><span style="font-size:15px;flex-shrink:0;line-height:1.2">${a.ic}</span><div style="font-size:12px;color:${a.col};line-height:1.4">${a.txt}</div></div>`).join('')}`}
+      </div>`;
 
     setArea('nxTssResultado', `
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0">
@@ -10174,7 +10216,24 @@
         ${chip('#059669', '#ecfdf5', 'Coinciden', coinciden.length)}
         ${chip('#d97706', '#fffbeb', 'Dudosos', dudosos.length)}
         ${chip('#dc2626', '#fef2f2', 'No están', soloArchivo.length)}
+        ${conDeuda.length ? chip('#9a3412', '#fff7ed', 'Con deuda', conDeuda.length) : ''}
       </div>
+
+      ${resumenHTML}
+
+      <div style="font-size:10.5px;color:#94a3b8;text-align:center;margin:-4px 0 10px">👆 Toca una persona (con cédula) para ver su ficha</div>
+
+      <button onclick="window.nxTssExportarExcel && window.nxTssExportarExcel()" style="width:100%;border:none;background:linear-gradient(135deg,#047857,#10b981);color:#fff;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-file-spreadsheet" style="color:#fff!important"></i> Descargar Excel del cuadre</button>
+
+      ${conDeuda.length ? `<div style="background:#fff;border:1px solid #fed7aa;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fff7ed;padding:9px 12px;font-size:11px;font-weight:800;color:#9a3412;display:flex;justify-content:space-between;gap:8px"><span>💰 EN EL PDF CON DEUDA PENDIENTE (${conDeuda.length})</span><span>Total: ${fmtRD(totalDeuda)}</span></div>
+        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div onclick="window.nxTssFicha('${esc(c.ced)}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">${esc(fmtCed(c.ced))}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
+      </div>` : ''}
+
+      ${inhabEnTSS.length ? `<div style="background:#fff;border:2px solid #fecdd3;border-radius:12px;margin-bottom:10px;overflow:hidden">
+        <div style="background:#fff1f2;padding:9px 12px;font-size:11px;font-weight:800;color:#9f1239">⛔ INHABILITADOS QUE APARECEN EN EL PDF — NO DEBERÍAN (${inhabEnTSS.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(inhabEnTSS, '#e11d48', '')}</div>
+      </div>` : ''}
 
       ${dudosos.length ? `<div style="background:#fff;border:1px solid #fde68a;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <div style="background:#fffbeb;padding:9px 12px;font-size:11px;font-weight:800;color:#b45309">❓ POSIBLE COINCIDENCIA — REVISAR (${dudosos.length})</div>

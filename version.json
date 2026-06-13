@@ -1,10 +1,10 @@
 {
-  "version": "10.2",
+  "version": "10.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Tabla Comparativa: resumen ejecutivo con % que cuadra y acciones sugeridas",
-    "Toca cualquier persona del cuadre para ver su ficha (plan, deuda, dependientes)",
-    "Nuevo permiso para dar acceso a la Tabla Comparativa a otros roles",
-    "El botón Actualizar también trae las correcciones nuevas del sistema"
+    "Ahora puedes guardar y descargar el cuadre también del PDF de Humano (Plan Voluntario)",
+    "Resumen ejecutivo y clientes con deuda también en el cuadre por nombre",
+    "Tabla Comparativa: ficha al tocar cada persona y acciones sugeridas",
+    "Nuevo permiso para dar acceso a la Tabla Comparativa a otros roles"
   ]
 }
