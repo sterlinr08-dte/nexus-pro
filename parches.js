@@ -4235,7 +4235,7 @@
         display: inline-flex; align-items: center; justify-content: center;
         background: linear-gradient(145deg,#3b82f6,#22d3ee);
         color: #fff;
-        box-shadow: 0 3px 8px rgba(37,99,235,.28), inset 0 1px 1px rgba(255,255,255,.45);
+        box-shadow: 0 4px 10px rgba(37,99,235,.30), inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 4px rgba(0,0,0,.14);
         vertical-align: middle;
         line-height: 1;
         transition: transform .15s ease, box-shadow .2s ease;
@@ -4246,11 +4246,7 @@
       .btn .ti, button .ti, td .ti, th .ti, label .ti, summary .ti,
       .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti, .nxs-badge .ti, .nxl-logo .ti,
       .sb-av .ti, .nxDC-bank-badge .ti,
-      .ti.ti-chevron-down, .ti.ti-chevron-up, .ti.ti-chevron-left, .ti.ti-chevron-right,
-      .ti.ti-caret-down, .ti.ti-caret-up, .ti.ti-caret-left, .ti.ti-caret-right,
-      .ti.ti-selector, .ti.ti-x, .ti.ti-dots, .ti.ti-dots-vertical, .ti.ti-menu-2,
-      .ti.ti-arrow-left, .ti.ti-arrow-right, .ti.ti-arrow-up, .ti.ti-arrow-down,
-      .ti.ti-search, i.ti[style*="absolute"], i.ti[style*="position:absolute"]{
+      i.ti[style*="absolute"], i.ti[style*="position:absolute"]{
         width: auto !important; height: auto !important;
         border-radius: 0 !important;
         background: none !important;
@@ -11285,19 +11281,13 @@
       if (!m) continue;
       var name = m[0];
       // iconos que deben quedar planos (flechas, chevrons, x, etc.)
-      // Solo flechas/utilitarios de NAVEGACION quedan planos; los de contenido
-      // (arrows-exchange, arrows-up-down, arrow-*-circle...) sí reciben color.
-      if (/^ti-(chevron|caret|dots|menu)/.test(name)
-          || name === 'ti-x' || name === 'ti-search' || name === 'ti-selector'
-          || name === 'ti-arrow-up' || name === 'ti-arrow-down'
-          || name === 'ti-arrow-left' || name === 'ti-arrow-right') continue;
       // iconos decorativos posicionados (adornos de inputs) → no colorear
       if (/absolute/.test(el.getAttribute('style') || '')) continue;
       // dentro de un contexto excluido → plano
       try { if (el.closest(SKIP_CTX)) continue; } catch (e) {}
       var hu = hue(name);
       el.style.setProperty('background', 'linear-gradient(145deg,hsl(' + hu + ',70%,48%),hsl(' + ((hu + 22) % 360) + ',75%,60%))', 'important');
-      el.style.setProperty('box-shadow', '0 3px 8px hsla(' + hu + ',70%,45%,.30), inset 0 1px 1px rgba(255,255,255,.45)', 'important');
+      el.style.setProperty('box-shadow', '0 4px 10px hsla(' + hu + ',70%,45%,.34), inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 4px hsla(' + hu + ',70%,28%,.30)', 'important');
     }
   }
   var pend = null;
