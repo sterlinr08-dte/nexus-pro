@@ -4083,8 +4083,9 @@
         align-items: center !important;
         justify-content: flex-start !important;
         gap: 5px !important;
-        padding: 4px 4px !important;
-        min-width: 62px !important;
+        padding: 4px 3px !important;
+        min-width: 66px !important;
+        max-width: 88px !important;
         border-radius: 14px !important;
         white-space: normal !important;
       }
@@ -4098,13 +4099,19 @@
         transition: transform .2s ease, background .2s ease, box-shadow .2s ease !important;
       }
       .cfg-tab span{
-        font-size: 9px !important;
-        line-height: 1.15 !important;
+        font-size: 8.5px !important;
+        line-height: 1.2 !important;
         font-weight: 700 !important;
         text-align: center !important;
         color: #64748b !important;
-        max-width: 66px !important;
+        max-width: 80px !important;
         white-space: normal !important;
+        overflow-wrap: break-word !important;
+        word-break: break-word !important;
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 2 !important;
+        overflow: hidden !important;
       }
       .cfg-tab:hover i{ transform: scale(1.06) !important; background: #e2e8f0 !important; }
       .cfg-tab.active-tab{ background: none !important; box-shadow: none !important; }
@@ -4121,6 +4128,52 @@
       body.tema-premium .cfg-tab.active-tab i, body.dark .cfg-tab.active-tab i{ background: linear-gradient(135deg,#1e3a6e,#2563eb) !important; color: #fff !important; }
       body.tema-premium .cfg-tab span, body.dark .cfg-tab span{ color: #94a3b8 !important; }
       body.tema-premium .cfg-tab.active-tab span, body.dark .cfg-tab.active-tab span{ color: #60a5fa !important; }
+
+      /* === MENU LATERAL: iconos en circulo de color + efectos (como el dashboard) === */
+      nav.sb .ni{ position: relative; }
+      nav.sb .ni > *:not(.nx-ripple){ position: relative; z-index: 1; }
+      nav.sb .ni .ni-i{
+        width: 30px !important; height: 30px !important; min-width: 30px !important;
+        border-radius: 50% !important;
+        display: inline-flex !important; align-items: center !important; justify-content: center !important;
+        font-size: 15px !important;
+        color: #fff !important;
+        background: linear-gradient(145deg,#94a3b8,#b6c2d4) !important;
+        box-shadow: 0 3px 8px rgba(30,58,110,.20) !important;
+        transition: transform .18s ease, box-shadow .18s ease !important;
+      }
+      nav.sb .ni.on .ni-i{ box-shadow: 0 4px 12px rgba(37,99,235,.42) !important; }
+      nav.sb .ni:active .ni-i{ transform: scale(.9) !important; }
+      /* colores por icono (8 grupos) */
+      nav.sb .ni:has(.ti-layout-dashboard) .ni-i,
+      nav.sb .ni:has(.ti-building) .ni-i,
+      nav.sb .ni:has(.ti-mail) .ni-i,
+      nav.sb .ni:has(.ti-chart-line) .ni-i{ background:linear-gradient(145deg,#2563eb,#22d3ee)!important }
+      nav.sb .ni:has(.ti-users) .ni-i,
+      nav.sb .ni:has(.ti-percentage) .ni-i,
+      nav.sb .ni:has(.ti-report-money) .ni-i,
+      nav.sb .ni:has(.ti-target) .ni-i{ background:linear-gradient(145deg,#10b981,#84cc16)!important }
+      nav.sb .ni:has(.ti-chart-bar) .ni-i,
+      nav.sb .ni:has(.ti-user-check) .ni-i,
+      nav.sb .ni:has(.ti-database) .ni-i,
+      nav.sb .ni:has(.ti-scale) .ni-i{ background:linear-gradient(145deg,#0d9488,#3b82f6)!important }
+      nav.sb .ni:has(.ti-book) .ni-i,
+      nav.sb .ni:has(.ti-clock-dollar) .ni-i,
+      nav.sb .ni:has(.ti-clipboard-list) .ni-i,
+      nav.sb .ni:has(.ti-id-badge) .ni-i{ background:linear-gradient(145deg,#d97706,#fbbf24)!important }
+      nav.sb .ni:has(.ti-receipt-tax) .ni-i,
+      nav.sb .ni:has(.ti-shield-lock) .ni-i{ background:linear-gradient(145deg,#dc2626,#f97316)!important }
+      nav.sb .ni:has(.ti-certificate) .ni-i,
+      nav.sb .ni:has(.ti-robot) .ni-i,
+      nav.sb .ni:has(.ti-palette) .ni-i,
+      nav.sb .ni:has(.ti-settings) .ni-i{ background:linear-gradient(145deg,#8b5cf6,#d946ef)!important }
+      nav.sb .ni:has(.ti-file-invoice) .ni-i,
+      nav.sb .ni:has(.ti-briefcase) .ni-i,
+      nav.sb .ni:has(.ti-layers) .ni-i,
+      nav.sb .ni:has(.ti-building-bank) .ni-i{ background:linear-gradient(145deg,#4f46e5,#6366f1)!important }
+      nav.sb .ni:has(.ti-building-store) .ni-i,
+      nav.sb .ni:has(.ti-history) .ni-i,
+      nav.sb .ni:has(.ti-list-check) .ni-i{ background:linear-gradient(145deg,#db2777,#f472b6)!important }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
@@ -11102,7 +11155,7 @@
 (function(){
   if (window.__NX_RIPPLE__) return;
   window.__NX_RIPPLE__ = true;
-  var SEL = '.btn, .cfg-tab, .kpi, #v-dashboard .qa';
+  var SEL = '.btn, .cfg-tab, .kpi, #v-dashboard .qa, nav.sb .ni';
   function spawn(e){
     var el = e.target && e.target.closest ? e.target.closest(SEL) : null;
     if (!el) return;
