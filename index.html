@@ -2449,8 +2449,8 @@ function mostrarSetup(){document.getElementById('loginScreen').style.display='no
 
 // ── FASE 2 (opt-in): login por Supabase Auth ─────────────────────────────────
 // Se activa/desactiva con ?authmode=auth | ?authmode=legacy. Por defecto: legacy.
-(function(){try{const p=new URLSearchParams(location.search).get('authmode');if(p==='auth'){localStorage.setItem('nx_auth_mode','auth');}else if(p==='legacy'){localStorage.removeItem('nx_auth_mode');}}catch(e){}})();
-function nxAuthMode(){try{return localStorage.getItem('nx_auth_mode')==='auth';}catch(e){return false;}}
+(function(){try{const p=new URLSearchParams(location.search).get('authmode');if(p==='legacy'){localStorage.setItem('nx_auth_mode','legacy');}else if(p==='auth'){localStorage.removeItem('nx_auth_mode');}}catch(e){}})();
+function nxAuthMode(){try{return localStorage.getItem('nx_auth_mode')!=='legacy';}catch(e){return true;}}
 
 // Persistencia + renovación del token (para que la sesión sobreviva recargas y no caduque)
 function nxStoreAuth(data){try{const exp=Date.now()+(((data&&data.expires_in)||3600)*1000);localStorage.setItem('nx_auth_session',JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,expires_at:exp}));API.token=data.access_token;}catch(e){}}
@@ -3036,7 +3036,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='14.4';
+const APP_VERSION='14.5';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -7401,7 +7401,13 @@ window.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('sbNom').textContent = sesion.nom.split(' ')[0];
       document.getElementById('sbRol').textContent = (sesion.rol||'agente').toUpperCase()+'::'+((CFG.empNom||'NEXUS').split(' ')[0].toUpperCase());
       try{activarMayusculasGlobales();}catch(e){}
-      if(nxAuthMode()){ nxRefreshAuth().then(()=>{nxScheduleRefresh();cargarTodo();}); return; }
+      if(nxAuthMode()){
+        nxRefreshAuth().then(ok=>{
+          if(ok){ nxScheduleRefresh(); cargarTodo(); }
+          else { sessionStorage.removeItem('nx_sesion'); const a=document.getElementById('app'); if(a)a.style.display='none'; const l=document.getElementById('loginScreen'); if(l)l.style.display='flex'; }
+        });
+        return;
+      }
       cargarTodo(); return;
     }catch{ sessionStorage.removeItem('nx_sesion'); }
   }
