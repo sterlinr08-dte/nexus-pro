@@ -978,12 +978,12 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="view on" id="v-dashboard">
           <div id="alertasBanner"></div>
           <div class="qa-g">
-            <div class="qa" onclick="nav('facturas',null)"><span class="qa-i"><i class="ti ti-file-invoice"></i></span><div class="qa-l">Facturas</div></div>
-            <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><span class="qa-i"><i class="ti ti-wallet"></i></span><div class="qa-l">CLIENTES</div></div>
-            <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><span class="qa-i"><i class="ti ti-chart-pie"></i></span><div class="qa-l">Detalles de Cobro</div></div>
-            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><span class="qa-i"><i class="ti ti-file-alert"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
-            <div class="qa" onclick="nav('dgii',null)"><span class="qa-i"><i class="ti ti-receipt-tax"></i></span><div class="qa-l">Reporte DGII</div></div>
-            <div class="qa" onclick="exportarCSV()"><span class="qa-i"><i class="ti ti-file-spreadsheet"></i></span><div class="qa-l">Exportar Excel</div></div>
+            <div class="qa" onclick="nav('facturas',null)"><span class="qa-i"><i class="qa-emo">🧾</i></span><div class="qa-l">Facturas</div></div>
+            <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><span class="qa-i"><i class="qa-emo">👥</i></span><div class="qa-l">CLIENTES</div></div>
+            <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><span class="qa-i"><i class="qa-emo">📊</i></span><div class="qa-l">Detalles de Cobro</div></div>
+            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><span class="qa-i"><i class="qa-emo">⏳</i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
+            <div class="qa" onclick="nav('dgii',null)"><span class="qa-i"><i class="qa-emo">🏛️</i></span><div class="qa-l">Reporte DGII</div></div>
+            <div class="qa" onclick="exportarCSV()"><span class="qa-i"><i class="qa-emo">📗</i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
           <div class="kg" id="kpiG"><div class="loading"><div class="spin"></div>Cargando...</div></div>
           <div class="nc"><div class="ch"><div><div class="ct">Resumen de cobros</div><div class="ct-s">últimos 6 meses</div></div></div><div id="chartCobros" style="padding:8px 4px 4px"></div></div>

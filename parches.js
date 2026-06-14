@@ -4001,6 +4001,27 @@
         line-height: 1 !important;
       }
 
+      /* Emoji a color (estilo realista) dentro de las fichas del dashboard */
+      #v-dashboard .qa i.qa-emo,
+      #v-dashboard .kpi i.qa-emo,
+      #v-dashboard .sm i.qa-emo,
+      #v-dashboard .nc i.qa-emo {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-style: normal !important;
+        font-size: 26px !important;
+        color: initial !important;
+        background:
+          linear-gradient(145deg, rgba(255,255,255,.98), rgba(244,247,252,.94)) !important;
+      }
+      @media(max-width:768px){
+        #v-dashboard .qa i.qa-emo,
+        #v-dashboard .kpi i.qa-emo,
+        #v-dashboard .sm i.qa-emo,
+        #v-dashboard .nc i.qa-emo { font-size: 23px !important; }
+      }
+
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
       #v-dashboard .nc button i, #v-dashboard .nc button .ti,
@@ -4219,7 +4240,7 @@
     btn.style.position = 'relative';
     btn.innerHTML = `
       <span class="qa-i" style="position:relative">
-        <i class="ti ti-inbox"></i>
+        <i class="qa-emo">📥</i>
         <span class="qaSolicitBadge" id="qaSolicitBadge" style="display:none"></span>
       </span>
       <div class="qa-l">Solicitudes</div>
@@ -5740,7 +5761,7 @@
     btn.id = 'qaConsultarCobertura';
     btn.setAttribute('onclick', "window.nxAbrirConsultarCobertura && window.nxAbrirConsultarCobertura()");
     btn.innerHTML = `
-      <span class="qa-i"><i class="ti ti-shield-check"></i></span>
+      <span class="qa-i"><i class="qa-emo">🛡️</i></span>
       <div class="qa-l">Consultar Cobertura</div>
     `;
     
@@ -7034,7 +7055,7 @@
     btn.id = 'qaMisCuentas';
     btn.setAttribute('onclick', 'window.nxAbrirMisCuentas && window.nxAbrirMisCuentas()');
     btn.innerHTML = `
-      <span class="qa-i"><i class="ti ti-building-bank"></i></span>
+      <span class="qa-i"><i class="qa-emo">🏦</i></span>
       <div class="qa-l">Mis Cuentas</div>
     `;
     qaGrid.appendChild(btn);
@@ -8120,7 +8141,7 @@
     btn.setAttribute('data-go', 'smart');
     btn.onclick = () => window.nxAbrirSmart();
     btn.innerHTML = `
-      <span class="qa-i"><i class="ti ti-sparkles" style="background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(221,214,254,.92))!important;color:#7c3aed!important;box-shadow:0 12px 26px rgba(124,58,237,.42),0 4px 10px rgba(124,58,237,.22),inset 0 1px 0 rgba(255,255,255,.95)!important;border:1px solid rgba(124,58,237,.30)!important"></i></span>
+      <span class="qa-i"><i class="qa-emo">🤖</i></span>
       <span class="qa-l">NEXUS Smart</span>
       <span style="position:absolute;top:6px;right:8px;background:#7c3aed;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px">IA</span>
     `;
@@ -8386,7 +8407,7 @@
     btn.style.cssText = 'cursor:pointer;position:relative';
     btn.onclick = () => window.nxAbrirCierre();
     btn.innerHTML = `
-      <span class="qa-i"><i class="ti ti-calendar-stats"></i></span>
+      <span class="qa-i"><i class="qa-emo">📅</i></span>
       <span class="qa-l">Cierre de Mes</span>
     `;
     qaCont.appendChild(btn);
@@ -9048,7 +9069,7 @@
     btn.id = 'qaContab';
     btn.setAttribute('onclick', 'window.nxAbrirContabilidad && window.nxAbrirContabilidad()');
     btn.innerHTML = `
-      <span class="qa-i"><i class="ti ti-calculator"></i></span>
+      <span class="qa-i"><i class="qa-emo">🧮</i></span>
       <div class="qa-l">Contabilidad</div>
     `;
     qaGrid.appendChild(btn);
@@ -10653,7 +10674,7 @@
     btn.className = 'qa';
     btn.id = 'qaCuadreTSS';
     btn.setAttribute('onclick', 'window.nxAbrirCuadreTSS && window.nxAbrirCuadreTSS()');
-    btn.innerHTML = `<span class="qa-i"><i class="ti ti-file-search"></i></span><div class="qa-l">Tabla Comparativa</div>`;
+    btn.innerHTML = `<span class="qa-i"><i class="qa-emo">📋</i></span><div class="qa-l">Tabla Comparativa</div>`;
     qa.parentElement.appendChild(btn);
     return true;
   }
