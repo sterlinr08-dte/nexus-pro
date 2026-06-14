@@ -4133,6 +4133,46 @@
     } catch(e) {}
   }
 
+  // Avisa al REMITENTE cuando una transferencia suya pasó a aceptada/rechazada.
+  // Usa localStorage para no repetir ni avisar de lo viejo (la primera vez solo
+  // memoriza el estado actual, sin mostrar nada).
+  function notificarRemitente(transferencias) {
+    try {
+      const miId = getMiAgenteId();
+      if (!miId) return;
+      const key = 'nx_tx_notif_' + miId;
+      const resueltas = (transferencias || []).filter(t =>
+        String(t.desde_agente) === String(miId) &&
+        (t.estado === 'aceptada' || t.estado === 'rechazada'));
+
+      let seen = null;
+      try { seen = JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) {}
+      if (!Array.isArray(seen)) {
+        // Primera vez: memorizar lo actual sin avisar retroactivamente
+        try { localStorage.setItem(key, JSON.stringify(resueltas.map(t => String(t.id)))); } catch(e) {}
+        return;
+      }
+
+      const seenSet = new Set(seen.map(String));
+      const nuevas = resueltas.filter(t => !seenSet.has(String(t.id)));
+      if (nuevas.length === 0) return;
+
+      const F = getFmt();
+      nuevas.forEach(t => {
+        const hacia = (st().agentes || []).find(a => String(a.id) === String(t.hacia_agente))?.nom || 'el agente';
+        if (typeof window.toast === 'function') {
+          if (t.estado === 'aceptada') {
+            window.toast('ok', 'Transferencia aceptada', hacia + ' aceptó ' + F(t.monto));
+          } else {
+            window.toast('err', 'Transferencia rechazada', hacia + ' rechazó ' + F(t.monto) + ' · el dinero sigue contigo');
+          }
+        }
+        seenSet.add(String(t.id));
+      });
+      try { localStorage.setItem(key, JSON.stringify(Array.from(seenSet))); } catch(e) {}
+    } catch(e) {}
+  }
+
   async function actualizarBadge() {
     const it = document.getElementById('niSolicit');
     if (it) it.style.display = ''; // Visible para todos
@@ -4143,6 +4183,9 @@
       _entregasCache = entregas;
       const transferencias = await cargarTransferencias();
       _transferenciasCache = transferencias;
+
+      // Avisar al remitente si su transferencia fue aceptada o rechazada
+      notificarRemitente(transferencias);
 
       // Solicitudes = solo entregas hacia el admin (las aprueba el admin)
       let pendSolicit = 0;
