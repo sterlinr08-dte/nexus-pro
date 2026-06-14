@@ -4225,6 +4225,41 @@
       nav.sb .ni:has(.ti-history) .ni-i,
       nav.sb .ni:has(.ti-list-check) .ni-i{ background:linear-gradient(145deg,#db2777,#f472b6)!important }
 
+      /* === ICONOS GLOBALES: todo icono "suelto" como circulo de color ===
+         Base con specificity baja (.ti) para que cualquier componente con
+         estilo propio lo sobreescriba; solo afecta iconos sin contexto.
+         Tamano en 'em' para que escalen con el icono y no descuadren. */
+      .ti{
+        width: 1.7em; height: 1.7em;
+        border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: linear-gradient(145deg,#3b82f6,#22d3ee);
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(37,99,235,.22);
+        vertical-align: middle;
+        line-height: 1;
+      }
+      /* Excepciones: estos NO deben ser circulo (romperian el diseno).
+         Los componentes ya estilizados (ni-i, qa-ico, cfg-tab) ganan solos
+         por mayor specificity, no hace falta listarlos. */
+      .btn .ti, button .ti, td .ti, th .ti, label .ti, summary .ti,
+      .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti, .nxs-badge .ti, .nxl-logo .ti,
+      .sb-av .ti, .nxDC-bank-badge .ti,
+      .ti.ti-chevron-down, .ti.ti-chevron-up, .ti.ti-chevron-left, .ti.ti-chevron-right,
+      .ti.ti-caret-down, .ti.ti-caret-up, .ti.ti-caret-left, .ti.ti-caret-right,
+      .ti.ti-selector, .ti.ti-x, .ti.ti-dots, .ti.ti-dots-vertical, .ti.ti-menu-2,
+      .ti.ti-arrow-left, .ti.ti-arrow-right, .ti.ti-arrow-up, .ti.ti-arrow-down,
+      .ti.ti-search{
+        width: auto !important; height: auto !important;
+        border-radius: 0 !important;
+        background: none !important;
+        box-shadow: none !important;
+        color: inherit !important;
+        display: inline-block !important;
+        vertical-align: baseline !important;
+        line-height: inherit !important;
+      }
+
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
       #v-dashboard .nc button i, #v-dashboard .nc button .ti,
