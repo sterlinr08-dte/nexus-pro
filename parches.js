@@ -4044,6 +4044,26 @@
         #v-dashboard .nc i.qa-emo { font-size: 24px !important; }
       }
 
+      /* NEXUS Smart: brillo azul + morado para destacar la parte inteligente */
+      #v-dashboard .qa i.qa-emo-smart {
+        background:
+          linear-gradient(155deg, #ffffff 0%, #f1ecfd 52%, #e7ddfb 100%) !important;
+        border: 1px solid rgba(139,92,246,.38) !important;
+        box-shadow:
+          0 16px 30px rgba(37,99,235,.32),
+          0 8px 22px rgba(139,92,246,.36),
+          inset 0 2px 2px rgba(255,255,255,1),
+          inset 0 -4px 8px rgba(124,58,237,.22) !important;
+      }
+      #v-dashboard .qa:hover i.qa-emo-smart {
+        transform: translateY(-3px) scale(1.05) !important;
+        box-shadow:
+          0 22px 40px rgba(37,99,235,.38),
+          0 12px 28px rgba(139,92,246,.44),
+          inset 0 2px 2px rgba(255,255,255,1),
+          inset 0 -4px 10px rgba(124,58,237,.28) !important;
+      }
+
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
       #v-dashboard .nc button i, #v-dashboard .nc button .ti,
@@ -8163,7 +8183,7 @@
     btn.setAttribute('data-go', 'smart');
     btn.onclick = () => window.nxAbrirSmart();
     btn.innerHTML = `
-      <span class="qa-i"><i class="qa-emo">🤖</i></span>
+      <span class="qa-i"><i class="qa-emo qa-emo-smart">🤖</i></span>
       <span class="qa-l">NEXUS Smart</span>
       <span style="position:absolute;top:6px;right:8px;background:#7c3aed;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px">IA</span>
     `;
