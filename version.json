@@ -1,7 +1,8 @@
 {
-  "version": "11.3",
+  "version": "11.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Las tablas largas (más de 15 filas) ahora se muestran de 15 en 15 con 'Ver más' / 'Ver menos', en todo el sistema",
     "El que envía recibe aviso cuando su transferencia es aceptada o rechazada",
     "Las transferencias nuevas entran como PENDIENTES: el dinero se mueve solo cuando el receptor las acepta",
     "Dinero en mano, KPIs y resumen cuentan solo transferencias aceptadas; el historial muestra todas con su estado",

@@ -10596,3 +10596,132 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — PAGINADOR GLOBAL DE TABLAS
+   Cualquier tabla con más de 15 filas muestra 15 y un botón
+   "Ver más (15)" / "Ver menos". Aplica a todo el sistema.
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  if (window.__NX_TABLE_PAGER__) return;
+  window.__NX_TABLE_PAGER__ = true;
+
+  const PAGE = 15;
+
+  function injectCSS() {
+    if (document.getElementById('nxPager-css')) return;
+    const s = document.createElement('style');
+    s.id = 'nxPager-css';
+    s.textContent = `
+      .nxPager{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+        flex-wrap:wrap; padding:9px 4px 2px; font-size:11px; color:#64748b; }
+      .nxPager-info{ font-weight:700; }
+      .nxPager-btns{ display:flex; gap:6px; }
+      .nxPager-btn{ border:1px solid #e2e8f0; background:#fff; color:#334155;
+        border-radius:9px; padding:7px 13px; font-size:11px; font-weight:800;
+        cursor:pointer; transition:background .12s ease; }
+      .nxPager-btn:hover{ background:#f1f5f9; }
+      .nxPager-more{ color:#4f46e5; border-color:#c7d2fe; background:#eef2ff; }
+      .nxPager-more:hover{ background:#e0e7ff; }
+      @media (max-width:560px){
+        .nxPager{ font-size:10px; }
+        .nxPager-btn{ padding:7px 11px; }
+      }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function ensurePager(table) {
+    const tbody = table.tBodies && table.tBodies[0];
+    if (!tbody) return;
+    const allRows = Array.from(tbody.rows);
+    // Elegibles = filas visibles + las que ocultó el propio paginador
+    // (así respetamos filtros de otros módulos que ocultan con display:none)
+    const rows = allRows.filter(r => r.style.display !== 'none' || r.dataset.nxPagerHidden === '1');
+    const total = rows.length;
+    let footer = table.__nxPagerEl;
+
+    if (total <= PAGE) {
+      rows.forEach(r => { if (r.dataset.nxPagerHidden) { r.style.display = ''; delete r.dataset.nxPagerHidden; } });
+      if (footer) { footer.remove(); table.__nxPagerEl = null; }
+      table.__nxShown = 0;
+      return;
+    }
+
+    let shown = (table.__nxShown && table.__nxShown >= PAGE) ? table.__nxShown : PAGE;
+    if (shown > total) shown = total;
+    table.__nxShown = shown;
+
+    rows.forEach((r, i) => {
+      if (i < shown) { if (r.dataset.nxPagerHidden) { r.style.display = ''; delete r.dataset.nxPagerHidden; } }
+      else { r.style.display = 'none'; r.dataset.nxPagerHidden = '1'; }
+    });
+
+    if (!footer) {
+      const anchor = table.closest('.nxDC-table-wrap, .nxSL-hist-table-wrap, .nxSL-table-wrap, .nx-table-wrap, .table-wrap') || table;
+      const sib = anchor.nextElementSibling;
+      if (sib && sib.classList && sib.classList.contains('nxPager')) {
+        footer = sib; // reutilizar uno existente (evita duplicados)
+      } else {
+        footer = document.createElement('div');
+        footer.className = 'nxPager';
+        anchor.insertAdjacentElement('afterend', footer);
+      }
+      table.__nxPagerEl = footer;
+    }
+
+    const visibles = Math.min(shown, total);
+    const restantes = total - shown;
+    footer.innerHTML =
+      '<span class="nxPager-info">Mostrando ' + visibles + ' de ' + total + '</span>' +
+      '<span class="nxPager-btns">' +
+        (restantes > 0 ? '<button type="button" class="nxPager-btn nxPager-more">Ver más (' + Math.min(PAGE, restantes) + ')</button>' : '') +
+        (shown > PAGE ? '<button type="button" class="nxPager-btn nxPager-less">Ver menos</button>' : '') +
+      '</span>';
+
+    const more = footer.querySelector('.nxPager-more');
+    if (more) more.addEventListener('click', function () {
+      table.__nxShown = Math.min((table.__nxShown || PAGE) + PAGE, total);
+      ensurePager(table);
+    });
+    const less = footer.querySelector('.nxPager-less');
+    if (less) less.addEventListener('click', function () {
+      table.__nxShown = PAGE;
+      ensurePager(table);
+      try { table.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+    });
+  }
+
+  const mo = new MutationObserver(function () { scheduleScan(); });
+
+  function scan() {
+    // Desconectar mientras escribimos para no auto-disparar el observer
+    try { mo.disconnect(); } catch (e) {}
+    try {
+      document.querySelectorAll('table').forEach(function (t) {
+        try { ensurePager(t); } catch (e) {}
+      });
+    } finally {
+      try { mo.observe(document.body, { childList: true, subtree: true }); } catch (e) {}
+    }
+  }
+
+  let pending = null;
+  function scheduleScan() {
+    if (pending) return;
+    pending = setTimeout(function () { pending = null; scan(); }, 200);
+  }
+
+  function start() {
+    injectCSS();
+    scheduleScan();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
+  try { window.addEventListener('nexus:reinit', scheduleScan); } catch (e) {}
+})();
