@@ -4009,17 +4009,39 @@
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
         font-style: normal !important;
-        font-size: 26px !important;
+        font-size: 27px !important;
+        line-height: 1 !important;
         color: initial !important;
+        border-radius: 18px !important;
         background:
-          linear-gradient(145deg, rgba(255,255,255,.98), rgba(244,247,252,.94)) !important;
+          linear-gradient(155deg, #ffffff 0%, #eef4fc 52%, #dfe9f7 100%) !important;
+        border: 1px solid rgba(255,255,255,.9) !important;
+        box-shadow:
+          0 16px 28px rgba(30,58,110,.24),
+          0 6px 12px rgba(30,58,110,.14),
+          inset 0 2px 2px rgba(255,255,255,1),
+          inset 0 -4px 8px rgba(37,99,235,.18) !important;
+      }
+      #v-dashboard .qa:hover i.qa-emo,
+      #v-dashboard .kpi:hover i.qa-emo,
+      #v-dashboard .sm:hover i.qa-emo,
+      #v-dashboard .nc:hover i.qa-emo {
+        transform: translateY(-3px) scale(1.05) !important;
+        box-shadow:
+          0 22px 38px rgba(30,58,110,.30),
+          0 10px 18px rgba(30,58,110,.16),
+          inset 0 2px 2px rgba(255,255,255,1),
+          inset 0 -4px 10px rgba(37,99,235,.22) !important;
       }
       @media(max-width:768px){
         #v-dashboard .qa i.qa-emo,
         #v-dashboard .kpi i.qa-emo,
         #v-dashboard .sm i.qa-emo,
-        #v-dashboard .nc i.qa-emo { font-size: 23px !important; }
+        #v-dashboard .nc i.qa-emo { font-size: 24px !important; }
       }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
