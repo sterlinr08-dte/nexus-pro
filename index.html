@@ -536,7 +536,8 @@ body.tema-premium .acc-menu-hd{color:#64748b}
 .cli-subtab.active-subtab i,.cli-subtab.active-subtab span{color:#fff !important}
 
 /* ════ TABS DINÁMICAS DE CONFIGURACIÓN ════ */
-.cfg-tabs-bar{display:flex;gap:4px;margin-bottom:6px;background:#fff;border-radius:12px;padding:6px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.cfg-tabs-bar{position:relative;display:flex;gap:4px;margin-bottom:6px;background:#fff;border-radius:12px;padding:6px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.cfg-indicator{position:absolute;bottom:3px;left:0;width:0;height:3px;border-radius:3px;background:linear-gradient(90deg,#2563eb,#60a5fa);transition:left .28s ease,width .28s ease;pointer-events:none;z-index:1}
 /* ═══ BANCOS - Responsive ═══ */
 .bcoRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;flex-wrap:wrap}
 .bcoActions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
@@ -1277,10 +1278,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <button id="cfgTab12" onclick="switchCfgTab(12)" class="cfg-tab"><i class="ti ti-palette"></i><span>Apariencia</span></button>
             <button id="cfgTab13" onclick="switchCfgTab(13)" class="cfg-tab"><i class="ti ti-list-check"></i><span>Coberturas</span></button>
             <button id="cfgTab14" onclick="switchCfgTab(14)" class="cfg-tab"><i class="ti ti-building-bank"></i><span>Bancos</span></button>
+            <!-- Indicador de tab activo: DENTRO de la barra para deslizarse en sincronía con el scroll -->
+            <span id="cfgIndicator" class="cfg-indicator"></span>
           </div>
-
-          <!-- Indicador de tab activo -->
-          <div id="cfgIndicator" style="height:0;margin-bottom:12px;background:none;width:0;display:none"></div>
+          <div style="margin-bottom:12px"></div>
 
           <!-- TAB 1: Empresa y Tarifas -->
           <div id="cfgPanel1" class="cfg-panel active-panel">
@@ -2724,10 +2725,11 @@ function switchCfgTab(n){
   const ind=document.getElementById('cfgIndicator');
   if(tabActive&&ind){
     try{
-      const rect=tabActive.getBoundingClientRect();
-      const parent=tabActive.parentElement.getBoundingClientRect();
-      ind.style.width=rect.width+'px';
-      ind.style.transform='translateX('+(rect.left-parent.left)+'px)';
+      // offsetLeft/offsetWidth son relativos a la barra y NO dependen del scroll;
+      // el indicador vive DENTRO de la barra, así que se desliza en sincronía.
+      ind.style.width=tabActive.offsetWidth+'px';
+      ind.style.left=tabActive.offsetLeft+'px';
+      tabActive.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
     }catch(e){}
   }
   // Cargar contenido del tab — cada función renderiza directo en su panel.
@@ -2966,7 +2968,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='13.6';
+const APP_VERSION='13.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
