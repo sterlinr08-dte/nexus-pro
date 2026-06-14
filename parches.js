@@ -4071,6 +4071,56 @@
                     background .35s ease, border-color .35s ease,
                     box-shadow .35s ease, color .35s ease;
       }
+      /* el contenido siempre por encima de la onda */
+      .btn > *:not(.nx-ripple),
+      .cfg-tab > *:not(.nx-ripple),
+      .kpi > *:not(.nx-ripple){ position: relative; z-index: 1; }
+
+      /* === Pestanas de Configuracion: icono en circulo centrado + nombre debajo === */
+      .cfg-tabs-bar{ gap: 8px !important; padding: 8px 8px !important; align-items: flex-start !important; }
+      .cfg-tab{
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 5px !important;
+        padding: 4px 4px !important;
+        min-width: 62px !important;
+        border-radius: 14px !important;
+        white-space: normal !important;
+      }
+      .cfg-tab i{
+        width: 44px !important; height: 44px !important;
+        border-radius: 50% !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        background: #eef2f7 !important;
+        color: #475569 !important;
+        font-size: 19px !important;
+        transition: transform .2s ease, background .2s ease, box-shadow .2s ease !important;
+      }
+      .cfg-tab span{
+        font-size: 9px !important;
+        line-height: 1.15 !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        color: #64748b !important;
+        max-width: 66px !important;
+        white-space: normal !important;
+      }
+      .cfg-tab:hover i{ transform: scale(1.06) !important; background: #e2e8f0 !important; }
+      .cfg-tab.active-tab{ background: none !important; box-shadow: none !important; }
+      .cfg-tab.active-tab i{
+        background: linear-gradient(135deg,#1e3a6e,#2563eb) !important;
+        color: #fff !important;
+        box-shadow: 0 6px 16px rgba(37,99,235,.38) !important;
+        transform: none !important;
+      }
+      .cfg-tab.active-tab span{ color: #2563eb !important; font-weight: 800 !important; }
+      /* temas oscuros */
+      body.tema-premium .cfg-tab, body.dark .cfg-tab{ background: none !important; }
+      body.tema-premium .cfg-tab i, body.dark .cfg-tab i{ background: #1e293b !important; color: #cbd5e1 !important; }
+      body.tema-premium .cfg-tab.active-tab i, body.dark .cfg-tab.active-tab i{ background: linear-gradient(135deg,#1e3a6e,#2563eb) !important; color: #fff !important; }
+      body.tema-premium .cfg-tab span, body.dark .cfg-tab span{ color: #94a3b8 !important; }
+      body.tema-premium .cfg-tab.active-tab span, body.dark .cfg-tab.active-tab span{ color: #60a5fa !important; }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,

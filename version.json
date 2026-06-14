@@ -1,7 +1,8 @@
 {
-  "version": "12.5",
+  "version": "12.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Pestañas de Configuración: icono centrado en círculo y el nombre debajo (más claras de leer)",
     "Efecto táctil en todo el sistema: botones, pestañas y tarjetas se hunden y sueltan una onda de color al tocar",
     "Nuevos iconos del inicio: badges circulares de color con brillo suave",
     "Al tocar un icono se hunde, rebota en 3D y suelta una onda de color",
