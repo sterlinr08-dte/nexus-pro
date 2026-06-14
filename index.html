@@ -771,6 +771,18 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 </div>
 </div>
 
+<!-- Pantalla propia para definir contraseña (modo seguro) -->
+<div id="pwChangeScreen" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.62);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:18px;padding:24px;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:4px">🔒 Define tu contraseña</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:16px">Primer ingreso seguro. Crea tu contraseña personal (mínimo 6 caracteres).</div>
+    <input type="password" id="pwNew" placeholder="Nueva contraseña" autocomplete="new-password" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;font-size:14px;box-sizing:border-box"/>
+    <input type="password" id="pwNew2" placeholder="Repite la contraseña" autocomplete="new-password" onkeydown="if(event.key==='Enter')nxGuardarNuevaPwd()" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;font-size:14px;box-sizing:border-box"/>
+    <div id="pwChangeErr" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px"></div>
+    <button id="pwChangeBtn" onclick="nxGuardarNuevaPwd()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1e3a6e,#3b82f6);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:14px;cursor:pointer">Guardar y entrar</button>
+  </div>
+</div>
+
 <!-- ═══════════════ SETUP ═══════════════ -->
 <div id="setupScreen">
 <div class="sbox">
@@ -2492,29 +2504,53 @@ async function doLoginAuth(user,pwd,err,btn){
     const prof=profs&&profs[0];
     if(!prof){API.token=null;throw new Error('Tu perfil no está configurado. Avisa al administrador.');}
     if(prof.must_change_password){
-      let np=prompt('Primer ingreso. Define tu nueva contraseña (mínimo 6 caracteres):');
-      if(np===null){API.token=null;throw new Error('Debes definir una nueva contraseña para continuar.');}
-      np=String(np);
-      if(np.length<6){API.token=null;throw new Error('La contraseña debe tener al menos 6 caracteres.');}
-      const ru=await fetch(API.url+'/auth/v1/user',{method:'PUT',headers:{'apikey':API.key,'Authorization':'Bearer '+data.access_token,'Content-Type':'application/json'},body:JSON.stringify({password:np})});
-      if(!ru.ok){API.token=null;throw new Error('No se pudo guardar la nueva contraseña. Intenta de nuevo.');}
-      try{await API.patch('profiles',`id=eq.${prof.id}`,{must_change_password:false});}catch(e){}
-      try{toast('ok','Contraseña actualizada','Ya quedó guardada tu nueva clave');}catch(e){}
+      // Mostrar pantalla PROPIA para definir la clave (prompt() no funciona en la app instalada)
+      _nxPendingAuth={data:data,prof:prof,user:user,recordar:document.getElementById('rememberMe')?.checked};
+      const sc=document.getElementById('pwChangeScreen'); if(sc)sc.style.display='flex';
+      const e1=document.getElementById('pwNew'); if(e1)e1.value=''; const e2=document.getElementById('pwNew2'); if(e2)e2.value='';
+      const pe=document.getElementById('pwChangeErr'); if(pe)pe.style.display='none';
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Entrar al sistema';
+      return;
     }
-    nxStoreAuth(data);nxScheduleRefresh();
-    sesion={id:prof.usuario_sistema_id||prof.id,nom:prof.nom,rol:prof.rol,cargo:''};
-    const recordar=document.getElementById('rememberMe')?.checked;
-    const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,inicio:Date.now()});
-    sessionStorage.setItem('nx_sesion',sesData);
-    sessionStorage.setItem('nx_sesion_actividad',String(Date.now()));
-    if(recordar){localStorage.setItem('nx_sesion_persist',sesData);localStorage.setItem('nx_user_persist',user);}
-    try{logAudit('LOGIN_EXITOSO',`${user} (Auth) · ${new Date().toLocaleString('es-DO')}`,'Seguridad');}catch(e){}
-    await iniciarApp();
+    await nxFinalizarLoginAuth(data,prof,user,document.getElementById('rememberMe')?.checked);
   }catch(e){
     err.textContent=(e.message&&(e.message.includes('fetch')||e.message.includes('Failed')))?'No se puede conectar. Verifica tu internet.':e.message;
     err.style.display='block';
     btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Entrar al sistema';
   }
+}
+
+let _nxPendingAuth=null;
+async function nxFinalizarLoginAuth(data,prof,user,recordar){
+  nxStoreAuth(data);nxScheduleRefresh();
+  sesion={id:prof.usuario_sistema_id||prof.id,nom:prof.nom,rol:prof.rol,cargo:''};
+  const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,inicio:Date.now()});
+  sessionStorage.setItem('nx_sesion',sesData);
+  sessionStorage.setItem('nx_sesion_actividad',String(Date.now()));
+  if(recordar){localStorage.setItem('nx_sesion_persist',sesData);localStorage.setItem('nx_user_persist',user);}
+  try{logAudit('LOGIN_EXITOSO',`${user} (Auth) · ${new Date().toLocaleString('es-DO')}`,'Seguridad');}catch(e){}
+  await iniciarApp();
+}
+async function nxGuardarNuevaPwd(){
+  const err=document.getElementById('pwChangeErr');
+  const show=(m)=>{if(err){err.textContent=m;err.style.display='block';}};
+  const np=(document.getElementById('pwNew')?.value)||'';
+  const np2=(document.getElementById('pwNew2')?.value)||'';
+  if(err)err.style.display='none';
+  if(np.length<6)return show('Mínimo 6 caracteres.');
+  if(np!==np2)return show('Las contraseñas no coinciden.');
+  if(!_nxPendingAuth)return show('La sesión expiró. Vuelve a entrar.');
+  const b=document.getElementById('pwChangeBtn'); if(b){b.disabled=true;b.textContent='Guardando...';}
+  try{
+    const data=_nxPendingAuth.data, prof=_nxPendingAuth.prof;
+    const ru=await fetch(API.url+'/auth/v1/user',{method:'PUT',headers:{'apikey':API.key,'Authorization':'Bearer '+data.access_token,'Content-Type':'application/json'},body:JSON.stringify({password:np})});
+    if(!ru.ok){const t=await ru.text();throw new Error('No se pudo guardar ('+t.slice(0,120)+')');}
+    try{await API.patch('profiles',`id=eq.${prof.id}`,{must_change_password:false});}catch(e){}
+    const sc=document.getElementById('pwChangeScreen'); if(sc)sc.style.display='none';
+    try{toast('ok','Contraseña guardada','¡Listo!');}catch(e){}
+    await nxFinalizarLoginAuth(data,prof,_nxPendingAuth.user,_nxPendingAuth.recordar);
+    _nxPendingAuth=null;
+  }catch(e){ show(e.message||'Error al guardar'); if(b){b.disabled=false;b.textContent='Guardar y entrar';} }
 }
 
 async function doLogin(){
@@ -3040,7 +3076,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='14.7';
+const APP_VERSION='14.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
