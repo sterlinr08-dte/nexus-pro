@@ -1,8 +1,9 @@
 {
-  "version": "11.9",
+  "version": "12.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Teclado numérico y miles con coma en TODOS los montos: cobro/abono, deuda, primas, meta de cobros, asientos, transferencia, entrega y egresos",
+    "Teclado numérico y miles con coma en TODOS los montos del sistema, incluidos los precios y costos de planes en Configuración",
+    "Cobro/abono, deuda, primas, meta de cobros, asientos, transferencia, entrega y egresos con formato automático",
     "Nuevo diseño de transferencia de dinero: panel, chips y formulario más modernos y elegantes",
     "Detalles de Cobro abre siempre en el período vigente (EN CURSO)",
     "Nueva opción 'TODOS LOS PERÍODOS' para ver el histórico completo junto (los rótulos se ajustan)",

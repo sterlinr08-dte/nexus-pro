@@ -1311,21 +1311,21 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                 <button class="btn bsm bc1" onclick="guardarNumeracion()" style="width:100%;margin-bottom:10px"><i class="ti ti-device-floppy"></i> Guardar numeración</button>
                 <div style="font-size:10px;font-weight:700;color:#dc2626;margin:10px 0 8px">COSTOS REALES POR PLAN (RD$)</div>
                 <div class="g3">
-                  <div class="fr"><label>Básico</label><input type="number" id="cfgCost1"/></div>
-                  <div class="fr"><label>Superior</label><input type="number" id="cfgCost2"/></div>
-                  <div class="fr"><label>Esencial</label><input type="number" id="cfgCost3"/></div>
+                  <div class="fr"><label>Básico</label><input type="text" inputmode="decimal" data-nx-money id="cfgCost1"/></div>
+                  <div class="fr"><label>Superior</label><input type="text" inputmode="decimal" data-nx-money id="cfgCost2"/></div>
+                  <div class="fr"><label>Esencial</label><input type="text" inputmode="decimal" data-nx-money id="cfgCost3"/></div>
                 </div>
                 <div style="font-size:10px;font-weight:700;color:#059669;margin:10px 0 8px">PRIMAS TITULAR (RD$)</div>
                 <div class="g3">
-                  <div class="fr"><label>Básico</label><input type="number" id="cfgT1"/></div>
-                  <div class="fr"><label>Superior</label><input type="number" id="cfgT2"/></div>
-                  <div class="fr"><label>Esencial</label><input type="number" id="cfgT3"/></div>
+                  <div class="fr"><label>Básico</label><input type="text" inputmode="decimal" data-nx-money id="cfgT1"/></div>
+                  <div class="fr"><label>Superior</label><input type="text" inputmode="decimal" data-nx-money id="cfgT2"/></div>
+                  <div class="fr"><label>Esencial</label><input type="text" inputmode="decimal" data-nx-money id="cfgT3"/></div>
                 </div>
                 <div style="font-size:10px;font-weight:700;color:#059669;margin:10px 0 8px">PRIMAS DEPENDIENTE (RD$)</div>
                 <div class="g3">
-                  <div class="fr"><label>Básico</label><input type="number" id="cfgD1"/></div>
-                  <div class="fr"><label>Superior</label><input type="number" id="cfgD2"/></div>
-                  <div class="fr"><label>Esencial</label><input type="number" id="cfgD3"/></div>
+                  <div class="fr"><label>Básico</label><input type="text" inputmode="decimal" data-nx-money id="cfgD1"/></div>
+                  <div class="fr"><label>Superior</label><input type="text" inputmode="decimal" data-nx-money id="cfgD2"/></div>
+                  <div class="fr"><label>Esencial</label><input type="text" inputmode="decimal" data-nx-money id="cfgD3"/></div>
                 </div>
                 <div style="font-size:10px;font-weight:700;color:#7c3aed;margin:10px 0 8px">COMISIÓN AGENTE (%)</div>
                 <div class="g3">
@@ -6295,11 +6295,13 @@ function poblarSelectArsCliente(){
 async function guardarTarifas(){
   const numIni=document.getElementById('cfgNumIni')?.value;
   if(numIni&&parseInt(numIni)>0){await API.patch('configuracion','clave=eq.seq_poliza',{valor:String(parseInt(numIni)-1),actualizado:new Date().toISOString()});}
-  const datos=[{clave:'prima_basico',valor:document.getElementById('cfgT1').value},{clave:'prima_superior',valor:document.getElementById('cfgT2').value},{clave:'prima_esencial',valor:document.getElementById('cfgT3').value},{clave:'dep_basico',valor:document.getElementById('cfgD1').value},{clave:'dep_superior',valor:document.getElementById('cfgD2').value},{clave:'dep_esencial',valor:document.getElementById('cfgD3').value},{clave:'comision_basico',valor:document.getElementById('cfgC1').value},{clave:'comision_superior',valor:document.getElementById('cfgC2').value},{clave:'comision_esencial',valor:document.getElementById('cfgC3').value}];
+  // gv: lee el valor del campo quitando las comas de miles (guardar limpio)
+  const gv=id=>{const v=document.getElementById(id)?.value||'';return window.nxMoney?window.nxMoney.strip(v):String(v).replace(/,/g,'');};
+  const datos=[{clave:'prima_basico',valor:gv('cfgT1')},{clave:'prima_superior',valor:gv('cfgT2')},{clave:'prima_esencial',valor:gv('cfgT3')},{clave:'dep_basico',valor:gv('cfgD1')},{clave:'dep_superior',valor:gv('cfgD2')},{clave:'dep_esencial',valor:gv('cfgD3')},{clave:'comision_basico',valor:gv('cfgC1')},{clave:'comision_superior',valor:gv('cfgC2')},{clave:'comision_esencial',valor:gv('cfgC3')}];
   // Agregar costos si fueron ingresados
-  const c1=document.getElementById('cfgCost1')?.value;
-  const c2=document.getElementById('cfgCost2')?.value;
-  const c3=document.getElementById('cfgCost3')?.value;
+  const c1=gv('cfgCost1');
+  const c2=gv('cfgCost2');
+  const c3=gv('cfgCost3');
   if(c1)datos.push({clave:'costo_basico',valor:c1});
   if(c2)datos.push({clave:'costo_superior',valor:c2});
   if(c3)datos.push({clave:'costo_esencial',valor:c3});

@@ -10961,7 +10961,10 @@
     r.querySelectorAll('input[data-nx-money]').forEach(attach);
   }
 
-  window.nxMoney = { parse: parse, format: formatLive, attach: attach, scan: scan };
+  // Quita comas conservando el texto (para guardar como string sin formato)
+  function strip(v) { return String(v == null ? '' : v).replace(/,/g, ''); }
+
+  window.nxMoney = { parse: parse, format: formatLive, attach: attach, scan: scan, strip: strip };
 
   let pending = null;
   function schedule() {
