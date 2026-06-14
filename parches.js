@@ -1716,9 +1716,12 @@
   // ═══════════════════════════════════════════════════════════
   // RENDER — 4 KPIs PRINCIPALES
   // ═══════════════════════════════════════════════════════════
-  function renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado) {
+  function renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado, todos) {
     const F = getFmt();
     const acum = (typeof dineroEnManoAcumulado === 'number') ? dineroEnManoAcumulado : dineroEnMano;
+    const lblCobrado = todos ? 'TOTAL COBRADO (TODOS)' : 'TOTAL COBRADO DEL CICLO';
+    const subCobrado = todos ? 'De todos los períodos' : 'Acumulado del período actual';
+    const subTransf = todos ? 'Envíos entre agentes (todos)' : 'Envíos entre agentes';
     return `
       <div class="nxDC-kpis-row">
         <div class="nxDC-kpi">
@@ -1726,9 +1729,9 @@
             <i class="ti ti-currency-dollar"></i>
           </div>
           <div class="nxDC-kpi-body">
-            <div class="nxDC-kpi-label">TOTAL COBRADO DEL CICLO</div>
+            <div class="nxDC-kpi-label">${lblCobrado}</div>
             <div class="nxDC-kpi-value" style="color:#059669">${F(stats.total)}</div>
-            <div class="nxDC-kpi-sub">Acumulado del período actual</div>
+            <div class="nxDC-kpi-sub">${subCobrado}</div>
           </div>
         </div>
         <div class="nxDC-kpi">
@@ -1748,7 +1751,7 @@
           <div class="nxDC-kpi-body">
             <div class="nxDC-kpi-label">TRANSFERIDO ENTRE AGENTES</div>
             <div class="nxDC-kpi-value" style="color:#2563eb">${F(totalTransferido)}</div>
-            <div class="nxDC-kpi-sub">Envíos entre agentes</div>
+            <div class="nxDC-kpi-sub">${subTransf}</div>
           </div>
         </div>
         <div class="nxDC-kpi">
@@ -1758,7 +1761,7 @@
           <div class="nxDC-kpi-body">
             <div class="nxDC-kpi-label">DINERO EN MANO REAL</div>
             <div class="nxDC-kpi-value" style="color:#7c3aed">${F(acum)}</div>
-            <div class="nxDC-kpi-sub">Acumulado · <strong>${F(dineroEnMano)}</strong> del ciclo</div>
+            <div class="nxDC-kpi-sub">Acumulado · <strong>${F(dineroEnMano)}</strong> ${todos ? 'en total' : 'del ciclo'}</div>
           </div>
         </div>
       </div>
@@ -2085,7 +2088,7 @@
     cont.innerHTML = `
       <div class="nxDC-wrap">
         ${renderHeader(listaCiclos, periodo, indexActual)}
-        ${renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado)}
+        ${renderKPIsRow(stats, pendiente, totalTransferido, dineroEnMano, dineroEnManoAcumulado, !!periodo.todos)}
         <div class="nxDC-row-2col">
           <div class="nxDC-card">
             <div class="nxDC-card-title">RESUMEN POR MÉTODO DE COBRO</div>
