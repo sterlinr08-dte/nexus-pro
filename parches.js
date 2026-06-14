@@ -4180,9 +4180,7 @@
       body.tema-premium .cfg-tab span, body.dark .cfg-tab span{ color: #94a3b8 !important; }
       body.tema-premium .cfg-tab.active-tab span, body.dark .cfg-tab.active-tab span{ color: #60a5fa !important; }
 
-      /* === MENU LATERAL: iconos en circulo de color + efectos (como el dashboard) === */
-      nav.sb .ni{ position: relative; }
-      nav.sb .ni > *:not(.nx-ripple){ position: relative; z-index: 1; }
+      /* === MENU LATERAL: iconos en circulo de color (sin onda, para no romper el clic del div) === */
       nav.sb .ni .ni-i{
         width: 30px !important; height: 30px !important; min-width: 30px !important;
         border-radius: 50% !important;
@@ -4221,6 +4219,7 @@
       nav.sb .ni:has(.ti-file-invoice) .ni-i,
       nav.sb .ni:has(.ti-briefcase) .ni-i,
       nav.sb .ni:has(.ti-layers) .ni-i,
+      nav.sb .ni:has(.ti-inbox) .ni-i,
       nav.sb .ni:has(.ti-building-bank) .ni-i{ background:linear-gradient(145deg,#4f46e5,#6366f1)!important }
       nav.sb .ni:has(.ti-building-store) .ni-i,
       nav.sb .ni:has(.ti-history) .ni-i,
@@ -11206,7 +11205,7 @@
 (function(){
   if (window.__NX_RIPPLE__) return;
   window.__NX_RIPPLE__ = true;
-  var SEL = '.btn, .cfg-tab, .kpi, #v-dashboard .qa, nav.sb .ni';
+  var SEL = '.btn, .cfg-tab, .kpi, #v-dashboard .qa';
   function spawn(e){
     var el = e.target && e.target.closest ? e.target.closest(SEL) : null;
     if (!el) return;
