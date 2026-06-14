@@ -11285,7 +11285,12 @@
       if (!m) continue;
       var name = m[0];
       // iconos que deben quedar planos (flechas, chevrons, x, etc.)
-      if (/^ti-(chevron|caret|arrow|selector|dots|menu)/.test(name) || name === 'ti-x' || name === 'ti-search') continue;
+      // Solo flechas/utilitarios de NAVEGACION quedan planos; los de contenido
+      // (arrows-exchange, arrows-up-down, arrow-*-circle...) sí reciben color.
+      if (/^ti-(chevron|caret|dots|menu)/.test(name)
+          || name === 'ti-x' || name === 'ti-search' || name === 'ti-selector'
+          || name === 'ti-arrow-up' || name === 'ti-arrow-down'
+          || name === 'ti-arrow-left' || name === 'ti-arrow-right') continue;
       // iconos decorativos posicionados (adornos de inputs) → no colorear
       if (/absolute/.test(el.getAttribute('style') || '')) continue;
       // dentro de un contexto excluido → plano

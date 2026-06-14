@@ -1,7 +1,8 @@
 {
-  "version": "13.2",
+  "version": "13.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Más iconos con color: los de contenido (transferir, ordenar, subir/bajar) ahora también llevan color; solo las flechas/menús de navegación quedan planos",
     "Auditoría general: iconos decorativos dentro de campos ya no se vuelven círculo (se solapaban)",
     "Iconos multicolor y con relieve 3D de forma uniforme en todo el sistema (cada icono con su color)",
     "Iconos en círculo de color en todo el sistema (los iconos sueltos de listas y secciones)",
