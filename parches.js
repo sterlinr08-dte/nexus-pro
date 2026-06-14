@@ -4001,68 +4001,59 @@
         line-height: 1 !important;
       }
 
-      /* Emoji a color (estilo realista) dentro de las fichas del dashboard */
-      #v-dashboard .qa i.qa-emo,
-      #v-dashboard .kpi i.qa-emo,
-      #v-dashboard .sm i.qa-emo,
-      #v-dashboard .nc i.qa-emo {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-        text-align: center !important;
-        font-style: normal !important;
-        font-size: 27px !important;
-        line-height: 1 !important;
-        color: initial !important;
-        border-radius: 18px !important;
-        background:
-          linear-gradient(155deg, #ffffff 0%, #eef4fc 52%, #dfe9f7 100%) !important;
-        border: 1px solid rgba(255,255,255,.9) !important;
+      /* ICONOS C2: badges circulares de color con glow suave */
+      #v-dashboard .qa i.qa-ico {
+        border-radius: 50% !important;
+        color: #ffffff !important;
+        border: 2px solid rgba(255,255,255,.55) !important;
+        background: linear-gradient(145deg,#64748b,#94a3b8) !important;
         box-shadow:
-          0 16px 28px rgba(30,58,110,.24),
-          0 6px 12px rgba(30,58,110,.14),
-          inset 0 2px 2px rgba(255,255,255,1),
-          inset 0 -4px 8px rgba(37,99,235,.18) !important;
+          0 10px 20px rgba(30,58,110,.22),
+          inset 0 2px 3px rgba(255,255,255,.45) !important;
+        transition: transform .26s cubic-bezier(.34,1.56,.64,1),
+                    box-shadow .2s ease !important;
       }
-      #v-dashboard .qa:hover i.qa-emo,
-      #v-dashboard .kpi:hover i.qa-emo,
-      #v-dashboard .sm:hover i.qa-emo,
-      #v-dashboard .nc:hover i.qa-emo {
-        transform: translateY(-3px) scale(1.05) !important;
-        box-shadow:
-          0 22px 38px rgba(30,58,110,.30),
-          0 10px 18px rgba(30,58,110,.16),
-          inset 0 2px 2px rgba(255,255,255,1),
-          inset 0 -4px 10px rgba(37,99,235,.22) !important;
-      }
-      @media(max-width:768px){
-        #v-dashboard .qa i.qa-emo,
-        #v-dashboard .kpi i.qa-emo,
-        #v-dashboard .sm i.qa-emo,
-        #v-dashboard .nc i.qa-emo { font-size: 24px !important; }
-      }
+      /* color por categoria (glow suave) */
+      #v-dashboard .qa i.qa-ico.c-azul{background:linear-gradient(145deg,#2563eb,#22d3ee)!important;box-shadow:0 10px 20px rgba(37,99,235,.26),0 4px 10px rgba(34,211,238,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-verde{background:linear-gradient(145deg,#10b981,#84cc16)!important;box-shadow:0 10px 20px rgba(16,185,129,.26),0 4px 10px rgba(132,204,22,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-teal{background:linear-gradient(145deg,#0d9488,#3b82f6)!important;box-shadow:0 10px 20px rgba(13,148,136,.26),0 4px 10px rgba(59,130,246,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-ambar{background:linear-gradient(145deg,#d97706,#fbbf24)!important;box-shadow:0 10px 20px rgba(217,119,6,.26),0 4px 10px rgba(251,191,36,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-rojo{background:linear-gradient(145deg,#dc2626,#f97316)!important;box-shadow:0 10px 20px rgba(220,38,38,.26),0 4px 10px rgba(249,115,22,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-esmeralda{background:linear-gradient(145deg,#059669,#2dd4bf)!important;box-shadow:0 10px 20px rgba(5,150,105,.26),0 4px 10px rgba(45,212,191,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-indigo{background:linear-gradient(145deg,#4f46e5,#6366f1)!important;box-shadow:0 10px 20px rgba(79,70,229,.26),0 4px 10px rgba(99,102,241,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-cielo{background:linear-gradient(145deg,#0891b2,#38bdf8)!important;box-shadow:0 10px 20px rgba(8,145,178,.26),0 4px 10px rgba(56,189,248,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-violeta{background:linear-gradient(145deg,#8b5cf6,#d946ef)!important;box-shadow:0 10px 20px rgba(139,92,246,.26),0 4px 10px rgba(217,70,239,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-naranja{background:linear-gradient(145deg,#ea580c,#fb923c)!important;box-shadow:0 10px 20px rgba(234,88,12,.26),0 4px 10px rgba(251,146,60,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      #v-dashboard .qa i.qa-ico.c-rosa{background:linear-gradient(145deg,#db2777,#f472b6)!important;box-shadow:0 10px 20px rgba(219,39,119,.26),0 4px 10px rgba(244,114,182,.20),inset 0 2px 3px rgba(255,255,255,.45)!important}
+      /* NEXUS Smart: morado -> rosa con glow azul+morado */
+      #v-dashboard .qa i.qa-ico.c-smart{background:linear-gradient(145deg,#7c3aed,#ec4899)!important;box-shadow:0 12px 22px rgba(37,99,235,.28),0 6px 16px rgba(139,92,246,.32),inset 0 2px 3px rgba(255,255,255,.5)!important}
 
-      /* NEXUS Smart: brillo azul + morado para destacar la parte inteligente */
-      #v-dashboard .qa i.qa-emo-smart {
-        background:
-          linear-gradient(155deg, #ffffff 0%, #f1ecfd 52%, #e7ddfb 100%) !important;
-        border: 1px solid rgba(139,92,246,.38) !important;
-        box-shadow:
-          0 16px 30px rgba(37,99,235,.32),
-          0 8px 22px rgba(139,92,246,.36),
-          inset 0 2px 2px rgba(255,255,255,1),
-          inset 0 -4px 8px rgba(124,58,237,.22) !important;
+      /* === ANIMACION AL TOCAR: hundir + rebote 3D === */
+      #v-dashboard .qa{
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform .14s cubic-bezier(.2,.7,.3,1) !important;
       }
-      #v-dashboard .qa:hover i.qa-emo-smart {
-        transform: translateY(-3px) scale(1.05) !important;
-        box-shadow:
-          0 22px 40px rgba(37,99,235,.38),
-          0 12px 28px rgba(139,92,246,.44),
-          inset 0 2px 2px rgba(255,255,255,1),
-          inset 0 -4px 10px rgba(124,58,237,.28) !important;
+      #v-dashboard .qa:active{ transform: scale(.95) !important; }
+      #v-dashboard .qa:active i.qa-ico{
+        transform: scale(.84) translateY(2px) !important;
+        box-shadow: 0 4px 10px rgba(30,58,110,.30), inset 0 2px 3px rgba(255,255,255,.4) !important;
       }
+      /* el contenido siempre por encima de la onda */
+      #v-dashboard .qa .qa-i,
+      #v-dashboard .qa .qa-l{ position: relative; z-index: 1; }
+      /* onda de color (ripple) al tocar */
+      .nx-ripple{
+        position: absolute;
+        border-radius: 50%;
+        transform: translate(-50%,-50%) scale(0);
+        pointer-events: none;
+        z-index: 0;
+        background: radial-gradient(circle, rgba(99,102,241,.42) 0%, rgba(99,102,241,0) 70%);
+        animation: nxRipple .6s ease-out forwards;
+      }
+      @keyframes nxRipple{ to{ transform: translate(-50%,-50%) scale(1); opacity: 0; } }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
@@ -4282,7 +4273,7 @@
     btn.style.position = 'relative';
     btn.innerHTML = `
       <span class="qa-i" style="position:relative">
-        <i class="qa-emo">📥</i>
+        <i class="ti ti-inbox qa-ico c-indigo"></i>
         <span class="qaSolicitBadge" id="qaSolicitBadge" style="display:none"></span>
       </span>
       <div class="qa-l">Solicitudes</div>
@@ -5803,7 +5794,7 @@
     btn.id = 'qaConsultarCobertura';
     btn.setAttribute('onclick', "window.nxAbrirConsultarCobertura && window.nxAbrirConsultarCobertura()");
     btn.innerHTML = `
-      <span class="qa-i"><i class="qa-emo">🛡️</i></span>
+      <span class="qa-i"><i class="ti ti-shield-check qa-ico c-cielo"></i></span>
       <div class="qa-l">Consultar Cobertura</div>
     `;
     
@@ -7097,7 +7088,7 @@
     btn.id = 'qaMisCuentas';
     btn.setAttribute('onclick', 'window.nxAbrirMisCuentas && window.nxAbrirMisCuentas()');
     btn.innerHTML = `
-      <span class="qa-i"><i class="qa-emo">🏦</i></span>
+      <span class="qa-i"><i class="ti ti-building-bank qa-ico c-violeta"></i></span>
       <div class="qa-l">Mis Cuentas</div>
     `;
     qaGrid.appendChild(btn);
@@ -8183,7 +8174,7 @@
     btn.setAttribute('data-go', 'smart');
     btn.onclick = () => window.nxAbrirSmart();
     btn.innerHTML = `
-      <span class="qa-i"><i class="qa-emo qa-emo-smart">🤖</i></span>
+      <span class="qa-i"><i class="ti ti-sparkles qa-ico c-smart"></i></span>
       <span class="qa-l">NEXUS Smart</span>
       <span style="position:absolute;top:6px;right:8px;background:#7c3aed;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px">IA</span>
     `;
@@ -8449,7 +8440,7 @@
     btn.style.cssText = 'cursor:pointer;position:relative';
     btn.onclick = () => window.nxAbrirCierre();
     btn.innerHTML = `
-      <span class="qa-i"><i class="qa-emo">📅</i></span>
+      <span class="qa-i"><i class="ti ti-calendar-stats qa-ico c-naranja"></i></span>
       <span class="qa-l">Cierre de Mes</span>
     `;
     qaCont.appendChild(btn);
@@ -9111,7 +9102,7 @@
     btn.id = 'qaContab';
     btn.setAttribute('onclick', 'window.nxAbrirContabilidad && window.nxAbrirContabilidad()');
     btn.innerHTML = `
-      <span class="qa-i"><i class="qa-emo">🧮</i></span>
+      <span class="qa-i"><i class="ti ti-calculator qa-ico c-azul"></i></span>
       <div class="qa-l">Contabilidad</div>
     `;
     qaGrid.appendChild(btn);
@@ -10716,7 +10707,7 @@
     btn.className = 'qa';
     btn.id = 'qaCuadreTSS';
     btn.setAttribute('onclick', 'window.nxAbrirCuadreTSS && window.nxAbrirCuadreTSS()');
-    btn.innerHTML = `<span class="qa-i"><i class="qa-emo">📋</i></span><div class="qa-l">Tabla Comparativa</div>`;
+    btn.innerHTML = `<span class="qa-i"><i class="ti ti-file-search qa-ico c-rosa"></i></span><div class="qa-l">Tabla Comparativa</div>`;
     qa.parentElement.appendChild(btn);
     return true;
   }
@@ -11038,4 +11029,26 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
   else schedule();
   try { window.addEventListener('nexus:reinit', schedule); } catch (e) {}
+})();
+
+/* ── Onda de color (ripple) al tocar las fichas del dashboard ───────────── */
+(function(){
+  if (window.__NX_RIPPLE__) return;
+  window.__NX_RIPPLE__ = true;
+  function spawn(e){
+    var qa = e.target && e.target.closest ? e.target.closest('#v-dashboard .qa') : null;
+    if (!qa) return;
+    var rect = qa.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height) * 1.25;
+    var x = (e.clientX != null ? e.clientX : rect.left + rect.width / 2) - rect.left;
+    var y = (e.clientY != null ? e.clientY : rect.top + rect.height / 2) - rect.top;
+    var r = document.createElement('span');
+    r.className = 'nx-ripple';
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = x + 'px';
+    r.style.top = y + 'px';
+    qa.appendChild(r);
+    setTimeout(function(){ if (r && r.parentNode) r.parentNode.removeChild(r); }, 650);
+  }
+  document.addEventListener('pointerdown', spawn, { passive: true });
 })();

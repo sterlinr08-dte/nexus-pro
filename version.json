@@ -1,7 +1,9 @@
 {
-  "version": "12.3",
+  "version": "12.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Nuevos iconos del inicio: badges circulares de color con brillo suave",
+    "Al tocar un icono se hunde, rebota en 3D y suelta una onda de color",
     "NEXUS Smart resalta con un brillo azul y morado en su icono",
     "Iconos del inicio mejor centrados y con relieve 3D (sombra y brillo)",
     "Nuevos iconos del inicio: emoji realistas a todo color en las fichas del dashboard",
