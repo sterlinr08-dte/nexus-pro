@@ -2968,7 +2968,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='13.9';
+const APP_VERSION='14.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4376,9 +4376,9 @@ function rWidgetProceso(){
   html+='</div>';
   const pends=Object.entries(cont2).sort((a,b)=>b[1]-a[1]);
   if(pends.length){
-    html+='<div style="padding:0 8px 8px"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);margin-bottom:4px">PENDIENTES MÁS FRECUENTES</div>';
+    html+='<div style="padding:2px 8px 8px"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);margin-bottom:6px;letter-spacing:.5px">PENDIENTES MÁS FRECUENTES</div>';
     pends.forEach(([k,v])=>{
-      html+=`<div style="display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid rgba(148,163,184,.1)"><span>${labels[k]}</span><strong style="font-family:var(--mono);color:var(--c4)">${v}</strong></div>`;
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(145deg,#ffffff,#f6f8fc);border:1px solid rgba(148,163,184,.18);border-radius:10px;padding:8px 10px;margin-bottom:6px;box-shadow:0 2px 8px rgba(30,58,110,.07)"><span style="font-size:11px;font-weight:600;color:var(--tx1)">${labels[k]}</span><span style="min-width:24px;height:22px;padding:0 7px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;font-family:var(--mono);background:linear-gradient(145deg,#f59e0b,#fbbf24);box-shadow:0 3px 8px rgba(245,158,11,.35),inset 0 1px 0 rgba(255,255,255,.5)">${v}</span></div>`;
     });
     html+='</div>';
   }

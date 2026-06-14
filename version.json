@@ -1,7 +1,8 @@
 {
-  "version": "13.9",
+  "version": "14.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Lista 'Pendientes más frecuentes': cada fila como mini-tarjeta con el conteo en un badge ámbar con relieve (ya no es texto plano)",
     "Tarjeta 'Clientes en proceso': las cajas (En proceso/VIP/Seguim.) ahora con relieve 3D (degradado, sombra de color y brillo), ya no se ven planas",
     "Arreglada la gráfica 'Resumen de cobros': ya muestra los abonos por mes (no contaba bien la fecha y salía en cero)",
     "Arreglado el Estado de Resultados (P&G): ahora filtra los asientos del período correcto (la fecha no se interpretaba bien)",
