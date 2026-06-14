@@ -4235,9 +4235,10 @@
         display: inline-flex; align-items: center; justify-content: center;
         background: linear-gradient(145deg,#3b82f6,#22d3ee);
         color: #fff;
-        box-shadow: 0 2px 6px rgba(37,99,235,.22);
+        box-shadow: 0 3px 8px rgba(37,99,235,.28), inset 0 1px 1px rgba(255,255,255,.45);
         vertical-align: middle;
         line-height: 1;
+        transition: transform .15s ease, box-shadow .2s ease;
       }
       /* Excepciones: estos NO deben ser circulo (romperian el diseno).
          Los componentes ya estilizados (ni-i, qa-ico, cfg-tab) ganan solos
@@ -11261,4 +11262,41 @@
     setTimeout(function(){ if (r && r.parentNode) r.parentNode.removeChild(r); }, 650);
   }
   document.addEventListener('pointerdown', spawn, { passive: true });
+})();
+
+/* ── Iconos multicolor: a cada icono "suelto" su color estable + sombra 3D ── */
+(function(){
+  if (window.__NX_ICON_COLOR__) return;
+  window.__NX_ICON_COLOR__ = true;
+  // Contextos donde el icono NO debe ser badge (debe quedar plano)
+  var SKIP_CTX = '.btn,button,td,th,label,summary,.cfg-tab,.qa,.ni,.kpi,' +
+                 '.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.nxl-logo,.sb-av,.nx-fab';
+  function hue(name){
+    var h = 0;
+    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    return h % 360;
+  }
+  function colorize(root){
+    var list = (root || document).querySelectorAll('i.ti:not([data-nxc])');
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i];
+      el.setAttribute('data-nxc', '1'); // marcar para no reprocesar
+      var m = (el.className || '').match(/ti-[a-z0-9]+(?:-[a-z0-9]+)*/);
+      if (!m) continue;
+      var name = m[0];
+      // iconos que deben quedar planos (flechas, chevrons, x, etc.)
+      if (/^ti-(chevron|caret|arrow|selector|dots|menu)/.test(name) || name === 'ti-x' || name === 'ti-search') continue;
+      // dentro de un contexto excluido → plano
+      try { if (el.closest(SKIP_CTX)) continue; } catch (e) {}
+      var hu = hue(name);
+      el.style.setProperty('background', 'linear-gradient(145deg,hsl(' + hu + ',70%,48%),hsl(' + ((hu + 22) % 360) + ',75%,60%))', 'important');
+      el.style.setProperty('box-shadow', '0 3px 8px hsla(' + hu + ',70%,45%,.30), inset 0 1px 1px rgba(255,255,255,.45)', 'important');
+    }
+  }
+  var pend = null;
+  function sched(){ if (pend) return; pend = setTimeout(function(){ pend = null; colorize(document); }, 200); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sched, { once: true });
+  else sched();
+  try { new MutationObserver(sched).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+  try { window.addEventListener('nexus:reinit', sched); } catch (e) {}
 })();

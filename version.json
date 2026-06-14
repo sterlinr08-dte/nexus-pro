@@ -1,7 +1,8 @@
 {
-  "version": "13.0",
+  "version": "13.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Iconos multicolor y con relieve 3D de forma uniforme en todo el sistema (cada icono con su color)",
     "Iconos en círculo de color en todo el sistema (los iconos sueltos de listas y secciones)",
     "Arreglado: los botones del menú lateral ya vuelven a navegar (la onda al tocar bloqueaba el clic)",
     "Bancos en 'Dónde está el dinero': cada banco con su color e iniciales para reconocerlo de un vistazo",
