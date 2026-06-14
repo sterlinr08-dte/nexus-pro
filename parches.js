@@ -5238,7 +5238,7 @@
       // Capturar datos ANTES (el original puede modificar el DOM al final)
       let snapshot = null;
       if (esDirecto) {
-        const monto = parseFloat(document.getElementById('aMnt')?.value || 0);
+        const monto = window.nxMoney ? window.nxMoney.parse(document.getElementById('aMnt')?.value) : parseFloat(document.getElementById('aMnt')?.value || 0);
         const metodo = document.getElementById('aMet')?.value || '';
         const ref = (document.getElementById('aRef')?.value || '').trim();
         const agente = document.getElementById('aAgente')?.value || '';
@@ -10945,6 +10945,13 @@
       if (after !== before) {
         input.value = after;
         try { const L = input.value.length; input.setSelectionRange(L, L); } catch (e) {}
+      }
+    });
+    // Reformatear valores pre-cargados (p. ej. al abrir un editar) al enfocar
+    input.addEventListener('focus', function () {
+      if (input.value) {
+        const after = formatLive(input.value);
+        if (after !== input.value) input.value = after;
       }
     });
   }

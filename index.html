@@ -1536,7 +1536,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div class="ch"><div class="ct">🎯 Metas mensuales</div></div>
               <div class="g3">
                 <div class="fr"><label>Meta clientes nuevos</label><input type="number" id="metaClientes" placeholder="20"/></div>
-                <div class="fr"><label>Meta cobros (RD$)</label><input type="number" id="metaCobros" placeholder="500000"/></div>
+                <div class="fr"><label>Meta cobros (RD$)</label><input type="text" id="metaCobros" inputmode="decimal" data-nx-money placeholder="500000"/></div>
                 <div class="fr"><label>Meta facturas</label><input type="number" id="metaFacturas" placeholder="100"/></div>
               </div>
               <button class="btn bxl" onclick="guardarMetas()"><i class="ti ti-device-floppy"></i> Guardar metas</button>
@@ -1628,7 +1628,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
       <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
       <div class="fr"><label>Día de facturación (1-28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" placeholder="Día del mes"/></div>
-      <div class="fr"><label>Deuda RD$ (al crear: deuda previa · al editar: ajusta la deuda total)</label><input type="number" id="cDeudaIni" value="0" min="0" step="0.01" placeholder="Ej: 17400" class="no-upper"/></div>
+      <div class="fr"><label>Deuda RD$ (al crear: deuda previa · al editar: ajusta la deuda total)</label><input type="text" id="cDeudaIni" inputmode="decimal" data-nx-money value="0" placeholder="Ej: 17400" class="no-upper"/></div>
     </div>
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin:8px 0">
       <div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:10px;font-family:var(--mono)">📋 ESTADO Y PROCESO DEL CLIENTE</div>
@@ -1706,8 +1706,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div id="camposPrecioCustom" style="display:none">
         <div style="font-size:9px;color:#92400e;margin-bottom:8px">Deja en blanco para usar el precio estándar del plan</div>
         <div class="g2">
-          <div class="fr"><label>Prima titular (RD$)</label><input type="number" id="cPrecioTitular" placeholder="Precio estándar"/></div>
-          <div class="fr"><label>Prima por dependiente (RD$)</label><input type="number" id="cPrecioDep" placeholder="Precio estándar"/></div>
+          <div class="fr"><label>Prima titular (RD$)</label><input type="text" id="cPrecioTitular" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
+          <div class="fr"><label>Prima por dependiente (RD$)</label><input type="text" id="cPrecioDep" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
         </div>
         <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 8px"></div>
       </div>
@@ -1749,7 +1749,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   <div class="modal" style="max-width:360px">
     <div class="mt"><span>// REGISTRAR ABONO</span><button class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
     <div id="abonoI" style="background:var(--bg3);border-radius:var(--r6);padding:10px;margin-bottom:12px;border:1px solid rgba(0,229,199,.07)"></div>
-    <div class="fr"><label>Monto (RD$) *</label><input type="number" id="aMnt" placeholder="0.00" min="0.01" step="0.01"/></div>
+    <div class="fr"><label>Monto (RD$) *</label><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
     <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
     <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
     <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"/></div>
@@ -1808,9 +1808,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="div"></div>
     <div class="gf2">
       <div class="fr"><label>Cuenta Débito</label><select id="asiCtaDr" style="width:100%;font-size:10px;padding:7px;border:1px solid rgba(0,229,199,.12);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"></select></div>
-      <div class="fr"><label>Monto Débito (RD$)</label><input type="number" id="asiMntDr" placeholder="0.00" min="0" step="0.01"/></div>
+      <div class="fr"><label>Monto Débito (RD$)</label><input type="text" id="asiMntDr" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
       <div class="fr"><label>Cuenta Crédito</label><select id="asiCtaCr" style="width:100%;font-size:10px;padding:7px;border:1px solid rgba(244,63,94,.15);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"></select></div>
-      <div class="fr"><label>Monto Crédito (RD$)</label><input type="number" id="asiMntCr" placeholder="0.00" min="0" step="0.01"/></div>
+      <div class="fr"><label>Monto Crédito (RD$)</label><input type="text" id="asiMntCr" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
     </div>
     <div class="fe"><button class="btn" onclick="closeM('mAsiento')">Cancelar</button><button class="btn bc2" onclick="guardarAsientoFn()" id="btnAsi"><i class="ti ti-check"></i> Registrar</button></div>
   </div>
@@ -3178,7 +3178,7 @@ async function rMetas(){
 async function guardarMetas(){
   const m={
     clientes:parseInt(document.getElementById('metaClientes').value)||0,
-    cobros:parseFloat(document.getElementById('metaCobros').value)||0,
+    cobros:(window.nxMoney?window.nxMoney.parse(document.getElementById('metaCobros').value):parseFloat(document.getElementById('metaCobros').value))||0,
     facturas:parseInt(document.getElementById('metaFacturas').value)||0,
   };
   // Guardar local + Supabase (para que todos los usuarios vean las mismas metas)
@@ -5416,7 +5416,7 @@ async function verHistorialAbonos(clienteId){
 }
 
 async function regAbono(){
-  const monto=parseFloat(document.getElementById('aMnt').value);
+  const monto=window.nxMoney?window.nxMoney.parse(document.getElementById('aMnt').value):parseFloat(document.getElementById('aMnt').value);
   if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');return;}
   // VALIDACIONES nuevas: agente, referencia, banco (si transferencia/depósito)
   const agenteCobro=document.getElementById('aAgente')?.value||null;
@@ -5668,8 +5668,8 @@ async function guardarCli(){
   if(customOn && tienePermiso('modificar_precio')){
     const vt=document.getElementById('cPrecioTitular')?.value;
     const vd=document.getElementById('cPrecioDep')?.value;
-    precioT=(vt!==''&&vt!=null)?parseFloat(vt):null;
-    precioD=(vd!==''&&vd!=null)?parseFloat(vd):null;
+    precioT=(vt!==''&&vt!=null)?(window.nxMoney?window.nxMoney.parse(vt):parseFloat(vt)):null;
+    precioD=(vd!==''&&vd!=null)?(window.nxMoney?window.nxMoney.parse(vd):parseFloat(vd)):null;
   }
   const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
   // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
@@ -5724,7 +5724,7 @@ async function guardarCli(){
       // Generar número de póliza automático
       const numPol=await generarNumPoliza();
       // Deuda inicial: si el cliente ya venía debiendo meses atrasados
-      const deudaIni=parseFloat(document.getElementById('cDeudaIni')?.value)||0;
+      const deudaIni=(window.nxMoney?window.nxMoney.parse(document.getElementById('cDeudaIni')?.value):parseFloat(document.getElementById('cDeudaIni')?.value))||0;
       let res;
       try{
         res=await API.post('clientes',{...datos,deuda_total:deudaIni,pagado:0,activo:true,numero_poliza:numPol});
@@ -5882,7 +5882,7 @@ function editarAsiento(id){
 }
 async function guardarAsientoFn(){
   const desc=document.getElementById('asiDesc').value.trim();if(!desc){toast('err','Campo requerido','Ingrese descripción');return;}
-  const mntDr=parseFloat(document.getElementById('asiMntDr').value)||0;const mntCr=parseFloat(document.getElementById('asiMntCr').value)||0;
+  const mntDr=(window.nxMoney?window.nxMoney.parse(document.getElementById('asiMntDr').value):parseFloat(document.getElementById('asiMntDr').value))||0;const mntCr=(window.nxMoney?window.nxMoney.parse(document.getElementById('asiMntCr').value):parseFloat(document.getElementById('asiMntCr').value))||0;
   if(Math.abs(mntDr-mntCr)>0.01){toast('warn','Asiento desbalanceado',`Débito ${fmt(mntDr)} ≠ Crédito ${fmt(mntCr)}`);return;}
   const ctaDr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaDr').value);const ctaCr=CUENTAS.find(c=>c.cod===document.getElementById('asiCtaCr').value);
   const btn=document.getElementById('btnAsi');btn.disabled=true;
