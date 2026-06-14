@@ -2452,6 +2452,21 @@ function mostrarSetup(){document.getElementById('loginScreen').style.display='no
 (function(){try{const p=new URLSearchParams(location.search).get('authmode');if(p==='auth'){localStorage.setItem('nx_auth_mode','auth');}else if(p==='legacy'){localStorage.removeItem('nx_auth_mode');}}catch(e){}})();
 function nxAuthMode(){try{return localStorage.getItem('nx_auth_mode')==='auth';}catch(e){return false;}}
 
+// Persistencia + renovación del token (para que la sesión sobreviva recargas y no caduque)
+function nxStoreAuth(data){try{const exp=Date.now()+(((data&&data.expires_in)||3600)*1000);localStorage.setItem('nx_auth_session',JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,expires_at:exp}));API.token=data.access_token;}catch(e){}}
+async function nxRefreshAuth(){
+  try{
+    const raw=localStorage.getItem('nx_auth_session');if(!raw)return false;
+    const sess=JSON.parse(raw);if(!sess.refresh_token)return false;
+    const r=await fetch(API.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':API.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:sess.refresh_token})});
+    if(!r.ok)return false;
+    nxStoreAuth(await r.json());return true;
+  }catch(e){return false;}
+}
+let _nxRefreshTimer=null;
+function nxScheduleRefresh(){try{if(_nxRefreshTimer)clearInterval(_nxRefreshTimer);_nxRefreshTimer=setInterval(()=>{nxRefreshAuth();},45*60*1000);}catch(e){}}
+function nxClearAuth(){try{localStorage.removeItem('nx_auth_session');API.token=null;if(_nxRefreshTimer)clearInterval(_nxRefreshTimer);}catch(e){}}
+
 async function doLoginAuth(user,pwd,err,btn){
   btn.disabled=true;btn.innerHTML='<div class="spin" style="border-color:rgba(0,0,0,.2);border-top-color:#060810"></div> Verificando...';
   const lk='nx_fails_'+user;
@@ -2482,6 +2497,7 @@ async function doLoginAuth(user,pwd,err,btn){
       try{await API.patch('profiles',`id=eq.${prof.id}`,{must_change_password:false});}catch(e){}
       try{toast('ok','Contraseña actualizada','Ya quedó guardada tu nueva clave');}catch(e){}
     }
+    nxStoreAuth(data);nxScheduleRefresh();
     sesion={id:prof.usuario_sistema_id||prof.id,nom:prof.nom,rol:prof.rol,cargo:''};
     const recordar=document.getElementById('rememberMe')?.checked;
     const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,inicio:Date.now()});
@@ -2573,6 +2589,7 @@ function logout(forzado){
     sessionStorage.removeItem('nx_sesion_actividad');
     localStorage.removeItem('nx_sesion_persist');
     localStorage.removeItem('nx_user_persist');
+    try{nxClearAuth();}catch(e){}
     location.reload();
   }
 }
@@ -3019,7 +3036,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='14.3';
+const APP_VERSION='14.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -7384,6 +7401,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('sbNom').textContent = sesion.nom.split(' ')[0];
       document.getElementById('sbRol').textContent = (sesion.rol||'agente').toUpperCase()+'::'+((CFG.empNom||'NEXUS').split(' ')[0].toUpperCase());
       try{activarMayusculasGlobales();}catch(e){}
+      if(nxAuthMode()){ nxRefreshAuth().then(()=>{nxScheduleRefresh();cargarTodo();}); return; }
       cargarTodo(); return;
     }catch{ sessionStorage.removeItem('nx_sesion'); }
   }
