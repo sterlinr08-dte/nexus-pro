@@ -1200,9 +1200,11 @@
       }
       toastSafe("ok", "Transferencia enviada", getAgenteNombreById(hacia) + " debe aceptarla · " + money(monto));
       window.nxCerrarTransferenciaAgenteV2();
-      // Refrescar avisos y Detalles de Cobro si está visible
+      // Refrescar avisos y Detalles de Cobro si está visible (sin cambiar período)
       if (typeof window.nxRefrescarSolicitudes === 'function') window.nxRefrescarSolicitudes();
-      if (typeof window.nxAbrirDetallesCobro === 'function') {
+      if (typeof window.nxRefrescarDetallesCobro === 'function') {
+        window.nxRefrescarDetallesCobro();
+      } else if (typeof window.nxAbrirDetallesCobro === 'function') {
         const cDet = document.getElementById('nxDetallesCobroV1');
         if (cDet && cDet.style.display !== 'none') {
           window.nxAbrirDetallesCobro();
@@ -1364,6 +1366,15 @@
         key: `${ini.getTime()}_${fin.getTime()}`
       });
     }
+
+    // Opción para ver TODO junto (todos los períodos anteriores + el actual)
+    ciclos.push({
+      inicio: new Date(0),                  // 1970
+      fin: new Date(8640000000000000),      // fecha máxima válida
+      nombre: 'TODOS LOS PERÍODOS',
+      key: 'ALL',
+      todos: true
+    });
     return ciclos;
   }
 
@@ -2115,6 +2126,9 @@
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return;
 
+    // Al abrir SIEMPRE mostrar el período vigente (EN CURSO)
+    cicloSeleccionado = null;
+
     // Asegurar que estamos en Dashboard
     document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
     vDash.classList.add('on');
@@ -2178,6 +2192,13 @@
   };
 
   window.nxAbrirDetallesCobro = mostrarDetalles;
+
+  // Refrescar SIN cambiar el período seleccionado (para actualizaciones en vivo,
+  // p. ej. al aceptar/rechazar/crear una transferencia)
+  window.nxRefrescarDetallesCobro = function() {
+    const c = document.getElementById('nxDetallesCobroV1');
+    if (c && c.style.display !== 'none') renderDetallesCobro();
+  };
 
   // ═══════════════════════════════════════════════════════════════
   // ENTREGAS A ADMIN — Caja Central
@@ -4882,7 +4903,9 @@
   // ahora viven allí). Seguro si el módulo aún no cargó.
   function refrescarDetallesCobroSiVisible() {
     try {
-      if (typeof window.nxAbrirDetallesCobro === 'function') {
+      if (typeof window.nxRefrescarDetallesCobro === 'function') {
+        window.nxRefrescarDetallesCobro();
+      } else if (typeof window.nxAbrirDetallesCobro === 'function') {
         const cDet = document.getElementById('nxDetallesCobroV1');
         if (cDet && cDet.style.display !== 'none') window.nxAbrirDetallesCobro();
       }
