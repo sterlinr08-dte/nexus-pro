@@ -1,10 +1,13 @@
 {
-  "version": "10.8",
+  "version": "11.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "En Clientes: toca una columna (CLIENTE, AGENTE, PLAN, EMPRESA, PRIMA, PENDIENTE...) para ordenar",
-    "Toca de nuevo la misma columna para invertir el orden (▲/▼)",
-    "Filtro por agente en Clientes, Facturas y Cobros",
-    "Reporte por agente con la lista de clientes del agente"
+    "El que envía recibe aviso cuando su transferencia es aceptada o rechazada",
+    "Las transferencias nuevas entran como PENDIENTES: el dinero se mueve solo cuando el receptor las acepta",
+    "Dinero en mano, KPIs y resumen cuentan solo transferencias aceptadas; el historial muestra todas con su estado",
+    "Transferencias entre agentes viven en Detalles de Cobro: transferir, aprobar/rechazar e historial",
+    "El aviso de transferencias por aprobar aparece en el KPI 'Cobrado' del inicio",
+    "Solicitudes quedó limpio: solo entregas hacia el admin",
+    "En Clientes: toca una columna para ordenar y de nuevo para invertir (▲/▼)"
   ]
 }

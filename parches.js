@@ -1085,24 +1085,74 @@
     if (q("#nxTA2BancoOtroWrap")) q("#nxTA2BancoOtroWrap").style.display = banco === "Otros" ? "block" : "none";
   }
 
+  // ── Identidad de la sesión (para bloquear "entrega" a un agente) ──
+  function getSesionV2() {
+    try { if (typeof sesion !== 'undefined' && sesion) return sesion; } catch(e) {}
+    try { return window.sesion || null; } catch(_) { return null; }
+  }
+  function esAdminV2() {
+    const s = getSesionV2();
+    return !!(s && s.rol === 'admin');
+  }
+  // Resuelve el agente vinculado a la sesión (por agente_id o por nombre)
+  function miAgenteV2() {
+    const s = getSesionV2();
+    if (!s) return null;
+    const ag = getAgentes();
+    const sid = s.agente_id || s.agenteId;
+    if (sid) {
+      const byId = ag.find(a => String(a.id) === String(sid));
+      if (byId) return byId;
+    }
+    const norm = x => String(x || '').trim().toLowerCase();
+    const n = norm(s.nom);
+    if (!n) return null;
+    return ag.find(a => norm(a.nom) === n) || null;
+  }
+
   window.nxAbrirTransferenciaAgenteV2 = async function () {
     createTransferModal();
-    
+
     // Mostrar modal abierto con loading
     q("#nxModalTransferAgenteV2")?.classList.add("open");
-    
+
     // Cargar agentes (con fallback a API)
     const agentes = await getAgentesAsync();
-    
+
     if (agentes.length === 0) {
       if (typeof window.toast === 'function') {
         window.toast('err', 'Sin agentes', 'No hay agentes registrados en el sistema. Crea agentes desde Configuración primero.');
       }
       return;
     }
-    
+
     // Llenar los selects con los agentes cargados
     fillAgentesSelects();
+
+    // Por rol: el admin elige ambos; un agente solo ENVÍA desde sí mismo
+    const selDesde = q("#nxTA2Desde");
+    const selHacia = q("#nxTA2Hacia");
+    if (selDesde) {
+      if (esAdminV2()) {
+        selDesde.disabled = false;
+      } else {
+        const mi = miAgenteV2();
+        if (!mi) {
+          if (typeof window.toast === 'function') {
+            window.toast('err', 'Sin agente vinculado', 'Tu usuario no está vinculado a un agente. Pídele al administrador que lo configure.');
+          }
+          window.nxCerrarTransferenciaAgenteV2();
+          return;
+        }
+        selDesde.value = String(mi.id);
+        selDesde.disabled = true;
+        selDesde.title = 'Tú entregas el dinero';
+        // No puede enviarse a sí mismo: quitarlo de la lista "recibe"
+        if (selHacia) {
+          Array.from(selHacia.options).forEach(o => { if (o.value === String(mi.id)) o.remove(); });
+        }
+      }
+    }
     toggleBancoTransfer();
   };
 
@@ -1140,16 +1190,18 @@
     const btn = q("#nxTA2Btn");
     if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
 
-    const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today() };
+    // Entra como "pendiente": el dinero se mueve solo cuando el receptor acepta
+    const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today(), estado: 'pendiente' };
 
     try {
       await api.post(TRANSFER_TABLE, payload);
       if (typeof window.logAudit === "function") {
-        window.logAudit("TRANSFERENCIA_AGENTE", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : ""), "Cobros");
+        window.logAudit("TRANSFERENCIA_AGENTE", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : "") + " · pendiente", "Cobros");
       }
-      toastSafe("ok", "Transferencia registrada", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto));
+      toastSafe("ok", "Transferencia enviada", getAgenteNombreById(hacia) + " debe aceptarla · " + money(monto));
       window.nxCerrarTransferenciaAgenteV2();
-      // Refrescar Detalles de Cobro si está visible
+      // Refrescar avisos y Detalles de Cobro si está visible
+      if (typeof window.nxRefrescarSolicitudes === 'function') window.nxRefrescarSolicitudes();
       if (typeof window.nxAbrirDetallesCobro === 'function') {
         const cDet = document.getElementById('nxDetallesCobroV1');
         if (cDet && cDet.style.display !== 'none') {
@@ -1232,6 +1284,11 @@
   function getGAgt(id) {
     if (typeof gAgt === 'function') return gAgt(id);
     return (st().agentes || []).find(a => String(a.id) === String(id));
+  }
+  // Una transferencia mueve dinero solo si fue ACEPTADA (o es legado sin estado).
+  // Las "pendiente"/"rechazada" no cuentan para dinero en mano ni KPIs.
+  function esTxEfectiva(t) {
+    return !t.estado || t.estado === 'aceptada';
   }
   function normMet(m) {
     const s = String(m||'').toLowerCase();
@@ -1379,6 +1436,35 @@
     }
   }
 
+  // Devuelve la sesión actual de forma segura (tabla usuarios_sistema)
+  function getSesion() {
+    try {
+      if (typeof sesion !== 'undefined' && sesion) return sesion;
+    } catch(e) {}
+    try { return window.sesion || null; } catch(_) { return null; }
+  }
+
+  // Resuelve el AGENTE vinculado a la sesión actual.
+  // Usuarios y agentes son tablas distintas; el vínculo es por nombre
+  // (o por agente_id si la sesión lo trae). Devuelve el agente o null.
+  function agenteDeSesion() {
+    const ses = getSesion();
+    if (!ses) return null;
+    const agentes = Array.isArray(st().agentes) ? st().agentes : [];
+    if (!agentes.length) return null;
+    const norm = s => String(s || '').trim().toLowerCase();
+    // 1) Vínculo directo por id, si existe
+    const sid = ses.agente_id || ses.agenteId;
+    if (sid) {
+      const byId = agentes.find(a => String(a.id) === String(sid));
+      if (byId) return byId;
+    }
+    // 2) Vínculo por nombre
+    const n = norm(ses.nom);
+    if (!n) return null;
+    return agentes.find(a => norm(a.nom) === n) || null;
+  }
+
   // ═══════════════════════════════════════════════════════════
   // CÁLCULOS
   // ═══════════════════════════════════════════════════════════
@@ -1393,9 +1479,15 @@
     return { stats, abonosPeriodo: enPeriodo };
   }
 
-  function calcularPendienteTotal() {
-    const facturas = Array.isArray(st().facturas) ? st().facturas : [];
-    const clientes = Array.isArray(st().clientes) ? st().clientes : [];
+  function calcularPendienteTotal(soloAgenteId) {
+    let facturas = Array.isArray(st().facturas) ? st().facturas : [];
+    let clientes = Array.isArray(st().clientes) ? st().clientes : [];
+    // Si se pasa un agente, limitar el pendiente a SUS clientes/facturas
+    if (soloAgenteId) {
+      clientes = clientes.filter(c => String(c.agente_id || '') === String(soloAgenteId));
+      const idsCli = new Set(clientes.map(c => String(c.id)));
+      facturas = facturas.filter(f => idsCli.has(String(f.cliente_id)));
+    }
     const factPend = facturas.reduce((sum, f) => {
       const estado = String(f.estado||'').toLowerCase();
       if (estado.includes('pagado')) return sum;
@@ -1784,93 +1876,117 @@
   }
 
   // ═══════════════════════════════════════════════════════════
-  // RENDER — TRANSFERENCIAS: resumen + historial
+  // RENDER — PANEL DE TRANSFERENCIAS (crear + aprobar + historial)
+  //   verTodo=true  → admin (ve todas)
+  //   verTodo=false → agente (solo lo suyo); miId = id de su agente
   // ═══════════════════════════════════════════════════════════
-  function renderTransferenciasResumen(transferenciasPeriodo) {
+  function renderPanelTransferencias(periodoTx, allTx, verTodo, miId) {
     const F = getFmt();
-    const totalEnviado = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
-    const totalRecibido = totalEnviado;
-    const neto = Math.abs(totalEnviado - totalRecibido);
 
-    return `
-      <div class="nxDC-card">
-        <div class="nxDC-card-title">TRANSFERENCIAS ENTRE AGENTES <span class="nxDC-muted">(RESUMEN)</span></div>
-        <div class="nxDC-transf-summary">
-          <div class="nxDC-transf-box nxDC-transf-out">
-            <div class="nxDC-transf-head">
-              <i class="ti ti-arrow-up"></i>
-              <span>ENVIADO</span>
-            </div>
-            <div class="nxDC-transf-val">${F(totalEnviado)}</div>
-            <div class="nxDC-transf-sub">Total enviado</div>
-          </div>
-          <div class="nxDC-transf-box nxDC-transf-in">
-            <div class="nxDC-transf-head">
-              <i class="ti ti-arrow-down"></i>
-              <span>RECIBIDO</span>
-            </div>
-            <div class="nxDC-transf-val">${F(totalRecibido)}</div>
-            <div class="nxDC-transf-sub">Total recibido</div>
-          </div>
-        </div>
-        <div class="nxDC-neto">
-          <div class="nxDC-neto-label">NETO ENTRE AGENTES</div>
-          <div class="nxDC-neto-val">${F(neto)}</div>
-          <div class="nxDC-neto-sub">Envíos − Recibidos</div>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderHistorialTransferencias(transferencias) {
-    if (!transferencias.length) {
-      return `
-        <div class="nxDC-card">
-          <div class="nxDC-card-title">HISTORIAL DE TRANSFERENCIAS</div>
-          <div class="nxDC-empty-soft">Sin transferencias en este ciclo</div>
-        </div>
-      `;
+    // Resumen del ciclo (solo transferencias ACEPTADAS: dinero que ya se movió)
+    const efectivasPeriodo = periodoTx.filter(esTxEfectiva);
+    let enviado = 0, recibido = 0;
+    if (verTodo) {
+      enviado = efectivasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
+      recibido = enviado;
+    } else {
+      efectivasPeriodo.forEach(t => {
+        if (String(t.desde_agente) === miId) enviado += Number(t.monto || 0);
+        if (String(t.hacia_agente) === miId) recibido += Number(t.monto || 0);
+      });
     }
-    const F = getFmt();
-    const filas = transferencias.slice(0, 15).map((t, idx) => {
+    const neto = recibido - enviado;
+    const netoColor = neto > 0 ? '#059669' : neto < 0 ? '#dc2626' : '#475569';
+
+    // Pendientes por aprobar (entrantes), de cualquier fecha
+    const pendientes = verTodo
+      ? allTx.filter(t => t.estado === 'pendiente')
+      : allTx.filter(t => t.estado === 'pendiente' && String(t.hacia_agente) === miId);
+
+    const filasPend = pendientes.map(t => {
       const desde = getGAgt(t.desde_agente)?.nom || '—';
       const hacia = getGAgt(t.hacia_agente)?.nom || '—';
-      const ref = t.referencia || `TRF-${String(idx+1).padStart(4,'0')}`;
+      const meta = [fmtFecha(t.fecha), t.metodo, t.banco, t.referencia].filter(Boolean).map(esc).join(' · ');
+      return `
+        <div class="nxDC-txp-item">
+          <div class="nxDC-txp-info">
+            <div class="nxDC-txp-ruta"><strong>${esc(desde)}</strong> <i class="ti ti-arrow-right"></i> <strong>${esc(hacia)}</strong></div>
+            <div class="nxDC-txp-meta">${meta}</div>
+          </div>
+          <div class="nxDC-txp-monto">${F(t.monto)}</div>
+          <div class="nxDC-txp-acc">
+            <button class="nxDC-btn nxDC-btn-ok" type="button" onclick="window.nxAceptarTransferencia && window.nxAceptarTransferencia('${esc(t.id)}')"><i class="ti ti-check"></i> Aceptar</button>
+            <button class="nxDC-btn nxDC-btn-no" type="button" onclick="window.nxRechazarTransferencia && window.nxRechazarTransferencia('${esc(t.id)}')"><i class="ti ti-x"></i> Rechazar</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    const bloquePend = pendientes.length ? `
+      <div class="nxDC-txp-wrap">
+        <div class="nxDC-txp-title"><i class="ti ti-clock-hour-4"></i> POR APROBAR (${pendientes.length})</div>
+        ${filasPend}
+      </div>` : '';
+
+    // Historial del ciclo
+    const estadoBadge = (t) => {
+      const e = t.estado || 'aceptada';
+      if (e === 'pendiente') return '<span class="nxDC-tx-badge nxDC-tx-pend">Pendiente</span>';
+      if (e === 'rechazada') return '<span class="nxDC-tx-badge nxDC-tx-rech">Rechazada</span>';
+      return '<span class="nxDC-tx-badge nxDC-tx-ok">Aceptada</span>';
+    };
+    const hist = periodoTx.slice(0, 15);
+    const filasHist = hist.map(t => {
+      const desde = getGAgt(t.desde_agente)?.nom || '—';
+      const hacia = getGAgt(t.hacia_agente)?.nom || '—';
+      const flecha = (!verTodo && String(t.desde_agente) === miId) ? '#dc2626'
+                   : (!verTodo && String(t.hacia_agente) === miId) ? '#059669' : '#2563eb';
       return `
         <tr>
           <td class="nxDC-tx-fecha">${fmtFecha(t.fecha)}</td>
           <td>${esc(desde)}</td>
+          <td><i class="ti ti-arrow-right" style="color:${flecha}"></i></td>
           <td>${esc(hacia)}</td>
           <td class="nxDC-num">${F(t.monto)}</td>
-          <td><span class="nxDC-tx-tag nxDC-tx-out">Envío</span></td>
-          <td class="nxDC-tx-ref">${esc(ref)}</td>
-        </tr>
-      `;
+          <td>${estadoBadge(t)}</td>
+        </tr>`;
     }).join('');
 
+    const tablaHist = hist.length ? `
+      <div class="nxDC-table-wrap">
+        <table class="nxDC-table nxDC-tx-table">
+          <thead>
+            <tr><th>FECHA</th><th>DESDE</th><th></th><th>HACIA</th><th class="nxDC-num">MONTO</th><th>ESTADO</th></tr>
+          </thead>
+          <tbody>${filasHist}</tbody>
+        </table>
+      </div>` : '<div class="nxDC-empty-soft">Sin transferencias en este ciclo</div>';
+
     return `
-      <div class="nxDC-card">
-        <div class="nxDC-card-head">
-          <div class="nxDC-card-title">HISTORIAL DE TRANSFERENCIAS</div>
-          ${transferencias.length > 15 ? `<a class="nxDC-link" href="#" onclick="event.preventDefault()">Ver todas</a>` : ''}
+      <div class="nxDC-card nxDC-tx-card">
+        <div class="nxDC-tx-head">
+          <div class="nxDC-card-title" style="margin:0">TRANSFERENCIAS ENTRE AGENTES</div>
+          <button class="nxDC-tx-btn" type="button" onclick="window.nxAbrirTransferenciaAgenteV2 && window.nxAbrirTransferenciaAgenteV2()">
+            <i class="ti ti-transfer"></i> Transferir dinero
+          </button>
         </div>
-        <div class="nxDC-table-wrap">
-          <table class="nxDC-table nxDC-tx-table">
-            <thead>
-              <tr>
-                <th>FECHA</th>
-                <th>DESDE</th>
-                <th>HACIA</th>
-                <th class="nxDC-num">MONTO</th>
-                <th>TIPO</th>
-                <th>REFERENCIA</th>
-              </tr>
-            </thead>
-            <tbody>${filas}</tbody>
-          </table>
+        <div class="nxDC-tx-chips">
+          <div class="nxDC-tx-chip">
+            <div class="nxDC-tx-chip-ico" style="background:#fee2e2;color:#dc2626"><i class="ti ti-arrow-up"></i></div>
+            <div class="nxDC-tx-chip-body"><div class="nxDC-tx-chip-lbl">ENVIADO</div><div class="nxDC-tx-chip-val">${F(enviado)}</div></div>
+          </div>
+          <div class="nxDC-tx-chip">
+            <div class="nxDC-tx-chip-ico" style="background:#dcfce7;color:#059669"><i class="ti ti-arrow-down"></i></div>
+            <div class="nxDC-tx-chip-body"><div class="nxDC-tx-chip-lbl">RECIBIDO</div><div class="nxDC-tx-chip-val">${F(recibido)}</div></div>
+          </div>
+          <div class="nxDC-tx-chip">
+            <div class="nxDC-tx-chip-ico" style="background:#e0e7ff;color:#4f46e5"><i class="ti ti-scale"></i></div>
+            <div class="nxDC-tx-chip-body"><div class="nxDC-tx-chip-lbl">NETO</div><div class="nxDC-tx-chip-val" style="color:${netoColor}">${F(neto)}</div></div>
+          </div>
         </div>
-      </div>
-    `;
+        ${bloquePend}
+        <div class="nxDC-tx-hist-title">HISTORIAL${verTodo ? '' : ' (TUYO)'}</div>
+        ${tablaHist}
+      </div>`;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1922,14 +2038,36 @@
       return;
     }
 
+    // ── ACCESO POR ROL ──
+    // El admin ve TODO. Cualquier otro usuario (agente) solo ve lo suyo:
+    // sus cobros, su dinero en mano, sus transferencias y su pendiente.
+    const verTodo = esAdmin();
+    let miAgente = null, miId = null;
+    if (!verTodo) {
+      miAgente = agenteDeSesion();
+      // Si no se resuelve el agente, se usa un id imposible => no ve datos ajenos
+      miId = miAgente ? String(miAgente.id) : '__sin_agente__';
+      abonos = abonos.filter(a => String(a.agente_cobro) === miId);
+      transferencias = transferencias.filter(t =>
+        String(t.desde_agente) === miId || String(t.hacia_agente) === miId);
+      entregas = entregas.filter(e => String(e.agente_id) === miId);
+    }
+
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
+    // TODAS las transferencias (para historial y "por aprobar")
     const transferenciasPeriodo = transferencias.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
+    // Solo EFECTIVAS (aceptadas) para el dinero: KPIs, dinero en mano, totales
+    const txEfectivas = transferencias.filter(esTxEfectiva);
+    const txEfectivasPeriodo = txEfectivas.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
     const entregasPeriodo = entregas.filter(e => enRango(e.fecha, periodo.inicio, periodo.fin));
-    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin, entregas);
+    let porAgente = calcularPorAgente(abonosPeriodo, txEfectivasPeriodo, abonos, txEfectivas, periodo.fin, entregas);
+    // Un agente solo se ve a sí mismo en el detalle por agente (la contraparte
+    // de una transferencia no debe aparecer como fila aparte)
+    if (!verTodo) porAgente = porAgente.filter(a => String(a.id) === miId);
     const hayTransferencias = transferenciasPeriodo.length > 0;
-    const pendiente = calcularPendienteTotal();
-    const totalTransferido = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
+    const pendiente = calcularPendienteTotal(verTodo ? null : miId);
+    const totalTransferido = txEfectivasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
     const dineroEnMano = porAgente.reduce((s, a) => s + Number(a.enMano || 0), 0);
     const dineroEnManoAcumulado = porAgente.reduce((s, a) => s + Number(a.enManoAcumulado || 0), 0);
 
@@ -1946,10 +2084,7 @@
         </div>
         ${renderTablaAgentes(porAgente, hayTransferencias)}
         ${esAdmin() ? renderCajaCentral(entregas, entregasPeriodo) : ''}
-        <div class="nxDC-row-2col">
-          ${renderTransferenciasResumen(transferenciasPeriodo)}
-          ${renderHistorialTransferencias(transferenciasPeriodo)}
-        </div>
+        ${renderPanelTransferencias(transferenciasPeriodo, transferencias, verTodo, miId)}
       </div>
     `;
 
@@ -2775,6 +2910,76 @@
         .nxDC-donut-val { font-size:17px; }
         .nxDC-transf-val { font-size:15px; }
         .nxDC-neto-val { font-size:18px; }
+      }
+
+      /* ═══ PANEL DE TRANSFERENCIAS (crear + aprobar + historial) ═══ */
+      .nxDC-tx-card { display:flex; flex-direction:column; gap:12px; }
+      .nxDC-tx-head {
+        display:flex; align-items:center; justify-content:space-between;
+        gap:10px; flex-wrap:wrap;
+      }
+      .nxDC-tx-btn {
+        display:inline-flex; align-items:center; gap:7px;
+        background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff;
+        border:none; border-radius:10px; padding:9px 15px;
+        font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;
+        box-shadow:0 4px 12px rgba(79,70,229,.28); transition:transform .12s ease, box-shadow .12s ease;
+      }
+      .nxDC-tx-btn:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(79,70,229,.36); }
+      .nxDC-tx-btn:active { transform:translateY(0); }
+      .nxDC-tx-btn i { font-size:15px; }
+
+      /* Rejilla adaptable de resumen */
+      .nxDC-tx-chips {
+        display:grid; gap:10px;
+        grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+      }
+      .nxDC-tx-chip {
+        display:flex; align-items:center; gap:10px;
+        background:#f8fafc; border:1px solid #eef2f7; border-radius:12px; padding:11px 12px;
+      }
+      .nxDC-tx-chip-ico {
+        width:34px; height:34px; flex:0 0 34px; border-radius:10px;
+        display:flex; align-items:center; justify-content:center; font-size:16px;
+      }
+      .nxDC-tx-chip-body { min-width:0; }
+      .nxDC-tx-chip-lbl { font-size:9px; font-weight:800; letter-spacing:.4px; color:#94a3b8; }
+      .nxDC-tx-chip-val { font-size:16px; font-weight:800; color:#0f172a; }
+
+      /* Pendientes por aprobar */
+      .nxDC-txp-wrap {
+        border:1px solid #fde68a; background:#fffbeb; border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px;
+      }
+      .nxDC-txp-title { font-size:11px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:6px; }
+      .nxDC-txp-item {
+        display:grid; gap:8px 12px; align-items:center;
+        grid-template-columns:1fr auto; padding:9px; background:#fff; border:1px solid #fef3c7; border-radius:10px;
+      }
+      .nxDC-txp-ruta { font-size:12px; color:#0f172a; }
+      .nxDC-txp-ruta i { color:#f59e0b; font-size:13px; vertical-align:middle; }
+      .nxDC-txp-meta { font-size:10px; color:#94a3b8; margin-top:2px; }
+      .nxDC-txp-monto { font-size:14px; font-weight:800; color:#b45309; font-variant-numeric:tabular-nums; }
+      .nxDC-txp-acc { grid-column:1 / -1; display:flex; gap:8px; flex-wrap:wrap; }
+      .nxDC-btn {
+        display:inline-flex; align-items:center; gap:5px; border:none; border-radius:8px;
+        padding:7px 12px; font-size:11px; font-weight:800; cursor:pointer; flex:1 1 auto; justify-content:center;
+      }
+      .nxDC-btn-ok { background:#dcfce7; color:#047857; }
+      .nxDC-btn-ok:hover { background:#bbf7d0; }
+      .nxDC-btn-no { background:#fee2e2; color:#b91c1c; }
+      .nxDC-btn-no:hover { background:#fecaca; }
+
+      .nxDC-tx-hist-title { font-size:11px; font-weight:800; color:#64748b; letter-spacing:.3px; }
+      .nxDC-tx-badge { font-size:9px; font-weight:800; padding:3px 8px; border-radius:999px; white-space:nowrap; }
+      .nxDC-tx-ok { background:#dcfce7; color:#047857; }
+      .nxDC-tx-pend { background:#fef3c7; color:#b45309; }
+      .nxDC-tx-rech { background:#fee2e2; color:#b91c1c; }
+
+      @media (max-width:560px) {
+        .nxDC-tx-btn { width:100%; justify-content:center; }
+        .nxDC-tx-chip-val { font-size:14.5px; }
+        .nxDC-txp-item { grid-template-columns:1fr; }
+        .nxDC-txp-monto { justify-self:start; }
       }
     `;
     document.head.appendChild(style);
@@ -3742,8 +3947,18 @@
     try {
       const s = (typeof sesion !== 'undefined') ? sesion : window.sesion;
       if (!s) return null;
-      // Intentar varios campos posibles
-      return s.agente_id || s.agenteId || s.usuario_id || s.id || null;
+      // Vínculo directo si la sesión lo trae
+      if (s.agente_id || s.agenteId) return s.agente_id || s.agenteId;
+      // Usuarios y agentes son tablas distintas: se vinculan por nombre
+      const agentes = Array.isArray(st().agentes) ? st().agentes : [];
+      const norm = x => String(x || '').trim().toLowerCase();
+      const n = norm(s.nom);
+      if (n) {
+        const ag = agentes.find(a => norm(a.nom) === n);
+        if (ag) return ag.id;
+      }
+      // Último recurso
+      return s.usuario_id || s.id || null;
     } catch(e) { return null; }
   }
   // Filtra solicitudes según el rol (admin ve todo, agente ve solo suyas)
@@ -3890,6 +4105,74 @@
   // ═══════════════════════════════════════════════════════════════
   // BADGE DE PENDIENTES (siempre visible en sidebar)
   // ═══════════════════════════════════════════════════════════════
+  // Punto rojo sobre el KPI "COBRADO" del dashboard (entrada a Detalles de
+  // Cobro), donde ahora se aprueban las transferencias.
+  function setBadgeCobros(count) {
+    try {
+      let tile = null;
+      document.querySelectorAll('#v-dashboard .kl').forEach(l => {
+        if (!tile && l.textContent.trim().toUpperCase().includes('COBRADO')) {
+          tile = l.closest('.kpi, .nc, [class*="kpi"]') || l.parentElement;
+        }
+      });
+      if (!tile) return;
+      if (getComputedStyle(tile).position === 'static') tile.style.position = 'relative';
+      let b = tile.querySelector('.nxCobrosBadge');
+      if (count > 0) {
+        if (!b) {
+          b = document.createElement('span');
+          b.className = 'nxCobrosBadge';
+          b.style.cssText = 'position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff;z-index:5';
+          tile.appendChild(b);
+        }
+        b.textContent = count > 9 ? '9+' : String(count);
+        b.style.display = 'flex';
+      } else if (b) {
+        b.style.display = 'none';
+      }
+    } catch(e) {}
+  }
+
+  // Avisa al REMITENTE cuando una transferencia suya pasó a aceptada/rechazada.
+  // Usa localStorage para no repetir ni avisar de lo viejo (la primera vez solo
+  // memoriza el estado actual, sin mostrar nada).
+  function notificarRemitente(transferencias) {
+    try {
+      const miId = getMiAgenteId();
+      if (!miId) return;
+      const key = 'nx_tx_notif_' + miId;
+      const resueltas = (transferencias || []).filter(t =>
+        String(t.desde_agente) === String(miId) &&
+        (t.estado === 'aceptada' || t.estado === 'rechazada'));
+
+      let seen = null;
+      try { seen = JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) {}
+      if (!Array.isArray(seen)) {
+        // Primera vez: memorizar lo actual sin avisar retroactivamente
+        try { localStorage.setItem(key, JSON.stringify(resueltas.map(t => String(t.id)))); } catch(e) {}
+        return;
+      }
+
+      const seenSet = new Set(seen.map(String));
+      const nuevas = resueltas.filter(t => !seenSet.has(String(t.id)));
+      if (nuevas.length === 0) return;
+
+      const F = getFmt();
+      nuevas.forEach(t => {
+        const hacia = (st().agentes || []).find(a => String(a.id) === String(t.hacia_agente))?.nom || 'el agente';
+        if (typeof window.toast === 'function') {
+          if (t.estado === 'aceptada') {
+            window.toast('ok', 'Transferencia aceptada', hacia + ' aceptó ' + F(t.monto));
+          } else {
+            window.toast('err', 'Transferencia rechazada', hacia + ' rechazó ' + F(t.monto) + ' · el dinero sigue contigo');
+          }
+        }
+        seenSet.add(String(t.id));
+      });
+      try { localStorage.setItem(key, JSON.stringify(Array.from(seenSet))); } catch(e) {}
+    } catch(e) {}
+  }
+
   async function actualizarBadge() {
     const it = document.getElementById('niSolicit');
     if (it) it.style.display = ''; // Visible para todos
@@ -3900,40 +4183,47 @@
       _entregasCache = entregas;
       const transferencias = await cargarTransferencias();
       _transferenciasCache = transferencias;
-      
-      let pend = 0;
+
+      // Avisar al remitente si su transferencia fue aceptada o rechazada
+      notificarRemitente(transferencias);
+
+      // Solicitudes = solo entregas hacia el admin (las aprueba el admin)
+      let pendSolicit = 0;
+      // Cobros = transferencias por aprobar (ahora viven en Detalles de Cobro)
+      let pendCobros = 0;
       if (esAdmin()) {
-        // Admin: cuenta TODAS las entregas pendientes de confirmar
-        pend = entregas.filter(e => !e.confirmado).length;
+        pendSolicit = entregas.filter(e => !e.confirmado).length;
+        pendCobros = transferencias.filter(t => t.estado === 'pendiente').length;
       } else {
-        // Agente: cuenta solo las transferencias entrantes pendientes hacia él
         const miId = getMiAgenteId();
         if (miId) {
-          pend = transferencias.filter(t => 
-            String(t.hacia_agente) === String(miId) && 
-            t.estado === 'pendiente'
+          pendCobros = transferencias.filter(t =>
+            String(t.hacia_agente) === String(miId) && t.estado === 'pendiente'
           ).length;
         }
+        // El agente no aprueba entregas en Solicitudes
       }
-      
-      // Badge sidebar
+
+      // Badge de Solicitudes (sidebar)
       if (badge) {
-        if (pend > 0) {
-          badge.textContent = pend > 99 ? '99+' : String(pend);
+        if (pendSolicit > 0) {
+          badge.textContent = pendSolicit > 99 ? '99+' : String(pendSolicit);
           badge.style.display = '';
         } else {
           badge.style.display = 'none';
         }
       }
-      // Badge dashboard
+      // Badge de Solicitudes (dashboard)
       if (dashBadge) {
-        if (pend > 0) {
-          dashBadge.textContent = pend > 9 ? '9+' : String(pend);
+        if (pendSolicit > 0) {
+          dashBadge.textContent = pendSolicit > 9 ? '9+' : String(pendSolicit);
           dashBadge.style.display = '';
         } else {
           dashBadge.style.display = 'none';
         }
       }
+      // Aviso de transferencias en la entrada de Detalles de Cobro
+      setBadgeCobros(pendCobros);
     } catch(e) {
       if (badge) badge.style.display = 'none';
       if (dashBadge) dashBadge.style.display = 'none';
@@ -4009,8 +4299,7 @@
         <div class="nxSL-wrap">
           ${renderHeaderSolicitudes(entregasView, transferenciasView)}
           ${renderSeccionEntregasPendientes(entregasView)}
-          ${renderSeccionTransferencias(transferenciasView)}
-          ${renderSeccionHistorial(entregasView, transferenciasView)}
+          ${renderSeccionHistorial(entregasView)}
           ${renderSeccionRecibirEntrega()}
         </div>
       `;
@@ -4188,164 +4477,29 @@
     `;
   }
 
-  function renderSeccionTransferencias(transferencias) {
+  // NOTA: "Transferencias entre agentes" se movió a "Detalles de Cobro"
+  // (crear + aprobar + historial). Aquí solo quedan las entregas hacia el admin.
+
+  function renderSeccionHistorial(entregas) {
     const F = getFmt();
-    
-    // Separar pendientes (las que el usuario actual debe aprobar/rechazar)
-    const miId = getMiAgenteId();
-    let pendientesEntrantes = [];
-    if (esAdmin()) {
-      pendientesEntrantes = transferencias.filter(t => t.estado === 'pendiente');
-    } else if (miId) {
-      pendientesEntrantes = transferencias.filter(t => 
-        t.estado === 'pendiente' && String(t.hacia_agente) === String(miId)
-      );
-    }
-    
-    // Resto: confirmadas o historial
-    const historial = transferencias.filter(t => !t.estado || t.estado === 'aceptada');
-    const ultimas = historial.slice(0, 10);
-    const totalMes = historial
-      .filter(t => {
-        if (!t.fecha) return false;
-        try {
-          const d = new Date(t.fecha);
-          const ahora = new Date();
-          return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear();
-        } catch(e) { return false; }
-      })
-      .reduce((s, t) => s + Number(t.monto || 0), 0);
-    
-    // Filas de PENDIENTES con botones de Aceptar/Rechazar
-    const filasPendientes = pendientesEntrantes.map(t => {
-      const desde = (st().agentes || []).find(a => String(a.id) === String(t.desde_agente))?.nom || '—';
-      const hacia = (st().agentes || []).find(a => String(a.id) === String(t.hacia_agente))?.nom || '—';
-      return `
-        <tr>
-          <td class="nxSL-tx-fecha">${fmtFecha(t.fecha)}</td>
-          <td>${esc(desde)}</td>
-          <td><i class="ti ti-arrow-right" style="color:#f59e0b"></i></td>
-          <td><strong>${esc(hacia)}</strong></td>
-          <td class="nxSL-num">${F(t.monto)}</td>
-          <td>${esc(t.metodo || '')}${t.banco ? `<br><span class="nxSL-muted">${esc(t.banco)}</span>` : ''}</td>
-          <td class="nxSL-tx-ref">${esc(t.referencia || '—')}</td>
-          <td class="nxSL-actions">
-            <button class="nxSL-btn nxSL-btn-conf" onclick="window.nxAceptarTransferencia('${esc(t.id)}')" title="Aceptar"><i class="ti ti-check"></i> Aceptar</button>
-            <button class="nxSL-btn nxSL-btn-anu" onclick="window.nxRechazarTransferencia('${esc(t.id)}')" title="Rechazar"><i class="ti ti-x"></i> Rechazar</button>
-          </td>
-        </tr>
-      `;
-    }).join('');
 
-    const filas = ultimas.map(t => {
-      const desde = (st().agentes || []).find(a => String(a.id) === String(t.desde_agente))?.nom || '—';
-      const hacia = (st().agentes || []).find(a => String(a.id) === String(t.hacia_agente))?.nom || '—';
-      return `
-        <tr>
-          <td class="nxSL-tx-fecha">${fmtFecha(t.fecha)}</td>
-          <td>${esc(desde)}</td>
-          <td><i class="ti ti-arrow-right" style="color:#2563eb"></i></td>
-          <td><strong>${esc(hacia)}</strong></td>
-          <td class="nxSL-num">${F(t.monto)}</td>
-          <td>${esc(t.metodo || '')}${t.banco ? `<br><span class="nxSL-muted">${esc(t.banco)}</span>` : ''}</td>
-          <td class="nxSL-tx-ref">${esc(t.referencia || '—')}</td>
-        </tr>
-      `;
-    }).join('');
-    
-    // Bloque de pendientes (si hay)
-    const bloquePendientes = pendientesEntrantes.length > 0 ? `
-      <div class="nxSL-transfer-hist-title" style="color:#d97706">⚠️ TRANSFERENCIAS PENDIENTES DE TU APROBACIÓN (${pendientesEntrantes.length})</div>
-      <div class="nxSL-table-wrap">
-        <table class="nxSL-table">
-          <thead>
-            <tr>
-              <th>FECHA</th>
-              <th>DESDE</th>
-              <th></th>
-              <th>HACIA</th>
-              <th class="nxSL-num">MONTO</th>
-              <th>MÉTODO</th>
-              <th>REF</th>
-              <th>ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody>${filasPendientes}</tbody>
-        </table>
-      </div>
-    ` : '';
-
-    return `
-      <div class="nxSL-section nxSL-section-transfer">
-        <div class="nxSL-section-head">
-          <div class="nxSL-section-title"><i class="ti ti-transfer"></i> TRANSFERENCIAS ENTRE AGENTES</div>
-          <button class="nxSL-action-btn nxSL-action-blue" onclick="window.nxAbrirTransferenciaAgenteV2 && window.nxAbrirTransferenciaAgenteV2()">
-            <i class="ti ti-plus"></i> Nueva transferencia
-          </button>
-        </div>
-        ${bloquePendientes}
-        <div class="nxSL-transfer-stats">
-          <div class="nxSL-transfer-stat">
-            <div class="nxSL-transfer-stat-lbl">TRANSFERIDO ESTE MES</div>
-            <div class="nxSL-transfer-stat-val">${F(totalMes)}</div>
-          </div>
-          <div class="nxSL-transfer-stat">
-            <div class="nxSL-transfer-stat-lbl">MOVIMIENTOS TOTALES</div>
-            <div class="nxSL-transfer-stat-val">${historial.length}</div>
-          </div>
-        </div>
-        ${ultimas.length === 0 ?
-          '<div class="nxSL-empty-soft">No hay transferencias entre agentes registradas.</div>' :
-          `<div class="nxSL-transfer-hist-title">ÚLTIMAS ${ultimas.length} TRANSFERENCIAS</div>
-          <div class="nxSL-table-wrap">
-            <table class="nxSL-table">
-              <thead>
-                <tr>
-                  <th>FECHA</th>
-                  <th>DESDE</th>
-                  <th></th>
-                  <th>HACIA</th>
-                  <th class="nxSL-num">MONTO</th>
-                  <th>MÉTODO / BANCO</th>
-                  <th>REFERENCIA</th>
-                </tr>
-              </thead>
-              <tbody>${filas}</tbody>
-            </table>
-          </div>`
-        }
-      </div>
-    `;
-  }
-
-  function renderSeccionHistorial(entregas, transferencias) {
-    const F = getFmt();
-    
-    // Entregas: confirmadas (depositadas o no)
-    const entregasHist = entregas.filter(e => e.confirmado)
+    // Entregas hacia el admin: confirmadas (depositadas o no)
+    const entregasHist = (entregas || []).filter(e => e.confirmado)
       .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
       .slice(0, 30); // Últimas 30
-    
-    // Transferencias: aceptadas o rechazadas (no pendientes)
-    const transfHist = transferencias.filter(t => t.estado === 'aceptada' || t.estado === 'rechazada')
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-      .slice(0, 30);
-    
-    const totalHist = entregasHist.length + transfHist.length;
-    
-    if (totalHist === 0) {
+
+    if (entregasHist.length === 0) {
       return `
         <div class="nxSL-section nxSL-section-historial">
           <div class="nxSL-section-head">
-            <div class="nxSL-section-title"><i class="ti ti-history"></i> HISTORIAL DE SOLICITUDES</div>
+            <div class="nxSL-section-title"><i class="ti ti-history"></i> HISTORIAL DE ENTREGAS</div>
             <div class="nxSL-section-badge nxSL-badge-gray">0</div>
           </div>
-          <div class="nxSL-empty-soft">Aún no hay solicitudes procesadas en el historial.</div>
+          <div class="nxSL-empty-soft">Aún no hay entregas procesadas en el historial.</div>
         </div>
       `;
     }
-    
-    // Filas de entregas confirmadas
+
     const filasEntregas = entregasHist.map(e => {
       const ag = (st().agentes || []).find(a => String(a.id) === String(e.agente_id));
       const nomAg = ag?.nom || '—';
@@ -4355,7 +4509,6 @@
       return `
         <tr>
           <td class="nxSL-hist-fecha">${fmtFecha(fechaProc)}</td>
-          <td><span class="nxSL-hist-tipo nxSL-hist-tipo-entrega">Entrega</span></td>
           <td>${esc(nomAg)}</td>
           <td class="nxSL-hist-monto">${F(e.monto)}</td>
           <td>${esc(e.metodo || '')}</td>
@@ -4364,78 +4517,32 @@
         </tr>
       `;
     }).join('');
-    
-    // Filas de transferencias
-    const filasTransf = transfHist.map(t => {
-      const desde = (st().agentes || []).find(a => String(a.id) === String(t.desde_agente))?.nom || '—';
-      const hacia = (st().agentes || []).find(a => String(a.id) === String(t.hacia_agente))?.nom || '—';
-      const estadoClass = t.estado === 'aceptada' ? 'nxSL-hist-acept' : 'nxSL-hist-rech';
-      const estadoTxt = t.estado === 'aceptada' ? 'ACEPTADA' : 'RECHAZADA';
-      return `
-        <tr>
-          <td class="nxSL-hist-fecha">${fmtFecha(t.fecha)}</td>
-          <td><span class="nxSL-hist-tipo nxSL-hist-tipo-transf">Transfer</span></td>
-          <td>${esc(desde)} → ${esc(hacia)}</td>
-          <td class="nxSL-hist-monto">${F(t.monto)}</td>
-          <td>${esc(t.metodo || '')}</td>
-          <td class="nxSL-hist-ref">${esc(t.referencia || '—')}</td>
-          <td><span class="nxSL-hist-estado ${estadoClass}">${estadoTxt}</span></td>
-        </tr>
-      `;
-    }).join('');
-    
+
     return `
       <div class="nxSL-section nxSL-section-historial">
         <div class="nxSL-section-head">
-          <div class="nxSL-section-title"><i class="ti ti-history"></i> HISTORIAL DE SOLICITUDES</div>
-          <div class="nxSL-section-badge nxSL-badge-gray">${totalHist}</div>
+          <div class="nxSL-section-title"><i class="ti ti-history"></i> HISTORIAL DE ENTREGAS</div>
+          <div class="nxSL-section-badge nxSL-badge-gray">${entregasHist.length}</div>
         </div>
-        <div class="nxSL-section-sub">Últimas solicitudes procesadas (confirmadas, rechazadas o depositadas)</div>
-        <div class="nxSL-hist-tabs">
-          <button class="nxSL-hist-tab nxSL-hist-tab-active" onclick="window.nxFiltrarHistorial('todos', this)" type="button">Todos (${totalHist})</button>
-          <button class="nxSL-hist-tab" onclick="window.nxFiltrarHistorial('entregas', this)" type="button">Entregas (${entregasHist.length})</button>
-          <button class="nxSL-hist-tab" onclick="window.nxFiltrarHistorial('transf', this)" type="button">Transferencias (${transfHist.length})</button>
-        </div>
+        <div class="nxSL-section-sub">Últimas entregas al admin (confirmadas o depositadas)</div>
         <div class="nxSL-hist-table-wrap">
           <table class="nxSL-hist-table" id="nxSL-hist-table">
             <thead>
               <tr>
                 <th>FECHA</th>
-                <th>TIPO</th>
-                <th>AGENTE / RUTA</th>
+                <th>AGENTE</th>
                 <th class="nxSL-hist-monto">MONTO</th>
                 <th>MÉTODO</th>
                 <th>REFERENCIA</th>
                 <th>ESTADO</th>
               </tr>
             </thead>
-            <tbody>${filasEntregas}${filasTransf}</tbody>
+            <tbody>${filasEntregas}</tbody>
           </table>
         </div>
       </div>
     `;
   }
-
-  // Filtrar historial por tipo
-  window.nxFiltrarHistorial = function(tipo, btn) {
-    const tabla = document.getElementById('nxSL-hist-table');
-    if (!tabla) return;
-    // Cambiar tab activo
-    document.querySelectorAll('.nxSL-hist-tab').forEach(t => t.classList.remove('nxSL-hist-tab-active'));
-    if (btn) btn.classList.add('nxSL-hist-tab-active');
-    // Filtrar filas
-    const rows = tabla.querySelectorAll('tbody tr');
-    rows.forEach(r => {
-      const tipoCell = r.querySelector('.nxSL-hist-tipo');
-      if (!tipoCell) { r.style.display = ''; return; }
-      const esEntrega = tipoCell.classList.contains('nxSL-hist-tipo-entrega');
-      const esTransf = tipoCell.classList.contains('nxSL-hist-tipo-transf');
-      if (tipo === 'todos') r.style.display = '';
-      else if (tipo === 'entregas' && esEntrega) r.style.display = '';
-      else if (tipo === 'transf' && esTransf) r.style.display = '';
-      else r.style.display = 'none';
-    });
-  };
 
   function renderSeccionRecibirEntrega() {
     const titulo = esAdmin() ? 'RECIBIR ENTREGA DE AGENTE' : 'ENTREGAR DINERO AL ADMIN';
@@ -4771,6 +4878,17 @@
   // ═══════════════════════════════════════════════════════════════
   window.nxRenderSolicitudes = renderSolicitudes;
   
+  // Refresca el panel de Detalles de Cobro si está visible (las transferencias
+  // ahora viven allí). Seguro si el módulo aún no cargó.
+  function refrescarDetallesCobroSiVisible() {
+    try {
+      if (typeof window.nxAbrirDetallesCobro === 'function') {
+        const cDet = document.getElementById('nxDetallesCobroV1');
+        if (cDet && cDet.style.display !== 'none') window.nxAbrirDetallesCobro();
+      }
+    } catch(e) {}
+  }
+
   // Aceptar transferencia entrante (admin o agente que recibe)
   window.nxAceptarTransferencia = async function(id) {
     const api = getAPI();
@@ -4788,6 +4906,7 @@
       }
       if (typeof window.toast === 'function') window.toast('ok', 'Aceptada', 'La transferencia se efectuó');
       await renderSolicitudes();
+      refrescarDetallesCobroSiVisible();
     } catch(e) {
       console.error('Error al aceptar:', e);
       if (typeof window.toast === 'function') window.toast('err', 'No se pudo aceptar', e.message || '');
@@ -4811,6 +4930,7 @@
       }
       if (typeof window.toast === 'function') window.toast('ok', 'Rechazada', 'La transferencia se rechazó');
       await renderSolicitudes();
+      refrescarDetallesCobroSiVisible();
     } catch(e) {
       console.error('Error al rechazar:', e);
       if (typeof window.toast === 'function') window.toast('err', 'No se pudo rechazar', e.message || '');
