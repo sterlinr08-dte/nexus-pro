@@ -1,11 +1,11 @@
 {
-  "version": "11.1",
+  "version": "11.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Transferencias entre agentes ahora viven en Detalles de Cobro: transferir, aprobar/rechazar e historial en un solo lugar",
-    "El aviso de transferencias por aprobar se movió al KPI 'Cobrado' del inicio (entrada a Detalles de Cobro)",
-    "El agente solo puede enviar desde sí mismo; el admin puede elegir ambos agentes",
-    "Solicitudes quedó limpio: solo entregas hacia el admin (sin duplicar transferencias)",
-    "Detalles de Cobro por rol: el agente ve solo lo suyo; el admin ve todo"
+    "Las transferencias nuevas entran como PENDIENTES: el dinero se mueve solo cuando el receptor las acepta",
+    "Dinero en mano, KPIs y resumen cuentan solo transferencias aceptadas; el historial muestra todas con su estado",
+    "Transferencias entre agentes viven en Detalles de Cobro: transferir, aprobar/rechazar e historial",
+    "El aviso de transferencias por aprobar aparece en el KPI 'Cobrado' del inicio",
+    "Solicitudes quedó limpio: solo entregas hacia el admin"
   ]
 }

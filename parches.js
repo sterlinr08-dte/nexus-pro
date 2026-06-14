@@ -1190,16 +1190,18 @@
     const btn = q("#nxTA2Btn");
     if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
 
-    const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today() };
+    // Entra como "pendiente": el dinero se mueve solo cuando el receptor acepta
+    const payload = { desde_agente: desde, hacia_agente: hacia, monto, metodo, banco: banco || null, referencia: ref, nota: nota || null, fecha: today(), estado: 'pendiente' };
 
     try {
       await api.post(TRANSFER_TABLE, payload);
       if (typeof window.logAudit === "function") {
-        window.logAudit("TRANSFERENCIA_AGENTE", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : ""), "Cobros");
+        window.logAudit("TRANSFERENCIA_AGENTE", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto) + " · " + metodo + (banco ? " · " + banco : "") + " · pendiente", "Cobros");
       }
-      toastSafe("ok", "Transferencia registrada", getAgenteNombreById(desde) + " → " + getAgenteNombreById(hacia) + " · " + money(monto));
+      toastSafe("ok", "Transferencia enviada", getAgenteNombreById(hacia) + " debe aceptarla · " + money(monto));
       window.nxCerrarTransferenciaAgenteV2();
-      // Refrescar Detalles de Cobro si está visible
+      // Refrescar avisos y Detalles de Cobro si está visible
+      if (typeof window.nxRefrescarSolicitudes === 'function') window.nxRefrescarSolicitudes();
       if (typeof window.nxAbrirDetallesCobro === 'function') {
         const cDet = document.getElementById('nxDetallesCobroV1');
         if (cDet && cDet.style.display !== 'none') {
@@ -1282,6 +1284,11 @@
   function getGAgt(id) {
     if (typeof gAgt === 'function') return gAgt(id);
     return (st().agentes || []).find(a => String(a.id) === String(id));
+  }
+  // Una transferencia mueve dinero solo si fue ACEPTADA (o es legado sin estado).
+  // Las "pendiente"/"rechazada" no cuentan para dinero en mano ni KPIs.
+  function esTxEfectiva(t) {
+    return !t.estado || t.estado === 'aceptada';
   }
   function normMet(m) {
     const s = String(m||'').toLowerCase();
@@ -1876,13 +1883,14 @@
   function renderPanelTransferencias(periodoTx, allTx, verTodo, miId) {
     const F = getFmt();
 
-    // Resumen del ciclo
+    // Resumen del ciclo (solo transferencias ACEPTADAS: dinero que ya se movió)
+    const efectivasPeriodo = periodoTx.filter(esTxEfectiva);
     let enviado = 0, recibido = 0;
     if (verTodo) {
-      enviado = periodoTx.reduce((s, t) => s + Number(t.monto || 0), 0);
+      enviado = efectivasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
       recibido = enviado;
     } else {
-      periodoTx.forEach(t => {
+      efectivasPeriodo.forEach(t => {
         if (String(t.desde_agente) === miId) enviado += Number(t.monto || 0);
         if (String(t.hacia_agente) === miId) recibido += Number(t.monto || 0);
       });
@@ -2047,15 +2055,19 @@
 
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
+    // TODAS las transferencias (para historial y "por aprobar")
     const transferenciasPeriodo = transferencias.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
+    // Solo EFECTIVAS (aceptadas) para el dinero: KPIs, dinero en mano, totales
+    const txEfectivas = transferencias.filter(esTxEfectiva);
+    const txEfectivasPeriodo = txEfectivas.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
     const entregasPeriodo = entregas.filter(e => enRango(e.fecha, periodo.inicio, periodo.fin));
-    let porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin, entregas);
+    let porAgente = calcularPorAgente(abonosPeriodo, txEfectivasPeriodo, abonos, txEfectivas, periodo.fin, entregas);
     // Un agente solo se ve a sí mismo en el detalle por agente (la contraparte
     // de una transferencia no debe aparecer como fila aparte)
     if (!verTodo) porAgente = porAgente.filter(a => String(a.id) === miId);
     const hayTransferencias = transferenciasPeriodo.length > 0;
     const pendiente = calcularPendienteTotal(verTodo ? null : miId);
-    const totalTransferido = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
+    const totalTransferido = txEfectivasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
     const dineroEnMano = porAgente.reduce((s, a) => s + Number(a.enMano || 0), 0);
     const dineroEnManoAcumulado = porAgente.reduce((s, a) => s + Number(a.enManoAcumulado || 0), 0);
 
