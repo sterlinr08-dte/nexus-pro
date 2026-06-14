@@ -1,10 +1,10 @@
 {
-  "version": "10.8",
+  "version": "10.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "En Clientes: toca una columna (CLIENTE, AGENTE, PLAN, EMPRESA, PRIMA, PENDIENTE...) para ordenar",
-    "Toca de nuevo la misma columna para invertir el orden (▲/▼)",
-    "Filtro por agente en Clientes, Facturas y Cobros",
-    "Reporte por agente con la lista de clientes del agente"
+    "Detalles de Cobro por rol: el agente solo ve LO SUYO (sus cobros, su dinero en mano, sus transferencias y su pendiente)",
+    "El administrador sigue viendo todo (todos los agentes y la caja central)",
+    "En Clientes: toca una columna para ordenar y de nuevo para invertir (▲/▼)",
+    "Filtro por agente en Clientes, Facturas y Cobros"
   ]
 }

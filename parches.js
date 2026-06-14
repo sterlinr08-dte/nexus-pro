@@ -1379,6 +1379,35 @@
     }
   }
 
+  // Devuelve la sesión actual de forma segura (tabla usuarios_sistema)
+  function getSesion() {
+    try {
+      if (typeof sesion !== 'undefined' && sesion) return sesion;
+    } catch(e) {}
+    try { return window.sesion || null; } catch(_) { return null; }
+  }
+
+  // Resuelve el AGENTE vinculado a la sesión actual.
+  // Usuarios y agentes son tablas distintas; el vínculo es por nombre
+  // (o por agente_id si la sesión lo trae). Devuelve el agente o null.
+  function agenteDeSesion() {
+    const ses = getSesion();
+    if (!ses) return null;
+    const agentes = Array.isArray(st().agentes) ? st().agentes : [];
+    if (!agentes.length) return null;
+    const norm = s => String(s || '').trim().toLowerCase();
+    // 1) Vínculo directo por id, si existe
+    const sid = ses.agente_id || ses.agenteId;
+    if (sid) {
+      const byId = agentes.find(a => String(a.id) === String(sid));
+      if (byId) return byId;
+    }
+    // 2) Vínculo por nombre
+    const n = norm(ses.nom);
+    if (!n) return null;
+    return agentes.find(a => norm(a.nom) === n) || null;
+  }
+
   // ═══════════════════════════════════════════════════════════
   // CÁLCULOS
   // ═══════════════════════════════════════════════════════════
@@ -1393,9 +1422,15 @@
     return { stats, abonosPeriodo: enPeriodo };
   }
 
-  function calcularPendienteTotal() {
-    const facturas = Array.isArray(st().facturas) ? st().facturas : [];
-    const clientes = Array.isArray(st().clientes) ? st().clientes : [];
+  function calcularPendienteTotal(soloAgenteId) {
+    let facturas = Array.isArray(st().facturas) ? st().facturas : [];
+    let clientes = Array.isArray(st().clientes) ? st().clientes : [];
+    // Si se pasa un agente, limitar el pendiente a SUS clientes/facturas
+    if (soloAgenteId) {
+      clientes = clientes.filter(c => String(c.agente_id || '') === String(soloAgenteId));
+      const idsCli = new Set(clientes.map(c => String(c.id)));
+      facturas = facturas.filter(f => idsCli.has(String(f.cliente_id)));
+    }
     const factPend = facturas.reduce((sum, f) => {
       const estado = String(f.estado||'').toLowerCase();
       if (estado.includes('pagado')) return sum;
@@ -1922,13 +1957,31 @@
       return;
     }
 
+    // ── ACCESO POR ROL ──
+    // El admin ve TODO. Cualquier otro usuario (agente) solo ve lo suyo:
+    // sus cobros, su dinero en mano, sus transferencias y su pendiente.
+    const verTodo = esAdmin();
+    let miAgente = null, miId = null;
+    if (!verTodo) {
+      miAgente = agenteDeSesion();
+      // Si no se resuelve el agente, se usa un id imposible => no ve datos ajenos
+      miId = miAgente ? String(miAgente.id) : '__sin_agente__';
+      abonos = abonos.filter(a => String(a.agente_cobro) === miId);
+      transferencias = transferencias.filter(t =>
+        String(t.desde_agente) === miId || String(t.hacia_agente) === miId);
+      entregas = entregas.filter(e => String(e.agente_id) === miId);
+    }
+
     const { stats, abonosPeriodo } = calcularKPIs(abonos, periodo);
     const porBanco = calcularPorBanco(abonosPeriodo);
     const transferenciasPeriodo = transferencias.filter(t => enRango(t.fecha, periodo.inicio, periodo.fin));
     const entregasPeriodo = entregas.filter(e => enRango(e.fecha, periodo.inicio, periodo.fin));
-    const porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin, entregas);
+    let porAgente = calcularPorAgente(abonosPeriodo, transferenciasPeriodo, abonos, transferencias, periodo.fin, entregas);
+    // Un agente solo se ve a sí mismo en el detalle por agente (la contraparte
+    // de una transferencia no debe aparecer como fila aparte)
+    if (!verTodo) porAgente = porAgente.filter(a => String(a.id) === miId);
     const hayTransferencias = transferenciasPeriodo.length > 0;
-    const pendiente = calcularPendienteTotal();
+    const pendiente = calcularPendienteTotal(verTodo ? null : miId);
     const totalTransferido = transferenciasPeriodo.reduce((s, t) => s + Number(t.monto || 0), 0);
     const dineroEnMano = porAgente.reduce((s, a) => s + Number(a.enMano || 0), 0);
     const dineroEnManoAcumulado = porAgente.reduce((s, a) => s + Number(a.enManoAcumulado || 0), 0);
