@@ -1,7 +1,8 @@
 {
-  "version": "11.7",
+  "version": "11.8",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Campos de monto: teclado numérico en el celular y miles con coma automáticos al escribir",
     "Nuevo diseño de transferencia de dinero: panel, chips y formulario más modernos y elegantes",
     "Detalles de Cobro abre siempre en el período vigente (EN CURSO)",
     "Nueva opción 'TODOS LOS PERÍODOS' para ver el histórico completo junto (los rótulos se ajustan)",

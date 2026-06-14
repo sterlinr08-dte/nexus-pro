@@ -1060,7 +1060,7 @@
             <label>Monto a transferir</label>
             <div class="nxTA2-amount-box">
               <span class="nxTA2-amount-cur">RD$</span>
-              <input type="number" id="nxTA2Monto" min="0.01" step="0.01" placeholder="0.00">
+              <input type="text" id="nxTA2Monto" inputmode="decimal" data-nx-money placeholder="0.00">
             </div>
           </div>
 
@@ -1304,7 +1304,7 @@
   window.nxGuardarTransferenciaAgenteV2 = async function () {
     const desde = q("#nxTA2Desde")?.value || "";
     const hacia = q("#nxTA2Hacia")?.value || "";
-    const monto = Number(q("#nxTA2Monto")?.value || 0);
+    const monto = window.nxMoney ? window.nxMoney.parse(q("#nxTA2Monto")?.value) : Number(q("#nxTA2Monto")?.value || 0);
     const metodo = q("#nxTA2Metodo")?.value || "Efectivo";
     const ref = (q("#nxTA2Ref")?.value || "").trim();
     const nota = (q("#nxTA2Nota")?.value || "").trim();
@@ -2409,7 +2409,7 @@
         </div>
         <div class="gf2">
           <div class="fr"><label>Agente que entrega *</label><select id="nxEA_Agente"></select></div>
-          <div class="fr"><label>Monto RD$ *</label><input type="number" id="nxEA_Monto" min="0.01" step="0.01" placeholder="0.00"></div>
+          <div class="fr"><label>Monto RD$ *</label><input type="text" id="nxEA_Monto" inputmode="decimal" data-nx-money placeholder="0.00"></div>
           <div class="fr"><label>Método *</label>
             <select id="nxEA_Metodo">
               <option>Efectivo</option>
@@ -2493,7 +2493,7 @@
   window.nxGuardarEntregaAdmin = async function() {
     if (!esAdmin()) return;
     const agente_id = document.getElementById('nxEA_Agente')?.value || '';
-    const monto = Number(document.getElementById('nxEA_Monto')?.value || 0);
+    const monto = window.nxMoney ? window.nxMoney.parse(document.getElementById('nxEA_Monto')?.value) : Number(document.getElementById('nxEA_Monto')?.value || 0);
     const metodo = document.getElementById('nxEA_Metodo')?.value || 'Efectivo';
     const fecha = document.getElementById('nxEA_Fecha')?.value || new Date().toISOString().slice(0, 10);
     const ref = (document.getElementById('nxEA_Ref')?.value || '').trim();
@@ -8930,7 +8930,7 @@
           </div>
           <div style="display:flex;gap:8px">
             <div class="fr" style="flex:1"><label>Monto *</label>
-              <input type="number" id="nxEgMonto" value="${esc(e.monto || '')}" placeholder="0" inputmode="decimal" min="0" step="0.01">
+              <input type="text" id="nxEgMonto" value="${esc(e.monto || '')}" placeholder="0" inputmode="decimal" data-nx-money>
             </div>
             <div class="fr" style="flex:1"><label>Fecha</label>
               <input type="date" id="nxEgFecha" value="${esc(e.fecha || new Date().toISOString().slice(0, 10))}">
@@ -8973,7 +8973,7 @@
       tipo: document.getElementById('nxEgTipo')?.value || 'GASTO',
       concepto: val('nxEgConcepto'),
       beneficiario: val('nxEgBenef'),
-      monto: Number(document.getElementById('nxEgMonto')?.value || 0),
+      monto: window.nxMoney ? window.nxMoney.parse(document.getElementById('nxEgMonto')?.value) : Number(document.getElementById('nxEgMonto')?.value || 0),
       metodo: document.getElementById('nxEgMetodo')?.value || '',
       banco: val('nxEgBanco'),
       referencia: val('nxEgRef'),
@@ -10896,4 +10896,73 @@
     start();
   }
   try { window.addEventListener('nexus:reinit', scheduleScan); } catch (e) {}
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO — UTILIDAD GLOBAL DE MONTOS (nxMoney)
+   Teclado decimal en móvil + miles con coma automáticos mientras se
+   escribe. Se aplica a cualquier <input data-nx-money>.
+   Para leer el valor numérico real: window.nxMoney.parse(input.value)
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  if (window.nxMoney) return;
+
+  // "1,234.56" / "RD$ 1,234" → 1234.56  (quita comas y todo lo no numérico)
+  function parse(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    const n = Number(String(v == null ? '' : v).replace(/,/g, '').replace(/[^\d.\-]/g, '').trim());
+    return isNaN(n) ? 0 : n;
+  }
+
+  // Formatea en vivo: miles con coma, hasta 2 decimales
+  function formatLive(raw) {
+    let s = String(raw == null ? '' : raw).replace(/[^\d.]/g, '');
+    const i = s.indexOf('.');
+    if (i !== -1) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, ''); // un solo punto
+    let parts = s.split('.');
+    let ent = (parts[0] || '').replace(/^0+(?=\d)/, ''); // sin ceros a la izquierda
+    let dec = parts[1];
+    let out = ent ? Number(ent).toLocaleString('en-US') : '';
+    if (dec !== undefined) {
+      dec = dec.slice(0, 2);
+      if (out === '') out = '0';
+      out += '.' + dec;
+    }
+    return out;
+  }
+
+  function attach(input) {
+    if (!input || input.__nxMoney) return;
+    input.__nxMoney = true;
+    try { if (input.type !== 'text') input.type = 'text'; } catch (e) {}
+    input.setAttribute('inputmode', 'decimal');
+    input.setAttribute('autocomplete', 'off');
+    if (input.value) input.value = formatLive(input.value);
+    input.addEventListener('input', function () {
+      const before = input.value;
+      const after = formatLive(before);
+      if (after !== before) {
+        input.value = after;
+        try { const L = input.value.length; input.setSelectionRange(L, L); } catch (e) {}
+      }
+    });
+  }
+
+  function scan(root) {
+    const r = (root && root.querySelectorAll) ? root : document;
+    r.querySelectorAll('input[data-nx-money]').forEach(attach);
+  }
+
+  window.nxMoney = { parse: parse, format: formatLive, attach: attach, scan: scan };
+
+  let pending = null;
+  function schedule() {
+    if (pending) return;
+    pending = setTimeout(function () { pending = null; scan(document); }, 150);
+  }
+  try { new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
+  else schedule();
+  try { window.addEventListener('nexus:reinit', schedule); } catch (e) {}
 })();
