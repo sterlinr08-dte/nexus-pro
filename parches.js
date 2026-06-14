@@ -4093,6 +4093,34 @@
   // ═══════════════════════════════════════════════════════════════
   // BADGE DE PENDIENTES (siempre visible en sidebar)
   // ═══════════════════════════════════════════════════════════════
+  // Punto rojo sobre el KPI "COBRADO" del dashboard (entrada a Detalles de
+  // Cobro), donde ahora se aprueban las transferencias.
+  function setBadgeCobros(count) {
+    try {
+      let tile = null;
+      document.querySelectorAll('#v-dashboard .kl').forEach(l => {
+        if (!tile && l.textContent.trim().toUpperCase().includes('COBRADO')) {
+          tile = l.closest('.kpi, .nc, [class*="kpi"]') || l.parentElement;
+        }
+      });
+      if (!tile) return;
+      if (getComputedStyle(tile).position === 'static') tile.style.position = 'relative';
+      let b = tile.querySelector('.nxCobrosBadge');
+      if (count > 0) {
+        if (!b) {
+          b = document.createElement('span');
+          b.className = 'nxCobrosBadge';
+          b.style.cssText = 'position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff;z-index:5';
+          tile.appendChild(b);
+        }
+        b.textContent = count > 9 ? '9+' : String(count);
+        b.style.display = 'flex';
+      } else if (b) {
+        b.style.display = 'none';
+      }
+    } catch(e) {}
+  }
+
   async function actualizarBadge() {
     const it = document.getElementById('niSolicit');
     if (it) it.style.display = ''; // Visible para todos
@@ -4103,40 +4131,44 @@
       _entregasCache = entregas;
       const transferencias = await cargarTransferencias();
       _transferenciasCache = transferencias;
-      
-      let pend = 0;
+
+      // Solicitudes = solo entregas hacia el admin (las aprueba el admin)
+      let pendSolicit = 0;
+      // Cobros = transferencias por aprobar (ahora viven en Detalles de Cobro)
+      let pendCobros = 0;
       if (esAdmin()) {
-        // Admin: cuenta TODAS las entregas pendientes de confirmar
-        pend = entregas.filter(e => !e.confirmado).length;
+        pendSolicit = entregas.filter(e => !e.confirmado).length;
+        pendCobros = transferencias.filter(t => t.estado === 'pendiente').length;
       } else {
-        // Agente: cuenta solo las transferencias entrantes pendientes hacia él
         const miId = getMiAgenteId();
         if (miId) {
-          pend = transferencias.filter(t => 
-            String(t.hacia_agente) === String(miId) && 
-            t.estado === 'pendiente'
+          pendCobros = transferencias.filter(t =>
+            String(t.hacia_agente) === String(miId) && t.estado === 'pendiente'
           ).length;
         }
+        // El agente no aprueba entregas en Solicitudes
       }
-      
-      // Badge sidebar
+
+      // Badge de Solicitudes (sidebar)
       if (badge) {
-        if (pend > 0) {
-          badge.textContent = pend > 99 ? '99+' : String(pend);
+        if (pendSolicit > 0) {
+          badge.textContent = pendSolicit > 99 ? '99+' : String(pendSolicit);
           badge.style.display = '';
         } else {
           badge.style.display = 'none';
         }
       }
-      // Badge dashboard
+      // Badge de Solicitudes (dashboard)
       if (dashBadge) {
-        if (pend > 0) {
-          dashBadge.textContent = pend > 9 ? '9+' : String(pend);
+        if (pendSolicit > 0) {
+          dashBadge.textContent = pendSolicit > 9 ? '9+' : String(pendSolicit);
           dashBadge.style.display = '';
         } else {
           dashBadge.style.display = 'none';
         }
       }
+      // Aviso de transferencias en la entrada de Detalles de Cobro
+      setBadgeCobros(pendCobros);
     } catch(e) {
       if (badge) badge.style.display = 'none';
       if (dashBadge) dashBadge.style.display = 'none';
