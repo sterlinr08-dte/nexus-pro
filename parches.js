@@ -4246,6 +4246,7 @@
       .btn .ti, button .ti, td .ti, th .ti, label .ti, summary .ti,
       .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti, .nxs-badge .ti, .nxl-logo .ti,
       .sb-av .ti, .nxDC-bank-badge .ti,
+      .ti.ti-search, .ti.ti-search-off,
       i.ti[style*="absolute"], i.ti[style*="position:absolute"]{
         width: auto !important; height: auto !important;
         border-radius: 0 !important;
@@ -11281,6 +11282,8 @@
       if (!m) continue;
       var name = m[0];
       // iconos que deben quedar planos (flechas, chevrons, x, etc.)
+      // la lupa de búsqueda queda plana (sin círculo de color)
+      if (name === 'ti-search' || name === 'ti-search-off') continue;
       // iconos decorativos posicionados (adornos de inputs) → no colorear
       if (/absolute/.test(el.getAttribute('style') || '')) continue;
       // dentro de un contexto excluido → plano
