@@ -4250,7 +4250,7 @@
       .ti.ti-caret-down, .ti.ti-caret-up, .ti.ti-caret-left, .ti.ti-caret-right,
       .ti.ti-selector, .ti.ti-x, .ti.ti-dots, .ti.ti-dots-vertical, .ti.ti-menu-2,
       .ti.ti-arrow-left, .ti.ti-arrow-right, .ti.ti-arrow-up, .ti.ti-arrow-down,
-      .ti.ti-search{
+      .ti.ti-search, i.ti[style*="absolute"], i.ti[style*="position:absolute"]{
         width: auto !important; height: auto !important;
         border-radius: 0 !important;
         background: none !important;
@@ -11286,6 +11286,8 @@
       var name = m[0];
       // iconos que deben quedar planos (flechas, chevrons, x, etc.)
       if (/^ti-(chevron|caret|arrow|selector|dots|menu)/.test(name) || name === 'ti-x' || name === 'ti-search') continue;
+      // iconos decorativos posicionados (adornos de inputs) → no colorear
+      if (/absolute/.test(el.getAttribute('style') || '')) continue;
       // dentro de un contexto excluido → plano
       try { if (el.closest(SKIP_CTX)) continue; } catch (e) {}
       var hu = hue(name);
