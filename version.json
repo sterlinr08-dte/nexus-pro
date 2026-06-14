@@ -1,7 +1,8 @@
 {
-  "version": "14.8",
+  "version": "14.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Inicio de sesión seguro activado: entra con tu usuario y tu contraseña personal",
     "Modo seguro: pantalla propia para definir tu contraseña (reemplaza el popup que no funcionaba en la app instalada)",
     "Más robustez de fechas: seguimiento y antigüedad de facturas ya no fallan si la fecha viene como timestamp",
     "En la tabla de clientes ahora se ve quién creó cada cliente (debajo de la cédula)",
