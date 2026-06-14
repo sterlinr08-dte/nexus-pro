@@ -2968,7 +2968,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='13.7';
+const APP_VERSION='13.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4402,8 +4402,11 @@ async function rChartCobros(){
   try{abonos=await API.get('abonos','select=fecha,monto')||[];}catch(e){abonos=[];}
   abonos.forEach(a=>{
     if(!a.fecha)return;
-    const f=new Date(a.fecha+'T12:00:00');
-    const m=meses.find(x=>x.mes===f.getMonth()&&x.anio===f.getFullYear());
+    // fecha puede venir como 'YYYY-MM-DD' o como timestamp 'YYYY-MM-DDTHH:..';
+    // tomamos año/mes directo del texto para no romper con timestamps.
+    const s=String(a.fecha);
+    const anio=parseInt(s.slice(0,4),10), mesIdx=parseInt(s.slice(5,7),10)-1;
+    const m=meses.find(x=>x.mes===mesIdx&&x.anio===anio);
     if(m)m.total+=(Number(a.monto)||0);
   });
   const vals=meses.map(m=>m.total);
@@ -5949,7 +5952,8 @@ function rPYG(){
   const ingPorCta={},gastPorCta={};
   (ST.asientos||[]).forEach(a=>{
     if(!a.fecha)return;
-    const f=new Date(a.fecha+'T12:00:00');
+    // fecha puede ser timestamp; tomamos solo 'YYYY-MM-DD' para un Date válido.
+    const f=new Date(String(a.fecha).slice(0,10)+'T12:00:00');
     if(f<desde||f>hasta)return;
     // Ingreso: cuenta tipo Ingreso acreditada
     const cr=CUENTAS.find(c=>c.cod===a.cuenta_cr_cod);
