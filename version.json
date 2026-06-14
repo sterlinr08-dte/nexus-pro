@@ -1,7 +1,8 @@
 {
-  "version": "13.5",
+  "version": "13.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Arreglado en Configuración: se quitó la barra azul que se desincronizaba al hacer scroll y se ocultó el scrollbar gris (el tab activo ya se ve marcado)",
     "La lupa de búsqueda vuelve a verse plana (sin círculo de color)",
     "Todos los iconos sueltos ahora son redondos, a color y con 3D mejorado (brillo y profundidad); solo quedan planos los que van dentro de botones, campos y tablas",
     "Auditoría general: iconos decorativos dentro de campos ya no se vuelven círculo (se solapaban)",

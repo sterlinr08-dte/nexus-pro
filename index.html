@@ -536,7 +536,7 @@ body.tema-premium .acc-menu-hd{color:#64748b}
 .cli-subtab.active-subtab i,.cli-subtab.active-subtab span{color:#fff !important}
 
 /* ════ TABS DINÁMICAS DE CONFIGURACIÓN ════ */
-.cfg-tabs-bar{display:flex;gap:4px;margin-bottom:6px;background:#fff;border-radius:12px;padding:6px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:thin}
+.cfg-tabs-bar{display:flex;gap:4px;margin-bottom:6px;background:#fff;border-radius:12px;padding:6px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 /* ═══ BANCOS - Responsive ═══ */
 .bcoRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;flex-wrap:wrap}
 .bcoActions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
@@ -550,7 +550,7 @@ body.tema-premium .acc-menu-hd{color:#64748b}
   #bcoForm .btn{width:100% !important;min-height:44px !important;justify-content:center !important}
   #bcoNuevo{min-height:42px !important;font-size:14px !important}
 }
-.cfg-tabs-bar::-webkit-scrollbar{height:4px}
+.cfg-tabs-bar::-webkit-scrollbar{display:none;height:0}
 .cfg-tab{padding:8px 14px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:none;color:#64748b;transition:all .25s cubic-bezier(.4,0,.2,1);white-space:nowrap;font-family:var(--ff);display:flex;align-items:center;gap:6px}
 .cfg-tab i{font-size:13px;transition:transform .2s}
 .cfg-tab:hover{background:#f1f5f9;color:#1e293b}
@@ -1280,7 +1280,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           </div>
 
           <!-- Indicador de tab activo -->
-          <div id="cfgIndicator" style="height:3px;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:3px;margin-bottom:14px;transition:all .3s ease;width:80px"></div>
+          <div id="cfgIndicator" style="height:0;margin-bottom:12px;background:none;width:0;display:none"></div>
 
           <!-- TAB 1: Empresa y Tarifas -->
           <div id="cfgPanel1" class="cfg-panel active-panel">
@@ -2966,7 +2966,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='13.5';
+const APP_VERSION='13.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
