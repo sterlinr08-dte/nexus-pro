@@ -1917,6 +1917,16 @@
     if (!n || /SIN\s*BANCO|EFECTIVO|CAJA/.test(n)) {
       return '<span class="nxDC-bank-badge" style="background:linear-gradient(145deg,#94a3b8,#cbd5e1)"><i class="ti ti-wallet"></i></span>';
     }
+    // Logos reales (archivos provistos). APAP no debe usar el logo de Popular.
+    if (!/APAP|ASOC.*POPULAR/.test(n)) {
+      var LB = 'https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/logos/';
+      var logos = [[/BANRESERVAS|RESERVAS/, 'banco-banreservas.png'], [/BHD/, 'banco-bhd.png'], [/POPULAR/, 'banco-popular.png']];
+      for (var L = 0; L < logos.length; L++) {
+        if (logos[L][0].test(n)) {
+          return '<span class="nxDC-bank-badge nxDC-bank-logo"><img src="' + LB + logos[L][1] + '" alt="' + esc(raw) + '" loading="lazy"></span>';
+        }
+      }
+    }
     var map = [
       [/APAP|ASOC.*POPULAR/,        '#ea580c', '#fb923c', 'AP'],
       [/BANRESERVAS|RESERVAS/,      '#0d9488', '#14b8a6', 'BR'],
@@ -2918,6 +2928,8 @@
         box-shadow:0 4px 10px rgba(30,58,110,.22), inset 0 1px 0 rgba(255,255,255,.45);
       }
       .nxDC-bank-badge i { font-size:18px; color:#fff !important; }
+      .nxDC-bank-badge.nxDC-bank-logo { background:#fff !important; }
+      .nxDC-bank-badge.nxDC-bank-logo img { width:100%; height:100%; object-fit:contain; padding:3px; box-sizing:border-box; border-radius:11px; display:block; }
       .nxDC-banco-monto { font-weight:700; color:#0f172a; font-family:var(--mono,monospace); font-size:13px; }
       .nxDC-banco-total { display:flex; justify-content:space-between; align-items:center; padding:12px 4px 4px; border-top:1px solid #e2e8f0; margin-top:8px; }
       .nxDC-banco-total > div:first-child { font-weight:800; color:#0f172a; font-size:13px; }
