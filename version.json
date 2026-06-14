@@ -1,10 +1,11 @@
 {
-  "version": "10.9",
+  "version": "11.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Detalles de Cobro por rol: el agente solo ve LO SUYO (sus cobros, su dinero en mano, sus transferencias y su pendiente)",
-    "El administrador sigue viendo todo (todos los agentes y la caja central)",
-    "En Clientes: toca una columna para ordenar y de nuevo para invertir (▲/▼)",
-    "Filtro por agente en Clientes, Facturas y Cobros"
+    "Transferencias entre agentes ahora viven en Detalles de Cobro: transferir, aprobar/rechazar e historial en un solo lugar",
+    "Botón 'Transferir dinero' junto a tu Dinero en Mano (diseño nuevo y adaptable a móvil)",
+    "El agente solo puede enviar desde sí mismo; el admin puede elegir ambos agentes",
+    "Solicitudes quedó limpio: solo entregas hacia el admin (sin duplicar transferencias)",
+    "Detalles de Cobro por rol: el agente ve solo lo suyo; el admin ve todo"
   ]
 }
