@@ -4055,6 +4055,23 @@
       }
       @keyframes nxRipple{ to{ transform: translate(-50%,-50%) scale(1); opacity: 0; } }
 
+      /* === EFECTOS TACTILES EN TODO EL SISTEMA === */
+      .btn, .cfg-tab, .kpi{
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .btn:active{ transform: scale(.955); }
+      .ni:active{ transform: scale(.97); }
+      .cfg-tab:active{ transform: scale(.97); }
+      .kpi:active{ transform: scale(.985); }
+      /* incluir transform en la transicion de estos (los botones ya tienen all .15s) */
+      .ni, .cfg-tab, .kpi{
+        transition: transform .14s cubic-bezier(.2,.7,.3,1),
+                    background .35s ease, border-color .35s ease,
+                    box-shadow .35s ease, color .35s ease;
+      }
+
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
       #v-dashboard .nc button i, #v-dashboard .nc button .ti,
@@ -11031,14 +11048,19 @@
   try { window.addEventListener('nexus:reinit', schedule); } catch (e) {}
 })();
 
-/* ── Onda de color (ripple) al tocar las fichas del dashboard ───────────── */
+/* ── Onda de color (ripple) al tocar en todo el sistema ─────────────────── */
 (function(){
   if (window.__NX_RIPPLE__) return;
   window.__NX_RIPPLE__ = true;
+  var SEL = '.btn, .cfg-tab, .kpi, #v-dashboard .qa';
   function spawn(e){
-    var qa = e.target && e.target.closest ? e.target.closest('#v-dashboard .qa') : null;
-    if (!qa) return;
-    var rect = qa.getBoundingClientRect();
+    var el = e.target && e.target.closest ? e.target.closest(SEL) : null;
+    if (!el) return;
+    var tag = el.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return; // no admiten hijos
+    if (el.disabled) return;
+    var rect = el.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     var size = Math.max(rect.width, rect.height) * 1.25;
     var x = (e.clientX != null ? e.clientX : rect.left + rect.width / 2) - rect.left;
     var y = (e.clientY != null ? e.clientY : rect.top + rect.height / 2) - rect.top;
@@ -11047,7 +11069,7 @@
     r.style.width = r.style.height = size + 'px';
     r.style.left = x + 'px';
     r.style.top = y + 'px';
-    qa.appendChild(r);
+    try { el.appendChild(r); } catch (_) { return; }
     setTimeout(function(){ if (r && r.parentNode) r.parentNode.removeChild(r); }, 650);
   }
   document.addEventListener('pointerdown', spawn, { passive: true });
