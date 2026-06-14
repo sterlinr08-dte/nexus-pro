@@ -1,7 +1,9 @@
 {
-  "version": "14.1",
+  "version": "14.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Más robustez de fechas: seguimiento y antigüedad de facturas ya no fallan si la fecha viene como timestamp",
+    "En la tabla de clientes ahora se ve quién creó cada cliente (debajo de la cédula)",
     "Al crear un cliente, el Agente ya NO queda 'Sin asignar': sale por defecto el agente del usuario que lo crea (se puede cambiar, pero no dejar vacío)",
     "Nuevo bloque 'Registro' en el detalle del cliente: muestra quién lo creó y cuándo (y la última edición)",
     "Lista 'Pendientes más frecuentes': cada fila como mini-tarjeta con el conteo en un badge ámbar con relieve (ya no es texto plano)",

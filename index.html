@@ -2968,7 +2968,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='14.1';
+const APP_VERSION='14.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4630,7 +4630,7 @@ function rCli(){
       const progCol=prog>=100?'#10b981':prog>=60?'#2563eb':prog>=30?'#f59e0b':'#ef4444';
       let segTxt='';
       if(c.fecha_seguimiento){
-        const fs=new Date(c.fecha_seguimiento+'T12:00:00');
+        const fs=new Date(String(c.fecha_seguimiento).slice(0,10)+'T12:00:00');
         const diff=Math.floor((fs-hoy2)/86400000);
         if(diff<0)segTxt=`<span style="color:#ef4444">⚠ Seguimiento vencido</span>`;
         else if(diff===0)segTxt=`<span style="color:#f59e0b">📅 Seguimiento hoy</span>`;
@@ -4651,7 +4651,7 @@ function rCli(){
       </div>`;
     }
     return`<tr style="${!c.activo?'opacity:.5':''}">
-      <td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div>${procInfo}</div></div></td>
+      <td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div>${c.created_by_name?`<div style="font-size:7.5px;color:#94a3b8" title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</div>`:''}${procInfo}</div></div></td>
       <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
       <td>${planB(c.plan)}</td>
       <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
@@ -6058,7 +6058,7 @@ function rRepAging(){
     if(f.estado==='Pagado'||f.estado==='Anulada')return;
     const saldo=Number(f.total)||0;
     if(saldo<=0)return;
-    const femi=f.fecha_emision?new Date(f.fecha_emision+'T12:00:00'):(f.created_at?new Date(f.created_at):hoyD);
+    const femi=f.fecha_emision?new Date(String(f.fecha_emision).slice(0,10)+'T12:00:00'):(f.created_at?new Date(f.created_at):hoyD);
     const dias=Math.floor((hoyD-femi)/(1000*60*60*24));
     let b;
     if(dias<=30)b=buckets.b1;else if(dias<=60)b=buckets.b2;else if(dias<=90)b=buckets.b3;else b=buckets.b4;
