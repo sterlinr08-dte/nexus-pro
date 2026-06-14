@@ -1,7 +1,8 @@
 {
-  "version": "13.8",
+  "version": "13.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Tarjeta 'Clientes en proceso': las cajas (En proceso/VIP/Seguim.) ahora con relieve 3D (degradado, sombra de color y brillo), ya no se ven planas",
     "Arreglada la gráfica 'Resumen de cobros': ya muestra los abonos por mes (no contaba bien la fecha y salía en cero)",
     "Arreglado el Estado de Resultados (P&G): ahora filtra los asientos del período correcto (la fecha no se interpretaba bien)",
     "Configuración: el indicador azul vuelve, ahora DENTRO de la barra y sincronizado con el scroll (ya no se desfasa); la pestaña activa se centra al tocarla",

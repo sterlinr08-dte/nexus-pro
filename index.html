@@ -2968,7 +2968,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='13.8';
+const APP_VERSION='13.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4352,7 +4352,7 @@ function rWidgetProceso(){
   let segVenc=0,segHoy=0;
   enProc.forEach(c=>{
     if(!c.fecha_seguimiento)return;
-    const fs=new Date(c.fecha_seguimiento+'T12:00:00');
+    const fs=new Date(String(c.fecha_seguimiento).slice(0,10)+'T12:00:00');
     const diff=Math.floor((fs-hoy3)/86400000);
     if(diff<0)segVenc++;else if(diff===0)segHoy++;
   });
@@ -4371,7 +4371,7 @@ function rWidgetProceso(){
     ['Seguim. hoy',segHoy,'#10b981']
   ];
   tarjetas.forEach(([lbl,n,col])=>{
-    html+=`<div style="background:${col}12;border-left:3px solid ${col};border-radius:8px;padding:8px"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono)">${lbl.toUpperCase()}</div><div style="font-size:18px;font-weight:700;color:${col};font-family:var(--mono)">${n}</div></div>`;
+    html+=`<div style="background:linear-gradient(145deg,${col}24,${col}0a);border:1px solid ${col}33;border-left:3px solid ${col};border-radius:12px;padding:10px;box-shadow:0 5px 14px ${col}26,inset 0 1px 0 rgba(255,255,255,.6)"><div style="font-size:9px;color:var(--tx3);font-family:var(--mono);letter-spacing:.5px">${lbl.toUpperCase()}</div><div style="font-size:20px;font-weight:800;color:${col};font-family:var(--mono);line-height:1.1;margin-top:2px">${n}</div></div>`;
   });
   html+='</div>';
   const pends=Object.entries(cont2).sort((a,b)=>b[1]-a[1]);
