@@ -766,6 +766,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   <div class="lfr"><label>Contraseña</label><input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
   <div class="lerr" id="loginErr"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
+  <div style="text-align:center;margin-top:10px"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#64748b;text-decoration:none">🔒 Probar inicio de sesión seguro (beta)</a></div>
   <div class="lsetup"><a onclick="mostrarSetup()">⚙️ Primera vez — conectar base de datos</a></div>
 </div>
 </div>
@@ -2449,8 +2450,11 @@ function mostrarSetup(){document.getElementById('loginScreen').style.display='no
 
 // ── FASE 2 (opt-in): login por Supabase Auth ─────────────────────────────────
 // Se activa/desactiva con ?authmode=auth | ?authmode=legacy. Por defecto: legacy.
-(function(){try{const p=new URLSearchParams(location.search).get('authmode');if(p==='auth'){localStorage.setItem('nx_auth_mode','auth');}else{localStorage.removeItem('nx_auth_mode');}}catch(e){}})();
+(function(){try{const p=new URLSearchParams(location.search).get('authmode');if(p==='auth'){localStorage.setItem('nx_auth_mode','auth');}else if(p==='legacy'){localStorage.removeItem('nx_auth_mode');}}catch(e){}})();
 function nxAuthMode(){try{return localStorage.getItem('nx_auth_mode')==='auth';}catch(e){return false;}}
+// Botón en la pantalla de login para entrar/salir del modo seguro (sin depender de la URL)
+function nxToggleAuthMode(){try{if(nxAuthMode())localStorage.removeItem('nx_auth_mode');else localStorage.setItem('nx_auth_mode','auth');}catch(e){}location.reload();}
+function nxUpdateAuthToggle(){try{const a=document.getElementById('authToggleLink');if(!a)return;if(nxAuthMode()){a.innerHTML='🔓 Modo seguro ACTIVO — volver al inicio normal';a.style.color='#059669';}else{a.innerHTML='🔒 Probar inicio de sesión seguro (beta)';a.style.color='#64748b';}}catch(e){}}
 
 // Persistencia + renovación del token (para que la sesión sobreviva recargas y no caduque)
 function nxStoreAuth(data){try{const exp=Date.now()+(((data&&data.expires_in)||3600)*1000);localStorage.setItem('nx_auth_session',JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,expires_at:exp}));API.token=data.access_token;}catch(e){}}
@@ -3036,7 +3040,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='14.6';
+const APP_VERSION='14.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -7404,7 +7408,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(nxAuthMode()){
         nxRefreshAuth().then(ok=>{
           if(ok){ nxScheduleRefresh(); cargarTodo(); }
-          else { sessionStorage.removeItem('nx_sesion'); const a=document.getElementById('app'); if(a)a.style.display='none'; const l=document.getElementById('loginScreen'); if(l)l.style.display='flex'; }
+          else { sessionStorage.removeItem('nx_sesion'); const a=document.getElementById('app'); if(a)a.style.display='none'; const l=document.getElementById('loginScreen'); if(l)l.style.display='flex'; try{nxUpdateAuthToggle();}catch(e){} }
         });
         return;
       }
@@ -7417,6 +7421,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('setupScreen').style.display = 'none';
     document.querySelector('.lsetup').style.display = 'none';
+    try{nxUpdateAuthToggle();}catch(e){}
     return;
   }
 
