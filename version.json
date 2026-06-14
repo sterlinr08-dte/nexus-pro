@@ -1,7 +1,9 @@
 {
-  "version": "14.0",
+  "version": "14.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Al crear un cliente, el Agente ya NO queda 'Sin asignar': sale por defecto el agente del usuario que lo crea (se puede cambiar, pero no dejar vacío)",
+    "Nuevo bloque 'Registro' en el detalle del cliente: muestra quién lo creó y cuándo (y la última edición)",
     "Lista 'Pendientes más frecuentes': cada fila como mini-tarjeta con el conteo en un badge ámbar con relieve (ya no es texto plano)",
     "Tarjeta 'Clientes en proceso': las cajas (En proceso/VIP/Seguim.) ahora con relieve 3D (degradado, sombra de color y brillo), ya no se ven planas",
     "Arreglada la gráfica 'Resumen de cobros': ya muestra los abonos por mes (no contaba bien la fecha y salía en cero)",

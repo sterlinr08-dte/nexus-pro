@@ -2968,7 +2968,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='14.0';
+const APP_VERSION='14.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3422,6 +3422,7 @@ function verCliente(id){
   const notas=getNotas(id);
   const emp=gEmp(c.empresa_id)?.nom||'Particular';
   const agt=gAgt(c.agente_id)?.nom||'Sin asignar';
+  const fFB=(s)=>{if(!s)return '—';try{const d=new Date(s);return d.toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(e){return String(s).slice(0,16).replace('T',' ');}};
   document.getElementById('csBody').innerHTML=`
     <div style="text-align:center;margin-bottom:14px">
       <span class="fav-star ${fav?'active':''}" onclick="toggleFav('${id}')" style="font-size:24px">★</span>
@@ -3452,7 +3453,16 @@ function verCliente(id){
         <div><strong>Agente:</strong> ${agt}</div>
       </div>
     </div>
-    
+
+    <div class="cs-section">
+      <div class="cs-section-ttl">Registro</div>
+      <div style="background:linear-gradient(145deg,#eff6ff,#f8fbff);border:1px solid #dbeafe;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.7;box-shadow:0 3px 10px rgba(37,99,235,.10)">
+        <div><strong>🆕 Creado por:</strong> ${c.created_by_name||'—'}</div>
+        <div><strong>📅 Fecha de creación:</strong> ${fFB(c.created_at)}</div>
+        ${c.updated_by_name?`<div style="margin-top:4px;color:var(--tx2)"><strong>✏️ Última edición:</strong> ${c.updated_by_name} · ${fFB(c.updated_at||c.created_at)}</div>`:''}
+      </div>
+    </div>
+
     <div class="cs-section">
       <div class="cs-section-ttl">Estado financiero</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -5557,7 +5567,7 @@ function abrirNuevoCli(){
   const cRS=document.getElementById('cRespSeg');if(cRS){rAgtSel('cRespSeg','');}
   const cPri=document.getElementById('cPrioridad');if(cPri)cPri.value='MEDIA';
   actualizarProgreso();
-  rEChips(null);rAgtSel('cAgt','');document.getElementById('depLM').innerHTML='';
+  rEChips(null);rAgtSelCli('');document.getElementById('depLM').innerHTML='';
   // Default: inicio hoy, fin en 1 año
   document.getElementById('cFecIni').value=hoy();
   const fin=new Date();fin.setFullYear(fin.getFullYear()+1);
@@ -5610,7 +5620,7 @@ function editarCli(id){
   const cRefEl=document.getElementById('cRef');if(cRefEl)cRefEl.value=c.referencia||'';
   const cRefWaEl=document.getElementById('cRefWa');if(cRefWaEl)cRefWaEl.value=c.referencia_wa||'';
   document.getElementById('cFecIni').value=c.fecha_inicio||'';document.getElementById('cFecFin').value=c.fecha_fin||'';
-  rEChips(c.empresa_id);rAgtSel('cAgt',c.agente_id);rDepLM();
+  rEChips(c.empresa_id);rAgtSelCli(c.agente_id);rDepLM();
   // Cargar precio personalizado si el cliente lo tiene
   mostrarSeccionPrecioCustom();
   const tieneCustom=(c.precio_titular!=null&&c.precio_titular!=='')||(c.precio_dep!=null&&c.precio_dep!=='');
@@ -5799,6 +5809,23 @@ async function reactivar(id){
 function rEChips(selId){const div=document.getElementById('eChips');div._sel=selId||'';div.innerHTML=`<div class="echip ${!selId?'sel':''}" onclick="selEch('')"><i class="ti ti-user" style="font-size:11px"></i> Particular</div>`+ST.empresas.map(e=>`<div class="echip ${e.id===selId?'sel':''}" onclick="selEch('${e.id}')"><i class="ti ti-building" style="font-size:11px"></i> ${e.nom.split(' ').slice(0,3).join(' ')}</div>`).join('');}
 function selEch(id){document.querySelectorAll('.echip').forEach(c=>c.classList.remove('sel'));const chips=document.getElementById('eChips');chips._sel=id;chips.querySelectorAll('.echip').forEach(c=>{if(c.getAttribute('onclick')===`selEch('${id}')`)c.classList.add('sel');});}
 function rAgtSel(selId,val){document.getElementById(selId).innerHTML='<option value="">Sin asignar</option>'+ST.agentes.map(a=>`<option value="${a.id}"${a.id===val?' selected':''}>${a.nom}</option>`).join('');}
+// Agente del usuario en sesión (match por nombre); '' si no coincide con ninguno.
+function agenteDeSesion(){
+  try{
+    if(!sesion||!Array.isArray(ST.agentes))return '';
+    const nom=(sesion.nom||'').trim().toLowerCase();
+    const a=ST.agentes.find(x=>(x.nom||'').trim().toLowerCase()===nom);
+    return a?a.id:'';
+  }catch(e){return '';}
+}
+// Select de agente del CLIENTE: NUNCA "Sin asignar". Por defecto, el agente del
+// usuario que está creando; al editar respeta el agente guardado.
+function rAgtSelCli(val){
+  const sel=document.getElementById('cAgt');if(!sel)return;
+  if(!Array.isArray(ST.agentes)||!ST.agentes.length){sel.innerHTML='<option value="">(Crea un agente primero)</option>';return;}
+  const target=val||agenteDeSesion()||ST.agentes[0].id;
+  sel.innerHTML=ST.agentes.map(a=>`<option value="${a.id}"${String(a.id)===String(target)?' selected':''}>${a.nom}</option>`).join('');
+}
 function addDep(){const n=document.getElementById('dN').value.trim();if(!n)return;tempDeps.push({nom:n,rel:document.getElementById('dR').value,id:Date.now()});document.getElementById('dN').value='';rDepLM();}
 function rDepLM(){document.getElementById('depLM').innerHTML=tempDeps.map(d=>`<div class="dep-c">${d.nom} <span style="opacity:.5">(${d.rel})</span><button onclick="rmDep(${d.id})">×</button></div>`).join('');}
 function rmDep(id){tempDeps=tempDeps.filter(d=>d.id!==id);rDepLM();}
