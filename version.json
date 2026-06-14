@@ -1,7 +1,8 @@
 {
-  "version": "11.6",
+  "version": "11.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Nuevo diseño de transferencia de dinero: panel, chips y formulario más modernos y elegantes",
     "Detalles de Cobro abre siempre en el período vigente (EN CURSO)",
     "Nueva opción 'TODOS LOS PERÍODOS' para ver el histórico completo junto (los rótulos se ajustan)",
     "Las tablas largas (más de 15 filas) ahora se muestran de 15 en 15 con 'Ver más' / 'Ver menos', en todo el sistema",

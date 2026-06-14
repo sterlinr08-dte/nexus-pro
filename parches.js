@@ -1029,35 +1029,176 @@
   }
   function createTransferModal() {
     if (q("#nxModalTransferAgenteV2")) return;
+    injectTA2CSS();
     const modal = document.createElement("div");
     modal.className = "overlay";
     modal.id = "nxModalTransferAgenteV2";
     modal.innerHTML = `
-      <div class="modal" style="max-width:460px">
-        <div class="mt">
-          <span>// TRANSFERENCIA ENTRE AGENTES</span>
-          <button class="btn bghost bsm" type="button" onclick="window.nxCerrarTransferenciaAgenteV2()"><i class="ti ti-x"></i></button>
+      <div class="modal nxTA2-modal">
+        <div class="nxTA2-head">
+          <div class="nxTA2-head-icon"><i class="ti ti-transfer"></i></div>
+          <div class="nxTA2-head-txt">
+            <div class="nxTA2-head-title">Transferir dinero</div>
+            <div class="nxTA2-head-sub">De un agente a otro · el receptor confirma</div>
+          </div>
+          <button class="nxTA2-close" type="button" onclick="window.nxCerrarTransferenciaAgenteV2()"><i class="ti ti-x"></i></button>
         </div>
-        <div class="gf2">
-          <div class="fr"><label>Agente que entrega *</label><select id="nxTA2Desde"></select></div>
-          <div class="fr"><label>Agente que recibe *</label><select id="nxTA2Hacia"></select></div>
-          <div class="fr"><label>Monto RD$ *</label><input type="number" id="nxTA2Monto" min="0.01" step="0.01" placeholder="0.00"></div>
-          <div class="fr"><label>Método *</label><select id="nxTA2Metodo"><option>Efectivo</option><option>Transferencia</option></select></div>
-          <div class="fr" id="nxTA2BancoWrap" style="display:none"><label>Banco</label><select id="nxTA2Banco"><option value="">Seleccionar...</option><option>BHD</option><option>Banreservas</option><option>Popular</option><option>Otros</option></select></div>
-          <div class="fr" id="nxTA2BancoOtroWrap" style="display:none"><label>Otro banco</label><input type="text" id="nxTA2BancoOtro" placeholder="Nombre del banco"></div>
-          <div class="fr"><label>Referencia *</label><input type="text" id="nxTA2Ref" placeholder="Número de recibo o transferencia"></div>
-          <div class="fr"><label>Nota</label><input type="text" id="nxTA2Nota" placeholder="Opcional"></div>
+        <div class="nxTA2-body">
+          <div class="nxTA2-route">
+            <div class="nxTA2-field">
+              <label>Entrega</label>
+              <div class="nxTA2-control"><i class="ti ti-arrow-up-circle"></i><select id="nxTA2Desde"></select></div>
+            </div>
+            <div class="nxTA2-route-arrow"><i class="ti ti-arrow-right"></i></div>
+            <div class="nxTA2-field">
+              <label>Recibe</label>
+              <div class="nxTA2-control"><i class="ti ti-arrow-down-circle"></i><select id="nxTA2Hacia"></select></div>
+            </div>
+          </div>
+
+          <div class="nxTA2-field nxTA2-amount">
+            <label>Monto a transferir</label>
+            <div class="nxTA2-amount-box">
+              <span class="nxTA2-amount-cur">RD$</span>
+              <input type="number" id="nxTA2Monto" min="0.01" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="nxTA2-field">
+            <label>Método</label>
+            <div class="nxTA2-control"><i class="ti ti-wallet"></i><select id="nxTA2Metodo"><option>Efectivo</option><option>Transferencia</option></select></div>
+          </div>
+          <div class="nxTA2-field" id="nxTA2BancoWrap" style="display:none">
+            <label>Banco</label>
+            <div class="nxTA2-control"><i class="ti ti-building-bank"></i><select id="nxTA2Banco"><option value="">Seleccionar...</option><option>BHD</option><option>Banreservas</option><option>Popular</option><option>Otros</option></select></div>
+          </div>
+          <div class="nxTA2-field" id="nxTA2BancoOtroWrap" style="display:none">
+            <label>Otro banco</label>
+            <input class="nxTA2-input" type="text" id="nxTA2BancoOtro" placeholder="Nombre del banco">
+          </div>
+          <div class="nxTA2-field">
+            <label>Referencia</label>
+            <input class="nxTA2-input" type="text" id="nxTA2Ref" placeholder="N° de recibo o transferencia">
+          </div>
+          <div class="nxTA2-field">
+            <label>Nota <span class="nxTA2-opt">opcional</span></label>
+            <input class="nxTA2-input" type="text" id="nxTA2Nota" placeholder="Detalle adicional">
+          </div>
+
+          <div class="nxTA2-info"><i class="ti ti-info-circle"></i><span>El dinero se mueve solo cuando el agente que recibe acepta la transferencia.</span></div>
         </div>
-        <div class="nx-info-box-v2">Este movimiento ajusta el control interno para saber qué agente tiene el dinero.</div>
-        <div class="fe">
-          <button class="btn" type="button" onclick="window.nxCerrarTransferenciaAgenteV2()">Cancelar</button>
-          <button class="btn bxl" type="button" onclick="window.nxGuardarTransferenciaAgenteV2()" id="nxTA2Btn"><i class="ti ti-check"></i> Guardar transferencia</button>
+        <div class="nxTA2-foot">
+          <button class="nxTA2-btn nxTA2-btn-ghost" type="button" onclick="window.nxCerrarTransferenciaAgenteV2()">Cancelar</button>
+          <button class="nxTA2-btn nxTA2-btn-primary" type="button" onclick="window.nxGuardarTransferenciaAgenteV2()" id="nxTA2Btn"><i class="ti ti-send"></i> Enviar transferencia</button>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
     q("#nxTA2Metodo")?.addEventListener("change", toggleBancoTransfer);
     q("#nxTA2Banco")?.addEventListener("change", toggleBancoOtroTransfer);
+  }
+
+  function injectTA2CSS() {
+    if (document.getElementById("nxTA2-css")) return;
+    const s = document.createElement("style");
+    s.id = "nxTA2-css";
+    s.textContent = `
+      #nxModalTransferAgenteV2 .nxTA2-modal{
+        padding:0 !important; max-width:460px; border:none !important; overflow:hidden;
+        border-radius:22px; box-shadow:0 24px 70px rgba(15,23,42,.28);
+        background:#fff !important; color:#0f172a !important;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-head{
+        display:flex; align-items:center; gap:12px; padding:18px 18px 16px;
+        background:linear-gradient(135deg,#f5f3ff,#eef2ff); border-bottom:1px solid #eceaf6;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-head-icon{
+        width:42px; height:42px; flex:0 0 42px; border-radius:13px; color:#fff; font-size:20px;
+        display:flex; align-items:center; justify-content:center;
+        background:linear-gradient(135deg,#7c3aed,#4f46e5); box-shadow:0 8px 18px rgba(79,70,229,.35);
+      }
+      #nxModalTransferAgenteV2 .nxTA2-head-title{ font-size:16px; font-weight:800; color:#0f172a; }
+      #nxModalTransferAgenteV2 .nxTA2-head-sub{ font-size:11px; color:#64748b; margin-top:1px; }
+      #nxModalTransferAgenteV2 .nxTA2-close{
+        margin-left:auto; width:32px; height:32px; border-radius:10px; border:none; cursor:pointer;
+        background:rgba(255,255,255,.7); color:#475569; display:flex; align-items:center; justify-content:center; font-size:16px;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-close:hover{ background:#fff; color:#0f172a; }
+
+      #nxModalTransferAgenteV2 .nxTA2-body{ padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+      #nxModalTransferAgenteV2 .nxTA2-field{ display:flex; flex-direction:column; }
+      #nxModalTransferAgenteV2 .nxTA2-field > label{
+        font-size:10px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:#94a3b8; margin-bottom:5px;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-opt{ color:#cbd5e1; font-weight:700; text-transform:none; letter-spacing:0; }
+
+      #nxModalTransferAgenteV2 .nxTA2-control{
+        position:relative; display:flex; align-items:center;
+        background:#f8fafc; border:1.5px solid #e7ecf3; border-radius:12px;
+        transition:border-color .15s, box-shadow .15s, background .15s;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-control:focus-within{ border-color:#7c3aed; background:#fff; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+      #nxModalTransferAgenteV2 .nxTA2-control > i{ position:absolute; left:11px; color:#94a3b8; font-size:15px; pointer-events:none; }
+      #nxModalTransferAgenteV2 .nxTA2-control::after{
+        content:''; position:absolute; right:13px; width:7px; height:7px;
+        border-right:2px solid #94a3b8; border-bottom:2px solid #94a3b8; transform:rotate(45deg); margin-top:-3px; pointer-events:none;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-control select{
+        appearance:none; -webkit-appearance:none; width:100%; border:none; background:transparent; outline:none;
+        padding:11px 30px 11px 34px; font-size:13px; font-weight:600; color:#0f172a; cursor:pointer;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-control select:disabled{ color:#475569; cursor:not-allowed; }
+
+      #nxModalTransferAgenteV2 .nxTA2-input{
+        width:100%; background:#f8fafc; border:1.5px solid #e7ecf3; border-radius:12px;
+        padding:11px 13px; font-size:13px; color:#0f172a; outline:none; transition:border-color .15s, box-shadow .15s, background .15s;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-input:focus{ border-color:#7c3aed; background:#fff; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+
+      #nxModalTransferAgenteV2 .nxTA2-route{ display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:end; }
+      #nxModalTransferAgenteV2 .nxTA2-route-arrow{
+        width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+        background:#eef2ff; color:#4f46e5; font-size:15px; margin-bottom:6px;
+      }
+
+      #nxModalTransferAgenteV2 .nxTA2-amount-box{
+        display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:14px;
+        background:linear-gradient(135deg,#faf5ff,#eff6ff); border:1.5px solid #e9d5ff;
+        transition:border-color .15s, box-shadow .15s;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-amount-box:focus-within{ border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+      #nxModalTransferAgenteV2 .nxTA2-amount-cur{ font-size:15px; font-weight:800; color:#7c3aed; }
+      #nxModalTransferAgenteV2 .nxTA2-amount input{
+        flex:1; width:100%; border:none; background:transparent; outline:none; font-size:24px; font-weight:800; color:#0f172a;
+      }
+
+      #nxModalTransferAgenteV2 .nxTA2-info{
+        display:flex; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:12px;
+        background:#eef2ff; border:1px solid #e0e7ff; font-size:11px; color:#4338ca; line-height:1.4;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-info i{ font-size:15px; margin-top:1px; flex:0 0 auto; }
+
+      #nxModalTransferAgenteV2 .nxTA2-foot{ display:flex; gap:10px; padding:14px 18px 18px; border-top:1px solid #f1f5f9; }
+      #nxModalTransferAgenteV2 .nxTA2-btn{
+        border:none; border-radius:13px; padding:13px; font-size:13px; font-weight:800; cursor:pointer;
+        display:flex; align-items:center; justify-content:center; gap:7px; transition:transform .12s, box-shadow .12s, background .12s;
+      }
+      #nxModalTransferAgenteV2 .nxTA2-btn-ghost{ flex:0 0 38%; background:#f1f5f9; color:#475569; }
+      #nxModalTransferAgenteV2 .nxTA2-btn-ghost:hover{ background:#e2e8f0; }
+      #nxModalTransferAgenteV2 .nxTA2-btn-primary{
+        flex:1; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; box-shadow:0 8px 20px rgba(79,70,229,.32);
+      }
+      #nxModalTransferAgenteV2 .nxTA2-btn-primary:hover{ transform:translateY(-1px); box-shadow:0 10px 24px rgba(79,70,229,.4); }
+      #nxModalTransferAgenteV2 .nxTA2-btn-primary:active{ transform:translateY(0); }
+      #nxModalTransferAgenteV2 .nxTA2-btn:disabled{ opacity:.6; cursor:default; transform:none; }
+
+      @media (max-width:560px){
+        #nxModalTransferAgenteV2 .nxTA2-route{ grid-template-columns:1fr; gap:6px; }
+        #nxModalTransferAgenteV2 .nxTA2-route-arrow{ transform:rotate(90deg); margin:2px auto; }
+        #nxModalTransferAgenteV2 .nxTA2-amount input{ font-size:21px; }
+      }
+    `;
+    (document.head || document.documentElement).appendChild(s);
   }
 
   function fillAgentesSelects() {
@@ -1214,7 +1355,7 @@
       console.error("Error guardando transferencia:", e);
       toastSafe("err", "No se pudo guardar", "Verifica que exista la tabla transferencias_agentes en Supabase");
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Guardar transferencia'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Enviar transferencia'; }
     }
   };
 
@@ -1984,15 +2125,15 @@
           </button>
         </div>
         <div class="nxDC-tx-chips">
-          <div class="nxDC-tx-chip">
+          <div class="nxDC-tx-chip nxDC-tx-chip-out">
             <div class="nxDC-tx-chip-ico" style="background:#fee2e2;color:#dc2626"><i class="ti ti-arrow-up"></i></div>
             <div class="nxDC-tx-chip-body"><div class="nxDC-tx-chip-lbl">ENVIADO</div><div class="nxDC-tx-chip-val">${F(enviado)}</div></div>
           </div>
-          <div class="nxDC-tx-chip">
+          <div class="nxDC-tx-chip nxDC-tx-chip-in">
             <div class="nxDC-tx-chip-ico" style="background:#dcfce7;color:#059669"><i class="ti ti-arrow-down"></i></div>
             <div class="nxDC-tx-chip-body"><div class="nxDC-tx-chip-lbl">RECIBIDO</div><div class="nxDC-tx-chip-val">${F(recibido)}</div></div>
           </div>
-          <div class="nxDC-tx-chip">
+          <div class="nxDC-tx-chip nxDC-tx-chip-net">
             <div class="nxDC-tx-chip-ico" style="background:#e0e7ff;color:#4f46e5"><i class="ti ti-scale"></i></div>
             <div class="nxDC-tx-chip-body"><div class="nxDC-tx-chip-lbl">NETO</div><div class="nxDC-tx-chip-val" style="color:${netoColor}">${F(neto)}</div></div>
           </div>
@@ -2937,71 +3078,76 @@
       }
 
       /* ═══ PANEL DE TRANSFERENCIAS (crear + aprobar + historial) ═══ */
-      .nxDC-tx-card { display:flex; flex-direction:column; gap:12px; }
-      .nxDC-tx-head {
-        display:flex; align-items:center; justify-content:space-between;
-        gap:10px; flex-wrap:wrap;
+      .nxDC-tx-card {
+        display:flex; flex-direction:column; gap:14px;
+        background:linear-gradient(180deg,#ffffff,#fbfaff); border:1px solid #efeafd;
       }
+      .nxDC-tx-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
       .nxDC-tx-btn {
-        display:inline-flex; align-items:center; gap:7px;
-        background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff;
-        border:none; border-radius:10px; padding:9px 15px;
-        font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;
-        box-shadow:0 4px 12px rgba(79,70,229,.28); transition:transform .12s ease, box-shadow .12s ease;
+        display:inline-flex; align-items:center; justify-content:center; gap:9px;
+        background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none;
+        border-radius:14px; padding:13px 18px; font-size:13px; font-weight:800; letter-spacing:.2px;
+        cursor:pointer; white-space:nowrap; flex:1 1 auto;
+        box-shadow:0 10px 22px rgba(79,70,229,.30); transition:transform .12s ease, box-shadow .12s ease;
       }
-      .nxDC-tx-btn:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(79,70,229,.36); }
+      .nxDC-tx-btn:hover { transform:translateY(-1px); box-shadow:0 14px 28px rgba(79,70,229,.40); }
       .nxDC-tx-btn:active { transform:translateY(0); }
-      .nxDC-tx-btn i { font-size:15px; }
+      .nxDC-tx-btn i { font-size:17px; }
 
       /* Rejilla adaptable de resumen */
-      .nxDC-tx-chips {
-        display:grid; gap:10px;
-        grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-      }
+      .nxDC-tx-chips { display:grid; gap:11px; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); }
       .nxDC-tx-chip {
-        display:flex; align-items:center; gap:10px;
-        background:#f8fafc; border:1px solid #eef2f7; border-radius:12px; padding:11px 12px;
+        position:relative; display:flex; align-items:center; gap:11px; overflow:hidden;
+        background:#fff; border:1px solid #eef0f6; border-radius:16px; padding:13px 14px;
+        box-shadow:0 4px 14px rgba(15,23,42,.05);
       }
+      .nxDC-tx-chip::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:#cbd5e1; }
+      .nxDC-tx-chip-out::before { background:#ef4444; }
+      .nxDC-tx-chip-in::before  { background:#10b981; }
+      .nxDC-tx-chip-net::before { background:#6366f1; }
       .nxDC-tx-chip-ico {
-        width:34px; height:34px; flex:0 0 34px; border-radius:10px;
-        display:flex; align-items:center; justify-content:center; font-size:16px;
+        width:38px; height:38px; flex:0 0 38px; border-radius:12px;
+        display:flex; align-items:center; justify-content:center; font-size:18px;
       }
       .nxDC-tx-chip-body { min-width:0; }
-      .nxDC-tx-chip-lbl { font-size:9px; font-weight:800; letter-spacing:.4px; color:#94a3b8; }
-      .nxDC-tx-chip-val { font-size:16px; font-weight:800; color:#0f172a; }
+      .nxDC-tx-chip-lbl { font-size:9px; font-weight:800; letter-spacing:.5px; color:#94a3b8; }
+      .nxDC-tx-chip-val { font-size:18px; font-weight:800; color:#0f172a; line-height:1.2; font-variant-numeric:tabular-nums; }
 
       /* Pendientes por aprobar */
       .nxDC-txp-wrap {
-        border:1px solid #fde68a; background:#fffbeb; border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px;
+        border:1px solid #fde68a; background:linear-gradient(180deg,#fffdf5,#fffbeb);
+        border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:9px;
       }
-      .nxDC-txp-title { font-size:11px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:6px; }
+      .nxDC-txp-title { font-size:11px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:6px; letter-spacing:.3px; }
       .nxDC-txp-item {
-        display:grid; gap:8px 12px; align-items:center;
-        grid-template-columns:1fr auto; padding:9px; background:#fff; border:1px solid #fef3c7; border-radius:10px;
+        display:grid; gap:9px 12px; align-items:center; grid-template-columns:1fr auto;
+        padding:11px; background:#fff; border:1px solid #fde9c8; border-radius:12px;
+        box-shadow:0 3px 10px rgba(180,83,9,.06);
       }
-      .nxDC-txp-ruta { font-size:12px; color:#0f172a; }
+      .nxDC-txp-ruta { font-size:12.5px; color:#0f172a; }
       .nxDC-txp-ruta i { color:#f59e0b; font-size:13px; vertical-align:middle; }
-      .nxDC-txp-meta { font-size:10px; color:#94a3b8; margin-top:2px; }
-      .nxDC-txp-monto { font-size:14px; font-weight:800; color:#b45309; font-variant-numeric:tabular-nums; }
+      .nxDC-txp-meta { font-size:10px; color:#94a3b8; margin-top:3px; }
+      .nxDC-txp-monto { font-size:15px; font-weight:800; color:#b45309; font-variant-numeric:tabular-nums; }
       .nxDC-txp-acc { grid-column:1 / -1; display:flex; gap:8px; flex-wrap:wrap; }
       .nxDC-btn {
-        display:inline-flex; align-items:center; gap:5px; border:none; border-radius:8px;
-        padding:7px 12px; font-size:11px; font-weight:800; cursor:pointer; flex:1 1 auto; justify-content:center;
+        display:inline-flex; align-items:center; gap:6px; border:none; border-radius:10px;
+        padding:9px 12px; font-size:11.5px; font-weight:800; cursor:pointer; flex:1 1 auto; justify-content:center;
+        transition:background .12s ease;
       }
       .nxDC-btn-ok { background:#dcfce7; color:#047857; }
       .nxDC-btn-ok:hover { background:#bbf7d0; }
       .nxDC-btn-no { background:#fee2e2; color:#b91c1c; }
       .nxDC-btn-no:hover { background:#fecaca; }
 
-      .nxDC-tx-hist-title { font-size:11px; font-weight:800; color:#64748b; letter-spacing:.3px; }
-      .nxDC-tx-badge { font-size:9px; font-weight:800; padding:3px 8px; border-radius:999px; white-space:nowrap; }
+      .nxDC-tx-hist-title { font-size:11px; font-weight:800; color:#64748b; letter-spacing:.3px; padding-top:2px; }
+      .nxDC-tx-badge { font-size:9px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap; }
       .nxDC-tx-ok { background:#dcfce7; color:#047857; }
       .nxDC-tx-pend { background:#fef3c7; color:#b45309; }
       .nxDC-tx-rech { background:#fee2e2; color:#b91c1c; }
 
       @media (max-width:560px) {
-        .nxDC-tx-btn { width:100%; justify-content:center; }
-        .nxDC-tx-chip-val { font-size:14.5px; }
+        .nxDC-tx-btn { width:100%; }
+        .nxDC-tx-chip-val { font-size:16px; }
         .nxDC-txp-item { grid-template-columns:1fr; }
         .nxDC-txp-monto { justify-self:start; }
       }
