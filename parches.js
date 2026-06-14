@@ -1909,6 +1909,49 @@
     `;
   }
 
+  // Badge visual por banco: color de marca + iniciales (referencia rápida).
+  // Para bancos no listados, deriva un color estable del nombre.
+  function bancoBadge(nombre) {
+    var raw = String(nombre == null ? '' : nombre).trim();
+    var n = raw.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (!n || /SIN\s*BANCO|EFECTIVO|CAJA/.test(n)) {
+      return '<span class="nxDC-bank-badge" style="background:linear-gradient(145deg,#94a3b8,#cbd5e1)"><i class="ti ti-wallet"></i></span>';
+    }
+    var map = [
+      [/APAP|ASOC.*POPULAR/,        '#ea580c', '#fb923c', 'AP'],
+      [/BANRESERVAS|RESERVAS/,      '#0d9488', '#14b8a6', 'BR'],
+      [/BHD/,                       '#0b3b8f', '#2563eb', 'BHD'],
+      [/POPULAR/,                   '#1e40af', '#2563eb', 'BP'],
+      [/SCOTIA/,                    '#dc2626', '#f43f5e', 'S'],
+      [/SANTA\s*CRUZ/,              '#047857', '#10b981', 'SC'],
+      [/PROMERICA/,                 '#15803d', '#22c55e', 'PR'],
+      [/CARIBE/,                    '#1e3a8a', '#3b82f6', 'BC'],
+      [/VIMENCA/,                   '#b91c1c', '#ef4444', 'VI'],
+      [/ADEMI/,                     '#c2410c', '#fb923c', 'AD'],
+      [/LAFISE/,                    '#1d4ed8', '#60a5fa', 'LF'],
+      [/CIBAO/,                     '#1d4ed8', '#60a5fa', 'AC'],
+      [/LOPEZ\s*DE\s*HARO|BLH/,     '#1e40af', '#3b82f6', 'LH'],
+      [/BDI/,                       '#0e7490', '#06b6d4', 'BDI'],
+      [/BANESCO/,                   '#15803d', '#22c55e', 'BA'],
+      [/QIK/,                       '#7c3aed', '#a855f7', 'Q'],
+      [/ALAVER/,                    '#b45309', '#f59e0b', 'AL'],
+      [/MOTOR\s*CREDITO/,           '#9333ea', '#c084fc', 'MC']
+    ];
+    for (var i = 0; i < map.length; i++) {
+      if (map[i][0].test(n)) {
+        return '<span class="nxDC-bank-badge" style="background:linear-gradient(145deg,' + map[i][1] + ',' + map[i][2] + ')">' + map[i][3] + '</span>';
+      }
+    }
+    // Respaldo: color estable derivado del nombre + iniciales
+    var h = 0;
+    for (var k = 0; k < n.length; k++) h = (h * 31 + n.charCodeAt(k)) >>> 0;
+    var hue = h % 360;
+    var c1 = 'hsl(' + hue + ',60%,42%)', c2 = 'hsl(' + ((hue + 26) % 360) + ',70%,55%)';
+    var words = n.replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
+    var ab = words.length >= 2 ? (words[0].charAt(0) + words[1].charAt(0)) : (words[0] ? words[0].substring(0, 2) : '?');
+    return '<span class="nxDC-bank-badge" style="background:linear-gradient(145deg,' + c1 + ',' + c2 + ')">' + ab + '</span>';
+  }
+
   // ═══════════════════════════════════════════════════════════
   // RENDER — BANCOS (lista limpia con total)
   // ═══════════════════════════════════════════════════════════
@@ -1925,7 +1968,7 @@
     const rows = porBanco.map(b => `
       <div class="nxDC-banco-row">
         <div class="nxDC-banco-cell">
-          <i class="ti ti-building-bank"></i>
+          ${bancoBadge(b.nombre)}
           <span>${esc(b.nombre)}</span>
         </div>
         <div class="nxDC-banco-monto">${F(b.monto)}</div>
@@ -2867,6 +2910,14 @@
       .nxDC-banco-row:last-of-type { border-bottom:0; }
       .nxDC-banco-cell { display:flex; align-items:center; gap:10px; color:#0f172a; font-weight:600; font-size:13px; }
       .nxDC-banco-cell i { font-size:18px; color:#64748b; }
+      .nxDC-bank-badge {
+        width:36px; height:36px; min-width:36px; flex:0 0 auto;
+        border-radius:11px;
+        display:inline-flex; align-items:center; justify-content:center;
+        color:#fff; font-weight:800; font-size:11.5px; letter-spacing:.3px;
+        box-shadow:0 4px 10px rgba(30,58,110,.22), inset 0 1px 0 rgba(255,255,255,.45);
+      }
+      .nxDC-bank-badge i { font-size:18px; color:#fff !important; }
       .nxDC-banco-monto { font-weight:700; color:#0f172a; font-family:var(--mono,monospace); font-size:13px; }
       .nxDC-banco-total { display:flex; justify-content:space-between; align-items:center; padding:12px 4px 4px; border-top:1px solid #e2e8f0; margin-top:8px; }
       .nxDC-banco-total > div:first-child { font-weight:800; color:#0f172a; font-size:13px; }

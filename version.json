@@ -1,7 +1,8 @@
 {
-  "version": "12.7",
+  "version": "12.8",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Bancos en 'Dónde está el dinero': cada banco con su color e iniciales para reconocerlo de un vistazo",
     "Menú lateral: iconos en círculos de color con animación y onda al tocar (como el inicio)",
     "Pestañas de Configuración: nombres ajustados (no se cortan) y se arregló el icono de Empresas",
     "Pestañas de Configuración: icono centrado en círculo y el nombre debajo (más claras de leer)",
