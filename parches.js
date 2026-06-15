@@ -3484,7 +3484,6 @@
       .card,
       .kpi,
       .sm,
-      .qa,
       .box,
       .panel,
       .modal,
@@ -4128,10 +4127,13 @@
         position: relative !important;
         overflow: hidden !important;
         box-shadow:
-          0 16px 30px rgba(30,58,110,.28),
+          0 20px 36px rgba(30,58,110,.38),
+          0 9px 16px rgba(30,58,110,.22),
           inset 0 3px 6px rgba(255,255,255,.6),
           inset 0 -9px 16px rgba(0,0,0,.18) !important;
       }
+      /* sin caja/sombra de tarjeta tampoco en hover */
+      #v-dashboard .qa-g .qa:hover { background:none !important; box-shadow:none !important; border:0 !important; }
       /* reflejo cristalino (brillo de vidrio en la parte superior) */
       #v-dashboard .qa-g .qa i.qa-ico::after {
         content:''; position:absolute; left:12%; top:6%; width:76%; height:42%;
