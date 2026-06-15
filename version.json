@@ -1,8 +1,9 @@
 {
-  "version": "17.0",
+  "version": "17.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Arreglado el 'parpadeo' al actualizar: el sistema ya no se muestra sin estilos por un momento. La pantalla de carga ahora espera a que los estilos estén listos (con tope de seguridad) y los parches se guardan en caché por versión para que carguen rápido, sobre todo en redes lentas (3G)",
+    "Parpadeo al actualizar eliminado del todo: la pantalla de carga ahora es opaca (antes era casi transparente y dejaba ver el sistema sin estilos) y ya NO se quita sola a los 2s; espera a que los estilos estén listos. Si la red falla, reintenta cargar los parches solo (hasta 3 veces)",
+    "Arreglado el 'parpadeo' al actualizar: la pantalla de carga espera a que los estilos estén listos (con tope de seguridad) y los parches se guardan en caché por versión para que carguen rápido, sobre todo en redes lentas (3G)",
     "El logo del inicio de sesión ahora también rebota como goma y suelta humo al tocarlo",
     "Nuevo inicio de sesión: tarjeta de vidrio esmerilado sobre un fondo azul con esferas de luz que flotan; logo cristalino, campos más elegantes y botón con brillo que recorre",
     "Efecto goma (jelly) en TODO el sistema al tocar: botones, pestañas, KPIs y menú lateral también rebotan (versión suave); los iconos redondos mantienen el rebote completo",

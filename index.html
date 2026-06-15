@@ -104,7 +104,8 @@ input,select,textarea,button{font-family:var(--ff)}
 /* ── SPLASH (pantalla de bienvenida animada) ── */
 #nxSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,#1e3a6e 0%,#2d5a9e 50%,#1a2d5a 100%);
-  animation:nxsFade .6s ease 1.9s forwards}
+  transition:opacity .45s ease}
+#nxSplash.nxs-out{opacity:0;visibility:hidden;pointer-events:none}
 .nxs-inner{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:1rem}
 .nxs-badge{width:96px;height:96px;border-radius:26px;background:linear-gradient(135deg,#1e3a6e,#3b82f6);
   display:flex;align-items:center;justify-content:center;color:#fff;font-size:48px;position:relative;
@@ -126,12 +127,11 @@ input,select,textarea,button{font-family:var(--ff)}
 @keyframes nxsLoad{0%{transform:translateX(-130%)}100%{transform:translateX(360%)}}
 @keyframes nxsFade{to{opacity:0;visibility:hidden;pointer-events:none}}
 @media (prefers-reduced-motion:reduce){
-  #nxSplash{animation:nxsFade .3s ease 1s forwards}
   .nxs-badge,.nxs-badge i,.nxs-brand,.nxs-tag,.nxs-bar,.nxs-bar span,.nxs-badge::after{animation-duration:.01ms!important;animation-iteration-count:1!important;opacity:1}
 }
 
 /* ── LOADER (spinner breve en recargas) ── */
-#nxLoader{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:rgba(15,31,61,.18);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#nxLoader{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a6e 0%,#2d5a9e 50%,#1a2d5a 100%)}
 #nxLoader.nxl-out{opacity:0;pointer-events:none;transition:opacity .35s ease}
 .nxl-logo{width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,#1e3a6e,#3b82f6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;animation:nxlLogoOrbit 1.6s linear infinite}
 @keyframes nxlLogoOrbit{0%{box-shadow:0 13px 32px rgba(37,99,235,.6)}25%{box-shadow:15px 0 32px rgba(96,165,250,.7)}50%{box-shadow:0 -13px 32px rgba(37,99,235,.6)}75%{box-shadow:-15px 0 32px rgba(96,165,250,.7)}100%{box-shadow:0 13px 32px rgba(37,99,235,.6)}}
@@ -774,7 +774,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   }catch(e){}
   // Primera vez: bienvenida; espera a que apliquen estilos (mín 2.8s, máx 8s)
   var t1=Date.now();
-  (function tickS(){ var el=Date.now()-t1; if((ready&&el>=2800)||el>=8000){try{s.remove();}catch(e){s.style.display='none';}return;} setTimeout(tickS,150); })();
+  var hideS=function(){ s.classList.add('nxs-out'); setTimeout(function(){try{s.remove();}catch(e){s.style.display='none';}},480); };
+  (function tickS(){ var el=Date.now()-t1; if((ready&&el>=2800)||el>=8000){hideS();return;} setTimeout(tickS,150); })();
 })();
 </script>
 
@@ -3101,7 +3102,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='17.0';
+const APP_VERSION='17.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -7752,12 +7753,21 @@ setTimeout(verificarAutoFacturacion, 5000);
 <!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══ -->
 <script>
   (function(){
-    var s = document.createElement('script');
     // Cachea parches.js por versión (no por Date.now): evita re-descargarlo en cada
     // carga — clave en redes lentas (3G) para que los estilos apliquen rápido.
-    s.src = 'parches.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1');
-    s.onerror = function(){ console.log('parches.js no disponible o aún no creado'); };
-    document.head.appendChild(s);
+    var V = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1');
+    var intentos = 0;
+    function cargar(){
+      var s = document.createElement('script');
+      s.src = 'parches.js?v=' + V;
+      s.onerror = function(){
+        intentos++;
+        if (intentos <= 3) { setTimeout(cargar, 800 * intentos); } // reintenta en 3G inestable
+        else { console.log('parches.js no se pudo cargar tras varios intentos'); }
+      };
+      document.head.appendChild(s);
+    }
+    cargar();
   })();
 </script>
 </body>
