@@ -11120,10 +11120,23 @@
   }
   window.nxTssComparar = comparar;
 
+  // Crea (una vez) la vista normal del sistema para la Tabla Comparativa
+  function ensureTssView() {
+    var v = document.getElementById('v-tablatss');
+    if (v) return v;
+    var dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
+    v = document.createElement('div');
+    v.className = 'view';
+    v.id = 'v-tablatss';
+    dash.parentElement.appendChild(v);
+    return v;
+  }
+
   window.nxAbrirCuadreTSS = function () {
     if (!puedeVerTSS()) return;
-    let ov = document.getElementById('nxTssOverlay');
-    if (ov) ov.remove();
+    const view = ensureTssView();
+    if (!view) return;
     _modo = 'cedula'; _rows = []; _header = []; _colCed = -1; _colNom = -1; _titulares = []; _depCount = 0;
     _acumCed = []; _acumArchivos = [];
 
@@ -11131,23 +11144,13 @@
     const empresas = (Array.isArray(ST_.empresas) ? ST_.empresas : []).slice().sort((a, b) => String(a.nom).localeCompare(String(b.nom)));
     const opcEmp = '<option value="">— Elegir empresa —</option><option value="__TODAS__">★ Todas las empresas (cuadre combinado)</option>' + empresas.map(e => `<option value="${esc(e.id)}">${esc(e.nom)}</option>`).join('');
 
-    ov = document.createElement('div');
-    ov.id = 'nxTssOverlay';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:99990;display:flex;justify-content:center;align-items:flex-start;padding:16px;overflow-y:auto';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `
-      <div style="background:#f8fafc;border-radius:18px;max-width:620px;width:100%;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-        <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:18px 18px;display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-size:17px;font-weight:800">🔍 Tabla Comparativa</div>
-            <div style="font-size:11px;opacity:.85;margin-top:2px">Compara tus clientes con la TSS (Excel, por cédula) o Humano (PDF, por nombre)</div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-            <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center" title="Volver"><i class="ti ti-arrow-left"></i></button>
-            <button onclick="document.getElementById('nxTssOverlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" title="Cerrar">✕</button>
-          </div>
+    view.innerHTML = `
+      <div class="nc">
+        <div class="ch">
+          <div><div class="ct"><i class="ti ti-file-search"></i> Tabla Comparativa</div><div class="ct-s">Compara tus clientes con la TSS (Excel, por cédula) o Humano (PDF, por nombre)</div></div>
+          <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
         </div>
-        <div style="padding:16px">
+        <div style="max-width:640px">
           <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">1. Empresa a comparar</label>
           <select id="nxTssEmpresa" onchange="window.nxTssComparar()" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;background:#fff;margin-bottom:12px">${opcEmp}</select>
 
@@ -11170,7 +11173,13 @@
           <div id="nxTssResultado"></div>
         </div>
       </div>`;
-    document.body.appendChild(ov);
+    // Mostrar como una ventana normal del sistema (no flotante)
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
+    view.classList.add('on');
+    document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+    var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'TABLA COMPARATIVA';
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
     const fileInp = document.getElementById('nxTssFile');
     if (fileInp) fileInp.addEventListener('change', function () { if (this.files && this.files.length) { const ta = document.getElementById('nxTssPegar'); if (ta) ta.value = ''; if (this.files.length > 1) onVariosArchivos(this.files); else onArchivo(this.files[0]); } });
     // Arrastrar y soltar el archivo sobre el botón

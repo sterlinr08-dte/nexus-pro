@@ -1,7 +1,8 @@
 {
-  "version": "17.9",
+  "version": "18.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "La Tabla Comparativa ya no abre como ventana flotante: ahora es una ventana normal del sistema (se abre en la página, con botón Volver al inicio)",
     "En PC los iconos del inicio ahora van en 2 líneas (6 columnas), centrados",
     "ARREGLADO: muchos botones se inflaban enormemente al presionarlos (en iPhone, el efecto 'goma' sobre botones dentro de ventanas con desenfoque). Se quitó el rebote de los botones; mantienen su hundido y la onda al tocar. El rebote sigue en iconos redondos, KPIs y menú",
     "La sección 'Pendientes' de Facturas ya no abre una ventana flotante: ahora se muestra dentro de la página como una pestaña más (Facturas/Cobros/Pendientes/Historial)",
