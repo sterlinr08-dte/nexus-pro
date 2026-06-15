@@ -4149,7 +4149,16 @@
         gap: 8px !important;
         padding: 6px 2px 8px !important;
       }
-      #v-dashboard .qa-g .qa-i { margin: 0 !important; }
+      #v-dashboard .qa-g .qa-i { margin: 0 !important; animation: nxOrbFloat 3.2s ease-in-out infinite; will-change: transform; }
+      @keyframes nxOrbFloat { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-5px); } }
+      #v-dashboard .qa-g .qa:nth-child(3n+2) .qa-i{ animation-delay: .4s; }
+      #v-dashboard .qa-g .qa:nth-child(3n)   .qa-i{ animation-delay: .8s; }
+      #v-dashboard .qa-g .qa:nth-child(4n)   .qa-i{ animation-delay: 1.2s; }
+      @keyframes nxOrbGlint { 0%,86%,100%{ opacity:.6; } 93%{ opacity:1; } }
+      #v-dashboard .qa-g .qa i.qa-ico::after{ animation: nxOrbGlint 4.2s ease-in-out infinite; }
+      @media (prefers-reduced-motion: reduce){
+        #v-dashboard .qa-g .qa-i, #v-dashboard .qa-g .qa i.qa-ico::after{ animation: none !important; }
+      }
       #v-dashboard .qa-g .qa-l {
         text-align: center !important;
         font-size: 8.5px !important;
