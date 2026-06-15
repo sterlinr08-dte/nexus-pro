@@ -1774,18 +1774,40 @@
     let offset = 0;
 
     const segmentos = [
-      { color: '#10b981', value: stats.efectivo, label: 'Efectivo' },
-      { color: '#3b82f6', value: stats.banco,    label: 'Banco / Transferencia' },
-      { color: '#f59e0b', value: stats.cheque,   label: 'Cheque' },
-      { color: '#a855f7', value: stats.otros,    label: 'Otros' }
+      { color: '#10b981', c1: '#34e0aa', c2: '#0b9466', value: stats.efectivo, label: 'Efectivo' },
+      { color: '#3b82f6', c1: '#60a5fa', c2: '#1d4ed8', value: stats.banco,    label: 'Banco / Transferencia' },
+      { color: '#f59e0b', c1: '#fbbf24', c2: '#d97706', value: stats.cheque,   label: 'Cheque' },
+      { color: '#a855f7', c1: '#c084fc', c2: '#9333ea', value: stats.otros,    label: 'Otros' }
     ];
 
-    const paths = segmentos.map(s => {
+    // Degradados por segmento (luz arriba, sombra abajo) para dar volumen 3D
+    const grads = segmentos.map((s, i) => `
+      <linearGradient id="nxDonutG${i}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${s.c1}"/>
+        <stop offset="55%" stop-color="${s.color}"/>
+        <stop offset="100%" stop-color="${s.c2}"/>
+      </linearGradient>`).join('');
+
+    // Filtro de profundidad (sombra proyectada suave del aro de color)
+    const defs = `
+      <defs>
+        ${grads}
+        <filter id="nxDonut3D" x="-25%" y="-25%" width="150%" height="150%">
+          <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.22"/>
+        </filter>
+        <radialGradient id="nxDonutGloss" cx="50%" cy="30%" r="62%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+          <stop offset="42%" stop-color="#ffffff" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>`;
+
+    const paths = segmentos.map((s, i) => {
       if (s.value === 0) return '';
       const pct = s.value / total;
       const len = pct * circumference;
       const seg = `<circle cx="${cx}" cy="${cy}" r="${radius}"
-        fill="none" stroke="${s.color}" stroke-width="24"
+        fill="none" stroke="url(#nxDonutG${i})" stroke-width="26"
         stroke-dasharray="${len.toFixed(2)} ${circumference.toFixed(2)}"
         stroke-dashoffset="${(-offset).toFixed(2)}"
         transform="rotate(-90 ${cx} ${cy})"
@@ -1794,11 +1816,16 @@
       return seg;
     }).join('');
 
+    // Brillo cristalino superior (reflejo de vidrio sobre el aro)
+    const gloss = `<circle cx="${cx}" cy="${cy}" r="${radius + 1}" fill="none"
+      stroke="url(#nxDonutGloss)" stroke-width="26" transform="rotate(-90 ${cx} ${cy})"
+      style="pointer-events:none"/>`;
+
     const leyenda = segmentos.map(s => {
       const pct = total > 0 ? ((s.value/total)*100).toFixed(1) : '0.0';
       return `
         <div class="nxDC-leg-item">
-          <div class="nxDC-leg-dot" style="background:${s.color}"></div>
+          <div class="nxDC-leg-dot" style="background-color:${s.color}"></div>
           <div class="nxDC-leg-name">${s.label}</div>
           <div class="nxDC-leg-val">${F(s.value)}</div>
           <div class="nxDC-leg-pct">${pct}%</div>
@@ -1810,8 +1837,10 @@
       <div class="nxDC-donut-block">
         <div class="nxDC-donut-chart">
           <svg viewBox="0 0 200 200" class="nxDC-donut-svg" aria-hidden="true">
-            <circle cx="100" cy="100" r="70" fill="none" stroke="#f1f5f9" stroke-width="24"/>
-            ${paths}
+            ${defs}
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#eef2f7" stroke-width="26"/>
+            <g filter="url(#nxDonut3D)">${paths}</g>
+            ${gloss}
           </svg>
           <div class="nxDC-donut-center">
             <div class="nxDC-donut-amt">RD$</div>
@@ -2908,12 +2937,19 @@
       .nxDC-donut-chart { position:relative; width:160px; height:160px; flex:0 0 auto; }
       .nxDC-donut-svg { width:100%; height:100%; }
       .nxDC-donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+      /* hueco central con profundidad (sombra interior tipo vidrio) */
+      .nxDC-donut-center::before { content:''; position:absolute; width:54%; height:54%; border-radius:50%;
+        background:radial-gradient(circle at 50% 34%, #ffffff, #eef3f9 78%);
+        box-shadow: inset 0 2px 5px rgba(15,23,42,.10), inset 0 -2px 4px rgba(255,255,255,.9), 0 1px 2px rgba(15,23,42,.06);
+        z-index:-1; }
       .nxDC-donut-amt { font-size:11px; color:#64748b; font-weight:700; }
       .nxDC-donut-val { font-size:22px; font-weight:900; color:#0f172a; font-family:var(--mono,monospace); line-height:1; margin:2px 0; }
       .nxDC-donut-lbl { font-size:10px; color:#94a3b8; font-weight:700; letter-spacing:.5px; }
       .nxDC-legend { display:flex; flex-direction:column; gap:10px; min-width:0; }
       .nxDC-leg-item { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:10px; font-size:12px; }
-      .nxDC-leg-dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+      .nxDC-leg-dot { width:13px; height:13px; border-radius:50%; flex:0 0 auto; position:relative;
+        box-shadow: inset 0 1.5px 2px rgba(255,255,255,.75), inset 0 -2px 3px rgba(0,0,0,.22), 0 2px 4px rgba(15,23,42,.22);
+        background-image: linear-gradient(150deg, rgba(255,255,255,.45), rgba(0,0,0,.12)); }
       .nxDC-leg-name { color:#475569; font-weight:600; }
       .nxDC-leg-val { color:#0f172a; font-weight:700; font-family:var(--mono,monospace); font-size:11px; }
       .nxDC-leg-pct { color:#64748b; font-weight:700; font-size:11px; min-width:42px; text-align:right; }
@@ -4072,7 +4108,7 @@
       #v-dashboard .qa i.qa-ico {
         border-radius: 50% !important;
         color: #ffffff !important;
-        border: 2px solid rgba(255,255,255,.55) !important;
+        border: none !important;
         background: linear-gradient(145deg,#64748b,#94a3b8) !important;
         box-shadow:
           0 10px 20px rgba(30,58,110,.22),
@@ -4123,7 +4159,7 @@
       #v-dashboard .qa-g .qa i.qa-ico {
         width: 66px !important; height: 66px !important; min-width: 66px !important;
         font-size: 30px !important;
-        border: 1.5px solid rgba(255,255,255,.9) !important;
+        border: none !important;
         position: relative !important;
         overflow: hidden !important;
         backdrop-filter: blur(3px) saturate(155%);
@@ -4131,9 +4167,8 @@
         box-shadow:
           0 20px 36px rgba(30,58,110,.38),
           0 9px 16px rgba(30,58,110,.22),
-          inset 0 5px 9px rgba(255,255,255,.75),
-          inset 0 -11px 18px rgba(0,0,0,.22),
-          inset 0 0 0 1px rgba(255,255,255,.3) !important;
+          inset 0 5px 9px rgba(255,255,255,.7),
+          inset 0 -11px 18px rgba(0,0,0,.22) !important;
       }
       /* sin caja/sombra de tarjeta tampoco en hover */
       #v-dashboard .qa-g .qa:hover { background:none !important; box-shadow:none !important; border:0 !important; }
@@ -4325,7 +4360,7 @@
         display: inline-flex; align-items: center; justify-content: center;
         background: linear-gradient(145deg,#3b82f6,#22d3ee);
         color: #fff;
-        border: 1px solid rgba(255,255,255,.55);
+        border: none;
         position: relative;
         overflow: hidden;
         backdrop-filter: blur(2px) saturate(150%);

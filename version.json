@@ -1,7 +1,9 @@
 {
-  "version": "15.8",
+  "version": "15.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Gráfica 'Resumen por método de cobro' con aspecto 3D realista: aro con degradado y volumen, sombra de profundidad, brillo de vidrio y hueco central con relieve; puntos de la leyenda como mini-esferas",
+    "Iconos sin la línea blanca alrededor: esferas más realistas en el inicio y en todo el sistema",
     "Inicio rediseñado: sin los cuadros blancos, con esferas más grandes y cristalinas (efecto vidrio)",
     "Detalles de Cobro: 'EN CURSO' ahora es el período vigente (el que contiene hoy), no el siguiente",
     "Solicitudes ahora aparece arriba de Pólizas en el menú",
