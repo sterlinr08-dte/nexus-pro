@@ -4140,7 +4140,6 @@
       }
       #v-dashboard .qa:active{ transform: scale(.95) !important; }
       #v-dashboard .qa:active i.qa-ico{
-        transform: scale(.84) translateY(2px) !important;
         box-shadow: 0 4px 10px rgba(30,58,110,.30), inset 0 2px 3px rgba(255,255,255,.4) !important;
       }
       /* el contenido siempre por encima de la onda */
@@ -4187,15 +4186,34 @@
         gap: 8px !important;
         padding: 6px 2px 8px !important;
       }
-      #v-dashboard .qa-g .qa-i { margin: 0 !important; animation: nxOrbFloat 3.2s ease-in-out infinite; will-change: transform; }
-      @keyframes nxOrbFloat { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-5px); } }
-      #v-dashboard .qa-g .qa:nth-child(3n+2) .qa-i{ animation-delay: .4s; }
-      #v-dashboard .qa-g .qa:nth-child(3n)   .qa-i{ animation-delay: .8s; }
-      #v-dashboard .qa-g .qa:nth-child(4n)   .qa-i{ animation-delay: 1.2s; }
+      #v-dashboard .qa-g .qa-i { margin: 0 !important; position: relative; perspective: 600px; will-change: transform; }
+      /* La esfera GIRA en 3D al presionarla (en vez de flotar) */
+      @keyframes nxOrbSpin {
+        0%   { transform: scale(.84) rotateY(0deg); }
+        55%  { transform: scale(1.07) rotateY(250deg); }
+        100% { transform: scale(1) rotateY(360deg); }
+      }
+      #v-dashboard .qa i.qa-ico.nx-spin { animation: nxOrbSpin .62s cubic-bezier(.3,.85,.35,1); transform-style: preserve-3d; }
+      /* Reflejo cristalino sutil (no es flotación) */
       @keyframes nxOrbGlint { 0%,86%,100%{ opacity:.6; } 93%{ opacity:1; } }
       #v-dashboard .qa-g .qa i.qa-ico::after{ animation: nxOrbGlint 4.2s ease-in-out infinite; }
+      /* Pequeño humo al presionar */
+      .nx-smoke{
+        position:absolute; left:50%; top:34%; width:15px; height:15px; border-radius:50%;
+        background: radial-gradient(circle, rgba(226,232,240,.95), rgba(203,213,225,0) 72%);
+        pointer-events:none; filter:blur(2px); z-index:-1;
+        transform:translate(-50%,0) scale(.35); opacity:0;
+        animation: nxSmoke .75s ease-out forwards;
+      }
+      @keyframes nxSmoke{
+        0%   { opacity:0; transform:translate(-50%,0) scale(.35); }
+        22%  { opacity:.6; }
+        100% { opacity:0; transform: translate(calc(-50% + var(--dx,0px)), -42px) scale(1.7); }
+      }
       @media (prefers-reduced-motion: reduce){
-        #v-dashboard .qa-g .qa-i, #v-dashboard .qa-g .qa i.qa-ico::after{ animation: none !important; }
+        #v-dashboard .qa i.qa-ico.nx-spin{ animation: none !important; }
+        #v-dashboard .qa-g .qa i.qa-ico::after{ animation: none !important; }
+        .nx-smoke{ display:none !important; }
       }
       #v-dashboard .qa-g .qa-l {
         text-align: center !important;
@@ -11409,6 +11427,41 @@
     setTimeout(function(){ if (r && r.parentNode) r.parentNode.removeChild(r); }, 650);
   }
   document.addEventListener('pointerdown', spawn, { passive: true });
+})();
+
+/* ── Inicio: la esfera gira en 3D y suelta un poco de humo al presionar ───── */
+(function(){
+  if (window.__NX_ORB_FX__) return;
+  window.__NX_ORB_FX__ = true;
+  function press(e){
+    var qa = e.target && e.target.closest ? e.target.closest('#v-dashboard .qa') : null;
+    if (!qa) return;
+    var ico = qa.querySelector('i.qa-ico');
+    var host = qa.querySelector('.qa-i') || ico && ico.parentNode;
+    // Giro 3D (re-disparable en cada toque)
+    if (ico){
+      ico.classList.remove('nx-spin');
+      void ico.offsetWidth; // fuerza reflow para reiniciar la animación
+      ico.classList.add('nx-spin');
+      var done = function(){ ico.classList.remove('nx-spin'); ico.removeEventListener('animationend', done); };
+      ico.addEventListener('animationend', done);
+    }
+    // Humo (varias volutas que suben y se desvanecen)
+    if (host){
+      for (var i=0;i<5;i++){
+        (function(n){
+          var p = document.createElement('span');
+          p.className = 'nx-smoke';
+          p.style.setProperty('--dx', (Math.random()*28 - 14).toFixed(0) + 'px');
+          p.style.left = (40 + Math.random()*20) + '%';
+          p.style.animationDelay = (n*45) + 'ms';
+          try { host.appendChild(p); } catch(_){ return; }
+          setTimeout(function(){ if (p.parentNode) p.parentNode.removeChild(p); }, 850 + n*45);
+        })(i);
+      }
+    }
+  }
+  document.addEventListener('pointerdown', press, { passive: true });
 })();
 
 /* ── Iconos multicolor: a cada icono "suelto" su color estable + sombra 3D ── */
