@@ -746,6 +746,18 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 /* "Pendientes" es una alerta: misma forma/tamaño, acento rojo suave */
 .nxft-tab.nxft-alert{background:rgba(220,38,38,.10);color:#dc2626}
 .nxft-tab.nxft-alert:hover{background:rgba(220,38,38,.16);color:#b91c1c}
+/* "Nuevo" es una acción de agregar: acento verde */
+.nxft-tab.nxft-add{background:linear-gradient(135deg,#059669,#10b981);color:#fff;box-shadow:0 4px 12px rgba(16,185,129,.3),inset 0 1px 0 rgba(255,255,255,.25)}
+.nxft-tab.nxft-add:hover{filter:brightness(1.06);color:#fff}
+.nxft-tab.nxft-add i{color:#fff}
+/* Variante en fila con scroll (para grupos con muchos items o anchos dispares) */
+.nxft-tabs.nxft-flex{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nxft-tabs.nxft-flex::-webkit-scrollbar{height:0;display:none}
+.nxft-tabs.nxft-flex{scrollbar-width:none}
+.nxft-tabs.nxft-flex .nxft-tab{flex:0 0 auto}
+/* Contadores dentro de las pestañas */
+.nxft-tab .nxft-cnt{padding:1px 7px;border-radius:10px;font-size:9px;margin-left:1px;background:rgba(148,163,184,.22);color:inherit}
+.nxft-tab.is-active .nxft-cnt{background:rgba(255,255,255,.25);color:#fff}
 </style>
 </head>
 <body>
@@ -1055,21 +1067,21 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </div>
             </div>
             <!-- Botón Nuevo + Sub-tabs en una sola fila, en orden: Nuevo, Activos, En proceso, VIP, Inhabilitados -->
-            <div style="display:flex;gap:4px;margin-bottom:12px;background:#f1f5f9;border-radius:10px;padding:4px;width:fit-content;flex-wrap:wrap">
-              <button class="cli-subtab" style="background:#2563eb;color:#fff" onclick="abrirNuevoCli()">
+            <div class="nxft-tabs nxft-flex">
+              <button class="nxft-tab nxft-add" onclick="abrirNuevoCli()">
                 <i class="ti ti-plus"></i> Nuevo
               </button>
-              <button id="cliTabAct" class="cli-subtab active-subtab" onclick="switchCliTab('activos')">
-                <i class="ti ti-users"></i> Activos <span id="cntAct" style="background:rgba(255,255,255,.25);padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              <button id="cliTabAct" class="nxft-tab is-active" onclick="switchCliTab('activos')">
+                <i class="ti ti-users"></i> Activos <span id="cntAct" class="nxft-cnt">0</span>
               </button>
-              <button id="cliTabProc" class="cli-subtab" onclick="switchCliTab('proceso')">
-                <i class="ti ti-clipboard-list"></i> En proceso <span id="cntProc" style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              <button id="cliTabProc" class="nxft-tab" onclick="switchCliTab('proceso')">
+                <i class="ti ti-clipboard-list"></i> En proceso <span id="cntProc" class="nxft-cnt">0</span>
               </button>
-              <button id="cliTabVip" class="cli-subtab" onclick="switchCliTab('vip')">
-                <i class="ti ti-star"></i> VIP <span id="cntVip" style="background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              <button id="cliTabVip" class="nxft-tab" onclick="switchCliTab('vip')">
+                <i class="ti ti-star"></i> VIP <span id="cntVip" class="nxft-cnt">0</span>
               </button>
-              <button id="cliTabInh" class="cli-subtab" onclick="switchCliTab('inhabilitados')">
-                <i class="ti ti-user-off"></i> Inhabilitados <span id="cntInh" style="background:#fee2e2;color:#dc2626;padding:1px 7px;border-radius:10px;font-size:9px;margin-left:3px">0</span>
+              <button id="cliTabInh" class="nxft-tab" onclick="switchCliTab('inhabilitados')">
+                <i class="ti ti-user-off"></i> Inhabilitados <span id="cntInh" class="nxft-cnt">0</span>
               </button>
             </div>
             <div class="frow">
@@ -2040,10 +2052,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="mt"><span>// WHATSAPP MASIVO</span><button class="btn bghost bsm" onclick="closeM('mWAMasivo')"><i class="ti ti-x"></i></button></div>
     <!-- Tipo de mensaje -->
     <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:8px">Tipo de mensaje</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button id="waTipoFactura" onclick="selWATipo('factura')" class="btn bc1" style="font-size:11px;padding:8px 14px"><i class="ti ti-file-invoice"></i> Factura del mes</button>
-      <button id="waTipoPago" onclick="selWATipo('pago')" class="btn" style="font-size:11px;padding:8px 14px"><i class="ti ti-clock"></i> Pago pendiente</button>
-      <button id="waTipoVence" onclick="selWATipo('vence')" class="btn" style="font-size:11px;padding:8px 14px"><i class="ti ti-calendar-x"></i> Póliza por vencer</button>
+    <div class="nxft-tabs nxft-flex" style="margin-bottom:14px">
+      <button id="waTipoFactura" onclick="selWATipo('factura')" class="nxft-tab is-active"><i class="ti ti-file-invoice"></i> Factura del mes</button>
+      <button id="waTipoPago" onclick="selWATipo('pago')" class="nxft-tab"><i class="ti ti-clock"></i> Pago pendiente</button>
+      <button id="waTipoVence" onclick="selWATipo('vence')" class="nxft-tab"><i class="ti ti-calendar-x"></i> Póliza por vencer</button>
     </div>
     <!-- Vista previa del mensaje -->
     <div style="font-size:10px;font-weight:600;color:#1e293b;margin-bottom:5px">Vista previa del mensaje</div>
@@ -3111,7 +3123,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='17.2';
+const APP_VERSION='17.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4609,10 +4621,10 @@ let _cliVerTodos=false;
 function switchCliTab(tab){
   _cliTab=tab;
   _cliVerTodos=false;
-  document.getElementById('cliTabAct')?.classList.toggle('active-subtab',tab==='activos');
-  document.getElementById('cliTabInh')?.classList.toggle('active-subtab',tab==='inhabilitados');
-  document.getElementById('cliTabVip')?.classList.toggle('active-subtab',tab==='vip');
-  document.getElementById('cliTabProc')?.classList.toggle('active-subtab',tab==='proceso');
+  document.getElementById('cliTabAct')?.classList.toggle('is-active',tab==='activos');
+  document.getElementById('cliTabInh')?.classList.toggle('is-active',tab==='inhabilitados');
+  document.getElementById('cliTabVip')?.classList.toggle('is-active',tab==='vip');
+  document.getElementById('cliTabProc')?.classList.toggle('is-active',tab==='proceso');
   rCli();
 }
 
@@ -7561,7 +7573,7 @@ function selWATipo(tipo){
   _waTipo=tipo;
   ['factura','pago','vence'].forEach(t=>{
     const btn=document.getElementById('waTipo'+t.charAt(0).toUpperCase()+t.slice(1));
-    if(btn){btn.className=t===tipo?'btn bc1':'btn';btn.style.fontSize='11px';btn.style.padding='8px 14px';}
+    if(btn)btn.classList.toggle('is-active',t===tipo);
   });
   const preview=document.getElementById('waPreviewBox');
   const ej=ST.clientes.find(c=>c.activo)||{nom:'Juan García',plan:'Superior',numero_poliza:'POL-2026-000001',wa:'',fecha_fin:'2026-12-31'};
