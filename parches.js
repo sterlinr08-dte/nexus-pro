@@ -7064,6 +7064,67 @@
           box-shadow: none !important;
         }
       }
+
+      /* ═══ BARRA SUPERIOR: botones cristalinos 3D (menú, campana, refrescar) ═══ */
+      .tn-tog {
+        border: none !important;
+        background: linear-gradient(150deg,#34d399,#10b981 52%,#059669) !important;
+        box-shadow:
+          0 8px 18px rgba(16,185,129,.42),
+          0 3px 7px rgba(16,185,129,.30),
+          inset 0 2px 3px rgba(255,255,255,.6),
+          inset 0 -5px 9px rgba(0,0,0,.20) !important;
+        overflow: visible;
+      }
+      .tn-tog::after {
+        display: block !important;
+        content: '' !important;
+        position: absolute !important;
+        left: 14% !important; top: 8% !important; width: 72% !important; height: 40% !important;
+        border-radius: 50% !important;
+        background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.72), rgba(255,255,255,0) 72%) !important;
+        animation: none !important; box-shadow: none !important; pointer-events: none !important;
+      }
+      .tn-r > #btnRefrescar, .tn-r > .notif-bell {
+        border: none !important;
+        border-radius: 50% !important;
+        color: #fff !important;
+        position: relative;
+        overflow: visible;
+        transition: transform .15s ease, box-shadow .2s ease !important;
+      }
+      .tn-r > #btnRefrescar i, .tn-r > .notif-bell i { color: #fff !important; }
+      .tn-r > #btnRefrescar {
+        background: linear-gradient(150deg,#22d3ee,#3b82f6 55%,#2563eb) !important;
+        box-shadow:
+          0 8px 18px rgba(37,99,235,.40),
+          inset 0 2px 3px rgba(255,255,255,.6),
+          inset 0 -5px 9px rgba(0,0,0,.20) !important;
+      }
+      .tn-r > .notif-bell {
+        background: linear-gradient(150deg,#fbbf24,#f59e0b 55%,#d97706) !important;
+        box-shadow:
+          0 8px 18px rgba(217,119,6,.40),
+          inset 0 2px 3px rgba(255,255,255,.6),
+          inset 0 -5px 9px rgba(0,0,0,.20) !important;
+      }
+      .tn-r > #btnRefrescar::after, .tn-r > .notif-bell::after {
+        content: ''; position: absolute; left: 16%; top: 9%; width: 68%; height: 38%;
+        border-radius: 50%;
+        background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.66), rgba(255,255,255,0) 72%);
+        pointer-events: none;
+      }
+      @media (max-width: 768px) {
+        .tn-r > .notif-bell { width: 40px !important; height: 40px !important; padding: 0 !important; flex-shrink: 0; }
+      }
+      /* Giro 3D al presionar (reusa el keyframe del logo) */
+      .tn-tog.nx-spin, .tn-r > #btnRefrescar.nx-spin, .tn-r > .notif-bell.nx-spin {
+        animation: nxLogoSpin .62s cubic-bezier(.3,.85,.35,1) !important;
+      }
+      .tn-tog:active, .tn-r > #btnRefrescar:active, .tn-r > .notif-bell:active { transform: scale(.92); }
+      @media (prefers-reduced-motion: reduce) {
+        .tn-tog.nx-spin, .tn-r > #btnRefrescar.nx-spin, .tn-r > .notif-bell.nx-spin { animation: none !important; }
+      }
     `;
 
     document.head.appendChild(style);
@@ -11474,11 +11535,12 @@
     var t = e.target;
     if (!t || !t.closest) return;
     var qa = t.closest('#v-dashboard .qa');
-    var logo = qa ? null : t.closest('.sb-mk'); // logo del encabezado
-    if (!qa && !logo) return;
+    // logo del encabezado + botones cristalinos de la barra superior
+    var solid = qa ? null : t.closest('.sb-mk, .tn-tog, #btnRefrescar, .notif-bell');
+    if (!qa && !solid) return;
     // Elemento que gira y de dónde sale el humo / color
-    var ico = qa ? qa.querySelector('i.qa-ico') : logo;
-    var host = qa ? (qa.querySelector('.qa-i') || ico && ico.parentNode) : logo;
+    var ico = qa ? qa.querySelector('i.qa-ico') : solid;
+    var host = qa ? (qa.querySelector('.qa-i') || ico && ico.parentNode) : solid;
     var rgb = ico ? iconColor(ico) : ['148','163','184'];
     var base = rgb[0]+','+rgb[1]+','+rgb[2];
     // Giro 3D (re-disparable en cada toque)

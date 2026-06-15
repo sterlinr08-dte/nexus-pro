@@ -1,7 +1,8 @@
 {
-  "version": "16.2",
+  "version": "16.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Barra superior: el menú (verde), la campana (ámbar) y el botón refrescar (azul) ahora son esferas cristalinas 3D con brillo de vidrio; al tocarlas giran en 3D y sueltan humo de su color",
     "Logo del encabezado (NEXUS PRO): aspecto cristalino 3D con brillo de vidrio; al tocarlo gira en 3D y suelta humo, igual que las esferas del inicio",
     "Humo al presionar ahora es del color del icono y más visible (más grande, más opaco y se esparce más)",
     "Iconos del inicio: se quitó el efecto flotante; ahora la esfera GIRA en 3D al presionarla y suelta un pequeño humo",
