@@ -11650,6 +11650,33 @@
   document.addEventListener('pointerdown', press, { passive: true });
 })();
 
+/* ── Clic en una celda de tabla → filtra esa tabla por ese valor ──────────────
+   Reutilizable: cualquier <td class="nxf-cell" data-f="valor"> filtra usando el
+   buscador (input id^="nxBus_") de su misma tarjeta. Tocar de nuevo limpia. */
+(function(){
+  if (window.__NX_CLICK_FILTRO__) return;
+  window.__NX_CLICK_FILTRO__ = true;
+  try {
+    var st = document.createElement('style');
+    st.textContent = 'td.nxf-cell{transition:background .12s}td.nxf-cell:hover{background:rgba(124,58,237,.08)!important}';
+    document.head.appendChild(st);
+  } catch (e) {}
+  document.addEventListener('click', function (e) {
+    var cell = e.target && e.target.closest ? e.target.closest('td.nxf-cell[data-f]') : null;
+    if (!cell) return;
+    if (e.target.closest('button,a,input,select,.btn')) return;
+    var val = cell.getAttribute('data-f') || '';
+    if (!val) return;
+    var box = cell.closest('.nc') || cell.closest('.view');
+    var inp = box && box.querySelector('input[id^="nxBus_"]');
+    if (!inp) return;
+    var cur = (inp.value || '').trim().toLowerCase();
+    inp.value = (cur === val.trim().toLowerCase()) ? '' : val; // toggle
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+    try { inp.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+  }, false);
+})();
+
 /* ── Iconos multicolor: a cada icono "suelto" su color estable + sombra 3D ── */
 (function(){
   if (window.__NX_ICON_COLOR__) return;
