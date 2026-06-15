@@ -9744,10 +9744,9 @@
         }).join('');
 
     modal.innerHTML = `
-      <div class="modal" style="max-width:600px;max-height:82vh;display:flex;flex-direction:column;margin-bottom:80px">
-        <div class="mt" style="display:flex;align-items:center;gap:8px">
-          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalPendPrev').classList.remove('open')" title="Volver"><i class="ti ti-arrow-left"></i></button>
-          <span style="flex:1;text-align:center"><i class="ti ti-alert-triangle"></i> PENDIENTES DE MESES ANTERIORES</span>
+      <div class="modal" style="max-width:600px;max-height:82vh;display:flex;flex-direction:column">
+        <div class="mt">
+          <span><i class="ti ti-alert-triangle"></i> PENDIENTES DE MESES ANTERIORES</span>
           <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalPendPrev').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         ${lista.length ? `<div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1px solid #fecaca;border-radius:12px;padding:12px;text-align:center;margin:6px 2px 10px">
