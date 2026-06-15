@@ -3812,8 +3812,8 @@
         78%  { transform: scale(1.04,0.96); }
         100% { transform: scale(1,1); }
       }
-      nav.sb .sb-mk.nx-spin { animation: nxRubber .7s cubic-bezier(.3,.6,.3,1) !important; transform-origin: center !important; }
-      nav.sb .sb-mk:active { transform: scale(.92); }
+      nav.sb .sb-mk.nx-spin, .lmk.nx-spin { animation: nxRubber .7s cubic-bezier(.3,.6,.3,1) !important; transform-origin: center !important; }
+      nav.sb .sb-mk:active, .lmk:active { transform: scale(.92); }
       @media (prefers-reduced-motion: reduce){
         nav.sb .sb-mk.nx-spin{ animation: none !important; }
       }
@@ -11569,8 +11569,8 @@
     var t = e.target;
     if (!t || !t.closest) return;
     var qa = t.closest('#v-dashboard .qa');
-    // logo del encabezado + botones cristalinos de la barra superior
-    var solid = qa ? null : t.closest('.sb-mk, .tn-tog, #btnRefrescar, .notif-bell');
+    // logo del encabezado + logo del login + botones cristalinos de la barra superior
+    var solid = qa ? null : t.closest('.sb-mk, .lmk, .tn-tog, #btnRefrescar, .notif-bell');
     if (!qa && !solid){
       // Resto del sistema: jelly suave (sin humo)
       var jel = t.closest(JELLY_SEL);
