@@ -7027,9 +7027,9 @@
 
   // ═══ BANCOS PRINCIPALES RD ═══
   const BANCOS = [
-    { id: 'popular', nom: 'Banco Popular Dominicano', color: '#0066b3', logoUrl: 'https://www.popularenlinea.com/Style%20Library/PWeb/img/logo-popular.svg' },
-    { id: 'bhd', nom: 'BHD', color: '#e85a00', logoUrl: 'https://www.bhd.com.do/wps/wcm/connect/bhdleon/Site/header/logo-bhd.svg' },
-    { id: 'reservas', nom: 'Banreservas', color: '#c8102e', logoUrl: null },
+    { id: 'popular', nom: 'Banco Popular Dominicano', color: '#0066b3', logoUrl: 'https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/logos/banco-popular.png' },
+    { id: 'bhd', nom: 'BHD', color: '#e85a00', logoUrl: 'https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/logos/banco-bhd.png' },
+    { id: 'reservas', nom: 'Banreservas', color: '#c8102e', logoUrl: 'https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/logos/banco-banreservas.png' },
     { id: 'scotiabank', nom: 'Scotiabank', color: '#e1141d', logoUrl: null },
     { id: 'bdi', nom: 'Banco BDI', color: '#003876', logoUrl: null },
     { id: 'banesco', nom: 'Banesco', color: '#00a652', logoUrl: null },
