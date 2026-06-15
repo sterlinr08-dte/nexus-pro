@@ -1,7 +1,8 @@
 {
-  "version": "15.1",
+  "version": "15.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Detalles de Cobro: 'EN CURSO' ahora es el período vigente (el que contiene hoy), no el siguiente",
     "Solicitudes ahora aparece arriba de Pólizas en el menú",
     "Logos reales de bancos (Popular, BHD, Banreservas) en 'Dónde está el dinero'",
     "Inicio de sesión seguro activado: entra con tu usuario y tu contraseña personal",

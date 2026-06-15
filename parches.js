@@ -1457,8 +1457,17 @@
   // ═══════════════════════════════════════════════════════════
   function calcularPeriodo() {
     const hoy = new Date();
-    const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
-    const inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 20);
+    const D = 20; // día de corte del ciclo de facturación
+    let inicio, fin;
+    if (hoy.getDate() >= D) {
+      // ya pasó el corte: el ciclo vigente va de este mes al próximo
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth(), D);
+      fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, D);
+    } else {
+      // antes del corte: el ciclo vigente va del mes pasado a este mes
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, D);
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), D);
+    }
     return { inicio, fin };
   }
   function enRango(fechaStr, inicio, fin) {
@@ -1485,20 +1494,16 @@
     const ciclos = [];
     const base = calcularPeriodo();
 
-    // Ciclo EN CURSO (siguiente al cerrado actual)
-    const cursoIni = new Date(base.inicio);
-    const cursoFin = new Date(base.fin);
-    cursoIni.setMonth(cursoIni.getMonth() + 1);
-    cursoFin.setMonth(cursoFin.getMonth() + 1);
+    // Ciclo EN CURSO = el período VIGENTE (el que contiene hoy)
     ciclos.push({
-      inicio: cursoIni, fin: cursoFin,
-      nombre: nombreCiclo({inicio: cursoIni, fin: cursoFin}) + ' · EN CURSO',
-      key: `${cursoIni.getTime()}_${cursoFin.getTime()}`,
+      inicio: new Date(base.inicio), fin: new Date(base.fin),
+      nombre: nombreCiclo(base) + ' · EN CURSO',
+      key: `${base.inicio.getTime()}_${base.fin.getTime()}`,
       enCurso: true
     });
 
-    // 6 ciclos cerrados (del más reciente al más antiguo)
-    for (let i = 0; i < cantidad; i++) {
+    // Ciclos cerrados anteriores (del más reciente al más antiguo)
+    for (let i = 1; i <= cantidad; i++) {
       const ini = new Date(base.inicio); ini.setMonth(ini.getMonth() - i);
       const fin = new Date(base.fin); fin.setMonth(fin.getMonth() - i);
       ciclos.push({
