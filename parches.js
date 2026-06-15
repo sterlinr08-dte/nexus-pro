@@ -4430,8 +4430,14 @@
     if (document.getElementById('niSolicit')) return true;
     const sbNav = document.querySelector('nav.sb .sb-nav');
     if (!sbNav) return false;
-    // Insertar después de CLIENTES
-    const anchor = document.getElementById('niCli') || document.getElementById('niPol');
+    // Insertar ARRIBA de Pólizas (buscando el ítem por su acción nav('polizas'))
+    let anchor = document.getElementById('niPol');
+    if (!anchor) {
+      const items = sbNav.querySelectorAll('.ni');
+      for (let k = 0; k < items.length; k++) {
+        if (/nav\(['"]polizas/.test(items[k].getAttribute('onclick') || '')) { anchor = items[k]; break; }
+      }
+    }
     const item = document.createElement('div');
     item.className = 'ni';
     item.id = 'niSolicit';
@@ -4442,10 +4448,8 @@
       <span class="ni-l">SOLICITUDES</span>
       <span class="ni-b" id="niSolicitBadge" style="display:none">0</span>
     `;
-    if (anchor && anchor.nextSibling) {
-      sbNav.insertBefore(item, anchor.nextSibling);
-    } else if (anchor) {
-      sbNav.appendChild(item);
+    if (anchor) {
+      sbNav.insertBefore(item, anchor); // justo ARRIBA de Pólizas
     } else {
       sbNav.appendChild(item);
     }

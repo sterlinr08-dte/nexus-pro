@@ -1,7 +1,8 @@
 {
-  "version": "15.0",
+  "version": "15.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Solicitudes ahora aparece arriba de Pólizas en el menú",
     "Logos reales de bancos (Popular, BHD, Banreservas) en 'Dónde está el dinero'",
     "Inicio de sesión seguro activado: entra con tu usuario y tu contraseña personal",
     "Modo seguro: pantalla propia para definir tu contraseña (reemplaza el popup que no funcionaba en la app instalada)",
