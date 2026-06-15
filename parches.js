@@ -9815,7 +9815,7 @@
     const btn = document.createElement('button');
     btn.id = 'nxBtnPendPrev';
     btn.type = 'button';
-    btn.style.cssText = 'padding:7px 14px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.3);transition:all .15s';
+    btn.className = 'nxft-tab nxft-alert'; // mismo control segmentado, acento de alerta
     btn.setAttribute('onclick', 'window.nxAbrirPendientesPrev && window.nxAbrirPendientesPrev()');
     btn.innerHTML = '<i class="ti ti-alert-triangle"></i> Pendientes';
     tabCob.insertAdjacentElement('afterend', btn); // queda justo al lado de "Cobros"
