@@ -520,7 +520,7 @@ tbody tr{transition:background .12s ease}
 .acc-menu-hd{font-size:8px;font-weight:700;color:#94a3b8;letter-spacing:.6px;padding:7px 12px 4px;font-family:var(--mono)}
 .acc-menu button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;padding:10px 11px;font-size:12px;font-weight:600;color:#1e293b;cursor:pointer;border-radius:13px;font-family:var(--ff);white-space:nowrap;transition:background .14s,transform .1s}
 .acc-menu button:hover{background:#f1f5f9}
-.acc-menu button:active{transform:scale(.97);background:#e8edf3}
+.acc-menu button:active{background:#e8edf3}
 .acc-menu button i{font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex-shrink:0;pointer-events:none}
 .acc-menu button *{pointer-events:none}
 .acc-menu .am-sep{height:1px;background:#eef2f7;margin:5px 10px}
@@ -741,7 +741,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 .nxft-tab{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 10px;border:none;border-radius:10px;background:transparent;color:#64748b;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .18s,color .18s,box-shadow .18s,transform .12s}
 .nxft-tab i{font-size:14px;flex-shrink:0}
 .nxft-tab:hover{background:rgba(255,255,255,.75);color:#334155}
-.nxft-tab:active{transform:scale(.96)}
+.nxft-tab:active{opacity:.72}
 .nxft-tab.is-active{background:linear-gradient(135deg,#1e3a6e,#3b82f6);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.32),inset 0 1px 0 rgba(255,255,255,.25)}
 /* "Pendientes" es una alerta: misma forma/tamaño, acento rojo suave */
 .nxft-tab.nxft-alert{background:rgba(220,38,38,.10);color:#dc2626}
@@ -3126,7 +3126,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='18.5';
+const APP_VERSION='18.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 

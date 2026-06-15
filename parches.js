@@ -4306,10 +4306,12 @@
         overflow: hidden;
         -webkit-tap-highlight-color: transparent;
       }
-      .btn:active{ transform: scale(.955); }
-      .ni:active{ transform: scale(.97); }
-      .cfg-tab:active{ transform: scale(.97); }
-      .kpi:active{ transform: scale(.985); }
+      /* OJO: nada de transform:scale en botones. En iPhone, escalar un botón dentro
+         de un modal con backdrop-filter lo "infla" enorme. Usamos opacidad (segura). */
+      .btn:active{ opacity: .7; }
+      .ni:active{ background: rgba(37,99,235,.07); }
+      .cfg-tab:active{ opacity: .82; }
+      .kpi:active{ opacity: .9; }
       /* incluir transform en la transicion de estos (los botones ya tienen all .15s) */
       .ni, .cfg-tab, .kpi{
         transition: transform .14s cubic-bezier(.2,.7,.3,1),
