@@ -1,7 +1,8 @@
 {
-  "version": "16.5",
+  "version": "16.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Efecto goma (jelly) ahora en todos los iconos al tocar: esferas del inicio, logo del encabezado, menú y campana (igual que el botón Actualizar)",
     "Botón Actualizar (barra superior): al tocarlo rebota como una goma (efecto jelly)",
     "Barra superior alineada: menú, buscador, campana y refrescar ahora a la misma altura (40px) y el buscador ya no queda desalineado",
     "Nuevo icono de la app: escudo azul cristalino con la 'N' y brillo de vidrio (reemplaza el oscuro). Para verlo en el teléfono puede que tengas que quitar y volver a agregar la app a la pantalla de inicio",

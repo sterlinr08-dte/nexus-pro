@@ -3802,13 +3802,17 @@
         background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.72), rgba(255,255,255,0) 72%);
         pointer-events:none;
       }
-      /* GIRO 3D + hundido al presionar (igual que las esferas del inicio) */
-      @keyframes nxLogoSpin {
-        0%   { transform: perspective(620px) scale(.9)  rotateY(0deg); }
-        55%  { transform: perspective(620px) scale(1.06) rotateY(250deg); }
-        100% { transform: perspective(620px) scale(1)   rotateY(360deg); }
+      /* Rebote tipo goma (jelly) al presionar — igual en todo el sistema */
+      @keyframes nxRubber {
+        0%   { transform: scale(1,1); }
+        30%  { transform: scale(1.28,0.72); }
+        40%  { transform: scale(0.78,1.22); }
+        52%  { transform: scale(1.12,0.88); }
+        66%  { transform: scale(0.94,1.06); }
+        78%  { transform: scale(1.04,0.96); }
+        100% { transform: scale(1,1); }
       }
-      nav.sb .sb-mk.nx-spin { animation: nxLogoSpin .62s cubic-bezier(.3,.85,.35,1) !important; }
+      nav.sb .sb-mk.nx-spin { animation: nxRubber .7s cubic-bezier(.3,.6,.3,1) !important; transform-origin: center !important; }
       nav.sb .sb-mk:active { transform: scale(.92); }
       @media (prefers-reduced-motion: reduce){
         nav.sb .sb-mk.nx-spin{ animation: none !important; }
@@ -4217,7 +4221,7 @@
         55%  { transform: scale(1.07) rotateY(250deg); }
         100% { transform: scale(1) rotateY(360deg); }
       }
-      #v-dashboard .qa i.qa-ico.nx-spin { animation: nxOrbSpin .62s cubic-bezier(.3,.85,.35,1); transform-style: preserve-3d; }
+      #v-dashboard .qa i.qa-ico.nx-spin { animation: nxRubber .7s cubic-bezier(.3,.6,.3,1); transform-origin: center; }
       /* Reflejo cristalino sutil (no es flotación) */
       @keyframes nxOrbGlint { 0%,86%,100%{ opacity:.6; } 93%{ opacity:1; } }
       #v-dashboard .qa-g .qa i.qa-ico::after{ animation: nxOrbGlint 4.2s ease-in-out infinite; }
@@ -7117,21 +7121,8 @@
       @media (max-width: 768px) {
         .tn-r > .notif-bell { width: 40px !important; height: 40px !important; padding: 0 !important; flex-shrink: 0; }
       }
-      /* Menú y campana: giro 3D al presionar (reusa el keyframe del logo) */
-      .tn-tog.nx-spin, .tn-r > .notif-bell.nx-spin {
-        animation: nxLogoSpin .62s cubic-bezier(.3,.85,.35,1) !important;
-      }
-      /* Botón ACTUALIZAR: rebota como una goma (jelly) al presionar */
-      @keyframes nxRubber {
-        0%   { transform: scale(1,1); }
-        30%  { transform: scale(1.28,0.72); }
-        40%  { transform: scale(0.78,1.22); }
-        52%  { transform: scale(1.12,0.88); }
-        66%  { transform: scale(0.94,1.06); }
-        78%  { transform: scale(1.04,0.96); }
-        100% { transform: scale(1,1); }
-      }
-      .tn-r > #btnRefrescar.nx-spin {
+      /* Menú, campana y actualizar: rebote tipo goma (jelly) al presionar */
+      .tn-tog.nx-spin, .tn-r > .notif-bell.nx-spin, .tn-r > #btnRefrescar.nx-spin {
         animation: nxRubber .7s cubic-bezier(.3,.6,.3,1) !important;
         transform-origin: center !important;
       }
