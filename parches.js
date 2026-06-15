@@ -3826,7 +3826,7 @@
         80%  { transform: scale(0.99,1.01); }
         100% { transform: scale(1,1); }
       }
-      .nx-jelly { animation: nxJelly .5s cubic-bezier(.3,.6,.3,1); transform-origin: center; }
+      .nx-jelly { animation: nxJelly .5s cubic-bezier(.3,.6,.3,1); transform-origin: center; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
       @media (prefers-reduced-motion: reduce){ .nx-jelly { animation: none !important; } }
       nav.sb .sb-nm { color: #0f172a !important; }
       nav.sb .sb-sm { color: #64748b !important; }
@@ -9659,16 +9659,15 @@
     const clientes = Array.isArray(ST_.clientes) ? ST_.clientes : [];
     const agentes = Array.isArray(ST_.agentes) ? ST_.agentes : [];
 
-    let modal = document.getElementById('nxModalPendPrev');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.className = 'overlay';
-      modal.id = 'nxModalPendPrev';
-      modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
-      document.body.appendChild(modal);
-    }
-    modal.innerHTML = '<div class="modal" style="max-width:600px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Revisando facturas...</div></div></div>';
-    modal.classList.add('open');
+    const inner = document.getElementById('nxPendInner');
+    const panel = document.getElementById('panelPend');
+    if (!inner || !panel) return;
+    // Mostrar como pestaña inline (igual que Facturas/Cobros/Historial), no como ventana flotante
+    ['panelFact', 'panelCob', 'panelPagos'].forEach(id => { const p = document.getElementById(id); if (p) p.style.display = 'none'; });
+    panel.style.display = '';
+    ['tabFact', 'tabCob', 'tabPagos'].forEach(id => { const t = document.getElementById(id); if (t) t.classList.remove('is-active'); });
+    const tabBtn = document.getElementById('nxBtnPendPrev'); if (tabBtn) tabBtn.classList.add('is-active');
+    inner.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Revisando facturas...</div></div></div>';
 
     // Cobros aplicados a cada factura (para descontar lo ya pagado)
     let pagadoPorFactura = {};
@@ -9708,10 +9707,10 @@
     const lista = Object.values(porCliente).sort((a, b) => b.total - a.total);
     const totalGeneral = lista.reduce((s, x) => s + x.total, 0);
 
-    renderPendPrev(modal, lista, totalGeneral);
+    renderPendPanel(inner, lista, totalGeneral);
   };
 
-  function renderPendPrev(modal, lista, totalGeneral) {
+  function renderPendPanel(inner, lista, totalGeneral) {
     const filas = lista.length === 0
       ? '<div style="text-align:center;padding:40px 20px;color:#10b981;font-size:14px;font-weight:600">✓ ¡Todo al día!<br><span style="color:#94a3b8;font-weight:400;font-size:12px">Ningún cliente debe facturas de meses anteriores.</span></div>'
       : lista.map((x, i) => {
@@ -9743,31 +9742,28 @@
             </div>`;
         }).join('');
 
-    modal.innerHTML = `
-      <div class="modal" style="max-width:600px;max-height:82vh;display:flex;flex-direction:column">
-        <div class="mt">
-          <span><i class="ti ti-alert-triangle"></i> PENDIENTES DE MESES ANTERIORES</span>
-          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalPendPrev').classList.remove('open')"><i class="ti ti-x"></i></button>
+    inner.innerHTML = `
+      <div class="nc">
+        <div class="ch">
+          <div><div class="ct"><i class="ti ti-alert-triangle"></i> Pendientes de meses anteriores</div><div class="ct-s">Facturas de meses anteriores aún por cobrar</div></div>
         </div>
-        ${lista.length ? `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;text-align:center;margin:6px 2px 10px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+        ${lista.length ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;text-align:center;margin:0 0 12px;box-shadow:inset 0 1px 2px rgba(15,23,42,.04)">
           <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:.4px">TOTAL POR COBRAR DE MESES ANTERIORES</div>
           <div style="font-size:24px;font-weight:900;color:#dc2626;margin-top:2px">${fmt(totalGeneral)}</div>
           <div style="font-size:10px;color:#94a3b8;font-weight:600">${lista.length} cliente(s) con atraso</div>
         </div>` : ''}
-        ${lista.length ? `<div style="position:relative;margin:0 2px 10px">
+        ${lista.length ? `<div style="position:relative;margin:0 0 12px">
           <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
           <input type="text" id="nxPendBuscar" placeholder="Buscar cliente..." autocomplete="off" oninput="window.nxFiltrarPend(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
         </div>` : ''}
-        <div style="overflow-y:auto;flex:1;padding:2px 2px;-webkit-overflow-scrolling:touch">
-          ${filas}
-        </div>
+        <div>${filas}</div>
       </div>`;
   }
 
   // Filtrar la lista de pendientes por nombre de cliente
   window.nxFiltrarPend = function (q) {
     const t = String(q || '').trim().toLowerCase();
-    document.querySelectorAll('#nxModalPendPrev .nxPendCard').forEach(c => {
+    document.querySelectorAll('#panelPend .nxPendCard').forEach(c => {
       const nom = c.getAttribute('data-nom') || '';
       c.style.display = (!t || nom.includes(t)) ? '' : 'none';
     });
@@ -9837,6 +9833,20 @@
     init();
   }
   try { window.addEventListener('nexus:reinit', init); } catch (e) {}
+
+  // Al cambiar a otra pestaña (Facturas/Cobros/Historial), ocultar el panel de
+  // Pendientes y desactivar su botón — para que se comporte como una pestaña más.
+  try {
+    const orig = window.switchTab;
+    if (typeof orig === 'function' && !orig.__nxPendWrapped) {
+      window.switchTab = function () {
+        const panel = document.getElementById('panelPend'); if (panel) panel.style.display = 'none';
+        const tb = document.getElementById('nxBtnPendPrev'); if (tb) tb.classList.remove('is-active');
+        return orig.apply(this, arguments);
+      };
+      window.switchTab.__nxPendWrapped = true;
+    }
+  } catch (e) {}
 })();
 
 /* ════════════════════════════════════════════════════════════════
@@ -11556,7 +11566,10 @@
     return ['148','163','184'];
   }
   // Selector amplio para el jelly suave (resto del sistema)
-  var JELLY_SEL = '.btn, button, .cfg-tab, .kpi, .ni, .nxDC-period-nav, .sb-u, .err-badge';
+  // OJO: sin botones. En iOS, animar transform:scale sobre un <button> dentro de
+  // un contenedor con backdrop-filter (modales) lo "infla" enormemente al tocarlo.
+  // Los botones conservan su :active y la onda (ripple), que son estables.
+  var JELLY_SEL = '.kpi, .ni, .sb-u, .err-badge';
   function reTrigger(el, cls){
     el.classList.remove(cls);
     void el.offsetWidth; // reflow para reiniciar la animación
@@ -11575,7 +11588,7 @@
       var jel = t.closest(JELLY_SEL);
       if (!jel) return;
       var jt = jel.tagName;
-      if (jt === 'INPUT' || jt === 'TEXTAREA' || jt === 'SELECT' || jel.disabled) return;
+      if (jt === 'INPUT' || jt === 'TEXTAREA' || jt === 'SELECT' || jt === 'BUTTON' || jel.disabled) return;
       reTrigger(jel, 'nx-jelly');
       return;
     }

@@ -746,6 +746,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 /* "Pendientes" es una alerta: misma forma/tamaño, acento rojo suave */
 .nxft-tab.nxft-alert{background:rgba(220,38,38,.10);color:#dc2626}
 .nxft-tab.nxft-alert:hover{background:rgba(220,38,38,.16);color:#b91c1c}
+.nxft-tab.nxft-alert.is-active{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.32),inset 0 1px 0 rgba(255,255,255,.25)}
+.nxft-tab.nxft-alert.is-active i{color:#fff}
 /* "Nuevo" es una acción de agregar: acento verde */
 .nxft-tab.nxft-add{background:linear-gradient(135deg,#059669,#10b981);color:#fff;box-shadow:0 4px 12px rgba(16,185,129,.3),inset 0 1px 0 rgba(255,255,255,.25)}
 .nxft-tab.nxft-add:hover{filter:brightness(1.06);color:#fff}
@@ -1200,6 +1202,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             </table></div>
           </div><!-- /nc -->
         </div><!-- /panelPagos -->
+        <div id="panelPend" style="display:none"><div id="nxPendInner"></div></div>
         </div><!-- /v-facturas -->
 
         <!-- EMPRESAS -->
@@ -3123,7 +3126,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='17.5';
+const APP_VERSION='17.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
