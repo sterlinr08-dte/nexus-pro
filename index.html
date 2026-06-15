@@ -1146,7 +1146,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </div>
             </div>
             <div class="tw"><table>
-              <thead><tr><th style="width:15%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:9%">PLAN</th><th style="width:11%">EMPRESA</th><th style="width:9%">PRIMA</th><th style="width:8%">DEPS</th><th style="width:9%">DEU.ANT</th><th style="width:10%">TOTAL</th><th style="width:8%">ESTADO</th><th style="width:10%">ACCIONES</th></tr></thead>
+              <thead><tr><th style="width:15%;cursor:pointer;user-select:none" onclick="sortFact('cliente')">CLIENTE <span id="sf_cliente" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortFact('agente')">AGENTE <span id="sf_agente" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortFact('plan')">PLAN <span id="sf_plan" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortFact('empresa')">EMPRESA <span id="sf_empresa" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortFact('prima')">PRIMA <span id="sf_prima" style="color:#2563eb"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortFact('deps')">DEPS <span id="sf_deps" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortFact('deuant')">DEU.ANT <span id="sf_deuant" style="color:#2563eb"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortFact('total')">TOTAL <span id="sf_total" style="color:#2563eb"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortFact('estado')">ESTADO <span id="sf_estado" style="color:#2563eb"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
               <tbody id="tbFact"><tr><td colspan="10"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
           </div>
@@ -3126,7 +3126,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='18.3';
+const APP_VERSION='18.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4967,20 +4967,19 @@ function rFact(){
     else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
   }
   if(fa){const idsAg=new Set(ST.clientes.filter(c=>String(c.agente_id)===fa).map(c=>String(c.id)));lista=lista.filter(f=>idsAg.has(String(f.cliente_id)));}
+  if(_factSort.col){const col=_factSort.col,dir=_factSort.dir;lista.sort((a,b)=>{const va=_factSortVal(a,col),vb=_factSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
   const tb=document.getElementById('tbFact');
-  if(!lista.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar + NCF"'}</div></td></tr>`;return;}
-  tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
-    const _cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));const _ag=_cli?ST.agentes?.find(a=>String(a.id)===String(_cli.agente_id)):null;const _agNom=_ag?_ag.nom:'';const _empNom=emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular';const _fa=s=>String(s==null?'':s).replace(/"/g,'&quot;');
-    return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
-    <td class="nxf-cell" data-f="${_fa(f.cliente_nom)}" style="font-weight:700;font-size:10px;cursor:pointer;color:#7c3aed;text-decoration:underline" title="Filtrar por este cliente">${f.cliente_nom}${atrasadas?`<div style="font-size:8px;color:#92400e;font-weight:700;text-decoration:none">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}</td>
-    <td class="nxf-cell" data-f="${_fa(_agNom)}" style="font-size:10px;font-weight:700;color:#7c3aed;cursor:pointer" title="Filtrar por este agente">${_agNom?_agNom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>'}</td>
-    <td class="nxf-cell" data-f="${_fa(f.plan)}" style="cursor:pointer" title="Filtrar por este plan">${planB(f.plan)}</td>
-    <td class="nxf-cell" data-f="${_fa(_empNom)}" style="font-size:9px;color:var(--tx2);cursor:pointer" title="Filtrar por esta empresa">${_empNom}</td>
+  if(!lista.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar + NCF"'}</div></td></tr>`;pintarFlechasFact();return;}
+  tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
+    <td style="font-weight:700;font-size:10px;cursor:pointer;color:#7c3aed;text-decoration:underline" onclick="verCliente('${f.cliente_id}')" title="Ver resumen del cliente">${f.cliente_nom}${atrasadas?`<div style="font-size:8px;color:#92400e;font-weight:700;text-decoration:none">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}</td>
+    <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
+    <td>${planB(f.plan)}</td>
+    <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
     <td style="font-family:var(--mono);font-size:9px">${fmt(f.prima_base)}</td>
     <td style="font-family:var(--mono);font-size:9px">${f.prima_deps>0?fmt(f.prima_deps):'—'}</td>
     <td style="font-family:var(--mono);font-size:9px;color:var(--c3)">${f.deuda_ant>0?fmt(f.deuda_ant):'—'}</td>
     <td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c4)">${fmt(f.total)}</td>
-    <td class="nxf-cell" data-f="${_fa(f.estado)}" style="cursor:pointer" title="Filtrar por estado"><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
+    <td><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
     <td style="white-space:normal;min-width:104px;vertical-align:middle">
       <div style="display:flex;flex-direction:column;gap:4px;align-items:stretch">
         ${f.estado!=='Anulada'?`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:9.5px;padding:5px 7px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:0 2px 6px rgba(16,185,129,.3);background:linear-gradient(135deg,#059669,#10b981)"><i class="ti ti-wallet" style="color:#fff!important;font-size:13px"></i> COBRAR</button>`:''}
@@ -4990,6 +4989,32 @@ function rFact(){
       </div>
     </td>
   </tr>`;}).join('');
+  pintarFlechasFact();
+}
+let _factSort={col:'',dir:1};
+function sortFact(col){
+  if(_factSort.col===col)_factSort.dir=-_factSort.dir; else {_factSort.col=col;_factSort.dir=1;}
+  rFact();
+}
+function _factSortVal(f,col){
+  switch(col){
+    case 'cliente':return (f.cliente_nom||'').toLowerCase();
+    case 'agente':{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;return (ag?.nom||'').toLowerCase();}
+    case 'plan':return (f.plan||'').toLowerCase();
+    case 'empresa':return (gEmp(f.empresa_id)?.nom||'').toLowerCase();
+    case 'prima':return Number(f.prima_base||0);
+    case 'deps':return Number(f.prima_deps||0);
+    case 'deuant':return Number(f.deuda_ant||0);
+    case 'total':return Number(f.total||0);
+    case 'estado':return (f.estado||'').toLowerCase();
+  }
+  return '';
+}
+function pintarFlechasFact(){
+  ['cliente','agente','plan','empresa','prima','deps','deuant','total','estado'].forEach(col=>{
+    const el=document.getElementById('sf_'+col);
+    if(el)el.textContent=(_factSort.col===col)?(_factSort.dir===1?'▲':'▼'):'';
+  });
 }
 
 async function anularFactura(facturaId){

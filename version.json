@@ -1,9 +1,8 @@
 {
-  "version": "18.3",
+  "version": "18.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Facturas: ahora puedes tocar el TÍTULO de una columna (Cliente, Agente, Plan, Empresa, Estado) y sale un selector con los valores para filtrar; también puedes tocar directamente una celda de la fila",
-    "Facturas: clic en una celda (cliente, agente, plan, empresa o estado) filtra la tabla por ese valor; tócala de nuevo para quitar el filtro",
+    "Facturas: tocar el título de una columna ahora ORDENA la tabla (▲/▼) y al tocar de nuevo invierte, igual que en Clientes. (Se quitó el selector/filtro anterior que no convencía)",
     "En la Tabla Comparativa, al tocar un cliente ahora se abre su ficha completa del sistema (con botón Editar). Funciona también en los cuadres guardados (historial)",
     "En PC los iconos del inicio quedan en 2 líneas más separadas",
     "La Tabla Comparativa ya no abre como ventana flotante: ahora es una ventana normal del sistema (se abre en la página, con botón Volver al inicio)",
