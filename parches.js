@@ -3785,9 +3785,33 @@
         border-bottom: 1px solid rgba(59,130,246,.12) !important;
       }
       nav.sb .sb-mk {
+        position: relative;
+        cursor: pointer;
+        background: linear-gradient(150deg,#60a5fa,#3b82f6 52%,#2563eb) !important;
         box-shadow:
-          0 6px 16px rgba(59,130,246,.35),
-          inset 0 1px 0 rgba(255,255,255,.4) !important;
+          0 9px 20px rgba(37,99,235,.42),
+          0 3px 8px rgba(37,99,235,.30),
+          inset 0 2px 3px rgba(255,255,255,.6),
+          inset 0 -5px 9px rgba(0,0,0,.22) !important;
+        transition: transform .15s ease, box-shadow .2s ease;
+      }
+      /* reflejo cristalino (vidrio) sobre el logo */
+      nav.sb .sb-mk::after {
+        content:''; position:absolute; left:12%; top:7%; width:76%; height:42%;
+        border-radius:50%;
+        background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.72), rgba(255,255,255,0) 72%);
+        pointer-events:none;
+      }
+      /* GIRO 3D + hundido al presionar (igual que las esferas del inicio) */
+      @keyframes nxLogoSpin {
+        0%   { transform: perspective(620px) scale(.9)  rotateY(0deg); }
+        55%  { transform: perspective(620px) scale(1.06) rotateY(250deg); }
+        100% { transform: perspective(620px) scale(1)   rotateY(360deg); }
+      }
+      nav.sb .sb-mk.nx-spin { animation: nxLogoSpin .62s cubic-bezier(.3,.85,.35,1) !important; }
+      nav.sb .sb-mk:active { transform: scale(.92); }
+      @media (prefers-reduced-motion: reduce){
+        nav.sb .sb-mk.nx-spin{ animation: none !important; }
       }
       nav.sb .sb-nm { color: #0f172a !important; }
       nav.sb .sb-sm { color: #64748b !important; }
@@ -11447,10 +11471,14 @@
     return ['148','163','184'];
   }
   function press(e){
-    var qa = e.target && e.target.closest ? e.target.closest('#v-dashboard .qa') : null;
-    if (!qa) return;
-    var ico = qa.querySelector('i.qa-ico');
-    var host = qa.querySelector('.qa-i') || ico && ico.parentNode;
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var qa = t.closest('#v-dashboard .qa');
+    var logo = qa ? null : t.closest('.sb-mk'); // logo del encabezado
+    if (!qa && !logo) return;
+    // Elemento que gira y de dónde sale el humo / color
+    var ico = qa ? qa.querySelector('i.qa-ico') : logo;
+    var host = qa ? (qa.querySelector('.qa-i') || ico && ico.parentNode) : logo;
     var rgb = ico ? iconColor(ico) : ['148','163','184'];
     var base = rgb[0]+','+rgb[1]+','+rgb[2];
     // Giro 3D (re-disparable en cada toque)
