@@ -4134,6 +4134,34 @@
       }
       /* sin caja/sombra de tarjeta tampoco en hover */
       #v-dashboard .qa-g .qa:hover { background:none !important; box-shadow:none !important; border:0 !important; }
+
+      /* Inicio: 3 columnas, esfera y nombre alineados (centrados) y con espacio */
+      #v-dashboard .qa-g {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 14px 8px !important;
+        align-items: start !important;
+      }
+      #v-dashboard .qa-g .qa {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+        padding: 6px 2px 8px !important;
+      }
+      #v-dashboard .qa-g .qa-i { margin: 0 !important; }
+      #v-dashboard .qa-g .qa-l {
+        text-align: center !important;
+        font-size: 8.5px !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+        width: 100% !important;
+        letter-spacing: .2px !important;
+        color: var(--tx1, #1e293b) !important;
+      }
+      @media(max-width:768px){
+        #v-dashboard .qa-g .qa i.qa-ico { width: 56px !important; height: 56px !important; min-width: 56px !important; font-size: 25px !important; }
+      }
       /* reflejo cristalino (brillo de vidrio en la parte superior) */
       #v-dashboard .qa-g .qa i.qa-ico::after {
         content:''; position:absolute; left:12%; top:6%; width:76%; height:42%;
