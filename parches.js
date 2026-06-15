@@ -4221,10 +4221,10 @@
          de estirarse a lo ancho de la pantalla */
       @media (min-width: 1024px) {
         #v-dashboard .qa-g {
-          grid-template-columns: repeat(auto-fit, 116px) !important;
+          grid-template-columns: repeat(6, 116px) !important;
           justify-content: center !important;
-          gap: 10px 4px !important;
-          max-width: 740px;
+          gap: 14px 6px !important;
+          max-width: 760px;
           margin-left: auto !important;
           margin-right: auto !important;
         }
