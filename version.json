@@ -1,7 +1,8 @@
 {
-  "version": "16.3",
+  "version": "16.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Nuevo icono de la app: escudo azul cristalino con la 'N' y brillo de vidrio (reemplaza el oscuro). Para verlo en el teléfono puede que tengas que quitar y volver a agregar la app a la pantalla de inicio",
     "Barra superior: el menú (verde), la campana (ámbar) y el botón refrescar (azul) ahora son esferas cristalinas 3D con brillo de vidrio; al tocarlas giran en 3D y sueltan humo de su color",
     "Logo del encabezado (NEXUS PRO): aspecto cristalino 3D con brillo de vidrio; al tocarlo gira en 3D y suelta humo, igual que las esferas del inicio",
     "Humo al presionar ahora es del color del icono y más visible (más grande, más opaco y se esparce más)",
