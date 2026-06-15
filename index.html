@@ -753,20 +753,28 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 <div id="nxLoader" style="display:none" aria-hidden="true"><div class="nxl-logo"><i class="ti ti-shield-check"></i></div></div>
 <script>
 (function(){var s=document.getElementById('nxSplash');if(!s)return;
+  // Mantener el splash/loader hasta que parches.js termine de aplicar los estilos
+  // (evita el "flash" del sistema sin estilos al actualizar en redes lentas).
+  var ready = !!window.__NX_PARCHES_READY__;
+  window.addEventListener('nexus:parches-ready', function(){ ready = true; }, {once:true});
   try{
     if(sessionStorage.getItem('nx_splash_shown')){
-      // Recarga / "Actualizar": sin bienvenida completa, solo un spinner breve de carga
+      // Recarga / "Actualizar": spinner hasta que los estilos estén listos (tope 7s)
       s.remove();
       var L=document.getElementById('nxLoader');
       if(L){
         L.style.display='flex';
-        setTimeout(function(){L.classList.add('nxl-out');setTimeout(function(){try{L.remove();}catch(e){L.style.display='none';}},400);},900);
+        var t0=Date.now(), hid=false;
+        var hideL=function(){ if(hid)return; hid=true; L.classList.add('nxl-out'); setTimeout(function(){try{L.remove();}catch(e){L.style.display='none';}},400); };
+        (function tick(){ var el=Date.now()-t0; if(ready&&el>=600){hideL();return;} if(el>=7000){hideL();return;} setTimeout(tick,120); })();
       }
       return;
     }
     sessionStorage.setItem('nx_splash_shown','1');
   }catch(e){}
-  setTimeout(function(){try{s.remove();}catch(e){s.style.display='none';}},2800);
+  // Primera vez: bienvenida; espera a que apliquen estilos (mín 2.8s, máx 8s)
+  var t1=Date.now();
+  (function tickS(){ var el=Date.now()-t1; if((ready&&el>=2800)||el>=8000){try{s.remove();}catch(e){s.style.display='none';}return;} setTimeout(tickS,150); })();
 })();
 </script>
 
@@ -3093,7 +3101,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='16.9';
+const APP_VERSION='17.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -7745,7 +7753,9 @@ setTimeout(verificarAutoFacturacion, 5000);
 <script>
   (function(){
     var s = document.createElement('script');
-    s.src = 'parches.js?v=' + Date.now();
+    // Cachea parches.js por versión (no por Date.now): evita re-descargarlo en cada
+    // carga — clave en redes lentas (3G) para que los estilos apliquen rápido.
+    s.src = 'parches.js?v=' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '1');
     s.onerror = function(){ console.log('parches.js no disponible o aún no creado'); };
     document.head.appendChild(s);
   })();

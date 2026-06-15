@@ -11647,3 +11647,9 @@
   try { new MutationObserver(sched).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
   try { window.addEventListener('nexus:reinit', sched); } catch (e) {}
 })();
+
+/* ── Señal: parches.js terminó de aplicar estilos (para ocultar el splash/loader) ── */
+try {
+  window.__NX_PARCHES_READY__ = true;
+  window.dispatchEvent(new Event('nexus:parches-ready'));
+} catch (e) {}
