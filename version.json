@@ -1,8 +1,9 @@
 {
-  "version": "18.6",
+  "version": "18.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "ARREGLADO (de verdad): los botones ya no se inflan al presionarlos. La causa real era el 'encoger' (transform:scale) en :active, que en iPhone dentro de ventanas con desenfoque inflaba el botón. Ahora el botón solo se atenúa al tocarlo (sin escalar)",
+    "Auditoría completa de botones: se quitó el transform (encoger/levantar) de TODOS los botones al tocar/pasar (incluido el de Abonar, Editar, Guardar, transferencias, etc.). Ya no se inflan en iPhone; ahora solo se atenúan. Los iconos esfera (inicio, barra superior, logo) conservan su efecto porque no están dentro de ventanas con desenfoque",
+    "ARREGLADO: los botones ya no se inflan al presionarlos (causa: transform:scale/translate en :active dentro de ventanas con desenfoque en iPhone)",
     "Ordenar por columnas (▲/▼) también en Cobros, Historial de pagos y Agentes (igual que en Clientes y Facturas)",
     "Facturas: tocar el título de una columna ORDENA la tabla (▲/▼) y al tocar de nuevo invierte, igual que en Clientes",
     "En la Tabla Comparativa, al tocar un cliente ahora se abre su ficha completa del sistema (con botón Editar). Funciona también en los cuadres guardados (historial)",

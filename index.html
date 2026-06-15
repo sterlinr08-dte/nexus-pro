@@ -96,7 +96,7 @@ input,select,textarea,button{font-family:var(--ff)}
 .lbtn::after{content:'';position:absolute;top:0;left:-60%;width:38%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-20deg);animation:lbtnShine 3.6s ease-in-out infinite}
 @keyframes lbtnShine{0%,55%{left:-60%}100%{left:135%}}
 @media (prefers-reduced-motion:reduce){.lbtn::after{animation:none;display:none}}
-.lbtn:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(37,99,235,.55)}.lbtn:active{transform:translateY(0) scale(.99)}.lbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.lbtn:hover{box-shadow:0 14px 30px rgba(37,99,235,.55)}.lbtn:active{opacity:.85}.lbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .lbtn>*{position:relative;z-index:1}
 .lsetup{text-align:center;margin-top:1rem;font-size:11px;color:#94a3b8}
 .lsetup a{color:#3b82f6;cursor:pointer;text-decoration:underline}
@@ -252,7 +252,7 @@ input,select,textarea,button{font-family:var(--ff)}
 .bc3{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#dc2626}.bc4{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);color:#d97706}
 .bc5{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3);color:#059669}
 .bxl{background:var(--gradient-primary);border:none;color:#fff !important;font-weight:600;padding:8px 18px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(37,99,235,.25),0 1px 2px rgba(37,99,235,.2);letter-spacing:.2px}
-.bxl:hover{opacity:.92;color:#fff !important;transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.35)}
+.bxl:hover{opacity:.92;color:#fff !important;box-shadow:0 4px 14px rgba(37,99,235,.35)}
 .bxl *{color:#fff !important}
 .bdis{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#dc2626}.bghost{border:none;background:none;padding:4px 8px;color:var(--tx3)}.bghost:hover{background:#f1f5f9;color:var(--tx1)}.bsm{padding:4px 10px;font-size:10px}
 .bwa{border-color:#bbf7d0;color:#16a34a;background:#f0fdf4}.bwa:hover{background:#dcfce7;color:#16a34a}
@@ -464,7 +464,7 @@ html{scroll-behavior:smooth}
 /* ════ MEJORAS UI/UX PREMIUM (Punto 10) ════ */
 /* Botones con efecto 3D suave */
 .bxl,.bc1,.bc5{position:relative;transition:all .18s cubic-bezier(.4,0,.2,1)}
-.bxl:active,.bc1:active,.bc5:active{transform:translateY(1px)}
+.bxl:active,.bc1:active,.bc5:active{opacity:.82}
 /* Cards premium con sombra mejorada */
 .nc{transition:box-shadow .2s ease}
 .nc:hover{box-shadow:0 4px 20px rgba(0,0,0,.06)}
@@ -496,7 +496,7 @@ tbody tr{transition:background .12s ease}
   border:1.5px solid #e2e8f0;background:#fff;border-radius:8px;transition:all .15s;
 }
 .btn.bsm.bghost i{font-size:15px;color:#475569}
-.btn.bsm.bghost:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.12)}
+.btn.bsm.bghost:hover{box-shadow:0 4px 10px rgba(0,0,0,.12)}
 /* Color por tipo de acción */
 .btn.bsm.bghost[title*="Editar"]:hover,.btn.bsm.bghost[title*="editar"]:hover{border-color:#2563eb;background:#eff6ff}
 .btn.bsm.bghost[title*="Editar"]:hover i,.btn.bsm.bghost[title*="editar"]:hover i{color:#2563eb}
@@ -3126,7 +3126,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='18.6';
+const APP_VERSION='18.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
