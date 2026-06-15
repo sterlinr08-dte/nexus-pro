@@ -1,7 +1,8 @@
 {
-  "version": "16.0",
+  "version": "16.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Humo al presionar ahora es del color del icono y más visible (más grande, más opaco y se esparce más)",
     "Iconos del inicio: se quitó el efecto flotante; ahora la esfera GIRA en 3D al presionarla y suelta un pequeño humo",
     "Gráfica 'Resumen por método de cobro' con aspecto 3D realista: aro con degradado y volumen, sombra de profundidad, brillo de vidrio y hueco central con relieve; puntos de la leyenda como mini-esferas",
     "Iconos sin la línea blanca alrededor: esferas más realistas en el inicio y en todo el sistema",

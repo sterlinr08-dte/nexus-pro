@@ -4197,18 +4197,18 @@
       /* Reflejo cristalino sutil (no es flotación) */
       @keyframes nxOrbGlint { 0%,86%,100%{ opacity:.6; } 93%{ opacity:1; } }
       #v-dashboard .qa-g .qa i.qa-ico::after{ animation: nxOrbGlint 4.2s ease-in-out infinite; }
-      /* Pequeño humo al presionar */
+      /* Humo del color del icono al presionar */
       .nx-smoke{
-        position:absolute; left:50%; top:34%; width:15px; height:15px; border-radius:50%;
-        background: radial-gradient(circle, rgba(226,232,240,.95), rgba(203,213,225,0) 72%);
-        pointer-events:none; filter:blur(2px); z-index:-1;
-        transform:translate(-50%,0) scale(.35); opacity:0;
-        animation: nxSmoke .75s ease-out forwards;
+        position:absolute; left:50%; top:40%; width:22px; height:22px; border-radius:50%;
+        background: radial-gradient(circle, rgba(148,163,184,.95), rgba(148,163,184,0) 70%);
+        pointer-events:none; filter:blur(1.5px); z-index:-1;
+        transform:translate(-50%,0) scale(.4); opacity:0;
+        animation: nxSmoke .85s ease-out forwards;
       }
       @keyframes nxSmoke{
-        0%   { opacity:0; transform:translate(-50%,0) scale(.35); }
-        22%  { opacity:.6; }
-        100% { opacity:0; transform: translate(calc(-50% + var(--dx,0px)), -42px) scale(1.7); }
+        0%   { opacity:0;  transform:translate(-50%,0) scale(.4); }
+        25%  { opacity:.95; }
+        100% { opacity:0;  transform: translate(calc(-50% + var(--dx,0px)), -52px) scale(2.1); }
       }
       @media (prefers-reduced-motion: reduce){
         #v-dashboard .qa i.qa-ico.nx-spin{ animation: none !important; }
@@ -11433,11 +11433,26 @@
 (function(){
   if (window.__NX_ORB_FX__) return;
   window.__NX_ORB_FX__ = true;
+  // Toma el color del icono (primer color del degradado de fondo)
+  function rgbParts(c){ var m = (c||'').match(/(\d+(?:\.\d+)?)/g); return m && m.length>=3 ? m : null; }
+  function iconColor(ico){
+    try{
+      var bg = getComputedStyle(ico).backgroundImage || '';
+      var m = bg.match(/rgba?\([^)]+\)/);
+      if (m) { var p = rgbParts(m[0]); if (p) return p; }
+      var bc = getComputedStyle(ico).backgroundColor;
+      var p2 = rgbParts(bc);
+      if (p2 && bc !== 'rgba(0, 0, 0, 0)') return p2;
+    }catch(_){}
+    return ['148','163','184'];
+  }
   function press(e){
     var qa = e.target && e.target.closest ? e.target.closest('#v-dashboard .qa') : null;
     if (!qa) return;
     var ico = qa.querySelector('i.qa-ico');
     var host = qa.querySelector('.qa-i') || ico && ico.parentNode;
+    var rgb = ico ? iconColor(ico) : ['148','163','184'];
+    var base = rgb[0]+','+rgb[1]+','+rgb[2];
     // Giro 3D (re-disparable en cada toque)
     if (ico){
       ico.classList.remove('nx-spin');
@@ -11448,15 +11463,16 @@
     }
     // Humo (varias volutas que suben y se desvanecen)
     if (host){
-      for (var i=0;i<5;i++){
+      for (var i=0;i<6;i++){
         (function(n){
           var p = document.createElement('span');
           p.className = 'nx-smoke';
-          p.style.setProperty('--dx', (Math.random()*28 - 14).toFixed(0) + 'px');
-          p.style.left = (40 + Math.random()*20) + '%';
-          p.style.animationDelay = (n*45) + 'ms';
+          p.style.background = 'radial-gradient(circle, rgba('+base+',.95), rgba('+base+',0) 70%)';
+          p.style.setProperty('--dx', (Math.random()*38 - 19).toFixed(0) + 'px');
+          p.style.left = (38 + Math.random()*24) + '%';
+          p.style.animationDelay = (n*40) + 'ms';
           try { host.appendChild(p); } catch(_){ return; }
-          setTimeout(function(){ if (p.parentNode) p.parentNode.removeChild(p); }, 850 + n*45);
+          setTimeout(function(){ if (p.parentNode) p.parentNode.removeChild(p); }, 900 + n*40);
         })(i);
       }
     }
