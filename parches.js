@@ -4217,6 +4217,18 @@
         gap: 14px 8px !important;
         align-items: start !important;
       }
+      /* PC/escritorio: iconos más juntos (columnas de ancho fijo, centradas) en vez
+         de estirarse a lo ancho de la pantalla */
+      @media (min-width: 1024px) {
+        #v-dashboard .qa-g {
+          grid-template-columns: repeat(auto-fit, 148px) !important;
+          justify-content: center !important;
+          gap: 22px 18px !important;
+          max-width: 1020px;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+      }
       #v-dashboard .qa-g .qa {
         display: flex !important;
         flex-direction: column !important;

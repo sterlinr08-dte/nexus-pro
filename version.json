@@ -1,7 +1,8 @@
 {
-  "version": "17.6",
+  "version": "17.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "En PC los iconos del inicio ya no se estiran a lo ancho: ahora van en columnas de ancho fijo, centradas y más juntas (en el celular se quedan igual, de 3 en 3)",
     "ARREGLADO: muchos botones se inflaban enormemente al presionarlos (en iPhone, el efecto 'goma' sobre botones dentro de ventanas con desenfoque). Se quitó el rebote de los botones; mantienen su hundido y la onda al tocar. El rebote sigue en iconos redondos, KPIs y menú",
     "La sección 'Pendientes' de Facturas ya no abre una ventana flotante: ahora se muestra dentro de la página como una pestaña más (Facturas/Cobros/Pendientes/Historial)",
     "Ventana 'Pendientes de meses anteriores' ahora se ve como las demás del sistema: banner y tarjetas neutras (blanco/gris), el rojo queda solo en los montos (lo que se debe)",
