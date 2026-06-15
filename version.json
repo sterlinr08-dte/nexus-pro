@@ -1,8 +1,8 @@
 {
-  "version": "17.4",
+  "version": "17.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Ventana 'Pendientes de meses anteriores' alineada con el resto del sistema: encabezado estándar (título a la izquierda + X) y ventana centrada; se conserva el banner rojo de total y las tarjetas (es una alerta de atrasos)",
+    "Ventana 'Pendientes de meses anteriores' ahora se ve como las demás del sistema: banner y tarjetas neutras (blanco/gris), el rojo queda solo en los montos (lo que se debe); encabezado estándar y ventana centrada",
     "Mismo orden armónico aplicado a más grupos: las pestañas de Clientes (Nuevo/Activos/En proceso/VIP/Inhabilitados) y el selector de WhatsApp masivo (Factura/Pago/Vence) ahora usan el mismo control segmentado parejo; 'Nuevo' con acento verde, activa en azul, sin filas disparejas",
     "Pestañas de Facturas/Cobros/Pendientes/Historial reorganizadas: ahora son un control segmentado parejo (mismo tamaño y forma) en rejilla 2x2 en móvil; la activa en azul y 'Pendientes' como alerta roja suave (ya no se ven desarmonizadas)",
     "Parpadeo al actualizar eliminado del todo: la pantalla de carga ahora es opaca (antes era casi transparente y dejaba ver el sistema sin estilos) y ya NO se quita sola a los 2s; espera a que los estilos estén listos. Si la red falla, reintenta cargar los parches solo (hasta 3 veces)",

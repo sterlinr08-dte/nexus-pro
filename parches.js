@@ -9717,7 +9717,7 @@
       : lista.map((x, i) => {
           const cli = x.cli || {};
           const chips = x.periodos.sort((a, b) => a.num - b.num)
-            .map(p => `<span style="display:inline-block;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px 3px 0 0">${esc(p.label)} · ${fmt(p.monto)}</span>`).join('');
+            .map(p => `<span style="display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px 3px 0 0">${esc(p.label)} · ${fmt(p.monto)}</span>`).join('');
           const num = waNumero(cli);
           const idSafe = esc(String(cli.id || i));
           const cid = cli.id ? esc(String(cli.id)) : '';
@@ -9725,7 +9725,7 @@
           return `
             <div class="nxPendCard" data-nom="${nomData}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
               <div style="display:flex;align-items:center;gap:10px">
-                <div style="width:38px;height:38px;border-radius:10px;background:#fee2e2;color:#dc2626;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
+                <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#eef2f7,#e2e8f0);color:#475569;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
                 <div style="flex:1;min-width:0;cursor:pointer" ${cid ? `onclick="window.nxVerClientePend('${cid}')"` : ''} title="Ver resumen del cliente">
                   <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cli.nom || 'Cliente')}</div>
                   <div style="font-size:11px;color:#64748b">Agente: ${esc(x.agente)} · ${x.periodos.length} factura(s)</div>
@@ -9749,10 +9749,10 @@
           <span><i class="ti ti-alert-triangle"></i> PENDIENTES DE MESES ANTERIORES</span>
           <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalPendPrev').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
-        ${lista.length ? `<div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1px solid #fecaca;border-radius:12px;padding:12px;text-align:center;margin:6px 2px 10px">
-          <div style="font-size:10px;font-weight:800;color:#b91c1c;letter-spacing:.4px">TOTAL POR COBRAR DE MESES ANTERIORES</div>
-          <div style="font-size:22px;font-weight:900;color:#991b1b;margin-top:2px">${fmt(totalGeneral)}</div>
-          <div style="font-size:10px;color:#ef4444;font-weight:600">${lista.length} cliente(s) con atraso</div>
+        ${lista.length ? `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;text-align:center;margin:6px 2px 10px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:.4px">TOTAL POR COBRAR DE MESES ANTERIORES</div>
+          <div style="font-size:24px;font-weight:900;color:#dc2626;margin-top:2px">${fmt(totalGeneral)}</div>
+          <div style="font-size:10px;color:#94a3b8;font-weight:600">${lista.length} cliente(s) con atraso</div>
         </div>` : ''}
         ${lista.length ? `<div style="position:relative;margin:0 2px 10px">
           <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
