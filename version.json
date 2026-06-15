@@ -1,8 +1,9 @@
 {
-  "version": "18.4",
+  "version": "18.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Facturas: tocar el título de una columna ahora ORDENA la tabla (▲/▼) y al tocar de nuevo invierte, igual que en Clientes. (Se quitó el selector/filtro anterior que no convencía)",
+    "Ordenar por columnas (▲/▼) también en Cobros, Historial de pagos y Agentes (igual que en Clientes y Facturas): toca el título para ordenar, de nuevo para invertir",
+    "Facturas: tocar el título de una columna ORDENA la tabla (▲/▼) y al tocar de nuevo invierte, igual que en Clientes",
     "En la Tabla Comparativa, al tocar un cliente ahora se abre su ficha completa del sistema (con botón Editar). Funciona también en los cuadres guardados (historial)",
     "En PC los iconos del inicio quedan en 2 líneas más separadas",
     "La Tabla Comparativa ya no abre como ventana flotante: ahora es una ventana normal del sistema (se abre en la página, con botón Volver al inicio)",

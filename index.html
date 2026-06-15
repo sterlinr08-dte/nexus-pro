@@ -1161,7 +1161,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <select id="fCobEst" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
             </div>
             <div class="tw"><table>
-              <thead><tr><th style="width:22%">CLIENTE</th><th style="width:11%">AGENTE</th><th style="width:10%">PLAN</th><th style="width:13%">DEUDA</th><th style="width:11%">COBRADO</th><th style="width:11%">PENDIENTE</th><th style="width:12%">PROGRESO</th><th style="width:10%"></th></tr></thead>
+              <thead><tr><th style="width:22%;cursor:pointer;user-select:none" onclick="sortCob('cliente')">CLIENTE <span id="sfc_cliente" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCob('agente')">AGENTE <span id="sfc_agente" style="color:#2563eb"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCob('plan')">PLAN <span id="sfc_plan" style="color:#2563eb"></span></th><th style="width:13%;cursor:pointer;user-select:none" onclick="sortCob('deuda')">DEUDA <span id="sfc_deuda" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCob('cobrado')">COBRADO <span id="sfc_cobrado" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCob('pendiente')">PENDIENTE <span id="sfc_pendiente" style="color:#2563eb"></span></th><th style="width:12%;cursor:pointer;user-select:none" onclick="sortCob('progreso')">PROGRESO <span id="sfc_progreso" style="color:#2563eb"></span></th><th style="width:10%"></th></tr></thead>
               <tbody id="tbCob"><tr><td colspan="8"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
           </div>
@@ -1197,7 +1197,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </div>
             </div>
             <div class="tw"><table>
-              <thead><tr><th>FECHA</th><th>CLIENTE</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead>
+              <thead><tr><th style="cursor:pointer;user-select:none" onclick="sortPag('fecha')">FECHA <span id="sfp_fecha" style="color:#2563eb"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('cliente')">CLIENTE <span id="sfp_cliente" style="color:#2563eb"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('monto')">MONTO <span id="sfp_monto" style="color:#2563eb"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('metodo')">MÉTODO <span id="sfp_metodo" style="color:#2563eb"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('referencia')">REFERENCIA <span id="sfp_referencia" style="color:#2563eb"></span></th><th>ACCIONES</th></tr></thead>
               <tbody id="tbPagos"></tbody>
             </table></div>
           </div><!-- /nc -->
@@ -1218,7 +1218,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="nc">
             <div class="ch"><span class="ct">Agentes / Corredores</span><button class="btn bxl bsm" onclick="openM('mAgente')"><i class="ti ti-plus"></i> Nuevo agente</button></div>
             <div class="tw"><table>
-              <thead><tr><th style="width:28%">NOMBRE</th><th style="width:20%">CARGO</th><th style="width:16%">LICENCIA</th><th style="width:12%">VENCE</th><th style="width:10%">ESTADO LIC.</th><th style="width:14%">ACCIONES</th></tr></thead>
+              <thead><tr><th style="width:28%;cursor:pointer;user-select:none" onclick="sortAgt('nombre')">NOMBRE <span id="sfa_nombre" style="color:#2563eb"></span></th><th style="width:20%;cursor:pointer;user-select:none" onclick="sortAgt('cargo')">CARGO <span id="sfa_cargo" style="color:#2563eb"></span></th><th style="width:16%;cursor:pointer;user-select:none" onclick="sortAgt('licencia')">LICENCIA <span id="sfa_licencia" style="color:#2563eb"></span></th><th style="width:12%;cursor:pointer;user-select:none" onclick="sortAgt('vence')">VENCE <span id="sfa_vence" style="color:#2563eb"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortAgt('estado')">ESTADO LIC. <span id="sfa_estado" style="color:#2563eb"></span></th><th style="width:14%">ACCIONES</th></tr></thead>
               <tbody id="tbAgt"><tr><td colspan="6"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
           </div>
@@ -3126,7 +3126,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='18.4';
+const APP_VERSION='18.5';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5173,6 +5173,20 @@ function generarHTMLCertificado(c){
 }
 
 // ── COBROS ───────────────────────────────────────────────────────────────────
+// ── Ordenamiento por columnas (genérico) — Cobros, Pagos, Agentes ──
+const _ordTablas={};
+function _ordToggle(key,col){const s=_ordTablas[key]||(_ordTablas[key]={col:'',dir:1});if(s.col===col)s.dir=-s.dir;else{s.col=col;s.dir=1;}}
+function _ordAplicar(key,list,valFn){const s=_ordTablas[key];if(!s||!s.col)return list;return [...list].sort((a,b)=>{const va=valFn(a,s.col),vb=valFn(b,s.col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*s.dir;});}
+function _ordFlechas(key,prefix,cols){const s=_ordTablas[key]||{col:'',dir:1};cols.forEach(col=>{const el=document.getElementById(prefix+col);if(el)el.textContent=(s.col===col)?(s.dir===1?'▲':'▼'):'';});}
+const _COLS_COB=['cliente','agente','plan','deuda','cobrado','pendiente','progreso'];
+const _COLS_PAG=['fecha','cliente','monto','metodo','referencia'];
+const _COLS_AGT=['nombre','cargo','licencia','vence','estado'];
+function sortCob(col){_ordToggle('cob',col);rCob();}
+function _cobSortVal(c,col){switch(col){case 'cliente':return (c.nom||'').toLowerCase();case 'agente':return (gAgt(c.agente_id)?.nom||'').toLowerCase();case 'plan':return (c.plan||'').toLowerCase();case 'deuda':return Number(c.deuda_total||0);case 'cobrado':return Number(c.pagado||0);case 'pendiente':return Number(pend(c)||0);case 'progreso':return c.deuda_total>0?(c.pagado||0)/c.deuda_total:1;}return '';}
+function sortPag(col){_ordToggle('pag',col);aplicarFiltrosPagos();}
+function _pagSortVal(p,col){switch(col){case 'fecha':return (p.fecha||'').slice(0,10);case 'cliente':return (p.cliente_nom||'').toLowerCase();case 'monto':return Number(p.monto||0);case 'metodo':return (p.metodo||'').toLowerCase();case 'referencia':return (p.referencia||'').toLowerCase();}return '';}
+function sortAgt(col){_ordToggle('agt',col);rAgentes();}
+function _agtSortVal(a,col){switch(col){case 'nombre':return (a.nom||'').toLowerCase();case 'cargo':return (a.cargo||'').toLowerCase();case 'licencia':return (a.licencia||'').toLowerCase();case 'vence':return a.lic_vence||'';case 'estado':{const v=a.lic_vence?new Date(a.lic_vence):null;const h=new Date();return !a.licencia?'0':!v?'2':v<h?'1':Math.ceil((v-h)/86400000)<=30?'3':'2';}}return '';}
 function rCob(){
   llenarFiltroAgentes('fAgenteCob');
   const tb=document.getElementById('tbCob');
@@ -5184,6 +5198,8 @@ function rCob(){
   if(q)activos=activos.filter(c=>c.nom.toLowerCase().includes(q)||(c.cedula||'').includes(q)||(c.referencia||'').toLowerCase().includes(q)||(c.numero_poliza||'').toLowerCase().includes(q));
   if(fest==='deuda')activos=activos.filter(c=>pend(c)>0);
   else if(fest==='aldia')activos=activos.filter(c=>pend(c)<=0);
+  activos=_ordAplicar('cob',activos,_cobSortVal);
+  _ordFlechas('cob','sfc_',_COLS_COB);
   if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin resultados</div></td></tr>';return;}
   tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div></td><td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
 }
@@ -5394,6 +5410,8 @@ function aplicarFiltrosPagos(){
   const elC=document.getElementById('pgTotalCant');if(elC)elC.textContent=list.length;
   const elP=document.getElementById('pgPromedio');if(elP)elP.textContent=fmt(prom);
 
+  list=_ordAplicar('pag',list,_pagSortVal);
+  _ordFlechas('pag','sfp_',_COLS_PAG);
   if(!list.length){
     tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8">No hay pagos que coincidan con los filtros</td></tr>';
     return;
@@ -5704,8 +5722,9 @@ async function eliminarEmp(id){if(ST.clientes.find(c=>c.empresa_id===id)){toast(
 // ── AGENTES ──────────────────────────────────────────────────────────────────
 function rAgentes(){
   const tb=document.getElementById('tbAgt');
+  _ordFlechas('agt','sfa_',_COLS_AGT);
   if(!ST.agentes.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Sin agentes</div></td></tr>';return;}
-  tb.innerHTML=ST.agentes.map(a=>{
+  tb.innerHTML=_ordAplicar('agt',ST.agentes,_agtSortVal).map(a=>{
     const vence=a.lic_vence?new Date(a.lic_vence):null;
     const hoyD=new Date();
     const licEst=!a.licencia?{badge:'bCg',lbl:'Sin licencia'}:!vence?{badge:'bC1',lbl:'Vigente'}:vence<hoyD?{badge:'bC3',lbl:'Vencida'}:Math.ceil((vence-hoyD)/86400000)<=30?{badge:'bC4',lbl:'Por vencer'}:{badge:'bC1',lbl:'Vigente'};
