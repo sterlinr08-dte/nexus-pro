@@ -4123,14 +4123,17 @@
       #v-dashboard .qa-g .qa i.qa-ico {
         width: 66px !important; height: 66px !important; min-width: 66px !important;
         font-size: 30px !important;
-        border: 1px solid rgba(255,255,255,.7) !important;
+        border: 1.5px solid rgba(255,255,255,.9) !important;
         position: relative !important;
         overflow: hidden !important;
+        backdrop-filter: blur(3px) saturate(155%);
+        -webkit-backdrop-filter: blur(3px) saturate(155%);
         box-shadow:
           0 20px 36px rgba(30,58,110,.38),
           0 9px 16px rgba(30,58,110,.22),
-          inset 0 3px 6px rgba(255,255,255,.6),
-          inset 0 -9px 16px rgba(0,0,0,.18) !important;
+          inset 0 5px 9px rgba(255,255,255,.75),
+          inset 0 -11px 18px rgba(0,0,0,.22),
+          inset 0 0 0 1px rgba(255,255,255,.3) !important;
       }
       /* sin caja/sombra de tarjeta tampoco en hover */
       #v-dashboard .qa-g .qa:hover { background:none !important; box-shadow:none !important; border:0 !important; }
@@ -4173,9 +4176,9 @@
       }
       /* reflejo cristalino (brillo de vidrio en la parte superior) */
       #v-dashboard .qa-g .qa i.qa-ico::after {
-        content:''; position:absolute; left:12%; top:6%; width:76%; height:42%;
+        content:''; position:absolute; left:9%; top:4%; width:82%; height:54%;
         border-radius:50%;
-        background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%);
+        background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.92), rgba(255,255,255,.25) 52%, rgba(255,255,255,0) 76%);
         pointer-events:none; z-index:1;
       }
       @media(max-width:768px){
@@ -4322,10 +4325,22 @@
         display: inline-flex; align-items: center; justify-content: center;
         background: linear-gradient(145deg,#3b82f6,#22d3ee);
         color: #fff;
-        box-shadow: 0 4px 10px rgba(37,99,235,.30), inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 4px rgba(0,0,0,.14);
+        border: 1px solid rgba(255,255,255,.55);
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(2px) saturate(150%);
+        -webkit-backdrop-filter: blur(2px) saturate(150%);
+        box-shadow: 0 4px 10px rgba(37,99,235,.30), inset 0 2.5px 3px rgba(255,255,255,.7), inset 0 -3px 6px rgba(0,0,0,.16);
         vertical-align: middle;
         line-height: 1;
         transition: transform .15s ease, box-shadow .2s ease;
+      }
+      /* reflejo cristalino (vidrio) en todos los iconos badge */
+      .ti::after{
+        content:''; position:absolute; left:10%; top:6%; width:80%; height:46%;
+        border-radius:50%;
+        background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.7), rgba(255,255,255,0) 72%);
+        pointer-events:none;
       }
       /* Excepciones: estos NO deben ser circulo (romperian el diseno).
          Los componentes ya estilizados (ni-i, qa-ico, cfg-tab) ganan solos
@@ -4343,7 +4358,16 @@
         display: inline-block !important;
         vertical-align: baseline !important;
         line-height: inherit !important;
+        border: 0 !important;
+        position: static !important;
+        overflow: visible !important;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
       }
+      .btn .ti::after, button .ti::after, td .ti::after, th .ti::after, label .ti::after, summary .ti::after,
+      .nx-fab .ti::after, .sb-mk .ti::after, .lmk .ti::after, .smk .ti::after, .nxs-badge .ti::after, .nxl-logo .ti::after,
+      .sb-av .ti::after, .nxDC-bank-badge .ti::after,
+      .ti.ti-search::after, .ti.ti-search-off::after,
+      i.ti[style*="absolute"]::after, i.ti[style*="position:absolute"]::after{ content: none !important; }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
@@ -11381,7 +11405,7 @@
       try { if (el.closest(SKIP_CTX)) continue; } catch (e) {}
       var hu = hue(name);
       el.style.setProperty('background', 'linear-gradient(145deg,hsl(' + hu + ',70%,48%),hsl(' + ((hu + 22) % 360) + ',75%,60%))', 'important');
-      el.style.setProperty('box-shadow', '0 4px 10px hsla(' + hu + ',70%,45%,.34), inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 4px hsla(' + hu + ',70%,28%,.30)', 'important');
+      el.style.setProperty('box-shadow', '0 4px 10px hsla(' + hu + ',70%,45%,.34), inset 0 2.5px 3px rgba(255,255,255,.72), inset 0 -3px 6px hsla(' + hu + ',70%,28%,.32)', 'important');
     }
   }
   var pend = null;
