@@ -4221,10 +4221,10 @@
          de estirarse a lo ancho de la pantalla */
       @media (min-width: 1024px) {
         #v-dashboard .qa-g {
-          grid-template-columns: repeat(6, 116px) !important;
+          grid-template-columns: repeat(6, 124px) !important;
           justify-content: center !important;
-          gap: 14px 6px !important;
-          max-width: 760px;
+          gap: 30px 26px !important;
+          max-width: 920px;
           margin-left: auto !important;
           margin-right: auto !important;
         }
@@ -10699,7 +10699,11 @@
     const esHumano = res.fuente ? res.fuente === 'humano' : /voluntario|humano/i.test(r.empresa_nom || '');
     const F = esHumano ? (/voluntario/i.test(r.empresa_nom || '') ? 'PLAN VOLUNTARIO HUMANO' : 'HUMANO') : 'TSS';
     const sec = (titulo, color, bg, arr, deuda) => {
-      const lista = (arr || []).map(p => '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600">' + esc(p.nom || '') + '</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">' + esc(p.ced || '') + '</div></div>' + (deuda ? '<div style="font-weight:800;color:#b91c1c;flex-shrink:0">RD$ ' + Number(p.deuda || 0).toLocaleString('es-DO') + '</div>' : (p.extra ? '<div style="font-size:10px;color:#94a3b8;flex-shrink:0">' + esc(p.extra) + '</div>' : '')) + '</div>').join('') || '<div style="padding:10px 12px;color:#94a3b8;font-size:11px">—</div>';
+      const lista = (arr || []).map(p => {
+        const clic = p.ced ? ' onclick="window.nxTssFicha(\'' + esc(p.ced) + '\')"' : '';
+        const cur = p.ced ? 'cursor:pointer;' : '';
+        return '<div' + clic + ' style="' + cur + 'display:flex;justify-content:space-between;gap:8px;padding:6px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600">' + esc(p.nom || '') + '</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">' + esc(p.ced || '') + '</div></div>' + (deuda ? '<div style="font-weight:800;color:#b91c1c;flex-shrink:0">RD$ ' + Number(p.deuda || 0).toLocaleString('es-DO') + '</div>' : (p.extra ? '<div style="font-size:10px;color:#94a3b8;flex-shrink:0">' + esc(p.extra) + '</div>' : '')) + (p.ced ? '<i class="ti ti-chevron-right" style="color:#cbd5e1;flex-shrink:0;font-size:15px"></i>' : '') + '</div>';
+      }).join('') || '<div style="padding:10px 12px;color:#94a3b8;font-size:11px">—</div>';
       return '<div style="border:1px solid ' + color + '33;border-radius:10px;margin-bottom:8px;overflow:hidden"><div style="background:' + bg + ';padding:8px 12px;font-size:11px;font-weight:800;color:' + color + '">' + titulo + ' (' + (arr || []).length + ')</div><div style="max-height:180px;overflow-y:auto">' + lista + '</div></div>';
     };
     setArea('nxTssResultado',
@@ -10839,6 +10843,11 @@
     const empresas = Array.isArray(ST_.empresas) ? ST_.empresas : [];
     const k = normCedula(ced);
     const c = clientes.find(x => normCedula(x.cedula) === k);
+    // Si el cliente existe en el sistema, abrir su ficha COMPLETA (con botón Editar)
+    if (c) {
+      const ver = (typeof window.verCliente === 'function') ? window.verCliente : (typeof verCliente === 'function' ? verCliente : null);
+      if (ver) { try { ver(c.id); return; } catch (e) {} }
+    }
     const nomEmp = id => empresas.find(e => String(e.id) === String(id))?.nom || '—';
     const fmtRD = (x) => 'RD$ ' + Number(x || 0).toLocaleString('es-DO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     const pendDe = (cl) => (typeof window.pend === 'function' ? Number(window.pend(cl) || 0) : Math.max(0, Number(cl.deuda_total || 0) - Number(cl.pagado || 0)));

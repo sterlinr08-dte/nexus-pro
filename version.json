@@ -1,7 +1,9 @@
 {
-  "version": "18.0",
+  "version": "18.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "En la Tabla Comparativa, al tocar un cliente ahora se abre su ficha completa del sistema (con botón Editar). Funciona también en los cuadres guardados (historial)",
+    "En PC los iconos del inicio quedan en 2 líneas más separadas",
     "La Tabla Comparativa ya no abre como ventana flotante: ahora es una ventana normal del sistema (se abre en la página, con botón Volver al inicio)",
     "En PC los iconos del inicio ahora van en 2 líneas (6 columnas), centrados",
     "ARREGLADO: muchos botones se inflaban enormemente al presionarlos (en iPhone, el efecto 'goma' sobre botones dentro de ventanas con desenfoque). Se quitó el rebote de los botones; mantienen su hundido y la onda al tocar. El rebote sigue en iconos redondos, KPIs y menú",
