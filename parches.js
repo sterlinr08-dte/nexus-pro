@@ -11677,6 +11677,64 @@
   }, false);
 })();
 
+/* ── Tocar el TÍTULO de una columna (encabezado) → elegir un valor para filtrar ──
+   Empieza por la tabla de Facturas. Reúne los valores distintos de esa columna
+   (de las celdas .nxf-cell) y muestra un selector; al elegir, filtra. */
+(function(){
+  if (window.__NX_COL_FILTRO__) return;
+  window.__NX_COL_FILTRO__ = true;
+  function _e(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  function cerrar(){ var o=document.getElementById('nxColFiltroOv'); if(o) o.remove(); }
+  try {
+    var st=document.createElement('style');
+    st.textContent='#panelFact thead th{cursor:pointer}#panelFact thead th:hover{background:rgba(124,58,237,.06)}';
+    document.head.appendChild(st);
+  } catch(e){}
+  document.addEventListener('click', function(e){
+    var th = e.target && e.target.closest ? e.target.closest('#panelFact thead th') : null;
+    if (!th) return;
+    var tabla = th.closest('table');
+    var tb = tabla && tabla.querySelector('tbody');
+    if (!tb) return;
+    var idx = th.cellIndex;
+    var vals = {};
+    tb.querySelectorAll(':scope > tr').forEach(function(tr){
+      var td = tr.children[idx];
+      if (td && td.classList && td.classList.contains('nxf-cell')) {
+        var v=(td.getAttribute('data-f')||'').trim();
+        if (v) vals[v]=(vals[v]||0)+1;
+      }
+    });
+    var keys = Object.keys(vals).sort(function(a,b){ return a.localeCompare(b); });
+    var box = th.closest('.nc');
+    var inp = box && box.querySelector('input[id^="nxBus_"]');
+    if (!keys.length) {
+      try { if (window.toast) window.toast('info','Esa columna no se filtra','Toca Cliente, Agente, Plan, Empresa o Estado'); } catch(_){}
+      return;
+    }
+    cerrar();
+    var actual = inp ? (inp.value||'').trim().toLowerCase() : '';
+    var ov = document.createElement('div');
+    ov.id='nxColFiltroOv'; ov.className='overlay open';
+    ov.addEventListener('click', function(ev){ if (ev.target===ov) cerrar(); });
+    ov.innerHTML='<div class="modal" style="max-width:360px;max-height:80vh;display:flex;flex-direction:column">'
+      +'<div class="mt"><span><i class="ti ti-filter"></i> Filtrar por '+_e((th.textContent||'').trim())+'</span><button class="btn bghost bsm" type="button" data-i="x"><i class="ti ti-x"></i></button></div>'
+      +'<button type="button" class="btn" style="width:100%;margin-bottom:6px" data-i="all"><i class="ti ti-list"></i> Mostrar todos</button>'
+      +'<div style="overflow-y:auto;display:flex;flex-direction:column;gap:5px">'
+      + keys.map(function(k,i){ var act=k.toLowerCase()===actual; return '<button type="button" class="btn'+(act?' bc1':'')+'" style="width:100%;display:flex;justify-content:space-between;text-align:left" data-i="'+i+'"><span>'+_e(k)+'</span><span style="opacity:.55;font-weight:700">'+vals[k]+'</span></button>'; }).join('')
+      +'</div></div>';
+    document.body.appendChild(ov);
+    ov.querySelectorAll('button[data-i]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var di=b.getAttribute('data-i');
+        if (di==='x') { cerrar(); return; }
+        if (inp) { inp.value = (di==='all') ? '' : keys[parseInt(di,10)]; inp.dispatchEvent(new Event('input',{bubbles:true})); }
+        cerrar();
+      });
+    });
+  }, false);
+})();
+
 /* ── Iconos multicolor: a cada icono "suelto" su color estable + sombra 3D ── */
 (function(){
   if (window.__NX_ICON_COLOR__) return;
