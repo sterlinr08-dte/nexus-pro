@@ -7117,13 +7117,36 @@
       @media (max-width: 768px) {
         .tn-r > .notif-bell { width: 40px !important; height: 40px !important; padding: 0 !important; flex-shrink: 0; }
       }
-      /* Giro 3D al presionar (reusa el keyframe del logo) */
-      .tn-tog.nx-spin, .tn-r > #btnRefrescar.nx-spin, .tn-r > .notif-bell.nx-spin {
+      /* Menú y campana: giro 3D al presionar (reusa el keyframe del logo) */
+      .tn-tog.nx-spin, .tn-r > .notif-bell.nx-spin {
         animation: nxLogoSpin .62s cubic-bezier(.3,.85,.35,1) !important;
+      }
+      /* Botón ACTUALIZAR: rebota como una goma (jelly) al presionar */
+      @keyframes nxRubber {
+        0%   { transform: scale(1,1); }
+        30%  { transform: scale(1.28,0.72); }
+        40%  { transform: scale(0.78,1.22); }
+        52%  { transform: scale(1.12,0.88); }
+        66%  { transform: scale(0.94,1.06); }
+        78%  { transform: scale(1.04,0.96); }
+        100% { transform: scale(1,1); }
+      }
+      .tn-r > #btnRefrescar.nx-spin {
+        animation: nxRubber .7s cubic-bezier(.3,.6,.3,1) !important;
+        transform-origin: center !important;
       }
       .tn-tog:active, .tn-r > #btnRefrescar:active, .tn-r > .notif-bell:active { transform: scale(.92); }
       @media (prefers-reduced-motion: reduce) {
         .tn-tog.nx-spin, .tn-r > #btnRefrescar.nx-spin, .tn-r > .notif-bell.nx-spin { animation: none !important; }
+      }
+      /* ═══ Alineación de la barra superior (todo a 40px y centrado) ═══ */
+      @media (max-width: 768px) {
+        .tnav { align-items: center !important; }
+        .tn-tog { width: 40px !important; height: 40px !important; }
+        .tn-tog i { font-size: 20px !important; }
+        .tn-sr { max-width: none !important; display: flex !important; align-items: center !important; }
+        .tn-sr input { height: 40px !important; border-radius: 12px !important; padding: 0 14px 0 36px !important; }
+        .tn-sr .si { left: 13px !important; font-size: 15px !important; }
       }
     `;
 
