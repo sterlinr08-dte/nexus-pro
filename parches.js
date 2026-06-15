@@ -3817,6 +3817,17 @@
       @media (prefers-reduced-motion: reduce){
         nav.sb .sb-mk.nx-spin{ animation: none !important; }
       }
+      /* ═══ Jelly global suave al tocar (botones, pestañas, KPIs, menú) ═══ */
+      @keyframes nxJelly {
+        0%   { transform: scale(1,1); }
+        25%  { transform: scale(1.06,0.94); }
+        45%  { transform: scale(0.96,1.04); }
+        62%  { transform: scale(1.03,0.97); }
+        80%  { transform: scale(0.99,1.01); }
+        100% { transform: scale(1,1); }
+      }
+      .nx-jelly { animation: nxJelly .5s cubic-bezier(.3,.6,.3,1); transform-origin: center; }
+      @media (prefers-reduced-motion: reduce){ .nx-jelly { animation: none !important; } }
       nav.sb .sb-nm { color: #0f172a !important; }
       nav.sb .sb-sm { color: #64748b !important; }
 
@@ -11545,25 +11556,38 @@
     }catch(_){}
     return ['148','163','184'];
   }
+  // Selector amplio para el jelly suave (resto del sistema)
+  var JELLY_SEL = '.btn, button, .cfg-tab, .kpi, .ni, .nxDC-period-nav, .sb-u, .err-badge';
+  function reTrigger(el, cls){
+    el.classList.remove(cls);
+    void el.offsetWidth; // reflow para reiniciar la animación
+    el.classList.add(cls);
+    var done = function(){ el.classList.remove(cls); el.removeEventListener('animationend', done); };
+    el.addEventListener('animationend', done);
+  }
   function press(e){
     var t = e.target;
     if (!t || !t.closest) return;
     var qa = t.closest('#v-dashboard .qa');
     // logo del encabezado + botones cristalinos de la barra superior
     var solid = qa ? null : t.closest('.sb-mk, .tn-tog, #btnRefrescar, .notif-bell');
-    if (!qa && !solid) return;
-    // Elemento que gira y de dónde sale el humo / color
+    if (!qa && !solid){
+      // Resto del sistema: jelly suave (sin humo)
+      var jel = t.closest(JELLY_SEL);
+      if (!jel) return;
+      var jt = jel.tagName;
+      if (jt === 'INPUT' || jt === 'TEXTAREA' || jt === 'SELECT' || jel.disabled) return;
+      reTrigger(jel, 'nx-jelly');
+      return;
+    }
+    // Elemento que rebota y de dónde sale el humo / color
     var ico = qa ? qa.querySelector('i.qa-ico') : solid;
     var host = qa ? (qa.querySelector('.qa-i') || ico && ico.parentNode) : solid;
     var rgb = ico ? iconColor(ico) : ['148','163','184'];
     var base = rgb[0]+','+rgb[1]+','+rgb[2];
-    // Giro 3D (re-disparable en cada toque)
+    // Rebote (re-disparable en cada toque)
     if (ico){
-      ico.classList.remove('nx-spin');
-      void ico.offsetWidth; // fuerza reflow para reiniciar la animación
-      ico.classList.add('nx-spin');
-      var done = function(){ ico.classList.remove('nx-spin'); ico.removeEventListener('animationend', done); };
-      ico.addEventListener('animationend', done);
+      reTrigger(ico, 'nx-spin');
     }
     // Humo (varias volutas que suben y se desvanecen)
     if (host){
