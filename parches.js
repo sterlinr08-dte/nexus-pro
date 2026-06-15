@@ -4111,6 +4111,37 @@
       /* el contenido siempre por encima de la onda */
       #v-dashboard .qa .qa-i,
       #v-dashboard .qa .qa-l{ position: relative; z-index: 1; }
+
+      /* === IDEA: SIN tarjeta blanca; esferas más grandes y cristalizadas === */
+      #v-dashboard .qa-g .qa {
+        background: none !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        padding: 8px 4px 12px !important;
+      }
+      #v-dashboard .qa-g .qa i.qa-ico {
+        width: 66px !important; height: 66px !important; min-width: 66px !important;
+        font-size: 30px !important;
+        border: 1px solid rgba(255,255,255,.7) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        box-shadow:
+          0 16px 30px rgba(30,58,110,.28),
+          inset 0 3px 6px rgba(255,255,255,.6),
+          inset 0 -9px 16px rgba(0,0,0,.18) !important;
+      }
+      /* reflejo cristalino (brillo de vidrio en la parte superior) */
+      #v-dashboard .qa-g .qa i.qa-ico::after {
+        content:''; position:absolute; left:12%; top:6%; width:76%; height:42%;
+        border-radius:50%;
+        background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%);
+        pointer-events:none; z-index:1;
+      }
+      @media(max-width:768px){
+        #v-dashboard .qa-g .qa i.qa-ico { width: 60px !important; height: 60px !important; min-width: 60px !important; font-size: 27px !important; }
+      }
       /* onda de color (ripple) al tocar */
       .nx-ripple{
         position: absolute;
