@@ -12383,6 +12383,15 @@
             ${fld('cfgAboMat', 'Matrícula (CARD)', c.abogado_matricula, 'No. de matrícula')}
           </div>
           ${fld('cfgAboTel', 'Teléfono / Estudio', c.abogado_telefono, '809-000-0000')}
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 6px">TESTIGOS (opcional)</div>
+          <div class="fr-row">
+            ${fld('cfgT1Nom', 'Testigo 1 — nombre', c.testigo1_nombre, 'Nombre Apellido')}
+            ${fld('cfgT1Ced', 'Cédula', c.testigo1_cedula, '000-0000000-0')}
+          </div>
+          <div class="fr-row">
+            ${fld('cfgT2Nom', 'Testigo 2 — nombre', c.testigo2_nombre, 'Nombre Apellido')}
+            ${fld('cfgT2Ced', 'Cédula', c.testigo2_cedula, '000-0000000-0')}
+          </div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
           <button class="btn bghost" type="button" onclick="document.getElementById('nxPrCfg').remove()">Cancelar</button>
@@ -12402,6 +12411,10 @@
       abogado_cedula: (val('cfgAboCed') || '').trim() || null,
       abogado_matricula: (val('cfgAboMat') || '').trim() || null,
       abogado_telefono: (val('cfgAboTel') || '').trim() || null,
+      testigo1_nombre: (val('cfgT1Nom') || '').trim() || null,
+      testigo1_cedula: (val('cfgT1Ced') || '').trim() || null,
+      testigo2_nombre: (val('cfgT2Nom') || '').trim() || null,
+      testigo2_cedula: (val('cfgT2Ced') || '').trim() || null,
       updated_at: new Date().toISOString()
     };
     try {
@@ -12425,6 +12438,11 @@
       cfg.empresa_direccion ? 'con domicilio en ' + esc(cfg.empresa_direccion) : '',
       cfg.empresa_telefono ? 'teléfono ' + esc(cfg.empresa_telefono) : ''
     ].filter(Boolean).join(', ');
+    const firmaTestigo = (nom, ced) => nom ? `<div class="firma" style="max-width:48%">${esc(nom)}<br><span style="color:#777;font-size:11px">Testigo${ced ? '<br>Céd. ' + esc(ced) : ''}</span></div>` : '';
+    const testigosHTML = (cfg.testigo1_nombre || cfg.testigo2_nombre)
+      ? `<div style="font-size:12px;text-align:center;color:#475569;margin:36px 0 0;font-weight:700">TESTIGOS</div>
+         <div class="firmas" style="margin-top:40px;justify-content:space-around">${firmaTestigo(cfg.testigo1_nombre, cfg.testigo1_cedula)}${firmaTestigo(cfg.testigo2_nombre, cfg.testigo2_cedula)}</div>`
+      : '';
     let clausulaPago = '';
     if (esC) {
       const c = creditoCalc(p);
@@ -12458,11 +12476,12 @@
         ${clausulaPago}
         <p><b>CUARTA — Mora:</b> La falta de pago en las fechas convenidas facultará a EL ACREEDOR a exigir el saldo total adeudado y a iniciar las acciones legales correspondientes, corriendo por cuenta de EL DEUDOR los gastos y costas que ello genere.</p>
         <p><b>QUINTA — Compromiso de pago (pagaré):</b> EL DEUDOR reconoce deber y se obliga a pagar a EL ACREEDOR la suma antes indicada en las condiciones aquí establecidas, sirviendo el presente documento como pagaré y reconocimiento de deuda.</p>
-        <p>Hecho y firmado de buena fe, en dos (2) originales de un mismo tenor y efecto, uno para cada parte.</p>
+        <p>Hecho y firmado de buena fe, en dos (2) originales de un mismo tenor y efecto, uno para cada parte${testigosHTML ? ', ante los testigos que firman al pie' : ''}.</p>
         <div class="firmas">
           <div class="firma">EL ACREEDOR<br><span style="color:#777;font-size:11px">${esc(acreedor)}</span></div>
           <div class="firma">EL DEUDOR<br><span style="color:#777;font-size:11px">${esc(p.nombre || '')}${p.cedula ? '<br>Céd. ' + esc(p.cedula) : ''}</span></div>
         </div>
+        ${testigosHTML}
         ${cfg.abogado_nombre ? `<div style="margin-top:40px;border-top:1px dashed #bbb;padding-top:16px">
           <p style="font-size:12px"><b>LEGALIZACIÓN DE FIRMAS.</b> Yo, <b>${esc(cfg.abogado_nombre)}</b>, Abogado(a) Notario(a)${cfg.abogado_matricula ? ', con Matrícula del Colegio de Abogados de la República Dominicana (CARD) No. <b>' + esc(cfg.abogado_matricula) + '</b>' : ''}${cfg.abogado_cedula ? ', portador(a) de la cédula de identidad y electoral No. <b>' + esc(cfg.abogado_cedula) + '</b>' : ''}${cfg.abogado_telefono ? ', Tel. ' + esc(cfg.abogado_telefono) : ''}, CERTIFICO Y DOY FE de que las firmas que anteceden fueron puestas libre y voluntariamente en mi presencia por las partes contratantes, quienes me declararon que esas son las firmas que acostumbran usar en todos los actos de su vida pública y privada. En la República Dominicana, a los ${fechaLarga(p.fecha_prestamo)}.</p>
           <div class="firmas" style="margin-top:46px"><div class="firma" style="max-width:60%">${esc(cfg.abogado_nombre)}<br><span style="color:#777;font-size:11px">Abogado(a) Notario(a)${cfg.abogado_matricula ? '<br>CARD No. ' + esc(cfg.abogado_matricula) : ''}</span></div></div>

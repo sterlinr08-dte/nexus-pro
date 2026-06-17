@@ -1,7 +1,8 @@
 {
-  "version": "20.0",
+  "version": "20.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Préstamos: el contrato ahora también puede llevar TESTIGOS. En 'Config' agregas hasta 2 testigos (nombre y cédula) y en el contrato aparece una sección de TESTIGOS con sus líneas de firma, y se menciona que el acto se firma ante ellos",
     "Préstamos: nueva CONFIGURACIÓN del contrato (botón 'Config' arriba). Defines una sola vez el ACREEDOR que presta (nombre, RNC/cédula, teléfono y dirección) y las credenciales del ABOGADO (nombre, cédula, matrícula del CARD y teléfono). Esos datos salen automáticamente en cada contrato: el acreedor con sus datos y, al final, un bloque de LEGALIZACIÓN DE FIRMAS con la fe del abogado y su línea de firma. Solo el administrador lo ve y lo edita (RLS en la base)",
     "Préstamos: los botones del detalle (WhatsApp, Contrato, Estado, Docs, Editar, Borrar) ahora son todos del mismo tamaño y ordenados en una rejilla pareja de 3 columnas, cada uno con su icono y nombre",
     "Préstamos: CONTRATO y CARGA DE DOCUMENTOS. En el detalle de cada préstamo tienes el botón 'Contrato' que genera un contrato de préstamo / pagaré listo para imprimir o guardar en PDF (con los datos del deudor, el monto en números y en letras, la forma de pago según el tipo —cuotas, abonos libres o línea de crédito—, cláusulas de mora y reconocimiento de deuda, y líneas de firma). Y el botón 'Documentos' para subir y guardar archivos del préstamo: cédula, contrato firmado, garantía u otros (imágenes o PDF). Puedes verlos, descargarlos y eliminarlos. Solo el administrador los ve",
