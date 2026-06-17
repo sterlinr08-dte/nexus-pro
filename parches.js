@@ -13345,11 +13345,31 @@
     } catch (e) {}
   }
 
-  function mesesOpciones() {
-    const out = []; const d = new Date(); d.setDate(1);
-    d.setMonth(d.getMonth() - 1); // desde el mes anterior
-    for (let i = 0; i < 14; i++) { out.push({ mes: d.getMonth() + 1, anio: d.getFullYear() }); d.setMonth(d.getMonth() + 1); }
+  // Meses con factura PENDIENTE o PARCIAL del cliente (para marcar automáticamente)
+  function mesesPendientesDe(c) {
+    if (!c) return [];
+    let facturas = [];
+    try { facturas = (typeof ST !== 'undefined' && ST.facturas) ? ST.facturas : ((window.ST && window.ST.facturas) || []); } catch (e) { facturas = []; }
+    const out = [], seen = {};
+    facturas.forEach(f => {
+      if (String(f.cliente_id) !== String(c.id)) return;
+      const est = String(f.estado || '');
+      if (est !== 'Pendiente' && est !== 'Parcial') return;
+      const mes = Number(f.mes || 0), anio = Number(f.anio || 0);
+      if (!mes || !anio) return;
+      const k = anio + '-' + mes; if (seen[k]) return; seen[k] = 1;
+      out.push({ mes: mes, anio: anio });
+    });
     return out;
+  }
+
+  function mesesOpciones() {
+    const map = {}; const add = (mes, anio) => { map[anio + '-' + mes] = { mes: mes, anio: anio }; };
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 2);
+    for (let i = 0; i < 15; i++) { add(d.getMonth() + 1, d.getFullYear()); d.setMonth(d.getMonth() + 1); }
+    mesesPendientesDe(_recCli).forEach(o => add(o.mes, o.anio));
+    Object.keys(_recSel).forEach(k => { if (_recSel[k]) { const p = k.split('-'); add(Number(p[1]), Number(p[0])); } });
+    return Object.values(map).sort((a, b) => (a.anio * 12 + a.mes) - (b.anio * 12 + b.mes));
   }
   function selKey(o) { return o.anio + '-' + o.mes; }
   function mesesSeleccionados() {
@@ -13373,6 +13393,14 @@
 
   window.nxReciboToggleMes = function (k) { _recSel[k] = !_recSel[k]; pintarChips(); };
 
+  // Selección rápida de meses: actual / pendientes / limpiar
+  window.nxReciboQuick = function (tipo) {
+    _recSel = {};
+    if (tipo === 'actual') { const d = new Date(); _recSel[d.getFullYear() + '-' + (d.getMonth() + 1)] = true; }
+    else if (tipo === 'pend') { mesesPendientesDe(_recCli).forEach(o => { _recSel[o.anio + '-' + o.mes] = true; }); if (!mesesSeleccionados().length) toast('warn', 'Sin meses pendientes', 'Este cliente no tiene facturas pendientes'); }
+    pintarChips();
+  };
+
   // Abre el modal del recibo. opts: {monto, metodo, fecha, ref, meses:[{mes,anio,monto}], abonoId}
   function abrirReciboModal(c, opts) {
     opts = opts || {};
@@ -13381,6 +13409,11 @@
     _recNum = (opts.reciboNum != null && opts.reciboNum !== '') ? Number(opts.reciboNum) : null;
     _recAnio = (opts.reciboAnio != null && opts.reciboAnio !== '') ? Number(opts.reciboAnio) : (_recNum != null ? anioDe(opts.fecha) : null);
     (opts.meses || []).forEach(m => { const k = m.anio + '-' + m.mes; _recSel[k] = true; if (m.monto != null) _recMesMonto[k] = Number(m.monto); });
+    // Preselección automática (solo si no venían meses guardados)
+    if (!(opts.meses && opts.meses.length)) {
+      if (opts.preselect === 'pend') { mesesPendientesDe(c).forEach(o => { _recSel[o.anio + '-' + o.mes] = true; }); }
+      if (opts.preselect === 'actual' || (opts.preselect === 'pend' && !Object.keys(_recSel).length)) { const dn = new Date(); _recSel[dn.getFullYear() + '-' + (dn.getMonth() + 1)] = true; }
+    }
     const m = Number(opts.monto) || 0;
     const metodo = opts.metodo || 'Efectivo';
     const ref = opts.ref || '';
@@ -13400,7 +13433,12 @@
           <div style="font-size:11px;color:#64748b;margin-bottom:6px">Póliza ${esc(c.numero_poliza || '—')} · Plan ${esc(c.plan || '—')} · Prima ${fmt(_recAmt)}/mes</div>
           <div id="recNumLbl" style="font-size:11px;font-weight:800;color:#1e3a6e;margin-bottom:10px">${_recNum != null ? ('Recibo No. ' + recNumStr()) : (_recAbonoId ? 'Recibo (asignando No…)' : 'Recibo sin número (genera desde el pago)')}</div>
           <div class="fr"><label>Monto recibido (RD$)</label><input id="recMonto" data-nx-money inputmode="numeric" value="${m ? Math.round(m) : ''}" placeholder="0"></div>
-          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">MESES QUE PAGA <span style="font-weight:600;color:#94a3b8">(toca para marcar)</span></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">MESES QUE PAGA <span style="font-weight:600;color:#94a3b8">(automático o toca para marcar)</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px">
+            <button type="button" class="btn bsm bc1" style="font-size:10px;padding:5px 10px" onclick="window.nxReciboQuick('actual')"><i class="ti ti-calendar"></i> Mes actual</button>
+            <button type="button" class="btn bsm" style="font-size:10px;padding:5px 10px" onclick="window.nxReciboQuick('pend')"><i class="ti ti-alert-circle"></i> Pendientes</button>
+            <button type="button" class="btn bsm" style="font-size:10px;padding:5px 10px" onclick="window.nxReciboQuick('limpiar')"><i class="ti ti-eraser"></i> Limpiar</button>
+          </div>
           <div id="recChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${chips}</div>
           <div id="recTotMeses" style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:8px">Ningún mes seleccionado</div>
           ${note}
@@ -13433,7 +13471,7 @@
     let ua = null; try { ua = window._ultimoAbono; } catch (e) {}
     const linked = !!(ua && ua.abonoId && String(ua.cliente) === String(c.id));
     if (!m && ua) m = Number(ua.monto) || 0;
-    abrirReciboModal(c, { monto: m, metodo: val('aMet') || 'Efectivo', ref: val('aRef') || '', meses: [], abonoId: linked ? ua.abonoId : null });
+    abrirReciboModal(c, { monto: m, metodo: val('aMet') || 'Efectivo', ref: val('aRef') || '', meses: [], abonoId: linked ? ua.abonoId : null, preselect: 'actual' });
   };
 
   // Entrada desde el Historial de pagos / ficha del cliente (pago existente)
