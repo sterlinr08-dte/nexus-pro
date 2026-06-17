@@ -1,7 +1,8 @@
 {
-  "version": "21.9",
+  "version": "22.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Recibo: si el cliente TIENE meses pendientes, al generar el recibo de un cobro nuevo se marcan automáticamente esos meses pendientes (se capturan al momento de registrar el pago, antes de marcarlos pagados) y el recibo dice 'Pago de mensualidad pendiente'. Si no hay pendientes, marca el mes actual. Nuevo campo 'Concepto' editable que sale en el recibo (PDF y WhatsApp): el botón 'Pendientes' lo pone como 'pendiente' y 'Mes actual' como mensualidad normal",
     "Recibo (meses que paga): ahora puedes marcarlos AUTOMÁTICO o manual. Botones rápidos: 'Mes actual' (marca el mes en curso), 'Pendientes' (marca los meses con factura pendiente del cliente) y 'Limpiar'. Al generar un recibo desde un cobro nuevo, el mes actual queda marcado solo; igual puedes ajustar tocando los meses (incluye adelantados). La lista de meses ahora también incluye los meses pendientes aunque sean de atrás",
     "Recibo: 1) se quitó del encabezado el texto 'vuelve al sistema' (no debía aparecer en un documento del cliente); la barra superior ahora solo dice 'Cerrar'. 2) NUEVO botón COMPARTIR en el recibo: abre el menú de compartir del teléfono para enviarlo por cualquier app (no solo WhatsApp); si el navegador no lo soporta, copia el recibo al portapapeles",
     "El número de recibo (ej. 🧾 2026-0001) ahora también se muestra en el historial de pagos, junto a los meses: en el Historial general, en la ventana de Cobros del cliente y en la ficha del cliente. Así ves de un vistazo cuáles pagos ya tienen recibo y con qué número",

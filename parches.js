@@ -13396,8 +13396,9 @@
   // Selección rápida de meses: actual / pendientes / limpiar
   window.nxReciboQuick = function (tipo) {
     _recSel = {};
-    if (tipo === 'actual') { const d = new Date(); _recSel[d.getFullYear() + '-' + (d.getMonth() + 1)] = true; }
-    else if (tipo === 'pend') { mesesPendientesDe(_recCli).forEach(o => { _recSel[o.anio + '-' + o.mes] = true; }); if (!mesesSeleccionados().length) toast('warn', 'Sin meses pendientes', 'Este cliente no tiene facturas pendientes'); }
+    const cc = document.getElementById('recConcepto');
+    if (tipo === 'actual') { const d = new Date(); _recSel[d.getFullYear() + '-' + (d.getMonth() + 1)] = true; if (cc) cc.value = 'Pago de mensualidad'; }
+    else if (tipo === 'pend') { mesesPendientesDe(_recCli).forEach(o => { _recSel[o.anio + '-' + o.mes] = true; }); if (!mesesSeleccionados().length) toast('warn', 'Sin meses pendientes', 'Este cliente no tiene facturas pendientes'); else if (cc) cc.value = 'Pago de mensualidad pendiente'; }
     pintarChips();
   };
 
@@ -13417,6 +13418,7 @@
     const m = Number(opts.monto) || 0;
     const metodo = opts.metodo || 'Efectivo';
     const ref = opts.ref || '';
+    const concepto = opts.concepto || 'Pago de mensualidad';
     const fecha = (opts.fecha ? String(opts.fecha).slice(0, 10) : fechaHoyISO());
     cerrarModal('nxRecibo');
     const chips = mesesOpciones().map(o => `<button type="button" data-k="${selKey(o)}" onclick="window.nxReciboToggleMes('${selKey(o)}')" style="border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">${MESES[o.mes - 1].slice(0, 3)} ${o.anio}</button>`).join('');
@@ -13442,6 +13444,7 @@
           <div id="recChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${chips}</div>
           <div id="recTotMeses" style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:8px">Ningún mes seleccionado</div>
           ${note}
+          <div class="fr"><label>Concepto (sale en el recibo)</label><input id="recConcepto" class="no-upper" value="${esc(concepto)}" placeholder="Pago de mensualidad"></div>
           <div class="fr-row">
             <div class="fr"><label>Método</label><select id="recMetodo"><option${metodo === 'Efectivo' ? ' selected' : ''}>Efectivo</option><option${metodo === 'Transferencia' ? ' selected' : ''}>Transferencia</option><option${metodo === 'Cheque' ? ' selected' : ''}>Cheque</option><option${metodo === 'Tarjeta' ? ' selected' : ''}>Tarjeta</option><option${metodo === 'Depósito' ? ' selected' : ''}>Depósito</option></select></div>
             <div class="fr"><label>Fecha</label><input id="recFecha" type="date" value="${fecha}"></div>
@@ -13471,7 +13474,13 @@
     let ua = null; try { ua = window._ultimoAbono; } catch (e) {}
     const linked = !!(ua && ua.abonoId && String(ua.cliente) === String(c.id));
     if (!m && ua) m = Number(ua.monto) || 0;
-    abrirReciboModal(c, { monto: m, metodo: val('aMet') || 'Efectivo', ref: val('aRef') || '', meses: [], abonoId: linked ? ua.abonoId : null, preselect: 'actual' });
+    // Meses pendientes: los capturados al registrar el pago (preciso), o los actuales del cliente
+    let pend = (linked && Array.isArray(ua.mesesPend) && ua.mesesPend.length) ? ua.mesesPend : mesesPendientesDe(c);
+    let meses = (pend || []).map(o => ({ mes: o.mes, anio: o.anio }));
+    let concepto = 'Pago de mensualidad';
+    if (meses.length) { concepto = 'Pago de mensualidad pendiente'; }
+    else { const d = new Date(); meses = [{ mes: d.getMonth() + 1, anio: d.getFullYear() }]; }
+    abrirReciboModal(c, { monto: m, metodo: val('aMet') || 'Efectivo', ref: val('aRef') || '', meses: meses, abonoId: linked ? ua.abonoId : null, concepto: concepto });
   };
 
   // Entrada desde el Historial de pagos / ficha del cliente (pago existente)
@@ -13494,7 +13503,8 @@
     const metodo = val('recMetodo') || 'Efectivo';
     const fecha = val('recFecha') || fechaHoyISO();
     const ref = (val('recRef') || '').trim();
-    return { c, monto, meses, metodo, fecha, ref };
+    const concepto = (val('recConcepto') || '').trim() || 'Pago de mensualidad';
+    return { c, monto, meses, metodo, fecha, ref, concepto };
   }
 
   // Guarda en la base los meses que cubre el pago (si el recibo está enlazado al
@@ -13530,7 +13540,7 @@
         <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-22px -22px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85"></span></div>
         <div class="hd"><div><h1>${esc(empNom)}</h1><div class="muted">${cfg.empRNC ? 'RNC: ' + esc(cfg.empRNC) + ' · ' : ''}${esc(cfg.empTel || '')}${cfg.empDir ? '<br>' + esc(cfg.empDir) : ''}</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:800;color:#1e3a6e">RECIBO DE PAGO</div><div class="muted">No. ${noRec}</div><div class="muted">Fecha: ${fechaDMY(d.fecha)}</div></div></div>
         <div class="box"><table style="margin:0"><tr><td>Recibí de</td><td style="text-align:right"><b>${esc(d.c.nom || '')}</b></td></tr>${d.c.cedula ? `<tr><td>Cédula</td><td style="text-align:right">${esc(d.c.cedula)}</td></tr>` : ''}<tr><td>Póliza</td><td style="text-align:right">${esc(d.c.numero_poliza || '—')}</td></tr><tr><td>Plan</td><td style="text-align:right">${esc(d.c.plan || '—')}</td></tr></table></div>
-        <p style="font-size:13px">La suma de <b>${fmt(d.monto)}</b> (<b>${numLetras(d.monto)} PESOS DOMINICANOS</b>), por concepto de pago del seguro correspondiente a: <b>${esc(mesesTxt)}</b>.</p>
+        <p style="font-size:13px">La suma de <b>${fmt(d.monto)}</b> (<b>${numLetras(d.monto)} PESOS DOMINICANOS</b>), por concepto de <b>${esc(d.concepto)}</b> del seguro, correspondiente a: <b>${esc(mesesTxt)}</b>.</p>
         <table><thead><tr><th>Mes pagado</th><th style="text-align:right">Monto</th></tr></thead><tbody>${filas}</tbody><tfoot><tr><td class="tot">TOTAL RECIBIDO</td><td class="tot" style="text-align:right">${fmt(d.monto)}</td></tr></tfoot></table>
         <div class="box"><table style="margin:0"><tr><td>Método de pago</td><td style="text-align:right">${esc(d.metodo)}${d.ref ? ' · Ref. ' + esc(d.ref) : ''}</td></tr><tr><td>Saldo pendiente actual</td><td style="text-align:right"><b>${fmt(_pend(d.c))}</b></td></tr></table></div>
         <div class="firma">Recibido por · ${esc(empNom)}</div>
@@ -13544,7 +13554,7 @@
     const cfg = _CFG();
     const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
     const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(mesMonto(m))).join('\n');
-    return `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses pagados:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
+    return `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Concepto:* ${d.concepto}\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
   }
 
   window.nxReciboWA = function () {

@@ -3128,7 +3128,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='21.9';
+const APP_VERSION='22.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5686,12 +5686,14 @@ async function regAbono(){
     const asi={fecha:hoy(),referencia:'AST-COB-'+((c.numero_poliza?.replace('POL-','').slice(-4))||'0000'),descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
     const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);
     recalcularSaldosContables();
+    // Capturar los meses que estaban PENDIENTES/PARCIAL antes de marcarlos pagados (para el recibo)
+    const _mesesPend=ST.facturas.filter(f=>f.cliente_id===c.id&&(f.estado==='Pendiente'||f.estado==='Parcial')&&f.mes&&f.anio).map(f=>({mes:Number(f.mes),anio:Number(f.anio)}));
     const pd2=pend(c);
     if(pd2===0)await API.patch('facturas',`cliente_id=eq.${c.id}&estado=eq.Pendiente`,{estado:'Pagado'});
     else await API.patch('facturas',`cliente_id=eq.${c.id}&estado=eq.Pendiente`,{estado:'Parcial'});
     ST.facturas.filter(f=>f.cliente_id===c.id&&f.estado==='Pendiente').forEach(f=>f.estado=pd2===0?'Pagado':'Parcial');
     logAudit('ABONO_REGISTRADO',`${fmt(monto)} · ${c.nom}`);
-    _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId};
+    _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:_mesesPend};
     // Mostrar botón de recibo WA
     const reciboDiv=document.getElementById('reciboWAbtn');
     if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
