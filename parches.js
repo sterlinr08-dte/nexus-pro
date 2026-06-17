@@ -11716,6 +11716,7 @@
 
   let _prestamos = [];
   let _pagosByPrestamo = {};
+  let _prCfg = {};
   let _modoForm = 'libre';
   let _prFiltro = 'todos';
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
@@ -11818,6 +11819,7 @@
     const pagos = await getAPI().get('prestamo_pagos', 'select=*&order=fecha.asc') || [];
     _pagosByPrestamo = {};
     pagos.forEach(p => { (_pagosByPrestamo[p.prestamo_id] = _pagosByPrestamo[p.prestamo_id] || []).push(p); });
+    try { const cfg = await getAPI().get('prestamos_config', 'select=*&id=eq.1'); _prCfg = (cfg && cfg[0]) || {}; } catch (e) { _prCfg = {}; }
   }
 
   function kpi(lbl, val, col) {
@@ -11885,6 +11887,7 @@
           <div><div class="ct"><i class="ti ti-cash"></i> Préstamos</div><div class="ct-s">Solo visible para el administrador</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+            <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoConfig()" title="Datos para el contrato"><i class="ti ti-settings"></i> Config</button>
             <button class="btn bsm bc4" type="button" onclick="window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             <button class="btn bsm bc1" type="button" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo</button>
           </div>
@@ -12353,12 +12356,75 @@
   }
   function empresaNom() { try { return (window.CFG && CFG.empresa_nom) || (window.ST && ST.config && ST.config.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
 
+  // ── Configuración del contrato: empresa que presta + datos del abogado ──
+  window.nxPrestamoConfig = function () {
+    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    cerrarModal('nxPrCfg');
+    const c = _prCfg || {};
+    const fld = (id, lbl, val, ph, extra) => `<div class="fr"><label>${lbl}</label><input id="${id}" class="no-upper" value="${esc(val || '')}" placeholder="${ph || ''}" ${extra || ''}></div>`;
+    const ov = document.createElement('div'); ov.id = 'nxPrCfg'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-settings"></i> Datos del contrato</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrCfg').remove()"><i class="ti ti-x"></i></button></div>
+        <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Estos datos saldrán en el contrato de préstamo (el acreedor que presta y la legalización del abogado).</div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">EMPRESA / PERSONA QUE PRESTA</div>
+          ${fld('cfgEmpNom', 'Nombre del acreedor', c.empresa_nombre, 'Ej: Inversiones XYZ, SRL')}
+          <div class="fr-row">
+            ${fld('cfgEmpDoc', 'RNC / Cédula', c.empresa_doc, '0-00-00000-0')}
+            ${fld('cfgEmpTel', 'Teléfono', c.empresa_telefono, '809-000-0000')}
+          </div>
+          ${fld('cfgEmpDir', 'Dirección', c.empresa_direccion, 'Calle, sector, ciudad')}
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 6px">ABOGADO (LEGALIZACIÓN)</div>
+          ${fld('cfgAboNom', 'Nombre del abogado(a)', c.abogado_nombre, 'Lic. Nombre Apellido')}
+          <div class="fr-row">
+            ${fld('cfgAboCed', 'Cédula', c.abogado_cedula, '000-0000000-0')}
+            ${fld('cfgAboMat', 'Matrícula (CARD)', c.abogado_matricula, 'No. de matrícula')}
+          </div>
+          ${fld('cfgAboTel', 'Teléfono / Estudio', c.abogado_telefono, '809-000-0000')}
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px">
+          <button class="btn bghost" type="button" onclick="document.getElementById('nxPrCfg').remove()">Cancelar</button>
+          <button class="btn bc1" type="button" onclick="window.nxPrestamoGuardarConfig()"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+
+  window.nxPrestamoGuardarConfig = async function () {
+    const body = {
+      empresa_nombre: (val('cfgEmpNom') || '').trim() || null,
+      empresa_doc: (val('cfgEmpDoc') || '').trim() || null,
+      empresa_telefono: (val('cfgEmpTel') || '').trim() || null,
+      empresa_direccion: (val('cfgEmpDir') || '').trim() || null,
+      abogado_nombre: (val('cfgAboNom') || '').trim() || null,
+      abogado_cedula: (val('cfgAboCed') || '').trim() || null,
+      abogado_matricula: (val('cfgAboMat') || '').trim() || null,
+      abogado_telefono: (val('cfgAboTel') || '').trim() || null,
+      updated_at: new Date().toISOString()
+    };
+    try {
+      let r = await getAPI().patch('prestamos_config', 'id=eq.1', body);
+      if (!r || (Array.isArray(r) && r.length === 0)) { try { await getAPI().post('prestamos_config', Object.assign({ id: 1 }, body)); } catch (e) {} }
+      _prCfg = Object.assign({}, _prCfg, body);
+      cerrarModal('nxPrCfg');
+      toast('ok', 'Datos del contrato guardados');
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+
   window.nxPrestamoContrato = function (id) {
     const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
     const esC = p.modo === 'credito';
     const cap = Number(p.capital || 0);
-    const empNom = empresaNom();
-    const acreedor = (function () { try { return (window.CFG && CFG.empresa_nom) || nomAdmin() || empNom; } catch (e) { return empNom; } })();
+    const cfg = _prCfg || {};
+    const acreedor = (cfg.empresa_nombre && cfg.empresa_nombre.trim()) || (function () { try { return (window.CFG && CFG.empresa_nom) || nomAdmin() || empresaNom(); } catch (e) { return empresaNom(); } })();
+    const empNom = acreedor;
+    const acreedorDet = [
+      cfg.empresa_doc ? 'RNC/Cédula No. <b>' + esc(cfg.empresa_doc) + '</b>' : '',
+      cfg.empresa_direccion ? 'con domicilio en ' + esc(cfg.empresa_direccion) : '',
+      cfg.empresa_telefono ? 'teléfono ' + esc(cfg.empresa_telefono) : ''
+    ].filter(Boolean).join(', ');
     let clausulaPago = '';
     if (esC) {
       const c = creditoCalc(p);
@@ -12386,7 +12452,7 @@
         <h1>CONTRATO DE PRÉSTAMO</h1>
         <div class="sub">${esc(empNom)}</div>
         <p>En la República Dominicana, a los <b>${fechaLarga(p.fecha_prestamo)}</b>, entre las partes que más abajo se identifican, se ha convenido y pactado el siguiente contrato de préstamo:</p>
-        <div class="parte"><b>EL ACREEDOR:</b> ${esc(acreedor)}, quien en lo adelante se denominará <b>EL ACREEDOR</b>.</div>
+        <div class="parte"><b>EL ACREEDOR:</b> ${esc(acreedor)}${acreedorDet ? ', ' + acreedorDet : ''}, quien en lo adelante se denominará <b>EL ACREEDOR</b>.</div>
         <div class="parte"><b>EL DEUDOR:</b> ${esc(p.nombre || '____________')}${p.cedula ? ', portador(a) de la cédula de identidad No. <b>' + esc(p.cedula) + '</b>' : ''}${p.telefono ? ', teléfono ' + esc(p.telefono) : ''}, quien en lo adelante se denominará <b>EL DEUDOR</b>.</div>
         <p><b>PRIMERA — Objeto:</b> EL ACREEDOR entrega en este acto a EL DEUDOR, en calidad de préstamo, la suma de <b>${fmt(cap)}</b> (<b>${numLetras(cap)} PESOS DOMINICANOS</b>), que EL DEUDOR declara haber recibido a su entera satisfacción.</p>
         ${clausulaPago}
@@ -12397,6 +12463,10 @@
           <div class="firma">EL ACREEDOR<br><span style="color:#777;font-size:11px">${esc(acreedor)}</span></div>
           <div class="firma">EL DEUDOR<br><span style="color:#777;font-size:11px">${esc(p.nombre || '')}${p.cedula ? '<br>Céd. ' + esc(p.cedula) : ''}</span></div>
         </div>
+        ${cfg.abogado_nombre ? `<div style="margin-top:40px;border-top:1px dashed #bbb;padding-top:16px">
+          <p style="font-size:12px"><b>LEGALIZACIÓN DE FIRMAS.</b> Yo, <b>${esc(cfg.abogado_nombre)}</b>, Abogado(a) Notario(a)${cfg.abogado_matricula ? ', con Matrícula del Colegio de Abogados de la República Dominicana (CARD) No. <b>' + esc(cfg.abogado_matricula) + '</b>' : ''}${cfg.abogado_cedula ? ', portador(a) de la cédula de identidad y electoral No. <b>' + esc(cfg.abogado_cedula) + '</b>' : ''}${cfg.abogado_telefono ? ', Tel. ' + esc(cfg.abogado_telefono) : ''}, CERTIFICO Y DOY FE de que las firmas que anteceden fueron puestas libre y voluntariamente en mi presencia por las partes contratantes, quienes me declararon que esas son las firmas que acostumbran usar en todos los actos de su vida pública y privada. En la República Dominicana, a los ${fechaLarga(p.fecha_prestamo)}.</p>
+          <div class="firmas" style="margin-top:46px"><div class="firma" style="max-width:60%">${esc(cfg.abogado_nombre)}<br><span style="color:#777;font-size:11px">Abogado(a) Notario(a)${cfg.abogado_matricula ? '<br>CARD No. ' + esc(cfg.abogado_matricula) : ''}</span></div></div>
+        </div>` : ''}
         <button class="noprint" onclick="window.print()" style="width:100%;padding:13px;margin-top:30px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:Arial,sans-serif">🖨️ Imprimir / Guardar PDF</button>
         <div class="foot">${esc(empNom)} · Documento generado el ${hoy()}</div>
       </body></html>`;
