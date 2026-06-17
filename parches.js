@@ -11734,10 +11734,16 @@
   function val(id) { const e = document.getElementById(id); return e ? e.value : ''; }
   function parsePct(v) { return Number(String(v == null ? '' : v).replace(',', '.').replace(/[^0-9.]/g, '')) || 0; }
 
-  // Amortización método de cuota fija (francés). tasa = % por cuota (período).
+  // Convierte la tasa MENSUAL a tasa por cuota según la frecuencia
+  // (mensual = 1 mes, quincenal = 1/2 mes, semanal = 1/4 mes)
+  function tasaPorCuota(tasaMensualPct, frec) {
+    const f = frec === 'semanal' ? 0.25 : frec === 'quincenal' ? 0.5 : 1;
+    return (Number(tasaMensualPct) || 0) * f;
+  }
+  // Amortización método de cuota fija (francés). tasa = % MENSUAL.
   function amortizar(capital, tasaPct, n, base, frec) {
     capital = Number(capital || 0); n = parseInt(n, 10) || 0;
-    const i = (Number(tasaPct) || 0) / 100;
+    const i = tasaPorCuota(tasaPct, frec) / 100;
     const rows = []; let saldo = capital, cuota;
     if (n <= 0 || capital <= 0) return { cuota: 0, total: 0, interesTotal: 0, rows: [] };
     cuota = i > 0 ? (capital * i / (1 - Math.pow(1 + i, -n))) : (capital / n);
@@ -11770,7 +11776,7 @@
     const badge = est === 'pagado'
       ? '<span style="background:#dcfce7;color:#16a34a;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">PAGADO</span>'
       : '<span style="background:#fef9c3;color:#a16207;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">ACTIVO</span>';
-    const sub = (p.modo === 'cuotas') ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%' : '')) : 'abonos libres';
+    const sub = (p.modo === 'cuotas') ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : 'abonos libres';
     return `<div class="nxPrCard" data-busca="${esc((p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''))}" onclick="window.nxPrestamoVer('${p.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
         <div style="min-width:0"><div style="font-weight:800;color:#0f172a;font-size:13px">${esc(p.nombre || 'Sin nombre')}</div>
@@ -11873,7 +11879,12 @@
     if (d.usar) {
       const a = amortizar(d.cap, d.tasa, d.n, val('prFecha') || hoy(), d.frec);
       if (totRow) totRow.style.display = 'none'; // total lo calcula el sistema
-      if (preview) { preview.style.display = 'block'; preview.innerHTML = `<b>Cuota:</b> ${fmt(a.cuota)} (${d.n} ${d.frec})<br><b>Total a devolver:</b> ${fmt(a.total)} · <b>Interés:</b> ${fmt(a.interesTotal)}`; }
+      if (preview) {
+        const ic = tasaPorCuota(d.tasa, d.frec);
+        const nota = d.frec !== 'mensual' ? `<br><span style="font-size:10.5px;color:#64748b">${d.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${d.frec === 'semanal' ? 'semana' : 'quincena'}</span>` : '';
+        preview.style.display = 'block';
+        preview.innerHTML = `<b>Cuota:</b> ${fmt(a.cuota)} (${d.n} ${d.frec})<br><b>Total a devolver:</b> ${fmt(a.total)} · <b>Interés:</b> ${fmt(a.interesTotal)}${nota}`;
+      }
     } else {
       if (totRow) totRow.style.display = '';
       if (preview) { preview.style.display = 'none'; }
@@ -11909,7 +11920,7 @@
             <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.num_cuotas || ''}" placeholder="4"></div>
             <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.nxPrRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
           </div>
-          <div class="fr"><label>Tasa de interés por cuota (%)</label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
+          <div class="fr"><label>Tasa de interés mensual (%)</label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
           <div id="prPreview" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 11px;font-size:12px;color:#1e40af;margin-bottom:10px;line-height:1.5"></div>
         </div>
         <div class="fr" id="prTotRow"><label>Total a devolver</label><input id="prTot" data-nx-money inputmode="numeric" oninput="window.nxPrRecalc()" value="${p.total_devolver ? Number(p.total_devolver).toLocaleString('en-US') : ''}" placeholder="0"></div>
@@ -11970,7 +11981,7 @@
         const cub = pag >= acum - 0.5;
         return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#64748b;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#2563eb">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
       }).join('');
-      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% por cuota · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
+      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
           <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:430px;background:#fff">
             <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">#</th><th style="padding:6px;text-align:left">Fecha</th><th style="padding:6px;text-align:right">Cuota</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:right">Capital</th><th style="padding:6px;text-align:right">Saldo</th><th style="padding:6px;text-align:center">Pag.</th></tr></thead>
