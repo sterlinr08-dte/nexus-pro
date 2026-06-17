@@ -13321,8 +13321,25 @@
   let _recAmt = 0;  // prima mensual del cliente (por defecto por mes)
   let _recMesMonto = {}; // 'anio-mes' -> monto específico (de un pago guardado)
   let _recAbonoId = null; // id del abono al que se guardarán los meses (si aplica)
+  let _recNum = null;     // número consecutivo del recibo (de abonos.recibo_num)
 
   function mesMonto(o) { const k = selKey(o); return (_recMesMonto[k] != null) ? Number(_recMesMonto[k]) : _recAmt; }
+  function fmtRecNum(n) { return 'No. ' + String(n).padStart(4, '0'); }
+
+  // Asigna un número consecutivo (secuencia en la base) al recibo del pago y lo guarda
+  async function asignarNumeroRecibo() {
+    try {
+      const api = (typeof API !== 'undefined') ? API : window.API;
+      if (!api || !api.post || !_recAbonoId) return;
+      const r = await api.post('rpc/next_recibo', {});
+      const n = Array.isArray(r) ? Number(r[0]) : Number(r);
+      if (!n || isNaN(n)) return;
+      _recNum = n;
+      try { api.patch('abonos', 'id=eq.' + _recAbonoId, { recibo_num: n }).catch(() => {}); } catch (e) {}
+      try { const cache = (typeof _pagosCache !== 'undefined') ? _pagosCache : null; if (Array.isArray(cache)) { const row = cache.find(p => String(p.id) === String(_recAbonoId)); if (row) row.recibo_num = n; } } catch (e) {}
+      const lbl = document.getElementById('recNumLbl'); if (lbl) lbl.textContent = 'Recibo ' + fmtRecNum(n);
+    } catch (e) {}
+  }
 
   function mesesOpciones() {
     const out = []; const d = new Date(); d.setDate(1);
@@ -13357,6 +13374,7 @@
     opts = opts || {};
     _recCli = c; _recAmt = _getTot(c) || 0;
     _recSel = {}; _recMesMonto = {}; _recAbonoId = opts.abonoId || null;
+    _recNum = (opts.reciboNum != null && opts.reciboNum !== '') ? Number(opts.reciboNum) : null;
     (opts.meses || []).forEach(m => { const k = m.anio + '-' + m.mes; _recSel[k] = true; if (m.monto != null) _recMesMonto[k] = Number(m.monto); });
     const m = Number(opts.monto) || 0;
     const metodo = opts.metodo || 'Efectivo';
@@ -13374,7 +13392,8 @@
         <div class="mt"><span><i class="ti ti-receipt"></i> Recibo de pago</span><button class="nxBack" type="button" onclick="document.getElementById('nxRecibo').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="font-size:12px;color:#1e293b;font-weight:700">${esc(c.nom || '')}</div>
-          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Póliza ${esc(c.numero_poliza || '—')} · Plan ${esc(c.plan || '—')} · Prima ${fmt(_recAmt)}/mes</div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:6px">Póliza ${esc(c.numero_poliza || '—')} · Plan ${esc(c.plan || '—')} · Prima ${fmt(_recAmt)}/mes</div>
+          <div id="recNumLbl" style="font-size:11px;font-weight:800;color:#1e3a6e;margin-bottom:10px">${_recNum != null ? ('Recibo ' + fmtRecNum(_recNum)) : (_recAbonoId ? 'Recibo (asignando No…)' : 'Recibo sin número (genera desde el pago)')}</div>
           <div class="fr"><label>Monto recibido (RD$)</label><input id="recMonto" data-nx-money inputmode="numeric" value="${m ? Math.round(m) : ''}" placeholder="0"></div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">MESES QUE PAGA <span style="font-weight:600;color:#94a3b8">(toca para marcar)</span></div>
           <div id="recChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${chips}</div>
@@ -13394,6 +13413,7 @@
     document.body.appendChild(ov);
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
     pintarChips();
+    if (_recAbonoId && _recNum == null) asignarNumeroRecibo();
   }
 
   // Entrada desde el modal de Abono (pago en vivo / recién registrado)
@@ -13420,7 +13440,7 @@
     try { if (typeof _pagosCache !== 'undefined' && Array.isArray(_pagosCache)) ab = _pagosCache.find(p => String(p.id) === String(abonoId)); } catch (e) {}
     if (!ab) { try { const r = await api.get('abonos', 'id=eq.' + abonoId); ab = r && r[0]; } catch (e) {} }
     if (!ab) { toast('err', 'No se encontró el pago'); return; }
-    abrirReciboModal(c, { monto: ab.monto, metodo: ab.metodo, fecha: ab.fecha, ref: ab.referencia, meses: Array.isArray(ab.meses_cubiertos) ? ab.meses_cubiertos : [], abonoId: ab.id });
+    abrirReciboModal(c, { monto: ab.monto, metodo: ab.metodo, fecha: ab.fecha, ref: ab.referencia, meses: Array.isArray(ab.meses_cubiertos) ? ab.meses_cubiertos : [], abonoId: ab.id, reciboNum: ab.recibo_num });
   };
 
   function datosRecibo() {
@@ -13459,7 +13479,7 @@
     const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
     const filas = d.meses.map(m => `<tr><td>${MESES[m.mes - 1]} ${m.anio}</td><td style="text-align:right">${fmt(mesMonto(m))}</td></tr>`).join('');
     const mesesTxt = d.meses.map(m => MESES[m.mes - 1] + ' ' + m.anio).join(', ');
-    const noRec = 'R-' + d.fecha.replace(/-/g, '') + '-' + new Date().toTimeString().slice(0, 5).replace(':', '');
+    const noRec = (_recNum != null) ? String(_recNum).padStart(4, '0') : ('S/N-' + d.fecha.replace(/-/g, ''));
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo de pago - ${esc(d.c.nom || '')}</title>
       <style>body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:580px;margin:0 auto;padding:22px}h1{font-size:18px;margin:0}.muted{color:#64748b;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1e3a6e;padding-bottom:10px;margin-bottom:14px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tot{font-size:15px;font-weight:800;color:#1e3a6e}.firma{margin-top:48px;border-top:1.5px solid #1a1a1a;width:60%;padding-top:6px;font-size:12px;text-align:center}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
@@ -13485,7 +13505,7 @@
     const cfg = _CFG();
     const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
     const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(mesMonto(m))).join('\n');
-    const msg = `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses pagados:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
+    const msg = `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${_recNum != null ? '*Recibo:* ' + fmtRecNum(_recNum) + '\n' : ''}*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses pagados:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
     try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {}
     window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
   };
