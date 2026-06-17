@@ -1,7 +1,8 @@
 {
-  "version": "19.6",
+  "version": "19.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Préstamos COMPLETO (4 mejoras): (1) Al pagar ya eliges fecha, método (efectivo/transferencia/cheque) y nota. (2) Botón de WhatsApp para enviarle al prestatario el recordatorio con su saldo. (3) Filtros (Todos/Activos/Vencidos/Pagados/por tipo), los atrasados se marcan en rojo 'VENCIDO', y el resumen muestra Prestado, Por cobrar, Cobrado, Interés cobrado y Vencido. (4) Exportar a Excel todos los préstamos y un 'Estado de cuenta' por prestatario para imprimir o guardar en PDF",
     "Préstamos: NUEVO tipo 'Línea de crédito' (como los bancos). Prestas un capital a una tasa mensual; el interés se calcula cada mes completo sobre el capital que falta. Los pagos se marcan 'a capital' (bajan la deuda y el interés futuro) o 'a interés' (tu ganancia). Lleva: capital pendiente, interés acumulado, interés pagado, lo que debe ahora, y una FECHA LÍMITE para devolver el capital con aviso cuando se vence. Abonar al capital reduce el interés de los próximos meses",
     "Préstamos (auditoría): corregido un descuadre de redondeo en la amortización (el total y la suma de las cuotas mostradas podían diferir 1-2 pesos). Ahora todo se calcula en pesos enteros y cuadra exacto: suma de cuotas = total, suma de capital = capital prestado, saldo final = 0. La barra de progreso ya no se desborda si se paga de más",
     "Préstamos: 'Abonos libres' ahora también acepta tasa de interés (interés fijo de una vez sobre el capital). Ej: 10,000 al 10% = total a devolver 11,000, que se paga en abonos libres. El total queda fijo. El campo de tasa ahora aparece en ambas formas de pago, con su aclaración (mensual para cuotas, una vez para abonos libres)",

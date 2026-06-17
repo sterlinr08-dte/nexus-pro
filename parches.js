@@ -11717,6 +11717,7 @@
   let _prestamos = [];
   let _pagosByPrestamo = {};
   let _modoForm = 'libre';
+  let _prFiltro = 'todos';
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
   window.nxPrTipoPago = function (t) {
     _tipoPago = t;
@@ -11759,6 +11760,20 @@
   function pagadoDe(pr) { if (pr.modo === 'credito') { const c = creditoCalc(pr); return c.pagCap + c.pagInt; } return (_pagosByPrestamo[pr.id] || []).reduce((s, p) => s + Number(p.monto || 0), 0); }
   function saldoDe(pr) { if (pr.modo === 'credito') return creditoCalc(pr).totalDebe; return Math.max(0, Number(pr.total_devolver || 0) - pagadoDe(pr)); }
   function estadoDe(pr) { if (pr.modo === 'credito') { const c = creditoCalc(pr); return (c.capPend <= 0 && c.interesPend <= 0) ? 'pagado' : 'activo'; } return saldoDe(pr) <= 0 ? 'pagado' : 'activo'; }
+  function soloDig(s) { return String(s == null ? '' : s).replace(/\D/g, ''); }
+  function waNumero(tel) { let d = soloDig(tel); if (d.length === 10) d = '1' + d; return d.length >= 11 ? d : ''; }
+  function fechaUltCuota(pr) { return pr.num_cuotas > 0 ? fechaCuota(pr.fecha_prestamo, pr.frecuencia, pr.num_cuotas) : ''; }
+  function esVencido(pr) {
+    if (estadoDe(pr) === 'pagado') return false;
+    if (pr.modo === 'credito') { const c = creditoCalc(pr); return c.diasRestan != null && c.diasRestan < 0; }
+    if (pr.modo === 'cuotas' && pr.num_cuotas > 0) { return fechaUltCuota(pr) < hoy() && saldoDe(pr) > 0; }
+    return false; // abonos libres: sin fecha límite
+  }
+  function interesCobradoDe(pr) {
+    if (pr.modo === 'credito') return creditoCalc(pr).pagInt;
+    const it = Math.max(0, Number(pr.total_devolver || 0) - Number(pr.capital || 0)), tot = Number(pr.total_devolver || 0), pg = pagadoDe(pr);
+    return tot > 0 ? Math.round(it * Math.min(1, pg / tot)) : 0;
+  }
 
   function fechaCuota(base, frec, n) {
     try {
@@ -11810,10 +11825,12 @@
   }
 
   function cardHTML(p) {
-    const est = estadoDe(p);
+    const est = estadoDe(p), venc = esVencido(p);
     const badge = est === 'pagado'
       ? '<span style="background:#dcfce7;color:#16a34a;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">PAGADO</span>'
-      : '<span style="background:#fef9c3;color:#a16207;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">ACTIVO</span>';
+      : venc
+        ? '<span style="background:#fee2e2;color:#dc2626;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">VENCIDO</span>'
+        : '<span style="background:#fef9c3;color:#a16207;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">ACTIVO</span>';
     const sub = p.modo === 'credito'
       ? ('línea de crédito' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : ''))
       : (p.modo === 'cuotas')
@@ -11847,24 +11864,40 @@
     const totalCap = _prestamos.reduce((s, p) => s + Number(p.capital || 0), 0);
     const totalPag = _prestamos.reduce((s, p) => s + pagadoDe(p), 0);
     const totalSaldo = _prestamos.reduce((s, p) => s + saldoDe(p), 0);
-    const activos = _prestamos.filter(p => estadoDe(p) === 'activo').length;
+    const totalIntCob = _prestamos.reduce((s, p) => s + interesCobradoDe(p), 0);
+    const totalVencido = _prestamos.filter(esVencido).reduce((s, p) => s + saldoDe(p), 0);
+    // aplicar filtro
+    const f = _prFiltro;
+    const lista = _prestamos.filter(p => {
+      if (f === 'activos') return estadoDe(p) !== 'pagado';
+      if (f === 'pagados') return estadoDe(p) === 'pagado';
+      if (f === 'vencidos') return esVencido(p);
+      if (f === 'credito' || f === 'cuotas' || f === 'libre') return (p.modo || 'libre') === f;
+      return true;
+    });
+    const chip = (key, lbl) => `<button type="button" class="btn bsm${_prFiltro === key ? ' bc1' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')" style="font-size:10px;padding:5px 10px">${lbl}</button>`;
     const cards = _prestamos.length === 0
       ? '<div style="text-align:center;padding:36px;color:#94a3b8;font-size:13px">Aún no hay préstamos.<br>Toca <b>"Nuevo préstamo"</b> para empezar.</div>'
-      : _prestamos.map(cardHTML).join('');
+      : (lista.length === 0 ? '<div style="text-align:center;padding:30px;color:#94a3b8;font-size:12px">Ningún préstamo en este filtro.</div>' : lista.map(cardHTML).join(''));
     view.innerHTML = `
       <div class="nc">
         <div class="ch">
           <div><div class="ct"><i class="ti ti-cash"></i> Préstamos</div><div class="ct-s">Solo visible para el administrador</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
-            <button class="btn bsm bc1" type="button" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
+            <button class="btn bsm bc4" type="button" onclick="window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+            <button class="btn bsm bc1" type="button" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo</button>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-bottom:10px">
           ${kpi('Prestado', fmt(totalCap), '#2563eb')}
           ${kpi('Por cobrar', fmt(totalSaldo), '#dc2626')}
           ${kpi('Cobrado', fmt(totalPag), '#059669')}
-          ${kpi('Activos', activos, '#7c3aed')}
+          ${kpi('Interés cobrado', fmt(totalIntCob), '#9a3412')}
+          ${kpi('Vencido', fmt(totalVencido), totalVencido > 0 ? '#dc2626' : '#16a34a')}
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+          ${chip('todos', 'Todos')}${chip('activos', 'Activos')}${chip('vencidos', 'Vencidos')}${chip('pagados', 'Pagados')}${chip('cuotas', 'Cuotas')}${chip('libre', 'Libres')}${chip('credito', 'Crédito')}
         </div>
         <div style="position:relative;margin-bottom:10px">
           <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
@@ -12134,13 +12167,21 @@
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
         </div>
         <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
-          ${est !== 'pagado' ? `${esCredito ? `<div style="display:flex;gap:6px;margin-bottom:6px"><button id="prTipoCap" class="btn bc1" type="button" onclick="window.nxPrTipoPago('capital')" style="flex:1">A capital</button><button id="prTipoInt" class="btn" type="button" onclick="window.nxPrTipoPago('interes')" style="flex:1">A interés</button></div>` : ''}<div style="display:flex;gap:6px;margin-bottom:6px">
-            <input id="prPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto del pago" style="flex:1;min-width:0;padding:11px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none">
-            <button class="btn bc1" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Pagar</button>
-          </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
-          <div style="display:flex;gap:6px">
-            <button class="btn bsm bghost" type="button" style="flex:1" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
-            <button class="btn bsm bghost" type="button" style="flex:1;color:#dc2626" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Eliminar</button>
+          ${est !== 'pagado' ? `${esCredito ? `<div style="display:flex;gap:6px;margin-bottom:6px"><button id="prTipoCap" class="btn bc1" type="button" onclick="window.nxPrTipoPago('capital')" style="flex:1">A capital</button><button id="prTipoInt" class="btn" type="button" onclick="window.nxPrTipoPago('interes')" style="flex:1">A interés</button></div>` : ''}
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="prPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none">
+            <input id="prPagoFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <select id="prPagoMetodo" style="flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Cheque">Cheque</option><option value="Otro">Otro</option></select>
+            <input id="prPagoNota" class="no-upper" placeholder="Nota (opcional)" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
+          </div>
+          <button class="btn bc1" type="button" style="width:100%;margin-bottom:8px" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${waNumero(p.telefono) ? `<button class="btn bsm bwa" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
+            <button class="btn bsm bghost" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
+            <button class="btn bsm bghost" type="button" style="flex:1 1 50px" onclick="window.nxPrestamoEditar('${id}')" title="Editar"><i class="ti ti-edit"></i></button>
+            <button class="btn bsm bghost" type="button" style="flex:1 1 50px;color:#dc2626" onclick="window.nxPrestamoBorrar('${id}')" title="Eliminar"><i class="ti ti-trash"></i></button>
           </div>
         </div>
       </div>`;
@@ -12152,7 +12193,13 @@
     const monto = parseMoney(document.getElementById('prPagoMonto') && document.getElementById('prPagoMonto').value);
     if (monto <= 0) { toast('err', 'Pon el monto del pago'); return; }
     const pr = _prestamos.find(x => String(x.id) === String(id));
-    const body = { prestamo_id: id, monto: monto, fecha: hoy(), created_by_name: nomAdmin() };
+    const body = {
+      prestamo_id: id, monto: monto,
+      fecha: val('prPagoFecha') || hoy(),
+      metodo: val('prPagoMetodo') || 'Efectivo',
+      nota: (val('prPagoNota') || '').trim() || null,
+      created_by_name: nomAdmin()
+    };
     if (pr && pr.modo === 'credito') body.tipo = _tipoPago || 'capital';
     try {
       await getAPI().post('prestamo_pagos', body);
@@ -12186,6 +12233,86 @@
       await cargarPrestamos();
       const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
     } catch (e) { toast('err', 'Error al eliminar', String(e && e.message || e)); }
+  };
+
+  // ── Filtro por estado/tipo ──
+  window.nxPrestamoFiltroTipo = function (k) { _prFiltro = k; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
+
+  // ── Recordatorio / recibo por WhatsApp ──
+  window.nxPrestamoWA = function (id) {
+    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+    const num = waNumero(p.telefono); if (!num) { toast('err', 'Sin teléfono válido'); return; }
+    const nom = (p.nombre || '').split(' ')[0] || '';
+    const saldo = saldoDe(p);
+    let msg;
+    if (p.modo === 'credito') {
+      const c = creditoCalc(p);
+      msg = `Hola ${nom}, le recordamos su préstamo:\n• Capital pendiente: ${fmt(c.capPend)}\n• Interés pendiente: ${fmt(c.interesPend)}\n• Total a la fecha: ${fmt(c.totalDebe)}` + (c.fechaLimite ? `\n• Fecha límite del capital: ${c.fechaLimite}` : '') + `\n\nGracias.`;
+    } else {
+      msg = `Hola ${nom}, le recordamos su préstamo:\n• Prestado: ${fmt(p.capital)}\n• A devolver: ${fmt(p.total_devolver)}\n• Pagado: ${fmt(pagadoDe(p))}\n• Saldo pendiente: ${fmt(saldo)}` + (p.modo === 'cuotas' ? `\n• Próxima(s) cuota(s) de ${p.num_cuotas} ${p.frecuencia || ''}` : '') + `\n\nGracias.`;
+    }
+    try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {}
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+  };
+
+  // ── Exportar préstamos a Excel (CSV) ──
+  window.nxPrestamoExportar = function () {
+    if (!_prestamos.length) { toast('warn', 'No hay préstamos para exportar'); return; }
+    const tipoTxt = m => m === 'credito' ? 'Línea de crédito' : m === 'cuotas' ? 'Cuotas fijas' : 'Abonos libres';
+    const cab = ['Nombre', 'Cédula', 'Teléfono', 'Tipo', 'Capital', 'Tasa%', 'Cuotas/Plazo', 'Total a devolver', 'Pagado', 'Saldo', 'Estado', 'Vencido', 'Fecha', 'Notas'];
+    const filas = _prestamos.map(p => {
+      const esC = p.modo === 'credito';
+      return [
+        p.nombre || '', p.cedula || '', p.telefono || '', tipoTxt(p.modo),
+        Math.round(Number(p.capital || 0)), Number(p.tasa_interes || 0),
+        esC ? ((p.plazo_meses || '') + ' meses') : (p.modo === 'cuotas' ? ((p.num_cuotas || '') + ' ' + (p.frecuencia || '')) : 'libre'),
+        esC ? '' : Math.round(Number(p.total_devolver || 0)),
+        Math.round(pagadoDe(p)), Math.round(saldoDe(p)),
+        estadoDe(p) === 'pagado' ? 'Pagado' : 'Activo', esVencido(p) ? 'SÍ' : '',
+        p.fecha_prestamo || '', (p.notas || '').replace(/[\r\n]+/g, ' ')
+      ];
+    });
+    const esc2 = v => { const s = String(v == null ? '' : v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const csv = '﻿' + [cab, ...filas].map(r => r.map(esc2).join(',')).join('\r\n');
+    try {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'prestamos_' + hoy() + '.csv';
+      document.body.appendChild(a); a.click(); setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 500);
+      toast('ok', 'Excel exportado', _prestamos.length + ' préstamos');
+    } catch (e) { toast('err', 'No se pudo exportar', String(e && e.message || e)); }
+  };
+
+  // ── Estado de cuenta del prestatario (para imprimir / guardar PDF / compartir) ──
+  window.nxPrestamoEstadoCuenta = function (id) {
+    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+    const pagos = (_pagosByPrestamo[id] || []).slice().sort((a, b) => (a.fecha || '') < (b.fecha || '') ? -1 : 1);
+    const esC = p.modo === 'credito';
+    const cc = esC ? creditoCalc(p) : null;
+    const empNom = (function () { try { return (window.CFG && CFG.empresa_nom) || (window.ST && ST.config && ST.config.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } })();
+    const filasPagos = pagos.length ? pagos.map(x => `<tr><td>${(x.fecha || '').slice(0, 10)}</td><td>${esc(x.metodo || '')}${x.tipo ? ' · ' + esc(x.tipo) : ''}</td><td style="text-align:right">${fmt(x.monto)}</td><td>${esc(x.nota || '')}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:#888">Sin pagos</td></tr>';
+    const resumen = esC
+      ? `<tr><td>Capital prestado</td><td style="text-align:right">${fmt(cc.cap)}</td></tr><tr><td>Pagado a capital</td><td style="text-align:right">${fmt(cc.pagCap)}</td></tr><tr><td>Capital pendiente</td><td style="text-align:right"><b>${fmt(cc.capPend)}</b></td></tr><tr><td>Interés acumulado</td><td style="text-align:right">${fmt(cc.interesAcum)}</td></tr><tr><td>Interés pagado</td><td style="text-align:right">${fmt(cc.pagInt)}</td></tr><tr><td><b>Total a la fecha</b></td><td style="text-align:right"><b>${fmt(cc.totalDebe)}</b></td></tr>${cc.fechaLimite ? `<tr><td>Fecha límite del capital</td><td style="text-align:right">${cc.fechaLimite}</td></tr>` : ''}`
+      : `<tr><td>Capital prestado</td><td style="text-align:right">${fmt(p.capital)}</td></tr><tr><td>Total a devolver</td><td style="text-align:right">${fmt(p.total_devolver)}</td></tr><tr><td>Pagado</td><td style="text-align:right">${fmt(pagadoDe(p))}</td></tr><tr><td><b>Saldo pendiente</b></td><td style="text-align:right"><b>${fmt(saldoDe(p))}</b></td></tr>`;
+    const tipoTxt = esC ? 'Línea de crédito · ' + (p.tasa_interes || 0) + '%/mes' : p.modo === 'cuotas' ? (p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '') : 'Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : '');
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta - ${esc(p.nombre || '')}</title>
+      <style>body{font-family:Arial,sans-serif;color:#1e293b;max-width:560px;margin:0 auto;padding:18px}h1{font-size:18px;margin:0 0 2px}.sub{color:#64748b;font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12.5px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tit{font-size:12px;font-weight:800;color:#475569;margin:6px 0 4px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:4px 10px;margin-bottom:12px}.foot{color:#94a3b8;font-size:11px;text-align:center;margin-top:18px}@media print{.noprint{display:none}}</style></head>
+      <body>
+        <h1>📄 Estado de cuenta</h1>
+        <div class="sub">${esc(empNom)} · Generado ${hoy()}</div>
+        <div class="box"><table><tr><td>Cliente</td><td style="text-align:right"><b>${esc(p.nombre || '')}</b></td></tr>${p.cedula ? `<tr><td>Cédula</td><td style="text-align:right">${esc(p.cedula)}</td></tr>` : ''}${p.telefono ? `<tr><td>Teléfono</td><td style="text-align:right">${esc(p.telefono)}</td></tr>` : ''}<tr><td>Tipo</td><td style="text-align:right">${esc(tipoTxt)}</td></tr><tr><td>Fecha del préstamo</td><td style="text-align:right">${esc(p.fecha_prestamo || '')}</td></tr></table></div>
+        <div class="tit">RESUMEN</div>
+        <table>${resumen}</table>
+        <div class="tit">PAGOS (${pagos.length})</div>
+        <table><thead><tr><th>Fecha</th><th>Método</th><th style="text-align:right">Monto</th><th>Nota</th></tr></thead><tbody>${filasPagos}</tbody></table>
+        <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+        <div class="foot">NEXUS PRO · Préstamos</div>
+      </body></html>`;
+    try {
+      const w = window.open('', '_blank');
+      if (!w) { toast('err', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; }
+      w.document.write(html); w.document.close();
+    } catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
   };
 
   // ── Estilos del formulario + tile del dashboard ──
