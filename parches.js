@@ -12177,13 +12177,13 @@
             <input id="prPagoNota" class="no-upper" placeholder="Nota (opcional)" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
           </div>
           <button class="btn bc1" type="button" style="width:100%;margin-bottom:8px" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            ${waNumero(p.telefono) ? `<button class="btn bsm bwa" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
-            <button class="btn bsm bghost" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
-            <button class="btn bsm bghost" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
-            <button class="btn bsm bghost" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Documentos${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
-            <button class="btn bsm bghost" type="button" style="flex:1 1 50px" onclick="window.nxPrestamoEditar('${id}')" title="Editar"><i class="ti ti-edit"></i></button>
-            <button class="btn bsm bghost" type="button" style="flex:1 1 50px;color:#dc2626" onclick="window.nxPrestamoBorrar('${id}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            ${waNumero(p.telefono) ? `<button class="btn bsm bwa nxPrAcc" type="button" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
+            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
+            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
+            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
+            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
+            <button class="btn bsm bghost nxPrAcc" type="button" style="color:#dc2626" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Borrar</button>
           </div>
         </div>
       </div>`;
@@ -12522,7 +12522,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}';
+    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrAcc{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;min-width:0;padding:9px 6px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxPrAcc i{font-size:14px;flex:0 0 auto}';
     document.head.appendChild(st);
   }
 
