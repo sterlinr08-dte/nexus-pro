@@ -11734,10 +11734,10 @@
   function val(id) { const e = document.getElementById(id); return e ? e.value : ''; }
   function parsePct(v) { return Number(String(v == null ? '' : v).replace(',', '.').replace(/[^0-9.]/g, '')) || 0; }
 
-  // Convierte la tasa MENSUAL a tasa por cuota según la frecuencia
-  // (mensual = 1 mes, quincenal = 1/2 mes, semanal = 1/4 mes)
+  // Convierte la tasa MENSUAL a tasa por cuota según la frecuencia, proporcional
+  // a los días del período (mes = 30 días): semanal = 7/30, quincenal = 15/30, mensual = 1.
   function tasaPorCuota(tasaMensualPct, frec) {
-    const f = frec === 'semanal' ? 0.25 : frec === 'quincenal' ? 0.5 : 1;
+    const f = frec === 'semanal' ? (7 / 30) : frec === 'quincenal' ? (15 / 30) : 1;
     return (Number(tasaMensualPct) || 0) * f;
   }
   // Amortización método de cuota fija (francés). tasa = % MENSUAL.
