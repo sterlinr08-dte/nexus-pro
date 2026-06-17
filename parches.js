@@ -12071,7 +12071,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px">
-        <div class="mt"><span><i class="ti ti-cash"></i> ${pr ? 'Editar préstamo' : 'Nuevo préstamo'}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-cash"></i> ${pr ? 'Editar préstamo' : 'Nuevo préstamo'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div class="fr"><label>Nombre del prestatario</label><input id="prNom" class="no-upper" value="${esc(p.nombre || '')}" placeholder="Nombre completo"></div>
         <div class="fr-row">
           <div class="fr"><label>Cédula</label><input id="prCed" class="no-upper" value="${esc(p.cedula || '')}" placeholder="000-0000000-0"></div>
@@ -12203,7 +12203,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-user"></i> ${esc(p.nombre || '')}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-user"></i> ${esc(p.nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
@@ -12423,7 +12423,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-settings"></i> Datos del contrato</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrCfg').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-settings"></i> Datos del contrato</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrCfg').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="font-size:11px;color:#64748b;margin-bottom:10px">Estos datos saldrán en el contrato de préstamo (el acreedor que presta y la legalización del abogado).</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">EMPRESA / PERSONA QUE PRESTA</div>
@@ -12654,7 +12654,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc((p.nombre || '').split(' ')[0] || '')}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrDocs').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc((p.nombre || '').split(' ')[0] || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrDocs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="font-size:11px;color:#64748b;margin-bottom:8px">Sube cédula, contrato firmado, garantías u otros archivos (imágenes o PDF).</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tiles}</div>
@@ -12669,7 +12669,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#64748b;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}';
+    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#64748b;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
     document.head.appendChild(st);
   }
 
@@ -12860,7 +12860,7 @@
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:480px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-car"></i> ${v ? 'Editar vehículo' : 'Nuevo vehículo'}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxVhModal').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-car"></i> ${v ? 'Editar vehículo' : 'Nuevo vehículo'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">DATOS DEL VEHÍCULO</div>
           <div class="fr-row">${fld('vhMarca', 'Marca', e.marca, 'Toyota')}${fld('vhModelo', 'Modelo', e.modelo, 'Corolla')}</div>
@@ -12928,7 +12928,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:480px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-car"></i> ${esc(tituloVeh(v))}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxVhDet').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-car"></i> ${esc(tituloVeh(v))}</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhDet').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px">${datos || '<span style="font-size:11px;color:#94a3b8">Sin datos adicionales</span>'}</div>
@@ -13056,7 +13056,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px;max-height:88vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-cash"></i> Registrar venta</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxVhVenta').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-cash"></i> Registrar venta</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhVenta').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
           <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(tituloVeh(v))} · costo total ${fmt(costoTotal(v))}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">COMPRADOR</div>
@@ -13193,7 +13193,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc(tituloVeh(v))}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxVhDocs').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc(tituloVeh(v))}</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhDocs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
           <div style="font-size:11px;color:#64748b;margin-bottom:8px">Matrícula, acto firmado, cédula del comprador, fotos u otros (imágenes o PDF).</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tiles}</div>
@@ -13214,7 +13214,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-settings"></i> Datos del acto de venta</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxVhCfg').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="mt"><span><i class="ti ti-settings"></i> Datos del acto de venta</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhCfg').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
           <div style="font-size:11px;color:#64748b;margin-bottom:10px">Estos datos salen en el acto de venta como EL VENDEDOR y su legalización.</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">VENDEDOR (usted)</div>
