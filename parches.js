@@ -11741,17 +11741,18 @@
     return (Number(tasaMensualPct) || 0) * f;
   }
   // Amortización método de cuota fija (francés). tasa = % MENSUAL.
+  // Trabaja en pesos enteros para que la suma de las cuotas cuadre EXACTO con el total.
   function amortizar(capital, tasaPct, n, base, frec) {
-    capital = Number(capital || 0); n = parseInt(n, 10) || 0;
+    capital = Math.round(Number(capital || 0)); n = parseInt(n, 10) || 0;
     const i = tasaPorCuota(tasaPct, frec) / 100;
-    const rows = []; let saldo = capital, cuota;
+    const rows = []; let saldo = capital;
     if (n <= 0 || capital <= 0) return { cuota: 0, total: 0, interesTotal: 0, rows: [] };
-    cuota = i > 0 ? (capital * i / (1 - Math.pow(1 + i, -n))) : (capital / n);
+    const cuota = i > 0 ? Math.round(capital * i / (1 - Math.pow(1 + i, -n))) : Math.round(capital / n);
     for (let k = 1; k <= n; k++) {
-      let interes = saldo * i;
-      let capPart = cuota - interes;
-      let cuotaK = cuota;
-      if (k === n) { capPart = saldo; cuotaK = saldo + interes; } // última: salda lo que reste
+      const interes = Math.round(saldo * i);
+      let capPart, cuotaK;
+      if (k === n) { capPart = saldo; cuotaK = saldo + interes; } // última cuota salda el resto
+      else { capPart = Math.min(saldo, cuota - interes); cuotaK = capPart + interes; }
       saldo = Math.max(0, saldo - capPart);
       rows.push({ n: k, fecha: fechaCuota(base, frec, k), cuota: cuotaK, interes: interes, capital: capPart, saldo: saldo });
     }
@@ -11786,7 +11787,7 @@
         <div style="flex-shrink:0">${badge}</div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#64748b"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>A devolver: <b style="color:#0f172a">${fmt(p.total_devolver)}</b></span></div>
-      <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${pct}%;background:${est === 'pagado' ? '#10b981' : '#f59e0b'}"></div></div>
+      <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${Math.min(100, pct)}%;background:${est === 'pagado' ? '#10b981' : '#f59e0b'}"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px"><span style="color:#059669;font-weight:700">Pagó: ${fmt(pag)}</span><span style="color:#dc2626;font-weight:800">Saldo: ${fmt(saldo)}</span></div>
     </div>`;
   }
