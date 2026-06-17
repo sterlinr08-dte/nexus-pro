@@ -12362,7 +12362,7 @@
     const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta - ${esc(p.nombre || '')}</title>
       <style>body{font-family:Arial,sans-serif;color:#1e293b;max-width:560px;margin:0 auto;padding:18px}h1{font-size:18px;margin:0 0 2px}.sub{color:#64748b;font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12.5px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tit{font-size:12px;font-weight:800;color:#475569;margin:6px 0 4px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:4px 10px;margin-bottom:12px}.foot{color:#94a3b8;font-size:11px;text-align:center;margin-top:18px}@media print{.noprint{display:none}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-18px -18px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Arial,sans-serif">Cierra esta hoja y vuelve al sistema</span></div>
+        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-18px -18px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Arial,sans-serif"></span></div>
         <h1>📄 Estado de cuenta</h1>
         <div class="sub">${esc(empNom)} · Generado ${hoy()}</div>
         <div class="box"><table><tr><td>Cliente</td><td style="text-align:right"><b>${esc(p.nombre || '')}</b></td></tr>${p.cedula ? `<tr><td>Cédula</td><td style="text-align:right">${esc(p.cedula)}</td></tr>` : ''}${p.telefono ? `<tr><td>Teléfono</td><td style="text-align:right">${esc(p.telefono)}</td></tr>` : ''}<tr><td>Tipo</td><td style="text-align:right">${esc(tipoTxt)}</td></tr><tr><td>Fecha del préstamo</td><td style="text-align:right">${esc(p.fecha_prestamo || '')}</td></tr></table></div>
@@ -12527,7 +12527,7 @@
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contrato de préstamo - ${esc(p.nombre || '')}</title>
       <style>body{font-family:'Times New Roman',Georgia,serif;color:#1a1a1a;max-width:640px;margin:0 auto;padding:26px 22px;line-height:1.55;font-size:13.5px}h1{font-size:19px;text-align:center;margin:0 0 2px;letter-spacing:1px}.sub{text-align:center;color:#555;font-size:12px;margin-bottom:18px}p{margin:9px 0;text-align:justify}.parte{background:#f6f7f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:12.5px}.firmas{display:flex;justify-content:space-between;gap:24px;margin-top:54px}.firma{flex:1;text-align:center;border-top:1.5px solid #1a1a1a;padding-top:6px;font-size:12px}.foot{color:#999;font-size:10.5px;text-align:center;margin-top:26px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-26px -22px 18px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Arial,sans-serif">Cierra esta hoja y vuelve al sistema</span></div>
+        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-26px -22px 18px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Arial,sans-serif"></span></div>
         <h1>CONTRATO DE PRÉSTAMO</h1>
         <div class="sub">${esc(empNom)}</div>
         <p>En la República Dominicana, a los <b>${fechaLarga(p.fecha_prestamo)}</b>, entre las partes que más abajo se identifican, se ha convenido y pactado el siguiente contrato de préstamo:</p>
@@ -13113,7 +13113,7 @@
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acto de venta - ${esc(tituloVeh(v))}</title>
       <style>body{font-family:'Times New Roman',Georgia,serif;color:#1a1a1a;max-width:660px;margin:0 auto;padding:26px 22px;line-height:1.55;font-size:13.5px}h1{font-size:18px;text-align:center;margin:0 0 16px;letter-spacing:.5px}p{margin:9px 0;text-align:justify}.parte{background:#f6f7f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:12.5px}table.veh{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.5px}table.veh td{padding:5px 9px;border-bottom:1px solid #ececec}.firmas{display:flex;justify-content:space-between;gap:24px;margin-top:54px}.firma{flex:1;text-align:center;border-top:1.5px solid #1a1a1a;padding-top:6px;font-size:12px}.foot{color:#999;font-size:10.5px;text-align:center;margin-top:26px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-26px -22px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Arial,sans-serif">Cierra esta hoja y vuelve al sistema</span></div>
+        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-26px -22px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Arial,sans-serif"></span></div>
         <h1>CONTRATO DE VENTA DE VEHÍCULO DE MOTOR</h1>
         <p><b>ENTRE:</b> De una parte, <b>${esc(vendNom)}</b>${vendDet ? ', ' + vendDet : ''}, quien en lo adelante se denominará <b>EL VENDEDOR</b>; y de la otra parte, <b>${esc(v.comprador_nombre || '____________________')}</b>${compDet ? ', ' + compDet : ''}, quien en lo adelante se denominará <b>EL COMPRADOR</b>.</p>
         <p><b>PRIMERO:</b> EL VENDEDOR declara ser el único y legítimo propietario del vehículo de motor que se describe a continuación:</p>
@@ -13410,9 +13410,10 @@
           </div>
           <div class="fr"><label>Referencia (opcional)</label><input id="recRef" class="no-upper" value="${esc(ref)}" placeholder="No. de cheque, transferencia..."></div>
         </div>
-        <div class="fe" style="margin-top:10px;gap:8px">
+        <div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap">
           ${waNum(c) ? `<button class="btn bwa" type="button" onclick="window.nxReciboWA()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
-          <button class="btn bc1" type="button" onclick="window.nxReciboImprimir()"><i class="ti ti-printer"></i> Imprimir / PDF</button>
+          <button class="btn bc2" type="button" onclick="window.nxReciboCompartir()"><i class="ti ti-share"></i> Compartir</button>
+          <button class="btn bc1" type="button" onclick="window.nxReciboImprimir()"><i class="ti ti-printer"></i> Imprimir</button>
         </div>
       </div>`;
     document.body.appendChild(ov);
@@ -13488,7 +13489,7 @@
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo de pago - ${esc(d.c.nom || '')}</title>
       <style>body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:580px;margin:0 auto;padding:22px}h1{font-size:18px;margin:0}.muted{color:#64748b;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1e3a6e;padding-bottom:10px;margin-bottom:14px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tot{font-size:15px;font-weight:800;color:#1e3a6e}.firma{margin-top:48px;border-top:1.5px solid #1a1a1a;width:60%;padding-top:6px;font-size:12px;text-align:center}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-22px -22px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85">Cierra esta hoja y vuelve al sistema</span></div>
+        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-22px -22px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85"></span></div>
         <div class="hd"><div><h1>${esc(empNom)}</h1><div class="muted">${cfg.empRNC ? 'RNC: ' + esc(cfg.empRNC) + ' · ' : ''}${esc(cfg.empTel || '')}${cfg.empDir ? '<br>' + esc(cfg.empDir) : ''}</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:800;color:#1e3a6e">RECIBO DE PAGO</div><div class="muted">No. ${noRec}</div><div class="muted">Fecha: ${fechaDMY(d.fecha)}</div></div></div>
         <div class="box"><table style="margin:0"><tr><td>Recibí de</td><td style="text-align:right"><b>${esc(d.c.nom || '')}</b></td></tr>${d.c.cedula ? `<tr><td>Cédula</td><td style="text-align:right">${esc(d.c.cedula)}</td></tr>` : ''}<tr><td>Póliza</td><td style="text-align:right">${esc(d.c.numero_poliza || '—')}</td></tr><tr><td>Plan</td><td style="text-align:right">${esc(d.c.plan || '—')}</td></tr></table></div>
         <p style="font-size:13px">La suma de <b>${fmt(d.monto)}</b> (<b>${numLetras(d.monto)} PESOS DOMINICANOS</b>), por concepto de pago del seguro correspondiente a: <b>${esc(mesesTxt)}</b>.</p>
@@ -13501,18 +13502,34 @@
     catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
   };
 
+  function construirTextoRecibo(d) {
+    const cfg = _CFG();
+    const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
+    const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(mesMonto(m))).join('\n');
+    return `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${recNumStr() ? '*Recibo:* No. ' + recNumStr() + '\n' : ''}*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses pagados:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
+  }
+
   window.nxReciboWA = function () {
     const d = datosRecibo(); if (!d) return;
     if (d.monto <= 0) { toast('err', 'Pon el monto recibido'); return; }
     if (!d.meses.length) { toast('warn', 'Marca al menos un mes que está pagando'); return; }
     const num = waNum(d.c); if (!num) { toast('err', 'Cliente sin WhatsApp válido'); return; }
     guardarMesesAbono(d);
-    const cfg = _CFG();
-    const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
-    const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(mesMonto(m))).join('\n');
-    const msg = `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n${_recNum != null ? '*Recibo:* ' + fmtRecNum(_recNum) + '\n' : ''}*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses pagados:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
     try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {}
-    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(construirTextoRecibo(d)), '_blank', 'noopener,noreferrer');
+  };
+
+  window.nxReciboCompartir = async function () {
+    const d = datosRecibo(); if (!d) return;
+    if (d.monto <= 0) { toast('err', 'Pon el monto recibido'); return; }
+    if (!d.meses.length) { toast('warn', 'Marca al menos un mes que está pagando'); return; }
+    guardarMesesAbono(d);
+    const txt = construirTextoRecibo(d);
+    const titulo = 'Recibo de pago' + (recNumStr() ? ' No. ' + recNumStr() : '');
+    try { if (navigator.share) { await navigator.share({ title: titulo, text: txt }); return; } }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(txt); toast('ok', 'Recibo copiado', 'Pégalo donde quieras compartirlo'); return; } } catch (e) {}
+    toast('warn', 'Compartir no disponible', 'Usa WhatsApp o Imprimir/PDF');
   };
 })();
 
