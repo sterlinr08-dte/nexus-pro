@@ -12179,7 +12179,9 @@
           <button class="btn bc1" type="button" style="width:100%;margin-bottom:8px" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             ${waNumero(p.telefono) ? `<button class="btn bsm bwa" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
+            <button class="btn bsm bghost" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
             <button class="btn bsm bghost" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
+            <button class="btn bsm bghost" type="button" style="flex:1 1 84px" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Documentos${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
             <button class="btn bsm bghost" type="button" style="flex:1 1 50px" onclick="window.nxPrestamoEditar('${id}')" title="Editar"><i class="ti ti-edit"></i></button>
             <button class="btn bsm bghost" type="button" style="flex:1 1 50px;color:#dc2626" onclick="window.nxPrestamoBorrar('${id}')" title="Eliminar"><i class="ti ti-trash"></i></button>
           </div>
@@ -12313,6 +12315,207 @@
       if (!w) { toast('err', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; }
       w.document.write(html); w.document.close();
     } catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
+  };
+
+  // ════════════════════════════════════════════════════════════════
+  //  CONTRATO DE PRÉSTAMO (documento imprimible / PDF)
+  // ════════════════════════════════════════════════════════════════
+  function numLetras(n) {
+    n = Math.floor(Math.abs(Number(n) || 0));
+    if (n === 0) return 'CERO';
+    const U = ['', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE', 'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE', 'VEINTE'];
+    const D = ['', '', '', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+    const C = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'];
+    function men100(x) {
+      if (x <= 20) return U[x];
+      if (x < 30) return 'VEINTI' + U[x - 20];
+      const d = Math.floor(x / 10), u = x % 10;
+      return D[d] + (u ? ' Y ' + U[u] : '');
+    }
+    function men1000(x) {
+      if (x === 100) return 'CIEN';
+      const c = Math.floor(x / 100), r = x % 100;
+      return ((c ? C[c] + ' ' : '') + (r ? men100(r) : '')).trim();
+    }
+    let txt = '';
+    const millones = Math.floor(n / 1000000), miles = Math.floor((n % 1000000) / 1000), cientos = n % 1000;
+    if (millones) txt += (millones === 1 ? 'UN MILLÓN' : men1000(millones) + ' MILLONES') + ' ';
+    if (miles) txt += (miles === 1 ? 'MIL' : men1000(miles) + ' MIL') + ' ';
+    if (cientos) txt += men1000(cientos);
+    return txt.trim();
+  }
+  function fechaLarga(d) {
+    try {
+      const dt = new Date(String(d || hoy()).slice(0, 10) + 'T12:00:00');
+      const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      return dt.getDate() + ' días del mes de ' + meses[dt.getMonth()] + ' del año ' + dt.getFullYear();
+    } catch (e) { return String(d || ''); }
+  }
+  function empresaNom() { try { return (window.CFG && CFG.empresa_nom) || (window.ST && ST.config && ST.config.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
+
+  window.nxPrestamoContrato = function (id) {
+    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+    const esC = p.modo === 'credito';
+    const cap = Number(p.capital || 0);
+    const empNom = empresaNom();
+    const acreedor = (function () { try { return (window.CFG && CFG.empresa_nom) || nomAdmin() || empNom; } catch (e) { return empNom; } })();
+    let clausulaPago = '';
+    if (esC) {
+      const c = creditoCalc(p);
+      clausulaPago = `<p><b>SEGUNDA — Intereses:</b> Sobre el capital adeudado se aplicará una tasa de interés de <b>${p.tasa_interes || 0}% mensual</b>, calculada sobre el saldo de capital pendiente. EL DEUDOR se compromete a pagar dichos intereses de forma mensual.</p>
+        <p><b>TERCERA — Plazo del capital:</b> EL DEUDOR deberá reembolsar la totalidad del capital prestado a más tardar el día <b>${c.fechaLimite || '____________'}</b>${p.plazo_meses ? ' (plazo de ' + p.plazo_meses + ' meses)' : ''}. EL DEUDOR podrá realizar abonos parciales al capital en cualquier momento, reduciendo así los intereses futuros.</p>`;
+    } else if (p.modo === 'cuotas' && p.num_cuotas > 0) {
+      const total = Number(p.total_devolver || 0);
+      const tieneInt = Number(p.tasa_interes || 0) > 0;
+      let cuotaTxt = '';
+      if (tieneInt) { const a = amortizar(cap, p.tasa_interes, p.num_cuotas, p.fecha_prestamo, p.frecuencia); cuotaTxt = fmt(a.cuota); }
+      else { cuotaTxt = fmt(total / p.num_cuotas); }
+      const ultima = fechaCuota(p.fecha_prestamo, p.frecuencia, p.num_cuotas);
+      const primera = fechaCuota(p.fecha_prestamo, p.frecuencia, 1);
+      clausulaPago = `<p><b>SEGUNDA — Forma de pago:</b> EL DEUDOR se obliga a devolver la suma total de <b>${fmt(total)}</b>${tieneInt ? ' (capital más intereses al ' + p.tasa_interes + '% mensual)' : ''}, pagadera en <b>${p.num_cuotas} cuotas ${p.frecuencia || ''}</b> de aproximadamente <b>${cuotaTxt}</b> cada una.</p>
+        <p><b>TERCERA — Vencimientos:</b> La primera cuota vence el <b>${primera}</b> y la última el <b>${ultima}</b>. El detalle completo consta en la tabla de amortización anexa al estado de cuenta.</p>`;
+    } else {
+      const total = Number(p.total_devolver || 0);
+      const tieneInt = Number(p.tasa_interes || 0) > 0;
+      clausulaPago = `<p><b>SEGUNDA — Forma de pago:</b> EL DEUDOR se obliga a devolver la suma total de <b>${fmt(total)}</b>${tieneInt ? ' (capital de ' + fmt(cap) + ' más un ' + p.tasa_interes + '% de interés)' : ''}, mediante abonos libres, sin un calendario fijo de cuotas, hasta saldar la totalidad de la deuda.</p>
+        <p><b>TERCERA — Saldo:</b> EL DEUDOR podrá abonar las cantidades que estime convenientes en cualquier momento hasta cubrir el monto total adeudado.</p>`;
+    }
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contrato de préstamo - ${esc(p.nombre || '')}</title>
+      <style>body{font-family:'Times New Roman',Georgia,serif;color:#1a1a1a;max-width:640px;margin:0 auto;padding:26px 22px;line-height:1.55;font-size:13.5px}h1{font-size:19px;text-align:center;margin:0 0 2px;letter-spacing:1px}.sub{text-align:center;color:#555;font-size:12px;margin-bottom:18px}p{margin:9px 0;text-align:justify}.parte{background:#f6f7f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:12.5px}.firmas{display:flex;justify-content:space-between;gap:24px;margin-top:54px}.firma{flex:1;text-align:center;border-top:1.5px solid #1a1a1a;padding-top:6px;font-size:12px}.foot{color:#999;font-size:10.5px;text-align:center;margin-top:26px}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <h1>CONTRATO DE PRÉSTAMO</h1>
+        <div class="sub">${esc(empNom)}</div>
+        <p>En la República Dominicana, a los <b>${fechaLarga(p.fecha_prestamo)}</b>, entre las partes que más abajo se identifican, se ha convenido y pactado el siguiente contrato de préstamo:</p>
+        <div class="parte"><b>EL ACREEDOR:</b> ${esc(acreedor)}, quien en lo adelante se denominará <b>EL ACREEDOR</b>.</div>
+        <div class="parte"><b>EL DEUDOR:</b> ${esc(p.nombre || '____________')}${p.cedula ? ', portador(a) de la cédula de identidad No. <b>' + esc(p.cedula) + '</b>' : ''}${p.telefono ? ', teléfono ' + esc(p.telefono) : ''}, quien en lo adelante se denominará <b>EL DEUDOR</b>.</div>
+        <p><b>PRIMERA — Objeto:</b> EL ACREEDOR entrega en este acto a EL DEUDOR, en calidad de préstamo, la suma de <b>${fmt(cap)}</b> (<b>${numLetras(cap)} PESOS DOMINICANOS</b>), que EL DEUDOR declara haber recibido a su entera satisfacción.</p>
+        ${clausulaPago}
+        <p><b>CUARTA — Mora:</b> La falta de pago en las fechas convenidas facultará a EL ACREEDOR a exigir el saldo total adeudado y a iniciar las acciones legales correspondientes, corriendo por cuenta de EL DEUDOR los gastos y costas que ello genere.</p>
+        <p><b>QUINTA — Compromiso de pago (pagaré):</b> EL DEUDOR reconoce deber y se obliga a pagar a EL ACREEDOR la suma antes indicada en las condiciones aquí establecidas, sirviendo el presente documento como pagaré y reconocimiento de deuda.</p>
+        <p>Hecho y firmado de buena fe, en dos (2) originales de un mismo tenor y efecto, uno para cada parte.</p>
+        <div class="firmas">
+          <div class="firma">EL ACREEDOR<br><span style="color:#777;font-size:11px">${esc(acreedor)}</span></div>
+          <div class="firma">EL DEUDOR<br><span style="color:#777;font-size:11px">${esc(p.nombre || '')}${p.cedula ? '<br>Céd. ' + esc(p.cedula) : ''}</span></div>
+        </div>
+        <button class="noprint" onclick="window.print()" style="width:100%;padding:13px;margin-top:30px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:Arial,sans-serif">🖨️ Imprimir / Guardar PDF</button>
+        <div class="foot">${esc(empNom)} · Documento generado el ${hoy()}</div>
+      </body></html>`;
+    try {
+      const w = window.open('', '_blank');
+      if (!w) { toast('err', 'Permite las ventanas emergentes para ver el contrato'); return; }
+      w.document.write(html); w.document.close();
+    } catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
+  };
+
+  // ════════════════════════════════════════════════════════════════
+  //  DOCUMENTOS DEL PRÉSTAMO (cédula, contrato firmado, garantías…)
+  // ════════════════════════════════════════════════════════════════
+  const DOCS_BUCKET = 'comprobantes'; // bucket público (mismo que los bauches)
+  const DOC_TIPOS = [
+    { k: 'cedula', lbl: 'Cédula', ic: 'ti-id' },
+    { k: 'contrato', lbl: 'Contrato firmado', ic: 'ti-file-certificate' },
+    { k: 'garantia', lbl: 'Garantía', ic: 'ti-shield-check' },
+    { k: 'otro', lbl: 'Otro', ic: 'ti-paperclip' }
+  ];
+  let _docSubiendo = false;
+
+  async function subirDocPrestamo(id, file) {
+    const api = getAPI();
+    if (!api || !api.url || !api.key) throw new Error('Sin conexión');
+    let ext = '';
+    if (file.name && file.name.includes('.')) ext = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!ext) ext = (file.type && file.type.includes('png')) ? 'png' : (file.type && file.type.includes('pdf')) ? 'pdf' : 'jpg';
+    const path = `prestamos/${id}/${Date.now()}.${ext}`;
+    const fd = new FormData();
+    fd.append('', file, 'doc.' + ext);
+    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key };
+    let resp = await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${path}`, { method: 'POST', headers, body: fd });
+    if (!resp.ok && resp.status === 400) {
+      resp = await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${path}`, { method: 'PUT', headers, body: fd });
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + (await resp.text()).slice(0, 120));
+    return { path: path, url: `${api.url}/storage/v1/object/public/${DOCS_BUCKET}/${path}` };
+  }
+
+  window.nxPrestamoSubirDoc = async function (id, input, tipo) {
+    if (!input || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    if (!/^image\//.test(file.type) && !/pdf$/i.test(file.type || '') && !/\.(jpg|jpeg|png|webp|pdf|heic)$/i.test(file.name || '')) {
+      toast('err', 'Archivo no válido', 'Sube una imagen o PDF'); input.value = ''; return;
+    }
+    if (_docSubiendo) return;
+    _docSubiendo = true;
+    const p = _prestamos.find(x => String(x.id) === String(id));
+    toast('ok', 'Subiendo documento…', file.name);
+    try {
+      const r = await subirDocPrestamo(id, file);
+      const arr = Array.isArray(p.documentos) ? p.documentos.slice() : [];
+      arr.push({ nombre: file.name, tipo: tipo || 'otro', url: r.url, path: r.path, mime: file.type || '', fecha: hoy() });
+      await getAPI().patch('prestamos', 'id=eq.' + id, { documentos: arr });
+      p.documentos = arr;
+      toast('ok', 'Documento guardado', file.name);
+      window.nxPrestamoDocs(id);
+    } catch (e) {
+      toast('err', 'No se pudo subir el documento', String(e && e.message || e).slice(0, 90));
+    }
+    _docSubiendo = false;
+    try { input.value = ''; } catch (e) {}
+  };
+
+  window.nxPrestamoBorrarDoc = async function (id, idx) {
+    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+    const arr = Array.isArray(p.documentos) ? p.documentos.slice() : [];
+    const doc = arr[idx]; if (!doc) return;
+    if (!confirm('¿Eliminar el documento "' + (doc.nombre || '') + '"?')) return;
+    arr.splice(idx, 1);
+    try {
+      await getAPI().patch('prestamos', 'id=eq.' + id, { documentos: arr });
+      p.documentos = arr;
+      // Intentar borrar el archivo del storage (sin bloquear si falla)
+      try {
+        const api = getAPI();
+        if (doc.path && api) await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${doc.path}`, { method: 'DELETE', headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key } });
+      } catch (e) {}
+      toast('ok', 'Documento eliminado');
+      window.nxPrestamoDocs(id);
+    } catch (e) { toast('err', 'No se pudo eliminar', String(e && e.message || e)); }
+  };
+
+  window.nxPrestamoDocs = function (id) {
+    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+    cerrarModal('nxPrDocs');
+    const docs = Array.isArray(p.documentos) ? p.documentos : [];
+    const tiles = DOC_TIPOS.map(t => `
+      <label style="flex:1 1 70px;min-width:70px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:12px;padding:11px 6px;text-align:center">
+        <input type="file" accept="image/*,.pdf" style="display:none" onchange="window.nxPrestamoSubirDoc('${id}',this,'${t.k}')">
+        <i class="ti ${t.ic}" style="font-size:20px;color:#2563eb"></i>
+        <span style="font-size:10px;font-weight:700;color:#475569;line-height:1.1">${t.lbl}</span>
+      </label>`).join('');
+    const lista = docs.length ? docs.map((d, i) => {
+      const tlbl = (DOC_TIPOS.find(t => t.k === d.tipo) || {}).lbl || 'Documento';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9">
+          <i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#64748b"></i>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.nombre || tlbl)}</div>
+            <div style="font-size:10px;color:#94a3b8">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div>
+          </div>
+          <button class="btn bsm bghost" type="button" onclick="window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')" title="Ver"><i class="ti ti-eye" style="color:#2563eb"></i></button>
+          <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarDoc('${id}',${i})" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button>
+        </div>`;
+    }).join('') : '<div style="color:#94a3b8;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
+    const ov = document.createElement('div'); ov.id = 'nxPrDocs'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal nxPrForm" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc((p.nombre || '').split(' ')[0] || '')}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrDocs').remove()"><i class="ti ti-x"></i></button></div>
+        <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+          <div style="font-size:11px;color:#64748b;margin-bottom:8px">Sube cédula, contrato firmado, garantías u otros archivos (imágenes o PDF).</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tiles}</div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 4px">ARCHIVOS (${docs.length})</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
   };
 
   // ── Estilos del formulario + tile del dashboard ──
