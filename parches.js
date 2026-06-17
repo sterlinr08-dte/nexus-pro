@@ -11884,9 +11884,9 @@
     view.innerHTML = `
       <div class="nc">
         <div class="ch">
-          <div><div class="ct"><i class="ti ti-cash"></i> Préstamos</div><div class="ct-s">Solo visible para el administrador</div></div>
+          <div><div class="ct"><i class="ti ti-cash"></i> Financiamiento</div><div class="ct-s">Multiempresa · solo el administrador</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+            <button class="btn bsm bghost" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>
             <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoConfig()" title="Datos para el contrato"><i class="ti ti-settings"></i> Config</button>
             <button class="btn bsm bc4" type="button" onclick="window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             <button class="btn bsm bc1" type="button" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo</button>
@@ -11928,6 +11928,53 @@
     return v;
   }
 
+  // ── Hub MULTIEMPRESA: contenedor de módulos (Financiamiento, y futuros) ──
+  function ensureHubView() {
+    let v = document.getElementById('v-multiempresa');
+    if (v) return v;
+    const dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
+    v = document.createElement('div'); v.className = 'view'; v.id = 'v-multiempresa';
+    dash.parentElement.appendChild(v);
+    return v;
+  }
+
+  function renderHub(view) {
+    const mods = [
+      { nombre: 'Financiamiento', desc: 'Préstamos, cuotas y líneas de crédito', icon: 'ti-cash', color: '#059669', bg: '#ecfdf5', onclick: 'window.nxAbrirPrestamos()' }
+    ];
+    const cards = mods.map(m => `
+      <button type="button" class="nxMeCard" onclick="${m.onclick}">
+        <span class="nxMeIco" style="background:${m.bg};color:${m.color}"><i class="ti ${m.icon}"></i></span>
+        <span class="nxMeTxt"><span class="nxMeNom">${esc(m.nombre)}</span><span class="nxMeDesc">${esc(m.desc)}</span></span>
+        <i class="ti ti-chevron-right nxMeArr"></i>
+      </button>`).join('');
+    view.innerHTML = `
+      <div class="nc">
+        <div class="ch">
+          <div><div class="ct"><i class="ti ti-building-skyscraper"></i> Multiempresa</div><div class="ct-s">Solo visible para el administrador</div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:12px">Elige una empresa o módulo.</div>
+        <div class="nxMeGrid">${cards}</div>
+      </div>`;
+  }
+
+  window.nxAbrirMultiempresa = function () {
+    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    const view = ensureHubView();
+    if (!view) return;
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
+    view.classList.add('on');
+    document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+    const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'MULTIEMPRESA';
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    renderHub(view);
+  };
+
   window.nxAbrirPrestamos = async function () {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     const view = ensureView();
@@ -11935,10 +11982,10 @@
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
-    const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'PRÉSTAMOS';
+    const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'FINANCIAMIENTO';
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
-    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando préstamos...</div></div></div>';
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando financiamiento...</div></div></div>';
     try { await cargarPrestamos(); renderLista(view); }
     catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudieron cargar los préstamos.<br><span style="font-size:11px;color:#94a3b8">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
   };
@@ -12611,21 +12658,21 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}';
+    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#64748b;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}';
     document.head.appendChild(st);
   }
 
   function inyectarTile() {
-    if (document.getElementById('qaPrestamos')) return true;
+    if (document.getElementById('qaMultiempresa')) return true;
     if (!esAdmin()) return false;
     const vDash = document.getElementById('v-dashboard');
     if (!vDash) return false;
     const qa = vDash.querySelector('.qa');
     if (!qa || !qa.parentElement) return false;
     const btn = document.createElement('div');
-    btn.className = 'qa'; btn.id = 'qaPrestamos';
-    btn.setAttribute('onclick', 'window.nxAbrirPrestamos && window.nxAbrirPrestamos()');
-    btn.innerHTML = '<span class="qa-i"><i class="ti ti-cash qa-ico c-esmeralda"></i></span><div class="qa-l">Préstamos</div>';
+    btn.className = 'qa'; btn.id = 'qaMultiempresa';
+    btn.setAttribute('onclick', 'window.nxAbrirMultiempresa && window.nxAbrirMultiempresa()');
+    btn.innerHTML = '<span class="qa-i"><i class="ti ti-building-skyscraper qa-ico c-esmeralda"></i></span><div class="qa-l">Multiempresa</div>';
     qa.parentElement.appendChild(btn);
     return true;
   }

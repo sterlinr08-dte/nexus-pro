@@ -1,7 +1,8 @@
 {
-  "version": "20.5",
+  "version": "20.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "El módulo 'Préstamos' ahora se llama MULTIEMPRESA y funciona como un contenedor de módulos. Al entrar ves la lista de empresas/módulos; el primero es FINANCIAMIENTO, que tiene todo lo que ya teníamos (préstamos, cuotas, líneas de crédito, contrato, documentos, etc.). Así queda listo para ir agregando más empresas/módulos adentro. Solo el administrador lo ve",
     "Préstamos: el botón 'Registrar pago' ahora sí quedó pequeño (ya no a todo el ancho; es un botón compacto centrado). Una regla global le fijaba una altura mínima y por eso no encogía",
     "ARREGLADO de verdad (Préstamos): los botones del detalle se veían desajustados porque una regla global de iconos los forzaba a un cuadrito de 38px (y WhatsApp se escapaba y salía más grande). Ahora tienen su propio estilo independiente: rejilla adaptable, todos exactamente del mismo tamaño y alineados. El botón 'Registrar pago' también quedó más pequeño",
     "Préstamos: los botones de acción del detalle ahora usan una rejilla ADAPTABLE y todos quedan exactamente del mismo tamaño (el de WhatsApp ya no se ve más grande). Y el botón 'Registrar pago' se hizo más pequeño",
