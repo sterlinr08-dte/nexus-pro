@@ -11692,6 +11692,340 @@
   try { window.addEventListener('nexus:reinit', sched); } catch (e) {}
 })();
 
+/* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - MÓDULO DE PRÉSTAMOS (SOLO ADMIN)
+   ────────────────────────────────────────────────────────────────
+   Préstamos a personas que NO son clientes del seguro. Monto fijo a
+   devolver (lo define el admin). Soporta abonos libres y cuotas fijas.
+   Tablas: prestamos, prestamo_pagos (RLS: solo admin via mi_rol()).
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  if (window.__NX_PRESTAMOS__) return;
+  window.__NX_PRESTAMOS__ = true;
+
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function esAdmin() { try { return (typeof sesion !== 'undefined') && sesion && sesion.rol === 'admin'; } catch (e) { try { return window.sesion && window.sesion.rol === 'admin'; } catch (_) { return false; } } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  function fmt(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+  function hoy() { return new Date().toISOString().slice(0, 10); }
+  function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
+  function cerrarModal(id) { const o = document.getElementById(id); if (o) o.remove(); }
+  function parseMoney(v) { try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return Number(String(v == null ? '' : v).replace(/,/g, '')) || 0; }
+  function nomAdmin() { try { return (window.sesion && window.sesion.nom) || 'Admin'; } catch (e) { return 'Admin'; } }
+
+  let _prestamos = [];
+  let _pagosByPrestamo = {};
+  let _modoForm = 'libre';
+
+  function pagadoDe(pr) { return (_pagosByPrestamo[pr.id] || []).reduce((s, p) => s + Number(p.monto || 0), 0); }
+  function saldoDe(pr) { return Math.max(0, Number(pr.total_devolver || 0) - pagadoDe(pr)); }
+  function estadoDe(pr) { return saldoDe(pr) <= 0 ? 'pagado' : 'activo'; }
+
+  function fechaCuota(base, frec, n) {
+    try {
+      const d = new Date(String(base).slice(0, 10) + 'T12:00:00');
+      if (frec === 'semanal') d.setDate(d.getDate() + 7 * n);
+      else if (frec === 'quincenal') d.setDate(d.getDate() + 15 * n);
+      else d.setMonth(d.getMonth() + n);
+      return d.toISOString().slice(0, 10);
+    } catch (e) { return ''; }
+  }
+
+  async function cargarPrestamos() {
+    _prestamos = await getAPI().get('prestamos', 'select=*&order=created_at.desc') || [];
+    const pagos = await getAPI().get('prestamo_pagos', 'select=*&order=fecha.asc') || [];
+    _pagosByPrestamo = {};
+    pagos.forEach(p => { (_pagosByPrestamo[p.prestamo_id] = _pagosByPrestamo[p.prestamo_id] || []).push(p); });
+  }
+
+  function kpi(lbl, val, col) {
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center"><div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px">${lbl}</div><div style="font-size:15px;font-weight:900;color:${col};margin-top:2px">${val}</div></div>`;
+  }
+
+  function cardHTML(p) {
+    const pag = pagadoDe(p), saldo = saldoDe(p), est = estadoDe(p);
+    const pct = p.total_devolver > 0 ? Math.round(pag / p.total_devolver * 100) : 0;
+    const badge = est === 'pagado'
+      ? '<span style="background:#dcfce7;color:#16a34a;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">PAGADO</span>'
+      : '<span style="background:#fef9c3;color:#a16207;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">ACTIVO</span>';
+    const sub = (p.modo === 'cuotas') ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '')) : 'abonos libres';
+    return `<div class="nxPrCard" data-busca="${esc((p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''))}" onclick="window.nxPrestamoVer('${p.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <div style="min-width:0"><div style="font-weight:800;color:#0f172a;font-size:13px">${esc(p.nombre || 'Sin nombre')}</div>
+        <div style="font-size:10px;color:#94a3b8">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''} · ${esc(sub)}</div></div>
+        <div style="flex-shrink:0">${badge}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#64748b"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>A devolver: <b style="color:#0f172a">${fmt(p.total_devolver)}</b></span></div>
+      <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${pct}%;background:${est === 'pagado' ? '#10b981' : '#f59e0b'}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px"><span style="color:#059669;font-weight:700">Pagó: ${fmt(pag)}</span><span style="color:#dc2626;font-weight:800">Saldo: ${fmt(saldo)}</span></div>
+    </div>`;
+  }
+
+  function renderLista(view) {
+    const totalCap = _prestamos.reduce((s, p) => s + Number(p.capital || 0), 0);
+    const totalPag = _prestamos.reduce((s, p) => s + pagadoDe(p), 0);
+    const totalSaldo = _prestamos.reduce((s, p) => s + saldoDe(p), 0);
+    const activos = _prestamos.filter(p => estadoDe(p) === 'activo').length;
+    const cards = _prestamos.length === 0
+      ? '<div style="text-align:center;padding:36px;color:#94a3b8;font-size:13px">Aún no hay préstamos.<br>Toca <b>"Nuevo préstamo"</b> para empezar.</div>'
+      : _prestamos.map(cardHTML).join('');
+    view.innerHTML = `
+      <div class="nc">
+        <div class="ch">
+          <div><div class="ct"><i class="ti ti-cash"></i> Préstamos</div><div class="ct-s">Solo visible para el administrador</div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+            <button class="btn bsm bc1" type="button" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-bottom:12px">
+          ${kpi('Prestado', fmt(totalCap), '#2563eb')}
+          ${kpi('Por cobrar', fmt(totalSaldo), '#dc2626')}
+          ${kpi('Cobrado', fmt(totalPag), '#059669')}
+          ${kpi('Activos', activos, '#7c3aed')}
+        </div>
+        <div style="position:relative;margin-bottom:10px">
+          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
+          <input type="text" id="nxPrBuscar" placeholder="Buscar por nombre o cédula..." autocomplete="off" oninput="window.nxPrestamoFiltrar(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
+        </div>
+        <div id="nxPrLista">${cards}</div>
+      </div>`;
+  }
+
+  window.nxPrestamoFiltrar = function (q) {
+    const t = String(q || '').trim().toLowerCase();
+    document.querySelectorAll('#nxPrLista .nxPrCard').forEach(c => {
+      const b = c.getAttribute('data-busca') || '';
+      c.style.display = (!t || b.includes(t)) ? '' : 'none';
+    });
+  };
+
+  function ensureView() {
+    let v = document.getElementById('v-prestamos');
+    if (v) return v;
+    const dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
+    v = document.createElement('div'); v.className = 'view'; v.id = 'v-prestamos';
+    dash.parentElement.appendChild(v);
+    return v;
+  }
+
+  window.nxAbrirPrestamos = async function () {
+    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    const view = ensureView();
+    if (!view) return;
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
+    view.classList.add('on');
+    document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+    const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'PRÉSTAMOS';
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando préstamos...</div></div></div>';
+    try { await cargarPrestamos(); renderLista(view); }
+    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudieron cargar los préstamos.<br><span style="font-size:11px;color:#94a3b8">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
+  };
+
+  // ── Formulario nuevo/editar ──
+  window.nxPrestamoNuevo = function () { abrirForm(null); };
+  window.nxPrestamoEditar = function (id) { const p = _prestamos.find(x => String(x.id) === String(id)); if (p) abrirForm(p); };
+  window.nxPrModo = function (m) { _modoForm = m; pintarModo(); };
+
+  function pintarModo() {
+    const bl = document.getElementById('prModoLibre'), bc = document.getElementById('prModoCuotas'), box = document.getElementById('prCuotasBox');
+    if (bl) bl.className = _modoForm === 'libre' ? 'btn bc1' : 'btn';
+    if (bc) bc.className = _modoForm === 'cuotas' ? 'btn bc1' : 'btn';
+    if (box) box.style.display = _modoForm === 'cuotas' ? 'block' : 'none';
+  }
+
+  function abrirForm(pr) {
+    cerrarModal('nxPrModal');
+    _modoForm = (pr && pr.modo) || 'libre';
+    const p = pr || {};
+    const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal nxPrForm" style="max-width:440px">
+        <div class="mt"><span><i class="ti ti-cash"></i> ${pr ? 'Editar préstamo' : 'Nuevo préstamo'}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-x"></i></button></div>
+        <div class="fr"><label>Nombre del prestatario</label><input id="prNom" class="no-upper" value="${esc(p.nombre || '')}" placeholder="Nombre completo"></div>
+        <div class="fr-row">
+          <div class="fr"><label>Cédula</label><input id="prCed" class="no-upper" value="${esc(p.cedula || '')}" placeholder="000-0000000-0"></div>
+          <div class="fr"><label>Teléfono</label><input id="prTel" class="no-upper" value="${esc(p.telefono || '')}" placeholder="809-000-0000"></div>
+        </div>
+        <div class="fr-row">
+          <div class="fr"><label>Capital prestado</label><input id="prCap" data-nx-money inputmode="numeric" value="${p.capital ? Number(p.capital).toLocaleString('en-US') : ''}" placeholder="0"></div>
+          <div class="fr"><label>Total a devolver</label><input id="prTot" data-nx-money inputmode="numeric" value="${p.total_devolver ? Number(p.total_devolver).toLocaleString('en-US') : ''}" placeholder="0"></div>
+        </div>
+        <div class="fr"><label>Fecha del préstamo</label><input id="prFecha" type="date" value="${p.fecha_prestamo || hoy()}"></div>
+        <div class="fr"><label>Forma de pago</label>
+          <div style="display:flex;gap:6px">
+            <button type="button" id="prModoLibre" class="btn" onclick="window.nxPrModo('libre')" style="flex:1">Abonos libres</button>
+            <button type="button" id="prModoCuotas" class="btn" onclick="window.nxPrModo('cuotas')" style="flex:1">Cuotas fijas</button>
+          </div>
+        </div>
+        <div id="prCuotasBox" style="display:none">
+          <div class="fr-row">
+            <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" value="${p.num_cuotas || ''}" placeholder="4"></div>
+            <div class="fr"><label>Frecuencia</label><select id="prFrec"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
+          </div>
+        </div>
+        <div class="fr"><label>Notas (opcional)</label><textarea id="prNotas" rows="2" class="no-upper">${esc(p.notas || '')}</textarea></div>
+        <button class="btn bc1" type="button" style="width:100%" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+      </div>`;
+    document.body.appendChild(ov);
+    pintarModo();
+    if (p.frecuencia) { const s = document.getElementById('prFrec'); if (s) s.value = p.frecuencia; }
+    try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
+  }
+
+  window.nxPrestamoGuardar = async function (id) {
+    const nom = (document.getElementById('prNom') && document.getElementById('prNom').value || '').trim();
+    if (!nom) { toast('err', 'Falta el nombre'); return; }
+    const tot = parseMoney(document.getElementById('prTot') && document.getElementById('prTot').value);
+    if (tot <= 0) { toast('err', 'Pon el total a devolver'); return; }
+    const modo = _modoForm || 'libre';
+    const datos = {
+      nombre: nom,
+      cedula: (document.getElementById('prCed') && document.getElementById('prCed').value || '').trim(),
+      telefono: (document.getElementById('prTel') && document.getElementById('prTel').value || '').trim(),
+      capital: parseMoney(document.getElementById('prCap') && document.getElementById('prCap').value),
+      total_devolver: tot,
+      fecha_prestamo: (document.getElementById('prFecha') && document.getElementById('prFecha').value) || hoy(),
+      modo: modo,
+      num_cuotas: modo === 'cuotas' ? (parseInt(document.getElementById('prNumCuotas') && document.getElementById('prNumCuotas').value, 10) || null) : null,
+      frecuencia: modo === 'cuotas' ? (document.getElementById('prFrec') && document.getElementById('prFrec').value || 'mensual') : null,
+      notas: (document.getElementById('prNotas') && document.getElementById('prNotas').value || '').trim()
+    };
+    try {
+      if (id) { await getAPI().patch('prestamos', 'id=eq.' + id, datos); }
+      else { datos.created_by_name = nomAdmin(); await getAPI().post('prestamos', datos); }
+      cerrarModal('nxPrModal');
+      toast('ok', id ? 'Préstamo actualizado' : 'Préstamo creado', nom);
+      await cargarPrestamos();
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'Error al guardar', String(e && e.message || e)); }
+  };
+
+  // ── Detalle + pagos ──
+  window.nxPrestamoVer = function (id) {
+    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+    cerrarModal('nxPrModal');
+    const pagos = (_pagosByPrestamo[id] || []).slice().sort((a, b) => (a.fecha || '') < (b.fecha || '') ? -1 : 1);
+    const pag = pagadoDe(p), saldo = saldoDe(p);
+    let scheduleHTML = '';
+    if (p.modo === 'cuotas' && p.num_cuotas > 0) {
+      const cuota = Number(p.total_devolver || 0) / p.num_cuotas;
+      let acum = 0; const rows = [];
+      for (let i = 0; i < p.num_cuotas; i++) {
+        const due = fechaCuota(p.fecha_prestamo, p.frecuencia, i + 1);
+        acum += cuota;
+        const cubierta = pag >= acum - 0.5;
+        rows.push(`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">#${i + 1}</td><td style="padding:6px 10px;font-size:11px;color:#64748b;border-bottom:1px solid #f1f5f9">${due}</td><td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:700;border-bottom:1px solid #f1f5f9">${fmt(cuota)}</td><td style="padding:6px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${cubierta ? '<span style="color:#16a34a;font-weight:800;font-size:10px">PAGADA</span>' : '<span style="color:#dc2626;font-weight:800;font-size:10px">PENDIENTE</span>'}</td></tr>`);
+      }
+      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">CALENDARIO DE CUOTAS (${fmt(cuota)} c/u)</div><table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${rows.join('')}</table>`;
+    }
+    const pagosHTML = pagos.length === 0
+      ? '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin pagos aún</div>'
+      : pagos.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b> <span style="color:#94a3b8">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(x.nota)}</div>` : ''}</div><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-user"></i> ${esc(p.nombre || '')}</span><button class="btn bghost bsm" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-x"></i></button></div>
+        <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
+            ${kpi('Prestó', fmt(p.capital), '#2563eb')}
+            ${kpi('A devolver', fmt(p.total_devolver), '#0f172a')}
+            ${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#64748b">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '')) : 'Abonos libres'} · ${esc(p.fecha_prestamo || '')}</span></div>
+          ${p.notas ? `<div style="font-size:11px;color:#64748b;margin-top:6px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(p.notas)}</div>` : ''}
+          ${scheduleHTML}
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">PAGOS (${pagos.length})</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
+        </div>
+        <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
+          ${saldo > 0 ? `<div style="display:flex;gap:6px;margin-bottom:6px">
+            <input id="prPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto del pago" style="flex:1;min-width:0;padding:11px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none">
+            <button class="btn bc1" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Pagar</button>
+          </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
+          <div style="display:flex;gap:6px">
+            <button class="btn bsm bghost" type="button" style="flex:1" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
+            <button class="btn bsm bghost" type="button" style="flex:1;color:#dc2626" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Eliminar</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
+  };
+
+  window.nxPrestamoPagar = async function (id) {
+    const monto = parseMoney(document.getElementById('prPagoMonto') && document.getElementById('prPagoMonto').value);
+    if (monto <= 0) { toast('err', 'Pon el monto del pago'); return; }
+    try {
+      await getAPI().post('prestamo_pagos', { prestamo_id: id, monto: monto, fecha: hoy(), created_by_name: nomAdmin() });
+      toast('ok', 'Pago registrado', fmt(monto));
+      await cargarPrestamos();
+      const p = _prestamos.find(x => String(x.id) === String(id));
+      if (p && saldoDe(p) <= 0 && p.estado !== 'pagado') { try { await getAPI().patch('prestamos', 'id=eq.' + id, { estado: 'pagado' }); p.estado = 'pagado'; } catch (e) {} }
+      window.nxPrestamoVer(id);
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'Error al registrar el pago', String(e && e.message || e)); }
+  };
+
+  window.nxPrestamoBorrarPago = async function (pagoId, prestamoId) {
+    try {
+      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('💸', '¿Eliminar este pago?', 'Se restará del total pagado') : window.confirm('¿Eliminar este pago?');
+      if (!ok) return;
+      await getAPI().del('prestamo_pagos', 'id=eq.' + pagoId);
+      await cargarPrestamos();
+      window.nxPrestamoVer(prestamoId);
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'Error al eliminar el pago'); }
+  };
+
+  window.nxPrestamoBorrar = async function (id) {
+    try {
+      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('🗑️', '¿Eliminar este préstamo?', 'Se borran también todos sus pagos. No se puede deshacer.') : window.confirm('¿Eliminar este préstamo y todos sus pagos?');
+      if (!ok) return;
+      await getAPI().del('prestamos', 'id=eq.' + id);
+      cerrarModal('nxPrModal');
+      toast('ok', 'Préstamo eliminado');
+      await cargarPrestamos();
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'Error al eliminar', String(e && e.message || e)); }
+  };
+
+  // ── Estilos del formulario + tile del dashboard ──
+  function inyectarCSS() {
+    if (document.getElementById('nxPrestamosCSS')) return;
+    const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
+    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}';
+    document.head.appendChild(st);
+  }
+
+  function inyectarTile() {
+    if (document.getElementById('qaPrestamos')) return true;
+    if (!esAdmin()) return false;
+    const vDash = document.getElementById('v-dashboard');
+    if (!vDash) return false;
+    const qa = vDash.querySelector('.qa');
+    if (!qa || !qa.parentElement) return false;
+    const btn = document.createElement('div');
+    btn.className = 'qa'; btn.id = 'qaPrestamos';
+    btn.setAttribute('onclick', 'window.nxAbrirPrestamos && window.nxAbrirPrestamos()');
+    btn.innerHTML = '<span class="qa-i"><i class="ti ti-cash qa-ico c-esmeralda"></i></span><div class="qa-l">Préstamos</div>';
+    qa.parentElement.appendChild(btn);
+    return true;
+  }
+
+  function init() { inyectarCSS(); let n = 0; const t = function () { n++; if (inyectarTile()) return; if (n < 80) setTimeout(t, 150); }; t(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+  try { window.addEventListener('nexus:reinit', function () { try { inyectarTile(); } catch (e) {} }); } catch (e) {}
+})();
+
 /* ── Señal: parches.js terminó de aplicar estilos (para ocultar el splash/loader) ── */
 try {
   window.__NX_PARCHES_READY__ = true;

@@ -1,7 +1,8 @@
 {
-  "version": "18.7",
+  "version": "19.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO módulo de PRÉSTAMOS (solo el administrador lo ve): para personas que NO son clientes del seguro. Defines el capital y el total a devolver (monto fijo), y registras pagos como abonos libres o con cuotas fijas (semanal/quincenal/mensual con calendario). Lleva el saldo, el progreso y el estado de cada préstamo. Entra desde el ícono 'Préstamos' del inicio. Datos protegidos: solo el admin puede verlos o tocarlos (RLS en la base)",
     "Auditoría completa de botones: se quitó el transform (encoger/levantar) de TODOS los botones al tocar/pasar (incluido el de Abonar, Editar, Guardar, transferencias, etc.). Ya no se inflan en iPhone; ahora solo se atenúan. Los iconos esfera (inicio, barra superior, logo) conservan su efecto porque no están dentro de ventanas con desenfoque",
     "ARREGLADO: los botones ya no se inflan al presionarlos (causa: transform:scale/translate en :active dentro de ventanas con desenfoque en iPhone)",
     "Ordenar por columnas (▲/▼) también en Cobros, Historial de pagos y Agentes (igual que en Clientes y Facturas)",
