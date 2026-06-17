@@ -11557,7 +11557,10 @@
 (function(){
   if (window.__NX_RIPPLE__) return;
   window.__NX_RIPPLE__ = true;
-  var SEL = '.btn, .cfg-tab, .kpi, #v-dashboard .qa';
+  // OJO: NO incluir '.btn'. En iOS, animar transform:scale en la onda (hija) dentro
+  // de un botón con overflow:hidden + border-radius lo promueve a capa y lo "infla"
+  // dejándolo bloqueado (no acciona). Los botones ya tienen :active{opacity} estable.
+  var SEL = '.cfg-tab, .kpi, #v-dashboard .qa';
   function spawn(e){
     var el = e.target && e.target.closest ? e.target.closest(SEL) : null;
     if (!el) return;
@@ -13272,6 +13275,167 @@
   function init() { let n = 0; const t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 150); }; t(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
+})();
+
+/* ════════════════════════════════════════════════════════════════════
+   RECIBO DE PAGO POR MESES (pagos por adelantado de clientes del seguro)
+   Permite generar un recibo imprimible / WhatsApp indicando los meses
+   que el cliente está pagando. Se abre desde el modal de Abono.
+   ════════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  if (window.__NX_RECIBO__) return;
+  window.__NX_RECIBO__ = true;
+
+  const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
+  function fmtN(n) { return Math.round(Number(n || 0)).toLocaleString('en-US'); }
+  function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
+  function val(id) { const e = document.getElementById(id); return e ? e.value : ''; }
+  function parseMoney(v) { try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return Number(String(v == null ? '' : v).replace(/,/g, '')) || 0; }
+  function cerrarModal(id) { const o = document.getElementById(id); if (o) o.remove(); }
+  function _ST() { try { return ST; } catch (e) { return window.ST || { clientes: [] }; } }
+  function _CFG() { try { return CFG; } catch (e) { return window.CFG || {}; } }
+  function _getTot(c) { try { return getTot(c); } catch (e) { return Number(c && c.deuda_total || 0); } }
+  function _pend(c) { try { return pend(c); } catch (e) { return Math.max(0, (c && c.deuda_total || 0) - (c && c.pagado || 0)); } }
+  function fechaHoyISO() { return new Date().toISOString().slice(0, 10); }
+  function fechaDMY(d) { try { const dt = new Date(String(d || fechaHoyISO()).slice(0, 10) + 'T12:00:00'); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear(); } catch (e) { return String(d || ''); } }
+  function waNum(c) { let d = String((c && (c.wa || c.tel)) || '').replace(/\D/g, ''); if (d.length === 10) d = '1' + d; return d.length >= 11 ? d : ''; }
+  function numLetras(n) {
+    n = Math.floor(Math.abs(Number(n) || 0)); if (n === 0) return 'CERO';
+    const U = ['', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE', 'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE', 'VEINTE'];
+    const D = ['', '', '', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+    const C = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'];
+    function m100(x) { if (x <= 20) return U[x]; if (x < 30) return 'VEINTI' + U[x - 20]; const d = Math.floor(x / 10), u = x % 10; return D[d] + (u ? ' Y ' + U[u] : ''); }
+    function m1000(x) { if (x === 100) return 'CIEN'; const c = Math.floor(x / 100), r = x % 100; return ((c ? C[c] + ' ' : '') + (r ? m100(r) : '')).trim(); }
+    let t = ''; const mill = Math.floor(n / 1000000), miles = Math.floor((n % 1000000) / 1000), cien = n % 1000;
+    if (mill) t += (mill === 1 ? 'UN MILLÓN' : m1000(mill) + ' MILLONES') + ' ';
+    if (miles) t += (miles === 1 ? 'MIL' : m1000(miles) + ' MIL') + ' ';
+    if (cien) t += m1000(cien);
+    return t.trim();
+  }
+
+  let _recCli = null;
+  let _recSel = {}; // 'anio-mes' -> true
+  let _recAmt = 0;  // prima mensual del cliente
+
+  function mesesOpciones() {
+    const out = []; const d = new Date(); d.setDate(1);
+    d.setMonth(d.getMonth() - 1); // desde el mes anterior
+    for (let i = 0; i < 14; i++) { out.push({ mes: d.getMonth() + 1, anio: d.getFullYear() }); d.setMonth(d.getMonth() + 1); }
+    return out;
+  }
+  function selKey(o) { return o.anio + '-' + o.mes; }
+  function mesesSeleccionados() {
+    return Object.keys(_recSel).filter(k => _recSel[k]).map(k => { const p = k.split('-'); return { anio: +p[0], mes: +p[1] }; })
+      .sort((a, b) => (a.anio * 12 + a.mes) - (b.anio * 12 + b.mes));
+  }
+  function totalMeses() { return mesesSeleccionados().length * _recAmt; }
+
+  function pintarChips() {
+    const cont = document.getElementById('recChips'); if (!cont) return;
+    cont.querySelectorAll('[data-k]').forEach(ch => {
+      const on = !!_recSel[ch.getAttribute('data-k')];
+      ch.style.background = on ? '#2563eb' : '#fff';
+      ch.style.color = on ? '#fff' : '#475569';
+      ch.style.borderColor = on ? '#2563eb' : '#e2e8f0';
+    });
+    const t = document.getElementById('recTotMeses');
+    const n = mesesSeleccionados().length;
+    if (t) t.textContent = n ? (n + ' mes' + (n > 1 ? 'es' : '') + ' · ' + fmt(totalMeses())) : 'Ningún mes seleccionado';
+  }
+
+  window.nxReciboToggleMes = function (k) { _recSel[k] = !_recSel[k]; pintarChips(); };
+
+  window.nxReciboMeses = function (cliId, monto) {
+    const ST = _ST();
+    cliId = cliId || (typeof abonoCliId !== 'undefined' ? abonoCliId : window.abonoCliId);
+    const c = (ST.clientes || []).find(x => String(x.id) === String(cliId));
+    if (!c) { toast('err', 'Abre el cobro de un cliente primero'); return; }
+    _recCli = c; _recSel = {}; _recAmt = _getTot(c) || 0;
+    let m = Number(monto) || 0;
+    if (!m) m = parseMoney(val('aMnt'));
+    if (!m) { try { m = Number((window._ultimoAbono || {}).monto) || 0; } catch (e) {} }
+    const metodo = val('aMet') || 'Efectivo';
+    const ref = val('aRef') || '';
+    cerrarModal('nxRecibo');
+    const chips = mesesOpciones().map(o => `<button type="button" data-k="${selKey(o)}" onclick="window.nxReciboToggleMes('${selKey(o)}')" style="border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">${MESES[o.mes - 1].slice(0, 3)} ${o.anio}</button>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxRecibo'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-receipt"></i> Recibo de pago</span><button class="nxBack" type="button" onclick="document.getElementById('nxRecibo').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+          <div style="font-size:12px;color:#1e293b;font-weight:700">${esc(c.nom || '')}</div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Póliza ${esc(c.numero_poliza || '—')} · Plan ${esc(c.plan || '—')} · Prima ${fmt(_recAmt)}/mes</div>
+          <div class="fr"><label>Monto recibido (RD$)</label><input id="recMonto" data-nx-money inputmode="numeric" value="${m ? Math.round(m) : ''}" placeholder="0"></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">MESES QUE ESTÁ PAGANDO <span style="font-weight:600;color:#94a3b8">(toca para marcar)</span></div>
+          <div id="recChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${chips}</div>
+          <div id="recTotMeses" style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:10px">Ningún mes seleccionado</div>
+          <div class="fr-row">
+            <div class="fr"><label>Método</label><select id="recMetodo"><option${metodo === 'Efectivo' ? ' selected' : ''}>Efectivo</option><option${metodo === 'Transferencia' ? ' selected' : ''}>Transferencia</option><option${metodo === 'Cheque' ? ' selected' : ''}>Cheque</option><option${metodo === 'Tarjeta' ? ' selected' : ''}>Tarjeta</option><option${metodo === 'Depósito' ? ' selected' : ''}>Depósito</option></select></div>
+            <div class="fr"><label>Fecha</label><input id="recFecha" type="date" value="${fechaHoyISO()}"></div>
+          </div>
+          <div class="fr"><label>Referencia (opcional)</label><input id="recRef" class="no-upper" value="${esc(ref)}" placeholder="No. de cheque, transferencia..."></div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px">
+          ${waNum(c) ? `<button class="btn bwa" type="button" onclick="window.nxReciboWA()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
+          <button class="btn bc1" type="button" onclick="window.nxReciboImprimir()"><i class="ti ti-printer"></i> Imprimir / PDF</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
+    pintarChips();
+  };
+
+  function datosRecibo() {
+    const c = _recCli; if (!c) return null;
+    const monto = parseMoney(val('recMonto'));
+    const meses = mesesSeleccionados();
+    const metodo = val('recMetodo') || 'Efectivo';
+    const fecha = val('recFecha') || fechaHoyISO();
+    const ref = (val('recRef') || '').trim();
+    return { c, monto, meses, metodo, fecha, ref };
+  }
+
+  window.nxReciboImprimir = function () {
+    const d = datosRecibo(); if (!d) return;
+    if (d.monto <= 0) { toast('err', 'Pon el monto recibido'); return; }
+    if (!d.meses.length) { toast('warn', 'Marca al menos un mes que está pagando'); return; }
+    const cfg = _CFG();
+    const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
+    const filas = d.meses.map(m => `<tr><td>${MESES[m.mes - 1]} ${m.anio}</td><td style="text-align:right">${fmt(_recAmt)}</td></tr>`).join('');
+    const mesesTxt = d.meses.map(m => MESES[m.mes - 1] + ' ' + m.anio).join(', ');
+    const noRec = 'R-' + d.fecha.replace(/-/g, '') + '-' + new Date().toTimeString().slice(0, 5).replace(':', '');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo de pago - ${esc(d.c.nom || '')}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:580px;margin:0 auto;padding:22px}h1{font-size:18px;margin:0}.muted{color:#64748b;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1e3a6e;padding-bottom:10px;margin-bottom:14px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tot{font-size:15px;font-weight:800;color:#1e3a6e}.firma{margin-top:48px;border-top:1.5px solid #1a1a1a;width:60%;padding-top:6px;font-size:12px;text-align:center}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-22px -22px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85">Cierra esta hoja y vuelve al sistema</span></div>
+        <div class="hd"><div><h1>${esc(empNom)}</h1><div class="muted">${cfg.empRNC ? 'RNC: ' + esc(cfg.empRNC) + ' · ' : ''}${esc(cfg.empTel || '')}${cfg.empDir ? '<br>' + esc(cfg.empDir) : ''}</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:800;color:#1e3a6e">RECIBO DE PAGO</div><div class="muted">No. ${noRec}</div><div class="muted">Fecha: ${fechaDMY(d.fecha)}</div></div></div>
+        <div class="box"><table style="margin:0"><tr><td>Recibí de</td><td style="text-align:right"><b>${esc(d.c.nom || '')}</b></td></tr>${d.c.cedula ? `<tr><td>Cédula</td><td style="text-align:right">${esc(d.c.cedula)}</td></tr>` : ''}<tr><td>Póliza</td><td style="text-align:right">${esc(d.c.numero_poliza || '—')}</td></tr><tr><td>Plan</td><td style="text-align:right">${esc(d.c.plan || '—')}</td></tr></table></div>
+        <p style="font-size:13px">La suma de <b>${fmt(d.monto)}</b> (<b>${numLetras(d.monto)} PESOS DOMINICANOS</b>), por concepto de pago del seguro correspondiente a: <b>${esc(mesesTxt)}</b>.</p>
+        <table><thead><tr><th>Mes pagado</th><th style="text-align:right">Monto</th></tr></thead><tbody>${filas}</tbody><tfoot><tr><td class="tot">TOTAL RECIBIDO</td><td class="tot" style="text-align:right">${fmt(d.monto)}</td></tr></tfoot></table>
+        <div class="box"><table style="margin:0"><tr><td>Método de pago</td><td style="text-align:right">${esc(d.metodo)}${d.ref ? ' · Ref. ' + esc(d.ref) : ''}</td></tr><tr><td>Saldo pendiente actual</td><td style="text-align:right"><b>${fmt(_pend(d.c))}</b></td></tr></table></div>
+        <div class="firma">Recibido por · ${esc(empNom)}</div>
+        <button class="noprint" onclick="window.print()" style="width:100%;padding:13px;margin-top:26px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('err', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); }
+    catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
+  };
+
+  window.nxReciboWA = function () {
+    const d = datosRecibo(); if (!d) return;
+    if (d.monto <= 0) { toast('err', 'Pon el monto recibido'); return; }
+    if (!d.meses.length) { toast('warn', 'Marca al menos un mes que está pagando'); return; }
+    const num = waNum(d.c); if (!num) { toast('err', 'Cliente sin WhatsApp válido'); return; }
+    const cfg = _CFG();
+    const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
+    const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(_recAmt)).join('\n');
+    const msg = `Estimado/a *${d.c.nom}*,\n\n✅ Confirmamos su pago:\n*Monto:* ${fmt(d.monto)}\n*Póliza:* ${d.c.numero_poliza || '—'}\n*Plan:* ${d.c.plan || '—'}\n*Fecha:* ${fechaDMY(d.fecha)}\n\n*Meses pagados:*\n${mesesTxt}\n\n*Saldo pendiente:* ${fmt(_pend(d.c))}\n\nGracias por su pago.\n_${empNom}_`;
+    try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {}
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+  };
 })();
 
 /* ── Señal: parches.js terminó de aplicar estilos (para ocultar el splash/loader) ── */

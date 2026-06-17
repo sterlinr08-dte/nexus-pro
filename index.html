@@ -1824,6 +1824,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <span>Abono registrado — ¿Enviar recibo por WhatsApp?</span>
       <button class="btn bwa bsm" style="margin-left:auto" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Enviar recibo</button>
     </div>
+    <div style="margin-bottom:8px"><button class="btn bsm" style="width:100%;justify-content:center" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo de pago (meses adelantados)</button></div>
     <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cerrar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
   </div>
 </div>
@@ -3126,7 +3127,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='21.1';
+const APP_VERSION='21.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 

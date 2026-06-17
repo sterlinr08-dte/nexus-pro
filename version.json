@@ -1,7 +1,9 @@
 {
-  "version": "21.1",
+  "version": "21.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (importante): muchos botones se 'inflaban' al tocarlos y no respondían (en iPhone). La causa era la onda de color (ripple) que, al animarse dentro del botón, en iOS lo agrandaba y bloqueaba el toque. Se quitó la onda SOLO de los botones (mantienen el atenuado al presionar, que es estable); las tarjetas/KPIs del inicio conservan la onda. Ahora los botones responden bien",
+    "NUEVO: RECIBO DE PAGO por meses adelantados. Cuando un cliente paga por adelantado (ej. junio, o varios meses), en la ventana de Cobro/Abono ahora hay un botón 'Recibo de pago (meses adelantados)'. Marcas los meses que está pagando, el monto recibido, el método y la referencia, y generas un recibo imprimible/PDF (con el monto en letras, los meses pagados, el total y el saldo pendiente) o lo envías por WhatsApp al cliente con el detalle de los meses",
     "ARREGLADO: los botones 'Volver' y 'Config' se veían deformados (el ícono por un lado y la letra por otro, apretados). Era porque una regla del sistema los forzaba a un cuadrito de ícono. Ahora los botones CON texto se ven completos y centrados; los de solo ícono siguen cuadrados como deben. Aplicado en Financiamiento, Vehículos, el hub Multiempresa, la Tabla Comparativa y otras vistas",
     "Las hojas imprimibles (Contrato, Estado de cuenta y Acto de venta) ahora tienen el botón '✕ Cerrar' (en vez de 'Volver'), ya que esas cierran la hoja y te devuelven al sistema",
     "Multiempresa: todas las ventanas emergentes (detalle, formularios, registrar venta, documentos y configuración, tanto de Financiamiento como de Vehículos) ahora muestran un botón '← Volver' con texto en la esquina, en vez de solo la 'X'. Más claro y fácil de ver",
