@@ -3127,7 +3127,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='21.3';
+const APP_VERSION='21.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5426,10 +5426,10 @@ function aplicarFiltrosPagos(){
     <td style="font-size:10px">${p.metodo||'—'}</td>
     <td style="font-size:10px">${p.referencia||'—'}</td>
     <td style="white-space:nowrap">
+      ${p.cliente_id?`<button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${p.id}','${p.cliente_id}')" title="Recibo de pago"><i class="ti ti-receipt"></i></button>`:''}
       ${p.comprobante_url?`<button class="btn bsm" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${p.comprobante_url}')" title="Ver bauche"><i class="ti ti-eye"></i></button>`:''}
       ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar"><i class="ti ti-edit"></i></button>`:''}
       ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
-      ${(!puedeEdit&&!puedeDel&&!p.comprobante_url)?'<span style="font-size:9px;color:#94a3b8">Solo lectura</span>':''}
     </td>
   </tr>`).join('');
 }
@@ -5501,16 +5501,17 @@ async function abrirHistorialCobros(clienteId){
     return;
   }
   lista.innerHTML=`<div class="tw"><table>
-    <thead><tr><th>FECHA</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th>${puedeEdit?'<th>ACCIONES</th>':''}</tr></thead>
+    <thead><tr><th>FECHA</th><th>MONTO</th><th>MÉTODO</th><th>REFERENCIA</th><th>ACCIONES</th></tr></thead>
     <tbody>${abonos.map(a=>`<tr>
-      <td style="font-size:10px">${(a.fecha||'').slice(0,10)}</td>
+      <td style="font-size:10px">${(a.fecha||'').slice(0,10)}${(Array.isArray(a.meses_cubiertos)&&a.meses_cubiertos.length)?`<div style="font-size:8px;color:#2563eb;font-weight:600">📅 ${a.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}</div>`:''}</td>
       <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
-      ${puedeEdit?`<td style="white-space:nowrap">
-        <button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')" title="Editar"><i class="ti ti-edit"></i></button>
-        <button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')" title="Eliminar"><i class="ti ti-trash"></i></button>
-      </td>`:''}
+      <td style="white-space:nowrap">
+        <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago"><i class="ti ti-receipt"></i></button>
+        ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')" title="Editar"><i class="ti ti-edit"></i></button>`:''}
+        ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
+      </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
@@ -5611,14 +5612,15 @@ async function verHistorialAbonos(clienteId){
   const puedeDel=tienePermiso('payments_delete');
   const filas=abonos.length?abonos.map(a=>`
     <tr>
-      <td style="font-size:10px">${(a.fecha||'').slice(0,10)}</td>
+      <td style="font-size:10px">${(a.fecha||'').slice(0,10)}${(Array.isArray(a.meses_cubiertos)&&a.meses_cubiertos.length)?`<div style="font-size:8px;color:#2563eb;font-weight:600">📅 ${a.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}</div>`:''}</td>
       <td style="font-weight:700;color:#059669">${fmt(a.monto)}</td>
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
-      ${puedeEdit?`<td style="white-space:nowrap;display:flex;gap:4px">
-        <button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')"><i class="ti ti-edit"></i></button>
-        <button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')"><i class="ti ti-trash"></i></button>
-      </td>`:'<td style="font-size:9px;color:#94a3b8">—</td>'}
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago"><i class="ti ti-receipt"></i></button>
+        ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')"><i class="ti ti-edit"></i></button>`:''}
+        ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')"><i class="ti ti-trash"></i></button>`:''}
+      </td>
     </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8">Sin abonos registrados</td></tr>';
   const cont=document.getElementById('csBody');
   if(cont){
