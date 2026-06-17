@@ -11776,7 +11776,9 @@
     const badge = est === 'pagado'
       ? '<span style="background:#dcfce7;color:#16a34a;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">PAGADO</span>'
       : '<span style="background:#fef9c3;color:#a16207;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">ACTIVO</span>';
-    const sub = (p.modo === 'cuotas') ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : 'abonos libres';
+    const sub = (p.modo === 'cuotas')
+      ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : ''))
+      : ('abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''));
     return `<div class="nxPrCard" data-busca="${esc((p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''))}" onclick="window.nxPrestamoVer('${p.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
         <div style="min-width:0"><div style="font-weight:800;color:#0f172a;font-size:13px">${esc(p.nombre || 'Sin nombre')}</div>
@@ -11863,31 +11865,41 @@
     if (bl) bl.className = _modoForm === 'libre' ? 'btn bc1' : 'btn';
     if (bc) bc.className = _modoForm === 'cuotas' ? 'btn bc1' : 'btn';
     if (box) box.style.display = _modoForm === 'cuotas' ? 'block' : 'none';
+    const hint = document.getElementById('prTasaHint');
+    if (hint) hint.textContent = _modoForm === 'cuotas' ? '· mensual' : '· una vez, sobre el capital';
     window.nxPrRecalc();
   }
 
-  // ¿Usar amortización? = cuotas + tasa>0 + capital>0 + #cuotas>0
-  function datosAmort() {
-    const cap = parseMoney(val('prCap')), n = parseInt(val('prNumCuotas'), 10) || 0, tasa = parsePct(val('prTasa'));
-    const usar = (_modoForm === 'cuotas' && tasa > 0 && cap > 0 && n > 0);
-    return { cap, n, tasa, frec: val('prFrec') || 'mensual', usar };
+  // Calcula el total a devolver según el modo y la tasa.
+  // cuotas + tasa>0 -> amortización (tasa mensual). libre + tasa>0 -> interés fijo (capital × tasa%).
+  function calcPrestamo() {
+    const cap = parseMoney(val('prCap')), n = parseInt(val('prNumCuotas'), 10) || 0, tasa = parsePct(val('prTasa')), frec = val('prFrec') || 'mensual';
+    if (_modoForm === 'cuotas' && tasa > 0 && cap > 0 && n > 0) {
+      const a = amortizar(cap, tasa, n, val('prFecha') || hoy(), frec);
+      return { computa: true, modo: 'cuotas', cap, tasa, n, frec, total: Math.round(a.total), interes: a.interesTotal, cuota: a.cuota };
+    }
+    if (_modoForm === 'libre' && tasa > 0 && cap > 0) {
+      const total = Math.round(cap * (1 + tasa / 100));
+      return { computa: true, modo: 'libre', cap, tasa, total, interes: total - cap };
+    }
+    return { computa: false, modo: _modoForm, cap, tasa, n, frec };
   }
   window.nxPrRecalc = function () {
-    const d = datosAmort();
+    const c = calcPrestamo();
     const preview = document.getElementById('prPreview');
     const totRow = document.getElementById('prTotRow');
-    if (d.usar) {
-      const a = amortizar(d.cap, d.tasa, d.n, val('prFecha') || hoy(), d.frec);
-      if (totRow) totRow.style.display = 'none'; // total lo calcula el sistema
-      if (preview) {
-        const ic = tasaPorCuota(d.tasa, d.frec);
-        const nota = d.frec !== 'mensual' ? `<br><span style="font-size:10.5px;color:#64748b">${d.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${d.frec === 'semanal' ? 'semana' : 'quincena'}</span>` : '';
-        preview.style.display = 'block';
-        preview.innerHTML = `<b>Cuota:</b> ${fmt(a.cuota)} (${d.n} ${d.frec})<br><b>Total a devolver:</b> ${fmt(a.total)} · <b>Interés:</b> ${fmt(a.interesTotal)}${nota}`;
-      }
+    if (totRow) totRow.style.display = c.computa ? 'none' : '';
+    if (!preview) return;
+    if (c.computa && c.modo === 'cuotas') {
+      const ic = tasaPorCuota(c.tasa, c.frec);
+      const nota = c.frec !== 'mensual' ? `<br><span style="font-size:10.5px;color:#64748b">${c.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${c.frec === 'semanal' ? 'semana' : 'quincena'}</span>` : '';
+      preview.style.display = 'block';
+      preview.innerHTML = `<b>Cuota:</b> ${fmt(c.cuota)} (${c.n} ${c.frec})<br><b>Total a devolver:</b> ${fmt(c.total)} · <b>Interés:</b> ${fmt(c.interes)}${nota}`;
+    } else if (c.computa && c.modo === 'libre') {
+      preview.style.display = 'block';
+      preview.innerHTML = `<b>Total a devolver:</b> ${fmt(c.total)} · <b>Interés:</b> ${fmt(c.interes)} (${c.tasa}% una vez)<br><span style="font-size:10.5px;color:#64748b">Se paga en abonos libres</span>`;
     } else {
-      if (totRow) totRow.style.display = '';
-      if (preview) { preview.style.display = 'none'; }
+      preview.style.display = 'none';
     }
   };
 
@@ -11915,14 +11927,14 @@
             <button type="button" id="prModoCuotas" class="btn" onclick="window.nxPrModo('cuotas')" style="flex:1">Cuotas fijas</button>
           </div>
         </div>
+        <div class="fr"><label>Tasa de interés (%) <span id="prTasaHint" style="font-weight:400;color:#94a3b8;font-size:10px"></span></label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
         <div id="prCuotasBox" style="display:none">
           <div class="fr-row">
             <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.num_cuotas || ''}" placeholder="4"></div>
             <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.nxPrRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
           </div>
-          <div class="fr"><label>Tasa de interés mensual (%)</label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
-          <div id="prPreview" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 11px;font-size:12px;color:#1e40af;margin-bottom:10px;line-height:1.5"></div>
         </div>
+        <div id="prPreview" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 11px;font-size:12px;color:#1e40af;margin-bottom:10px;line-height:1.5"></div>
         <div class="fr" id="prTotRow"><label>Total a devolver</label><input id="prTot" data-nx-money inputmode="numeric" oninput="window.nxPrRecalc()" value="${p.total_devolver ? Number(p.total_devolver).toLocaleString('en-US') : ''}" placeholder="0"></div>
         <div class="fr"><label>Notas (opcional)</label><textarea id="prNotas" rows="2" class="no-upper">${esc(p.notas || '')}</textarea></div>
         <button class="btn bc1" type="button" style="width:100%" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
@@ -11938,11 +11950,11 @@
     if (!nom) { toast('err', 'Falta el nombre'); return; }
     const modo = _modoForm || 'libre';
     const fecha = val('prFecha') || hoy();
-    const d = datosAmort();
+    const c = calcPrestamo();
     let total, tasaStore;
-    if (d.usar) { total = Math.round(amortizar(d.cap, d.tasa, d.n, fecha, d.frec).total); tasaStore = d.tasa; }
+    if (c.computa) { total = c.total; tasaStore = c.tasa; }
     else { total = parseMoney(val('prTot')); tasaStore = 0; }
-    if (total <= 0) { toast('err', d.usar ? 'Revisa capital, # cuotas y tasa' : 'Pon el total a devolver'); return; }
+    if (total <= 0) { toast('err', c.computa ? 'Revisa el capital, las cuotas y la tasa' : 'Pon el total a devolver'); return; }
     const datos = {
       nombre: nom,
       cedula: (val('prCed') || '').trim(),
@@ -12014,7 +12026,8 @@
             ${kpi('A devolver', fmt(p.total_devolver), '#0f172a')}
             ${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#64748b">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '')) : 'Abonos libres'} · ${esc(p.fecha_prestamo || '')}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#64748b">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : ('Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''))} · ${esc(p.fecha_prestamo || '')}</span></div>
+          ${(p.modo === 'libre' && Number(p.tasa_interes || 0) > 0) ? `<div style="font-size:11px;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:7px 9px;margin-top:6px">Interés (una vez): <b>${fmt(Number(p.total_devolver || 0) - Number(p.capital || 0))}</b> · ${p.tasa_interes}% sobre el capital</div>` : ''}
           ${p.notas ? `<div style="font-size:11px;color:#64748b;margin-top:6px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(p.notas)}</div>` : ''}
           ${scheduleHTML}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">PAGOS (${pagos.length})</div>

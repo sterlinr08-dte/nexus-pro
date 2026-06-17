@@ -1,8 +1,9 @@
 {
-  "version": "19.3",
+  "version": "19.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
-    "Préstamos: la conversión de la tasa mensual ahora es proporcional a los días reales (semanal = 7/30 del mes, quincenal = 15/30). Ej: 10% mensual = 2.33% por semana",
+    "Préstamos: 'Abonos libres' ahora también acepta tasa de interés (interés fijo de una vez sobre el capital). Ej: 10,000 al 10% = total a devolver 11,000, que se paga en abonos libres. El total queda fijo. El campo de tasa ahora aparece en ambas formas de pago, con su aclaración (mensual para cuotas, una vez para abonos libres)",
+    "Préstamos: la conversión de la tasa mensual es proporcional a los días reales (semanal = 7/30 del mes, quincenal = 15/30). Ej: 10% mensual = 2.33% por semana",
     "Préstamos: la tasa de interés es MENSUAL y el sistema la convierte sola según la frecuencia de las cuotas. La vista previa te muestra el % equivalente por semana/quincena",
     "Préstamos: TASA DE INTERÉS y TABLA DE AMORTIZACIÓN. En 'Cuotas fijas' pones el % y el sistema calcula la cuota, el total a devolver y el interés (vista previa al instante). En el detalle ves la tabla completa: por cada cuota su fecha, cuota, interés, abono a capital y saldo. Si pones 0% funciona como antes (cuotas o monto fijo)",
     "NUEVO módulo de PRÉSTAMOS (solo el administrador lo ve): para personas que NO son clientes del seguro. Defines el capital y el total a devolver (monto fijo), y registras pagos como abonos libres o con cuotas fijas (semanal/quincenal/mensual con calendario). Lleva el saldo, el progreso y el estado de cada préstamo. Entra desde el ícono 'Préstamos' del inicio. Datos protegidos: solo el admin puede verlos o tocarlos (RLS en la base)",
