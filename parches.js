@@ -12181,12 +12181,12 @@
           </div>
           <button class="btn bc1 nxPrPagar" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
           <div class="nxPrActs">
-            ${waNumero(p.telefono) ? `<button class="btn bsm bwa nxPrAcc" type="button" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
-            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
-            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
-            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
-            <button class="btn bsm bghost nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
-            <button class="btn bsm bghost nxPrAcc" type="button" style="color:#dc2626" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Borrar</button>
+            ${waNumero(p.telefono) ? `<button class="nxPrAcc wa" type="button" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
+            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
+            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
+            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
+            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
+            <button class="nxPrAcc del" type="button" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Borrar</button>
           </div>
         </div>
       </div>`;
@@ -12611,7 +12611,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs .nxPrAcc,button.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;min-height:54px;padding:8px 3px;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}.nxPrActs .nxPrAcc i,button.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0}.nxPrPagar{width:100%;margin-bottom:8px;padding:8px 12px;font-size:12.5px}';
+    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar{width:100%;margin-bottom:8px;padding:8px 12px;font-size:12.5px}';
     document.head.appendChild(st);
   }
 

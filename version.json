@@ -1,7 +1,8 @@
 {
-  "version": "20.3",
+  "version": "20.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO de verdad (Préstamos): los botones del detalle se veían desajustados porque una regla global de iconos los forzaba a un cuadrito de 38px (y WhatsApp se escapaba y salía más grande). Ahora tienen su propio estilo independiente: rejilla adaptable, todos exactamente del mismo tamaño y alineados. El botón 'Registrar pago' también quedó más pequeño",
     "Préstamos: los botones de acción del detalle ahora usan una rejilla ADAPTABLE y todos quedan exactamente del mismo tamaño (el de WhatsApp ya no se ve más grande). Y el botón 'Registrar pago' se hizo más pequeño",
     "ARREGLADO (Préstamos): los botones del detalle (WhatsApp, Contrato, Estado, Docs, Editar, Borrar) se cortaban en el iPhone (salía 'CONTR', 'ESTA', 'BORR'). Ahora el icono va arriba y el nombre completo debajo, todos del mismo tamaño y sin recortarse",
     "Préstamos: el contrato ahora también puede llevar TESTIGOS. En 'Config' agregas hasta 2 testigos (nombre y cédula) y en el contrato aparece una sección de TESTIGOS con sus líneas de firma, y se menciona que el acto se firma ante ellos",
