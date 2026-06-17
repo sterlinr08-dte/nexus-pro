@@ -1,7 +1,8 @@
 {
-  "version": "20.6",
+  "version": "20.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO módulo dentro de Multiempresa: COMPRA Y VENTA DE VEHÍCULOS. Registras el vehículo (marca, modelo, año, color, chasis, placa, motor, matrícula) con su precio de compra. Le vas agregando los gastos de reacondicionamiento (pintura, interior, mecánica…) cada uno con su costo, y el sistema suma el COSTO TOTAL. Defines el PRECIO DE VENTA a mano o con un margen (en RD$ o en %) y ves la ganancia al instante. Registras la venta con los datos del comprador y generas el ACTO DE VENTA imprimible (estilo dominicano: vendedor, comprador, descripción del vehículo, precio en letras, legalización del abogado y testigos). Incluye documentos (matrícula, acto firmado, cédula, fotos), filtros (inventario/vendidos), buscador, resumen (invertido, ganancia potencial y realizada) y exportar a Excel. Solo el administrador lo ve (RLS en la base)",
     "El módulo 'Préstamos' ahora se llama MULTIEMPRESA y funciona como un contenedor de módulos. Al entrar ves la lista de empresas/módulos; el primero es FINANCIAMIENTO, que tiene todo lo que ya teníamos (préstamos, cuotas, líneas de crédito, contrato, documentos, etc.). Así queda listo para ir agregando más empresas/módulos adentro. Solo el administrador lo ve",
     "Préstamos: el botón 'Registrar pago' ahora sí quedó pequeño (ya no a todo el ancho; es un botón compacto centrado). Una regla global le fijaba una altura mínima y por eso no encogía",
     "ARREGLADO de verdad (Préstamos): los botones del detalle se veían desajustados porque una regla global de iconos los forzaba a un cuadrito de 38px (y WhatsApp se escapaba y salía más grande). Ahora tienen su propio estilo independiente: rejilla adaptable, todos exactamente del mismo tamaño y alineados. El botón 'Registrar pago' también quedó más pequeño",
