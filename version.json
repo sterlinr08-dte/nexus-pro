@@ -1,7 +1,8 @@
 {
-  "version": "21.6",
+  "version": "21.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "El número de recibo (ej. 🧾 2026-0001) ahora también se muestra en el historial de pagos, junto a los meses: en el Historial general, en la ventana de Cobros del cliente y en la ficha del cliente. Así ves de un vistazo cuáles pagos ya tienen recibo y con qué número",
     "Recibos: el número ahora lleva PREFIJO CON EL AÑO (ej. 2026-0001, 2026-0002...). El contador es POR AÑO y reinicia en 0001 cada año nuevo, de forma segura en la base (sin saltos ni repetidos). Cada pago conserva su número, así que al reimprimir sale el mismo",
     "Recibos con NÚMERO CONSECUTIVO. Cada recibo lleva su número correlativo (No. 0001, 0002, 0003...) generado de forma segura en la base de datos (sin saltos ni repetidos, aunque se hagan desde varios dispositivos). El número queda guardado en el pago, así que si reimprimes el recibo de un pago sale SIEMPRE el mismo número. Aparece en el recibo (PDF), en el mensaje de WhatsApp y en la ventana del recibo",
     "Recibos desde el HISTORIAL: ahora cada pago tiene un botón de RECIBO (icono de recibo) tanto en el Historial de pagos general como en el historial de pagos del cliente (su ficha y la ventana de Cobros del cliente). Si el cliente te pide 'mándame los comprobantes de mis pagos', entras al historial y desde cualquier pago generas/reenvías su recibo por WhatsApp o PDF. El recibo muestra los meses que cubre ese pago; si era un pago adelantado de varios meses, sale un solo recibo con todos los meses listados. Si un pago viejo no tenía los meses marcados, puedes marcarlos ahí y quedan guardados en ese pago",
