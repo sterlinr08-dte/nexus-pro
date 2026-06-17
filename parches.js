@@ -11717,10 +11717,48 @@
   let _prestamos = [];
   let _pagosByPrestamo = {};
   let _modoForm = 'libre';
+  let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
+  window.nxPrTipoPago = function (t) {
+    _tipoPago = t;
+    const bc = document.getElementById('prTipoCap'), bi = document.getElementById('prTipoInt');
+    if (bc) bc.className = t === 'capital' ? 'btn bc1' : 'btn';
+    if (bi) bi.className = t === 'interes' ? 'btn bc1' : 'btn';
+  };
 
-  function pagadoDe(pr) { return (_pagosByPrestamo[pr.id] || []).reduce((s, p) => s + Number(p.monto || 0), 0); }
-  function saldoDe(pr) { return Math.max(0, Number(pr.total_devolver || 0) - pagadoDe(pr)); }
-  function estadoDe(pr) { return saldoDe(pr) <= 0 ? 'pagado' : 'activo'; }
+  function addMonths(dateStr, m) { const d = new Date(String(dateStr).slice(0, 10) + 'T12:00:00'); d.setMonth(d.getMonth() + m); return d; }
+  function mesesCompletos(fecha, hasta) {
+    const start = new Date(String(fecha).slice(0, 10) + 'T12:00:00'), end = new Date(String(hasta).slice(0, 10) + 'T12:00:00');
+    let k = 0; while (k < 600) { const next = addMonths(fecha, k + 1); if (next <= end) k++; else break; } return k;
+  }
+  // Cálculo de una LÍNEA DE CRÉDITO: interés por mes completo sobre el capital pendiente,
+  // pagos separados en 'capital' (bajan la deuda) e 'interes' (ganancia).
+  function creditoCalc(pr) {
+    const cap = Number(pr.capital || 0), tasa = Number(pr.tasa_interes || 0) / 100;
+    const pagos = _pagosByPrestamo[pr.id] || [];
+    const capPagos = pagos.filter(p => p.tipo === 'capital').sort((a, b) => (a.fecha || '') < (b.fecha || '') ? -1 : 1);
+    const pagCap = capPagos.reduce((s, p) => s + Number(p.monto || 0), 0);
+    const pagInt = pagos.filter(p => p.tipo === 'interes').reduce((s, p) => s + Number(p.monto || 0), 0);
+    const capPend = Math.max(0, cap - pagCap);
+    const M = mesesCompletos(pr.fecha_prestamo, hoy());
+    let interesAcum = 0; const meses = [];
+    for (let k = 1; k <= M + 1; k++) { // M completos + 1 en curso (referencial)
+      const mStart = addMonths(pr.fecha_prestamo, k - 1);
+      let pagAntes = 0; capPagos.forEach(p => { const pf = new Date(String(p.fecha).slice(0, 10) + 'T12:00:00'); if (pf < mStart) pagAntes += Number(p.monto || 0); });
+      const saldoK = Math.max(0, cap - pagAntes);
+      const intK = Math.round(saldoK * tasa);
+      if (k <= M) interesAcum += intK;
+      meses.push({ n: k, fecha: mStart.toISOString().slice(0, 10), saldo: saldoK, interes: intK, encurso: k > M });
+    }
+    const interesPend = Math.max(0, interesAcum - pagInt);
+    const totalDebe = capPend + interesPend;
+    const fechaLimite = pr.plazo_meses ? addMonths(pr.fecha_prestamo, pr.plazo_meses).toISOString().slice(0, 10) : null;
+    const diasRestan = fechaLimite ? Math.ceil((new Date(fechaLimite + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 86400000) : null;
+    return { cap, capPend, pagCap, pagInt, interesAcum, interesPend, totalDebe, interesMes: Math.round(capPend * tasa), M, meses, fechaLimite, diasRestan, tasa: Number(pr.tasa_interes || 0) };
+  }
+
+  function pagadoDe(pr) { if (pr.modo === 'credito') { const c = creditoCalc(pr); return c.pagCap + c.pagInt; } return (_pagosByPrestamo[pr.id] || []).reduce((s, p) => s + Number(p.monto || 0), 0); }
+  function saldoDe(pr) { if (pr.modo === 'credito') return creditoCalc(pr).totalDebe; return Math.max(0, Number(pr.total_devolver || 0) - pagadoDe(pr)); }
+  function estadoDe(pr) { if (pr.modo === 'credito') { const c = creditoCalc(pr); return (c.capPend <= 0 && c.interesPend <= 0) ? 'pagado' : 'activo'; } return saldoDe(pr) <= 0 ? 'pagado' : 'activo'; }
 
   function fechaCuota(base, frec, n) {
     try {
@@ -11772,24 +11810,37 @@
   }
 
   function cardHTML(p) {
-    const pag = pagadoDe(p), saldo = saldoDe(p), est = estadoDe(p);
-    const pct = p.total_devolver > 0 ? Math.round(pag / p.total_devolver * 100) : 0;
+    const est = estadoDe(p);
     const badge = est === 'pagado'
       ? '<span style="background:#dcfce7;color:#16a34a;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">PAGADO</span>'
       : '<span style="background:#fef9c3;color:#a16207;font-weight:800;font-size:9px;padding:3px 8px;border-radius:999px">ACTIVO</span>';
-    const sub = (p.modo === 'cuotas')
-      ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : ''))
-      : ('abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''));
-    return `<div class="nxPrCard" data-busca="${esc((p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''))}" onclick="window.nxPrestamoVer('${p.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)">
-      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+    const sub = p.modo === 'credito'
+      ? ('línea de crédito' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : ''))
+      : (p.modo === 'cuotas')
+        ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : ''))
+        : ('abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''));
+    const head = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
         <div style="min-width:0"><div style="font-weight:800;color:#0f172a;font-size:13px">${esc(p.nombre || 'Sin nombre')}</div>
         <div style="font-size:10px;color:#94a3b8">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''} · ${esc(sub)}</div></div>
         <div style="flex-shrink:0">${badge}</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#64748b"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>A devolver: <b style="color:#0f172a">${fmt(p.total_devolver)}</b></span></div>
+      </div>`;
+    let cuerpo;
+    if (p.modo === 'credito') {
+      const c = creditoCalc(p);
+      const venc = c.diasRestan != null && c.diasRestan < 0 && est !== 'pagado';
+      const pctCap = c.cap > 0 ? Math.round(c.pagCap / c.cap * 100) : 0;
+      cuerpo = `<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#64748b"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>Capital pend.: <b style="color:#0f172a">${fmt(c.capPend)}</b></span></div>
+      <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${Math.min(100, pctCap)}%;background:${est === 'pagado' ? '#10b981' : '#2563eb'}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px"><span style="color:#ea580c;font-weight:700">Interés pend.: ${fmt(c.interesPend)}</span><span style="color:#dc2626;font-weight:800">Debe: ${fmt(c.totalDebe)}</span></div>
+      ${c.fechaLimite ? `<div style="font-size:10px;margin-top:4px;color:${venc ? '#dc2626' : '#94a3b8'};font-weight:${venc ? '800' : '400'}">${venc ? '⚠️ Vencido el ' + c.fechaLimite : '📅 Límite: ' + c.fechaLimite + (c.diasRestan != null ? ' (' + c.diasRestan + ' días)' : '')}</div>` : ''}`;
+    } else {
+      const pag = pagadoDe(p), saldo = saldoDe(p);
+      const pct = p.total_devolver > 0 ? Math.round(pag / p.total_devolver * 100) : 0;
+      cuerpo = `<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#64748b"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>A devolver: <b style="color:#0f172a">${fmt(p.total_devolver)}</b></span></div>
       <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${Math.min(100, pct)}%;background:${est === 'pagado' ? '#10b981' : '#f59e0b'}"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px"><span style="color:#059669;font-weight:700">Pagó: ${fmt(pag)}</span><span style="color:#dc2626;font-weight:800">Saldo: ${fmt(saldo)}</span></div>
-    </div>`;
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px"><span style="color:#059669;font-weight:700">Pagó: ${fmt(pag)}</span><span style="color:#dc2626;font-weight:800">Saldo: ${fmt(saldo)}</span></div>`;
+    }
+    return `<div class="nxPrCard" data-busca="${esc((p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''))}" onclick="window.nxPrestamoVer('${p.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)">${head}${cuerpo}</div>`;
   }
 
   function renderLista(view) {
@@ -11862,12 +11913,15 @@
   window.nxPrModo = function (m) { _modoForm = m; pintarModo(); };
 
   function pintarModo() {
-    const bl = document.getElementById('prModoLibre'), bc = document.getElementById('prModoCuotas'), box = document.getElementById('prCuotasBox');
+    const bl = document.getElementById('prModoLibre'), bc = document.getElementById('prModoCuotas'), bcr = document.getElementById('prModoCredito');
     if (bl) bl.className = _modoForm === 'libre' ? 'btn bc1' : 'btn';
     if (bc) bc.className = _modoForm === 'cuotas' ? 'btn bc1' : 'btn';
+    if (bcr) bcr.className = _modoForm === 'credito' ? 'btn bc1' : 'btn';
+    const box = document.getElementById('prCuotasBox'), cbox = document.getElementById('prCreditoBox');
     if (box) box.style.display = _modoForm === 'cuotas' ? 'block' : 'none';
+    if (cbox) cbox.style.display = _modoForm === 'credito' ? 'block' : 'none';
     const hint = document.getElementById('prTasaHint');
-    if (hint) hint.textContent = _modoForm === 'cuotas' ? '· mensual' : '· una vez, sobre el capital';
+    if (hint) hint.textContent = _modoForm === 'cuotas' ? '· mensual' : _modoForm === 'credito' ? '· mensual sobre el saldo' : '· una vez, sobre el capital';
     window.nxPrRecalc();
   }
 
@@ -11886,9 +11940,22 @@
     return { computa: false, modo: _modoForm, cap, tasa, n, frec };
   }
   window.nxPrRecalc = function () {
-    const c = calcPrestamo();
     const preview = document.getElementById('prPreview');
     const totRow = document.getElementById('prTotRow');
+    if (_modoForm === 'credito') {
+      if (totRow) totRow.style.display = 'none';
+      if (preview) {
+        const cap = parseMoney(val('prCap')), tasa = parsePct(val('prTasa')), plazo = parseInt(val('prPlazo'), 10) || 0;
+        if (cap > 0 && tasa > 0) {
+          const intMes = Math.round(cap * tasa / 100);
+          const lim = plazo > 0 ? addMonths(val('prFecha') || hoy(), plazo).toISOString().slice(0, 10) : '—';
+          preview.style.display = 'block';
+          preview.innerHTML = `<b>Interés del 1er mes:</b> ${fmt(intMes)} (${tasa}% de ${fmt(cap)})<br><b>Fecha límite del capital:</b> ${lim}<br><span style="font-size:10.5px;color:#64748b">Cada mes el interés se calcula sobre lo que falte de capital. Abonar al capital baja el interés.</span>`;
+        } else { preview.style.display = 'none'; }
+      }
+      return;
+    }
+    const c = calcPrestamo();
     if (totRow) totRow.style.display = c.computa ? 'none' : '';
     if (!preview) return;
     if (c.computa && c.modo === 'cuotas') {
@@ -11922,10 +11989,11 @@
           <div class="fr"><label>Capital prestado</label><input id="prCap" data-nx-money inputmode="numeric" oninput="window.nxPrRecalc()" value="${p.capital ? Number(p.capital).toLocaleString('en-US') : ''}" placeholder="0"></div>
           <div class="fr"><label>Fecha del préstamo</label><input id="prFecha" type="date" onchange="window.nxPrRecalc()" value="${p.fecha_prestamo || hoy()}"></div>
         </div>
-        <div class="fr"><label>Forma de pago</label>
-          <div style="display:flex;gap:6px">
-            <button type="button" id="prModoLibre" class="btn" onclick="window.nxPrModo('libre')" style="flex:1">Abonos libres</button>
-            <button type="button" id="prModoCuotas" class="btn" onclick="window.nxPrModo('cuotas')" style="flex:1">Cuotas fijas</button>
+        <div class="fr"><label>Tipo de préstamo</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" id="prModoLibre" class="btn" onclick="window.nxPrModo('libre')" style="flex:1 1 88px">Abonos libres</button>
+            <button type="button" id="prModoCuotas" class="btn" onclick="window.nxPrModo('cuotas')" style="flex:1 1 88px">Cuotas fijas</button>
+            <button type="button" id="prModoCredito" class="btn" onclick="window.nxPrModo('credito')" style="flex:1 1 88px">Línea de crédito</button>
           </div>
         </div>
         <div class="fr"><label>Tasa de interés (%) <span id="prTasaHint" style="font-weight:400;color:#94a3b8;font-size:10px"></span></label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
@@ -11934,6 +12002,9 @@
             <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.num_cuotas || ''}" placeholder="4"></div>
             <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.nxPrRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
           </div>
+        </div>
+        <div id="prCreditoBox" style="display:none">
+          <div class="fr"><label>Plazo (meses) <span style="font-weight:400;color:#94a3b8;font-size:10px">· fecha límite para devolver el capital</span></label><input id="prPlazo" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.plazo_meses || ''}" placeholder="6"></div>
         </div>
         <div id="prPreview" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 11px;font-size:12px;color:#1e40af;margin-bottom:10px;line-height:1.5"></div>
         <div class="fr" id="prTotRow"><label>Total a devolver</label><input id="prTot" data-nx-money inputmode="numeric" oninput="window.nxPrRecalc()" value="${p.total_devolver ? Number(p.total_devolver).toLocaleString('en-US') : ''}" placeholder="0"></div>
@@ -11951,18 +12022,27 @@
     if (!nom) { toast('err', 'Falta el nombre'); return; }
     const modo = _modoForm || 'libre';
     const fecha = val('prFecha') || hoy();
-    const c = calcPrestamo();
-    let total, tasaStore;
-    if (c.computa) { total = c.total; tasaStore = c.tasa; }
-    else { total = parseMoney(val('prTot')); tasaStore = 0; }
-    if (total <= 0) { toast('err', c.computa ? 'Revisa el capital, las cuotas y la tasa' : 'Pon el total a devolver'); return; }
+    const capital = parseMoney(val('prCap'));
+    let total, tasaStore, plazoStore = null;
+    if (modo === 'credito') {
+      const tasa = parsePct(val('prTasa')), plazo = parseInt(val('prPlazo'), 10) || 0;
+      if (capital <= 0) { toast('err', 'Pon el capital prestado'); return; }
+      if (tasa <= 0) { toast('err', 'Pon la tasa de interés mensual'); return; }
+      total = capital; tasaStore = tasa; plazoStore = plazo || null;
+    } else {
+      const c = calcPrestamo();
+      if (c.computa) { total = c.total; tasaStore = c.tasa; }
+      else { total = parseMoney(val('prTot')); tasaStore = 0; }
+      if (total <= 0) { toast('err', c.computa ? 'Revisa el capital, las cuotas y la tasa' : 'Pon el total a devolver'); return; }
+    }
     const datos = {
       nombre: nom,
       cedula: (val('prCed') || '').trim(),
       telefono: (val('prTel') || '').trim(),
-      capital: parseMoney(val('prCap')),
+      capital: capital,
       total_devolver: total,
       tasa_interes: tasaStore,
+      plazo_meses: plazoStore,
       fecha_prestamo: fecha,
       modo: modo,
       num_cuotas: modo === 'cuotas' ? (parseInt(val('prNumCuotas'), 10) || null) : null,
@@ -11983,10 +12063,22 @@
   window.nxPrestamoVer = function (id) {
     const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
     cerrarModal('nxPrModal');
+    _tipoPago = 'capital';
     const pagos = (_pagosByPrestamo[id] || []).slice().sort((a, b) => (a.fecha || '') < (b.fecha || '') ? -1 : 1);
-    const pag = pagadoDe(p), saldo = saldoDe(p);
+    const pag = pagadoDe(p), saldo = saldoDe(p), est = estadoDe(p);
+    const esCredito = p.modo === 'credito';
+    const cc = esCredito ? creditoCalc(p) : null;
     let scheduleHTML = '';
-    if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
+    if (esCredito) {
+      const rows = cc.meses.map(m => `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${m.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#64748b;white-space:nowrap">${m.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(m.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c;font-weight:700">${fmt(m.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${m.encurso ? '<span style="color:#94a3b8;font-size:9px">en curso</span>' : '<span style="color:#16a34a;font-weight:800">✓</span>'}</td></tr>`).join('');
+      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">INTERÉS POR MES · ${p.tasa_interes}% sobre el saldo de capital</div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
+          <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:340px;background:#fff">
+            <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">Mes</th><th style="padding:6px;text-align:left">Desde</th><th style="padding:6px;text-align:right">Capital base</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:center">Estado</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    } else if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
       const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia);
       let acum = 0;
       const rows = a.rows.map(r => {
@@ -12014,7 +12106,7 @@
     }
     const pagosHTML = pagos.length === 0
       ? '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin pagos aún</div>'
-      : pagos.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b> <span style="color:#94a3b8">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(x.nota)}</div>` : ''}</div><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('');
+      : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#2563eb;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#94a3b8">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(x.nota)}</div>` : ''}</div><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`; }).join('');
     const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -12023,19 +12115,26 @@
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
-            ${kpi('Prestó', fmt(p.capital), '#2563eb')}
-            ${kpi('A devolver', fmt(p.total_devolver), '#0f172a')}
-            ${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
+            ${esCredito
+        ? `${kpi('Capital pend.', fmt(cc.capPend), '#2563eb')}${kpi('Interés pend.', fmt(cc.interesPend), '#ea580c')}${kpi('Debe ahora', fmt(cc.totalDebe), cc.totalDebe > 0 ? '#dc2626' : '#16a34a')}`
+        : `${kpi('Prestó', fmt(p.capital), '#2563eb')}${kpi('A devolver', fmt(p.total_devolver), '#0f172a')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}`}
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#64748b">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : ('Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''))} · ${esc(p.fecha_prestamo || '')}</span></div>
-          ${(p.modo === 'libre' && Number(p.tasa_interes || 0) > 0) ? `<div style="font-size:11px;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:7px 9px;margin-top:6px">Interés (una vez): <b>${fmt(Number(p.total_devolver || 0) - Number(p.capital || 0))}</b> · ${p.tasa_interes}% sobre el capital</div>` : ''}
+          ${esCredito
+        ? `<div style="font-size:11px;color:#64748b">Línea de crédito · ${p.tasa_interes}%/mes · desde ${esc(p.fecha_prestamo || '')}</div>
+             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;font-size:11px">
+               <div style="background:#eff6ff;border-radius:8px;padding:7px 9px;color:#1e40af">Prestó: <b>${fmt(cc.cap)}</b><br>Pagado a capital: <b>${fmt(cc.pagCap)}</b></div>
+               <div style="background:#fff7ed;border-radius:8px;padding:7px 9px;color:#9a3412">Interés acumulado: <b>${fmt(cc.interesAcum)}</b><br>Interés pagado: <b>${fmt(cc.pagInt)}</b></div>
+             </div>
+             ${cc.fechaLimite ? `<div style="font-size:11px;margin-top:6px;padding:7px 9px;border-radius:8px;${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? 'background:#fef2f2;color:#dc2626;font-weight:700' : 'background:#f8fafc;color:#64748b'}">${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? '⚠️ Capital VENCIDO el ' + cc.fechaLimite + ' (' + Math.abs(cc.diasRestan) + ' días de atraso)' : '📅 Fecha límite del capital: ' + cc.fechaLimite + (cc.diasRestan != null ? ' · faltan ' + cc.diasRestan + ' días' : '')}</div>` : ''}`
+        : `<div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#64748b">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : ('Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''))} · ${esc(p.fecha_prestamo || '')}</span></div>
+             ${(p.modo === 'libre' && Number(p.tasa_interes || 0) > 0) ? `<div style="font-size:11px;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:7px 9px;margin-top:6px">Interés (una vez): <b>${fmt(Number(p.total_devolver || 0) - Number(p.capital || 0))}</b> · ${p.tasa_interes}% sobre el capital</div>` : ''}`}
           ${p.notas ? `<div style="font-size:11px;color:#64748b;margin-top:6px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(p.notas)}</div>` : ''}
           ${scheduleHTML}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">PAGOS (${pagos.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
         </div>
         <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
-          ${saldo > 0 ? `<div style="display:flex;gap:6px;margin-bottom:6px">
+          ${est !== 'pagado' ? `${esCredito ? `<div style="display:flex;gap:6px;margin-bottom:6px"><button id="prTipoCap" class="btn bc1" type="button" onclick="window.nxPrTipoPago('capital')" style="flex:1">A capital</button><button id="prTipoInt" class="btn" type="button" onclick="window.nxPrTipoPago('interes')" style="flex:1">A interés</button></div>` : ''}<div style="display:flex;gap:6px;margin-bottom:6px">
             <input id="prPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto del pago" style="flex:1;min-width:0;padding:11px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none">
             <button class="btn bc1" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Pagar</button>
           </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
@@ -12052,12 +12151,15 @@
   window.nxPrestamoPagar = async function (id) {
     const monto = parseMoney(document.getElementById('prPagoMonto') && document.getElementById('prPagoMonto').value);
     if (monto <= 0) { toast('err', 'Pon el monto del pago'); return; }
+    const pr = _prestamos.find(x => String(x.id) === String(id));
+    const body = { prestamo_id: id, monto: monto, fecha: hoy(), created_by_name: nomAdmin() };
+    if (pr && pr.modo === 'credito') body.tipo = _tipoPago || 'capital';
     try {
-      await getAPI().post('prestamo_pagos', { prestamo_id: id, monto: monto, fecha: hoy(), created_by_name: nomAdmin() });
-      toast('ok', 'Pago registrado', fmt(monto));
+      await getAPI().post('prestamo_pagos', body);
+      toast('ok', 'Pago registrado', fmt(monto) + (body.tipo ? ' · ' + (body.tipo === 'capital' ? 'a capital' : 'a interés') : ''));
       await cargarPrestamos();
       const p = _prestamos.find(x => String(x.id) === String(id));
-      if (p && saldoDe(p) <= 0 && p.estado !== 'pagado') { try { await getAPI().patch('prestamos', 'id=eq.' + id, { estado: 'pagado' }); p.estado = 'pagado'; } catch (e) {} }
+      if (p && estadoDe(p) === 'pagado' && p.estado !== 'pagado') { try { await getAPI().patch('prestamos', 'id=eq.' + id, { estado: 'pagado' }); p.estado = 'pagado'; } catch (e) {} }
       window.nxPrestamoVer(id);
       const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
     } catch (e) { toast('err', 'Error al registrar el pago', String(e && e.message || e)); }
