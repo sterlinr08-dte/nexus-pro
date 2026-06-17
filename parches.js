@@ -13359,6 +13359,8 @@
     if (!m) { try { m = Number((window._ultimoAbono || {}).monto) || 0; } catch (e) {} }
     const metodo = val('aMet') || 'Efectivo';
     const ref = val('aRef') || '';
+    let ua = null; try { ua = window._ultimoAbono; } catch (e) {}
+    const linked = !!(ua && ua.abonoId && String(ua.cliente) === String(c.id));
     cerrarModal('nxRecibo');
     const chips = mesesOpciones().map(o => `<button type="button" data-k="${selKey(o)}" onclick="window.nxReciboToggleMes('${selKey(o)}')" style="border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">${MESES[o.mes - 1].slice(0, 3)} ${o.anio}</button>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxRecibo'; ov.className = 'overlay open';
@@ -13372,7 +13374,8 @@
           <div class="fr"><label>Monto recibido (RD$)</label><input id="recMonto" data-nx-money inputmode="numeric" value="${m ? Math.round(m) : ''}" placeholder="0"></div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">MESES QUE ESTÁ PAGANDO <span style="font-weight:600;color:#94a3b8">(toca para marcar)</span></div>
           <div id="recChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">${chips}</div>
-          <div id="recTotMeses" style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:10px">Ningún mes seleccionado</div>
+          <div id="recTotMeses" style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:8px">Ningún mes seleccionado</div>
+          ${linked ? '<div style="font-size:10.5px;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 9px;margin-bottom:10px">✓ Estos meses se guardarán en el pago registrado (historial/auditoría).</div>' : '<div style="font-size:10.5px;color:#94a3b8;background:#f8fafc;border-radius:8px;padding:6px 9px;margin-bottom:10px">Para guardar los meses en el historial del pago, genera el recibo justo después de registrar el abono.</div>'}
           <div class="fr-row">
             <div class="fr"><label>Método</label><select id="recMetodo"><option${metodo === 'Efectivo' ? ' selected' : ''}>Efectivo</option><option${metodo === 'Transferencia' ? ' selected' : ''}>Transferencia</option><option${metodo === 'Cheque' ? ' selected' : ''}>Cheque</option><option${metodo === 'Tarjeta' ? ' selected' : ''}>Tarjeta</option><option${metodo === 'Depósito' ? ' selected' : ''}>Depósito</option></select></div>
             <div class="fr"><label>Fecha</label><input id="recFecha" type="date" value="${fechaHoyISO()}"></div>
@@ -13399,10 +13402,28 @@
     return { c, monto, meses, metodo, fecha, ref };
   }
 
+  // Guarda en la base los meses que cubre el pago (si el recibo está enlazado al
+  // abono recién registrado). Para historial / auditoría.
+  function guardarMesesAbono(d) {
+    try {
+      const ua = window._ultimoAbono;
+      if (!ua || !ua.abonoId || String(ua.cliente) !== String(d.c.id)) return;
+      const api = (typeof API !== 'undefined') ? API : window.API;
+      if (!api || !api.patch) return;
+      const payload = d.meses.map(m => ({ mes: m.mes, anio: m.anio, monto: _recAmt }));
+      api.patch('abonos', 'id=eq.' + ua.abonoId, { meses_cubiertos: payload }).then(() => {
+        toast('ok', 'Meses guardados en el pago', d.meses.length + ' mes(es)');
+        try { const cache = (typeof _pagosCache !== 'undefined') ? _pagosCache : null; if (Array.isArray(cache)) { const row = cache.find(p => String(p.id) === String(ua.abonoId)); if (row) row.meses_cubiertos = payload; } } catch (e) {}
+        try { if (typeof aplicarFiltrosPagos === 'function') aplicarFiltrosPagos(); } catch (e) {}
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
   window.nxReciboImprimir = function () {
     const d = datosRecibo(); if (!d) return;
     if (d.monto <= 0) { toast('err', 'Pon el monto recibido'); return; }
     if (!d.meses.length) { toast('warn', 'Marca al menos un mes que está pagando'); return; }
+    guardarMesesAbono(d);
     const cfg = _CFG();
     const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
     const filas = d.meses.map(m => `<tr><td>${MESES[m.mes - 1]} ${m.anio}</td><td style="text-align:right">${fmt(_recAmt)}</td></tr>`).join('');
@@ -13429,6 +13450,7 @@
     if (d.monto <= 0) { toast('err', 'Pon el monto recibido'); return; }
     if (!d.meses.length) { toast('warn', 'Marca al menos un mes que está pagando'); return; }
     const num = waNum(d.c); if (!num) { toast('err', 'Cliente sin WhatsApp válido'); return; }
+    guardarMesesAbono(d);
     const cfg = _CFG();
     const empNom = cfg.empNom || cfg.empresa_nom || 'NEXUS PRO';
     const mesesTxt = d.meses.map(m => '• ' + MESES[m.mes - 1] + ' ' + m.anio + ' — ' + fmt(_recAmt)).join('\n');

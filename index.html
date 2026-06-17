@@ -3127,7 +3127,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='21.2';
+const APP_VERSION='21.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5421,7 +5421,7 @@ function aplicarFiltrosPagos(){
   const puedeDel=tienePermiso('payments_delete');
   tb.innerHTML=list.map(p=>`<tr>
     <td style="font-size:10px">${(p.fecha||'').slice(0,10)}</td>
-    <td style="font-weight:700;font-size:11px;cursor:pointer" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')"`:''} title="Ver resumen del cliente">${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-size:9px">(${p.referencia_cli})</span>`:''}</td>
+    <td style="font-weight:700;font-size:11px;cursor:pointer" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')"`:''} title="Ver resumen del cliente">${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-size:9px">(${p.referencia_cli})</span>`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?`<div style="font-size:8px;color:#2563eb;font-weight:600" title="Meses que cubre este pago">📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}</div>`:''}</td>
     <td style="font-weight:700;color:#059669">${fmt(p.monto)}</td>
     <td style="font-size:10px">${p.metodo||'—'}</td>
     <td style="font-size:10px">${p.referencia||'—'}</td>
@@ -5663,14 +5663,18 @@ async function regAbono(){
   try{
     const nuevoP=(c.pagado||0)+monto;
     await API.patch('clientes',`id=eq.${c.id}`,{pagado:nuevoP});c.pagado=nuevoP;
+    let _abonoId=null;
     try{
-      await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar});
+      const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar});
+      if(rA&&rA[0])_abonoId=rA[0].id;
     }catch(eCol){
       // Si alguna columna no existe, guardar sin ella
       try{
-        await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro});
+        const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro});
+        if(rA&&rA[0])_abonoId=rA[0].id;
       }catch(eCol2){
-        await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy()});
+        const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo:metodo,referencia:refValor,fecha:hoy()});
+        if(rA&&rA[0])_abonoId=rA[0].id;
       }
     }
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
@@ -5684,7 +5688,7 @@ async function regAbono(){
     else await API.patch('facturas',`cliente_id=eq.${c.id}&estado=eq.Pendiente`,{estado:'Parcial'});
     ST.facturas.filter(f=>f.cliente_id===c.id&&f.estado==='Pendiente').forEach(f=>f.estado=pd2===0?'Pagado':'Parcial');
     logAudit('ABONO_REGISTRADO',`${fmt(monto)} · ${c.nom}`);
-    _ultimoAbono={cliente:c.id,monto};
+    _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId};
     // Mostrar botón de recibo WA
     const reciboDiv=document.getElementById('reciboWAbtn');
     if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
