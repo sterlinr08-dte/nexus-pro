@@ -4979,7 +4979,7 @@
 
     return `
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-        <button class="btn bsm bghost" type="button" onclick="window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+        <button class="btn bsm" type="button" onclick="window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
         <button class="btn bsm bghost" type="button" onclick="window.nav('dashboard',null)" title="Cerrar"><i class="ti ti-x"></i></button>
       </div>
       <div class="nxSL-head">
@@ -11159,7 +11159,7 @@
       <div class="nc">
         <div class="ch">
           <div><div class="ct"><i class="ti ti-file-search"></i> Tabla Comparativa</div><div class="ct-s">Compara tus clientes con la TSS (Excel, por cédula) o Humano (PDF, por nombre)</div></div>
-          <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+          <button class="btn bsm" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
         </div>
         <div style="max-width:640px">
           <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">1. Empresa a comparar</label>
@@ -11886,8 +11886,8 @@
         <div class="ch">
           <div><div class="ct"><i class="ti ti-cash"></i> Financiamiento</div><div class="ct-s">Multiempresa · solo el administrador</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn bsm bghost" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>
-            <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoConfig()" title="Datos para el contrato"><i class="ti ti-settings"></i> Config</button>
+            <button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>
+            <button class="btn bsm" type="button" onclick="window.nxPrestamoConfig()" title="Datos para el contrato"><i class="ti ti-settings"></i> Config</button>
             <button class="btn bsm bc4" type="button" onclick="window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             <button class="btn bsm bc1" type="button" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo</button>
           </div>
@@ -11963,7 +11963,7 @@
         <div class="ch">
           <div><div class="ct"><i class="ti ti-building-skyscraper"></i> Multiempresa</div><div class="ct-s">Solo visible para el administrador</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn bsm bghost" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
+            <button class="btn bsm" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
           </div>
         </div>
         <div style="font-size:12px;color:#64748b;margin-bottom:12px">Elige una empresa o módulo.</div>
@@ -12803,8 +12803,8 @@
         <div class="ch">
           <div><div class="ct"><i class="ti ti-car"></i> Compra y Venta de Vehículos</div><div class="ct-s">Multiempresa · solo el administrador</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn bsm bghost" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>
-            <button class="btn bsm bghost" type="button" onclick="window.nxVehConfig()" title="Datos para el acto de venta"><i class="ti ti-settings"></i> Config</button>
+            <button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>
+            <button class="btn bsm" type="button" onclick="window.nxVehConfig()" title="Datos para el acto de venta"><i class="ti ti-settings"></i> Config</button>
             <button class="btn bsm bc4" type="button" onclick="window.nxVehExportar()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             <button class="btn bsm bc1" type="button" onclick="window.nxVehNuevo()"><i class="ti ti-plus"></i> Nuevo</button>
           </div>
@@ -12956,7 +12956,7 @@
           </div>
         </div>
         <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
-          ${!vendido ? `<button class="btn bc1 nxPrPagar" type="button" onclick="window.nxVehVender('${id}')"><i class="ti ti-cash"></i> Registrar venta</button>` : `<div style="text-align:center;margin-bottom:8px"><button class="btn bsm bghost" type="button" onclick="window.nxVehReabrir('${id}')"><i class="ti ti-rotate"></i> Volver a inventario</button></div>`}
+          ${!vendido ? `<button class="btn bc1 nxPrPagar" type="button" onclick="window.nxVehVender('${id}')"><i class="ti ti-cash"></i> Registrar venta</button>` : `<div style="text-align:center;margin-bottom:8px"><button class="btn bsm" type="button" onclick="window.nxVehReabrir('${id}')"><i class="ti ti-rotate"></i> Volver a inventario</button></div>`}
           <div class="nxPrActs">
             <button class="nxPrAcc" type="button" onclick="window.nxVehActoVenta('${id}')"><i class="ti ti-file-certificate"></i> Acto venta</button>
             <button class="nxPrAcc" type="button" onclick="window.nxVehDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(v.documentos) && v.documentos.length ? ' (' + v.documentos.length + ')' : ''}</button>

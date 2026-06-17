@@ -1,7 +1,8 @@
 {
-  "version": "21.0",
+  "version": "21.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO: los botones 'Volver' y 'Config' se veían deformados (el ícono por un lado y la letra por otro, apretados). Era porque una regla del sistema los forzaba a un cuadrito de ícono. Ahora los botones CON texto se ven completos y centrados; los de solo ícono siguen cuadrados como deben. Aplicado en Financiamiento, Vehículos, el hub Multiempresa, la Tabla Comparativa y otras vistas",
     "Las hojas imprimibles (Contrato, Estado de cuenta y Acto de venta) ahora tienen el botón '✕ Cerrar' (en vez de 'Volver'), ya que esas cierran la hoja y te devuelven al sistema",
     "Multiempresa: todas las ventanas emergentes (detalle, formularios, registrar venta, documentos y configuración, tanto de Financiamiento como de Vehículos) ahora muestran un botón '← Volver' con texto en la esquina, en vez de solo la 'X'. Más claro y fácil de ver",
     "Botón VOLVER en cada ventana. Antes, al abrir el Contrato / Estado de cuenta / Acto de venta (que se abren como una hoja aparte para imprimir) no había forma de regresar al sistema. Ahora cada uno tiene arriba una barra azul con '← Volver' que cierra la hoja y te devuelve. Además se auditó que todas las ventanas tengan su salida: el hub Multiempresa, Financiamiento y Vehículos vuelven con el botón Volver de la barra; y todas las ventanas emergentes (detalle, formularios, documentos, configuración) cierran con la X y te dejan en la pantalla anterior, sin tener que salir hasta el inicio",
