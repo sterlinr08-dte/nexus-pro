@@ -13631,11 +13631,11 @@
   function saldoProv(p) { const id = p && p.id; return Math.max(0, (_cxpByProv[id] || 0) - (_pagosProvByProv[id] || 0)); }
   async function totalesCaja(caja) {
     let ventas = [], abonos = [], movs = [];
-    try { ventas = await getAPI().get('pos_ventas', 'select=metodo_pago,total,a_credito&caja_id=eq.' + caja.id + '&estado=eq.completada') || []; } catch (e) {}
+    try { ventas = await getAPI().get('pos_ventas', 'select=pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto&caja_id=eq.' + caja.id + '&estado=eq.completada') || []; } catch (e) {}
     try { abonos = await getAPI().get('pos_abonos', 'select=metodo,monto&caja_id=eq.' + caja.id) || []; } catch (e) {}
     try { movs = await getAPI().get('pos_caja_movimientos', 'select=*&caja_id=eq.' + caja.id + '&order=fecha.asc') || []; } catch (e) {}
-    let efe = 0, tar = 0, tra = 0, cre = 0;
-    ventas.forEach(v => { const tot = Number(v.total || 0); if (v.a_credito) cre += tot; else if (v.metodo_pago === 'Tarjeta') tar += tot; else if (v.metodo_pago === 'Transferencia') tra += tot; else efe += tot; });
+    let efe = 0, tar = 0, tra = 0, cre = 0, otro = 0;
+    ventas.forEach(v => { efe += Number(v.pagado_efectivo || 0); tar += Number(v.pagado_tarjeta || 0); tra += Number(v.pagado_transferencia || 0); otro += Number(v.pagado_otro || 0); cre += Number(v.credito_monto || 0); });
     let abEfe = 0, abOtro = 0;
     abonos.forEach(a => { const m = Number(a.monto || 0); if ((a.metodo || 'Efectivo') === 'Efectivo') abEfe += m; else abOtro += m; });
     let ent = 0, sal = 0;
@@ -13649,8 +13649,8 @@
   async function cargarSaldosCli() {
     _fiadoByCli = {}; _abonosByCli = {};
     try {
-      const fi = await getAPI().get('pos_ventas', 'select=cliente_id,total&a_credito=eq.true') || [];
-      fi.forEach(v => { if (v.cliente_id) _fiadoByCli[v.cliente_id] = (_fiadoByCli[v.cliente_id] || 0) + Number(v.total || 0); });
+      const fi = await getAPI().get('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0') || [];
+      fi.forEach(v => { if (v.cliente_id) _fiadoByCli[v.cliente_id] = (_fiadoByCli[v.cliente_id] || 0) + Number(v.credito_monto || 0); });
       const ab = await getAPI().get('pos_abonos', 'select=cliente_id,monto') || [];
       ab.forEach(a => { if (a.cliente_id) _abonosByCli[a.cliente_id] = (_abonosByCli[a.cliente_id] || 0) + Number(a.monto || 0); });
     } catch (e) {}
@@ -13739,8 +13739,8 @@
   function gridHTML() {
     const lista = _prods.filter(p => _posCat === 'todas' || String(p.categoria_id) === String(_posCat));
     if (!lista.length) return '<div style="grid-column:1/-1;color:#94a3b8;font-size:12px;padding:20px;text-align:center">Sin productos en esta categoría</div>';
-    return lista.map(p => `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '')).toLowerCase())}" onclick="window.nxPosAdd('${p.id}')">
-        <div class="nxPosCardNom">${esc(p.nombre || '')}</div>
+    return lista.map(p => `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxPosAdd('${p.id}')">
+        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#94a3b8">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#94a3b8">${esc(p.marca)}</span>` : '')}</div>
         <div class="nxPosCardBot"><span class="nxPosCardPre">${fmt(p.precio)}</span><span class="nxPosCardStk">${Number(p.stock || 0)} und</span></div>
       </button>`).join('');
   }
@@ -13783,6 +13783,19 @@
   }
 
   // ── Cobrar / checkout ──
+  function leerCobro() {
+    const tt = totales(); const base = tt.total; const itbisBruto = tt.itbis;
+    const desc = Math.max(0, Math.min(100, Number(String(val('posDesc') || '0').replace(',', '.').replace(/[^0-9.]/g, '')) || 0));
+    const descMonto = Math.round(base * desc / 100);
+    const total = base - descMonto;
+    const itbis = base > 0 ? Math.round(itbisBruto * total / base) : 0;
+    const subtotal = total - itbis;
+    const efe = parseMoney(val('payEfe')), tar = parseMoney(val('payTar')), tra = parseMoney(val('payTra')), che = parseMoney(val('payChe')), nc = parseMoney(val('payNc'));
+    const pagado = efe + tar + tra + che + nc;
+    const credito = Math.max(0, total - pagado);
+    const devuelta = Math.max(0, pagado - total);
+    return { base: base, descPct: desc, descMonto: descMonto, total: total, itbis: itbis, subtotal: subtotal, efe: efe, tar: tar, tra: tra, che: che, nc: nc, pagado: pagado, credito: credito, devuelta: devuelta };
+  }
   window.nxPosCobrar = function () {
     if (!_cart.length) return;
     const t = totales();
@@ -13790,54 +13803,71 @@
     const ov = document.createElement('div'); ov.id = 'nxPosPago'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
-      <div class="modal nxPrForm" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosPago').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="modal nxPrForm" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-cash"></i> Cobrar</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosPago').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div class="fr"><label>Cliente</label><select id="posCliId" onchange="window.nxPosCliSel()"><option value="">— Consumidor final —</option>${_clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div>
+          <div class="fr"><label>Cliente</label><select id="posCliId" onchange="window.nxPosCobroCalc()"><option value="">— Consumidor final —</option>${_clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div>
           <div class="fr" id="posCliNomBox"><label>Nombre (opcional, para el ticket)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente"></div>
-          <div class="fr"><label>Método de pago</label><select id="posMet" onchange="window.nxPosMet()"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option value="Crédito">Crédito (fiar)</option></select></div>
-          <div id="posEfeBox">
-            <div class="fr-row">
-              <div class="fr"><label>Recibido</label><input id="posRec" data-nx-money inputmode="numeric" placeholder="${Math.round(t.total)}" oninput="window.nxPosDevuelta()"></div>
-              <div class="fr"><label>Devuelta</label><input id="posDev" readonly value="RD$ 0" style="background:#f8fafc;font-weight:800"></div>
-            </div>
+          <div class="fr-row">
+            <div class="fr"><label>Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
+            <div class="fr"><label>Total a pagar</label><input id="posTotalLbl" readonly value="${fmt(t.total)}" style="background:#f0fdf4;font-weight:800;color:#065f46"></div>
           </div>
-          <div id="posCredBox" style="display:none"><div style="font-size:11.5px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:8px 10px">Esta venta queda <b>fiada</b>. Se sumará <b>${fmt(t.total)}</b> a la cuenta del cliente. <span id="posCredWarn"></span></div></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">FORMA DE PAGO <span style="font-weight:600;color:#94a3b8">(deja en 0 lo que no aplique; lo que falte queda fiado)</span></div>
+          <div class="fr-row"><div class="fr"><label>Efectivo</label><input id="payEfe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Tarjeta</label><input id="payTar" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
+          <div class="fr-row"><div class="fr"><label>Transferencia</label><input id="payTra" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Cheque</label><input id="payChe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
+          <div class="fr"><label>Nota de crédito</label><input id="payNc" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#64748b">Pagado</span><b id="cobroPagado">RD$ 0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span id="cobroRestoLbl" style="color:#64748b">Pendiente</span><b id="cobroResto" style="color:#16a34a">RD$ 0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#64748b">Devuelta</span><b id="cobroDev" style="color:#16a34a">RD$ 0</b></div>
+            <div id="cobroFiadoNote"></div>
+          </div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
-          <button class="btn bghost" type="button" onclick="document.getElementById('nxPosPago').remove()">Cancelar</button>
+          <button class="btn bghost" type="button" onclick="window.nxPosPagoExacto()">Efectivo exacto</button>
           <button class="btn bc1" type="button" onclick="window.nxPosConfirmar()"><i class="ti ti-check"></i> Confirmar venta</button>
         </div>
       </div>`;
     document.body.appendChild(ov);
     scanMoney(ov);
+    window.nxPosCobroCalc();
   };
-  window.nxPosMet = function () {
-    const m = val('posMet');
-    const efe = document.getElementById('posEfeBox'); if (efe) efe.style.display = (m === 'Efectivo') ? '' : 'none';
-    const cred = document.getElementById('posCredBox'); if (cred) cred.style.display = (m === 'Crédito') ? '' : 'none';
-    const warn = document.getElementById('posCredWarn'); if (warn) warn.innerHTML = (m === 'Crédito' && !val('posCliId')) ? '<b style="color:#dc2626">Elige un cliente para fiar.</b>' : '';
+  window.nxPosPagoExacto = function () {
+    const c = leerCobro(); const el = document.getElementById('payEfe');
+    if (el) { el.value = Math.round(c.total).toLocaleString('en-US'); }
+    window.nxPosCobroCalc();
   };
-  window.nxPosCliSel = function () { const box = document.getElementById('posCliNomBox'); const id = val('posCliId'); if (box) box.style.display = id ? 'none' : ''; window.nxPosMet(); };
-  window.nxPosDevuelta = function () {
-    const t = totales(); const rec = parseMoney(val('posRec')); const dev = Math.max(0, rec - t.total);
-    const el = document.getElementById('posDev'); if (el) el.value = fmt(dev);
+  window.nxPosCobroCalc = function () {
+    const box = document.getElementById('posCliNomBox'); const cliId = val('posCliId'); if (box) box.style.display = cliId ? 'none' : '';
+    const c = leerCobro();
+    const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const elTot = document.getElementById('posTotalLbl'); if (elTot) elTot.value = fmt(c.total);
+    setT('cobroPagado', fmt(c.pagado)); setT('cobroResto', fmt(c.credito)); setT('cobroDev', fmt(c.devuelta));
+    const rl = document.getElementById('cobroRestoLbl'); if (rl) rl.textContent = c.credito > 0 ? 'Falta / Fiado' : 'Pendiente';
+    const rEl = document.getElementById('cobroResto'); if (rEl) rEl.style.color = c.credito > 0 ? '#dc2626' : '#16a34a';
+    const note = document.getElementById('cobroFiadoNote');
+    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px">⚠️ Quedan ' + fmt(c.credito) + ' a fiar: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará fiado a la cuenta del cliente.</div>' : '');
   };
   window.nxPosConfirmar = async function () {
     if (!_cart.length) return;
-    const t = totales();
-    const met = val('posMet') || 'Efectivo';
-    const cred = met === 'Crédito';
+    const c = leerCobro();
     const cliId = val('posCliId') || null;
-    if (cred && !cliId) { toast('err', 'Para fiar, elige un cliente'); return; }
-    const rec = cred ? 0 : (met === 'Efectivo' ? parseMoney(val('posRec')) : t.total);
-    if (met === 'Efectivo' && rec > 0 && rec < t.total) { toast('err', 'Recibido menor al total'); return; }
-    const dev = cred ? 0 : Math.max(0, (rec || t.total) - t.total);
-    const cliNom = cliId ? ((_clientes.find(c => String(c.id) === String(cliId)) || {}).nombre || null) : ((val('posCli') || '').trim() || null);
+    if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a fiar: elige un cliente'); return; }
+    const cliNom = cliId ? ((_clientes.find(x => String(x.id) === String(cliId)) || {}).nombre || null) : ((val('posCli') || '').trim() || null);
+    const pagosArr = [];
+    if (c.efe > 0) pagosArr.push({ metodo: 'Efectivo', monto: c.efe });
+    if (c.tar > 0) pagosArr.push({ metodo: 'Tarjeta', monto: c.tar });
+    if (c.tra > 0) pagosArr.push({ metodo: 'Transferencia', monto: c.tra });
+    if (c.che > 0) pagosArr.push({ metodo: 'Cheque', monto: c.che });
+    if (c.nc > 0) pagosArr.push({ metodo: 'Nota de crédito', monto: c.nc });
+    if (c.credito > 0) pagosArr.push({ metodo: 'Crédito (fiado)', monto: c.credito });
+    const metodoLabel = pagosArr.length === 0 ? 'Efectivo' : pagosArr.length === 1 ? pagosArr[0].metodo : 'Mixto';
     const body = {
-      cliente_id: cliId, cliente_nombre: cliNom, a_credito: cred,
-      subtotal: t.subtotal, itbis: t.itbis, total: t.total,
-      metodo_pago: met, recibido: cred ? 0 : (rec || t.total), devuelta: dev,
+      cliente_id: cliId, cliente_nombre: cliNom, a_credito: c.credito > 0,
+      subtotal: c.subtotal, itbis: c.itbis, total: c.total, descuento: c.descMonto,
+      metodo_pago: metodoLabel, pagos: pagosArr,
+      pagado_efectivo: c.efe, pagado_tarjeta: c.tar, pagado_transferencia: c.tra, pagado_otro: c.che + c.nc,
+      credito_monto: c.credito, recibido: c.efe, devuelta: c.devuelta,
       estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     try {
@@ -13850,8 +13880,8 @@
       for (const it of _cart) {
         try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const ns = Number(p.stock || 0) - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
       }
-      if (cred && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + t.total; }
-      toast('ok', cred ? 'Venta a crédito (fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(t.total));
+      if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
+      toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
       const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), _items: items });
       _cart = [];
       cerrarModal('nxPosPago');
@@ -13880,10 +13910,12 @@
         <div class="line"></div>
         <table>
           <tr><td>Subtotal</td><td style="text-align:right">${fmt(v.subtotal)}</td></tr>
+          ${Number(v.descuento || 0) > 0 ? `<tr><td>Descuento</td><td style="text-align:right">- ${fmt(v.descuento)}</td></tr>` : ''}
           <tr><td>ITBIS (18%)</td><td style="text-align:right">${fmt(v.itbis)}</td></tr>
           <tr class="tot big"><td>TOTAL</td><td style="text-align:right">${fmt(v.total)}</td></tr>
         </table>
-        <div class="muted">Pago: ${esc(v.metodo_pago)}${v.metodo_pago === 'Efectivo' ? ' · Recibido ' + fmt(v.recibido) + ' · Devuelta ' + fmt(v.devuelta) : ''}</div>
+        <div class="line"></div>
+        <table>${(Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]).map(p => `<tr><td>${esc(p.metodo)}</td><td style="text-align:right">${fmt(p.monto)}</td></tr>`).join('')}${Number(v.devuelta || 0) > 0 ? `<tr><td>Devuelta</td><td style="text-align:right">${fmt(v.devuelta)}</td></tr>` : ''}</table>
         <div class="line"></div>
         <div class="c muted">¡Gracias por su compra!</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Arial">🖨️ Imprimir</button>
@@ -13927,16 +13959,24 @@
         <div style="overflow-y:auto;flex:1">
           <div class="fr"><label>Nombre *</label><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div>
           <div class="fr-row">
+            <div class="fr"><label>Referencia / spec</label><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div>
+            <div class="fr"><label>Marca</label><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div>
+          </div>
+          <div class="fr-row">
             <div class="fr"><label>Código / barra</label><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Opcional"></div>
             <div class="fr"><label>Categoría</label><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select></div>
           </div>
           <div class="fr-row">
-            <div class="fr"><label>Precio venta (con ITBIS)</label><input id="ppPre" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0"></div>
-            <div class="fr"><label>Costo</label><input id="ppCos" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0"></div>
+            <div class="fr"><label>Precio CONTADO (con ITBIS)</label><input id="ppPre" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0"></div>
+            <div class="fr"><label>Precio CRÉDITO</label><input id="ppPreCred" data-nx-money inputmode="numeric" value="${e.precio_credito ? Math.round(e.precio_credito) : ''}" placeholder="= contado"></div>
           </div>
           <div class="fr-row">
+            <div class="fr"><label>Costo</label><input id="ppCos" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0"></div>
             <div class="fr"><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div>
+          </div>
+          <div class="fr-row">
             <div class="fr"><label>¿Lleva ITBIS (18%)?</label><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div>
+            <div class="fr"><label>Imagen (URL opcional)</label><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div>
           </div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
@@ -13948,11 +13988,16 @@
     scanMoney(ov);
   }
   window.nxPosGuardarProd = async function (id) {
+    const precio = parseMoney(val('ppPre'));
     const body = {
       nombre: (val('ppNom') || '').trim(),
+      referencia: (val('ppRef') || '').trim() || null,
+      marca: (val('ppMarca') || '').trim() || null,
+      imagen: (val('ppImg') || '').trim() || null,
       codigo: (val('ppCod') || '').trim() || null,
       categoria_id: val('ppCat') || null,
-      precio: parseMoney(val('ppPre')),
+      precio: precio,
+      precio_credito: parseMoney(val('ppPreCred')) || precio,
       costo: parseMoney(val('ppCos')),
       stock: Number(String(val('ppStk') || '0').replace(/[^0-9.-]/g, '')) || 0,
       itbis: val('ppItb') === '1'
@@ -14075,13 +14120,13 @@
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
     cerrarModal('nxPosCli');
     let ventas = [], abonos = [];
-    try { ventas = await getAPI().get('pos_ventas', 'select=*&cliente_id=eq.' + id + '&a_credito=eq.true&order=created_at.desc') || []; } catch (e) {}
+    try { ventas = await getAPI().get('pos_ventas', 'select=*&cliente_id=eq.' + id + '&credito_monto=gt.0&order=created_at.desc') || []; } catch (e) {}
     try { abonos = await getAPI().get('pos_abonos', 'select=*&cliente_id=eq.' + id + '&order=fecha.desc') || []; } catch (e) {}
-    const totFiado = ventas.reduce((s, v) => s + Number(v.total || 0), 0);
+    const totFiado = ventas.reduce((s, v) => s + Number(v.credito_monto || 0), 0);
     const totAb = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
     const saldo = Math.max(0, totFiado - totAb);
     _fiadoByCli[id] = totFiado; _abonosByCli[id] = totAb;
-    const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>#${v.numero || ''} <span style="color:#94a3b8">${fechaDMY(v.fecha || v.created_at)}</span></div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.total)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin ventas fiadas</div>';
+    const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>#${v.numero || ''} <span style="color:#94a3b8">${fechaDMY(v.fecha || v.created_at)}</span>${Number(v.credito_monto || 0) < Number(v.total || 0) ? `<div style="color:#94a3b8;font-size:9.5px">Venta ${fmt(v.total)} · fiado</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.credito_monto)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin ventas fiadas</div>';
     const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#94a3b8">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(a.nota)}</div>` : ''}</div><button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin abonos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCli'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
