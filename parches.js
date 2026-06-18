@@ -13696,6 +13696,7 @@
     const view = document.getElementById('v-pos'); if (!view) return;
     if (t === 'ventas') { try { await cargarVentas(); } catch (e) {} }
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
+    if (t === 'compras') { try { await cargarComprasTab(); } catch (e) {} }
     if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {} }
     renderPOS(view);
   };
@@ -13707,10 +13708,11 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">Multiempresa · solo el administrador</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'productos') body = renderProductos();
+    else if (_posTab === 'compras') body = renderCompras();
     else if (_posTab === 'clientes') body = renderClientes();
     else if (_posTab === 'caja') body = renderCaja();
     else body = renderVentas();
@@ -14194,6 +14196,196 @@
     const saldo = saldoCli(c); const nom = (c.nombre || '').split(' ')[0] || '';
     const msg = `Hola ${nom}, le recordamos su cuenta pendiente:\n• Saldo: ${fmt(saldo)}\n\nGracias.\n${empNom()}`;
     window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+  };
+
+  // ── TAB: COMPRAS / PROVEEDORES ──
+  function renderCompras() {
+    const totalCxP = _proveedores.reduce((s, p) => s + saldoProv(p), 0);
+    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer"><td style="font-size:10px">#${c.numero || ''}<div style="color:#94a3b8">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:#dc2626">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin compras registradas</td></tr>';
+    return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
+        ${kpi('Proveedores', _proveedores.length, '#2563eb')}
+        ${kpi('Por pagar (CxP)', fmt(totalCxP), totalCxP > 0 ? '#dc2626' : '#16a34a')}
+        ${kpi('Compras', _compras.length, '#0f172a')}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn bsm bghost" type="button" onclick="window.nxPosProveedores()"><i class="ti ti-building-warehouse"></i> Proveedores</button>
+        <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevaCompra()"><i class="ti ti-plus"></i> Nueva compra</button>
+      </div>
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Proveedor</th><th>Tipo</th><th style="text-align:right">Total</th></tr></thead><tbody>${comprasHTML}</tbody></table></div>`;
+  }
+
+  // Nueva compra
+  window.nxPosNuevaCompra = function () {
+    _compraItems = [];
+    cerrarModal('nxPosCompra');
+    const provOpts = _proveedores.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
+    const prodOpts = _prods.map(p => `<option value="${p.id}">${esc(p.nombre)}${p.codigo ? ' (' + esc(p.codigo) + ')' : ''}</option>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxPosCompra'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-truck-delivery"></i> Nueva compra</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCompra').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div class="fr"><label>Proveedor</label><div style="display:flex;gap:6px"><select id="compProv" style="flex:1">${'<option value="">— Proveedor —</option>' + provOpts}</select><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevoProvDesdeCompra()" title="Nuevo proveedor"><i class="ti ti-plus"></i></button></div></div>
+          <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Factura No. (proveedor)</label><input id="compFact" class="no-upper" placeholder="Opcional"></div></div>
+          <div class="fr-row"><div class="fr"><label>NCF del proveedor</label><input id="compNcf" class="no-upper" placeholder="B01... (opcional)"></div><div class="fr" style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer"><input type="checkbox" id="compCred" style="width:18px;height:18px"> Compra a crédito (CxP)</label></div></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 6px">ARTÍCULOS</div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:8px">
+            <div class="fr" style="margin-bottom:6px"><select id="compArt"><option value="">— Elige un artículo —</option>${prodOpts}</select></div>
+            <div style="display:flex;gap:6px"><input id="compCant" inputmode="numeric" value="1" placeholder="Cant." style="width:62px;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;text-align:center"><input id="compCosto" data-nx-money inputmode="numeric" placeholder="Costo unit." style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px"><button class="btn bc1 bsm" type="button" onclick="window.nxPosCompraAddItem()"><i class="ti ti-plus"></i> Agregar</button></div>
+          </div>
+          <div id="compItemsList" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:9px 12px"><span style="font-weight:700;color:#065f46">Total compra</span><b id="compTotal" style="font-size:16px;color:#065f46">RD$ 0</b></div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosCompra').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosGuardarCompra()"><i class="ti ti-device-floppy"></i> Guardar compra</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    scanMoney(ov);
+    pintarCompraItems();
+  };
+  window.nxPosNuevoProvDesdeCompra = function () { abrirProv(null, true); };
+  window.nxPosCompraAddItem = function () {
+    const pid = val('compArt'); if (!pid) { toast('err', 'Elige un artículo'); return; }
+    const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
+    const cant = Number(String(val('compCant') || '1').replace(/[^0-9.]/g, '')) || 1;
+    const costo = parseMoney(val('compCosto')) || Number(p.costo || 0);
+    const ex = _compraItems.find(x => String(x.producto_id) === String(pid));
+    if (ex) { ex.cantidad += cant; ex.costo = costo; } else _compraItems.push({ producto_id: p.id, nombre: p.nombre, cantidad: cant, costo: costo });
+    const cc = document.getElementById('compCant'); if (cc) cc.value = '1';
+    const co = document.getElementById('compCosto'); if (co) co.value = '';
+    pintarCompraItems();
+  };
+  window.nxPosCompraDelItem = function (idx) { _compraItems.splice(idx, 1); pintarCompraItems(); };
+  function pintarCompraItems() {
+    const cont = document.getElementById('compItemsList'); if (!cont) return;
+    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#94a3b8">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
+    const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
+    const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
+  }
+  window.nxPosGuardarCompra = async function () {
+    if (!_compraItems.length) { toast('err', 'Agrega al menos un artículo'); return; }
+    const provId = val('compProv') || null;
+    const aCred = document.getElementById('compCred') && document.getElementById('compCred').checked;
+    if (aCred && !provId) { toast('err', 'Para compra a crédito elige un proveedor'); return; }
+    const provNom = provId ? ((_proveedores.find(p => String(p.id) === String(provId)) || {}).nombre || null) : null;
+    const subtotal = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
+    const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
+    try {
+      const r = await getAPI().post('pos_compras', body);
+      const compra = (r && r[0]) || null; if (!compra) throw new Error('No se pudo registrar');
+      const items = _compraItems.map(it => ({ compra_id: compra.id, producto_id: it.producto_id, nombre: it.nombre, cantidad: it.cantidad, costo: it.costo, importe: Math.round(it.costo * it.cantidad) }));
+      try { await getAPI().post('pos_compra_items', items); } catch (e) {}
+      for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const ns = Number(p.stock || 0) + Number(it.cantidad); p.stock = ns; p.costo = it.costo; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns, costo: it.costo }).catch(() => {}); } } catch (e) {} }
+      if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
+      toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
+      _compraItems = []; cerrarModal('nxPosCompra');
+      await cargarComprasTab(); await cargarPOS();
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo registrar la compra', String(e && e.message || e)); }
+  };
+  window.nxPosCompraVer = async function (id) {
+    const c = _compras.find(x => String(x.id) === String(id)); if (!c) return;
+    let items = []; try { items = await getAPI().get('pos_compra_items', 'select=*&compra_id=eq.' + id) || []; } catch (e) {}
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
+    cerrarModal('nxPosCompraDet');
+    const ov = document.createElement('div'); ov.id = 'nxPosCompraDet'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px;max-height:88vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-receipt"></i> Compra No. ${c.numero || ''}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCompraDet').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">${filas}</table>
+          <div style="display:flex;justify-content:space-between;border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;font-weight:800"><span>TOTAL</span><span>${fmt(c.total)}</span></div>
+        </div>
+        <div class="fe" style="margin-top:10px"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPosDelCompra('${id}')"><i class="ti ti-trash"></i> Eliminar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPosDelCompra = async function (id) {
+    if (!confirm('¿Eliminar esta compra? (No revierte el stock automáticamente)')) return;
+    try { await getAPI().del('pos_compras', 'id=eq.' + id); toast('ok', 'Compra eliminada'); cerrarModal('nxPosCompraDet'); await cargarComprasTab(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // Proveedores
+  window.nxPosProveedores = function () {
+    cerrarModal('nxPosProvs');
+    const lista = _proveedores.length ? _proveedores.map(p => { const s = saldoProv(p); return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosProvVer('${p.id}')"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b">${esc(p.nombre)}</div><div style="font-size:10px;color:#94a3b8">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div></div>${s > 0 ? `<b style="color:#dc2626;font-size:12px">${fmt(s)}</b>` : ''}<i class="ti ti-chevron-right" style="color:#cbd5e1"></i></div>`; }).join('') : '<div style="color:#94a3b8;font-size:11px;padding:14px;text-align:center">Sin proveedores</div>';
+    const ov = document.createElement('div'); ov.id = 'nxPosProvs'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:430px;max-height:86vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-building-warehouse"></i> Proveedores</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosProvs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1"><div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProv()"><i class="ti ti-plus"></i> Nuevo proveedor</button></div><div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPosNuevoProv = function () { abrirProv(null); };
+  window.nxPosEditProv = function (id) { const p = _proveedores.find(x => String(x.id) === String(id)); if (p) abrirProv(p); };
+  function abrirProv(p, fromCompra) {
+    cerrarModal('nxPosProvForm');
+    const e = p || {};
+    const ov = document.createElement('div'); ov.id = 'nxPosProvForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:430px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-building-warehouse"></i> ${p ? 'Editar proveedor' : 'Nuevo proveedor'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosProvForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div class="fr"><label>Nombre *</label><input id="pvNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre / empresa"></div>
+          <div class="fr-row"><div class="fr"><label>RNC / Cédula</label><input id="pvRnc" class="no-upper" value="${esc(e.rnc || '')}" placeholder="0-00-00000-0"></div><div class="fr"><label>Teléfono</label><input id="pvTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div></div>
+          <div class="fr"><label>Contacto</label><input id="pvCon" class="no-upper" value="${esc(e.contacto || '')}" placeholder="Persona de contacto"></div>
+          <div class="fr"><label>Dirección</label><input id="pvDir" class="no-upper" value="${esc(e.direccion || '')}" placeholder="Opcional"></div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosProvForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosGuardarProv('${p ? p.id : ''}','${fromCompra ? '1' : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  }
+  window.nxPosGuardarProv = async function (id, fromCompra) {
+    const body = { nombre: (val('pvNom') || '').trim(), rnc: (val('pvRnc') || '').trim() || null, telefono: (val('pvTel') || '').trim() || null, contacto: (val('pvCon') || '').trim() || null, direccion: (val('pvDir') || '').trim() || null };
+    if (!body.nombre) { toast('err', 'Pon el nombre del proveedor'); return; }
+    try {
+      let nuevo = null;
+      if (id) await getAPI().patch('pos_proveedores', 'id=eq.' + id, body);
+      else { const r = await getAPI().post('pos_proveedores', body); nuevo = (r && r[0]) || null; }
+      toast('ok', id ? 'Proveedor actualizado' : 'Proveedor agregado', body.nombre);
+      cerrarModal('nxPosProvForm');
+      _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || [];
+      if (fromCompra === '1') { const sel = document.getElementById('compProv'); if (sel) { sel.innerHTML = '<option value="">— Proveedor —</option>' + _proveedores.map(p => `<option value="${p.id}"${nuevo && String(p.id) === String(nuevo.id) ? ' selected' : ''}>${esc(p.nombre)}</option>`).join(''); } }
+      else { const v = document.getElementById('v-pos'); if (v && _posTab === 'compras') renderPOS(v); if (document.getElementById('nxPosProvs')) window.nxPosProveedores(); }
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxPosProvVer = async function (id) {
+    const p = _proveedores.find(x => String(x.id) === String(id)); if (!p) return;
+    cerrarModal('nxPosProv');
+    let compras = [], pagos = [];
+    try { compras = await getAPI().get('pos_compras', 'select=*&proveedor_id=eq.' + id + '&a_credito=eq.true&order=created_at.desc') || []; } catch (e) {}
+    try { pagos = await getAPI().get('pos_compra_pagos', 'select=*&proveedor_id=eq.' + id + '&order=fecha.desc') || []; } catch (e) {}
+    const totC = compras.reduce((s, c) => s + Number(c.total || 0), 0); const totP = pagos.reduce((s, a) => s + Number(a.monto || 0), 0); const saldo = Math.max(0, totC - totP);
+    _cxpByProv[id] = totC; _pagosProvByProv[id] = totP;
+    const comprasHTML = compras.length ? compras.map(c => `<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span>#${c.numero || ''} <span style="color:#94a3b8">${(c.fecha || '').slice(0, 10)}</span></span><b style="color:#dc2626">${fmt(c.total)}</b></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin compras a crédito</div>';
+    const pagosHTML = pagos.length ? pagos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#94a3b8">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span></span><button class="btn bsm bghost" onclick="window.nxPosDelPagoProv('${a.id}','${id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin pagos</div>';
+    const ov = document.createElement('div'); ov.id = 'nxPosProv'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-building-warehouse"></i> ${esc(p.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosProv').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">${kpi('Comprado (créd.)', fmt(totC), '#0f172a')}${kpi('Pagado', fmt(totP), '#059669')}${kpi('Saldo (CxP)', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}</div>
+          ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px"><div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR PAGO AL PROVEEDOR</div><div style="display:flex;gap:6px"><input id="provPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px"><select id="provPagoMet" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select><button class="btn bc1 bsm" type="button" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-plus"></i></button></div></div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px">✓ Sin deuda</div>'}
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">COMPRAS A CRÉDITO (${compras.length})</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${comprasHTML}</div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">PAGOS (${pagos.length})</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bsm bghost" type="button" onclick="window.nxPosEditProv('${id}')"><i class="ti ti-edit"></i> Editar</button><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPosDelProv('${id}')"><i class="ti ti-trash"></i> Borrar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    scanMoney(ov);
+  };
+  window.nxPosPagarProv = async function (id) {
+    const monto = parseMoney(val('provPagoMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
+    try { await getAPI().post('pos_compra_pagos', { proveedor_id: id, monto: monto, metodo: val('provPagoMet') || 'Efectivo', created_by_name: nomAdmin() }); _pagosProvByProv[id] = (_pagosProvByProv[id] || 0) + monto; toast('ok', 'Pago registrado', fmt(monto)); window.nxPosProvVer(id); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxPosDelPagoProv = async function (pid, provId) { if (!confirm('¿Eliminar este pago?')) return; try { await getAPI().del('pos_compra_pagos', 'id=eq.' + pid); toast('ok', 'Pago eliminado'); window.nxPosProvVer(provId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); } };
+  window.nxPosDelProv = async function (id) {
+    if (!confirm('¿Eliminar este proveedor?')) return;
+    try { await getAPI().patch('pos_proveedores', 'id=eq.' + id, { activo: false }); toast('ok', 'Proveedor eliminado'); cerrarModal('nxPosProv'); _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; const v = document.getElementById('v-pos'); if (v) renderPOS(v); if (document.getElementById('nxPosProvs')) window.nxPosProveedores(); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
   // ── TAB: CAJA (apertura / arqueo / cierre) ──
