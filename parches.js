@@ -13610,11 +13610,27 @@
   let _cart = [];
   let _posTab = 'vender';
   let _posCat = 'todas';
+  let _caja = null, _cajaTot = null, _cierres = [];
 
   async function cargarPOS() {
     _cats = await getAPI().get('pos_categorias', 'select=*&order=orden.asc,nombre.asc') || [];
     _prods = await getAPI().get('pos_productos', 'select=*&activo=eq.true&order=nombre.asc') || [];
     try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _clientes = []; }
+    try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; } catch (e) { _caja = null; }
+  }
+  async function totalesCaja(caja) {
+    let ventas = [], abonos = [], movs = [];
+    try { ventas = await getAPI().get('pos_ventas', 'select=metodo_pago,total,a_credito&caja_id=eq.' + caja.id + '&estado=eq.completada') || []; } catch (e) {}
+    try { abonos = await getAPI().get('pos_abonos', 'select=metodo,monto&caja_id=eq.' + caja.id) || []; } catch (e) {}
+    try { movs = await getAPI().get('pos_caja_movimientos', 'select=*&caja_id=eq.' + caja.id + '&order=fecha.asc') || []; } catch (e) {}
+    let efe = 0, tar = 0, tra = 0, cre = 0;
+    ventas.forEach(v => { const tot = Number(v.total || 0); if (v.a_credito) cre += tot; else if (v.metodo_pago === 'Tarjeta') tar += tot; else if (v.metodo_pago === 'Transferencia') tra += tot; else efe += tot; });
+    let abEfe = 0, abOtro = 0;
+    abonos.forEach(a => { const m = Number(a.monto || 0); if ((a.metodo || 'Efectivo') === 'Efectivo') abEfe += m; else abOtro += m; });
+    let ent = 0, sal = 0;
+    movs.forEach(m => { const mo = Number(m.monto || 0); if (m.tipo === 'entrada') ent += mo; else sal += mo; });
+    const esperado = Number(caja.monto_inicial || 0) + efe + abEfe + ent - sal;
+    return { efe: efe, tar: tar, tra: tra, cre: cre, abEfe: abEfe, abOtro: abOtro, ent: ent, sal: sal, esperado: esperado, movs: movs, nventas: ventas.length };
   }
   async function cargarVentas() {
     _ventas = await getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=100') || [];
@@ -13669,6 +13685,7 @@
     const view = document.getElementById('v-pos'); if (!view) return;
     if (t === 'ventas') { try { await cargarVentas(); } catch (e) {} }
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
+    if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {} }
     renderPOS(view);
   };
 
@@ -13679,11 +13696,12 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">Multiempresa · solo el administrador</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'productos') body = renderProductos();
     else if (_posTab === 'clientes') body = renderClientes();
+    else if (_posTab === 'caja') body = renderCaja();
     else body = renderVentas();
     view.innerHTML = `<div class="nc">${head}${body}</div>`;
     if (_posTab === 'vender') pintarCarrito();
@@ -13809,7 +13827,7 @@
       cliente_id: cliId, cliente_nombre: cliNom, a_credito: cred,
       subtotal: t.subtotal, itbis: t.itbis, total: t.total,
       metodo_pago: met, recibido: cred ? 0 : (rec || t.total), devuelta: dev,
-      estado: 'completada', created_by_name: nomAdmin()
+      estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     try {
       const r = await getAPI().post('pos_ventas', body);
@@ -14092,7 +14110,7 @@
   window.nxPosAbonar = async function (id) {
     const monto = parseMoney(val('posAbMonto')); if (monto <= 0) { toast('err', 'Pon el monto del abono'); return; }
     try {
-      await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, created_by_name: nomAdmin() });
+      await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
       _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
       toast('ok', 'Abono registrado', fmt(monto));
       window.nxPosCliVer(id);
@@ -14121,6 +14139,149 @@
     const msg = `Hola ${nom}, le recordamos su cuenta pendiente:\n• Saldo: ${fmt(saldo)}\n\nGracias.\n${empNom()}`;
     window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
   };
+
+  // ── TAB: CAJA (apertura / arqueo / cierre) ──
+  function renderCaja() {
+    const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? '#dc2626' : Number(c.descuadre) > 0 ? '#ea580c' : '#16a34a'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:#94a3b8;font-size:11px;padding:14px">Sin cierres aún</td></tr>';
+    const histo = `<div style="font-size:11px;font-weight:800;color:#475569;margin:14px 0 4px">CIERRES RECIENTES</div><div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Fecha cierre</th><th style="text-align:right">Esperado</th><th style="text-align:right">Descuadre</th></tr></thead><tbody>${cierresHTML}</tbody></table></div>`;
+    if (!_caja) {
+      return `<div class="nc" style="border:1px solid #e2e8f0;max-width:420px">
+          <div style="text-align:center;padding:6px 0 12px"><i class="ti ti-lock" style="font-size:34px;color:#94a3b8"></i><div style="font-weight:800;color:#1e293b;margin-top:6px">Caja cerrada</div><div style="font-size:11px;color:#64748b">Abre la caja para empezar el turno.</div></div>
+          <div class="fr nxPrForm" style="display:block"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Monto inicial (fondo)</label><input id="cajaIni" data-nx-money inputmode="numeric" placeholder="0" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none"></div>
+          <button class="btn bc1" type="button" style="width:100%;margin-top:10px" onclick="window.nxPosAbrirCaja()"><i class="ti ti-lock-open"></i> Abrir caja</button>
+        </div>${histo}`;
+    }
+    const tt = _cajaTot || { efe: 0, tar: 0, tra: 0, cre: 0, abEfe: 0, ent: 0, sal: 0, esperado: Number(_caja.monto_inicial || 0), movs: [], nventas: 0 };
+    const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? '#059669' : '#dc2626'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:#94a3b8">${esc(m.concepto || m.tipo)}</span></div><button class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin movimientos</div>';
+    return `<div class="nc" style="border:1px solid #e2e8f0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:#16a34a;font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:#64748b">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px;margin-bottom:10px">
+          ${kpi('Efectivo', fmt(tt.efe), '#059669')}${kpi('Tarjeta', fmt(tt.tar), '#2563eb')}${kpi('Transfer.', fmt(tt.tra), '#7c3aed')}${kpi('Fiado', fmt(tt.cre), '#dc2626')}${kpi('Abonos efec.', fmt(tt.abEfe), '#059669')}
+        </div>
+        <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;color:#065f46;font-size:12px">Efectivo esperado en caja</span><b style="font-size:17px;color:#065f46">${fmt(tt.esperado)}</b></div>
+        <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 4px">MOVIMIENTOS DE EFECTIVO</div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:6px">${movsHTML}</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px"><button class="btn bsm bghost" type="button" onclick="window.nxPosMovimiento('entrada')"><i class="ti ti-plus"></i> Entrada</button><button class="btn bsm bghost" type="button" onclick="window.nxPosMovimiento('salida')"><i class="ti ti-minus"></i> Salida / Gasto</button></div>
+        <button class="btn bc1" type="button" style="width:100%" onclick="window.nxPosCerrarCaja()"><i class="ti ti-lock"></i> Cerrar caja / Arqueo</button>
+      </div>${histo}`;
+  }
+  window.nxPosAbrirCaja = async function () {
+    const ini = parseMoney(val('cajaIni'));
+    try {
+      const r = await getAPI().post('pos_cajas', { monto_inicial: ini, estado: 'abierta', created_by_name: nomAdmin() });
+      _caja = (r && r[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null;
+      toast('ok', 'Caja abierta', fmt(ini));
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo abrir', String(e && e.message || e)); }
+  };
+  window.nxPosMovimiento = function (tipo) {
+    if (!_caja) return;
+    cerrarModal('nxPosMov');
+    const ov = document.createElement('div'); ov.id = 'nxPosMov'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:380px"><div class="mt"><span><i class="ti ti-cash"></i> ${tipo === 'entrada' ? 'Entrada de efectivo' : 'Salida / Gasto'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosMov').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Concepto</label><input id="movConc" class="no-upper" placeholder="${tipo === 'entrada' ? 'Fondo extra, etc.' : 'Pago a proveedor, retiro...'}"></div>
+        <div class="fr"><label>Monto</label><input id="movMonto" data-nx-money inputmode="numeric" placeholder="0"></div>
+        <div class="fe" style="gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosMov').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosAddMov('${tipo}')"><i class="ti ti-check"></i> Registrar</button></div>
+      </div>`;
+    document.body.appendChild(ov); scanMoney(ov);
+  };
+  window.nxPosAddMov = async function (tipo) {
+    const monto = parseMoney(val('movMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
+    try {
+      await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: tipo, concepto: (val('movConc') || '').trim() || null, monto: monto, created_by_name: nomAdmin() });
+      cerrarModal('nxPosMov'); _cajaTot = await totalesCaja(_caja);
+      toast('ok', tipo === 'entrada' ? 'Entrada registrada' : 'Salida registrada', fmt(monto));
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxPosDelMov = async function (id) {
+    if (!confirm('¿Eliminar este movimiento?')) return;
+    try { await getAPI().del('pos_caja_movimientos', 'id=eq.' + id); _cajaTot = await totalesCaja(_caja); toast('ok', 'Movimiento eliminado'); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxPosCerrarCaja = function () {
+    if (!_caja || !_cajaTot) return;
+    cerrarModal('nxPosCierre');
+    const denoms = [2000, 1000, 500, 200, 100, 50, 25, 10, 5, 1];
+    const rows = denoms.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:2px 0"><span style="width:54px;font-size:12px;font-weight:700;color:#475569;text-align:right">${d.toLocaleString('en-US')}</span><span style="color:#cbd5e1">×</span><input type="number" inputmode="numeric" min="0" data-den="${d}" value="0" oninput="window.nxPosDenom()" style="width:56px;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;text-align:center"><span data-densub="${d}" style="margin-left:auto;font-size:12px;color:#64748b">RD$ 0</span></div>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxPosCierre'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-lock"></i> Cerrar caja / Arqueo</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCierre').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:9px 12px;margin-bottom:10px;display:flex;justify-content:space-between"><span style="font-weight:700;color:#065f46;font-size:12px">Efectivo esperado</span><b style="color:#065f46;font-size:15px">${fmt(_cajaTot.esperado)}</b></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 6px">CONTEO DE EFECTIVO (opcional)</div>
+          <div id="cierreDenoms" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:10px">${rows}</div>
+          <div class="fr"><label>Efectivo contado</label><input id="cierreContado" inputmode="numeric" value="0" oninput="window.nxPosCierreCalc()" style="font-weight:800"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border-radius:10px;padding:9px 12px;margin-bottom:10px"><span style="font-weight:700;color:#475569;font-size:12px">Descuadre</span><b id="cierreDesc" style="font-size:15px;color:#16a34a">RD$ 0</b></div>
+          <div class="fr"><label>Notas (opcional)</label><input id="cierreNotas" class="no-upper" placeholder="Observaciones del turno"></div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosCierre').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosConfirmarCierre()"><i class="ti ti-check"></i> Cerrar caja</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPosDenom = function () {
+    let sum = 0;
+    document.querySelectorAll('#cierreDenoms [data-den]').forEach(inp => { const d = Number(inp.getAttribute('data-den')); const q = Number(inp.value) || 0; const st = d * q; sum += st; const lbl = document.querySelector('#cierreDenoms [data-densub="' + d + '"]'); if (lbl) lbl.textContent = 'RD$ ' + st.toLocaleString('en-US'); });
+    const c = document.getElementById('cierreContado'); if (c) c.value = sum.toLocaleString('en-US');
+    window.nxPosCierreCalc();
+  };
+  window.nxPosCierreCalc = function () {
+    const esperado = (_cajaTot && _cajaTot.esperado) || 0; const contado = parseMoney(val('cierreContado')); const desc = contado - esperado;
+    const el = document.getElementById('cierreDesc'); if (el) { el.textContent = (desc > 0 ? '+' : '') + fmt(desc); el.style.color = desc < 0 ? '#dc2626' : desc > 0 ? '#ea580c' : '#16a34a'; }
+  };
+  window.nxPosConfirmarCierre = async function () {
+    if (!_caja || !_cajaTot) return;
+    const tt = _cajaTot; const contado = parseMoney(val('cierreContado')); const desc = contado - tt.esperado;
+    const body = { estado: 'cerrada', cierre: new Date().toISOString(), ventas_efectivo: tt.efe, ventas_tarjeta: tt.tar, ventas_transferencia: tt.tra, ventas_credito: tt.cre, abonos_efectivo: tt.abEfe, entradas: tt.ent, salidas: tt.sal, efectivo_esperado: tt.esperado, efectivo_contado: contado, descuadre: desc, notas: (val('cierreNotas') || '').trim() || null };
+    try {
+      await getAPI().patch('pos_cajas', 'id=eq.' + _caja.id, body);
+      const cerrada = Object.assign({}, _caja, body, { monto_inicial: _caja.monto_inicial });
+      toast('ok', 'Caja cerrada', 'Descuadre ' + (desc > 0 ? '+' : '') + fmt(desc));
+      cerrarModal('nxPosCierre');
+      const movs = (tt.movs || []).slice();
+      _caja = null; _cajaTot = null;
+      try { _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {}
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+      imprimirCierre(cerrada, movs);
+    } catch (e) { toast('err', 'No se pudo cerrar', String(e && e.message || e)); }
+  };
+  window.nxPosVerCierre = async function (id) {
+    let c = _cierres.find(x => String(x.id) === String(id));
+    if (!c) { try { const r = await getAPI().get('pos_cajas', 'select=*&id=eq.' + id); c = r && r[0]; } catch (e) {} }
+    if (!c) return;
+    let movs = []; try { movs = await getAPI().get('pos_caja_movimientos', 'select=*&caja_id=eq.' + id + '&order=fecha.asc') || []; } catch (e) {}
+    imprimirCierre(c, movs);
+  };
+  function imprimirCierre(c, movs) {
+    const e = empInfo();
+    const row = (l, v, col) => `<tr><td>${l}</td><td style="text-align:right${col ? ';color:' + col : ''}">${fmt(v)}</td></tr>`;
+    const movHTML = (movs || []).length ? movs.map(m => `<tr><td>${m.tipo === 'entrada' ? '➕' : '➖'} ${esc(m.concepto || m.tipo)}</td><td style="text-align:right;color:${m.tipo === 'entrada' ? '#059669' : '#dc2626'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</td></tr>`).join('') : '';
+    const desc = Number(c.descuadre || 0);
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cierre de caja</title>
+      <style>body{font-family:Arial,sans-serif;color:#1e293b;max-width:420px;margin:0 auto;padding:18px;font-size:13px}h1{font-size:17px;text-align:center;margin:0}.muted{color:#64748b;font-size:11px;text-align:center}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:6px 4px;border-bottom:1px solid #eef2f6}.tit{font-size:11px;font-weight:800;color:#475569;margin:10px 0 2px}.big td{font-size:15px;font-weight:800}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-18px -18px 12px;padding:10px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button></div>
+        <h1>📋 Cierre de Caja</h1>
+        <div class="muted">${esc(e.nom)} · ${c.created_by_name ? esc(c.created_by_name) + ' · ' : ''}${fechaDMY(c.cierre)}</div>
+        <div class="muted">Apertura: ${fechaDMY(c.apertura)}</div>
+        <div class="tit">VENTAS DEL TURNO</div>
+        <table>
+          ${row('Efectivo', c.ventas_efectivo)}${row('Tarjeta', c.ventas_tarjeta)}${row('Transferencia', c.ventas_transferencia)}${row('Fiado (crédito)', c.ventas_credito, '#dc2626')}${row('Abonos en efectivo', c.abonos_efectivo, '#059669')}
+        </table>
+        <div class="tit">EFECTIVO</div>
+        <table>
+          ${row('Fondo inicial', c.monto_inicial)}${row('+ Ventas efectivo', c.ventas_efectivo)}${row('+ Abonos efectivo', c.abonos_efectivo)}${row('+ Entradas', c.entradas)}${row('− Salidas/Gastos', c.salidas)}
+          <tr class="big"><td>Efectivo esperado</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td></tr>
+          <tr class="big"><td>Efectivo contado</td><td style="text-align:right">${fmt(c.efectivo_contado)}</td></tr>
+          <tr class="big"><td>Descuadre</td><td style="text-align:right;color:${desc < 0 ? '#dc2626' : desc > 0 ? '#ea580c' : '#16a34a'}">${desc > 0 ? '+' : ''}${fmt(desc)}</td></tr>
+        </table>
+        ${movHTML ? '<div class="tit">MOVIMIENTOS</div><table>' + movHTML + '</table>' : ''}
+        ${c.notas ? '<div class="muted" style="text-align:left;margin-top:6px">📝 ' + esc(c.notas) + '</div>' : ''}
+        <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:16px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🖨️ Imprimir</button>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el cierre'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  }
 
   // ── CSS + registro en el hub ──
   function inyectarCSS() {
