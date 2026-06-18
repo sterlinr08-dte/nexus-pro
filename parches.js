@@ -13611,13 +13611,24 @@
   let _posTab = 'vender';
   let _posCat = 'todas';
   let _caja = null, _cajaTot = null, _cierres = [];
+  let _proveedores = [], _compras = [], _compraItems = [];
+  let _cxpByProv = {}, _pagosProvByProv = {};
 
   async function cargarPOS() {
     _cats = await getAPI().get('pos_categorias', 'select=*&order=orden.asc,nombre.asc') || [];
     _prods = await getAPI().get('pos_productos', 'select=*&activo=eq.true&order=nombre.asc') || [];
     try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _clientes = []; }
+    try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _proveedores = []; }
     try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; } catch (e) { _caja = null; }
   }
+  async function cargarComprasTab() {
+    try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
+    try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; } catch (e) { _compras = []; }
+    _cxpByProv = {}; _pagosProvByProv = {};
+    try { const cc = await getAPI().get('pos_compras', 'select=proveedor_id,total&a_credito=eq.true') || []; cc.forEach(c => { if (c.proveedor_id) _cxpByProv[c.proveedor_id] = (_cxpByProv[c.proveedor_id] || 0) + Number(c.total || 0); }); } catch (e) {}
+    try { const pp = await getAPI().get('pos_compra_pagos', 'select=proveedor_id,monto') || []; pp.forEach(p => { if (p.proveedor_id) _pagosProvByProv[p.proveedor_id] = (_pagosProvByProv[p.proveedor_id] || 0) + Number(p.monto || 0); }); } catch (e) {}
+  }
+  function saldoProv(p) { const id = p && p.id; return Math.max(0, (_cxpByProv[id] || 0) - (_pagosProvByProv[id] || 0)); }
   async function totalesCaja(caja) {
     let ventas = [], abonos = [], movs = [];
     try { ventas = await getAPI().get('pos_ventas', 'select=metodo_pago,total,a_credito&caja_id=eq.' + caja.id + '&estado=eq.completada') || []; } catch (e) {}
