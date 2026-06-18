@@ -13878,9 +13878,9 @@
       if (!venta) throw new Error('No se pudo registrar la venta');
       const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, importe: Math.round(it.precio * it.cantidad) }));
       try { await getAPI().post('pos_venta_items', items); } catch (e) {}
-      // descontar stock (best-effort)
+      // descontar stock (best-effort; los servicios no manejan stock)
       for (const it of _cart) {
-        try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const ns = Number(p.stock || 0) - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
+        try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const ns = Number(p.stock || 0) - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
       }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
@@ -13934,16 +13934,22 @@
 
   // ── TAB: PRODUCTOS ──
   function renderProductos() {
-    const filas = _prods.length ? _prods.map(p => `<tr>
-        <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#94a3b8">${esc(p.codigo || '')}${p.categoria_id ? ' · ' + esc(catNombre(p.categoria_id)) : ''}</div></td>
+    const bajos = _prods.filter(p => p.tipo !== 'servicio' && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0).length;
+    const filas = _prods.length ? _prods.map(p => {
+      const serv = p.tipo === 'servicio';
+      const bajo = !serv && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0;
+      return `<tr>
+        <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#7c3aed;background:#faf5ff;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#94a3b8">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
         <td style="text-align:right;font-weight:700">${fmt(p.precio)}</td>
-        <td style="text-align:right;color:${Number(p.stock) <= 0 ? '#dc2626' : '#64748b'}">${Number(p.stock || 0)}</td>
+        <td style="text-align:right;color:${serv ? '#cbd5e1' : (Number(p.stock) <= 0 ? '#dc2626' : bajo ? '#ea580c' : '#64748b')}">${serv ? '—' : Number(p.stock || 0)}${bajo ? ' <i class="ti ti-alert-triangle" style="font-size:11px"></i>' : ''}</td>
         <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#94a3b8">—</span>'}</td>
         <td style="white-space:nowrap;text-align:right"><button class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin productos. Toca "Nuevo" para agregar.</td></tr>';
-    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin productos. Toca "Nuevo" para agregar.</td></tr>';
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
+        ${bajos > 0 ? `<span style="font-size:10.5px;color:#ea580c;font-weight:700;margin-left:auto"><i class="ti ti-alert-triangle"></i> ${bajos} con stock bajo</span>` : ''}
       </div>
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Precio</th><th style="text-align:right">Stock</th><th style="text-align:center">ITBIS</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
@@ -13980,6 +13986,15 @@
             <div class="fr"><label>¿Lleva ITBIS (18%)?</label><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div>
             <div class="fr"><label>Imagen (URL opcional)</label><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div>
           </div>
+          <div class="fr-row">
+            <div class="fr"><label>Tipo</label><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div>
+            <div class="fr"><label>Stock mínimo (alerta)</label><input id="ppMin" inputmode="numeric" value="${e.stock_min != null ? Number(e.stock_min) : '0'}" placeholder="0"></div>
+          </div>
+          <div class="fr-row">
+            <div class="fr"><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div>
+            <div class="fr"><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div>
+          </div>
+          <div class="fr"><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite descuento</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
           <button class="btn bghost" type="button" onclick="document.getElementById('nxPosProd').remove()">Cancelar</button>
@@ -13991,6 +14006,7 @@
   }
   window.nxPosGuardarProd = async function (id) {
     const precio = parseMoney(val('ppPre'));
+    const tipo = val('ppTipo') === 'servicio' ? 'servicio' : 'producto';
     const body = {
       nombre: (val('ppNom') || '').trim(),
       referencia: (val('ppRef') || '').trim() || null,
@@ -14001,8 +14017,13 @@
       precio: precio,
       precio_credito: parseMoney(val('ppPreCred')) || precio,
       costo: parseMoney(val('ppCos')),
-      stock: Number(String(val('ppStk') || '0').replace(/[^0-9.-]/g, '')) || 0,
-      itbis: val('ppItb') === '1'
+      stock: tipo === 'servicio' ? 0 : (Number(String(val('ppStk') || '0').replace(/[^0-9.-]/g, '')) || 0),
+      itbis: val('ppItb') === '1',
+      tipo: tipo,
+      stock_min: Number(String(val('ppMin') || '0').replace(/[^0-9.-]/g, '')) || 0,
+      garantia_dias: parseInt(val('ppGar'), 10) || 0,
+      serial: val('ppSer') === '1',
+      no_descuento: val('ppNoDesc') === '1'
     };
     if (!body.nombre) { toast('err', 'Pon el nombre del producto'); return; }
     try {
