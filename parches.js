@@ -13605,7 +13605,8 @@
   function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
   function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'NEXUS PRO', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
 
-  let _cats = [], _prods = [], _ventas = [];
+  let _cats = [], _prods = [], _ventas = [], _clientes = [];
+  let _fiadoByCli = {}, _abonosByCli = {};
   let _cart = [];
   let _posTab = 'vender';
   let _posCat = 'todas';
@@ -13613,10 +13614,22 @@
   async function cargarPOS() {
     _cats = await getAPI().get('pos_categorias', 'select=*&order=orden.asc,nombre.asc') || [];
     _prods = await getAPI().get('pos_productos', 'select=*&activo=eq.true&order=nombre.asc') || [];
+    try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _clientes = []; }
   }
   async function cargarVentas() {
     _ventas = await getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=100') || [];
   }
+  async function cargarSaldosCli() {
+    _fiadoByCli = {}; _abonosByCli = {};
+    try {
+      const fi = await getAPI().get('pos_ventas', 'select=cliente_id,total&a_credito=eq.true') || [];
+      fi.forEach(v => { if (v.cliente_id) _fiadoByCli[v.cliente_id] = (_fiadoByCli[v.cliente_id] || 0) + Number(v.total || 0); });
+      const ab = await getAPI().get('pos_abonos', 'select=cliente_id,monto') || [];
+      ab.forEach(a => { if (a.cliente_id) _abonosByCli[a.cliente_id] = (_abonosByCli[a.cliente_id] || 0) + Number(a.monto || 0); });
+    } catch (e) {}
+  }
+  function saldoCli(c) { const id = c && c.id; return Math.max(0, (_fiadoByCli[id] || 0) - (_abonosByCli[id] || 0)); }
+  function waNum(t) { let d = String(t || '').replace(/\D/g, ''); if (d.length === 10) d = '1' + d; return d.length >= 11 ? d : ''; }
 
   function totales() {
     let total = 0, itbis = 0;
@@ -13655,6 +13668,7 @@
     _posTab = t;
     const view = document.getElementById('v-pos'); if (!view) return;
     if (t === 'ventas') { try { await cargarVentas(); } catch (e) {} }
+    if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
     renderPOS(view);
   };
 
@@ -13665,10 +13679,11 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">Multiempresa · solo el administrador</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'productos') body = renderProductos();
+    else if (_posTab === 'clientes') body = renderClientes();
     else body = renderVentas();
     view.innerHTML = `<div class="nc">${head}${body}</div>`;
     if (_posTab === 'vender') pintarCarrito();
@@ -13749,14 +13764,16 @@
       <div class="modal nxPrForm" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosPago').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div class="fr"><label>Cliente (opcional)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente"></div>
-          <div class="fr"><label>Método de pago</label><select id="posMet" onchange="window.nxPosMet()"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select></div>
+          <div class="fr"><label>Cliente</label><select id="posCliId" onchange="window.nxPosCliSel()"><option value="">— Consumidor final —</option>${_clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('')}</select></div>
+          <div class="fr" id="posCliNomBox"><label>Nombre (opcional, para el ticket)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente"></div>
+          <div class="fr"><label>Método de pago</label><select id="posMet" onchange="window.nxPosMet()"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option><option value="Crédito">Crédito (fiar)</option></select></div>
           <div id="posEfeBox">
             <div class="fr-row">
               <div class="fr"><label>Recibido</label><input id="posRec" data-nx-money inputmode="numeric" placeholder="${Math.round(t.total)}" oninput="window.nxPosDevuelta()"></div>
               <div class="fr"><label>Devuelta</label><input id="posDev" readonly value="RD$ 0" style="background:#f8fafc;font-weight:800"></div>
             </div>
           </div>
+          <div id="posCredBox" style="display:none"><div style="font-size:11.5px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:8px 10px">Esta venta queda <b>fiada</b>. Se sumará <b>${fmt(t.total)}</b> a la cuenta del cliente. <span id="posCredWarn"></span></div></div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
           <button class="btn bghost" type="button" onclick="document.getElementById('nxPosPago').remove()">Cancelar</button>
@@ -13766,7 +13783,13 @@
     document.body.appendChild(ov);
     scanMoney(ov);
   };
-  window.nxPosMet = function () { const m = val('posMet'); const box = document.getElementById('posEfeBox'); if (box) box.style.display = (m === 'Efectivo') ? '' : 'none'; };
+  window.nxPosMet = function () {
+    const m = val('posMet');
+    const efe = document.getElementById('posEfeBox'); if (efe) efe.style.display = (m === 'Efectivo') ? '' : 'none';
+    const cred = document.getElementById('posCredBox'); if (cred) cred.style.display = (m === 'Crédito') ? '' : 'none';
+    const warn = document.getElementById('posCredWarn'); if (warn) warn.innerHTML = (m === 'Crédito' && !val('posCliId')) ? '<b style="color:#dc2626">Elige un cliente para fiar.</b>' : '';
+  };
+  window.nxPosCliSel = function () { const box = document.getElementById('posCliNomBox'); const id = val('posCliId'); if (box) box.style.display = id ? 'none' : ''; window.nxPosMet(); };
   window.nxPosDevuelta = function () {
     const t = totales(); const rec = parseMoney(val('posRec')); const dev = Math.max(0, rec - t.total);
     const el = document.getElementById('posDev'); if (el) el.value = fmt(dev);
@@ -13775,13 +13798,17 @@
     if (!_cart.length) return;
     const t = totales();
     const met = val('posMet') || 'Efectivo';
-    const rec = met === 'Efectivo' ? parseMoney(val('posRec')) : t.total;
+    const cred = met === 'Crédito';
+    const cliId = val('posCliId') || null;
+    if (cred && !cliId) { toast('err', 'Para fiar, elige un cliente'); return; }
+    const rec = cred ? 0 : (met === 'Efectivo' ? parseMoney(val('posRec')) : t.total);
     if (met === 'Efectivo' && rec > 0 && rec < t.total) { toast('err', 'Recibido menor al total'); return; }
-    const dev = Math.max(0, (rec || t.total) - t.total);
+    const dev = cred ? 0 : Math.max(0, (rec || t.total) - t.total);
+    const cliNom = cliId ? ((_clientes.find(c => String(c.id) === String(cliId)) || {}).nombre || null) : ((val('posCli') || '').trim() || null);
     const body = {
-      cliente_nombre: (val('posCli') || '').trim() || null,
+      cliente_id: cliId, cliente_nombre: cliNom, a_credito: cred,
       subtotal: t.subtotal, itbis: t.itbis, total: t.total,
-      metodo_pago: met, recibido: rec || t.total, devuelta: dev,
+      metodo_pago: met, recibido: cred ? 0 : (rec || t.total), devuelta: dev,
       estado: 'completada', created_by_name: nomAdmin()
     };
     try {
@@ -13794,7 +13821,8 @@
       for (const it of _cart) {
         try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const ns = Number(p.stock || 0) - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
       }
-      toast('ok', 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(t.total));
+      if (cred && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + t.total; }
+      toast('ok', cred ? 'Venta a crédito (fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(t.total));
       const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), _items: items });
       _cart = [];
       cerrarModal('nxPosPago');
@@ -13961,6 +13989,138 @@
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Cliente</th><th>Pago</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
   function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
+
+  // ── TAB: CLIENTES (fiado / cuentas por cobrar) ──
+  function renderClientes() {
+    const totalCobrar = _clientes.reduce((s, c) => s + saldoCli(c), 0);
+    const conDeuda = _clientes.filter(c => saldoCli(c) > 0).length;
+    const filas = _clientes.length ? _clientes.map(c => {
+      const sal = saldoCli(c);
+      return `<tr onclick="window.nxPosCliVer('${c.id}')" style="cursor:pointer">
+        <td><div style="font-weight:700;font-size:12px">${esc(c.nombre)}</div><div style="font-size:10px;color:#94a3b8">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
+        <td style="text-align:right;font-weight:800;color:${sal > 0 ? '#dc2626' : '#16a34a'}">${fmt(sal)}</td>
+        <td style="text-align:right"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta"><i class="ti ti-eye"></i></button></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin clientes. Toca "Nuevo cliente".</td></tr>';
+    return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
+        ${kpi('Clientes', _clientes.length, '#2563eb')}
+        ${kpi('Por cobrar (fiado)', fmt(totalCobrar), totalCobrar > 0 ? '#dc2626' : '#16a34a')}
+        ${kpi('Con deuda', conDeuda, '#ea580c')}
+      </div>
+      <div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (fiado)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+  window.nxPosNuevoCli = function () { abrirCli(null); };
+  window.nxPosEditCli = function (id) { const c = _clientes.find(x => String(x.id) === String(id)); if (c) abrirCli(c); };
+  function abrirCli(c) {
+    cerrarModal('nxPosCliForm');
+    const e = c || {};
+    const ov = document.createElement('div'); ov.id = 'nxPosCliForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-user"></i> ${c ? 'Editar cliente' : 'Nuevo cliente'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCliForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div class="fr"><label>Nombre *</label><input id="pcNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del cliente"></div>
+          <div class="fr-row"><div class="fr"><label>Cédula / RNC</label><input id="pcCed" class="no-upper" value="${esc(e.cedula || '')}" placeholder="000-0000000-0"></div><div class="fr"><label>Teléfono</label><input id="pcTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div></div>
+          <div class="fr"><label>Dirección</label><input id="pcDir" class="no-upper" value="${esc(e.direccion || '')}" placeholder="Opcional"></div>
+          <div class="fr"><label>Límite de crédito (opcional)</label><input id="pcLim" data-nx-money inputmode="numeric" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite"></div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosGuardarCli('${c ? c.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    scanMoney(ov);
+  }
+  window.nxPosGuardarCli = async function (id) {
+    const body = { nombre: (val('pcNom') || '').trim(), cedula: (val('pcCed') || '').trim() || null, telefono: (val('pcTel') || '').trim() || null, direccion: (val('pcDir') || '').trim() || null, limite_credito: parseMoney(val('pcLim')) };
+    if (!body.nombre) { toast('err', 'Pon el nombre del cliente'); return; }
+    try {
+      if (id) await getAPI().patch('pos_clientes', 'id=eq.' + id, body);
+      else await getAPI().post('pos_clientes', body);
+      toast('ok', id ? 'Cliente actualizado' : 'Cliente agregado', body.nombre);
+      cerrarModal('nxPosCliForm');
+      _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || [];
+      const view = document.getElementById('v-pos'); if (view) renderPOS(view);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxPosCliVer = async function (id) {
+    const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
+    cerrarModal('nxPosCli');
+    let ventas = [], abonos = [];
+    try { ventas = await getAPI().get('pos_ventas', 'select=*&cliente_id=eq.' + id + '&a_credito=eq.true&order=created_at.desc') || []; } catch (e) {}
+    try { abonos = await getAPI().get('pos_abonos', 'select=*&cliente_id=eq.' + id + '&order=fecha.desc') || []; } catch (e) {}
+    const totFiado = ventas.reduce((s, v) => s + Number(v.total || 0), 0);
+    const totAb = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
+    const saldo = Math.max(0, totFiado - totAb);
+    _fiadoByCli[id] = totFiado; _abonosByCli[id] = totAb;
+    const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>#${v.numero || ''} <span style="color:#94a3b8">${fechaDMY(v.fecha || v.created_at)}</span></div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.total)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin ventas fiadas</div>';
+    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#94a3b8">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(a.nota)}</div>` : ''}</div><button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin abonos</div>';
+    const ov = document.createElement('div'); ov.id = 'nxPosCli'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-user"></i> ${esc(c.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCli').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
+            ${kpi('Fiado total', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
+          </div>
+          ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR ABONO</div>
+            <div style="display:flex;gap:6px;margin-bottom:6px"><input id="posAbMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;outline:none"><input id="posAbFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"></div>
+            <div style="display:flex;gap:6px"><select id="posAbMet" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><input id="posAbNota" class="no-upper" placeholder="Nota" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><button class="btn bc1 bsm" type="button" onclick="window.nxPosAbonar('${id}')"><i class="ti ti-plus"></i></button></div>
+          </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px">✓ Sin deuda</div>'}
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">VENTAS FIADAS (${ventas.length})</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${ventasHTML}</div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">ABONOS (${abonos.length})</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${abonosHTML}</div>
+        </div>
+        <div class="fe" style="margin-top:10px;gap:8px">
+          ${waNum(c.telefono) ? `<button class="btn bwa bsm" type="button" onclick="window.nxPosCliWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
+          <button class="btn bsm bghost" type="button" onclick="window.nxPosEditCli('${id}')"><i class="ti ti-edit"></i> Editar</button>
+          <button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPosDelCli('${id}')"><i class="ti ti-trash"></i> Borrar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    scanMoney(ov);
+  };
+  window.nxPosTicketVenta = async function (ventaId) {
+    let v = _ventas.find(x => String(x.id) === String(ventaId));
+    if (!v) { try { const r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + ventaId); v = r && r[0]; } catch (e) {} }
+    if (!v) return;
+    let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
+    ticketHTML(Object.assign({}, v, { _items: items }));
+  };
+  window.nxPosAbonar = async function (id) {
+    const monto = parseMoney(val('posAbMonto')); if (monto <= 0) { toast('err', 'Pon el monto del abono'); return; }
+    try {
+      await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, created_by_name: nomAdmin() });
+      _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
+      toast('ok', 'Abono registrado', fmt(monto));
+      window.nxPosCliVer(id);
+      const view = document.getElementById('v-pos'); if (view && _posTab === 'clientes') renderPOS(view);
+    } catch (e) { toast('err', 'No se pudo registrar', String(e && e.message || e)); }
+  };
+  window.nxPosDelAbono = async function (abId, cliId) {
+    if (!confirm('¿Eliminar este abono?')) return;
+    try { await getAPI().del('pos_abonos', 'id=eq.' + abId); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxPosDelCli = async function (id) {
+    const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
+    if (saldoCli(c) > 0 && !confirm('Este cliente tiene saldo pendiente. ¿Eliminarlo de todos modos?')) return;
+    if (saldoCli(c) <= 0 && !confirm('¿Eliminar el cliente "' + c.nombre + '"?')) return;
+    try {
+      await getAPI().patch('pos_clientes', 'id=eq.' + id, { activo: false });
+      toast('ok', 'Cliente eliminado'); cerrarModal('nxPosCli');
+      _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || [];
+      const view = document.getElementById('v-pos'); if (view) renderPOS(view);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxPosCliWA = function (id) {
+    const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
+    const num = waNum(c.telefono); if (!num) { toast('err', 'Sin teléfono válido'); return; }
+    const saldo = saldoCli(c); const nom = (c.nombre || '').split(' ')[0] || '';
+    const msg = `Hola ${nom}, le recordamos su cuenta pendiente:\n• Saldo: ${fmt(saldo)}\n\nGracias.\n${empNom()}`;
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+  };
 
   // ── CSS + registro en el hub ──
   function inyectarCSS() {
