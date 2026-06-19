@@ -80,6 +80,32 @@ Vender NEXUS PRO a varios negocios con **un solo dominio** y **control general**
 - **Prerrequisito CRÍTICO antes de vender:** cerrar la seguridad (RLS por empresa)
   — ver `SEGURIDAD-PLAN.md` / `PLAN-AUTH-OPCION-A.md`.
 
+### Estado multi-empresa (Opción A) — construido por fases
+- **Tabla `organizaciones`** (NO confundir con `empresas`, que son las cotizantes del
+  seguro): cada negocio cliente. Campos: `slug` (el `@sufijo`), `nombre`, `tipo`
+  (`seguros`|`tienda`...), `logo`, `color`, `dominio`, `activo`.
+- **`usuarios_sistema.organizacion_id`** liga cada usuario a su organización.
+  Org por defecto: `nexus-pro` (Correduría de Seguros). Demo tienda: `bayolsale`
+  (Bayolsale Celulares), usuario `francis`.
+- **Login Auth (Supabase Auth, activo por defecto):** `<user>@nexus-pro.local`.
+  La sesión se arma desde `profiles`; el helper JS `nxCargarOrg()` carga
+  `sesion.org` (vía `usuarios_sistema.organizacion_id`). Crear usuario nuevo =
+  fila en `auth.users` (con `crypt()` y **todos** los token-cols en `''`, si no el
+  login falla) + `auth.identities` + `profiles`.
+- **Fase 2 (módulos por tipo):** `aplicarOrgSidebar()` + CSS `body.org-tienda`
+  ocultan toda la navegación de seguros (sidebar, barra inferior móvil
+  `.mobile-bottom-nav-clean`, FAB `.nx-fab`) y abren el POS directo para `tipo='tienda'`.
+- **Fase 3 (separación de datos, RLS) — POS HECHO y verificado:** todas las tablas
+  `pos_*` tienen `organizacion_id` + trigger `set_organizacion_id()` (autocompleta
+  con `mi_organizacion()` en cada INSERT) + política RLS
+  `mi_rol()='admin' AND organizacion_id = mi_organizacion()`. Helper
+  `mi_organizacion()` (security definer: `auth.uid()`→`profiles`→`usuarios_sistema`).
+  Verificado: Sterling ve 5 productos, Francis ve 0. **Las tablas del SEGURO
+  (clientes, polizas, facturas, asientos...) AÚN no tienen `organizacion_id`/RLS por
+  org — pendiente, hacer tabla por tabla y probado.**
+- **Pendiente:** Fase 3 para tablas de seguros · Fase 4 = panel de **control general**
+  del dueño (superadmin que ve todas las organizaciones) · marca blanca por dominio.
+
 ---
 
 ## Reglas obligatorias en cada cambio (de `REGLAS-ACTUALIZACION.md`)
