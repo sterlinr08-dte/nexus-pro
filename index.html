@@ -2658,13 +2658,7 @@ async function doLogin(){
     }
     localStorage.removeItem(lk);localStorage.removeItem(lk+'_t');
     sesion=users[0];
-    // Fase 1 multi-empresa (Opción A): cargar la organización del usuario.
-    try{
-      if(sesion.organizacion_id){
-        const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(sesion.organizacion_id)}&select=*`);
-        sesion.org=(orgs&&orgs[0])||null;
-      }
-    }catch(e){}
+    await nxCargarOrg(); // multi-empresa: carga la organización del usuario
     const recordar=document.getElementById('rememberMe')?.checked;
     const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,organizacion_id:sesion.organizacion_id||null,inicio:Date.now()});
     sessionStorage.setItem('nx_sesion',sesData);
@@ -3134,7 +3128,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.2';
+const APP_VERSION='23.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3742,6 +3736,23 @@ function aplicarRolSidebar(){
   if(sbContab&&!puedeContab)sbContab.style.maxHeight='0';
 }
 
+// ── Multi-empresa: cargar la organización del usuario en sesion.org ──
+// Funciona en login viejo (sesion.organizacion_id) y en Auth (busca por usuario_sistema_id).
+async function nxCargarOrg(){
+  try{
+    if(!sesion || sesion.org) return;
+    let orgId=sesion.organizacion_id;
+    if(!orgId && sesion.id){
+      const u=await API.get('usuarios_sistema',`id=eq.${encodeURIComponent(sesion.id)}&select=organizacion_id`);
+      orgId=(u&&u[0]&&u[0].organizacion_id)||null; sesion.organizacion_id=orgId;
+    }
+    if(orgId){
+      const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(orgId)}&select=*`);
+      sesion.org=(orgs&&orgs[0])||null;
+    }
+  }catch(e){}
+}
+
 // ── Fase 2 multi-empresa: módulos según el TIPO de organización ──
 // 'tienda' → solo Punto de Venta (POS directo). 'seguros'/otros → comportamiento normal.
 let _orgTiendaAplicada=false;
@@ -4193,13 +4204,7 @@ async function iniciarApp(){
   resetIdle(); // Iniciar contador de inactividad
   activarMayusculasGlobales(); // Mayúsculas automáticas en inputs
   cargarTemaGuardado(); // Aplicar tema visual guardado
-  // Fase 1 multi-empresa (Opción A): asegurar la organización cargada (login o sesión restaurada).
-  try{
-    if(sesion && !sesion.org && sesion.organizacion_id){
-      const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(sesion.organizacion_id)}&select=*`);
-      sesion.org=(orgs&&orgs[0])||null;
-    }
-  }catch(e){}
+  await nxCargarOrg(); // multi-empresa: organización del usuario (login o sesión restaurada)
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('setupScreen').style.display='none';
   document.getElementById('app').style.display='flex';
@@ -4256,13 +4261,7 @@ async function cargarDatosNucleo(){
 
 async function cargarTodo(){
   try{
-    // Fase 1 multi-empresa (Opción A): organización del usuario disponible en sesion.org.
-    try{
-      if(sesion && !sesion.org && sesion.organizacion_id){
-        const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(sesion.organizacion_id)}&select=*`);
-        sesion.org=(orgs&&orgs[0])||null;
-      }
-    }catch(e){}
+    await nxCargarOrg(); // multi-empresa: organización del usuario disponible en sesion.org
     await cargarDatosNucleo();
     actualizarTicker();
     verificarAlertas();
