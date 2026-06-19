@@ -1,7 +1,8 @@
 {
-  "version": "23.3",
+  "version": "23.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO: en la pantalla de entrada (login) ahora hay un OJITO en la contraseña para ver u ocultar lo que escribes. Así confirmas que pusiste bien la clave antes de entrar",
     "ARREGLADO multi-empresa: el reconocimiento de la EMPRESA del usuario ahora funciona también con el login seguro (Supabase Auth), no solo con el login viejo. Así, al entrar con la cuenta de una tienda, el sistema ya sabe que es 'tienda' y muestra el Punto de Venta directo",
     "NUEVO multi-empresa (Fase 2): el sistema ahora muestra MÓDULOS según el TIPO de empresa. Una empresa tipo 'tienda' entra y ve DIRECTO el Punto de Venta (sin nada de seguros); una empresa tipo 'seguros' ve todo lo de siempre (pólizas, facturas, etc.). Tu cuenta de seguros NO cambia en nada. (Nota: la separación total de datos entre empresas llega en la Fase 3, con la seguridad.)",
     "INTERNO (preparación para vender a varios negocios): el sistema ahora identifica a qué EMPRESA/ORGANIZACIÓN pertenece cada usuario al entrar, y entiende el login con formato usuario@empresa. Es el primer paso (invisible) del modo multi-empresa, para poder ofrecer NEXUS PRO a distintos negocios con un mismo sistema. NO cambia nada de tu uso actual: todo sigue igual y todos tus usuarios quedaron en la empresa 'Correduría de Seguros'",

@@ -809,7 +809,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   </div>
   <div class="lh">Iniciar sesión</div>
   <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="admin" autocomplete="username"/></div>
-  <div class="lfr"><label>Contraseña</label><input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+  <div class="lfr"><label>Contraseña</label><div style="position:relative"><input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
   <div class="lerr" id="loginErr"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
   <div style="text-align:center;margin-top:10px"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#64748b;text-decoration:none">🔒 Probar inicio de sesión seguro (beta)</a></div>
@@ -2605,6 +2605,16 @@ async function nxGuardarNuevaPwd(){
   }catch(e){ show(e.message||'Error al guardar'); if(b){b.disabled=false;b.textContent='Guardar y entrar';} }
 }
 
+function nxTogglePwd(inputId,btnId){
+  try{
+    const i=document.getElementById(inputId), b=document.getElementById(btnId);
+    if(!i)return;
+    const mostrar=i.type==='password';
+    i.type=mostrar?'text':'password';
+    const ic=b&&b.querySelector('i'); if(ic)ic.className=mostrar?'ti ti-eye-off':'ti ti-eye';
+    try{i.focus();}catch(e){}
+  }catch(e){}
+}
 async function doLogin(){
   const rawUser=document.getElementById('loginUser').value.trim();
   const pwd=document.getElementById('loginPwd').value;
@@ -3128,7 +3138,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.3';
+const APP_VERSION='23.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
