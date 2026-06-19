@@ -1,7 +1,8 @@
 {
-  "version": "23.6",
+  "version": "23.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO multi-empresa (tienda): en modo TIENDA, ahora NINGÚN botón saca al usuario hacia el seguro. Antes, al tocar el logo, 'Volver' o 'Actualizar', se colaba el dashboard de seguros con todos los accesos; ahora cualquier navegación rebota al Punto de Venta. La tienda queda 100% encerrada en su POS",
     "ARREGLADO multi-empresa (tienda): ahora en modo TIENDA se oculta TODA la navegación de seguros, incluida la barra de abajo del móvil y el botón flotante (+). Antes en el teléfono todavía se podía ver el resto; ya no. La tienda ve solo el Punto de Venta",
     "ARREGLADO multi-empresa: al entrar con una cuenta de TIENDA, ahora el sistema abre el Punto de Venta directo de forma más segura (no muestra la pantalla de seguros ni aunque tarde en cargar). Refuerzo del modo tienda",
     "NUEVO: en la pantalla de entrada (login) ahora hay un OJITO en la contraseña para ver u ocultar lo que escribes. Así confirmas que pusiste bien la clave antes de entrar",

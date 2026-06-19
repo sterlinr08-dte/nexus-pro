@@ -3140,7 +3140,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.6';
+const APP_VERSION='23.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4398,6 +4398,11 @@ async function chequearVersionApp(){
 }
 
 function nav(view,el){
+  // ── Modo TIENDA: bloquear vistas de seguros; siempre al Punto de Venta ──
+  try{
+    const esTienda=(sesion&&sesion.org&&sesion.org.tipo==='tienda')||document.body.classList.contains('org-tienda');
+    if(esTienda){ if(typeof window.nxAbrirPOS==='function')window.nxAbrirPOS(); return; }
+  }catch(e){}
   // ── Control de acceso a Contabilidad ──
   const vistasContab=['mayor','asientos','balance','pyg','comisiones','rep-agente','rep-plan','rep-empresa','rep-aging','dgii'];
   if(vistasContab.includes(view)&&!tienePermiso('can_view_accounting')){

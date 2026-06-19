@@ -12010,6 +12010,8 @@
 
   window.nxAbrirMultiempresa = function () {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    // Modo TIENDA: el hub Multiempresa no aplica; rebota al Punto de Venta.
+    try { if (window.sesion && window.sesion.org && window.sesion.org.tipo === 'tienda') { if (window.nxAbrirPOS) window.nxAbrirPOS(); return; } } catch (e) {}
     const view = ensureHubView();
     if (!view) return;
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
