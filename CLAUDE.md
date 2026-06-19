@@ -121,16 +121,62 @@ RLS `USING(true)` → abiertas.** Quien extraiga la anon key puede leer/editar t
 
 ---
 
-## Convenciones
+## Cómo le gusta trabajar al dueño (estilo y preferencias — IMPORTANTE)
 
-- Idioma de UI, comentarios y commits: **español**.
-- Sin acentos en muchos mensajes de commit existentes (estilo del historial).
-- CSS inline y clases cortas (`.qa-g`, `.kg`, `.g2/.g3/.g4`, etc.).
-- Variables globales del núcleo: `ST` (estado) y `API` (acceso a Supabase) — en
-  `parches.js` se accede a ellas directamente, con fallback a `API` si `ST` vacío.
-- `parches.js` se auto-registra en el changelog interno (sección 5.5).
+Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto:
+
+1. **Publicar EN VIVO directo a `main`.** El dueño quiere que cada corrección se
+   aplique, pruebe y suba **directo a `main`** (push directo, fast-forward),
+   subiendo `APP_VERSION` + changelog. No quedarse en ramas de prueba. Solo
+   avisar antes si el cambio es grande/riesgoso (no un arreglo puntual).
+2. **Móvil primero, iPhone obsesivo.** Muchísimos arreglos son de iPhone: botones
+   que se "inflan" al tocar (evitar `transform:scale/translate` en `:active`
+   dentro de ventanas con desenfoque), textos que se cortan, áreas tocables,
+   pantallas angostas. Probar SIEMPRE el cambio en móvil angosto.
+3. **Arreglos de RAÍZ, no parches.** El dueño nota cuando algo se "arregló a
+   medias" (hay commits "ARREGLADO de verdad", "arreglar de raíz"). Encontrar la
+   causa real (p.ej. una regla CSS global que pisa) y corregirla bien la primera.
+4. **Estética = prioridad real.** Le importa mucho el diseño: iconos 3D
+   cristal/vidrio, efecto "goma" (jelly) al tocar, humo de color, degradados,
+   relieve, control segmentado parejo, rejillas uniformes. Lo visual no es
+   secundario.
+5. **Rejillas uniformes y adaptables.** Botones del mismo tamaño en rejilla
+   (`auto-fit`/`minmax`), nada que desborde ni se vea disparejo en móvil.
+6. **Contexto dominicano (RD).** `RD$`, `es-DO`, ITBIS 18%, NCF, DGII/ARS, cédula,
+   RNC, denominaciones de billetes RD, documentos legales al estilo dominicano
+   (acto de venta, contrato/pagaré con abogado + matrícula del CARD + testigos),
+   monto **en letras**. Notación de números: punto = miles, coma = decimal.
+7. **Todo se imprime / PDF / WhatsApp.** Recibos, contratos, estados de cuenta,
+   actos de venta, reportes de cierre. Los documentos para el cliente importan.
+8. **Solo admin + RLS.** Los módulos sensibles (Préstamos, Vehículos, POS) son
+   solo para el administrador y se protegen con RLS en la base.
+9. **Auditoría.** Registrar acciones con `logAudit(accion, detalle, modulo)`.
+10. **Iterativo y constante.** Muchas versiones pequeñas seguidas; mejor entregar
+    incrementos probados que grandes cambios de golpe.
+
+### Estilo del changelog (`version.json`)
+- En **español llano, para el usuario final** (no técnico). Explica QUÉ cambió y
+  para qué le sirve, con ejemplos concretos (ej. "'4.000' = 4,000").
+- Las correcciones empiezan con **`ARREGLADO`** (a veces `ARREGLADO (importante)`).
+  Las novedades con **`NUEVO`**. La entrada nueva va **al inicio** del array.
+- Mantener `version` de `version.json` == `APP_VERSION` de `index.html`.
+
+### Estilo de commits
+- Cortos, en español, con prefijo de módulo: `POS:`, `Préstamos:`, `Recibo:`,
+  `Multiempresa:`. A menudo **sin acentos**. Describir el qué, no el cómo.
+
+### Estilo de código
+- Denso, en una línea, nombres en español, helpers como arrow `const`. Comentarios
+  en español con banners `// ──────`. Sin build, todo a mano.
+- Helpers del núcleo (en `index.html`): `API` (get/post/patch/del a Supabase REST),
+  `fmt(n)`→`'RD$ '+...es-DO`, `fmtN(n)`, `pend(c)`, `getTot(c)`, `hoy()`,
+  `toast(tipo,titulo,msg)` (tipo `'err'`/`'ok'`...), `nav(view,el)`, `gAgt`/`gEmp`,
+  `logAudit(...)`, `escHtml(s)`, `ST` (estado global), `CFG`, `sesion`.
+- Montos: leer SIEMPRE con `window.nxMoney.parse(input.value)` y marcar los inputs
+  con `data-nx-money`. Nunca `parseFloat` crudo sobre un campo de dinero.
 
 ## Ramas
 
-Trabajo en ramas `claude/...`. La app de producción descarga de **`main`**, así
-que un cambio no llega a los usuarios hasta que se integra a `main`.
+Por defecto el dueño quiere **push directo a `main`** (ver punto 1). La app de
+producción descarga de `main`, así que ahí es "en vivo". La rama de trabajo
+`claude/...` se mantiene sincronizada, pero el destino real es `main`.
