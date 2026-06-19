@@ -177,6 +177,9 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
 
 ## Ramas
 
-Por defecto el dueño quiere **push directo a `main`** (ver punto 1). La app de
-producción descarga de `main`, así que ahí es "en vivo". La rama de trabajo
-`claude/...` se mantiene sincronizada, pero el destino real es `main`.
+- **`main` es única y de producción**: `sterlinr08-dte/nexus-pro` rama `main`. La
+  app instalada **descarga de `main`** (ver `version.json` → `url`).
+- **Rama de trabajo de esta sesión:** `claude/bold-lovelace-8sy1hk`.
+- **El otro chat usa:** `claude/parches-js-line-count-RvxXb`.
+- **ANTES de trabajar, sincronizar con `main`** (`git fetch origin main` y alinear
+  la rama de trabajo). Cada corrección se publica con push a `main` (en vivo).
