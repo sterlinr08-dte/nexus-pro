@@ -2613,21 +2613,20 @@ async function doLogin(){
   err.style.display='none';
   if(!rawUser||!pwd){err.textContent='Ingresa usuario y contraseña.';err.style.display='block';return;}
 
-  // Detectar formato usuario@nombrebase
+  // Detectar formato usuario@organizacion
   let user=rawUser, baseNom='';
   if(rawUser.includes('@')){
     const partes=rawUser.split('@');
     user=partes[0];
     baseNom=partes[1];
-    // Buscar la base por nombre
+    // Híbrido (Opción B): si hay una base aparte registrada en getTenants, conectar a ella.
     const tenants=getTenants();
     const tenant=tenants.find(t=>t.nom.toLowerCase().replace(/\s+/g,'')===(baseNom||'').toLowerCase());
     if(tenant){ API.url=tenant.url; API.key=tenant.key;
       localStorage.setItem('nx_url',tenant.url); localStorage.setItem('nx_key',tenant.key);
-    } else if(baseNom){
-      err.innerHTML=`Base de datos "<strong>${escHtml(baseNom)}</strong>" no encontrada.<br>Verifica el nombre o usa solo tu usuario.`;
-      err.style.display='block'; return;
     }
+    // Si no hay base aparte, es Opción A: misma base; la organización se resuelve
+    // por el usuario tras validar el login (escribir @organizacion no es error).
   }
 
   // Verificar si hay conexión configurada
@@ -2659,8 +2658,15 @@ async function doLogin(){
     }
     localStorage.removeItem(lk);localStorage.removeItem(lk+'_t');
     sesion=users[0];
+    // Fase 1 multi-empresa (Opción A): cargar la organización del usuario.
+    try{
+      if(sesion.organizacion_id){
+        const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(sesion.organizacion_id)}&select=*`);
+        sesion.org=(orgs&&orgs[0])||null;
+      }
+    }catch(e){}
     const recordar=document.getElementById('rememberMe')?.checked;
-    const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,inicio:Date.now()});
+    const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,organizacion_id:sesion.organizacion_id||null,inicio:Date.now()});
     sessionStorage.setItem('nx_sesion',sesData);
     sessionStorage.setItem('nx_sesion_actividad',String(Date.now()));
     if(recordar){localStorage.setItem('nx_sesion_persist',sesData);localStorage.setItem('nx_user_persist',user);}
@@ -3128,7 +3134,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.0';
+const APP_VERSION='23.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4167,6 +4173,13 @@ async function iniciarApp(){
   resetIdle(); // Iniciar contador de inactividad
   activarMayusculasGlobales(); // Mayúsculas automáticas en inputs
   cargarTemaGuardado(); // Aplicar tema visual guardado
+  // Fase 1 multi-empresa (Opción A): asegurar la organización cargada (login o sesión restaurada).
+  try{
+    if(sesion && !sesion.org && sesion.organizacion_id){
+      const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(sesion.organizacion_id)}&select=*`);
+      sesion.org=(orgs&&orgs[0])||null;
+    }
+  }catch(e){}
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('setupScreen').style.display='none';
   document.getElementById('app').style.display='flex';
@@ -4223,6 +4236,13 @@ async function cargarDatosNucleo(){
 
 async function cargarTodo(){
   try{
+    // Fase 1 multi-empresa (Opción A): organización del usuario disponible en sesion.org.
+    try{
+      if(sesion && !sesion.org && sesion.organizacion_id){
+        const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(sesion.organizacion_id)}&select=*`);
+        sesion.org=(orgs&&orgs[0])||null;
+      }
+    }catch(e){}
     await cargarDatosNucleo();
     actualizarTicker();
     verificarAlertas();
