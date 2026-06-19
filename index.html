@@ -222,6 +222,8 @@ input,select,textarea,button{font-family:var(--ff)}
 /* ── CARDS ── */
 .nc{background:#fff;border-radius:var(--r14);border:1px solid var(--border);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
 .nc.p2{border-top:3px solid var(--c2)}.nc.p3{border-top:3px solid var(--c3)}.nc.p4{border-top:3px solid var(--c4)}.nc.p5{border-top:3px solid var(--c5)}
+/* Modo TIENDA (organización tipo 'tienda'): ocultar TODA la navegación de seguros (menú lateral, barra inferior móvil, botón flotante y menú "Más"). Deja solo el Punto de Venta. */
+body.org-tienda .sb-nav,body.org-tienda .mobile-bottom-nav-clean,body.org-tienda .nx-fab,body.org-tienda .nx-menu-backdrop,body.org-tienda .mobile-more-sheet-clean{display:none!important}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
 .ct{font-size:13px;font-weight:700;color:#1e293b;letter-spacing:.1px}.ct-s{font-size:10px;color:var(--tx3);margin-top:2px}
 
@@ -3138,7 +3140,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.5';
+const APP_VERSION='23.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3760,6 +3762,7 @@ async function nxCargarOrg(){
       const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(orgId)}&select=*`);
       sesion.org=(orgs&&orgs[0])||null;
     }
+    try{ document.body.classList.toggle('org-tienda', !!(sesion.org && sesion.org.tipo==='tienda')); }catch(e){}
   }catch(e){}
 }
 
