@@ -46,7 +46,39 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    **sincronizados** para que la app avise "hay actualización").
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **22.6** (ver `index.html` y `version.json`).
+> Versión actual: **23.0** (ver `index.html` y `version.json`).
+
+---
+
+## Dominio y hosting (producción en vivo)
+
+- **Dominio propio:** `nexusprord.com` (comprado en **Cloudflare Registrar**, cuenta
+  `sterlinr08@gmail.com`, auto-renovación ON, vence 19-jun-2027). DNS en Cloudflare.
+- **Hosting:** **Cloudflare Workers (static assets)** — proyecto `nexus-pro`,
+  conectado por Git al repo `sterlinr08-dte/nexus-pro`, rama **`main`**.
+  **Cada push a `main` se despliega solo** en el dominio (deploy automático).
+  - Worker URL: `nexus-pro.sterlinr08.workers.dev`. Dominio personalizado:
+    `nexusprord.com` (Custom Domain en la pestaña *Domains* del Worker).
+  - Config en `wrangler.jsonc` (raíz): sirve el repo tal cual (`assets.directory: "./"`,
+    `not_found_handling: single-page-application`). **No hay build.**
+- **La app sigue auto-actualizándose** vía `version.json` → `url`
+  (`raw.githubusercontent.com/.../main/index.html`). Eso NO cambió con el dominio;
+  el botón "Actualizar" sigue bajando de `main`.
+- GitHub Pages (`sterlinr08-dte.github.io`) puede seguir existiendo, pero el
+  **front oficial ahora es `nexusprord.com`** (Cloudflare).
+
+### Plan SaaS multiempresa (acordado, pendiente de construir)
+Vender NEXUS PRO a varios negocios con **un solo dominio** y **control general** del dueño:
+- **Arquitectura elegida: Opción A** = **una sola base multi-empresa** (todo en un
+  proyecto Supabase, separado por empresa con **RLS**). Costo plano (~US$25/mes Pro,
+  100k usuarios incl.), un arreglo llega a todos, fácil de mantener. Puerta abierta a
+  **híbrido** (mover un cliente grande a su propia base si lo exige).
+- **Login por empresa:** la parte después del `@` decide el tenant
+  (`sterling@nexus-pro` → seguros; `francis@bayolsale` → tienda de celulares).
+- **Marca blanca:** cada cliente con su propio dominio apuntando al mismo Worker;
+  la app detecta el `hostname` y carga datos + logo/colores/nombre de ese cliente.
+- **Prerrequisito CRÍTICO antes de vender:** cerrar la seguridad (RLS por empresa)
+  — ver `SEGURIDAD-PLAN.md` / `PLAN-AUTH-OPCION-A.md`.
 
 ---
 
