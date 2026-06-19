@@ -177,9 +177,25 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
 
 ## Ramas
 
-- **`main` es única y de producción**: `sterlinr08-dte/nexus-pro` rama `main`. La
-  app instalada **descarga de `main`** (ver `version.json` → `url`).
-- **Rama de trabajo de esta sesión:** `claude/bold-lovelace-8sy1hk`.
-- **El otro chat usa:** `claude/parches-js-line-count-RvxXb`.
-- **ANTES de trabajar, sincronizar con `main`** (`git fetch origin main` y alinear
-  la rama de trabajo). Cada corrección se publica con push a `main` (en vivo).
+Por defecto el dueño quiere **push directo a `main`** (ver punto 1). La app de
+producción descarga de `main`, así que ahí es "en vivo". La rama de trabajo
+`claude/...` se mantiene sincronizada, pero el destino real es `main`.
+
+### REGLA DE ORO entre chats (varios chats a la vez)
+
+Hay **un solo `main`** (`sterlinr08-dte/nexus-pro` → `main`). Cada chat crea su
+propia rama de trabajo `claude/...` con nombre al azar (p.ej. uno usa
+`claude/parches-js-line-count-RvxXb`, otro `claude/bold-lovelace-8sy1hk`). Son
+solo carriles temporales; **el único que importa es `main`**.
+
+1. **Todo trabajo importante de cualquier chat TERMINA en `main`.** Así los dos
+   (o más) chats siempre miran lo mismo y **nada se pierde entre conversaciones**.
+2. **Antes de empezar a tocar código**, sincronizar con lo último de `main`
+   (`git fetch origin` + rebase/merge de `origin/main`). Evita pisar lo que otro
+   chat ya subió.
+3. **Trabajar código en un solo chat a la vez** (sobre todo `parches.js` /
+   `index.html`) para no chocar. Si dos chats editan el mismo archivo a la vez,
+   uno pisa al otro.
+4. El **contexto del proyecto vive en este CLAUDE.md** (no en el chat). El chat es
+   desechable; al iniciar, cualquier Claude lee este archivo y ya sabe todo. Tras
+   un cambio importante, **actualizar este CLAUDE.md** para que no se desactualice.
