@@ -13983,6 +13983,7 @@
     return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
+        <button class="btn bsm bghost" type="button" onclick="window.nxPosImportarUI()"><i class="ti ti-file-import"></i> Importar</button>
         ${bajos > 0 ? `<span style="font-size:10.5px;color:#ea580c;font-weight:700;margin-left:auto"><i class="ti ti-alert-triangle"></i> ${bajos} con stock bajo</span>` : ''}
       </div>
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Precio</th><th style="text-align:right">Stock</th><th style="text-align:center">ITBIS</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
@@ -14074,6 +14075,89 @@
     if (!confirm('¿Eliminar el producto "' + (p.nombre || '') + '"?')) return;
     try { await getAPI().patch('pos_productos', 'id=eq.' + id, { activo: false }); toast('ok', 'Producto eliminado'); await cargarPOS(); const view = document.getElementById('v-pos'); if (view) renderPOS(view); }
     catch (e) { toast('err', 'No se pudo eliminar', String(e && e.message || e)); }
+  };
+
+  // ── Importar productos (desde Infoplus) ──
+  // Pega el JSON exportado de Infoplus. Cada fila: [Codigo, Descripcion, Existencia, Referencia, Marca, Imagen].
+  // Precio/costo entran en 0 (cada negocio pone sus precios). No duplica por codigo.
+  function parseInfoplus(text) {
+    let t = (text || '').trim(); if (!t) return [];
+    let dstr = null;
+    try { const o = JSON.parse(t);
+      if (Array.isArray(o)) return o;
+      if (o && typeof o.d === 'string') dstr = o.d;
+      else if (o && Array.isArray(o.d)) return o.d;
+    } catch (e) { dstr = t; }
+    if (dstr == null) dstr = t;
+    dstr = String(dstr).split('|||')[0].trim();
+    const arr = JSON.parse(dstr);
+    return Array.isArray(arr) ? arr : [];
+  }
+  window.nxPosImportarUI = function () {
+    cerrarModal('nxPosImp');
+    const ov = document.createElement('div'); ov.id = 'nxPosImp'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-file-import"></i> Importar productos</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosImp').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
+            Pega aquí el inventario exportado de <b>Infoplus</b> (el texto que empieza con <code>{"d":</code> o con <code>[[</code>).<br>
+            Se cargan: <b>descripción, existencia, referencia y marca</b>. El <b>precio y el costo entran en 0</b> — luego los pones tú. No se duplican los códigos que ya existan.
+          </div>
+          <div class="fr"><label>Datos de Infoplus</label><textarea id="impTxt" class="no-upper" placeholder='{"d":"[[1000,\\"CELULAR...\\",3,\\"128GB\\",\\"M-HORSE\\",\\"\\"]...' style="width:100%;min-height:160px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:11px;font-family:monospace;outline:none;resize:vertical"></textarea></div>
+          <div id="impMsg" style="font-size:11px;color:#64748b;min-height:16px;margin-top:4px"></div>
+        </div>
+        <div style="display:flex;gap:8px;padding-top:10px">
+          <button class="btn bghost" type="button" style="flex:1" onclick="document.getElementById('nxPosImp').remove()">Cancelar</button>
+          <button class="btn bc1" type="button" style="flex:2" id="impBtn" onclick="window.nxPosImportarRun()"><i class="ti ti-download"></i> Importar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPosImportarRun = async function () {
+    const msg = document.getElementById('impMsg'); const btn = document.getElementById('impBtn');
+    const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c || '#64748b'; } };
+    let filas;
+    try { filas = parseInfoplus(val('impTxt')); }
+    catch (e) { setMsg('No pude leer el texto. Verifica que pegaste el JSON completo de Infoplus.', '#dc2626'); return; }
+    if (!filas.length) { setMsg('No se encontraron productos en el texto pegado.', '#dc2626'); return; }
+    const existentes = new Set(_prods.map(p => String(p.codigo || '').trim()).filter(Boolean));
+    const nuevos = []; let saltados = 0;
+    for (const r of filas) {
+      const codigo = String(r[0] != null ? r[0] : '').trim();
+      const nombre = String(r[1] != null ? r[1] : '').trim();
+      if (!nombre) { saltados++; continue; }
+      if (codigo && existentes.has(codigo)) { saltados++; continue; }
+      if (codigo) existentes.add(codigo);
+      nuevos.push({
+        nombre: nombre,
+        codigo: codigo || null,
+        referencia: String(r[3] != null ? r[3] : '').trim() || null,
+        marca: String(r[4] != null ? r[4] : '').trim() || null,
+        imagen: null,
+        precio: 0, precio_credito: 0, costo: 0,
+        stock: Number(String(r[2] != null ? r[2] : 0).replace(/[^0-9.-]/g, '')) || 0,
+        itbis: true, tipo: 'producto', stock_min: 0, garantia_dias: 0,
+        serial: false, no_descuento: false, activo: true
+      });
+    }
+    if (!nuevos.length) { setMsg('Nada nuevo que importar (todos los códigos ya existían).', '#ea580c'); return; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Importando...'; }
+    try {
+      const LOTE = 200; let hechos = 0;
+      for (let i = 0; i < nuevos.length; i += LOTE) {
+        await getAPI().post('pos_productos', nuevos.slice(i, i + LOTE));
+        hechos += Math.min(LOTE, nuevos.length - i);
+        setMsg('Importando... ' + hechos + ' / ' + nuevos.length, '#2563eb');
+      }
+      toast('ok', 'Importación lista', hechos + ' productos agregados' + (saltados ? ' · ' + saltados + ' saltados' : ''));
+      cerrarModal('nxPosImp');
+      await cargarPOS();
+      const view = document.getElementById('v-pos'); if (view) renderPOS(view);
+    } catch (e) {
+      setMsg('Error al guardar: ' + String(e && e.message || e), '#dc2626');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-download"></i> Importar'; }
+    }
   };
 
   // ── Categorías ──
