@@ -221,9 +221,6 @@ input,select,textarea,button{font-family:var(--ff)}
 
 /* ── CARDS ── */
 .nc{background:#fff;border-radius:var(--r14);border:1px solid var(--border);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
-/* Separación clara entre filas (clientes) en la tabla de facturas */
-#tbFact>tr>td{border-bottom:2px solid #e2e8f0;padding-top:9px;padding-bottom:9px}
-#tbFact>tr:nth-child(even){background:#f6f8fb}
 .nc.p2{border-top:3px solid var(--c2)}.nc.p3{border-top:3px solid var(--c3)}.nc.p4{border-top:3px solid var(--c4)}.nc.p5{border-top:3px solid var(--c5)}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
 .ct{font-size:13px;font-weight:700;color:#1e293b;letter-spacing:.1px}.ct-s{font-size:10px;color:var(--tx3);margin-top:2px}
@@ -1126,29 +1123,32 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div id="panelFact">
           <div class="nc">
             <div class="ch">
-              <div><div class="ct">Facturas del mes</div><div class="ct-s">Comprobante Fiscal DGII</div></div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                <select id="fMes" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"></select>
-                <select id="fAnio" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px;width:68px"></select>
-                <select id="fFactEstado" onchange="rFact()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px">
-                  <option value="activas">Pendientes</option>
-                  <option value="atrasadas">Pendientes meses anteriores</option>
-                  <option value="todas">Todas</option>
-                  <option value="Pagado">Pagadas</option>
-                  <option value="Pendiente">Solo pendientes</option>
-                  <option value="Parcial">Parciales</option>
-                  <option value="Anulada">Anuladas</option>
-                </select>
-                <select id="fAgenteFact" onchange="rFact()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
-                <button class="btn bsm bc1" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
-                <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
-                <button class="btn bsm bc4" onclick="exportarCSVFacturas()"><i class="ti ti-file-spreadsheet"></i></button>
-              </div>
+              <div><div class="ct">Facturas</div><div class="ct-s">Cobra y factura a tus clientes</div></div>
+              <button class="btn bsm bc1" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
             </div>
-            <div class="tw"><table>
-              <thead><tr><th style="width:15%;cursor:pointer;user-select:none" onclick="sortFact('cliente')">CLIENTE <span id="sf_cliente" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortFact('agente')">AGENTE <span id="sf_agente" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortFact('plan')">PLAN <span id="sf_plan" style="color:#2563eb"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortFact('empresa')">EMPRESA <span id="sf_empresa" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortFact('prima')">PRIMA <span id="sf_prima" style="color:#2563eb"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortFact('deps')">DEPS <span id="sf_deps" style="color:#2563eb"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortFact('deuant')">DEU.ANT <span id="sf_deuant" style="color:#2563eb"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortFact('total')">TOTAL <span id="sf_total" style="color:#2563eb"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortFact('estado')">ESTADO <span id="sf_estado" style="color:#2563eb"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
-              <tbody id="tbFact"><tr><td colspan="10"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
-            </table></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+              <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
+              <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
+              <select id="fFactEstado" onchange="rFact()" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;flex:1;min-width:130px">
+                <option value="activas">Pendientes</option>
+                <option value="atrasadas">Pendientes meses anteriores</option>
+                <option value="todas">Todas</option>
+                <option value="Pagado">Pagadas</option>
+                <option value="Pendiente">Solo pendientes</option>
+                <option value="Parcial">Parciales</option>
+                <option value="Anulada">Anuladas</option>
+              </select>
+            </div>
+            <details style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc">
+              <summary style="cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:#475569;list-style:none"><i class="ti ti-adjustments-horizontal"></i> Más filtros y herramientas</summary>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 12px 12px">
+                <select id="fAgenteFact" onchange="rFact()" style="height:32px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:11px"><option value="">Todos los agentes</option></select>
+                <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
+                <button class="btn bsm bc4" onclick="exportarCSVFacturas()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+              </div>
+            </details>
+            <div id="factResumen"></div>
+            <div id="tbFact"><div class="loading"><div class="spin"></div></div></div>
           </div>
           </div><!-- /panelFact -->
           <!-- Panel Cobros -->
@@ -3128,7 +3128,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='22.8';
+const APP_VERSION='22.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4971,26 +4971,48 @@ function rFact(){
   if(fa){const idsAg=new Set(ST.clientes.filter(c=>String(c.agente_id)===fa).map(c=>String(c.id)));lista=lista.filter(f=>idsAg.has(String(f.cliente_id)));}
   if(_factSort.col){const col=_factSort.col,dir=_factSort.dir;lista.sort((a,b)=>{const va=_factSortVal(a,col),vb=_factSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
   const tb=document.getElementById('tbFact');
-  if(!lista.length){tb.innerHTML=`<tr><td colspan="10"><div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar + NCF"'}</div></td></tr>`;pintarFlechasFact();return;}
-  tb.innerHTML=lista.map(f=>{const emp=gEmp(f.empresa_id);const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';return`<tr${f.estado==='Anulada'?' style="opacity:.55"':''}>
-    <td style="font-weight:700;font-size:10px;cursor:pointer;color:#7c3aed;text-decoration:underline" onclick="verCliente('${f.cliente_id}')" title="Ver resumen del cliente">${f.cliente_nom}${atrasadas?`<div style="font-size:8px;color:#92400e;font-weight:700;text-decoration:none">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}</td>
-    <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
-    <td>${planB(f.plan)}</td>
-    <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
-    <td style="font-family:var(--mono);font-size:9px">${fmt(f.prima_base)}</td>
-    <td style="font-family:var(--mono);font-size:9px">${f.prima_deps>0?fmt(f.prima_deps):'—'}</td>
-    <td style="font-family:var(--mono);font-size:9px;color:var(--c3)">${f.deuda_ant>0?fmt(f.deuda_ant):'—'}</td>
-    <td style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--c4)">${fmt(f.total)}</td>
-    <td><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
-    <td style="white-space:normal;min-width:104px;vertical-align:middle">
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:stretch">
-        ${f.estado!=='Anulada'?`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:9.5px;padding:5px 7px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:0 2px 6px rgba(16,185,129,.3);background:linear-gradient(135deg,#059669,#10b981)"><i class="ti ti-wallet" style="color:#fff!important;font-size:13px"></i> COBRAR</button>`:''}
-        <button onclick="verFacturaPDF_id('${f.id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:9.5px;padding:5px 7px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:0 2px 6px rgba(37,99,235,.25);background:linear-gradient(135deg,#2563eb,#3b82f6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> FACTURA</button>
-        ${f.estado!=='Anulada'?`<button onclick="enviarWA('${f.id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:9.5px;padding:5px 7px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:0 2px 6px rgba(37,211,102,.3);background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WHATSAPP</button>`:''}
-        ${(f.estado!=='Anulada'&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="width:100%;border:none;color:#fff;font-weight:700;font-size:9.5px;padding:5px 7px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:0 2px 6px rgba(220,38,38,.25);background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> ANULAR</button>`:''}
+  const rz=document.getElementById('factResumen');
+  if(!lista.length){tb.innerHTML=`<div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar"'}</div>`;if(rz)rz.innerHTML='';pintarFlechasFact();return;}
+  const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+Number(f.total||0),0);
+  if(rz)rz.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#2563eb;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Facturas</div><div style="font-size:18px;font-weight:800;color:#1e3a8a">${lista.length}</div></div>
+      <div style="flex:2;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#c2410c;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Por cobrar</div><div style="font-size:18px;font-weight:800;color:#9a3412">${fmt(porCobrar)}</div></div>
+    </div>`;
+  const L=t=>`<div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${t}</div>`;
+  tb.innerHTML=lista.map(f=>{
+    const emp=gEmp(f.empresa_id);
+    const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
+    const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
+    const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
+    const agTxt=ag?ag.nom:'⚠ Sin agente';
+    const anul=f.estado==='Anulada';
+    const nBtns=anul?1:(f.estado!=='Pagado'?3:2);
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.05)${anul?';opacity:.55':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div onclick="verCliente('${f.cliente_id}')" style="font-weight:800;font-size:14.5px;color:#0f172a;cursor:pointer;line-height:1.2">${f.cliente_nom}</div>
+          <div style="font-size:10.5px;color:#64748b;margin-top:3px">${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</div>
+          ${atrasadas?`<div style="font-size:9px;color:#92400e;font-weight:700;margin-top:2px">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <span class="badge ${ec}">${f.estado.toUpperCase()}</span>
+          <div style="margin-top:6px">${planB(f.plan)}</div>
+        </div>
       </div>
-    </td>
-  </tr>`;}).join('');
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:11px 0;padding:9px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
+        <div>${L('Prima')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_base)}</div></div>
+        ${f.prima_deps>0?`<div>${L('Dependientes')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_deps)}</div></div>`:''}
+        ${f.deuda_ant>0?`<div>${L('Deuda anterior')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}
+        <div style="margin-left:auto;text-align:right">${L('Total a pagar')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(f.total)}</div></div>
+      </div>
+      ${anul?'':`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:7px"><i class="ti ti-wallet" style="color:#fff!important;font-size:16px"></i> COBRAR</button>`}
+      <div style="display:grid;grid-template-columns:repeat(${nBtns},1fr);gap:6px">
+        <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:11px;padding:9px 6px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#2563eb,#3b82f6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:14px"></i> Factura</button>
+        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:11px;padding:9px 6px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:14px"></i> WhatsApp</button>`}
+        ${(!anul&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:11px;padding:9px 6px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:14px"></i> Anular</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
   pintarFlechasFact();
 }
 let _factSort={col:'',dir:1};
