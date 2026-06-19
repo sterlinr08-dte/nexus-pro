@@ -1,7 +1,8 @@
 {
-  "version": "23.4",
+  "version": "23.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO multi-empresa: al entrar con una cuenta de TIENDA, ahora el sistema abre el Punto de Venta directo de forma más segura (no muestra la pantalla de seguros ni aunque tarde en cargar). Refuerzo del modo tienda",
     "NUEVO: en la pantalla de entrada (login) ahora hay un OJITO en la contraseña para ver u ocultar lo que escribes. Así confirmas que pusiste bien la clave antes de entrar",
     "ARREGLADO multi-empresa: el reconocimiento de la EMPRESA del usuario ahora funciona también con el login seguro (Supabase Auth), no solo con el login viejo. Así, al entrar con la cuenta de una tienda, el sistema ya sabe que es 'tienda' y muestra el Punto de Venta directo",
     "NUEVO multi-empresa (Fase 2): el sistema ahora muestra MÓDULOS según el TIPO de empresa. Una empresa tipo 'tienda' entra y ve DIRECTO el Punto de Venta (sin nada de seguros); una empresa tipo 'seguros' ve todo lo de siempre (pólizas, facturas, etc.). Tu cuenta de seguros NO cambia en nada. (Nota: la separación total de datos entre empresas llega en la Fase 3, con la seguridad.)",

@@ -3138,7 +3138,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.4';
+const APP_VERSION='23.5';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3774,10 +3774,14 @@ function aplicarOrgSidebar(){
     if(esTienda){
       // Ocultar todo el menú de seguros (ítems y secciones).
       document.querySelectorAll('.sb-nav .ni, .sb-nav .ss').forEach(n=>{n.style.display='none';});
-      // Abrir el POS directo una sola vez (evita reabrirlo en cada re-render).
-      if(!_orgTiendaAplicada && typeof window.nxAbrirPOS==='function'){
+      // Abrir el POS directo una sola vez (reintenta si parches.js aún no cargó).
+      if(!_orgTiendaAplicada){
         _orgTiendaAplicada=true;
-        setTimeout(()=>{try{window.nxAbrirPOS();}catch(e){}},60);
+        const abrirPOS=(n)=>{
+          if(typeof window.nxAbrirPOS==='function'){ try{window.nxAbrirPOS();}catch(e){} }
+          else if(n<25){ setTimeout(()=>abrirPOS(n+1),150); }
+        };
+        abrirPOS(0);
       }
     }
   }catch(e){}
@@ -4297,7 +4301,10 @@ async function cargarTodo(){
     // Se hace de inmediato, sin timeout, para no mostrar el dashboard primero.
     const lastView=localStorage.getItem('nx_last_view');
     window.__nxHtmlRestauroVista = true; // avisar al parche que ya restauramos
-    if(lastView){
+    const esTiendaOrg = !!(sesion && sesion.org && sesion.org.tipo==='tienda');
+    if(esTiendaOrg){
+      // Modo tienda: no abrir vistas de seguros; aplicarOrgSidebar abrirá el POS directo.
+    } else if(lastView){
       nav(lastView,null);
       // Si es solicitudes, renderizar de inmediato
       if(lastView==='solicitudes'){setTimeout(()=>{if(window.nxRenderSolicitudes)window.nxRenderSolicitudes();},300);}
