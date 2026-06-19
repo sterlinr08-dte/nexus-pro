@@ -13741,9 +13741,14 @@
   function tabBtn(k, lbl, ic) { return `<button type="button" class="nxPosTab${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>`; }
 
   function renderPOS(view) {
+    const esTienda = !!(window.sesion && window.sesion.org && window.sesion.org.tipo === 'tienda');
+    const sub = esTienda ? esc((window.sesion.org.nombre || 'Mi negocio')) : 'Multiempresa · solo el administrador';
+    const btnTop = esTienda
+      ? `<button class="btn bsm bc3" type="button" onclick="if(window.logout)window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>`
+      : `<button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>`;
     const head = `<div class="ch">
-        <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">Multiempresa · solo el administrador</div></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
       <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
     let body = '';
