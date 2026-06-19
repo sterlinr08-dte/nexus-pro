@@ -1,0 +1,136 @@
+# CLAUDE.md — NEXUS PRO
+
+Contexto del proyecto para cualquier sesión de Claude Code. Léelo al inicio para
+no perder el hilo entre chats (la conversación se llena, pero **el contexto vive
+aquí, en el repo**).
+
+> Idioma de trabajo: **español** (el usuario y todos los textos de la app están
+> en español de República Dominicana, `es-DO`). Responde y comenta en español.
+
+---
+
+## ¿Qué es NEXUS PRO?
+
+Sistema de gestión para una **correduría de seguros de salud en República
+Dominicana**. Maneja clientes, facturación, cobros, comisiones, agentes,
+transferencias entre agentes, recibos de pago y contabilidad. Incluye además un
+módulo **Multiempresa** con un **Punto de Venta (POS)** estilo Infoplus.
+
+Es una **PWA** (app web instalable) pensada principalmente para **móvil**
+(iPhone/Android). Se instala desde el navegador y funciona en pantalla angosta.
+
+---
+
+## Arquitectura (importante)
+
+- **Es una app de un solo archivo HTML grande**, sin framework ni build step.
+  - `index.html` (~7.8k líneas, ~520 KB): toda la app — HTML, CSS y JS del núcleo.
+  - `parches.js` (~14.5k líneas, ~820 KB): "parches" móviles y módulos nuevos que
+    se inyectan sobre el núcleo (navegación móvil, FAB, POS, transferencias,
+    ciclos 20-20, recibos, etc.). Se carga al final con `parches.js?v=<APP_VERSION>`.
+  - `sw.js`: Service Worker. **Solo cachea imágenes/iconos estáticos.** Nunca
+    intercepta Supabase, `parches.js`, `.html` ni peticiones con `?` (datos).
+  - `manifest.json`: configuración PWA.
+  - Iconos `icon-*.png` y `gen_icon.py` (generador de iconos).
+- **Backend: Supabase** (PostgreSQL + RLS + RPC).
+  - URL y anon key están fijas en `index.html` (`SUPABASE_URL_FIXED`,
+    `SUPABASE_KEY_FIXED`, ~líneas 2191-2192).
+  - Proyecto: `tnwsgcxurfyuszxsewsn.supabase.co`.
+- **Sin proceso de build, sin npm, sin bundler.** Se edita el archivo y se sube.
+
+### Cómo se actualiza la app en producción
+1. La app instalada **descarga `index.html` desde la rama `main`** del repo en
+   GitHub (ver `version.json` → `url`).
+2. Para publicar una novedad: subir `APP_VERSION` en `index.html` (~línea 3131) y
+   `version` + entrada en `cambios[]` de `version.json` (mantenerlos
+   **sincronizados** para que la app avise "hay actualización").
+3. El usuario abre la app y toca **"Actualizar"**.
+
+> Versión actual: **22.6** (ver `index.html` y `version.json`).
+
+---
+
+## Reglas obligatorias en cada cambio (de `REGLAS-ACTUALIZACION.md`)
+
+Aplicar **siempre** al hacer una novedad/actualización:
+
+1. **Depurar** — quitar dead code, no romper navegación ni clics existentes.
+2. **Refactorizar** — código limpio y consistente con el estilo del archivo.
+3. **Probar** — `node --check parches.js` (y revisar la lógica del cambio).
+4. **Web móvil angosta** — verse bien en ~320–480px, sin desbordes horizontales.
+5. **Auditar los grids** — `.qa-g`, `.kg`, `.g2/.g3/.g4`; breakpoints 768/640/480.
+6. **Rejilla adaptable** — usar `auto-fit`/`auto-fill` + `minmax` o columnas por
+   breakpoint; nunca anchos fijos que desborden.
+
+**Despliegue:** subir `APP_VERSION` + `version.json`, `node --check parches.js`,
+commit descriptivo y push. La app descarga de `main`.
+
+---
+
+## Módulos / funcionalidades ya construidas
+
+- **Clientes**: ficha, cédula, teléfono, dirección; clientes en proceso.
+- **Facturación / Cobros / Historial**: facturas, cobros (Cobros e Historial son
+  pestañas dentro de Facturas), abonos, meses pendientes.
+- **Recibos de pago** (muy trabajado):
+  - Numeración **consecutiva y segura** en BD, con **prefijo de año**
+    (`2026-0001`), contador por año que reinicia cada año.
+  - Recibos desde el historial (general y por cliente), por meses adelantados.
+  - Guarda en BD los meses que cubre cada pago (auditoría).
+  - Marcado de meses automático (mes actual / pendientes) o manual; concepto
+    editable; PDF, WhatsApp y botón **Compartir** nativo.
+- **Comisiones / Agentes**: colores por agente, roles (admin vs agente).
+- **Transferencias entre agentes**: con estado (pendiente/aceptada/rechazada);
+  el dinero solo se mueve si fue **aceptada**.
+- **Ciclos 20-20**: períodos del 20 al 20; ciclo en curso + cerrados anteriores.
+- **Navegación móvil**: barra/FAB flotante arrastrable, menú "Más" personalizable.
+- **Multiempresa → Punto de Venta (POS)** (estilo Infoplus, solo admin / RLS):
+  - **Vender**: catálogo por categoría, buscador, carrito, ITBIS 18%, cobro en
+    efectivo/tarjeta/transferencia/cheque/nota de crédito, **pago mixto**,
+    **descuento %**, devuelta, "efectivo exacto", ticket imprimible.
+  - **Productos**: inventario con precio contado/crédito, costo, stock, código de
+    barra, categoría, ITBIS, tipo (producto/servicio), stock mínimo + alerta,
+    garantía, serial/IMEI, si permite descuento, referencia/marca/imagen.
+  - **Ventas**: historial con total del día y ticket por venta (descuenta stock).
+  - **Clientes + Fiado** (cuentas por cobrar): límite de crédito, ventas fiadas,
+    abonos, recordatorio por WhatsApp.
+  - **Compras / Proveedores** (cuentas por pagar): compras suben stock y
+    actualizan costo; crédito = CxP; ficha de proveedor con saldo y pagos.
+  - **Caja**: apertura/cierre y **arqueo** con conteo de billetes (denominaciones
+    RD), efectivo esperado, descuadre y reporte de cierre imprimible.
+
+---
+
+## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
+
+**Estado actual (riesgo conocido):** la app entra con la **anon key** + un login
+propio (`usuarios_sistema`, validado en el navegador). **Todas las tablas tienen
+RLS `USING(true)` → abiertas.** Quien extraiga la anon key puede leer/editar todo.
+
+**Plan acordado (Opción A — Supabase Auth, por fases reversibles):**
+- Fase 0: tabla `profiles` + helper `mi_rol()` (no rompe nada).
+- Fase 1: crear usuarios en Auth (correo sintético `login@nexus-pro.local`) en
+  paralelo, sin cambiar el login aún.
+- Fase 2: login con `signInWithPassword` + flag para revertir al login viejo.
+- Fase 3: RLS real por rol, **tabla por tabla**, probando entre cada una.
+- Fase 4: contraseñas y limpieza.
+
+> **Decisión pendiente del usuario** (define la Fase 1): cómo establecen los
+> usuarios su clave nueva — (1) temporal + cambio obligatorio [recomendado],
+> (2) el admin las define, (3) correo + enlace mágico.
+
+---
+
+## Convenciones
+
+- Idioma de UI, comentarios y commits: **español**.
+- Sin acentos en muchos mensajes de commit existentes (estilo del historial).
+- CSS inline y clases cortas (`.qa-g`, `.kg`, `.g2/.g3/.g4`, etc.).
+- Variables globales del núcleo: `ST` (estado) y `API` (acceso a Supabase) — en
+  `parches.js` se accede a ellas directamente, con fallback a `API` si `ST` vacío.
+- `parches.js` se auto-registra en el changelog interno (sección 5.5).
+
+## Ramas
+
+Trabajo en ramas `claude/...`. La app de producción descarga de **`main`**, así
+que un cambio no llega a los usuarios hasta que se integra a `main`.
