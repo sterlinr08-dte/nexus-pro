@@ -1,0 +1,10 @@
+{
+  // Despliegue de NEXUS PRO en Cloudflare (sitio estático = "assets").
+  // No hay build: se sirve el repositorio tal cual (index.html, parches.js, sw.js, etc.).
+  "name": "nexus-pro",
+  "compatibility_date": "2025-06-01",
+  "assets": {
+    "directory": "./",
+    "not_found_handling": "single-page-application"
+  }
+}
