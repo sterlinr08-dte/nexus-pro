@@ -3134,7 +3134,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.1';
+const APP_VERSION='23.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3742,6 +3742,26 @@ function aplicarRolSidebar(){
   if(sbContab&&!puedeContab)sbContab.style.maxHeight='0';
 }
 
+// ── Fase 2 multi-empresa: módulos según el TIPO de organización ──
+// 'tienda' → solo Punto de Venta (POS directo). 'seguros'/otros → comportamiento normal.
+let _orgTiendaAplicada=false;
+function aplicarOrgSidebar(){
+  try{
+    const tipo=(sesion&&sesion.org&&sesion.org.tipo)||'seguros';
+    const esTienda=tipo==='tienda';
+    document.body.classList.toggle('org-tienda', esTienda);
+    if(esTienda){
+      // Ocultar todo el menú de seguros (ítems y secciones).
+      document.querySelectorAll('.sb-nav .ni, .sb-nav .ss').forEach(n=>{n.style.display='none';});
+      // Abrir el POS directo una sola vez (evita reabrirlo en cada re-render).
+      if(!_orgTiendaAplicada && typeof window.nxAbrirPOS==='function'){
+        _orgTiendaAplicada=true;
+        setTimeout(()=>{try{window.nxAbrirPOS();}catch(e){}},60);
+      }
+    }
+  }catch(e){}
+}
+
 function desconectar(){if(confirm('¿Cambiar configuración de Supabase?')){localStorage.removeItem('nx_url');localStorage.removeItem('nx_key');sessionStorage.removeItem('nx_sesion');location.reload();}}
 
 // ══════════════════════════════════════════════════════════════════
@@ -4251,6 +4271,7 @@ async function cargarTodo(){
     if(!sessionStorage.getItem('nx_ya_saludo')){toast('ok','Sistema listo · NEXUS PRO','Bienvenido, '+sesion.nom.split(' ')[0]);sessionStorage.setItem('nx_ya_saludo','1');}
     logError('info','Sistema iniciado correctamente','Usuario: '+sesion.nom+' | Rol: '+sesion.rol,'Sistema');
     setTimeout(aplicarRolSidebar, 200);
+    setTimeout(aplicarOrgSidebar, 260);
     setTimeout(()=>{rNotifs();},500);
     setTimeout(()=>{cargarAuditoriaSupabase();},800);
     // Re-inyectar los módulos de parches.js ahora que la sesión está lista
@@ -4258,6 +4279,7 @@ async function cargarTodo(){
     //  no aparezcan hasta darle Actualizar).
     [250,1200,2600].forEach(ms=>setTimeout(()=>{
       try{aplicarRolSidebar();}catch(e){}
+      try{aplicarOrgSidebar();}catch(e){}
       try{window.dispatchEvent(new Event('nexus:reinit'));}catch(e){}
     },ms));
     // Cargar log guardado
