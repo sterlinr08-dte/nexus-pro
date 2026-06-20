@@ -1,7 +1,8 @@
 {
-  "version": "28.8",
+  "version": "28.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (sugerencias abren la ventanilla): en la Factura, al escribir y tocar un artículo de las SUGERENCIAS, ahora se abre la MISMA ventanilla con los dos precios (final/por mayor), la existencia por almacén y los IMEI — igual que con la lupa — para que elijas con la info delante (y el precio que aplica al cliente). Ya no se agrega de golpe",
     "NUEVO (IMEI directo desde Productos): en la pestaña Productos, los artículos que manejan serial ahora tienen un botón 📱 al lado de editar, para agregar/ver sus IMEI directamente. (También se agregan al comprar el equipo, y desde la lupa → artículo → Administrar.) Recuerda: el producto debe tener activado '¿Maneja serial/IMEI?' en su ficha",
     "NUEVO (IMEI por compra): al abrir el detalle de una compra (en Compras → tocar una compra), ahora ves la LISTA DE IMEI/seriales que entraron en esa compra (los vendidos quedan marcados). Y hay un botón IMPRIMIR que saca un documento de la compra con sus artículos y la lista completa de IMEI recibidos — ideal para tu control o para el proveedor",
     "NUEVO (IMEI obligatorio al vender): cuando vendes un equipo que maneja serial, el sistema ahora te OBLIGA a elegir el IMEI antes de cobrar — si no lo eliges, se abre solo el selector de IMEI y no deja terminar la venta hasta asignarlo. Así el historial del equipo siempre queda completo. (Si ese equipo no tiene IMEI cargados, hay un botón 'Vender sin IMEI' para no trancarte.) En la compra, la casilla para escribir los IMEI se habilita al agregar un artículo que maneja serial",

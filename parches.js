@@ -14019,11 +14019,22 @@
     if (!t) { box.innerHTML = ''; box.style.display = 'none'; return; }
     const lista = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase().includes(t)).slice(0, 8);
     if (!lista.length) { box.innerHTML = '<div class="nxFacSugEmpty">Sin resultados</div>'; box.style.display = 'block'; return; }
-    box.innerHTML = lista.map(p => `<div class="nxFacSugIt" onclick="window.nxFacAdd('${p.id}')">
+    box.innerHTML = lista.map(p => `<div class="nxFacSugIt" onclick="window.nxFacSugSel('${p.id}')">
         <div style="flex:1;min-width:0"><div class="nxFacSugNom">${esc(p.nombre || '')}</div><div class="nxFacSugSub">${p.codigo ? esc(p.codigo) : ''}${p.referencia ? ' · ' + esc(p.referencia) : ''}</div></div>
-        <div class="nxFacSugPre">${fmt(p.precio)}<span>${Number(p.stock || 0)} und</span></div>
+        <div class="nxFacSugPre">${fmt(precioCli(p))}<span>${Number(p.stock || 0)} und</span></div>
       </div>`).join('');
     box.style.display = 'block';
+  };
+  // Al elegir una sugerencia, abre la misma ventanilla (precios + IMEI) con ese artículo expandido
+  window.nxFacSugSel = function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    const box = document.getElementById('facSug'); if (box) { box.innerHTML = ''; box.style.display = 'none'; }
+    const inp = document.getElementById('facBuscar'); if (inp) inp.value = '';
+    window.nxProdPicker('factura');
+    _ppkOpen = String(id);
+    const q = document.getElementById('ppkQ'); if (q) q.value = p.nombre;
+    pintarProdPick(p.nombre);
+    setTimeout(function () { const el = document.querySelector('.nxPpkWrap.on'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }, 50);
   };
   window.nxFacAdd = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
