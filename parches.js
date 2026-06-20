@@ -13647,6 +13647,8 @@
   let _posTab = 'vender';
   let _posCat = 'todas';
   let _factCli = '';
+  let _facNCF = 'sin';
+  let _facCredito = false;
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
@@ -13695,11 +13697,16 @@
   function saldoCli(c) { const id = c && c.id; return Math.max(0, (_fiadoByCli[id] || 0) - (_abonosByCli[id] || 0)); }
   function waNum(t) { let d = String(t || '').replace(/\D/g, ''); if (d.length === 10) d = '1' + d; return d.length >= 11 ? d : ''; }
 
+  // ── Importe de línea con descuento (% o $) ──
+  function lineBase(it) { return Number(it.precio || 0) * Number(it.cantidad || 0); }
+  function lineDescMonto(it) { const base = lineBase(it); const d = Number(it.desc || 0); if (!d) return 0; return it.descT === 'mon' ? Math.min(d, base) : Math.min(base * d / 100, base); }
+  function lineImporte(it) { return lineBase(it) - lineDescMonto(it); }
+
   function totales() {
-    let total = 0, itbis = 0;
-    _cart.forEach(it => { const imp = Number(it.precio) * Number(it.cantidad); total += imp; if (it.itbis) itbis += imp * 18 / 118; });
-    total = Math.round(total); itbis = Math.round(itbis);
-    return { total: total, itbis: itbis, subtotal: total - itbis, items: _cart.reduce((s, it) => s + Number(it.cantidad), 0) };
+    let total = 0, itbis = 0, descuento = 0;
+    _cart.forEach(it => { const imp = lineImporte(it); descuento += lineDescMonto(it); total += imp; if (it.itbis) itbis += imp * 18 / 118; });
+    total = Math.round(total); itbis = Math.round(itbis); descuento = Math.round(descuento);
+    return { total: total, itbis: itbis, subtotal: total - itbis, descuento: descuento, items: _cart.reduce((s, it) => s + Number(it.cantidad), 0) };
   }
   function catNombre(id) { const c = _cats.find(x => String(x.id) === String(id)); return c ? c.nombre : ''; }
 
@@ -13828,17 +13835,24 @@
       </div>`;
   }
 
-  // ── TAB: FACTURA (estilo Infoplus: cliente arriba + cuadro de artículos) ──
+  // ── TAB: FACTURA (estilo Infoplus: cabecera + cuadro de artículos) ──
   function prodCodigo(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? (p.codigo || '') : ''; }
+  function prodStock(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? Number(p.stock || 0) : 0; }
+  function proxNumeroFactura() { let mx = 0; (_ventas || []).forEach(v => { const n = parseInt(v.numero, 10); if (n > mx) mx = n; }); return mx + 1; }
+  const NCF_TIPOS = [['sin', 'Sin comprobante'], ['consumo', 'Consumo (B02)'], ['credito_fiscal', 'Crédito Fiscal (B01)'], ['gubernamental', 'Gubernamental (B15)'], ['regimen_especial', 'Régimen Especial (B14)']];
   function renderFactura() {
     if (!_prods.length) {
       return `<div style="text-align:center;padding:36px;color:#94a3b8;font-size:13px">Aún no hay artículos.<br>Ve a <b>"Productos"</b> (o usa <b>Importar</b>) y agrégalos.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Ir a Productos</button></div>`;
     }
     const cliOpts = `<option value="">— Consumidor final —</option>` + _clientes.map(c => `<option value="${c.id}"${String(_factCli) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
+    const ncfOpts = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('');
     return `<div class="nxFac">
-        <div class="nxFacTop">
-          <div class="nxFacCli"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
-          <div class="nxFacFecha"><span>Fecha</span><b>${fechaDMY(hoy())}</b></div>
+        <div class="nxFacHead">
+          <div class="nxFacF"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
+          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum">#${proxNumeroFactura()}</div></div>
+          <div class="nxFacF nxFacFsm"><label>Fecha</label><div class="nxFacNum" style="font-weight:600;color:#334155">${fechaDMY(hoy())}</div></div>
+          <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
+          <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito (fiado)</label></div>
         </div>
         <div class="nxFacAdd">
           <i class="ti ti-search"></i>
@@ -13849,6 +13863,8 @@
       </div>`;
   }
   window.nxFacSetCli = function (v) { _factCli = v || ''; };
+  window.nxFacSetNCF = function (v) { _facNCF = v || 'sin'; };
+  window.nxFacSetCredito = function (b) { _facCredito = !!b; };
   window.nxFacBuscar = function (q) {
     const box = document.getElementById('facSug'); if (!box) return;
     const t = String(q || '').trim().toLowerCase();
@@ -13864,7 +13880,7 @@
   window.nxFacAdd = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
-    if (ex) ex.cantidad += 1; else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio || 0), cantidad: 1, itbis: !!p.itbis });
+    if (ex) ex.cantidad += 1; else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio || 0), cantidad: 1, itbis: !!p.itbis, desc: 0, descT: 'pct' });
     const inp = document.getElementById('facBuscar'); if (inp) { inp.value = ''; inp.focus(); }
     const box = document.getElementById('facSug'); if (box) { box.innerHTML = ''; box.style.display = 'none'; }
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
@@ -13872,24 +13888,32 @@
   };
   window.nxFacCant = function (i, v) { const it = _cart[i]; if (!it) return; const n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0)); if (n === 0) { _cart.splice(i, 1); } else it.cantidad = n; pintarFactura(); };
   window.nxFacPrecio = function (i, v) { const it = _cart[i]; if (!it) return; it.precio = Math.max(0, parseMoney(v)); pintarFactura(); };
+  window.nxFacDesc = function (i, v) { const it = _cart[i]; if (!it) return; it.desc = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0); pintarFactura(); };
+  window.nxFacDescTipo = function (i) { const it = _cart[i]; if (!it) return; it.descT = (it.descT === 'mon') ? 'pct' : 'mon'; pintarFactura(); };
   window.nxFacRepaint = function () { const v = document.getElementById('v-pos'); if (v && _posTab === 'factura') pintarFactura(); };
   window.nxFacFacturar = function () { if (!_cart.length) return; window.nxPosCobrar(); };
   function pintarFactura() {
     const cont = document.getElementById('facTabla'); if (!cont) return;
     const t = totales();
-    const filas = _cart.length ? _cart.map((it, i) => `<tr>
+    const filas = _cart.length ? _cart.map((it, i) => {
+      const exi = prodStock(it.producto_id);
+      return `<tr>
         <td class="nxFacCod">${esc(prodCodigo(it.producto_id) || '—')}</td>
         <td class="nxFacDesc">${esc(it.nombre)}</td>
+        <td class="nxFacExi"><span${exi <= 0 ? ' class="nxFacExi0"' : ''}>${exi}</span></td>
         <td class="nxFacCant"><input inputmode="numeric" value="${it.cantidad}" onchange="window.nxFacCant(${i},this.value)"></td>
         <td class="nxFacPre"><input inputmode="decimal" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
-        <td class="nxFacImp">${fmt(it.precio * it.cantidad)}</td>
+        <td class="nxFacDsc"><div class="nxFacDscBox"><input inputmode="decimal" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
+        <td class="nxFacImp">${fmt(lineImporte(it))}</td>
         <td class="nxFacDel"><button type="button" onclick="window.nxPosDel(${i});window.nxFacRepaint()"><i class="ti ti-x"></i></button></td>
-      </tr>`).join('') : `<tr><td colspan="6" class="nxFacEmpty">Aún no hay artículos. Búscalos arriba y se agregan a la factura.</td></tr>`;
+      </tr>`;
+    }).join('') : `<tr><td colspan="8" class="nxFacEmpty">Aún no hay artículos. Búscalos arriba y se agregan a la factura.</td></tr>`;
     cont.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl">
-        <thead><tr><th>Código</th><th>Descripción</th><th>Cant.</th><th>Precio</th><th>Importe</th><th></th></tr></thead>
+        <thead><tr><th>Código</th><th>Descripción</th><th>Exist.</th><th>Cant.</th><th>Precio</th><th>Desc.</th><th>Importe</th><th></th></tr></thead>
         <tbody>${filas}</tbody>
       </table></div>
       <div class="nxFacTot">
+        ${t.descuento > 0 ? `<div class="nxFacTotR"><span>Descuento</span><span style="color:#dc2626">− ${fmt(t.descuento)}</span></div>` : ''}
         <div class="nxFacTotR"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
         <div class="nxFacTotR"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
         <div class="nxFacTotR nxFacTotBig"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
@@ -13986,13 +14010,14 @@
       metodo_pago: metodoLabel, pagos: pagosArr,
       pagado_efectivo: c.efe, pagado_tarjeta: c.tar, pagado_transferencia: c.tra, pagado_otro: c.che + c.nc,
       credito_monto: c.credito, recibido: c.efe, devuelta: c.devuelta,
+      tipo_comprobante: _facNCF || 'sin',
       estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     try {
       const r = await getAPI().post('pos_ventas', body);
       const venta = (r && r[0]) || null;
       if (!venta) throw new Error('No se pudo registrar la venta');
-      const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, importe: Math.round(it.precio * it.cantidad) }));
+      const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)) }));
       try { await getAPI().post('pos_venta_items', items); } catch (e) {}
       // descontar stock (best-effort; los servicios no manejan stock)
       for (const it of _cart) {
@@ -14003,6 +14028,7 @@
       const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), _items: items });
       _cart = [];
       _factCli = '';
+      _facNCF = 'sin'; _facCredito = false;
       cerrarModal('nxPosPago');
       const view = document.getElementById('v-pos'); if (view && (_posTab === 'vender' || _posTab === 'factura')) renderPOS(view);
       ticketHTML(ventaTicket);
@@ -14757,7 +14783,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPosCSS';
-    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#94a3b8}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#94a3b8}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#94a3b8;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#94a3b8;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#94a3b8;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#94a3b8;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#64748b;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}';
+    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#94a3b8}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#94a3b8}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#94a3b8;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#94a3b8;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#94a3b8;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#94a3b8;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#64748b;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}';
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 3, nombre: 'Punto de Venta', desc: 'Ventas, productos e inventario', icon: 'ti-shopping-cart', color: '#7c3aed', bg: '#faf5ff', onclick: 'window.nxAbrirPOS()' }); } catch (e) {} }
