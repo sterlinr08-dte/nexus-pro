@@ -188,6 +188,23 @@ commit descriptivo y push. La app descarga de `main`.
     actualizan costo; crédito = CxP; ficha de proveedor con saldo y pagos.
   - **Caja**: apertura/cierre y **arqueo** con conteo de billetes (denominaciones
     RD), efectivo esperado, descuadre y reporte de cierre imprimible.
+  - **Historial de facturas** (pestaña "Historial"): buscar venta por No. o
+    cliente, filtros por rango de fechas, KPIs (cantidad/total), ticket por venta
+    y **anular** (restaura stock desde `pos_venta_items`).
+  - **Contabilidad** (pestaña "Contabilidad", v24.9): Plan de cuentas (botón
+    "Crear plan de cuentas base" siembra catálogo DR estándar), Libro Diario,
+    Libro Mayor por cuenta, Balance de Comprobación, Estado de Resultados y
+    Balance General; filtro Desde/Hasta; asientos manuales (valida Debe=Haber).
+    **Cada venta del POS se contabiliza sola** (`postAsientoVenta()` llamado en
+    `nxPosConfirmar`: Caja/CxC contra Ventas + ITBIS por pagar). Tablas nuevas:
+    `pos_cuentas`, `pos_asientos`, `pos_asiento_lineas` — las 3 con
+    `organizacion_id` + trigger `set_organizacion_id()` + RLS
+    `mi_rol()='admin' AND organizacion_id = mi_organizacion()` (mismo patrón POS).
+  - **Recursos Humanos / Nómina** (POS) — *EN CONSTRUCCIÓN*: las tablas
+    `rrhh_empleados`, `rrhh_nominas`, `rrhh_nomina_lineas` (mismo patrón org+RLS)
+    **están diseñadas pero su migración fue bloqueada por el gate de cambios de
+    esquema**; falta el OK explícito del dueño para crearlas y luego construir el
+    frontend (empleados, generar nómina con SFS/AFP/ISR RD, recibo imprimible).
 
 ---
 
