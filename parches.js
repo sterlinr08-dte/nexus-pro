@@ -14534,7 +14534,7 @@
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
         <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}</td>
         <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button>${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button>${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxDevNueva('${v.id}')" title="Devolución / Nota de crédito"><i class="ti ti-arrow-back-up" style="color:#ea580c"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
       </tr>`;
     }).join('');
   }
@@ -14553,6 +14553,112 @@
       pintarHistorial();
     } catch (e) { toast('err', 'No se pudo anular', String(e && e.message || e)); }
   };
+
+  // ════════════════════════════════════════════════════════════════════
+  // ── DEVOLUCIONES / NOTAS DE CRÉDITO ──
+  // ════════════════════════════════════════════════════════════════════
+  let _devEdit = null; // { venta, lineas:[{producto_id,nombre,precio,itbis,maxCant,cant}] }
+  window.nxDevNueva = async function (ventaId) {
+    let v = (_ventas || []).find(x => String(x.id) === String(ventaId));
+    if (!v) { try { const r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + ventaId); v = r && r[0]; } catch (e) {} }
+    if (!v) { toast('err', 'Venta no encontrada'); return; }
+    let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
+    if (!items.length) { toast('err', 'La venta no tiene artículos'); return; }
+    _devEdit = { venta: v, motivo: '', metodo: 'Efectivo', lineas: items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: Number(it.precio || 0), itbis: it.itbis !== false, maxCant: Number(it.cantidad || 0), cant: Number(it.cantidad || 0) })) };
+    abrirDevolucion();
+  };
+  function devTotales() {
+    let total = 0, itbis = 0;
+    (_devEdit.lineas || []).forEach(l => { const imp = Number(l.precio || 0) * Number(l.cant || 0); total += imp; if (l.itbis) itbis += imp * 18 / 118; });
+    total = Math.round(total); itbis = Math.round(itbis);
+    return { total: total, itbis: itbis, subtotal: total - itbis };
+  }
+  function abrirDevolucion() {
+    cerrarModal('nxDevForm');
+    const v = _devEdit.venta;
+    const ov = document.createElement('div'); ov.id = 'nxDevForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:560px;max-height:94vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-arrow-back-up"></i> Devolución / Nota de crédito</span><button class="nxBack" type="button" onclick="document.getElementById('nxDevForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="font-size:11.5px;color:#64748b;margin-bottom:8px">Factura <b>${esc(v.numero_factura || '#' + v.numero)}</b> · ${esc(v.cliente_nombre || 'Consumidor final')}${v.ncf ? ' · NCF ' + esc(v.ncf) : ''}<br>Indica la cantidad a devolver de cada artículo.</div>
+        <div id="devLineas" style="overflow-y:auto;flex:1"></div>
+        <div class="fr-row">
+          <div class="fr"><label>Motivo</label><input id="devMot" class="no-upper" value="" placeholder="Ej: producto defectuoso"></div>
+          <div class="fr"><label>Cómo se devuelve</label><select id="devMet"><option>Efectivo</option><option>Nota de crédito</option><option>Transferencia</option><option>Rebaja a cuenta (CxC)</option></select></div>
+        </div>
+        <div id="devTot" class="nxAsTot"></div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxDevForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxDevGuardar()"><i class="ti ti-device-floppy"></i> Emitir devolución</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    pintarDevLineas();
+  }
+  window.nxDevCant = function (i, val) { const l = _devEdit.lineas[i]; if (!l) return; let n = parseFloat(val); if (isNaN(n) || n < 0) n = 0; if (n > l.maxCant) n = l.maxCant; l.cant = n; pintarDevTot(); };
+  function pintarDevLineas() {
+    const wrap = document.getElementById('devLineas'); if (!wrap) return;
+    wrap.innerHTML = _devEdit.lineas.map((l, i) => `<div class="nxNomRow" style="grid-template-columns:1fr 110px">
+        <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.nombre)}</div><div style="font-size:10px;color:#94a3b8">Precio ${fmt(l.precio)} · vendido ${l.maxCant}</div></div>
+        <label class="nxNomF"><span>Devolver</span><input data-devc="${i}" inputmode="numeric" value="${l.cant}" onchange="window.nxDevCant(${i},this.value)"></label>
+      </div>`).join('');
+    pintarDevTot();
+  }
+  function pintarDevTot() { const el = document.getElementById('devTot'); if (!el) return; const t = devTotales(); el.innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span>Subtotal: <b>${fmt(t.subtotal)}</b></span><span>ITBIS: <b>${fmt(t.itbis)}</b></span><span style="color:#dc2626">A devolver: <b>${fmt(t.total)}</b></span></div>`; }
+  function devProxNumero(lista) { let mx = 0; (lista || []).forEach(d => { const m = String(d.numero || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return 'NC-' + String(mx + 1).padStart(5, '0'); }
+  window.nxDevGuardar = async function () {
+    const lineas = _devEdit.lineas.filter(l => Number(l.cant || 0) > 0);
+    if (!lineas.length) { toast('err', 'Indica al menos una cantidad a devolver'); return; }
+    const t = devTotales();
+    const v = _devEdit.venta;
+    const metodo = val('devMet') || 'Efectivo';
+    let ncfDev = null;
+    try {
+      let prev = []; try { prev = await getAPI().get('pos_devoluciones', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
+      const numero = devProxNumero(prev);
+      try { ncfDev = await asignarNCF('B04'); } catch (e) {}
+      const body = { venta_id: v.id, numero: numero, ncf: ncfDev, fecha: isoHoy(), cliente_id: v.cliente_id || null, cliente_nombre: v.cliente_nombre || null, motivo: (val('devMot') || '').trim() || null, subtotal: t.subtotal, itbis: t.itbis, total: t.total, metodo: metodo, estado: 'emitida', created_by_name: nomAdmin() };
+      const r = await getAPI().post('pos_devoluciones', body);
+      const dev = (r && r[0]) || null; if (!dev) throw new Error('No se pudo registrar');
+      const items = lineas.map(l => ({ devolucion_id: dev.id, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant, precio: Math.round(l.precio), itbis: !!l.itbis, importe: Math.round(l.precio * l.cant) }));
+      await getAPI().post('pos_devolucion_items', items);
+      // devolver stock
+      for (const l of lineas) { try { const p = _prods.find(x => String(x.id) === String(l.producto_id)); if (p && p.tipo !== 'servicio') { const ns = Number(p.stock || 0) + Number(l.cant || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
+      }
+      // si se rebaja a cuenta del cliente (fiado), bajar su saldo
+      if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
+      // asiento contable inverso a la venta
+      try { postAsientoDevolucion(dev, t, metodo, v); } catch (e) {}
+      cerrarModal('nxDevForm');
+      toast('ok', 'Devolución emitida', (ncfDev ? 'NCF ' + ncfDev + ' · ' : '') + fmt(t.total));
+      nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v }));
+    } catch (e) { toast('err', 'No se pudo emitir', String(e && e.message || e)); }
+  };
+  async function postAsientoDevolucion(dev, t, metodo, venta) {
+    try {
+      const byc = await ctasMap(); if (!Object.keys(byc).length) return;
+      // Reversa de la venta: Debe Ventas + ITBIS / Haber Caja o CxC
+      const haberCod = (metodo.indexOf('CxC') >= 0) ? '1103' : '1101';
+      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0))];
+      await postAsientoConcepto(dev.fecha, 'Devolución ' + (dev.numero || '') + ' (fact. ' + (venta.numero_factura || '#' + venta.numero) + ')', 'devolucion', dev.id, lineas, dev.numero);
+    } catch (e) {}
+  }
+  function nxDevImprimirObj(dev) {
+    const e = empInfo();
+    const filas = (dev._items || []).map(it => `<tr><td>${Number(it.cantidad)}</td><td>${esc(it.nombre)}</td><td class="r">${fmt(it.precio)}</td><td class="r">${fmt(it.importe)}</td></tr>`).join('');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nota de crédito ${esc(dev.numero || '')}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:540px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot{margin-left:auto;max-width:260px}.tot td{border:none;padding:3px 6px}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>NOTA DE CRÉDITO ${esc(dev.numero || '')}</b></div>
+        ${dev.ncf ? `<div class="c muted">NCF: <b>${esc(dev.ncf)}</b></div>` : ''}
+        <div class="muted">Fecha: ${fechaDMY(dev.fecha)} · Cliente: <b>${esc(dev.cliente_nombre || 'Consumidor final')}</b><br>Factura afectada: ${esc((dev._venta && (dev._venta.numero_factura || '#' + dev._venta.numero)) || '')}${dev.motivo ? '<br>Motivo: ' + esc(dev.motivo) : ''}</div>
+        <table><thead><tr><th>Cant.</th><th>Descripción</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${filas}</tbody></table>
+        <table class="tot"><tr><td>Subtotal</td><td class="r">${fmt(dev.subtotal)}</td></tr><tr><td>ITBIS (18%)</td><td class="r">${fmt(dev.itbis)}</td></tr><tr class="gran"><td>TOTAL DEVUELTO</td><td class="r">${fmt(dev.total)}</td></tr></table>
+        <div class="muted" style="margin-top:8px">Forma de devolución: ${esc(dev.metodo || '')}</div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  }
   function renderVentas() {
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
         <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i><input id="histQ" value="${esc(_histQ)}" oninput="window.nxPosVentasBuscar(this.value)" placeholder="Buscar por No. de factura o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>

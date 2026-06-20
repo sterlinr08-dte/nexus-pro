@@ -200,6 +200,12 @@ commit descriptivo y push. La app descarga de `main`.
   - **Estado de cuenta de cliente (fiado)** (v25.3): botón en la ficha del cliente
     (`nxPosEstadoCuenta`) que imprime ventas a crédito + abonos + saldo corriente.
     No crea tablas (usa `pos_ventas`/`pos_abonos`).
+  - **Devoluciones / Notas de crédito** (v25.6): botón en cada fila del Historial
+    (`nxDevNueva`). Devolución total o parcial por artículo; regresa stock; emite
+    `pos_devoluciones`+`pos_devolucion_items` (org+trigger+RLS) con número
+    `NC-00001`; asigna NCF **B04** si hay secuencia (`asignarNCF('B04')`); asiento
+    inverso (`postAsientoDevolucion`: Debe Ventas+ITBIS / Haber Caja o CxC); nota
+    de crédito imprimible. Convive con "Anular" (que cancela la venta completa).
   - **Vendedores y comisiones** (v25.5): gestión en Ajustes (`pos_vendedores`:
     nombre, teléfono, comision_pct, activo; org+trigger+RLS). Selector de vendedor
     en el modal de cobro; se guarda `pos_ventas.vendedor_id`/`vendedor_nombre`
