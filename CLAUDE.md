@@ -103,8 +103,28 @@ Vender NEXUS PRO a varios negocios con **un solo dominio** y **control general**
   Verificado: Sterling ve 5 productos, Francis ve 0. **Las tablas del SEGURO
   (clientes, polizas, facturas, asientos...) AÚN no tienen `organizacion_id`/RLS por
   org — pendiente, hacer tabla por tabla y probado.**
+- **ENTRADA INTELIGENTE (login `usuario@empresa`, estilo Infoplus) — HECHA:** en
+  `doLogin()` (index.html), al escribir `usuario@empresa` se consulta la tabla
+  `organizaciones` por `slug` (en la base maestra de seguros, con la anon key). Si la
+  org tiene **`dominio`** → **redirige** a esa app (window.location). Si NO tiene
+  dominio → entra en ESTE sistema (seguros/POS). Directorio central = tabla
+  `organizaciones` (slug, nombre, tipo, dominio). Ej.: `deluxe`→`deluxe.nexusprord.com`,
+  `bayolcell`→`bayolcell.nexusprord.com` (redirigen); `nexus-pro`/`bayolsale` (sin
+  dominio) entran local.
+- **Decisión de arquitectura (importante):** sistemas DISTINTOS (seguros, Deluxe
+  belleza, BayolCell taller) = **cada uno su app/repo + su base + su subdominio**
+  (`deluxe.nexusprord.com` etc.), unificados por la entrada inteligente `@empresa`.
+  El **mismo** sistema vendido a varias (POS) = **una sola base compartida** separada
+  por `organizacion_id`+RLS (NO se crea base por cada cliente). Repos del dueño:
+  `nexus-pro` (seguros, este), `DELUXE-BEAUTY-CENTER-` (Vite/TS, base Supabase
+  `mrtqkhachhvsczltwakt`), `bayolcell-taller` (base `vkhwdvjtowrhkhqavnvk`).
+- **Deluxe DESPLEGADO y EN VIVO:** Cloudflare Pages (proyecto `deluxe-beauty-center`,
+  build `npm run build`, salida `dist`, env `VITE_SUPABASE_URL`+`VITE_SUPABASE_ANON_KEY`),
+  dominio `deluxe.nexusprord.com`. Flujo `estefany@deluxe` en `nexusprord.com` →
+  redirige a Deluxe. **Verificado funcionando.** Falta igual: BayolCell (desplegar su
+  subdominio).
 - **Pendiente:** Fase 3 para tablas de seguros · Fase 4 = panel de **control general**
-  del dueño (superadmin que ve todas las organizaciones) · marca blanca por dominio.
+  del dueño (superadmin que ve todas las organizaciones) · desplegar BayolCell.
 
 ---
 
