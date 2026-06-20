@@ -14822,7 +14822,7 @@
         <td style="text-align:right;font-weight:700">${fmt(p.precio)}</td>
         <td style="text-align:right;color:${serv ? '#cbd5e1' : (Number(p.stock) <= 0 ? '#dc2626' : bajo ? '#ea580c' : '#475569')}">${serv ? '—' : Number(p.stock || 0)}${bajo ? ' <i class="ti ti-alert-triangle" style="font-size:11px"></i>' : ''}</td>
         <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#6d28d9">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
-        <td style="white-space:nowrap;text-align:right"><button class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
+        <td style="white-space:nowrap;text-align:right">${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')"><i class="ti ti-device-mobile"></i></button> ` : ''}<button class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
       </tr>`;
     }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin productos. Toca "Nuevo" para agregar.</td></tr>';
     return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
