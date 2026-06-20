@@ -13649,6 +13649,7 @@
   let _factCli = '';
   let _facNCF = 'sin';
   let _facCredito = false;
+  let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR' };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
@@ -13659,6 +13660,7 @@
     try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _clientes = []; }
     try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _proveedores = []; }
     try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; } catch (e) { _caja = null; }
+    try { const cf = await getAPI().get('pos_config', 'select=*&limit=1'); if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; } } catch (e) {}
   }
   async function cargarComprasTab() {
     try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
@@ -13757,7 +13759,7 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'factura') body = renderFactura();
@@ -13765,6 +13767,7 @@
     else if (_posTab === 'compras') body = renderCompras();
     else if (_posTab === 'clientes') body = renderClientes();
     else if (_posTab === 'caja') body = renderCaja();
+    else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
     view.innerHTML = `<div class="nc">${head}${body}</div>`;
     if (_posTab === 'vender') pintarCarrito();
@@ -13839,6 +13842,8 @@
   function prodCodigo(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? (p.codigo || '') : ''; }
   function prodStock(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? Number(p.stock || 0) : 0; }
   function proxNumeroFactura() { let mx = 0; (_ventas || []).forEach(v => { const n = parseInt(v.numero, 10); if (n > mx) mx = n; }); return mx + 1; }
+  function prefijoFac(esCredito) { return esCredito ? (_posCfg.prefijo_credito || 'CR') : (_posCfg.prefijo_contado || 'CO'); }
+  function proxNumeroFacturaFmt(esCredito) { const pref = prefijoFac(esCredito); let mx = 0; (_ventas || []).forEach(v => { const nf = String(v.numero_factura || ''); if (nf.indexOf(pref) === 0) { const m = nf.match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } } }); return pref + String(mx + 1).padStart(6, '0'); }
   const NCF_TIPOS = [['sin', 'Sin comprobante'], ['consumo', 'Consumo (B02)'], ['credito_fiscal', 'Crédito Fiscal (B01)'], ['gubernamental', 'Gubernamental (B15)'], ['regimen_especial', 'Régimen Especial (B14)']];
   function renderFactura() {
     if (!_prods.length) {
@@ -13849,7 +13854,7 @@
     return `<div class="nxFac">
         <div class="nxFacHead">
           <div class="nxFacF"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
-          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum">#${proxNumeroFactura()}</div></div>
+          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" id="facNumPrev">${proxNumeroFacturaFmt(_facCredito)}</div></div>
           <div class="nxFacF nxFacFsm"><label>Fecha</label><div class="nxFacNum" style="font-weight:600;color:#334155">${fechaDMY(hoy())}</div></div>
           <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
           <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito (fiado)</label></div>
@@ -13864,7 +13869,7 @@
   }
   window.nxFacSetCli = function (v) { _factCli = v || ''; };
   window.nxFacSetNCF = function (v) { _facNCF = v || 'sin'; };
-  window.nxFacSetCredito = function (b) { _facCredito = !!b; };
+  window.nxFacSetCredito = function (b) { _facCredito = !!b; const el = document.getElementById('facNumPrev'); if (el) el.textContent = proxNumeroFacturaFmt(_facCredito); };
   window.nxFacBuscar = function (q) {
     const box = document.getElementById('facSug'); if (!box) return;
     const t = String(q || '').trim().toLowerCase();
@@ -13892,6 +13897,30 @@
   window.nxFacDescTipo = function (i) { const it = _cart[i]; if (!it) return; it.descT = (it.descT === 'mon') ? 'pct' : 'mon'; pintarFactura(); };
   window.nxFacRepaint = function () { const v = document.getElementById('v-pos'); if (v && _posTab === 'factura') pintarFactura(); };
   window.nxFacFacturar = function () { if (!_cart.length) return; window.nxPosCobrar(); };
+
+  // ── TAB: AJUSTES (prefijos del número de factura) ──
+  function renderAjustes() {
+    return `<div style="max-width:580px">
+        <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-receipt"></i> Numeración de facturas</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.5">Define el prefijo del número de factura según el tipo de venta. El consecutivo es automático por empresa.<br>Ejemplo: contado <b style="color:#2563eb">${esc(_posCfg.prefijo_contado)}000001</b> · crédito <b style="color:#2563eb">${esc(_posCfg.prefijo_credito)}000001</b>.</div>
+        <div class="fr-row">
+          <div class="fr"><label>Prefijo CONTADO</label><input id="cfgPrefCo" value="${esc(_posCfg.prefijo_contado)}" maxlength="6" placeholder="CO" style="text-transform:uppercase"></div>
+          <div class="fr"><label>Prefijo CRÉDITO</label><input id="cfgPrefCr" value="${esc(_posCfg.prefijo_credito)}" maxlength="6" placeholder="CR" style="text-transform:uppercase"></div>
+        </div>
+        <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
+      </div>`;
+  }
+  window.nxPosGuardarCfg = async function () {
+    const co = (val('cfgPrefCo') || '').trim().toUpperCase().replace(/\s/g, '') || 'CO';
+    const cr = (val('cfgPrefCr') || '').trim().toUpperCase().replace(/\s/g, '') || 'CR';
+    try {
+      const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+      if (ex && ex.length) await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, { prefijo_contado: co, prefijo_credito: cr });
+      else await getAPI().post('pos_config', { prefijo_contado: co, prefijo_credito: cr });
+      _posCfg = { prefijo_contado: co, prefijo_credito: cr };
+      toast('ok', 'Ajustes guardados', 'Contado: ' + co + ' · Crédito: ' + cr);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
   function pintarFactura() {
     const cont = document.getElementById('facTabla'); if (!cont) return;
     const t = totales();
@@ -14004,13 +14033,21 @@
     if (c.nc > 0) pagosArr.push({ metodo: 'Nota de crédito', monto: c.nc });
     if (c.credito > 0) pagosArr.push({ metodo: 'Crédito (fiado)', monto: c.credito });
     const metodoLabel = pagosArr.length === 0 ? 'Efectivo' : pagosArr.length === 1 ? pagosArr[0].metodo : 'Mixto';
+    // Número de factura con prefijo según tipo (contado/crédito) y consecutivo por empresa
+    let numFac = '';
+    try {
+      const esCred = c.credito > 0; const pref = prefijoFac(esCred);
+      const last = await getAPI().get('pos_ventas', `a_credito=eq.${esCred}&numero_factura=like.${encodeURIComponent(pref)}*&select=numero_factura&order=created_at.desc&limit=1`);
+      let nx = 1; if (last && last[0] && last[0].numero_factura) { const m = String(last[0].numero_factura).match(/(\d+)\s*$/); if (m) nx = parseInt(m[1], 10) + 1; }
+      numFac = pref + String(nx).padStart(6, '0');
+    } catch (e) {}
     const body = {
       cliente_id: cliId, cliente_nombre: cliNom, a_credito: c.credito > 0,
       subtotal: c.subtotal, itbis: c.itbis, total: c.total, descuento: c.descMonto,
       metodo_pago: metodoLabel, pagos: pagosArr,
       pagado_efectivo: c.efe, pagado_tarjeta: c.tar, pagado_transferencia: c.tra, pagado_otro: c.che + c.nc,
       credito_monto: c.credito, recibido: c.efe, devuelta: c.devuelta,
-      tipo_comprobante: _facNCF || 'sin',
+      tipo_comprobante: _facNCF || 'sin', numero_factura: numFac || null,
       estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     try {
@@ -14048,7 +14085,7 @@
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
         <div class="c muted">${esc(e.dir || '')}</div>
         <div class="line"></div>
-        <div class="c"><b>TICKET DE VENTA No. ${v.numero || ''}</b></div>
+        <div class="c"><b>${v.numero_factura ? ('FACTURA ' + v.numero_factura) : ('TICKET DE VENTA No. ' + (v.numero || ''))}</b></div>
         <div class="muted">${fechaDMY(v.fecha)}${v.cliente_nombre ? '<br>Cliente: ' + esc(v.cliente_nombre) : ''}</div>
         <div class="line"></div>
         <table>${filas}</table>
@@ -14299,7 +14336,7 @@
   function renderVentas() {
     const totalDia = _ventas.filter(v => (v.fecha || v.created_at || '').slice(0, 10) === hoy()).reduce((s, v) => s + Number(v.total || 0), 0);
     const filas = _ventas.length ? _ventas.map(v => `<tr onclick="window.nxPosTicket('${v.id}')" style="cursor:pointer">
-        <td style="font-size:10px">#${v.numero || ''}<div style="color:#94a3b8">${fechaDMY(v.fecha || v.created_at)}</div></td>
+        <td style="font-size:10px;font-weight:700;color:#1e293b">${esc(v.numero_factura || ('#' + (v.numero || '')))}<div style="color:#94a3b8;font-weight:400">${fechaDMY(v.fecha || v.created_at)}</div></td>
         <td style="font-size:11px">${esc(v.cliente_nombre || 'Consumidor final')}</td>
         <td style="font-size:10px">${esc(v.metodo_pago || '')}</td>
         <td style="text-align:right;font-weight:800;color:#059669">${fmt(v.total)}</td>

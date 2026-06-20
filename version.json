@@ -1,7 +1,8 @@
 {
-  "version": "24.4",
+  "version": "24.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (POS · número de factura con prefijo): la factura lleva un número con prefijo según el tipo de venta — CONTADO = CO000001, CRÉDITO = CR000001 (consecutivo automático por empresa). Los prefijos se configuran en la nueva pestaña AJUSTES del Punto de Venta (puedes poner los que quieras, ej. FAC, VTA…). El número sale en la cabecera de la factura, en la lista de Ventas y en el ticket",
     "NUEVO (Factura POS nivel Infoplus): la pantalla FACTURA ahora tiene cabecera completa — Cliente, No. de Factura, Fecha, TIPO DE COMPROBANTE (Consumo B02, Crédito Fiscal B01, etc.) y opción A CRÉDITO. En el cuadro de artículos cada línea muestra la EXISTENCIA y permite poner un DESCUENTO por artículo en % o en RD$ (con un botón que cambia entre % y RD$). Abajo se ve el Descuento total, Subtotal, ITBIS y TOTAL. (Próximamente: existencia por almacén / multi-almacén.)",
     "NUEVO (POS rediseñado para PC): el Punto de Venta ahora está pensado para computadora (como Infoplus). Aprovecha el ancho de la pantalla, las pestañas de arriba tienen un look más limpio de escritorio (subrayado), la rejilla de productos es más densa, el carrito/factura más cómodos, y en la pantalla FACTURA los totales quedan a la derecha con el botón Cobrar grande. Sigue viéndose bien en el teléfono (se adapta solo)",
     "ARREGLADO: la pantalla de entrada (nexusprord.com) ya NO dice 'Seguros de Salud'. Ahora es neutral ('Plataforma de gestión'), porque es la puerta de TODOS tus negocios (seguros, Deluxe, POS, etc.). El campo de usuario sugiere el formato usuario@empresa. Adentro, cada negocio mantiene su propia marca",
