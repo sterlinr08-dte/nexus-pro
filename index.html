@@ -1695,7 +1695,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
       <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
       <div class="fr"><label>Día de facturación (1-28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" placeholder="Día del mes"/></div>
-      <div class="fr"><label>Deuda RD$ (al crear: deuda previa · al editar: ajusta la deuda total)</label><input type="text" id="cDeudaIni" inputmode="decimal" data-nx-money value="0" placeholder="Ej: 17400" class="no-upper"/></div>
+      <div class="fr"><label id="cDeudaLbl">Deuda previa RD$ (deuda que el cliente ya tenía antes del sistema)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="cDeudaIni" inputmode="decimal" data-nx-money value="0" placeholder="Ej: 17400" class="no-upper" style="flex:1;min-width:0"/>
+          <button type="button" id="cDeudaUnlock" onclick="nxDeudaUnlock()" style="display:none;flex:0 0 auto;background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap"><i class="ti ti-lock-open"></i> Ajustar</button>
+        </div>
+        <div id="cDeudaHint" style="display:none;font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">🔒 La deuda se maneja sola con las facturas y los cobros. Está bloqueada para que al editar no se dañe. Toca <b>Ajustar</b> solo si necesitas corregir un error puntual.</div>
+      </div>
     </div>
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin:8px 0">
       <div style="font-size:10px;font-weight:700;color:#475569;margin-bottom:10px;font-family:var(--mono)">📋 ESTADO Y PROCESO DEL CLIENTE</div>
@@ -3178,7 +3184,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='29.9';
+const APP_VERSION='30.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5931,7 +5937,11 @@ function abrirNuevoCli(){
   const cArsNew=document.getElementById('cARS');if(cArsNew)cArsNew.value='';
   // Día de facturación: por defecto el día configurado del sistema (ej: 20)
   const cDiaNew=document.getElementById('cDiaFact');if(cDiaNew)cDiaNew.value=autoCfg.dia||1;
-  const cDeudaNew=document.getElementById('cDeudaIni');if(cDeudaNew){cDeudaNew.value='0';cDeudaNew.disabled=false;}
+  // CREAR: el campo sirve para registrar la deuda PREVIA del cliente (editable, sin candado)
+  const cDeudaNew=document.getElementById('cDeudaIni');if(cDeudaNew){cDeudaNew.value='0';cDeudaNew.disabled=false;cDeudaNew._deudaOriginal=0;}
+  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda previa RD$ (deuda que el cliente ya tenía antes del sistema)';
+   const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='none';
+   const hn=document.getElementById('cDeudaHint');if(hn)hn.style.display='none';}
   ['cVip'].forEach(id=>{const e=document.getElementById(id);if(e)e.checked=false;});
   // Cliente nuevo: estado ACTIVO, facturación activa (factura igual que antes)
   const cEst=document.getElementById('cEstadoCli');if(cEst)cEst.value='ACTIVO';
@@ -5975,10 +5985,14 @@ function editarCli(id){
   }
   // Día de facturación: el guardado del cliente, o el del sistema si no tiene
   const cDiaEd=document.getElementById('cDiaFact');if(cDiaEd)cDiaEd.value=c.dia_facturacion||autoCfg.dia||1;
-  // Deuda: al editar se muestra la deuda actual pero bloqueada (para no duplicarla).
-  // Para cambiar la deuda de un cliente existente se usa el botón Abonar / cobros.
+  // EDITAR: la deuda se muestra pero BLOQUEADA (candado). La deuda total se maneja sola con
+  // las facturas y los cobros; dejarla editable en cada edición la dañaba (bug de los RD$ 5/8).
+  // Para corregir un error puntual está el botón "Ajustar" (nxDeudaUnlock), deliberado y auditado.
   const cDeudaEd=document.getElementById('cDeudaIni');
-  if(cDeudaEd){cDeudaEd.value=c.deuda_total||0;cDeudaEd.disabled=false;cDeudaEd._deudaOriginal=c.deuda_total||0;}
+  if(cDeudaEd){cDeudaEd.value=c.deuda_total||0;cDeudaEd.disabled=true;cDeudaEd._deudaOriginal=c.deuda_total||0;}
+  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda total RD$ (bloqueada · se maneja con facturas y cobros)';
+   const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='';
+   const hn=document.getElementById('cDeudaHint');if(hn)hn.style.display='';}
   const cVipEl=document.getElementById('cVip');if(cVipEl)cVipEl.checked=!!c.vip;
   const cEstEl=document.getElementById('cEstadoCli');if(cEstEl)cEstEl.value=c.estado_cliente||'ACTIVO';
   const cPFEl=document.getElementById('cPermFact');if(cPFEl)cPFEl.checked=c.permitir_facturacion!==false;
@@ -6011,6 +6025,17 @@ function editarCli(id){
 }
 // Calcula el % de progreso de onboarding y muestra/oculta el campo "Otro"
 const TOTAL_PENDIENTES_POSIBLES=12;
+// Desbloquea el campo de deuda al EDITAR un cliente, de forma deliberada (no se daña por accidente).
+// La deuda normal se maneja sola con facturas y cobros; esto es solo para corregir un error puntual.
+function nxDeudaUnlock(){
+  const inp=document.getElementById('cDeudaIni');if(!inp)return;
+  if(!confirm('La deuda se maneja sola con las facturas y los cobros.\n\n¿Seguro que quieres AJUSTARLA a mano? Úsalo solo para corregir un error puntual.'))return;
+  inp.disabled=false;
+  const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='none';
+  try{inp.focus();inp.select();}catch(e){}
+  toast('info','Deuda desbloqueada','Cámbiala con cuidado · se guarda al guardar el cliente');
+}
+
 function actualizarProgreso(){
   const chks=document.querySelectorAll('.pend-chk:checked');
   const n=chks.length;
