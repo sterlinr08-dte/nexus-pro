@@ -15091,8 +15091,8 @@
       let entId = id;
       if (id) await getAPI().patch('pos_clientes', 'id=eq.' + id, body);
       else { const r = await getAPI().post('pos_clientes', body); entId = r && r[0] && r[0].id; }
-      // ── Sincronizar con RRHH si es empleado (crea/actualiza ficha enlazada) ──
-      try { if (body.es_empleado && entId) await syncEmpleadoEntidad(entId, body); } catch (e) {}
+      // ── Sincronizar con RRHH: crea/actualiza si es empleado; desactiva la ficha si le quitan el rol ──
+      try { if (body.es_empleado && entId) await syncEmpleadoEntidad(entId, body); else if (entId && !body.es_empleado) await getAPI().patch('rrhh_empleados', 'entidad_id=eq.' + entId, { activo: false }); } catch (e) {}
       toast('ok', id ? 'Entidad actualizada' : 'Entidad creada', body.codigo + ' · ' + body.nombre);
       cerrarModal('nxEntForm');
       _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || [];
@@ -15221,17 +15221,18 @@
   window.nxPosAbonar = async function (id) {
     const monto = parseMoney(val('posAbMonto')); if (monto <= 0) { toast('err', 'Pon el monto del abono'); return; }
     try {
-      await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, numero: await nextSeq('recibo'), caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
+      const rab = await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, numero: await nextSeq('recibo'), caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
+      const abId = rab && rab[0] && rab[0].id;
       _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
-      try { const cli = _clientes.find(x => String(x.id) === String(id)); postAsientoAbono(cli && cli.nombre, monto, val('posAbMet') || 'Efectivo', val('posAbFecha') || hoy()); } catch (e) {}
+      try { const cli = _clientes.find(x => String(x.id) === String(id)); postAsientoAbono(cli && cli.nombre, monto, val('posAbMet') || 'Efectivo', val('posAbFecha') || hoy(), abId); } catch (e) {}
       toast('ok', 'Abono registrado', fmt(monto));
       window.nxPosCliVer(id);
       const view = document.getElementById('v-pos'); if (view && _posTab === 'clientes') renderPOS(view);
     } catch (e) { toast('err', 'No se pudo registrar', String(e && e.message || e)); }
   };
   window.nxPosDelAbono = async function (abId, cliId) {
-    if (!confirm('¿Eliminar este abono?')) return;
-    try { await getAPI().del('pos_abonos', 'id=eq.' + abId); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    if (!confirm('¿Eliminar este abono? Se revierte su contabilidad.')) return;
+    try { await getAPI().del('pos_abonos', 'id=eq.' + abId); await delAsientoOrigen('cobro', abId); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosDelCli = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
@@ -15358,8 +15359,20 @@
     document.body.appendChild(ov);
   };
   window.nxPosDelCompra = async function (id) {
-    if (!confirm('¿Eliminar esta compra? (No revierte el stock automáticamente)')) return;
-    try { await getAPI().del('pos_compras', 'id=eq.' + id); toast('ok', 'Compra eliminada'); cerrarModal('nxPosCompraDet'); await cargarComprasTab(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    if (!confirm('¿Eliminar esta compra? Se revierte el stock y la contabilidad.')) return;
+    const compra = (_compras || []).find(x => String(x.id) === String(id));
+    try {
+      // revertir stock de cada artículo (total + almacén + kardex)
+      try {
+        const items = await getAPI().get('pos_compra_items', 'select=producto_id,cantidad&compra_id=eq.' + id) || [];
+        const aid = (compra && compra.almacen_id) || (_almacenes.length && almPrincipal() && almPrincipal().id) || null;
+        for (const it of items) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = Math.max(0, prev - Number(it.cantidad || 0)); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'ajuste', -Number(it.cantidad || 0), prev, ns, 'Compra eliminada', 'Reversa de compra'); if (aid) { try { upsertStockAlm(it.producto_id, aid, Math.max(0, stockEnAlm(it.producto_id, aid) - Number(it.cantidad || 0))).catch(() => {}); } catch (e) {} } } }
+      } catch (e) {}
+      await delAsientoOrigen('compra', id);
+      await getAPI().del('pos_compras', 'id=eq.' + id);
+      toast('ok', 'Compra eliminada', 'Stock y contabilidad revertidos');
+      cerrarModal('nxPosCompraDet'); await cargarComprasTab(); await cargarPOS(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
   // Proveedores
@@ -15444,7 +15457,8 @@
     const monto = parseMoney(val('provPagoMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
     const metodo = val('provPagoMet') || 'Efectivo';
     try {
-      await getAPI().post('pos_compra_pagos', { proveedor_id: id, monto: monto, metodo: metodo, numero: await nextSeq('pago_prov'), created_by_name: nomAdmin() });
+      const rpg = await getAPI().post('pos_compra_pagos', { proveedor_id: id, monto: monto, metodo: metodo, numero: await nextSeq('pago_prov'), created_by_name: nomAdmin() });
+      const pagoId = rpg && rpg[0] && rpg[0].id;
       _pagosProvByProv[id] = (_pagosProvByProv[id] || 0) + monto;
       // Asiento: Debe CxP (2101) / Haber Caja o Banco
       try {
@@ -15452,13 +15466,13 @@
         if (Object.keys(byc).length) {
           const pn = (_proveedores.find(p => String(p.id) === String(id)) || {}).nombre || '';
           const ln = [lnCta(byc, '2101', 'Cuentas por pagar', monto, 0), lnCta(byc, metodo === 'Efectivo' ? '1101' : '1102', metodo === 'Efectivo' ? 'Caja' : 'Banco', 0, monto)];
-          await postAsientoConcepto(isoHoy(), 'Pago a proveedor' + (pn ? ' ' + pn : ''), 'pago_prov', null, ln);
+          await postAsientoConcepto(isoHoy(), 'Pago a proveedor' + (pn ? ' ' + pn : ''), 'pago_prov', pagoId || null, ln);
         }
       } catch (e) {}
       toast('ok', 'Pago registrado', fmt(monto)); window.nxPosProvVer(id);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
-  window.nxPosDelPagoProv = async function (pid, provId) { if (!confirm('¿Eliminar este pago?')) return; try { await getAPI().del('pos_compra_pagos', 'id=eq.' + pid); toast('ok', 'Pago eliminado'); window.nxPosProvVer(provId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); } };
+  window.nxPosDelPagoProv = async function (pid, provId) { if (!confirm('¿Eliminar este pago? Se revierte su contabilidad.')) return; try { await getAPI().del('pos_compra_pagos', 'id=eq.' + pid); await delAsientoOrigen('pago_prov', pid); toast('ok', 'Pago eliminado'); window.nxPosProvVer(provId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); } };
   window.nxPosDelProv = async function (id) {
     const pp = _proveedores.find(x => String(x.id) === String(id));
     if (pp && pp._entidad) { toast('err', 'Es una Entidad', 'Quítale el rol "Proveedor" desde el módulo Entidades'); return; }
@@ -15516,13 +15530,14 @@
     const monto = parseMoney(val('movMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
     const concepto = (val('movConc') || '').trim() || null;
     try {
-      await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: tipo, concepto: concepto, monto: monto, created_by_name: nomAdmin() });
+      const rmv = await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: tipo, concepto: concepto, monto: monto, created_by_name: nomAdmin() });
+      const movId = rmv && rmv[0] && rmv[0].id;
       // Asiento: entrada → Debe Caja / Haber Otros ingresos · salida → Debe Gastos varios / Haber Caja
       try {
         const byc = await ctasMap();
         if (Object.keys(byc).length) {
           const ln = tipo === 'entrada' ? [lnCta(byc, '1101', 'Caja', monto, 0), lnCta(byc, '4102', 'Otros ingresos', 0, monto)] : [lnCta(byc, '6104', 'Gastos varios', monto, 0), lnCta(byc, '1101', 'Caja', 0, monto)];
-          await postAsientoConcepto(isoHoy(), (tipo === 'entrada' ? 'Entrada de caja' : 'Salida de caja') + (concepto ? ': ' + concepto : ''), 'caja_mov', null, ln);
+          await postAsientoConcepto(isoHoy(), (tipo === 'entrada' ? 'Entrada de caja' : 'Salida de caja') + (concepto ? ': ' + concepto : ''), 'caja_mov', movId || null, ln);
         }
       } catch (e) {}
       cerrarModal('nxPosMov'); _cajaTot = await totalesCaja(_caja);
@@ -15532,7 +15547,7 @@
   };
   window.nxPosDelMov = async function (id) {
     if (!confirm('¿Eliminar este movimiento?')) return;
-    try { await getAPI().del('pos_caja_movimientos', 'id=eq.' + id); _cajaTot = await totalesCaja(_caja); toast('ok', 'Movimiento eliminado'); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    try { await getAPI().del('pos_caja_movimientos', 'id=eq.' + id); await delAsientoOrigen('caja_mov', id); _cajaTot = await totalesCaja(_caja); toast('ok', 'Movimiento eliminado'); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosCerrarCaja = function () {
     if (!_caja || !_cajaTot) return;
@@ -16097,12 +16112,19 @@
     } catch (e) {}
   }
   // Abono de cliente (cobro de fiado): Debe Caja/Banco / Haber Cuentas por cobrar
-  async function postAsientoAbono(cliNom, monto, metodo, fecha) {
+  async function postAsientoAbono(cliNom, monto, metodo, fecha, origenId) {
     try {
       const byc = await ctasMap(); if (!Object.keys(byc).length) return;
       const efe = (metodo || 'Efectivo') === 'Efectivo';
       const lineas = [lnCta(byc, efe ? '1101' : '1102', efe ? 'Caja' : 'Banco', Number(monto || 0), 0), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, Number(monto || 0))];
-      await postAsientoConcepto(fecha, 'Abono cliente' + (cliNom ? ' ' + cliNom : ''), 'cobro', null, lineas);
+      await postAsientoConcepto(fecha, 'Abono cliente' + (cliNom ? ' ' + cliNom : ''), 'cobro', origenId || null, lineas);
+    } catch (e) {}
+  }
+  // Borra el/los asiento(s) de un documento (reversa al eliminar/anular)
+  async function delAsientoOrigen(tipo, origenId) {
+    try {
+      const as = await getAPI().get('pos_asientos', 'select=id&tipo=eq.' + tipo + '&origen_id=eq.' + origenId) || [];
+      for (const a of as) { try { await getAPI().del('pos_asiento_lineas', 'asiento_id=eq.' + a.id); await getAPI().del('pos_asientos', 'id=eq.' + a.id); } catch (e) {} }
     } catch (e) {}
   }
 
@@ -16363,6 +16385,7 @@
     ov.innerHTML = `<div class="modal" style="max-width:420px">
         <div class="mt"><span><i class="ti ti-adjustments"></i> Ajuste de inventario</span><button class="nxBack" type="button" onclick="document.getElementById('nxInvAjuste').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div class="fr"><label>Producto *</label><select id="ajProd">${opts}</select></div>
+        ${_almacenes.length > 1 ? `<div class="fr"><label>Almacén</label><select id="ajAlm">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}
         <div class="fr-row">
           <div class="fr"><label>Stock contado (real) *</label><input id="ajStock" inputmode="numeric" placeholder="Cantidad real"></div>
           <div class="fr"><label>Motivo</label><input id="ajMot" class="no-upper" placeholder="Ej: conteo físico, merma"></div>
@@ -16376,13 +16399,25 @@
     const pid = val('ajProd'); const nuevo = parseInt(String(val('ajStock')).replace(/[^0-9.-]/g, ''), 10);
     if (!pid || isNaN(nuevo)) { toast('err', 'Elige producto y stock real'); return; }
     const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
-    const prev = Number(p.stock || 0); const delta = nuevo - prev;
-    if (delta === 0) { toast('ok', 'Sin cambios', 'El stock ya coincide'); cerrarModal('nxInvAjuste'); return; }
+    const motivo = (val('ajMot') || '').trim() || null;
+    const aid = (_almacenes.length > 1) ? (val('ajAlm') || _almacenSel) : (_almacenes.length ? (almPrincipal() && almPrincipal().id) : null);
     try {
-      await getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: nuevo }); p.stock = nuevo;
-      const ap = almPrincipal(); if (ap) { try { await upsertStockAlm(p.id, ap.id, stockEnAlm(p.id, ap.id) + delta); } catch (e) {} }
-      await logMov(p, 'ajuste', delta, prev, nuevo, 'Ajuste manual' + (ap ? ' (' + ap.nombre + ')' : ''), (val('ajMot') || '').trim() || null);
-      toast('ok', 'Inventario ajustado', p.nombre + ': ' + fmtN(prev) + ' → ' + fmtN(nuevo));
+      if (aid) {
+        // ajuste por almacén: el conteo es de ESE almacén; el total cambia por la diferencia
+        const curAlm = stockEnAlm(pid, aid); const delta = nuevo - curAlm;
+        if (delta === 0) { toast('ok', 'Sin cambios', 'El stock ya coincide'); cerrarModal('nxInvAjuste'); return; }
+        const totPrev = Number(p.stock || 0); const totNew = Math.max(0, totPrev + delta);
+        await getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: totNew }); p.stock = totNew;
+        try { await upsertStockAlm(pid, aid, nuevo); } catch (e) {}
+        await logMov(p, 'ajuste', delta, totPrev, totNew, 'Ajuste · ' + almNombre(aid), motivo);
+        toast('ok', 'Inventario ajustado', almNombre(aid) + ': ' + fmtN(curAlm) + ' → ' + fmtN(nuevo));
+      } else {
+        const prev = Number(p.stock || 0); const delta = nuevo - prev;
+        if (delta === 0) { toast('ok', 'Sin cambios', 'El stock ya coincide'); cerrarModal('nxInvAjuste'); return; }
+        await getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: nuevo }); p.stock = nuevo;
+        await logMov(p, 'ajuste', delta, prev, nuevo, 'Ajuste manual', motivo);
+        toast('ok', 'Inventario ajustado', p.nombre + ': ' + fmtN(prev) + ' → ' + fmtN(nuevo));
+      }
       cerrarModal('nxInvAjuste');
       await cargarInventario(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo ajustar', String(e && e.message || e)); }
@@ -17009,7 +17044,7 @@
   };
   window.nxRhAnularNomina = async function (id) {
     if (!confirm('¿Anular esta nómina?')) return;
-    try { await getAPI().patch('rrhh_nominas', 'id=eq.' + id, { estado: 'anulada' }); toast('ok', 'Nómina anulada'); _nominaSel = null; await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
+    try { await getAPI().patch('rrhh_nominas', 'id=eq.' + id, { estado: 'anulada' }); await delAsientoOrigen('nomina', id); toast('ok', 'Nómina anulada', 'Contabilidad revertida'); _nominaSel = null; await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
     catch (e) { toast('err', 'No se pudo anular', String(e && e.message || e)); }
   };
 
