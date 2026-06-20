@@ -15600,10 +15600,28 @@
     pintarCompraItems();
   };
   window.nxPosCompraDelItem = function (idx) { _compraItems.splice(idx, 1); pintarCompraItems(); };
+  window.nxCompraEditItem = function (i) {
+    const it = _compraItems[i]; if (!it) return;
+    const ar = document.getElementById('compArt'); if (ar) ar.value = it.producto_id;
+    window.nxCompraArtCambio();
+    const p = _prods.find(x => String(x.id) === String(it.producto_id));
+    const co = document.getElementById('compCosto'); if (co) co.value = Math.round(it.costo);
+    if (p && p.serial) {
+      _compraImeiBuf = it.imeis ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [];
+      pintarCompraImeiChips();
+      const cc = document.getElementById('compCant'); if (cc) cc.value = _compraImeiBuf.length || '0';
+    } else {
+      const cc = document.getElementById('compCant'); if (cc) cc.value = it.cantidad;
+    }
+    _compraItems.splice(i, 1);
+    pintarCompraItems();
+    if (ar && ar.scrollIntoView) ar.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    toast('ok', 'Editando artículo', 'Cámbialo y toca "Agregar"');
+  };
   window.nxCompraImei = function (i, v) { if (_compraItems[i]) _compraItems[i].imeis = v; };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
-    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
+    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b> <i class="ti ti-edit" style="font-size:11px;color:#6d28d9"></i><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
   }

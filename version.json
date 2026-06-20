@@ -1,7 +1,8 @@
 {
-  "version": "29.4",
+  "version": "29.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Compra · editar artículo con un clic): en la lista de artículos de la compra, ahora tocas un artículo y vuelve arriba al editor para cambiarlo (cantidad, costo o sus IMEI). Lo ajustas y tocas 'Agregar' otra vez. La x sigue para eliminar",
     "ARREGLADO (importante · compra con proveedor de Entidades): se corrigió el error 'NO SE PUDO REGISTRAR LA COMPRA' que salía cuando el proveedor era una Entidad (no de la lista vieja). Ahora la compra guarda bien con cualquier proveedor",
     "ARREGLADO (compra · cantidad bloqueada en equipos con serial): la casilla de Cantidad ya no se puede editar a mano cuando el artículo maneja IMEI — se ajusta sola según cuántos IMEI agregues con el +",
     "PRUEBA (botones planos): se quitó el relieve 2.5D de los botones de color (morado/rojo/verde) y quedaron PLANOS, a ver si se ve más limpio. Si prefieres el relieve, se devuelve",
