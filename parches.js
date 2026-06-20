@@ -14521,6 +14521,7 @@
     try {
       await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
       _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
+      try { const cli = _clientes.find(x => String(x.id) === String(id)); postAsientoAbono(cli && cli.nombre, monto, val('posAbMet') || 'Efectivo', val('posAbFecha') || hoy()); } catch (e) {}
       toast('ok', 'Abono registrado', fmt(monto));
       window.nxPosCliVer(id);
       const view = document.getElementById('v-pos'); if (view && _posTab === 'clientes') renderPOS(view);
@@ -14627,6 +14628,7 @@
       try { await getAPI().post('pos_compra_items', items); } catch (e) {}
       for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const ns = Number(p.stock || 0) + Number(it.cantidad); p.stock = ns; p.costo = it.costo; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns, costo: it.costo }).catch(() => {}); } } catch (e) {} }
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
+      try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {}
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
       _compraItems = []; cerrarModal('nxPosCompra');
       await cargarComprasTab(); await cargarPOS();
@@ -14946,10 +14948,12 @@
     }
     const sub = (k, lbl, ic) => `<button type="button" class="nxFacSubTab${_ctaTab === k ? ' on' : ''}" onclick="window.nxCtaTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>`;
     const tabs = `<div class="nxFacSubTabs">${sub('resumen', 'Resumen', 'ti-gauge')}${sub('plan', 'Plan de cuentas', 'ti-list-numbers')}${sub('diario', 'Libro Diario', 'ti-book')}${sub('mayor', 'Libro Mayor', 'ti-file-text')}${sub('balanza', 'Comprobación', 'ti-scale')}${sub('resultados', 'Estado Resultados', 'ti-chart-bar')}${sub('general', 'Balance General', 'ti-report-money')}</div>`;
+    const imprimible = ['diario', 'balanza', 'resultados', 'general'].indexOf(_ctaTab) >= 0;
     const rango = (_ctaTab === 'plan') ? '' : `<div class="nxCtaRango">
         <div class="nxFacF"><label>Desde</label><input type="date" value="${_ctaDesde}" onchange="window.nxCtaRango('d',this.value)"></div>
         <div class="nxFacF"><label>Hasta</label><input type="date" value="${_ctaHasta}" onchange="window.nxCtaRango('h',this.value)"></div>
         <div style="font-size:11px;color:#94a3b8;align-self:end;padding-bottom:11px">${asientosRango().length} asiento(s)</div>
+        ${imprimible ? `<button class="btn bsm bghost" type="button" style="margin-left:auto;align-self:end" onclick="window.nxCtaImprimir('${_ctaTab}')"><i class="ti ti-printer"></i> Imprimir</button>` : ''}
       </div>`;
     let body = '';
     if (_ctaTab === 'plan') body = ctaPlan();
@@ -14977,7 +14981,8 @@
         ${card('Capital + resultado', capital + utilidad, '#7c3aed')}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-        <button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button>
+        <button class="btn bsm bc1" type="button" onclick="window.nxCtaGasto()"><i class="ti ti-cash-banknote"></i> Registrar gasto</button>
+        <button class="btn bsm bghost" type="button" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button>
         <button class="btn bsm bghost" type="button" onclick="window.nxCtaTab('diario')"><i class="ti ti-book"></i> Ver libro diario</button>
         <button class="btn bsm bghost" type="button" onclick="window.nxCtaTab('resultados')"><i class="ti ti-chart-bar"></i> Estado de resultados</button>
       </div>`;
@@ -15141,6 +15146,91 @@
     catch (e) { toast('err', 'No se pudo eliminar', String(e && e.message || e)); }
   };
 
+  // ── Registrar gasto rápido (Debe gasto / Haber Caja o Banco) ──
+  window.nxCtaGasto = function () {
+    const gastos = _cuentas.filter(c => (c.tipo === 'gasto' || c.tipo === 'costo') && c.activo !== false);
+    if (!gastos.length) { toast('err', 'No hay cuentas de gasto', 'Crea el plan de cuentas primero'); return; }
+    cerrarModal('nxGastoForm');
+    const opts = gastos.map(c => `<option value="${c.id}">${esc(c.codigo)} — ${esc(c.nombre)}</option>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxGastoForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:420px">
+        <div class="mt"><span><i class="ti ti-cash-banknote"></i> Registrar gasto</span><button class="nxBack" type="button" onclick="document.getElementById('nxGastoForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Tipo de gasto *</label><select id="gsC">${opts}</select></div>
+        <div class="fr-row">
+          <div class="fr"><label>Monto *</label><input id="gsM" data-nx-money inputmode="numeric" placeholder="0"></div>
+          <div class="fr"><label>Pagado con</label><select id="gsP"><option value="1101">Caja (efectivo)</option><option value="1102">Banco / transferencia</option></select></div>
+        </div>
+        <div class="fr"><label>Fecha</label><input type="date" id="gsF" value="${isoHoy()}"></div>
+        <div class="fr"><label>Concepto</label><input id="gsD" class="no-upper" placeholder="Ej: Pago de luz de junio"></div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxGastoForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxCtaGuardarGasto()"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    scanMoney(ov);
+  };
+  window.nxCtaGuardarGasto = async function () {
+    const cid = val('gsC'), monto = parseMoney(val('gsM'));
+    if (!cid || monto <= 0) { toast('err', 'Elige el gasto y el monto'); return; }
+    const cg = ctaById(cid); const pagCod = val('gsP') || '1101'; const cp = _cuentas.find(c => c.codigo === pagCod);
+    if (!cg || !cp) { toast('err', 'Faltan cuentas (Caja/Banco)'); return; }
+    const conc = (val('gsD') || '').trim() || ('Gasto: ' + (cg.nombre || ''));
+    try {
+      const as = await getAPI().post('pos_asientos', { fecha: val('gsF') || isoHoy(), concepto: conc, tipo: 'gasto' });
+      const aid = (as && as[0] && as[0].id); if (!aid) throw new Error('No se creó el asiento');
+      await getAPI().post('pos_asiento_lineas', [
+        { asiento_id: aid, cuenta_id: cg.id, cuenta_codigo: cg.codigo, cuenta_nombre: cg.nombre, debito: Math.round(monto), credito: 0 },
+        { asiento_id: aid, cuenta_id: cp.id, cuenta_codigo: cp.codigo, cuenta_nombre: cp.nombre, debito: 0, credito: Math.round(monto) }
+      ]);
+      cerrarModal('nxGastoForm'); toast('ok', 'Gasto registrado', fmt(monto));
+      await cargarContabilidad(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+
+  // ── Imprimir reportes contables ──
+  window.nxCtaImprimir = function (tipo) {
+    const e = empInfo();
+    const titulos = { diario: 'LIBRO DIARIO', balanza: 'BALANCE DE COMPROBACIÓN', resultados: 'ESTADO DE RESULTADOS', general: 'BALANCE GENERAL' };
+    let cuerpo = '';
+    const s = saldosCta();
+    if (tipo === 'balanza') {
+      const arr = Object.values(s).filter(o => o.debe || o.haber).sort((a, b) => String(a.cuenta.codigo).localeCompare(String(b.cuenta.codigo)));
+      let TD = 0, TH = 0;
+      const filas = arr.map(o => { TD += o.debe; TH += o.haber; return `<tr><td>${esc(o.cuenta.codigo)}</td><td>${esc(o.cuenta.nombre)}</td><td class="r">${fmt(o.debe)}</td><td class="r">${fmt(o.haber)}</td></tr>`; }).join('');
+      cuerpo = `<table><thead><tr><th>Código</th><th>Cuenta</th><th class="r">Debe</th><th class="r">Haber</th></tr></thead><tbody>${filas}<tr class="tot"><td></td><td class="r">TOTALES</td><td class="r">${fmt(TD)}</td><td class="r">${fmt(TH)}</td></tr></tbody></table>`;
+    } else if (tipo === 'resultados') {
+      const ingArr = Object.values(s).filter(o => o.cuenta.tipo === 'ingreso' && saldoNat(o));
+      const cosArr = Object.values(s).filter(o => o.cuenta.tipo === 'costo' && saldoNat(o));
+      const gasArr = Object.values(s).filter(o => o.cuenta.tipo === 'gasto' && saldoNat(o));
+      const ing = ingArr.reduce((a, o) => a + saldoNat(o), 0), cos = cosArr.reduce((a, o) => a + saldoNat(o), 0), gas = gasArr.reduce((a, o) => a + saldoNat(o), 0);
+      const sec = (t, arr) => (arr.length ? `<tr class="sec"><td colspan="2">${t}</td></tr>` + arr.map(o => `<tr><td class="ind">${esc(o.cuenta.nombre)}</td><td class="r">${fmt(saldoNat(o))}</td></tr>`).join('') : '');
+      cuerpo = `<table>${sec('INGRESOS', ingArr)}<tr class="tot"><td>Total ingresos</td><td class="r">${fmt(ing)}</td></tr>${sec('COSTO DE VENTAS', cosArr)}<tr class="tot"><td>Utilidad bruta</td><td class="r">${fmt(ing - cos)}</td></tr>${sec('GASTOS', gasArr)}<tr class="tot"><td>Total gastos</td><td class="r">${fmt(gas)}</td></tr><tr class="gran"><td>${(ing - cos - gas) >= 0 ? 'UTILIDAD NETA' : 'PÉRDIDA NETA'}</td><td class="r">${fmt(ing - cos - gas)}</td></tr></table>`;
+    } else if (tipo === 'general') {
+      const ing = sumaPorTipo(s, 'ingreso'), cos = sumaPorTipo(s, 'costo'), gas = sumaPorTipo(s, 'gasto'), util = ing - cos - gas;
+      const actArr = Object.values(s).filter(o => o.cuenta.tipo === 'activo' && saldoNat(o));
+      const pasArr = Object.values(s).filter(o => o.cuenta.tipo === 'pasivo' && saldoNat(o));
+      const capArr = Object.values(s).filter(o => o.cuenta.tipo === 'capital' && saldoNat(o));
+      const act = actArr.reduce((a, o) => a + saldoNat(o), 0), pas = pasArr.reduce((a, o) => a + saldoNat(o), 0), cap = capArr.reduce((a, o) => a + saldoNat(o), 0);
+      const sec = (t, arr) => `<tr class="sec"><td colspan="2">${t}</td></tr>` + (arr.length ? arr.map(o => `<tr><td class="ind">${esc(o.cuenta.nombre)}</td><td class="r">${fmt(saldoNat(o))}</td></tr>`).join('') : '<tr><td class="ind">—</td><td></td></tr>');
+      cuerpo = `<table>${sec('ACTIVOS', actArr)}<tr class="tot"><td>Total activos</td><td class="r">${fmt(act)}</td></tr>${sec('PASIVOS', pasArr)}<tr class="tot"><td>Total pasivos</td><td class="r">${fmt(pas)}</td></tr>${sec('PATRIMONIO', capArr)}<tr><td class="ind">Resultado del período</td><td class="r">${fmt(util)}</td></tr><tr class="gran"><td>PASIVO + CAPITAL</td><td class="r">${fmt(pas + cap + util)}</td></tr></table>`;
+    } else {
+      const list = asientosRango();
+      cuerpo = list.map(a => { const ls = asLineas(a); const filas = ls.map(l => `<tr><td>${esc(l.cuenta_codigo || '')}</td><td>${esc(l.cuenta_nombre || '')}</td><td class="r">${Number(l.debito) ? fmt(l.debito) : ''}</td><td class="r">${Number(l.credito) ? fmt(l.credito) : ''}</td></tr>`).join(''); return `<div class="as"><b>${fechaDMY(a.fecha)}</b> · ${esc(a.concepto || '')}<table><thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Debe</th><th class="r">Haber</th></tr></thead><tbody>${filas}</tbody></table></div>`; }).join('') || '<div style="color:#777">Sin asientos en el período.</div>';
+    }
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulos[tipo] || 'Reporte'}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px 6px}td{padding:4px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:1.5px solid #999;border-bottom:none}.gran td{font-weight:800;font-size:14px;border-top:2px solid #111;border-bottom:none}.sec td{font-weight:800;font-size:10px;text-transform:uppercase;color:#555;padding-top:10px}.ind{padding-left:16px}.as{border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;margin-bottom:8px}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>${titulos[tipo] || 'Reporte'}</b></div>
+        <div class="c muted">Del ${fechaDMY(_ctaDesde)} al ${fechaDMY(_ctaHasta)}</div>
+        ${cuerpo}
+        <div class="muted" style="margin-top:18px">Generado el ${fechaDMY(isoHoy())} · NEXUS PRO</div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
+
   // ── Editor de asiento manual ──
   window.nxCtaNuevoAsiento = function () {
     _asEdit = { fecha: isoHoy(), concepto: '', lineas: [{ cuenta_id: '', debito: '', credito: '' }, { cuenta_id: '', debito: '', credito: '' }] };
@@ -15225,6 +15315,41 @@
       const as = await getAPI().post('pos_asientos', { fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id });
       const aid = (as && as[0] && as[0].id); if (!aid) return;
       await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
+    } catch (e) {}
+  }
+  // Cuentas en memoria (carga perezosa) para los asientos automáticos
+  async function ctasMap() {
+    let cu = _cuentas;
+    if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
+    const byc = {}; cu.forEach(x => byc[x.codigo] = x); return byc;
+  }
+  function lnCta(byc, cod, nomDef, d, h) { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nomDef, debito: Math.round(d), credito: Math.round(h) }; }
+  async function postAsientoConcepto(fecha, concepto, tipo, origenId, lineas, referencia) {
+    lineas = lineas.filter(Boolean); if (lineas.length < 2) return;
+    try {
+      const as = await getAPI().post('pos_asientos', { fecha: (String(fecha || '').slice(0, 10)) || isoHoy(), concepto: concepto, referencia: referencia || null, tipo: tipo, origen_id: origenId || null });
+      const aid = (as && as[0] && as[0].id); if (!aid) return;
+      await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
+    } catch (e) {}
+  }
+  // Compra: Debe Inventario (+ITBIS adelantado) / Haber Caja o CxP
+  async function postAsientoCompra(compra, subtotal, itbis, aCredito) {
+    try {
+      const byc = await ctasMap(); if (!Object.keys(byc).length) return;
+      const monto = Number(subtotal || 0) + Number(itbis || 0);
+      const lineas = [lnCta(byc, '1104', 'Inventario de mercancías', Number(subtotal || 0), 0), lnCta(byc, '1105', 'ITBIS pagado (adelantado)', Number(itbis || 0), 0)];
+      if (aCredito) lineas.push(lnCta(byc, '2101', 'Cuentas por pagar (proveedores)', 0, monto));
+      else lineas.push(lnCta(byc, '1101', 'Caja', 0, monto));
+      await postAsientoConcepto(compra.fecha, 'Compra ' + (compra.proveedor_nombre ? 'a ' + compra.proveedor_nombre : ('No. ' + (compra.numero || ''))), 'compra', compra.id, lineas, String(compra.numero || ''));
+    } catch (e) {}
+  }
+  // Abono de cliente (cobro de fiado): Debe Caja/Banco / Haber Cuentas por cobrar
+  async function postAsientoAbono(cliNom, monto, metodo, fecha) {
+    try {
+      const byc = await ctasMap(); if (!Object.keys(byc).length) return;
+      const efe = (metodo || 'Efectivo') === 'Efectivo';
+      const lineas = [lnCta(byc, efe ? '1101' : '1102', efe ? 'Caja' : 'Banco', Number(monto || 0), 0), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, Number(monto || 0))];
+      await postAsientoConcepto(fecha, 'Abono cliente' + (cliNom ? ' ' + cliNom : ''), 'cobro', null, lineas);
     } catch (e) {}
   }
 
