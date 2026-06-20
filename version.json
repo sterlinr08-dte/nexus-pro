@@ -1,7 +1,8 @@
 {
-  "version": "26.3",
+  "version": "26.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (TODO CONECTADO · Proveedores ↔ Entidades): ahora un PROVEEDOR creado en el módulo Entidades aparece SOLO en Compras (en el selector, en la lista de proveedores y en sus cuentas por pagar) — sin volver a registrarlo. 'Un solo lugar para cada dato'. Tus proveedores anteriores siguen funcionando igual; los dos conviven. Editar un proveedor que es Entidad te lleva a su ficha de Entidad. (Empezamos a conectar todo el sistema entre sí.)",
     "NUEVO (POS · MULTI-ALMACÉN paso 1): en la app Inventario puedes ACTIVAR multi-almacén (crea tu 'Almacén Principal' con tu stock actual). Luego creas más almacenes/sucursales y haces TRANSFERENCIAS entre ellos (eliges desde/hacia, producto y cantidad). Ves las unidades por almacén y, en el kardex de cada producto, su stock en cada almacén. IMPORTANTE: este paso NO cambia tus ventas todavía (siguen descontando del stock total); el paso 2 — que cada venta descuente del almacén activo — lo activo cuando confirmes que este paso va bien",
     "NUEVO (look estilo Odoo): el color de acento del sistema pasó del azul al MORADO/índigo de Odoo. Se ve en botones, pestañas activas, enlaces y detalles de todo el sistema (seguros y POS). Es solo el color de acento — tu diseño, textos y estructura quedan igual. Si prefieres otro tono de morado, se cambia en un momento",
     "NUEVO (POS · CRM / embudo de ventas estilo Odoo): nueva app 'CRM' para dar seguimiento a tus oportunidades de venta. Cada oportunidad tiene cliente/contacto, monto estimado, fuente, próxima acción y una ETAPA (Nuevo → Contactado → Cotizado → Ganado/Perdido) que cambias con un toque. Ves cuántas oportunidades tienes abiertas, el monto en tu 'pipeline' y lo ganado. Botón de WhatsApp directo al contacto. No toca tus ventas — es solo seguimiento",

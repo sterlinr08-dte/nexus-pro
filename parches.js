@@ -13683,15 +13683,28 @@
     try { _ncfSecs = await getAPI().get('pos_ncf_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _ncfSecs = []; }
     try { _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _vendedores = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) { _almacenes = []; }
+    mergeProvEntidades();
   }
   async function cargarComprasTab() {
     try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
+    try { if (!_clientes.length) _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
+    mergeProvEntidades();
     try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; } catch (e) { _compras = []; }
     _cxpByProv = {}; _pagosProvByProv = {};
     try { const cc = await getAPI().get('pos_compras', 'select=proveedor_id,total&a_credito=eq.true') || []; cc.forEach(c => { if (c.proveedor_id) _cxpByProv[c.proveedor_id] = (_cxpByProv[c.proveedor_id] || 0) + Number(c.total || 0); }); } catch (e) {}
     try { const pp = await getAPI().get('pos_compra_pagos', 'select=proveedor_id,monto') || []; pp.forEach(p => { if (p.proveedor_id) _pagosProvByProv[p.proveedor_id] = (_pagosProvByProv[p.proveedor_id] || 0) + Number(p.monto || 0); }); } catch (e) {}
   }
   function saldoProv(p) { const id = p && p.id; return Math.max(0, (_cxpByProv[id] || 0) - (_pagosProvByProv[id] || 0)); }
+  // Conecta Entidades(es_proveedor) con la lista de proveedores de Compras (additivo, no duplica)
+  function mergeProvEntidades() {
+    try {
+      const ids = new Set((_proveedores || []).map(p => String(p.id)));
+      (_clientes || []).filter(c => c.es_proveedor).forEach(c => {
+        if (!ids.has(String(c.id))) _proveedores.push({ id: c.id, nombre: c.nombre, rnc: c.cedula, telefono: c.telefono, direccion: c.direccion, _entidad: true, activo: true });
+      });
+      _proveedores.sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || '')));
+    } catch (e) {}
+  }
   async function totalesCaja(caja) {
     let ventas = [], abonos = [], movs = [];
     try { ventas = await getAPI().get('pos_ventas', 'select=pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto&caja_id=eq.' + caja.id + '&estado=eq.completada') || []; } catch (e) {}
@@ -14802,6 +14815,8 @@
       toast('ok', id ? 'Entidad actualizada' : 'Entidad creada', body.codigo + ' · ' + body.nombre);
       cerrarModal('nxEntForm');
       _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || [];
+      try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
+      mergeProvEntidades();
       const view = document.getElementById('v-pos'); if (view) renderPOS(view);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
@@ -15068,8 +15083,12 @@
       </div>`;
     document.body.appendChild(ov);
   };
-  window.nxPosNuevoProv = function () { abrirProv(null); };
-  window.nxPosEditProv = function (id) { const p = _proveedores.find(x => String(x.id) === String(id)); if (p) abrirProv(p); };
+  window.nxPosNuevoProv = function () { cerrarModal('nxPosProvs'); abrirEntidad(null, { es_proveedor: true }); };
+  window.nxPosEditProv = function (id) {
+    const p = _proveedores.find(x => String(x.id) === String(id));
+    if (p && p._entidad) { const ent = _clientes.find(c => String(c.id) === String(id)); if (ent) { cerrarModal('nxPosProv'); cerrarModal('nxPosProvs'); abrirEntidad(ent, null); return; } }
+    if (p) abrirProv(p);
+  };
   function abrirProv(p, fromCompra) {
     cerrarModal('nxPosProvForm');
     const e = p || {};
@@ -15097,6 +15116,7 @@
       toast('ok', id ? 'Proveedor actualizado' : 'Proveedor agregado', body.nombre);
       cerrarModal('nxPosProvForm');
       _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || [];
+      mergeProvEntidades();
       if (fromCompra === '1') { const sel = document.getElementById('compProv'); if (sel) { sel.innerHTML = '<option value="">— Proveedor —</option>' + _proveedores.map(p => `<option value="${p.id}"${nuevo && String(p.id) === String(nuevo.id) ? ' selected' : ''}>${esc(p.nombre)}</option>`).join(''); } }
       else { const v = document.getElementById('v-pos'); if (v && _posTab === 'compras') renderPOS(v); if (document.getElementById('nxPosProvs')) window.nxPosProveedores(); }
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
@@ -15135,8 +15155,10 @@
   };
   window.nxPosDelPagoProv = async function (pid, provId) { if (!confirm('¿Eliminar este pago?')) return; try { await getAPI().del('pos_compra_pagos', 'id=eq.' + pid); toast('ok', 'Pago eliminado'); window.nxPosProvVer(provId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); } };
   window.nxPosDelProv = async function (id) {
+    const pp = _proveedores.find(x => String(x.id) === String(id));
+    if (pp && pp._entidad) { toast('err', 'Es una Entidad', 'Quítale el rol "Proveedor" desde el módulo Entidades'); return; }
     if (!confirm('¿Eliminar este proveedor?')) return;
-    try { await getAPI().patch('pos_proveedores', 'id=eq.' + id, { activo: false }); toast('ok', 'Proveedor eliminado'); cerrarModal('nxPosProv'); _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; const v = document.getElementById('v-pos'); if (v) renderPOS(v); if (document.getElementById('nxPosProvs')) window.nxPosProveedores(); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    try { await getAPI().patch('pos_proveedores', 'id=eq.' + id, { activo: false }); toast('ok', 'Proveedor eliminado'); cerrarModal('nxPosProv'); _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; mergeProvEntidades(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); if (document.getElementById('nxPosProvs')) window.nxPosProveedores(); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
   // ── TAB: CAJA (apertura / arqueo / cierre) ──

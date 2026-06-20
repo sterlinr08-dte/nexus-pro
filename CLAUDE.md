@@ -192,6 +192,11 @@ commit descriptivo y push. La app descarga de `main`.
     `abrirEntidad`/`nxEntGuardar`; código automático `CL/PR/EM/BC-0001`
     (`entCodigoAuto`). El form de "Nuevo cliente" (pestaña Clientes) ahora abre
     este mismo modal con `es_cliente` precargado (se eliminó `abrirCli` viejo).
+    **CONEXIÓN (v26.4):** `mergeProvEntidades()` une las entidades `es_proveedor`
+    a la lista `_proveedores` de Compras (additivo, dedup por id, flag `_entidad`);
+    "Nuevo proveedor" del manager abre la ficha de Entidad; editar/eliminar un
+    proveedor-entidad redirige a Entidades. Pendiente conexión: empleado-entidad ↔
+    RRHH (RRHH tiene campos de nómina propios, queda especializado por ahora).
     Los selectores de cliente (Factura/Cobro) filtran `es_cliente` y muestran el
     código. **Precio por mayor:** `pos_productos.precio_mayor` (Precio 2); la
     Factura usa `precioCli()` → precio 2 si el cliente es `nivel_precio='mayor'`
