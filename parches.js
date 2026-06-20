@@ -13773,6 +13773,7 @@
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     if (t === 'reportes') { try { await cargarReportes(); } catch (e) {} }
     if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
+    if (t === 'inventario') { try { _invProdSel = ''; await cargarInventario(); } catch (e) {} }
     renderPOS(view);
   };
 
@@ -13788,12 +13789,13 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
-      <div class="nxPosTabs">${tabBtn('inicio', 'Inicio', 'ti-layout-grid')}${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('cotizaciones', 'Cotizaciones', 'ti-clipboard-text')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('entidades', 'Entidades', 'ti-address-book')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('reportes', 'Reportes', 'ti-chart-pie')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
+      <div class="nxPosTabs">${tabBtn('inicio', 'Inicio', 'ti-layout-grid')}${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('inventario', 'Inventario', 'ti-building-warehouse')}${tabBtn('cotizaciones', 'Cotizaciones', 'ti-clipboard-text')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('entidades', 'Entidades', 'ti-address-book')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('reportes', 'Reportes', 'ti-chart-pie')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'inicio') body = renderInicio();
     else if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'factura') body = renderFactura();
     else if (_posTab === 'productos') body = renderProductos();
+    else if (_posTab === 'inventario') body = renderInventario();
     else if (_posTab === 'compras') body = renderCompras();
     else if (_posTab === 'entidades') body = renderEntidades();
     else if (_posTab === 'clientes') body = renderClientes();
@@ -13819,7 +13821,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${grupo('Ventas', tile('vender', 'Vender', 'ti-cash-register', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#2563eb') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
-        ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
+        ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
         ${grupo('Configuración', tile('ajustes', 'Ajustes', 'ti-settings', '#475569'))}
@@ -14259,7 +14261,7 @@
       try { postAsientoVenta(venta, c); } catch (e) {}
       // descontar stock (best-effort; los servicios no manejan stock)
       for (const it of _cart) {
-        try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const ns = Number(p.stock || 0) - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
+        try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'venta', -Number(it.cantidad), prev, ns, numFac || ('No. ' + (venta.numero || '')), null); } } catch (e) {}
       }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
@@ -14577,7 +14579,7 @@
     if (!confirm('¿Anular la factura ' + (v.numero_factura || '#' + v.numero) + '? Se devolverá el stock.')) return;
     try {
       await getAPI().patch('pos_ventas', 'id=eq.' + id, { estado: 'anulada' });
-      try { const items = await getAPI().get('pos_venta_items', 'venta_id=eq.' + id + '&select=producto_id,cantidad'); for (const it of (items || [])) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const ns = Number(p.stock || 0) + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } } catch (e) {}
+      try { const items = await getAPI().get('pos_venta_items', 'venta_id=eq.' + id + '&select=producto_id,cantidad'); for (const it of (items || [])) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'anulacion', Number(it.cantidad || 0), prev, ns, (v.numero_factura || v.numero || ''), 'Anulación de factura'); } } } catch (e) {}
       v.estado = 'anulada';
       toast('ok', 'Factura anulada', 'Se devolvió el stock');
       pintarHistorial();
@@ -14650,7 +14652,7 @@
       const items = lineas.map(l => ({ devolucion_id: dev.id, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant, precio: Math.round(l.precio), itbis: !!l.itbis, importe: Math.round(l.precio * l.cant) }));
       await getAPI().post('pos_devolucion_items', items);
       // devolver stock
-      for (const l of lineas) { try { const p = _prods.find(x => String(x.id) === String(l.producto_id)); if (p && p.tipo !== 'servicio') { const ns = Number(p.stock || 0) + Number(l.cant || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
+      for (const l of lineas) { try { const p = _prods.find(x => String(x.id) === String(l.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(l.cant || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'devolucion', Number(l.cant || 0), prev, ns, (dev.numero || ''), 'Devolución'); } } catch (e) {}
       }
       // si se rebaja a cuenta del cliente (fiado), bajar su saldo
       if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
@@ -15019,7 +15021,7 @@
       const compra = (r && r[0]) || null; if (!compra) throw new Error('No se pudo registrar');
       const items = _compraItems.map(it => ({ compra_id: compra.id, producto_id: it.producto_id, nombre: it.nombre, cantidad: it.cantidad, costo: it.costo, importe: Math.round(it.costo * it.cantidad) }));
       try { await getAPI().post('pos_compra_items', items); } catch (e) {}
-      for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const ns = Number(p.stock || 0) + Number(it.cantidad); p.stock = ns; p.costo = it.costo; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns, costo: it.costo }).catch(() => {}); } } catch (e) {} }
+      for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad); p.stock = ns; p.costo = it.costo; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns, costo: it.costo }).catch(() => {}); logMov(p, 'compra', Number(it.cantidad), prev, ns, (compra.numero || ''), 'Compra'); } } catch (e) {} }
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
       try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {}
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
@@ -15898,6 +15900,97 @@
         <div class="muted" style="margin-top:16px">Esta cotización es un presupuesto y no constituye una factura. Precios sujetos a cambio después de la fecha de validez.</div>
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
+
+  // ════════════════════════════════════════════════════════════════════
+  // ── MÓDULO INVENTARIO (kardex / valoración / ajuste) estilo Odoo ──
+  // ════════════════════════════════════════════════════════════════════
+  let _invMovs = [], _invProdSel = '', _invProdMovs = [];
+  const MOV_LBL = { venta: ['Venta', '#dc2626'], compra: ['Compra', '#16a34a'], devolucion: ['Devolución', '#2563eb'], anulacion: ['Anulación', '#475569'], ajuste: ['Ajuste', '#ea580c'], apertura: ['Apertura', '#7c3aed'] };
+  // Registra un movimiento de inventario (best-effort, no bloquea la operación)
+  async function logMov(prod, tipo, cantidad, stockAnterior, stockNuevo, referencia, motivo) {
+    try { await getAPI().post('pos_inv_movimientos', { producto_id: prod.id, producto_nombre: prod.nombre, tipo: tipo, cantidad: cantidad, stock_anterior: stockAnterior, stock_nuevo: stockNuevo, referencia: referencia || null, motivo: motivo || null, created_by_name: (typeof nomAdmin === 'function' ? nomAdmin() : null) }); } catch (e) {}
+  }
+  async function cargarInventario() { try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=200') || []; } catch (e) { _invMovs = []; } }
+  function invProductosStock() { return (_prods || []).filter(p => p.tipo !== 'servicio'); }
+  function movFila(m) {
+    const t = MOV_LBL[m.tipo] || [m.tipo, '#475569'];
+    const c = Number(m.cantidad || 0);
+    return `<tr><td style="white-space:nowrap;color:#475569">${fechaDMY(m.fecha)}</td><td>${esc(m.producto_nombre || '')}</td><td><span style="font-size:9px;font-weight:800;color:${t[1]};background:${t[1]}1a;padding:2px 7px;border-radius:6px">${t[0]}</span></td><td style="text-align:right;font-weight:700;color:${c < 0 ? '#dc2626' : '#16a34a'}">${c > 0 ? '+' : ''}${fmtN(c)}</td><td style="text-align:right;color:#475569">${m.stock_nuevo != null ? fmtN(m.stock_nuevo) : ''}</td><td style="color:#475569;font-size:10px">${esc(m.referencia || m.motivo || '')}</td></tr>`;
+  }
+  function fmtN(n) { return Number(n || 0).toLocaleString('en-US'); }
+  function renderInventario() {
+    const prods = invProductosStock();
+    const valCosto = prods.reduce((s, p) => s + Number(p.stock || 0) * Number(p.costo || 0), 0);
+    const valPrecio = prods.reduce((s, p) => s + Number(p.stock || 0) * Number(p.precio || 0), 0);
+    const bajos = prods.filter(p => Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0);
+    const sinStock = prods.filter(p => Number(p.stock || 0) <= 0);
+    const kpi = (l, v, c) => `<div class="nxCtaKpi"><div class="nxCtaKpiL">${l}</div><div class="nxCtaKpiV" style="color:${c}">${v}</div></div>`;
+    const prodList = prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
+    let detalle = '';
+    if (_invProdSel) {
+      const p = _prods.find(x => String(x.id) === String(_invProdSel));
+      const filas = _invProdMovs.length ? _invProdMovs.map(movFila).join('') : '<tr><td colspan="6" style="text-align:center;padding:18px;color:#475569;font-size:12px">Sin movimientos registrados (el kardex empieza desde ahora).</td></tr>';
+      detalle = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-history"></i> Kardex — ${esc(p ? p.nombre : '')} (stock: ${fmtN(p ? p.stock : 0)})</span><button class="btn bsm bghost" onclick="window.nxInvCerrarProd()"><i class="ti ti-x"></i></button></div>
+        <div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${filas}</tbody></table></div></div>`;
+    }
+    const bajosHTML = bajos.length ? `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit"><i class="ti ti-alert-triangle" style="color:#ea580c"></i> Bajo stock (${bajos.length})</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Stock</th><th style="text-align:right">Mínimo</th><th></th></tr></thead><tbody>${bajos.map(p => `<tr><td>${esc(p.nombre)}</td><td style="text-align:right;font-weight:700;color:${Number(p.stock || 0) <= 0 ? '#dc2626' : '#ea580c'}">${fmtN(p.stock)}</td><td style="text-align:right;color:#475569">${fmtN(p.stock_min)}</td><td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxInvAjustarProd('${p.id}')"><i class="ti ti-adjustments"></i></button></td></tr>`).join('')}</tbody></table></div></div>` : '';
+    const recientes = _invMovs.length ? `<div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-arrows-exchange"></i> Movimientos recientes</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${_invMovs.slice(0, 60).map(movFila).join('')}</tbody></table></div></div>` : '<div style="text-align:center;color:#475569;font-size:12px;padding:20px">Aún no hay movimientos. Se registran al vender, comprar, devolver o ajustar.</div>';
+    return `<div class="nxCtaKpis" style="margin-bottom:12px">
+        ${kpi('Productos', fmtN(prods.length), '#2563eb')}
+        ${kpi('Valor a costo', fmt(valCosto), '#0891b2')}
+        ${kpi('Valor a precio', fmt(valPrecio), '#16a34a')}
+        ${kpi('Bajo stock', fmtN(bajos.length), bajos.length ? '#ea580c' : '#16a34a')}
+        ${kpi('Sin stock', fmtN(sinStock.length), sinStock.length ? '#dc2626' : '#16a34a')}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <button class="btn bsm bc1" type="button" onclick="window.nxInvAjustarProd('')"><i class="ti ti-adjustments"></i> Ajustar inventario</button>
+        <div class="nxFacAdd" style="flex:1;min-width:180px;margin:0"><i class="ti ti-search"></i><input list="invProds" placeholder="Ver kardex de un producto..." onchange="window.nxInvBuscar(this.value)"><datalist id="invProds">${prodList}</datalist></div>
+      </div>
+      ${detalle}${bajosHTML}${recientes}`;
+  }
+  window.nxInvBuscar = function (txt) {
+    const t = String(txt || '').toLowerCase();
+    const p = _prods.find(x => (x.nombre + (x.codigo ? ' [' + x.codigo + ']' : '')).toLowerCase() === t) || _prods.find(x => String(x.nombre).toLowerCase() === t);
+    if (p) window.nxInvVerProd(p.id);
+  };
+  window.nxInvVerProd = async function (id) {
+    _invProdSel = id;
+    try { _invProdMovs = await getAPI().get('pos_inv_movimientos', 'select=*&producto_id=eq.' + id + '&order=fecha.desc&limit=300') || []; } catch (e) { _invProdMovs = []; }
+    const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+  };
+  window.nxInvCerrarProd = function () { _invProdSel = ''; _invProdMovs = []; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxInvAjustarProd = function (id) {
+    cerrarModal('nxInvAjuste');
+    const prods = invProductosStock();
+    const opts = prods.map(p => `<option value="${p.id}"${String(id) === String(p.id) ? ' selected' : ''}>${esc(p.nombre)}${p.codigo ? ' (' + esc(p.codigo) + ')' : ''} — stock ${fmtN(p.stock)}</option>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxInvAjuste'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:420px">
+        <div class="mt"><span><i class="ti ti-adjustments"></i> Ajuste de inventario</span><button class="nxBack" type="button" onclick="document.getElementById('nxInvAjuste').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Producto *</label><select id="ajProd">${opts}</select></div>
+        <div class="fr-row">
+          <div class="fr"><label>Stock contado (real) *</label><input id="ajStock" inputmode="numeric" placeholder="Cantidad real"></div>
+          <div class="fr"><label>Motivo</label><input id="ajMot" class="no-upper" placeholder="Ej: conteo físico, merma"></div>
+        </div>
+        <div style="font-size:11px;color:#475569;margin-bottom:6px">El sistema calcula la diferencia con el stock actual y la registra en el kardex.</div>
+        <div class="fe" style="gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxInvAjuste').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxInvGuardarAjuste()"><i class="ti ti-device-floppy"></i> Aplicar ajuste</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxInvGuardarAjuste = async function () {
+    const pid = val('ajProd'); const nuevo = parseInt(String(val('ajStock')).replace(/[^0-9.-]/g, ''), 10);
+    if (!pid || isNaN(nuevo)) { toast('err', 'Elige producto y stock real'); return; }
+    const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
+    const prev = Number(p.stock || 0); const delta = nuevo - prev;
+    if (delta === 0) { toast('ok', 'Sin cambios', 'El stock ya coincide'); cerrarModal('nxInvAjuste'); return; }
+    try {
+      await getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: nuevo }); p.stock = nuevo;
+      await logMov(p, 'ajuste', delta, prev, nuevo, 'Ajuste manual', (val('ajMot') || '').trim() || null);
+      toast('ok', 'Inventario ajustado', p.nombre + ': ' + fmtN(prev) + ' → ' + fmtN(nuevo));
+      cerrarModal('nxInvAjuste');
+      await cargarInventario(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo ajustar', String(e && e.message || e)); }
   };
 
   // ════════════════════════════════════════════════════════════════════

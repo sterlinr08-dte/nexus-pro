@@ -265,7 +265,20 @@ commit descriptivo y push. La app descarga de `main`.
     Retenciones y 2103 Sueldos por pagar). Tablas `rrhh_empleados`,
     `rrhh_nominas`, `rrhh_nomina_lineas` — las 3 con `organizacion_id` + trigger +
     RLS `mi_rol()='admin' AND organizacion_id = mi_organizacion()` (patrón POS).
-  - **PENDIENTE POS (lo único que falta del ERP):** **Multi-almacén** (stock por
+  - **Inicio (lanzador de apps estilo Odoo)** (v25.9): `_posTab='inicio'` por
+    defecto; `renderInicio()` muestra un mosaico de apps (tiles `.nxApp`) agrupadas
+    por área que llaman `nxPosTab(...)`. El tab bar sigue para cambio rápido.
+  - **Inventario** (pestaña "Inventario", v26.0) estilo Odoo: valoración (a costo /
+    a precio), conteo de productos, bajo stock / sin stock, **kardex** por producto
+    y **ajuste de inventario**. Tabla `pos_inv_movimientos` (org+trigger+RLS);
+    helper `logMov()` enganchado (best-effort) en venta (`nxPosConfirmar`), compra
+    (`nxPosGuardarCompra`), devolución (`nxDevGuardar`) y anulación
+    (`nxPosAnularVenta`). El kardex arranca desde ahora (no retroactivo).
+  - **Rumbo Odoo (acordado):** el dueño quiere el POS como un ERP Odoo. Hecho:
+    Inicio (apps) + Inventario (kardex/valoración/ajuste). Pendiente elegido por el
+    dueño: **CRM/embudo** (bajo riesgo, no toca ventas) · **look Odoo**
+    (índigo/morado — re-pintado global, mostrar muestra antes) · **Multi-almacén**.
+  - **PENDIENTE POS:** **Multi-almacén** (stock por
     almacén) — se dejó fuera a propósito porque es INVASIVO (cambia el modelo de
     stock en vender/productos/compras/devoluciones); hacerlo supervisado, tabla
     por tabla y probado. Opcional menor: **Conduce** (nota de entrega). Todo lo
