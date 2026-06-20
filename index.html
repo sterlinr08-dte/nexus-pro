@@ -3178,7 +3178,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='29.8';
+const APP_VERSION='29.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5695,7 +5695,8 @@ async function editarAbono(abonoId,clienteId){
   // Pedir nuevo monto
   const nuevoMonto=prompt(`Editar abono\n\nMonto actual: RD$ ${abono.monto}\n\nNuevo monto:`,abono.monto);
   if(nuevoMonto===null)return;
-  const montoNum=parseFloat(nuevoMonto);
+  // Leer con nxMoney.parse: si el usuario escribe "4,500" o "4.500", parseFloat daría 4 (bug de miles)
+  const montoNum=(window.nxMoney?window.nxMoney.parse(nuevoMonto):parseFloat(nuevoMonto))||0;
   if(!montoNum||montoNum<=0){toast('err','Monto inválido');return;}
   const valorAnterior=abono.monto;
   try{
