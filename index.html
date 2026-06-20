@@ -2631,13 +2631,16 @@ async function doLogin(){
     const partes=rawUser.split('@');
     user=partes[0];
     baseNom=partes[1];
-    // ── ENTRADA INTELIGENTE: directorio central de empresas (tabla organizaciones) ──
-    // Si la empresa tiene su propia app (campo 'dominio'), se REDIRIGE a su dirección.
-    // Si no tiene dominio, es inquilina de ESTE sistema (seguros/POS) y entra aquí.
+    // ── ENTRADA INTELIGENTE + SSO: directorio central de empresas (tabla organizaciones) ──
+    // Si la empresa tiene su propia app (campo 'dominio'):
+    //   • Con datos de SSO (auth_url/auth_key/email_dominio) → valida la clave contra SU base
+    //     y entra a su app YA LOGUEADA (un solo login).
+    //   • Sin SSO → simplemente redirige a su dirección (login allá).
+    // Si no tiene dominio → es inquilina de ESTE sistema (seguros/POS) y entra aquí.
     try{
       const slug=(baseNom||'').trim().toLowerCase();
       if(slug){
-        const orgs=await fetch(`${SUPABASE_URL_FIXED}/rest/v1/organizaciones?slug=eq.${encodeURIComponent(slug)}&select=slug,nombre,dominio,activo`,
+        const orgs=await fetch(`${SUPABASE_URL_FIXED}/rest/v1/organizaciones?slug=eq.${encodeURIComponent(slug)}&select=slug,nombre,dominio,activo,auth_url,auth_key,email_dominio`,
           {headers:{apikey:SUPABASE_KEY_FIXED,Authorization:'Bearer '+SUPABASE_KEY_FIXED}}).then(r=>r.ok?r.json():[]).catch(()=>[]);
         const org=orgs&&orgs[0];
         if(org&&org.activo===false){ err.textContent='La empresa "'+escHtml(baseNom)+'" está inactiva. Contacta al administrador.'; err.style.display='block'; return; }
@@ -2645,6 +2648,22 @@ async function doLogin(){
           let dest=String(org.dominio).trim();
           if(!/^https?:\/\//i.test(dest)) dest='https://'+dest;
           err.style.display='none';
+          const resetBtn=()=>{ if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Entrar al sistema';} };
+          // SSO: validar contra la base de esa empresa y entrar ya logueado
+          if(org.auth_url && org.auth_key && org.email_dominio){
+            if(btn){btn.disabled=true;btn.innerHTML='<div class="spin" style="border-color:rgba(0,0,0,.2);border-top-color:#060810"></div> Entrando a '+escHtml(org.nombre||baseNom)+'...';}
+            const email=(user||'').trim().toLowerCase()+org.email_dominio;
+            try{
+              const r=await fetch(String(org.auth_url).replace(/\/$/,'')+'/auth/v1/token?grant_type=password',
+                {method:'POST',headers:{apikey:org.auth_key,'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pwd})});
+              if(!r.ok){ err.textContent='Usuario o contraseña incorrectos.'; err.style.display='block'; resetBtn(); return; }
+              const d=await r.json();
+              const hash='#access_token='+encodeURIComponent(d.access_token)+'&refresh_token='+encodeURIComponent(d.refresh_token||'')+'&expires_in='+(d.expires_in||3600)+'&token_type=bearer&type=magiclink';
+              window.location.href=dest.replace(/#.*$/,'')+hash;
+              return;
+            }catch(e){ err.textContent='No se pudo conectar con '+escHtml(org.nombre||baseNom)+'. Verifica tu internet.'; err.style.display='block'; resetBtn(); return; }
+          }
+          // Sin SSO: redirección simple
           if(btn){btn.disabled=true;btn.innerHTML='<div class="spin" style="border-color:rgba(0,0,0,.2);border-top-color:#060810"></div> Redirigiendo a '+escHtml(org.nombre||baseNom)+'...';}
           window.location.href=dest;
           return;
@@ -3158,7 +3177,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.9';
+const APP_VERSION='24.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 

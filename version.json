@@ -1,7 +1,8 @@
 {
-  "version": "23.9",
+  "version": "24.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO multi-empresa (UN SOLO LOGIN / SSO): ahora un empleado escribe su usuario@empresa + su contraseña UNA sola vez en nexusprord.com, y entra a su sistema YA logueado (sin que le pidan la clave otra vez). Funciona para los sistemas externos configurados (ej. Deluxe) y servirá igual para los próximos que crees. Una sola entrada para todo tu ecosistema",
     "NUEVO multi-empresa (entrada inteligente): ahora desde UNA sola dirección (nexusprord.com), al escribir usuario@empresa el sistema sabe a dónde mandarte. Si la empresa tiene su propio sistema (ej. Deluxe), te REDIRIGE a su app automáticamente; si es del mismo sistema (seguros/POS), entras aquí mismo viendo solo lo de tu empresa. Una sola puerta para todos tus negocios, cada quien a lo suyo",
     "ARREGLADO multi-empresa (tienda): en el Punto de Venta, el botón de arriba ahora es 'Cerrar sesión' (antes decía 'Volver' y llevaba al hub con los otros módulos). Así la tienda ya puede SALIR de su cuenta y no se cuela a otras empresas. Arriba se muestra el nombre del negocio",
     "ARREGLADO multi-empresa (tienda): en modo TIENDA, ahora NINGÚN botón saca al usuario hacia el seguro. Antes, al tocar el logo, 'Volver' o 'Actualizar', se colaba el dashboard de seguros con todos los accesos; ahora cualquier navegación rebota al Punto de Venta. La tienda queda 100% encerrada en su POS",
