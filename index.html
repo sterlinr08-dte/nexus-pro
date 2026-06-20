@@ -3178,7 +3178,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='29.5';
+const APP_VERSION='29.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4270,6 +4270,21 @@ async function iniciarApp(){
 }
 
 // ── NÚCLEO: solo carga datos desde Supabase y los vuelca en ST (reutilizable) ──
+// ── Auto-reconciliación: deuda_total NUNCA puede ser menor que lo realmente facturado (no anulado).
+// Si por una importación o ajuste viejo quedó por debajo, se sube sola a lo facturado (nunca se baja).
+function reconciliarDeudasClientes(){
+  try{
+    if(!Array.isArray(ST.clientes)||!Array.isArray(ST.facturas)||!ST.facturas.length)return;
+    const fac={};
+    ST.facturas.forEach(f=>{if(f&&f.estado!=='Anulada'&&f.cliente_id){fac[f.cliente_id]=(fac[f.cliente_id]||0)+(Number(f.prima_base)||0)+(Number(f.prima_deps)||0);}});
+    const arreglar=[];
+    ST.clientes.forEach(c=>{const pf=fac[c.id]||0;if(pf>0&&Number(c.deuda_total||0)<pf){c.deuda_total=pf;arreglar.push(c.id);}});
+    if(arreglar.length){
+      arreglar.forEach(id=>{const c=ST.clientes.find(x=>x.id===id);if(c){try{API.patch('clientes',`id=eq.${id}`,{deuda_total:c.deuda_total}).catch(()=>{});}catch(e){}}});
+      try{logAudit('DEUDA_RECONCILIADA',`${arreglar.length} cliente(s) tenían deuda menor a lo facturado — corregido automáticamente`,'Clientes');}catch(e){}
+    }
+  }catch(e){}
+}
 async function cargarDatosNucleo(){
   const [emp,agt,cli,fac,asi,usu,cfg]=await Promise.all([
     API.get('empresas','select=*&order=nom'),
@@ -4282,6 +4297,7 @@ async function cargarDatosNucleo(){
   ]);
   ST.empresas=emp||[];ST.agentes=agt||[];ST.clientes=cli||[];
   ST.facturas=fac||[];ST.asientos=asi||[];ST.usuarios=usu||[];
+  try{reconciliarDeudasClientes();}catch(_){}
   recalcularSaldosContables();
   // Cargar config
   (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});

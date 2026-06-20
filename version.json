@@ -1,7 +1,8 @@
 {
-  "version": "29.5",
+  "version": "29.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (importante · seguros · deuda/pendiente): se auditó y corrigió en TODA la base el error donde el 'Pendiente' de un cliente salía mal (ejemplo: RD$ 5 en vez de lo real) porque la deuda guardada había quedado por DEBAJO de lo realmente facturado en sus pólizas. Ahora la deuda se reconcilia sola al abrir el sistema (sube a lo facturado si quedó corta) y NUNCA baja una deuda legítima (saldos de apertura). Ese cliente que salía RD$ 5 ya muestra su pendiente correcto",
     "NUEVO (Compra · editar artículo con un clic): en la lista de artículos de la compra, ahora tocas un artículo y vuelve arriba al editor para cambiarlo (cantidad, costo o sus IMEI). Lo ajustas y tocas 'Agregar' otra vez. La x sigue para eliminar",
     "ARREGLADO (importante · compra con proveedor de Entidades): se corrigió el error 'NO SE PUDO REGISTRAR LA COMPRA' que salía cuando el proveedor era una Entidad (no de la lista vieja). Ahora la compra guarda bien con cualquier proveedor",
     "ARREGLADO (compra · cantidad bloqueada en equipos con serial): la casilla de Cantidad ya no se puede editar a mano cuando el artículo maneja IMEI — se ajusta sola según cuántos IMEI agregues con el +",
