@@ -46,7 +46,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    **sincronizados** para que la app avise "hay actualización").
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **23.0** (ver `index.html` y `version.json`).
+> Versión actual: **30.0** (ver `index.html` y `version.json`).
 
 ---
 
@@ -186,6 +186,39 @@ políticas RLS de `pos_*`/`rrhh_*` de `mi_rol()='admin'` a permitir otros roles 
 la MISMA org (la isolación por `organizacion_id` se mantiene). Es la Fase 3 de
 `SEGURIDAD-PLAN.md`. Hacerlo con el dueño probando (puede dejar gente afuera si
 sale mal).
+
+### Bug de la DEUDA al editar cliente (RAÍZ) — ARREGLADO v30.0 (20-jun-2026)
+Síntoma: clientes salían con un "Pendiente" diminuto o equivocado (p.ej. "RD$ 8")
+y los pagos parecían perderse. **Causa de fondo (la identificó el dueño):** la
+casilla **Deuda RD$** del formulario de cliente se creó SOLO para registrar la
+deuda previa AL CREAR, pero al EDITAR quedaba abierta (`disabled=false`,
+contradiciendo su propio comentario) y **reescribía `deuda_total` en cada
+guardado** — así, editar un cliente para cualquier cosa (ponerle precio,
+teléfono...) le dañaba la deuda. Sumado a un `parseFloat` crudo sobre el campo de
+dinero (formato `4.000`→`4`), dejaba la deuda en números diminutos.
+**Arreglos (todos en `index.html`):**
+1. Al EDITAR, la casilla sale **BLOQUEADA** (candado): `cDeudaIni.disabled=true`
+   en el fill de edición. La lógica de guardado ya salta el ajuste de deuda
+   `if(cDeudaEl && !cDeudaEl.disabled)`, así que editar NO toca `deuda_total`.
+   Botón **"Ajustar"** (`nxDeudaUnlock`, con confirm + audit) la desbloquea solo a
+   propósito. Label/hint cambian según crear (deuda previa) vs editar (bloqueada).
+2. Lectura de montos del campo con `nxMoney.parse` (no `parseFloat`).
+3. **Auto-reconciliación** (`reconciliarDeudasClientes` en `cargarDatosNucleo`):
+   en cada carga, si `deuda_total < Σ(prima_base+prima_deps)` de las facturas no
+   anuladas, **sube `deuda_total` al facturado** y lo persiste (additivo, solo
+   sube, nunca baja). Repara solo cualquier deuda que haya quedado por debajo.
+   IMPORTANTE: usa `prima_base+prima_deps` (NO `total`, que incluye `deuda_ant`
+   arrastrada y duplicaría). Por eso al cuadrar a mano deja `deuda_total = suma de
+   primas reales`, no la suma de `total`.
+**Correcciones de datos hechas a mano (SQL, base seguros):** ESTEVEZ TEJADA,
+RAFAELINA (precio real 4.000, mayo pagada + depósito 4.000 en `abonos`, junio
+pendiente → pendiente 4.000) y VALERIO VARGAS, DILENIA (deuda estaba en 0;
+restaurada a 8.000 → pendiente 4.000). Barrido completo: eran las **únicas** con
+deuda por debajo de lo facturado; el resto sano. NUÑEZ, MARIA DE LOURDES se dejó
+como está (pendiente 200, decisión del dueño). Nota de modelo: el "Pendiente" del
+cliente = `deuda_total - pagado` (`pend(c)`); un cobro suma a `clientes.pagado` e
+inserta fila en `abonos` (seguros) — `agente_cobro` = UUID del agente; estado de
+factura pagada = `'Pagado'`.
 
 ## Módulos / funcionalidades ya construidas
 
