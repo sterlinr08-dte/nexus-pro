@@ -15984,7 +15984,7 @@
       const p = _prods.find(x => String(x.id) === String(_invProdSel));
       const filas = _invProdMovs.length ? _invProdMovs.map(movFila).join('') : '<tr><td colspan="6" style="text-align:center;padding:18px;color:#475569;font-size:12px">Sin movimientos registrados (el kardex empieza desde ahora).</td></tr>';
       const porAlm = _almacenes.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${_almacenes.map(a => `<span class="nxAlmChip">${esc(a.nombre)}: <b>${fmtN(stockEnAlm(_invProdSel, a.id))}</b></span>`).join('')}</div>` : '';
-      detalle = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-history"></i> Kardex — ${esc(p ? p.nombre : '')} (stock total: ${fmtN(p ? p.stock : 0)})</span><button class="btn bsm bghost" onclick="window.nxInvCerrarProd()"><i class="ti ti-x"></i></button></div>
+      detalle = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-history"></i> Kardex — ${esc(p ? p.nombre : '')} (stock total: ${fmtN(p ? p.stock : 0)})</span><span style="display:flex;gap:6px"><button class="btn bsm bghost" onclick="window.nxInvKardexImprimir('${_invProdSel}')"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" onclick="window.nxInvCerrarProd()"><i class="ti ti-x"></i></button></span></div>
         ${porAlm}
         <div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${filas}</tbody></table></div></div>`;
     }
@@ -16021,6 +16021,24 @@
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
   window.nxInvCerrarProd = function () { _invProdSel = ''; _invProdMovs = []; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxInvKardexImprimir = function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    const e = empInfo();
+    const porAlm = _almacenes.length ? _almacenes.map(a => `${esc(a.nombre)}: ${fmtN(stockEnAlm(id, a.id))}`).join(' · ') : '';
+    const filas = (_invProdMovs || []).map(m => { const t = MOV_LBL[m.tipo] || [m.tipo, '#111']; const c = Number(m.cantidad || 0); return `<tr><td>${fechaDMY(m.fecha)}</td><td>${t[0]}</td><td class="r" style="color:${c < 0 ? '#b91c1c' : '#15803d'}">${c > 0 ? '+' : ''}${fmtN(c)}</td><td class="r">${m.stock_nuevo != null ? fmtN(m.stock_nuevo) : ''}</td><td>${esc(m.referencia || m.motivo || '')}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">Sin movimientos</td></tr>';
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kardex — ${esc(p.nombre)}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:20px;font-size:12px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:9.5px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:4px 5px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>KARDEX DE INVENTARIO</b></div>
+        <div class="muted">Producto: <b>${esc(p.nombre)}</b>${p.codigo ? ' · Cód: ' + esc(p.codigo) : ''} · Stock total: <b>${fmtN(p.stock)}</b>${porAlm ? '<br>Por almacén: ' + porAlm : ''}<br>Generado: ${fechaDMY(isoHoy())}</div>
+        <table><thead><tr><th>Fecha</th><th>Tipo</th><th class="r">Cant.</th><th class="r">Stock</th><th>Referencia</th></tr></thead><tbody>${filas}</tbody></table>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
   window.nxInvAjustarProd = function (id) {
     cerrarModal('nxInvAjuste');
     const prods = invProductosStock();
@@ -16092,50 +16110,106 @@
       await cargarInventario(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
+  let _transEdit = null; // { origen, destino, fecha, notas, lineas:[{producto_id,nombre,cant}] }
   window.nxAlmTransferir = function () {
     if (_almacenes.length < 2) { toast('err', 'Necesitas al menos 2 almacenes'); return; }
+    _transEdit = { origen: _almacenes[0].id, destino: _almacenes[1].id, fecha: isoHoy(), notas: '', lineas: [] };
+    abrirTransfer();
+  };
+  function abrirTransfer() {
     cerrarModal('nxAlmTransf');
     const almOpts = (sel) => _almacenes.map(a => `<option value="${a.id}"${String(sel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('');
-    const prodOpts = invProductosStock().map(p => `<option value="${p.id}">${esc(p.nombre)}${p.codigo ? ' (' + esc(p.codigo) + ')' : ''}</option>`).join('');
+    const prodList = invProductosStock().map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     const ov = document.createElement('div'); ov.id = 'nxAlmTransf'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal" style="max-width:420px">
-        <div class="mt"><span><i class="ti ti-transfer"></i> Transferencia entre almacenes</span><button class="nxBack" type="button" onclick="document.getElementById('nxAlmTransf').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+    ov.innerHTML = `<div class="modal" style="max-width:560px;max-height:94vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-transfer"></i> Transferencia / Despacho</span><button class="nxBack" type="button" onclick="document.getElementById('nxAlmTransf').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div class="fr-row">
-          <div class="fr"><label>Desde *</label><select id="trOrig" onchange="window.nxAlmTransStock()">${almOpts(_almacenes[0].id)}</select></div>
-          <div class="fr"><label>Hacia *</label><select id="trDest">${almOpts(_almacenes[1].id)}</select></div>
+          <div class="fr"><label>Desde *</label><select id="trOrig" onchange="window.nxTransField('origen',this.value)">${almOpts(_transEdit.origen)}</select></div>
+          <div class="fr"><label>Hacia *</label><select id="trDest" onchange="window.nxTransField('destino',this.value)">${almOpts(_transEdit.destino)}</select></div>
+          <div class="fr"><label>Fecha</label><input type="date" id="trFecha" value="${_transEdit.fecha}" onchange="window.nxTransField('fecha',this.value)"></div>
         </div>
-        <div class="fr"><label>Producto *</label><select id="trProd" onchange="window.nxAlmTransStock()">${prodOpts}</select></div>
-        <div class="fr-row">
-          <div class="fr"><label>Cantidad *</label><input id="trCant" inputmode="numeric" placeholder="0"></div>
-          <div class="fr"><label>Disponible (origen)</label><input id="trDisp" disabled value="0" style="background:#f8fafc"></div>
-        </div>
-        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxAlmTransf').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAlmGuardarTransfer()"><i class="ti ti-transfer"></i> Transferir</button></div>
+        <div class="nxFacAdd" style="margin:2px 0 10px"><i class="ti ti-search"></i><input list="trProds" id="trBuscar" placeholder="Escribe un producto y elígelo para agregar..." autocomplete="off" onchange="window.nxTransAdd(this.value)"><datalist id="trProds">${prodList}</datalist></div>
+        <div id="trTabla" style="overflow-y:auto;flex:1"></div>
+        <div class="fr"><label>Notas / motivo</label><input id="trNotas" class="no-upper" placeholder="Ej: surtido a sucursal" onchange="window.nxTransField('notas',this.value)"></div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxAlmTransf').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAlmGuardarTransfer()"><i class="ti ti-transfer"></i> Transferir y despachar</button></div>
       </div>`;
     document.body.appendChild(ov);
-    window.nxAlmTransStock();
+    pintarTransTabla();
+  }
+  window.nxTransField = function (k, v) { if (_transEdit) { _transEdit[k] = v; if (k === 'origen') pintarTransTabla(); } };
+  window.nxTransAdd = function (txt) {
+    if (!txt) return; const t = String(txt).toLowerCase();
+    let p = _prods.find(x => (x.nombre + (x.codigo ? ' [' + x.codigo + ']' : '')).toLowerCase() === t) || _prods.find(x => String(x.nombre).toLowerCase() === t);
+    if (!p) { const m = String(txt).match(/\[([^\]]+)\]/); if (m) p = _prods.find(x => x.codigo && String(x.codigo).toLowerCase() === m[1].toLowerCase()); }
+    if (!p) { toast('warn', 'Producto no encontrado', 'Elígelo de la lista'); return; }
+    const ex = _transEdit.lineas.find(l => String(l.producto_id) === String(p.id));
+    if (ex) ex.cant += 1; else _transEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1 });
+    const inp = document.getElementById('trBuscar'); if (inp) inp.value = '';
+    pintarTransTabla();
   };
-  window.nxAlmTransStock = function () { const d = document.getElementById('trDisp'); if (d) d.value = fmtN(stockEnAlm(val('trProd'), val('trOrig'))); };
+  window.nxTransCant = function (i, v) { const l = _transEdit.lineas[i]; if (!l) return; let n = parseInt(String(v).replace(/[^0-9.-]/g, ''), 10); if (isNaN(n) || n < 1) n = 1; l.cant = n; pintarTransTabla(); };
+  window.nxTransDel = function (i) { _transEdit.lineas.splice(i, 1); pintarTransTabla(); };
+  function pintarTransTabla() {
+    const wrap = document.getElementById('trTabla'); if (!wrap || !_transEdit) return;
+    if (!_transEdit.lineas.length) { wrap.innerHTML = '<div style="text-align:center;color:#475569;font-size:12px;padding:22px">Agrega los artículos a despachar.</div>'; return; }
+    const oid = _transEdit.origen;
+    const filas = _transEdit.lineas.map((l, i) => { const disp = stockEnAlm(l.producto_id, oid); const falta = l.cant > disp; return `<tr>
+        <td class="nxFacDesc">${esc(l.nombre)}</td>
+        <td class="nxFacExi"><span${falta ? ' class="nxFacExi0"' : ''}>${fmtN(disp)}</span></td>
+        <td class="nxFacCant"><input inputmode="numeric" value="${l.cant}" onchange="window.nxTransCant(${i},this.value)" style="${falta ? 'border-color:#dc2626' : ''}"></td>
+        <td class="nxFacDel"><button onclick="window.nxTransDel(${i})"><i class="ti ti-x"></i></button></td>
+      </tr>`; }).join('');
+    wrap.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl" style="min-width:0"><thead><tr><th>Artículo</th><th style="text-align:center">Disp. origen</th><th style="text-align:right">Cantidad</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+  function transProxNumero(lista) { let mx = 0; (lista || []).forEach(d => { const m = String(d.numero || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return 'TR-' + String(mx + 1).padStart(5, '0'); }
   window.nxAlmGuardarTransfer = async function () {
-    const oid = val('trOrig'), did = val('trDest'), pid = val('trProd');
-    const cant = parseInt(String(val('trCant')).replace(/[^0-9.-]/g, ''), 10);
+    const oid = _transEdit.origen, did = _transEdit.destino;
     if (oid === did) { toast('err', 'Origen y destino deben ser distintos'); return; }
-    if (!pid || !cant || cant <= 0) { toast('err', 'Elige producto y cantidad'); return; }
-    const so = stockEnAlm(pid, oid);
-    if (cant > so) { toast('err', 'No hay suficiente en el origen', 'Disponible: ' + fmtN(so)); return; }
-    const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
+    const lineas = _transEdit.lineas.filter(l => Number(l.cant || 0) > 0);
+    if (!lineas.length) { toast('err', 'Agrega al menos un artículo'); return; }
+    for (const l of lineas) { if (l.cant > stockEnAlm(l.producto_id, oid)) { toast('err', 'Sin stock suficiente', l.nombre + ' en ' + almNombre(oid)); return; } }
     try {
-      await upsertStockAlm(pid, oid, so - cant);
-      const sd = stockEnAlm(pid, did);
-      await upsertStockAlm(pid, did, sd + cant);
-      const ref = almNombre(oid) + ' → ' + almNombre(did);
-      await logMov(p, 'transferencia', -cant, so, so - cant, ref, 'Salida transferencia');
-      await logMov(p, 'transferencia', cant, sd, sd + cant, ref, 'Entrada transferencia');
+      let prev = []; try { prev = await getAPI().get('pos_transferencias', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
+      const numero = transProxNumero(prev);
+      const head = await getAPI().post('pos_transferencias', { numero: numero, fecha: _transEdit.fecha || isoHoy(), origen_id: oid, destino_id: did, origen_nombre: almNombre(oid), destino_nombre: almNombre(did), notas: (_transEdit.notas || '').trim() || null, created_by_name: nomAdmin() });
+      const tid = head && head[0] && head[0].id; if (!tid) throw new Error('No se creó el despacho');
+      await getAPI().post('pos_transferencia_items', lineas.map(l => ({ transferencia_id: tid, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant })));
+      const ref = numero + ' · ' + almNombre(oid) + ' → ' + almNombre(did);
+      for (const l of lineas) {
+        const so = stockEnAlm(l.producto_id, oid), sd = stockEnAlm(l.producto_id, did);
+        await upsertStockAlm(l.producto_id, oid, so - l.cant);
+        await upsertStockAlm(l.producto_id, did, sd + l.cant);
+        const p = _prods.find(x => String(x.id) === String(l.producto_id)) || { id: l.producto_id, nombre: l.nombre };
+        await logMov(p, 'transferencia', -l.cant, so, so - l.cant, ref, 'Salida ' + numero);
+        await logMov(p, 'transferencia', l.cant, sd, sd + l.cant, ref, 'Entrada ' + numero);
+      }
       cerrarModal('nxAlmTransf');
-      toast('ok', 'Transferencia hecha', fmtN(cant) + ' und · ' + ref);
+      toast('ok', 'Despacho ' + numero, lineas.length + ' artículo(s)');
+      transDespachoImprimir(Object.assign({}, head[0], { _items: lineas.map(l => ({ nombre: l.nombre, cantidad: l.cant })) }));
       await cargarInventario(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo transferir', String(e && e.message || e)); }
   };
+  function transDespachoImprimir(t) {
+    const e = empInfo();
+    const filas = (t._items || []).map((it, i) => `<tr><td>${i + 1}</td><td>${esc(it.nombre)}</td><td class="r">${fmtN(it.cantidad)}</td></tr>`).join('');
+    const total = (t._items || []).reduce((s, it) => s + Number(it.cantidad || 0), 0);
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Despacho ${esc(t.numero || '')}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:560px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.rut{display:flex;justify-content:space-between;margin:8px 0;font-weight:700}.fz{display:flex;justify-content:space-between;margin-top:40px;font-size:12px}.fz>div{text-align:center;width:45%;border-top:1px solid #999;padding-top:4px}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>CONDUCE DE DESPACHO / TRASLADO ${esc(t.numero || '')}</b></div>
+        <div class="muted">Fecha: ${fechaDMY(t.fecha)}</div>
+        <div class="rut"><span>Desde: ${esc(t.origen_nombre || '')}</span><span>→</span><span>Hacia: ${esc(t.destino_nombre || '')}</span></div>
+        <table><thead><tr><th>#</th><th>Artículo</th><th class="r">Cantidad</th></tr></thead><tbody>${filas}<tr style="font-weight:800"><td></td><td class="r">TOTAL UNIDADES</td><td class="r">${fmtN(total)}</td></tr></tbody></table>
+        ${t.notas ? `<div class="muted"><b>Notas:</b> ${esc(t.notas)}</div>` : ''}
+        <div class="fz"><div>Entregado por</div><div>Recibido por</div></div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el despacho'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // ── MÓDULO CRM / EMBUDO DE VENTAS estilo Odoo ──

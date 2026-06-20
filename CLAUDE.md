@@ -302,7 +302,12 @@ commit descriptivo y push. La app descarga de `main`.
     regresan al `venta.almacen_id` (o principal). TODO best-effort: `product.stock`
     sigue siendo el total autoritativo (invariante total = suma de almacenes). Si no
     hay almacenes (`_almacenes` vacío) el comportamiento es idéntico al anterior.
-    `_stockAlmRows` se carga en `cargarPOS` solo si hay almacenes. Opcional menor: **Conduce** (nota de entrega). Todo lo
+    `_stockAlmRows` se carga en `cargarPOS` solo si hay almacenes.
+    **Transferencia multi-artículo + conduce (v26.7):** tablas `pos_transferencias`
+    + `pos_transferencia_items` (org+trigger+RLS); modal multi-línea (`_transEdit`,
+    datalist add, número `TR-00001`), mueve stock por línea, loga movimientos e
+    imprime **conduce de despacho** (`transDespachoImprimir`). **Kardex imprimible**
+    por producto (`nxInvKardexImprimir`). Opcional menor: **Conduce** (nota de entrega). Todo lo
     demás del POS (ventas, factura, cotizaciones, compras, clientes/fiado, caja,
     historial, contabilidad, reportes, RRHH, NCF, vendedores, devoluciones) está
     HECHO y EN VIVO (v25.6). El tab bar del POS tiene ~14 pestañas (se podría
