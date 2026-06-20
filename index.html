@@ -3178,7 +3178,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='29.7';
+const APP_VERSION='29.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -6090,9 +6090,12 @@ async function guardarCli(){
       // Ajuste de deuda: si el usuario cambió el campo de deuda, ajustar deuda_total
       const cDeudaEl=document.getElementById('cDeudaIni');
       if(cDeudaEl&&!cDeudaEl.disabled){
-        const deudaNueva=parseFloat(cDeudaEl.value)||0;
-        const deudaOrig=parseFloat(cDeudaEl._deudaOriginal)||0;
-        if(deudaNueva!==deudaOrig){
+        // IMPORTANTE: el campo es data-nx-money (se muestra "9.000"); leer con nxMoney.parse.
+        // Con parseFloat crudo "9.000" daba 9 y SOBREESCRIBÍA la deuda con un número diminuto
+        // (causa de los "Pendiente RD$ 5/8"). Comparar redondeado para evitar falsos cambios.
+        const deudaNueva=(window.nxMoney?window.nxMoney.parse(cDeudaEl.value):parseFloat(cDeudaEl.value))||0;
+        const deudaOrig=Number(cDeudaEl._deudaOriginal)||0;
+        if(Math.round(deudaNueva*100)!==Math.round(deudaOrig*100)){
           datos.deuda_total=deudaNueva;
           logAudit('AJUSTE_DEUDA',`${nom} · Deuda ajustada de ${fmt(deudaOrig)} a ${fmt(deudaNueva)}`,'Clientes');
         }
