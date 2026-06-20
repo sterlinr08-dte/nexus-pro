@@ -200,6 +200,16 @@ commit descriptivo y push. La app descarga de `main`.
   - **Estado de cuenta de cliente (fiado)** (v25.3): botón en la ficha del cliente
     (`nxPosEstadoCuenta`) que imprime ventas a crédito + abonos + saldo corriente.
     No crea tablas (usa `pos_ventas`/`pos_abonos`).
+  - **NCF / Comprobantes Fiscales** (v25.4): en Ajustes se gestionan secuencias
+    (`pos_ncf_secuencias`: tipo B01/B02/B14/B15…, prefijo, desde/hasta/actual,
+    vencimiento, activo; org+trigger+RLS). `asignarNCF()` consume la secuencia en
+    `nxPosConfirmar` (mapea el valor del selector de la Factura
+    consumo→B02/credito_fiscal→B01/… vía `NCF_MAP`), guarda `pos_ventas.ncf`
+    (columna nueva nullable), lo muestra en el ticket y avisa cuando restan ≤10.
+    Botón **Reporte 607** en Reportes (`nxRep607`, imprimible). NOTA: el selector
+    de comprobante de la Factura usa valores `consumo/credito_fiscal/...` (NO los
+    códigos B0x) — por eso existe `NCF_MAP`. Hay además un `NCF_DESC` (códigos→
+    nombre) separado del `NCF_TIPOS` (array) que ya usaba la Factura.
   - **Reportes** (pestaña "Reportes", v25.1): analítica sobre `pos_ventas` +
     `pos_venta_items` (NO crea tablas). KPIs (total vendido, ganancia estimada
     precio−costo, costo de lo vendido, ITBIS, No. ventas, ticket promedio),

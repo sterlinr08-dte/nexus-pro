@@ -13650,6 +13650,7 @@
   let _facNCF = 'sin';
   let _facCredito = false;
   let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR' };
+  let _ncfSecs = [];
   let _facFecha = '';
   let _facSubTab = 'datos';
   let _histQ = '', _histDesde = '', _histHasta = '';
@@ -13677,6 +13678,7 @@
     try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _proveedores = []; }
     try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; } catch (e) { _caja = null; }
     try { const cf = await getAPI().get('pos_config', 'select=*&limit=1'); if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; } } catch (e) {}
+    try { _ncfSecs = await getAPI().get('pos_ncf_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _ncfSecs = []; }
   }
   async function cargarComprasTab() {
     try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
@@ -13934,7 +13936,88 @@
           <div class="fr"><label>Prefijo CRÉDITO</label><input id="cfgPrefCr" value="${esc(_posCfg.prefijo_credito)}" maxlength="6" placeholder="CR" style="text-transform:uppercase"></div>
         </div>
         <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
+        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
+        ${ajustesNCF()}
       </div>`;
+  }
+  const NCF_DESC = { B01: 'Crédito Fiscal', B02: 'Consumo', B14: 'Régimen Especial', B15: 'Gubernamental', B16: 'Exportación', B04: 'Nota de Crédito' };
+  // Mapa: valor del selector de comprobante de la Factura -> código NCF de la secuencia
+  const NCF_MAP = { consumo: 'B02', credito_fiscal: 'B01', gubernamental: 'B15', regimen_especial: 'B14', B01: 'B01', B02: 'B02', B14: 'B14', B15: 'B15', B16: 'B16', B04: 'B04' };
+  function ajustesNCF() {
+    const filas = _ncfSecs.length ? _ncfSecs.map(s => {
+      const restante = Math.max(0, Number(s.hasta || 0) - Number(s.actual || 0) + 1);
+      const bajo = restante <= 10;
+      return `<tr${s.activo === false ? ' style="opacity:.5"' : ''}>
+        <td><b>${esc(s.tipo)}</b> <span style="font-size:10px;color:#94a3b8">${esc(s.descripcion || NCF_DESC[s.tipo] || '')}</span></td>
+        <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px">${esc(s.prefijo)}${String(s.actual).padStart(8, '0')}</td>
+        <td style="text-align:right;color:${bajo ? '#dc2626' : '#64748b'};font-weight:${bajo ? '800' : '400'}">${restante}${bajo ? ' ⚠' : ''}</td>
+        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxNcfEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
+    return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-file-certificate"></i> Comprobantes Fiscales (NCF)</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5">Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.</div>
+      <div class="tw" style="font-size:12px;margin-bottom:10px"><table style="width:100%"><thead><tr><th>Tipo</th><th style="text-align:center">Próximo NCF</th><th style="text-align:right">Restan</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <button class="btn bsm bc1" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button>`;
+  }
+  window.nxNcfNuevo = function () { abrirNcf(null); };
+  window.nxNcfEdit = function (id) { const s = _ncfSecs.find(x => String(x.id) === String(id)); if (s) abrirNcf(s); };
+  function abrirNcf(s) {
+    cerrarModal('nxNcfForm');
+    const d = s || {};
+    const tipos = Object.keys(NCF_DESC).map(t => `<option value="${t}"${d.tipo === t ? ' selected' : ''}>${t} — ${NCF_DESC[t]}</option>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxNcfForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:420px">
+        <div class="mt"><span><i class="ti ti-file-certificate"></i> ${s ? 'Editar' : 'Nueva'} secuencia NCF</span><button class="nxBack" type="button" onclick="document.getElementById('nxNcfForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Tipo de comprobante *</label><select id="ncT" onchange="var p=document.getElementById('ncP');if(p&&!p.value)p.value=this.value">${tipos}</select></div>
+        <div class="fr"><label>Prefijo (normalmente igual al tipo)</label><input id="ncP" class="no-upper" value="${esc(d.prefijo || d.tipo || '')}" placeholder="Ej: B02"></div>
+        <div class="fr-row">
+          <div class="fr"><label>Desde *</label><input id="ncD" inputmode="numeric" value="${d.desde != null ? d.desde : '1'}" placeholder="1"></div>
+          <div class="fr"><label>Hasta *</label><input id="ncH" inputmode="numeric" value="${d.hasta != null ? d.hasta : ''}" placeholder="Ej: 1000"></div>
+        </div>
+        <div class="fr-row">
+          <div class="fr"><label>Próximo a usar</label><input id="ncA" inputmode="numeric" value="${d.actual != null ? d.actual : (d.desde != null ? d.desde : '1')}" placeholder="1"></div>
+          <div class="fr"><label>Vence (opcional)</label><input type="date" id="ncV" value="${esc((d.vencimiento || '').slice(0, 10))}"></div>
+        </div>
+        <div class="fr"><label>Activa</label><select id="ncAct"><option value="1"${d.activo !== false ? ' selected' : ''}>Sí</option><option value="0"${d.activo === false ? ' selected' : ''}>No</option></select></div>
+        <div class="fe" style="margin-top:8px;gap:8px">
+          ${s ? `<button class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxNcfDel('${s.id}')"><i class="ti ti-trash"></i></button>` : ''}
+          <button class="btn bghost" type="button" onclick="document.getElementById('nxNcfForm').remove()">Cancelar</button>
+          <button class="btn bc1" type="button" onclick="window.nxNcfGuardar('${s ? s.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+  }
+  window.nxNcfGuardar = async function (id) {
+    const tipo = val('ncT'); const prefijo = ((val('ncP') || '').trim().toUpperCase() || tipo);
+    const desde = parseInt(val('ncD'), 10) || 1, hasta = parseInt(val('ncH'), 10) || 0;
+    let actual = parseInt(val('ncA'), 10); if (!actual) actual = desde;
+    if (hasta < desde) { toast('err', 'El "hasta" debe ser mayor que el "desde"'); return; }
+    const body = { tipo: tipo, descripcion: NCF_DESC[tipo] || null, prefijo: prefijo, desde: desde, hasta: hasta, actual: actual, vencimiento: val('ncV') || null, activo: val('ncAct') === '1' };
+    try {
+      if (id) await getAPI().patch('pos_ncf_secuencias', 'id=eq.' + id, body); else await getAPI().post('pos_ncf_secuencias', body);
+      cerrarModal('nxNcfForm'); toast('ok', 'Secuencia NCF guardada');
+      try { _ncfSecs = await getAPI().get('pos_ncf_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) {}
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxNcfDel = async function (id) {
+    if (!confirm('¿Eliminar esta secuencia NCF?')) return;
+    try { await getAPI().del('pos_ncf_secuencias', 'id=eq.' + id); cerrarModal('nxNcfForm'); toast('ok', 'Secuencia eliminada'); _ncfSecs = await getAPI().get('pos_ncf_secuencias', 'select=*&order=tipo.asc') || []; const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo eliminar'); }
+  };
+  // Asigna el próximo NCF de una secuencia activa para el tipo dado (avanza el contador)
+  async function asignarNCF(tipoFactura) {
+    try {
+      if (!tipoFactura || tipoFactura === 'sin') return null;
+      const cod = NCF_MAP[tipoFactura] || tipoFactura;
+      const s = _ncfSecs.find(x => x.tipo === cod && x.activo !== false && Number(x.actual || 0) <= Number(x.hasta || 0));
+      if (!s) return null;
+      const num = Number(s.actual || s.desde || 1);
+      const ncf = (s.prefijo || tipo) + String(num).padStart(8, '0');
+      await getAPI().patch('pos_ncf_secuencias', 'id=eq.' + s.id, { actual: num + 1 });
+      s.actual = num + 1;
+      return ncf;
+    } catch (e) { return null; }
   }
   window.nxPosGuardarCfg = async function () {
     const co = (val('cfgPrefCo') || '').trim().toUpperCase().replace(/\s/g, '') || 'CO';
@@ -14083,6 +14166,9 @@
       if (!venta) throw new Error('No se pudo registrar la venta');
       const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)) }));
       try { await getAPI().post('pos_venta_items', items); } catch (e) {}
+      // Asignar NCF fiscal si hay secuencia activa para el tipo elegido (best-effort)
+      let ncfAsignado = null;
+      try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
       // contabilizar la venta automáticamente (best-effort, no bloquea la venta)
       try { postAsientoVenta(venta, c); } catch (e) {}
       // descontar stock (best-effort; los servicios no manejan stock)
@@ -14091,7 +14177,7 @@
       }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
-      const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), _items: items });
+      const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), ncf: ncfAsignado, _items: items });
       _cart = [];
       _factCli = '';
       _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos';
@@ -14115,6 +14201,7 @@
         <div class="c muted">${esc(e.dir || '')}</div>
         <div class="line"></div>
         <div class="c"><b>${v.numero_factura ? ('FACTURA ' + v.numero_factura) : ('TICKET DE VENTA No. ' + (v.numero || ''))}</b></div>
+        ${v.ncf ? `<div class="c muted">NCF: <b>${esc(v.ncf)}</b></div>` : ''}
         <div class="muted">${fechaDMY(v.fecha)}${v.cliente_nombre ? '<br>Cliente: ' + esc(v.cliente_nombre) : ''}</div>
         <div class="line"></div>
         <table>${filas}</table>
@@ -15598,6 +15685,7 @@
         <div class="nxFacF"><label>Desde</label><input type="date" value="${_repDesde}" onchange="window.nxRepRango('d',this.value)"></div>
         <div class="nxFacF"><label>Hasta</label><input type="date" value="${_repHasta}" onchange="window.nxRepRango('h',this.value)"></div>
         <div style="font-size:11px;color:#94a3b8;align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
+        <button class="btn bsm bghost" type="button" style="margin-left:auto;align-self:end" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
       </div>
       <div class="nxCtaKpis">
         ${kpi('Ventas (total)', totVta, '#2563eb')}
@@ -15616,6 +15704,29 @@
       </div>`;
   }
   window.nxRepRango = function (k, val) { if (k === 'd') _repDesde = val; else _repHasta = val; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxRep607 = function () {
+    const list = ventasRepRango().filter(v => v.ncf);
+    const e = empInfo();
+    let mSin = 0, mItb = 0, mTot = 0;
+    const filas = list.map(v => {
+      const total = Number(v.total || 0), itbis = Number(v.itbis || 0), sin = total - itbis;
+      mSin += sin; mItb += itbis; mTot += total;
+      return `<tr><td>${esc(v.ncf)}</td><td>${fechaDMY(v.fecha || v.created_at)}</td><td>${esc(v.cliente_nombre || 'Consumidor final')}</td><td class="r">${fmt(sin)}</td><td class="r">${fmt(itbis)}</td><td class="r">${fmt(total)}</td></tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:#777;padding:14px">No hay ventas con NCF en el período.</td></tr>';
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Reporte 607 (NCF)</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:760px;margin:0 auto;padding:20px;font-size:12px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:9.5px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:4px 5px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:1.5px solid #999}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>REPORTE 607 — VENTAS CON COMPROBANTE FISCAL (NCF)</b></div>
+        <div class="c muted">Del ${fechaDMY(_repDesde)} al ${fechaDMY(_repHasta)} · ${list.length} comprobante(s)</div>
+        <table><thead><tr><th>NCF</th><th>Fecha</th><th>Cliente</th><th class="r">Monto sin ITBIS</th><th class="r">ITBIS</th><th class="r">Total</th></tr></thead><tbody>${filas}<tr class="tot"><td colspan="3" class="r">TOTALES</td><td class="r">${fmt(mSin)}</td><td class="r">${fmt(mItb)}</td><td class="r">${fmt(mTot)}</td></tr></tbody></table>
+        <div class="muted" style="margin-top:14px">Base para el formato 607 de la DGII. Verifica los datos del cliente (RNC/Cédula) antes de declarar.</div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
 
   // ════════════════════════════════════════════════════════════════════
   // ── MÓDULO RECURSOS HUMANOS / NÓMINA (POS / multiempresa, RD) ──
