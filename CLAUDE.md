@@ -282,10 +282,17 @@ commit descriptivo y push. La app descarga de `main`.
     Inicio (apps) + Inventario (kardex/valoración/ajuste) + CRM/embudo. Pendiente
     elegido por el dueño: **look Odoo** (índigo/morado — re-pintado global, mostrar
     muestra antes de aplicar) · **Multi-almacén** (invasivo, supervisado).
-  - **PENDIENTE POS:** **Multi-almacén** (stock por
-    almacén) — se dejó fuera a propósito porque es INVASIVO (cambia el modelo de
-    stock en vender/productos/compras/devoluciones); hacerlo supervisado, tabla
-    por tabla y probado. Opcional menor: **Conduce** (nota de entrega). Todo lo
+  - **Multi-almacén** (v26.3, PASO 1 de 2): tablas `pos_almacenes` +
+    `pos_stock_almacen` (unique producto+almacén; org+trigger+RLS). En Inventario:
+    activar (`nxAlmInit` siembra principal con `_prods.stock`), crear almacenes,
+    **transferencias** (`nxAlmGuardarTransfer` mueve stock entre almacenes y loga
+    `tipo='transferencia'`), stock por almacén en KPIs y en el kardex. Helpers
+    `stockEnAlm`/`upsertStockAlm`/`_stockAlmRows` (mapa `pid|aid`→{id,stock}).
+    `pos_productos.stock` sigue siendo el TOTAL autoritativo (las ventas/compras
+    aún descuentan del total, NO del almacén). El ajuste sí actualiza el principal.
+    **PASO 2 PENDIENTE (supervisado):** selector de almacén activo en vender/factura
+    y descontar `pos_stock_almacen` del almacén activo en venta/compra/devolución
+    (best-effort, sin romper el total). Hacerlo con el dueño probando. Opcional menor: **Conduce** (nota de entrega). Todo lo
     demás del POS (ventas, factura, cotizaciones, compras, clientes/fiado, caja,
     historial, contabilidad, reportes, RRHH, NCF, vendedores, devoluciones) está
     HECHO y EN VIVO (v25.6). El tab bar del POS tiene ~14 pestañas (se podría
