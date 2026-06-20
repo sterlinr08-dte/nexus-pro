@@ -1,7 +1,8 @@
 {
-  "version": "25.8",
+  "version": "25.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (POS · INICIO estilo Odoo): el Punto de Venta ahora abre en una pantalla de INICIO con un mosaico de 'apps' (Vender, Factura, Cotizaciones, Productos, Compras, Entidades, Clientes, Caja, Contabilidad, Reportes, Recursos Humanos, Ajustes), agrupadas por área (Ventas, Inventario, Personas, Finanzas). Se ve y se navega como un ERP moderno — tocas el módulo que quieres. Las pestañas de arriba siguen para cambiar rápido. Primer paso para que tu POS se sienta como Odoo",
     "NUEVO (POS · ENTIDADES): nueva ventana 'Entidades' en el Punto de Venta — el maestro de todos tus terceros, estilo Infoplus. Al crear una entidad, PRIMERO eliges qué es (sus afines: Cliente, Proveedor, Empleado o Entidad bancaria — puede ser varios a la vez), luego si es Persona Física o Jurídica (empresa) y llenas sus datos: código, RNC/cédula, teléfono, email, dirección, contacto y representante. Puedes filtrar por tipo. Los clientes que crees aquí salen al facturar",
     "NUEVO (POS · clientes con código y nivel de precio): los clientes ahora tienen CÓDIGO automático (CL-0001) y se puede marcar si son 'Normal (consumidor final)' o 'Por mayor'. En el artículo defines Precio 1 (consumidor final) y Precio 2 (por mayor); al facturarle a un cliente 'por mayor', el sistema usa solo el Precio 2",
     "ARREGLADO (POS): se quitó el botón de '+ crear cliente' de la pantalla Factura (los clientes se crean ahora en Entidades o en la pestaña Clientes) y se quitó el símbolo '#' de los códigos y números que se mostraban con él",
