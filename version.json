@@ -1,7 +1,8 @@
 {
-  "version": "28.0",
+  "version": "28.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "PRUEBA (botones 2.5D): los botones de color (morado=principal, rojo=eliminar, verde=confirmar) ahora tienen un relieve suave '2.5D' — degradado vertical, una sombrita y brillo arriba, y se HUNDEN un poquito al tocarlos (sin inflarse en iPhone). Se quitó el 3D pesado del botón de entrar. Si prefieres planos del todo o más relieve, se ajusta en un momento",
     "ARREGLADO (Buscar artículo · estilo plano): el detalle que se despliega al tocar un artículo ahora se ve PLANO, como un cuadro/recuadro dentro del mismo artículo. Los precios (cliente final / por mayor) van en líneas limpias con el que aplica resaltado, la existencia por almacén en etiquetas blancas, y todo se DESLIZA con una animación suave de despliegue. Más minimalista y ordenado",
     "ARREGLADO (Buscar artículo · detalle minimalista): la ventanilla que se desliza al tocar un artículo ahora es más PEQUEÑA y compacta — las tarjetas de precio, la existencia por almacén, los seriales y el botón 'Elegir' se redujeron para que se vea limpio y minimalista, ocupando menos espacio",
     "ARREGLADO (Buscar artículo · detalle en línea): ahora al tocar un artículo en la lista de búsqueda, NO se abre otra ventana — el artículo se DESLIZA hacia abajo ahí mismo (acordeón) y muestra debajo sus dos precios (final y por mayor), la existencia por almacén y los seriales/IMEI, con el botón 'Elegir'. Tocas otra vez (o cierras) para contraerlo. Todo sin salir de la lista",
