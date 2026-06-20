@@ -2631,14 +2631,32 @@ async function doLogin(){
     const partes=rawUser.split('@');
     user=partes[0];
     baseNom=partes[1];
-    // Híbrido (Opción B): si hay una base aparte registrada en getTenants, conectar a ella.
+    // ── ENTRADA INTELIGENTE: directorio central de empresas (tabla organizaciones) ──
+    // Si la empresa tiene su propia app (campo 'dominio'), se REDIRIGE a su dirección.
+    // Si no tiene dominio, es inquilina de ESTE sistema (seguros/POS) y entra aquí.
+    try{
+      const slug=(baseNom||'').trim().toLowerCase();
+      if(slug){
+        const orgs=await fetch(`${SUPABASE_URL_FIXED}/rest/v1/organizaciones?slug=eq.${encodeURIComponent(slug)}&select=slug,nombre,dominio,activo`,
+          {headers:{apikey:SUPABASE_KEY_FIXED,Authorization:'Bearer '+SUPABASE_KEY_FIXED}}).then(r=>r.ok?r.json():[]).catch(()=>[]);
+        const org=orgs&&orgs[0];
+        if(org&&org.activo===false){ err.textContent='La empresa "'+escHtml(baseNom)+'" está inactiva. Contacta al administrador.'; err.style.display='block'; return; }
+        if(org&&org.dominio){
+          let dest=String(org.dominio).trim();
+          if(!/^https?:\/\//i.test(dest)) dest='https://'+dest;
+          err.style.display='none';
+          if(btn){btn.disabled=true;btn.innerHTML='<div class="spin" style="border-color:rgba(0,0,0,.2);border-top-color:#060810"></div> Redirigiendo a '+escHtml(org.nombre||baseNom)+'...';}
+          window.location.href=dest;
+          return;
+        }
+      }
+    }catch(e){}
+    // Híbrido (Opción B local con getTenants) — se mantiene por compatibilidad.
     const tenants=getTenants();
     const tenant=tenants.find(t=>t.nom.toLowerCase().replace(/\s+/g,'')===(baseNom||'').toLowerCase());
     if(tenant){ API.url=tenant.url; API.key=tenant.key;
       localStorage.setItem('nx_url',tenant.url); localStorage.setItem('nx_key',tenant.key);
     }
-    // Si no hay base aparte, es Opción A: misma base; la organización se resuelve
-    // por el usuario tras validar el login (escribir @organizacion no es error).
   }
 
   // Verificar si hay conexión configurada
@@ -3140,7 +3158,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='23.8';
+const APP_VERSION='23.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
