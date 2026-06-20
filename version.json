@@ -1,7 +1,8 @@
 {
-  "version": "24.1",
+  "version": "24.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (POS rediseñado para PC): el Punto de Venta ahora está pensado para computadora (como Infoplus). Aprovecha el ancho de la pantalla, las pestañas de arriba tienen un look más limpio de escritorio (subrayado), la rejilla de productos es más densa, el carrito/factura más cómodos, y en la pantalla FACTURA los totales quedan a la derecha con el botón Cobrar grande. Sigue viéndose bien en el teléfono (se adapta solo)",
     "ARREGLADO: la pantalla de entrada (nexusprord.com) ya NO dice 'Seguros de Salud'. Ahora es neutral ('Plataforma de gestión'), porque es la puerta de TODOS tus negocios (seguros, Deluxe, POS, etc.). El campo de usuario sugiere el formato usuario@empresa. Adentro, cada negocio mantiene su propia marca",
     "NUEVO multi-empresa (UN SOLO LOGIN / SSO): ahora un empleado escribe su usuario@empresa + su contraseña UNA sola vez en nexusprord.com, y entra a su sistema YA logueado (sin que le pidan la clave otra vez). Funciona para los sistemas externos configurados (ej. Deluxe) y servirá igual para los próximos que crees. Una sola entrada para todo tu ecosistema",
     "NUEVO multi-empresa (entrada inteligente): ahora desde UNA sola dirección (nexusprord.com), al escribir usuario@empresa el sistema sabe a dónde mandarte. Si la empresa tiene su propio sistema (ej. Deluxe), te REDIRIGE a su app automáticamente; si es del mismo sistema (seguros/POS), entras aquí mismo viendo solo lo de tu empresa. Una sola puerta para todos tus negocios, cada quien a lo suyo",
