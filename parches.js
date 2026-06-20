@@ -14864,8 +14864,17 @@
     try {
       await getAPI().patch('pos_ventas', 'id=eq.' + id, { estado: 'anulada' });
       try { const items = await getAPI().get('pos_venta_items', 'venta_id=eq.' + id + '&select=producto_id,cantidad'); for (const it of (items || [])) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'anulacion', Number(it.cantidad || 0), prev, ns, (v.numero_factura || v.numero || ''), 'Anulación de factura'); if (_almacenes.length) { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); if (aid) { try { upsertStockAlm(it.producto_id, aid, stockEnAlm(it.producto_id, aid) + Number(it.cantidad || 0)).catch(() => {}); } catch (e) {} } } } } } catch (e) {}
+      // Asiento inverso de la venta (revierte Ventas + ITBIS contra Caja/CxC)
+      try {
+        const byc = await ctasMap();
+        if (Object.keys(byc).length) {
+          const caja = Number(v.pagado_efectivo || 0) + Number(v.pagado_tarjeta || 0) + Number(v.pagado_transferencia || 0) + Number(v.pagado_otro || 0);
+          const ln = [lnCta(byc, '4101', 'Ventas', Number(v.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(v.itbis || 0), 0), lnCta(byc, '1101', 'Caja', 0, caja), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, Number(v.credito_monto || 0))].filter(Boolean);
+          if (ln.length >= 2) await postAsientoConcepto(isoHoy(), 'Anulación venta ' + (v.numero_factura || ('No. ' + (v.numero || ''))), 'anulacion', v.id, ln, v.numero_factura || String(v.numero || ''));
+        }
+      } catch (e) {}
       v.estado = 'anulada';
-      toast('ok', 'Factura anulada', 'Se devolvió el stock');
+      toast('ok', 'Factura anulada', 'Stock devuelto y contabilidad revertida');
       pintarHistorial();
     } catch (e) { toast('err', 'No se pudo anular', String(e && e.message || e)); }
   };
@@ -15079,7 +15088,11 @@
     if (!body.nombre) { toast('err', 'Falta el nombre / razón social'); return; }
     if (!body.codigo) body.codigo = entCodigoAuto(body);
     try {
-      if (id) await getAPI().patch('pos_clientes', 'id=eq.' + id, body); else await getAPI().post('pos_clientes', body);
+      let entId = id;
+      if (id) await getAPI().patch('pos_clientes', 'id=eq.' + id, body);
+      else { const r = await getAPI().post('pos_clientes', body); entId = r && r[0] && r[0].id; }
+      // ── Sincronizar con RRHH si es empleado (crea/actualiza ficha enlazada) ──
+      try { if (body.es_empleado && entId) await syncEmpleadoEntidad(entId, body); } catch (e) {}
       toast('ok', id ? 'Entidad actualizada' : 'Entidad creada', body.codigo + ' · ' + body.nombre);
       cerrarModal('nxEntForm');
       _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || [];
@@ -15088,6 +15101,14 @@
       const view = document.getElementById('v-pos'); if (view) renderPOS(view);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
+  // Crea/actualiza la ficha de RRHH enlazada a una entidad-empleado (salario/puesto se completan en RRHH)
+  async function syncEmpleadoEntidad(entId, body) {
+    try {
+      const ex = await getAPI().get('rrhh_empleados', 'select=id&entidad_id=eq.' + entId + '&limit=1');
+      if (ex && ex[0]) await getAPI().patch('rrhh_empleados', 'id=eq.' + ex[0].id, { nombre: body.nombre, cedula: body.cedula, telefono: body.telefono });
+      else await getAPI().post('rrhh_empleados', { entidad_id: entId, nombre: body.nombre, cedula: body.cedula, telefono: body.telefono, activo: true });
+    } catch (e) {}
+  }
 
   // ── TAB: CLIENTES (fiado / cuentas por cobrar) ──
   function renderClientes() {
@@ -15421,7 +15442,21 @@
   };
   window.nxPosPagarProv = async function (id) {
     const monto = parseMoney(val('provPagoMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
-    try { await getAPI().post('pos_compra_pagos', { proveedor_id: id, monto: monto, metodo: val('provPagoMet') || 'Efectivo', numero: await nextSeq('pago_prov'), created_by_name: nomAdmin() }); _pagosProvByProv[id] = (_pagosProvByProv[id] || 0) + monto; toast('ok', 'Pago registrado', fmt(monto)); window.nxPosProvVer(id); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    const metodo = val('provPagoMet') || 'Efectivo';
+    try {
+      await getAPI().post('pos_compra_pagos', { proveedor_id: id, monto: monto, metodo: metodo, numero: await nextSeq('pago_prov'), created_by_name: nomAdmin() });
+      _pagosProvByProv[id] = (_pagosProvByProv[id] || 0) + monto;
+      // Asiento: Debe CxP (2101) / Haber Caja o Banco
+      try {
+        const byc = await ctasMap();
+        if (Object.keys(byc).length) {
+          const pn = (_proveedores.find(p => String(p.id) === String(id)) || {}).nombre || '';
+          const ln = [lnCta(byc, '2101', 'Cuentas por pagar', monto, 0), lnCta(byc, metodo === 'Efectivo' ? '1101' : '1102', metodo === 'Efectivo' ? 'Caja' : 'Banco', 0, monto)];
+          await postAsientoConcepto(isoHoy(), 'Pago a proveedor' + (pn ? ' ' + pn : ''), 'pago_prov', null, ln);
+        }
+      } catch (e) {}
+      toast('ok', 'Pago registrado', fmt(monto)); window.nxPosProvVer(id);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosDelPagoProv = async function (pid, provId) { if (!confirm('¿Eliminar este pago?')) return; try { await getAPI().del('pos_compra_pagos', 'id=eq.' + pid); toast('ok', 'Pago eliminado'); window.nxPosProvVer(provId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); } };
   window.nxPosDelProv = async function (id) {
@@ -15479,8 +15514,17 @@
   };
   window.nxPosAddMov = async function (tipo) {
     const monto = parseMoney(val('movMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
+    const concepto = (val('movConc') || '').trim() || null;
     try {
-      await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: tipo, concepto: (val('movConc') || '').trim() || null, monto: monto, created_by_name: nomAdmin() });
+      await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: tipo, concepto: concepto, monto: monto, created_by_name: nomAdmin() });
+      // Asiento: entrada → Debe Caja / Haber Otros ingresos · salida → Debe Gastos varios / Haber Caja
+      try {
+        const byc = await ctasMap();
+        if (Object.keys(byc).length) {
+          const ln = tipo === 'entrada' ? [lnCta(byc, '1101', 'Caja', monto, 0), lnCta(byc, '4102', 'Otros ingresos', 0, monto)] : [lnCta(byc, '6104', 'Gastos varios', monto, 0), lnCta(byc, '1101', 'Caja', 0, monto)];
+          await postAsientoConcepto(isoHoy(), (tipo === 'entrada' ? 'Entrada de caja' : 'Salida de caja') + (concepto ? ': ' + concepto : ''), 'caja_mov', null, ln);
+        }
+      } catch (e) {}
       cerrarModal('nxPosMov'); _cajaTot = await totalesCaja(_caja);
       toast('ok', tipo === 'entrada' ? 'Entrada registrada' : 'Salida registrada', fmt(monto));
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
@@ -15527,6 +15571,17 @@
     const body = { estado: 'cerrada', cierre: new Date().toISOString(), ventas_efectivo: tt.efe, ventas_tarjeta: tt.tar, ventas_transferencia: tt.tra, ventas_credito: tt.cre, abonos_efectivo: tt.abEfe, entradas: tt.ent, salidas: tt.sal, efectivo_esperado: tt.esperado, efectivo_contado: contado, descuadre: desc, notas: (val('cierreNotas') || '').trim() || null };
     try {
       await getAPI().patch('pos_cajas', 'id=eq.' + _caja.id, body);
+      // Asiento del descuadre: faltante → Debe Gastos varios / Haber Caja · sobrante → Debe Caja / Haber Otros ingresos
+      try {
+        if (Math.round(desc) !== 0) {
+          const byc = await ctasMap();
+          if (Object.keys(byc).length) {
+            const a = Math.abs(desc);
+            const ln = desc < 0 ? [lnCta(byc, '6104', 'Gastos varios', a, 0), lnCta(byc, '1101', 'Caja', 0, a)] : [lnCta(byc, '1101', 'Caja', a, 0), lnCta(byc, '4102', 'Otros ingresos', 0, a)];
+            await postAsientoConcepto(isoHoy(), 'Descuadre cierre de caja (' + (desc < 0 ? 'faltante' : 'sobrante') + ')', 'cierre_caja', _caja.id, ln);
+          }
+        }
+      } catch (e) {}
       const cerrada = Object.assign({}, _caja, body, { monto_inicial: _caja.monto_inicial });
       toast('ok', 'Caja cerrada', 'Descuadre ' + (desc > 0 ? '+' : '') + fmt(desc));
       cerrarModal('nxPosCierre');
@@ -15877,6 +15932,8 @@
         { asiento_id: aid, cuenta_id: cg.id, cuenta_codigo: cg.codigo, cuenta_nombre: cg.nombre, debito: Math.round(monto), credito: 0 },
         { asiento_id: aid, cuenta_id: cp.id, cuenta_codigo: cp.codigo, cuenta_nombre: cp.nombre, debito: 0, credito: Math.round(monto) }
       ]);
+      // Si el gasto es en efectivo y hay caja abierta, también baja el efectivo de la caja (arqueo)
+      try { if (pagCod === '1101' && _caja && _caja.id) await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'salida', concepto: conc, monto: Math.round(monto), created_by_name: nomAdmin() }); } catch (e) {}
       cerrarModal('nxGastoForm'); toast('ok', 'Gasto registrado', fmt(monto));
       await cargarContabilidad(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
