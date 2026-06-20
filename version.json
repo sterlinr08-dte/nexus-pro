@@ -1,5 +1,5 @@
 {
-  "version": "24.3",
+  "version": "24.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
     "NUEVO (Factura POS nivel Infoplus): la pantalla FACTURA ahora tiene cabecera completa — Cliente, No. de Factura, Fecha, TIPO DE COMPROBANTE (Consumo B02, Crédito Fiscal B01, etc.) y opción A CRÉDITO. En el cuadro de artículos cada línea muestra la EXISTENCIA y permite poner un DESCUENTO por artículo en % o en RD$ (con un botón que cambia entre % y RD$). Abajo se ve el Descuento total, Subtotal, ITBIS y TOTAL. (Próximamente: existencia por almacén / multi-almacén.)",

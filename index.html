@@ -84,8 +84,8 @@ input,select,textarea,button{font-family:var(--ff)}
 .lmk::after{content:'';position:absolute;left:14%;top:8%;width:72%;height:42%;border-radius:50%;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.78),rgba(255,255,255,0) 72%);pointer-events:none}
 @keyframes lmkOrbit{0%{box-shadow:0 10px 22px rgba(37,99,235,.5)}25%{box-shadow:12px 0 22px rgba(96,165,250,.5)}50%{box-shadow:0 -10px 22px rgba(37,99,235,.5)}75%{box-shadow:-12px 0 22px rgba(96,165,250,.5)}100%{box-shadow:0 10px 22px rgba(37,99,235,.5)}}
 @media (prefers-reduced-motion:reduce){.lmk{animation:none}}
-.lbrand{font-size:24px;font-weight:700;color:#1e3a6e;letter-spacing:.5px}
-.lver{font-size:10px;color:#94a3b8;font-family:var(--mono);margin-top:2px}
+.lbrand{font-size:24px;font-weight:700;color:#1e3a6e;letter-spacing:.5px;text-align:center}
+.lver{font-size:10px;color:#94a3b8;font-family:var(--mono);margin-top:2px;text-align:center}
 .lh{font-size:14px;font-weight:600;color:#1e293b;margin-bottom:1.25rem;text-align:center}
 .lfr{margin-bottom:14px}
 .lfr label{font-size:11px;font-weight:600;color:#475569;display:block;margin-bottom:5px}
@@ -3177,7 +3177,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='24.3';
+const APP_VERSION='24.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
