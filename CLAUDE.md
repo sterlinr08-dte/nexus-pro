@@ -251,6 +251,21 @@ commit descriptivo y push. La app descarga de `main`.
     Retenciones y 2103 Sueldos por pagar). Tablas `rrhh_empleados`,
     `rrhh_nominas`, `rrhh_nomina_lineas` — las 3 con `organizacion_id` + trigger +
     RLS `mi_rol()='admin' AND organizacion_id = mi_organizacion()` (patrón POS).
+  - **PENDIENTE POS (lo único que falta del ERP):** **Multi-almacén** (stock por
+    almacén) — se dejó fuera a propósito porque es INVASIVO (cambia el modelo de
+    stock en vender/productos/compras/devoluciones); hacerlo supervisado, tabla
+    por tabla y probado. Opcional menor: **Conduce** (nota de entrega). Todo lo
+    demás del POS (ventas, factura, cotizaciones, compras, clientes/fiado, caja,
+    historial, contabilidad, reportes, RRHH, NCF, vendedores, devoluciones) está
+    HECHO y EN VIVO (v25.6). El tab bar del POS tiene ~14 pestañas (se podría
+    agrupar en un menú "Más" si el dueño lo pide; en móvil hace wrap).
+
+> **Build autónomo (sesión nocturna, chat `RvxXb`):** v25.0→v25.6 se construyeron
+> de corrido con autorización explícita del dueño ("tienes todos los permisos…
+> concluye el sistema completo"). Cada migración de esquema sí pasó el gate porque
+> el dueño dio OK explícito y repetido. Todas las tablas nuevas verificadas con
+> RLS+trigger+policy. Si retomas: revisa que nada en el flujo de cobro
+> (`nxPosConfirmar`) se haya roto y prueba en móvil angosto.
 
 ---
 
