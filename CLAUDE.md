@@ -191,6 +191,15 @@ commit descriptivo y push. La app descarga de `main`.
   - **Historial de facturas** (pestaña "Historial"): buscar venta por No. o
     cliente, filtros por rango de fechas, KPIs (cantidad/total), ticket por venta
     y **anular** (restaura stock desde `pos_venta_items`).
+  - **Cotizaciones / Presupuestos** (pestaña "Cotizaciones", v25.3): crear/editar
+    presupuestos (cliente, productos vía datalist, validez en días), número
+    `COT-0001`, imprimir documento formal (`nxCotImprimir`), **convertir en venta**
+    (`nxCotConvertir` carga `_cart`+`_factCli` y abre Factura), estado
+    vigente/vencida/convertida/anulada. Tablas `pos_cotizaciones`,
+    `pos_cotizacion_items` (org+trigger+RLS patrón POS).
+  - **Estado de cuenta de cliente (fiado)** (v25.3): botón en la ficha del cliente
+    (`nxPosEstadoCuenta`) que imprime ventas a crédito + abonos + saldo corriente.
+    No crea tablas (usa `pos_ventas`/`pos_abonos`).
   - **Reportes** (pestaña "Reportes", v25.1): analítica sobre `pos_ventas` +
     `pos_venta_items` (NO crea tablas). KPIs (total vendido, ganancia estimada
     precio−costo, costo de lo vendido, ITBIS, No. ventas, ticket promedio),

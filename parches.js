@@ -13661,6 +13661,8 @@
   let _cuentas = [], _asientos = [];
   let _ctaDesde = '', _ctaHasta = '', _ctaMayorSel = '';
   let _asEdit = null; // { fecha, concepto, lineas:[{cuenta_id,debito,credito}] }
+  // ── Cotizaciones ──
+  let _cotizaciones = [], _cotEdit = null;
   // ── Reportes ──
   let _repDesde = '', _repHasta = '', _repVentas = [];
   // ── Recursos Humanos ──
@@ -13761,6 +13763,7 @@
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     if (t === 'reportes') { try { await cargarReportes(); } catch (e) {} }
+    if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
     renderPOS(view);
   };
 
@@ -13776,7 +13779,7 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('reportes', 'Reportes', 'ti-chart-pie')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('cotizaciones', 'Cotizaciones', 'ti-clipboard-text')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('reportes', 'Reportes', 'ti-chart-pie')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'factura') body = renderFactura();
@@ -13786,6 +13789,7 @@
     else if (_posTab === 'caja') body = renderCaja();
     else if (_posTab === 'contabilidad') body = renderContabilidad();
     else if (_posTab === 'reportes') body = renderReportes();
+    else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
@@ -14502,12 +14506,50 @@
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
           ${waNum(c.telefono) ? `<button class="btn bwa bsm" type="button" onclick="window.nxPosCliWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
+          <button class="btn bsm bghost" type="button" onclick="window.nxPosEstadoCuenta('${id}')"><i class="ti ti-printer"></i> Estado de cuenta</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxPosEditCli('${id}')"><i class="ti ti-edit"></i> Editar</button>
           <button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPosDelCli('${id}')"><i class="ti ti-trash"></i> Borrar</button>
         </div>
       </div>`;
     document.body.appendChild(ov);
     scanMoney(ov);
+  };
+  window.nxPosEstadoCuenta = async function (id) {
+    const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
+    let ventas = [], abonos = [];
+    try { ventas = await getAPI().get('pos_ventas', 'select=*&cliente_id=eq.' + id + '&credito_monto=gt.0&order=created_at.asc') || []; } catch (e) {}
+    try { abonos = await getAPI().get('pos_abonos', 'select=*&cliente_id=eq.' + id + '&order=fecha.asc') || []; } catch (e) {}
+    const totFiado = ventas.reduce((s, v) => s + Number(v.credito_monto || 0), 0);
+    const totAb = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
+    const saldo = Math.max(0, totFiado - totAb);
+    // Movimientos ordenados por fecha con saldo corriente
+    const movs = [];
+    ventas.forEach(v => movs.push({ f: v.fecha || v.created_at, t: 'Venta a crédito #' + (v.numero || ''), cargo: Number(v.credito_monto || 0), abono: 0 }));
+    abonos.forEach(a => movs.push({ f: a.fecha, t: 'Abono' + (a.metodo ? ' (' + a.metodo + ')' : ''), cargo: 0, abono: Number(a.monto || 0) }));
+    movs.sort((x, y) => String(x.f).localeCompare(String(y.f)));
+    let run = 0;
+    const filas = movs.map(m => { run += m.cargo - m.abono; return `<tr><td>${fechaDMY(m.f)}</td><td>${esc(m.t)}</td><td class="r">${m.cargo ? fmt(m.cargo) : ''}</td><td class="r">${m.abono ? fmt(m.abono) : ''}</td><td class="r">${fmt(run)}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">Sin movimientos</td></tr>';
+    const e = empInfo();
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta — ${esc(c.nombre)}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:640px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.box{display:flex;gap:10px;margin:10px 0}.kp{flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:10px;text-align:center}.kp b{display:block;font-size:16px}.kp span{font-size:10px;color:#555}.sal{font-weight:800;font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>ESTADO DE CUENTA</b></div>
+        <div class="muted">Cliente: <b>${esc(c.nombre)}</b>${c.cedula ? ' · ' + esc(c.cedula) : ''}${c.telefono ? ' · ' + esc(c.telefono) : ''}<br>Fecha: ${fechaDMY(isoHoy())}</div>
+        <div class="box">
+          <div class="kp"><b>${fmt(totFiado)}</b><span>Total a crédito</span></div>
+          <div class="kp"><b style="color:#059669">${fmt(totAb)}</b><span>Abonado</span></div>
+          <div class="kp"><b style="color:${saldo > 0 ? '#dc2626' : '#16a34a'}">${fmt(saldo)}</b><span>Saldo pendiente</span></div>
+        </div>
+        <table><thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Cargo</th><th class="r">Abono</th><th class="r">Saldo</th></tr></thead><tbody>${filas}</tbody></table>
+        <div class="line"></div>
+        <div class="c sal">SALDO PENDIENTE: ${fmt(saldo)}</div>
+        <div class="muted" style="margin-top:14px">Documento informativo generado por NEXUS PRO el ${fechaDMY(isoHoy())}.</div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxPosTicketVenta = async function (ventaId) {
     let v = _ventas.find(x => String(x.id) === String(ventaId));
@@ -15358,6 +15400,154 @@
       await postAsientoConcepto(fecha, 'Abono cliente' + (cliNom ? ' ' + cliNom : ''), 'cobro', null, lineas);
     } catch (e) {}
   }
+
+  // ════════════════════════════════════════════════════════════════════
+  // ── MÓDULO COTIZACIONES / PRESUPUESTOS (POS) ──
+  // ════════════════════════════════════════════════════════════════════
+  async function cargarCotizaciones() {
+    _cotizaciones = await getAPI().get('pos_cotizaciones', 'select=*&order=created_at.desc&limit=300') || [];
+  }
+  function cotProxNumero() { let mx = 0; (_cotizaciones || []).forEach(c => { const m = String(c.numero || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return 'COT-' + String(mx + 1).padStart(4, '0'); }
+  function cotTotales(lineas) {
+    let total = 0, itbis = 0, descuento = 0;
+    (lineas || []).forEach(it => { const imp = lineImporte(it); descuento += lineDescMonto(it); total += imp; if (it.itbis) itbis += imp * 18 / 118; });
+    total = Math.round(total); itbis = Math.round(itbis); descuento = Math.round(descuento);
+    return { total: total, itbis: itbis, subtotal: total - itbis, descuento: descuento };
+  }
+  function cotEstadoBadge(e) {
+    const m = { vigente: ['#16a34a', '#f0fdf4', 'VIGENTE'], convertida: ['#2563eb', '#eff6ff', 'CONVERTIDA'], vencida: ['#ea580c', '#fff7ed', 'VENCIDA'], anulada: ['#dc2626', '#fef2f2', 'ANULADA'] };
+    const x = m[e] || m.vigente; return `<span style="font-size:9px;font-weight:800;color:${x[0]};background:${x[1]};padding:2px 7px;border-radius:6px">${x[2]}</span>`;
+  }
+  function cotVigente(c) {
+    if (c.estado !== 'vigente') return c.estado;
+    try { const venc = new Date(String(c.fecha).slice(0, 10) + 'T12:00:00'); venc.setDate(venc.getDate() + Number(c.validez_dias || 15)); if (venc < new Date()) return 'vencida'; } catch (e) {}
+    return 'vigente';
+  }
+  function renderCotizaciones() {
+    const filas = _cotizaciones.length ? _cotizaciones.map(c => {
+      const est = cotVigente(c);
+      return `<tr>
+        <td style="font-weight:700;font-family:var(--mono,monospace);font-size:11px">${esc(c.numero || '')}</td>
+        <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:#94a3b8">${fechaDMY(c.fecha)}</div></td>
+        <td style="text-align:center">${cotEstadoBadge(est)}</td>
+        <td style="text-align:right;font-weight:700">${fmt(c.total)}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn bsm bghost" title="Imprimir" onclick="window.nxCotImprimir('${c.id}')"><i class="ti ti-printer"></i></button>
+          ${est === 'vigente' || est === 'vencida' ? `<button class="btn bsm bc1" title="Convertir en venta" onclick="window.nxCotConvertir('${c.id}')"><i class="ti ti-arrow-right"></i></button>` : ''}
+          <button class="btn bsm bghost" title="Editar" onclick="window.nxCotEditar('${c.id}')"><i class="ti ti-edit"></i></button>
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Aún no hay cotizaciones. Crea la primera.</td></tr>';
+    return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+  window.nxCotNueva = function () { _cotEdit = { id: null, cliente_id: '', cliente_nombre: '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; abrirCotizacion(); };
+  window.nxCotEditar = async function (id) {
+    const c = _cotizaciones.find(x => String(x.id) === String(id)); if (!c) return;
+    let items = []; try { items = await getAPI().get('pos_cotizacion_items', 'select=*&cotizacion_id=eq.' + id) || []; } catch (e) {}
+    _cotEdit = { id: c.id, cliente_id: c.cliente_id || '', cliente_nombre: c.cliente_nombre || '', fecha: String(c.fecha).slice(0, 10), validez_dias: c.validez_dias || 15, notas: c.notas || '', estado: c.estado, lineas: items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: Number(it.precio || 0), cantidad: Number(it.cantidad || 1), itbis: it.itbis !== false, desc: 0, descT: 'pct' })) };
+    abrirCotizacion();
+  };
+  function abrirCotizacion() {
+    cerrarModal('nxCotForm');
+    const cliOpts = '<option value="">— Cliente / consumidor final —</option>' + _clientes.map(c => `<option value="${c.id}"${String(_cotEdit.cliente_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
+    const prodList = _prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxCotForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:640px;max-height:94vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-clipboard-text"></i> ${_cotEdit.id ? 'Editar' : 'Nueva'} cotización</span><button class="nxBack" type="button" onclick="document.getElementById('nxCotForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr-row">
+          <div class="fr" style="flex:2"><label>Cliente</label><select id="cotCli" onchange="window.nxCotSetCli(this.value)">${cliOpts}</select></div>
+          <div class="fr"><label>Fecha</label><input type="date" id="cotFecha" value="${_cotEdit.fecha}" onchange="window.nxCotField('fecha',this.value)"></div>
+          <div class="fr"><label>Validez (días)</label><input id="cotVal" inputmode="numeric" value="${_cotEdit.validez_dias}" onchange="window.nxCotField('validez_dias',this.value)"></div>
+        </div>
+        <div class="nxFacAdd" style="margin:4px 0 10px"><i class="ti ti-search"></i><input list="cotProds" id="cotBuscar" placeholder="Escribe un producto y elígelo para agregar..." autocomplete="off" onchange="window.nxCotAdd(this.value)"><datalist id="cotProds">${prodList}</datalist></div>
+        <div id="cotTabla" style="overflow-y:auto;flex:1"></div>
+        <div id="cotTot" class="nxAsTot"></div>
+        <div class="fr"><label>Notas (opcional)</label><input id="cotNotas" class="no-upper" value="${esc(_cotEdit.notas || '')}" placeholder="Condiciones, entrega..." onchange="window.nxCotField('notas',this.value)"></div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxCotForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxCotGuardar()"><i class="ti ti-device-floppy"></i> Guardar cotización</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    pintarCotTabla();
+  }
+  window.nxCotSetCli = function (id) { _cotEdit.cliente_id = id; const c = _clientes.find(x => String(x.id) === String(id)); _cotEdit.cliente_nombre = c ? c.nombre : ''; };
+  window.nxCotField = function (k, v) { _cotEdit[k] = (k === 'validez_dias') ? (parseInt(v, 10) || 15) : v; };
+  window.nxCotAdd = function (txt) {
+    if (!txt) return;
+    const t = String(txt).toLowerCase();
+    let p = _prods.find(x => (x.nombre + (x.codigo ? ' [' + x.codigo + ']' : '')).toLowerCase() === t) || _prods.find(x => String(x.nombre).toLowerCase() === t) || _prods.find(x => x.codigo && String(x.codigo).toLowerCase() === t);
+    if (!p) { const m = String(txt).match(/\[([^\]]+)\]/); if (m) p = _prods.find(x => x.codigo && String(x.codigo).toLowerCase() === m[1].toLowerCase()); }
+    if (!p) { toast('warn', 'Producto no encontrado', 'Elígelo de la lista'); return; }
+    const ex = _cotEdit.lineas.find(l => String(l.producto_id) === String(p.id));
+    if (ex) ex.cantidad += 1; else _cotEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio || 0), cantidad: 1, itbis: p.itbis !== false, desc: 0, descT: 'pct' });
+    const inp = document.getElementById('cotBuscar'); if (inp) inp.value = '';
+    pintarCotTabla();
+  };
+  window.nxCotLinea = function (i, k, v) { const l = _cotEdit.lineas[i]; if (!l) return; if (k === 'cantidad') l.cantidad = Math.max(1, parseFloat(v) || 1); else if (k === 'precio') l.precio = parseMoney(v); else if (k === 'desc') l.desc = parseFloat(v) || 0; pintarCotTabla(); };
+  window.nxCotDel = function (i) { _cotEdit.lineas.splice(i, 1); pintarCotTabla(); };
+  function pintarCotTabla() {
+    const wrap = document.getElementById('cotTabla'); if (!wrap) return;
+    if (!_cotEdit.lineas.length) { wrap.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:22px">Agrega productos a la cotización.</div>'; const t = document.getElementById('cotTot'); if (t) t.innerHTML = ''; return; }
+    const filas = _cotEdit.lineas.map((l, i) => `<tr>
+        <td class="nxFacDesc">${esc(l.nombre)}</td>
+        <td class="nxFacCant"><input inputmode="numeric" value="${l.cantidad}" onchange="window.nxCotLinea(${i},'cantidad',this.value)"></td>
+        <td class="nxFacPre"><input inputmode="numeric" value="${Math.round(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)"></td>
+        <td class="nxFacImp">${fmt(lineImporte(l))}</td>
+        <td class="nxFacDel"><button onclick="window.nxCotDel(${i})"><i class="ti ti-x"></i></button></td>
+      </tr>`).join('');
+    wrap.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl" style="min-width:0"><thead><tr><th>Descripción</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio</th><th style="text-align:right">Importe</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+    const tt = cotTotales(_cotEdit.lineas); const t = document.getElementById('cotTot');
+    if (t) t.innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span>Subtotal: <b>${fmt(tt.subtotal)}</b></span><span>ITBIS: <b>${fmt(tt.itbis)}</b></span><span style="color:#0f172a">TOTAL: <b>${fmt(tt.total)}</b></span></div>`;
+  }
+  window.nxCotGuardar = async function () {
+    if (!_cotEdit.lineas.length) { toast('err', 'Agrega al menos un producto'); return; }
+    const tt = cotTotales(_cotEdit.lineas);
+    const numero = _cotEdit.numero || cotProxNumero();
+    const body = { numero: numero, cliente_id: _cotEdit.cliente_id || null, cliente_nombre: _cotEdit.cliente_nombre || null, fecha: _cotEdit.fecha || isoHoy(), validez_dias: Number(_cotEdit.validez_dias || 15), subtotal: tt.subtotal, itbis: tt.itbis, descuento: tt.descuento, total: tt.total, notas: (_cotEdit.notas || '').trim() || null, created_by_name: nomAdmin() };
+    try {
+      let cotId = _cotEdit.id;
+      if (cotId) { await getAPI().patch('pos_cotizaciones', 'id=eq.' + cotId, body); await getAPI().del('pos_cotizacion_items', 'cotizacion_id=eq.' + cotId); }
+      else { const r = await getAPI().post('pos_cotizaciones', body); cotId = (r && r[0] && r[0].id); }
+      if (!cotId) throw new Error('No se pudo guardar');
+      const items = _cotEdit.lineas.map(l => ({ cotizacion_id: cotId, producto_id: l.producto_id, nombre: l.nombre, precio: Math.round(l.precio), cantidad: l.cantidad, itbis: !!l.itbis, descuento: Math.round(lineDescMonto(l)), importe: Math.round(lineImporte(l)) }));
+      await getAPI().post('pos_cotizacion_items', items);
+      cerrarModal('nxCotForm'); toast('ok', 'Cotización guardada', numero);
+      await cargarCotizaciones(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxCotConvertir = async function (id) {
+    const c = _cotizaciones.find(x => String(x.id) === String(id)); if (!c) return;
+    if (!confirm('¿Convertir esta cotización en venta? Se cargará en la pantalla Factura para cobrarla.')) return;
+    let items = []; try { items = await getAPI().get('pos_cotizacion_items', 'select=*&cotizacion_id=eq.' + id) || []; } catch (e) {}
+    if (!items.length) { toast('err', 'La cotización no tiene productos'); return; }
+    _cart = items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: Number(it.precio || 0), cantidad: Number(it.cantidad || 1), itbis: it.itbis !== false, desc: 0, descT: 'pct' }));
+    _factCli = c.cliente_id || '';
+    try { await getAPI().patch('pos_cotizaciones', 'id=eq.' + id, { estado: 'convertida' }); } catch (e) {}
+    toast('ok', 'Cotización cargada', 'Completa el cobro en Factura');
+    _posTab = 'factura'; const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+  };
+  window.nxCotImprimir = async function (id) {
+    const c = _cotizaciones.find(x => String(x.id) === String(id)); if (!c) return;
+    let items = []; try { items = await getAPI().get('pos_cotizacion_items', 'select=*&cotizacion_id=eq.' + id) || []; } catch (e) {}
+    const e = empInfo();
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}</td><td>${esc(it.nombre)}</td><td class="r">${fmt(it.precio)}</td><td class="r">${fmt(it.importe)}</td></tr>`).join('');
+    let venc = ''; try { const d = new Date(String(c.fecha).slice(0, 10) + 'T12:00:00'); d.setDate(d.getDate() + Number(c.validez_dias || 15)); venc = fechaDMY(d.toLocaleDateString('en-CA')); } catch (er) {}
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cotización ${esc(c.numero || '')}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:660px;margin:0 auto;padding:22px;font-size:12.5px}h1{font-size:17px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.tot{margin-left:auto;max-width:280px}.tot td{padding:3px 6px;border:none}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-22px -22px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}${e.dir ? '<br>' + esc(e.dir) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>COTIZACIÓN ${esc(c.numero || '')}</b></div>
+        <div class="muted">Fecha: ${fechaDMY(c.fecha)} · Válida hasta: ${venc}<br>Cliente: <b>${esc(c.cliente_nombre || 'Consumidor final')}</b></div>
+        <table><thead><tr><th>Cant.</th><th>Descripción</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${filas}</tbody></table>
+        <table class="tot"><tr><td>Subtotal</td><td class="r">${fmt(c.subtotal)}</td></tr>${Number(c.descuento) ? `<tr><td>Descuento</td><td class="r">- ${fmt(c.descuento)}</td></tr>` : ''}<tr><td>ITBIS (18%)</td><td class="r">${fmt(c.itbis)}</td></tr><tr class="gran"><td>TOTAL</td><td class="r">${fmt(c.total)}</td></tr></table>
+        ${c.notas ? `<div class="muted" style="margin-top:10px"><b>Notas:</b> ${esc(c.notas)}</div>` : ''}
+        <div class="muted" style="margin-top:16px">Esta cotización es un presupuesto y no constituye una factura. Precios sujetos a cambio después de la fecha de validez.</div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
 
   // ════════════════════════════════════════════════════════════════════
   // ── MÓDULO REPORTES (POS) — analítica sobre ventas existentes ──
