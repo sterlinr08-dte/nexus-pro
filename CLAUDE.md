@@ -111,6 +111,18 @@ Vender NEXUS PRO a varios negocios con **un solo dominio** y **control general**
   `organizaciones` (slug, nombre, tipo, dominio). Ej.: `deluxe`→`deluxe.nexusprord.com`,
   `bayolcell`→`bayolcell.nexusprord.com` (redirigen); `nexus-pro`/`bayolsale` (sin
   dominio) entran local.
+- **SSO (UN SOLO LOGIN) — HECHO y verificado con Deluxe:** la tabla `organizaciones`
+  tiene además `auth_url`, `auth_key` (anon de ESA base) y `email_dominio`. En
+  `doLogin()`, si la org tiene esos 3 campos: arma `email = usuario + email_dominio`,
+  hace POST a `auth_url/auth/v1/token?grant_type=password` (apikey=auth_key) con la
+  clave; si OK, redirige a `dominio#access_token=...&refresh_token=...&expires_in=...&token_type=bearer&type=magiclink`.
+  La app destino (Supabase v2, flujo implícito, `detectSessionInUrl` por defecto)
+  **entra ya logueada, sin segundo login**. NO requiere tocar la app destino.
+  Deluxe configurado: `auth_url`=`mrtqkhachhvsczltwakt.supabase.co`, `email_dominio`=`@deluxe.local`
+  (su login convierte `usuario`→`usuario@deluxe.local` vía `usuarioAEmail()`).
+  **Para sumar un sistema nuevo al SSO:** llenar en `organizaciones` su `dominio`,
+  `auth_url`, `auth_key`, `email_dominio` (ver convención de email en su Login). El
+  repo de Deluxe se puede clonar (público) para inspeccionar; deploy es en su Cloudflare.
 - **Decisión de arquitectura (importante):** sistemas DISTINTOS (seguros, Deluxe
   belleza, BayolCell taller) = **cada uno su app/repo + su base + su subdominio**
   (`deluxe.nexusprord.com` etc.), unificados por la entrada inteligente `@empresa`.
