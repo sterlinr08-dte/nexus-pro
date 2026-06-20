@@ -1,7 +1,8 @@
 {
-  "version": "28.3",
+  "version": "28.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Email en compras + historial por email): al hacer una COMPRA ahora hay un campo de EMAIL (del equipo o proveedor). Y al cargar los seriales/IMEI de un equipo puedes ponerles su email/iCloud. En REPORTES → 'Historial de email' escribes un correo y ves TODOS sus movimientos: compras, ventas, abonos y los equipos (IMEI) ligados a ese email. Ideal para rastrear a quién le compraste o qué iCloud trae cada equipo",
     "ARREGLADO (detalle del artículo · horizontal): los precios ahora se muestran en HORIZONTAL — Cliente final y Por mayor uno al lado del otro (separados por una línea), y la existencia por almacén en una sola fila. Es solo para LEER la información de un vistazo; el artículo se elige al tocar el botón. Más compacto y fácil de leer",
     "ARREGLADO (detalle del artículo · más legible): dentro de la ventanilla que se desliza, las LÍNEAS que separan las filas (cliente final, por mayor, existencia) se ven un poco más marcadas y el texto un poco más oscuro y con más aire, para que se lea más fácil",
     "PRUEBA (botones 2.5D): los botones de color (morado=principal, rojo=eliminar, verde=confirmar) ahora tienen un relieve suave '2.5D' — degradado vertical, una sombrita y brillo arriba, y se HUNDEN un poquito al tocarlos (sin inflarse en iPhone). Se quitó el 3D pesado del botón de entrar. Si prefieres planos del todo o más relieve, se ajusta en un momento",
