@@ -3178,7 +3178,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='29.6';
+const APP_VERSION='29.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5015,7 +5015,21 @@ function initMesSel(){
 }
 
 let _generandoFacturas=false;
-async function genFacturas(){
+async function genFacturas(silent){
+  // Prevención: antes de generar MANUALMENTE, mostrar los precios de plan que se van a usar.
+  // Cada factura "congela" el precio del momento; si está mal puesto, sale mal y no se corrige
+  // cambiando el precio después. (silent=true en la auto-facturación para no trancarla.)
+  if(!silent){
+    const mes=parseInt(document.getElementById('fMes')?.value||new Date().getMonth()+1);
+    const anio=parseInt(document.getElementById('fAnio')?.value||new Date().getFullYear());
+    const okPrecios=confirm(
+      `Vas a generar las facturas de ${MESES[mes-1]} ${anio} con ESTOS precios de plan:\n\n`+
+      `• Básico — titular RD$ ${fmtN(CFG.t1)} · dependiente RD$ ${fmtN(CFG.d1)}\n`+
+      `• Superior — titular RD$ ${fmtN(CFG.t2)} · dependiente RD$ ${fmtN(CFG.d2)}\n`+
+      `• Esencial — titular RD$ ${fmtN(CFG.t3)} · dependiente RD$ ${fmtN(CFG.d3)}\n\n`+
+      `Cada factura queda con el precio de AHORA. Si algún precio está mal, cancela y arréglalo en Ajustes → Tarifas antes de generar.\n\n¿Los precios están correctos y genero?`);
+    if(!okPrecios)return;
+  }
   // Protección contra doble clic / doble ejecución
   if(_generandoFacturas){toast('warn','Espera','Ya se están generando facturas...');return;}
   _generandoFacturas=true;
@@ -5062,11 +5076,16 @@ async function _genFacturasInterno(){
   }catch(e){mostrarError(e.message,'Al generar facturas del período: '+key);toast('err','Error generando facturas',e.message);}
 }
 
-function autoGenerar(){nav('facturas',null);setTimeout(()=>{initMesSel();genFacturas();},100);}
+function autoGenerar(){nav('facturas',null);setTimeout(()=>{initMesSel();genFacturas(true);},100);}
 // Generación manual y CONFIRMADA desde Configuración (evita pulsarlo por error)
 function genFacturasConfirm(){
   const m=new Date();
-  if(confirm('¿Generar las facturas del mes actual ('+MESES[m.getMonth()]+' '+m.getFullYear()+') para todos los clientes activos?\n\nEsto crea las facturas y sus asientos contables. Las que ya existan NO se duplican.')){
+  if(confirm('¿Generar las facturas del mes actual ('+MESES[m.getMonth()]+' '+m.getFullYear()+') para todos los clientes activos?\n\n'+
+    'Precios de plan que se usarán (revísalos):\n'+
+    `• Básico RD$ ${fmtN(CFG.t1)} · dep ${fmtN(CFG.d1)}\n`+
+    `• Superior RD$ ${fmtN(CFG.t2)} · dep ${fmtN(CFG.d2)}\n`+
+    `• Esencial RD$ ${fmtN(CFG.t3)} · dep ${fmtN(CFG.d3)}\n\n`+
+    'Cada factura queda con el precio de AHORA. Esto crea las facturas y sus asientos contables. Las que ya existan NO se duplican.')){
     autoGenerar();
   }
 }
@@ -6694,7 +6713,12 @@ async function guardarTarifas(){
   if(c1)datos.push({clave:'costo_basico',valor:c1});
   if(c2)datos.push({clave:'costo_superior',valor:c2});
   if(c3)datos.push({clave:'costo_esencial',valor:c3});
-  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();logAudit('TARIFAS_ACTUALIZADAS','Primas, costos y comisiones modificadas');toast('ok','Tarifas y comisiones actualizadas');}catch(e){toast('err','Error',e.message);}
+  // Detalle con valores ANTES→DESPUÉS de las primas, para que un cambio de precio quede trazable
+  // en la bitácora (antes solo decía "modificadas" y un precio mal puesto pasaba silencioso).
+  const antes=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
+  try{for(const d of datos){await API.patch('configuracion',`clave=eq.${d.clave}`,{valor:d.valor,actualizado:new Date().toISOString()});ST.config[d.clave]=d.valor;}actualizarCFG();
+    const ahora=`B:${fmtN(CFG.t1)}/${fmtN(CFG.d1)} · S:${fmtN(CFG.t2)}/${fmtN(CFG.d2)} · E:${fmtN(CFG.t3)}/${fmtN(CFG.d3)}`;
+    logAudit('TARIFAS_ACTUALIZADAS',`Primas titular/dep — ANTES ${antes} → AHORA ${ahora}`,'Configuración');toast('ok','Tarifas y comisiones actualizadas');}catch(e){toast('err','Error',e.message);}
 }
 
 // ── AUTOMATIZACIÓN ────────────────────────────────────────────────────────────
@@ -7923,7 +7947,7 @@ async function verificarAutoFacturacion(){
       const mesEl=document.getElementById('fMes');const anioEl=document.getElementById('fAnio');
       if(mesEl)mesEl.value=mes;if(anioEl)anioEl.value=anio;
       try{
-        await genFacturas();
+        await genFacturas(true);
         guardarHistorialAuto(mes,anio,activos,0,'Ejecutada correctamente');
       }catch(e){
         guardarHistorialAuto(mes,anio,0,1,'Error: '+e.message);
