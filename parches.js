@@ -16154,6 +16154,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px">
           <select class="nxCrmEt" onchange="window.nxCrmEtapa('${o.id}',this.value)">${etOpts(o)}</select>
           <div style="display:flex;gap:4px">
+            ${o.etapa !== 'perdido' ? `<button class="btn bsm bc1" onclick="window.nxCrmVender('${o.id}')" title="Convertir en venta"><i class="ti ti-cash"></i></button>` : ''}
             ${o.telefono && waNum(o.telefono) ? `<a class="btn bsm bwa" href="https://wa.me/${waNum(o.telefono)}" target="_blank"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
             <button class="btn bsm bghost" onclick="window.nxCrmEdit('${o.id}')"><i class="ti ti-edit"></i></button>
           </div>
@@ -16177,6 +16178,15 @@
   window.nxCrmEtapa = async function (id, etapa) {
     const body = { etapa: etapa, cerrado_at: (etapa === 'ganado' || etapa === 'perdido') ? new Date().toISOString() : null };
     try { await getAPI().patch('pos_crm', 'id=eq.' + id, body); const o = _crm.find(x => String(x.id) === String(id)); if (o) o.etapa = etapa; toast('ok', 'Etapa actualizada', crmEt(etapa)[1]); const v = document.getElementById('v-pos'); if (v) renderPOS(v); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxCrmVender = async function (id) {
+    const o = _crm.find(x => String(x.id) === String(id)); if (!o) return;
+    if (!confirm('¿Convertir esta oportunidad en venta? Se abrirá la Factura' + (o.cliente_id ? ' con el cliente cargado' : '') + ' y se marca como Ganada.')) return;
+    _cart = [];
+    _factCli = o.cliente_id || '';
+    try { await getAPI().patch('pos_crm', 'id=eq.' + id, { etapa: 'ganado', cerrado_at: new Date().toISOString() }); o.etapa = 'ganado'; } catch (e) {}
+    toast('ok', 'Oportunidad ganada', 'Agrega los productos y cobra');
+    _posTab = 'factura'; const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
   window.nxCrmNueva = function () { abrirCrm(null); };
   window.nxCrmEdit = function (id) { const o = _crm.find(x => String(x.id) === String(id)); if (o) abrirCrm(o); };
@@ -16448,11 +16458,14 @@
     const d = e || {};
     const tp = t => `<option value="${t[0]}"${d.tipo_pago === t[0] ? ' selected' : ''}>${t[1]}</option>`;
     const tipos = [['mensual', 'Mensual'], ['quincenal', 'Quincenal'], ['semanal', 'Semanal'], ['por_hora', 'Por hora']].map(tp).join('');
+    const entEmp = (_clientes || []).filter(c => c.es_empleado);
+    const entOpts = '<option value="">— Ninguna (crear nuevo) —</option>' + entEmp.map(c => `<option value="${c.id}"${String(d.entidad_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}${c.cedula ? ' · ' + esc(c.cedula) : ''}</option>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxEmpForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-id-badge-2"></i> ${e ? 'Editar empleado' : 'Nuevo empleado'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxEmpForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
+          ${entEmp.length ? `<div class="fr"><label>Vincular con Entidad (empleado)</label><select id="emEnt" onchange="window.nxRhVincEnt()">${entOpts}</select></div>` : ''}
           <div class="fr"><label>Nombre completo *</label><input id="emN" class="no-upper" value="${esc(d.nombre || '')}" placeholder="Nombre y apellido"></div>
           <div class="fr-row">
             <div class="fr"><label>Cédula</label><input id="emC" class="no-upper" value="${esc(d.cedula || '')}" placeholder="000-0000000-0"></div>
@@ -16485,12 +16498,19 @@
     document.body.appendChild(ov);
     scanMoney(ov);
   }
+  window.nxRhVincEnt = function () {
+    const id = val('emEnt'); if (!id) return;
+    const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
+    const set = (eln, v) => { const el = document.getElementById(eln); if (el) el.value = v || ''; };
+    set('emN', c.nombre); set('emC', c.cedula); set('emT', c.telefono);
+  };
   window.nxRhGuardarEmp = async function (id) {
     const body = {
       nombre: (val('emN') || '').trim(), cedula: (val('emC') || '').trim() || null, telefono: (val('emT') || '').trim() || null,
       puesto: (val('emP') || '').trim() || null, departamento: (val('emD') || '').trim() || null,
       salario: parseMoney(val('emS')), tipo_pago: val('emTp'), fecha_ingreso: val('emF') || null,
       tss: (val('emNss') || '').trim() || null, banco: (val('emB') || '').trim() || null, cuenta_banco: (val('emCb') || '').trim() || null,
+      entidad_id: val('emEnt') || null,
       activo: val('emA') === '1'
     };
     if (!body.nombre) { toast('err', 'Falta el nombre'); return; }
