@@ -1,7 +1,8 @@
 {
-  "version": "27.4",
+  "version": "27.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Buscar artículo · ventanilla deslizante): al tocar la lupa y elegir un artículo de la lista, ahora se DESLIZA una ventanilla desde abajo con el detalle: el PRECIO a cliente final y el PRECIO por mayor (resaltado el que corresponde al cliente), la EXISTENCIA por almacén, y un botón 'Elegir' grande. Al tocar Elegir, el artículo se agrega con el precio correcto automáticamente (final o por mayor según el cliente de la factura)",
     "NUEVO (Secuencias · ver todos los historiales): en Ajustes → Secuencias hay un botón de lupa 'Ver todos los historiales' que abre una ventana con TODOS los documentos numerados del sistema juntos (cotizaciones, notas de crédito, transferencias, nóminas, recibos, pagos, asientos, oportunidades), con su número, tipo, detalle y monto/fecha. Puedes filtrar por número o texto. Todo el historial en un solo lugar",
     "NUEVO (Buscar artículo · doble precio): al consultar un artículo en la ventana de búsqueda, ahora se ven AMBOS precios — Final y Por mayor — y a la derecha el precio que APLICA. Si el cliente de la factura está marcado como 'por mayor', el sistema carga solo el Precio 2; si es cliente final, el Precio 1. Arriba te dice qué cliente y qué precio se está usando",
     "NUEVO (Empleado en todos lados): un empleado creado en ENTIDADES ahora aparece solo en Recursos Humanos Y en VENDEDORES (para asignarle ventas) — se registra una sola vez y sale donde se necesita. Si le quitas el rol de empleado, se retira de esos módulos",
