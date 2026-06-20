@@ -157,6 +157,19 @@ commit descriptivo y push. La app descarga de `main`.
 
 ---
 
+### Secuencias centralizadas (numeración de documentos, v26.8)
+Tabla `pos_secuencias` (tipo único por org, prefijo, longitud, proximo; org+trigger+RLS).
+Helper async `nextSeq(tipo)` lee la fila, devuelve `prefijo+pad(proximo)` y hace
+`proximo+1`; si no hay fila para ese tipo devuelve **null** (los callers caen a su
+lógica vieja → additivo, no rompe). Sección **Secuencias** en Ajustes
+(`ajustesSecuencias`, `nxSecInit` siembra `SEC_DEFS` continuando desde el max
+actual de cotización/NC/transferencia, `nxSecEdit/nxSecGuardar`). Enganchado en:
+cotización, nota_credito, transferencia, nómina (`rrhh_nominas.numero`), recibo
+(`pos_abonos.numero`), pago_prov (`pos_compra_pagos.numero`), crm
+(`pos_crm.numero`) y asiento (`pos_asientos.numero`, en los 5 puntos de post:
+venta/compra/abono/devolución/nómina/manual/gasto). Factura (CO/CR vía
+`pos_config`) y NCF (`pos_ncf_secuencias`) mantienen su sistema propio.
+
 ## Módulos / funcionalidades ya construidas
 
 - **Clientes**: ficha, cédula, teléfono, dirección; clientes en proceso.

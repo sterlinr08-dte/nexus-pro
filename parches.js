@@ -13652,6 +13652,17 @@
   let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR' };
   let _ncfSecs = [];
   let _vendedores = [];
+  let _secuencias = [];
+  const SEC_DEFS = [
+    ['cotizacion', 'Cotización', 'COT', 5],
+    ['nota_credito', 'Nota de crédito / Devolución', 'NC', 5],
+    ['transferencia', 'Transferencia / Despacho', 'TR', 5],
+    ['nomina', 'Nómina', 'NOM', 5],
+    ['recibo', 'Recibo de abono', 'REC', 5],
+    ['pago_prov', 'Pago a proveedor', 'PG', 5],
+    ['asiento', 'Asiento contable', 'AS', 5],
+    ['crm', 'Oportunidad (CRM)', 'OP', 5]
+  ];
   let _entFiltro = 'todas';
   let _facFecha = '';
   let _facSubTab = 'datos';
@@ -13682,6 +13693,7 @@
     try { const cf = await getAPI().get('pos_config', 'select=*&limit=1'); if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; } } catch (e) {}
     try { _ncfSecs = await getAPI().get('pos_ncf_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _ncfSecs = []; }
     try { _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _vendedores = []; }
+    try { _secuencias = await getAPI().get('pos_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _secuencias = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) { _almacenes = []; }
     if (_almacenes.length) {
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
@@ -13849,6 +13861,18 @@
   }
 
   // ── TAB: VENDER ──
+  // ── Secuencia central: devuelve el próximo número de un documento (o null si no está configurada) ──
+  async function nextSeq(tipo) {
+    try {
+      const s = (_secuencias || []).find(x => x.tipo === tipo && x.activo !== false);
+      if (!s) return null;
+      const num = Number(s.proximo || 1);
+      const fmt = (s.prefijo || '') + String(num).padStart(Number(s.longitud || 5), '0');
+      await getAPI().patch('pos_secuencias', 'id=eq.' + s.id, { proximo: num + 1 });
+      s.proximo = num + 1;
+      return fmt;
+    } catch (e) { return null; }
+  }
   function almSelectorHTML() {
     if (_almacenes.length < 2) return '';
     return `<div class="nxAlmSel"><i class="ti ti-building-warehouse"></i><span>Almacén activo:</span><select onchange="window.nxPosSetAlmacen(this.value)">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>`;
@@ -13995,11 +14019,66 @@
         </div>
         <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
+        ${ajustesSecuencias()}
+        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesNCF()}
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesVendedores()}
       </div>`;
   }
+  function secEjemplo(s) { return (s.prefijo || '') + String(s.proximo || 1).padStart(Number(s.longitud || 5), '0'); }
+  function ajustesSecuencias() {
+    if (!_secuencias.length) {
+      return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-list-numbers"></i> Secuencias de documentos</div>
+        <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Numeración automática y centralizada de tus documentos (cotizaciones, notas de crédito, transferencias, nóminas, recibos, pagos, asientos, oportunidades). Crea las secuencias base y cada documento tomará su número de aquí.</div>
+        <button class="btn bsm bc1" type="button" onclick="window.nxSecInit()"><i class="ti ti-sparkles"></i> Crear secuencias base</button>`;
+    }
+    const filas = _secuencias.map(s => `<tr>
+        <td><b>${esc(s.nombre || s.tipo)}</b></td>
+        <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px;color:#6d28d9">${esc(secEjemplo(s))}</td>
+        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxSecEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
+      </tr>`).join('');
+    return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-list-numbers"></i> Secuencias de documentos</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">El prefijo y el próximo número de cada documento. Cada uno toma su número de aquí (lógica sincronizada).</div>
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Documento</th><th style="text-align:center">Próximo</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+  window.nxSecInit = async function () {
+    try {
+      const maxDe = async (tabla, sel) => { try { const r = await getAPI().get(tabla, 'select=' + sel + '&order=created_at.desc&limit=400') || []; let mx = 0; r.forEach(x => { const m = String(x[sel] || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return mx; } catch (e) { return 0; } };
+      const cont = { cotizacion: (await maxDe('pos_cotizaciones', 'numero')) + 1, nota_credito: (await maxDe('pos_devoluciones', 'numero')) + 1, transferencia: (await maxDe('pos_transferencias', 'numero')) + 1 };
+      const rows = SEC_DEFS.map(d => ({ tipo: d[0], nombre: d[1], prefijo: d[2] + '-', longitud: d[3], proximo: cont[d[0]] || 1 }));
+      await getAPI().post('pos_secuencias', rows);
+      toast('ok', 'Secuencias creadas', rows.length + ' documentos');
+      _secuencias = await getAPI().get('pos_secuencias', 'select=*&order=tipo.asc') || [];
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
+  };
+  window.nxSecEdit = function (id) {
+    const s = _secuencias.find(x => String(x.id) === String(id)); if (!s) return;
+    cerrarModal('nxSecForm');
+    const ov = document.createElement('div'); ov.id = 'nxSecForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:380px">
+        <div class="mt"><span><i class="ti ti-list-numbers"></i> ${esc(s.nombre || s.tipo)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxSecForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr-row">
+          <div class="fr"><label>Prefijo</label><input id="seP" class="no-upper" value="${esc(s.prefijo || '')}" placeholder="Ej: COT-"></div>
+          <div class="fr"><label>Dígitos</label><input id="seL" inputmode="numeric" value="${Number(s.longitud || 5)}"></div>
+        </div>
+        <div class="fr"><label>Próximo número</label><input id="seN" inputmode="numeric" value="${Number(s.proximo || 1)}"></div>
+        <div style="font-size:11px;color:#475569;margin-bottom:6px">Ejemplo: <b id="seEj" style="color:#6d28d9">${esc(secEjemplo(s))}</b></div>
+        <div class="fe" style="gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxSecForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxSecGuardar('${s.id}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxSecGuardar = async function (id) {
+    const body = { prefijo: (val('seP') || '').trim(), longitud: parseInt(val('seL'), 10) || 5, proximo: parseInt(String(val('seN')).replace(/[^0-9]/g, ''), 10) || 1 };
+    try {
+      await getAPI().patch('pos_secuencias', 'id=eq.' + id, body);
+      cerrarModal('nxSecForm'); toast('ok', 'Secuencia guardada');
+      _secuencias = await getAPI().get('pos_secuencias', 'select=*&order=tipo.asc') || [];
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
   function ajustesVendedores() {
     const filas = _vendedores.length ? _vendedores.map(v => `<tr>
         <td style="font-weight:700">${esc(v.nombre)}</td>
@@ -14670,7 +14749,7 @@
     let ncfDev = null;
     try {
       let prev = []; try { prev = await getAPI().get('pos_devoluciones', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
-      const numero = devProxNumero(prev);
+      const numero = (await nextSeq('nota_credito')) || devProxNumero(prev);
       try { ncfDev = await asignarNCF('B04'); } catch (e) {}
       const body = { venta_id: v.id, numero: numero, ncf: ncfDev, fecha: isoHoy(), cliente_id: v.cliente_id || null, cliente_nombre: v.cliente_nombre || null, motivo: (val('devMot') || '').trim() || null, subtotal: t.subtotal, itbis: t.itbis, total: t.total, metodo: metodo, estado: 'emitida', created_by_name: nomAdmin() };
       const r = await getAPI().post('pos_devoluciones', body);
@@ -14942,7 +15021,7 @@
   window.nxPosAbonar = async function (id) {
     const monto = parseMoney(val('posAbMonto')); if (monto <= 0) { toast('err', 'Pon el monto del abono'); return; }
     try {
-      await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
+      await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, numero: await nextSeq('recibo'), caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
       _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
       try { const cli = _clientes.find(x => String(x.id) === String(id)); postAsientoAbono(cli && cli.nombre, monto, val('posAbMet') || 'Efectivo', val('posAbFecha') || hoy()); } catch (e) {}
       toast('ok', 'Abono registrado', fmt(monto));
@@ -15163,7 +15242,7 @@
   };
   window.nxPosPagarProv = async function (id) {
     const monto = parseMoney(val('provPagoMonto')); if (monto <= 0) { toast('err', 'Pon el monto'); return; }
-    try { await getAPI().post('pos_compra_pagos', { proveedor_id: id, monto: monto, metodo: val('provPagoMet') || 'Efectivo', created_by_name: nomAdmin() }); _pagosProvByProv[id] = (_pagosProvByProv[id] || 0) + monto; toast('ok', 'Pago registrado', fmt(monto)); window.nxPosProvVer(id); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    try { await getAPI().post('pos_compra_pagos', { proveedor_id: id, monto: monto, metodo: val('provPagoMet') || 'Efectivo', numero: await nextSeq('pago_prov'), created_by_name: nomAdmin() }); _pagosProvByProv[id] = (_pagosProvByProv[id] || 0) + monto; toast('ok', 'Pago registrado', fmt(monto)); window.nxPosProvVer(id); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosDelPagoProv = async function (pid, provId) { if (!confirm('¿Eliminar este pago?')) return; try { await getAPI().del('pos_compra_pagos', 'id=eq.' + pid); toast('ok', 'Pago eliminado'); window.nxPosProvVer(provId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); } };
   window.nxPosDelProv = async function (id) {
@@ -15450,7 +15529,7 @@
       const filas = ls.map(l => `<tr><td class="nxFacCod">${esc(l.cuenta_codigo || '')}</td><td>${esc(l.cuenta_nombre || (ctaById(l.cuenta_id) || {}).nombre || '')}</td><td style="text-align:right">${Number(l.debito) ? fmt(l.debito) : ''}</td><td style="text-align:right">${Number(l.credito) ? fmt(l.credito) : ''}</td></tr>`).join('');
       const badge = a.tipo === 'venta' ? '<span class="nxCtaOrig">auto · venta</span>' : a.tipo === 'manual' ? '' : `<span class="nxCtaOrig">${esc(a.tipo)}</span>`;
       return `<div class="nxCtaAs">
-        <div class="nxCtaAsHd"><div><b>${fechaDMY(a.fecha)}</b> · ${esc(a.concepto || 'Asiento')} ${badge}</div>${a.tipo === 'manual' ? `<button class="nxPosX" title="Eliminar" onclick="window.nxCtaDelAsiento('${a.id}')"><i class="ti ti-trash"></i></button>` : ''}</div>
+        <div class="nxCtaAsHd"><div>${a.numero ? '<span class="nxFacCod" style="color:#6d28d9">' + esc(a.numero) + '</span> · ' : ''}<b>${fechaDMY(a.fecha)}</b> · ${esc(a.concepto || 'Asiento')} ${badge}</div>${a.tipo === 'manual' ? `<button class="nxPosX" title="Eliminar" onclick="window.nxCtaDelAsiento('${a.id}')"><i class="ti ti-trash"></i></button>` : ''}</div>
         <table class="nxCtaAsT"><thead><tr><th>Cód.</th><th>Cuenta</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td></td><td style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td></tr></tbody></table>
       </div>`;
     }).join('');
@@ -15613,7 +15692,7 @@
     if (!cg || !cp) { toast('err', 'Faltan cuentas (Caja/Banco)'); return; }
     const conc = (val('gsD') || '').trim() || ('Gasto: ' + (cg.nombre || ''));
     try {
-      const as = await getAPI().post('pos_asientos', { fecha: val('gsF') || isoHoy(), concepto: conc, tipo: 'gasto' });
+      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: val('gsF') || isoHoy(), concepto: conc, tipo: 'gasto' });
       const aid = (as && as[0] && as[0].id); if (!aid) throw new Error('No se creó el asiento');
       await getAPI().post('pos_asiento_lineas', [
         { asiento_id: aid, cuenta_id: cg.id, cuenta_codigo: cg.codigo, cuenta_nombre: cg.nombre, debito: Math.round(monto), credito: 0 },
@@ -15730,7 +15809,7 @@
     const td = lineas.reduce((s, l) => s + Number(l.debito || 0), 0), th = lineas.reduce((s, l) => s + Number(l.credito || 0), 0);
     if (Math.round(td) !== Math.round(th)) { toast('err', 'No cuadra', 'El Debe debe ser igual al Haber'); return; }
     try {
-      const as = await getAPI().post('pos_asientos', { fecha: _asEdit.fecha || isoHoy(), concepto: (_asEdit.concepto || '').trim() || 'Asiento manual', tipo: 'manual' });
+      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: _asEdit.fecha || isoHoy(), concepto: (_asEdit.concepto || '').trim() || 'Asiento manual', tipo: 'manual' });
       const aid = (as && as[0] && as[0].id); if (!aid) throw new Error('No se creó el asiento');
       const rows = lineas.map(l => { const c = ctaById(l.cuenta_id) || {}; return { asiento_id: aid, cuenta_id: l.cuenta_id, cuenta_codigo: c.codigo || '', cuenta_nombre: c.nombre || '', debito: Math.round(Number(l.debito || 0)), credito: Math.round(Number(l.credito || 0)) }; });
       await getAPI().post('pos_asiento_lineas', rows);
@@ -15750,7 +15829,7 @@
       const caja = Number(c.efe || 0) + Number(c.tar || 0) + Number(c.tra || 0) + Number(c.che || 0) + Number(c.nc || 0);
       const lineas = [ln('1101', 'Caja', caja, 0), ln('1103', 'Cuentas por cobrar (clientes)', Number(c.credito || 0), 0), ln('4101', 'Ventas', 0, Number(c.subtotal || 0)), ln('2102', 'ITBIS por pagar', 0, Number(c.itbis || 0))].filter(Boolean);
       if (lineas.length < 2) return;
-      const as = await getAPI().post('pos_asientos', { fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id });
+      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id });
       const aid = (as && as[0] && as[0].id); if (!aid) return;
       await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
     } catch (e) {}
@@ -15765,7 +15844,7 @@
   async function postAsientoConcepto(fecha, concepto, tipo, origenId, lineas, referencia) {
     lineas = lineas.filter(Boolean); if (lineas.length < 2) return;
     try {
-      const as = await getAPI().post('pos_asientos', { fecha: (String(fecha || '').slice(0, 10)) || isoHoy(), concepto: concepto, referencia: referencia || null, tipo: tipo, origen_id: origenId || null });
+      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(fecha || '').slice(0, 10)) || isoHoy(), concepto: concepto, referencia: referencia || null, tipo: tipo, origen_id: origenId || null });
       const aid = (as && as[0] && as[0].id); if (!aid) return;
       await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
     } catch (e) {}
@@ -15892,7 +15971,7 @@
   window.nxCotGuardar = async function () {
     if (!_cotEdit.lineas.length) { toast('err', 'Agrega al menos un producto'); return; }
     const tt = cotTotales(_cotEdit.lineas);
-    const numero = _cotEdit.numero || cotProxNumero();
+    const numero = _cotEdit.numero || (await nextSeq('cotizacion')) || cotProxNumero();
     const body = { numero: numero, cliente_id: _cotEdit.cliente_id || null, cliente_nombre: _cotEdit.cliente_nombre || null, fecha: _cotEdit.fecha || isoHoy(), validez_dias: Number(_cotEdit.validez_dias || 15), subtotal: tt.subtotal, itbis: tt.itbis, descuento: tt.descuento, total: tt.total, notas: (_cotEdit.notas || '').trim() || null, created_by_name: nomAdmin() };
     try {
       let cotId = _cotEdit.id;
@@ -16171,7 +16250,7 @@
     for (const l of lineas) { if (l.cant > stockEnAlm(l.producto_id, oid)) { toast('err', 'Sin stock suficiente', l.nombre + ' en ' + almNombre(oid)); return; } }
     try {
       let prev = []; try { prev = await getAPI().get('pos_transferencias', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
-      const numero = transProxNumero(prev);
+      const numero = (await nextSeq('transferencia')) || transProxNumero(prev);
       const head = await getAPI().post('pos_transferencias', { numero: numero, fecha: _transEdit.fecha || isoHoy(), origen_id: oid, destino_id: did, origen_nombre: almNombre(oid), destino_nombre: almNombre(did), notas: (_transEdit.notas || '').trim() || null, created_by_name: nomAdmin() });
       const tid = head && head[0] && head[0].id; if (!tid) throw new Error('No se creó el despacho');
       await getAPI().post('pos_transferencia_items', lineas.map(l => ({ transferencia_id: tid, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant })));
@@ -16318,7 +16397,7 @@
     const etapa = val('crEt') || 'nuevo';
     const body = { nombre: (val('crNom') || '').trim(), cliente_id: val('crCli') || null, contacto: (val('crCont') || '').trim() || null, telefono: (val('crTel') || '').trim() || null, email: (val('crEmail') || '').trim() || null, monto_estimado: parseMoney(val('crMonto')), etapa: etapa, fuente: (val('crFuente') || '').trim() || null, proxima_accion: val('crProx') || null, notas: (val('crNotas') || '').trim() || null, cerrado_at: (etapa === 'ganado' || etapa === 'perdido') ? new Date().toISOString() : null };
     if (!body.nombre) { toast('err', 'Falta el nombre de la oportunidad'); return; }
-    if (!id) body.created_by_name = nomAdmin();
+    if (!id) { body.created_by_name = nomAdmin(); body.numero = await nextSeq('crm'); }
     try {
       if (id) await getAPI().patch('pos_crm', 'id=eq.' + id, body); else await getAPI().post('pos_crm', body);
       cerrarModal('nxCrmForm'); toast('ok', id ? 'Oportunidad actualizada' : 'Oportunidad creada', body.nombre);
@@ -16522,7 +16601,7 @@
       </tr>`).join('');
     return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
         <button class="btn bsm bghost" type="button" onclick="window.nxRhVolver()"><i class="ti ti-arrow-left"></i> Volver</button>
-        <div style="font-weight:800;font-size:14px;color:#1e293b">${esc(n.periodo || 'Nómina')}</div>
+        <div style="font-weight:800;font-size:14px;color:#1e293b">${n.numero ? esc(n.numero) + ' · ' : ''}${esc(n.periodo || 'Nómina')}</div>
         <span style="font-size:11px;color:#475569">${fechaDMY(n.fecha)}</span>
         ${n.estado !== 'anulada' ? `<button class="btn bsm bc3" style="margin-left:auto" type="button" onclick="window.nxRhAnularNomina('${n.id}')"><i class="ti ti-ban"></i> Anular</button>` : '<span style="margin-left:auto;font-size:11px;font-weight:800;color:#dc2626">ANULADA</span>'}
       </div>
@@ -16678,7 +16757,7 @@
     let bruto = 0, ded = 0, neto = 0;
     _nomEdit.lineas.forEach(l => { bruto += Number(l.salario_bruto || 0) + Number(l.bonos || 0); ded += Number(l.sfs || 0) + Number(l.afp || 0) + Number(l.isr || 0) + Number(l.otras_deducciones || 0); neto += nomLineaNeto(l); });
     try {
-      const nm = await getAPI().post('rrhh_nominas', { periodo: (_nomEdit.periodo || '').trim() || 'Nómina', fecha: _nomEdit.fecha || isoHoy(), tipo: _nomEdit.tipo, total_bruto: Math.round(bruto), total_deducciones: Math.round(ded), total_neto: Math.round(neto), estado: 'pagada' });
+      const nm = await getAPI().post('rrhh_nominas', { numero: await nextSeq('nomina'), periodo: (_nomEdit.periodo || '').trim() || 'Nómina', fecha: _nomEdit.fecha || isoHoy(), tipo: _nomEdit.tipo, total_bruto: Math.round(bruto), total_deducciones: Math.round(ded), total_neto: Math.round(neto), estado: 'pagada' });
       const nid = (nm && nm[0] && nm[0].id); if (!nid) throw new Error('No se creó la nómina');
       const rows = _nomEdit.lineas.map(l => ({ nomina_id: nid, empleado_id: l.empleado_id, empleado_nombre: l.empleado_nombre, salario_bruto: Math.round(l.salario_bruto || 0), bonos: Math.round(l.bonos || 0), sfs: Math.round(l.sfs || 0), afp: Math.round(l.afp || 0), isr: Math.round(l.isr || 0), otras_deducciones: Math.round(l.otras_deducciones || 0), neto: Math.round(nomLineaNeto(l)) }));
       await getAPI().post('rrhh_nomina_lineas', rows);
@@ -16708,7 +16787,7 @@
       const ln = (cod, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre, debito: Math.round(d), credito: Math.round(h) }; };
       const lineas = [ln('6101', bruto, 0), ln('2104', 0, ded), ln('2103', 0, neto)].filter(Boolean);
       if (lineas.length < 2) return;
-      const as = await getAPI().post('pos_asientos', { fecha: (String(nomina.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Nómina ' + (nomina.periodo || ''), referencia: nomina.periodo || '', tipo: 'nomina', origen_id: nomina.id });
+      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(nomina.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Nómina ' + (nomina.periodo || ''), referencia: nomina.periodo || '', tipo: 'nomina', origen_id: nomina.id });
       const aid = (as && as[0] && as[0].id); if (!aid) return;
       await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
     } catch (e) {}
