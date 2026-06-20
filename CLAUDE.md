@@ -295,9 +295,14 @@ commit descriptivo y push. La app descarga de `main`.
     `stockEnAlm`/`upsertStockAlm`/`_stockAlmRows` (mapa `pid|aid`→{id,stock}).
     `pos_productos.stock` sigue siendo el TOTAL autoritativo (las ventas/compras
     aún descuentan del total, NO del almacén). El ajuste sí actualiza el principal.
-    **PASO 2 PENDIENTE (supervisado):** selector de almacén activo en vender/factura
-    y descontar `pos_stock_almacen` del almacén activo en venta/compra/devolución
-    (best-effort, sin romper el total). Hacerlo con el dueño probando. Opcional menor: **Conduce** (nota de entrega). Todo lo
+    **PASO 2 HECHO (v26.6):** `_almacenSel` (almacén activo, default principal) +
+    `almSelectorHTML()` en vender/factura (si ≥2 almacenes). `pos_ventas.almacen_id`
+    y `pos_compras.almacen_id` (columnas nuevas). Venta descuenta `pos_stock_almacen`
+    del almacén activo; compra suma al `compAlm` elegido; devolución/anulación
+    regresan al `venta.almacen_id` (o principal). TODO best-effort: `product.stock`
+    sigue siendo el total autoritativo (invariante total = suma de almacenes). Si no
+    hay almacenes (`_almacenes` vacío) el comportamiento es idéntico al anterior.
+    `_stockAlmRows` se carga en `cargarPOS` solo si hay almacenes. Opcional menor: **Conduce** (nota de entrega). Todo lo
     demás del POS (ventas, factura, cotizaciones, compras, clientes/fiado, caja,
     historial, contabilidad, reportes, RRHH, NCF, vendedores, devoluciones) está
     HECHO y EN VIVO (v25.6). El tab bar del POS tiene ~14 pestañas (se podría
