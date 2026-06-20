@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Muestra · Formatos del POS</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#eef1f6; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+  --ind1:#4f46e5; --ind2:#4338ca; --ind3:#3730a3;
+  --sb1:#1b1f4d; --sb2:#283593;
+  --ok:#16a34a; --warn:#d97706; --rose:#e11d48;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── Selector de formato (arriba del todo) ── */
+.fmt-pick{position:sticky;top:0;z-index:60;background:linear-gradient(135deg,var(--ind3),var(--ind1));padding:8px 10px;display:flex;gap:6px;align-items:center;box-shadow:0 4px 14px rgba(49,46,129,.3)}
+.fmt-pick .lbl{color:#c7cbf2;font-size:10.5px;font-weight:800;letter-spacing:.5px;margin-right:2px}
+.fmt-pick button{flex:1;border:0;cursor:pointer;background:rgba(255,255,255,.14);color:#eef0ff;font-size:11.5px;font-weight:700;padding:8px 6px;border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.fmt-pick button i{font-size:16px}
+.fmt-pick button.on{background:#fff;color:var(--ind2)}
+
+/* ── LAYOUT base ── */
+.shell{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sb{width:236px;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:40;background:linear-gradient(180deg,var(--sb1),var(--sb2));color:#e9eafb;display:flex;flex-direction:column;box-shadow:6px 0 28px rgba(20,16,55,.28);transition:transform .26s cubic-bezier(.4,0,.2,1)}
+.sb-brand{display:flex;align-items:center;gap:11px;padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:linear-gradient(145deg,#6366f1,#4338ca);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;box-shadow:0 6px 16px rgba(67,56,202,.5),inset 0 1px 1px rgba(255,255,255,.4)}
+.sb-biz{font-weight:800;font-size:14px;line-height:1.1}
+.sb-biz small{display:block;font-weight:600;font-size:10px;color:#a4abe6;margin-top:3px;letter-spacing:.3px}
+.sb-scroll{flex:1;overflow-y:auto;padding:8px 9px 14px}
+.sb-sec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7f88d4;margin:13px 8px 5px}
+.sb-sec:first-child{margin-top:3px}
+.nav{display:flex;align-items:center;gap:11px;width:100%;border:0;cursor:pointer;background:transparent;color:#cdd3f2;text-align:left;padding:9px 11px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:2px}
+.nav i{font-size:17px;width:21px;text-align:center}
+.nav:active{background:rgba(255,255,255,.06)}
+.nav.on{background:linear-gradient(135deg,rgba(79,70,229,.97),rgba(55,48,163,.97));color:#fff;box-shadow:0 6px 16px rgba(67,56,202,.45)}
+.sb-foot{padding:10px;border-top:1px solid rgba(255,255,255,.08)}
+.btn-logout{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(255,255,255,.07);color:#f1eefb;border:1px solid rgba(255,255,255,.12);padding:9px;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer}
+
+/* MAIN */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:11px;padding:11px 15px;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);position:sticky;top:0;z-index:30;border-bottom:1px solid var(--line)}
+.burger{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:#fff;font-size:20px;color:var(--ind1);display:none;align-items:center;justify-content:center;cursor:pointer}
+.tb-logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#6366f1,#4338ca);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px}
+.topbar .tb-biz{font-weight:800;font-size:14.5px;flex:1}
+.tb-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#818cf8,#4338ca);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px}
+.content{padding:18px 18px 40px;max-width:1040px;width:100%;margin:0 auto}
+
+.hero{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.hi{font-size:12.5px;color:var(--muted);font-weight:600}
+.hi b{display:block;font-size:22px;color:var(--ink);font-weight:800;margin-top:2px;letter-spacing:-.3px}
+.hero-date{font-size:11.5px;color:var(--muted);background:#fff;border:1px solid var(--line);padding:7px 13px;border-radius:11px;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+.kpi-ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--kc);background:color-mix(in srgb,var(--kc) 14%,transparent);margin-bottom:9px}
+.kpi-l{font-size:11px;color:var(--muted);font-weight:700}
+.kpi-v{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-top:3px}
+.kpi-s{font-size:10.5px;font-weight:700;margin-top:5px}
+.kpi-s.up{color:var(--ok)} .kpi-s.dn{color:var(--rose)}
+.sec-t{font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8;margin:18px 2px 10px;display:flex;align-items:center;gap:8px}
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:11px}
+.app{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px 9px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.app:active{box-shadow:0 2px 8px rgba(15,23,42,.10);border-color:#cbd5e1}
+.app-ic{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--ac);background:color-mix(in srgb,var(--ac) 13%,transparent);box-shadow:inset 0 1px 2px rgba(255,255,255,.6)}
+.app-n{font-size:11.5px;font-weight:700;color:#334155;text-align:center;line-height:1.15}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px 15px 5px;margin-top:20px;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+.panel h3{margin:0 0 3px;font-size:13.5px;font-weight:800}
+.panel .sub{font-size:11px;color:var(--muted);margin-bottom:8px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+.row:last-child{border-bottom:0}
+.row .l{display:flex;align-items:center;gap:10px}
+.row .ic{width:32px;height:32px;border-radius:9px;background:#e0e7ff;color:var(--ind1);display:flex;align-items:center;justify-content:center;font-size:15px}
+.row .nm b{font-weight:700} .row .nm span{display:block;font-size:10.5px;color:var(--muted)}
+.row .amt{font-weight:800;color:var(--ok)}
+
+/* BARRA ABAJO */
+.botnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom));justify-content:space-around;box-shadow:0 -6px 22px rgba(15,23,42,.08)}
+.botnav button{border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#94a3b8;font-size:10px;font-weight:700;flex:1;padding:3px 0}
+.botnav button i{font-size:22px}
+.botnav button.on{color:var(--ind1)}
+.botnav button.on .bIco{background:color-mix(in srgb,var(--ind1) 13%,transparent)}
+.botnav .bIco{width:42px;height:30px;border-radius:11px;display:flex;align-items:center;justify-content:center}
+
+/* HOJA "MÁS" */
+.sheet-bd{display:none;position:fixed;inset:0;background:rgba(15,16,40,.45);z-index:55}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:56;background:#fff;border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);box-shadow:0 -10px 30px rgba(15,23,42,.2)}
+.sheet.open{transform:translateY(0)}
+.sheet-bd.open{display:block}
+.sheet .grip{width:42px;height:5px;border-radius:3px;background:#cbd5e1;margin:6px auto 12px}
+.sheet h4{margin:0 0 12px;font-size:14px;font-weight:800}
+
+/* Backdrop sidebar móvil */
+.backdrop{display:none;position:fixed;inset:0;background:rgba(15,16,40,.45);z-index:35}
+
+/* ════ MODOS ════ */
+/* lay-side */
+body.lay-side .botnav,body.lay-side .sheet,body.lay-side .sheet-bd{display:none!important}
+body.lay-side .main{margin-left:236px}
+@media(max-width:860px){
+  body.lay-side .main{margin-left:0}
+  body.lay-side .burger{display:flex}
+  body.lay-side .tb-logo{display:none}
+  body.lay-side .sb{transform:translateX(-100%)}
+  body.lay-side .sb.open{transform:translateX(0)}
+  body.lay-side.drawer .backdrop{display:block}
+}
+/* lay-bottom */
+body.lay-bottom .sb,body.lay-bottom .backdrop{display:none!important}
+body.lay-bottom .main{margin-left:0}
+body.lay-bottom .burger{display:none}
+body.lay-bottom .botnav{display:flex}
+body.lay-bottom .content{padding-bottom:96px}
+/* lay-apps: el inicio ES el lanzador grande */
+body.lay-apps .sb,body.lay-apps .botnav,body.lay-apps .backdrop{display:none!important}
+body.lay-apps .main{margin-left:0}
+body.lay-apps .burger{display:none}
+body.lay-apps .kpis,body.lay-apps .panel,body.lay-apps #secRapidos,body.lay-apps .hero-date{display:none}
+body.lay-apps .apps{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:14px}
+body.lay-apps .app{padding:20px 10px}
+body.lay-apps .app-ic{width:58px;height:58px;font-size:29px;border-radius:18px}
+body.lay-apps .app-n{font-size:13px}
+body.lay-apps #secApps{margin-top:6px}
+
+@media(min-width:861px){.burger{display:none!important}}
+@media(max-width:380px){.apps{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:9px}.app-ic{width:44px;height:44px;font-size:22px}}
+</style>
+</head>
+<body class="lay-side">
+
+<!-- SELECTOR -->
+<div class="fmt-pick">
+  <span class="lbl">FORMATO:</span>
+  <button id="b-side" class="on" onclick="setLay('side')"><i class="ti ti-layout-sidebar"></i>Barra lateral</button>
+  <button id="b-bottom" onclick="setLay('bottom')"><i class="ti ti-layout-bottombar"></i>Barra abajo</button>
+  <button id="b-apps" onclick="setLay('apps')"><i class="ti ti-layout-grid"></i>Apps (Odoo)</button>
+</div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sb" id="sb">
+    <div class="sb-brand">
+      <div class="sb-logo"><i class="ti ti-building-store"></i></div>
+      <div class="sb-biz">Mi Tienda<small>PUNTO DE VENTA</small></div>
+    </div>
+    <div class="sb-scroll">
+      <div class="sb-sec">Principal</div>
+      <button class="nav on" onclick="pick(this)"><i class="ti ti-layout-dashboard"></i> Inicio</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-cash-register"></i> Vender</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-file-invoice"></i> Factura</button>
+      <div class="sb-sec">Inventario</div>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-box"></i> Productos</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-building-warehouse"></i> Inventario</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-truck-delivery"></i> Compras</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-clipboard-text"></i> Cotizaciones</button>
+      <div class="sb-sec">Personas y CRM</div>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-address-book"></i> Entidades</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-target-arrow"></i> CRM</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-users"></i> Clientes</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-users-group"></i> Rec. Humanos</button>
+      <div class="sb-sec">Finanzas</div>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-cash"></i> Caja</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-history"></i> Historial</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-chart-pie"></i> Reportes</button>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-book-2"></i> Contabilidad</button>
+      <div class="sb-sec">Sistema</div>
+      <button class="nav" onclick="pick(this)"><i class="ti ti-settings"></i> Ajustes</button>
+    </div>
+    <div class="sb-foot"><button class="btn-logout"><i class="ti ti-logout"></i> Cerrar sesión</button></div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button class="burger" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
+      <div class="tb-logo"><i class="ti ti-building-store"></i></div>
+      <div class="tb-biz">Mi Tienda</div>
+      <div class="tb-ava">F</div>
+    </div>
+
+    <div class="content">
+      <div class="hero">
+        <div class="hi">Buenas tardes 👋<b>Mi Tienda</b></div>
+        <div class="hero-date"><i class="ti ti-calendar"></i> Sáb, 20 jun 2026</div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi" style="--kc:#16a34a"><div class="kpi-ic"><i class="ti ti-cash"></i></div><div class="kpi-l">Ventas de hoy</div><div class="kpi-v">RD$ 24,850</div><div class="kpi-s up"><i class="ti ti-trending-up"></i> +12% vs ayer</div></div>
+        <div class="kpi" style="--kc:#4f46e5"><div class="kpi-ic"><i class="ti ti-receipt"></i></div><div class="kpi-l">Facturas de hoy</div><div class="kpi-v">18</div><div class="kpi-s up">Ticket prom. RD$ 1,380</div></div>
+        <div class="kpi" style="--kc:#0891b2"><div class="kpi-ic"><i class="ti ti-wallet"></i></div><div class="kpi-l">En caja</div><div class="kpi-v">RD$ 31,200</div><div class="kpi-s up">Caja abierta · 9:02 am</div></div>
+        <div class="kpi" style="--kc:#d97706"><div class="kpi-ic"><i class="ti ti-alert-triangle"></i></div><div class="kpi-l">Bajo stock</div><div class="kpi-v">5</div><div class="kpi-s dn"><i class="ti ti-arrow-down"></i> Revisar</div></div>
+      </div>
+
+      <div id="secApps">
+        <div class="sec-t" id="secRapidos"><i class="ti ti-bolt"></i> Accesos rápidos</div>
+        <div class="apps">
+          <div class="app"><div class="app-ic" style="--ac:#16a34a"><i class="ti ti-cash-register"></i></div><div class="app-n">Vender</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#4f46e5"><i class="ti ti-file-invoice"></i></div><div class="app-n">Factura</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#ea580c"><i class="ti ti-box"></i></div><div class="app-n">Productos</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#0d9488"><i class="ti ti-building-warehouse"></i></div><div class="app-n">Inventario</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#0891b2"><i class="ti ti-truck-delivery"></i></div><div class="app-n">Compras</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#16a34a"><i class="ti ti-cash"></i></div><div class="app-n">Caja</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#e11d48"><i class="ti ti-target-arrow"></i></div><div class="app-n">CRM</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#0891b2"><i class="ti ti-users"></i></div><div class="app-n">Clientes</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#d97706"><i class="ti ti-chart-pie"></i></div><div class="app-n">Reportes</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#4338ca"><i class="ti ti-book-2"></i></div><div class="app-n">Contabilidad</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#db2777"><i class="ti ti-users-group"></i></div><div class="app-n">Rec. Humanos</div></div>
+          <div class="app"><div class="app-ic" style="--ac:#475569"><i class="ti ti-settings"></i></div><div class="app-n">Ajustes</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Últimas ventas</h3><div class="sub">Movimiento del día</div>
+        <div class="row"><div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00184</b><span>Consumidor final · Efectivo</span></div></div><div class="amt">RD$ 2,360</div></div>
+        <div class="row"><div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00183</b><span>Ramona Pérez · Tarjeta</span></div></div><div class="amt">RD$ 980</div></div>
+        <div class="row"><div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00182</b><span>José Martínez · Fiado</span></div></div><div class="amt" style="color:#4338ca">RD$ 4,500</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BARRA ABAJO -->
+<nav class="botnav">
+  <button class="on"><span class="bIco"><i class="ti ti-layout-dashboard"></i></span>Inicio</button>
+  <button><span class="bIco"><i class="ti ti-cash-register"></i></span>Vender</button>
+  <button><span class="bIco"><i class="ti ti-file-invoice"></i></span>Factura</button>
+  <button><span class="bIco"><i class="ti ti-cash"></i></span>Caja</button>
+  <button onclick="openSheet()"><span class="bIco"><i class="ti ti-dots"></i></span>Más</button>
+</nav>
+
+<!-- HOJA MÁS -->
+<div class="sheet-bd" id="sheetBd" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="grip"></div>
+  <h4>Todos los módulos</h4>
+  <div class="apps">
+    <div class="app"><div class="app-ic" style="--ac:#ea580c"><i class="ti ti-box"></i></div><div class="app-n">Productos</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#0d9488"><i class="ti ti-building-warehouse"></i></div><div class="app-n">Inventario</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#0891b2"><i class="ti ti-truck-delivery"></i></div><div class="app-n">Compras</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#7c3aed"><i class="ti ti-clipboard-text"></i></div><div class="app-n">Cotizaciones</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#e11d48"><i class="ti ti-target-arrow"></i></div><div class="app-n">CRM</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#0891b2"><i class="ti ti-users"></i></div><div class="app-n">Clientes</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#d97706"><i class="ti ti-chart-pie"></i></div><div class="app-n">Reportes</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#4338ca"><i class="ti ti-book-2"></i></div><div class="app-n">Contabilidad</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#db2777"><i class="ti ti-users-group"></i></div><div class="app-n">Rec. Humanos</div></div>
+    <div class="app"><div class="app-ic" style="--ac:#475569"><i class="ti ti-settings"></i></div><div class="app-n">Ajustes</div></div>
+  </div>
+</div>
+
+<div class="backdrop" onclick="toggleSB()"></div>
+
+<script>
+function setLay(m){
+  document.body.className='lay-'+m;
+  document.getElementById('b-side').classList.toggle('on',m==='side');
+  document.getElementById('b-bottom').classList.toggle('on',m==='bottom');
+  document.getElementById('b-apps').classList.toggle('on',m==='apps');
+  closeSheet(); document.getElementById('sb').classList.remove('open');
+  window.scrollTo(0,0);
+}
+function toggleSB(){var sb=document.getElementById('sb');sb.classList.toggle('open');document.body.classList.toggle('drawer',sb.classList.contains('open'));}
+function pick(b){document.querySelectorAll('.nav').forEach(function(x){x.classList.remove('on')});b.classList.add('on');if(window.innerWidth<=860)toggleSB();}
+function openSheet(){document.getElementById('sheet').classList.add('open');document.getElementById('sheetBd').classList.add('open');}
+function closeSheet(){document.getElementById('sheet').classList.remove('open');document.getElementById('sheetBd').classList.remove('open');}
+</script>
+</body>
+</html>
