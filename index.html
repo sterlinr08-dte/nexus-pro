@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover"/>
-<title>NEXUS PRO — Seguros de Salud RD</title>
+<title>NEXUS PRO — Plataforma de Gestión RD</title>
 
 <!-- ═══ PWA — INSTALABLE EN iOS Y ANDROID ═══ -->
 <meta name="application-name" content="NEXUS PRO"/>
@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="theme-color" content="#1e3a6e"/>
 <meta name="msapplication-TileColor" content="#1e3a6e"/>
-<meta name="description" content="Sistema de gestión de seguros de salud · República Dominicana"/>
+<meta name="description" content="Plataforma de gestión empresarial · República Dominicana"/>
 
 <!-- Íconos para iOS -->
 <link rel="apple-touch-icon" sizes="180x180" href="icon-apple-180.png"/>
@@ -768,7 +768,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   <div class="nxs-inner">
     <div class="nxs-badge"><i class="ti ti-shield-check"></i></div>
     <div class="nxs-brand">NEXUS<span>PRO</span></div>
-    <div class="nxs-tag">Sistema de Seguros de Salud · RD</div>
+    <div class="nxs-tag">Plataforma de gestión · RD</div>
     <div class="nxs-bar"><span></span></div>
   </div>
 </div>
@@ -807,14 +807,14 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 <div class="lbox">
   <div class="llogo">
     <div class="lmk"><i class="ti ti-shield-check"></i></div>
-    <div><div class="lbrand">NEXUS PRO v6</div><div class="lver">Sistema de Seguros de Salud · República Dominicana</div></div>
+    <div><div class="lbrand">NEXUS PRO</div><div class="lver">Plataforma de gestión · República Dominicana</div></div>
   </div>
   <div class="lh">Iniciar sesión</div>
-  <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="admin" autocomplete="username"/></div>
+  <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="usuario@empresa" autocomplete="username"/></div>
   <div class="lfr"><label>Contraseña</label><div style="position:relative"><input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
   <div class="lerr" id="loginErr"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
-  <div style="text-align:center;margin-top:10px"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#64748b;text-decoration:none">🔒 Probar inicio de sesión seguro (beta)</a></div>
+  <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#64748b;text-decoration:none">🔒 Probar inicio de sesión seguro (beta)</a></div>
   <div class="lsetup"><a onclick="mostrarSetup()">⚙️ Primera vez — conectar base de datos</a></div>
 </div>
 </div>
@@ -3177,7 +3177,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='24.0';
+const APP_VERSION='24.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
