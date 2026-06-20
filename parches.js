@@ -14915,7 +14915,13 @@
   function isoMesIni() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('en-CA'); }
   async function cargarContabilidad() {
     _cuentas = await getAPI().get('pos_cuentas', 'select=*&order=codigo.asc') || [];
-    _asientos = await getAPI().get('pos_asientos', 'select=*,pos_asiento_lineas(*)&order=fecha.desc,created_at.desc&limit=600') || [];
+    _asientos = await getAPI().get('pos_asientos', 'select=*&order=fecha.desc,created_at.desc&limit=600') || [];
+    // Unir las líneas en JS (no depende de la detección de relación de PostgREST)
+    try {
+      const lns = await getAPI().get('pos_asiento_lineas', 'select=*&limit=5000') || [];
+      const byA = {}; lns.forEach(l => { (byA[l.asiento_id] = byA[l.asiento_id] || []).push(l); });
+      _asientos.forEach(a => { a.lineas = byA[a.id] || []; });
+    } catch (e) { _asientos.forEach(a => { a.lineas = a.lineas || []; }); }
     if (!_ctaDesde) _ctaDesde = isoMesIni();
     if (!_ctaHasta) _ctaHasta = isoHoy();
   }
@@ -15359,10 +15365,15 @@
   async function cargarReportes() {
     if (!_repDesde) _repDesde = isoMesIni();
     if (!_repHasta) _repHasta = isoHoy();
-    _repVentas = await getAPI().get('pos_ventas', 'select=*,pos_venta_items(*)&estado=eq.completada&order=created_at.desc&limit=2000') || [];
+    _repVentas = await getAPI().get('pos_ventas', 'select=*&estado=eq.completada&order=created_at.desc&limit=2000') || [];
+    try {
+      const its = await getAPI().get('pos_venta_items', 'select=*&limit=20000') || [];
+      const byV = {}; its.forEach(it => { (byV[it.venta_id] = byV[it.venta_id] || []).push(it); });
+      _repVentas.forEach(v => { v._items = byV[v.id] || []; });
+    } catch (e) {}
   }
   function repFecha(v) { return String(v.fecha || v.created_at || '').slice(0, 10); }
-  function repItems(v) { return v.pos_venta_items || v._items || []; }
+  function repItems(v) { return v._items || v.pos_venta_items || []; }
   function prodCosto(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? Number(p.costo || 0) : 0; }
   function ventasRepRango() { return (_repVentas || []).filter(v => { const f = repFecha(v); return (!_repDesde || f >= _repDesde) && (!_repHasta || f <= _repHasta); }); }
 

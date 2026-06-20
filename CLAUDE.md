@@ -191,15 +191,25 @@ commit descriptivo y push. La app descarga de `main`.
   - **Historial de facturas** (pestaña "Historial"): buscar venta por No. o
     cliente, filtros por rango de fechas, KPIs (cantidad/total), ticket por venta
     y **anular** (restaura stock desde `pos_venta_items`).
-  - **Contabilidad** (pestaña "Contabilidad", v24.9): Plan de cuentas (botón
-    "Crear plan de cuentas base" siembra catálogo DR estándar), Libro Diario,
-    Libro Mayor por cuenta, Balance de Comprobación, Estado de Resultados y
-    Balance General; filtro Desde/Hasta; asientos manuales (valida Debe=Haber).
-    **Cada venta del POS se contabiliza sola** (`postAsientoVenta()` llamado en
-    `nxPosConfirmar`: Caja/CxC contra Ventas + ITBIS por pagar). Tablas nuevas:
-    `pos_cuentas`, `pos_asientos`, `pos_asiento_lineas` — las 3 con
-    `organizacion_id` + trigger `set_organizacion_id()` + RLS
-    `mi_rol()='admin' AND organizacion_id = mi_organizacion()` (mismo patrón POS).
+  - **Reportes** (pestaña "Reportes", v25.1): analítica sobre `pos_ventas` +
+    `pos_venta_items` (NO crea tablas). KPIs (total vendido, ganancia estimada
+    precio−costo, costo de lo vendido, ITBIS, No. ventas, ticket promedio),
+    gráfica de ventas por día (14), desglose por método de pago y TOP 10
+    productos; filtro Desde/Hasta. Carga robusta: une items en JS (no depende del
+    embed de PostgREST).
+  - **Contabilidad** (pestaña "Contabilidad", v24.9→v25.2 COMPLETA): Plan de
+    cuentas (botón "Crear plan de cuentas base" siembra catálogo DR estándar),
+    Libro Diario, Libro Mayor por cuenta, Balance de Comprobación, Estado de
+    Resultados y Balance General; filtro Desde/Hasta; **IMPRIMIR/PDF** de los 4
+    reportes (`nxCtaImprimir`); asientos manuales (valida Debe=Haber); botón
+    **"Registrar gasto"** rápido (`nxCtaGasto`). **Asientos automáticos**:
+    cada VENTA (`postAsientoVenta` en `nxPosConfirmar`: Caja/CxC vs Ventas+ITBIS),
+    cada COMPRA (`postAsientoCompra`: Inventario+ITBIS adelantado vs Caja/CxP),
+    cada ABONO de cliente (`postAsientoAbono`: Caja/Banco vs CxC) y cada NÓMINA
+    (`postAsientoNomina`). Tablas: `pos_cuentas`, `pos_asientos`,
+    `pos_asiento_lineas` — las 3 con `organizacion_id` + trigger
+    `set_organizacion_id()` + RLS `mi_rol()='admin' AND organizacion_id =
+    mi_organizacion()` (patrón POS). Carga une líneas en JS (no usa embed).
   - **Recursos Humanos / Nómina** (POS, v25.0) — HECHO: pestaña "Recursos
     Humanos" con sub-pestañas Empleados y Nóminas. Ficha de empleado (nombre,
     cédula, puesto, salario, tipo de pago, banco, NSS). **Generar nómina** del
