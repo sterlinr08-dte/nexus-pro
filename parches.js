@@ -13931,7 +13931,7 @@
   function gridHTML() {
     const lista = _prods.filter(p => _posCat === 'todas' || String(p.categoria_id) === String(_posCat));
     if (!lista.length) return '<div style="grid-column:1/-1;color:#475569;font-size:12px;padding:20px;text-align:center">Sin productos en esta categoría</div>';
-    return lista.map(p => `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxPosAdd('${p.id}')">
+    return lista.map(p => `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxVenderSel('${p.id}')">
         <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.marca)}</span>` : '')}</div>
         <div class="nxPosCardBot"><span class="nxPosCardPre">${fmt(p.precio)}</span><span class="nxPosCardStk">${Number(p.stock || 0)} und</span></div>
       </button>`).join('');
@@ -14026,6 +14026,14 @@
     box.style.display = 'block';
   };
   // Al elegir una sugerencia, abre la misma ventanilla (precios + IMEI) con ese artículo expandido
+  window.nxVenderSel = function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    window.nxProdPicker('vender');
+    _ppkOpen = String(id);
+    const q = document.getElementById('ppkQ'); if (q) q.value = p.nombre;
+    pintarProdPick(p.nombre);
+    setTimeout(function () { const el = document.querySelector('.nxPpkWrap.on'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }, 50);
+  };
   window.nxFacSugSel = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
     const box = document.getElementById('facSug'); if (box) { box.innerHTML = ''; box.style.display = 'none'; }
