@@ -13853,15 +13853,8 @@
     }
     const cliOpts = `<option value="">— Consumidor final —</option>` + _clientes.map(c => `<option value="${c.id}"${String(_factCli) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
     const ncfOpts = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('');
-    const subtabs = [['datos', 'Datos Generales'], ['pago', 'Forma de Pago'], ['pagare', 'Pagaré'], ['letras', 'Letras de Cambio'], ['anexos', 'Anexos']];
-    const subBar = `<div class="nxFacSubTabs">${subtabs.map(s => `<button type="button" class="nxFacSubTab${_facSubTab === s[0] ? ' on' : ''}" onclick="window.nxFacSubTab('${s[0]}')">${s[1]}</button>`).join('')}</div>`;
-    let contenido;
-    if (_facSubTab !== 'datos') {
-      const labels = { pago: 'Forma de Pago', pagare: 'Pagaré', letras: 'Letras de Cambio', anexos: 'Anexos' };
-      const sub = { pago: 'La forma de pago (efectivo, tarjeta, mixto, fiado…) se elige al tocar el botón <b>Cobrar</b>.', pagare: 'Documento de pagaré para ventas a crédito.', letras: 'Impresión de letras de cambio.', anexos: 'Documentos anexos a la factura.' };
-      contenido = `<div style="padding:44px 20px;text-align:center;color:#94a3b8"><i class="ti ti-tools" style="font-size:30px;display:block;margin-bottom:10px;color:#cbd5e1"></i><div style="font-size:15px;font-weight:800;color:#475569">${labels[_facSubTab] || ''}</div><div style="margin-top:8px;font-size:12px;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.5">${sub[_facSubTab] || 'Próximamente.'}</div></div>`;
-    } else {
-      contenido = `<div class="nxFacHead">
+    return `<div class="nxFac">
+        <div class="nxFacHead">
           <div class="nxFacF" style="grid-column:span 2"><label>Cliente</label><div class="nxFacCliRow"><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select><button type="button" class="nxFacCliAdd" title="Nuevo cliente" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i></button></div></div>
           <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" id="facNumPrev">${proxNumeroFacturaFmt(_facCredito)}</div></div>
           <div class="nxFacF nxFacFsm"><label>Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"></div>
@@ -13873,11 +13866,10 @@
           <input type="text" id="facBuscar" placeholder="Buscar artículo por nombre o código…" autocomplete="off" oninput="window.nxFacBuscar(this.value)" onfocus="window.nxFacBuscar(this.value)">
           <div id="facSug" class="nxFacSug"></div>
         </div>
-        <div id="facTabla"></div>`;
-    }
-    return `<div class="nxFac">${subBar}${contenido}</div>`;
+        <div id="facTabla"></div>
+      </div>`;
   }
-  window.nxFacSubTab = function (t) { _facSubTab = t || 'datos'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxFacSubTab = function (t) { _facSubTab = t || 'datos'; };
   window.nxFacSetCli = function (v) { _factCli = v || ''; };
   window.nxFacSetFecha = function (v) { _facFecha = v || ''; };
   window.nxFacSetNCF = function (v) { _facNCF = v || 'sin'; };
