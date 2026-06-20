@@ -138,7 +138,47 @@ Vender NEXUS PRO a varios negocios con **un solo dominio** y **control general**
 - **Pendiente:** Fase 3 para tablas de seguros · Fase 4 = panel de **control general**
   del dueño (superadmin que ve todas las organizaciones) · desplegar BayolCell.
 
----
+### POS como app independiente para tiendas (decidido 20-jun-2026, EN CONSTRUCCIÓN)
+Acordado con el dueño en chat `RvxXb`. Vender el **mismo POS** a varios negocios
+(clientes), cada uno entrando a un POS que **se sienta como su propio sistema**:
+- **Formato elegido: BARRA LATERAL** (sidebar índigo a la izquierda con los módulos
+  agrupados: Principal/Inventario/Personas y CRM/Finanzas/Sistema) + **dashboard de
+  inicio** con KPIs (ventas hoy, facturas, en caja, bajo stock) + accesos rápidos +
+  últimas ventas. NO barra de pestañas arriba. Se descartaron "barra abajo" y
+  "lanzador Odoo" (se le mostraron las 3 en muestras y eligió lateral).
+- **Color elegido: AZUL ÍNDIGO** (`#4f46e5`/`#4338ca`/`#3730a3`, sidebar gradiente
+  `#1b1f4d→#283593`). Sin morados/violeta. Iconos de módulos conservan su color
+  propio (verde Vender, naranja Productos…) para distinguir de un vistazo.
+- **Muestras visuales** (standalone, en `main`, para que el dueño aprobara en el
+  móvil antes de construir): `muestra-pos.html` (sidebar) y `muestra-formatos.html`
+  (comparador de los 3 formatos). Se pueden borrar cuando el POS real esté hecho.
+- **Cómo se activa:** SOLO para organizaciones **`tipo='tienda'`** (mecanismo
+  `body.org-tienda` Fase 2 que YA oculta toda la nav de seguros + abre POS directo +
+  cambia "Volver" por "Cerrar sesión"). El cliente entra y ve SOLO su POS, sin
+  rastro del seguro ni puerta de regreso. La org de seguros (`nexus-pro`) NO cambia.
+- **A construir (Paso 1):** en `parches.js`, que `renderPOS` dibuje el **sidebar +
+  dashboard** cuando `sesion.org.tipo==='tienda'` (reutiliza los 16 renders de
+  módulo que ya existen; solo cambia el "chrome" de navegación). Paso 2: org tienda
+  de prueba. Paso 3: primer cajero con su login (ver sección de roles/login abajo).
+
+### Multi-cliente del POS: aislamiento y personalización (acordado, IMPORTANTE)
+Reglas confirmadas con el dueño (cómo responderle si pregunta de nuevo):
+- **Mismo POS para varios clientes = UNA sola base compartida**, separada por
+  `organizacion_id` + RLS (NO base por cliente). NO es como Deluxe. Deluxe tiene
+  base/repo/subdominio propio porque es un **sistema DISTINTO**, no el mismo POS.
+  El aislamiento del POS YA está hecho y verificado (Sterling 5 prods / Francis 0).
+- **Personalización por cliente:** NUNCA clavar un cambio a fuego en el código (eso
+  le llega a TODOS). Siempre como **opción/interruptor guardado en la organización**
+  (patrón que ya existe: logo, color, tipo, `pos_acceso`, secuencias, NCF…). El
+  código es compartido; se "configura" distinto por org. Lo que necesite código
+  nuevo va detrás de un flag por org (`if(org tiene función X)`), encendido solo
+  para quien lo pidió.
+- **Si una personalización perjudica a otros:** el dueño SIEMPRE tiene control →
+  (1) **apagar** el interruptor (reversible al instante), (2) dejarla **solo** en esa
+  org, o (3) **graduar** a ese cliente a su **propia base/subdominio** (ruta
+  "híbrido"/Deluxe) para que su versión no toque a nadie más. Nunca queda atrapado.
+
+
 
 ## Reglas obligatorias en cada cambio (de `REGLAS-ACTUALIZACION.md`)
 
