@@ -13687,7 +13687,7 @@
   let _facSubTab = 'datos';
   let _histQ = '', _histDesde = '', _histHasta = '';
   let _caja = null, _cajaTot = null, _cierres = [];
-  let _proveedores = [], _compras = [], _compraItems = [];
+  let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
   // ── Contabilidad ──
   let _ctaTab = 'resumen';
@@ -15542,7 +15542,12 @@
           ${_almacenes.length > 1 ? `<div class="fr"><label>Almacén (entra el stock)</label><select id="compAlm">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 6px">ARTÍCULOS</div>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:8px">
-            <div class="fr" style="margin-bottom:6px"><select id="compArt"><option value="">— Elige un artículo —</option>${prodOpts}</select></div>
+            <div class="fr" style="margin-bottom:6px"><select id="compArt" onchange="window.nxCompraArtCambio()"><option value="">— Elige un artículo —</option>${prodOpts}</select></div>
+            <div id="compImeiArea" style="display:none;margin-bottom:6px">
+              <div style="font-size:9px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px">IMEI / Serial — agrega uno por uno con +</div>
+              <div style="display:flex;gap:6px"><input id="compImeiIn" class="no-upper" inputmode="numeric" placeholder="Escribe un IMEI y toca +" style="flex:1;min-width:0;padding:9px;border:1.5px solid #ddd6fe;border-radius:9px;font-size:13px;font-family:var(--mono,monospace)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxCompraImeiAdd();}"><button class="btn bc1 bsm" type="button" onclick="window.nxCompraImeiAdd()"><i class="ti ti-plus"></i></button></div>
+              <div id="compImeiChips" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px"></div>
+            </div>
             <div style="display:flex;gap:6px"><input id="compCant" inputmode="numeric" value="1" placeholder="Cant." style="width:62px;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;text-align:center"><input id="compCosto" data-nx-money inputmode="numeric" placeholder="Costo unit." style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px"><button class="btn bc1 bsm" type="button" onclick="window.nxPosCompraAddItem()"><i class="ti ti-plus"></i> Agregar</button></div>
           </div>
           <div id="compItemsList" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px"></div>
@@ -15555,13 +15560,40 @@
     pintarCompraItems();
   };
   window.nxPosNuevoProvDesdeCompra = function () { abrirProv(null, true); };
+  window.nxCompraArtCambio = function () {
+    const p = _prods.find(x => String(x.id) === String(val('compArt')));
+    _compraImeiBuf = [];
+    const area = document.getElementById('compImeiArea'); if (area) area.style.display = (p && p.serial) ? '' : 'none';
+    pintarCompraImeiChips();
+    const cc = document.getElementById('compCant'); if (cc && p && p.serial) cc.value = '0';
+    const co = document.getElementById('compCosto'); if (co && p && Number(p.costo || 0) > 0) co.value = Math.round(p.costo);
+  };
+  window.nxCompraImeiAdd = function () {
+    const inp = document.getElementById('compImeiIn'); if (!inp) return;
+    const raw = (inp.value || '').trim(); if (!raw) return;
+    raw.split(/[\n,;\s]+/).map(s => s.trim()).filter(Boolean).forEach(s => { if (_compraImeiBuf.indexOf(s) < 0) _compraImeiBuf.push(s); });
+    inp.value = ''; inp.focus();
+    pintarCompraImeiChips();
+    const cc = document.getElementById('compCant'); if (cc) cc.value = _compraImeiBuf.length || '1';
+  };
+  window.nxCompraImeiDel = function (i) { _compraImeiBuf.splice(i, 1); pintarCompraImeiChips(); const cc = document.getElementById('compCant'); if (cc) cc.value = _compraImeiBuf.length || '0'; };
+  function pintarCompraImeiChips() {
+    const box = document.getElementById('compImeiChips'); if (!box) return;
+    box.innerHTML = _compraImeiBuf.map((s, i) => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)} <i class="ti ti-x" style="cursor:pointer;color:#dc2626" onclick="window.nxCompraImeiDel(${i})"></i></span>`).join('') + (_compraImeiBuf.length ? ` <span style="font-size:9px;color:#475569;align-self:center;font-weight:700">${_compraImeiBuf.length} IMEI</span>` : '');
+  }
   window.nxPosCompraAddItem = function () {
     const pid = val('compArt'); if (!pid) { toast('err', 'Elige un artículo'); return; }
     const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
-    const cant = Number(String(val('compCant') || '1').replace(/[^0-9.]/g, '')) || 1;
+    const esSerial = !!p.serial;
+    if (esSerial && !_compraImeiBuf.length) { toast('err', 'Agrega al menos un IMEI', 'Escríbelo y toca +'); return; }
+    const cant = esSerial ? _compraImeiBuf.length : (Number(String(val('compCant') || '1').replace(/[^0-9.]/g, '')) || 1);
     const costo = parseMoney(val('compCosto')) || Number(p.costo || 0);
     const ex = _compraItems.find(x => String(x.producto_id) === String(pid));
-    if (ex) { ex.cantidad += cant; ex.costo = costo; } else _compraItems.push({ producto_id: p.id, nombre: p.nombre, cantidad: cant, costo: costo });
+    if (ex) { ex.cantidad += cant; ex.costo = costo; if (esSerial) ex.imeis = ((ex.imeis ? ex.imeis + '\n' : '') + _compraImeiBuf.join('\n')); }
+    else { const nuevo = { producto_id: p.id, nombre: p.nombre, cantidad: cant, costo: costo }; if (esSerial) nuevo.imeis = _compraImeiBuf.join('\n'); _compraItems.push(nuevo); }
+    _compraImeiBuf = []; pintarCompraImeiChips();
+    const ar = document.getElementById('compArt'); if (ar) ar.value = '';
+    const area = document.getElementById('compImeiArea'); if (area) area.style.display = 'none';
     const cc = document.getElementById('compCant'); if (cc) cc.value = '1';
     const co = document.getElementById('compCosto'); if (co) co.value = '';
     pintarCompraItems();
@@ -15570,7 +15602,7 @@
   window.nxCompraImei = function (i, v) { if (_compraItems[i]) _compraItems[i].imeis = v; };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
-    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>${ser ? `<textarea class="no-upper" placeholder="IMEI de los ${it.cantidad} equipo(s) — uno por línea o coma" onchange="window.nxCompraImei(${i},this.value)" style="width:100%;margin-top:5px;border:1.5px solid #ddd6fe;border-radius:8px;padding:6px;font-size:11.5px;font-family:var(--mono,monospace);resize:vertical;min-height:42px">${esc(it.imeis || '')}</textarea>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
+    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
   }
