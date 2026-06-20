@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Muestra · POS independiente</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#eef1f6; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+  --ind1:#4f46e5; --ind2:#7c3aed; --ind3:#312e81;
+  --sb1:#221b4d; --sb2:#3b2f7a; --sb3:#4f46e5;
+  --ok:#16a34a; --warn:#d97706; --rose:#e11d48;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--ink);min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+/* ── LAYOUT ── */
+.shell{display:flex;min-height:100vh}
+/* ── SIDEBAR ── */
+.sb{
+  width:248px;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:40;
+  background:linear-gradient(180deg,var(--sb1),var(--sb2));color:#e9e7fb;
+  display:flex;flex-direction:column;
+  box-shadow:6px 0 28px rgba(20,16,55,.28);
+  transition:transform .26s cubic-bezier(.4,0,.2,1);
+}
+.sb-brand{display:flex;align-items:center;gap:11px;padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo{
+  width:42px;height:42px;border-radius:13px;flex-shrink:0;
+  background:linear-gradient(145deg,#8b5cf6,#6366f1);
+  display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;
+  box-shadow:0 6px 16px rgba(99,102,241,.5),inset 0 1px 1px rgba(255,255,255,.4);
+}
+.sb-biz{font-weight:800;font-size:15px;letter-spacing:.2px;line-height:1.1}
+.sb-biz small{display:block;font-weight:600;font-size:10.5px;color:#a7a0e0;margin-top:3px;letter-spacing:.3px}
+.sb-scroll{flex:1;overflow-y:auto;padding:10px 10px 16px}
+.sb-sec{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#897fd0;margin:14px 8px 6px}
+.sb-sec:first-child{margin-top:4px}
+.nav{
+  display:flex;align-items:center;gap:11px;width:100%;border:0;cursor:pointer;
+  background:transparent;color:#cfcaf2;text-align:left;
+  padding:10px 11px;border-radius:11px;font-size:13.5px;font-weight:600;margin-bottom:2px;
+  transition:background .15s,color .15s;
+}
+.nav i{font-size:18px;width:22px;text-align:center;opacity:.92}
+.nav:active{background:rgba(255,255,255,.06)}
+.nav.on{background:linear-gradient(135deg,rgba(124,58,237,.95),rgba(79,70,229,.95));color:#fff;box-shadow:0 6px 16px rgba(79,70,229,.45)}
+.nav.on i{opacity:1}
+.sb-foot{padding:12px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:6px 4px 12px}
+.sb-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px}
+.sb-user b{font-size:13px;display:block}
+.sb-user span{font-size:10.5px;color:#a7a0e0}
+.btn-logout{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  background:rgba(255,255,255,.07);color:#f1eefb;border:1px solid rgba(255,255,255,.12);
+  padding:10px;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;
+}
+.btn-logout:active{background:rgba(255,255,255,.13)}
+/* ── MAIN ── */
+.main{flex:1;margin-left:248px;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  display:none;align-items:center;gap:12px;padding:12px 16px;
+  background:rgba(255,255,255,.85);backdrop-filter:blur(14px);
+  position:sticky;top:0;z-index:30;border-bottom:1px solid var(--line);
+}
+.burger{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:21px;color:var(--ind1);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.topbar .tb-biz{font-weight:800;font-size:15px}
+.content{padding:20px 22px 40px;max-width:1080px;width:100%;margin:0 auto}
+/* Hero saludo */
+.hero{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.hi{font-size:13px;color:var(--muted);font-weight:600}
+.hi b{display:block;font-size:24px;color:var(--ink);font-weight:800;margin-top:2px;letter-spacing:-.3px}
+.hero-date{font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);padding:8px 14px;border-radius:12px;font-weight:600}
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:13px;margin-bottom:22px}
+.kpi{
+  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;
+  box-shadow:0 8px 22px rgba(15,23,42,.05);position:relative;overflow:hidden;
+}
+.kpi::after{content:"";position:absolute;right:-22px;top:-22px;width:78px;height:78px;border-radius:50%;opacity:.12;background:var(--kc,#6366f1)}
+.kpi-ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--kc);background:color-mix(in srgb,var(--kc) 14%,transparent);margin-bottom:10px}
+.kpi-l{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.2px}
+.kpi-v{font-size:23px;font-weight:800;letter-spacing:-.5px;margin-top:3px}
+.kpi-s{font-size:11px;font-weight:700;margin-top:5px}
+.kpi-s.up{color:var(--ok)} .kpi-s.dn{color:var(--rose)}
+/* Secciones de apps */
+.sec-t{font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8;margin:20px 2px 11px;display:flex;align-items:center;gap:8px}
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}
+.app{
+  background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;
+  box-shadow:0 4px 14px rgba(15,23,42,.04);transition:box-shadow .15s,border-color .15s;
+}
+.app:active{box-shadow:0 2px 8px rgba(15,23,42,.10);border-color:#cbd5e1}
+.app-ic{width:50px;height:50px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:25px;color:var(--ac);background:color-mix(in srgb,var(--ac) 13%,transparent);box-shadow:inset 0 1px 2px rgba(255,255,255,.6)}
+.app-n{font-size:12px;font-weight:700;color:#334155;text-align:center;line-height:1.15}
+/* Panel inferior */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 16px 6px;margin-top:22px;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+.panel h3{margin:0 0 4px;font-size:14px;font-weight:800}
+.panel .sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:11px 4px;border-bottom:1px solid var(--line);font-size:13px}
+.row:last-child{border-bottom:0}
+.row .l{display:flex;align-items:center;gap:11px}
+.row .ic{width:34px;height:34px;border-radius:10px;background:#eef2ff;color:var(--ind1);display:flex;align-items:center;justify-content:center;font-size:16px}
+.row .nm b{font-weight:700} .row .nm span{display:block;font-size:11px;color:var(--muted)}
+.row .amt{font-weight:800;color:var(--ok)}
+.tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;background:#dcfce7;color:#15803d}
+.tag.b{background:#ede9fe;color:#6d28d9}
+/* Backdrop móvil */
+.backdrop{display:none;position:fixed;inset:0;background:rgba(15,16,40,.45);backdrop-filter:blur(2px);z-index:35}
+/* Banner muestra */
+.demo-banner{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;text-align:center;font-size:11.5px;font-weight:700;padding:7px 14px;letter-spacing:.2px}
+.demo-banner i{margin-right:5px}
+/* ── RESPONSIVE (móvil) ── */
+@media(max-width:860px){
+  .sb{transform:translateX(-100%)}
+  .sb.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .topbar{display:flex}
+  body.drawer .backdrop{display:block}
+  .content{padding:16px 14px 40px}
+  .hi b{font-size:21px}
+}
+@media(max-width:380px){
+  .apps{grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:10px}
+  .app-ic{width:46px;height:46px;font-size:23px}
+}
+</style>
+</head>
+<body>
+<div class="demo-banner"><i class="ti ti-eye"></i> MUESTRA — así se vería el POS como sistema independiente (toca el menú ☰ en móvil)</div>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sb" id="sb">
+    <div class="sb-brand">
+      <div class="sb-logo"><i class="ti ti-building-store"></i></div>
+      <div class="sb-biz">Mi Tienda<small>PUNTO DE VENTA</small></div>
+    </div>
+    <div class="sb-scroll">
+      <div class="sb-sec">Principal</div>
+      <button class="nav on"><i class="ti ti-layout-dashboard"></i> Inicio</button>
+      <button class="nav"><i class="ti ti-cash-register"></i> Vender</button>
+      <button class="nav"><i class="ti ti-file-invoice"></i> Factura</button>
+
+      <div class="sb-sec">Inventario</div>
+      <button class="nav"><i class="ti ti-box"></i> Productos</button>
+      <button class="nav"><i class="ti ti-building-warehouse"></i> Inventario</button>
+      <button class="nav"><i class="ti ti-truck-delivery"></i> Compras</button>
+      <button class="nav"><i class="ti ti-clipboard-text"></i> Cotizaciones</button>
+
+      <div class="sb-sec">Personas y CRM</div>
+      <button class="nav"><i class="ti ti-address-book"></i> Entidades</button>
+      <button class="nav"><i class="ti ti-target-arrow"></i> CRM</button>
+      <button class="nav"><i class="ti ti-users"></i> Clientes</button>
+      <button class="nav"><i class="ti ti-users-group"></i> Rec. Humanos</button>
+
+      <div class="sb-sec">Finanzas</div>
+      <button class="nav"><i class="ti ti-cash"></i> Caja</button>
+      <button class="nav"><i class="ti ti-history"></i> Historial</button>
+      <button class="nav"><i class="ti ti-chart-pie"></i> Reportes</button>
+      <button class="nav"><i class="ti ti-book-2"></i> Contabilidad</button>
+
+      <div class="sb-sec">Sistema</div>
+      <button class="nav"><i class="ti ti-settings"></i> Ajustes</button>
+    </div>
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="sb-ava">F</div>
+        <div><b>Francis</b><span>Cajero</span></div>
+      </div>
+      <button class="btn-logout"><i class="ti ti-logout"></i> Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button class="burger" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
+      <div class="tb-biz">Mi Tienda</div>
+    </div>
+
+    <div class="content">
+      <div class="hero">
+        <div class="hi">Buenas tardes 👋<b>Mi Tienda</b></div>
+        <div class="hero-date"><i class="ti ti-calendar"></i> Sábado, 20 jun 2026</div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi" style="--kc:#16a34a">
+          <div class="kpi-ic"><i class="ti ti-cash"></i></div>
+          <div class="kpi-l">Ventas de hoy</div>
+          <div class="kpi-v">RD$ 24,850</div>
+          <div class="kpi-s up"><i class="ti ti-trending-up"></i> +12% vs ayer</div>
+        </div>
+        <div class="kpi" style="--kc:#4f46e5">
+          <div class="kpi-ic"><i class="ti ti-receipt"></i></div>
+          <div class="kpi-l">Facturas de hoy</div>
+          <div class="kpi-v">18</div>
+          <div class="kpi-s up">Ticket prom. RD$ 1,380</div>
+        </div>
+        <div class="kpi" style="--kc:#0891b2">
+          <div class="kpi-ic"><i class="ti ti-wallet"></i></div>
+          <div class="kpi-l">En caja</div>
+          <div class="kpi-v">RD$ 31,200</div>
+          <div class="kpi-s up">Caja abierta · 9:02 am</div>
+        </div>
+        <div class="kpi" style="--kc:#d97706">
+          <div class="kpi-ic"><i class="ti ti-alert-triangle"></i></div>
+          <div class="kpi-l">Bajo stock</div>
+          <div class="kpi-v">5</div>
+          <div class="kpi-s dn"><i class="ti ti-arrow-down"></i> Revisar productos</div>
+        </div>
+      </div>
+
+      <!-- Accesos rápidos -->
+      <div class="sec-t"><i class="ti ti-bolt"></i> Accesos rápidos</div>
+      <div class="apps">
+        <div class="app"><div class="app-ic" style="--ac:#16a34a"><i class="ti ti-cash-register"></i></div><div class="app-n">Vender</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#6d28d9"><i class="ti ti-file-invoice"></i></div><div class="app-n">Factura</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#ea580c"><i class="ti ti-box"></i></div><div class="app-n">Productos</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#0d9488"><i class="ti ti-building-warehouse"></i></div><div class="app-n">Inventario</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#0891b2"><i class="ti ti-truck-delivery"></i></div><div class="app-n">Compras</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#16a34a"><i class="ti ti-cash"></i></div><div class="app-n">Caja</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#d97706"><i class="ti ti-chart-pie"></i></div><div class="app-n">Reportes</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#475569"><i class="ti ti-settings"></i></div><div class="app-n">Ajustes</div></div>
+      </div>
+
+      <!-- Últimas ventas -->
+      <div class="panel">
+        <h3>Últimas ventas</h3>
+        <div class="sub">Movimiento del día</div>
+        <div class="row">
+          <div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00184</b><span>Consumidor final · Efectivo</span></div></div>
+          <div class="amt">RD$ 2,360</div>
+        </div>
+        <div class="row">
+          <div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00183</b><span>Ramona Pérez · Tarjeta</span></div></div>
+          <div class="amt">RD$ 980</div>
+        </div>
+        <div class="row">
+          <div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00182</b><span>José Martínez · Fiado</span></div></div>
+          <div class="amt" style="color:#6d28d9">RD$ 4,500</div>
+        </div>
+        <div class="row">
+          <div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00181</b><span>Consumidor final · Transferencia</span></div></div>
+          <div class="amt">RD$ 1,750</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="backdrop" onclick="toggleSB()"></div>
+
+<script>
+function toggleSB(){
+  var sb=document.getElementById('sb');
+  sb.classList.toggle('open');
+  document.body.classList.toggle('drawer',sb.classList.contains('open'));
+}
+// Marcar el item del sidebar al tocarlo (solo visual para la muestra)
+document.querySelectorAll('.nav').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.nav').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    if(window.innerWidth<=860){toggleSB();}
+    document.querySelector('.content').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+</script>
+</body>
+</html>
