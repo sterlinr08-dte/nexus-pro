@@ -1,7 +1,8 @@
 {
-  "version": "27.8",
+  "version": "27.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (Buscar artículo · detalle minimalista): la ventanilla que se desliza al tocar un artículo ahora es más PEQUEÑA y compacta — las tarjetas de precio, la existencia por almacén, los seriales y el botón 'Elegir' se redujeron para que se vea limpio y minimalista, ocupando menos espacio",
     "ARREGLADO (Buscar artículo · detalle en línea): ahora al tocar un artículo en la lista de búsqueda, NO se abre otra ventana — el artículo se DESLIZA hacia abajo ahí mismo (acordeón) y muestra debajo sus dos precios (final y por mayor), la existencia por almacén y los seriales/IMEI, con el botón 'Elegir'. Tocas otra vez (o cierras) para contraerlo. Todo sin salir de la lista",
     "NUEVO (IMEI enlazado a la venta): al facturar un equipo que maneja serial/IMEI, en su línea aparece un botón 'IMEI' donde ELIGES cuál(es) serial(es) se venden. Al cobrar, esos IMEI se marcan como VENDIDOS (bajan de los disponibles) y salen impresos en el ticket. Si anulas la factura, los IMEI vuelven a estar disponibles. Así cada celular queda trazado por su IMEI de principio a fin",
     "NUEVO (Seriales / IMEI en la ventanilla del artículo): para los artículos que manejan serial/IMEI (celulares, equipos), la ventanilla deslizante ahora muestra CUÁNTOS SERIALES tiene disponibles y la LISTA de esos seriales. Con el botón 'Administrar' agregas los seriales (uno por línea o separados por coma — ideal al recibir mercancía) o los eliminas. Así sabes exactamente qué equipos tienes por su IMEI",
