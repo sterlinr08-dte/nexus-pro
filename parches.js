@@ -14062,12 +14062,72 @@
     const filas = _secuencias.map(s => `<tr>
         <td><b>${esc(s.nombre || s.tipo)}</b></td>
         <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px;color:#6d28d9">${esc(secEjemplo(s))}</td>
-        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxSecEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" title="Historial" onclick="window.nxSecHistorial('${s.id}')"><i class="ti ti-history"></i></button> <button class="btn bsm bc1" onclick="window.nxSecEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
     return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-list-numbers"></i> Secuencias de documentos</div>
       <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">El prefijo y el próximo número de cada documento. Cada uno toma su número de aquí (lógica sincronizada).</div>
-      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Documento</th><th style="text-align:center">Próximo</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Documento</th><th style="text-align:center">Próximo</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <button class="btn bsm bghost" type="button" style="margin-top:10px" onclick="window.nxSecNueva()"><i class="ti ti-plus"></i> Nueva secuencia</button>`;
   }
+  const SEC_FUENTE = {
+    cotizacion: ['pos_cotizaciones', 'numero', 'cliente_nombre', 'total'],
+    nota_credito: ['pos_devoluciones', 'numero', 'cliente_nombre', 'total'],
+    transferencia: ['pos_transferencias', 'numero', 'destino_nombre', null],
+    nomina: ['rrhh_nominas', 'numero', 'periodo', 'total_neto'],
+    recibo: ['pos_abonos', 'numero', 'nota', 'monto'],
+    pago_prov: ['pos_compra_pagos', 'numero', 'metodo', 'monto'],
+    asiento: ['pos_asientos', 'numero', 'concepto', null],
+    crm: ['pos_crm', 'numero', 'nombre', 'monto_estimado']
+  };
+  window.nxSecHistorial = async function (id) {
+    const s = _secuencias.find(x => String(x.id) === String(id)); if (!s) return;
+    const f = SEC_FUENTE[s.tipo];
+    let filas = '<tr><td colspan="3" style="text-align:center;color:#475569;padding:16px;font-size:12px">Esta secuencia aún no está enlazada a un documento.</td></tr>';
+    if (f) {
+      try {
+        const cols = ['numero', f[2]].concat(f[3] ? [f[3]] : []).concat(['created_at']).filter(Boolean).join(',');
+        const rows = await getAPI().get(f[0], 'select=' + cols + '&numero=not.is.null&order=created_at.desc&limit=100') || [];
+        filas = rows.length ? rows.map(r => `<tr><td style="font-weight:700;color:#6d28d9;font-family:var(--mono,monospace);font-size:11px">${esc(r.numero || '')}</td><td>${esc(r[f[2]] || '')}</td><td style="text-align:right">${f[3] ? fmt(r[f[3]]) : (r.created_at ? fechaDMY(r.created_at) : '')}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:#475569;padding:16px;font-size:12px">Sin documentos generados todavía.</td></tr>';
+      } catch (e) { filas = '<tr><td colspan="3" style="text-align:center;color:#dc2626;padding:16px;font-size:12px">No se pudo cargar el historial</td></tr>'; }
+    }
+    cerrarModal('nxSecHist');
+    const ov = document.createElement('div'); ov.id = 'nxSecHist'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:480px;max-height:88vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-history"></i> Historial · ${esc(s.nombre || s.tipo)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxSecHist').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="font-size:11px;color:#475569;margin-bottom:8px">Próximo número: <b style="color:#6d28d9">${esc(secEjemplo(s))}</b></div>
+        <div style="overflow-y:auto;flex:1" class="tw"><table style="width:100%;font-size:12px"><thead><tr><th>Número</th><th>Detalle</th><th style="text-align:right">Monto / Fecha</th></tr></thead><tbody>${filas}</tbody></table></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxSecNueva = function () {
+    cerrarModal('nxSecNew');
+    const ov = document.createElement('div'); ov.id = 'nxSecNew'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:380px">
+        <div class="mt"><span><i class="ti ti-list-numbers"></i> Nueva secuencia</span><button class="nxBack" type="button" onclick="document.getElementById('nxSecNew').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Nombre del documento *</label><input id="snNom" class="no-upper" placeholder="Ej: Orden de servicio"></div>
+        <div class="fr-row">
+          <div class="fr"><label>Prefijo</label><input id="snP" class="no-upper" placeholder="Ej: OS-"></div>
+          <div class="fr"><label>Dígitos</label><input id="snL" inputmode="numeric" value="5"></div>
+        </div>
+        <div class="fr"><label>Empezar en</label><input id="snN" inputmode="numeric" value="1"></div>
+        <div class="fe" style="gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxSecNew').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxSecCrear()"><i class="ti ti-device-floppy"></i> Crear</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxSecCrear = async function () {
+    const nom = (val('snNom') || '').trim();
+    if (!nom) { toast('err', 'Pon el nombre del documento'); return; }
+    const tipo = 'custom_' + nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30);
+    if (_secuencias.find(s => s.tipo === tipo)) { toast('err', 'Ya existe una secuencia con ese nombre'); return; }
+    try {
+      await getAPI().post('pos_secuencias', { tipo: tipo, nombre: nom, prefijo: (val('snP') || '').trim(), longitud: parseInt(val('snL'), 10) || 5, proximo: parseInt(String(val('snN')).replace(/[^0-9]/g, ''), 10) || 1 });
+      cerrarModal('nxSecNew'); toast('ok', 'Secuencia creada', nom);
+      _secuencias = await getAPI().get('pos_secuencias', 'select=*&order=tipo.asc') || [];
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
+  };
   window.nxSecInit = async function () {
     try {
       const maxDe = async (tabla, sel) => { try { const r = await getAPI().get(tabla, 'select=' + sel + '&order=created_at.desc&limit=400') || []; let mx = 0; r.forEach(x => { const m = String(x[sel] || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return mx; } catch (e) { return 0; } };
@@ -14106,22 +14166,27 @@
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   function accesoRol(rol) { const a = (_acceso || []).find(x => x.rol === rol); if (a) { let m = a.modulos; if (typeof m === 'string') { try { m = JSON.parse(m); } catch (e) { m = []; } } return m || []; } const d = ROLES_DEF.find(x => x[0] === rol); return d ? d[2] : []; }
+  function rolLabel(rol) { const a = (_acceso || []).find(x => x.rol === rol); if (a && a.label) return a.label; const d = ROLES_DEF.find(x => x[0] === rol); return d ? d[1] : rol; }
+  function rolEsPreset(rol) { return !!ROLES_DEF.find(x => x[0] === rol); }
+  function rolesLista() {
+    const out = []; const vistos = {};
+    ROLES_DEF.forEach(r => { if (r[0] !== 'admin') { out.push({ rol: r[0], label: r[1], modulos: accesoRol(r[0]), preset: true }); vistos[r[0]] = 1; } });
+    (_acceso || []).forEach(a => { if (a.rol !== 'admin' && !vistos[a.rol]) { out.push({ rol: a.rol, label: a.label || a.rol, modulos: accesoRol(a.rol), preset: false }); vistos[a.rol] = 1; } });
+    return out;
+  }
   function ajustesRoles() {
-    const verComo = `<div style="margin-top:10px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Probar: ver el sistema como…</label><select onchange="window.nxRolPreview(this.value)" style="height:36px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 10px;font-size:12.5px;font-weight:700;color:#334155;background:#fff;font-family:inherit"><option value="">— Yo (Dueño, todo) —</option>${ROLES_DEF.filter(r => r[0] !== 'admin').map(r => `<option value="${r[0]}"${_rolPreview === r[0] ? ' selected' : ''}>${esc(r[1])}</option>`).join('')}</select></div>`;
-    if (!_acceso.length) {
-      return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-shield-lock"></i> Roles y accesos</div>
-        <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Define qué módulos ve cada rol (Cajero, Vendedor, Gerente). Crea los roles base y luego ajusta los accesos. <b>Tú (Dueño) siempre ves todo.</b></div>
-        <button class="btn bsm bc1" type="button" onclick="window.nxAccesoInit()"><i class="ti ti-sparkles"></i> Crear roles base</button>
-        ${verComo}`;
-    }
-    const filas = ROLES_DEF.filter(r => r[0] !== 'admin').map(r => { const mods = accesoRol(r[0]); return `<tr>
-        <td><b>${esc(r[1])}</b></td>
-        <td style="text-align:center;color:#475569;font-size:11px">${mods.length} módulo(s)</td>
-        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxAccesoEdit('${r[0]}')"><i class="ti ti-edit"></i></button></td>
-      </tr>`; }).join('');
+    const lista = rolesLista();
+    const verComo = `<div style="margin-top:10px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Probar: ver el sistema como…</label><select onchange="window.nxRolPreview(this.value)" style="height:36px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 10px;font-size:12.5px;font-weight:700;color:#334155;background:#fff;font-family:inherit"><option value="">— Yo (Dueño, todo) —</option>${lista.map(r => `<option value="${r.rol}"${_rolPreview === r.rol ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select></div>`;
+    const filas = lista.map(r => `<tr>
+        <td><b>${esc(r.label)}</b>${r.preset ? '' : ' <span class="nxEntRol">propio</span>'}</td>
+        <td style="text-align:center;color:#475569;font-size:11px">${r.modulos.length} módulo(s)</td>
+        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxAccesoEdit('${r.rol}')"><i class="ti ti-edit"></i></button></td>
+      </tr>`).join('');
     return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-shield-lock"></i> Roles y accesos</div>
-      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Qué módulos ve cada rol. <b>El Dueño siempre ve todo.</b> (El ingreso de cada empleado con su clave se activa en el paso supervisado.)</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Qué módulos ve cada rol. <b>El Dueño siempre ve todo.</b> Puedes crear los roles que quieras. (El ingreso de cada empleado con su clave se activa en el paso supervisado.)</div>
+      ${!_acceso.length ? `<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxAccesoInit()"><i class="ti ti-sparkles"></i> Crear roles base</button> ` : ''}
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Rol</th><th style="text-align:center">Acceso</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <button class="btn bsm bghost" type="button" style="margin-top:10px" onclick="window.nxRolNuevo()"><i class="ti ti-plus"></i> Nuevo rol</button>
       ${verComo}`;
   }
   window.nxAccesoInit = async function () {
@@ -14132,31 +14197,61 @@
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
   };
-  window.nxAccesoEdit = function (rol) {
-    const def = ROLES_DEF.find(x => x[0] === rol); if (!def) return;
-    const mods = accesoRol(rol);
+  window.nxRolNuevo = function () { abrirRolForm(''); };
+  window.nxAccesoEdit = function (rol) { abrirRolForm(rol); };
+  function abrirRolForm(rol) {
+    const isNew = !rol;
+    const preset = !isNew && rolEsPreset(rol);
+    const label = isNew ? '' : rolLabel(rol);
+    const mods = isNew ? ['inicio'] : accesoRol(rol);
     cerrarModal('nxAccForm');
     const chks = MODULOS.map(m => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${m[0]}"${mods.indexOf(m[0]) >= 0 ? ' checked' : ''}${m[0] === 'inicio' ? ' checked disabled' : ''}> ${m[1]}</label>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxAccForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-shield-lock"></i> Accesos · ${esc(def[1])}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAccForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Marca los módulos que este rol puede ver y usar.</div>
+        <div class="mt"><span><i class="ti ti-shield-lock"></i> ${isNew ? 'Nuevo rol' : 'Rol · ' + esc(label)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAccForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Nombre del rol *</label><input id="accNom" class="no-upper" value="${esc(label)}" placeholder="Ej: Supervisor, Almacenista"${preset ? ' readonly style="background:#f8fafc"' : ''}></div>
+        <div style="font-size:11.5px;color:#475569;margin:2px 0 8px">Marca los módulos que este rol puede ver y usar.</div>
         <div style="overflow-y:auto;flex:1"><div class="nxEntAfines" style="grid-template-columns:1fr 1fr">${chks}</div></div>
-        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxAccForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAccesoGuardar('${rol}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+        <div class="fe" style="margin-top:10px;gap:8px">
+          ${(!isNew && !preset) ? `<button class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxRolDel('${rol}')"><i class="ti ti-trash"></i></button>` : ''}
+          <button class="btn bghost" type="button" onclick="document.getElementById('nxAccForm').remove()">Cancelar</button>
+          <button class="btn bc1" type="button" onclick="window.nxAccesoGuardar('${rol}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
       </div>`;
     document.body.appendChild(ov);
-  };
+  }
   window.nxAccesoGuardar = async function (rol) {
+    const isNew = !rol;
+    const nombre = (val('accNom') || '').trim();
+    if ((isNew || !rolEsPreset(rol)) && !nombre) { toast('err', 'Pon el nombre del rol'); return; }
     const mods = ['inicio'].concat(MODULOS.filter(m => m[0] !== 'inicio' && document.getElementById('acc_' + m[0]) && document.getElementById('acc_' + m[0]).checked).map(m => m[0]));
     try {
-      const ex = (_acceso || []).find(x => x.rol === rol);
-      if (ex) await getAPI().patch('pos_acceso', 'id=eq.' + ex.id, { modulos: mods });
-      else await getAPI().post('pos_acceso', { rol: rol, label: (ROLES_DEF.find(x => x[0] === rol) || [])[1] || rol, modulos: mods });
-      cerrarModal('nxAccForm'); toast('ok', 'Accesos guardados');
+      if (isNew) {
+        const key = 'rol_' + nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 28);
+        if (rolEsPreset(key) || (_acceso || []).find(x => x.rol === key)) { toast('err', 'Ya existe un rol con ese nombre'); return; }
+        await getAPI().post('pos_acceso', { rol: key, label: nombre, modulos: mods });
+      } else {
+        const ex = (_acceso || []).find(x => x.rol === rol);
+        const body = rolEsPreset(rol) ? { modulos: mods } : { label: nombre, modulos: mods };
+        if (ex) await getAPI().patch('pos_acceso', 'id=eq.' + ex.id, body);
+        else await getAPI().post('pos_acceso', { rol: rol, label: rolLabel(rol), modulos: mods });
+      }
+      cerrarModal('nxAccForm'); toast('ok', 'Rol guardado');
       _acceso = await getAPI().get('pos_acceso', 'select=*') || [];
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxRolDel = async function (rol) {
+    const ex = (_acceso || []).find(x => x.rol === rol); if (!ex) return;
+    if (!confirm('¿Eliminar el rol "' + rolLabel(rol) + '"?')) return;
+    try {
+      await getAPI().del('pos_acceso', 'id=eq.' + ex.id);
+      if (_rolPreview === rol) _rolPreview = '';
+      cerrarModal('nxAccForm'); toast('ok', 'Rol eliminado');
+      _acceso = await getAPI().get('pos_acceso', 'select=*') || [];
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo eliminar', String(e && e.message || e)); }
   };
   window.nxRolPreview = function (rol) {
     _rolPreview = rol || '';
