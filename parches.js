@@ -13652,6 +13652,7 @@
   let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR' };
   let _facFecha = '';
   let _facSubTab = 'datos';
+  let _histQ = '', _histDesde = '', _histHasta = '';
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
@@ -13687,7 +13688,7 @@
     return { efe: efe, tar: tar, tra: tra, cre: cre, abEfe: abEfe, abOtro: abOtro, ent: ent, sal: sal, esperado: esperado, movs: movs, nventas: ventas.length };
   }
   async function cargarVentas() {
-    _ventas = await getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=100') || [];
+    _ventas = await getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=400') || [];
   }
   async function cargarSaldosCli() {
     _fiadoByCli = {}; _abonosByCli = {};
@@ -13761,7 +13762,7 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Ventas', 'ti-receipt-2')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'factura') body = renderFactura();
@@ -14338,21 +14339,62 @@
   };
 
   // ── TAB: VENTAS ──
+  function ventasFiltradas() {
+    const q = (_histQ || '').trim().toLowerCase();
+    return (_ventas || []).filter(v => {
+      const f = (v.fecha || v.created_at || '').slice(0, 10);
+      if (_histDesde && f < _histDesde) return false;
+      if (_histHasta && f > _histHasta) return false;
+      if (q) { const hay = ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase(); if (!hay.includes(q)) return false; }
+      return true;
+    });
+  }
+  function kpisHistorial() {
+    const lista = ventasFiltradas();
+    const total = lista.filter(v => (v.estado || '') !== 'anulada').reduce((s, v) => s + Number(v.total || 0), 0);
+    const hoyN = (_ventas || []).filter(v => (v.fecha || v.created_at || '').slice(0, 10) === hoy() && (v.estado || '') !== 'anulada').length;
+    return kpi('Facturas', lista.length, '#2563eb') + kpi('Total filtrado', fmt(total), '#059669') + kpi('Hoy', hoyN, '#0f172a');
+  }
+  function filasHistorial() {
+    const lista = ventasFiltradas();
+    if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin facturas con esos filtros</td></tr>';
+    return lista.map(v => {
+      const anulada = (v.estado || '') === 'anulada';
+      const esCred = !!v.a_credito;
+      return `<tr style="cursor:pointer${anulada ? ';opacity:.5' : ''}" onclick="window.nxPosTicket('${v.id}')">
+        <td style="font-weight:700;color:#1e293b;white-space:nowrap">${esc(v.numero_factura || ('#' + (v.numero || '')))}</td>
+        <td style="color:#64748b;white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
+        <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
+        <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}</td>
+        <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button>${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
+      </tr>`;
+    }).join('');
+  }
+  function pintarHistorial() { const b = document.getElementById('histBody'); if (b) b.innerHTML = filasHistorial(); const k = document.getElementById('histKpis'); if (k) k.innerHTML = kpisHistorial(); }
+  window.nxPosVentasBuscar = function (v) { _histQ = v; pintarHistorial(); };
+  window.nxPosHistFecha = function () { _histDesde = val('histDesde') || ''; _histHasta = val('histHasta') || ''; pintarHistorial(); };
+  window.nxPosHistLimpiar = function () { _histQ = ''; _histDesde = ''; _histHasta = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxPosAnularVenta = async function (id) {
+    const v = (_ventas || []).find(x => String(x.id) === String(id)); if (!v) return;
+    if (!confirm('¿Anular la factura ' + (v.numero_factura || '#' + v.numero) + '? Se devolverá el stock.')) return;
+    try {
+      await getAPI().patch('pos_ventas', 'id=eq.' + id, { estado: 'anulada' });
+      try { const items = await getAPI().get('pos_venta_items', 'venta_id=eq.' + id + '&select=producto_id,cantidad'); for (const it of (items || [])) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const ns = Number(p.stock || 0) + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } } catch (e) {}
+      v.estado = 'anulada';
+      toast('ok', 'Factura anulada', 'Se devolvió el stock');
+      pintarHistorial();
+    } catch (e) { toast('err', 'No se pudo anular', String(e && e.message || e)); }
+  };
   function renderVentas() {
-    const totalDia = _ventas.filter(v => (v.fecha || v.created_at || '').slice(0, 10) === hoy()).reduce((s, v) => s + Number(v.total || 0), 0);
-    const filas = _ventas.length ? _ventas.map(v => `<tr onclick="window.nxPosTicket('${v.id}')" style="cursor:pointer">
-        <td style="font-size:10px;font-weight:700;color:#1e293b">${esc(v.numero_factura || ('#' + (v.numero || '')))}<div style="color:#94a3b8;font-weight:400">${fechaDMY(v.fecha || v.created_at)}</div></td>
-        <td style="font-size:11px">${esc(v.cliente_nombre || 'Consumidor final')}</td>
-        <td style="font-size:10px">${esc(v.metodo_pago || '')}</td>
-        <td style="text-align:right;font-weight:800;color:#059669">${fmt(v.total)}</td>
-        <td style="text-align:right"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin ventas registradas</td></tr>';
-    return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
-        ${kpi('Ventas hoy', _ventas.filter(v => (v.fecha || v.created_at || '').slice(0, 10) === hoy()).length, '#2563eb')}
-        ${kpi('Cobrado hoy', fmt(totalDia), '#059669')}
-        ${kpi('Últimas ventas', _ventas.length, '#0f172a')}
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i><input id="histQ" value="${esc(_histQ)}" oninput="window.nxPosVentasBuscar(this.value)" placeholder="Buscar por No. de factura o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+        <input type="date" id="histDesde" value="${_histDesde}" onchange="window.nxPosHistFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
+        <input type="date" id="histHasta" value="${_histHasta}" onchange="window.nxPosHistFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
+        <button class="btn bsm bghost" type="button" onclick="window.nxPosHistLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
       </div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Cliente</th><th>Pago</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div id="histKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisHistorial()}</div>
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No. Factura</th><th>Fecha</th><th>Cliente</th><th>Tipo</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>`;
   }
   function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
 
