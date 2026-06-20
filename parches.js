@@ -14170,7 +14170,7 @@
         <div class="mt"><span><i class="ti ti-device-mobile"></i> IMEI · ${esc(prod.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacSer').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Selecciona el/los IMEI a vender (hasta <b>${it.cantidad}</b>).</div>
         <div style="overflow-y:auto;flex:1"><div class="nxEntAfines" style="grid-template-columns:1fr">${chks}</div></div>
-        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxFacSer').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFacSerGuardar(${i})"><i class="ti ti-check"></i> Asignar</button></div>
+        <div class="fe" style="margin-top:10px;gap:8px">${rows.length ? '' : `<button class="btn bc4 bsm" type="button" style="margin-right:auto" onclick="window.nxFacSerSin(${i})">Vender sin IMEI</button>`}<button class="btn bghost" type="button" onclick="document.getElementById('nxFacSer').remove()">Cancelar</button>${rows.length ? `<button class="btn bc1" type="button" onclick="window.nxFacSerGuardar(${i})"><i class="ti ti-check"></i> Asignar</button>` : ''}</div>
       </div>`;
     document.body.appendChild(ov);
   };
@@ -14178,8 +14178,10 @@
     const it = _cart[i]; if (!it) return;
     const chk = Array.prototype.slice.call(document.querySelectorAll('#nxFacSer [data-serid]')).filter(c => c.checked).slice(0, it.cantidad);
     it.seriales = chk.map(c => ({ id: c.getAttribute('data-serid'), serial: c.getAttribute('data-serial') }));
+    if (it.seriales.length) it._sinSerial = false;
     cerrarModal('nxFacSer'); pintarFactura();
   };
+  window.nxFacSerSin = function (i) { const it = _cart[i]; if (!it) return; it._sinSerial = true; it.seriales = []; cerrarModal('nxFacSer'); toast('ok', 'Se venderá sin IMEI', 'No había seriales cargados'); pintarFactura(); };
   window.nxFacCant = function (i, v) { const it = _cart[i]; if (!it) return; const n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0)); if (n === 0) { _cart.splice(i, 1); } else it.cantidad = n; pintarFactura(); };
   window.nxFacPrecio = function (i, v) { const it = _cart[i]; if (!it) return; it.precio = Math.max(0, parseMoney(v)); pintarFactura(); };
   window.nxFacDesc = function (i, v) { const it = _cart[i]; if (!it) return; it.desc = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0); pintarFactura(); };
@@ -14696,6 +14698,15 @@
   };
   window.nxPosConfirmar = async function () {
     if (!_cart.length) return;
+    // IMEI obligatorio: para artículos con serial hay que elegir el/los IMEI antes de cobrar
+    for (let i = 0; i < _cart.length; i++) {
+      const it = _cart[i]; const p = _prods.find(x => String(x.id) === String(it.producto_id));
+      if (p && p.serial && !it._sinSerial && (it.seriales || []).length < Number(it.cantidad)) {
+        toast('err', 'Falta elegir el IMEI', p.nombre + ' (' + (it.seriales || []).length + ' de ' + it.cantidad + ')');
+        window.nxFacSerial(i);
+        return;
+      }
+    }
     const c = leerCobro();
     const cliId = val('posCliId') || null;
     if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a fiar: elige un cliente'); return; }
