@@ -1,7 +1,10 @@
 {
-  "version": "29.3",
+  "version": "29.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (importante · compra con proveedor de Entidades): se corrigió el error 'NO SE PUDO REGISTRAR LA COMPRA' que salía cuando el proveedor era una Entidad (no de la lista vieja). Ahora la compra guarda bien con cualquier proveedor",
+    "ARREGLADO (compra · cantidad bloqueada en equipos con serial): la casilla de Cantidad ya no se puede editar a mano cuando el artículo maneja IMEI — se ajusta sola según cuántos IMEI agregues con el +",
+    "PRUEBA (botones planos): se quitó el relieve 2.5D de los botones de color (morado/rojo/verde) y quedaron PLANOS, a ver si se ve más limpio. Si prefieres el relieve, se devuelve",
     "ARREGLADO (Compra · IMEI uno por uno con +): al elegir un artículo que maneja serial, ANTES de tocar 'Agregar' aparece un campo de IMEI con un botón +. Escribes un IMEI y tocas + (o Enter) y se va agregando como una etiqueta — uno por uno, no todos juntos en un cuadro. La cantidad se ajusta sola al número de IMEI. Cada IMEI se puede quitar con la x. Al tocar 'Agregar' el artículo entra con sus IMEI ya puestos",
     "NUEVO (Compra estilo Infoplus): la pantalla de Compra ahora tiene más campos como en Infoplus — EMPLEADO (quién hace la compra), VENCIMIENTO (fecha de pago si es a crédito), ORDEN No. y LIQUIDACIÓN No. (opcionales). Y un botón 'Guardar e imprimir' que registra la compra y te saca su documento de una (con proveedor, empleado, artículos, total y los IMEI recibidos). Esos datos también salen en el detalle e impresión de la compra",
     "ARREGLADO (ventanilla · IMEI solo para seleccionar): en la ventanilla del artículo, los IMEI/seriales ahora son para ELEGIR el que vas a vender (los que entraron por compra), NO para agregar. Tocas el/los IMEI, quedan marcados en morado, y al tocar 'Elegir' se agrega con ese IMEI ya asignado (sale del sistema al cobrar y deja su registro en el historial). Se quitó el botón 'Administrar' de ahí: agregar IMEI es solo desde Productos (botón 📱) o al comprar. La sección ahora dice 'IMEI / Serial · elige el que vas a vender'",

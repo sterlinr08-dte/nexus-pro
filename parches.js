@@ -15562,10 +15562,11 @@
   window.nxPosNuevoProvDesdeCompra = function () { abrirProv(null, true); };
   window.nxCompraArtCambio = function () {
     const p = _prods.find(x => String(x.id) === String(val('compArt')));
+    const esSerial = !!(p && p.serial);
     _compraImeiBuf = [];
-    const area = document.getElementById('compImeiArea'); if (area) area.style.display = (p && p.serial) ? '' : 'none';
+    const area = document.getElementById('compImeiArea'); if (area) area.style.display = esSerial ? '' : 'none';
     pintarCompraImeiChips();
-    const cc = document.getElementById('compCant'); if (cc && p && p.serial) cc.value = '0';
+    const cc = document.getElementById('compCant'); if (cc) { cc.value = esSerial ? '0' : '1'; cc.readOnly = esSerial; cc.style.background = esSerial ? '#eef0f4' : '#fff'; cc.style.color = esSerial ? '#94a3b8' : '#1e293b'; cc.title = esSerial ? 'La cantidad se ajusta según los IMEI' : ''; }
     const co = document.getElementById('compCosto'); if (co && p && Number(p.costo || 0) > 0) co.value = Math.round(p.costo);
   };
   window.nxCompraImeiAdd = function () {
