@@ -13651,6 +13651,7 @@
   let _facCredito = false;
   let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR' };
   let _ncfSecs = [];
+  let _vendedores = [];
   let _facFecha = '';
   let _facSubTab = 'datos';
   let _histQ = '', _histDesde = '', _histHasta = '';
@@ -13679,6 +13680,7 @@
     try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; } catch (e) { _caja = null; }
     try { const cf = await getAPI().get('pos_config', 'select=*&limit=1'); if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; } } catch (e) {}
     try { _ncfSecs = await getAPI().get('pos_ncf_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _ncfSecs = []; }
+    try { _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _vendedores = []; }
   }
   async function cargarComprasTab() {
     try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
@@ -13938,8 +13940,59 @@
         <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesNCF()}
+        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
+        ${ajustesVendedores()}
       </div>`;
   }
+  function ajustesVendedores() {
+    const filas = _vendedores.length ? _vendedores.map(v => `<tr>
+        <td style="font-weight:700">${esc(v.nombre)}</td>
+        <td style="text-align:center;color:#64748b">${esc(v.telefono || '')}</td>
+        <td style="text-align:right;font-weight:700;color:#2563eb">${Number(v.comision_pct || 0)}%</td>
+        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxVendEdit('${v.id}')"><i class="ti ti-edit"></i></button></td>
+      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">Sin vendedores. Agrega uno para asignar ventas y calcular comisiones.</td></tr>';
+    return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-user-dollar"></i> Vendedores y comisiones</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5">Registra a tus vendedores con su % de comisión. Al cobrar podrás elegir el vendedor; en Reportes ves la comisión de cada uno.</div>
+      <div class="tw" style="font-size:12px;margin-bottom:10px"><table style="width:100%"><thead><tr><th>Nombre</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <button class="btn bsm bc1" type="button" onclick="window.nxVendNuevo()"><i class="ti ti-plus"></i> Agregar vendedor</button>`;
+  }
+  window.nxVendNuevo = function () { abrirVend(null); };
+  window.nxVendEdit = function (id) { const v = _vendedores.find(x => String(x.id) === String(id)); if (v) abrirVend(v); };
+  function abrirVend(v) {
+    cerrarModal('nxVendForm');
+    const d = v || {};
+    const ov = document.createElement('div'); ov.id = 'nxVendForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:400px">
+        <div class="mt"><span><i class="ti ti-user-dollar"></i> ${v ? 'Editar' : 'Nuevo'} vendedor</span><button class="nxBack" type="button" onclick="document.getElementById('nxVendForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Nombre *</label><input id="vdN" class="no-upper" value="${esc(d.nombre || '')}" placeholder="Nombre del vendedor"></div>
+        <div class="fr-row">
+          <div class="fr"><label>Teléfono</label><input id="vdT" class="no-upper" value="${esc(d.telefono || '')}" placeholder="809-..."></div>
+          <div class="fr"><label>Comisión (%)</label><input id="vdC" inputmode="decimal" value="${d.comision_pct != null ? Number(d.comision_pct) : '0'}" placeholder="0"></div>
+        </div>
+        <div class="fr"><label>Activo</label><select id="vdA"><option value="1"${d.activo !== false ? ' selected' : ''}>Sí</option><option value="0"${d.activo === false ? ' selected' : ''}>No</option></select></div>
+        <div class="fe" style="margin-top:8px;gap:8px">
+          ${v ? `<button class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxVendDel('${v.id}')"><i class="ti ti-trash"></i></button>` : ''}
+          <button class="btn bghost" type="button" onclick="document.getElementById('nxVendForm').remove()">Cancelar</button>
+          <button class="btn bc1" type="button" onclick="window.nxVendGuardar('${v ? v.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+  }
+  window.nxVendGuardar = async function (id) {
+    const body = { nombre: (val('vdN') || '').trim(), telefono: (val('vdT') || '').trim() || null, comision_pct: parseFloat(val('vdC')) || 0, activo: val('vdA') === '1' };
+    if (!body.nombre) { toast('err', 'Falta el nombre'); return; }
+    try {
+      if (id) await getAPI().patch('pos_vendedores', 'id=eq.' + id, body); else await getAPI().post('pos_vendedores', body);
+      cerrarModal('nxVendForm'); toast('ok', 'Vendedor guardado');
+      try { _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
+      const vv = document.getElementById('v-pos'); if (vv) renderPOS(vv);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxVendDel = async function (id) {
+    if (!confirm('¿Eliminar este vendedor?')) return;
+    try { await getAPI().del('pos_vendedores', 'id=eq.' + id); cerrarModal('nxVendForm'); toast('ok', 'Vendedor eliminado'); _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; const vv = document.getElementById('v-pos'); if (vv) renderPOS(vv); } catch (e) { toast('err', 'No se pudo eliminar'); }
+  };
   const NCF_DESC = { B01: 'Crédito Fiscal', B02: 'Consumo', B14: 'Régimen Especial', B15: 'Gubernamental', B16: 'Exportación', B04: 'Nota de Crédito' };
   // Mapa: valor del selector de comprobante de la Factura -> código NCF de la secuencia
   const NCF_MAP = { consumo: 'B02', credito_fiscal: 'B01', gubernamental: 'B15', regimen_especial: 'B14', B01: 'B01', B02: 'B02', B14: 'B14', B15: 'B15', B16: 'B16', B04: 'B04' };
@@ -14088,6 +14141,7 @@
         <div style="overflow-y:auto;flex:1">
           <div class="fr"><label>Cliente</label><select id="posCliId" onchange="window.nxPosCobroCalc()"><option value="">— Consumidor final —</option>${_clientes.map(c => `<option value="${c.id}"${String(_factCli) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div>
           <div class="fr" id="posCliNomBox"><label>Nombre (opcional, para el ticket)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente"></div>
+          ${_vendedores.length ? `<div class="fr"><label>Vendedor</label><select id="posVendId"><option value="">— Sin vendedor —</option>${_vendedores.map(v => `<option value="${v.id}">${esc(v.nombre)}</option>`).join('')}</select></div>` : ''}
           <div class="fr-row">
             <div class="fr"><label>Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
             <div class="fr"><label>Total a pagar</label><input id="posTotalLbl" readonly value="${fmt(t.total)}" style="background:#f0fdf4;font-weight:800;color:#065f46"></div>
@@ -14134,6 +14188,8 @@
     const cliId = val('posCliId') || null;
     if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a fiar: elige un cliente'); return; }
     const cliNom = cliId ? ((_clientes.find(x => String(x.id) === String(cliId)) || {}).nombre || null) : ((val('posCli') || '').trim() || null);
+    const vendId = val('posVendId') || null;
+    const vendNom = vendId ? ((_vendedores.find(x => String(x.id) === String(vendId)) || {}).nombre || null) : null;
     const pagosArr = [];
     if (c.efe > 0) pagosArr.push({ metodo: 'Efectivo', monto: c.efe });
     if (c.tar > 0) pagosArr.push({ metodo: 'Tarjeta', monto: c.tar });
@@ -14157,6 +14213,7 @@
       pagado_efectivo: c.efe, pagado_tarjeta: c.tar, pagado_transferencia: c.tra, pagado_otro: c.che + c.nc,
       credito_monto: c.credito, recibido: c.efe, devuelta: c.devuelta,
       tipo_comprobante: _facNCF || 'sin', numero_factura: numFac || null,
+      vendedor_id: vendId, vendedor_nombre: vendNom,
       estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     if (_facFecha) body.fecha = _facFecha;
@@ -15685,7 +15742,10 @@
         <div class="nxFacF"><label>Desde</label><input type="date" value="${_repDesde}" onchange="window.nxRepRango('d',this.value)"></div>
         <div class="nxFacF"><label>Hasta</label><input type="date" value="${_repHasta}" onchange="window.nxRepRango('h',this.value)"></div>
         <div style="font-size:11px;color:#94a3b8;align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
-        <button class="btn bsm bghost" type="button" style="margin-left:auto;align-self:end" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
+        <div style="margin-left:auto;display:flex;gap:6px;align-self:end">
+          ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
+          <button class="btn bsm bghost" type="button" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
+        </div>
       </div>
       <div class="nxCtaKpis">
         ${kpi('Ventas (total)', totVta, '#2563eb')}
@@ -15704,6 +15764,26 @@
       </div>`;
   }
   window.nxRepRango = function (k, val) { if (k === 'd') _repDesde = val; else _repHasta = val; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxRepComisiones = function () {
+    const list = ventasRepRango();
+    const acc = {};
+    _vendedores.forEach(v => { acc[v.id] = { nombre: v.nombre, pct: Number(v.comision_pct || 0), ventas: 0, monto: 0 }; });
+    list.forEach(v => { if (v.vendedor_id && acc[v.vendedor_id]) { acc[v.vendedor_id].ventas += 1; acc[v.vendedor_id].monto += Number(v.total || 0); } });
+    const e = empInfo();
+    let tM = 0, tC = 0;
+    const filas = Object.values(acc).filter(o => o.ventas > 0).map(o => { const com = o.monto * o.pct / 100; tM += o.monto; tC += com; return `<tr><td>${esc(o.nombre)}</td><td class="r">${o.ventas}</td><td class="r">${fmt(o.monto)}</td><td class="r">${o.pct}%</td><td class="r">${fmt(com)}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">No hay ventas con vendedor asignado en el período.</td></tr>';
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comisiones</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:620px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:1.5px solid #999}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="line"></div>
+        <div class="c"><b>REPORTE DE COMISIONES</b></div>
+        <div class="c muted">Del ${fechaDMY(_repDesde)} al ${fechaDMY(_repHasta)}</div>
+        <table><thead><tr><th>Vendedor</th><th class="r">Ventas</th><th class="r">Monto</th><th class="r">%</th><th class="r">Comisión</th></tr></thead><tbody>${filas}<tr class="tot"><td>TOTALES</td><td class="r"></td><td class="r">${fmt(tM)}</td><td class="r"></td><td class="r">${fmt(tC)}</td></tr></tbody></table>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
   window.nxRep607 = function () {
     const list = ventasRepRango().filter(v => v.ncf);
     const e = empInfo();

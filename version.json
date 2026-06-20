@@ -1,7 +1,8 @@
 {
-  "version": "25.4",
+  "version": "25.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (POS · VENDEDORES Y COMISIONES): en Ajustes registras a tus vendedores con su % de comisión. Al cobrar, eliges quién hizo la venta, y en Reportes hay un botón 'Comisiones' que te da, por vendedor, cuántas ventas hizo, el monto y la comisión que le toca — listo para imprimir y pagar",
     "NUEVO (POS · COMPROBANTES FISCALES / NCF): en Ajustes del Punto de Venta ahora cargas tus secuencias de NCF autorizadas por la DGII (Consumo B02, Crédito Fiscal B01, Gubernamental B15, Régimen Especial B14…), con su rango Desde–Hasta y vencimiento. Al facturar eligiendo el tipo de comprobante, el sistema ASIGNA el NCF y avanza el contador solo, lo imprime en el ticket/factura, y te AVISA cuando quedan pocos. Además, en Reportes hay un botón 'Reporte 607 (NCF)' que lista todas tus ventas con comprobante fiscal (monto, ITBIS, total) listo para imprimir y declarar",
     "NUEVO (POS · COTIZACIONES): nueva pestaña 'Cotizaciones' para hacer presupuestos al cliente antes de venderle. Eliges el cliente, agregas los productos (escribiendo el nombre), pones la validez en días y guardas. Cada cotización tiene su número (COT-0001), se puede IMPRIMIR/PDF con el membrete de tu empresa, y con un clic la CONVIERTES EN VENTA (se carga sola en la pantalla Factura para cobrarla). El sistema marca solo si está Vigente, Vencida o Convertida",
     "NUEVO (POS · Estado de cuenta del cliente): en la ficha de un cliente con fiado, botón 'Estado de cuenta' que imprime un documento formal con todas sus ventas a crédito, sus abonos y el saldo pendiente, con saldo corriente fecha por fecha. Ideal para enviar o entregar al cliente",

@@ -200,6 +200,11 @@ commit descriptivo y push. La app descarga de `main`.
   - **Estado de cuenta de cliente (fiado)** (v25.3): botón en la ficha del cliente
     (`nxPosEstadoCuenta`) que imprime ventas a crédito + abonos + saldo corriente.
     No crea tablas (usa `pos_ventas`/`pos_abonos`).
+  - **Vendedores y comisiones** (v25.5): gestión en Ajustes (`pos_vendedores`:
+    nombre, teléfono, comision_pct, activo; org+trigger+RLS). Selector de vendedor
+    en el modal de cobro; se guarda `pos_ventas.vendedor_id`/`vendedor_nombre`
+    (columnas nuevas nullable). Reporte de comisiones imprimible en Reportes
+    (`nxRepComisiones`: ventas/monto/comisión por vendedor en el período).
   - **NCF / Comprobantes Fiscales** (v25.4): en Ajustes se gestionan secuencias
     (`pos_ncf_secuencias`: tipo B01/B02/B14/B15…, prefijo, desde/hasta/actual,
     vencimiento, activo; org+trigger+RLS). `asignarNCF()` consume la secuencia en
