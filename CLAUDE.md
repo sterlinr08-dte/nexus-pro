@@ -274,10 +274,14 @@ commit descriptivo y push. La app descarga de `main`.
     helper `logMov()` enganchado (best-effort) en venta (`nxPosConfirmar`), compra
     (`nxPosGuardarCompra`), devolución (`nxDevGuardar`) y anulación
     (`nxPosAnularVenta`). El kardex arranca desde ahora (no retroactivo).
+  - **CRM / embudo** (pestaña "CRM", v26.1): tabla `pos_crm` (org+trigger+RLS).
+    Oportunidades con etapa nuevo→contactado→cotizado→ganado/perdido (cambio en 1
+    toque, `nxCrmEtapa`), monto estimado, próxima acción, enlace opcional a
+    entidad-cliente, WhatsApp al contacto. KPIs pipeline/ganadas. No toca ventas.
   - **Rumbo Odoo (acordado):** el dueño quiere el POS como un ERP Odoo. Hecho:
-    Inicio (apps) + Inventario (kardex/valoración/ajuste). Pendiente elegido por el
-    dueño: **CRM/embudo** (bajo riesgo, no toca ventas) · **look Odoo**
-    (índigo/morado — re-pintado global, mostrar muestra antes) · **Multi-almacén**.
+    Inicio (apps) + Inventario (kardex/valoración/ajuste) + CRM/embudo. Pendiente
+    elegido por el dueño: **look Odoo** (índigo/morado — re-pintado global, mostrar
+    muestra antes de aplicar) · **Multi-almacén** (invasivo, supervisado).
   - **PENDIENTE POS:** **Multi-almacén** (stock por
     almacén) — se dejó fuera a propósito porque es INVASIVO (cambia el modelo de
     stock en vender/productos/compras/devoluciones); hacerlo supervisado, tabla
