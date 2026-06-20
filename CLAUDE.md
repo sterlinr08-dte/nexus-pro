@@ -170,6 +170,23 @@ cotización, nota_credito, transferencia, nómina (`rrhh_nominas.numero`), recib
 venta/compra/abono/devolución/nómina/manual/gasto). Factura (CO/CR vía
 `pos_config`) y NCF (`pos_ncf_secuencias`) mantienen su sistema propio.
 
+### Roles y permisos del POS (v26.9) — SOLO UI por ahora
+Tabla `pos_acceso` (rol único por org, `label`, `modulos` jsonb; org+trigger+RLS).
+`MODULOS` (16 claves: inicio/vender/factura/…/ajustes), `ROLES_DEF`
+(admin=todo, gerente=todo menos ajustes, cajero, vendedor). Helpers `rolReal()`
+(sesion.rol), `rolEfectivo()` (= `_rolPreview` || real), `puedeVer(mod)`.
+Gating en `tabBtn` (devuelve '' si no), tiles de `renderInicio` y guard en
+`nxPosTab`. Sección **Roles y accesos** en Ajustes (`ajustesRoles`,
+`nxAccesoInit` siembra ROLES_DEF, `nxAccesoEdit/Guardar` editan `modulos`,
+`nxRolPreview` = "Ver como [rol]" con banner `.nxPrevBar`). **IMPORTANTE: NO
+toca login ni RLS** — todos los usuarios del POS tienen `sesion.rol='admin'`
+(esAdmin), así que hoy puedeVer=true salvo en preview. **PASO PENDIENTE
+(supervisado, riesgoso):** crear usuarios staff con su rol/login + RELAJAR las
+políticas RLS de `pos_*`/`rrhh_*` de `mi_rol()='admin'` a permitir otros roles de
+la MISMA org (la isolación por `organizacion_id` se mantiene). Es la Fase 3 de
+`SEGURIDAD-PLAN.md`. Hacerlo con el dueño probando (puede dejar gente afuera si
+sale mal).
+
 ## Módulos / funcionalidades ya construidas
 
 - **Clientes**: ficha, cédula, teléfono, dirección; clientes en proceso.
