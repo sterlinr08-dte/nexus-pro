@@ -14043,7 +14043,8 @@
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:580px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-search"></i> Buscar artículo</span><button class="nxBack" type="button" onclick="document.getElementById('nxProdPick').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        <div class="nxFacAdd" style="margin:2px 0 10px"><i class="ti ti-search" style="pointer-events:none"></i><input id="ppkQ" placeholder="Escribe nombre o código… (vacío = todos)" autocomplete="off" oninput="window.nxProdPickFiltrar(this.value)"></div>
+        <div class="nxFacAdd" style="margin:2px 0 8px"><i class="ti ti-search" style="pointer-events:none"></i><input id="ppkQ" placeholder="Escribe nombre o código… (vacío = todos)" autocomplete="off" oninput="window.nxProdPickFiltrar(this.value)"></div>
+        ${(_prodPickDest === 'factura' && clienteSel()) ? `<div style="font-size:11px;color:#6d28d9;margin:0 0 8px;font-weight:700"><i class="ti ti-user"></i> ${esc(clienteSel().nombre)} — ${clienteSel().nivel_precio === 'mayor' ? 'PRECIO POR MAYOR' : 'precio final'} (se carga solo)</div>` : ''}
         <div id="ppkList" style="overflow-y:auto;flex:1"></div>
       </div>`;
     document.body.appendChild(ov);
@@ -14056,9 +14057,15 @@
     let lista = _prods;
     if (q) lista = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase().includes(q));
     const total = lista.length; const show = lista.slice(0, 400);
-    const rows = show.map(p => { const exi = Number(p.stock || 0); return `<button type="button" class="nxPpkIt" onclick="window.nxProdPickAdd('${p.id}')">
-        <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''} · <span style="color:${exi <= 0 ? '#dc2626' : '#475569'}">${exi} und</span></div></div>
-        <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><b style="color:#6d28d9">${fmt(precioCli(p))}</b><i class="ti ti-circle-plus" style="color:#16a34a;font-size:19px"></i></div>
+    const cliMayor = (clienteSel() || {}).nivel_precio === 'mayor';
+    const rows = show.map(p => {
+      const exi = Number(p.stock || 0);
+      const pf = Number(p.precio || 0), pm = Number(p.precio_mayor || 0) > 0 ? Number(p.precio_mayor) : pf;
+      const aplica = precioCli(p);
+      const precios = `Final: <b style="color:${cliMayor ? '#475569' : '#6d28d9'}">${fmt(pf)}</b>` + (Number(p.precio_mayor || 0) > 0 ? ` · Mayor: <b style="color:${cliMayor ? '#6d28d9' : '#475569'}">${fmt(pm)}</b>` : '');
+      return `<button type="button" class="nxPpkIt" onclick="window.nxProdPickAdd('${p.id}')">
+        <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.codigo ? ' · ' : ''}<span style="color:${exi <= 0 ? '#dc2626' : '#475569'}">${exi} und</span></div><div style="font-size:10.5px;color:#475569;margin-top:1px">${precios}</div></div>
+        <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div><div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#6d28d9;font-size:13px">${fmt(aplica)}</b></div><i class="ti ti-circle-plus" style="color:#16a34a;font-size:19px"></i></div>
       </button>`; }).join('') || '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>';
     wrap.innerHTML = (total > 400 ? `<div style="font-size:10.5px;color:#475569;margin-bottom:6px">Mostrando 400 de ${total} — escribe para afinar</div>` : '') + `<div class="nxPpkGrid">${rows}</div>`;
   }
@@ -14111,8 +14118,49 @@
     return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-list-numbers"></i> Secuencias de documentos</div>
       <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">El prefijo y el próximo número de cada documento. Cada uno toma su número de aquí (lógica sincronizada).</div>
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Documento</th><th style="text-align:center">Próximo</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <button class="btn bsm bghost" type="button" style="margin-top:10px" onclick="window.nxSecNueva()"><i class="ti ti-plus"></i> Nueva secuencia</button>`;
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn bsm bghost" type="button" onclick="window.nxSecNueva()"><i class="ti ti-plus"></i> Nueva secuencia</button>
+        <button class="btn bsm bc1" type="button" onclick="window.nxSecHistTodos()"><i class="ti ti-search"></i> Ver todos los historiales</button>
+      </div>`;
   }
+  window.nxSecHistTodos = async function () {
+    cerrarModal('nxSecHistAll');
+    const ov = document.createElement('div'); ov.id = 'nxSecHistAll'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-search"></i> Historial de todos los documentos</span><button class="nxBack" type="button" onclick="document.getElementById('nxSecHistAll').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+        <div class="nxFacAdd" style="margin:2px 0 8px"><i class="ti ti-search" style="pointer-events:none"></i><input id="shaQ" placeholder="Filtrar por número, documento o detalle…" autocomplete="off" oninput="window.nxSecHistAllFiltrar(this.value)"></div>
+        <div id="shaList" style="overflow-y:auto;flex:1"><div style="text-align:center;padding:24px;color:#475569"><div class="spin"></div><div style="margin-top:6px;font-size:12px">Cargando…</div></div></div>
+      </div>`;
+    document.body.appendChild(ov);
+    const all = [];
+    for (const tipo of Object.keys(SEC_FUENTE)) {
+      const f = SEC_FUENTE[tipo];
+      const nombre = (_secuencias.find(s => s.tipo === tipo) || {}).nombre || tipo;
+      try {
+        const cols = ['numero', f[1], f[2]].concat(f[3] ? [f[3]] : []).concat(['created_at']).filter((v, i, a) => v && a.indexOf(v) === i).join(',');
+        const rows = await getAPI().get(f[0], 'select=' + cols + '&numero=not.is.null&order=created_at.desc&limit=60') || [];
+        rows.forEach(r => all.push({ numero: r.numero, doc: nombre, detalle: r[f[2]] || '', monto: f[3] ? r[f[3]] : null, fecha: r.created_at }));
+      } catch (e) {}
+    }
+    all.sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
+    window._secHistAll = all;
+    pintarSecHistAll('');
+  };
+  function pintarSecHistAll(q) {
+    const wrap = document.getElementById('shaList'); if (!wrap) return;
+    q = (q || '').toLowerCase().trim();
+    let list = window._secHistAll || [];
+    if (q) list = list.filter(x => ((x.numero || '') + ' ' + (x.doc || '') + ' ' + (x.detalle || '')).toLowerCase().includes(q));
+    const filas = list.slice(0, 300).map(x => `<tr>
+        <td style="font-weight:700;color:#6d28d9;font-family:var(--mono,monospace);font-size:11px;white-space:nowrap">${esc(x.numero || '')}</td>
+        <td style="font-size:11px;color:#475569">${esc(x.doc)}</td>
+        <td style="font-size:11.5px">${esc(x.detalle || '')}</td>
+        <td style="text-align:right;white-space:nowrap;font-size:11px">${x.monto != null ? fmt(x.monto) : (x.fecha ? fechaDMY(x.fecha) : '')}</td>
+      </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#475569;padding:20px;font-size:12px">Sin documentos</td></tr>';
+    wrap.innerHTML = `<div class="tw"><table style="width:100%;font-size:12px"><thead><tr><th>Número</th><th>Documento</th><th>Detalle</th><th style="text-align:right">Monto/Fecha</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+  window.nxSecHistAllFiltrar = function (q) { pintarSecHistAll(q); };
   const SEC_FUENTE = {
     cotizacion: ['pos_cotizaciones', 'numero', 'cliente_nombre', 'total'],
     nota_credito: ['pos_devoluciones', 'numero', 'cliente_nombre', 'total'],
