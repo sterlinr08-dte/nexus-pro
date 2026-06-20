@@ -13656,6 +13656,11 @@
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
+  // ── Contabilidad ──
+  let _ctaTab = 'resumen';
+  let _cuentas = [], _asientos = [];
+  let _ctaDesde = '', _ctaHasta = '', _ctaMayorSel = '';
+  let _asEdit = null; // { fecha, concepto, lineas:[{cuenta_id,debito,credito}] }
 
   async function cargarPOS() {
     _cats = await getAPI().get('pos_categorias', 'select=*&order=orden.asc,nombre.asc') || [];
@@ -13747,6 +13752,7 @@
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
     if (t === 'compras') { try { await cargarComprasTab(); } catch (e) {} }
     if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {} }
+    if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     renderPOS(view);
   };
 
@@ -13762,7 +13768,7 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'factura') body = renderFactura();
@@ -13770,6 +13776,7 @@
     else if (_posTab === 'compras') body = renderCompras();
     else if (_posTab === 'clientes') body = renderClientes();
     else if (_posTab === 'caja') body = renderCaja();
+    else if (_posTab === 'contabilidad') body = renderContabilidad();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
     view.innerHTML = `<div class="nc">${head}${body}</div>`;
@@ -14062,6 +14069,8 @@
       if (!venta) throw new Error('No se pudo registrar la venta');
       const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)) }));
       try { await getAPI().post('pos_venta_items', items); } catch (e) {}
+      // contabilizar la venta automáticamente (best-effort, no bloquea la venta)
+      try { postAsientoVenta(venta, c); } catch (e) {}
       // descontar stock (best-effort; los servicios no manejan stock)
       for (const it of _cart) {
         try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const ns = Number(p.stock || 0) - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); } } catch (e) {}
@@ -14863,11 +14872,357 @@
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el cierre'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  // ── MÓDULO CONTABILIDAD (POS / multiempresa) ──
+  // Plan de cuentas, Libro Diario, Mayor, Balance de comprobación,
+  // Estado de Resultados y Balance General. Asientos automáticos desde ventas.
+  // ════════════════════════════════════════════════════════════════════
+  const PLAN_BASE = [
+    ['1101', 'Caja', 'activo', 'deudora'],
+    ['1102', 'Banco', 'activo', 'deudora'],
+    ['1103', 'Cuentas por cobrar (clientes)', 'activo', 'deudora'],
+    ['1104', 'Inventario de mercancías', 'activo', 'deudora'],
+    ['1105', 'ITBIS pagado (adelantado)', 'activo', 'deudora'],
+    ['2101', 'Cuentas por pagar (proveedores)', 'pasivo', 'acreedora'],
+    ['2102', 'ITBIS por pagar', 'pasivo', 'acreedora'],
+    ['2103', 'Sueldos por pagar', 'pasivo', 'acreedora'],
+    ['2104', 'Retenciones por pagar (TSS/ISR)', 'pasivo', 'acreedora'],
+    ['3101', 'Capital', 'capital', 'acreedora'],
+    ['3102', 'Resultados acumulados', 'capital', 'acreedora'],
+    ['4101', 'Ventas', 'ingreso', 'acreedora'],
+    ['4102', 'Otros ingresos', 'ingreso', 'acreedora'],
+    ['5101', 'Costo de mercancía vendida', 'costo', 'deudora'],
+    ['6101', 'Sueldos y salarios', 'gasto', 'deudora'],
+    ['6102', 'Alquiler', 'gasto', 'deudora'],
+    ['6103', 'Servicios (luz, agua, internet)', 'gasto', 'deudora'],
+    ['6104', 'Gastos varios', 'gasto', 'deudora']
+  ];
+  const TIPO_LBL = { activo: 'Activo', pasivo: 'Pasivo', capital: 'Capital', ingreso: 'Ingreso', costo: 'Costo', gasto: 'Gasto' };
+
+  function isoHoy() { try { return new Date().toLocaleDateString('en-CA'); } catch (e) { return new Date().toISOString().slice(0, 10); } }
+  function isoMesIni() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('en-CA'); }
+  async function cargarContabilidad() {
+    _cuentas = await getAPI().get('pos_cuentas', 'select=*&order=codigo.asc') || [];
+    _asientos = await getAPI().get('pos_asientos', 'select=*,pos_asiento_lineas(*)&order=fecha.desc,created_at.desc&limit=600') || [];
+    if (!_ctaDesde) _ctaDesde = isoMesIni();
+    if (!_ctaHasta) _ctaHasta = isoHoy();
+  }
+  function ctaById(id) { return _cuentas.find(x => String(x.id) === String(id)); }
+  function asLineas(a) { return a.lineas || a.pos_asiento_lineas || []; }
+  function enRangoCta(f) { const d = String(f || '').slice(0, 10); if (_ctaDesde && d < _ctaDesde) return false; if (_ctaHasta && d > _ctaHasta) return false; return true; }
+  function asientosRango() { return (_asientos || []).filter(a => enRangoCta(a.fecha)); }
+  function saldosCta() {
+    const m = {};
+    _cuentas.forEach(c => { m[c.codigo] = { cuenta: c, debe: 0, haber: 0 }; });
+    asientosRango().forEach(a => asLineas(a).forEach(l => {
+      let cod = l.cuenta_codigo || ((ctaById(l.cuenta_id) || {}).codigo);
+      if (!cod) return;
+      if (!m[cod]) { const c = ctaById(l.cuenta_id) || { codigo: cod, nombre: l.cuenta_nombre || cod, tipo: 'gasto', naturaleza: 'deudora' }; m[cod] = { cuenta: c, debe: 0, haber: 0 }; }
+      m[cod].debe += Number(l.debito || 0); m[cod].haber += Number(l.credito || 0);
+    }));
+    return m;
+  }
+  function saldoNat(o) { const nat = (o.cuenta && o.cuenta.naturaleza) || 'deudora'; return nat === 'deudora' ? o.debe - o.haber : o.haber - o.debe; }
+  function sumaPorTipo(saldos, tipo) { let s = 0; Object.values(saldos).forEach(o => { if (o.cuenta && o.cuenta.tipo === tipo) s += saldoNat(o); }); return s; }
+
+  function renderContabilidad() {
+    if (!_cuentas.length) {
+      return `<div style="text-align:center;padding:40px 16px;color:#64748b">
+        <div style="font-size:42px;margin-bottom:8px"><i class="ti ti-book-2" style="color:#7c3aed"></i></div>
+        <div style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:6px">Contabilidad lista para empezar</div>
+        <div style="font-size:12.5px;max-width:420px;margin:0 auto 16px;line-height:1.5">Crea tu <b>Plan de Cuentas</b> base (Caja, Banco, Ventas, ITBIS, Gastos…). Desde ahí podrás registrar asientos y ver tus reportes. Las <b>ventas del POS se contabilizan solas</b>.</div>
+        <button class="btn bc1" type="button" onclick="window.nxCtaInicializar()"><i class="ti ti-sparkles"></i> Crear plan de cuentas base</button>
+      </div>`;
+    }
+    const sub = (k, lbl, ic) => `<button type="button" class="nxFacSubTab${_ctaTab === k ? ' on' : ''}" onclick="window.nxCtaTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>`;
+    const tabs = `<div class="nxFacSubTabs">${sub('resumen', 'Resumen', 'ti-gauge')}${sub('plan', 'Plan de cuentas', 'ti-list-numbers')}${sub('diario', 'Libro Diario', 'ti-book')}${sub('mayor', 'Libro Mayor', 'ti-file-text')}${sub('balanza', 'Comprobación', 'ti-scale')}${sub('resultados', 'Estado Resultados', 'ti-chart-bar')}${sub('general', 'Balance General', 'ti-report-money')}</div>`;
+    const rango = (_ctaTab === 'plan') ? '' : `<div class="nxCtaRango">
+        <div class="nxFacF"><label>Desde</label><input type="date" value="${_ctaDesde}" onchange="window.nxCtaRango('d',this.value)"></div>
+        <div class="nxFacF"><label>Hasta</label><input type="date" value="${_ctaHasta}" onchange="window.nxCtaRango('h',this.value)"></div>
+        <div style="font-size:11px;color:#94a3b8;align-self:end;padding-bottom:11px">${asientosRango().length} asiento(s)</div>
+      </div>`;
+    let body = '';
+    if (_ctaTab === 'plan') body = ctaPlan();
+    else if (_ctaTab === 'diario') body = ctaDiario();
+    else if (_ctaTab === 'mayor') body = ctaMayor();
+    else if (_ctaTab === 'balanza') body = ctaBalanza();
+    else if (_ctaTab === 'resultados') body = ctaResultados();
+    else if (_ctaTab === 'general') body = ctaGeneral();
+    else body = ctaResumen();
+    return tabs + rango + body;
+  }
+
+  function ctaResumen() {
+    const s = saldosCta();
+    const ingresos = sumaPorTipo(s, 'ingreso'), costo = sumaPorTipo(s, 'costo'), gasto = sumaPorTipo(s, 'gasto');
+    const utilidad = ingresos - costo - gasto;
+    const activos = sumaPorTipo(s, 'activo'), pasivos = sumaPorTipo(s, 'pasivo'), capital = sumaPorTipo(s, 'capital');
+    const card = (lbl, val, col) => `<div class="nxCtaKpi"><div class="nxCtaKpiL">${lbl}</div><div class="nxCtaKpiV" style="color:${col}">${fmt(val)}</div></div>`;
+    return `<div class="nxCtaKpis">
+        ${card('Ingresos del período', ingresos, '#16a34a')}
+        ${card('Costos + Gastos', costo + gasto, '#dc2626')}
+        ${card('Utilidad / Pérdida', utilidad, utilidad >= 0 ? '#16a34a' : '#dc2626')}
+        ${card('Activos', activos, '#2563eb')}
+        ${card('Pasivos', pasivos, '#ea580c')}
+        ${card('Capital + resultado', capital + utilidad, '#7c3aed')}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button>
+        <button class="btn bsm bghost" type="button" onclick="window.nxCtaTab('diario')"><i class="ti ti-book"></i> Ver libro diario</button>
+        <button class="btn bsm bghost" type="button" onclick="window.nxCtaTab('resultados')"><i class="ti ti-chart-bar"></i> Estado de resultados</button>
+      </div>`;
+  }
+
+  function ctaPlan() {
+    const filas = _cuentas.map(c => `<tr${c.activo === false ? ' style="opacity:.5"' : ''}>
+        <td class="nxFacCod">${esc(c.codigo)}</td>
+        <td style="font-weight:600">${esc(c.nombre)}</td>
+        <td><span class="nxCtaTipo nxCtaTipo-${c.tipo}">${TIPO_LBL[c.tipo] || c.tipo}</span></td>
+        <td style="text-align:center;font-size:11px;color:#94a3b8">${c.naturaleza === 'deudora' ? 'Deudora' : 'Acreedora'}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bc1" onclick="window.nxCtaEditCuenta('${c.id}')"><i class="ti ti-edit"></i></button></td>
+      </tr>`).join('');
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevaCuenta()"><i class="ti ti-plus"></i> Nueva cuenta</button>
+        <span style="font-size:11px;color:#94a3b8;align-self:center">${_cuentas.length} cuentas</span>
+      </div>
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Código</th><th>Cuenta</th><th>Tipo</th><th style="text-align:center">Naturaleza</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+
+  function ctaDiario() {
+    const list = asientosRango();
+    if (!list.length) return `<div style="text-align:center;padding:30px;color:#94a3b8;font-size:12.5px">Sin asientos en este período.<br><button class="btn bsm bc1" style="margin-top:10px" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>`;
+    const bloques = list.map(a => {
+      const ls = asLineas(a);
+      const td = ls.reduce((s, l) => s + Number(l.debito || 0), 0), th = ls.reduce((s, l) => s + Number(l.credito || 0), 0);
+      const filas = ls.map(l => `<tr><td class="nxFacCod">${esc(l.cuenta_codigo || '')}</td><td>${esc(l.cuenta_nombre || (ctaById(l.cuenta_id) || {}).nombre || '')}</td><td style="text-align:right">${Number(l.debito) ? fmt(l.debito) : ''}</td><td style="text-align:right">${Number(l.credito) ? fmt(l.credito) : ''}</td></tr>`).join('');
+      const badge = a.tipo === 'venta' ? '<span class="nxCtaOrig">auto · venta</span>' : a.tipo === 'manual' ? '' : `<span class="nxCtaOrig">${esc(a.tipo)}</span>`;
+      return `<div class="nxCtaAs">
+        <div class="nxCtaAsHd"><div><b>${fechaDMY(a.fecha)}</b> · ${esc(a.concepto || 'Asiento')} ${badge}</div>${a.tipo === 'manual' ? `<button class="nxPosX" title="Eliminar" onclick="window.nxCtaDelAsiento('${a.id}')"><i class="ti ti-trash"></i></button>` : ''}</div>
+        <table class="nxCtaAsT"><thead><tr><th>Cód.</th><th>Cuenta</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td></td><td style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td></tr></tbody></table>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>${bloques}`;
+  }
+
+  function ctaMayor() {
+    const opts = _cuentas.map(c => `<option value="${c.id}"${String(_ctaMayorSel) === String(c.id) ? ' selected' : ''}>${esc(c.codigo)} — ${esc(c.nombre)}</option>`).join('');
+    let cuerpo = '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:12.5px">Elige una cuenta para ver su movimiento.</div>';
+    const c = ctaById(_ctaMayorSel);
+    if (c) {
+      const movs = [];
+      asientosRango().slice().reverse().forEach(a => asLineas(a).forEach(l => {
+        const cod = l.cuenta_codigo || ((ctaById(l.cuenta_id) || {}).codigo);
+        if (String(cod) === String(c.codigo)) movs.push({ fecha: a.fecha, concepto: a.concepto, debe: Number(l.debito || 0), haber: Number(l.credito || 0) });
+      }));
+      let saldo = 0;
+      const filas = movs.map(m => { saldo += (c.naturaleza === 'deudora' ? (m.debe - m.haber) : (m.haber - m.debe)); return `<tr><td>${fechaDMY(m.fecha)}</td><td>${esc(m.concepto || '')}</td><td style="text-align:right">${m.debe ? fmt(m.debe) : ''}</td><td style="text-align:right">${m.haber ? fmt(m.haber) : ''}</td><td style="text-align:right;font-weight:700">${fmt(saldo)}</td></tr>`; }).join('');
+      const td = movs.reduce((s, m) => s + m.debe, 0), th = movs.reduce((s, m) => s + m.haber, 0);
+      cuerpo = movs.length ? `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th><th style="text-align:right">Saldo</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td colspan="2" style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td><td style="text-align:right;font-weight:800">${fmt(saldo)}</td></tr></tbody></table></div>` : '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:12.5px">Sin movimientos en el período.</div>';
+    }
+    return `<div class="nxFacF" style="max-width:420px;margin-bottom:12px"><label>Cuenta</label><select onchange="window.nxCtaMayorSel(this.value)"><option value="">— Elegir cuenta —</option>${opts}</select></div>${cuerpo}`;
+  }
+
+  function ctaBalanza() {
+    const s = saldosCta();
+    const arr = Object.values(s).filter(o => o.debe || o.haber).sort((a, b) => String(a.cuenta.codigo).localeCompare(String(b.cuenta.codigo)));
+    if (!arr.length) return '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:12.5px">Sin movimientos contables en el período.</div>';
+    let TD = 0, TH = 0;
+    const filas = arr.map(o => { TD += o.debe; TH += o.haber; return `<tr><td class="nxFacCod">${esc(o.cuenta.codigo)}</td><td>${esc(o.cuenta.nombre)}</td><td style="text-align:right">${fmt(o.debe)}</td><td style="text-align:right">${fmt(o.haber)}</td></tr>`; }).join('');
+    const cuadra = Math.round(TD) === Math.round(TH);
+    return `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Código</th><th>Cuenta</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td></td><td style="text-align:right;font-weight:800">TOTALES</td><td style="text-align:right;font-weight:800">${fmt(TD)}</td><td style="text-align:right;font-weight:800">${fmt(TH)}</td></tr></tbody></table></div>
+      <div style="text-align:center;margin-top:10px;font-size:12px;font-weight:700;color:${cuadra ? '#16a34a' : '#dc2626'}">${cuadra ? '✓ La balanza cuadra (Debe = Haber)' : '⚠ Descuadre de ' + fmt(Math.abs(TD - TH))}</div>`;
+  }
+
+  function ctaResultados() {
+    const s = saldosCta();
+    const ingArr = Object.values(s).filter(o => o.cuenta.tipo === 'ingreso' && saldoNat(o));
+    const cosArr = Object.values(s).filter(o => o.cuenta.tipo === 'costo' && saldoNat(o));
+    const gasArr = Object.values(s).filter(o => o.cuenta.tipo === 'gasto' && saldoNat(o));
+    const ing = ingArr.reduce((a, o) => a + saldoNat(o), 0);
+    const cos = cosArr.reduce((a, o) => a + saldoNat(o), 0);
+    const gas = gasArr.reduce((a, o) => a + saldoNat(o), 0);
+    const bruta = ing - cos, neta = bruta - gas;
+    const sec = (titulo, arr, col) => arr.length ? `<tr class="nxCtaSec"><td colspan="2">${titulo}</td></tr>` + arr.map(o => `<tr><td style="padding-left:18px">${esc(o.cuenta.nombre)}</td><td style="text-align:right;color:${col}">${fmt(saldoNat(o))}</td></tr>`).join('') : '';
+    return `<div class="nxCtaRep"><table style="width:100%">
+        ${sec('INGRESOS', ingArr, '#16a34a')}
+        <tr class="nxCtaTotR"><td>Total ingresos</td><td style="text-align:right">${fmt(ing)}</td></tr>
+        ${sec('COSTO DE VENTAS', cosArr, '#dc2626')}
+        <tr class="nxCtaTotR"><td>Utilidad bruta</td><td style="text-align:right;color:${bruta >= 0 ? '#16a34a' : '#dc2626'}">${fmt(bruta)}</td></tr>
+        ${sec('GASTOS OPERATIVOS', gasArr, '#dc2626')}
+        <tr class="nxCtaTotR"><td>Total gastos</td><td style="text-align:right">${fmt(gas)}</td></tr>
+        <tr class="nxCtaGran"><td>${neta >= 0 ? 'UTILIDAD NETA' : 'PÉRDIDA NETA'}</td><td style="text-align:right;color:${neta >= 0 ? '#16a34a' : '#dc2626'}">${fmt(neta)}</td></tr>
+      </table></div>`;
+  }
+
+  function ctaGeneral() {
+    const s = saldosCta();
+    const ing = sumaPorTipo(s, 'ingreso'), cos = sumaPorTipo(s, 'costo'), gas = sumaPorTipo(s, 'gasto');
+    const utilidad = ing - cos - gas;
+    const actArr = Object.values(s).filter(o => o.cuenta.tipo === 'activo' && saldoNat(o));
+    const pasArr = Object.values(s).filter(o => o.cuenta.tipo === 'pasivo' && saldoNat(o));
+    const capArr = Object.values(s).filter(o => o.cuenta.tipo === 'capital' && saldoNat(o));
+    const act = actArr.reduce((a, o) => a + saldoNat(o), 0);
+    const pas = pasArr.reduce((a, o) => a + saldoNat(o), 0);
+    const cap = capArr.reduce((a, o) => a + saldoNat(o), 0);
+    const patrimonio = cap + utilidad, pasMasCap = pas + patrimonio;
+    const cuadra = Math.round(act) === Math.round(pasMasCap);
+    const sec = (titulo, arr) => `<tr class="nxCtaSec"><td colspan="2">${titulo}</td></tr>` + (arr.length ? arr.map(o => `<tr><td style="padding-left:18px">${esc(o.cuenta.nombre)}</td><td style="text-align:right">${fmt(saldoNat(o))}</td></tr>`).join('') : '<tr><td style="padding-left:18px;color:#94a3b8">—</td><td></td></tr>');
+    return `<div class="nxCtaRep"><table style="width:100%">
+        ${sec('ACTIVOS', actArr)}
+        <tr class="nxCtaTotR"><td>Total activos</td><td style="text-align:right">${fmt(act)}</td></tr>
+        ${sec('PASIVOS', pasArr)}
+        <tr class="nxCtaTotR"><td>Total pasivos</td><td style="text-align:right">${fmt(pas)}</td></tr>
+        ${sec('PATRIMONIO / CAPITAL', capArr)}
+        <tr><td style="padding-left:18px">Resultado del período</td><td style="text-align:right;color:${utilidad >= 0 ? '#16a34a' : '#dc2626'}">${fmt(utilidad)}</td></tr>
+        <tr class="nxCtaTotR"><td>Total patrimonio</td><td style="text-align:right">${fmt(patrimonio)}</td></tr>
+        <tr class="nxCtaGran"><td>PASIVO + CAPITAL</td><td style="text-align:right">${fmt(pasMasCap)}</td></tr>
+      </table>
+      <div style="text-align:center;margin-top:10px;font-size:12px;font-weight:700;color:${cuadra ? '#16a34a' : '#dc2626'}">${cuadra ? '✓ Balance cuadrado (Activo = Pasivo + Capital)' : '⚠ Diferencia de ' + fmt(Math.abs(act - pasMasCap))}</div></div>`;
+  }
+
+  // ── Acciones Contabilidad ──
+  window.nxCtaTab = function (t) { _ctaTab = t; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxCtaRango = function (k, val) { if (k === 'd') _ctaDesde = val; else _ctaHasta = val; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxCtaMayorSel = function (id) { _ctaMayorSel = id; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxCtaInicializar = async function () {
+    if (!esAdmin()) return;
+    try {
+      const rows = PLAN_BASE.map(p => ({ codigo: p[0], nombre: p[1], tipo: p[2], naturaleza: p[3] }));
+      await getAPI().post('pos_cuentas', rows);
+      toast('ok', 'Plan de cuentas creado', rows.length + ' cuentas');
+      await cargarContabilidad(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo crear el plan', String(e && e.message || e)); }
+  };
+  window.nxCtaNuevaCuenta = function () { abrirCuenta(null); };
+  window.nxCtaEditCuenta = function (id) { const c = ctaById(id); if (c) abrirCuenta(c); };
+  function abrirCuenta(c) {
+    cerrarModal('nxCtaForm');
+    const e = c || {};
+    const tipos = ['activo', 'pasivo', 'capital', 'ingreso', 'costo', 'gasto'].map(t => `<option value="${t}"${e.tipo === t ? ' selected' : ''}>${TIPO_LBL[t]}</option>`).join('');
+    const ov = document.createElement('div'); ov.id = 'nxCtaForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:400px">
+        <div class="mt"><span><i class="ti ti-list-numbers"></i> ${c ? 'Editar cuenta' : 'Nueva cuenta'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxCtaForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr-row">
+          <div class="fr"><label>Código *</label><input id="ctC" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Ej: 6105"></div>
+          <div class="fr"><label>Tipo</label><select id="ctT">${tipos}</select></div>
+        </div>
+        <div class="fr"><label>Nombre *</label><input id="ctN" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre de la cuenta"></div>
+        <div class="fr-row">
+          <div class="fr"><label>Naturaleza</label><select id="ctNat"><option value="deudora"${e.naturaleza !== 'acreedora' ? ' selected' : ''}>Deudora</option><option value="acreedora"${e.naturaleza === 'acreedora' ? ' selected' : ''}>Acreedora</option></select></div>
+          <div class="fr"><label>Activa</label><select id="ctA"><option value="1"${e.activo !== false ? ' selected' : ''}>Sí</option><option value="0"${e.activo === false ? ' selected' : ''}>No</option></select></div>
+        </div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxCtaForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxCtaGuardarCuenta('${c ? c.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  }
+  window.nxCtaGuardarCuenta = async function (id) {
+    const body = { codigo: (val('ctC') || '').trim(), nombre: (val('ctN') || '').trim(), tipo: val('ctT'), naturaleza: val('ctNat'), activo: val('ctA') === '1' };
+    if (!body.codigo || !body.nombre) { toast('err', 'Falta código o nombre'); return; }
+    try {
+      if (id) await getAPI().patch('pos_cuentas', 'id=eq.' + id, body); else await getAPI().post('pos_cuentas', body);
+      cerrarModal('nxCtaForm'); toast('ok', 'Cuenta guardada');
+      await cargarContabilidad(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxCtaDelAsiento = async function (id) {
+    if (!confirm('¿Eliminar este asiento? Esta acción no se puede deshacer.')) return;
+    try { await getAPI().del('pos_asiento_lineas', 'asiento_id=eq.' + id); await getAPI().del('pos_asientos', 'id=eq.' + id); toast('ok', 'Asiento eliminado'); await cargarContabilidad(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
+    catch (e) { toast('err', 'No se pudo eliminar', String(e && e.message || e)); }
+  };
+
+  // ── Editor de asiento manual ──
+  window.nxCtaNuevoAsiento = function () {
+    _asEdit = { fecha: isoHoy(), concepto: '', lineas: [{ cuenta_id: '', debito: '', credito: '' }, { cuenta_id: '', debito: '', credito: '' }] };
+    abrirAsiento();
+  };
+  function asientoCtaOpts(sel) { return '<option value="">— Cuenta —</option>' + _cuentas.filter(c => c.activo !== false).map(c => `<option value="${c.id}"${String(sel) === String(c.id) ? ' selected' : ''}>${esc(c.codigo)} — ${esc(c.nombre)}</option>`).join(''); }
+  function abrirAsiento() {
+    cerrarModal('nxAsForm');
+    const ov = document.createElement('div'); ov.id = 'nxAsForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-book"></i> Nuevo asiento</span><button class="nxBack" type="button" onclick="document.getElementById('nxAsForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr-row">
+          <div class="fr"><label>Fecha</label><input type="date" id="asF" value="${_asEdit.fecha}"></div>
+          <div class="fr" style="flex:2"><label>Concepto</label><input id="asC" class="no-upper" value="${esc(_asEdit.concepto)}" placeholder="Ej: Pago de alquiler"></div>
+        </div>
+        <div id="asLineas" style="overflow-y:auto;flex:1"></div>
+        <div style="margin-top:6px"><button class="btn bsm bghost" type="button" onclick="window.nxAsAddLinea()"><i class="ti ti-plus"></i> Agregar línea</button></div>
+        <div id="asTot" class="nxAsTot"></div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxAsForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAsGuardar()"><i class="ti ti-device-floppy"></i> Guardar asiento</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    pintarAsLineas();
+  }
+  function leerAsLineas() {
+    if (!_asEdit) return;
+    const wrap = document.getElementById('asLineas'); if (!wrap) return;
+    _asEdit.lineas.forEach((l, i) => {
+      const cs = wrap.querySelector(`[data-asc="${i}"]`), db = wrap.querySelector(`[data-asd="${i}"]`), cr = wrap.querySelector(`[data-ash="${i}"]`);
+      if (cs) l.cuenta_id = cs.value; if (db) l.debito = db.value; if (cr) l.credito = cr.value;
+    });
+    const f = document.getElementById('asF'), c = document.getElementById('asC');
+    if (f) _asEdit.fecha = f.value; if (c) _asEdit.concepto = c.value;
+  }
+  function pintarAsLineas() {
+    const wrap = document.getElementById('asLineas'); if (!wrap || !_asEdit) return;
+    wrap.innerHTML = _asEdit.lineas.map((l, i) => `<div class="nxAsRow">
+        <select data-asc="${i}" onchange="window.nxAsTotals()">${asientoCtaOpts(l.cuenta_id)}</select>
+        <input data-asd="${i}" inputmode="numeric" placeholder="Debe" value="${l.debito || ''}" oninput="window.nxAsTotals()">
+        <input data-ash="${i}" inputmode="numeric" placeholder="Haber" value="${l.credito || ''}" oninput="window.nxAsTotals()">
+        <button class="nxPosX" type="button" onclick="window.nxAsDelLinea(${i})"><i class="ti ti-x"></i></button>
+      </div>`).join('');
+    pintarAsTot();
+  }
+  function pintarAsTot() {
+    const el = document.getElementById('asTot'); if (!el || !_asEdit) return;
+    let td = 0, th = 0;
+    _asEdit.lineas.forEach(l => { td += Number(l.debito || 0); th += Number(l.credito || 0); });
+    const ok = Math.round(td) === Math.round(th) && td > 0;
+    el.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Debe: <b>${fmt(td)}</b></span><span>Haber: <b>${fmt(th)}</b></span><span style="color:${ok ? '#16a34a' : '#dc2626'};font-weight:800">${ok ? '✓ cuadra' : 'Diferencia ' + fmt(Math.abs(td - th))}</span></div>`;
+  }
+  window.nxAsTotals = function () { leerAsLineas(); pintarAsTot(); };
+  window.nxAsAddLinea = function () { leerAsLineas(); _asEdit.lineas.push({ cuenta_id: '', debito: '', credito: '' }); pintarAsLineas(); };
+  window.nxAsDelLinea = function (i) { leerAsLineas(); if (_asEdit.lineas.length <= 2) { _asEdit.lineas[i] = { cuenta_id: '', debito: '', credito: '' }; } else { _asEdit.lineas.splice(i, 1); } pintarAsLineas(); };
+  window.nxAsGuardar = async function () {
+    leerAsLineas();
+    const lineas = _asEdit.lineas.filter(l => l.cuenta_id && (Number(l.debito) > 0 || Number(l.credito) > 0));
+    if (lineas.length < 2) { toast('err', 'El asiento necesita al menos 2 líneas'); return; }
+    const td = lineas.reduce((s, l) => s + Number(l.debito || 0), 0), th = lineas.reduce((s, l) => s + Number(l.credito || 0), 0);
+    if (Math.round(td) !== Math.round(th)) { toast('err', 'No cuadra', 'El Debe debe ser igual al Haber'); return; }
+    try {
+      const as = await getAPI().post('pos_asientos', { fecha: _asEdit.fecha || isoHoy(), concepto: (_asEdit.concepto || '').trim() || 'Asiento manual', tipo: 'manual' });
+      const aid = (as && as[0] && as[0].id); if (!aid) throw new Error('No se creó el asiento');
+      const rows = lineas.map(l => { const c = ctaById(l.cuenta_id) || {}; return { asiento_id: aid, cuenta_id: l.cuenta_id, cuenta_codigo: c.codigo || '', cuenta_nombre: c.nombre || '', debito: Math.round(Number(l.debito || 0)), credito: Math.round(Number(l.credito || 0)) }; });
+      await getAPI().post('pos_asiento_lineas', rows);
+      cerrarModal('nxAsForm'); _asEdit = null; toast('ok', 'Asiento registrado');
+      await cargarContabilidad(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+
+  // ── Asiento automático desde una venta del POS ──
+  async function postAsientoVenta(venta, c) {
+    try {
+      let cu = _cuentas;
+      if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
+      if (!cu.length) return; // sin plan de cuentas: no se contabiliza
+      const byc = {}; cu.forEach(x => byc[x.codigo] = x);
+      const ln = (cod, nom, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nom, debito: Math.round(d), credito: Math.round(h) }; };
+      const caja = Number(c.efe || 0) + Number(c.tar || 0) + Number(c.tra || 0) + Number(c.che || 0) + Number(c.nc || 0);
+      const lineas = [ln('1101', 'Caja', caja, 0), ln('1103', 'Cuentas por cobrar (clientes)', Number(c.credito || 0), 0), ln('4101', 'Ventas', 0, Number(c.subtotal || 0)), ln('2102', 'ITBIS por pagar', 0, Number(c.itbis || 0))].filter(Boolean);
+      if (lineas.length < 2) return;
+      const as = await getAPI().post('pos_asientos', { fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id });
+      const aid = (as && as[0] && as[0].id); if (!aid) return;
+      await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
+    } catch (e) {}
+  }
+
   // ── CSS + registro en el hub ──
   function inyectarCSS() {
     if (document.getElementById('nxPosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPosCSS';
-    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#94a3b8}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#94a3b8}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#94a3b8;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#94a3b8;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#94a3b8;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#94a3b8;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#64748b;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}.nxFacSubTabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid #eef2f7;margin-bottom:14px}.nxFacSubTab{border:none;background:transparent;color:#64748b;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}.nxFacSubTab:hover{color:#1e293b}.nxFacSubTab.on{color:#2563eb;border-bottom-color:#2563eb}.nxFacF input[type=date]{width:100%;height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacCliRow{display:flex;gap:6px;align-items:stretch}.nxFacCliRow select{flex:1;min-width:0}.nxFacCliAdd{border:1.5px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;width:44px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}.nxFacCliAdd:hover{background:#1d4ed8}';
+    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#94a3b8}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#94a3b8}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#94a3b8;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#94a3b8;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#94a3b8;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#94a3b8;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#64748b;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}.nxFacSubTabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid #eef2f7;margin-bottom:14px}.nxFacSubTab{border:none;background:transparent;color:#64748b;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}.nxFacSubTab:hover{color:#1e293b}.nxFacSubTab.on{color:#2563eb;border-bottom-color:#2563eb}.nxFacF input[type=date]{width:100%;height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacCliRow{display:flex;gap:6px;align-items:stretch}.nxFacCliRow select{flex:1;min-width:0}.nxFacCliAdd{border:1.5px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;width:44px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}.nxFacCliAdd:hover{background:#1d4ed8}/* ── Contabilidad ── */.nxCtaRango{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:end}.nxCtaRango .nxFacF{max-width:160px}.nxCtaKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.nxCtaKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxCtaKpiL{font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}.nxCtaKpiV{font-size:18px;font-weight:800;line-height:1}.nxCtaTipo{font-size:10px;font-weight:800;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.2px}.nxCtaTipo-activo{background:#eff6ff;color:#2563eb}.nxCtaTipo-pasivo{background:#fff7ed;color:#ea580c}.nxCtaTipo-capital{background:#faf5ff;color:#7c3aed}.nxCtaTipo-ingreso{background:#f0fdf4;color:#16a34a}.nxCtaTipo-costo{background:#fef2f2;color:#dc2626}.nxCtaTipo-gasto{background:#fef2f2;color:#b91c1c}.nxCtaAs{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.nxCtaAsHd{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#334155;margin-bottom:8px;gap:8px}.nxCtaOrig{font-size:9px;font-weight:800;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:6px;text-transform:uppercase;margin-left:4px}.nxCtaAsT{width:100%;border-collapse:collapse;font-size:11.5px}.nxCtaAsT th{text-align:left;font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid #eef2f7}.nxCtaAsT td{padding:4px 6px;border-bottom:1px solid #f6f8fb;color:#334155}.nxCtaAsTot td{border-top:1.5px solid #e2e8f0;border-bottom:none!important;padding-top:6px}.nxCtaRep{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}.nxCtaRep table{font-size:12.5px}.nxCtaRep td{padding:5px 6px;color:#334155}.nxCtaSec td{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding-top:12px;border-bottom:1px solid #eef2f7}.nxCtaTotR td{font-weight:800;border-top:1px solid #e2e8f0;color:#0f172a}.nxCtaGran td{font-weight:800;font-size:14px;border-top:2px solid #1e293b;padding-top:8px;color:#0f172a}.nxAsRow{display:grid;grid-template-columns:1fr 92px 92px 28px;gap:6px;margin-bottom:6px;align-items:center}.nxAsRow select,.nxAsRow input{height:38px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 8px;font-size:12px;background:#fff;color:#1e293b;font-family:inherit;width:100%}.nxAsRow input{text-align:right;font-weight:700}.nxAsTot{margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#475569}@media(max-width:520px){.nxAsRow{grid-template-columns:1fr 1fr 1fr 24px}.nxAsRow select{grid-column:1/-1}}';
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 3, nombre: 'Punto de Venta', desc: 'Ventas, productos e inventario', icon: 'ti-shopping-cart', color: '#7c3aed', bg: '#faf5ff', onclick: 'window.nxAbrirPOS()' }); } catch (e) {} }

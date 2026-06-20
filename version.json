@@ -1,7 +1,8 @@
 {
-  "version": "24.8",
+  "version": "24.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (POS · CONTABILIDAD): el Punto de Venta ahora trae un módulo de contabilidad completo. Toca el botón 'Crear plan de cuentas base' y tendrás listo el catálogo (Caja, Banco, Ventas, ITBIS, Inventario, Sueldos, Gastos…). Incluye: Libro Diario, Libro Mayor por cuenta, Balance de Comprobación, Estado de Resultados (utilidad o pérdida) y Balance General — todo con filtro por fechas (Desde / Hasta). Puedes registrar asientos manuales (el sistema verifica que el Debe = Haber). Y lo mejor: CADA VENTA del POS se contabiliza sola (Caja/Cuentas por cobrar contra Ventas e ITBIS por pagar). Cada empresa ve solo su propia contabilidad",
     "NUEVO (POS · Historial de facturas): la pestaña 'Historial' del Punto de Venta ahora te deja BUSCAR cualquier factura por número o por cliente, y filtrar por rango de fechas (Desde / Hasta). Arriba ves un resumen rápido (cantidad de facturas y total). Cada factura tiene su botón de ticket y un botón para ANULAR — al anular, el sistema devuelve automáticamente el stock de los productos al inventario. Botón 'Limpiar' para quitar los filtros",
     "ARREGLADO (POS Factura): se quitaron las sub-pestañas que aún no funcionaban (Pagaré, Letras de Cambio, Anexos, Forma de Pago) porque se veían como pantallas vacías. La Factura ahora muestra directo sus Datos Generales, sin pantallas en blanco. Esas secciones se irán agregando cuando estén listas de verdad",
     "NUEVO (Factura estilo Infoplus 'Datos Generales'): en la pantalla Factura, la FECHA ya es editable (con calendario), el CLIENTE tiene un botón + para crear uno nuevo al instante, y el número de factura quedó a 8 dígitos (CO00000001 / CR00000001) para verse igual que Infoplus",
