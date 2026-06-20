@@ -1,7 +1,8 @@
 {
-  "version": "28.6",
+  "version": "28.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (IMEI por compra): al abrir el detalle de una compra (en Compras → tocar una compra), ahora ves la LISTA DE IMEI/seriales que entraron en esa compra (los vendidos quedan marcados). Y hay un botón IMPRIMIR que saca un documento de la compra con sus artículos y la lista completa de IMEI recibidos — ideal para tu control o para el proveedor",
     "NUEVO (IMEI obligatorio al vender): cuando vendes un equipo que maneja serial, el sistema ahora te OBLIGA a elegir el IMEI antes de cobrar — si no lo eliges, se abre solo el selector de IMEI y no deja terminar la venta hasta asignarlo. Así el historial del equipo siempre queda completo. (Si ese equipo no tiene IMEI cargados, hay un botón 'Vender sin IMEI' para no trancarte.) En la compra, la casilla para escribir los IMEI se habilita al agregar un artículo que maneja serial",
     "NUEVO (IMEI en la compra + historial por IMEI): al COMPRAR un equipo que maneja serial, en su línea aparece un cuadro para escribir los IMEI (uno por línea). Al guardar la compra, esos IMEI entran SOLOS al inventario como disponibles, ligados a esa compra y a su almacén. En REPORTES → 'Historial de IMEI' escribes un IMEI (completo o parte) y ves su RECORRIDO: cuándo ENTRÓ (en qué compra) y cuándo SALIÓ (en qué factura, a qué cliente), y si está disponible o vendido. Trazabilidad total del equipo por su IMEI",
     "ARREGLADO (detalle del artículo · horizontal): los precios ahora se muestran en HORIZONTAL — Cliente final y Por mayor uno al lado del otro (separados por una línea), y la existencia por almacén en una sola fila. Es solo para LEER la información de un vistazo; el artículo se elige al tocar el botón. Más compacto y fácil de leer",

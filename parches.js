@@ -15547,7 +15547,7 @@
       for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad); p.stock = ns; p.costo = it.costo; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns, costo: it.costo }).catch(() => {}); logMov(p, 'compra', Number(it.cantidad), prev, ns, (compra.numero || ''), 'Compra'); if (almCompra) { try { upsertStockAlm(it.producto_id, almCompra, stockEnAlm(it.producto_id, almCompra) + Number(it.cantidad)).catch(() => {}); } catch (e) {} } } } catch (e) {} }
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
       // Registrar IMEI/seriales de los equipos comprados (entran como disponibles, ligados a esta compra)
-      try { for (const it of _compraItems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.serial && it.imeis) { const ims = String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean); if (ims.length) getAPI().post('pos_seriales', ims.map(s => ({ producto_id: it.producto_id, serial: s, estado: 'disponible', almacen_id: almCompra, notas: 'Compra ' + (compra.numero || '') }))).catch(() => {}); } } } catch (e) {}
+      try { for (const it of _compraItems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.serial && it.imeis) { const ims = String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean); if (ims.length) getAPI().post('pos_seriales', ims.map(s => ({ producto_id: it.producto_id, serial: s, estado: 'disponible', almacen_id: almCompra, compra_id: compra.id, notas: 'Compra ' + (compra.numero || '') }))).catch(() => {}); } } } catch (e) {}
       try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {}
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
       _compraItems = []; cerrarModal('nxPosCompra');
@@ -15559,6 +15559,8 @@
     const c = _compras.find(x => String(x.id) === String(id)); if (!c) return;
     let items = []; try { items = await getAPI().get('pos_compra_items', 'select=*&compra_id=eq.' + id) || []; } catch (e) {}
     const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
+    let imeis = []; try { imeis = await getAPI().get('pos_seriales', 'select=serial,estado&compra_id=eq.' + id + '&order=created_at.asc') || []; } catch (e) {}
+    const imeiHTML = imeis.length ? `<div style="font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin:10px 0 5px"><i class="ti ti-device-mobile"></i> IMEI / Seriales (${imeis.length})</div><div style="display:flex;gap:5px;flex-wrap:wrap">${imeis.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:${s.estado === 'vendido' ? '#dc2626' : '#6d28d9'};font-family:var(--mono,monospace)">${esc(s.serial)}${s.estado === 'vendido' ? ' ✓' : ''}</span>`).join('')}</div>` : '';
     cerrarModal('nxPosCompraDet');
     const ov = document.createElement('div'); ov.id = 'nxPosCompraDet'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -15568,10 +15570,33 @@
           <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">${filas}</table>
           <div style="display:flex;justify-content:space-between;border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;font-weight:800"><span>TOTAL</span><span>${fmt(c.total)}</span></div>
+          ${imeiHTML}
         </div>
-        <div class="fe" style="margin-top:10px"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPosDelCompra('${id}')"><i class="ti ti-trash"></i> Eliminar</button></div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPosDelCompra('${id}')"><i class="ti ti-trash"></i> Eliminar</button>${imeis.length ? `<button class="btn bsm bc1" type="button" onclick="window.nxCompraImprimir('${id}')"><i class="ti ti-printer"></i> Imprimir</button>` : ''}</div>
       </div>`;
     document.body.appendChild(ov);
+  };
+  window.nxCompraImprimir = async function (id) {
+    const c = _compras.find(x => String(x.id) === String(id)); if (!c) return;
+    let items = [], imeis = [];
+    try { items = await getAPI().get('pos_compra_items', 'select=*&compra_id=eq.' + id) || []; } catch (e) {}
+    try { imeis = await getAPI().get('pos_seriales', 'select=serial,producto_id,estado&compra_id=eq.' + id + '&order=created_at.asc') || []; } catch (e) {}
+    const e = empInfo();
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}</td><td>${esc(it.nombre)}</td><td class="r">${fmt(it.costo)}</td><td class="r">${fmt(it.importe)}</td></tr>`).join('');
+    const imFilas = imeis.map((s, i) => { const p = _prods.find(x => String(x.id) === String(s.producto_id)); return `<tr><td>${i + 1}</td><td style="font-family:monospace;font-weight:bold">${esc(s.serial)}</td><td>${esc(p ? p.nombre : '')}</td><td>${s.estado === 'vendido' ? 'Vendido' : 'Disponible'}</td></tr>`; }).join('');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compra ${esc(c.numero || '')}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:620px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:5px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>COMPRA No. ${esc(c.numero || '')}</b></div>
+        <div class="muted">Proveedor: <b>${esc(c.proveedor_nombre || '—')}</b> · ${fechaDMY(c.fecha)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}</div>
+        <table><thead><tr><th>Cant.</th><th>Artículo</th><th class="r">Costo</th><th class="r">Importe</th></tr></thead><tbody>${filas}<tr style="font-weight:800"><td colspan="3" class="r">TOTAL</td><td class="r">${fmt(c.total)}</td></tr></tbody></table>
+        ${imeis.length ? `<div style="margin-top:10px;font-weight:800;font-size:11px">IMEI / SERIALES RECIBIDOS (${imeis.length})</div><table><thead><tr><th>#</th><th>IMEI / Serial</th><th>Equipo</th><th>Estado</th></tr></thead><tbody>${imFilas}</tbody></table>` : ''}
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxPosDelCompra = async function (id) {
     if (!confirm('¿Eliminar esta compra? Se revierte el stock y la contabilidad.')) return;
