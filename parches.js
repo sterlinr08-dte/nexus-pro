@@ -14128,13 +14128,12 @@
     cerrarModal('nxSerMgr');
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=*&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
-    const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span>${r.email ? `<div style="font-size:9.5px;color:#6d28d9"><i class="ti ti-mail"></i> ${esc(r.email)}</div>` : ''}</div><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
+    const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
     const ov = document.createElement('div'); ov.id = 'nxSerMgr'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-device-mobile"></i> Seriales · ${esc(p.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxSerMgr').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div class="fr"><label>Agregar seriales / IMEI (uno por línea o separados por coma)</label><textarea id="serIn" class="no-upper" rows="3" placeholder="Ej:\n356789xxxxxxxxx\n356790xxxxxxxxx" style="width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px;font-size:13px;font-family:var(--mono,monospace);resize:vertical"></textarea></div>
-        <div class="fr"><label>Email / iCloud del equipo (opcional, se aplica a los que agregues)</label><input id="serEmail" class="no-upper" inputmode="email" placeholder="correo asociado"></div>
         <button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxSerialAdd('${pid}')"><i class="ti ti-plus"></i> Agregar</button>
         <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:4px">Disponibles (${rows.length})</div>
         <div style="overflow-y:auto;flex:1;border:1px solid #e2e8f0;border-radius:10px">${lista}</div>
@@ -14145,9 +14144,8 @@
     const raw = (val('serIn') || '').trim(); if (!raw) { toast('err', 'Escribe al menos un serial'); return; }
     const seriales = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
     if (!seriales.length) return;
-    const emailSer = (val('serEmail') || '').trim() || null;
     try {
-      await getAPI().post('pos_seriales', seriales.map(s => ({ producto_id: pid, serial: s, estado: 'disponible', email: emailSer })));
+      await getAPI().post('pos_seriales', seriales.map(s => ({ producto_id: pid, serial: s, estado: 'disponible' })));
       toast('ok', 'Seriales agregados', seriales.length + '');
       window.nxSerialMgr(pid);
       const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid);
@@ -15485,7 +15483,6 @@
         <div style="overflow-y:auto;flex:1">
           <div class="fr"><label>Proveedor</label><div style="display:flex;gap:6px"><select id="compProv" style="flex:1">${'<option value="">— Proveedor —</option>' + provOpts}</select><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevoProvDesdeCompra()" title="Nuevo proveedor"><i class="ti ti-plus"></i></button></div></div>
           <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Factura No. (proveedor)</label><input id="compFact" class="no-upper" placeholder="Opcional"></div></div>
-          <div class="fr"><label>Email del equipo / proveedor (opcional)</label><input id="compEmail" class="no-upper" inputmode="email" placeholder="ej: icloud o correo asociado"></div>
           <div class="fr-row"><div class="fr"><label>NCF del proveedor</label><input id="compNcf" class="no-upper" placeholder="B01... (opcional)"></div><div class="fr" style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer"><input type="checkbox" id="compCred" style="width:18px;height:18px"> Compra a crédito (CxP)</label></div></div>
           ${_almacenes.length > 1 ? `<div class="fr"><label>Almacén (entra el stock)</label><select id="compAlm">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 6px">ARTÍCULOS</div>
@@ -15515,9 +15512,10 @@
     pintarCompraItems();
   };
   window.nxPosCompraDelItem = function (idx) { _compraItems.splice(idx, 1); pintarCompraItems(); };
+  window.nxCompraImei = function (i, v) { if (_compraItems[i]) _compraItems[i].imeis = v; };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
-    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
+    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>${ser ? `<textarea class="no-upper" placeholder="IMEI de los ${it.cantidad} equipo(s) — uno por línea o coma" onchange="window.nxCompraImei(${i},this.value)" style="width:100%;margin-top:5px;border:1.5px solid #ddd6fe;border-radius:8px;padding:6px;font-size:11.5px;font-family:var(--mono,monospace);resize:vertical;min-height:42px">${esc(it.imeis || '')}</textarea>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
   }
@@ -15529,8 +15527,7 @@
     const provNom = provId ? ((_proveedores.find(p => String(p.id) === String(provId)) || {}).nombre || null) : null;
     const subtotal = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const almCompra = _almacenes.length ? (val('compAlm') || _almacenSel || (almPrincipal() && almPrincipal().id) || null) : null;
-    const emailComp = (val('compEmail') || '').trim() || null;
-    const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, email: emailComp, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
+    const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
     try {
       const r = await getAPI().post('pos_compras', body);
       const compra = (r && r[0]) || null; if (!compra) throw new Error('No se pudo registrar');
@@ -15538,6 +15535,8 @@
       try { await getAPI().post('pos_compra_items', items); } catch (e) {}
       for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad); p.stock = ns; p.costo = it.costo; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns, costo: it.costo }).catch(() => {}); logMov(p, 'compra', Number(it.cantidad), prev, ns, (compra.numero || ''), 'Compra'); if (almCompra) { try { upsertStockAlm(it.producto_id, almCompra, stockEnAlm(it.producto_id, almCompra) + Number(it.cantidad)).catch(() => {}); } catch (e) {} } } } catch (e) {} }
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
+      // Registrar IMEI/seriales de los equipos comprados (entran como disponibles, ligados a esta compra)
+      try { for (const it of _compraItems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.serial && it.imeis) { const ims = String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean); if (ims.length) getAPI().post('pos_seriales', ims.map(s => ({ producto_id: it.producto_id, serial: s, estado: 'disponible', almacen_id: almCompra, notas: 'Compra ' + (compra.numero || '') }))).catch(() => {}); } } } catch (e) {}
       try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {}
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + fmt(subtotal) + ' · stock actualizado');
       _compraItems = []; cerrarModal('nxPosCompra');
@@ -16936,7 +16935,7 @@
         <div style="font-size:11px;color:#475569;align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
         <div style="margin-left:auto;display:flex;gap:6px;align-self:end">
           ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
-          <button class="btn bsm bghost" type="button" onclick="window.nxRepEmail()"><i class="ti ti-mail-search"></i> Historial de email</button>
+          <button class="btn bsm bghost" type="button" onclick="window.nxRepImei()"><i class="ti ti-device-mobile-message"></i> Historial de IMEI</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
         </div>
       </div>
@@ -16977,41 +16976,45 @@
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
-  window.nxRepEmail = function () {
-    cerrarModal('nxRepEmailM');
-    const ov = document.createElement('div'); ov.id = 'nxRepEmailM'; ov.className = 'overlay open';
+  window.nxRepImei = function () {
+    cerrarModal('nxRepImeiM');
+    const ov = document.createElement('div'); ov.id = 'nxRepImeiM'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-mail-search"></i> Historial por email</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepEmailM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        <div style="display:flex;gap:6px;margin-bottom:10px"><input id="emQ" class="no-upper" inputmode="email" placeholder="Escribe el email a buscar…" style="flex:1;height:40px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 12px;font-size:13px"><button class="btn bc1" type="button" onclick="window.nxRepEmailBuscar()"><i class="ti ti-search"></i> Buscar</button></div>
-        <div id="emRes" style="overflow-y:auto;flex:1"><div style="text-align:center;color:#475569;font-size:12px;padding:24px">Escribe un email y toca Buscar para ver todos sus movimientos.</div></div>
+        <div class="mt"><span><i class="ti ti-device-mobile-message"></i> Historial por IMEI</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepImeiM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+        <div style="display:flex;gap:6px;margin-bottom:10px"><input id="imQ" class="no-upper" inputmode="numeric" placeholder="Escribe el IMEI / serial…" style="flex:1;height:40px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 12px;font-size:13px;font-family:var(--mono,monospace)" onkeydown="if(event.key==='Enter')window.nxRepImeiBuscar()"><button class="btn bc1" type="button" onclick="window.nxRepImeiBuscar()"><i class="ti ti-search"></i> Buscar</button></div>
+        <div id="imRes" style="overflow-y:auto;flex:1"><div style="text-align:center;color:#475569;font-size:12px;padding:24px">Escribe un IMEI (completo o parte) y toca Buscar para ver su recorrido: cuándo entró (compra) y cuándo salió (venta).</div></div>
       </div>`;
     document.body.appendChild(ov);
-    setTimeout(function () { const i = document.getElementById('emQ'); if (i) i.focus(); }, 60);
+    setTimeout(function () { const i = document.getElementById('imQ'); if (i) i.focus(); }, 60);
   };
-  window.nxRepEmailBuscar = async function () {
-    const email = (val('emQ') || '').trim(); const res = document.getElementById('emRes'); if (!res) return;
-    if (!email) { res.innerHTML = '<div style="text-align:center;color:#dc2626;font-size:12px;padding:16px">Escribe un email</div>'; return; }
+  window.nxRepImeiBuscar = async function () {
+    const q = (val('imQ') || '').trim(); const res = document.getElementById('imRes'); if (!res) return;
+    if (!q) { res.innerHTML = '<div style="text-align:center;color:#dc2626;font-size:12px;padding:16px">Escribe un IMEI</div>'; return; }
     res.innerHTML = '<div style="text-align:center;padding:24px;color:#475569"><div class="spin"></div><div style="margin-top:6px;font-size:12px">Buscando…</div></div>';
-    const e = encodeURIComponent(email);
-    let ent = null, compras = [], ventas = [], seriales = [], abonos = [];
-    try { const en = await getAPI().get('pos_clientes', 'select=id,nombre,codigo,telefono&email=eq.' + e + '&limit=1'); ent = en && en[0]; } catch (er) {}
-    try { compras = await getAPI().get('pos_compras', 'select=numero,fecha,total,proveedor_nombre,email&email=eq.' + e + '&order=created_at.desc&limit=100') || []; } catch (er) {}
-    if (ent) {
-      try { const c2 = await getAPI().get('pos_compras', 'select=numero,fecha,total,proveedor_nombre,email&proveedor_id=eq.' + ent.id + '&order=created_at.desc&limit=100') || []; const ids = new Set(compras.map(x => x.numero)); c2.forEach(x => { if (!ids.has(x.numero)) compras.push(x); }); } catch (er) {}
-      try { ventas = await getAPI().get('pos_ventas', 'select=numero,numero_factura,fecha,total,cliente_nombre&cliente_id=eq.' + ent.id + '&order=created_at.desc&limit=100') || []; } catch (er) {}
-      try { abonos = await getAPI().get('pos_abonos', 'select=numero,fecha,monto,metodo&cliente_id=eq.' + ent.id + '&order=fecha.desc&limit=100') || []; } catch (er) {}
-    }
-    try { seriales = await getAPI().get('pos_seriales', 'select=serial,estado&email=eq.' + e + '&limit=200') || []; } catch (er) {}
-    const sec = (titulo, icon, filas) => filas ? `<div style="font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 6px"><i class="ti ${icon}"></i> ${titulo}</div><div class="tw" style="font-size:12px"><table style="width:100%">${filas}</table></div>` : '';
-    const fc = compras.map(c => `<tr><td style="font-weight:700;color:#6d28d9;font-family:var(--mono,monospace);font-size:11px">${esc(c.numero || '')}</td><td>${esc(c.proveedor_nombre || '')}</td><td style="text-align:right">${fmt(c.total)}</td><td style="text-align:right;color:#475569;white-space:nowrap">${fechaDMY(c.fecha)}</td></tr>`).join('');
-    const fv = ventas.map(v => `<tr><td style="font-weight:700;color:#6d28d9;font-family:var(--mono,monospace);font-size:11px">${esc(v.numero_factura || v.numero || '')}</td><td>${esc(v.cliente_nombre || '')}</td><td style="text-align:right">${fmt(v.total)}</td><td style="text-align:right;color:#475569;white-space:nowrap">${fechaDMY(v.fecha)}</td></tr>`).join('');
-    const fab = abonos.map(a => `<tr><td style="font-weight:700;color:#6d28d9;font-family:var(--mono,monospace);font-size:11px">${esc(a.numero || '')}</td><td>${esc(a.metodo || '')}</td><td style="text-align:right;color:#059669">${fmt(a.monto)}</td><td style="text-align:right;color:#475569;white-space:nowrap">${fechaDMY(a.fecha)}</td></tr>`).join('');
-    const fs = seriales.map(s => `<tr><td style="font-family:var(--mono,monospace);font-weight:700">${esc(s.serial)}</td><td style="text-align:right"><span style="font-size:9px;font-weight:800;color:${s.estado === 'vendido' ? '#dc2626' : '#16a34a'}">${(s.estado || '').toUpperCase()}</span></td></tr>`).join('');
-    const total = compras.length + ventas.length + abonos.length + seriales.length;
-    res.innerHTML = (ent ? `<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px;margin-bottom:6px"><div style="font-weight:800;color:#4c1d95">${esc(ent.nombre)}</div><div style="font-size:11px;color:#6d28d9">${esc(ent.codigo || '')}${ent.telefono ? ' · ' + esc(ent.telefono) : ''} · ${esc(email)}</div></div>` : `<div style="font-size:11.5px;color:#475569;margin-bottom:4px">Email: <b>${esc(email)}</b></div>`)
-      + (total === 0 ? '<div style="text-align:center;color:#475569;font-size:12px;padding:20px">Sin movimientos para ese email</div>'
-        : sec('Compras (' + compras.length + ')', 'ti-truck-delivery', fc) + sec('Ventas (' + ventas.length + ')', 'ti-file-invoice', fv) + sec('Abonos (' + abonos.length + ')', 'ti-cash', fab) + sec('Equipos / IMEI (' + seriales.length + ')', 'ti-device-mobile', fs));
+    let rows = [];
+    try { rows = await getAPI().get('pos_seriales', 'select=*&serial=ilike.*' + encodeURIComponent(q) + '*&order=created_at.desc&limit=50') || []; } catch (er) {}
+    if (!rows.length) { res.innerHTML = '<div style="text-align:center;color:#475569;font-size:12.5px;padding:22px">No se encontró ningún equipo con ese IMEI.<br><span style="font-size:11px">Recuerda: el IMEI se registra al comprar el equipo o en su ficha (Administrar seriales).</span></div>'; return; }
+    // ventas de salida
+    const vids = rows.filter(r => r.venta_id).map(r => r.venta_id);
+    const vmap = {};
+    if (vids.length) { try { const vs = await getAPI().get('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_nombre,total&id=in.(' + vids.join(',') + ')') || []; vs.forEach(v => vmap[v.id] = v); } catch (er) {} }
+    const cards = rows.map(r => {
+      const prod = _prods.find(x => String(x.id) === String(r.producto_id));
+      const vendido = r.estado === 'vendido';
+      const v = r.venta_id ? vmap[r.venta_id] : null;
+      const alm = r.almacen_id ? almNombre(r.almacen_id) : '';
+      return `<div style="border:1px solid #e8edf3;border-radius:11px;padding:11px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div style="font-family:var(--mono,monospace);font-weight:800;color:#1e293b;font-size:13px">${esc(r.serial)}</div>
+          <span style="font-size:9px;font-weight:800;color:${vendido ? '#dc2626' : '#16a34a'};background:${vendido ? '#fef2f2' : '#f0fdf4'};padding:2px 8px;border-radius:6px">${vendido ? 'VENDIDO' : 'DISPONIBLE'}</span>
+        </div>
+        <div style="font-size:11.5px;color:#475569;margin-top:2px">${esc(prod ? prod.nombre : 'Producto')}${alm ? ' · ' + esc(alm) : ''}</div>
+        <div style="margin-top:8px;font-size:11.5px;color:#334155"><span style="color:#16a34a;font-weight:700"><i class="ti ti-login-2"></i> Entró:</span> ${esc(r.notas || 'registro manual')} · ${fechaDMY(r.created_at)}</div>
+        ${v ? `<div style="margin-top:3px;font-size:11.5px;color:#334155"><span style="color:#dc2626;font-weight:700"><i class="ti ti-logout-2"></i> Salió:</span> Factura ${esc(v.numero_factura || v.numero || '')}${v.cliente_nombre ? ' · ' + esc(v.cliente_nombre) : ''} · ${fechaDMY(v.fecha)} · ${fmt(v.total)}</div>` : (vendido ? '<div style="margin-top:3px;font-size:11px;color:#475569">Vendido (sin factura enlazada)</div>' : '<div style="margin-top:3px;font-size:11px;color:#16a34a;font-weight:700">En inventario</div>')}
+      </div>`;
+    }).join('');
+    res.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:6px">${rows.length} equipo(s) encontrado(s)</div>${cards}`;
   };
   window.nxRep607 = function () {
     const list = ventasRepRango().filter(v => v.ncf);
