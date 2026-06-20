@@ -1,7 +1,8 @@
 {
-  "version": "27.6",
+  "version": "27.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (IMEI enlazado a la venta): al facturar un equipo que maneja serial/IMEI, en su línea aparece un botón 'IMEI' donde ELIGES cuál(es) serial(es) se venden. Al cobrar, esos IMEI se marcan como VENDIDOS (bajan de los disponibles) y salen impresos en el ticket. Si anulas la factura, los IMEI vuelven a estar disponibles. Así cada celular queda trazado por su IMEI de principio a fin",
     "NUEVO (Seriales / IMEI en la ventanilla del artículo): para los artículos que manejan serial/IMEI (celulares, equipos), la ventanilla deslizante ahora muestra CUÁNTOS SERIALES tiene disponibles y la LISTA de esos seriales. Con el botón 'Administrar' agregas los seriales (uno por línea o separados por coma — ideal al recibir mercancía) o los eliminas. Así sabes exactamente qué equipos tienes por su IMEI",
     "NUEVO (Buscar artículo · ventanilla deslizante): al tocar la lupa y elegir un artículo de la lista, ahora se DESLIZA una ventanilla desde abajo con el detalle: el PRECIO a cliente final y el PRECIO por mayor (resaltado el que corresponde al cliente), la EXISTENCIA por almacén, y un botón 'Elegir' grande. Al tocar Elegir, el artículo se agrega con el precio correcto automáticamente (final o por mayor según el cliente de la factura)",
     "NUEVO (Secuencias · ver todos los historiales): en Ajustes → Secuencias hay un botón de lupa 'Ver todos los historiales' que abre una ventana con TODOS los documentos numerados del sistema juntos (cotizaciones, notas de crédito, transferencias, nóminas, recibos, pagos, asientos, oportunidades), con su número, tipo, detalle y monto/fecha. Puedes filtrar por número o texto. Todo el historial en un solo lugar",

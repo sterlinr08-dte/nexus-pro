@@ -14156,6 +14156,31 @@
     try { await getAPI().del('pos_seriales', 'id=eq.' + id); toast('ok', 'Serial eliminado'); window.nxSerialMgr(pid); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid); } catch (e) { toast('err', 'No se pudo'); }
   };
   window.nxProdPickElegir = function (id) { window.nxProdPickAdd(id); cerrarModal('nxPpkDet'); };
+  // ── Elegir IMEI/serial para una línea de la factura ──
+  window.nxFacSerial = async function (i) {
+    const it = _cart[i]; if (!it) return;
+    const prod = _prods.find(x => String(x.id) === String(it.producto_id)); if (!prod) return;
+    cerrarModal('nxFacSer');
+    let rows = [];
+    try { rows = await getAPI().get('pos_seriales', 'select=id,serial&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+    const sel = new Set((it.seriales || []).map(s => String(s.id)));
+    const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
+    const ov = document.createElement('div'); ov.id = 'nxFacSer'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-device-mobile"></i> IMEI · ${esc(prod.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacSer').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Selecciona el/los IMEI a vender (hasta <b>${it.cantidad}</b>).</div>
+        <div style="overflow-y:auto;flex:1"><div class="nxEntAfines" style="grid-template-columns:1fr">${chks}</div></div>
+        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxFacSer').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFacSerGuardar(${i})"><i class="ti ti-check"></i> Asignar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxFacSerGuardar = function (i) {
+    const it = _cart[i]; if (!it) return;
+    const chk = Array.prototype.slice.call(document.querySelectorAll('#nxFacSer [data-serid]')).filter(c => c.checked).slice(0, it.cantidad);
+    it.seriales = chk.map(c => ({ id: c.getAttribute('data-serid'), serial: c.getAttribute('data-serial') }));
+    cerrarModal('nxFacSer'); pintarFactura();
+  };
   window.nxFacCant = function (i, v) { const it = _cart[i]; if (!it) return; const n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0)); if (n === 0) { _cart.splice(i, 1); } else it.cantidad = n; pintarFactura(); };
   window.nxFacPrecio = function (i, v) { const it = _cart[i]; if (!it) return; it.precio = Math.max(0, parseMoney(v)); pintarFactura(); };
   window.nxFacDesc = function (i, v) { const it = _cart[i]; if (!it) return; it.desc = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0); pintarFactura(); };
@@ -14574,9 +14599,11 @@
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => {
       const exi = prodStock(it.producto_id);
+      const prod = _prods.find(x => String(x.id) === String(it.producto_id));
+      const serUI = (prod && prod.serial) ? `<div style="margin-top:3px"><button type="button" class="btn bsm bghost" style="font-size:9.5px;padding:2px 8px" onclick="window.nxFacSerial(${i})"><i class="ti ti-device-mobile"></i> IMEI ${(it.seriales || []).length}/${it.cantidad}</button>${(it.seriales || []).length ? ` <span style="font-size:9px;color:#6d28d9;font-family:var(--mono,monospace)">${(it.seriales || []).map(s => esc(s.serial)).join(', ')}</span>` : ''}</div>` : '';
       return `<tr>
         <td class="nxFacCod">${esc(prodCodigo(it.producto_id) || '—')}</td>
-        <td class="nxFacDesc">${esc(it.nombre)}</td>
+        <td class="nxFacDesc">${esc(it.nombre)}${serUI}</td>
         <td class="nxFacExi"><span${exi <= 0 ? ' class="nxFacExi0"' : ''}>${exi}</span></td>
         <td class="nxFacCant"><input inputmode="numeric" value="${it.cantidad}" onchange="window.nxFacCant(${i},this.value)"></td>
         <td class="nxFacPre"><input inputmode="decimal" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
@@ -14708,8 +14735,10 @@
       const r = await getAPI().post('pos_ventas', body);
       const venta = (r && r[0]) || null;
       if (!venta) throw new Error('No se pudo registrar la venta');
-      const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)) }));
+      const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null }));
       try { await getAPI().post('pos_venta_items', items); } catch (e) {}
+      // Marcar seriales/IMEI vendidos (best-effort)
+      try { for (const it of _cart) { if (it.seriales && it.seriales.length) { for (const s of it.seriales) { getAPI().patch('pos_seriales', 'id=eq.' + s.id, { estado: 'vendido', venta_id: venta.id }).catch(() => {}); } } } } catch (e) {}
       // Asignar NCF fiscal si hay secuencia activa para el tipo elegido (best-effort)
       let ncfAsignado = null;
       try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
@@ -14735,7 +14764,7 @@
   function ticketHTML(v) {
     const e = empInfo();
     const items = v._items || [];
-    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket No. ${v.numero || ''}</title>
       <style>body{font-family:'Courier New',monospace;color:#111;max-width:300px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
@@ -15045,6 +15074,7 @@
           if (ln.length >= 2) await postAsientoConcepto(isoHoy(), 'Anulación venta ' + (v.numero_factura || ('No. ' + (v.numero || ''))), 'anulacion', v.id, ln, v.numero_factura || String(v.numero || ''));
         }
       } catch (e) {}
+      try { await getAPI().patch('pos_seriales', 'venta_id=eq.' + id, { estado: 'disponible', venta_id: null }); } catch (e) {}
       v.estado = 'anulada';
       toast('ok', 'Factura anulada', 'Stock devuelto y contabilidad revertida');
       pintarHistorial();
