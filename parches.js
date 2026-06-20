@@ -15527,14 +15527,18 @@
     cerrarModal('nxPosCompra');
     const provOpts = _proveedores.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
     const prodOpts = _prods.map(p => `<option value="${p.id}">${esc(p.nombre)}${p.codigo ? ' (' + esc(p.codigo) + ')' : ''}</option>`).join('');
+    const empOpts = '<option value="">— Empleado —</option>' + (_clientes || []).filter(c => c.es_empleado).map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxPosCompra'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-truck-delivery"></i> Nueva compra</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCompra').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
           <div class="fr"><label>Proveedor</label><div style="display:flex;gap:6px"><select id="compProv" style="flex:1">${'<option value="">— Proveedor —</option>' + provOpts}</select><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevoProvDesdeCompra()" title="Nuevo proveedor"><i class="ti ti-plus"></i></button></div></div>
-          <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Factura No. (proveedor)</label><input id="compFact" class="no-upper" placeholder="Opcional"></div></div>
-          <div class="fr-row"><div class="fr"><label>NCF del proveedor</label><input id="compNcf" class="no-upper" placeholder="B01... (opcional)"></div><div class="fr" style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer"><input type="checkbox" id="compCred" style="width:18px;height:18px"> Compra a crédito (CxP)</label></div></div>
+          <div class="fr"><label>Empleado (quién compra)</label><select id="compEmp">${empOpts}</select></div>
+          <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Vencimiento (crédito)</label><input id="compVenc" type="date"></div></div>
+          <div class="fr-row"><div class="fr"><label>Factura No. (proveedor)</label><input id="compFact" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>NCF del proveedor</label><input id="compNcf" class="no-upper" placeholder="B01... (opcional)"></div></div>
+          <div class="fr-row"><div class="fr"><label>Orden No.</label><input id="compOrden" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>Liquidación No.</label><input id="compLiq" class="no-upper" placeholder="Opcional"></div></div>
+          <div class="fr" style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer"><input type="checkbox" id="compCred" style="width:18px;height:18px"> Compra a crédito (CxP)</label></div>
           ${_almacenes.length > 1 ? `<div class="fr"><label>Almacén (entra el stock)</label><select id="compAlm">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 6px">ARTÍCULOS</div>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:8px">
@@ -15544,7 +15548,7 @@
           <div id="compItemsList" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px"></div>
           <div style="display:flex;justify-content:space-between;align-items:center;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:9px 12px"><span style="font-weight:700;color:#065f46">Total compra</span><b id="compTotal" style="font-size:16px;color:#065f46">RD$ 0</b></div>
         </div>
-        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosCompra').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosGuardarCompra()"><i class="ti ti-device-floppy"></i> Guardar compra</button></div>
+        <div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosCompra').remove()">Cancelar</button><button class="btn bc1 bsm" type="button" onclick="window.nxPosGuardarCompra(1)"><i class="ti ti-printer"></i> Guardar e imprimir</button><button class="btn bc1" type="button" onclick="window.nxPosGuardarCompra()"><i class="ti ti-device-floppy"></i> Guardar compra</button></div>
       </div>`;
     document.body.appendChild(ov);
     scanMoney(ov);
@@ -15570,7 +15574,7 @@
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
   }
-  window.nxPosGuardarCompra = async function () {
+  window.nxPosGuardarCompra = async function (imprimir) {
     if (!_compraItems.length) { toast('err', 'Agrega al menos un artículo'); return; }
     const provId = val('compProv') || null;
     const aCred = document.getElementById('compCred') && document.getElementById('compCred').checked;
@@ -15578,7 +15582,9 @@
     const provNom = provId ? ((_proveedores.find(p => String(p.id) === String(provId)) || {}).nombre || null) : null;
     const subtotal = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const almCompra = _almacenes.length ? (val('compAlm') || _almacenSel || (almPrincipal() && almPrincipal().id) || null) : null;
-    const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
+    const empId = val('compEmp') || null;
+    const empNom = empId ? ((_clientes.find(x => String(x.id) === String(empId)) || {}).nombre || null) : null;
+    const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: 0, total: subtotal, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, empleado_id: empId, empleado_nombre: empNom, vencimiento: val('compVenc') || null, orden_no: (val('compOrden') || '').trim() || null, liquidacion_no: (val('compLiq') || '').trim() || null, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
     try {
       const r = await getAPI().post('pos_compras', body);
       const compra = (r && r[0]) || null; if (!compra) throw new Error('No se pudo registrar');
@@ -15593,6 +15599,7 @@
       _compraItems = []; cerrarModal('nxPosCompra');
       await cargarComprasTab(); await cargarPOS();
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+      if (imprimir) { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; window.nxCompraImprimir(compra.id); } catch (e) {} }
     } catch (e) { toast('err', 'No se pudo registrar la compra', String(e && e.message || e)); }
   };
   window.nxPosCompraVer = async function (id) {
@@ -15607,7 +15614,7 @@
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px;max-height:88vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-receipt"></i> Compra No. ${c.numero || ''}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCompraDet').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.vencimiento ? ' · vence ' + (c.vencimiento || '').slice(0, 10) : ''}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}${c.empleado_nombre ? '<br>Empleado: ' + esc(c.empleado_nombre) : ''}${c.orden_no ? ' · Orden ' + esc(c.orden_no) : ''}${c.liquidacion_no ? ' · Liq. ' + esc(c.liquidacion_no) : ''}</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">${filas}</table>
           <div style="display:flex;justify-content:space-between;border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;font-weight:800"><span>TOTAL</span><span>${fmt(c.total)}</span></div>
           ${imeiHTML}
@@ -15632,7 +15639,7 @@
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
         <div class="c"><b>COMPRA No. ${esc(c.numero || '')}</b></div>
-        <div class="muted">Proveedor: <b>${esc(c.proveedor_nombre || '—')}</b> · ${fechaDMY(c.fecha)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}</div>
+        <div class="muted">Proveedor: <b>${esc(c.proveedor_nombre || '—')}</b> · ${fechaDMY(c.fecha)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.vencimiento ? ' · Vence ' + fechaDMY(c.vencimiento) : ''}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}${c.empleado_nombre ? '<br>Empleado: ' + esc(c.empleado_nombre) : ''}${c.orden_no ? ' · Orden ' + esc(c.orden_no) : ''}${c.liquidacion_no ? ' · Liquidación ' + esc(c.liquidacion_no) : ''}</div>
         <table><thead><tr><th>Cant.</th><th>Artículo</th><th class="r">Costo</th><th class="r">Importe</th></tr></thead><tbody>${filas}<tr style="font-weight:800"><td colspan="3" class="r">TOTAL</td><td class="r">${fmt(c.total)}</td></tr></tbody></table>
         ${imeis.length ? `<div style="margin-top:10px;font-weight:800;font-size:11px">IMEI / SERIALES RECIBIDOS (${imeis.length})</div><table><thead><tr><th>#</th><th>IMEI / Serial</th><th>Equipo</th><th>Estado</th></tr></thead><tbody>${imFilas}</tbody></table>` : ''}
       </body></html>`;

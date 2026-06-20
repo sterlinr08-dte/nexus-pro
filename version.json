@@ -1,7 +1,8 @@
 {
-  "version": "29.1",
+  "version": "29.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Compra estilo Infoplus): la pantalla de Compra ahora tiene más campos como en Infoplus — EMPLEADO (quién hace la compra), VENCIMIENTO (fecha de pago si es a crédito), ORDEN No. y LIQUIDACIÓN No. (opcionales). Y un botón 'Guardar e imprimir' que registra la compra y te saca su documento de una (con proveedor, empleado, artículos, total y los IMEI recibidos). Esos datos también salen en el detalle e impresión de la compra",
     "ARREGLADO (ventanilla · IMEI solo para seleccionar): en la ventanilla del artículo, los IMEI/seriales ahora son para ELEGIR el que vas a vender (los que entraron por compra), NO para agregar. Tocas el/los IMEI, quedan marcados en morado, y al tocar 'Elegir' se agrega con ese IMEI ya asignado (sale del sistema al cobrar y deja su registro en el historial). Se quitó el botón 'Administrar' de ahí: agregar IMEI es solo desde Productos (botón 📱) o al comprar. La sección ahora dice 'IMEI / Serial · elige el que vas a vender'",
     "NUEVO (Vender · ventanilla al tocar el producto): en la pantalla Vender, al tocar un cuadrito de producto ahora también se abre la MISMA ventanilla con los precios, la existencia por almacén y los IMEI, en vez de agregarlo de golpe. Así, por la lupa, por la sugerencia o por los cuadritos, siempre llegas a la misma ventanilla para elegir con la info delante",
     "NUEVO (sugerencias abren la ventanilla): en la Factura, al escribir y tocar un artículo de las SUGERENCIAS, ahora se abre la MISMA ventanilla con los dos precios (final/por mayor), la existencia por almacén y los IMEI — igual que con la lupa — para que elijas con la info delante (y el precio que aplica al cliente). Ya no se agrega de golpe",
