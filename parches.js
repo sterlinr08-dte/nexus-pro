@@ -14103,6 +14103,7 @@
         </div>
         <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:5px">Existencia${_almacenes.length ? ' por almacén' : ''}</div>
         ${exiHTML}
+        ${p.serial ? '<div id="ppkSer" style="margin-top:12px"><div style="font-size:11px;color:#475569">Cargando seriales…</div></div>' : ''}
         ${cli ? `<div style="font-size:11.5px;color:#6d28d9;font-weight:700;margin-top:12px"><i class="ti ti-user"></i> ${esc(cli.nombre)} — se agrega a <b>${fmt(aplica)}</b> (${esMayor ? 'por mayor' : 'final'})</div>` : ''}
         <div style="display:flex;gap:8px;margin-top:14px">
           <button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPpkDet').remove()"><i class="ti ti-arrow-left"></i> Volver</button>
@@ -14110,6 +14111,49 @@
         </div>
       </div>`;
     document.body.appendChild(ov);
+    if (p.serial) nxCargarSerialesDet(p.id);
+  };
+  async function nxCargarSerialesDet(pid) {
+    const box = document.getElementById('ppkSer'); if (!box) return;
+    let rows = [];
+    try { rows = await getAPI().get('pos_seriales', 'select=serial&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+    const chips = rows.map(r => `<span class="nxAlmChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(r.serial)}</span>`).join('');
+    box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase">Seriales / IMEI · <b style="color:#6d28d9">${rows.length}</b> disponibles</span>
+        <button class="btn bsm bghost" type="button" onclick="window.nxSerialMgr('${pid}')"><i class="ti ti-edit"></i> Administrar</button>
+      </div>
+      ${rows.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;max-height:96px;overflow-y:auto">${chips}</div>` : '<div style="font-size:11px;color:#475569">Sin seriales cargados. Toca "Administrar" para agregarlos.</div>'}`;
+  }
+  window.nxSerialMgr = async function (pid) {
+    const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
+    cerrarModal('nxSerMgr');
+    let rows = [];
+    try { rows = await getAPI().get('pos_seriales', 'select=*&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+    const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
+    const ov = document.createElement('div'); ov.id = 'nxSerMgr'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-device-mobile"></i> Seriales · ${esc(p.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxSerMgr').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr"><label>Agregar seriales / IMEI (uno por línea o separados por coma)</label><textarea id="serIn" class="no-upper" rows="3" placeholder="Ej:\n356789xxxxxxxxx\n356790xxxxxxxxx" style="width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px;font-size:13px;font-family:var(--mono,monospace);resize:vertical"></textarea></div>
+        <button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxSerialAdd('${pid}')"><i class="ti ti-plus"></i> Agregar</button>
+        <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:4px">Disponibles (${rows.length})</div>
+        <div style="overflow-y:auto;flex:1;border:1px solid #e2e8f0;border-radius:10px">${lista}</div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxSerialAdd = async function (pid) {
+    const raw = (val('serIn') || '').trim(); if (!raw) { toast('err', 'Escribe al menos un serial'); return; }
+    const seriales = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+    if (!seriales.length) return;
+    try {
+      await getAPI().post('pos_seriales', seriales.map(s => ({ producto_id: pid, serial: s, estado: 'disponible' })));
+      toast('ok', 'Seriales agregados', seriales.length + '');
+      window.nxSerialMgr(pid);
+      const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxSerialDel = async function (id, pid) {
+    try { await getAPI().del('pos_seriales', 'id=eq.' + id); toast('ok', 'Serial eliminado'); window.nxSerialMgr(pid); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid); } catch (e) { toast('err', 'No se pudo'); }
   };
   window.nxProdPickElegir = function (id) { window.nxProdPickAdd(id); cerrarModal('nxPpkDet'); };
   window.nxFacCant = function (i, v) { const it = _cart[i]; if (!it) return; const n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0)); if (n === 0) { _cart.splice(i, 1); } else it.cantidad = n; pintarFactura(); };
