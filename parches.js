@@ -13661,6 +13661,10 @@
   let _cuentas = [], _asientos = [];
   let _ctaDesde = '', _ctaHasta = '', _ctaMayorSel = '';
   let _asEdit = null; // { fecha, concepto, lineas:[{cuenta_id,debito,credito}] }
+  // ── Recursos Humanos ──
+  let _rhTab = 'empleados';
+  let _empleados = [], _nominas = [], _nominaSel = null;
+  let _nomEdit = null; // { periodo, fecha, tipo, lineas:[...] }
 
   async function cargarPOS() {
     _cats = await getAPI().get('pos_categorias', 'select=*&order=orden.asc,nombre.asc') || [];
@@ -13753,6 +13757,7 @@
     if (t === 'compras') { try { await cargarComprasTab(); } catch (e) {} }
     if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', 'select=*&estado=eq.cerrada&order=cierre.desc&limit=10') || []; } catch (e) {} }
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
+    if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     renderPOS(view);
   };
 
@@ -13768,7 +13773,7 @@
         <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
-      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
+      <div class="nxPosTabs">${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'vender') body = renderVender();
     else if (_posTab === 'factura') body = renderFactura();
@@ -13777,6 +13782,7 @@
     else if (_posTab === 'clientes') body = renderClientes();
     else if (_posTab === 'caja') body = renderCaja();
     else if (_posTab === 'contabilidad') body = renderContabilidad();
+    else if (_posTab === 'rrhh') body = renderRRHH();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
     view.innerHTML = `<div class="nc">${head}${body}</div>`;
@@ -15218,11 +15224,305 @@
     } catch (e) {}
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  // ── MÓDULO RECURSOS HUMANOS / NÓMINA (POS / multiempresa, RD) ──
+  // Empleados + generación de nómina con deducciones de ley (SFS/AFP/ISR),
+  // recibo de pago imprimible y asiento contable automático.
+  // ════════════════════════════════════════════════════════════════════
+  const SFS_PCT = 0.0304, AFP_PCT = 0.0287; // aportes del empleado (TSS RD)
+  // Escala ISR anual DGII (RD$)
+  function isrAnual(base) {
+    if (base <= 416220) return 0;
+    if (base <= 624329) return (base - 416220) * 0.15;
+    if (base <= 867123) return 31216 + (base - 624329) * 0.20;
+    return 79776 + (base - 867123) * 0.25;
+  }
+  // Deducciones mensuales de un salario bruto mensual (RD)
+  function calcDeducciones(salario) {
+    const s = Number(salario || 0);
+    const sfs = s * SFS_PCT, afp = s * AFP_PCT;
+    const baseAnual = (s - sfs - afp) * 12;
+    const isr = isrAnual(baseAnual) / 12;
+    return { sfs: Math.round(sfs), afp: Math.round(afp), isr: Math.round(isr) };
+  }
+  async function cargarRRHH() {
+    _empleados = await getAPI().get('rrhh_empleados', 'select=*&order=nombre.asc') || [];
+    _nominas = await getAPI().get('rrhh_nominas', 'select=*&order=fecha.desc,created_at.desc&limit=200') || [];
+  }
+  function empById(id) { return _empleados.find(x => String(x.id) === String(id)); }
+
+  function renderRRHH() {
+    const sub = (k, lbl, ic) => `<button type="button" class="nxFacSubTab${_rhTab === k ? ' on' : ''}" onclick="window.nxRhTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>`;
+    const tabs = `<div class="nxFacSubTabs">${sub('empleados', 'Empleados', 'ti-id-badge-2')}${sub('nominas', 'Nóminas', 'ti-receipt-2')}</div>`;
+    return tabs + (_rhTab === 'nominas' ? rhNominas() : rhEmpleados());
+  }
+
+  function rhEmpleados() {
+    const activos = _empleados.filter(e => e.activo !== false);
+    const nomMensual = activos.reduce((s, e) => s + Number(e.salario || 0), 0);
+    const filas = _empleados.length ? _empleados.map(e => `<tr${e.activo === false ? ' style="opacity:.5"' : ''}>
+        <td><div style="font-weight:700;font-size:12.5px">${esc(e.nombre || '')}</div><div style="font-size:10px;color:#94a3b8">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div></td>
+        <td style="text-align:right;font-weight:700">${fmt(e.salario)}</td>
+        <td style="text-align:center;font-size:10.5px;color:#64748b">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>
+      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin empleados. Toca "Nuevo empleado".</td></tr>';
+    return `<div class="nxCtaKpis" style="margin-bottom:12px">
+        <div class="nxCtaKpi"><div class="nxCtaKpiL">Empleados activos</div><div class="nxCtaKpiV" style="color:#2563eb">${activos.length}</div></div>
+        <div class="nxCtaKpi"><div class="nxCtaKpiL">Nómina mensual (bruto)</div><div class="nxCtaKpiV" style="color:#7c3aed">${fmt(nomMensual)}</div></div>
+      </div>
+      <div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxRhNuevoEmp()"><i class="ti ti-plus"></i> Nuevo empleado</button></div>
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Empleado</th><th style="text-align:right">Salario</th><th style="text-align:center">Pago</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+
+  function rhNominas() {
+    if (_nominaSel) return rhNominaDetalle(_nominaSel);
+    const filas = _nominas.length ? _nominas.map(n => {
+      const est = n.estado === 'pagada' ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#f0fdf4;padding:2px 7px;border-radius:6px">PAGADA</span>' : n.estado === 'anulada' ? '<span style="font-size:9px;font-weight:800;color:#dc2626;background:#fef2f2;padding:2px 7px;border-radius:6px">ANULADA</span>' : '<span style="font-size:9px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 7px;border-radius:6px">BORRADOR</span>';
+      return `<tr style="cursor:pointer" onclick="window.nxRhVerNomina('${n.id}')">
+        <td><div style="font-weight:700;font-size:12.5px">${esc(n.periodo || n.descripcion || 'Nómina')}</div><div style="font-size:10px;color:#94a3b8">${fechaDMY(n.fecha)} · ${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal' })[n.tipo] || n.tipo || '')}</div></td>
+        <td style="text-align:center">${est}</td>
+        <td style="text-align:right;font-weight:700">${fmt(n.total_neto)}</td>
+        <td style="text-align:right"><i class="ti ti-chevron-right" style="color:#cbd5e1"></i></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Aún no has generado nóminas.</td></tr>';
+    return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxRhGenerar()"><i class="ti ti-calculator"></i> Generar nómina</button></div>
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Período</th><th style="text-align:center">Estado</th><th style="text-align:right">Neto</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+
+  function rhNominaDetalle(n) {
+    const ls = n._lineas || [];
+    const filas = ls.map(l => `<tr>
+        <td style="font-weight:600">${esc(l.empleado_nombre || '')}</td>
+        <td style="text-align:right">${fmt(l.salario_bruto)}</td>
+        <td style="text-align:right">${Number(l.bonos) ? fmt(l.bonos) : '—'}</td>
+        <td style="text-align:right;color:#dc2626">${fmt(Number(l.sfs) + Number(l.afp) + Number(l.isr) + Number(l.otras_deducciones))}</td>
+        <td style="text-align:right;font-weight:800">${fmt(l.neto)}</td>
+        <td style="text-align:right"><button class="btn bsm bghost" onclick="window.nxRhRecibo('${n.id}','${l.empleado_id || ''}')"><i class="ti ti-printer"></i></button></td>
+      </tr>`).join('');
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn bsm bghost" type="button" onclick="window.nxRhVolver()"><i class="ti ti-arrow-left"></i> Volver</button>
+        <div style="font-weight:800;font-size:14px;color:#1e293b">${esc(n.periodo || 'Nómina')}</div>
+        <span style="font-size:11px;color:#94a3b8">${fechaDMY(n.fecha)}</span>
+        ${n.estado !== 'anulada' ? `<button class="btn bsm bc3" style="margin-left:auto" type="button" onclick="window.nxRhAnularNomina('${n.id}')"><i class="ti ti-ban"></i> Anular</button>` : '<span style="margin-left:auto;font-size:11px;font-weight:800;color:#dc2626">ANULADA</span>'}
+      </div>
+      <div class="nxCtaKpis" style="margin-bottom:12px">
+        <div class="nxCtaKpi"><div class="nxCtaKpiL">Total bruto</div><div class="nxCtaKpiV" style="color:#2563eb">${fmt(n.total_bruto)}</div></div>
+        <div class="nxCtaKpi"><div class="nxCtaKpiL">Deducciones</div><div class="nxCtaKpiV" style="color:#dc2626">${fmt(n.total_deducciones)}</div></div>
+        <div class="nxCtaKpi"><div class="nxCtaKpiL">Neto a pagar</div><div class="nxCtaKpiV" style="color:#16a34a">${fmt(n.total_neto)}</div></div>
+      </div>
+      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Empleado</th><th style="text-align:right">Bruto</th><th style="text-align:right">Bonos</th><th style="text-align:right">Deducc.</th><th style="text-align:right">Neto</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  }
+
+  // ── Acciones RRHH ──
+  window.nxRhTab = function (t) { _rhTab = t; _nominaSel = null; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxRhVolver = function () { _nominaSel = null; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxRhNuevoEmp = function () { abrirEmpleado(null); };
+  window.nxRhEditEmp = function (id) { const e = empById(id); if (e) abrirEmpleado(e); };
+  function abrirEmpleado(e) {
+    cerrarModal('nxEmpForm');
+    const d = e || {};
+    const tp = t => `<option value="${t[0]}"${d.tipo_pago === t[0] ? ' selected' : ''}>${t[1]}</option>`;
+    const tipos = [['mensual', 'Mensual'], ['quincenal', 'Quincenal'], ['semanal', 'Semanal'], ['por_hora', 'Por hora']].map(tp).join('');
+    const ov = document.createElement('div'); ov.id = 'nxEmpForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-id-badge-2"></i> ${e ? 'Editar empleado' : 'Nuevo empleado'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxEmpForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1">
+          <div class="fr"><label>Nombre completo *</label><input id="emN" class="no-upper" value="${esc(d.nombre || '')}" placeholder="Nombre y apellido"></div>
+          <div class="fr-row">
+            <div class="fr"><label>Cédula</label><input id="emC" class="no-upper" value="${esc(d.cedula || '')}" placeholder="000-0000000-0"></div>
+            <div class="fr"><label>Teléfono</label><input id="emT" class="no-upper" value="${esc(d.telefono || '')}" placeholder="809-..."></div>
+          </div>
+          <div class="fr-row">
+            <div class="fr"><label>Puesto</label><input id="emP" class="no-upper" value="${esc(d.puesto || '')}" placeholder="Ej: Cajero"></div>
+            <div class="fr"><label>Departamento</label><input id="emD" class="no-upper" value="${esc(d.departamento || '')}" placeholder="Ej: Ventas"></div>
+          </div>
+          <div class="fr-row">
+            <div class="fr"><label>Salario bruto *</label><input id="emS" data-nx-money inputmode="numeric" value="${d.salario ? Math.round(d.salario) : ''}" placeholder="0"></div>
+            <div class="fr"><label>Tipo de pago</label><select id="emTp">${tipos}</select></div>
+          </div>
+          <div class="fr-row">
+            <div class="fr"><label>Fecha de ingreso</label><input type="date" id="emF" value="${esc((d.fecha_ingreso || '').slice(0, 10))}"></div>
+            <div class="fr"><label>No. TSS (NSS)</label><input id="emNss" class="no-upper" value="${esc(d.tss || '')}" placeholder="Opcional"></div>
+          </div>
+          <div class="fr-row">
+            <div class="fr"><label>Banco</label><input id="emB" class="no-upper" value="${esc(d.banco || '')}" placeholder="Opcional"></div>
+            <div class="fr"><label>Cuenta banco</label><input id="emCb" class="no-upper" value="${esc(d.cuenta_banco || '')}" placeholder="Opcional"></div>
+          </div>
+          <div class="fr"><label>Activo</label><select id="emA"><option value="1"${d.activo !== false ? ' selected' : ''}>Sí (activo)</option><option value="0"${d.activo === false ? ' selected' : ''}>No (inactivo)</option></select></div>
+        </div>
+        <div class="fe" style="margin-top:8px;gap:8px">
+          ${e ? `<button class="btn bc3 bsm" type="button" onclick="window.nxRhDelEmp('${e.id}')" style="margin-right:auto"><i class="ti ti-trash"></i></button>` : ''}
+          <button class="btn bghost" type="button" onclick="document.getElementById('nxEmpForm').remove()">Cancelar</button>
+          <button class="btn bc1" type="button" onclick="window.nxRhGuardarEmp('${e ? e.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    scanMoney(ov);
+  }
+  window.nxRhGuardarEmp = async function (id) {
+    const body = {
+      nombre: (val('emN') || '').trim(), cedula: (val('emC') || '').trim() || null, telefono: (val('emT') || '').trim() || null,
+      puesto: (val('emP') || '').trim() || null, departamento: (val('emD') || '').trim() || null,
+      salario: parseMoney(val('emS')), tipo_pago: val('emTp'), fecha_ingreso: val('emF') || null,
+      tss: (val('emNss') || '').trim() || null, banco: (val('emB') || '').trim() || null, cuenta_banco: (val('emCb') || '').trim() || null,
+      activo: val('emA') === '1'
+    };
+    if (!body.nombre) { toast('err', 'Falta el nombre'); return; }
+    try {
+      if (id) await getAPI().patch('rrhh_empleados', 'id=eq.' + id, body); else await getAPI().post('rrhh_empleados', body);
+      cerrarModal('nxEmpForm'); toast('ok', 'Empleado guardado');
+      await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxRhDelEmp = async function (id) {
+    if (!confirm('¿Eliminar este empleado? (mejor márcalo como inactivo si ya tuvo nómina)')) return;
+    try { await getAPI().del('rrhh_empleados', 'id=eq.' + id); cerrarModal('nxEmpForm'); toast('ok', 'Empleado eliminado'); await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
+    catch (e) { toast('err', 'No se pudo eliminar', 'Si ya tiene nómina, márcalo inactivo'); }
+  };
+
+  // ── Generar nómina ──
+  window.nxRhGenerar = function () {
+    const activos = _empleados.filter(e => e.activo !== false);
+    if (!activos.length) { toast('err', 'No hay empleados activos', 'Agrega empleados primero'); return; }
+    const d = new Date();
+    _nomEdit = {
+      periodo: d.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' }),
+      fecha: isoHoy(), tipo: 'mensual',
+      lineas: activos.map(e => { const ded = calcDeducciones(e.salario); return { empleado_id: e.id, empleado_nombre: e.nombre, salario_bruto: Number(e.salario || 0), bonos: 0, otras_deducciones: 0, sfs: ded.sfs, afp: ded.afp, isr: ded.isr }; })
+    };
+    abrirNomina();
+  }
+  function nomLineaNeto(l) { return Number(l.salario_bruto || 0) + Number(l.bonos || 0) - Number(l.sfs || 0) - Number(l.afp || 0) - Number(l.isr || 0) - Number(l.otras_deducciones || 0); }
+  function abrirNomina() {
+    cerrarModal('nxNomForm');
+    const ov = document.createElement('div'); ov.id = 'nxNomForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:680px;max-height:94vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-calculator"></i> Generar nómina</span><button class="nxBack" type="button" onclick="document.getElementById('nxNomForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="fr-row">
+          <div class="fr" style="flex:2"><label>Período</label><input id="nmP" class="no-upper" value="${esc(_nomEdit.periodo)}" placeholder="Ej: Junio 2026"></div>
+          <div class="fr"><label>Fecha</label><input type="date" id="nmF" value="${_nomEdit.fecha}"></div>
+          <div class="fr"><label>Tipo</label><select id="nmT"><option value="mensual"${_nomEdit.tipo === 'mensual' ? ' selected' : ''}>Mensual</option><option value="quincenal"${_nomEdit.tipo === 'quincenal' ? ' selected' : ''}>Quincenal</option><option value="semanal"${_nomEdit.tipo === 'semanal' ? ' selected' : ''}>Semanal</option></select></div>
+        </div>
+        <div style="font-size:10.5px;color:#94a3b8;margin:2px 2px 8px">Deducciones automáticas RD: SFS 3.04% · AFP 2.87% · ISR escala DGII. Puedes editar bonos y otras deducciones.</div>
+        <div id="nmLineas" style="overflow-y:auto;flex:1"></div>
+        <div id="nmTot" class="nxAsTot"></div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxNomForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRhGuardarNomina()"><i class="ti ti-device-floppy"></i> Guardar nómina</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    pintarNomLineas();
+  }
+  function leerNomLineas() {
+    if (!_nomEdit) return;
+    const wrap = document.getElementById('nmLineas'); if (!wrap) return;
+    _nomEdit.lineas.forEach((l, i) => {
+      const b = wrap.querySelector(`[data-nmb="${i}"]`), o = wrap.querySelector(`[data-nmo="${i}"]`);
+      if (b) l.bonos = Number(parseMoney(b.value) || 0); if (o) l.otras_deducciones = Number(parseMoney(o.value) || 0);
+    });
+    const p = document.getElementById('nmP'), f = document.getElementById('nmF'), t = document.getElementById('nmT');
+    if (p) _nomEdit.periodo = p.value; if (f) _nomEdit.fecha = f.value; if (t) _nomEdit.tipo = t.value;
+  }
+  function pintarNomLineas() {
+    const wrap = document.getElementById('nmLineas'); if (!wrap || !_nomEdit) return;
+    wrap.innerHTML = _nomEdit.lineas.map((l, i) => `<div class="nxNomRow">
+        <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.empleado_nombre)}</div><div style="font-size:10px;color:#94a3b8">Bruto ${fmt(l.salario_bruto)} · Ded. ${fmt(Number(l.sfs) + Number(l.afp) + Number(l.isr))}</div></div>
+        <label class="nxNomF"><span>Bonos</span><input data-nmb="${i}" data-nx-money inputmode="numeric" value="${l.bonos || ''}" placeholder="0" oninput="window.nxNomTotals()"></label>
+        <label class="nxNomF"><span>Otras ded.</span><input data-nmo="${i}" data-nx-money inputmode="numeric" value="${l.otras_deducciones || ''}" placeholder="0" oninput="window.nxNomTotals()"></label>
+        <div class="nxNomNeto"><span>Neto</span><b data-nmn="${i}">${fmt(nomLineaNeto(l))}</b></div>
+      </div>`).join('');
+    try { scanMoney(wrap); } catch (e) {}
+    pintarNomTot();
+  }
+  function pintarNomTot() {
+    const el = document.getElementById('nmTot'); if (!el || !_nomEdit) return;
+    let bruto = 0, ded = 0, neto = 0;
+    _nomEdit.lineas.forEach((l, i) => { bruto += Number(l.salario_bruto || 0) + Number(l.bonos || 0); ded += Number(l.sfs || 0) + Number(l.afp || 0) + Number(l.isr || 0) + Number(l.otras_deducciones || 0); neto += nomLineaNeto(l); const nb = document.querySelector(`[data-nmn="${i}"]`); if (nb) nb.textContent = fmt(nomLineaNeto(l)); });
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span>Bruto: <b>${fmt(bruto)}</b></span><span style="color:#dc2626">Deducciones: <b>${fmt(ded)}</b></span><span style="color:#16a34a">Neto a pagar: <b>${fmt(neto)}</b></span></div>`;
+  }
+  window.nxNomTotals = function () { leerNomLineas(); pintarNomTot(); };
+  window.nxRhGuardarNomina = async function () {
+    leerNomLineas();
+    if (!_nomEdit.lineas.length) { toast('err', 'Sin empleados en la nómina'); return; }
+    let bruto = 0, ded = 0, neto = 0;
+    _nomEdit.lineas.forEach(l => { bruto += Number(l.salario_bruto || 0) + Number(l.bonos || 0); ded += Number(l.sfs || 0) + Number(l.afp || 0) + Number(l.isr || 0) + Number(l.otras_deducciones || 0); neto += nomLineaNeto(l); });
+    try {
+      const nm = await getAPI().post('rrhh_nominas', { periodo: (_nomEdit.periodo || '').trim() || 'Nómina', fecha: _nomEdit.fecha || isoHoy(), tipo: _nomEdit.tipo, total_bruto: Math.round(bruto), total_deducciones: Math.round(ded), total_neto: Math.round(neto), estado: 'pagada' });
+      const nid = (nm && nm[0] && nm[0].id); if (!nid) throw new Error('No se creó la nómina');
+      const rows = _nomEdit.lineas.map(l => ({ nomina_id: nid, empleado_id: l.empleado_id, empleado_nombre: l.empleado_nombre, salario_bruto: Math.round(l.salario_bruto || 0), bonos: Math.round(l.bonos || 0), sfs: Math.round(l.sfs || 0), afp: Math.round(l.afp || 0), isr: Math.round(l.isr || 0), otras_deducciones: Math.round(l.otras_deducciones || 0), neto: Math.round(nomLineaNeto(l)) }));
+      await getAPI().post('rrhh_nomina_lineas', rows);
+      try { postAsientoNomina(nm[0], Math.round(bruto), Math.round(ded), Math.round(neto)); } catch (e) {}
+      cerrarModal('nxNomForm'); _nomEdit = null; toast('ok', 'Nómina generada', fmt(neto) + ' neto');
+      await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) { toast('err', 'No se pudo generar', String(e && e.message || e)); }
+  };
+  window.nxRhVerNomina = async function (id) {
+    const n = _nominas.find(x => String(x.id) === String(id)); if (!n) return;
+    try { n._lineas = await getAPI().get('rrhh_nomina_lineas', 'select=*&nomina_id=eq.' + id) || []; } catch (e) { n._lineas = []; }
+    _nominaSel = n; const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+  };
+  window.nxRhAnularNomina = async function (id) {
+    if (!confirm('¿Anular esta nómina?')) return;
+    try { await getAPI().patch('rrhh_nominas', 'id=eq.' + id, { estado: 'anulada' }); toast('ok', 'Nómina anulada'); _nominaSel = null; await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
+    catch (e) { toast('err', 'No se pudo anular', String(e && e.message || e)); }
+  };
+
+  // Asiento contable de la nómina (si existe plan de cuentas)
+  async function postAsientoNomina(nomina, bruto, ded, neto) {
+    try {
+      let cu = _cuentas;
+      if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
+      if (!cu.length) return;
+      const byc = {}; cu.forEach(x => byc[x.codigo] = x);
+      const ln = (cod, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre, debito: Math.round(d), credito: Math.round(h) }; };
+      const lineas = [ln('6101', bruto, 0), ln('2104', 0, ded), ln('2103', 0, neto)].filter(Boolean);
+      if (lineas.length < 2) return;
+      const as = await getAPI().post('pos_asientos', { fecha: (String(nomina.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Nómina ' + (nomina.periodo || ''), referencia: nomina.periodo || '', tipo: 'nomina', origen_id: nomina.id });
+      const aid = (as && as[0] && as[0].id); if (!aid) return;
+      await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
+    } catch (e) {}
+  }
+
+  // ── Recibo de pago imprimible ──
+  window.nxRhRecibo = function (nominaId, empId) {
+    const n = (_nominaSel && String(_nominaSel.id) === String(nominaId)) ? _nominaSel : _nominas.find(x => String(x.id) === String(nominaId));
+    if (!n || !n._lineas) { toast('err', 'Abre la nómina primero'); return; }
+    const l = n._lineas.find(x => String(x.empleado_id) === String(empId)); if (!l) return;
+    const e = empInfo();
+    const totDed = Number(l.sfs) + Number(l.afp) + Number(l.isr) + Number(l.otras_deducciones);
+    const fila = (lbl, v, neg) => `<tr><td>${lbl}</td><td style="text-align:right">${neg ? '- ' : ''}${fmt(v)}</td></tr>`;
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo de pago — ${esc(l.empleado_nombre)}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:460px;margin:0 auto;padding:18px;font-size:13px}h1{font-size:17px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:6px 0}td{padding:4px 0}.line{border-top:1px solid #ccc;margin:8px 0}.tot{font-weight:800;font-size:15px}.sec{font-weight:800;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-top:8px}.box{border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:10px}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-18px -18px 12px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>RECIBO DE PAGO DE NÓMINA</b></div>
+        <div class="c muted">${esc(n.periodo || '')} · ${fechaDMY(n.fecha)}</div>
+        <div class="box">
+          <table><tr><td><b>Empleado</b></td><td style="text-align:right">${esc(l.empleado_nombre)}</td></tr></table>
+          <div class="sec">Ingresos</div>
+          <table>${fila('Salario', l.salario_bruto)}${Number(l.bonos) ? fila('Bonos', l.bonos) : ''}</table>
+          <div class="sec">Deducciones</div>
+          <table>${fila('SFS (Seguro Familiar Salud)', l.sfs, true)}${fila('AFP (Pensión)', l.afp, true)}${Number(l.isr) ? fila('ISR', l.isr, true) : ''}${Number(l.otras_deducciones) ? fila('Otras deducciones', l.otras_deducciones, true) : ''}</table>
+          <div class="line"></div>
+          <table><tr><td>Total deducciones</td><td style="text-align:right">- ${fmt(totDed)}</td></tr><tr class="tot"><td>NETO A PAGAR</td><td style="text-align:right">${fmt(l.neto)}</td></tr></table>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:34px;font-size:12px">
+          <div style="text-align:center;width:45%;border-top:1px solid #999;padding-top:4px">Recibí conforme</div>
+          <div style="text-align:center;width:45%;border-top:1px solid #999;padding-top:4px">Pagado por</div>
+        </div>
+        <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:18px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🖨️ Imprimir</button>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  };
+
   // ── CSS + registro en el hub ──
   function inyectarCSS() {
     if (document.getElementById('nxPosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPosCSS';
-    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#94a3b8}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#94a3b8}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#94a3b8;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#94a3b8;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#94a3b8;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#94a3b8;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#64748b;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}.nxFacSubTabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid #eef2f7;margin-bottom:14px}.nxFacSubTab{border:none;background:transparent;color:#64748b;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}.nxFacSubTab:hover{color:#1e293b}.nxFacSubTab.on{color:#2563eb;border-bottom-color:#2563eb}.nxFacF input[type=date]{width:100%;height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacCliRow{display:flex;gap:6px;align-items:stretch}.nxFacCliRow select{flex:1;min-width:0}.nxFacCliAdd{border:1.5px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;width:44px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}.nxFacCliAdd:hover{background:#1d4ed8}/* ── Contabilidad ── */.nxCtaRango{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:end}.nxCtaRango .nxFacF{max-width:160px}.nxCtaKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.nxCtaKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxCtaKpiL{font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}.nxCtaKpiV{font-size:18px;font-weight:800;line-height:1}.nxCtaTipo{font-size:10px;font-weight:800;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.2px}.nxCtaTipo-activo{background:#eff6ff;color:#2563eb}.nxCtaTipo-pasivo{background:#fff7ed;color:#ea580c}.nxCtaTipo-capital{background:#faf5ff;color:#7c3aed}.nxCtaTipo-ingreso{background:#f0fdf4;color:#16a34a}.nxCtaTipo-costo{background:#fef2f2;color:#dc2626}.nxCtaTipo-gasto{background:#fef2f2;color:#b91c1c}.nxCtaAs{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.nxCtaAsHd{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#334155;margin-bottom:8px;gap:8px}.nxCtaOrig{font-size:9px;font-weight:800;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:6px;text-transform:uppercase;margin-left:4px}.nxCtaAsT{width:100%;border-collapse:collapse;font-size:11.5px}.nxCtaAsT th{text-align:left;font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid #eef2f7}.nxCtaAsT td{padding:4px 6px;border-bottom:1px solid #f6f8fb;color:#334155}.nxCtaAsTot td{border-top:1.5px solid #e2e8f0;border-bottom:none!important;padding-top:6px}.nxCtaRep{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}.nxCtaRep table{font-size:12.5px}.nxCtaRep td{padding:5px 6px;color:#334155}.nxCtaSec td{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding-top:12px;border-bottom:1px solid #eef2f7}.nxCtaTotR td{font-weight:800;border-top:1px solid #e2e8f0;color:#0f172a}.nxCtaGran td{font-weight:800;font-size:14px;border-top:2px solid #1e293b;padding-top:8px;color:#0f172a}.nxAsRow{display:grid;grid-template-columns:1fr 92px 92px 28px;gap:6px;margin-bottom:6px;align-items:center}.nxAsRow select,.nxAsRow input{height:38px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 8px;font-size:12px;background:#fff;color:#1e293b;font-family:inherit;width:100%}.nxAsRow input{text-align:right;font-weight:700}.nxAsTot{margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#475569}@media(max-width:520px){.nxAsRow{grid-template-columns:1fr 1fr 1fr 24px}.nxAsRow select{grid-column:1/-1}}';
+    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#94a3b8}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#94a3b8}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#94a3b8;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#94a3b8;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#94a3b8;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#94a3b8;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#64748b;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}.nxFacSubTabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid #eef2f7;margin-bottom:14px}.nxFacSubTab{border:none;background:transparent;color:#64748b;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}.nxFacSubTab:hover{color:#1e293b}.nxFacSubTab.on{color:#2563eb;border-bottom-color:#2563eb}.nxFacF input[type=date]{width:100%;height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacCliRow{display:flex;gap:6px;align-items:stretch}.nxFacCliRow select{flex:1;min-width:0}.nxFacCliAdd{border:1.5px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;width:44px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}.nxFacCliAdd:hover{background:#1d4ed8}/* ── Contabilidad ── */.nxCtaRango{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:end}.nxCtaRango .nxFacF{max-width:160px}.nxCtaKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.nxCtaKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxCtaKpiL{font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}.nxCtaKpiV{font-size:18px;font-weight:800;line-height:1}.nxCtaTipo{font-size:10px;font-weight:800;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.2px}.nxCtaTipo-activo{background:#eff6ff;color:#2563eb}.nxCtaTipo-pasivo{background:#fff7ed;color:#ea580c}.nxCtaTipo-capital{background:#faf5ff;color:#7c3aed}.nxCtaTipo-ingreso{background:#f0fdf4;color:#16a34a}.nxCtaTipo-costo{background:#fef2f2;color:#dc2626}.nxCtaTipo-gasto{background:#fef2f2;color:#b91c1c}.nxCtaAs{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.nxCtaAsHd{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#334155;margin-bottom:8px;gap:8px}.nxCtaOrig{font-size:9px;font-weight:800;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:6px;text-transform:uppercase;margin-left:4px}.nxCtaAsT{width:100%;border-collapse:collapse;font-size:11.5px}.nxCtaAsT th{text-align:left;font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid #eef2f7}.nxCtaAsT td{padding:4px 6px;border-bottom:1px solid #f6f8fb;color:#334155}.nxCtaAsTot td{border-top:1.5px solid #e2e8f0;border-bottom:none!important;padding-top:6px}.nxCtaRep{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}.nxCtaRep table{font-size:12.5px}.nxCtaRep td{padding:5px 6px;color:#334155}.nxCtaSec td{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding-top:12px;border-bottom:1px solid #eef2f7}.nxCtaTotR td{font-weight:800;border-top:1px solid #e2e8f0;color:#0f172a}.nxCtaGran td{font-weight:800;font-size:14px;border-top:2px solid #1e293b;padding-top:8px;color:#0f172a}.nxAsRow{display:grid;grid-template-columns:1fr 92px 92px 28px;gap:6px;margin-bottom:6px;align-items:center}.nxAsRow select,.nxAsRow input{height:38px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 8px;font-size:12px;background:#fff;color:#1e293b;font-family:inherit;width:100%}.nxAsRow input{text-align:right;font-weight:700}.nxAsTot{margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#475569}@media(max-width:520px){.nxAsRow{grid-template-columns:1fr 1fr 1fr 24px}.nxAsRow select{grid-column:1/-1}}/* ── RRHH / Nómina ── */.nxNomRow{display:grid;grid-template-columns:1fr 110px 110px 110px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid #f1f5f9}.nxNomEmp{min-width:0}.nxNomF{display:flex;flex-direction:column;gap:2px}.nxNomF span{font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase}.nxNomF input{height:36px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:12px;font-weight:700;text-align:right;background:#fff;color:#0f172a;font-family:inherit}.nxNomNeto{display:flex;flex-direction:column;gap:2px;text-align:right}.nxNomNeto span{font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase}.nxNomNeto b{font-size:13px;color:#16a34a}@media(max-width:560px){.nxNomRow{grid-template-columns:1fr 1fr;row-gap:6px}.nxNomEmp{grid-column:1/-1}.nxNomNeto{align-items:flex-end}}';
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 3, nombre: 'Punto de Venta', desc: 'Ventas, productos e inventario', icon: 'ti-shopping-cart', color: '#7c3aed', bg: '#faf5ff', onclick: 'window.nxAbrirPOS()' }); } catch (e) {} }

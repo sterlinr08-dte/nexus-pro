@@ -200,11 +200,17 @@ commit descriptivo y push. La app descarga de `main`.
     `pos_cuentas`, `pos_asientos`, `pos_asiento_lineas` — las 3 con
     `organizacion_id` + trigger `set_organizacion_id()` + RLS
     `mi_rol()='admin' AND organizacion_id = mi_organizacion()` (mismo patrón POS).
-  - **Recursos Humanos / Nómina** (POS) — *EN CONSTRUCCIÓN*: las tablas
-    `rrhh_empleados`, `rrhh_nominas`, `rrhh_nomina_lineas` (mismo patrón org+RLS)
-    **están diseñadas pero su migración fue bloqueada por el gate de cambios de
-    esquema**; falta el OK explícito del dueño para crearlas y luego construir el
-    frontend (empleados, generar nómina con SFS/AFP/ISR RD, recibo imprimible).
+  - **Recursos Humanos / Nómina** (POS, v25.0) — HECHO: pestaña "Recursos
+    Humanos" con sub-pestañas Empleados y Nóminas. Ficha de empleado (nombre,
+    cédula, puesto, salario, tipo de pago, banco, NSS). **Generar nómina** del
+    período: deducciones de ley RD automáticas — SFS 3.04%, AFP 2.87% (helpers
+    `calcDeducciones`/`isrAnual`) e ISR por escala DGII anual; campos editables de
+    bonos y otras deducciones; totales bruto/deducciones/neto en vivo. **Recibo de
+    pago imprimible** por empleado (`nxRhRecibo`, con firma "recibí conforme").
+    Cada nómina se contabiliza sola (`postAsientoNomina`: 6101 Sueldos contra 2104
+    Retenciones y 2103 Sueldos por pagar). Tablas `rrhh_empleados`,
+    `rrhh_nominas`, `rrhh_nomina_lineas` — las 3 con `organizacion_id` + trigger +
+    RLS `mi_rol()='admin' AND organizacion_id = mi_organizacion()` (patrón POS).
 
 ---
 
