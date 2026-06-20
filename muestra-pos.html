@@ -8,8 +8,8 @@
 <style>
 :root{
   --bg:#eef1f6; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
-  --ind1:#4f46e5; --ind2:#7c3aed; --ind3:#312e81;
-  --sb1:#221b4d; --sb2:#3b2f7a; --sb3:#4f46e5;
+  --ind1:#4f46e5; --ind2:#4338ca; --ind3:#3730a3;
+  --sb1:#1b1f4d; --sb2:#283593; --sb3:#4f46e5;
   --ok:#16a34a; --warn:#d97706; --rose:#e11d48;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -32,30 +32,30 @@ body{
 .sb-brand{display:flex;align-items:center;gap:11px;padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sb-logo{
   width:42px;height:42px;border-radius:13px;flex-shrink:0;
-  background:linear-gradient(145deg,#8b5cf6,#6366f1);
+  background:linear-gradient(145deg,#6366f1,#4338ca);
   display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;
-  box-shadow:0 6px 16px rgba(99,102,241,.5),inset 0 1px 1px rgba(255,255,255,.4);
+  box-shadow:0 6px 16px rgba(67,56,202,.5),inset 0 1px 1px rgba(255,255,255,.4);
 }
 .sb-biz{font-weight:800;font-size:15px;letter-spacing:.2px;line-height:1.1}
-.sb-biz small{display:block;font-weight:600;font-size:10.5px;color:#a7a0e0;margin-top:3px;letter-spacing:.3px}
+.sb-biz small{display:block;font-weight:600;font-size:10.5px;color:#a4abe6;margin-top:3px;letter-spacing:.3px}
 .sb-scroll{flex:1;overflow-y:auto;padding:10px 10px 16px}
-.sb-sec{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#897fd0;margin:14px 8px 6px}
+.sb-sec{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7f88d4;margin:14px 8px 6px}
 .sb-sec:first-child{margin-top:4px}
 .nav{
   display:flex;align-items:center;gap:11px;width:100%;border:0;cursor:pointer;
-  background:transparent;color:#cfcaf2;text-align:left;
+  background:transparent;color:#cdd3f2;text-align:left;
   padding:10px 11px;border-radius:11px;font-size:13.5px;font-weight:600;margin-bottom:2px;
   transition:background .15s,color .15s;
 }
 .nav i{font-size:18px;width:22px;text-align:center;opacity:.92}
 .nav:active{background:rgba(255,255,255,.06)}
-.nav.on{background:linear-gradient(135deg,rgba(124,58,237,.95),rgba(79,70,229,.95));color:#fff;box-shadow:0 6px 16px rgba(79,70,229,.45)}
+.nav.on{background:linear-gradient(135deg,rgba(79,70,229,.97),rgba(55,48,163,.97));color:#fff;box-shadow:0 6px 16px rgba(67,56,202,.45)}
 .nav.on i{opacity:1}
 .sb-foot{padding:12px;border-top:1px solid rgba(255,255,255,.08)}
 .sb-user{display:flex;align-items:center;gap:10px;padding:6px 4px 12px}
-.sb-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px}
+.sb-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#818cf8,#4338ca);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px}
 .sb-user b{font-size:13px;display:block}
-.sb-user span{font-size:10.5px;color:#a7a0e0}
+.sb-user span{font-size:10.5px;color:#a4abe6}
 .btn-logout{
   display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
   background:rgba(255,255,255,.07);color:#f1eefb;border:1px solid rgba(255,255,255,.12);
@@ -111,11 +111,11 @@ body{
 .row .nm b{font-weight:700} .row .nm span{display:block;font-size:11px;color:var(--muted)}
 .row .amt{font-weight:800;color:var(--ok)}
 .tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;background:#dcfce7;color:#15803d}
-.tag.b{background:#ede9fe;color:#6d28d9}
+.tag.b{background:#e0e7ff;color:#4338ca}
 /* Backdrop móvil */
 .backdrop{display:none;position:fixed;inset:0;background:rgba(15,16,40,.45);backdrop-filter:blur(2px);z-index:35}
 /* Banner muestra */
-.demo-banner{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;text-align:center;font-size:11.5px;font-weight:700;padding:7px 14px;letter-spacing:.2px}
+.demo-banner{background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;text-align:center;font-size:11.5px;font-weight:700;padding:7px 14px;letter-spacing:.2px}
 .demo-banner i{margin-right:5px}
 /* ── RESPONSIVE (móvil) ── */
 @media(max-width:860px){
@@ -224,7 +224,7 @@ body{
       <div class="sec-t"><i class="ti ti-bolt"></i> Accesos rápidos</div>
       <div class="apps">
         <div class="app"><div class="app-ic" style="--ac:#16a34a"><i class="ti ti-cash-register"></i></div><div class="app-n">Vender</div></div>
-        <div class="app"><div class="app-ic" style="--ac:#6d28d9"><i class="ti ti-file-invoice"></i></div><div class="app-n">Factura</div></div>
+        <div class="app"><div class="app-ic" style="--ac:#4f46e5"><i class="ti ti-file-invoice"></i></div><div class="app-n">Factura</div></div>
         <div class="app"><div class="app-ic" style="--ac:#ea580c"><i class="ti ti-box"></i></div><div class="app-n">Productos</div></div>
         <div class="app"><div class="app-ic" style="--ac:#0d9488"><i class="ti ti-building-warehouse"></i></div><div class="app-n">Inventario</div></div>
         <div class="app"><div class="app-ic" style="--ac:#0891b2"><i class="ti ti-truck-delivery"></i></div><div class="app-n">Compras</div></div>
@@ -247,7 +247,7 @@ body{
         </div>
         <div class="row">
           <div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00182</b><span>José Martínez · Fiado</span></div></div>
-          <div class="amt" style="color:#6d28d9">RD$ 4,500</div>
+          <div class="amt" style="color:#4338ca">RD$ 4,500</div>
         </div>
         <div class="row">
           <div class="l"><div class="ic"><i class="ti ti-receipt"></i></div><div class="nm"><b>FAC-00181</b><span>Consumidor final · Transferencia</span></div></div>
