@@ -184,6 +184,20 @@ commit descriptivo y push. La app descarga de `main`.
   - **Ventas**: historial con total del día y ticket por venta (descuenta stock).
   - **Clientes + Fiado** (cuentas por cobrar): límite de crédito, ventas fiadas,
     abonos, recordatorio por WhatsApp.
+  - **Entidades** (pestaña "Entidades", v25.8) — maestro de terceros estilo
+    Infoplus: extiende `pos_clientes` con `codigo`, `tipo_persona`
+    (fisica|juridica), `contacto`, `representante`, `email`, banderas de rol
+    `es_cliente/es_proveedor/es_empleado/es_banco` y `nivel_precio` (final|mayor).
+    El alta empieza eligiendo los **afines** (roles, multi) y luego los datos.
+    `abrirEntidad`/`nxEntGuardar`; código automático `CL/PR/EM/BC-0001`
+    (`entCodigoAuto`). El form de "Nuevo cliente" (pestaña Clientes) ahora abre
+    este mismo modal con `es_cliente` precargado (se eliminó `abrirCli` viejo).
+    Los selectores de cliente (Factura/Cobro) filtran `es_cliente` y muestran el
+    código. **Precio por mayor:** `pos_productos.precio_mayor` (Precio 2); la
+    Factura usa `precioCli()` → precio 2 si el cliente es `nivel_precio='mayor'`
+    (re-precia el carrito al cambiar de cliente). Botón "+cliente" QUITADO de la
+    Factura; `#` quitado de códigos/números mostrados. Pendiente: enlazar
+    entidades con rol proveedor/empleado a Compras/RRHH (hoy solo se clasifican).
   - **Compras / Proveedores** (cuentas por pagar): compras suben stock y
     actualizan costo; crédito = CxP; ficha de proveedor con saldo y pagos.
   - **Caja**: apertura/cierre y **arqueo** con conteo de billetes (denominaciones

@@ -1,7 +1,10 @@
 {
-  "version": "25.7",
+  "version": "25.8",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (POS · ENTIDADES): nueva ventana 'Entidades' en el Punto de Venta — el maestro de todos tus terceros, estilo Infoplus. Al crear una entidad, PRIMERO eliges qué es (sus afines: Cliente, Proveedor, Empleado o Entidad bancaria — puede ser varios a la vez), luego si es Persona Física o Jurídica (empresa) y llenas sus datos: código, RNC/cédula, teléfono, email, dirección, contacto y representante. Puedes filtrar por tipo. Los clientes que crees aquí salen al facturar",
+    "NUEVO (POS · clientes con código y nivel de precio): los clientes ahora tienen CÓDIGO automático (CL-0001) y se puede marcar si son 'Normal (consumidor final)' o 'Por mayor'. En el artículo defines Precio 1 (consumidor final) y Precio 2 (por mayor); al facturarle a un cliente 'por mayor', el sistema usa solo el Precio 2",
+    "ARREGLADO (POS): se quitó el botón de '+ crear cliente' de la pantalla Factura (los clientes se crean ahora en Entidades o en la pestaña Clientes) y se quitó el símbolo '#' de los códigos y números que se mostraban con él",
     "ARREGLADO (legibilidad): las letras grises de TODO el sistema (subtítulos, notas, textos secundarios) ahora usan el mismo color oscuro del título 'USUARIO', para que se lean mejor y se vea más parejo. Empezando por la pantalla de entrada, donde 'Plataforma de gestión · República Dominicana' ya no se ve tan clarito",
     "NUEVO (POS · DEVOLUCIONES / NOTAS DE CRÉDITO): en el Historial de facturas, cada venta tiene ahora un botón naranja de devolución. Eliges qué artículos y cuántos devuelve el cliente, el motivo y cómo se le devuelve (efectivo, nota de crédito, transferencia o rebaja a su cuenta). El sistema: regresa el stock, emite una NOTA DE CRÉDITO con su número (NC-00001) y NCF B04 si tienes secuencia, hace el asiento contable inverso de la venta, y te imprime el documento. Devolución total o parcial",
     "NUEVO (POS · VENDEDORES Y COMISIONES): en Ajustes registras a tus vendedores con su % de comisión. Al cobrar, eliges quién hizo la venta, y en Reportes hay un botón 'Comisiones' que te da, por vendedor, cuántas ventas hizo, el monto y la comisión que le toca — listo para imprimir y pagar",
