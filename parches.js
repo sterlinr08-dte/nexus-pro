@@ -54,7 +54,7 @@
         .mobile-bottom-nav-clean button {
           border: 0;
           background: transparent;
-          color: #64748b;
+          color: #475569;
           font-size: 9.5px;
           font-weight: 700;
           display: flex;
@@ -114,7 +114,7 @@
         .mobile-more-sheet-clean h3 {
           margin: 4px 6px 10px;
           font-size: 11px;
-          color: #94a3b8;
+          color: #475569;
           font-weight: 700;
           letter-spacing: .5px;
         }
@@ -629,7 +629,7 @@
       .nx-menu-editor.open .nx-me-card{transform:translateY(0)}
       .nx-me-head{display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:800;color:#0f172a;margin-bottom:4px}
       .nx-me-x{width:34px;height:34px;border-radius:50%;border:0;background:#f1f5f9;color:#475569;display:grid;place-items:center;cursor:pointer;font-size:16px}
-      .nx-me-hint{font-size:12px;color:#94a3b8;margin-bottom:10px}
+      .nx-me-hint{font-size:12px;color:#475569;margin-bottom:10px}
       .nx-me-list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;margin:0 -4px}
       .nx-me-row{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #f1f5f9}
       .nx-me-row.off{opacity:.45}
@@ -1118,7 +1118,7 @@
         background:linear-gradient(135deg,#7c3aed,#4f46e5); box-shadow:0 8px 18px rgba(79,70,229,.35);
       }
       #nxModalTransferAgenteV2 .nxTA2-head-title{ font-size:16px; font-weight:800; color:#0f172a; }
-      #nxModalTransferAgenteV2 .nxTA2-head-sub{ font-size:11px; color:#64748b; margin-top:1px; }
+      #nxModalTransferAgenteV2 .nxTA2-head-sub{ font-size:11px; color:#475569; margin-top:1px; }
       #nxModalTransferAgenteV2 .nxTA2-close{
         margin-left:auto; width:32px; height:32px; border-radius:10px; border:none; cursor:pointer;
         background:rgba(255,255,255,.7); color:#475569; display:flex; align-items:center; justify-content:center; font-size:16px;
@@ -1128,7 +1128,7 @@
       #nxModalTransferAgenteV2 .nxTA2-body{ padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
       #nxModalTransferAgenteV2 .nxTA2-field{ display:flex; flex-direction:column; }
       #nxModalTransferAgenteV2 .nxTA2-field > label{
-        font-size:10px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:#94a3b8; margin-bottom:5px;
+        font-size:10px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:#475569; margin-bottom:5px;
       }
       #nxModalTransferAgenteV2 .nxTA2-opt{ color:#cbd5e1; font-weight:700; text-transform:none; letter-spacing:0; }
 
@@ -1138,10 +1138,10 @@
         transition:border-color .15s, box-shadow .15s, background .15s;
       }
       #nxModalTransferAgenteV2 .nxTA2-control:focus-within{ border-color:#7c3aed; background:#fff; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
-      #nxModalTransferAgenteV2 .nxTA2-control > i{ position:absolute; left:11px; color:#94a3b8; font-size:15px; pointer-events:none; }
+      #nxModalTransferAgenteV2 .nxTA2-control > i{ position:absolute; left:11px; color:#475569; font-size:15px; pointer-events:none; }
       #nxModalTransferAgenteV2 .nxTA2-control::after{
         content:''; position:absolute; right:13px; width:7px; height:7px;
-        border-right:2px solid #94a3b8; border-bottom:2px solid #94a3b8; transform:rotate(45deg); margin-top:-3px; pointer-events:none;
+        border-right:2px solid #475569; border-bottom:2px solid #475569; transform:rotate(45deg); margin-top:-3px; pointer-events:none;
       }
       #nxModalTransferAgenteV2 .nxTA2-control select{
         appearance:none; -webkit-appearance:none; width:100%; border:none; background:transparent; outline:none;
@@ -1366,7 +1366,7 @@
     if (q("#nxReporteAgentesV2CSS")) return;
     const style = document.createElement("style");
     style.id = "nxReporteAgentesV2CSS";
-    style.textContent = `#nxReporteAgentesV2{margin-bottom:14px}.nx-report-v2{border-top:4px solid #7c3aed !important}.nx-report-head-v2{align-items:flex-start !important}.nx-actions-v2{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.nx-top-summary-v2{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:12px}.nx-top-summary-v2>div{border-radius:16px;padding:14px;border:1px solid #e2e8f0;background:#fff}.nx-top-summary-v2 span{display:block;font-size:10px;font-weight:900;color:#64748b;letter-spacing:.5px;text-transform:uppercase}.nx-top-summary-v2 b{display:block;margin-top:5px;font-size:22px;color:#0f172a}.nx-top-summary-v2 .green{background:#f0fdf4;border-color:#bbf7d0}.nx-top-summary-v2 .green b{color:#059669}.nx-top-summary-v2 .blue{background:#eff6ff;border-color:#bfdbfe}.nx-top-summary-v2 .blue b{color:#2563eb}.nx-top-summary-v2 .red{background:#fef2f2;border-color:#fecaca}.nx-top-summary-v2 .red b{color:#dc2626}.nx-top-summary-v2 .gray{background:#f8fafc;border-color:#e2e8f0}.nx-method-summary-v2{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:12px}.nx-method-card{border:1px solid;border-radius:14px;padding:12px}.nx-method-card span{display:block;font-size:10px;font-weight:900;letter-spacing:.4px}.nx-method-card b{display:block;margin-top:5px;font-size:19px;font-weight:900}.nx-two-cols-v2{display:grid;grid-template-columns:1fr 1.2fr;gap:10px;margin-bottom:12px}.nx-box-v2{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px}.nx-box-v2 h3{font-size:12px;margin:0 0 8px;color:#0f172a;font-weight:900}.nx-bank-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eef2f7;font-size:12px}.nx-bank-row span{font-weight:800;color:#1e293b}.nx-bank-row b{color:#2563eb}.nx-transfer-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.nx-transfer-table-wrap table{min-width:680px}.nx-transfer-table-wrap td,.nx-transfer-table-wrap th{font-size:11px}.nx-agents-grid-v2{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px}.nx-agent-card-v2{background:#fff;border:1px solid #e2e8f0;border-radius:22px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.08)}.nx-agent-head-v2{display:flex;align-items:center;gap:12px}.nx-agent-avatar-v2{width:50px;height:50px;border-radius:18px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;display:grid;place-items:center;font-size:20px;font-weight:900;box-shadow:0 10px 22px rgba(124,58,237,.28);flex:0 0 auto}.nx-agent-info-v2{min-width:0;flex:1}.nx-agent-name-v2{font-size:15px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nx-agent-role-v2,.nx-agent-license-v2,.nx-agent-clientes-v2{font-size:10px;color:#64748b;margin-top:2px;font-weight:700}.nx-agent-effect-v2{text-align:center;flex:0 0 auto}.nx-effect-circle-v2{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(closest-side,#fff 72%,transparent 74%),conic-gradient(var(--clr) calc(var(--pct) * 1%),#e2e8f0 0)}.nx-effect-circle-v2 span{font-size:12px;font-weight:900;color:var(--clr)}.nx-agent-effect-v2 small{display:block;margin-top:3px;font-size:8px;color:#64748b;font-weight:900}.nx-agent-main-money{background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:1px solid #bbf7d0;border-radius:18px;padding:14px;margin:14px 0 10px}.nx-agent-main-money span{display:block;font-size:10px;color:#059669;font-weight:900;letter-spacing:.6px}.nx-agent-main-money b{display:block;margin-top:4px;font-size:24px;line-height:1;color:#059669;font-weight:900}.nx-agent-methods-v2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}.nx-mini-title{font-size:9px;color:#64748b;font-weight:900;text-transform:uppercase;margin:7px 0}.nx-bank-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}.nx-bank-pills span{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:800}.nx-agent-balance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.nx-agent-balance-grid>div{background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:9px}.nx-agent-balance-grid span{display:block;font-size:8px;color:#64748b;font-weight:900;text-transform:uppercase}.nx-agent-balance-grid b{display:block;margin-top:4px;font-size:12px;color:#0f172a;font-weight:900}.nx-agent-balance-grid b.danger{color:#dc2626}.nx-agent-balance-grid b.blue{color:#2563eb}.nx-agent-balance-grid small{display:block;font-size:8px;color:#94a3b8;margin-top:3px;line-height:1.2}.nx-transfer-mini{display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:#64748b;margin-top:8px}.nx-transfer-mini b{color:#0f172a}.nx-progress-v2{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:9px}.nx-progress-v2 i{display:block;height:100%;border-radius:999px}.nx-empty-soft{background:#f8fafc;border:1px dashed #cbd5e1;color:#94a3b8;border-radius:12px;padding:10px;font-size:10px;font-weight:800}.nx-empty-card-v2{background:#f8fafc;border:1px dashed #cbd5e1;color:#64748b;border-radius:18px;padding:24px;text-align:center;font-weight:800}.nx-info-box-v2{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:11px;color:#1e3a6e;margin-top:8px}@media(max-width:768px){.nx-two-cols-v2{grid-template-columns:1fr}.nx-agents-grid-v2{grid-template-columns:1fr}.nx-method-summary-v2{grid-template-columns:1fr}.nx-agent-methods-v2{grid-template-columns:1fr}.nx-agent-balance-grid{grid-template-columns:1fr}.nx-top-summary-v2{grid-template-columns:repeat(2,minmax(0,1fr))}.nx-actions-v2{justify-content:flex-start;margin-top:8px}}`;
+    style.textContent = `#nxReporteAgentesV2{margin-bottom:14px}.nx-report-v2{border-top:4px solid #7c3aed !important}.nx-report-head-v2{align-items:flex-start !important}.nx-actions-v2{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.nx-top-summary-v2{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:12px}.nx-top-summary-v2>div{border-radius:16px;padding:14px;border:1px solid #e2e8f0;background:#fff}.nx-top-summary-v2 span{display:block;font-size:10px;font-weight:900;color:#475569;letter-spacing:.5px;text-transform:uppercase}.nx-top-summary-v2 b{display:block;margin-top:5px;font-size:22px;color:#0f172a}.nx-top-summary-v2 .green{background:#f0fdf4;border-color:#bbf7d0}.nx-top-summary-v2 .green b{color:#059669}.nx-top-summary-v2 .blue{background:#eff6ff;border-color:#bfdbfe}.nx-top-summary-v2 .blue b{color:#2563eb}.nx-top-summary-v2 .red{background:#fef2f2;border-color:#fecaca}.nx-top-summary-v2 .red b{color:#dc2626}.nx-top-summary-v2 .gray{background:#f8fafc;border-color:#e2e8f0}.nx-method-summary-v2{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:12px}.nx-method-card{border:1px solid;border-radius:14px;padding:12px}.nx-method-card span{display:block;font-size:10px;font-weight:900;letter-spacing:.4px}.nx-method-card b{display:block;margin-top:5px;font-size:19px;font-weight:900}.nx-two-cols-v2{display:grid;grid-template-columns:1fr 1.2fr;gap:10px;margin-bottom:12px}.nx-box-v2{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px}.nx-box-v2 h3{font-size:12px;margin:0 0 8px;color:#0f172a;font-weight:900}.nx-bank-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eef2f7;font-size:12px}.nx-bank-row span{font-weight:800;color:#1e293b}.nx-bank-row b{color:#2563eb}.nx-transfer-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.nx-transfer-table-wrap table{min-width:680px}.nx-transfer-table-wrap td,.nx-transfer-table-wrap th{font-size:11px}.nx-agents-grid-v2{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px}.nx-agent-card-v2{background:#fff;border:1px solid #e2e8f0;border-radius:22px;padding:16px;box-shadow:0 10px 28px rgba(15,23,42,.08)}.nx-agent-head-v2{display:flex;align-items:center;gap:12px}.nx-agent-avatar-v2{width:50px;height:50px;border-radius:18px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;display:grid;place-items:center;font-size:20px;font-weight:900;box-shadow:0 10px 22px rgba(124,58,237,.28);flex:0 0 auto}.nx-agent-info-v2{min-width:0;flex:1}.nx-agent-name-v2{font-size:15px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nx-agent-role-v2,.nx-agent-license-v2,.nx-agent-clientes-v2{font-size:10px;color:#475569;margin-top:2px;font-weight:700}.nx-agent-effect-v2{text-align:center;flex:0 0 auto}.nx-effect-circle-v2{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(closest-side,#fff 72%,transparent 74%),conic-gradient(var(--clr) calc(var(--pct) * 1%),#e2e8f0 0)}.nx-effect-circle-v2 span{font-size:12px;font-weight:900;color:var(--clr)}.nx-agent-effect-v2 small{display:block;margin-top:3px;font-size:8px;color:#475569;font-weight:900}.nx-agent-main-money{background:linear-gradient(135deg,#ecfdf5,#f0fdf4);border:1px solid #bbf7d0;border-radius:18px;padding:14px;margin:14px 0 10px}.nx-agent-main-money span{display:block;font-size:10px;color:#059669;font-weight:900;letter-spacing:.6px}.nx-agent-main-money b{display:block;margin-top:4px;font-size:24px;line-height:1;color:#059669;font-weight:900}.nx-agent-methods-v2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}.nx-mini-title{font-size:9px;color:#475569;font-weight:900;text-transform:uppercase;margin:7px 0}.nx-bank-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}.nx-bank-pills span{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:800}.nx-agent-balance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.nx-agent-balance-grid>div{background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:9px}.nx-agent-balance-grid span{display:block;font-size:8px;color:#475569;font-weight:900;text-transform:uppercase}.nx-agent-balance-grid b{display:block;margin-top:4px;font-size:12px;color:#0f172a;font-weight:900}.nx-agent-balance-grid b.danger{color:#dc2626}.nx-agent-balance-grid b.blue{color:#2563eb}.nx-agent-balance-grid small{display:block;font-size:8px;color:#475569;margin-top:3px;line-height:1.2}.nx-transfer-mini{display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:#475569;margin-top:8px}.nx-transfer-mini b{color:#0f172a}.nx-progress-v2{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:9px}.nx-progress-v2 i{display:block;height:100%;border-radius:999px}.nx-empty-soft{background:#f8fafc;border:1px dashed #cbd5e1;color:#475569;border-radius:12px;padding:10px;font-size:10px;font-weight:800}.nx-empty-card-v2{background:#f8fafc;border:1px dashed #cbd5e1;color:#475569;border-radius:18px;padding:24px;text-align:center;font-weight:800}.nx-info-box-v2{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:11px;color:#1e3a6e;margin-top:8px}@media(max-width:768px){.nx-two-cols-v2{grid-template-columns:1fr}.nx-agents-grid-v2{grid-template-columns:1fr}.nx-method-summary-v2{grid-template-columns:1fr}.nx-agent-methods-v2{grid-template-columns:1fr}.nx-agent-balance-grid{grid-template-columns:1fr}.nx-top-summary-v2{grid-template-columns:repeat(2,minmax(0,1fr))}.nx-actions-v2{justify-content:flex-start;margin-top:8px}}`;
     document.head.appendChild(style);
   }
 
@@ -1949,7 +1949,7 @@
     var raw = String(nombre == null ? '' : nombre).trim();
     var n = raw.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     if (!n || /SIN\s*BANCO|EFECTIVO|CAJA/.test(n)) {
-      return '<span class="nxDC-bank-badge" style="background:linear-gradient(145deg,#94a3b8,#cbd5e1)"><i class="ti ti-wallet"></i></span>';
+      return '<span class="nxDC-bank-badge" style="background:linear-gradient(145deg,#475569,#cbd5e1)"><i class="ti ti-wallet"></i></span>';
     }
     // Logos reales (archivos provistos). APAP no debe usar el logo de Popular.
     if (!/APAP|ASOC.*POPULAR/.test(n)) {
@@ -2271,7 +2271,7 @@
         <div style="padding:30px;text-align:center;background:#fff;border:1px solid #fecaca;border-radius:14px;color:#dc2626">
           <div style="font-size:32px;margin-bottom:10px">⚠️</div>
           <div style="font-weight:800;font-size:16px;margin-bottom:6px">Error al cargar</div>
-          <div style="font-size:13px;color:#64748b;margin-bottom:14px">Hubo un problema cargando los datos. Verifica tu conexión.</div>
+          <div style="font-size:13px;color:#475569;margin-bottom:14px">Hubo un problema cargando los datos. Verifica tu conexión.</div>
           <button class="btn bsm bc1" onclick="window.nxAbrirDetallesCobro && window.nxAbrirDetallesCobro()" style="cursor:pointer">
             <i class="ti ti-refresh"></i> Reintentar
           </button>
@@ -2881,7 +2881,7 @@
       #nxDetallesCobroV1 { animation: nxDCFade .3s ease-out; }
       @keyframes nxDCFade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
       .nxDC-wrap { display:flex; flex-direction:column; gap:14px; }
-      .nxDC-loading { display:flex; align-items:center; gap:10px; padding:30px; justify-content:center; color:#64748b; font-weight:600; }
+      .nxDC-loading { display:flex; align-items:center; gap:10px; padding:30px; justify-content:center; color:#475569; font-weight:600; }
       
       /* ═══ KPI COBRADO ROTATIVO (click corto rota / largo abre Detalles) ═══ */
       #v-dashboard .kpi:has(.kl),
@@ -2901,10 +2901,10 @@
       .nxDC-head-left { display:flex; align-items:center; gap:14px; min-width:0; flex:1 1 320px; }
       .nxDC-head-icon { width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; display:grid; place-items:center; font-size:22px; flex:0 0 auto; box-shadow:0 6px 16px rgba(59,130,246,.32); }
       .nxDC-head-title { margin:0; font-size:22px; font-weight:900; color:#0f172a; letter-spacing:.3px; line-height:1.1; }
-      .nxDC-head-sub { font-size:12px; color:#64748b; margin-top:3px; font-weight:500; }
+      .nxDC-head-sub { font-size:12px; color:#475569; margin-top:3px; font-weight:500; }
       .nxDC-head-right { flex:0 0 auto; }
       .nxDC-period { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:8px 12px; min-width:280px; }
-      .nxDC-period-label { font-size:10px; color:#64748b; font-weight:700; letter-spacing:.4px; margin-bottom:4px; }
+      .nxDC-period-label { font-size:10px; color:#475569; font-weight:700; letter-spacing:.4px; margin-bottom:4px; }
       .nxDC-period-controls { display:flex; align-items:center; gap:6px; }
       .nxDC-period-select { flex:1; border:0; background:transparent; font-size:13px; font-weight:700; color:#0f172a; cursor:pointer; outline:none; padding:4px; min-width:0; }
       .nxDC-period-nav { width:28px; height:28px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; color:#475569; cursor:pointer; display:grid; place-items:center; transition:all .15s; flex:0 0 auto; }
@@ -2916,9 +2916,9 @@
       .nxDC-kpi { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; display:flex; gap:12px; align-items:flex-start; box-shadow:0 1px 3px rgba(0,0,0,.03); }
       .nxDC-kpi-icon { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:20px; flex:0 0 auto; }
       .nxDC-kpi-body { min-width:0; flex:1; }
-      .nxDC-kpi-label { font-size:10px; font-weight:800; color:#64748b; letter-spacing:.5px; line-height:1.3; margin-bottom:5px; }
+      .nxDC-kpi-label { font-size:10px; font-weight:800; color:#475569; letter-spacing:.5px; line-height:1.3; margin-bottom:5px; }
       .nxDC-kpi-value { font-size:22px; font-weight:900; line-height:1.1; margin-bottom:3px; font-family:var(--mono,'SF Mono',monospace); letter-spacing:-.3px; }
-      .nxDC-kpi-sub { font-size:11px; color:#94a3b8; font-weight:500; }
+      .nxDC-kpi-sub { font-size:11px; color:#475569; font-weight:500; }
 
       /* ═══ ROW 2 COL ═══ */
       .nxDC-row-2col { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -2928,8 +2928,8 @@
       .nxDC-card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
       .nxDC-card-title { font-size:11px; font-weight:800; color:#475569; letter-spacing:.7px; }
       .nxDC-card-head .nxDC-card-title { margin:0; }
-      .nxDC-muted { color:#94a3b8; font-weight:600; }
-      .nxDC-empty-soft { padding:24px; text-align:center; color:#94a3b8; font-size:12px; font-weight:600; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; }
+      .nxDC-muted { color:#475569; font-weight:600; }
+      .nxDC-empty-soft { padding:24px; text-align:center; color:#475569; font-size:12px; font-weight:600; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; }
       .nxDC-link { color:#2563eb; font-size:11px; font-weight:700; text-decoration:none; }
 
       /* ═══ DONUT ═══ */
@@ -2942,9 +2942,9 @@
         background:radial-gradient(circle at 50% 34%, #ffffff, #eef3f9 78%);
         box-shadow: inset 0 2px 5px rgba(15,23,42,.10), inset 0 -2px 4px rgba(255,255,255,.9), 0 1px 2px rgba(15,23,42,.06);
         z-index:-1; }
-      .nxDC-donut-amt { font-size:11px; color:#64748b; font-weight:700; }
+      .nxDC-donut-amt { font-size:11px; color:#475569; font-weight:700; }
       .nxDC-donut-val { font-size:22px; font-weight:900; color:#0f172a; font-family:var(--mono,monospace); line-height:1; margin:2px 0; }
-      .nxDC-donut-lbl { font-size:10px; color:#94a3b8; font-weight:700; letter-spacing:.5px; }
+      .nxDC-donut-lbl { font-size:10px; color:#475569; font-weight:700; letter-spacing:.5px; }
       .nxDC-legend { display:flex; flex-direction:column; gap:10px; min-width:0; }
       .nxDC-leg-item { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:10px; font-size:12px; }
       .nxDC-leg-dot { width:13px; height:13px; border-radius:50%; flex:0 0 auto; position:relative;
@@ -2952,15 +2952,15 @@
         background-image: linear-gradient(150deg, rgba(255,255,255,.45), rgba(0,0,0,.12)); }
       .nxDC-leg-name { color:#475569; font-weight:600; }
       .nxDC-leg-val { color:#0f172a; font-weight:700; font-family:var(--mono,monospace); font-size:11px; }
-      .nxDC-leg-pct { color:#64748b; font-weight:700; font-size:11px; min-width:42px; text-align:right; }
-      .nxDC-leg-empty { color:#94a3b8; font-size:12px; padding:10px; text-align:center; }
+      .nxDC-leg-pct { color:#475569; font-weight:700; font-size:11px; min-width:42px; text-align:right; }
+      .nxDC-leg-empty { color:#475569; font-size:12px; padding:10px; text-align:center; }
 
       /* ═══ BANCOS ═══ */
       .nxDC-bancos-list { display:flex; flex-direction:column; gap:2px; }
       .nxDC-banco-row { display:flex; justify-content:space-between; align-items:center; padding:10px 4px; border-bottom:1px solid #f1f5f9; }
       .nxDC-banco-row:last-of-type { border-bottom:0; }
       .nxDC-banco-cell { display:flex; align-items:center; gap:10px; color:#0f172a; font-weight:600; font-size:13px; }
-      .nxDC-banco-cell i { font-size:18px; color:#64748b; }
+      .nxDC-banco-cell i { font-size:18px; color:#475569; }
       .nxDC-bank-badge {
         width:36px; height:36px; min-width:36px; flex:0 0 auto;
         border-radius:11px;
@@ -2979,7 +2979,7 @@
       /* ═══ TABLA AGENTES + TRANSFERENCIAS ═══ */
       .nxDC-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
       .nxDC-table { width:100%; border-collapse:collapse; font-size:12px; }
-      .nxDC-table thead th { padding:10px 12px; text-align:left; font-size:9px; font-weight:800; color:#64748b; letter-spacing:.6px; background:#f8fafc; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+      .nxDC-table thead th { padding:10px 12px; text-align:left; font-size:9px; font-weight:800; color:#475569; letter-spacing:.6px; background:#f8fafc; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
       .nxDC-table tbody td { padding:12px; border-bottom:1px solid #f1f5f9; color:#0f172a; font-weight:600; }
       .nxDC-table tbody tr:last-child td { border-bottom:0; }
       .nxDC-table tfoot td { padding:12px; background:#f8fafc; border-top:2px solid #e2e8f0; font-size:13px; }
@@ -2989,9 +2989,9 @@
       .nxDC-num-blue { color:#2563eb; font-weight:700; }
       .nxDC-num-stack { text-align:right; vertical-align:middle; }
       .nxDC-stack-big { font-weight:700; font-size:13px; line-height:1.15; font-family:var(--mono,monospace); }
-      .nxDC-stack-small { font-size:10px; color:#64748b; font-weight:500; margin-top:3px; font-family:var(--mono,monospace); }
-      .nxDC-muted-xs { color:#94a3b8; font-size:9px; font-family:inherit; }
-      .nxDC-muted-sm { color:#94a3b8; font-size:8.5px; font-weight:600; letter-spacing:.3px; display:block; margin-top:2px; }
+      .nxDC-stack-small { font-size:10px; color:#475569; font-weight:500; margin-top:3px; font-family:var(--mono,monospace); }
+      .nxDC-muted-xs { color:#475569; font-size:9px; font-family:inherit; }
+      .nxDC-muted-sm { color:#475569; font-size:8.5px; font-weight:600; letter-spacing:.3px; display:block; margin-top:2px; }
 
       /* ═══ CAJA CENTRAL (ADMIN) ═══ */
       .nxDC-caja-card { border:1px solid #bfdbfe; background:linear-gradient(180deg,#f8fbff,#ffffff); }
@@ -3006,7 +3006,7 @@
       .nxDC-caja-pend { background:linear-gradient(135deg,#fffbeb,#fef3c7); border-color:#fde68a; }
       .nxDC-caja-dep  { background:linear-gradient(135deg,#eff6ff,#dbeafe); border-color:#bfdbfe; }
       .nxDC-caja-cic  { background:linear-gradient(135deg,#f8fafc,#f1f5f9); border-color:#e2e8f0; }
-      .nxDC-caja-mini-lbl { font-size:9.5px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:6px; }
+      .nxDC-caja-mini-lbl { font-size:9.5px; font-weight:800; color:#475569; letter-spacing:.5px; margin-bottom:6px; }
       .nxDC-caja-cash .nxDC-caja-mini-lbl { color:#059669; }
       .nxDC-caja-pend .nxDC-caja-mini-lbl { color:#d97706; }
       .nxDC-caja-dep  .nxDC-caja-mini-lbl { color:#2563eb; }
@@ -3014,7 +3014,7 @@
       .nxDC-caja-cash .nxDC-caja-mini-val { color:#059669; }
       .nxDC-caja-pend .nxDC-caja-mini-val { color:#d97706; }
       .nxDC-caja-dep  .nxDC-caja-mini-val { color:#2563eb; }
-      .nxDC-caja-mini-sub { font-size:9.5px; color:#94a3b8; font-weight:500; margin-top:4px; line-height:1.3; }
+      .nxDC-caja-mini-sub { font-size:9.5px; color:#475569; font-weight:500; margin-top:4px; line-height:1.3; }
       .nxDC-caja-hist-title { font-size:10.5px; font-weight:800; color:#475569; letter-spacing:.6px; margin:14px 0 10px; }
 
       /* Badges de estado */
@@ -3050,16 +3050,16 @@
       .nxDC-transf-val { font-size:20px; font-weight:900; font-family:var(--mono,monospace); }
       .nxDC-transf-out .nxDC-transf-val { color:#059669; }
       .nxDC-transf-in  .nxDC-transf-val { color:#2563eb; }
-      .nxDC-transf-sub { font-size:11px; color:#94a3b8; font-weight:500; margin-top:4px; }
+      .nxDC-transf-sub { font-size:11px; color:#475569; font-weight:500; margin-top:4px; }
       .nxDC-neto { padding-top:14px; border-top:1px solid #e2e8f0; }
-      .nxDC-neto-label { font-size:11px; font-weight:800; color:#64748b; letter-spacing:.5px; margin-bottom:6px; }
+      .nxDC-neto-label { font-size:11px; font-weight:800; color:#475569; letter-spacing:.5px; margin-bottom:6px; }
       .nxDC-neto-val { font-size:24px; font-weight:900; color:#2563eb; font-family:var(--mono,monospace); }
-      .nxDC-neto-sub { font-size:11px; color:#94a3b8; font-weight:500; margin-top:3px; }
+      .nxDC-neto-sub { font-size:11px; color:#475569; font-weight:500; margin-top:3px; }
 
       /* ═══ HISTORIAL TRANSFERENCIAS ═══ */
       .nxDC-tx-table tbody td { font-size:12px; }
-      .nxDC-tx-fecha { font-family:var(--mono,monospace); color:#64748b; font-size:11px; }
-      .nxDC-tx-ref { font-family:var(--mono,monospace); color:#64748b; font-size:11px; }
+      .nxDC-tx-fecha { font-family:var(--mono,monospace); color:#475569; font-size:11px; }
+      .nxDC-tx-ref { font-family:var(--mono,monospace); color:#475569; font-size:11px; }
       .nxDC-tx-tag { display:inline-block; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:800; letter-spacing:.4px; }
       .nxDC-tx-out { background:#fee2e2; color:#dc2626; }
       .nxDC-tx-in  { background:#dcfce7; color:#059669; }
@@ -3214,7 +3214,7 @@
         display:flex; align-items:center; justify-content:center; font-size:18px;
       }
       .nxDC-tx-chip-body { min-width:0; }
-      .nxDC-tx-chip-lbl { font-size:9px; font-weight:800; letter-spacing:.5px; color:#94a3b8; }
+      .nxDC-tx-chip-lbl { font-size:9px; font-weight:800; letter-spacing:.5px; color:#475569; }
       .nxDC-tx-chip-val { font-size:18px; font-weight:800; color:#0f172a; line-height:1.2; font-variant-numeric:tabular-nums; }
 
       /* Pendientes por aprobar */
@@ -3230,7 +3230,7 @@
       }
       .nxDC-txp-ruta { font-size:12.5px; color:#0f172a; }
       .nxDC-txp-ruta i { color:#f59e0b; font-size:13px; vertical-align:middle; }
-      .nxDC-txp-meta { font-size:10px; color:#94a3b8; margin-top:3px; }
+      .nxDC-txp-meta { font-size:10px; color:#475569; margin-top:3px; }
       .nxDC-txp-monto { font-size:15px; font-weight:800; color:#b45309; font-variant-numeric:tabular-nums; }
       .nxDC-txp-acc { grid-column:1 / -1; display:flex; gap:8px; flex-wrap:wrap; }
       .nxDC-btn {
@@ -3243,7 +3243,7 @@
       .nxDC-btn-no { background:#fee2e2; color:#b91c1c; }
       .nxDC-btn-no:hover { background:#fecaca; }
 
-      .nxDC-tx-hist-title { font-size:11px; font-weight:800; color:#64748b; letter-spacing:.3px; padding-top:2px; }
+      .nxDC-tx-hist-title { font-size:11px; font-weight:800; color:#475569; letter-spacing:.3px; padding-top:2px; }
       .nxDC-tx-badge { font-size:9px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap; }
       .nxDC-tx-ok { background:#dcfce7; color:#047857; }
       .nxDC-tx-pend { background:#fef3c7; color:#b45309; }
@@ -3457,7 +3457,7 @@
         --nx-blue2:#3b82f6;
         --nx-blue3:#60a5fa;
         --nx-text:#0f172a;
-        --nx-muted:#64748b;
+        --nx-muted:#475569;
         --nx-glass:rgba(255,255,255,.72);
         --nx-glass-strong:rgba(255,255,255,.88);
         --nx-border:rgba(59,130,246,.20);
@@ -3829,10 +3829,10 @@
       .nx-jelly { animation: nxJelly .5s cubic-bezier(.3,.6,.3,1); transform-origin: center; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
       @media (prefers-reduced-motion: reduce){ .nx-jelly { animation: none !important; } }
       nav.sb .sb-nm { color: #0f172a !important; }
-      nav.sb .sb-sm { color: #64748b !important; }
+      nav.sb .sb-sm { color: #475569 !important; }
 
       /* Subtítulos de sección (PRINCIPAL, SISTEMA) */
-      nav.sb .ss { color: #94a3b8 !important; }
+      nav.sb .ss { color: #475569 !important; }
 
       /* ═══ ITEMS DEL MENÚ — estilo card flotante ═══ */
       nav.sb .ni {
@@ -3868,7 +3868,7 @@
       }
 
       /* Íconos y labels */
-      nav.sb .ni-i { color: #64748b !important; }
+      nav.sb .ni-i { color: #475569 !important; }
       nav.sb .ni:hover .ni-i,
       nav.sb .ni.on   .ni-i { color: #2563eb !important; }
 
@@ -3877,7 +3877,7 @@
       nav.sb .ni.on   .ni-l { color: #0f172a !important; font-weight: 700; }
 
       /* Chevrons de Contabilidad/Configuración */
-      nav.sb .ni i.ti-chevron-down { color: #94a3b8 !important; }
+      nav.sb .ni i.ti-chevron-down { color: #475569 !important; }
 
       /* Badges rojos (Clientes/Pólizas pendientes) */
       nav.sb .ni-b {
@@ -3914,7 +3914,7 @@
           inset 0 1px 0 rgba(255,255,255,.4) !important;
       }
       nav.sb .sb-un { color: #0f172a !important; }
-      nav.sb .sb-ur { color: #64748b !important; }
+      nav.sb .sb-ur { color: #475569 !important; }
 
       /* ═══ TICKER (barra superior con PRIMA/COBRADO/PENDIENTE) ═══ */
       .ticker {
@@ -4148,7 +4148,7 @@
         border-radius: 50% !important;
         color: #ffffff !important;
         border: none !important;
-        background: linear-gradient(145deg,#64748b,#94a3b8) !important;
+        background: linear-gradient(145deg,#475569,#475569) !important;
         box-shadow:
           0 10px 20px rgba(30,58,110,.22),
           inset 0 2px 3px rgba(255,255,255,.45) !important;
@@ -4350,7 +4350,7 @@
         line-height: 1.2 !important;
         font-weight: 700 !important;
         text-align: center !important;
-        color: #64748b !important;
+        color: #475569 !important;
         max-width: 80px !important;
         white-space: normal !important;
         overflow-wrap: break-word !important;
@@ -4373,7 +4373,7 @@
       body.tema-premium .cfg-tab, body.dark .cfg-tab{ background: none !important; }
       body.tema-premium .cfg-tab i, body.dark .cfg-tab i{ background: #1e293b !important; color: #cbd5e1 !important; }
       body.tema-premium .cfg-tab.active-tab i, body.dark .cfg-tab.active-tab i{ background: linear-gradient(135deg,#1e3a6e,#2563eb) !important; color: #fff !important; }
-      body.tema-premium .cfg-tab span, body.dark .cfg-tab span{ color: #94a3b8 !important; }
+      body.tema-premium .cfg-tab span, body.dark .cfg-tab span{ color: #475569 !important; }
       body.tema-premium .cfg-tab.active-tab span, body.dark .cfg-tab.active-tab span{ color: #60a5fa !important; }
 
       /* === MENU LATERAL: iconos en circulo de color (sin onda, para no romper el clic del div) === */
@@ -4383,7 +4383,7 @@
         display: inline-flex !important; align-items: center !important; justify-content: center !important;
         font-size: 15px !important;
         color: #fff !important;
-        background: linear-gradient(145deg,#94a3b8,#b6c2d4) !important;
+        background: linear-gradient(145deg,#475569,#b6c2d4) !important;
         box-shadow: 0 3px 8px rgba(30,58,110,.20) !important;
         transition: transform .18s ease, box-shadow .18s ease !important;
       }
@@ -4911,7 +4911,7 @@
         <div style="padding:30px;text-align:center;background:#fff;border:1px solid #fecaca;border-radius:14px;color:#dc2626;margin:20px">
           <div style="font-size:32px;margin-bottom:10px">⚠️</div>
           <div style="font-weight:800;font-size:16px;margin-bottom:6px">Error al cargar</div>
-          <div style="font-size:13px;color:#64748b;margin-bottom:14px">Hubo un problema cargando los datos. Verifica tu conexión.</div>
+          <div style="font-size:13px;color:#475569;margin-bottom:14px">Hubo un problema cargando los datos. Verifica tu conexión.</div>
           <button class="btn bsm bc1" onclick="window.nxRefrescarSolicitudes && window.nxRefrescarSolicitudes()" style="cursor:pointer">
             <i class="ti ti-refresh"></i> Reintentar
           </button>
@@ -4957,7 +4957,7 @@
         <div style="padding:30px;text-align:center;background:#fff;border:1px solid #fecaca;border-radius:14px;color:#dc2626;margin:20px">
           <div style="font-size:32px;margin-bottom:10px">⚠️</div>
           <div style="font-weight:800;font-size:16px;margin-bottom:6px">Error al mostrar</div>
-          <div style="font-size:11px;color:#64748b;margin-bottom:14px;font-family:monospace;text-align:left;background:#fef2f2;padding:8px;border-radius:6px;overflow-x:auto">${(err.message || err).toString().substring(0,300)}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:14px;font-family:monospace;text-align:left;background:#fef2f2;padding:8px;border-radius:6px;overflow-x:auto">${(err.message || err).toString().substring(0,300)}</div>
           <button class="btn bsm bc1" onclick="window.nxRefrescarSolicitudes && window.nxRefrescarSolicitudes()" style="cursor:pointer">
             <i class="ti ti-refresh"></i> Reintentar
           </button>
@@ -5231,7 +5231,7 @@
     style.textContent = `
       #v-solicitudes { padding: 0; }
       .nxSL-wrap { display:flex; flex-direction:column; gap:12px; padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
-      .nxSL-loading, .nxSL-empty { padding:40px; text-align:center; color:#64748b; font-weight:600; }
+      .nxSL-loading, .nxSL-empty { padding:40px; text-align:center; color:#475569; font-weight:600; }
 
       /* Header */
       .nxSL-head {
@@ -5257,7 +5257,7 @@
       }
       .nxSL-head-body { flex: 1 1 280px; min-width: 0; }
       .nxSL-title { margin:0; font-size:22px; font-weight:900; color:#0f172a; letter-spacing:.3px; }
-      .nxSL-sub { font-size:12px; color:#64748b; margin-top:3px; }
+      .nxSL-sub { font-size:12px; color:#475569; margin-top:3px; }
       .nxSL-head-stats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -5272,7 +5272,7 @@
         text-align: center;
       }
       .nxSL-stat-val { font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1; font-family: var(--mono, monospace); }
-      .nxSL-stat-lbl { font-size: 9.5px; font-weight: 700; color: #64748b; letter-spacing: .4px; margin-top: 6px; }
+      .nxSL-stat-lbl { font-size: 9.5px; font-weight: 700; color: #475569; letter-spacing: .4px; margin-top: 6px; }
 
       /* Sections */
       .nxSL-section {
@@ -5325,7 +5325,7 @@
       .nxSL-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 720px; }
       .nxSL-table thead th {
         padding: 10px 12px; text-align: left;
-        font-size: 9px; font-weight: 800; color: #64748b; letter-spacing: .6px;
+        font-size: 9px; font-weight: 800; color: #475569; letter-spacing: .6px;
         background: #f8fafc; border-bottom: 1px solid #e2e8f0; white-space: nowrap;
       }
       .nxSL-table tbody td {
@@ -5335,9 +5335,9 @@
       .nxSL-table tbody tr:last-child td { border-bottom: 0; }
       .nxSL-table .nxSL-num { text-align: right; font-family: var(--mono, monospace); white-space: nowrap; font-weight: 700; }
       .nxSL-table th.nxSL-num { text-align: right; }
-      .nxSL-tx-fecha { font-family: var(--mono, monospace); color: #64748b; font-size: 11px; white-space: nowrap; }
-      .nxSL-tx-ref { font-family: var(--mono, monospace); color: #64748b; font-size: 11px; }
-      .nxSL-muted { color: #94a3b8; font-size: 10px; }
+      .nxSL-tx-fecha { font-family: var(--mono, monospace); color: #475569; font-size: 11px; white-space: nowrap; }
+      .nxSL-tx-ref { font-family: var(--mono, monospace); color: #475569; font-size: 11px; }
+      .nxSL-muted { color: #475569; font-size: 10px; }
 
       /* Tags (DIRECTO vs FÍSICO) */
       .nxSL-tag {
@@ -5381,7 +5381,7 @@
       }
       .nxSL-transfer-stat-lbl { font-size: 9.5px; font-weight: 800; color: #7c3aed; letter-spacing: .5px; margin-bottom: 4px; }
       .nxSL-transfer-stat-val { font-size: 20px; font-weight: 900; color: #7c3aed; font-family: var(--mono, monospace); }
-      .nxSL-transfer-hist-title { font-size: 10px; font-weight: 800; color: #64748b; letter-spacing: .5px; margin: 14px 0 8px; }
+      .nxSL-transfer-hist-title { font-size: 10px; font-weight: 800; color: #475569; letter-spacing: .5px; margin: 14px 0 8px; }
 
       /* Recibir entrega section */
       .nxSL-recibir-body {
@@ -5401,7 +5401,7 @@
       /* Empty soft */
       .nxSL-empty-soft {
         padding: 20px; text-align: center;
-        color: #94a3b8; font-size: 12px; font-weight: 600;
+        color: #475569; font-size: 12px; font-weight: 600;
         background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;
       }
 
@@ -5434,10 +5434,10 @@
       }
       
       /* ═══ HISTORIAL ═══ */
-      .nxSL-section-historial { border-left: 4px solid #64748b; }
-      .nxSL-section-historial .nxSL-section-title i { color:#64748b; }
+      .nxSL-section-historial { border-left: 4px solid #475569; }
+      .nxSL-section-historial .nxSL-section-title i { color:#475569; }
       .nxSL-section-sub {
-        font-size: 11px; color: #64748b; margin-bottom: 12px; font-weight: 500;
+        font-size: 11px; color: #475569; margin-bottom: 12px; font-weight: 500;
       }
       .nxSL-badge-gray {
         background: #e2e8f0; color: #475569;
@@ -5446,7 +5446,7 @@
         min-width: 28px; text-align: center;
       }
       .nxSL-empty-soft {
-        padding: 24px; text-align: center; color: #94a3b8;
+        padding: 24px; text-align: center; color: #475569;
         font-size: 12px; font-weight: 600;
         background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;
       }
@@ -5472,7 +5472,7 @@
       }
       .nxSL-hist-table thead th {
         background: #f8fafc; padding: 10px 12px; text-align: left;
-        font-size: 9px; font-weight: 800; color: #64748b; letter-spacing: .5px;
+        font-size: 9px; font-weight: 800; color: #475569; letter-spacing: .5px;
         border-bottom: 1px solid #e2e8f0; white-space: nowrap;
       }
       .nxSL-hist-table th.nxSL-hist-monto { text-align: right; }
@@ -5482,8 +5482,8 @@
       }
       .nxSL-hist-table tbody tr:last-child td { border-bottom: 0; }
       .nxSL-hist-table tbody tr:hover { background: #f8fafc; }
-      .nxSL-hist-fecha { font-family: var(--mono, monospace); color: #64748b; font-size: 11px; }
-      .nxSL-hist-ref { font-family: var(--mono, monospace); color: #64748b; font-size: 11px; }
+      .nxSL-hist-fecha { font-family: var(--mono, monospace); color: #475569; font-size: 11px; }
+      .nxSL-hist-ref { font-family: var(--mono, monospace); color: #475569; font-size: 11px; }
       .nxSL-hist-monto { text-align: right; font-family: var(--mono, monospace); font-weight: 700; color: #059669; white-space: nowrap; }
       .nxSL-hist-tipo {
         display: inline-block; padding: 3px 8px; border-radius: 6px;
@@ -6061,7 +6061,7 @@
       .kpi i.ti-tool, .qa i.ti-tool, .sm i.ti-tool, .nc i.ti-tool,
       .kpi i.ti-tools, .qa i.ti-tools, .sm i.ti-tools, .nc i.ti-tools,
       .kpi i.ti-database, .qa i.ti-database, .sm i.ti-database, .nc i.ti-database {
-        background: linear-gradient(145deg, #cbd5e1, #64748b) !important;
+        background: linear-gradient(145deg, #cbd5e1, #475569) !important;
         color: #ffffff !important;
         box-shadow:
           0 10px 24px rgba(71,85,105,.32),
@@ -6169,7 +6169,7 @@
           <div style="padding:8px 0">
             <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px">URL de la plataforma</label>
             <input type="text" id="nxConfigCoberturaURL" placeholder="http://..." style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:13px;font-family:monospace">
-            <div style="font-size:11px;color:#64748b;margin-top:6px">
+            <div style="font-size:11px;color:#475569;margin-top:6px">
               <i class="ti ti-info-circle" style="color:#3b82f6"></i>
               Esta URL se abrirá en una nueva pestaña al tocar "Consultar Cobertura".
             </div>
@@ -6396,7 +6396,7 @@
               <input type="checkbox" id="nxNotifTipoFactura" style="width:20px;height:20px;cursor:pointer">
               <div>
                 <div style="font-weight:700;color:#0f172a">📄 Facturas generadas</div>
-                <div style="font-size:11px;color:#64748b">Cuando se crea una factura nueva</div>
+                <div style="font-size:11px;color:#475569">Cuando se crea una factura nueva</div>
               </div>
             </label>
             
@@ -6404,7 +6404,7 @@
               <input type="checkbox" id="nxNotifTipoPago" style="width:20px;height:20px;cursor:pointer">
               <div>
                 <div style="font-weight:700;color:#0f172a">💰 Pagos recibidos</div>
-                <div style="font-size:11px;color:#64748b">Cuando se registra un cobro</div>
+                <div style="font-size:11px;color:#475569">Cuando se registra un cobro</div>
               </div>
             </label>
             
@@ -6412,7 +6412,7 @@
               <input type="checkbox" id="nxNotifTipoError" style="width:20px;height:20px;cursor:pointer">
               <div>
                 <div style="font-weight:700;color:#0f172a">⚠️ Errores del sistema</div>
-                <div style="font-size:11px;color:#64748b">Avisos importantes que requieren atención</div>
+                <div style="font-size:11px;color:#475569">Avisos importantes que requieren atención</div>
               </div>
             </label>
             
@@ -6520,7 +6520,7 @@
         </div>
         <div>
           <div style="font-weight:800;color:#0f172a;font-size:14px">Notificaciones del navegador</div>
-          <div style="font-size:11px;color:#64748b">Avisos tipo app cuando ocurren eventos importantes</div>
+          <div style="font-size:11px;color:#475569">Avisos tipo app cuando ocurren eventos importantes</div>
         </div>
       </div>
       <div id="nxNotifEstadoInline" style="padding:10px;border-radius:10px;margin-bottom:12px;font-weight:600;font-size:12px;text-align:center"></div>
@@ -7247,7 +7247,7 @@
     { id: 'santacruz', nom: 'Banco Santa Cruz', color: '#1a5490', logoUrl: null },
     { id: 'vimenca', nom: 'Banco Vimenca', color: '#003c71', logoUrl: null },
     { id: 'apap', nom: 'APAP', color: '#00a89c', logoUrl: null },
-    { id: 'otro', nom: 'Otro Banco', color: '#64748b', logoUrl: null }
+    { id: 'otro', nom: 'Otro Banco', color: '#475569', logoUrl: null }
   ];
 
   // ═══ API HELPER ═══
@@ -7402,7 +7402,7 @@
       });
       document.body.appendChild(modal);
     }
-    modal.innerHTML = '<div class="modal" style="max-width:560px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando cuentas...</div></div></div>';
+    modal.innerHTML = '<div class="modal" style="max-width:560px"><div style="padding:40px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando cuentas...</div></div></div>';
     modal.classList.add('open');
     
     await cargarCuentas();
@@ -7413,7 +7413,7 @@
   function renderModal(modal) {
     const cuentas = _cuentasCache;
     const lista = cuentas.length === 0
-      ? '<div style="text-align:center;padding:40px 20px;color:#64748b;font-size:13px">No tienes cuentas registradas.<br>Agrega tu primera abajo. 👇</div>'
+      ? '<div style="text-align:center;padding:40px 20px;color:#475569;font-size:13px">No tienes cuentas registradas.<br>Agrega tu primera abajo. 👇</div>'
       : cuentas.map((c) => {
           const b = getBanco(c.banco);
           return `
@@ -7422,9 +7422,9 @@
                 ${renderLogoBanco(c.banco, 48)}
                 <div style="flex:1;min-width:0">
                   <div style="font-weight:800;color:#0f172a;font-size:13px">${esc(b.nom)}</div>
-                  <div style="font-size:11px;color:#64748b;margin-top:2px">${esc(c.tipo)} · <strong style="color:#1e3a8a">${esc(c.numero)}</strong></div>
-                  <div style="font-size:11px;color:#64748b">${esc(c.titular)}${c.cedula ? ' · ' + esc(c.cedula) : ''}</div>
-                  ${c.notas ? `<div style="font-size:10px;color:#94a3b8;margin-top:3px;font-style:italic">📝 ${esc(c.notas)}</div>` : ''}
+                  <div style="font-size:11px;color:#475569;margin-top:2px">${esc(c.tipo)} · <strong style="color:#1e3a8a">${esc(c.numero)}</strong></div>
+                  <div style="font-size:11px;color:#475569">${esc(c.titular)}${c.cedula ? ' · ' + esc(c.cedula) : ''}</div>
+                  ${c.notas ? `<div style="font-size:10px;color:#475569;margin-top:3px;font-style:italic">📝 ${esc(c.notas)}</div>` : ''}
                 </div>
                 <div style="display:flex;flex-direction:column;align-items:center;gap:2px;color:#2563eb">
                   <i class="ti ti-copy" style="font-size:22px"></i>
@@ -7883,7 +7883,7 @@
       modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
       document.body.appendChild(modal);
     }
-    modal.innerHTML = '<div class="modal" style="max-width:560px"><div style="padding:40px;text-align:center;color:#64748b">Cargando...</div></div>';
+    modal.innerHTML = '<div class="modal" style="max-width:560px"><div style="padding:40px;text-align:center;color:#475569">Cargando...</div></div>';
     modal.classList.add('open');
     await cargarDest();
     renderDestModal(modal);
@@ -7891,7 +7891,7 @@
 
   function renderDestModal(modal) {
     const lista = _destCache.length === 0
-      ? '<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">No hay empleados configurados.<br>Agrega uno abajo. 👇</div>'
+      ? '<div style="text-align:center;padding:30px;color:#475569;font-size:13px">No hay empleados configurados.<br>Agrega uno abajo. 👇</div>'
       : _destCache.map(d => {
           const secs = getSecs(d);
           return `
@@ -7899,11 +7899,11 @@
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
                 <div style="flex:1">
                   <div style="font-weight:800;font-size:13px;color:#0f172a">${esc(d.nombre)}</div>
-                  <div style="font-size:11px;color:#64748b">${esc(d.correo)}</div>
+                  <div style="font-size:11px;color:#475569">${esc(d.correo)}</div>
                 </div>
                 <span style="background:${d.activo?'#dcfce7':'#fee2e2'};color:${d.activo?'#059669':'#dc2626'};font-size:9px;font-weight:700;padding:3px 8px;border-radius:10px">${d.activo?'ACTIVO':'INACTIVO'}</span>
               </div>
-              <div style="font-size:10px;color:#94a3b8;margin-bottom:8px">Recibe: ${secs.length} sección(es)</div>
+              <div style="font-size:10px;color:#475569;margin-bottom:8px">Recibe: ${secs.length} sección(es)</div>
               <div style="display:flex;gap:6px">
                 <button class="btn bsm bc1" style="flex:1" onclick="window.nxEditarDest('${esc(d.id)}')"><i class="ti ti-pencil"></i> Editar</button>
                 <button class="btn bsm bghost" style="color:#dc2626" onclick="window.nxEliminarDest('${esc(d.id)}')"><i class="ti ti-trash"></i></button>
@@ -8107,7 +8107,7 @@
     const cont = document.getElementById('nxHorasList');
     if (!cont) return;
     cont.innerHTML = _horas.length === 0
-      ? '<div style="color:#94a3b8;font-size:11px;padding:6px">Sin horas. Agrega abajo.</div>'
+      ? '<div style="color:#475569;font-size:11px;padding:6px">Sin horas. Agrega abajo.</div>'
       : _horas.map((h, i) => `
           <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;margin-bottom:5px">
             <i class="ti ti-clock" style="color:#2563eb"></i>
@@ -8356,7 +8356,7 @@
               <i class="ti ti-${c.iconName}" style="font-size:28px;color:${c.icon}"></i>
             </div>
             <div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:8px;line-height:1.3">${(titulo||'').replace(/</g,'&lt;')}</div>
-            ${mensaje ? `<div style="font-size:13px;color:#64748b;line-height:1.5;white-space:pre-line">${(mensaje).replace(/</g,'&lt;')}</div>` : ''}
+            ${mensaje ? `<div style="font-size:13px;color:#475569;line-height:1.5;white-space:pre-line">${(mensaje).replace(/</g,'&lt;')}</div>` : ''}
           </div>
           <div style="display:flex;gap:8px;padding:14px 20px 20px;border-top:1px solid #f1f5f9;background:#f8fafc">
             <button id="nxConfirmCancel" class="btn bxl" style="flex:1;background:#fff;border:1.5px solid #e2e8f0;color:#475569">${txtCancel}</button>
@@ -8459,12 +8459,12 @@
     if (!modal) return;
 
     const lista = hist.length === 0
-      ? '<div style="text-align:center;color:#94a3b8;padding:30px;font-size:13px">No hay conversaciones guardadas todavía</div>'
+      ? '<div style="text-align:center;color:#475569;padding:30px;font-size:13px">No hay conversaciones guardadas todavía</div>'
       : hist.map((c, i) => {
           const fecha = new Date(c.fecha).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
           return `<div onclick="window.nxSmartCargarVieja(${i})" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer">
             <div style="font-size:12px;font-weight:700;color:#1e293b">${c.titulo}</div>
-            <div style="font-size:10px;color:#94a3b8;margin-top:3px">📅 ${fecha} · ${c.mensajes.length} mensajes</div>
+            <div style="font-size:10px;color:#475569;margin-top:3px">📅 ${fecha} · ${c.mensajes.length} mensajes</div>
           </div>`;
         }).join('');
 
@@ -8519,7 +8519,7 @@
     ).join('');
 
     const mensajes = _historial.length === 0 
-      ? `<div style="text-align:center;padding:30px 20px;color:#64748b">
+      ? `<div style="text-align:center;padding:30px 20px;color:#475569">
           <div style="font-size:42px;margin-bottom:12px">🤖</div>
           <div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:6px">NEXUS Smart</div>
           <div style="font-size:12px;line-height:1.5;margin-bottom:16px">Tu asistente inteligente. Pregúntame lo que quieras sobre tu correduría.</div>
@@ -8540,7 +8540,7 @@
             </div>`;
           } else if (m.tipo === 'cargando') {
             return `<div style="display:flex;justify-content:flex-start;margin-bottom:10px" id="nxSmartCargando">
-              <div style="background:#fff;border:1px solid #e2e8f0;color:#64748b;padding:10px 14px;border-radius:4px 18px 18px 18px;font-size:12px;font-style:italic">
+              <div style="background:#fff;border:1px solid #e2e8f0;color:#475569;padding:10px 14px;border-radius:4px 18px 18px 18px;font-size:12px;font-style:italic">
                 <span style="display:inline-block;animation:nxPulse 1s infinite">●</span> Pensando...
               </div>
             </div>`;
@@ -8817,12 +8817,12 @@
         .nxCi-head{background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:20px;display:flex;justify-content:space-between;align-items:center}
         .nxCi-body{padding:16px}
         .nxCi-card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-        .nxCi-title{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+        .nxCi-title{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
         .nxCi-big{font-size:34px;font-weight:800;color:#059669;line-height:1}
         .nxCi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
         .nxCi-stat{background:#f8fafc;border-radius:10px;padding:12px;text-align:center}
         .nxCi-stat b{font-size:18px;font-weight:800;display:block}
-        .nxCi-stat span{font-size:9px;color:#94a3b8;text-transform:uppercase}
+        .nxCi-stat span{font-size:9px;color:#475569;text-transform:uppercase}
         .nxCi-mes{display:flex;justify-content:space-between;align-items:center;padding:11px;background:#f8fafc;border-radius:10px;margin-bottom:7px}
         .nxCi-row{padding:9px 2px;border-bottom:1px solid #f1f5f9}
         .nxCi-row:last-child{border-bottom:none}
@@ -8857,7 +8857,7 @@
           <div class="nxCi-card">
             <div class="nxCi-title">💰 Cobrado este mes</div>
             <div class="nxCi-big">${F(mesActual.total)}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:6px">
+            <div style="font-size:12px;color:#475569;margin-top:6px">
               ${mesActual.num} cobros ·
               <span style="color:${tend >= 0 ? '#10b981' : '#ef4444'};font-weight:700">${tend >= 0 ? '↑' : '↓'} ${Math.abs(tend)}%</span>
               vs mes anterior
@@ -8905,11 +8905,11 @@
               <div class="nxCi-row">
                 <div style="display:flex;justify-content:space-between;align-items:center">
                   <span style="font-size:12px;font-weight:700;color:#1e293b">${nomMes(m.mes)}${m.mes===ymActual?' <span style="font-size:8px;background:#dbeafe;color:#1d4ed8;padding:1px 5px;border-radius:6px;font-weight:800">ACTUAL</span>':''}</span>
-                  <span style="font-size:13px;font-weight:800;color:#059669">${F(m.total)}<span style="font-size:9px;color:#94a3b8;font-weight:600"> · ${m.num}</span></span>
+                  <span style="font-size:13px;font-weight:800;color:#059669">${F(m.total)}<span style="font-size:9px;color:#475569;font-weight:600"> · ${m.num}</span></span>
                 </div>
                 <div class="nxCi-bar-bg"><div class="nxCi-bar-fill" style="width:${Math.round(m.total/maxHist*100)}%;background:${m.mes===ymActual?'linear-gradient(90deg,#60a5fa,#1d4ed8)':'linear-gradient(90deg,#a7f3d0,#10b981)'}"></div></div>
               </div>
-            `).join('') : '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:14px">Aún no hay cobros registrados</div>'}
+            `).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:14px">Aún no hay cobros registrados</div>'}
           </div>
 
         </div>
@@ -9048,7 +9048,7 @@
         } else if (limpio.length > 0) {
           // Incompleta
           aviso.style.display = 'block';
-          aviso.style.color = '#94a3b8';
+          aviso.style.color = '#475569';
           aviso.innerHTML = `${limpio.length}/11 dígitos`;
           input.style.borderColor = '';
         }
@@ -9137,7 +9137,7 @@
     SALARIO: { label: 'Salario empleado',  benef: 'Empleado',            icon: 'ti-user-dollar',       color: '#0891b2' },
     GASTO:   { label: 'Gasto general',     benef: 'Proveedor / detalle', icon: 'ti-receipt-2',         color: '#d97706' }
   };
-  function tipoInfo(t) { return TIPOS[t] || { label: t || 'Egreso', benef: 'Beneficiario', icon: 'ti-cash', color: '#64748b' }; }
+  function tipoInfo(t) { return TIPOS[t] || { label: t || 'Egreso', benef: 'Beneficiario', icon: 'ti-cash', color: '#475569' }; }
 
   const METODOS = ['Efectivo', 'Transferencia', 'Cheque', 'Tarjeta', 'Otro'];
 
@@ -9343,7 +9343,7 @@
       modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
       document.body.appendChild(modal);
     }
-    modal.innerHTML = '<div class="modal" style="max-width:620px"><div style="padding:40px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando contabilidad...</div></div></div>';
+    modal.innerHTML = '<div class="modal" style="max-width:620px"><div style="padding:40px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Cargando contabilidad...</div></div></div>';
     modal.classList.add('open');
 
     await Promise.all([cargarEgresos(), cargarAbonos()]);
@@ -9372,7 +9372,7 @@
     }).join('');
 
     const lista = egs.length === 0
-      ? '<div style="text-align:center;padding:36px 20px;color:#94a3b8;font-size:13px">No hay egresos en este periodo.<br>Registra uno abajo. 👇</div>'
+      ? '<div style="text-align:center;padding:36px 20px;color:#475569;font-size:13px">No hay egresos en este periodo.<br>Registra uno abajo. 👇</div>'
       : egs.map(e => {
           const ti = tipoInfo(e.tipo);
           return `
@@ -9380,8 +9380,8 @@
               <div style="width:40px;height:40px;border-radius:10px;background:${ti.color}18;color:${ti.color};display:grid;place-items:center;flex-shrink:0"><i class="ti ${ti.icon}" style="font-size:20px"></i></div>
               <div style="flex:1;min-width:0">
                 <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.concepto || ti.label)}</div>
-                <div style="font-size:11px;color:#64748b;margin-top:1px">${esc(ti.label)}${e.beneficiario ? ' · ' + esc(e.beneficiario) : ''}</div>
-                <div style="font-size:10.5px;color:#94a3b8;margin-top:1px">${fmtFecha(e.fecha)}${e.metodo ? ' · ' + esc(e.metodo) : ''}${e.banco ? ' · ' + esc(e.banco) : ''}${e.referencia ? ' · Ref: ' + esc(e.referencia) : ''}</div>
+                <div style="font-size:11px;color:#475569;margin-top:1px">${esc(ti.label)}${e.beneficiario ? ' · ' + esc(e.beneficiario) : ''}</div>
+                <div style="font-size:10.5px;color:#475569;margin-top:1px">${fmtFecha(e.fecha)}${e.metodo ? ' · ' + esc(e.metodo) : ''}${e.banco ? ' · ' + esc(e.banco) : ''}${e.referencia ? ' · Ref: ' + esc(e.referencia) : ''}</div>
               </div>
               <div style="text-align:right;flex-shrink:0">
                 <div style="font-weight:900;color:#dc2626;font-size:14px;white-space:nowrap">- ${fmt(e.monto)}</div>
@@ -9681,7 +9681,7 @@
     panel.style.display = '';
     ['tabFact', 'tabCob', 'tabPagos'].forEach(id => { const t = document.getElementById(id); if (t) t.classList.remove('is-active'); });
     const tabBtn = document.getElementById('nxBtnPendPrev'); if (tabBtn) tabBtn.classList.add('is-active');
-    inner.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Revisando facturas...</div></div></div>';
+    inner.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:10px;font-weight:600">Revisando facturas...</div></div></div>';
 
     // Cobros aplicados a cada factura (para descontar lo ya pagado)
     let pagadoPorFactura = {};
@@ -9726,7 +9726,7 @@
 
   function renderPendPanel(inner, lista, totalGeneral) {
     const filas = lista.length === 0
-      ? '<div style="text-align:center;padding:40px 20px;color:#10b981;font-size:14px;font-weight:600">✓ ¡Todo al día!<br><span style="color:#94a3b8;font-weight:400;font-size:12px">Ningún cliente debe facturas de meses anteriores.</span></div>'
+      ? '<div style="text-align:center;padding:40px 20px;color:#10b981;font-size:14px;font-weight:600">✓ ¡Todo al día!<br><span style="color:#475569;font-weight:400;font-size:12px">Ningún cliente debe facturas de meses anteriores.</span></div>'
       : lista.map((x, i) => {
           const cli = x.cli || {};
           const chips = x.periodos.sort((a, b) => a.num - b.num)
@@ -9741,7 +9741,7 @@
                 <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#eef2f7,#e2e8f0);color:#475569;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
                 <div style="flex:1;min-width:0;cursor:pointer" ${cid ? `onclick="window.nxVerClientePend('${cid}')"` : ''} title="Ver resumen del cliente">
                   <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cli.nom || 'Cliente')}</div>
-                  <div style="font-size:11px;color:#64748b">Agente: ${esc(x.agente)} · ${x.periodos.length} factura(s)</div>
+                  <div style="font-size:11px;color:#475569">Agente: ${esc(x.agente)} · ${x.periodos.length} factura(s)</div>
                   ${cid ? '<div style="font-size:9px;color:#7c3aed;font-weight:700;margin-top:1px"><i class="ti ti-user-search"></i> Toca para ver resumen</div>' : ''}
                 </div>
                 <div style="text-align:right;flex-shrink:0">
@@ -9762,12 +9762,12 @@
           <div><div class="ct"><i class="ti ti-alert-triangle"></i> Pendientes de meses anteriores</div><div class="ct-s">Facturas de meses anteriores aún por cobrar</div></div>
         </div>
         ${lista.length ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;text-align:center;margin:0 0 12px;box-shadow:inset 0 1px 2px rgba(15,23,42,.04)">
-          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:.4px">TOTAL POR COBRAR DE MESES ANTERIORES</div>
+          <div style="font-size:10px;font-weight:800;color:#475569;letter-spacing:.4px">TOTAL POR COBRAR DE MESES ANTERIORES</div>
           <div style="font-size:24px;font-weight:900;color:#dc2626;margin-top:2px">${fmt(totalGeneral)}</div>
-          <div style="font-size:10px;color:#94a3b8;font-weight:600">${lista.length} cliente(s) con atraso</div>
+          <div style="font-size:10px;color:#475569;font-weight:600">${lista.length} cliente(s) con atraso</div>
         </div>` : ''}
         ${lista.length ? `<div style="position:relative;margin:0 0 12px">
-          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
+          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i>
           <input type="text" id="nxPendBuscar" placeholder="Buscar cliente..." autocomplete="off" oninput="window.nxFiltrarPend(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
         </div>` : ''}
         <div>${filas}</div>
@@ -9987,7 +9987,7 @@
     wrap.style.cssText = 'position:relative;margin:0 0 10px';
     const ico = document.createElement('i');
     ico.className = 'ti ti-search';
-    ico.style.cssText = 'position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none';
+    ico.style.cssText = 'position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none';
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.id = 'nxBus_' + cfg.key;
@@ -10158,7 +10158,7 @@
     if (estado === 'subiendo') {
       prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#475569">Subiendo bauche...</div></div><div class="spin"></div></div>`;
     } else if (estado === 'listo') {
-      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer" onclick="window.nxVerComprobante('${src}')"><div style="flex:1"><div style="font-size:11px;font-weight:800;color:#059669"><i class="ti ti-check"></i> Bauche listo</div><div style="font-size:9px;color:#94a3b8">Toca la imagen para verla</div></div><button type="button" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxQuitarBauche()"><i class="ti ti-trash"></i></button></div>`;
+      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer" onclick="window.nxVerComprobante('${src}')"><div style="flex:1"><div style="font-size:11px;font-weight:800;color:#059669"><i class="ti ti-check"></i> Bauche listo</div><div style="font-size:9px;color:#475569">Toca la imagen para verla</div></div><button type="button" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxQuitarBauche()"><i class="ti ti-trash"></i></button></div>`;
     } else if (estado === 'error') {
       prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><div style="flex:1;font-size:11px;font-weight:700;color:#dc2626"><i class="ti ti-alert-triangle"></i> No se pudo subir</div><button type="button" class="btn bsm bghost" onclick="window.nxQuitarBauche()">Reintentar</button></div>`;
     }
@@ -10189,7 +10189,7 @@
           <button type="button" class="btn bsm" style="flex:1;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-weight:800" onclick="document.getElementById('nxBaucheInput').click()"><i class="ti ti-camera"></i> Foto / archivo</button>
           <button type="button" class="btn bsm" style="flex:1;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-weight:800" onclick="window.nxPegarBauche()"><i class="ti ti-clipboard"></i> Pegar</button>
         </div>
-        <div style="font-size:9.5px;color:#94a3b8;margin-top:6px;text-align:center">Copia el bauche en WhatsApp y toca <strong>"Pegar"</strong></div>
+        <div style="font-size:9.5px;color:#475569;margin-top:6px;text-align:center">Copia el bauche en WhatsApp y toca <strong>"Pegar"</strong></div>
       </div>
       <div id="nxBauchePreview" style="display:none;align-items:center;gap:10px;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#fff"></div>
       <input type="file" id="nxBaucheInput" accept="image/*,.pdf" style="display:none">
@@ -10478,7 +10478,7 @@
 
   async function onArchivo(file) {
     if (!file) return;
-    setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo archivo...</div></div>');
+    setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#475569"><div class="spin"></div><div style="margin-top:8px">Leyendo archivo...</div></div>');
     setArea('nxTssMapeo', '');
     _rows = []; _titulares = []; _depCount = 0;
     _acumCed = []; _acumArchivos = [];
@@ -10486,7 +10486,7 @@
     try {
       buf = await leerBufferRobusto(file);
     } catch (e) {
-      setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">⚠️ No se pudo leer el archivo.<br><span style="font-size:12px;color:#64748b">Si está <b>abierto en Excel</b> u otro programa, ciérralo y vuelve a intentarlo.<br>Si está en <b>OneDrive/Drive</b>, descárgalo primero a tu PC.</span></div>');
+      setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">⚠️ No se pudo leer el archivo.<br><span style="font-size:12px;color:#475569">Si está <b>abierto en Excel</b> u otro programa, ciérralo y vuelve a intentarlo.<br>Si está en <b>OneDrive/Drive</b>, descárgalo primero a tu PC.</span></div>');
       return;
     }
     try {
@@ -10499,7 +10499,7 @@
         const { titulares, dependientes } = parsearHumano(texto);
         _titulares = titulares; _depCount = dependientes.length;
         if (!titulares.length) {
-          setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center">No encontré titulares en el PDF.<br><span style="font-size:11px;color:#94a3b8">¿Es una factura de plan voluntario de Humano?</span></div>');
+          setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center">No encontré titulares en el PDF.<br><span style="font-size:11px;color:#475569">¿Es una factura de plan voluntario de Humano?</span></div>');
           return;
         }
         renderInfoPDF();
@@ -10522,7 +10522,7 @@
       const detalle = bloqueo
         ? 'Si está <b>abierto en Excel</b> u otro programa, ciérralo y vuelve a intentarlo.<br>Si está en <b>OneDrive/Drive</b>, descárgalo primero a tu PC.'
         : esc(e?.message || '');
-      setArea('nxTssResultado', `<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">⚠️ No se pudo leer el archivo.<br><span style="font-size:12px;color:#64748b">${detalle}</span></div>`);
+      setArea('nxTssResultado', `<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">⚠️ No se pudo leer el archivo.<br><span style="font-size:12px;color:#475569">${detalle}</span></div>`);
     }
   }
 
@@ -10546,7 +10546,7 @@
     _modo = 'cedula'; _rows = []; _titulares = []; _depCount = 0;
     _acumCed = []; _acumArchivos = [];
     setArea('nxTssMapeo', '');
-    setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#64748b"><div class="spin"></div><div style="margin-top:8px">Leyendo ' + files.length + ' archivo(s)...</div></div>');
+    setArea('nxTssResultado', '<div style="text-align:center;padding:24px;color:#475569"><div class="spin"></div><div style="margin-top:8px">Leyendo ' + files.length + ' archivo(s)...</div></div>');
     const errores = [];
     for (const file of files) {
       try {
@@ -10565,7 +10565,7 @@
     const vistos = new Set();
     _acumCed = _acumCed.filter(e => { if (vistos.has(e.ced)) return false; vistos.add(e.ced); return true; });
     const okHtml = _acumArchivos.length
-      ? '<div style="font-size:11px;color:#166534;font-weight:700">✓ ' + _acumArchivos.length + ' archivo(s) · ' + _acumCed.length + ' cédulas (sin repetir)</div><div style="font-size:10px;color:#64748b;margin-top:3px">' + _acumArchivos.map(esc).join(' · ') + '</div>'
+      ? '<div style="font-size:11px;color:#166534;font-weight:700">✓ ' + _acumArchivos.length + ' archivo(s) · ' + _acumCed.length + ' cédulas (sin repetir)</div><div style="font-size:10px;color:#475569;margin-top:3px">' + _acumArchivos.map(esc).join(' · ') + '</div>'
       : '<div style="font-size:11px;color:#b91c1c;font-weight:700">No se leyeron cédulas de los archivos.</div>';
     const errHtml = errores.length ? '<div style="font-size:10px;color:#b91c1c;margin-top:5px">⚠️ ' + errores.map(esc).join(' · ') + '</div>' : '';
     setArea('nxTssMapeo', '<div style="margin-top:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px">' + okHtml + errHtml + '</div>');
@@ -10681,15 +10681,15 @@
   };
 
   window.nxTssVerHistorial = async function () {
-    setArea('nxTssResultado', '<div style="text-align:center;padding:20px;color:#64748b"><div class="spin"></div><div style="margin-top:6px">Cargando historial...</div></div>');
+    setArea('nxTssResultado', '<div style="text-align:center;padding:20px;color:#475569"><div class="spin"></div><div style="margin-top:6px">Cargando historial...</div></div>');
     let data = [];
     try { const _api = (typeof API !== 'undefined') ? API : window.API; data = await _api.get('cuadre_tss_historial', 'select=*&order=created_at.desc&limit=300'); } catch (e) { setArea('nxTssResultado', '<div style="color:#dc2626;padding:16px;text-align:center;font-size:13px">No se pudo cargar el historial.</div>'); return; }
-    if (!Array.isArray(data) || !data.length) { setArea('nxTssResultado', '<div style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">📜 Aún no hay cuadres guardados.<br><span style="font-size:11px">Haz un cuadre y toca "Guardar cuadre".</span></div>'); return; }
+    if (!Array.isArray(data) || !data.length) { setArea('nxTssResultado', '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">📜 Aún no hay cuadres guardados.<br><span style="font-size:11px">Haz un cuadre y toca "Guardar cuadre".</span></div>'); return; }
     _histData = data;
     const items = data.map((r, i) => {
       const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-DO') : '';
       const res = r.resumen || {};
-      return '<div onclick="window.nxTssVerSnapshot(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:6px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:12.5px;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div><div style="font-size:10px;color:#94a3b8">' + esc(fecha) + '</div></div><div style="font-size:11px;color:#475569;margin-top:3px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + '</div><div style="font-size:10px;color:#64748b;margin-top:2px">✅ ' + (res.coinciden || 0) + ' coinciden · ⚠️ ' + ((res.faltanTSS || []).length) + ' faltan · 💰 ' + ((res.conDeuda || []).length) + ' con deuda</div></div>';
+      return '<div onclick="window.nxTssVerSnapshot(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:6px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:12.5px;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div><div style="font-size:10px;color:#475569">' + esc(fecha) + '</div></div><div style="font-size:11px;color:#475569;margin-top:3px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + '</div><div style="font-size:10px;color:#475569;margin-top:2px">✅ ' + (res.coinciden || 0) + ' coinciden · ⚠️ ' + ((res.faltanTSS || []).length) + ' faltan · 💰 ' + ((res.conDeuda || []).length) + ' con deuda</div></div>';
     }).join('');
     setArea('nxTssResultado', '<div style="margin:12px 0"><div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:8px">📜 HISTORIAL DE CUADRES (' + data.length + ')</div>' + items + '</div>');
   };
@@ -10704,14 +10704,14 @@
       const lista = (arr || []).map(p => {
         const clic = p.ced ? ' onclick="window.nxTssFicha(\'' + esc(p.ced) + '\')"' : '';
         const cur = p.ced ? 'cursor:pointer;' : '';
-        return '<div' + clic + ' style="' + cur + 'display:flex;justify-content:space-between;gap:8px;padding:6px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600">' + esc(p.nom || '') + '</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">' + esc(p.ced || '') + '</div></div>' + (deuda ? '<div style="font-weight:800;color:#b91c1c;flex-shrink:0">RD$ ' + Number(p.deuda || 0).toLocaleString('es-DO') + '</div>' : (p.extra ? '<div style="font-size:10px;color:#94a3b8;flex-shrink:0">' + esc(p.extra) + '</div>' : '')) + (p.ced ? '<i class="ti ti-chevron-right" style="color:#cbd5e1;flex-shrink:0;font-size:15px"></i>' : '') + '</div>';
-      }).join('') || '<div style="padding:10px 12px;color:#94a3b8;font-size:11px">—</div>';
+        return '<div' + clic + ' style="' + cur + 'display:flex;justify-content:space-between;gap:8px;padding:6px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600">' + esc(p.nom || '') + '</div><div style="font-size:10px;color:#475569;font-family:var(--mono,monospace)">' + esc(p.ced || '') + '</div></div>' + (deuda ? '<div style="font-weight:800;color:#b91c1c;flex-shrink:0">RD$ ' + Number(p.deuda || 0).toLocaleString('es-DO') + '</div>' : (p.extra ? '<div style="font-size:10px;color:#475569;flex-shrink:0">' + esc(p.extra) + '</div>' : '')) + (p.ced ? '<i class="ti ti-chevron-right" style="color:#cbd5e1;flex-shrink:0;font-size:15px"></i>' : '') + '</div>';
+      }).join('') || '<div style="padding:10px 12px;color:#475569;font-size:11px">—</div>';
       return '<div style="border:1px solid ' + color + '33;border-radius:10px;margin-bottom:8px;overflow:hidden"><div style="background:' + bg + ';padding:8px 12px;font-size:11px;font-weight:800;color:' + color + '">' + titulo + ' (' + (arr || []).length + ')</div><div style="max-height:180px;overflow-y:auto">' + lista + '</div></div>';
     };
     setArea('nxTssResultado',
       '<button type="button" onclick="window.nxTssVerHistorial()" style="border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 12px;font-weight:700;font-size:11px;cursor:pointer;margin:10px 0"><i class="ti ti-arrow-left"></i> Volver al historial</button>'
       + '<div style="font-size:13px;font-weight:800;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div>'
-      + '<div style="font-size:11px;color:#64748b;margin-bottom:10px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + (r.created_at ? ' · ' + esc(new Date(r.created_at).toLocaleString('es-DO')) : '') + '</div>'
+      + '<div style="font-size:11px;color:#475569;margin-bottom:10px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + (r.created_at ? ' · ' + esc(new Date(r.created_at).toLocaleString('es-DO')) : '') + '</div>'
       + sec('⚠️ FALTAN EN ' + F, '#dc2626', '#fef2f2', res.faltanTSS)
       + sec('📋 EN ' + F + ' PERO NO EN SISTEMA', '#b45309', '#fffbeb', res.extras)
       + sec('⛔ INHABILITADOS EN ' + F, '#9f1239', '#fff1f2', res.inhabEnTSS)
@@ -10724,7 +10724,7 @@
       <div style="display:flex;gap:8px;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;font-size:12px;color:#1e40af">
         <i class="ti ti-file-text" style="font-size:16px"></i>
         <div>PDF de Humano detectado · <b>${_titulares.length} titulares</b> · ${_depCount} dependientes ignorados.
-        <div style="font-size:10px;color:#64748b;margin-top:2px">Sin cédula en el PDF → la comparación es <b>por nombre</b>.</div></div>
+        <div style="font-size:10px;color:#475569;margin-top:2px">Sin cédula en el PDF → la comparación es <b>por nombre</b>.</div></div>
       </div>`);
   }
 
@@ -10790,9 +10790,9 @@
       let txt = '';
       try { txt = await navigator.clipboard.readText(); } catch (_) {}
       if (txt && txt.trim()) { const ta = document.getElementById('nxTssPegar'); if (ta) { ta.value = txt; compararPegado(); } return; }
-      aviso('No encontré un archivo en el portapapeles.<br><span style="color:#64748b;font-size:12px">En iPhone, para el PDF usa <b>"Seleccionar archivo" → "Elegir archivo"</b>.</span>', '#b45309');
+      aviso('No encontré un archivo en el portapapeles.<br><span style="color:#475569;font-size:12px">En iPhone, para el PDF usa <b>"Seleccionar archivo" → "Elegir archivo"</b>.</span>', '#b45309');
     } catch (e) {
-      aviso('No se pudo leer el portapapeles.<br><span style="color:#64748b;font-size:12px">Usa <b>"Seleccionar archivo"</b> para el PDF (en iPhone: "Elegir archivo").</span>', '#b45309');
+      aviso('No se pudo leer el portapapeles.<br><span style="color:#475569;font-size:12px">Usa <b>"Seleccionar archivo"</b> para el PDF (en iPhone: "Elegir archivo").</span>', '#b45309');
     }
   };
 
@@ -10801,12 +10801,12 @@
     const opts = sel => _header.map((h, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${esc(h || ('Columna ' + (i + 1)))}</option>`).join('');
     setArea('nxTssMapeo', `
       <div style="display:flex;gap:8px;margin-top:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px">
-        <div style="flex:1"><label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Columna de CÉDULA</label>
+        <div style="flex:1"><label style="font-size:10px;font-weight:700;color:#475569;display:block;margin-bottom:3px">Columna de CÉDULA</label>
           <select id="nxTssColCed" onchange="window.nxTssRemap()" style="width:100%;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px">${opts(_colCed)}</select></div>
-        <div style="flex:1"><label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Columna de NOMBRE</label>
+        <div style="flex:1"><label style="font-size:10px;font-weight:700;color:#475569;display:block;margin-bottom:3px">Columna de NOMBRE</label>
           <select id="nxTssColNom" onchange="window.nxTssRemap()" style="width:100%;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px">${opts(_colNom)}</select></div>
       </div>
-      <div style="font-size:10px;color:#94a3b8;margin-top:4px">Si las columnas no son correctas, cámbialas aquí.</div>`);
+      <div style="font-size:10px;color:#475569;margin-top:4px">Si las columnas no son correctas, cámbialas aquí.</div>`);
   }
   window.nxTssRemap = function () {
     _colCed = parseInt(document.getElementById('nxTssColCed')?.value || 0);
@@ -10817,7 +10817,7 @@
   function chip(color, bg, label, val) {
     return `<div style="background:${bg};border-radius:10px;padding:9px;text-align:center;flex:1;min-width:90px">
       <div style="font-size:17px;font-weight:900;color:${color}">${val}</div>
-      <div style="font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px">${label}</div></div>`;
+      <div style="font-size:8.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.3px">${label}</div></div>`;
   }
   function listaPersonas(items, color, vacio) {
     if (!items.length) return `<div style="text-align:center;color:#10b981;font-size:12px;padding:14px;font-weight:600">✓ ${vacio}</div>`;
@@ -10831,7 +10831,7 @@
         <div style="width:30px;height:30px;border-radius:8px;background:${color}1a;color:${color};display:grid;place-items:center;font-weight:800;flex-shrink:0;font-size:13px">${esc((it.nom || '?').trim().charAt(0).toUpperCase())}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;color:#0f172a;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nom || '(sin nombre)')}</div>
-          ${sub.length ? `<div style="font-size:10.5px;color:#64748b">${sub.join(' · ')}</div>` : ''}
+          ${sub.length ? `<div style="font-size:10.5px;color:#475569">${sub.join(' · ')}</div>` : ''}
         </div>
         ${it.ced ? '<i class="ti ti-chevron-right" style="color:#cbd5e1;flex-shrink:0;font-size:16px"></i>' : ''}
       </div>`;
@@ -10863,7 +10863,7 @@
 
     let cuerpo;
     if (!c) {
-      cuerpo = `<div style="padding:22px;text-align:center;color:#64748b;font-size:13px">
+      cuerpo = `<div style="padding:22px;text-align:center;color:#475569;font-size:13px">
         <div style="font-size:30px;margin-bottom:6px">🔎</div>
         <div style="font-weight:700;color:#0f172a">No está en el sistema</div>
         <div style="font-size:11px;margin-top:4px">Cédula ${esc(fmtCed(k))} aparece en la TSS pero no la tienes registrada como cliente.</div>
@@ -10872,7 +10872,7 @@
       const deuda = pendDe(c);
       const deps = Array.isArray(c.deps) ? c.deps : [];
       const inhab = c.activo === false;
-      const fila = (icono, etq, val) => `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9"><div style="width:20px;text-align:center;flex-shrink:0">${icono}</div><div style="font-size:11px;color:#64748b;width:78px;flex-shrink:0">${etq}</div><div style="font-size:12.5px;color:#0f172a;font-weight:600;flex:1;min-width:0;word-break:break-word">${val}</div></div>`;
+      const fila = (icono, etq, val) => `<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9"><div style="width:20px;text-align:center;flex-shrink:0">${icono}</div><div style="font-size:11px;color:#475569;width:78px;flex-shrink:0">${etq}</div><div style="font-size:12.5px;color:#0f172a;font-weight:600;flex:1;min-width:0;word-break:break-word">${val}</div></div>`;
       const tel = c.tel || c.wa || '';
       cuerpo = `
         <div style="padding:16px">
@@ -10883,7 +10883,7 @@
           ${fila('📞', 'Teléfono', tel ? esc(tel) : '—')}
           ${fila('👥', 'Dependientes', String(deps.length))}
           ${fila('💰', 'Deuda', `<span style="color:${deuda > 0 ? '#b91c1c' : '#059669'};font-weight:800">${fmtRD(deuda)}</span>`)}
-          ${deps.length ? `<div style="margin-top:10px;background:#f8fafc;border-radius:9px;padding:8px 10px"><div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Dependientes</div>${deps.map(d => `<div style="font-size:11.5px;color:#334155;padding:2px 0">• ${esc(d.nom || d.nombre || '—')}${d.rel ? ` <span style="color:#94a3b8">— ${esc(d.rel)}</span>` : ''}</div>`).join('')}</div>` : ''}
+          ${deps.length ? `<div style="margin-top:10px;background:#f8fafc;border-radius:9px;padding:8px 10px"><div style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Dependientes</div>${deps.map(d => `<div style="font-size:11.5px;color:#334155;padding:2px 0">• ${esc(d.nom || d.nombre || '—')}${d.rel ? ` <span style="color:#475569">— ${esc(d.rel)}</span>` : ''}</div>`).join('')}</div>` : ''}
         </div>`;
     }
 
@@ -10904,7 +10904,7 @@
   function comparar() {
     const empId = document.getElementById('nxTssEmpresa')?.value || '';
     const hayArchivo = _modo === 'nombre' ? _titulares.length : (_acumCed.length || _rows.length);
-    if (!hayArchivo) { setArea('nxTssResultado', '<div style="text-align:center;color:#94a3b8;padding:24px;font-size:13px">📄 Sube un archivo (TSS Excel/CSV o PDF de Humano) para comparar.</div>'); return; }
+    if (!hayArchivo) { setArea('nxTssResultado', '<div style="text-align:center;color:#475569;padding:24px;font-size:13px">📄 Sube un archivo (TSS Excel/CSV o PDF de Humano) para comparar.</div>'); return; }
     if (!empId) { setArea('nxTssResultado', '<div style="text-align:center;color:#f59e0b;padding:24px;font-size:13px">🏢 Elige una empresa arriba para comparar.</div>'); return; }
     if (_modo === 'nombre') return compararNombre(empId);
     return compararCedula(empId);
@@ -10983,7 +10983,7 @@
         <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-bottom:11px"><div style="height:100%;width:${pct}%;background:${pct >= 90 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'};border-radius:6px"></div></div>
         ${todoOk
         ? `<div style="display:flex;gap:8px;align-items:center;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 12px"><span style="font-size:18px">✅</span><div style="font-size:12px;font-weight:700;color:#065f46">Todo cuadra. No hay acciones pendientes para esta empresa.</div></div>`
-        : `<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px">Acciones sugeridas (${acciones.length})</div>
+        : `<div style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px">Acciones sugeridas (${acciones.length})</div>
            ${acciones.map(a => `<div style="display:flex;gap:9px;align-items:flex-start;background:${a.bg};border-radius:10px;padding:9px 11px;margin-bottom:6px"><span style="font-size:15px;flex-shrink:0;line-height:1.2">${a.ic}</span><div style="font-size:12px;color:${a.col};line-height:1.4">${a.txt}</div></div>`).join('')}`}
       </div>`;
 
@@ -11000,13 +11000,13 @@
 
       ${resumenHTML}
 
-      <div style="font-size:10.5px;color:#94a3b8;text-align:center;margin:-4px 0 10px">👆 Toca cualquier persona para ver su ficha</div>
+      <div style="font-size:10.5px;color:#475569;text-align:center;margin:-4px 0 10px">👆 Toca cualquier persona para ver su ficha</div>
 
       <button onclick="window.nxTssExportarExcel && window.nxTssExportarExcel()" style="width:100%;border:none;background:linear-gradient(135deg,#047857,#10b981);color:#fff;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-file-spreadsheet" style="color:#fff!important"></i> Descargar Excel del cuadre</button>
 
       ${conDeuda.length ? `<div style="background:#fff;border:1px solid #fed7aa;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <div style="background:#fff7ed;padding:9px 12px;font-size:11px;font-weight:800;color:#9a3412;display:flex;justify-content:space-between;gap:8px"><span>💰 EN TSS CON DEUDA PENDIENTE (${conDeuda.length})</span><span>Total: ${fmtRD(totalDeuda)}</span></div>
-        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">${esc(c.ced)}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
+        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#475569;font-family:var(--mono,monospace)">${esc(c.ced)}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
       </div>` : ''}
 
       ${inhabEnTSS.length ? `<div style="background:#fff;border:2px solid #fecdd3;border-radius:12px;margin-bottom:10px;overflow:hidden">
@@ -11025,8 +11025,8 @@
       </div>
 
       ${sinCedula.length ? `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
-        <div style="background:#f8fafc;padding:9px 12px;font-size:11px;font-weight:800;color:#64748b">❔ CLIENTES SIN CÉDULA (no se pueden comparar) (${sinCedula.length})</div>
-        <div style="max-height:160px;overflow-y:auto">${listaPersonas(sinCedula, '#64748b', '')}</div>
+        <div style="background:#f8fafc;padding:9px 12px;font-size:11px;font-weight:800;color:#475569">❔ CLIENTES SIN CÉDULA (no se pueden comparar) (${sinCedula.length})</div>
+        <div style="max-height:160px;overflow-y:auto">${listaPersonas(sinCedula, '#475569', '')}</div>
       </div>` : ''}
     `);
   }
@@ -11083,7 +11083,7 @@
         <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-bottom:11px"><div style="height:100%;width:${pct}%;background:${pct >= 90 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444'};border-radius:6px"></div></div>
         ${todoOk
         ? `<div style="display:flex;gap:8px;align-items:center;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:10px 12px"><span style="font-size:18px">✅</span><div style="font-size:12px;font-weight:700;color:#065f46">Todo cuadra. No hay acciones pendientes.</div></div>`
-        : `<div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px">Acciones sugeridas (${acciones.length})</div>
+        : `<div style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px">Acciones sugeridas (${acciones.length})</div>
            ${acciones.map(a => `<div style="display:flex;gap:9px;align-items:flex-start;background:${a.bg};border-radius:10px;padding:9px 11px;margin-bottom:6px"><span style="font-size:15px;flex-shrink:0;line-height:1.2">${a.ic}</span><div style="font-size:12px;color:${a.col};line-height:1.4">${a.txt}</div></div>`).join('')}`}
       </div>`;
 
@@ -11099,13 +11099,13 @@
 
       ${resumenHTML}
 
-      <div style="font-size:10.5px;color:#94a3b8;text-align:center;margin:-4px 0 10px">👆 Toca una persona (con cédula) para ver su ficha</div>
+      <div style="font-size:10.5px;color:#475569;text-align:center;margin:-4px 0 10px">👆 Toca una persona (con cédula) para ver su ficha</div>
 
       <button onclick="window.nxTssExportarExcel && window.nxTssExportarExcel()" style="width:100%;border:none;background:linear-gradient(135deg,#047857,#10b981);color:#fff;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-file-spreadsheet" style="color:#fff!important"></i> Descargar Excel del cuadre</button>
 
       ${conDeuda.length ? `<div style="background:#fff;border:1px solid #fed7aa;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <div style="background:#fff7ed;padding:9px 12px;font-size:11px;font-weight:800;color:#9a3412;display:flex;justify-content:space-between;gap:8px"><span>💰 EN EL PDF CON DEUDA PENDIENTE (${conDeuda.length})</span><span>Total: ${fmtRD(totalDeuda)}</span></div>
-        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div onclick="window.nxTssFicha('${esc(c.ced)}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#94a3b8;font-family:var(--mono,monospace)">${esc(fmtCed(c.ced))}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
+        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div onclick="window.nxTssFicha('${esc(c.ced)}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#475569;font-family:var(--mono,monospace)">${esc(fmtCed(c.ced))}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
       </div>` : ''}
 
       ${inhabEnTSS.length ? `<div style="background:#fff;border:2px solid #fecdd3;border-radius:12px;margin-bottom:10px;overflow:hidden">
@@ -11124,8 +11124,8 @@
       </div>
 
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
-        <div style="background:#f8fafc;padding:9px 12px;font-size:11px;font-weight:800;color:#64748b">📋 EN EL SISTEMA PERO NO EN EL PDF (${soloSistema.length})</div>
-        <div style="max-height:200px;overflow-y:auto">${listaPersonas(soloSistema, '#64748b', 'Todos tus clientes están en el PDF')}</div>
+        <div style="background:#f8fafc;padding:9px 12px;font-size:11px;font-weight:800;color:#475569">📋 EN EL SISTEMA PERO NO EN EL PDF (${soloSistema.length})</div>
+        <div style="max-height:200px;overflow-y:auto">${listaPersonas(soloSistema, '#475569', 'Todos tus clientes están en el PDF')}</div>
       </div>
     `);
   }
@@ -11166,10 +11166,10 @@
           <select id="nxTssEmpresa" onchange="window.nxTssComparar()" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:600;background:#fff;margin-bottom:12px">${opcEmp}</select>
 
           <label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">2. Archivo (TSS o Humano)</label>
-          <button type="button" id="nxTssBtnFile" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo(s) (Excel, CSV o PDF)<div style="font-size:10px;font-weight:600;color:#64748b;margin-top:3px">puedes elegir VARIOS Excel a la vez (titulares + dependientes) · el PDF de Humano va solo</div></button>
+          <button type="button" id="nxTssBtnFile" onclick="document.getElementById('nxTssFile').click()" style="width:100%;border:1.5px dashed #93c5fd;background:#eff6ff;color:#2563eb;border-radius:10px;padding:14px;font-weight:700;font-size:13px;cursor:pointer"><i class="ti ti-file-spreadsheet"></i> Seleccionar archivo(s) (Excel, CSV o PDF)<div style="font-size:10px;font-weight:600;color:#475569;margin-top:3px">puedes elegir VARIOS Excel a la vez (titulares + dependientes) · el PDF de Humano va solo</div></button>
           <input type="file" id="nxTssFile" multiple accept=".xlsx,.xls,.csv,.pdf,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
 
-          <div style="text-align:center;color:#94a3b8;font-size:11px;margin:9px 0;font-weight:700">— o pega los datos —</div>
+          <div style="text-align:center;color:#475569;font-size:11px;margin:9px 0;font-weight:700">— o pega los datos —</div>
           <button type="button" onclick="window.nxTssPegarArchivo()" style="width:100%;border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px;cursor:pointer;margin-bottom:8px"><i class="ti ti-clipboard"></i> Pegar archivo copiado (PDF/Excel)</button>
           <textarea id="nxTssPegar" placeholder="…o pega aquí lo copiado de Excel (cédula y nombre), o una lista de cédulas o nombres" style="width:100%;min-height:64px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;resize:vertical;font-family:inherit;box-sizing:border-box"></textarea>
 
@@ -11363,7 +11363,7 @@
     s.id = 'nxPager-css';
     s.textContent = `
       .nxPager{ display:flex; align-items:center; justify-content:space-between; gap:10px;
-        flex-wrap:wrap; padding:9px 4px 2px; font-size:11px; color:#64748b; }
+        flex-wrap:wrap; padding:9px 4px 2px; font-size:11px; color:#475569; }
       .nxPager-info{ font-weight:700; }
       .nxPager-btns{ display:flex; gap:6px; }
       .nxPager-btn{ border:1px solid #e2e8f0; background:#fff; color:#334155;
@@ -11860,7 +11860,7 @@
   }
 
   function kpi(lbl, val, col) {
-    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center"><div style="font-size:9px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px">${lbl}</div><div style="font-size:15px;font-weight:900;color:${col};margin-top:2px">${val}</div></div>`;
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center"><div style="font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px">${lbl}</div><div style="font-size:15px;font-weight:900;color:${col};margin-top:2px">${val}</div></div>`;
   }
 
   function cardHTML(p) {
@@ -11877,7 +11877,7 @@
         : ('abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''));
     const head = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
         <div style="min-width:0"><div style="font-weight:800;color:#0f172a;font-size:13px">${esc(p.nombre || 'Sin nombre')}</div>
-        <div style="font-size:10px;color:#94a3b8">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''} · ${esc(sub)}</div></div>
+        <div style="font-size:10px;color:#475569">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''} · ${esc(sub)}</div></div>
         <div style="flex-shrink:0">${badge}</div>
       </div>`;
     let cuerpo;
@@ -11885,14 +11885,14 @@
       const c = creditoCalc(p);
       const venc = c.diasRestan != null && c.diasRestan < 0 && est !== 'pagado';
       const pctCap = c.cap > 0 ? Math.round(c.pagCap / c.cap * 100) : 0;
-      cuerpo = `<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#64748b"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>Capital pend.: <b style="color:#0f172a">${fmt(c.capPend)}</b></span></div>
+      cuerpo = `<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#475569"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>Capital pend.: <b style="color:#0f172a">${fmt(c.capPend)}</b></span></div>
       <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${Math.min(100, pctCap)}%;background:${est === 'pagado' ? '#10b981' : '#2563eb'}"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px"><span style="color:#ea580c;font-weight:700">Interés pend.: ${fmt(c.interesPend)}</span><span style="color:#dc2626;font-weight:800">Debe: ${fmt(c.totalDebe)}</span></div>
-      ${c.fechaLimite ? `<div style="font-size:10px;margin-top:4px;color:${venc ? '#dc2626' : '#94a3b8'};font-weight:${venc ? '800' : '400'}">${venc ? '⚠️ Vencido el ' + c.fechaLimite : '📅 Límite: ' + c.fechaLimite + (c.diasRestan != null ? ' (' + c.diasRestan + ' días)' : '')}</div>` : ''}`;
+      ${c.fechaLimite ? `<div style="font-size:10px;margin-top:4px;color:${venc ? '#dc2626' : '#475569'};font-weight:${venc ? '800' : '400'}">${venc ? '⚠️ Vencido el ' + c.fechaLimite : '📅 Límite: ' + c.fechaLimite + (c.diasRestan != null ? ' (' + c.diasRestan + ' días)' : '')}</div>` : ''}`;
     } else {
       const pag = pagadoDe(p), saldo = saldoDe(p);
       const pct = p.total_devolver > 0 ? Math.round(pag / p.total_devolver * 100) : 0;
-      cuerpo = `<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#64748b"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>A devolver: <b style="color:#0f172a">${fmt(p.total_devolver)}</b></span></div>
+      cuerpo = `<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px;color:#475569"><span>Prestó: <b style="color:#0f172a">${fmt(p.capital)}</b></span><span>A devolver: <b style="color:#0f172a">${fmt(p.total_devolver)}</b></span></div>
       <div style="height:7px;background:#f1f5f9;border-radius:6px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${Math.min(100, pct)}%;background:${est === 'pagado' ? '#10b981' : '#f59e0b'}"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px"><span style="color:#059669;font-weight:700">Pagó: ${fmt(pag)}</span><span style="color:#dc2626;font-weight:800">Saldo: ${fmt(saldo)}</span></div>`;
     }
@@ -11916,8 +11916,8 @@
     });
     const chip = (key, lbl) => `<button type="button" class="btn bsm${_prFiltro === key ? ' bc1' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')" style="font-size:10px;padding:5px 10px">${lbl}</button>`;
     const cards = _prestamos.length === 0
-      ? '<div style="text-align:center;padding:36px;color:#94a3b8;font-size:13px">Aún no hay préstamos.<br>Toca <b>"Nuevo préstamo"</b> para empezar.</div>'
-      : (lista.length === 0 ? '<div style="text-align:center;padding:30px;color:#94a3b8;font-size:12px">Ningún préstamo en este filtro.</div>' : lista.map(cardHTML).join(''));
+      ? '<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay préstamos.<br>Toca <b>"Nuevo préstamo"</b> para empezar.</div>'
+      : (lista.length === 0 ? '<div style="text-align:center;padding:30px;color:#475569;font-size:12px">Ningún préstamo en este filtro.</div>' : lista.map(cardHTML).join(''));
     view.innerHTML = `
       <div class="nc">
         <div class="ch">
@@ -11940,7 +11940,7 @@
           ${chip('todos', 'Todos')}${chip('activos', 'Activos')}${chip('vencidos', 'Vencidos')}${chip('pagados', 'Pagados')}${chip('cuotas', 'Cuotas')}${chip('libre', 'Libres')}${chip('credito', 'Crédito')}
         </div>
         <div style="position:relative;margin-bottom:10px">
-          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
+          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i>
           <input type="text" id="nxPrBuscar" placeholder="Buscar por nombre o cédula..." autocomplete="off" oninput="window.nxPrestamoFiltrar(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
         </div>
         <div id="nxPrLista">${cards}</div>
@@ -12003,7 +12003,7 @@
             <button class="btn bsm" type="button" onclick="window.nav&&window.nav('dashboard',null)"><i class="ti ti-arrow-left"></i> Volver</button>
           </div>
         </div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:12px">Elige una empresa o módulo.</div>
+        <div style="font-size:12px;color:#475569;margin-bottom:12px">Elige una empresa o módulo.</div>
         <div class="nxMeGrid">${cards}</div>
       </div>`;
   }
@@ -12033,9 +12033,9 @@
     const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'FINANCIAMIENTO';
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
-    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando financiamiento...</div></div></div>';
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando financiamiento...</div></div></div>';
     try { await cargarPrestamos(); renderLista(view); }
-    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudieron cargar los préstamos.<br><span style="font-size:11px;color:#94a3b8">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
+    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudieron cargar los préstamos.<br><span style="font-size:11px;color:#475569">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
   };
 
   // ── Formulario nuevo/editar ──
@@ -12081,7 +12081,7 @@
           const intMes = Math.round(cap * tasa / 100);
           const lim = plazo > 0 ? addMonths(val('prFecha') || hoy(), plazo).toISOString().slice(0, 10) : '—';
           preview.style.display = 'block';
-          preview.innerHTML = `<b>Interés del 1er mes:</b> ${fmt(intMes)} (${tasa}% de ${fmt(cap)})<br><b>Fecha límite del capital:</b> ${lim}<br><span style="font-size:10.5px;color:#64748b">Cada mes el interés se calcula sobre lo que falte de capital. Abonar al capital baja el interés.</span>`;
+          preview.innerHTML = `<b>Interés del 1er mes:</b> ${fmt(intMes)} (${tasa}% de ${fmt(cap)})<br><b>Fecha límite del capital:</b> ${lim}<br><span style="font-size:10.5px;color:#475569">Cada mes el interés se calcula sobre lo que falte de capital. Abonar al capital baja el interés.</span>`;
         } else { preview.style.display = 'none'; }
       }
       return;
@@ -12091,12 +12091,12 @@
     if (!preview) return;
     if (c.computa && c.modo === 'cuotas') {
       const ic = tasaPorCuota(c.tasa, c.frec);
-      const nota = c.frec !== 'mensual' ? `<br><span style="font-size:10.5px;color:#64748b">${c.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${c.frec === 'semanal' ? 'semana' : 'quincena'}</span>` : '';
+      const nota = c.frec !== 'mensual' ? `<br><span style="font-size:10.5px;color:#475569">${c.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${c.frec === 'semanal' ? 'semana' : 'quincena'}</span>` : '';
       preview.style.display = 'block';
       preview.innerHTML = `<b>Cuota:</b> ${fmt(c.cuota)} (${c.n} ${c.frec})<br><b>Total a devolver:</b> ${fmt(c.total)} · <b>Interés:</b> ${fmt(c.interes)}${nota}`;
     } else if (c.computa && c.modo === 'libre') {
       preview.style.display = 'block';
-      preview.innerHTML = `<b>Total a devolver:</b> ${fmt(c.total)} · <b>Interés:</b> ${fmt(c.interes)} (${c.tasa}% una vez)<br><span style="font-size:10.5px;color:#64748b">Se paga en abonos libres</span>`;
+      preview.innerHTML = `<b>Total a devolver:</b> ${fmt(c.total)} · <b>Interés:</b> ${fmt(c.interes)} (${c.tasa}% una vez)<br><span style="font-size:10.5px;color:#475569">Se paga en abonos libres</span>`;
     } else {
       preview.style.display = 'none';
     }
@@ -12127,7 +12127,7 @@
             <button type="button" id="prModoCredito" class="btn" onclick="window.nxPrModo('credito')" style="flex:1 1 88px">Línea de crédito</button>
           </div>
         </div>
-        <div class="fr"><label>Tasa de interés (%) <span id="prTasaHint" style="font-weight:400;color:#94a3b8;font-size:10px"></span></label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
+        <div class="fr"><label>Tasa de interés (%) <span id="prTasaHint" style="font-weight:400;color:#475569;font-size:10px"></span></label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
         <div id="prCuotasBox" style="display:none">
           <div class="fr-row">
             <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.num_cuotas || ''}" placeholder="4"></div>
@@ -12135,7 +12135,7 @@
           </div>
         </div>
         <div id="prCreditoBox" style="display:none">
-          <div class="fr"><label>Plazo (meses) <span style="font-weight:400;color:#94a3b8;font-size:10px">· fecha límite para devolver el capital</span></label><input id="prPlazo" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.plazo_meses || ''}" placeholder="6"></div>
+          <div class="fr"><label>Plazo (meses) <span style="font-weight:400;color:#475569;font-size:10px">· fecha límite para devolver el capital</span></label><input id="prPlazo" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.plazo_meses || ''}" placeholder="6"></div>
         </div>
         <div id="prPreview" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 11px;font-size:12px;color:#1e40af;margin-bottom:10px;line-height:1.5"></div>
         <div class="fr" id="prTotRow"><label>Total a devolver</label><input id="prTot" data-nx-money inputmode="numeric" oninput="window.nxPrRecalc()" value="${p.total_devolver ? Number(p.total_devolver).toLocaleString('en-US') : ''}" placeholder="0"></div>
@@ -12201,7 +12201,7 @@
     const cc = esCredito ? creditoCalc(p) : null;
     let scheduleHTML = '';
     if (esCredito) {
-      const rows = cc.meses.map(m => `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${m.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#64748b;white-space:nowrap">${m.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(m.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c;font-weight:700">${fmt(m.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${m.encurso ? '<span style="color:#94a3b8;font-size:9px">en curso</span>' : '<span style="color:#16a34a;font-weight:800">✓</span>'}</td></tr>`).join('');
+      const rows = cc.meses.map(m => `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${m.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${m.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(m.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c;font-weight:700">${fmt(m.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${m.encurso ? '<span style="color:#475569;font-size:9px">en curso</span>' : '<span style="color:#16a34a;font-weight:800">✓</span>'}</td></tr>`).join('');
       scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">INTERÉS POR MES · ${p.tasa_interes}% sobre el saldo de capital</div>
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
           <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:340px;background:#fff">
@@ -12215,7 +12215,7 @@
       const rows = a.rows.map(r => {
         acum += r.cuota;
         const cub = pag >= acum - 0.5;
-        return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#64748b;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#2563eb">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
+        return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#2563eb">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
       }).join('');
       scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
@@ -12231,35 +12231,35 @@
         const due = fechaCuota(p.fecha_prestamo, p.frecuencia, i + 1);
         acum += cuota;
         const cubierta = pag >= acum - 0.5;
-        rows.push(`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">#${i + 1}</td><td style="padding:6px 10px;font-size:11px;color:#64748b;border-bottom:1px solid #f1f5f9">${due}</td><td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:700;border-bottom:1px solid #f1f5f9">${fmt(cuota)}</td><td style="padding:6px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${cubierta ? '<span style="color:#16a34a;font-weight:800;font-size:10px">PAGADA</span>' : '<span style="color:#dc2626;font-weight:800;font-size:10px">PENDIENTE</span>'}</td></tr>`);
+        rows.push(`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">#${i + 1}</td><td style="padding:6px 10px;font-size:11px;color:#475569;border-bottom:1px solid #f1f5f9">${due}</td><td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:700;border-bottom:1px solid #f1f5f9">${fmt(cuota)}</td><td style="padding:6px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${cubierta ? '<span style="color:#16a34a;font-weight:800;font-size:10px">PAGADA</span>' : '<span style="color:#dc2626;font-weight:800;font-size:10px">PENDIENTE</span>'}</td></tr>`);
       }
       scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">CALENDARIO DE CUOTAS (${fmt(cuota)} c/u)</div><table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${rows.join('')}</table>`;
     }
     const pagosHTML = pagos.length === 0
-      ? '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin pagos aún</div>'
-      : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#2563eb;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#94a3b8">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(x.nota)}</div>` : ''}</div><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`; }).join('');
+      ? '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos aún</div>'
+      : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#2563eb;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#475569">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#475569;font-size:10px">${esc(x.nota)}</div>` : ''}</div><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`; }).join('');
     const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-user"></i> ${esc(p.nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
             ${esCredito
         ? `${kpi('Capital pend.', fmt(cc.capPend), '#2563eb')}${kpi('Interés pend.', fmt(cc.interesPend), '#ea580c')}${kpi('Debe ahora', fmt(cc.totalDebe), cc.totalDebe > 0 ? '#dc2626' : '#16a34a')}`
         : `${kpi('Prestó', fmt(p.capital), '#2563eb')}${kpi('A devolver', fmt(p.total_devolver), '#0f172a')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}`}
           </div>
           ${esCredito
-        ? `<div style="font-size:11px;color:#64748b">Línea de crédito · ${p.tasa_interes}%/mes · desde ${esc(p.fecha_prestamo || '')}</div>
+        ? `<div style="font-size:11px;color:#475569">Línea de crédito · ${p.tasa_interes}%/mes · desde ${esc(p.fecha_prestamo || '')}</div>
              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;font-size:11px">
                <div style="background:#eff6ff;border-radius:8px;padding:7px 9px;color:#1e40af">Prestó: <b>${fmt(cc.cap)}</b><br>Pagado a capital: <b>${fmt(cc.pagCap)}</b></div>
                <div style="background:#fff7ed;border-radius:8px;padding:7px 9px;color:#9a3412">Interés acumulado: <b>${fmt(cc.interesAcum)}</b><br>Interés pagado: <b>${fmt(cc.pagInt)}</b></div>
              </div>
-             ${cc.fechaLimite ? `<div style="font-size:11px;margin-top:6px;padding:7px 9px;border-radius:8px;${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? 'background:#fef2f2;color:#dc2626;font-weight:700' : 'background:#f8fafc;color:#64748b'}">${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? '⚠️ Capital VENCIDO el ' + cc.fechaLimite + ' (' + Math.abs(cc.diasRestan) + ' días de atraso)' : '📅 Fecha límite del capital: ' + cc.fechaLimite + (cc.diasRestan != null ? ' · faltan ' + cc.diasRestan + ' días' : '')}</div>` : ''}`
-        : `<div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#64748b">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : ('Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''))} · ${esc(p.fecha_prestamo || '')}</span></div>
+             ${cc.fechaLimite ? `<div style="font-size:11px;margin-top:6px;padding:7px 9px;border-radius:8px;${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? 'background:#fef2f2;color:#dc2626;font-weight:700' : 'background:#f8fafc;color:#475569'}">${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? '⚠️ Capital VENCIDO el ' + cc.fechaLimite + ' (' + Math.abs(cc.diasRestan) + ' días de atraso)' : '📅 Fecha límite del capital: ' + cc.fechaLimite + (cc.diasRestan != null ? ' · faltan ' + cc.diasRestan + ' días' : '')}</div>` : ''}`
+        : `<div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#475569">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : ('Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''))} · ${esc(p.fecha_prestamo || '')}</span></div>
              ${(p.modo === 'libre' && Number(p.tasa_interes || 0) > 0) ? `<div style="font-size:11px;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:7px 9px;margin-top:6px">Interés (una vez): <b>${fmt(Number(p.total_devolver || 0) - Number(p.capital || 0))}</b> · ${p.tasa_interes}% sobre el capital</div>` : ''}`}
-          ${p.notas ? `<div style="font-size:11px;color:#64748b;margin-top:6px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(p.notas)}</div>` : ''}
+          ${p.notas ? `<div style="font-size:11px;color:#475569;margin-top:6px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(p.notas)}</div>` : ''}
           ${scheduleHTML}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">PAGOS (${pagos.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
@@ -12396,7 +12396,7 @@
       : `<tr><td>Capital prestado</td><td style="text-align:right">${fmt(p.capital)}</td></tr><tr><td>Total a devolver</td><td style="text-align:right">${fmt(p.total_devolver)}</td></tr><tr><td>Pagado</td><td style="text-align:right">${fmt(pagadoDe(p))}</td></tr><tr><td><b>Saldo pendiente</b></td><td style="text-align:right"><b>${fmt(saldoDe(p))}</b></td></tr>`;
     const tipoTxt = esC ? 'Línea de crédito · ' + (p.tasa_interes || 0) + '%/mes' : p.modo === 'cuotas' ? (p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '') : 'Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : '');
     const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta - ${esc(p.nombre || '')}</title>
-      <style>body{font-family:Arial,sans-serif;color:#1e293b;max-width:560px;margin:0 auto;padding:18px}h1{font-size:18px;margin:0 0 2px}.sub{color:#64748b;font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12.5px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tit{font-size:12px;font-weight:800;color:#475569;margin:6px 0 4px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:4px 10px;margin-bottom:12px}.foot{color:#94a3b8;font-size:11px;text-align:center;margin-top:18px}@media print{.noprint{display:none}}</style></head>
+      <style>body{font-family:Arial,sans-serif;color:#1e293b;max-width:560px;margin:0 auto;padding:18px}h1{font-size:18px;margin:0 0 2px}.sub{color:#475569;font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12.5px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tit{font-size:12px;font-weight:800;color:#475569;margin:6px 0 4px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:4px 10px;margin-bottom:12px}.foot{color:#475569;font-size:11px;text-align:center;margin-top:18px}@media print{.noprint{display:none}}</style></head>
       <body>
         <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-18px -18px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Arial,sans-serif"></span></div>
         <h1>📄 Estado de cuenta</h1>
@@ -12464,7 +12464,7 @@
       <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-settings"></i> Datos del contrato</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrCfg').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
-          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Estos datos saldrán en el contrato de préstamo (el acreedor que presta y la legalización del abogado).</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:10px">Estos datos saldrán en el contrato de préstamo (el acreedor que presta y la legalización del abogado).</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">EMPRESA / PERSONA QUE PRESTA</div>
           ${fld('cfgEmpNom', 'Nombre del acreedor', c.empresa_nombre, 'Ej: Inversiones XYZ, SRL')}
           <div class="fr-row">
@@ -12680,22 +12680,22 @@
     const lista = docs.length ? docs.map((d, i) => {
       const tlbl = (DOC_TIPOS.find(t => t.k === d.tipo) || {}).lbl || 'Documento';
       return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9">
-          <i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#64748b"></i>
+          <i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#475569"></i>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.nombre || tlbl)}</div>
-            <div style="font-size:10px;color:#94a3b8">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div>
+            <div style="font-size:10px;color:#475569">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div>
           </div>
           <button class="btn bsm bghost" type="button" onclick="window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')" title="Ver"><i class="ti ti-eye" style="color:#2563eb"></i></button>
           <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarDoc('${id}',${i})" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button>
         </div>`;
-    }).join('') : '<div style="color:#94a3b8;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
+    }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
     const ov = document.createElement('div'); ov.id = 'nxPrDocs'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc((p.nombre || '').split(' ')[0] || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrDocs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">Sube cédula, contrato firmado, garantías u otros archivos (imágenes o PDF).</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">Sube cédula, contrato firmado, garantías u otros archivos (imágenes o PDF).</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tiles}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 4px">ARCHIVOS (${docs.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div>
@@ -12708,7 +12708,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#64748b;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
+    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#3b82f6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#475569;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
     document.head.appendChild(st);
   }
 
@@ -12755,7 +12755,7 @@
   function parseMoney(v) { try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return Number(String(v == null ? '' : v).replace(/,/g, '')) || 0; }
   function nomAdmin() { try { return (window.sesion && window.sesion.nom) || 'Admin'; } catch (e) { return 'Admin'; } }
   function scanMoney(el) { try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(el); } catch (e) {} }
-  function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
+  function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
 
   function numLetras(n) {
     n = Math.floor(Math.abs(Number(n) || 0));
@@ -12815,12 +12815,12 @@
     const sub = [v.color, v.placa ? 'Placa ' + v.placa : '', v.chasis ? 'Chasis ' + (v.chasis || '').slice(-6) : ''].filter(Boolean).join(' · ');
     return `<div class="nxVhCard" data-busca="${esc((tituloVeh(v) + ' ' + (v.placa || '') + ' ' + (v.chasis || '') + ' ' + (v.comprador_nombre || '')).toLowerCase())}" onclick="window.nxVehVer('${v.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
-        <div style="min-width:0"><div style="font-size:14px;font-weight:800;color:#1e293b">${esc(tituloVeh(v))}</div><div style="font-size:11px;color:#94a3b8">${esc(sub || 'Sin datos')}</div></div>
+        <div style="min-width:0"><div style="font-size:14px;font-weight:800;color:#1e293b">${esc(tituloVeh(v))}</div><div style="font-size:11px;color:#475569">${esc(sub || 'Sin datos')}</div></div>
         ${badge}
       </div>
       <div style="display:flex;justify-content:space-between;gap:6px;font-size:11px">
-        <span style="color:#64748b">Costo: <b style="color:#0f172a">${fmt(ct)}</b></span>
-        ${pv > 0 ? `<span style="color:#64748b">Venta: <b style="color:#2563eb">${fmt(pv)}</b></span><span style="color:${gan >= 0 ? '#16a34a' : '#dc2626'};font-weight:800">${gan >= 0 ? '+' : ''}${fmt(gan)}</span>` : '<span style="color:#94a3b8">Precio sin definir</span>'}
+        <span style="color:#475569">Costo: <b style="color:#0f172a">${fmt(ct)}</b></span>
+        ${pv > 0 ? `<span style="color:#475569">Venta: <b style="color:#2563eb">${fmt(pv)}</b></span><span style="color:${gan >= 0 ? '#16a34a' : '#dc2626'};font-weight:800">${gan >= 0 ? '+' : ''}${fmt(gan)}</span>` : '<span style="color:#475569">Precio sin definir</span>'}
       </div>
     </div>`;
   }
@@ -12835,8 +12835,8 @@
     const lista = _vehiculos.filter(v => f === 'inventario' ? v.estado !== 'vendido' : f === 'vendidos' ? v.estado === 'vendido' : true);
     const chip = (k, l) => `<button type="button" class="btn bsm${_vhFiltro === k ? ' bc1' : ''}" onclick="window.nxVehFiltro('${k}')" style="font-size:10px;padding:5px 10px">${l}</button>`;
     const cards = _vehiculos.length === 0
-      ? '<div style="text-align:center;padding:36px;color:#94a3b8;font-size:13px">Aún no hay vehículos.<br>Toca <b>"Nuevo"</b> para registrar uno.</div>'
-      : (lista.length === 0 ? '<div style="text-align:center;padding:30px;color:#94a3b8;font-size:12px">Ningún vehículo en este filtro.</div>' : lista.map(cardHTML).join(''));
+      ? '<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay vehículos.<br>Toca <b>"Nuevo"</b> para registrar uno.</div>'
+      : (lista.length === 0 ? '<div style="text-align:center;padding:30px;color:#475569;font-size:12px">Ningún vehículo en este filtro.</div>' : lista.map(cardHTML).join(''));
     view.innerHTML = `
       <div class="nc">
         <div class="ch">
@@ -12857,7 +12857,7 @@
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chip('todos', 'Todos')}${chip('inventario', 'En inventario')}${chip('vendidos', 'Vendidos')}</div>
         <div style="position:relative;margin-bottom:10px">
-          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i>
+          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i>
           <input type="text" id="nxVhBuscar" placeholder="Buscar por marca, placa, chasis o comprador..." autocomplete="off" oninput="window.nxVehBuscar(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
         </div>
         <div id="nxVhLista">${cards}</div>
@@ -12879,9 +12879,9 @@
     const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'VEHÍCULOS';
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
-    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando vehículos...</div></div></div>';
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando vehículos...</div></div></div>';
     try { await cargarVehiculos(); renderLista(view); }
-    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudieron cargar los vehículos.<br><span style="font-size:11px;color:#94a3b8">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
+    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudieron cargar los vehículos.<br><span style="font-size:11px;color:#475569">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
   };
 
   // ── Formulario nuevo/editar ──
@@ -12959,10 +12959,10 @@
     const datos = [
       ['Año', v.anio], ['Color', v.color], ['Tipo', v.tipo], ['Placa', v.placa],
       ['Chasis', v.chasis], ['Motor', v.no_motor], ['Matrícula', v.no_matricula]
-    ].filter(x => x[1]).map(x => `<div style="font-size:11px"><span style="color:#94a3b8">${x[0]}:</span> <b style="color:#1e293b">${esc(x[1])}</b></div>`).join('');
+    ].filter(x => x[1]).map(x => `<div style="font-size:11px"><span style="color:#475569">${x[0]}:</span> <b style="color:#1e293b">${esc(x[1])}</b></div>`).join('');
     const gastosHTML = gastos.length === 0
-      ? '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin gastos de reacondicionamiento aún</div>'
-      : gastos.map(g => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#0f172a">${esc(g.concepto || 'Gasto')}</b> <span style="color:#94a3b8">${(g.fecha || '').slice(0, 10)}</span>${g.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(g.nota)}</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(g.costo)}</b><button class="btn bsm bghost" type="button" onclick="window.nxVehDelGasto('${g.id}','${id}')" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>`).join('');
+      ? '<div style="color:#475569;font-size:11px;padding:10px">Sin gastos de reacondicionamiento aún</div>'
+      : gastos.map(g => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#0f172a">${esc(g.concepto || 'Gasto')}</b> <span style="color:#475569">${(g.fecha || '').slice(0, 10)}</span>${g.nota ? `<div style="color:#475569;font-size:10px">${esc(g.nota)}</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(g.costo)}</b><button class="btn bsm bghost" type="button" onclick="window.nxVehDelGasto('${g.id}','${id}')" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxVhDet'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -12970,10 +12970,10 @@
         <div class="mt"><span><i class="ti ti-car"></i> ${esc(tituloVeh(v))}</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhDet').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px">${datos || '<span style="font-size:11px;color:#94a3b8">Sin datos adicionales</span>'}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px">${datos || '<span style="font-size:11px;color:#475569">Sin datos adicionales</span>'}</div>
             ${vendido ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#dcfce7;padding:3px 9px;border-radius:20px">VENDIDO</span>' : '<span style="font-size:9px;font-weight:800;color:#2563eb;background:#eff6ff;padding:3px 9px;border-radius:20px">INVENTARIO</span>'}
           </div>
-          ${v.descripcion ? `<div style="font-size:11px;color:#64748b;margin-bottom:8px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(v.descripcion)}</div>` : ''}
+          ${v.descripcion ? `<div style="font-size:11px;color:#475569;margin-bottom:8px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(v.descripcion)}</div>` : ''}
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
             ${kpi('Compra', fmt(v.compra_precio), '#2563eb')}${kpi('Reacond.', fmt(totalGastos(v)), '#ea580c')}${kpi('Costo total', fmt(ct), '#0f172a')}
           </div>
@@ -12985,13 +12985,13 @@
           </div>` : ''}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 4px">PRECIO DE VENTA</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px">
-            ${!vendido ? `<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;font-size:11px;color:#64748b">Margen:
+            ${!vendido ? `<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;font-size:11px;color:#475569">Margen:
               <input id="vhMargenVal" inputmode="decimal" placeholder="0" value="${v.margen_valor ? Number(v.margen_valor) : ''}" style="width:74px;padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none">
               <select id="vhMargenTipo" style="padding:7px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;background:#fff"><option value="monto"${v.margen_tipo !== 'porcentaje' ? ' selected' : ''}>RD$</option><option value="porcentaje"${v.margen_tipo === 'porcentaje' ? ' selected' : ''}>%</option></select>
               <button class="btn bsm bghost" type="button" onclick="window.nxVehAplicarMargen('${id}')">Calcular</button></div>
               <div style="display:flex;gap:6px;align-items:center"><input id="vhPrecioVenta" data-nx-money inputmode="numeric" placeholder="Precio de venta" value="${pv ? Math.round(pv) : ''}" oninput="window.nxVehPreviewGanancia('${id}')" style="flex:1;min-width:0;padding:10px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:15px;font-weight:700;outline:none"><button class="btn bc1 bsm" type="button" onclick="window.nxVehGuardarPrecio('${id}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
               <div id="vhGanPrev" style="font-size:11px;margin-top:6px;color:${gan >= 0 ? '#16a34a' : '#dc2626'};font-weight:700">${pv > 0 ? 'Ganancia: ' + fmt(gan) + ' · margen ' + mp.toFixed(1) + '%' : 'Define un precio para ver la ganancia'}</div>`
-        : `<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#64748b">Precio de venta</span><b style="color:#2563eb">${fmt(pv)}</b></div><div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px"><span style="color:#64748b">Ganancia</span><b style="color:${gan >= 0 ? '#16a34a' : '#dc2626'}">${fmt(gan)} · ${mp.toFixed(1)}%</b></div>${v.comprador_nombre ? `<div style="font-size:11px;color:#64748b;margin-top:6px">Comprador: <b>${esc(v.comprador_nombre)}</b>${v.venta_fecha ? ' · ' + esc(v.venta_fecha) : ''}</div>` : ''}`}
+        : `<div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#475569">Precio de venta</span><b style="color:#2563eb">${fmt(pv)}</b></div><div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px"><span style="color:#475569">Ganancia</span><b style="color:${gan >= 0 ? '#16a34a' : '#dc2626'}">${fmt(gan)} · ${mp.toFixed(1)}%</b></div>${v.comprador_nombre ? `<div style="font-size:11px;color:#475569;margin-top:6px">Comprador: <b>${esc(v.comprador_nombre)}</b>${v.venta_fecha ? ' · ' + esc(v.venta_fecha) : ''}</div>` : ''}`}
           </div>
         </div>
         <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
@@ -13097,7 +13097,7 @@
       <div class="modal nxPrForm" style="max-width:440px;max-height:88vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-cash"></i> Registrar venta</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhVenta').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(tituloVeh(v))} · costo total ${fmt(costoTotal(v))}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(tituloVeh(v))} · costo total ${fmt(costoTotal(v))}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">COMPRADOR</div>
           ${fld('vsNom', 'Nombre del comprador', v.comprador_nombre, 'Nombre Apellido')}
           <div class="fr-row">${fld('vsCed', 'Cédula', v.comprador_cedula, '000-0000000-0')}${fld('vsTel', 'Teléfono', v.comprador_telefono, '809-000-0000')}</div>
@@ -13227,14 +13227,14 @@
     cerrarModal('nxVhDocs');
     const docs = Array.isArray(v.documentos) ? v.documentos : [];
     const tiles = VH_DOC_TIPOS.map(t => `<label style="flex:1 1 64px;min-width:64px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:12px;padding:10px 5px;text-align:center"><input type="file" accept="image/*,.pdf" style="display:none" onchange="window.nxVehSubirDoc('${id}',this,'${t.k}')"><i class="ti ${t.ic}" style="font-size:19px;color:#2563eb"></i><span style="font-size:9.5px;font-weight:700;color:#475569;line-height:1.1">${t.lbl}</span></label>`).join('');
-    const lista = docs.length ? docs.map((d, i) => { const tlbl = (VH_DOC_TIPOS.find(t => t.k === d.tipo) || {}).lbl || 'Documento'; return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9"><i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#64748b"></i><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.nombre || tlbl)}</div><div style="font-size:10px;color:#94a3b8">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div></div><button class="btn bsm bghost" type="button" onclick="window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')" title="Ver"><i class="ti ti-eye" style="color:#2563eb"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVehBorrarDoc('${id}',${i})" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`; }).join('') : '<div style="color:#94a3b8;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
+    const lista = docs.length ? docs.map((d, i) => { const tlbl = (VH_DOC_TIPOS.find(t => t.k === d.tipo) || {}).lbl || 'Documento'; return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9"><i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#475569"></i><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.nombre || tlbl)}</div><div style="font-size:10px;color:#475569">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div></div><button class="btn bsm bghost" type="button" onclick="window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')" title="Ver"><i class="ti ti-eye" style="color:#2563eb"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVehBorrarDoc('${id}',${i})" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
     const ov = document.createElement('div'); ov.id = 'nxVhDocs'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc(tituloVeh(v))}</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhDocs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">Matrícula, acto firmado, cédula del comprador, fotos u otros (imágenes o PDF).</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">Matrícula, acto firmado, cédula del comprador, fotos u otros (imágenes o PDF).</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tiles}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 4px">ARCHIVOS (${docs.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div>
@@ -13255,7 +13255,7 @@
       <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-settings"></i> Datos del acto de venta</span><button class="nxBack" type="button" onclick="document.getElementById('nxVhCfg').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#64748b;margin-bottom:10px">Estos datos salen en el acto de venta como EL VENDEDOR y su legalización.</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:10px">Estos datos salen en el acto de venta como EL VENDEDOR y su legalización.</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:2px 0 6px">VENDEDOR (usted)</div>
           ${f('vcVendNom', 'Nombre del vendedor', c.vendedor_nombre, 'Nombre o empresa')}
           <div class="fr-row">${f('vcVendCed', 'Cédula / RNC', c.vendedor_cedula, '000-0000000-0')}${f('vcVendTel', 'Teléfono', c.vendedor_telefono, '809-000-0000')}</div>
@@ -13460,7 +13460,7 @@
     const chips = mesesOpciones().map(o => `<button type="button" data-k="${selKey(o)}" onclick="window.nxReciboToggleMes('${selKey(o)}')" style="border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">${MESES[o.mes - 1].slice(0, 3)} ${o.anio}</button>`).join('');
     const note = _recAbonoId
       ? '<div style="font-size:10.5px;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 9px;margin-bottom:10px">✓ Los meses marcados se guardarán en este pago (historial/auditoría).</div>'
-      : '<div style="font-size:10.5px;color:#94a3b8;background:#f8fafc;border-radius:8px;padding:6px 9px;margin-bottom:10px">Para guardar los meses en el historial, genera el recibo desde el pago (Historial de pagos o ficha del cliente).</div>';
+      : '<div style="font-size:10.5px;color:#475569;background:#f8fafc;border-radius:8px;padding:6px 9px;margin-bottom:10px">Para guardar los meses en el historial, genera el recibo desde el pago (Historial de pagos o ficha del cliente).</div>';
     const ov = document.createElement('div'); ov.id = 'nxRecibo'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -13468,10 +13468,10 @@
         <div class="mt"><span><i class="ti ti-receipt"></i> Recibo de pago</span><button class="nxBack" type="button" onclick="document.getElementById('nxRecibo').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
           <div style="font-size:12px;color:#1e293b;font-weight:700">${esc(c.nom || '')}</div>
-          <div style="font-size:11px;color:#64748b;margin-bottom:6px">Póliza ${esc(c.numero_poliza || '—')} · Plan ${esc(c.plan || '—')} · Prima ${fmt(_recAmt)}/mes</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:6px">Póliza ${esc(c.numero_poliza || '—')} · Plan ${esc(c.plan || '—')} · Prima ${fmt(_recAmt)}/mes</div>
           <div id="recNumLbl" style="font-size:11px;font-weight:800;color:#1e3a6e;margin-bottom:10px">${_recNum != null ? ('Recibo No. ' + recNumStr()) : (_recAbonoId ? 'Recibo (asignando No…)' : 'Recibo sin número (genera desde el pago)')}</div>
           <div class="fr"><label>Monto recibido (RD$)</label><input id="recMonto" data-nx-money inputmode="numeric" value="${m ? Math.round(m) : ''}" placeholder="0"></div>
-          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">MESES QUE PAGA <span style="font-weight:600;color:#94a3b8">(automático o toca para marcar)</span></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">MESES QUE PAGA <span style="font-weight:600;color:#475569">(automático o toca para marcar)</span></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px">
             <button type="button" class="btn bsm bc1" style="font-size:10px;padding:5px 10px" onclick="window.nxReciboQuick('actual')"><i class="ti ti-calendar"></i> Mes actual</button>
             <button type="button" class="btn bsm" style="font-size:10px;padding:5px 10px" onclick="window.nxReciboQuick('pend')"><i class="ti ti-alert-circle"></i> Pendientes</button>
@@ -13571,7 +13571,7 @@
     const mesesTxt = d.meses.map(m => MESES[m.mes - 1] + ' ' + m.anio).join(', ');
     const noRec = recNumStr() || ('S/N-' + d.fecha.replace(/-/g, ''));
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recibo de pago - ${esc(d.c.nom || '')}</title>
-      <style>body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:580px;margin:0 auto;padding:22px}h1{font-size:18px;margin:0}.muted{color:#64748b;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1e3a6e;padding-bottom:10px;margin-bottom:14px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tot{font-size:15px;font-weight:800;color:#1e3a6e}.firma{margin-top:48px;border-top:1.5px solid #1a1a1a;width:60%;padding-top:6px;font-size:12px;text-align:center}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:580px;margin:0 auto;padding:22px}h1{font-size:18px;margin:0}.muted{color:#475569;font-size:12px}.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1e3a6e;padding-bottom:10px;margin-bottom:14px}.box{border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}td,th{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#f3f4f6}.tot{font-size:15px;font-weight:800;color:#1e3a6e}.firma{margin-top:48px;border-top:1.5px solid #1a1a1a;width:60%;padding-top:6px;font-size:12px;text-align:center}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
         <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-22px -22px 16px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85"></span></div>
         <div class="hd"><div><h1>${esc(empNom)}</h1><div class="muted">${cfg.empRNC ? 'RNC: ' + esc(cfg.empRNC) + ' · ' : ''}${esc(cfg.empTel || '')}${cfg.empDir ? '<br>' + esc(cfg.empDir) : ''}</div></div><div style="text-align:right"><div style="font-size:15px;font-weight:800;color:#1e3a6e">RECIBO DE PAGO</div><div class="muted">No. ${noRec}</div><div class="muted">Fecha: ${fechaDMY(d.fecha)}</div></div></div>
@@ -13752,9 +13752,9 @@
     const pt = document.getElementById('pttl'); if (pt) pt.textContent = 'PUNTO DE VENTA';
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
-    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#64748b"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando punto de venta...</div></div></div>';
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando punto de venta...</div></div></div>';
     try { await cargarPOS(); renderPOS(view); }
-    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudo cargar el POS.<br><span style="font-size:11px;color:#94a3b8">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
+    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudo cargar el POS.<br><span style="font-size:11px;color:#475569">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
   };
 
   window.nxPosTab = async function (t) {
@@ -13805,7 +13805,7 @@
   // ── TAB: VENDER ──
   function renderVender() {
     if (!_prods.length) {
-      return `<div style="text-align:center;padding:36px;color:#94a3b8;font-size:13px">Aún no hay productos.<br>Ve a <b>"Productos"</b> y agrega el primero.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Agregar producto</button></div>`;
+      return `<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay productos.<br>Ve a <b>"Productos"</b> y agrega el primero.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Agregar producto</button></div>`;
     }
     const chips = ['todas'].concat(_cats.map(c => c.id)).map(cid => {
       const lbl = cid === 'todas' ? 'Todas' : esc(catNombre(cid));
@@ -13813,7 +13813,7 @@
     }).join('');
     return `<div class="nxPosGridWrap">
         <div class="nxPosLeft">
-          <div style="position:relative;margin-bottom:8px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i><input type="text" id="posBuscar" placeholder="Buscar producto o código..." autocomplete="off" oninput="window.nxPosBuscar(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+          <div style="position:relative;margin-bottom:8px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input type="text" id="posBuscar" placeholder="Buscar producto o código..." autocomplete="off" oninput="window.nxPosBuscar(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
           <div id="posGrid" class="nxPosGrid">${gridHTML()}</div>
         </div>
@@ -13822,9 +13822,9 @@
   }
   function gridHTML() {
     const lista = _prods.filter(p => _posCat === 'todas' || String(p.categoria_id) === String(_posCat));
-    if (!lista.length) return '<div style="grid-column:1/-1;color:#94a3b8;font-size:12px;padding:20px;text-align:center">Sin productos en esta categoría</div>';
+    if (!lista.length) return '<div style="grid-column:1/-1;color:#475569;font-size:12px;padding:20px;text-align:center">Sin productos en esta categoría</div>';
     return lista.map(p => `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxPosAdd('${p.id}')">
-        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#94a3b8">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#94a3b8">${esc(p.marca)}</span>` : '')}</div>
+        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.marca)}</span>` : '')}</div>
         <div class="nxPosCardBot"><span class="nxPosCardPre">${fmt(p.precio)}</span><span class="nxPosCardStk">${Number(p.stock || 0)} und</span></div>
       </button>`).join('');
   }
@@ -13849,11 +13849,11 @@
     const wrap = document.getElementById('posCartWrap'); if (!wrap) return;
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => `<div class="nxPosCartIt">
-        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nombre)}</div><div style="font-size:10.5px;color:#94a3b8">${fmt(it.precio)} c/u</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nombre)}</div><div style="font-size:10.5px;color:#475569">${fmt(it.precio)} c/u</div></div>
         <div class="nxPosQty"><button type="button" onclick="window.nxPosQty(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" onclick="window.nxPosQty(${i},1)">+</button></div>
         <div style="width:74px;text-align:right;font-weight:800;font-size:12px;color:#0f172a">${fmt(it.precio * it.cantidad)}</div>
         <button type="button" class="nxPosX" onclick="window.nxPosDel(${i})"><i class="ti ti-x"></i></button>
-      </div>`).join('') : '<div style="color:#94a3b8;font-size:12px;padding:18px;text-align:center">Carrito vacío.<br>Toca un producto para agregarlo.</div>';
+      </div>`).join('') : '<div style="color:#475569;font-size:12px;padding:18px;text-align:center">Carrito vacío.<br>Toca un producto para agregarlo.</div>';
     wrap.innerHTML = `<div class="nxPosCart">
         <div class="nxPosCartHd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span>${_cart.length ? `<button type="button" class="btn bsm bghost" onclick="window.nxPosVaciar()" title="Vaciar"><i class="ti ti-trash" style="color:#dc2626"></i></button>` : ''}</div>
         <div class="nxPosCartList">${filas}</div>
@@ -13875,7 +13875,7 @@
   const NCF_TIPOS = [['sin', 'Sin comprobante'], ['consumo', 'Consumo (B02)'], ['credito_fiscal', 'Crédito Fiscal (B01)'], ['gubernamental', 'Gubernamental (B15)'], ['regimen_especial', 'Régimen Especial (B14)']];
   function renderFactura() {
     if (!_prods.length) {
-      return `<div style="text-align:center;padding:36px;color:#94a3b8;font-size:13px">Aún no hay artículos.<br>Ve a <b>"Productos"</b> (o usa <b>Importar</b>) y agrégalos.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Ir a Productos</button></div>`;
+      return `<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay artículos.<br>Ve a <b>"Productos"</b> (o usa <b>Importar</b>) y agrégalos.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Ir a Productos</button></div>`;
     }
     const cliOpts = `<option value="">— Consumidor final —</option>` + _clientes.map(c => `<option value="${c.id}"${String(_factCli) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
     const ncfOpts = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('');
@@ -13932,7 +13932,7 @@
   function renderAjustes() {
     return `<div style="max-width:580px">
         <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-receipt"></i> Numeración de facturas</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.5">Define el prefijo del número de factura según el tipo de venta. El consecutivo es automático por empresa.<br>Ejemplo: contado <b style="color:#2563eb">${esc(_posCfg.prefijo_contado)}000001</b> · crédito <b style="color:#2563eb">${esc(_posCfg.prefijo_credito)}000001</b>.</div>
+        <div style="font-size:12px;color:#475569;margin-bottom:16px;line-height:1.5">Define el prefijo del número de factura según el tipo de venta. El consecutivo es automático por empresa.<br>Ejemplo: contado <b style="color:#2563eb">${esc(_posCfg.prefijo_contado)}000001</b> · crédito <b style="color:#2563eb">${esc(_posCfg.prefijo_credito)}000001</b>.</div>
         <div class="fr-row">
           <div class="fr"><label>Prefijo CONTADO</label><input id="cfgPrefCo" value="${esc(_posCfg.prefijo_contado)}" maxlength="6" placeholder="CO" style="text-transform:uppercase"></div>
           <div class="fr"><label>Prefijo CRÉDITO</label><input id="cfgPrefCr" value="${esc(_posCfg.prefijo_credito)}" maxlength="6" placeholder="CR" style="text-transform:uppercase"></div>
@@ -13947,12 +13947,12 @@
   function ajustesVendedores() {
     const filas = _vendedores.length ? _vendedores.map(v => `<tr>
         <td style="font-weight:700">${esc(v.nombre)}</td>
-        <td style="text-align:center;color:#64748b">${esc(v.telefono || '')}</td>
+        <td style="text-align:center;color:#475569">${esc(v.telefono || '')}</td>
         <td style="text-align:right;font-weight:700;color:#2563eb">${Number(v.comision_pct || 0)}%</td>
         <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxVendEdit('${v.id}')"><i class="ti ti-edit"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">Sin vendedores. Agrega uno para asignar ventas y calcular comisiones.</td></tr>';
+      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#475569;font-size:12px">Sin vendedores. Agrega uno para asignar ventas y calcular comisiones.</td></tr>';
     return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-user-dollar"></i> Vendedores y comisiones</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5">Registra a tus vendedores con su % de comisión. Al cobrar podrás elegir el vendedor; en Reportes ves la comisión de cada uno.</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Registra a tus vendedores con su % de comisión. Al cobrar podrás elegir el vendedor; en Reportes ves la comisión de cada uno.</div>
       <div class="tw" style="font-size:12px;margin-bottom:10px"><table style="width:100%"><thead><tr><th>Nombre</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       <button class="btn bsm bc1" type="button" onclick="window.nxVendNuevo()"><i class="ti ti-plus"></i> Agregar vendedor</button>`;
   }
@@ -14001,14 +14001,14 @@
       const restante = Math.max(0, Number(s.hasta || 0) - Number(s.actual || 0) + 1);
       const bajo = restante <= 10;
       return `<tr${s.activo === false ? ' style="opacity:.5"' : ''}>
-        <td><b>${esc(s.tipo)}</b> <span style="font-size:10px;color:#94a3b8">${esc(s.descripcion || NCF_DESC[s.tipo] || '')}</span></td>
+        <td><b>${esc(s.tipo)}</b> <span style="font-size:10px;color:#475569">${esc(s.descripcion || NCF_DESC[s.tipo] || '')}</span></td>
         <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px">${esc(s.prefijo)}${String(s.actual).padStart(8, '0')}</td>
-        <td style="text-align:right;color:${bajo ? '#dc2626' : '#64748b'};font-weight:${bajo ? '800' : '400'}">${restante}${bajo ? ' ⚠' : ''}</td>
+        <td style="text-align:right;color:${bajo ? '#dc2626' : '#475569'};font-weight:${bajo ? '800' : '400'}">${restante}${bajo ? ' ⚠' : ''}</td>
         <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxNcfEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#94a3b8;font-size:12px">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#475569;font-size:12px">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
     return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-file-certificate"></i> Comprobantes Fiscales (NCF)</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:12px;line-height:1.5">Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.</div>
       <div class="tw" style="font-size:12px;margin-bottom:10px"><table style="width:100%"><thead><tr><th>Tipo</th><th style="text-align:center">Próximo NCF</th><th style="text-align:right">Restan</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       <button class="btn bsm bc1" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button>`;
   }
@@ -14146,14 +14146,14 @@
             <div class="fr"><label>Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
             <div class="fr"><label>Total a pagar</label><input id="posTotalLbl" readonly value="${fmt(t.total)}" style="background:#f0fdf4;font-weight:800;color:#065f46"></div>
           </div>
-          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">FORMA DE PAGO <span style="font-weight:600;color:#94a3b8">(deja en 0 lo que no aplique; lo que falte queda fiado)</span></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">FORMA DE PAGO <span style="font-weight:600;color:#475569">(deja en 0 lo que no aplique; lo que falte queda fiado)</span></div>
           <div class="fr-row"><div class="fr"><label>Efectivo</label><input id="payEfe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Tarjeta</label><input id="payTar" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
           <div class="fr-row"><div class="fr"><label>Transferencia</label><input id="payTra" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Cheque</label><input id="payChe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
           <div class="fr"><label>Nota de crédito</label><input id="payNc" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#64748b">Pagado</span><b id="cobroPagado">RD$ 0</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span id="cobroRestoLbl" style="color:#64748b">Pendiente</span><b id="cobroResto" style="color:#16a34a">RD$ 0</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#64748b">Devuelta</span><b id="cobroDev" style="color:#16a34a">RD$ 0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#475569">Pagado</span><b id="cobroPagado">RD$ 0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span id="cobroRestoLbl" style="color:#475569">Pendiente</span><b id="cobroResto" style="color:#16a34a">RD$ 0</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#475569">Devuelta</span><b id="cobroDev" style="color:#16a34a">RD$ 0</b></div>
             <div id="cobroFiadoNote"></div>
           </div>
         </div>
@@ -14292,13 +14292,13 @@
       const serv = p.tipo === 'servicio';
       const bajo = !serv && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0;
       return `<tr>
-        <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#7c3aed;background:#faf5ff;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#94a3b8">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
+        <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#7c3aed;background:#faf5ff;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
         <td style="text-align:right;font-weight:700">${fmt(p.precio)}</td>
-        <td style="text-align:right;color:${serv ? '#cbd5e1' : (Number(p.stock) <= 0 ? '#dc2626' : bajo ? '#ea580c' : '#64748b')}">${serv ? '—' : Number(p.stock || 0)}${bajo ? ' <i class="ti ti-alert-triangle" style="font-size:11px"></i>' : ''}</td>
-        <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#94a3b8">—</span>'}</td>
+        <td style="text-align:right;color:${serv ? '#cbd5e1' : (Number(p.stock) <= 0 ? '#dc2626' : bajo ? '#ea580c' : '#475569')}">${serv ? '—' : Number(p.stock || 0)}${bajo ? ' <i class="ti ti-alert-triangle" style="font-size:11px"></i>' : ''}</td>
+        <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
         <td style="white-space:nowrap;text-align:right"><button class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin productos. Toca "Nuevo" para agregar.</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin productos. Toca "Nuevo" para agregar.</td></tr>';
     return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
@@ -14419,12 +14419,12 @@
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-file-import"></i> Importar productos</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosImp').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
+          <div style="font-size:11px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
             Pega aquí el inventario exportado de <b>Infoplus</b> (el texto que empieza con <code>{"d":</code> o con <code>[[</code>).<br>
             Se cargan: <b>descripción, existencia, referencia y marca</b>. El <b>precio y el costo entran en 0</b> — luego los pones tú. No se duplican los códigos que ya existan.
           </div>
           <div class="fr"><label>Datos de Infoplus</label><textarea id="impTxt" class="no-upper" placeholder='{"d":"[[1000,\\"CELULAR...\\",3,\\"128GB\\",\\"M-HORSE\\",\\"\\"]...' style="width:100%;min-height:160px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:11px;font-family:monospace;outline:none;resize:vertical"></textarea></div>
-          <div id="impMsg" style="font-size:11px;color:#64748b;min-height:16px;margin-top:4px"></div>
+          <div id="impMsg" style="font-size:11px;color:#475569;min-height:16px;margin-top:4px"></div>
         </div>
         <div style="display:flex;gap:8px;padding-top:10px">
           <button class="btn bghost" type="button" style="flex:1" onclick="document.getElementById('nxPosImp').remove()">Cancelar</button>
@@ -14435,7 +14435,7 @@
   };
   window.nxPosImportarRun = async function () {
     const msg = document.getElementById('impMsg'); const btn = document.getElementById('impBtn');
-    const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c || '#64748b'; } };
+    const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c || '#475569'; } };
     let filas;
     try { filas = parseInfoplus(val('impTxt')); }
     catch (e) { setMsg('No pude leer el texto. Verifica que pegaste el JSON completo de Infoplus.', '#dc2626'); return; }
@@ -14482,7 +14482,7 @@
   // ── Categorías ──
   window.nxPosCategorias = function () {
     cerrarModal('nxPosCats');
-    const lista = _cats.length ? _cats.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f5f9"><span style="flex:1;font-size:12px;font-weight:700;color:#1e293b">${esc(c.nombre)}</span><button class="btn bsm bghost" onclick="window.nxPosDelCat('${c.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:14px;text-align:center">Sin categorías</div>';
+    const lista = _cats.length ? _cats.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f5f9"><span style="flex:1;font-size:12px;font-weight:700;color:#1e293b">${esc(c.nombre)}</span><button class="btn bsm bghost" onclick="window.nxPosDelCat('${c.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin categorías</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCats'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px;max-height:84vh;display:flex;flex-direction:column">
@@ -14524,13 +14524,13 @@
   }
   function filasHistorial() {
     const lista = ventasFiltradas();
-    if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin facturas con esos filtros</td></tr>';
+    if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin facturas con esos filtros</td></tr>';
     return lista.map(v => {
       const anulada = (v.estado || '') === 'anulada';
       const esCred = !!v.a_credito;
       return `<tr style="cursor:pointer${anulada ? ';opacity:.5' : ''}" onclick="window.nxPosTicket('${v.id}')">
         <td style="font-weight:700;color:#1e293b;white-space:nowrap">${esc(v.numero_factura || ('#' + (v.numero || '')))}</td>
-        <td style="color:#64748b;white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
+        <td style="color:#475569;white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
         <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}</td>
         <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
@@ -14580,7 +14580,7 @@
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:560px;max-height:94vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-arrow-back-up"></i> Devolución / Nota de crédito</span><button class="nxBack" type="button" onclick="document.getElementById('nxDevForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="font-size:11.5px;color:#64748b;margin-bottom:8px">Factura <b>${esc(v.numero_factura || '#' + v.numero)}</b> · ${esc(v.cliente_nombre || 'Consumidor final')}${v.ncf ? ' · NCF ' + esc(v.ncf) : ''}<br>Indica la cantidad a devolver de cada artículo.</div>
+        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Factura <b>${esc(v.numero_factura || '#' + v.numero)}</b> · ${esc(v.cliente_nombre || 'Consumidor final')}${v.ncf ? ' · NCF ' + esc(v.ncf) : ''}<br>Indica la cantidad a devolver de cada artículo.</div>
         <div id="devLineas" style="overflow-y:auto;flex:1"></div>
         <div class="fr-row">
           <div class="fr"><label>Motivo</label><input id="devMot" class="no-upper" value="" placeholder="Ej: producto defectuoso"></div>
@@ -14596,7 +14596,7 @@
   function pintarDevLineas() {
     const wrap = document.getElementById('devLineas'); if (!wrap) return;
     wrap.innerHTML = _devEdit.lineas.map((l, i) => `<div class="nxNomRow" style="grid-template-columns:1fr 110px">
-        <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.nombre)}</div><div style="font-size:10px;color:#94a3b8">Precio ${fmt(l.precio)} · vendido ${l.maxCant}</div></div>
+        <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.nombre)}</div><div style="font-size:10px;color:#475569">Precio ${fmt(l.precio)} · vendido ${l.maxCant}</div></div>
         <label class="nxNomF"><span>Devolver</span><input data-devc="${i}" inputmode="numeric" value="${l.cant}" onchange="window.nxDevCant(${i},this.value)"></label>
       </div>`).join('');
     pintarDevTot();
@@ -14661,7 +14661,7 @@
   }
   function renderVentas() {
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;pointer-events:none"></i><input id="histQ" value="${esc(_histQ)}" oninput="window.nxPosVentasBuscar(this.value)" placeholder="Buscar por No. de factura o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input id="histQ" value="${esc(_histQ)}" oninput="window.nxPosVentasBuscar(this.value)" placeholder="Buscar por No. de factura o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
         <input type="date" id="histDesde" value="${_histDesde}" onchange="window.nxPosHistFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <input type="date" id="histHasta" value="${_histHasta}" onchange="window.nxPosHistFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosHistLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
@@ -14669,7 +14669,7 @@
       <div id="histKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisHistorial()}</div>
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No. Factura</th><th>Fecha</th><th>Cliente</th><th>Tipo</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>`;
   }
-  function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
+  function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
 
   // ── TAB: CLIENTES (fiado / cuentas por cobrar) ──
   function renderClientes() {
@@ -14678,11 +14678,11 @@
     const filas = _clientes.length ? _clientes.map(c => {
       const sal = saldoCli(c);
       return `<tr onclick="window.nxPosCliVer('${c.id}')" style="cursor:pointer">
-        <td><div style="font-weight:700;font-size:12px">${esc(c.nombre)}</div><div style="font-size:10px;color:#94a3b8">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
+        <td><div style="font-weight:700;font-size:12px">${esc(c.nombre)}</div><div style="font-size:10px;color:#475569">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
         <td style="text-align:right;font-weight:800;color:${sal > 0 ? '#dc2626' : '#16a34a'}">${fmt(sal)}</td>
         <td style="text-align:right"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta"><i class="ti ti-eye"></i></button></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin clientes. Toca "Nuevo cliente".</td></tr>';
+    }).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin clientes. Toca "Nuevo cliente".</td></tr>';
     return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
         ${kpi('Clientes', _clientes.length, '#2563eb')}
         ${kpi('Por cobrar (fiado)', fmt(totalCobrar), totalCobrar > 0 ? '#dc2626' : '#16a34a')}
@@ -14733,14 +14733,14 @@
     const totAb = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
     const saldo = Math.max(0, totFiado - totAb);
     _fiadoByCli[id] = totFiado; _abonosByCli[id] = totAb;
-    const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>#${v.numero || ''} <span style="color:#94a3b8">${fechaDMY(v.fecha || v.created_at)}</span>${Number(v.credito_monto || 0) < Number(v.total || 0) ? `<div style="color:#94a3b8;font-size:9.5px">Venta ${fmt(v.total)} · fiado</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.credito_monto)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin ventas fiadas</div>';
-    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#94a3b8">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#94a3b8;font-size:10px">${esc(a.nota)}</div>` : ''}</div><button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin abonos</div>';
+    const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>#${v.numero || ''} <span style="color:#475569">${fechaDMY(v.fecha || v.created_at)}</span>${Number(v.credito_monto || 0) < Number(v.total || 0) ? `<div style="color:#475569;font-size:9.5px">Venta ${fmt(v.total)} · fiado</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.credito_monto)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin ventas fiadas</div>';
+    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div><button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCli'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-user"></i> ${esc(c.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCli').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
             ${kpi('Fiado total', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
           </div>
@@ -14845,7 +14845,7 @@
   // ── TAB: COMPRAS / PROVEEDORES ──
   function renderCompras() {
     const totalCxP = _proveedores.reduce((s, p) => s + saldoProv(p), 0);
-    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer"><td style="font-size:10px">#${c.numero || ''}<div style="color:#94a3b8">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:#dc2626">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin compras registradas</td></tr>';
+    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer"><td style="font-size:10px">#${c.numero || ''}<div style="color:#475569">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:#dc2626">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin compras registradas</td></tr>';
     return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
         ${kpi('Proveedores', _proveedores.length, '#2563eb')}
         ${kpi('Por pagar (CxP)', fmt(totalCxP), totalCxP > 0 ? '#dc2626' : '#16a34a')}
@@ -14901,7 +14901,7 @@
   window.nxPosCompraDelItem = function (idx) { _compraItems.splice(idx, 1); pintarCompraItems(); };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
-    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#94a3b8">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
+    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
   }
@@ -14937,7 +14937,7 @@
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px;max-height:88vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-receipt"></i> Compra No. ${c.numero || ''}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCompraDet').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">${filas}</table>
           <div style="display:flex;justify-content:space-between;border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;font-weight:800"><span>TOTAL</span><span>${fmt(c.total)}</span></div>
         </div>
@@ -14953,7 +14953,7 @@
   // Proveedores
   window.nxPosProveedores = function () {
     cerrarModal('nxPosProvs');
-    const lista = _proveedores.length ? _proveedores.map(p => { const s = saldoProv(p); return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosProvVer('${p.id}')"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b">${esc(p.nombre)}</div><div style="font-size:10px;color:#94a3b8">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div></div>${s > 0 ? `<b style="color:#dc2626;font-size:12px">${fmt(s)}</b>` : ''}<i class="ti ti-chevron-right" style="color:#cbd5e1"></i></div>`; }).join('') : '<div style="color:#94a3b8;font-size:11px;padding:14px;text-align:center">Sin proveedores</div>';
+    const lista = _proveedores.length ? _proveedores.map(p => { const s = saldoProv(p); return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosProvVer('${p.id}')"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b">${esc(p.nombre)}</div><div style="font-size:10px;color:#475569">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div></div>${s > 0 ? `<b style="color:#dc2626;font-size:12px">${fmt(s)}</b>` : ''}<i class="ti ti-chevron-right" style="color:#cbd5e1"></i></div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin proveedores</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosProvs'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:430px;max-height:86vh;display:flex;flex-direction:column">
@@ -15003,14 +15003,14 @@
     try { pagos = await getAPI().get('pos_compra_pagos', 'select=*&proveedor_id=eq.' + id + '&order=fecha.desc') || []; } catch (e) {}
     const totC = compras.reduce((s, c) => s + Number(c.total || 0), 0); const totP = pagos.reduce((s, a) => s + Number(a.monto || 0), 0); const saldo = Math.max(0, totC - totP);
     _cxpByProv[id] = totC; _pagosProvByProv[id] = totP;
-    const comprasHTML = compras.length ? compras.map(c => `<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span>#${c.numero || ''} <span style="color:#94a3b8">${(c.fecha || '').slice(0, 10)}</span></span><b style="color:#dc2626">${fmt(c.total)}</b></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin compras a crédito</div>';
-    const pagosHTML = pagos.length ? pagos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#94a3b8">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span></span><button class="btn bsm bghost" onclick="window.nxPosDelPagoProv('${a.id}','${id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin pagos</div>';
+    const comprasHTML = compras.length ? compras.map(c => `<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span>#${c.numero || ''} <span style="color:#475569">${(c.fecha || '').slice(0, 10)}</span></span><b style="color:#dc2626">${fmt(c.total)}</b></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin compras a crédito</div>';
+    const pagosHTML = pagos.length ? pagos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span></span><button class="btn bsm bghost" onclick="window.nxPosDelPagoProv('${a.id}','${id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosProv'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-building-warehouse"></i> ${esc(p.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosProv').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">${kpi('Comprado (créd.)', fmt(totC), '#0f172a')}${kpi('Pagado', fmt(totP), '#059669')}${kpi('Saldo (CxP)', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}</div>
           ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px"><div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR PAGO AL PROVEEDOR</div><div style="display:flex;gap:6px"><input id="provPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px"><select id="provPagoMet" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select><button class="btn bc1 bsm" type="button" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-plus"></i></button></div></div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px">✓ Sin deuda</div>'}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">COMPRAS A CRÉDITO (${compras.length})</div>
@@ -15035,19 +15035,19 @@
 
   // ── TAB: CAJA (apertura / arqueo / cierre) ──
   function renderCaja() {
-    const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? '#dc2626' : Number(c.descuadre) > 0 ? '#ea580c' : '#16a34a'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:#94a3b8;font-size:11px;padding:14px">Sin cierres aún</td></tr>';
+    const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? '#dc2626' : Number(c.descuadre) > 0 ? '#ea580c' : '#16a34a'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:#475569;font-size:11px;padding:14px">Sin cierres aún</td></tr>';
     const histo = `<div style="font-size:11px;font-weight:800;color:#475569;margin:14px 0 4px">CIERRES RECIENTES</div><div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Fecha cierre</th><th style="text-align:right">Esperado</th><th style="text-align:right">Descuadre</th></tr></thead><tbody>${cierresHTML}</tbody></table></div>`;
     if (!_caja) {
       return `<div class="nc" style="border:1px solid #e2e8f0;max-width:420px">
-          <div style="text-align:center;padding:6px 0 12px"><i class="ti ti-lock" style="font-size:34px;color:#94a3b8"></i><div style="font-weight:800;color:#1e293b;margin-top:6px">Caja cerrada</div><div style="font-size:11px;color:#64748b">Abre la caja para empezar el turno.</div></div>
+          <div style="text-align:center;padding:6px 0 12px"><i class="ti ti-lock" style="font-size:34px;color:#475569"></i><div style="font-weight:800;color:#1e293b;margin-top:6px">Caja cerrada</div><div style="font-size:11px;color:#475569">Abre la caja para empezar el turno.</div></div>
           <div class="fr nxPrForm" style="display:block"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Monto inicial (fondo)</label><input id="cajaIni" data-nx-money inputmode="numeric" placeholder="0" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none"></div>
           <button class="btn bc1" type="button" style="width:100%;margin-top:10px" onclick="window.nxPosAbrirCaja()"><i class="ti ti-lock-open"></i> Abrir caja</button>
         </div>${histo}`;
     }
     const tt = _cajaTot || { efe: 0, tar: 0, tra: 0, cre: 0, abEfe: 0, ent: 0, sal: 0, esperado: Number(_caja.monto_inicial || 0), movs: [], nventas: 0 };
-    const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? '#059669' : '#dc2626'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:#94a3b8">${esc(m.concepto || m.tipo)}</span></div><button class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#94a3b8;font-size:11px;padding:10px">Sin movimientos</div>';
+    const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? '#059669' : '#dc2626'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:#475569">${esc(m.concepto || m.tipo)}</span></div><button class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin movimientos</div>';
     return `<div class="nc" style="border:1px solid #e2e8f0">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:#16a34a;font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:#64748b">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:#16a34a;font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:#475569">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px;margin-bottom:10px">
           ${kpi('Efectivo', fmt(tt.efe), '#059669')}${kpi('Tarjeta', fmt(tt.tar), '#2563eb')}${kpi('Transfer.', fmt(tt.tra), '#7c3aed')}${kpi('Fiado', fmt(tt.cre), '#dc2626')}${kpi('Abonos efec.', fmt(tt.abEfe), '#059669')}
         </div>
@@ -15096,7 +15096,7 @@
     if (!_caja || !_cajaTot) return;
     cerrarModal('nxPosCierre');
     const denoms = [2000, 1000, 500, 200, 100, 50, 25, 10, 5, 1];
-    const rows = denoms.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:2px 0"><span style="width:54px;font-size:12px;font-weight:700;color:#475569;text-align:right">${d.toLocaleString('en-US')}</span><span style="color:#cbd5e1">×</span><input type="number" inputmode="numeric" min="0" data-den="${d}" value="0" oninput="window.nxPosDenom()" style="width:56px;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;text-align:center"><span data-densub="${d}" style="margin-left:auto;font-size:12px;color:#64748b">RD$ 0</span></div>`).join('');
+    const rows = denoms.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:2px 0"><span style="width:54px;font-size:12px;font-weight:700;color:#475569;text-align:right">${d.toLocaleString('en-US')}</span><span style="color:#cbd5e1">×</span><input type="number" inputmode="numeric" min="0" data-den="${d}" value="0" oninput="window.nxPosDenom()" style="width:56px;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;text-align:center"><span data-densub="${d}" style="margin-left:auto;font-size:12px;color:#475569">RD$ 0</span></div>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxPosCierre'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
@@ -15152,7 +15152,7 @@
     const movHTML = (movs || []).length ? movs.map(m => `<tr><td>${m.tipo === 'entrada' ? '➕' : '➖'} ${esc(m.concepto || m.tipo)}</td><td style="text-align:right;color:${m.tipo === 'entrada' ? '#059669' : '#dc2626'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</td></tr>`).join('') : '';
     const desc = Number(c.descuadre || 0);
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cierre de caja</title>
-      <style>body{font-family:Arial,sans-serif;color:#1e293b;max-width:420px;margin:0 auto;padding:18px;font-size:13px}h1{font-size:17px;text-align:center;margin:0}.muted{color:#64748b;font-size:11px;text-align:center}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:6px 4px;border-bottom:1px solid #eef2f6}.tit{font-size:11px;font-weight:800;color:#475569;margin:10px 0 2px}.big td{font-size:15px;font-weight:800}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <style>body{font-family:Arial,sans-serif;color:#1e293b;max-width:420px;margin:0 auto;padding:18px;font-size:13px}h1{font-size:17px;text-align:center;margin:0}.muted{color:#475569;font-size:11px;text-align:center}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:6px 4px;border-bottom:1px solid #eef2f6}.tit{font-size:11px;font-weight:800;color:#475569;margin:10px 0 2px}.big td{font-size:15px;font-weight:800}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
         <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-18px -18px 12px;padding:10px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button></div>
         <h1>📋 Cierre de Caja</h1>
@@ -15237,7 +15237,7 @@
 
   function renderContabilidad() {
     if (!_cuentas.length) {
-      return `<div style="text-align:center;padding:40px 16px;color:#64748b">
+      return `<div style="text-align:center;padding:40px 16px;color:#475569">
         <div style="font-size:42px;margin-bottom:8px"><i class="ti ti-book-2" style="color:#7c3aed"></i></div>
         <div style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:6px">Contabilidad lista para empezar</div>
         <div style="font-size:12.5px;max-width:420px;margin:0 auto 16px;line-height:1.5">Crea tu <b>Plan de Cuentas</b> base (Caja, Banco, Ventas, ITBIS, Gastos…). Desde ahí podrás registrar asientos y ver tus reportes. Las <b>ventas del POS se contabilizan solas</b>.</div>
@@ -15250,7 +15250,7 @@
     const rango = (_ctaTab === 'plan') ? '' : `<div class="nxCtaRango">
         <div class="nxFacF"><label>Desde</label><input type="date" value="${_ctaDesde}" onchange="window.nxCtaRango('d',this.value)"></div>
         <div class="nxFacF"><label>Hasta</label><input type="date" value="${_ctaHasta}" onchange="window.nxCtaRango('h',this.value)"></div>
-        <div style="font-size:11px;color:#94a3b8;align-self:end;padding-bottom:11px">${asientosRango().length} asiento(s)</div>
+        <div style="font-size:11px;color:#475569;align-self:end;padding-bottom:11px">${asientosRango().length} asiento(s)</div>
         ${imprimible ? `<button class="btn bsm bghost" type="button" style="margin-left:auto;align-self:end" onclick="window.nxCtaImprimir('${_ctaTab}')"><i class="ti ti-printer"></i> Imprimir</button>` : ''}
       </div>`;
     let body = '';
@@ -15291,19 +15291,19 @@
         <td class="nxFacCod">${esc(c.codigo)}</td>
         <td style="font-weight:600">${esc(c.nombre)}</td>
         <td><span class="nxCtaTipo nxCtaTipo-${c.tipo}">${TIPO_LBL[c.tipo] || c.tipo}</span></td>
-        <td style="text-align:center;font-size:11px;color:#94a3b8">${c.naturaleza === 'deudora' ? 'Deudora' : 'Acreedora'}</td>
+        <td style="text-align:center;font-size:11px;color:#475569">${c.naturaleza === 'deudora' ? 'Deudora' : 'Acreedora'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn bsm bc1" onclick="window.nxCtaEditCuenta('${c.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
     return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevaCuenta()"><i class="ti ti-plus"></i> Nueva cuenta</button>
-        <span style="font-size:11px;color:#94a3b8;align-self:center">${_cuentas.length} cuentas</span>
+        <span style="font-size:11px;color:#475569;align-self:center">${_cuentas.length} cuentas</span>
       </div>
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Código</th><th>Cuenta</th><th>Tipo</th><th style="text-align:center">Naturaleza</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
 
   function ctaDiario() {
     const list = asientosRango();
-    if (!list.length) return `<div style="text-align:center;padding:30px;color:#94a3b8;font-size:12.5px">Sin asientos en este período.<br><button class="btn bsm bc1" style="margin-top:10px" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>`;
+    if (!list.length) return `<div style="text-align:center;padding:30px;color:#475569;font-size:12.5px">Sin asientos en este período.<br><button class="btn bsm bc1" style="margin-top:10px" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>`;
     const bloques = list.map(a => {
       const ls = asLineas(a);
       const td = ls.reduce((s, l) => s + Number(l.debito || 0), 0), th = ls.reduce((s, l) => s + Number(l.credito || 0), 0);
@@ -15319,7 +15319,7 @@
 
   function ctaMayor() {
     const opts = _cuentas.map(c => `<option value="${c.id}"${String(_ctaMayorSel) === String(c.id) ? ' selected' : ''}>${esc(c.codigo)} — ${esc(c.nombre)}</option>`).join('');
-    let cuerpo = '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:12.5px">Elige una cuenta para ver su movimiento.</div>';
+    let cuerpo = '<div style="text-align:center;padding:24px;color:#475569;font-size:12.5px">Elige una cuenta para ver su movimiento.</div>';
     const c = ctaById(_ctaMayorSel);
     if (c) {
       const movs = [];
@@ -15330,7 +15330,7 @@
       let saldo = 0;
       const filas = movs.map(m => { saldo += (c.naturaleza === 'deudora' ? (m.debe - m.haber) : (m.haber - m.debe)); return `<tr><td>${fechaDMY(m.fecha)}</td><td>${esc(m.concepto || '')}</td><td style="text-align:right">${m.debe ? fmt(m.debe) : ''}</td><td style="text-align:right">${m.haber ? fmt(m.haber) : ''}</td><td style="text-align:right;font-weight:700">${fmt(saldo)}</td></tr>`; }).join('');
       const td = movs.reduce((s, m) => s + m.debe, 0), th = movs.reduce((s, m) => s + m.haber, 0);
-      cuerpo = movs.length ? `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th><th style="text-align:right">Saldo</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td colspan="2" style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td><td style="text-align:right;font-weight:800">${fmt(saldo)}</td></tr></tbody></table></div>` : '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:12.5px">Sin movimientos en el período.</div>';
+      cuerpo = movs.length ? `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right">Debe</th><th style="text-align:right">Haber</th><th style="text-align:right">Saldo</th></tr></thead><tbody>${filas}<tr class="nxCtaAsTot"><td colspan="2" style="text-align:right;font-weight:800">Totales</td><td style="text-align:right;font-weight:800">${fmt(td)}</td><td style="text-align:right;font-weight:800">${fmt(th)}</td><td style="text-align:right;font-weight:800">${fmt(saldo)}</td></tr></tbody></table></div>` : '<div style="text-align:center;padding:24px;color:#475569;font-size:12.5px">Sin movimientos en el período.</div>';
     }
     return `<div class="nxFacF" style="max-width:420px;margin-bottom:12px"><label>Cuenta</label><select onchange="window.nxCtaMayorSel(this.value)"><option value="">— Elegir cuenta —</option>${opts}</select></div>${cuerpo}`;
   }
@@ -15338,7 +15338,7 @@
   function ctaBalanza() {
     const s = saldosCta();
     const arr = Object.values(s).filter(o => o.debe || o.haber).sort((a, b) => String(a.cuenta.codigo).localeCompare(String(b.cuenta.codigo)));
-    if (!arr.length) return '<div style="text-align:center;padding:24px;color:#94a3b8;font-size:12.5px">Sin movimientos contables en el período.</div>';
+    if (!arr.length) return '<div style="text-align:center;padding:24px;color:#475569;font-size:12.5px">Sin movimientos contables en el período.</div>';
     let TD = 0, TH = 0;
     const filas = arr.map(o => { TD += o.debe; TH += o.haber; return `<tr><td class="nxFacCod">${esc(o.cuenta.codigo)}</td><td>${esc(o.cuenta.nombre)}</td><td style="text-align:right">${fmt(o.debe)}</td><td style="text-align:right">${fmt(o.haber)}</td></tr>`; }).join('');
     const cuadra = Math.round(TD) === Math.round(TH);
@@ -15379,7 +15379,7 @@
     const cap = capArr.reduce((a, o) => a + saldoNat(o), 0);
     const patrimonio = cap + utilidad, pasMasCap = pas + patrimonio;
     const cuadra = Math.round(act) === Math.round(pasMasCap);
-    const sec = (titulo, arr) => `<tr class="nxCtaSec"><td colspan="2">${titulo}</td></tr>` + (arr.length ? arr.map(o => `<tr><td style="padding-left:18px">${esc(o.cuenta.nombre)}</td><td style="text-align:right">${fmt(saldoNat(o))}</td></tr>`).join('') : '<tr><td style="padding-left:18px;color:#94a3b8">—</td><td></td></tr>');
+    const sec = (titulo, arr) => `<tr class="nxCtaSec"><td colspan="2">${titulo}</td></tr>` + (arr.length ? arr.map(o => `<tr><td style="padding-left:18px">${esc(o.cuenta.nombre)}</td><td style="text-align:right">${fmt(saldoNat(o))}</td></tr>`).join('') : '<tr><td style="padding-left:18px;color:#475569">—</td><td></td></tr>');
     return `<div class="nxCtaRep"><table style="width:100%">
         ${sec('ACTIVOS', actArr)}
         <tr class="nxCtaTotR"><td>Total activos</td><td style="text-align:right">${fmt(act)}</td></tr>
@@ -15678,7 +15678,7 @@
       const est = cotVigente(c);
       return `<tr>
         <td style="font-weight:700;font-family:var(--mono,monospace);font-size:11px">${esc(c.numero || '')}</td>
-        <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:#94a3b8">${fechaDMY(c.fecha)}</div></td>
+        <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:#475569">${fechaDMY(c.fecha)}</div></td>
         <td style="text-align:center">${cotEstadoBadge(est)}</td>
         <td style="text-align:right;font-weight:700">${fmt(c.total)}</td>
         <td style="text-align:right;white-space:nowrap">
@@ -15687,7 +15687,7 @@
           <button class="btn bsm bghost" title="Editar" onclick="window.nxCotEditar('${c.id}')"><i class="ti ti-edit"></i></button>
         </td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Aún no hay cotizaciones. Crea la primera.</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">Aún no hay cotizaciones. Crea la primera.</td></tr>';
     return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
@@ -15737,7 +15737,7 @@
   window.nxCotDel = function (i) { _cotEdit.lineas.splice(i, 1); pintarCotTabla(); };
   function pintarCotTabla() {
     const wrap = document.getElementById('cotTabla'); if (!wrap) return;
-    if (!_cotEdit.lineas.length) { wrap.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:22px">Agrega productos a la cotización.</div>'; const t = document.getElementById('cotTot'); if (t) t.innerHTML = ''; return; }
+    if (!_cotEdit.lineas.length) { wrap.innerHTML = '<div style="text-align:center;color:#475569;font-size:12px;padding:22px">Agrega productos a la cotización.</div>'; const t = document.getElementById('cotTot'); if (t) t.innerHTML = ''; return; }
     const filas = _cotEdit.lineas.map((l, i) => `<tr>
         <td class="nxFacDesc">${esc(l.nombre)}</td>
         <td class="nxFacCant"><input inputmode="numeric" value="${l.cantidad}" onchange="window.nxCotLinea(${i},'cantidad',this.value)"></td>
@@ -15839,15 +15839,15 @@
     const kpi = (l, v, c) => `<div class="nxCtaKpi"><div class="nxCtaKpiL">${l}</div><div class="nxCtaKpiV" style="color:${c}">${fmt(v)}</div></div>`;
     const dias = Object.keys(porDia).sort().slice(-14);
     const maxDia = Math.max(1, ...dias.map(d => porDia[d]));
-    const barras = dias.length ? dias.map(d => { const h = Math.max(3, Math.round(porDia[d] / maxDia * 90)); const dd = d.slice(8) + '/' + d.slice(5, 7); return `<div class="nxRepBar"><div class="nxRepBarV" style="height:${h}px" title="${fmt(porDia[d])}"></div><div class="nxRepBarL">${dd}</div></div>`; }).join('') : '<div style="color:#94a3b8;font-size:12px;padding:20px">Sin ventas en el período.</div>';
+    const barras = dias.length ? dias.map(d => { const h = Math.max(3, Math.round(porDia[d] / maxDia * 90)); const dd = d.slice(8) + '/' + d.slice(5, 7); return `<div class="nxRepBar"><div class="nxRepBarV" style="height:${h}px" title="${fmt(porDia[d])}"></div><div class="nxRepBarL">${dd}</div></div>`; }).join('') : '<div style="color:#475569;font-size:12px;padding:20px">Sin ventas en el período.</div>';
     const top = Object.entries(porProd).sort((a, b) => b[1].monto - a[1].monto).slice(0, 10);
-    const topFilas = top.length ? top.map(([nom, o], i) => `<tr><td style="color:#94a3b8;width:22px">${i + 1}</td><td style="font-weight:600">${esc(nom)}</td><td style="text-align:right">${o.cant}</td><td style="text-align:right;font-weight:700">${fmt(o.monto)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:18px;color:#94a3b8;font-size:12px">Sin datos</td></tr>';
+    const topFilas = top.length ? top.map(([nom, o], i) => `<tr><td style="color:#475569;width:22px">${i + 1}</td><td style="font-weight:600">${esc(nom)}</td><td style="text-align:right">${o.cant}</td><td style="text-align:right;font-weight:700">${fmt(o.monto)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:18px;color:#475569;font-size:12px">Sin datos</td></tr>';
     const totMet = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
-    const metFilas = Object.entries(metodos).filter(([k, v]) => v > 0).map(([k, v]) => `<div class="nxRepMet"><div class="nxRepMetTop"><span>${esc(k)}</span><b>${fmt(v)}</b></div><div class="nxRepMetBar"><div style="width:${Math.round(v / totMet * 100)}%"></div></div></div>`).join('') || '<div style="color:#94a3b8;font-size:12px">Sin pagos registrados</div>';
+    const metFilas = Object.entries(metodos).filter(([k, v]) => v > 0).map(([k, v]) => `<div class="nxRepMet"><div class="nxRepMetTop"><span>${esc(k)}</span><b>${fmt(v)}</b></div><div class="nxRepMetBar"><div style="width:${Math.round(v / totMet * 100)}%"></div></div></div>`).join('') || '<div style="color:#475569;font-size:12px">Sin pagos registrados</div>';
     return `<div class="nxCtaRango">
         <div class="nxFacF"><label>Desde</label><input type="date" value="${_repDesde}" onchange="window.nxRepRango('d',this.value)"></div>
         <div class="nxFacF"><label>Hasta</label><input type="date" value="${_repHasta}" onchange="window.nxRepRango('h',this.value)"></div>
-        <div style="font-size:11px;color:#94a3b8;align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
+        <div style="font-size:11px;color:#475569;align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
         <div style="margin-left:auto;display:flex;gap:6px;align-self:end">
           ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
           <button class="btn bsm bghost" type="button" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
@@ -15951,11 +15951,11 @@
     const activos = _empleados.filter(e => e.activo !== false);
     const nomMensual = activos.reduce((s, e) => s + Number(e.salario || 0), 0);
     const filas = _empleados.length ? _empleados.map(e => `<tr${e.activo === false ? ' style="opacity:.5"' : ''}>
-        <td><div style="font-weight:700;font-size:12.5px">${esc(e.nombre || '')}</div><div style="font-size:10px;color:#94a3b8">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div></td>
+        <td><div style="font-weight:700;font-size:12.5px">${esc(e.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div></td>
         <td style="text-align:right;font-weight:700">${fmt(e.salario)}</td>
-        <td style="text-align:center;font-size:10.5px;color:#64748b">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
+        <td style="text-align:center;font-size:10.5px;color:#475569">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Sin empleados. Toca "Nuevo empleado".</td></tr>';
+      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin empleados. Toca "Nuevo empleado".</td></tr>';
     return `<div class="nxCtaKpis" style="margin-bottom:12px">
         <div class="nxCtaKpi"><div class="nxCtaKpiL">Empleados activos</div><div class="nxCtaKpiV" style="color:#2563eb">${activos.length}</div></div>
         <div class="nxCtaKpi"><div class="nxCtaKpiL">Nómina mensual (bruto)</div><div class="nxCtaKpiV" style="color:#7c3aed">${fmt(nomMensual)}</div></div>
@@ -15969,12 +15969,12 @@
     const filas = _nominas.length ? _nominas.map(n => {
       const est = n.estado === 'pagada' ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#f0fdf4;padding:2px 7px;border-radius:6px">PAGADA</span>' : n.estado === 'anulada' ? '<span style="font-size:9px;font-weight:800;color:#dc2626;background:#fef2f2;padding:2px 7px;border-radius:6px">ANULADA</span>' : '<span style="font-size:9px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 7px;border-radius:6px">BORRADOR</span>';
       return `<tr style="cursor:pointer" onclick="window.nxRhVerNomina('${n.id}')">
-        <td><div style="font-weight:700;font-size:12.5px">${esc(n.periodo || n.descripcion || 'Nómina')}</div><div style="font-size:10px;color:#94a3b8">${fechaDMY(n.fecha)} · ${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal' })[n.tipo] || n.tipo || '')}</div></td>
+        <td><div style="font-weight:700;font-size:12.5px">${esc(n.periodo || n.descripcion || 'Nómina')}</div><div style="font-size:10px;color:#475569">${fechaDMY(n.fecha)} · ${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal' })[n.tipo] || n.tipo || '')}</div></td>
         <td style="text-align:center">${est}</td>
         <td style="text-align:right;font-weight:700">${fmt(n.total_neto)}</td>
         <td style="text-align:right"><i class="ti ti-chevron-right" style="color:#cbd5e1"></i></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;font-size:12px">Aún no has generado nóminas.</td></tr>';
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Aún no has generado nóminas.</td></tr>';
     return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxRhGenerar()"><i class="ti ti-calculator"></i> Generar nómina</button></div>
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Período</th><th style="text-align:center">Estado</th><th style="text-align:right">Neto</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
@@ -15992,7 +15992,7 @@
     return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
         <button class="btn bsm bghost" type="button" onclick="window.nxRhVolver()"><i class="ti ti-arrow-left"></i> Volver</button>
         <div style="font-weight:800;font-size:14px;color:#1e293b">${esc(n.periodo || 'Nómina')}</div>
-        <span style="font-size:11px;color:#94a3b8">${fechaDMY(n.fecha)}</span>
+        <span style="font-size:11px;color:#475569">${fechaDMY(n.fecha)}</span>
         ${n.estado !== 'anulada' ? `<button class="btn bsm bc3" style="margin-left:auto" type="button" onclick="window.nxRhAnularNomina('${n.id}')"><i class="ti ti-ban"></i> Anular</button>` : '<span style="margin-left:auto;font-size:11px;font-weight:800;color:#dc2626">ANULADA</span>'}
       </div>
       <div class="nxCtaKpis" style="margin-bottom:12px">
@@ -16095,7 +16095,7 @@
           <div class="fr"><label>Fecha</label><input type="date" id="nmF" value="${_nomEdit.fecha}"></div>
           <div class="fr"><label>Tipo</label><select id="nmT"><option value="mensual"${_nomEdit.tipo === 'mensual' ? ' selected' : ''}>Mensual</option><option value="quincenal"${_nomEdit.tipo === 'quincenal' ? ' selected' : ''}>Quincenal</option><option value="semanal"${_nomEdit.tipo === 'semanal' ? ' selected' : ''}>Semanal</option></select></div>
         </div>
-        <div style="font-size:10.5px;color:#94a3b8;margin:2px 2px 8px">Deducciones automáticas RD: SFS 3.04% · AFP 2.87% · ISR escala DGII. Puedes editar bonos y otras deducciones.</div>
+        <div style="font-size:10.5px;color:#475569;margin:2px 2px 8px">Deducciones automáticas RD: SFS 3.04% · AFP 2.87% · ISR escala DGII. Puedes editar bonos y otras deducciones.</div>
         <div id="nmLineas" style="overflow-y:auto;flex:1"></div>
         <div id="nmTot" class="nxAsTot"></div>
         <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxNomForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRhGuardarNomina()"><i class="ti ti-device-floppy"></i> Guardar nómina</button></div>
@@ -16116,7 +16116,7 @@
   function pintarNomLineas() {
     const wrap = document.getElementById('nmLineas'); if (!wrap || !_nomEdit) return;
     wrap.innerHTML = _nomEdit.lineas.map((l, i) => `<div class="nxNomRow">
-        <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.empleado_nombre)}</div><div style="font-size:10px;color:#94a3b8">Bruto ${fmt(l.salario_bruto)} · Ded. ${fmt(Number(l.sfs) + Number(l.afp) + Number(l.isr))}</div></div>
+        <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.empleado_nombre)}</div><div style="font-size:10px;color:#475569">Bruto ${fmt(l.salario_bruto)} · Ded. ${fmt(Number(l.sfs) + Number(l.afp) + Number(l.isr))}</div></div>
         <label class="nxNomF"><span>Bonos</span><input data-nmb="${i}" data-nx-money inputmode="numeric" value="${l.bonos || ''}" placeholder="0" oninput="window.nxNomTotals()"></label>
         <label class="nxNomF"><span>Otras ded.</span><input data-nmo="${i}" data-nx-money inputmode="numeric" value="${l.otras_deducciones || ''}" placeholder="0" oninput="window.nxNomTotals()"></label>
         <div class="nxNomNeto"><span>Neto</span><b data-nmn="${i}">${fmt(nomLineaNeto(l))}</b></div>
@@ -16212,7 +16212,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPosCSS';
-    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#94a3b8}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#94a3b8}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#94a3b8;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#94a3b8;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#94a3b8;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#94a3b8;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#64748b;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#64748b;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}.nxFacSubTabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid #eef2f7;margin-bottom:14px}.nxFacSubTab{border:none;background:transparent;color:#64748b;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}.nxFacSubTab:hover{color:#1e293b}.nxFacSubTab.on{color:#2563eb;border-bottom-color:#2563eb}.nxFacF input[type=date]{width:100%;height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacCliRow{display:flex;gap:6px;align-items:stretch}.nxFacCliRow select{flex:1;min-width:0}.nxFacCliAdd{border:1.5px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;width:44px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}.nxFacCliAdd:hover{background:#1d4ed8}/* ── Contabilidad ── */.nxCtaRango{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:end}.nxCtaRango .nxFacF{max-width:160px}.nxCtaKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.nxCtaKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxCtaKpiL{font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}.nxCtaKpiV{font-size:18px;font-weight:800;line-height:1}.nxCtaTipo{font-size:10px;font-weight:800;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.2px}.nxCtaTipo-activo{background:#eff6ff;color:#2563eb}.nxCtaTipo-pasivo{background:#fff7ed;color:#ea580c}.nxCtaTipo-capital{background:#faf5ff;color:#7c3aed}.nxCtaTipo-ingreso{background:#f0fdf4;color:#16a34a}.nxCtaTipo-costo{background:#fef2f2;color:#dc2626}.nxCtaTipo-gasto{background:#fef2f2;color:#b91c1c}.nxCtaAs{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.nxCtaAsHd{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#334155;margin-bottom:8px;gap:8px}.nxCtaOrig{font-size:9px;font-weight:800;background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:6px;text-transform:uppercase;margin-left:4px}.nxCtaAsT{width:100%;border-collapse:collapse;font-size:11.5px}.nxCtaAsT th{text-align:left;font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid #eef2f7}.nxCtaAsT td{padding:4px 6px;border-bottom:1px solid #f6f8fb;color:#334155}.nxCtaAsTot td{border-top:1.5px solid #e2e8f0;border-bottom:none!important;padding-top:6px}.nxCtaRep{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}.nxCtaRep table{font-size:12.5px}.nxCtaRep td{padding:5px 6px;color:#334155}.nxCtaSec td{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding-top:12px;border-bottom:1px solid #eef2f7}.nxCtaTotR td{font-weight:800;border-top:1px solid #e2e8f0;color:#0f172a}.nxCtaGran td{font-weight:800;font-size:14px;border-top:2px solid #1e293b;padding-top:8px;color:#0f172a}.nxAsRow{display:grid;grid-template-columns:1fr 92px 92px 28px;gap:6px;margin-bottom:6px;align-items:center}.nxAsRow select,.nxAsRow input{height:38px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 8px;font-size:12px;background:#fff;color:#1e293b;font-family:inherit;width:100%}.nxAsRow input{text-align:right;font-weight:700}.nxAsTot{margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#475569}@media(max-width:520px){.nxAsRow{grid-template-columns:1fr 1fr 1fr 24px}.nxAsRow select{grid-column:1/-1}}/* ── RRHH / Nómina ── */.nxNomRow{display:grid;grid-template-columns:1fr 110px 110px 110px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid #f1f5f9}.nxNomEmp{min-width:0}.nxNomF{display:flex;flex-direction:column;gap:2px}.nxNomF span{font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase}.nxNomF input{height:36px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:12px;font-weight:700;text-align:right;background:#fff;color:#0f172a;font-family:inherit}.nxNomNeto{display:flex;flex-direction:column;gap:2px;text-align:right}.nxNomNeto span{font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase}.nxNomNeto b{font-size:13px;color:#16a34a}@media(max-width:560px){.nxNomRow{grid-template-columns:1fr 1fr;row-gap:6px}.nxNomEmp{grid-column:1/-1}.nxNomNeto{align-items:flex-end}}/* ── Reportes ── */.nxRepGrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}@media(min-width:760px){.nxRepGrid{grid-template-columns:1.4fr 1fr}}.nxRepCard{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxRepTit{font-size:12px;font-weight:800;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:6px}.nxRepTit i{color:#7c3aed}.nxRepBars{display:flex;align-items:flex-end;gap:5px;height:120px;overflow-x:auto;padding-bottom:2px}.nxRepBar{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:30px;flex:1}.nxRepBarV{width:70%;min-width:14px;background:linear-gradient(180deg,#3b82f6,#2563eb);border-radius:5px 5px 0 0}.nxRepBarL{font-size:8.5px;color:#94a3b8;white-space:nowrap}.nxRepMet{margin-bottom:10px}.nxRepMetTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.nxRepMetTop b{color:#0f172a}.nxRepMetBar{height:7px;background:#f1f5f9;border-radius:5px;overflow:hidden}.nxRepMetBar>div{height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:5px}';
+    st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#475569}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#475569;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#475569;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#475569;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(37,99,235,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#475569}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#475569;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#475569;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#475569;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#475569;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#475569;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#475569;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}.nxFacSubTabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid #eef2f7;margin-bottom:14px}.nxFacSubTab{border:none;background:transparent;color:#475569;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}.nxFacSubTab:hover{color:#1e293b}.nxFacSubTab.on{color:#2563eb;border-bottom-color:#2563eb}.nxFacF input[type=date]{width:100%;height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacCliRow{display:flex;gap:6px;align-items:stretch}.nxFacCliRow select{flex:1;min-width:0}.nxFacCliAdd{border:1.5px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;width:44px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}.nxFacCliAdd:hover{background:#1d4ed8}/* ── Contabilidad ── */.nxCtaRango{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:end}.nxCtaRango .nxFacF{max-width:160px}.nxCtaKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.nxCtaKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxCtaKpiL{font-size:10.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}.nxCtaKpiV{font-size:18px;font-weight:800;line-height:1}.nxCtaTipo{font-size:10px;font-weight:800;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.2px}.nxCtaTipo-activo{background:#eff6ff;color:#2563eb}.nxCtaTipo-pasivo{background:#fff7ed;color:#ea580c}.nxCtaTipo-capital{background:#faf5ff;color:#7c3aed}.nxCtaTipo-ingreso{background:#f0fdf4;color:#16a34a}.nxCtaTipo-costo{background:#fef2f2;color:#dc2626}.nxCtaTipo-gasto{background:#fef2f2;color:#b91c1c}.nxCtaAs{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.nxCtaAsHd{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#334155;margin-bottom:8px;gap:8px}.nxCtaOrig{font-size:9px;font-weight:800;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:6px;text-transform:uppercase;margin-left:4px}.nxCtaAsT{width:100%;border-collapse:collapse;font-size:11.5px}.nxCtaAsT th{text-align:left;font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid #eef2f7}.nxCtaAsT td{padding:4px 6px;border-bottom:1px solid #f6f8fb;color:#334155}.nxCtaAsTot td{border-top:1.5px solid #e2e8f0;border-bottom:none!important;padding-top:6px}.nxCtaRep{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}.nxCtaRep table{font-size:12.5px}.nxCtaRep td{padding:5px 6px;color:#334155}.nxCtaSec td{font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;padding-top:12px;border-bottom:1px solid #eef2f7}.nxCtaTotR td{font-weight:800;border-top:1px solid #e2e8f0;color:#0f172a}.nxCtaGran td{font-weight:800;font-size:14px;border-top:2px solid #1e293b;padding-top:8px;color:#0f172a}.nxAsRow{display:grid;grid-template-columns:1fr 92px 92px 28px;gap:6px;margin-bottom:6px;align-items:center}.nxAsRow select,.nxAsRow input{height:38px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 8px;font-size:12px;background:#fff;color:#1e293b;font-family:inherit;width:100%}.nxAsRow input{text-align:right;font-weight:700}.nxAsTot{margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#475569}@media(max-width:520px){.nxAsRow{grid-template-columns:1fr 1fr 1fr 24px}.nxAsRow select{grid-column:1/-1}}/* ── RRHH / Nómina ── */.nxNomRow{display:grid;grid-template-columns:1fr 110px 110px 110px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid #f1f5f9}.nxNomEmp{min-width:0}.nxNomF{display:flex;flex-direction:column;gap:2px}.nxNomF span{font-size:9px;font-weight:800;color:#475569;text-transform:uppercase}.nxNomF input{height:36px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:12px;font-weight:700;text-align:right;background:#fff;color:#0f172a;font-family:inherit}.nxNomNeto{display:flex;flex-direction:column;gap:2px;text-align:right}.nxNomNeto span{font-size:9px;font-weight:800;color:#475569;text-transform:uppercase}.nxNomNeto b{font-size:13px;color:#16a34a}@media(max-width:560px){.nxNomRow{grid-template-columns:1fr 1fr;row-gap:6px}.nxNomEmp{grid-column:1/-1}.nxNomNeto{align-items:flex-end}}/* ── Reportes ── */.nxRepGrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}@media(min-width:760px){.nxRepGrid{grid-template-columns:1.4fr 1fr}}.nxRepCard{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxRepTit{font-size:12px;font-weight:800;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:6px}.nxRepTit i{color:#7c3aed}.nxRepBars{display:flex;align-items:flex-end;gap:5px;height:120px;overflow-x:auto;padding-bottom:2px}.nxRepBar{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:30px;flex:1}.nxRepBarV{width:70%;min-width:14px;background:linear-gradient(180deg,#3b82f6,#2563eb);border-radius:5px 5px 0 0}.nxRepBarL{font-size:8.5px;color:#475569;white-space:nowrap}.nxRepMet{margin-bottom:10px}.nxRepMetTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.nxRepMetTop b{color:#0f172a}.nxRepMetBar{height:7px;background:#f1f5f9;border-radius:5px;overflow:hidden}.nxRepMetBar>div{height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:5px}';
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 3, nombre: 'Punto de Venta', desc: 'Ventas, productos e inventario', icon: 'ti-shopping-cart', color: '#7c3aed', bg: '#faf5ff', onclick: 'window.nxAbrirPOS()' }); } catch (e) {} }

@@ -1,7 +1,8 @@
 {
-  "version": "25.6",
+  "version": "25.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (legibilidad): las letras grises de TODO el sistema (subtítulos, notas, textos secundarios) ahora usan el mismo color oscuro del título 'USUARIO', para que se lean mejor y se vea más parejo. Empezando por la pantalla de entrada, donde 'Plataforma de gestión · República Dominicana' ya no se ve tan clarito",
     "NUEVO (POS · DEVOLUCIONES / NOTAS DE CRÉDITO): en el Historial de facturas, cada venta tiene ahora un botón naranja de devolución. Eliges qué artículos y cuántos devuelve el cliente, el motivo y cómo se le devuelve (efectivo, nota de crédito, transferencia o rebaja a su cuenta). El sistema: regresa el stock, emite una NOTA DE CRÉDITO con su número (NC-00001) y NCF B04 si tienes secuencia, hace el asiento contable inverso de la venta, y te imprime el documento. Devolución total o parcial",
     "NUEVO (POS · VENDEDORES Y COMISIONES): en Ajustes registras a tus vendedores con su % de comisión. Al cobrar, eliges quién hizo la venta, y en Reportes hay un botón 'Comisiones' que te da, por vendedor, cuántas ventas hizo, el monto y la comisión que le toca — listo para imprimir y pagar",
     "NUEVO (POS · COMPROBANTES FISCALES / NCF): en Ajustes del Punto de Venta ahora cargas tus secuencias de NCF autorizadas por la DGII (Consumo B02, Crédito Fiscal B01, Gubernamental B15, Régimen Especial B14…), con su rango Desde–Hasta y vencimiento. Al facturar eligiendo el tipo de comprobante, el sistema ASIGNA el NCF y avanza el contador solo, lo imprime en el ticket/factura, y te AVISA cuando quedan pocos. Además, en Reportes hay un botón 'Reporte 607 (NCF)' que lista todas tus ventas con comprobante fiscal (monto, ITBIS, total) listo para imprimir y declarar",
