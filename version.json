@@ -1,7 +1,8 @@
 {
-  "version": "33.2",
+  "version": "33.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "AJUSTE (Rifas · página pública): se quitó el selector de bandera/código de país (+1) del campo de WhatsApp. Ahora el cliente solo escribe su número directo.",
     "AJUSTE (Rifas · página pública): la pestaña 'Verificar' ahora es un BOTÓN visible al lado de 'Comprar tickets' que dice 'Consultar ticket'. Las dos opciones se ven como botones claros (el activo en color, el otro con borde), para que el cliente note que puede consultar sus tickets.",
     "AJUSTE (Rifas · texto): en la página pública, cuando la rifa no tiene cuentas de cobro cargadas, el mensaje ahora dice 'El organizador le enviará la confirmación por WhatsApp' (antes decía 'te dará los datos de pago por WhatsApp').",
     "AJUSTE (Rifas · página pública de compra, más simple y segura): 1) los datos del cliente quedan juntos arriba del todo: ahora solo se piden NOMBRE COMPLETO y WhatsApp (se quitaron cédula, correo y dirección). 2) Se quitó la opción 'Enviaré el voucher después': ahora el comprobante de pago es OBLIGATORIO. 3) El botón 'Confirmar' permanece apagado hasta que el cliente elija sus tickets, escriba su nombre y WhatsApp y ADJUNTE la foto del comprobante; al adjuntarlo se habilita. Así no entran compras sin voucher.",
