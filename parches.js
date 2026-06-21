@@ -17963,10 +17963,12 @@ try {
     var total = Number(r.cantidad_numeros || 0);
     var o = rifaStats();
     var pct = total ? Math.min(100, Math.round(o.n / total * 100)) : 0;
+    var wb = '';
+    if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
-      '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
       '<div class="rfLegend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#fde68a"></i>Por confirmar</span><span><i class="d" style="background:#c7d2fe"></i>Confirmado</span><span><i class="d" style="background:#cbd5e1"></i>Apartado</span></div>' +
@@ -18081,6 +18083,60 @@ try {
       toast('ok', 'Número liberado', '');
       cerrarModal('nxRbGest');
       await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // ── SORTEO / GANADOR ──
+  function padGan(raw, dig) { var r = String(raw || '').replace(/\D/g, ''); return r ? r.padStart(dig, '0').slice(-dig) : ''; }
+  window.nxRifaSorteo = function () {
+    var r = currentRifa(); if (!r) return;
+    cerrarModal('nxSorteo');
+    var dig = Number(r.cantidad_digitos || 4);
+    var prev = r.numero_ganador || '';
+    var ov = document.createElement('div'); ov.id = 'nxSorteo'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-trophy"></i> Sorteo · ' + esc(r.nombre || '') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxSorteo\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div class="fr"><label>Número ganador (el que salió en la lotería)</label><input id="rsNum" inputmode="numeric" maxlength="' + dig + '" value="' + esc(prev) + '" placeholder="' + new Array(dig + 1).join('0') + '" style="font-family:ui-monospace,monospace;font-size:22px;text-align:center;letter-spacing:5px;font-weight:800"></div>' +
+      '<button class="btn bc1" type="button" style="width:100%" onclick="window.nxRifaBuscarGanador()"><i class="ti ti-search"></i> Buscar ganador</button>' +
+      '<div id="rsResult" style="margin-top:12px"></div>' +
+      '<div class="fe" style="margin-top:12px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxSorteo\').remove()">Cerrar</button><button class="btn" type="button" style="background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaGuardarSorteo()"><i class="ti ti-check"></i> Guardar resultado</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    if (prev) window.nxRifaBuscarGanador();
+  };
+  window.nxRifaBuscarGanador = function () {
+    var r = currentRifa(); if (!r) return;
+    var dig = Number(r.cantidad_digitos || 4);
+    var num = padGan(val('rsNum'), dig);
+    var res = document.getElementById('rsResult'); if (!res) return;
+    if (!num) { res.innerHTML = '<div class="rsNone">Escribe el número ganador arriba.</div>'; return; }
+    var b = _bolMap[num];
+    if (b) {
+      var wa = String(b.comprador_telefono || '').replace(/\D/g, ''); if (wa.length === 10) wa = '1' + wa;
+      var waTxt = encodeURIComponent('¡FELICIDADES ' + (b.comprador_nombre || '') + '! 🎉🏆 Tu número ' + num + ' GANÓ en ' + (r.premio || r.nombre || 'la rifa') + '. En breve nos comunicamos contigo.');
+      res.innerHTML = '<div class="rsWin"><div class="rsWinT">🏆 ¡GANADOR!</div><div class="rsWinNum">' + esc(num) + '</div><div class="rsWinNom">' + esc(b.comprador_nombre || '—') + '</div>' +
+        (b.comprador_telefono ? '<div class="rsWinTel"><i class="ti ti-brand-whatsapp"></i> ' + esc(b.comprador_telefono) + '</div>' : '') +
+        '<div class="rsWinEst">' + (b.estado === 'confirmado' ? '✓ Pago verificado' : '• Pago por confirmar') + '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;justify-content:center">' +
+        (wa ? '<a class="btn bsm" style="background:#fff;color:#15803d;border:none" href="https://wa.me/' + wa + '?text=' + waTxt + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Avisar al ganador</a>' : '') +
+        '<button class="btn bsm" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.4)" type="button" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-ticket"></i> Ver boleto</button>' +
+        '</div></div>';
+    } else {
+      res.innerHTML = '<div class="rsNone"><i class="ti ti-mood-empty"></i> El número <b>' + esc(num) + '</b> no fue vendido — no hay ganador entre los boletos. Puedes registrar otro número (segundo sorteo) o el premio queda para la casa.</div>';
+    }
+  };
+  window.nxRifaGuardarSorteo = async function () {
+    var r = currentRifa(); if (!r) return;
+    var dig = Number(r.cantidad_digitos || 4);
+    var num = padGan(val('rsNum'), dig);
+    if (!num) { toast('err', 'Escribe el número ganador'); return; }
+    try {
+      await getAPI().patch('rifas', 'id=eq.' + r.id, { numero_ganador: num, estado: 'sorteada' });
+      r.numero_ganador = num; r.estado = 'sorteada';
+      toast('ok', 'Sorteo guardado', 'Número ganador: ' + num);
+      cerrarModal('nxSorteo');
+      await cargarRifas();
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
@@ -18222,7 +18278,7 @@ try {
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}' + BOL_CSS;
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}' + BOL_CSS;
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }

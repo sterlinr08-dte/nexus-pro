@@ -480,11 +480,17 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   hecho). En `parches.js`: `BOL_PAGE='nexusprord.com/boleto.html'`; el botón **"Enviar
   por WhatsApp"** de `gestBoleto` abre `wa.me/<numero>?text=<texto + enlace boleto.html>`
   → directo al número del cliente. "Ver / imagen" sigue con la imagen PNG por share.
+- **TANDA 5 (v31.9) HECHA — sorteo/ganador:** botón **"Sorteo"** en el panel de la
+  rifa (`nxRifaSorteo`): se registra el número que salió en la lotería; `padGan`
+  rellena con ceros a `cantidad_digitos`; `nxRifaBuscarGanador` busca en `_bolMap` →
+  muestra tarjeta **GANADOR** (verde: número, comprador, WhatsApp, estado) con botones
+  "Avisar al ganador" (wa.me con felicitación) y "Ver boleto", o "no vendido (casa)".
+  `nxRifaGuardarSorteo` patch `rifas.numero_ganador` + `estado='sorteada'`; banner del
+  ganador (`rsBanner`) arriba del panel cuando ya hay `numero_ganador`. CSS `.rsWin/.rsNone/.rsBanner`.
 - **PENDIENTE (siguientes tandas):**
-  **cuentas de cobro** + ver voucher con zoom (la confirmación de pago básica YA
-  está en gestBoleto) · **cuentas de cobro** +
-  recaudado por cuenta · **vendedores** + liquidación + vista limitada del vendedor ·
-  **sorteo/ganador** (registrar número de lotería → muestra ganador) · mejoras
+  **cuentas de cobro** (banco/tarjeta/móvil) + ver voucher con zoom (la confirmación
+  de pago básica YA está en gestBoleto) + recaudado por cuenta · **vendedores** +
+  liquidación + vista limitada del vendedor · mejoras
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
