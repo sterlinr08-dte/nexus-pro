@@ -1,7 +1,8 @@
 {
-  "version": "30.4",
+  "version": "30.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "AJUSTE (ventanilla del artículo más compacta): el buscador de IMEI quedó más pequeño y el botón 'Elegir' ya no ocupa todo el ancho (era muy largo sin necesidad) — ahora es del tamaño justo. Se ve más limpio al elegir el equipo y su IMEI",
     "AJUSTE (buscador de IMEI): ahora aparece desde que el equipo tiene 2 o más IMEI/seriales (antes pedía más de 5). Así lo ves casi siempre que hay de dónde elegir",
     "NUEVO (buscador de IMEI al facturar un celular): cuando vendes un equipo con varios IMEI/seriales, aparece un BUSCADOR arriba de la lista — escribes los últimos números del IMEI y la lista se filtra al instante, resaltando en amarillo la parte que coincide. Así no tienes que buscarlo a ojo entre todos. Está en los dos lugares: en la ventanilla del artículo (al elegirlo) y en el botón 'IMEI' de la línea de la factura",
     "NUEVO (ordenar tablas por columna): en Productos y en el Historial de facturas ahora puedes tocar el ENCABEZADO de una columna para ordenar (toca una vez para A→Z o menor→mayor, otra vez para invertir). En Productos: por Nombre, Precio, Stock o ITBIS. En Historial: por No. de factura, Fecha, Cliente, Tipo o Total. Una flechita te muestra por cuál columna y en qué sentido está ordenado",
