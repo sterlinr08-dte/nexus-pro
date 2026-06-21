@@ -521,9 +521,24 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   copiar/abrir/compartir `nexusprord.com/rifa.html?id=`), y **"Voucher"** en gestBoleto
   (`nxVerVoucher`) muestra el comprobante. OJO: `cargarBoletos` usa select=* (incluye voucher
   base64) — optimizar a futuro si pesa.
-- **PENDIENTE:** vista limitada del vendedor (login propio) · combos/carrito · gráfica medios
-  de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio, riesgoso) ·
-  apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
+- **TANDA 11 (v32.8) HECHA — página pública RENOVADA igual a la competencia (Rifarito):**
+  réplica al 100% del flujo de las plataformas (4 pantallas que mandó el dueño). Migración
+  `rifa_boleto_comprador_extra` añadió `comprador_cedula/email/direccion` a `rifa_boletos`.
+  Función Edge **`rifa` v3** ampliada: GET ahora devuelve `vendedores[]` y `logo`; **POST acepta
+  `numeros[]` (CARRITO multi-número, bulk insert, 409 si alguno tomado)** + email/cedula/direccion/
+  vendedor_id; y nuevo **GET `?id=<rifa>&buscar=<tel|numero>`** (VERIFICADOR) → `{tickets[]}` del
+  comprador (filtra por teléfono normalizado o número). `rifa.html` reescrito (estático,
+  nexusprord.com): hero + **2 pestañas** (Comprar / Verificar). Comprar = PASO 0 tablero
+  multi-select (toca varios, chips con ×, "Elegir a la suerte" +1/+5/+10/+25) + barra de carrito
+  fija con total → PASO 1 **Datos personales** (nombre, cédula, celular con código de país,
+  email, dirección, vendedor) → PASO 2 **Método de pago** (tiles de banco/cuenta seleccionables
+  con botón **Copiar** el número, subir voucher comprimido, checkbox **"Enviaré el voucher
+  después"**) → confirma todos los números de una. Verificar = busca por WhatsApp/número y lista
+  los tickets con su estado + enlace a boleto.html. NOTA: el trigger `set_organizacion_id()` solo
+  setea si null → la función pasa `organizacion_id` explícito sin problema.
+- **PENDIENTE:** vista limitada del vendedor (login propio) · combos/paquetes con precio (UI) ·
+  gráfica medios de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio,
+  riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
