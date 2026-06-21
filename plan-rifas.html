@@ -137,8 +137,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
   </div>
 
   <div class="sec-t"><i class="ti ti-database"></i> Base de datos (tablas)</div>
-  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifas</div><div class="cols"><span class="c">nombre</span><span class="c">premio</span><span class="c">imagen</span><span class="c">precio_boleto</span><span class="c">fecha_sorteo</span><span class="c">cantidad_numeros</span><span class="c">mostrar_fecha</span><span class="c">condicion_venta %</span><span class="c">estado</span><span class="c">numero_ganador</span></div></div>
-  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_boletos</div><div class="cols"><span class="c">rifa_id</span><span class="c">numero</span><span class="c">comprador_nombre</span><span class="c">comprador_telefono</span><span class="c">vendedor</span><span class="c">precio</span><span class="c">metodo_pago</span><span class="c">voucher</span><span class="c">estado (por_confirmar/confirmado)</span><span class="c">origen (online/offline)</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifas</div><div class="cols"><span class="c">nombre</span><span class="c">premio</span><span class="c">imagen</span><span class="c">precio_boleto</span><span class="c">fecha_sorteo</span><span class="c">cantidad_digitos (2–4)</span><span class="c">cantidad_numeros</span><span class="c">mostrar_fecha</span><span class="c">seleccion (manual/auto)</span><span class="c">descuento_pct</span><span class="c">apartado_horas</span><span class="c">limite_por_persona</span><span class="c">condicion_venta %</span><span class="c">estado</span><span class="c">numero_ganador</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_boletos</div><div class="cols"><span class="c">rifa_id</span><span class="c">numero</span><span class="c">comprador_nombre</span><span class="c">comprador_telefono</span><span class="c">vendedor</span><span class="c">precio</span><span class="c">metodo_pago</span><span class="c">voucher</span><span class="c">estado (apartado/por_confirmar/confirmado/anulado)</span><span class="c">apartado_hasta</span><span class="c">origen (online/offline)</span></div></div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_premios <span style="font-weight:600;color:#94a3b8;font-family:inherit">(configurable)</span></div><div class="cols"><span class="c">rifa_id</span><span class="c">orden (1ro/2do…)</span><span class="c">descripcion</span><span class="c">tipo (exacto/terminal)</span></div></div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_vendedores</div><div class="cols"><span class="c">nombre</span><span class="c">telefono</span><span class="c">comision_pct</span><span class="c">usuario (opcional)</span><span class="c">activo</span></div></div>
   <div class="note">Todas con <b>organizacion_id + trigger + RLS</b> (el patrón que ya usa el POS). Solo se guardan boletos vendidos; los disponibles se calculan.</div>
@@ -156,8 +156,91 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
     </ul>
   </div>
 
+  <div class="sec-t"><i class="ti ti-clipboard-check"></i> Gestión completa (checklist)</div>
+
+  <div class="card" style="--c:#4f46e5">
+    <h3><span class="ico" style="--c:#4f46e5"><i class="ti ti-ticket"></i></span>Rifas y configuración</h3>
+    <ul>
+      <li>Numeración <b>de 2 a 4 dígitos</b> (configurable, no solo 4).</li>
+      <li>Precio, premio(s), imagen/banner, logo y colores.</li>
+      <li>Fecha + hora del sorteo · boleto con/sin fecha.</li>
+      <li><b>Descuentos</b> por porcentaje.</li>
+      <li>Condición de sorteo al 80 / 90 / 100% vendido.</li>
+      <li>Varias rifas (activas/inactivas) + historial.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#d97706">
+    <h3><span class="ico" style="--c:#d97706"><i class="ti ti-list-numbers"></i></span>Boletos y venta</h3>
+    <ul>
+      <li>Estados: <b>disponible → apartado → por confirmar → confirmado</b> (+ anulado).</li>
+      <li><b>Apartados con expiración</b>: si no paga en X horas, el número se <b>libera solo</b>.</li>
+      <li>Selección <b>manual</b> o <b>a la suerte</b> 🍀.</li>
+      <li><b>Límite de boletos por persona</b> (configurable).</li>
+      <li>Ocultar apartados · <b>anular</b> boleto · <b>reembolso</b>.</li>
+      <li>Origen <b>online</b> (cliente) vs <b>offline</b> (panel).</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#16a34a">
+    <h3><span class="ico" style="--c:#16a34a"><i class="ti ti-cash"></i></span>Pagos</h3>
+    <ul>
+      <li><b>Voucher</b>/comprobante (transferencia/depósito) — sin pasarela; el dinero te llega directo.</li>
+      <li>Voucher obligatorio o con tiempo límite · aprobar/rechazar.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#7c3aed">
+    <h3><span class="ico" style="--c:#7c3aed"><i class="ti ti-users"></i></span>Vendedores, afiliados y accesos</h3>
+    <ul>
+      <li>Vendedores <b>con su usuario</b> o <b>sin usuario</b> (campo libre/selector).</li>
+      <li>Varios <b>administradores</b> con niveles (crear, editar, <b>aprobar vouchers</b>).</li>
+      <li><b>Comisiones</b>: % fijo, por <b>metas escalonadas</b> (1–10 = 10%, 11–20 = 20%) o "cada X = 1 boleto gratis".</li>
+      <li>Enlace de referido · reporte por vendedor/afiliado.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#0891b2">
+    <h3><span class="ico" style="--c:#0891b2"><i class="ti ti-address-book"></i></span>Clientes / CRM y reportes</h3>
+    <ul>
+      <li>Lista de <b>participantes</b> y prospectos.</li>
+      <li>Estadísticas: ventas, tickets, formas de pago, <b>progreso %</b>.</li>
+      <li><b>Exportar a Excel</b> (participantes / tickets).</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#e11d48">
+    <h3><span class="ico" style="--c:#e11d48"><i class="ti ti-brand-whatsapp"></i></span>Notificaciones y verificación</h3>
+    <ul>
+      <li>Compartir la rifa por <b>WhatsApp</b> · aviso de cada venta.</li>
+      <li><b>Recordatorios</b> de pago · <b>aviso al ganador</b>.</li>
+      <li><b>Verificador público</b>: el cliente revisa su boleto con su teléfono o número.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#0f172a">
+    <h3><span class="ico" style="--c:#0f172a"><i class="ti ti-trophy"></i></span>Sorteo, ganador y transparencia</h3>
+    <ul>
+      <li>Ganador por <b>número de la Lotería</b> (registras el número).</li>
+      <li><b>Mezclador aleatorio</b> público el día del sorteo (transparencia) o exportar a Excel para sortear afuera.</li>
+      <li><b>Acta/resultado</b> imprimible · publicar ganador.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#d97706;border-color:#fde68a;background:#fffdf5">
+    <h3><span class="ico" style="--c:#d97706"><i class="ti ti-gavel"></i></span>⚠️ Legal en RD (importante)</h3>
+    <p>Las rifas en RD (sobre todo benéficas) requieren <b>licencia de la Dirección de Casinos y Juegos de Azar</b> (Ministerio de Hacienda). Lo más relevante a tener en cuenta:</p>
+    <ul>
+      <li>Solicitud formal <b>30 días antes</b>: mecánica, cantidad y precio de boletos, fecha/hora/lugar del sorteo.</li>
+      <li><b>Notario</b> del Colegio Dominicano de Notarios + <b>inspector</b> de la DCJA en el sorteo.</li>
+      <li>Factura/descripción del premio (marca, modelo, garantía).</li>
+      <li>Publicar resultados en prensa (local y nacional) con números y nombres ganadores.</li>
+    </ul>
+    <p style="margin-top:7px;font-size:12px;color:#92400e"><b>El sistema te ayuda a cumplir</b> (lista de participantes, acta de sorteo, resultados publicables), pero el permiso lo tramitas tú. Conviene consultarlo con un abogado.</p>
+  </div>
+
   <div class="foot">
-    <i class="ti ti-circle-check" style="color:#16a34a"></i> Diagrama completo · listo para construir la <b>v1</b><br>
+    <i class="ti ti-circle-check" style="color:#16a34a"></i> Diagrama completo (gestión integral) · listo para construir la <b>v1</b><br>
     NEXUS PRO · Sistema de Rifas
   </div>
 </div>
