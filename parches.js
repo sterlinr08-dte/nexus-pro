@@ -17727,7 +17727,7 @@ try {
   function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
   function fechaDMY(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return String(d).slice(0, 10); } }
 
-  var _rifas = [], _resByRifa = {};
+  var _rifas = [], _resByRifa = {}, _rifaImgData = '';
 
   function ensureView() {
     var v = document.getElementById('v-rifas');
@@ -17778,7 +17778,7 @@ try {
         '<div class="nxRfTop"><div style="min-width:0"><div class="nxRfNom">' + esc(r.nombre || '') + '</div><div class="nxRfSub">' + esc(r.premio || '') + '</div></div>' +
         '<span class="nxRfEst" style="background:' + estCol + '1a;color:' + estCol + '">' + esc((r.estado || 'abierta').toUpperCase()) + '</span></div>' +
         '<div class="nxRfMeta"><span><i class="ti ti-ticket"></i> ' + o.n + '/' + total + '</span><span><i class="ti ti-cash"></i> ' + fmt(o.monto) + '</span><span><i class="ti ti-calendar"></i> ' + (r.fecha_sorteo ? fechaDMY(r.fecha_sorteo) : 'sin fecha') + '</span><span><i class="ti ti-coin"></i> ' + fmt(r.precio_boleto) + '</span></div>' +
-        '<div class="nxRfBar"><div style="width:' + pct + '%"></div></div>' +
+        (r.mostrar_progreso === false ? '<div class="nxRfHid"><i class="ti ti-eye-off"></i> Barra de vendidos oculta</div>' : '<div class="nxRfBar"><div style="width:' + pct + '%"></div></div>') +
         '<div class="nxRfAct"><button class="btn bsm bc1" type="button" onclick="window.nxRifaAbrir(\'' + r.id + '\')"><i class="ti ti-layout-grid"></i> Gestionar</button>' +
         '<button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button>' +
         '<button class="btn bsm bghost" type="button" onclick="window.nxRifaEliminar(\'' + r.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
@@ -17799,6 +17799,10 @@ try {
     cerrarModal('nxRifaForm');
     var e = r || {};
     var dig = Number(e.cantidad_digitos || 4);
+    var imgVal = e.imagen || ''; _rifaImgData = imgVal;
+    var imgIsUrl = /^https?:\/\//i.test(imgVal);
+    var imgUrl = imgIsUrl ? imgVal : '';
+    var imgPrev = imgVal ? '<img src="' + esc(imgVal) + '" style="max-width:100%;border-radius:10px">' : '';
     var fechaVal = '';
     if (e.fecha_sorteo) { try { fechaVal = new Date(e.fecha_sorteo).toISOString().slice(0, 16); } catch (er) {} }
     var ov = document.createElement('div'); ov.id = 'nxRifaForm'; ov.className = 'overlay open';
@@ -17822,14 +17826,41 @@ try {
       '<div class="fr"><label>Límite por persona</label><input id="rfLim" inputmode="numeric" value="' + (e.limite_por_persona != null ? e.limite_por_persona : '') + '" placeholder="sin límite"></div>' +
       '<div class="fr"><label>Sortear al vender</label><select id="rfCond"><option value=""' + (!e.condicion_venta ? ' selected' : '') + '>Sin condición</option><option value="80"' + (e.condicion_venta == 80 ? ' selected' : '') + '>80%</option><option value="90"' + (e.condicion_venta == 90 ? ' selected' : '') + '>90%</option><option value="100"' + (e.condicion_venta == 100 ? ' selected' : '') + '>100%</option></select></div>' +
       '</div>' +
-      '<div class="fr"><label>Imagen / banner (URL, opcional)</label><input id="rfImg" class="no-upper" value="' + esc(e.imagen || '') + '" placeholder="https://..."></div>' +
+      '<div class="fr"><label>Imagen / banner (opcional)</label>' +
+      '<input type="file" id="rfImgFile" accept="image/*" onchange="window.nxRifaImgFile(this)" style="font-size:12px;padding:9px;border:1.5px dashed #c7d2fe;border-radius:10px;width:100%;background:#f8fafc;color:#475569">' +
+      '<div id="rfImgPrev" style="margin-top:7px">' + imgPrev + '</div>' +
+      '<input id="rfImg" class="no-upper" value="' + esc(imgUrl) + '" placeholder="o pega un enlace https://..." style="margin-top:7px"></div>' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarFecha"' + (e.mostrar_fecha === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la fecha del sorteo en el boleto</label>' +
+      '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarProg"' + (e.mostrar_progreso === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la barra de boletos vendidos</label>' +
       '</div>' +
       '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxRifaForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRifaGuardar(\'' + (r ? r.id : '') + '\')"><i class="ti ti-check"></i> Guardar</button></div>' +
       '</div>';
     document.body.appendChild(ov);
   }
 
+  window.nxRifaImgFile = function (input) {
+    var f = input.files && input.files[0]; if (!f) return;
+    if (f.size > 12 * 1024 * 1024) { toast('err', 'Imagen muy grande', 'Máximo 12 MB'); return; }
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var max = 900, w = img.width, h = img.height;
+          if (w > max) { h = Math.round(h * max / w); w = max; }
+          var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          _rifaImgData = cv.toDataURL('image/jpeg', 0.72);
+        } catch (er) { _rifaImgData = ev.target.result; }
+        var p = document.getElementById('rfImgPrev'); if (p) p.innerHTML = '<img src="' + _rifaImgData + '" style="max-width:100%;border-radius:10px">';
+        var u = document.getElementById('rfImg'); if (u) u.value = '';
+        try { toast('ok', 'Imagen lista', 'Se guarda con la rifa'); } catch (er) {}
+      };
+      img.onerror = function () { toast('err', 'No se pudo leer la imagen'); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
+  };
   window.nxRifaDigCambio = function () {
     var dig = Number(val('rfDig') || 4);
     var def = dig === 2 ? 100 : (dig === 3 ? 1000 : 10000);
@@ -17855,8 +17886,9 @@ try {
       apartado_horas: Number(String(val('rfApart') || '24').replace(/[^0-9]/g, '')) || 24,
       limite_por_persona: val('rfLim') ? (Number(String(val('rfLim')).replace(/[^0-9]/g, '')) || null) : null,
       condicion_venta: val('rfCond') ? Number(val('rfCond')) : null,
-      imagen: (val('rfImg') || '').trim() || null,
-      mostrar_fecha: chk('rfMostrarFecha')
+      imagen: ((val('rfImg') || '').trim() || _rifaImgData || null),
+      mostrar_fecha: chk('rfMostrarFecha'),
+      mostrar_progreso: chk('rfMostrarProg')
     };
     try {
       if (id) { await getAPI().patch('rifas', 'id=eq.' + id, body); toast('ok', 'Rifa actualizada', nom); }
@@ -17896,7 +17928,7 @@ try {
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}';
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}';
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }
