@@ -18040,6 +18040,9 @@ try {
     cerrarModal('nxRbGest');
     var wa = String(b.comprador_telefono || '').replace(/\D/g, ''); if (wa.length === 10) wa = '1' + wa;
     var estTxt = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : 'Por confirmar');
+    var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
+    var prem = rg.premio || rg.nombre || 'la rifa';
+    var waTxt = encodeURIComponent('Hola ' + (b.comprador_nombre || '') + ' 👋, tu boleto de ' + prem + ' es el número ' + b.numero + '. Estado: ' + estTxt + '.');
     var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
@@ -18050,11 +18053,11 @@ try {
       '<div>Estado: <b>' + estTxt + '</b></div>' +
       (b.vendedor_nombre ? '<div>Vendedor: ' + esc(b.vendedor_nombre) + '</div>' : '') +
       '</div>' +
-      '<div class="fe" style="gap:8px;flex-wrap:wrap">' +
-      '<button class="btn bsm bc1" type="button" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-ticket"></i> Ver boleto</button>' +
-      (b.estado !== 'confirmado' ? '<button class="btn bsm bghost" type="button" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar pago</button>' : '') +
-      (wa ? '<a class="btn bsm bghost" href="https://wa.me/' + wa + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>' : '') +
-      '<button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
+      '<button class="btn bsm bc1" type="button" style="flex:1 1 100%;justify-content:center;padding:11px" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-ticket"></i> Ver / Enviar boleto</button>' +
+      (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:120px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
+      (wa ? '<a class="btn bsm bghost" style="flex:1;min-width:110px;justify-content:center" href="https://wa.me/' + wa + '?text=' + waTxt + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Mensaje</a>' : '') +
+      '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
     document.body.appendChild(ov);
   }
