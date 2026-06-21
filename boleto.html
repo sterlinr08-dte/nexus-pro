@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tu boleto de rifa</title>
+<!-- Vista previa (Open Graph) genérica para WhatsApp -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="🎟️ Tu boleto de rifa">
+<meta property="og:description" content="Toca para ver y verificar tu boleto: número, premio y estado del pago.">
+<meta property="og:image" content="https://nexusprord.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#eef1f6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px}
+.rfBol{max-width:340px;width:100%;border-radius:18px;overflow:hidden;background:var(--bc,#1f4b63);box-shadow:0 14px 34px rgba(15,23,42,.28)}
+.rfBolHd{background:#fff;color:#0f172a;text-align:center;font-weight:800;font-size:16px;padding:13px 12px;letter-spacing:.3px}
+.rfBolBody{padding:14px 16px;color:#eaf2f7}
+.rfBolBanner{border-radius:11px;overflow:hidden;margin-bottom:11px}
+.rfBolBanner img{width:100%;display:block}
+.rfBolPrem{font-weight:800;font-size:16px;color:#fff;margin-bottom:10px;line-height:1.2}
+.rfBolEst{font-weight:800;font-size:14px;margin-bottom:10px}
+.rfBolEst.ok{color:#34d399}.rfBolEst.pend{color:#fbbf24}
+.rfBolLn{font-size:13.5px;margin:5px 0;color:#dbe9f1}.rfBolLn b{color:#fff;font-weight:700}
+.rfBolFecha{text-align:center;font-weight:800;font-size:14px;color:#cfe3ee;padding:10px;border-top:1px dashed rgba(255,255,255,.35)}
+.rfBolNum{background:#fff;color:#0f172a;text-align:center;margin:0 16px 16px;border-radius:11px;padding:13px;font-size:34px;font-weight:800;letter-spacing:5px;font-family:ui-monospace,monospace;border:2px dashed #94a3b8}
+.msg{color:#64748b;font-size:14px;text-align:center;max-width:300px;line-height:1.5}
+.spin{width:34px;height:34px;border:3px solid #c7d2fe;border-top-color:#4f46e5;border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"><div class="msg"><div class="spin"></div>Cargando tu boleto…</div></div>
+<script>
+(function(){
+  var FUNC = "https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/boleto";
+  var app = document.getElementById("app");
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c]; }); }
+  var id = new URLSearchParams(location.search).get("id") || "";
+  if(!id){ app.innerHTML = '<div class="msg">Enlace de boleto inválido.</div>'; return; }
+  fetch(FUNC + "?id=" + encodeURIComponent(id))
+    .then(function(r){ return r.ok ? r.text() : Promise.reject(); })
+    .then(function(t){ var d; try{ d = JSON.parse(t); }catch(e){ throw e; } render(d); })
+    .catch(function(){ app.innerHTML = '<div class="msg">No se pudo cargar el boleto.<br>Verifica el enlace.</div>'; });
+  function render(d){
+    document.title = "Boleto N° " + d.numero + (d.premio ? " — " + d.premio : "");
+    var conf = !!d.conf;
+    var banner = d.hasImg ? '<div class="rfBolBanner"><img src="' + FUNC + '?id=' + encodeURIComponent(id) + '&img=1" alt=""></div>' : '';
+    app.innerHTML =
+      '<div class="rfBol" style="--bc:' + esc(d.color || '#1f4b63') + '">' +
+      '<div class="rfBolHd">' + esc(d.biz) + '</div>' +
+      '<div class="rfBolBody">' + banner +
+      (d.premio ? '<div class="rfBolPrem">' + esc(String(d.premio).toUpperCase()) + '</div>' : '') +
+      '<div class="rfBolEst ' + (conf ? 'ok' : 'pend') + '">' + (conf ? '✓ Pago Verificado' : '• Por confirmar') + '</div>' +
+      '<div class="rfBolLn"><b>Comprador:</b> ' + esc(d.comprador || '—') + '</div>' +
+      (d.tel ? '<div class="rfBolLn"><b>WhatsApp:</b> ' + esc(d.tel) + '</div>' : '') +
+      '<div class="rfBolLn"><b>Compra:</b> ' + esc(d.fcompra) + '</div>' +
+      '</div>' +
+      (d.fsorteo ? '<div class="rfBolFecha">' + esc(d.fsorteo) + '</div>' : '') +
+      '<div class="rfBolNum">' + esc(d.numero) + '</div>' +
+      '</div>';
+  }
+})();
+</script>
+</body>
+</html>

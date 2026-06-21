@@ -18043,7 +18043,7 @@ try {
     var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
     var prem = rg.premio || rg.nombre || 'la rifa';
     _bolActual = bolData(b, rg); _bolTexto = bolTexto(b, rg);
-    var bolLink = BOL_URL + '?id=' + b.id;
+    var bolLink = BOL_PAGE + '?id=' + b.id;
     var waHref = 'https://wa.me/' + wa + '?text=' + encodeURIComponent(_bolTexto + '\n\nMira tu boleto aquí: ' + bolLink);
     var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
@@ -18190,6 +18190,7 @@ try {
   // (iOS exige que navigator.share corra dentro del toque; si se genera después, no envía nada).
   var _bolFile = null, _bolTexto = '';
   var BOL_URL = 'https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/boleto';
+  var BOL_PAGE = 'https://nexusprord.com/boleto.html';
   function prepararBolFile() {
     _bolFile = null;
     var d = _bolActual; if (!d) return;
