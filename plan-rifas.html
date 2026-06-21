@@ -138,7 +138,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 
   <div class="sec-t"><i class="ti ti-database"></i> Base de datos (tablas)</div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifas</div><div class="cols"><span class="c">nombre</span><span class="c">premio</span><span class="c">imagen</span><span class="c">precio_boleto</span><span class="c">fecha_sorteo</span><span class="c">cantidad_digitos (2–4)</span><span class="c">cantidad_numeros</span><span class="c">mostrar_fecha</span><span class="c">seleccion (manual/auto)</span><span class="c">descuento_pct</span><span class="c">apartado_horas</span><span class="c">limite_por_persona</span><span class="c">condicion_venta %</span><span class="c">estado</span><span class="c">numero_ganador</span></div></div>
-  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_boletos</div><div class="cols"><span class="c">rifa_id</span><span class="c">numero</span><span class="c">comprador_nombre</span><span class="c">comprador_telefono</span><span class="c">vendedor</span><span class="c">precio</span><span class="c">metodo_pago</span><span class="c">voucher</span><span class="c">estado (apartado/por_confirmar/confirmado/anulado)</span><span class="c">apartado_hasta</span><span class="c">origen (online/offline)</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_boletos</div><div class="cols"><span class="c">rifa_id</span><span class="c">numero</span><span class="c">comprador_nombre</span><span class="c">comprador_telefono</span><span class="c">vendedor</span><span class="c">precio</span><span class="c">metodo_pago</span><span class="c">cuenta_id (a cuál pagó)</span><span class="c">voucher</span><span class="c">estado (apartado/por_confirmar/confirmado/anulado)</span><span class="c">apartado_hasta</span><span class="c">origen (online/offline)</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_cuentas <span style="font-weight:600;color:#94a3b8;font-family:inherit">(cuentas de cobro)</span></div><div class="cols"><span class="c">banco</span><span class="c">logo</span><span class="c">numero_cuenta</span><span class="c">titular</span><span class="c">tipo (banco/tarjeta/movil)</span><span class="c">activo</span></div></div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_premios <span style="font-weight:600;color:#94a3b8;font-family:inherit">(configurable)</span></div><div class="cols"><span class="c">rifa_id</span><span class="c">orden (1ro/2do…)</span><span class="c">descripcion</span><span class="c">tipo (exacto/terminal)</span></div></div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_vendedores</div><div class="cols"><span class="c">nombre</span><span class="c">telefono</span><span class="c">comision_pct</span><span class="c">usuario (opcional)</span><span class="c">activo</span></div></div>
   <div class="note">Todas con <b>organizacion_id + trigger + RLS</b> (el patrón que ya usa el POS). Solo se guardan boletos vendidos; los disponibles se calculan.</div>
@@ -183,10 +184,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
   </div>
 
   <div class="card" style="--c:#16a34a">
-    <h3><span class="ico" style="--c:#16a34a"><i class="ti ti-cash"></i></span>Pagos</h3>
+    <h3><span class="ico" style="--c:#16a34a"><i class="ti ti-building-bank"></i></span>Pagos y cuentas de cobro</h3>
     <ul>
-      <li><b>Voucher</b>/comprobante (transferencia/depósito) — sin pasarela; el dinero te llega directo.</li>
+      <li><b>Cuentas de cobro</b> configurables: banco <b>(con su logo)</b>, número de cuenta y titular — y también <b>tarjeta</b> o <b>pago móvil / tPago</b>.</li>
+      <li>El cliente <b>ve tus cuentas</b>, transfiere, <b>elige a cuál cuenta pagó</b> y sube el voucher.</li>
+      <li><b>📊 Cuánto entró por cada cuenta</b> — reporte de recaudado por banco/cuenta.</li>
       <li>Voucher obligatorio o con tiempo límite · aprobar/rechazar.</li>
+      <li><span style="color:#94a3b8">(Opcional, futuro)</span> pasarela automática tipo Mercado Pago (con comisión).</li>
     </ul>
   </div>
 
