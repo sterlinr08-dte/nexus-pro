@@ -14168,7 +14168,7 @@
     pintarFactura();
   };
   // ── Ventana flotante "Buscar artículo": muestra TODO el catálogo, clic para agregar ──
-  let _prodPickDest = 'factura', _ppkOpen = '', _ppkSerSel = [];
+  let _prodPickDest = 'factura', _ppkOpen = '', _ppkSerSel = [], _ppkSerRows = [];
   window.nxProdPicker = function (destino) {
     _prodPickDest = destino || 'factura'; _ppkOpen = ''; _ppkSerSel = [];
     cerrarModal('nxProdPick');
@@ -14250,11 +14250,30 @@
     const box = document.getElementById('ppkSer'); if (!box) return;
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=id,serial&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
-    const sel = new Set((_ppkSerSel || []).map(s => String(s.id)));
-    const chips = rows.map(r => `<span class="nxSerPick${sel.has(String(r.id)) ? ' on' : ''}" data-sid="${r.id}" data-ser="${esc(r.serial)}" onclick="event.stopPropagation();window.nxPpkSerTog(this)">${esc(r.serial)}</span>`).join('');
+    _ppkSerRows = rows;
+    // Con muchos IMEI, un buscador para teclear los últimos números (filtra y resalta).
+    const buscador = rows.length > 5
+      ? `<input id="ppkSerQ" class="no-upper" inputmode="numeric" autocomplete="off" placeholder="Buscar IMEI… (escribe los últimos números)" oninput="window.nxPpkSerFiltrar(this.value)" onclick="event.stopPropagation()" style="width:100%;height:30px;border:1.5px solid #ddd6fe;border-radius:8px;padding:0 9px;font-size:11.5px;font-family:var(--mono,monospace);margin-bottom:6px;outline:none">`
+      : '';
     box.innerHTML = `<div style="font-size:8px;font-weight:800;color:#a3acba;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">IMEI / Serial · elige el que vas a vender (${rows.length} disp.)</div>`
-      + (rows.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;max-height:84px;overflow-y:auto">${chips}</div>` : '<div style="font-size:10px;color:#dc2626">Sin IMEI disponibles. Cárgalos en Productos (botón 📱) o al comprar el equipo.</div>');
+      + (rows.length ? buscador + `<div id="ppkSerChips" style="display:flex;gap:4px;flex-wrap:wrap;max-height:120px;overflow-y:auto">${ppkSerChipsHTML('')}</div>` : '<div style="font-size:10px;color:#dc2626">Sin IMEI disponibles. Cárgalos en Productos (botón 📱) o al comprar el equipo.</div>');
   }
+  // Resalta en el serial la parte que coincide con lo buscado (sin alterar el data-ser real).
+  function ppkSerHi(serial, q) {
+    if (!q) return esc(serial);
+    const i = serial.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return esc(serial);
+    return esc(serial.slice(0, i)) + '<mark class="nxSerHl">' + esc(serial.slice(i, i + q.length)) + '</mark>' + esc(serial.slice(i + q.length));
+  }
+  // Chips de IMEI disponibles, filtrados por la búsqueda y conservando lo ya seleccionado.
+  function ppkSerChipsHTML(q) {
+    const sel = new Set((_ppkSerSel || []).map(s => String(s.id)));
+    const ql = (q || '').trim().toLowerCase();
+    const filt = (_ppkSerRows || []).filter(r => !ql || String(r.serial || '').toLowerCase().includes(ql));
+    if (!filt.length) return `<div style="font-size:10.5px;color:#475569;padding:6px 2px">Ningún IMEI coincide con “${esc(q)}”.</div>`;
+    return filt.map(r => `<span class="nxSerPick${sel.has(String(r.id)) ? ' on' : ''}" data-sid="${r.id}" data-ser="${esc(r.serial)}" onclick="event.stopPropagation();window.nxPpkSerTog(this)">${ppkSerHi(String(r.serial || ''), ql)}</span>`).join('');
+  }
+  window.nxPpkSerFiltrar = function (q) { const c = document.getElementById('ppkSerChips'); if (c) c.innerHTML = ppkSerChipsHTML(q); };
   window.nxPpkSerTog = function (el) {
     const id = el.getAttribute('data-sid'), ser = el.getAttribute('data-ser');
     const i = _ppkSerSel.findIndex(s => String(s.id) === String(id));
@@ -14317,16 +14336,24 @@
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=id,serial&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     const sel = new Set((it.seriales || []).map(s => String(s.id)));
-    const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
+    const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
+    const facSerBuscador = rows.length > 5 ? `<input id="nxFacSerQ" inputmode="numeric" autocomplete="off" placeholder="Buscar IMEI… (escribe los últimos números)" oninput="window.nxFacSerFiltrar(this.value)" style="width:100%;height:34px;border:1.5px solid #ddd6fe;border-radius:9px;padding:0 10px;font-size:12.5px;font-family:var(--mono,monospace);margin-bottom:8px;outline:none">` : '';
     const ov = document.createElement('div'); ov.id = 'nxFacSer'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-device-mobile"></i> IMEI · ${esc(prod.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacSer').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Selecciona el/los IMEI a vender (hasta <b>${it.cantidad}</b>).</div>
-        <div style="overflow-y:auto;flex:1"><div class="nxEntAfines" style="grid-template-columns:1fr">${chks}</div></div>
+        ${facSerBuscador}
+        <div style="overflow-y:auto;flex:1"><div id="nxFacSerList" class="nxEntAfines" style="grid-template-columns:1fr">${chks}</div></div>
         <div class="fe" style="margin-top:10px;gap:8px">${rows.length ? '' : `<button class="btn bc4 bsm" type="button" style="margin-right:auto" onclick="window.nxFacSerSin(${i})">Vender sin IMEI</button>`}<button class="btn bghost" type="button" onclick="document.getElementById('nxFacSer').remove()">Cancelar</button>${rows.length ? `<button class="btn bc1" type="button" onclick="window.nxFacSerGuardar(${i})"><i class="ti ti-check"></i> Asignar</button>` : ''}</div>
       </div>`;
     document.body.appendChild(ov);
+  };
+  // Filtra los IMEI del modal por lo tecleado (sin re-render: conserva lo marcado).
+  window.nxFacSerFiltrar = function (q) {
+    const ql = (q || '').trim().toLowerCase();
+    const labels = document.querySelectorAll('#nxFacSerList label');
+    labels.forEach(function (l) { const s = l.getAttribute('data-ser') || ''; l.style.display = (!ql || s.indexOf(ql) >= 0) ? '' : 'none'; });
   };
   window.nxFacSerGuardar = function (i) {
     const it = _cart[i]; if (!it) return;
@@ -17648,6 +17675,8 @@
       '.nxThSort.on{color:#4f46e5}',
       '.nxThI{font-size:11px;vertical-align:middle}',
       '.nxThIoff{opacity:.32}',
+      /* Resaltado del IMEI que coincide con la búsqueda */
+      '.nxSerHl{background:#fde68a;color:#92400e;border-radius:3px;padding:0 1px;font-weight:800}',
       /* Móvil: sidebar como cajón */
       '@media(max-width:860px){',
       '.nxTSide{transform:translateX(-100%)}',
