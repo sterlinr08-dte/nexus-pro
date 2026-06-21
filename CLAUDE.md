@@ -423,6 +423,44 @@ factura pagada = `'Pagado'`.
 > RLS+trigger+policy. Si retomas: revisa que nada en el flujo de cobro
 > (`nxPosConfirmar`) se haya roto y prueba en móvil angosto.
 
+### Sistema de RIFAS (EN CONSTRUCCIÓN, chat `RvxXb`, desde v30.7)
+Módulo nuevo dentro de NEXUS PRO (multiempresa) para rifas de boletos de 4 dígitos,
+ganador por **Lotería Nacional**, números **únicos 0000–9999**, con comprador
+(nombre+WhatsApp), voucher de pago, estadísticas y sorteo. **Diagrama completo y
+muestras visuales** (en `main`, descartables): `plan-rifas.html` (plano completo:
+arquitectura, tablas, flujos, marca blanca + alquiler por rifa, mejoras, roles),
+`muestra-rifas.html` (panel admin), `muestra-rifas-vendedor.html` (vista vendedor).
+Referencia que usó el dueño antes: **Rifarito** (`rifarito.com`) — landing pública
+por cliente con su dominio/logo, venta online (cliente elige número + sube voucher)
++ offline (panel), estados por_confirmar/confirmado, cuentas de cobro por banco.
+- **Modelo de negocio (acordado):** marca blanca multi-empresa (cada cliente su
+  dominio/subdominio, la app detecta el hostname) + **alquiler por rifa**
+  (`organizaciones.activo` + `activo_hasta` → enciendes/apagas el sistema por
+  período; datos quedan guardados) + panel **superadmin** del dueño (Fase 4).
+- **Base de datos HECHA y verificada (migración `create_rifa_tables`, v30.7):** 6
+  tablas con `organizacion_id` + trigger `set_organizacion_id()` + RLS
+  `mi_rol()='admin' AND organizacion_id = mi_organizacion()` (patrón POS idéntico) +
+  índices: `rifas`, `rifa_boletos` (unique rifa_id+numero; estados
+  apartado/por_confirmar/confirmado/anulado), `rifa_cuentas` (cuentas de cobro
+  banco/tarjeta/movil), `rifa_premios` (exacto/terminal/anterior/posterior),
+  `rifa_vendedores` (comisión), `rifa_paquetes` (combos). + `organizaciones.activo_hasta`.
+- **Módulo `parches.js` (IIFE nuevo al final, v30.7) — TANDA 1 HECHA:** se registra
+  en el hub Multiempresa (`nxMERegistrar` orden 4, "Rifas"). `window.nxAbrirRifas`
+  (vista `#v-rifas`), `cargarRifas`/`renderRifas` (lista de rifas con KPIs
+  vendidos/recaudado/progreso), crear/editar/eliminar rifa (`nxRifaNueva/Editar/
+  Guardar/Eliminar`, modal con todos los campos). "Gestionar" (`nxRifaAbrir`) hoy es
+  un panel de KPIs placeholder. CSS `.nxRf*`. Helpers locales propios en el IIFE.
+- **PENDIENTE (siguientes tandas):** Tablero de números (0000..límite, colores por
+  estado) + **registrar/vender boleto** (comprador, manual/a la suerte) · el
+  **boleto-tarjeta** (imagen PNG/PDF/WhatsApp, estilo el de SL Celular Shop:
+  logo+premio+comprador+WhatsApp+fecha compra+fecha sorteo opcional+número grande) ·
+  **confirmar pagos** (ver voucher con zoom → aprobar) · **cuentas de cobro** +
+  recaudado por cuenta · **vendedores** + liquidación + vista limitada del vendedor ·
+  **sorteo/ganador** (registrar número de lotería → muestra ganador) · mejoras
+  (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
+  página pública online + Storage para vouchers/imágenes. La parte **legal**
+  (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
+
 ---
 
 ## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)

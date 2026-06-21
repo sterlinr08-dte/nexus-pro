@@ -17709,3 +17709,194 @@ try {
   window.__NX_PARCHES_READY__ = true;
   window.dispatchEvent(new Event('nexus:parches-ready'));
 } catch (e) {}
+
+/* ===================== MÓDULO RIFAS (v1 · panel admin) ===================== */
+(function () {
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]; }); }
+  function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
+  function toast() { try { return window.toast.apply(null, arguments); } catch (e) {} }
+  function val(id) { var e = document.getElementById(id); return e ? e.value : ''; }
+  function chk(id) { var e = document.getElementById(id); return !!(e && e.checked); }
+  function moneyVal(id) { var e = document.getElementById(id); if (!e) return 0; try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(e.value)) || 0; } catch (er) {} return Number(String(e.value).replace(/[^0-9.-]/g, '')) || 0; }
+  function cerrarModal(id) { var o = document.getElementById(id); if (o) o.remove(); }
+  function esAdmin() { try { return window.sesion && window.sesion.rol === 'admin'; } catch (e) { return false; } }
+  function fechaDMY(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return String(d).slice(0, 10); } }
+
+  var _rifas = [], _resByRifa = {};
+
+  function ensureView() {
+    var v = document.getElementById('v-rifas');
+    if (v) return v;
+    var dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
+    v = document.createElement('div'); v.className = 'view'; v.id = 'v-rifas';
+    dash.parentElement.appendChild(v);
+    return v;
+  }
+
+  async function cargarRifas() {
+    try { _rifas = await getAPI().get('rifas', 'select=*&order=created_at.desc') || []; } catch (e) { _rifas = []; }
+    _resByRifa = {};
+    try {
+      var bs = await getAPI().get('rifa_boletos', 'select=rifa_id,precio,estado') || [];
+      bs.forEach(function (b) {
+        if (!b.rifa_id || b.estado === 'anulado') return;
+        var o = _resByRifa[b.rifa_id] || (_resByRifa[b.rifa_id] = { n: 0, conf: 0, pend: 0, monto: 0 });
+        o.n++;
+        if (b.estado === 'confirmado') { o.conf++; o.monto += Number(b.precio || 0); } else { o.pend++; }
+      });
+    } catch (e) {}
+  }
+
+  window.nxAbrirRifas = async function () {
+    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    var view = ensureView(); if (!view) return;
+    document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
+    view.classList.add('on');
+    document.querySelectorAll('.ni').forEach(function (n) { n.classList.remove('on'); });
+    var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'RIFAS';
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando rifas...</div></div></div>';
+    try { await cargarRifas(); renderRifas(view); }
+    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudo cargar Rifas.<br><span style="font-size:11px;color:#475569">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
+  };
+
+  function renderRifas(view) {
+    var negocio = (window.sesion && window.sesion.org && window.sesion.org.nombre) || 'Multiempresa';
+    var cards = _rifas.length ? _rifas.map(function (r) {
+      var o = _resByRifa[r.id] || { n: 0, conf: 0, pend: 0, monto: 0 };
+      var total = Number(r.cantidad_numeros || 0);
+      var pct = total ? Math.min(100, Math.round(o.n / total * 100)) : 0;
+      var estCol = r.estado === 'sorteada' ? '#16a34a' : (r.estado === 'cerrada' ? '#64748b' : '#4f46e5');
+      return '<div class="nxRfCard">' +
+        '<div class="nxRfTop"><div style="min-width:0"><div class="nxRfNom">' + esc(r.nombre || '') + '</div><div class="nxRfSub">' + esc(r.premio || '') + '</div></div>' +
+        '<span class="nxRfEst" style="background:' + estCol + '1a;color:' + estCol + '">' + esc((r.estado || 'abierta').toUpperCase()) + '</span></div>' +
+        '<div class="nxRfMeta"><span><i class="ti ti-ticket"></i> ' + o.n + '/' + total + '</span><span><i class="ti ti-cash"></i> ' + fmt(o.monto) + '</span><span><i class="ti ti-calendar"></i> ' + (r.fecha_sorteo ? fechaDMY(r.fecha_sorteo) : 'sin fecha') + '</span><span><i class="ti ti-coin"></i> ' + fmt(r.precio_boleto) + '</span></div>' +
+        '<div class="nxRfBar"><div style="width:' + pct + '%"></div></div>' +
+        '<div class="nxRfAct"><button class="btn bsm bc1" type="button" onclick="window.nxRifaAbrir(\'' + r.id + '\')"><i class="ti ti-layout-grid"></i> Gestionar</button>' +
+        '<button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button>' +
+        '<button class="btn bsm bghost" type="button" onclick="window.nxRifaEliminar(\'' + r.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
+        '</div>';
+    }).join('') : '<div style="text-align:center;color:#475569;font-size:13px;padding:34px">Aún no hay rifas.<br>Toca <b>"Nueva rifa"</b> para crear la primera.</div>';
+
+    view.innerHTML = '<div class="nc">' +
+      '<div class="ch"><div><div class="ct"><i class="ti ti-ticket"></i> Rifas</div><div class="ct-s">' + esc(negocio) + '</div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>' +
+      '<button class="btn bsm bc1" type="button" onclick="window.nxRifaNueva()"><i class="ti ti-plus"></i> Nueva rifa</button></div></div>' +
+      '<div class="nxRfGrid">' + cards + '</div></div>';
+  }
+
+  window.nxRifaNueva = function () { abrirRifaForm(null); };
+  window.nxRifaEditar = function (id) { var r = _rifas.find(function (x) { return String(x.id) === String(id); }); if (r) abrirRifaForm(r); };
+
+  function abrirRifaForm(r) {
+    cerrarModal('nxRifaForm');
+    var e = r || {};
+    var dig = Number(e.cantidad_digitos || 4);
+    var fechaVal = '';
+    if (e.fecha_sorteo) { try { fechaVal = new Date(e.fecha_sorteo).toISOString().slice(0, 16); } catch (er) {} }
+    var ov = document.createElement('div'); ov.id = 'nxRifaForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column">' +
+      '<div class="mt"><span><i class="ti ti-ticket"></i> ' + (r ? 'Editar rifa' : 'Nueva rifa') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRifaForm\').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div style="overflow-y:auto;flex:1">' +
+      '<div class="fr"><label>Nombre de la rifa *</label><input id="rfNom" class="no-upper" value="' + esc(e.nombre || '') + '" placeholder="Ej: Gran Rifa iPhone"></div>' +
+      '<div class="fr"><label>Premio</label><input id="rfPremio" class="no-upper" value="' + esc(e.premio || '') + '" placeholder="Ej: iPhone 16 Pro Max"></div>' +
+      '<div class="fr-row">' +
+      '<div class="fr"><label>Precio del boleto</label><input id="rfPrecio" data-nx-money inputmode="numeric" value="' + (e.precio_boleto ? Math.round(e.precio_boleto) : '') + '" placeholder="0"></div>' +
+      '<div class="fr"><label>Dígitos</label><select id="rfDig" onchange="window.nxRifaDigCambio()"><option value="2"' + (dig === 2 ? ' selected' : '') + '>2 (00–99)</option><option value="3"' + (dig === 3 ? ' selected' : '') + '>3 (000–999)</option><option value="4"' + (dig === 4 ? ' selected' : '') + '>4 (0000–9999)</option></select></div>' +
+      '</div>' +
+      '<div class="fr"><label>Cantidad de boletos (límite)</label><input id="rfCant" inputmode="numeric" value="' + (e.cantidad_numeros != null ? e.cantidad_numeros : 10000) + '" placeholder="10000"></div>' +
+      '<div class="fr"><label>Fecha y hora del sorteo</label><input id="rfFecha" type="datetime-local" value="' + fechaVal + '"></div>' +
+      '<div class="fr-row">' +
+      '<div class="fr"><label>Forma de elegir número</label><select id="rfSel"><option value="manual"' + (e.seleccion !== 'auto' ? ' selected' : '') + '>Manual (del tablero)</option><option value="auto"' + (e.seleccion === 'auto' ? ' selected' : '') + '>A la suerte (auto)</option></select></div>' +
+      '<div class="fr"><label>Apartado vence (horas)</label><input id="rfApart" inputmode="numeric" value="' + (e.apartado_horas != null ? e.apartado_horas : 24) + '" placeholder="24"></div>' +
+      '</div>' +
+      '<div class="fr-row">' +
+      '<div class="fr"><label>Límite por persona</label><input id="rfLim" inputmode="numeric" value="' + (e.limite_por_persona != null ? e.limite_por_persona : '') + '" placeholder="sin límite"></div>' +
+      '<div class="fr"><label>Sortear al vender</label><select id="rfCond"><option value=""' + (!e.condicion_venta ? ' selected' : '') + '>Sin condición</option><option value="80"' + (e.condicion_venta == 80 ? ' selected' : '') + '>80%</option><option value="90"' + (e.condicion_venta == 90 ? ' selected' : '') + '>90%</option><option value="100"' + (e.condicion_venta == 100 ? ' selected' : '') + '>100%</option></select></div>' +
+      '</div>' +
+      '<div class="fr"><label>Imagen / banner (URL, opcional)</label><input id="rfImg" class="no-upper" value="' + esc(e.imagen || '') + '" placeholder="https://..."></div>' +
+      '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarFecha"' + (e.mostrar_fecha === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la fecha del sorteo en el boleto</label>' +
+      '</div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxRifaForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRifaGuardar(\'' + (r ? r.id : '') + '\')"><i class="ti ti-check"></i> Guardar</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+  }
+
+  window.nxRifaDigCambio = function () {
+    var dig = Number(val('rfDig') || 4);
+    var def = dig === 2 ? 100 : (dig === 3 ? 1000 : 10000);
+    var c = document.getElementById('rfCant'); if (c) c.value = def;
+  };
+
+  window.nxRifaGuardar = async function (id) {
+    var nom = (val('rfNom') || '').trim();
+    if (!nom) { toast('err', 'Falta el nombre', 'Ponle nombre a la rifa'); return; }
+    var dig = Number(val('rfDig') || 4);
+    var max = Math.pow(10, dig);
+    var cant = Number(String(val('rfCant') || '').replace(/[^0-9]/g, '')) || max;
+    if (cant > max) cant = max;
+    var fecha = val('rfFecha');
+    var body = {
+      nombre: nom,
+      premio: (val('rfPremio') || '').trim() || null,
+      precio_boleto: moneyVal('rfPrecio'),
+      cantidad_digitos: dig,
+      cantidad_numeros: cant,
+      seleccion: val('rfSel') || 'manual',
+      fecha_sorteo: fecha ? fecha : null,
+      apartado_horas: Number(String(val('rfApart') || '24').replace(/[^0-9]/g, '')) || 24,
+      limite_por_persona: val('rfLim') ? (Number(String(val('rfLim')).replace(/[^0-9]/g, '')) || null) : null,
+      condicion_venta: val('rfCond') ? Number(val('rfCond')) : null,
+      imagen: (val('rfImg') || '').trim() || null,
+      mostrar_fecha: chk('rfMostrarFecha')
+    };
+    try {
+      if (id) { await getAPI().patch('rifas', 'id=eq.' + id, body); toast('ok', 'Rifa actualizada', nom); }
+      else { await getAPI().post('rifas', body); toast('ok', 'Rifa creada', nom); }
+      cerrarModal('nxRifaForm');
+      await cargarRifas();
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+
+  window.nxRifaEliminar = async function (id) {
+    var r = _rifas.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+    if (!confirm('¿Eliminar la rifa "' + (r.nombre || '') + '"? Se borran también sus boletos.')) return;
+    try {
+      try { await getAPI().del('rifa_boletos', 'rifa_id=eq.' + id); } catch (er) {}
+      await getAPI().del('rifas', 'id=eq.' + id);
+      toast('ok', 'Rifa eliminada', r.nombre || '');
+      await cargarRifas();
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // Gestionar (tablero + venta): próxima tanda. Por ahora, panel con KPIs.
+  window.nxRifaAbrir = function (id) {
+    var r = _rifas.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+    var o = _resByRifa[id] || { n: 0, conf: 0, pend: 0, monto: 0 };
+    var total = Number(r.cantidad_numeros || 0);
+    cerrarModal('nxRifaPanel');
+    var ov = document.createElement('div'); ov.id = 'nxRifaPanel'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:440px"><div class="mt"><span><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRifaPanel\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div class="nxRfK"><div class="nxRfKi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="nxRfKi"><span>Confirmados</span><b>' + o.conf + '</b></div><div class="nxRfKi"><span>Pendientes</span><b>' + o.pend + '</b></div><div class="nxRfKi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' +
+      '<div style="font-size:12px;color:#475569;text-align:center;padding:14px 6px 4px"><i class="ti ti-tools"></i> El <b>tablero de números</b> y la <b>venta de boletos</b> llegan en el siguiente paso.</div></div>';
+    document.body.appendChild(ov);
+  };
+
+  function inyectarCSS() {
+    if (document.getElementById('nxRifasCSS')) return;
+    var st = document.createElement('style'); st.id = 'nxRifasCSS';
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}';
+    document.head.appendChild(st);
+  }
+  function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }
+  function init() { inyectarCSS(); var n = 0; var t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 150); }; t(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
