@@ -17727,7 +17727,7 @@ try {
   function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
   function fechaDMY(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return String(d).slice(0, 10); } }
 
-  var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [];
+  var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
 
   function ensureView() {
@@ -17743,6 +17743,7 @@ try {
   async function cargarRifas() {
     try { _rifas = await getAPI().get('rifas', 'select=*&order=created_at.desc') || []; } catch (e) { _rifas = []; }
     try { _cuentas = await getAPI().get('rifa_cuentas', 'select=*&order=created_at.asc') || []; } catch (e) { _cuentas = []; }
+    try { _vendedores = await getAPI().get('rifa_vendedores', 'select=*&order=nombre.asc') || []; } catch (e) { _vendedores = []; }
     _resByRifa = {};
     try {
       var bs = await getAPI().get('rifa_boletos', 'select=rifa_id,precio,estado') || [];
@@ -17792,6 +17793,7 @@ try {
       '<div class="ch"><div><div class="ct"><i class="ti ti-ticket"></i> Rifas</div><div class="ct-s">' + esc(negocio) + '</div></div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>' +
       '<button class="btn bsm bghost" type="button" onclick="window.nxRifaCuentas()"><i class="ti ti-building-bank"></i> Cuentas</button>' +
+      '<button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()"><i class="ti ti-users"></i> Vendedores</button>' +
       '<button class="btn bsm bc1" type="button" onclick="window.nxRifaNueva()"><i class="ti ti-plus"></i> Nueva rifa</button></div></div>' +
       '<div class="nxRfGrid">' + cards + '</div></div>';
   }
@@ -17969,7 +17971,7 @@ try {
     if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPorCuenta()" title="Recaudado por cuenta"><i class="ti ti-building-bank"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPorCuenta()" title="Recaudado por cuenta"><i class="ti ti-building-bank"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLiquidacion()" title="Liquidación de vendedores"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
@@ -18003,7 +18005,7 @@ try {
       '<div class="fr"><label>WhatsApp / teléfono</label><input id="rvTel" inputmode="tel" placeholder="809-000-0000"></div>' +
       '<div class="fr-row"><div class="fr"><label>Precio</label><input id="rvPrecio" data-nx-money inputmode="numeric" value="' + (r.precio_boleto ? Math.round(r.precio_boleto) : '') + '"></div>' +
       '<div class="fr"><label>Método de pago</label><select id="rvMet"><option>Efectivo</option><option>Transferencia</option><option>Depósito</option><option>Tarjeta</option><option>Pago móvil</option></select></div></div>' +
-      '<div class="fr"><label>Vendedor (opcional)</label><input id="rvVend" class="no-upper" placeholder="Quién lo vendió"></div>' +
+      (_vendedores.length ? '<div class="fr"><label>Vendedor (opcional)</label><select id="rvVendSel"><option value="">— Sin vendedor —</option>' + _vendedores.map(function (v) { return '<option value="' + v.id + '">' + esc(v.nombre || '') + '</option>'; }).join('') + '</select></div>' : '<div class="fr"><label>Vendedor (opcional)</label><input id="rvVend" class="no-upper" placeholder="Quién lo vendió"></div>') +
       (_cuentas.length ? '<div class="fr"><label>Cuenta donde pagó (opcional)</label><select id="rvCuenta"><option value="">— No aplica —</option>' + _cuentas.map(function (c) { return '<option value="' + c.id + '">' + esc(c.banco || '') + (c.numero_cuenta ? ' · ' + esc(c.numero_cuenta) : '') + '</option>'; }).join('') + '</select></div>' : '') +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rvConf" style="width:18px;height:18px"> Pago confirmado (verificado)</label>' +
       '<div style="font-size:11px;color:#94a3b8;padding:0 2px 6px">Sin marcar, queda “Por confirmar” hasta que apruebes el pago.</div>' +
@@ -18023,7 +18025,8 @@ try {
       comprador_telefono: (val('rvTel') || '').trim() || null,
       precio: moneyVal('rvPrecio'),
       metodo_pago: val('rvMet') || null,
-      vendedor_nombre: (val('rvVend') || '').trim() || null,
+      vendedor_id: val('rvVendSel') || null,
+      vendedor_nombre: val('rvVendSel') ? ((_vendedores.find(function (x) { return String(x.id) === String(val('rvVendSel')); }) || {}).nombre || null) : ((val('rvVend') || '').trim() || null),
       cuenta_id: val('rvCuenta') || null,
       estado: chk('rvConf') ? 'confirmado' : 'por_confirmar',
       origen: 'offline'
@@ -18218,6 +18221,78 @@ try {
     document.body.appendChild(ov);
   };
 
+  // ── VENDEDORES + LIQUIDACIÓN ──
+  function nombreVend(id) { var v = _vendedores.find(function (x) { return String(x.id) === String(id); }); return v ? v.nombre : ''; }
+  async function recargarVend() { try { _vendedores = await getAPI().get('rifa_vendedores', 'select=*&order=nombre.asc') || []; } catch (e) {} }
+  window.nxRifaVendedores = function () {
+    cerrarModal('nxVends');
+    var lista = _vendedores.length ? _vendedores.map(function (v) {
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+    }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin vendedores. Agrega a tu equipo para asignar ventas y calcular comisiones.</div>';
+    var ov = document.createElement('div'); ov.id = 'nxVends'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-users"></i> Vendedores</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxVends\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxVendForm(\'\')"><i class="ti ti-plus"></i> Nuevo vendedor</button>' +
+      '<div style="overflow-y:auto;flex:1">' + lista + '</div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxVendForm = function (id) {
+    var v = id ? (_vendedores.find(function (x) { return String(x.id) === String(id); }) || {}) : {};
+    cerrarModal('nxVendForm');
+    var ov = document.createElement('div'); ov.id = 'nxVendForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-user"></i> ' + (id ? 'Editar vendedor' : 'Nuevo vendedor') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxVendForm\').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div class="fr"><label>Nombre *</label><input id="vdNom" class="no-upper" value="' + esc(v.nombre || '') + '" placeholder="Nombre del vendedor"></div>' +
+      '<div class="fr"><label>Teléfono / WhatsApp</label><input id="vdTel" inputmode="tel" value="' + esc(v.telefono || '') + '" placeholder="809-000-0000"></div>' +
+      '<div class="fr"><label>Comisión (%)</label><input id="vdCom" inputmode="decimal" value="' + (v.comision_pct != null ? Number(v.comision_pct) : '') + '" placeholder="0"></div>' +
+      '<div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxVendForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxVendGuardar(\'' + (id || '') + '\')"><i class="ti ti-check"></i> Guardar</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxVendGuardar = async function (id) {
+    var nom = (val('vdNom') || '').trim();
+    if (!nom) { toast('err', 'Falta el nombre'); return; }
+    var body = { nombre: nom, telefono: (val('vdTel') || '').trim() || null, comision_pct: Number(String(val('vdCom') || '0').replace(/[^0-9.]/g, '')) || 0 };
+    try {
+      if (id) await getAPI().patch('rifa_vendedores', 'id=eq.' + id, body);
+      else await getAPI().post('rifa_vendedores', body);
+      toast('ok', 'Vendedor guardado', '');
+      cerrarModal('nxVendForm');
+      await recargarVend();
+      window.nxRifaVendedores();
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxVendEliminar = async function (id) {
+    if (!confirm('¿Eliminar este vendedor?')) return;
+    try { await getAPI().del('rifa_vendedores', 'id=eq.' + id); await recargarVend(); toast('ok', 'Vendedor eliminado', ''); window.nxRifaVendedores(); }
+    catch (e) { toast('err', 'No se pudo'); }
+  };
+  window.nxRifaLiquidacion = function () {
+    var r = currentRifa(); if (!r) return;
+    cerrarModal('nxLiq');
+    var byV = {};
+    _boletos.forEach(function (b) {
+      if (b.estado !== 'confirmado') return;
+      var key = b.vendedor_id ? ('id:' + b.vendedor_id) : ('nom:' + (b.vendedor_nombre || '(sin vendedor)'));
+      var o = byV[key] || (byV[key] = { nombre: '', n: 0, monto: 0, vid: b.vendedor_id || null });
+      o.n++; o.monto += Number(b.precio || 0);
+      if (!o.nombre) o.nombre = (b.vendedor_id ? nombreVend(b.vendedor_id) : '') || b.vendedor_nombre || '(sin vendedor)';
+    });
+    var rows = Object.keys(byV).map(function (k) {
+      var o = byV[k];
+      var pct = o.vid ? Number((_vendedores.find(function (x) { return String(x.id) === String(o.vid); }) || {}).comision_pct || 0) : 0;
+      var com = Math.round(o.monto * pct / 100);
+      var entregar = o.monto - com;
+      return '<div class="liqRow"><div class="liqTop"><b>' + esc(o.nombre) + '</b><span>' + o.n + ' boletos · ' + fmt(o.monto) + '</span></div><div class="liqBot"><span>Comisión ' + pct + '%: <b style="color:#7c3aed">' + fmt(com) + '</b></span><span>A entregar: <b style="color:#16a34a">' + fmt(entregar) + '</b></span></div></div>';
+    }).join('');
+    if (!rows) rows = '<div style="text-align:center;color:#475569;font-size:12px;padding:16px">Aún no hay ventas confirmadas con vendedor.</div>';
+    var ov = document.createElement('div'); ov.id = 'nxLiq'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-users"></i> Liquidación de vendedores</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxLiq\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:11.5px;color:#475569;margin-bottom:8px">' + esc(r.nombre || '') + ' · solo pagos confirmados</div>' +
+      '<div style="overflow-y:auto;flex:1">' + rows + '</div></div>';
+    document.body.appendChild(ov);
+  };
+
   // ── BOLETO-TARJETA (ver / imagen PNG / imprimir / WhatsApp) ──
   var _bolActual = null;
   var BOL_CSS = '.rfBol{max-width:300px;margin:0 auto;border-radius:16px;overflow:hidden;background:var(--bc,#1f4b63);box-shadow:0 10px 26px rgba(15,23,42,.25)}.rfBolHd{background:#fff;color:#0f172a;text-align:center;font-weight:800;font-size:14px;padding:11px 10px;letter-spacing:.3px}.rfBolBody{padding:12px 14px;color:#eaf2f7}.rfBolBanner{border-radius:10px;overflow:hidden;margin-bottom:10px}.rfBolBanner img{width:100%;display:block}.rfBolPrem{font-weight:800;font-size:14px;color:#fff;margin-bottom:9px;line-height:1.2}.rfBolEst{font-weight:800;font-size:13px;margin-bottom:9px}.rfBolEst.ok{color:#34d399}.rfBolEst.pend{color:#fbbf24}.rfBolLn{font-size:12.5px;margin:4px 0;color:#dbe9f1}.rfBolLn b{color:#fff;font-weight:700}.rfBolFecha{text-align:center;font-weight:800;font-size:13px;color:#cfe3ee;padding:9px;border-top:1px dashed rgba(255,255,255,.35)}.rfBolNum{background:#fff;color:#0f172a;text-align:center;margin:0 14px 14px;border-radius:10px;padding:11px;font-size:30px;font-weight:800;letter-spacing:4px;font-family:ui-monospace,monospace;border:2px dashed #94a3b8}';
@@ -18355,7 +18430,7 @@ try {
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}' + BOL_CSS;
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}.liqRow{border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}.liqTop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.liqTop b{font-size:13.5px;font-weight:800}.liqTop span{font-size:11px;color:#64748b;font-weight:600;white-space:nowrap}.liqBot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#475569}' + BOL_CSS;
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }

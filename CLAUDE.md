@@ -493,10 +493,16 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   pagó"** en el modal de vender (si hay cuentas) → guarda `rifa_boletos.cuenta_id`.
   Botón **🏦 en el panel** (`nxRifaPorCuenta`) → modal **recaudado por cuenta** (suma
   precio de boletos confirmados agrupado por cuenta_id + "sin cuenta" + total). CSS `.ctaRow`.
-- **PENDIENTE (siguientes tandas):** ver voucher con zoom (confirmación básica YA en
-  gestBoleto; el voucher-imagen llega con la v2 pública + Storage) · **vendedores** +
-  liquidación + vista limitada del vendedor · mejoras (combos, carrito, mayor comprador,
-  anterior/posterior) · **v2 pública** (landing, cliente sube voucher, Storage).
+- **TANDA 7 (v32.1) HECHA — vendedores + liquidación:** `_vendedores` (rifa_vendedores)
+  en `cargarRifas`. Botón **"Vendedores"** en la lista (`nxRifaVendedores` manager: CRUD
+  `nxVendForm/Guardar/Eliminar`; nombre, teléfono, comision_pct). Selector de vendedor
+  en el modal de vender (si hay vendedores) → guarda `vendedor_id`+`vendedor_nombre`.
+  Botón **👥 en el panel** (`nxRifaLiquidacion`) → agrupa boletos confirmados por
+  vendedor, calcula comisión (monto×pct/100) y **"a entregar"** (monto−comisión). CSS `.liqRow`.
+- **PENDIENTE (siguientes tandas):** vista limitada del vendedor (login propio, riesgoso) ·
+  mejoras (combos, carrito, mayor comprador, anterior/posterior) · **v2 pública**
+  (landing, cliente elige número + sube voucher, Storage para vouchers/imágenes) ·
+  preview WhatsApp con foto del premio (Worker en dominio propio, riesgoso).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
