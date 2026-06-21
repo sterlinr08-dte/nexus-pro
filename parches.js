@@ -13661,7 +13661,7 @@
     ['cajero', 'Cajero', ['inicio', 'vender', 'caja', 'clientes', 'ventas']],
     ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'clientes', 'entidades']]
   ];
-  function rolReal() { try { return (window.sesion && window.sesion.rol) || 'admin'; } catch (e) { return 'admin'; } }
+  function rolReal() { try { var s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return (s && s.rol) || 'admin'; } catch (e) { return 'admin'; } }
   function rolEfectivo() { return _rolPreview || rolReal(); }
   function puedeVer(mod) {
     const r = rolEfectivo();
@@ -13898,7 +13898,7 @@
   };
 
   // ── Modo TIENDA: el POS se ve como sistema independiente (sidebar + dashboard) ──
-  function esTiendaPOS() { try { return !!(window.sesion && window.sesion.org && window.sesion.org.tipo === 'tienda'); } catch (e) { return false; } }
+  function esTiendaPOS() { try { var s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return !!(s && s.org && s.org.tipo === 'tienda'); } catch (e) { return false; } }
   // Alterna el cajón (drawer) del sidebar en móvil
   window.nxPosToggleSide = function () {
     const s = document.getElementById('nxTSide'); if (!s) return;
@@ -13907,8 +13907,9 @@
   };
 
   function renderPOS(view) {
-    const esTienda = !!(window.sesion && window.sesion.org && window.sesion.org.tipo === 'tienda');
-    const sub = esTienda ? esc((window.sesion.org.nombre || 'Mi negocio')) : 'Multiempresa · solo el administrador';
+    const _ses = (typeof sesion !== 'undefined') ? sesion : window.sesion;
+    const esTienda = !!(_ses && _ses.org && _ses.org.tipo === 'tienda');
+    const sub = esTienda ? esc((_ses.org.nombre || 'Mi negocio')) : 'Multiempresa · solo el administrador';
     const btnTop = esTienda
       ? `<button class="btn bsm bc3" type="button" onclick="if(window.logout)window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>`
       : `<button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>`;
@@ -13946,9 +13947,10 @@
 
   // ── Envoltorio del POS independiente para tiendas: barra lateral índigo + área principal ──
   function shellTienda(body, previewBar) {
-    const org = (window.sesion && window.sesion.org) || {};
+    const _ses = (typeof sesion !== 'undefined') ? sesion : window.sesion;
+    const org = (_ses && _ses.org) || {};
     const biz = org.nombre || empNom() || 'Mi negocio';
-    const nom = (window.sesion && window.sesion.nom) || 'Usuario';
+    const nom = (_ses && _ses.nom) || 'Usuario';
     const ini = (String(nom).trim()[0] || 'U').toUpperCase();
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
@@ -13978,7 +13980,8 @@
 
   // ── INICIO: lanzador de apps estilo Odoo ──
   function renderInicio() {
-    const negocio = (window.sesion && window.sesion.org && window.sesion.org.nombre) || empNom() || 'Mi negocio';
+    const _ses = (typeof sesion !== 'undefined') ? sesion : window.sesion;
+    const negocio = (_ses && _ses.org && _ses.org.nombre) || empNom() || 'Mi negocio';
     const h = new Date().getHours();
     const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
     const tile = (tab, label, icon, color) => puedeVer(tab) ? `<button type="button" class="nxApp" onclick="window.nxPosTab('${tab}')"><span class="nxAppIco" style="background:${color}1a;color:${color}"><i class="ti ${icon}"></i></span><span class="nxAppNom">${label}</span></button>` : '';
@@ -17720,7 +17723,8 @@ try {
   function chk(id) { var e = document.getElementById(id); return !!(e && e.checked); }
   function moneyVal(id) { var e = document.getElementById(id); if (!e) return 0; try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(e.value)) || 0; } catch (er) {} return Number(String(e.value).replace(/[^0-9.-]/g, '')) || 0; }
   function cerrarModal(id) { var o = document.getElementById(id); if (o) o.remove(); }
-  function esAdmin() { try { return window.sesion && window.sesion.rol === 'admin'; } catch (e) { return false; } }
+  function curSes() { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { try { return window.sesion; } catch (_) { return null; } } }
+  function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
   function fechaDMY(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return String(d).slice(0, 10); } }
 
   var _rifas = [], _resByRifa = {};
@@ -17764,7 +17768,7 @@ try {
   };
 
   function renderRifas(view) {
-    var negocio = (window.sesion && window.sesion.org && window.sesion.org.nombre) || 'Multiempresa';
+    var _s = curSes(); var negocio = (_s && _s.org && _s.org.nombre) || 'Multiempresa';
     var cards = _rifas.length ? _rifas.map(function (r) {
       var o = _resByRifa[r.id] || { n: 0, conf: 0, pend: 0, monto: 0 };
       var total = Number(r.cantidad_numeros || 0);

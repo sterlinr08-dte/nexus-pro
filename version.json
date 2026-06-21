@@ -1,7 +1,8 @@
 {
-  "version": "30.7",
+  "version": "30.8",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (Rifas no abría): al tocar 'Rifas' salía 'Acceso restringido · Solo el administrador' aunque sí fueras admin. Era un error interno (leía la sesión por una vía equivocada). Ya entra normal. De paso se corrigió lo mismo en la barra lateral del Punto de Venta para tiendas, que ahora sí se activa.",
     "NUEVO (arranca el Sistema de RIFAS): en Multiempresa aparece el módulo 'Rifas'. Ya puedes CREAR rifas (nombre, premio, precio del boleto, cantidad de números de 2/3/4 dígitos, fecha y hora del sorteo, forma de elegir el número manual o a la suerte, vencimiento de apartados, límite por persona, mostrar o no la fecha en el boleto) y ver tu lista de rifas con su progreso de venta. Esto es el primer paso: enseguida vienen el tablero de números, la venta de boletos con su tarjeta, confirmar pagos y el sorteo. (No afecta en nada al seguro ni al Punto de Venta.)",
     "AJUSTE (botones del POS más compactos): se achicaron los botones grandes del Punto de Venta (sobre todo el de 'Cobrar' en Vender y en Factura, que eran muy altos) y se apretó un poco el resto, para que todo se vea más limpio y parejo. En el teléfono se mantiene el tamaño cómodo para tocar",
     "AJUSTE (ventanilla del artículo más compacta): el buscador de IMEI quedó más pequeño y el botón 'Elegir' ya no ocupa todo el ancho (era muy largo sin necesidad) — ahora es del tamaño justo. Se ve más limpio al elegir el equipo y su IMEI",
