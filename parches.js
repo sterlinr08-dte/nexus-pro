@@ -17727,7 +17727,7 @@ try {
   function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
   function fechaDMY(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return String(d).slice(0, 10); } }
 
-  var _rifas = [], _resByRifa = {}, _rifaImgData = '';
+  var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
 
   function ensureView() {
@@ -17742,6 +17742,7 @@ try {
 
   async function cargarRifas() {
     try { _rifas = await getAPI().get('rifas', 'select=*&order=created_at.desc') || []; } catch (e) { _rifas = []; }
+    try { _cuentas = await getAPI().get('rifa_cuentas', 'select=*&order=created_at.asc') || []; } catch (e) { _cuentas = []; }
     _resByRifa = {};
     try {
       var bs = await getAPI().get('rifa_boletos', 'select=rifa_id,precio,estado') || [];
@@ -17790,6 +17791,7 @@ try {
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div><div class="ct"><i class="ti ti-ticket"></i> Rifas</div><div class="ct-s">' + esc(negocio) + '</div></div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>' +
+      '<button class="btn bsm bghost" type="button" onclick="window.nxRifaCuentas()"><i class="ti ti-building-bank"></i> Cuentas</button>' +
       '<button class="btn bsm bc1" type="button" onclick="window.nxRifaNueva()"><i class="ti ti-plus"></i> Nueva rifa</button></div></div>' +
       '<div class="nxRfGrid">' + cards + '</div></div>';
   }
@@ -17967,7 +17969,7 @@ try {
     if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPorCuenta()" title="Recaudado por cuenta"><i class="ti ti-building-bank"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
@@ -18002,6 +18004,7 @@ try {
       '<div class="fr-row"><div class="fr"><label>Precio</label><input id="rvPrecio" data-nx-money inputmode="numeric" value="' + (r.precio_boleto ? Math.round(r.precio_boleto) : '') + '"></div>' +
       '<div class="fr"><label>Método de pago</label><select id="rvMet"><option>Efectivo</option><option>Transferencia</option><option>Depósito</option><option>Tarjeta</option><option>Pago móvil</option></select></div></div>' +
       '<div class="fr"><label>Vendedor (opcional)</label><input id="rvVend" class="no-upper" placeholder="Quién lo vendió"></div>' +
+      (_cuentas.length ? '<div class="fr"><label>Cuenta donde pagó (opcional)</label><select id="rvCuenta"><option value="">— No aplica —</option>' + _cuentas.map(function (c) { return '<option value="' + c.id + '">' + esc(c.banco || '') + (c.numero_cuenta ? ' · ' + esc(c.numero_cuenta) : '') + '</option>'; }).join('') + '</select></div>' : '') +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rvConf" style="width:18px;height:18px"> Pago confirmado (verificado)</label>' +
       '<div style="font-size:11px;color:#94a3b8;padding:0 2px 6px">Sin marcar, queda “Por confirmar” hasta que apruebes el pago.</div>' +
       '</div>' +
@@ -18021,6 +18024,7 @@ try {
       precio: moneyVal('rvPrecio'),
       metodo_pago: val('rvMet') || null,
       vendedor_nombre: (val('rvVend') || '').trim() || null,
+      cuenta_id: val('rvCuenta') || null,
       estado: chk('rvConf') ? 'confirmado' : 'por_confirmar',
       origen: 'offline'
     };
@@ -18139,6 +18143,79 @@ try {
       await cargarRifas();
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // ── CUENTAS DE COBRO ──
+  function ctaIcon(t) { return t === 'tarjeta' ? 'ti-credit-card' : (t === 'movil' ? 'ti-device-mobile' : 'ti-building-bank'); }
+  async function recargarCuentas() { try { _cuentas = await getAPI().get('rifa_cuentas', 'select=*&order=created_at.asc') || []; } catch (e) {} }
+  window.nxRifaCuentas = function () {
+    cerrarModal('nxCtas');
+    var lista = _cuentas.length ? _cuentas.map(function (c) {
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '(sin banco)') + '</b><span>' + esc(c.numero_cuenta || '') + (c.titular ? ' · ' + esc(c.titular) : '') + '</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxCuentaForm(\'' + c.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxCuentaEliminar(\'' + c.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+    }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin cuentas. Agrega tus cuentas de banco, tarjeta o pago móvil para cobrar.</div>';
+    var ov = document.createElement('div'); ov.id = 'nxCtas'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-building-bank"></i> Cuentas de cobro</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxCtas\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxCuentaForm(\'\')"><i class="ti ti-plus"></i> Nueva cuenta</button>' +
+      '<div style="overflow-y:auto;flex:1">' + lista + '</div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxCuentaForm = function (id) {
+    var c = id ? (_cuentas.find(function (x) { return String(x.id) === String(id); }) || {}) : {};
+    cerrarModal('nxCtaForm');
+    var ov = document.createElement('div'); ov.id = 'nxCtaForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-building-bank"></i> ' + (id ? 'Editar cuenta' : 'Nueva cuenta') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxCtaForm\').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div class="fr"><label>Tipo</label><select id="ctTipo"><option value="banco"' + (c.tipo !== 'tarjeta' && c.tipo !== 'movil' ? ' selected' : '') + '>Cuenta bancaria</option><option value="tarjeta"' + (c.tipo === 'tarjeta' ? ' selected' : '') + '>Tarjeta</option><option value="movil"' + (c.tipo === 'movil' ? ' selected' : '') + '>Pago móvil / tPago</option></select></div>' +
+      '<div class="fr"><label>Banco / entidad</label><input id="ctBanco" class="no-upper" value="' + esc(c.banco || '') + '" placeholder="Ej: Banreservas"></div>' +
+      '<div class="fr"><label>Número de cuenta / teléfono</label><input id="ctNum" class="no-upper" value="' + esc(c.numero_cuenta || '') + '" placeholder="Ej: 9601234567"></div>' +
+      '<div class="fr"><label>Titular</label><input id="ctTit" class="no-upper" value="' + esc(c.titular || '') + '" placeholder="Nombre del titular"></div>' +
+      '<div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxCtaForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxCuentaGuardar(\'' + (id || '') + '\')"><i class="ti ti-check"></i> Guardar</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxCuentaGuardar = async function (id) {
+    var banco = (val('ctBanco') || '').trim();
+    if (!banco && !(val('ctNum') || '').trim()) { toast('err', 'Falta el banco o el número'); return; }
+    var body = { banco: banco || null, numero_cuenta: (val('ctNum') || '').trim() || null, titular: (val('ctTit') || '').trim() || null, tipo: val('ctTipo') || 'banco' };
+    try {
+      if (id) await getAPI().patch('rifa_cuentas', 'id=eq.' + id, body);
+      else await getAPI().post('rifa_cuentas', body);
+      toast('ok', 'Cuenta guardada', '');
+      cerrarModal('nxCtaForm');
+      await recargarCuentas();
+      window.nxRifaCuentas();
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxCuentaEliminar = async function (id) {
+    if (!confirm('¿Eliminar esta cuenta?')) return;
+    try {
+      await getAPI().del('rifa_cuentas', 'id=eq.' + id);
+      await recargarCuentas();
+      toast('ok', 'Cuenta eliminada', '');
+      window.nxRifaCuentas();
+    } catch (e) { toast('err', 'No se pudo'); }
+  };
+  window.nxRifaPorCuenta = function () {
+    var r = currentRifa(); if (!r) return;
+    cerrarModal('nxPorCta');
+    var tot = {}, sinCta = 0, totalGen = 0;
+    _boletos.forEach(function (b) {
+      if (b.estado !== 'confirmado') return;
+      var p = Number(b.precio || 0); totalGen += p;
+      if (b.cuenta_id) { tot[b.cuenta_id] = (tot[b.cuenta_id] || 0) + p; } else { sinCta += p; }
+    });
+    var rows = _cuentas.map(function (c) {
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '') + '</b><span>' + esc(c.numero_cuenta || '') + '</span></div></div><b style="color:#16a34a">' + fmt(tot[c.id] || 0) + '</b></div>';
+    }).join('');
+    if (sinCta > 0) rows += '<div class="ctaRow"><div class="ctaL"><i class="ti ti-cash"></i><div><b>Sin cuenta asignada</b><span>efectivo u otros</span></div></div><b style="color:#475569">' + fmt(sinCta) + '</b></div>';
+    if (!rows) rows = '<div style="text-align:center;color:#475569;font-size:12px;padding:16px">Aún no hay cobros confirmados.</div>';
+    var ov = document.createElement('div'); ov.id = 'nxPorCta'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:400px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-building-bank"></i> Recaudado por cuenta</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxPorCta\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:11.5px;color:#475569;margin-bottom:8px">' + esc(r.nombre || '') + ' · solo pagos confirmados</div>' +
+      '<div style="overflow-y:auto;flex:1">' + rows + '</div>' +
+      '<div style="border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:800;font-size:13px"><span>Total confirmado</span><span style="color:#16a34a">' + fmt(totalGen) + '</span></div></div>';
+    document.body.appendChild(ov);
   };
 
   // ── BOLETO-TARJETA (ver / imagen PNG / imprimir / WhatsApp) ──
@@ -18278,7 +18355,7 @@ try {
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}' + BOL_CSS;
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}' + BOL_CSS;
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }

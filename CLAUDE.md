@@ -487,10 +487,16 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   "Avisar al ganador" (wa.me con felicitación) y "Ver boleto", o "no vendido (casa)".
   `nxRifaGuardarSorteo` patch `rifas.numero_ganador` + `estado='sorteada'`; banner del
   ganador (`rsBanner`) arriba del panel cuando ya hay `numero_ganador`. CSS `.rsWin/.rsNone/.rsBanner`.
-- **PENDIENTE (siguientes tandas):**
-  **cuentas de cobro** (banco/tarjeta/móvil) + ver voucher con zoom (la confirmación
-  de pago básica YA está en gestBoleto) + recaudado por cuenta · **vendedores** +
-  liquidación + vista limitada del vendedor · mejoras
+- **TANDA 6 (v32.0) HECHA — cuentas de cobro:** `_cuentas` (rifa_cuentas) cargado en
+  `cargarRifas`. Botón **"Cuentas"** en la lista (`nxRifaCuentas` manager: CRUD
+  `nxCuentaForm/Guardar/Eliminar`, tipo banco/tarjeta/movil). Selector **"Cuenta donde
+  pagó"** en el modal de vender (si hay cuentas) → guarda `rifa_boletos.cuenta_id`.
+  Botón **🏦 en el panel** (`nxRifaPorCuenta`) → modal **recaudado por cuenta** (suma
+  precio de boletos confirmados agrupado por cuenta_id + "sin cuenta" + total). CSS `.ctaRow`.
+- **PENDIENTE (siguientes tandas):** ver voucher con zoom (confirmación básica YA en
+  gestBoleto; el voucher-imagen llega con la v2 pública + Storage) · **vendedores** +
+  liquidación + vista limitada del vendedor · mejoras (combos, carrito, mayor comprador,
+  anterior/posterior) · **v2 pública** (landing, cliente sube voucher, Storage).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
