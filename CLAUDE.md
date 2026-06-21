@@ -444,14 +444,23 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   apartado/por_confirmar/confirmado/anulado), `rifa_cuentas` (cuentas de cobro
   banco/tarjeta/movil), `rifa_premios` (exacto/terminal/anterior/posterior),
   `rifa_vendedores` (comisión), `rifa_paquetes` (combos). + `organizaciones.activo_hasta`.
-- **Módulo `parches.js` (IIFE nuevo al final, v30.7) — TANDA 1 HECHA:** se registra
-  en el hub Multiempresa (`nxMERegistrar` orden 4, "Rifas"). `window.nxAbrirRifas`
-  (vista `#v-rifas`), `cargarRifas`/`renderRifas` (lista de rifas con KPIs
-  vendidos/recaudado/progreso), crear/editar/eliminar rifa (`nxRifaNueva/Editar/
-  Guardar/Eliminar`, modal con todos los campos). "Gestionar" (`nxRifaAbrir`) hoy es
-  un panel de KPIs placeholder. CSS `.nxRf*`. Helpers locales propios en el IIFE.
-- **PENDIENTE (siguientes tandas):** Tablero de números (0000..límite, colores por
-  estado) + **registrar/vender boleto** (comprador, manual/a la suerte) · el
+- **Módulo `parches.js` (IIFE nuevo al final) — TANDA 1 (v30.7) + TANDA 2 (v31.0) HECHAS:**
+  se registra en el hub Multiempresa (`nxMERegistrar` orden 4, "Rifas").
+  `window.nxAbrirRifas` (vista `#v-rifas`), `cargarRifas`/`renderRifas` (lista con
+  KPIs), crear/editar/eliminar rifa (`nxRifaNueva/Editar/Guardar/Eliminar`, modal
+  con todos los campos + **subir banner**: `nxRifaImgFile` comprime con canvas a
+  dataURL en `rifas.imagen`; `mostrar_progreso` oculta la barra de vendidos).
+  **TANDA 2:** `_rifaSel` abre el **panel de la rifa** (`renderRifaPanel`): KPIs +
+  **tablero de números** paginado (`boardHTML`, 120/pág, `padStart` por dígitos,
+  buscador `nxRifaBuscar` que solo repinta `#rfBoardWrap` sin perder foco, colores
+  por estado disp/pend/conf/apar) + **vender boleto** (`nxRifaVender`/`VenderGuardar`:
+  comprador, WhatsApp, precio, método, vendedor, checkbox "pago confirmado" →
+  estado confirmado/por_confirmar; unique rifa_id+numero atrapa doble venta) +
+  **a la suerte** (`nxRifaSuerte`) + tocar boleto vendido (`gestBoleto`: ver datos,
+  WhatsApp, **confirmar pago** `nxRifaConfirmar`, **liberar** `nxRifaLiberar` borra
+  la fila). CSS `.nxRf*`/`.rfN*`/`.rfKpi`. Helpers locales en el IIFE; sesión vía
+  `curSes()` (NO `window.sesion`, que es undefined por el `let sesion`).
+- **PENDIENTE (siguientes tandas):** el
   **boleto-tarjeta** (imagen PNG/PDF/WhatsApp, estilo el de SL Celular Shop:
   logo+premio+comprador+WhatsApp+fecha compra+fecha sorteo opcional+número grande) ·
   **confirmar pagos** (ver voucher con zoom → aprobar) · **cuentas de cobro** +

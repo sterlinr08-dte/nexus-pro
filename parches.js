@@ -17728,6 +17728,7 @@ try {
   function fechaDMY(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return String(d).slice(0, 10); } }
 
   var _rifas = [], _resByRifa = {}, _rifaImgData = '';
+  var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
 
   function ensureView() {
     var v = document.getElementById('v-rifas');
@@ -17768,6 +17769,7 @@ try {
   };
 
   function renderRifas(view) {
+    if (_rifaSel) { var _rsel = _rifas.find(function (x) { return String(x.id) === String(_rifaSel); }); if (_rsel) { renderRifaPanel(view, _rsel); return; } _rifaSel = null; }
     var _s = curSes(); var negocio = (_s && _s.org && _s.org.nombre) || 'Multiempresa';
     var cards = _rifas.length ? _rifas.map(function (r) {
       var o = _resByRifa[r.id] || { n: 0, conf: 0, pend: 0, monto: 0 };
@@ -17911,24 +17913,175 @@ try {
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
-  // Gestionar (tablero + venta): próxima tanda. Por ahora, panel con KPIs.
-  window.nxRifaAbrir = function (id) {
-    var r = _rifas.find(function (x) { return String(x.id) === String(id); }); if (!r) return;
-    var o = _resByRifa[id] || { n: 0, conf: 0, pend: 0, monto: 0 };
+  function currentRifa() { return _rifas.find(function (x) { return String(x.id) === String(_rifaSel); }); }
+
+  async function cargarBoletos(id) {
+    try { _boletos = await getAPI().get('rifa_boletos', 'select=*&rifa_id=eq.' + id + '&order=created_at.desc') || []; } catch (e) { _boletos = []; }
+    _bolMap = {};
+    _boletos.forEach(function (b) { if (b.estado !== 'anulado') _bolMap[String(b.numero)] = b; });
+  }
+  function rifaStats() {
+    var o = { n: 0, conf: 0, pend: 0, monto: 0 };
+    _boletos.forEach(function (b) { if (b.estado === 'anulado') return; o.n++; if (b.estado === 'confirmado') { o.conf++; o.monto += Number(b.precio || 0); } else { o.pend++; } });
+    return o;
+  }
+
+  window.nxRifaAbrir = async function (id) {
+    _rifaSel = id; _tabPage = 0; _tabQ = '';
+    var view = document.getElementById('v-rifas'); if (!view) return;
+    await cargarBoletos(id);
+    renderRifas(view);
+  };
+  window.nxRifaVolverLista = async function () {
+    _rifaSel = null;
+    var view = document.getElementById('v-rifas'); if (!view) return;
+    await cargarRifas();
+    renderRifas(view);
+  };
+
+  function boardHTML(r) {
+    var dig = Number(r.cantidad_digitos || 4);
     var total = Number(r.cantidad_numeros || 0);
-    cerrarModal('nxRifaPanel');
-    var ov = document.createElement('div'); ov.id = 'nxRifaPanel'; ov.className = 'overlay open';
+    var q = (_tabQ || '').trim();
+    var per = 120;
+    var nums = [];
+    for (var i = 0; i < total; i++) { var s = String(i).padStart(dig, '0'); if (!q || s.indexOf(q) >= 0) nums.push(s); }
+    var pages = Math.max(1, Math.ceil(nums.length / per));
+    if (_tabPage >= pages) _tabPage = 0;
+    var slice = nums.slice(_tabPage * per, _tabPage * per + per);
+    var cells = slice.map(function (s) {
+      var b = _bolMap[s];
+      var cls = b ? (b.estado === 'confirmado' ? 'rfN-conf' : (b.estado === 'apartado' ? 'rfN-apar' : 'rfN-pend')) : 'rfN-disp';
+      return '<button type="button" class="rfN ' + cls + '" onclick="window.nxRifaNum(\'' + s + '\')">' + s + '</button>';
+    }).join('');
+    var board = '<div class="rfBoard">' + (slice.length ? cells : '<div style="grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px">Sin números con ese filtro</div>') + '</div>';
+    var pager = pages > 1 ? '<div class="rfPager"><button class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(-1)"' + (_tabPage <= 0 ? ' disabled' : '') + '><i class="ti ti-chevron-left"></i></button><span>Página ' + (_tabPage + 1) + ' / ' + pages + '</span><button class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(1)"' + (_tabPage >= pages - 1 ? ' disabled' : '') + '><i class="ti ti-chevron-right"></i></button></div>' : '';
+    return board + pager;
+  }
+
+  function renderRifaPanel(view, r) {
+    var total = Number(r.cantidad_numeros || 0);
+    var o = rifaStats();
+    var pct = total ? Math.min(100, Math.round(o.n / total * 100)) : 0;
+    view.innerHTML = '<div class="nc">' +
+      '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' +
+      (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
+      '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
+      '<div class="rfLegend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#fde68a"></i>Por confirmar</span><span><i class="d" style="background:#c7d2fe"></i>Confirmado</span><span><i class="d" style="background:#cbd5e1"></i>Apartado</span></div>' +
+      '<div id="rfBoardWrap">' + boardHTML(r) + '</div>' +
+      '</div>';
+  }
+
+  window.nxRifaBuscar = function (v) { _tabQ = v; _tabPage = 0; var r = currentRifa(); var w = document.getElementById('rfBoardWrap'); if (r && w) w.innerHTML = boardHTML(r); };
+  window.nxRifaTabPage = function (d) { _tabPage += d; if (_tabPage < 0) _tabPage = 0; var r = currentRifa(); var w = document.getElementById('rfBoardWrap'); if (r && w) w.innerHTML = boardHTML(r); };
+  window.nxRifaNum = function (s) { var b = _bolMap[s]; if (b) gestBoleto(b); else nxRifaVender(s); };
+
+  window.nxRifaSuerte = function () {
+    var r = currentRifa(); if (!r) return;
+    var total = Number(r.cantidad_numeros || 0), dig = Number(r.cantidad_digitos || 4);
+    var avail = [];
+    for (var i = 0; i < total; i++) { var s = String(i).padStart(dig, '0'); if (!_bolMap[s]) avail.push(s); }
+    if (!avail.length) { toast('err', 'Sin disponibles', 'No quedan números libres'); return; }
+    nxRifaVender(avail[Math.floor(Math.random() * avail.length)]);
+  };
+
+  function nxRifaVender(numero) {
+    var r = currentRifa(); if (!r) return;
+    cerrarModal('nxRvForm');
+    var ov = document.createElement('div'); ov.id = 'nxRvForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:440px"><div class="mt"><span><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRifaPanel\').remove()"><i class="ti ti-x"></i></button></div>' +
-      '<div class="nxRfK"><div class="nxRfKi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="nxRfKi"><span>Confirmados</span><b>' + o.conf + '</b></div><div class="nxRfKi"><span>Pendientes</span><b>' + o.pend + '</b></div><div class="nxRfKi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' +
-      '<div style="font-size:12px;color:#475569;text-align:center;padding:14px 6px 4px"><i class="ti ti-tools"></i> El <b>tablero de números</b> y la <b>venta de boletos</b> llegan en el siguiente paso.</div></div>';
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:92vh;display:flex;flex-direction:column">' +
+      '<div class="mt"><span><i class="ti ti-ticket"></i> Vender boleto ' + esc(numero) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRvForm\').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div style="overflow-y:auto;flex:1">' +
+      '<div class="fr"><label>Comprador *</label><input id="rvNom" class="no-upper" placeholder="Nombre del comprador"></div>' +
+      '<div class="fr"><label>WhatsApp / teléfono</label><input id="rvTel" inputmode="tel" placeholder="809-000-0000"></div>' +
+      '<div class="fr-row"><div class="fr"><label>Precio</label><input id="rvPrecio" data-nx-money inputmode="numeric" value="' + (r.precio_boleto ? Math.round(r.precio_boleto) : '') + '"></div>' +
+      '<div class="fr"><label>Método de pago</label><select id="rvMet"><option>Efectivo</option><option>Transferencia</option><option>Depósito</option><option>Tarjeta</option><option>Pago móvil</option></select></div></div>' +
+      '<div class="fr"><label>Vendedor (opcional)</label><input id="rvVend" class="no-upper" placeholder="Quién lo vendió"></div>' +
+      '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rvConf" style="width:18px;height:18px"> Pago confirmado (verificado)</label>' +
+      '<div style="font-size:11px;color:#94a3b8;padding:0 2px 6px">Sin marcar, queda “Por confirmar” hasta que apruebes el pago.</div>' +
+      '</div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxRvForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRifaVenderGuardar(\'' + esc(numero) + '\')"><i class="ti ti-check"></i> Vender</button></div>' +
+      '</div>';
     document.body.appendChild(ov);
+    setTimeout(function () { var i = document.getElementById('rvNom'); if (i) i.focus(); }, 60);
+  }
+
+  window.nxRifaVenderGuardar = async function (numero) {
+    var nom = (val('rvNom') || '').trim();
+    if (!nom) { toast('err', 'Falta el comprador', 'Pon el nombre'); return; }
+    var body = {
+      rifa_id: _rifaSel, numero: numero,
+      comprador_nombre: nom,
+      comprador_telefono: (val('rvTel') || '').trim() || null,
+      precio: moneyVal('rvPrecio'),
+      metodo_pago: val('rvMet') || null,
+      vendedor_nombre: (val('rvVend') || '').trim() || null,
+      estado: chk('rvConf') ? 'confirmado' : 'por_confirmar',
+      origen: 'offline'
+    };
+    try {
+      await getAPI().post('rifa_boletos', body);
+      toast('ok', 'Boleto vendido', numero + ' · ' + nom);
+      cerrarModal('nxRvForm');
+      await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) {
+      var msg = String(e && e.message || e);
+      if (/duplicate|unique|23505/i.test(msg)) toast('err', 'Número ya tomado', 'Ese boleto ya fue vendido');
+      else toast('err', 'No se pudo', msg);
+    }
+  };
+
+  function gestBoleto(b) {
+    cerrarModal('nxRbGest');
+    var wa = String(b.comprador_telefono || '').replace(/\D/g, ''); if (wa.length === 10) wa = '1' + wa;
+    var estTxt = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : 'Por confirmar');
+    var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:13px;color:#334155;line-height:1.7;padding:2px 2px 8px">' +
+      '<div style="font-size:15px;font-weight:800;color:#0f172a">' + esc(b.comprador_nombre || '—') + '</div>' +
+      (b.comprador_telefono ? '<div><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> ' + esc(b.comprador_telefono) + '</div>' : '') +
+      '<div><i class="ti ti-cash"></i> ' + fmt(b.precio) + (b.metodo_pago ? ' · ' + esc(b.metodo_pago) : '') + '</div>' +
+      '<div>Estado: <b>' + estTxt + '</b></div>' +
+      (b.vendedor_nombre ? '<div>Vendedor: ' + esc(b.vendedor_nombre) + '</div>' : '') +
+      '</div>' +
+      '<div class="fe" style="gap:8px;flex-wrap:wrap">' +
+      (wa ? '<a class="btn bsm bghost" href="https://wa.me/' + wa + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>' : '') +
+      (b.estado !== 'confirmado' ? '<button class="btn bsm bc1" type="button" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar pago</button>' : '') +
+      '<button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar número</button>' +
+      '</div></div>';
+    document.body.appendChild(ov);
+  }
+
+  window.nxRifaConfirmar = async function (id) {
+    try {
+      await getAPI().patch('rifa_boletos', 'id=eq.' + id, { estado: 'confirmado' });
+      toast('ok', 'Pago confirmado', '');
+      cerrarModal('nxRbGest');
+      await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  window.nxRifaLiberar = async function (id) {
+    if (!confirm('¿Liberar este número? Se borra el boleto y el número queda disponible otra vez.')) return;
+    try {
+      await getAPI().del('rifa_boletos', 'id=eq.' + id);
+      toast('ok', 'Número liberado', '');
+      cerrarModal('nxRbGest');
+      await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}';
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}';
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }
