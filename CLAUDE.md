@@ -499,8 +499,12 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   en el modal de vender (si hay vendedores) → guarda `vendedor_id`+`vendedor_nombre`.
   Botón **👥 en el panel** (`nxRifaLiquidacion`) → agrupa boletos confirmados por
   vendedor, calcula comisión (monto×pct/100) y **"a entregar"** (monto−comisión). CSS `.liqRow`.
+- **TANDA 8 (v32.2) HECHA — mejoras venta:** botón **👑 Mayor comprador** en el panel
+  (`nxRifaMayorComprador`: agrupa por teléfono/nombre, ranking con medallas 🥇🥈🥉, n
+  boletos + monto). En el **sorteo**, `nxRifaBuscarGanador` ahora muestra los números
+  **Anterior/Posterior** (consolación, con wrap-around `%max`) y quién los tiene. CSS `.rsCon`.
 - **PENDIENTE (siguientes tandas):** vista limitada del vendedor (login propio, riesgoso) ·
-  mejoras (combos, carrito, mayor comprador, anterior/posterior) · **v2 pública**
+  mejoras (combos/paquetes, carrito multi-número) · **v2 pública**
   (landing, cliente elige número + sube voucher, Storage para vouchers/imágenes) ·
   preview WhatsApp con foto del premio (Worker en dominio propio, riesgoso).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
