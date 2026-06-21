@@ -17680,6 +17680,11 @@
       /* Botón "Elegir" más compacto (antes ancho completo, quedaba muy largo) */
       '.nxPpkElegir{width:auto;display:inline-flex;padding:5px 13px;font-size:11px;border-radius:8px;margin-top:8px}',
       '.nxPpkElegir i{font-size:12px}',
+      /* Botones de acción del POS más compactos (Cobrar y demás), sin perder el área táctil en móvil */
+      '#v-pos .btn{padding:6px 11px}',
+      '#v-pos .nxPosCobrar{padding:10px;font-size:13px}',
+      '#v-pos .nxFacBtn{padding:9px 15px;font-size:13px}',
+      '@media(min-width:900px){#v-pos .nxFacBtn{padding:10px 18px;font-size:14px}}',
       /* Móvil: sidebar como cajón */
       '@media(max-width:860px){',
       '.nxTSide{transform:translateX(-100%)}',

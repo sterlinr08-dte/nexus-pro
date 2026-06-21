@@ -1,7 +1,8 @@
 {
-  "version": "30.5",
+  "version": "30.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "AJUSTE (botones del POS más compactos): se achicaron los botones grandes del Punto de Venta (sobre todo el de 'Cobrar' en Vender y en Factura, que eran muy altos) y se apretó un poco el resto, para que todo se vea más limpio y parejo. En el teléfono se mantiene el tamaño cómodo para tocar",
     "AJUSTE (ventanilla del artículo más compacta): el buscador de IMEI quedó más pequeño y el botón 'Elegir' ya no ocupa todo el ancho (era muy largo sin necesidad) — ahora es del tamaño justo. Se ve más limpio al elegir el equipo y su IMEI",
     "AJUSTE (buscador de IMEI): ahora aparece desde que el equipo tiene 2 o más IMEI/seriales (antes pedía más de 5). Así lo ves casi siempre que hay de dónde elegir",
     "NUEVO (buscador de IMEI al facturar un celular): cuando vendes un equipo con varios IMEI/seriales, aparece un BUSCADOR arriba de la lista — escribes los últimos números del IMEI y la lista se filtra al instante, resaltando en amarillo la parte que coincide. Así no tienes que buscarlo a ojo entre todos. Está en los dos lugares: en la ventanilla del artículo (al elegirlo) y en el botón 'IMEI' de la línea de la factura",
