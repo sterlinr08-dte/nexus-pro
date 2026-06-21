@@ -30,8 +30,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 .prog>div{height:100%;background:#fff;border-radius:6px}
 /* tabs */
 .tabs{display:flex;background:#fff;border-bottom:1px solid #e8edf3;position:sticky;top:0;z-index:20}
-.tabs button{flex:1;border:0;background:none;padding:14px 8px;font-size:14px;font-weight:800;color:#94a3b8;cursor:pointer;border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px}
-.tabs button.on{color:var(--c);border-bottom-color:var(--c)}
+.tabs{gap:8px;padding:9px 12px}
+.tabs button{flex:1;border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:11px;padding:11px 8px;font-size:14px;font-weight:800;color:#475569;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.tabs button.on{color:#fff;background:var(--c);border-color:var(--c);box-shadow:0 4px 12px rgba(79,70,229,.3)}
 .body{padding:14px}
 /* card / section */
 .card{background:#fff;border:1px solid #e8edf3;border-radius:16px;padding:15px;margin-bottom:14px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
@@ -186,7 +187,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       '<div class="htxt"><div class="prem">'+esc(R.premio||R.nombre||"")+'</div><div class="meta"><span><i class="ti ti-coin"></i> '+fmt(R.precio)+' c/u</span>'+fecha+(cerrada?'<span style="background:#dc2626">CERRADA</span>':'')+'</div></div>'+
       (R.mostrar_progreso!==false?'<div class="prog"><div style="width:'+pct+'%"></div></div>':'')+'</div>';
     var tabs='<div class="tabs"><button class="'+(tab==="comprar"?"on":"")+'" onclick="window.__tab(\'comprar\')"><i class="ti ti-shopping-cart"></i> Comprar tickets</button>'+
-      '<button class="'+(tab==="verificar"?"on":"")+'" onclick="window.__tab(\'verificar\')"><i class="ti ti-ticket"></i> Verificar</button></div>';
+      '<button class="'+(tab==="verificar"?"on":"")+'" onclick="window.__tab(\'verificar\')"><i class="ti ti-search"></i> Consultar ticket</button></div>';
 
     var content;
     if(done){ content=viewListo(); }
@@ -337,7 +338,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 
   // ── VERIFICADOR
   function viewVerificar(){
-    return '<div class="body"><div class="card"><div class="sec"><div><h3>Verificar mis tickets</h3><small>Busca por tu WhatsApp o número de ticket</small></div></div>'+
+    return '<div class="body"><div class="card"><div class="sec"><div><h3>Consultar mis tickets</h3><small>Busca por tu WhatsApp o número de ticket</small></div></div>'+
       '<div class="vsearch"><input id="vq" class="in" inputmode="numeric" placeholder="Tu WhatsApp o tu número" value="'+esc(window.__vq||"")+'" onkeydown="if(event.key===\'Enter\')window.__verif()"><button onclick="window.__verif()">Buscar</button></div>'+
       '<div id="vres"></div></div></div>';
   }
