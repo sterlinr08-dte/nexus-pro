@@ -18066,12 +18066,53 @@ try {
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
       '<a class="btn bsm bc1" href="' + waHref + '" target="_blank" rel="noopener" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</a>' +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver / imagen</button>' +
+      '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center" onclick="window.nxRifaEditarBoleto(\'' + b.id + '\')"><i class="ti ti-edit"></i> Editar</button>' +
       (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
     document.body.appendChild(ov);
   }
 
+  window.nxRifaEditarBoleto = function (id) {
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    cerrarModal('nxRbGest'); cerrarModal('nxBolEdit');
+    var metodos = ['Efectivo', 'Transferencia', 'Depósito', 'Tarjeta', 'Pago móvil'];
+    var metOpts = metodos.map(function (m) { return '<option' + (b.metodo_pago === m ? ' selected' : '') + '>' + m + '</option>'; }).join('');
+    var ov = document.createElement('div'); ov.id = 'nxBolEdit'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-edit"></i> Editar boleto ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxBolEdit\').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div style="overflow-y:auto;flex:1">' +
+      '<div class="fr"><label>Comprador</label><input id="beNom" class="no-upper" value="' + esc(b.comprador_nombre || '') + '"></div>' +
+      '<div class="fr"><label>WhatsApp / teléfono</label><input id="beTel" inputmode="tel" value="' + esc(b.comprador_telefono || '') + '"></div>' +
+      '<div class="fr-row"><div class="fr"><label>Precio</label><input id="bePrecio" data-nx-money inputmode="numeric" value="' + (b.precio ? Math.round(b.precio) : '') + '"></div>' +
+      '<div class="fr"><label>Método de pago</label><select id="beMet"><option value="">—</option>' + metOpts + '</select></div></div>' +
+      (_vendedores.length ? '<div class="fr"><label>Vendedor</label><select id="beVendSel"><option value="">— Sin vendedor —</option>' + _vendedores.map(function (v) { return '<option value="' + v.id + '"' + (String(b.vendedor_id) === String(v.id) ? ' selected' : '') + '>' + esc(v.nombre || '') + '</option>'; }).join('') + '</select></div>' : '') +
+      (_cuentas.length ? '<div class="fr"><label>Cuenta donde pagó</label><select id="beCuenta"><option value="">— No aplica —</option>' + _cuentas.map(function (c) { return '<option value="' + c.id + '"' + (String(b.cuenta_id) === String(c.id) ? ' selected' : '') + '>' + esc(c.banco || '') + (c.numero_cuenta ? ' · ' + esc(c.numero_cuenta) : '') + '</option>'; }).join('') + '</select></div>' : '') +
+      '<div class="fr"><label>Estado</label><select id="beEstado"><option value="apartado"' + (b.estado === 'apartado' ? ' selected' : '') + '>Apartado</option><option value="por_confirmar"' + (b.estado === 'por_confirmar' ? ' selected' : '') + '>Por confirmar</option><option value="confirmado"' + (b.estado === 'confirmado' ? ' selected' : '') + '>Pago verificado</option></select></div>' +
+      '</div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxBolEdit\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRifaEditBoletoGuardar(\'' + b.id + '\')"><i class="ti ti-check"></i> Guardar</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxRifaEditBoletoGuardar = async function (id) {
+    var nom = (val('beNom') || '').trim();
+    if (!nom) { toast('err', 'Falta el comprador'); return; }
+    var body = {
+      comprador_nombre: nom,
+      comprador_telefono: (val('beTel') || '').trim() || null,
+      precio: moneyVal('bePrecio'),
+      metodo_pago: val('beMet') || null,
+      estado: val('beEstado') || 'por_confirmar'
+    };
+    if (document.getElementById('beVendSel')) { var vid = val('beVendSel') || null; body.vendedor_id = vid; body.vendedor_nombre = vid ? ((_vendedores.find(function (x) { return String(x.id) === String(vid); }) || {}).nombre || null) : null; }
+    if (document.getElementById('beCuenta')) { body.cuenta_id = val('beCuenta') || null; }
+    try {
+      await getAPI().patch('rifa_boletos', 'id=eq.' + id, body);
+      toast('ok', 'Boleto actualizado', '');
+      cerrarModal('nxBolEdit');
+      await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
   window.nxRifaConfirmar = async function (id) {
     try {
       await getAPI().patch('rifa_boletos', 'id=eq.' + id, { estado: 'confirmado' });

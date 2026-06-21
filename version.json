@@ -1,7 +1,8 @@
 {
-  "version": "32.5",
+  "version": "32.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas · EDITAR un boleto registrado): al tocar un boleto vendido ahora hay un botón 'Editar' para corregir sus datos — comprador, WhatsApp, precio, método de pago, vendedor, cuenta donde pagó y estado (Apartado / Por confirmar / Pago verificado). Útil para arreglar un nombre mal escrito o cambiar la cuenta/estado sin tener que liberar y volver a vender.",
     "AJUSTE (Rifas · Control de boletos como tabla, igual a las plataformas): la 'Lista de tickets' ahora es una TABLA con columnas No., Participante (nombre+teléfono), Fecha, Pago (banco/método), Monto, Estado (Verificado/Pendiente/Apartado) y Modo (online/offline) — se desliza a lo ancho. Buscas por número, comprador o teléfono y tocas una fila para gestionarla. Quedó como el 'Control de boletos registrados' de la referencia.",
     "NUEVO (Rifas · LISTA DE TICKETS y ESTADÍSTICAS, como el panel de las plataformas): dentro de una rifa, el botón 'Reportes' ahora abre un menú con: 1) LISTA DE TICKETS — todas las ventas con buscador (por número, comprador o teléfono), su estado y monto; tocas una y la gestionas. 2) ESTADÍSTICAS — compradores, tickets y recaudado, una GRÁFICA de ventas por día (últimos 14) y el desglose por estado (confirmados / por confirmar / apartados). 3) Recaudado por cuenta, 4) Liquidación de vendedores y 5) Mayor comprador. (Se juntaron los íconos de reportes en ese solo botón para que el panel se vea más limpio.)",
     "AJUSTE (Rifas · vista del boleto): el botón 'Compartir' ahora es 'Enviar' y va DIRECTO al WhatsApp del cliente con su boleto (igual que en el boleto vendido) — ya no te hace elegir el contacto. Quedan: Imprimir, Guardar (la imagen) y Enviar.",
