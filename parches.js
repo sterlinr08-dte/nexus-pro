@@ -18115,9 +18115,10 @@ try {
     ov.innerHTML = '<div class="modal" style="max-width:340px;max-height:94vh;display:flex;flex-direction:column">' +
       '<div class="mt"><span><i class="ti ti-ticket"></i> Boleto</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxBolView\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="overflow-y:auto;flex:1;padding:4px 2px 8px">' + bolCardHTML(_bolActual) + '</div>' +
-      '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImg(0)"><i class="ti ti-download"></i> Imagen</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaBoletoImg(1)"><i class="ti ti-brand-whatsapp"></i> Compartir</button></div>' +
+      '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" type="button" onclick="window.nxBolDescargar()"><i class="ti ti-download"></i> Guardar</button><button class="btn bsm bc1" id="bolShareBtn" type="button" disabled onclick="window.nxBolShare()"><i class="ti ti-loader-2"></i> Preparando…</button></div>' +
       '</div>';
     document.body.appendChild(ov);
+    prepararBolFile();
   };
   window.nxRifaBoletoImprimir = function () {
     var d = _bolActual; if (!d) return;
@@ -18175,24 +18176,34 @@ try {
     if (d.banner) { var im = new Image(); try { im.crossOrigin = 'anonymous'; } catch (e) {} im.onload = function () { build(im); }; im.onerror = function () { build(null); }; im.src = d.banner; }
     else build(null);
   }
-  window.nxRifaBoletoImg = function (share) {
+  // Pre-genera la imagen al abrir el boleto, para que "Compartir" la envíe AL INSTANTE
+  // (iOS exige que navigator.share corra dentro del toque; si se genera después, no envía nada).
+  var _bolFile = null;
+  function prepararBolFile() {
+    _bolFile = null;
     var d = _bolActual; if (!d) return;
     bolCanvas(d, function (cv) {
-      if (!cv) { toast('err', 'No se pudo generar la imagen', 'Usa Imprimir'); return; }
+      if (!cv) return;
       try {
         cv.toBlob(function (blob) {
-          if (!blob) { toast('err', 'No se pudo'); return; }
-          var fname = 'boleto-' + d.numero + '.png';
-          var file = null; try { file = new File([blob], fname, { type: 'image/png' }); } catch (e) {}
-          if (share && file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: 'Boleto ' + d.numero }).catch(function () {});
-          } else {
-            var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
-            if (share) toast('info', 'Imagen descargada', 'Adjúntala en WhatsApp');
-          }
+          if (!blob) return;
+          try { _bolFile = new File([blob], 'boleto-' + d.numero + '.png', { type: 'image/png' }); } catch (e) { _bolFile = blob; }
+          var bt = document.getElementById('bolShareBtn'); if (bt) { bt.disabled = false; bt.innerHTML = '<i class="ti ti-brand-whatsapp"></i> Compartir'; }
         }, 'image/png');
-      } catch (e) { toast('err', 'No se pudo', 'Usa Imprimir'); }
+      } catch (e) {}
     });
+  }
+  window.nxBolShare = function () {
+    var f = _bolFile;
+    if (!f) { toast('info', 'Preparando imagen…', 'Espera un segundito e intenta de nuevo'); return; }
+    var puede = false; try { puede = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [f] })); } catch (e) { puede = false; }
+    if (puede) { navigator.share({ files: [f], title: 'Boleto' }).catch(function () {}); }
+    else { window.nxBolDescargar(); }
+  };
+  window.nxBolDescargar = function () {
+    var f = _bolFile;
+    if (!f) { toast('info', 'Preparando imagen…', 'Espera un segundito'); return; }
+    try { var url = URL.createObjectURL(f); var a = document.createElement('a'); a.href = url; a.download = (f.name || 'boleto.png'); document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1500); toast('ok', 'Imagen guardada', 'Adjúntala en WhatsApp'); } catch (e) { toast('err', 'No se pudo'); }
   };
 
   function inyectarCSS() {
