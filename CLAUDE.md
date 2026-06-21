@@ -536,6 +536,19 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   después"**) → confirma todos los números de una. Verificar = busca por WhatsApp/número y lista
   los tickets con su estado + enlace a boleto.html. NOTA: el trigger `set_organizacion_id()` solo
   setea si null → la función pasa `organizacion_id` explícito sin problema.
+- **TANDA 11b (v32.9) HECHA — UNA sola pantalla + OCULTAR NÚMEROS:** a pedido del dueño,
+  `rifa.html` se reescribió a **una sola pantalla con scroll** (no pasos): tarjeta 1 *Tus datos*
+  (nombre*, WhatsApp* con código país, + "Más datos" colapsable: cédula/email/dirección/vendedor),
+  tarjeta 2 *números*, tarjeta 3 *método de pago*, y **barra fija abajo** con total + Confirmar.
+  El estado del comprador vive en `F={}` (se guarda con `snap()`/`__sv` para sobrevivir el
+  re-render del tablero). **Opción "Ocultar los números en la página pública"** (`rifas.ocultar_numeros`
+  bool, migración `rifa_ocultar_numeros`; checkbox `rfOcultarNums` en el form admin de rifa,
+  guardado en `nxRifaGuardar`): si está ON, la página pública NO muestra el tablero — el cliente
+  solo elige **cuántos** tickets (stepper `__qty` + atajos +5/+10/+25) y al confirmar manda
+  `{cantidad}` en vez de `{numeros}`. La **función `rifa` v4** en modo oculto **asigna N números
+  al azar entre los disponibles server-side** (lee tomados, calcula libres, random, tope 200) y
+  los devuelve; la página los muestra ya comprados en la pantalla de éxito. GET devuelve
+  `ocultar_numeros`.
 - **PENDIENTE:** vista limitada del vendedor (login propio) · combos/paquetes con precio (UI) ·
   gráfica medios de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio,
   riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
