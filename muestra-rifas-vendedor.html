@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Muestra — Vista del Vendedor (Rifas)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+:root{--bg:#eef1f6;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--ind1:#4f46e5;--ind2:#4338ca;--ok:#16a34a;--warn:#d97706;--rose:#e11d48;--cy:#0891b2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+.demo{background:linear-gradient(135deg,#0e7490,#0891b2);color:#fff;text-align:center;font-size:11px;font-weight:700;padding:7px 12px}
+.wrap{max-width:600px;margin:0 auto}
+.head{background:linear-gradient(160deg,#0c4a6e,#0891b2);color:#fff;padding:16px 16px 18px}
+.head .row{display:flex;align-items:center;gap:11px}
+.head .logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(145deg,#22d3ee,#0891b2);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 6px 16px rgba(8,145,178,.5),inset 0 1px 1px rgba(255,255,255,.4)}
+.head .biz{font-weight:800;font-size:15px;line-height:1.1}
+.head .biz small{display:block;font-weight:600;font-size:10px;color:#bae6fd;margin-top:3px;letter-spacing:.3px}
+.who{margin-top:13px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:11px;padding:9px 12px;display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700}
+.who .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#67e8f9,#0891b2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+.who small{display:block;font-size:10px;font-weight:600;color:#bae6fd}
+.sel{margin-top:9px;background:rgba(255,255,255,.08);border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;color:#e0f2fe}
+.sel small{font-weight:600;color:#bae6fd}
+.nav{display:flex;gap:6px;padding:11px 12px;background:#fff;border-bottom:1px solid var(--line)}
+.nav button{flex:1;border:1.5px solid var(--line);background:#fff;color:#475569;font-size:12.5px;font-weight:700;padding:9px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:inherit}
+.nav button i{font-size:15px}
+.nav button.on{background:var(--cy);border-color:var(--cy);color:#fff}
+.body{padding:14px 14px 40px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:0 6px 16px rgba(15,23,42,.05)}
+.kpi .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);margin-bottom:8px}
+.kpi .l{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+.kpi .v{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-top:3px}
+.kpi .s{font-size:10.5px;color:var(--muted);font-weight:600;margin-top:3px}
+.liq{grid-column:1/-1;background:linear-gradient(135deg,#ecfeff,#cffafe);border-color:#a5f3fc}
+.liq .v{color:#0e7490}
+.st{font-size:11.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin:20px 2px 10px;display:flex;align-items:center;gap:7px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:9px;font-size:10.5px;color:#475569;font-weight:600}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:11px;height:11px;border-radius:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.num{aspect-ratio:1.5/1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;font-family:ui-monospace,monospace;border:1.5px solid}
+.n-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+.n-vend{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}
+.n-mio{background:#ecfeff;border-color:#67e8f9;color:#0e7490}
+.fab{display:flex;gap:8px;margin:16px 0 4px}
+.fab button{flex:1;border:0;border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:inherit}
+.b-add{background:linear-gradient(135deg,#16a34a,#15803d)}
+.b-luck{background:linear-gradient(135deg,#0891b2,#0e7490)}
+.list{background:#fff;border:1px solid var(--line);border-radius:15px;padding:4px 14px;box-shadow:0 6px 16px rgba(15,23,42,.05);margin-top:6px}
+.it{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}
+.it:last-child{border-bottom:0}
+.it .l{display:flex;align-items:center;gap:11px}
+.it .nn{width:46px;height:30px;border-radius:8px;background:#1f4b63;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:ui-monospace,monospace;font-size:13px;flex-shrink:0}
+.it .nm b{font-weight:700;font-size:12.5px}.it .nm span{display:block;font-size:10.5px;color:var(--muted)}
+.tag{font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:20px}
+.tag.ok{background:#dcfce7;color:#15803d}.tag.pend{background:#fef3c7;color:#92400e}
+.lock{background:#fff;border:1px dashed #cbd5e1;border-radius:13px;padding:13px;margin-top:18px;font-size:12px;color:#64748b;display:flex;gap:9px;align-items:flex-start}
+.lock i{font-size:18px;color:#94a3b8;flex-shrink:0;margin-top:1px}
+.note{font-size:11px;color:var(--muted);text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="demo"><i class="ti ti-eye"></i> MUESTRA — así ve el sistema un VENDEDOR (empleado)</div>
+<div class="wrap">
+
+  <div class="head">
+    <div class="row">
+      <div class="logo"><i class="ti ti-ticket"></i></div>
+      <div class="biz">SL Celular Shop<small>VENTA DE RIFA</small></div>
+    </div>
+    <div class="who"><div class="av">JM</div><div>José Martínez<small>Vendedor</small></div></div>
+    <div class="sel"><i class="ti ti-gift"></i> IPHONE 16 PRO MAX <small>· RD$ 100 · sorteo 15 feb</small></div>
+  </div>
+
+  <div class="nav">
+    <button class="on"><i class="ti ti-cash-register"></i> Vender</button>
+    <button><i class="ti ti-list"></i> Mis ventas</button>
+  </div>
+
+  <div class="body">
+
+    <!-- KPIs personales -->
+    <div class="kpis">
+      <div class="kpi" style="--c:#0891b2"><div class="ic"><i class="ti ti-ticket"></i></div><div class="l">Mis boletos</div><div class="v">42</div><div class="s">vendidos</div></div>
+      <div class="kpi" style="--c:#16a34a"><div class="ic"><i class="ti ti-cash"></i></div><div class="l">Mi recaudado</div><div class="v">RD$ 4,200</div><div class="s">42 boletos</div></div>
+      <div class="kpi" style="--c:#7c3aed"><div class="ic"><i class="ti ti-percentage"></i></div><div class="l">Mi comisión</div><div class="v">RD$ 420</div><div class="s">10%</div></div>
+      <div class="kpi liq"><div class="ic" style="--c:#0e7490;color:#0e7490"><i class="ti ti-wallet"></i></div><div class="l">A entregar (liquidación)</div><div class="v">RD$ 3,780</div><div class="s">recaudado − tu comisión</div></div>
+    </div>
+
+    <!-- Tablero para vender -->
+    <div class="st"><i class="ti ti-grid-dots"></i> Elige un número para vender</div>
+    <div class="legend">
+      <span><i class="dot" style="background:#bbf7d0"></i> Disponible</span>
+      <span><i class="dot" style="background:#67e8f9"></i> Mío (yo lo vendí)</span>
+      <span><i class="dot" style="background:#cbd5e1"></i> Ocupado</span>
+    </div>
+    <div class="grid">
+      <div class="num n-disp">0000</div><div class="num n-mio">0001</div><div class="num n-disp">0002</div><div class="num n-vend">0003</div><div class="num n-disp">0004</div><div class="num n-vend">0005</div>
+      <div class="num n-disp">0006</div><div class="num n-mio">0007</div><div class="num n-disp">0008</div><div class="num n-vend">0009</div><div class="num n-disp">0010</div><div class="num n-disp">0011</div>
+      <div class="num n-mio">0012</div><div class="num n-disp">0013</div><div class="num n-disp">0014</div><div class="num n-vend">0015</div><div class="num n-disp">0016</div><div class="num n-mio">0017</div>
+    </div>
+
+    <div class="fab">
+      <button class="b-add"><i class="ti ti-user-plus"></i> Vender boleto</button>
+      <button class="b-luck"><i class="ti ti-dice-5"></i> A la suerte</button>
+    </div>
+
+    <!-- Mis ventas -->
+    <div class="st"><i class="ti ti-history"></i> Mis últimas ventas</div>
+    <div class="list">
+      <div class="it"><div class="l"><div class="nn">0001</div><div class="nm"><b>Carla Núñez</b><span>+1 849 111 2233 · transferencia</span></div></div><span class="tag ok">Confirmado</span></div>
+      <div class="it"><div class="l"><div class="nn">0012</div><div class="nm"><b>Pedro Reyes</b><span>+1 809 333 4455 · efectivo</span></div></div><span class="tag ok">Confirmado</span></div>
+      <div class="it"><div class="l"><div class="nn">0017</div><div class="nm"><b>Ana Mota</b><span>+1 829 666 7788 · transferencia</span></div></div><span class="tag pend">Por confirmar</span></div>
+    </div>
+
+    <!-- Lo que NO ve -->
+    <div class="lock">
+      <i class="ti ti-lock"></i>
+      <div>El vendedor <b>no ve</b>: crear/editar rifas, confirmar pagos, totales del negocio, las cuentas bancarias ni a los demás vendedores. Solo <b>lo suyo</b>.</div>
+    </div>
+
+    <div class="note">Muestra con datos de ejemplo · los botones no hacen nada todavía.</div>
+  </div>
+</div>
+</body>
+</html>
