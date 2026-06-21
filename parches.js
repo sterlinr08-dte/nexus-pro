@@ -18055,6 +18055,7 @@ try {
       '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
       '<button class="btn bsm bc1 bolShareBtnEl" type="button" disabled data-lbl="Enviar por WhatsApp" onclick="window.nxBolShare()" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-loader-2"></i> Preparando…</button>' +
+      (wa ? '<a class="btn bsm bghost" style="flex:1;min-width:120px;justify-content:center" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(_bolTexto) + '" target="_blank" rel="noopener"><i class="ti ti-message-2"></i> Chat directo</a>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver boleto</button>' +
       (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
