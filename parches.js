@@ -17838,6 +17838,7 @@ try {
       '<input id="rfImg" class="no-upper" value="' + esc(imgUrl) + '" placeholder="o pega un enlace https://..." style="margin-top:7px"></div>' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarFecha"' + (e.mostrar_fecha === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la fecha del sorteo en el boleto</label>' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarProg"' + (e.mostrar_progreso === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la barra de boletos vendidos</label>' +
+      '<label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfOcultarNums"' + (e.ocultar_numeros ? ' checked' : '') + ' style="width:18px;height:18px;margin-top:1px"> <span>Ocultar los números en la página pública<br><small style="font-weight:500;color:#94a3b8">El cliente solo elige cuántos tickets quiere y el sistema le asigna números al azar.</small></span></label>' +
       '</div>' +
       '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxRifaForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRifaGuardar(\'' + (r ? r.id : '') + '\')"><i class="ti ti-check"></i> Guardar</button></div>' +
       '</div>';
@@ -17894,7 +17895,8 @@ try {
       condicion_venta: val('rfCond') ? Number(val('rfCond')) : null,
       imagen: ((val('rfImg') || '').trim() || _rifaImgData || null),
       mostrar_fecha: chk('rfMostrarFecha'),
-      mostrar_progreso: chk('rfMostrarProg')
+      mostrar_progreso: chk('rfMostrarProg'),
+      ocultar_numeros: chk('rfOcultarNums')
     };
     try {
       if (id) { await getAPI().patch('rifas', 'id=eq.' + id, body); toast('ok', 'Rifa actualizada', nom); }
