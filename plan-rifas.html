@@ -142,6 +142,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_cuentas <span style="font-weight:600;color:#94a3b8;font-family:inherit">(cuentas de cobro)</span></div><div class="cols"><span class="c">banco</span><span class="c">logo</span><span class="c">numero_cuenta</span><span class="c">titular</span><span class="c">tipo (banco/tarjeta/movil)</span><span class="c">activo</span></div></div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_premios <span style="font-weight:600;color:#94a3b8;font-family:inherit">(configurable)</span></div><div class="cols"><span class="c">rifa_id</span><span class="c">orden (1ro/2do…)</span><span class="c">descripcion</span><span class="c">tipo (exacto/terminal)</span></div></div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_vendedores</div><div class="cols"><span class="c">nombre</span><span class="c">telefono</span><span class="c">comision_pct</span><span class="c">usuario (opcional)</span><span class="c">activo</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_paquetes <span style="font-weight:600;color:#94a3b8;font-family:inherit">(combos)</span></div><div class="cols"><span class="c">rifa_id</span><span class="c">cantidad (ej. 5)</span><span class="c">precio (ej. 450)</span><span class="c">etiqueta</span></div></div>
   <div class="note">Todas con <b>organizacion_id + trigger + RLS</b> (el patrón que ya usa el POS). Solo se guardan boletos vendidos; los disponibles se calculan.</div>
 
   <div class="sec-t"><i class="ti ti-adjustments"></i> Reglas y opciones</div>
@@ -228,6 +229,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
       <li>Ganador por <b>número de la Lotería</b> (registras el número).</li>
       <li><b>Mezclador aleatorio</b> público el día del sorteo (transparencia) o exportar a Excel para sortear afuera.</li>
       <li><b>Acta/resultado</b> imprimible · publicar ganador.</li>
+    </ul>
+  </div>
+
+  <div class="sec-t"><i class="ti ti-bulb"></i> Mejoras recomendadas</div>
+
+  <div class="card" style="--c:#16a34a">
+    <h3><span class="ico" style="--c:#16a34a"><i class="ti ti-star-filled"></i></span>En la v1 (mueven ventas y orden)</h3>
+    <ul>
+      <li><b>Paquetes/combos con descuento</b> — "5 por RD$450, 10 por RD$800". Sube el ticket promedio.</li>
+      <li><b>Carrito de varios números</b> — apartar varios en una sola compra/voucher.</li>
+      <li><b>Premio al mayor comprador</b> 🏆 — ranking de quién más boletos compró; premio extra al/los primeros.</li>
+      <li><b>Premios "anterior y posterior"</b> — gana el número, y opcional el de antes y el de después (muy usado en RD).</li>
+      <li><b>WhatsApp automático</b> — al apartar manda boleto + datos de pago; al confirmar avisa "Pago Verificado"; recordatorio antes de que venza el apartado.</li>
+      <li><b>Liquidación de vendedores</b> — cuánto vendió, cuánto debe entregar y su comisión.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="--c:#4338ca">
+    <h3><span class="ico" style="--c:#4338ca"><i class="ti ti-sparkles"></i></span>Para la v2 (con la página pública)</h3>
+    <ul>
+      <li><b>Urgencia</b> — contador regresivo al sorteo + barra de "vendidos" (FOMO).</li>
+      <li><b>Números especiales</b> — resaltar capicúa / fechas / "de la suerte".</li>
+      <li><b>Sorteo con animación</b> (ruleta/mezclador) — transparencia y emoción.</li>
+      <li><b>QR en el boleto</b> + página pública de <b>resultados</b> y participantes.</li>
+      <li><b>Cortesías</b> (regalar números) y <b>auditoría</b> (quién confirmó/anuló).</li>
     </ul>
   </div>
 
