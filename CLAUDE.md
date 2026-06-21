@@ -468,6 +468,16 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   `nxRifaBoletoImg(share)` → `navigator.share` (WhatsApp) o descarga; **imprimir/PDF**
   con `nxRifaBoletoImprimir` (ventana). Botón "Ver boleto" en `gestBoleto` y se abre
   solo al vender. NOTA: el banner es dataURL (mismo origen) → canvas no se mancha.
+- **TANDA 4 (v31.7) HECHA — enlace público del boleto (estilo competencia):** función
+  **Edge `boleto`** (Supabase, `verify_jwt:false`, pública) en
+  `tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/boleto?id=<boleto_id>`: lee con
+  service role (rifa_boletos + embed rifas + org), devuelve HTML con la tarjeta del
+  boleto + **Open Graph** (`og:title/description/image`) para que **WhatsApp muestre
+  vista previa con la imagen del premio**. `?id=X&img=1` decodifica el banner dataURL
+  y sirve los bytes (og:image). En `parches.js` el botón **"Enviar por WhatsApp"** de
+  `gestBoleto` abre `wa.me/<numero>?text=<texto + enlace>` → **directo al número del
+  cliente** con preview (así lo hace Rifarito; adjuntar imagen-archivo obligaba a
+  elegir contacto). "Ver / imagen" sigue con la imagen PNG por `navigator.share`.
 - **PENDIENTE (siguientes tandas):**
   **cuentas de cobro** + ver voucher con zoom (la confirmación de pago básica YA
   está en gestBoleto) · **cuentas de cobro** +

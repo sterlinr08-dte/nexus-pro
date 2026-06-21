@@ -18043,6 +18043,8 @@ try {
     var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
     var prem = rg.premio || rg.nombre || 'la rifa';
     _bolActual = bolData(b, rg); _bolTexto = bolTexto(b, rg);
+    var bolLink = BOL_URL + '?id=' + b.id;
+    var waHref = 'https://wa.me/' + wa + '?text=' + encodeURIComponent(_bolTexto + '\n\nMira tu boleto aquí: ' + bolLink);
     var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
@@ -18054,14 +18056,12 @@ try {
       (b.vendedor_nombre ? '<div>Vendedor: ' + esc(b.vendedor_nombre) + '</div>' : '') +
       '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
-      '<button class="btn bsm bc1 bolShareBtnEl" type="button" disabled data-lbl="Enviar por WhatsApp" onclick="window.nxBolShare()" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-loader-2"></i> Preparando…</button>' +
-      (wa ? '<a class="btn bsm bghost" style="flex:1;min-width:120px;justify-content:center" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(_bolTexto) + '" target="_blank" rel="noopener"><i class="ti ti-message-2"></i> Chat directo</a>' : '') +
-      '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver boleto</button>' +
+      '<a class="btn bsm bc1" href="' + waHref + '" target="_blank" rel="noopener" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</a>' +
+      '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver / imagen</button>' +
       (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
     document.body.appendChild(ov);
-    prepararBolFile();
   }
 
   window.nxRifaConfirmar = async function (id) {
@@ -18189,6 +18189,7 @@ try {
   // Pre-genera la imagen al abrir el boleto, para que "Compartir" la envíe AL INSTANTE
   // (iOS exige que navigator.share corra dentro del toque; si se genera después, no envía nada).
   var _bolFile = null, _bolTexto = '';
+  var BOL_URL = 'https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/boleto';
   function prepararBolFile() {
     _bolFile = null;
     var d = _bolActual; if (!d) return;
