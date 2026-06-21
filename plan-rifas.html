@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Plan — Sistema de Rifas</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+:root{--bg:#eef1f6;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--ind1:#4f46e5;--ind2:#4338ca;--ind3:#3730a3;--ok:#16a34a;--warn:#d97706;--rose:#e11d48}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding:0 14px 60px}
+.top{background:linear-gradient(135deg,var(--ind3),var(--ind1));color:#fff;padding:26px 18px 22px;border-radius:0 0 22px 22px;box-shadow:0 8px 24px rgba(49,46,129,.3);text-align:center}
+.top .badge{display:inline-block;background:rgba(255,255,255,.18);font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:20px;margin-bottom:10px}
+.top h1{margin:0;font-size:23px;font-weight:800;letter-spacing:-.4px}
+.top p{margin:8px 0 0;font-size:12.5px;color:#dcdcfb}
+.sec-t{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#7f88d4;margin:26px 4px 11px}
+.sec-t i{font-size:17px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px 16px;box-shadow:0 6px 18px rgba(15,23,42,.05);margin-bottom:11px}
+.card h3{margin:0 0 7px;font-size:14.5px;font-weight:800;display:flex;align-items:center;gap:8px}
+.card h3 .ico{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--c,#4f46e5);background:color-mix(in srgb,var(--c,#4f46e5) 14%,transparent);flex-shrink:0}
+.card p{margin:0;font-size:13px;color:#334155}
+.card ul{margin:6px 0 0;padding-left:18px;font-size:12.5px;color:#334155}
+.card ul li{margin:3px 0}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px;margin:2px 3px 2px 0}
+.pill.v1{background:#dcfce7;color:#15803d}.pill.v2{background:#e0e7ff;color:#4338ca}
+/* Flujo */
+.flow{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:12px;align-items:flex-start;position:relative;padding-bottom:14px}
+.step:not(:last-child)::before{content:"";position:absolute;left:17px;top:36px;bottom:0;width:2px;background:#dbe1f5}
+.step .n{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:linear-gradient(145deg,#6366f1,#4338ca);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;box-shadow:0 4px 10px rgba(67,56,202,.4);z-index:1}
+.step .b{background:#fff;border:1px solid var(--line);border-radius:13px;padding:10px 13px;flex:1;box-shadow:0 3px 10px rgba(15,23,42,.04)}
+.step .b b{font-size:13px}.step .b span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+/* Tablas modelo */
+.tbl{background:#fff;border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:10px}
+.tbl .nm{font-size:12.5px;font-weight:800;color:var(--ind2);font-family:ui-monospace,monospace;display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.tbl .cols{display:flex;flex-wrap:wrap;gap:5px}
+.tbl .c{font-size:10.5px;font-weight:600;background:#f1f5f9;color:#475569;padding:3px 8px;border-radius:7px;font-family:ui-monospace,monospace}
+/* Boleto mini */
+.bolwrap{display:flex;justify-content:center;margin-top:4px}
+.bol{width:230px;background:#1f4b63;border-radius:16px;overflow:hidden;box-shadow:0 12px 30px rgba(15,23,42,.3);color:#eaf2f7}
+.bol .bh{background:#fff;color:#0f172a;text-align:center;padding:9px;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.bol .bh .lg{width:22px;height:22px;border-radius:50%;background:linear-gradient(145deg,#1e3a8a,#0ea5e9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+.bol .bp{padding:11px 13px;font-size:11px}
+.bol .bp .ti2{font-weight:800;font-size:12.5px;margin-bottom:8px;color:#fff}
+.bol .bp .ln{display:flex;align-items:center;gap:7px;margin:5px 0;color:#cfe3ee}
+.bol .bp .ln i{font-size:13px;opacity:.9}
+.bol .bd{display:flex;justify-content:space-between;padding:9px 13px;border-top:1px dashed rgba(255,255,255,.3);font-size:11px;font-weight:700}
+.bol .bn{background:#fff;color:#0f172a;text-align:center;margin:0 13px 13px;border-radius:9px;padding:9px;font-size:24px;font-weight:800;letter-spacing:3px;border:2px dashed #94a3b8}
+.bol .chk{color:#34d399}
+.note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:7px}
+.foot{text-align:center;margin-top:26px;font-size:11.5px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px;text-align:center}
+.kpi i{font-size:19px;color:var(--c,#4f46e5)}
+.kpi b{display:block;font-size:12px;margin-top:4px;color:#0f172a}
+.kpi span{font-size:10.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="badge">Plan completo · v1</div>
+  <h1>🎟️ Sistema de Rifas</h1>
+  <p>Módulo dentro de NEXUS PRO · boletos de 4 dígitos · ganador por Lotería</p>
+</div>
+
+<div class="wrap">
+
+  <div class="sec-t"><i class="ti ti-target-arrow"></i> Qué es</div>
+  <div class="card">
+    <p>Un <b>módulo dentro de NEXUS PRO</b> para crear y administrar rifas: vender boletos numerados de <b>4 dígitos (0000–9999)</b>, registrar al comprador, confirmar el pago por voucher, generar el <b>boleto-tarjeta</b>, ver <b>estadísticas</b> y registrar el <b>ganador</b> (número de la Lotería Nacional). Cada negocio ve solo su data (aislado por organización + RLS), como el POS.</p>
+  </div>
+
+  <div class="sec-t"><i class="ti ti-versions"></i> Por fases</div>
+  <div class="card" style="--c:#16a34a">
+    <h3><span class="ico" style="--c:#16a34a"><i class="ti ti-rocket"></i></span>v1 — Panel admin <span class="pill v1">Construimos ya</span></h3>
+    <p>Crear rifas, registrar boletos a mano, confirmar pagos, generar el boleto, estadísticas, vendedores y ganador. Venta manual (offline).</p>
+  </div>
+  <div class="card" style="--c:#4338ca">
+    <h3><span class="ico" style="--c:#4338ca"><i class="ti ti-world"></i></span>v2 — Página pública <span class="pill v2">Después</span></h3>
+    <p>Landing con tu logo y colores donde el <b>cliente entra solo</b>, elige su número, sube su voucher y verifica su boleto. Mezclador de números el día del sorteo.</p>
+  </div>
+
+  <div class="sec-t"><i class="ti ti-arrow-guide"></i> El flujo (v1)</div>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="b"><b>Crear la rifa</b><span>Nombre, premio, imagen, precio, fecha+hora del sorteo, cantidad de números, con/sin fecha en el boleto.</span></div></div>
+    <div class="step"><div class="n">2</div><div class="b"><b>Registrar boleto</b><span>Eliges un número disponible → comprador (nombre + WhatsApp) → vendedor → precio. Queda <b>POR CONFIRMAR</b>.</span></div></div>
+    <div class="step"><div class="n">3</div><div class="b"><b>Confirmar pago</b><span>Revisas el voucher/transferencia y lo apruebas → pasa a <b>CONFIRMADO</b> (Pago Verificado).</span></div></div>
+    <div class="step"><div class="n">4</div><div class="b"><b>Entregar el boleto</b><span>La tarjeta se imprime / se manda por WhatsApp / PDF.</span></div></div>
+    <div class="step"><div class="n">5</div><div class="b"><b>Día del sorteo</b><span>Registras el número que salió en la lotería.</span></div></div>
+    <div class="step"><div class="n">6</div><div class="b"><b>Ver ganador</b><span>El sistema busca el boleto y muestra quién ganó → avisar por WhatsApp.</span></div></div>
+  </div>
+
+  <div class="sec-t"><i class="ti ti-ticket"></i> El boleto (con / sin fecha)</div>
+  <div class="bolwrap">
+    <div class="bol">
+      <div class="bh"><span class="lg"><i class="ti ti-bolt"></i></span> MI NEGOCIO</div>
+      <div class="bp">
+        <div class="ti2">IPHONE 16 PRO MAX</div>
+        <div class="ln chk"><i class="ti ti-rosette-discount-check-filled"></i> Pago Verificado</div>
+        <div class="ln"><i class="ti ti-user"></i> Benita Díaz</div>
+        <div class="ln"><i class="ti ti-brand-whatsapp"></i> +1 849 882 7189</div>
+        <div class="ln"><i class="ti ti-calendar"></i> 2024-12-23 12:23</div>
+      </div>
+      <div class="bd"><span>15 FEB 2025</span><span>12:55 PM</span></div>
+      <div class="bn">6320</div>
+    </div>
+  </div>
+  <div class="note">Tarjeta azul: logo + negocio, premio, estado, comprador, WhatsApp, fecha de compra, <b>fecha del sorteo (opcional)</b> y el número grande.</div>
+
+  <div class="sec-t"><i class="ti ti-layout-dashboard"></i> Pantallas del panel</div>
+  <div class="kpis">
+    <div class="kpi" style="--c:#4f46e5"><i class="ti ti-list"></i><b>Lista de rifas</b><span>+ estadísticas</span></div>
+    <div class="kpi" style="--c:#16a34a"><i class="ti ti-plus"></i><b>Crear rifa</b><span>todos los campos</span></div>
+    <div class="kpi" style="--c:#0891b2"><i class="ti ti-grid-dots"></i><b>Tablero números</b><span>0000…límite</span></div>
+    <div class="kpi" style="--c:#d97706"><i class="ti ti-user-plus"></i><b>Registrar boleto</b><span>comprador</span></div>
+    <div class="kpi" style="--c:#e11d48"><i class="ti ti-checks"></i><b>Confirmar pagos</b><span>vouchers</span></div>
+    <div class="kpi" style="--c:#7c3aed"><i class="ti ti-users"></i><b>Vendedores</b><span>comisión</span></div>
+    <div class="kpi" style="--c:#0f172a"><i class="ti ti-trophy"></i><b>Sorteo / ganador</b><span>por lotería</span></div>
+    <div class="kpi" style="--c:#475569"><i class="ti ti-chart-pie"></i><b>Estadísticas</b><span>progreso %</span></div>
+  </div>
+
+  <div class="sec-t"><i class="ti ti-database"></i> Base de datos (tablas)</div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifas</div><div class="cols"><span class="c">nombre</span><span class="c">premio</span><span class="c">imagen</span><span class="c">precio_boleto</span><span class="c">fecha_sorteo</span><span class="c">cantidad_numeros</span><span class="c">mostrar_fecha</span><span class="c">condicion_venta %</span><span class="c">estado</span><span class="c">numero_ganador</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_boletos</div><div class="cols"><span class="c">rifa_id</span><span class="c">numero</span><span class="c">comprador_nombre</span><span class="c">comprador_telefono</span><span class="c">vendedor</span><span class="c">precio</span><span class="c">metodo_pago</span><span class="c">voucher</span><span class="c">estado (por_confirmar/confirmado)</span><span class="c">origen (online/offline)</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_premios <span style="font-weight:600;color:#94a3b8;font-family:inherit">(configurable)</span></div><div class="cols"><span class="c">rifa_id</span><span class="c">orden (1ro/2do…)</span><span class="c">descripcion</span><span class="c">tipo (exacto/terminal)</span></div></div>
+  <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_vendedores</div><div class="cols"><span class="c">nombre</span><span class="c">telefono</span><span class="c">comision_pct</span><span class="c">usuario (opcional)</span><span class="c">activo</span></div></div>
+  <div class="note">Todas con <b>organizacion_id + trigger + RLS</b> (el patrón que ya usa el POS). Solo se guardan boletos vendidos; los disponibles se calculan.</div>
+
+  <div class="sec-t"><i class="ti ti-adjustments"></i> Reglas y opciones</div>
+  <div class="card">
+    <ul>
+      <li><b>Números:</b> 4 dígitos; la <b>cantidad la eliges tú</b> por rifa (no forzado a 10,000).</li>
+      <li><b>Premios:</b> <b>tú eliges cuántos</b> (1ro, 2do, terminales…).</li>
+      <li><b>Vendedores:</b> varios, con <b>comisión</b>; con su usuario o como campo libre.</li>
+      <li><b>Pago:</b> voucher/transferencia (sin pasarela) → confirmar a mano.</li>
+      <li><b>Condición de sorteo:</b> opcional al 80% / 90% / 100% vendido.</li>
+      <li><b>Ganador:</b> registras el número de la Lotería → muestra quién ganó.</li>
+    </ul>
+  </div>
+
+  <div class="foot">
+    <i class="ti ti-circle-check" style="color:#16a34a"></i> Diagrama completo · listo para construir la <b>v1</b><br>
+    NEXUS PRO · Sistema de Rifas
+  </div>
+</div>
+</body>
+</html>
