@@ -13686,6 +13686,9 @@
   let _facFecha = '';
   let _facSubTab = 'datos';
   let _histQ = '', _histDesde = '', _histHasta = '';
+  // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
+  let _prodSort = { k: 'nombre', d: 1 };
+  let _histSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
@@ -13855,6 +13858,44 @@
   };
 
   function tabBtn(k, lbl, ic) { if (!puedeVer(k)) return ''; return `<button type="button" class="nxPosTab${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>`; }
+
+  // ── Ordenamiento por columnas (genérico, reutilizable en cualquier tabla del POS) ──
+  // Ordena una copia del arreglo por un getter de valor; respeta dirección.
+  function sortRows(arr, getter, dir) {
+    return (arr || []).slice().sort((a, b) => {
+      const va = getter(a), vb = getter(b);
+      if (va == null && vb == null) return 0;
+      if (va < vb) return -1 * dir; if (va > vb) return 1 * dir; return 0;
+    });
+  }
+  // Encabezado <th> clickeable con flecha de orden (asc/desc) e indicador.
+  function thSort(tabla, st, key, label, align) {
+    const on = st.k === key;
+    const ic = on ? (st.d > 0 ? 'ti-arrow-up' : 'ti-arrow-down') : 'ti-arrows-sort';
+    const al = align ? 'text-align:' + align + ';' : '';
+    return `<th class="nxThSort${on ? ' on' : ''}" style="${al}cursor:pointer;user-select:none;white-space:nowrap" onclick="window.nxSort('${tabla}','${key}')">${label} <i class="ti ${ic} nxThI${on ? '' : ' nxThIoff'}"></i></th>`;
+  }
+  // Valor a comparar por columna en cada tabla (type-aware: texto en minúscula, número, fecha ISO).
+  function prodSortVal(p, k) {
+    if (k === 'precio') return Number(p.precio || 0);
+    if (k === 'stock') return p.tipo === 'servicio' ? -Infinity : Number(p.stock || 0);
+    if (k === 'itbis') return p.itbis ? 1 : 0;
+    return String(p.nombre || '').toLowerCase();
+  }
+  function histSortVal(v, k) {
+    if (k === 'numero') return String(v.numero_factura || v.numero || '').toLowerCase();
+    if (k === 'cliente') return String(v.cliente_nombre || 'Consumidor final').toLowerCase();
+    if (k === 'tipo') return v.a_credito ? 1 : 0;
+    if (k === 'total') return Number(v.total || 0);
+    return String(v.fecha || v.created_at || '');
+  }
+  // Click en encabezado: misma columna invierte; nueva columna ordena (fecha empieza descendente).
+  window.nxSort = function (tabla, key) {
+    const st = tabla === 'prod' ? _prodSort : tabla === 'hist' ? _histSort : null;
+    if (!st) return;
+    if (st.k === key) st.d = -st.d; else { st.k = key; st.d = (key === 'fecha') ? -1 : 1; }
+    const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+  };
 
   // ── Modo TIENDA: el POS se ve como sistema independiente (sidebar + dashboard) ──
   function esTiendaPOS() { try { return !!(window.sesion && window.sesion.org && window.sesion.org.tipo === 'tienda'); } catch (e) { return false; } }
@@ -14066,7 +14107,7 @@
           <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" id="facNumPrev">${proxNumeroFacturaFmt(_facCredito)}</div></div>
           <div class="nxFacF nxFacFsm"><label>Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"></div>
           <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
-          <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito (fiado)</label></div>
+          <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito</label></div>
         </div>
         <div class="nxFacAdd">
           <i class="ti ti-search" onclick="window.nxProdPicker('factura')" style="pointer-events:auto;cursor:pointer" title="Ver todos los artículos"></i>
@@ -14773,7 +14814,7 @@
             <div class="fr"><label>Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
             <div class="fr"><label>Total a pagar</label><input id="posTotalLbl" readonly value="${fmt(t.total)}" style="background:#f0fdf4;font-weight:800;color:#065f46"></div>
           </div>
-          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">FORMA DE PAGO <span style="font-weight:600;color:#475569">(deja en 0 lo que no aplique; lo que falte queda fiado)</span></div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">FORMA DE PAGO <span style="font-weight:600;color:#475569">(deja en 0 lo que no aplique; lo que falte queda a crédito)</span></div>
           <div class="fr-row"><div class="fr"><label>Efectivo</label><input id="payEfe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Tarjeta</label><input id="payTar" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
           <div class="fr-row"><div class="fr"><label>Transferencia</label><input id="payTra" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Cheque</label><input id="payChe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
           <div class="fr"><label>Nota de crédito</label><input id="payNc" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div>
@@ -14804,10 +14845,10 @@
     const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     const elTot = document.getElementById('posTotalLbl'); if (elTot) elTot.value = fmt(c.total);
     setT('cobroPagado', fmt(c.pagado)); setT('cobroResto', fmt(c.credito)); setT('cobroDev', fmt(c.devuelta));
-    const rl = document.getElementById('cobroRestoLbl'); if (rl) rl.textContent = c.credito > 0 ? 'Falta / Fiado' : 'Pendiente';
+    const rl = document.getElementById('cobroRestoLbl'); if (rl) rl.textContent = c.credito > 0 ? 'Falta / Crédito' : 'Pendiente';
     const rEl = document.getElementById('cobroResto'); if (rEl) rEl.style.color = c.credito > 0 ? '#dc2626' : '#16a34a';
     const note = document.getElementById('cobroFiadoNote');
-    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px">⚠️ Quedan ' + fmt(c.credito) + ' a fiar: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará fiado a la cuenta del cliente.</div>' : '');
+    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px">⚠️ Quedan ' + fmt(c.credito) + ' a crédito: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
   };
   window.nxPosConfirmar = async function () {
     if (!_cart.length) return;
@@ -14822,7 +14863,7 @@
     }
     const c = leerCobro();
     const cliId = val('posCliId') || null;
-    if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a fiar: elige un cliente'); return; }
+    if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a crédito: elige un cliente'); return; }
     const cliNom = cliId ? ((_clientes.find(x => String(x.id) === String(cliId)) || {}).nombre || null) : ((val('posCli') || '').trim() || null);
     const vendId = val('posVendId') || null;
     const vendNom = vendId ? ((_vendedores.find(x => String(x.id) === String(vendId)) || {}).nombre || null) : null;
@@ -14832,7 +14873,7 @@
     if (c.tra > 0) pagosArr.push({ metodo: 'Transferencia', monto: c.tra });
     if (c.che > 0) pagosArr.push({ metodo: 'Cheque', monto: c.che });
     if (c.nc > 0) pagosArr.push({ metodo: 'Nota de crédito', monto: c.nc });
-    if (c.credito > 0) pagosArr.push({ metodo: 'Crédito (fiado)', monto: c.credito });
+    if (c.credito > 0) pagosArr.push({ metodo: 'Crédito', monto: c.credito });
     const metodoLabel = pagosArr.length === 0 ? 'Efectivo' : pagosArr.length === 1 ? pagosArr[0].metodo : 'Mixto';
     // Número de factura con prefijo según tipo (contado/crédito) y consecutivo por empresa
     let numFac = '';
@@ -14927,7 +14968,7 @@
   // ── TAB: PRODUCTOS ──
   function renderProductos() {
     const bajos = _prods.filter(p => p.tipo !== 'servicio' && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0).length;
-    const filas = _prods.length ? _prods.map(p => {
+    const filas = _prods.length ? sortRows(_prods, p => prodSortVal(p, _prodSort.k), _prodSort.d).map(p => {
       const serv = p.tipo === 'servicio';
       const bajo = !serv && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0;
       return `<tr>
@@ -14944,7 +14985,7 @@
         <button class="btn bsm bghost" type="button" onclick="window.nxPosImportarUI()"><i class="ti ti-file-import"></i> Importar</button>
         ${bajos > 0 ? `<span style="font-size:10.5px;color:#ea580c;font-weight:700;margin-left:auto"><i class="ti ti-alert-triangle"></i> ${bajos} con stock bajo</span>` : ''}
       </div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Precio</th><th style="text-align:right">Stock</th><th style="text-align:center">ITBIS</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('prod', _prodSort, 'nombre', 'Producto')}${thSort('prod', _prodSort, 'precio', 'Precio', 'right')}${thSort('prod', _prodSort, 'stock', 'Stock', 'right')}${thSort('prod', _prodSort, 'itbis', 'ITBIS', 'center')}<th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
   window.nxPosNuevoProd = function () { abrirProd(null); };
   window.nxPosEditProd = function (id) { const p = _prods.find(x => String(x.id) === String(id)); if (p) abrirProd(p); };
@@ -15163,7 +15204,7 @@
     return kpi('Facturas', lista.length, '#6d28d9') + kpi('Total filtrado', fmt(total), '#059669') + kpi('Hoy', hoyN, '#0f172a');
   }
   function filasHistorial() {
-    const lista = ventasFiltradas();
+    const lista = sortRows(ventasFiltradas(), v => histSortVal(v, _histSort.k), _histSort.d);
     if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin facturas con esos filtros</td></tr>';
     return lista.map(v => {
       const anulada = (v.estado || '') === 'anulada';
@@ -15317,7 +15358,7 @@
         <button class="btn bsm bghost" type="button" onclick="window.nxPosHistLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
       </div>
       <div id="histKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisHistorial()}</div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No. Factura</th><th>Fecha</th><th>Cliente</th><th>Tipo</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>`;
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('hist', _histSort, 'numero', 'No. Factura')}${thSort('hist', _histSort, 'fecha', 'Fecha')}${thSort('hist', _histSort, 'cliente', 'Cliente')}${thSort('hist', _histSort, 'tipo', 'Tipo')}${thSort('hist', _histSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>`;
   }
   function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
 
@@ -15450,11 +15491,11 @@
     }).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin clientes. Toca "Nuevo cliente".</td></tr>';
     return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
         ${kpi('Clientes', lista.length, '#6d28d9')}
-        ${kpi('Por cobrar (fiado)', fmt(totalCobrar), totalCobrar > 0 ? '#dc2626' : '#16a34a')}
+        ${kpi('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? '#dc2626' : '#16a34a')}
         ${kpi('Con deuda', conDeuda, '#ea580c')}
       </div>
       <div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (fiado)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
   window.nxPosNuevoCli = function () { abrirEntidad(null, { es_cliente: true }); };
   window.nxPosEditCli = function (id) { const c = _clientes.find(x => String(x.id) === String(id)); if (c) abrirEntidad(c, null); };
@@ -15477,7 +15518,7 @@
         <div style="overflow-y:auto;flex:1">
           <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
-            ${kpi('Fiado total', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
+            ${kpi('Total a crédito', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
           </div>
           ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR ABONO</div>
@@ -15907,7 +15948,7 @@
     return `<div class="nc" style="border:1px solid #e2e8f0">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:#16a34a;font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:#475569">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px;margin-bottom:10px">
-          ${kpi('Efectivo', fmt(tt.efe), '#059669')}${kpi('Tarjeta', fmt(tt.tar), '#6d28d9')}${kpi('Transfer.', fmt(tt.tra), '#7c3aed')}${kpi('Fiado', fmt(tt.cre), '#dc2626')}${kpi('Abonos efec.', fmt(tt.abEfe), '#059669')}
+          ${kpi('Efectivo', fmt(tt.efe), '#059669')}${kpi('Tarjeta', fmt(tt.tar), '#6d28d9')}${kpi('Transfer.', fmt(tt.tra), '#7c3aed')}${kpi('Crédito', fmt(tt.cre), '#dc2626')}${kpi('Abonos efec.', fmt(tt.abEfe), '#059669')}
         </div>
         <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;color:#065f46;font-size:12px">Efectivo esperado en caja</span><b style="font-size:17px;color:#065f46">${fmt(tt.esperado)}</b></div>
         <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 4px">MOVIMIENTOS DE EFECTIVO</div>
@@ -16039,7 +16080,7 @@
         <div class="muted">Apertura: ${fechaDMY(c.apertura)}</div>
         <div class="tit">VENTAS DEL TURNO</div>
         <table>
-          ${row('Efectivo', c.ventas_efectivo)}${row('Tarjeta', c.ventas_tarjeta)}${row('Transferencia', c.ventas_transferencia)}${row('Fiado (crédito)', c.ventas_credito, '#dc2626')}${row('Abonos en efectivo', c.abonos_efectivo, '#059669')}
+          ${row('Efectivo', c.ventas_efectivo)}${row('Tarjeta', c.ventas_tarjeta)}${row('Transferencia', c.ventas_transferencia)}${row('Crédito', c.ventas_credito, '#dc2626')}${row('Abonos en efectivo', c.abonos_efectivo, '#059669')}
         </table>
         <div class="tit">EFECTIVO</div>
         <table>
@@ -17112,13 +17153,13 @@
   function renderReportes() {
     const list = ventasRepRango();
     let totVta = 0, totItbis = 0, ganancia = 0, costoTot = 0;
-    const porDia = {}, porProd = {}, metodos = { Efectivo: 0, Tarjeta: 0, Transferencia: 0, Otro: 0, 'Crédito (fiado)': 0 };
+    const porDia = {}, porProd = {}, metodos = { Efectivo: 0, Tarjeta: 0, Transferencia: 0, Otro: 0, 'Crédito': 0 };
     list.forEach(v => {
       totVta += Number(v.total || 0); totItbis += Number(v.itbis || 0);
       const f = repFecha(v); porDia[f] = (porDia[f] || 0) + Number(v.total || 0);
       metodos.Efectivo += Number(v.pagado_efectivo || 0); metodos.Tarjeta += Number(v.pagado_tarjeta || 0);
       metodos.Transferencia += Number(v.pagado_transferencia || 0); metodos.Otro += Number(v.pagado_otro || 0);
-      metodos['Crédito (fiado)'] += Number(v.credito_monto || 0);
+      metodos['Crédito'] += Number(v.credito_monto || 0);
       repItems(v).forEach(it => {
         const cant = Number(it.cantidad || 0), imp = Number(it.importe != null ? it.importe : (Number(it.precio || 0) * cant));
         const sinItbis = it.itbis ? imp - (imp * 18 / 118) : imp;
@@ -17601,6 +17642,12 @@
       '.nxTKpiL{font-size:11px;color:#64748b;font-weight:700}',
       '.nxTKpiV{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-top:3px;color:#0f172a}',
       '.nxTKpiS{font-size:10.5px;font-weight:700;margin-top:5px;color:#64748b}',
+      /* Encabezados ordenables (cualquier tabla del POS) */
+      '.nxThSort{transition:color .12s}',
+      '.nxThSort:hover{color:#4f46e5}',
+      '.nxThSort.on{color:#4f46e5}',
+      '.nxThI{font-size:11px;vertical-align:middle}',
+      '.nxThIoff{opacity:.32}',
       /* Móvil: sidebar como cajón */
       '@media(max-width:860px){',
       '.nxTSide{transform:translateX(-100%)}',
