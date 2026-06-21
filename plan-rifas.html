@@ -136,6 +136,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
     <div class="kpi" style="--c:#475569"><i class="ti ti-chart-pie"></i><b>Estadísticas</b><span>progreso %</span></div>
   </div>
 
+  <div class="sec-t"><i class="ti ti-shield-lock"></i> Quién ve qué (roles)</div>
+  <div class="card" style="--c:#4f46e5">
+    <h3><span class="ico" style="--c:#4f46e5"><i class="ti ti-crown"></i></span>Administrador (tú)</h3>
+    <p>Control total: crear/editar rifas, todas las pantallas, <b>confirmar pagos</b>, cuentas y <b>totales</b>, vendedores y comisiones, sorteo y ganador.</p>
+  </div>
+  <div class="card" style="--c:#0891b2">
+    <h3><span class="ico" style="--c:#0891b2"><i class="ti ti-user-check"></i></span>Vendedor (empleado)</h3>
+    <ul>
+      <li>Entra con <b>su propio acceso</b> y ve solo la rifa activa.</li>
+      <li><b>Tablero de números → vende</b>: registra comprador (nombre + WhatsApp), manual o a la suerte, y <b>sube el voucher</b>.</li>
+      <li>Ve <b>solo SUS ventas</b>, su <b>comisión</b> y su <b>liquidación</b> (cuánto debe entregar).</li>
+      <li><b>NO ve:</b> crear/editar rifas, confirmar pagos de otros, totales globales, las cuentas ni a los demás vendedores.</li>
+    </ul>
+    <p style="margin-top:7px;font-size:12px;color:#0e7490">Reutiliza el <b>sistema de roles/permisos</b> que ya usa el POS: cada rol ve solo lo suyo, y tú decides qué puede hacer cada quien.</p>
+  </div>
+
   <div class="sec-t"><i class="ti ti-database"></i> Base de datos (tablas)</div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifas</div><div class="cols"><span class="c">nombre</span><span class="c">premio</span><span class="c">imagen</span><span class="c">precio_boleto</span><span class="c">fecha_sorteo</span><span class="c">cantidad_digitos (2–4)</span><span class="c">cantidad_numeros</span><span class="c">mostrar_fecha</span><span class="c">seleccion (manual/auto)</span><span class="c">descuento_pct</span><span class="c">apartado_horas</span><span class="c">limite_por_persona</span><span class="c">condicion_venta %</span><span class="c">estado</span><span class="c">numero_ganador</span></div></div>
   <div class="tbl"><div class="nm"><i class="ti ti-table"></i>rifa_boletos</div><div class="cols"><span class="c">rifa_id</span><span class="c">numero</span><span class="c">comprador_nombre</span><span class="c">comprador_telefono</span><span class="c">vendedor</span><span class="c">precio</span><span class="c">metodo_pago</span><span class="c">cuenta_id (a cuál pagó)</span><span class="c">voucher</span><span class="c">estado (apartado/por_confirmar/confirmado/anulado)</span><span class="c">apartado_hasta</span><span class="c">origen (online/offline)</span></div></div>
