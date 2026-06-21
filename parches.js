@@ -18042,7 +18042,7 @@ try {
     var estTxt = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : 'Por confirmar');
     var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
     var prem = rg.premio || rg.nombre || 'la rifa';
-    var waTxt = encodeURIComponent('Hola ' + (b.comprador_nombre || '') + ' 👋, tu boleto de ' + prem + ' es el número ' + b.numero + '. Estado: ' + estTxt + '.');
+    _bolActual = bolData(b, rg); _bolTexto = bolTexto(b, rg);
     var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
@@ -18054,12 +18054,13 @@ try {
       (b.vendedor_nombre ? '<div>Vendedor: ' + esc(b.vendedor_nombre) + '</div>' : '') +
       '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
-      '<button class="btn bsm bc1" type="button" style="flex:1 1 100%;justify-content:center;padding:11px" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-ticket"></i> Ver / Enviar boleto</button>' +
-      (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:120px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
-      (wa ? '<a class="btn bsm bghost" style="flex:1;min-width:110px;justify-content:center" href="https://wa.me/' + wa + '?text=' + waTxt + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Mensaje</a>' : '') +
+      '<button class="btn bsm bc1 bolShareBtnEl" type="button" disabled data-lbl="Enviar por WhatsApp" onclick="window.nxBolShare()" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-loader-2"></i> Preparando…</button>' +
+      '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver boleto</button>' +
+      (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
     document.body.appendChild(ov);
+    prepararBolFile();
   }
 
   window.nxRifaConfirmar = async function (id) {
@@ -18093,6 +18094,11 @@ try {
     var fsorteo = ''; if (r.mostrar_fecha !== false && r.fecha_sorteo) { try { fsorteo = new Date(r.fecha_sorteo).toLocaleString('es-DO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) {} }
     return { biz: org.nombre || empNomRf(), premio: r.premio || r.nombre || '', banner: r.imagen || '', conf: b.estado === 'confirmado', comprador: b.comprador_nombre || '', tel: b.comprador_telefono || '', fcompra: fcompra, fsorteo: fsorteo, numero: String(b.numero), color: org.color || '#1f4b63' };
   }
+  function bolTexto(b, r) {
+    var prem = (r && (r.premio || r.nombre)) || 'la rifa';
+    var est = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : 'Por confirmar');
+    return 'Hola ' + (b.comprador_nombre || '') + ' 👋, tu boleto de ' + prem + ' es el número ' + b.numero + '. Estado: ' + est + '. ¡Mucha suerte!';
+  }
   function bolCardHTML(d) {
     return '<div class="rfBol" style="--bc:' + esc(d.color) + '">' +
       '<div class="rfBolHd">' + esc(d.biz) + '</div>' +
@@ -18111,14 +18117,14 @@ try {
   window.nxRifaBoleto = function (id) {
     var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
     var r = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }); if (!r) return;
-    _bolActual = bolData(b, r);
+    _bolActual = bolData(b, r); _bolTexto = bolTexto(b, r);
     cerrarModal('nxBolView');
     var ov = document.createElement('div'); ov.id = 'nxBolView'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:340px;max-height:94vh;display:flex;flex-direction:column">' +
       '<div class="mt"><span><i class="ti ti-ticket"></i> Boleto</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxBolView\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="overflow-y:auto;flex:1;padding:4px 2px 8px">' + bolCardHTML(_bolActual) + '</div>' +
-      '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" type="button" onclick="window.nxBolDescargar()"><i class="ti ti-download"></i> Guardar</button><button class="btn bsm bc1" id="bolShareBtn" type="button" disabled onclick="window.nxBolShare()"><i class="ti ti-loader-2"></i> Preparando…</button></div>' +
+      '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" type="button" onclick="window.nxBolDescargar()"><i class="ti ti-download"></i> Guardar</button><button class="btn bsm bc1 bolShareBtnEl" type="button" disabled data-lbl="Compartir" onclick="window.nxBolShare()"><i class="ti ti-loader-2"></i> Preparando…</button></div>' +
       '</div>';
     document.body.appendChild(ov);
     prepararBolFile();
@@ -18181,7 +18187,7 @@ try {
   }
   // Pre-genera la imagen al abrir el boleto, para que "Compartir" la envíe AL INSTANTE
   // (iOS exige que navigator.share corra dentro del toque; si se genera después, no envía nada).
-  var _bolFile = null;
+  var _bolFile = null, _bolTexto = '';
   function prepararBolFile() {
     _bolFile = null;
     var d = _bolActual; if (!d) return;
@@ -18191,7 +18197,8 @@ try {
         cv.toBlob(function (blob) {
           if (!blob) return;
           try { _bolFile = new File([blob], 'boleto-' + d.numero + '.png', { type: 'image/png' }); } catch (e) { _bolFile = blob; }
-          var bt = document.getElementById('bolShareBtn'); if (bt) { bt.disabled = false; bt.innerHTML = '<i class="ti ti-brand-whatsapp"></i> Compartir'; }
+          var bts = document.querySelectorAll('.bolShareBtnEl');
+          for (var i = 0; i < bts.length; i++) { bts[i].disabled = false; bts[i].innerHTML = '<i class="ti ti-brand-whatsapp"></i> ' + (bts[i].getAttribute('data-lbl') || 'Compartir'); }
         }, 'image/png');
       } catch (e) {}
     });
@@ -18200,7 +18207,7 @@ try {
     var f = _bolFile;
     if (!f) { toast('info', 'Preparando imagen…', 'Espera un segundito e intenta de nuevo'); return; }
     var puede = false; try { puede = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [f] })); } catch (e) { puede = false; }
-    if (puede) { navigator.share({ files: [f], title: 'Boleto' }).catch(function () {}); }
+    if (puede) { navigator.share({ files: [f], text: _bolTexto || '', title: 'Boleto' }).catch(function () {}); }
     else { window.nxBolDescargar(); }
   };
   window.nxBolDescargar = function () {
