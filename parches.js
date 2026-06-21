@@ -18052,8 +18052,7 @@ try {
     var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
     var prem = rg.premio || rg.nombre || 'la rifa';
     _bolActual = bolData(b, rg); _bolTexto = bolTexto(b, rg);
-    var bolLink = BOL_PAGE + '?id=' + b.id;
-    var waHref = 'https://wa.me/' + wa + '?text=' + encodeURIComponent(_bolTexto + '\n\nMira tu boleto aquí: ' + bolLink);
+    var waHref = boletoWaHref(b, rg);
     var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
@@ -18342,6 +18341,11 @@ try {
     var est = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : 'Por confirmar');
     return 'Hola ' + (b.comprador_nombre || '') + ' 👋, tu boleto de ' + prem + ' es el número ' + b.numero + '. Estado: ' + est + '. ¡Mucha suerte!';
   }
+  // Enlace de WhatsApp DIRECTO al número del cliente, con el texto + enlace de su boleto.
+  function boletoWaHref(b, r) {
+    var wa = String(b.comprador_telefono || '').replace(/\D/g, ''); if (wa.length === 10) wa = '1' + wa;
+    return 'https://wa.me/' + wa + '?text=' + encodeURIComponent(bolTexto(b, r) + '\n\nMira tu boleto aquí: ' + BOL_PAGE + '?id=' + b.id);
+  }
   function bolCardHTML(d) {
     return '<div class="rfBol" style="--bc:' + esc(d.color) + '">' +
       '<div class="rfBolHd">' + esc(d.biz) + '</div>' +
@@ -18361,13 +18365,14 @@ try {
     var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
     var r = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }); if (!r) return;
     _bolActual = bolData(b, r); _bolTexto = bolTexto(b, r);
+    var waHref = boletoWaHref(b, r);
     cerrarModal('nxBolView');
     var ov = document.createElement('div'); ov.id = 'nxBolView'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:340px;max-height:94vh;display:flex;flex-direction:column">' +
       '<div class="mt"><span><i class="ti ti-ticket"></i> Boleto</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxBolView\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="overflow-y:auto;flex:1;padding:4px 2px 8px">' + bolCardHTML(_bolActual) + '</div>' +
-      '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" type="button" onclick="window.nxBolDescargar()"><i class="ti ti-download"></i> Guardar</button><button class="btn bsm bc1 bolShareBtnEl" type="button" disabled data-lbl="Compartir" onclick="window.nxBolShare()"><i class="ti ti-loader-2"></i> Preparando…</button></div>' +
+      '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" type="button" onclick="window.nxBolDescargar()"><i class="ti ti-download"></i> Guardar</button><a class="btn bsm bc1" href="' + waHref + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar</a></div>' +
       '</div>';
     document.body.appendChild(ov);
     prepararBolFile();

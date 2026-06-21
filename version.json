@@ -1,7 +1,8 @@
 {
-  "version": "32.2",
+  "version": "32.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "AJUSTE (Rifas · vista del boleto): el botón 'Compartir' ahora es 'Enviar' y va DIRECTO al WhatsApp del cliente con su boleto (igual que en el boleto vendido) — ya no te hace elegir el contacto. Quedan: Imprimir, Guardar (la imagen) y Enviar.",
     "NUEVO (Rifas · MAYOR COMPRADOR y números VECINOS): 1) dentro de una rifa, el botón 👑 muestra el RANKING de quién más boletos ha comprado (con medallas 🥇🥈🥉, cantidad de boletos y monto) — ideal para premiar al mayor comprador. 2) En el SORTEO, al buscar el ganador ahora también se muestran los números ANTERIOR y POSTERIOR (premios de consolación, muy usados en RD) y quién los tiene.",
     "NUEVO (Rifas · VENDEDORES y LIQUIDACIÓN): en la lista de Rifas hay un botón 'Vendedores' para registrar a tu equipo (nombre, teléfono y su % de comisión). Al vender un boleto eliges el vendedor de una lista. Dentro de una rifa, el botón 👥 te muestra la LIQUIDACIÓN: cuántos boletos vendió cada uno, cuánto recaudó, su comisión y CUÁNTO DEBE ENTREGAR (recaudado menos su comisión). Solo cuenta los pagos confirmados.",
     "NUEVO (Rifas · CUENTAS DE COBRO y recaudado por cuenta): en la lista de Rifas hay un botón 'Cuentas' para guardar tus cuentas de banco, tarjeta o pago móvil/tPago (banco, número y titular). Al vender un boleto, puedes elegir 'a cuál cuenta pagó' el cliente. Y dentro de una rifa, el botón 🏦 te muestra el RECAUDADO POR CUENTA — cuánto entró por cada banco/cuenta (de los pagos confirmados) más el total. Así sabes exactamente cuánto tienes en cada cuenta.",
