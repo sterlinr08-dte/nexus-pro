@@ -18028,6 +18028,7 @@ try {
       cerrarModal('nxRvForm');
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _bolMap[numero]; if (nb) window.nxRifaBoleto(nb.id);
     } catch (e) {
       var msg = String(e && e.message || e);
       if (/duplicate|unique|23505/i.test(msg)) toast('err', 'Número ya tomado', 'Ese boleto ya fue vendido');
@@ -18050,9 +18051,10 @@ try {
       (b.vendedor_nombre ? '<div>Vendedor: ' + esc(b.vendedor_nombre) + '</div>' : '') +
       '</div>' +
       '<div class="fe" style="gap:8px;flex-wrap:wrap">' +
+      '<button class="btn bsm bc1" type="button" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-ticket"></i> Ver boleto</button>' +
+      (b.estado !== 'confirmado' ? '<button class="btn bsm bghost" type="button" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar pago</button>' : '') +
       (wa ? '<a class="btn bsm bghost" href="https://wa.me/' + wa + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>' : '') +
-      (b.estado !== 'confirmado' ? '<button class="btn bsm bc1" type="button" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar pago</button>' : '') +
-      '<button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar número</button>' +
+      '<button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
     document.body.appendChild(ov);
   }
@@ -18078,10 +18080,117 @@ try {
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
+  // ── BOLETO-TARJETA (ver / imagen PNG / imprimir / WhatsApp) ──
+  var _bolActual = null;
+  var BOL_CSS = '.rfBol{max-width:300px;margin:0 auto;border-radius:16px;overflow:hidden;background:var(--bc,#1f4b63);box-shadow:0 10px 26px rgba(15,23,42,.25)}.rfBolHd{background:#fff;color:#0f172a;text-align:center;font-weight:800;font-size:14px;padding:11px 10px;letter-spacing:.3px}.rfBolBody{padding:12px 14px;color:#eaf2f7}.rfBolBanner{border-radius:10px;overflow:hidden;margin-bottom:10px}.rfBolBanner img{width:100%;display:block}.rfBolPrem{font-weight:800;font-size:14px;color:#fff;margin-bottom:9px;line-height:1.2}.rfBolEst{font-weight:800;font-size:13px;margin-bottom:9px}.rfBolEst.ok{color:#34d399}.rfBolEst.pend{color:#fbbf24}.rfBolLn{font-size:12.5px;margin:4px 0;color:#dbe9f1}.rfBolLn b{color:#fff;font-weight:700}.rfBolFecha{text-align:center;font-weight:800;font-size:13px;color:#cfe3ee;padding:9px;border-top:1px dashed rgba(255,255,255,.35)}.rfBolNum{background:#fff;color:#0f172a;text-align:center;margin:0 14px 14px;border-radius:10px;padding:11px;font-size:30px;font-weight:800;letter-spacing:4px;font-family:ui-monospace,monospace;border:2px dashed #94a3b8}';
+  function empNomRf() { try { return (window.CFG && (CFG.empNom || CFG.empresa_nom)) || 'Mi negocio'; } catch (e) { return 'Mi negocio'; } }
+  function bolData(b, r) {
+    var ses = curSes(); var org = (ses && ses.org) || {};
+    var fcompra = ''; try { fcompra = new Date(b.created_at).toLocaleString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) {}
+    var fsorteo = ''; if (r.mostrar_fecha !== false && r.fecha_sorteo) { try { fsorteo = new Date(r.fecha_sorteo).toLocaleString('es-DO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) {} }
+    return { biz: org.nombre || empNomRf(), premio: r.premio || r.nombre || '', banner: r.imagen || '', conf: b.estado === 'confirmado', comprador: b.comprador_nombre || '', tel: b.comprador_telefono || '', fcompra: fcompra, fsorteo: fsorteo, numero: String(b.numero), color: org.color || '#1f4b63' };
+  }
+  function bolCardHTML(d) {
+    return '<div class="rfBol" style="--bc:' + esc(d.color) + '">' +
+      '<div class="rfBolHd">' + esc(d.biz) + '</div>' +
+      '<div class="rfBolBody">' +
+      (d.banner ? '<div class="rfBolBanner"><img src="' + esc(d.banner) + '"></div>' : '') +
+      (d.premio ? '<div class="rfBolPrem">' + esc(d.premio.toUpperCase()) + '</div>' : '') +
+      '<div class="rfBolEst ' + (d.conf ? 'ok' : 'pend') + '">' + (d.conf ? '✓ Pago Verificado' : '• Por confirmar') + '</div>' +
+      '<div class="rfBolLn"><b>Comprador:</b> ' + esc(d.comprador || '—') + '</div>' +
+      (d.tel ? '<div class="rfBolLn"><b>WhatsApp:</b> ' + esc(d.tel) + '</div>' : '') +
+      '<div class="rfBolLn"><b>Compra:</b> ' + esc(d.fcompra) + '</div>' +
+      '</div>' +
+      (d.fsorteo ? '<div class="rfBolFecha">' + esc(d.fsorteo) + '</div>' : '') +
+      '<div class="rfBolNum">' + esc(d.numero) + '</div>' +
+      '</div>';
+  }
+  window.nxRifaBoleto = function (id) {
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    var r = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }); if (!r) return;
+    _bolActual = bolData(b, r);
+    cerrarModal('nxBolView');
+    var ov = document.createElement('div'); ov.id = 'nxBolView'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:340px;max-height:94vh;display:flex;flex-direction:column">' +
+      '<div class="mt"><span><i class="ti ti-ticket"></i> Boleto</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxBolView\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="overflow-y:auto;flex:1;padding:4px 2px 8px">' + bolCardHTML(_bolActual) + '</div>' +
+      '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImg(0)"><i class="ti ti-download"></i> Imagen</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaBoletoImg(1)"><i class="ti ti-brand-whatsapp"></i> Compartir</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+  };
+  window.nxRifaBoletoImprimir = function () {
+    var d = _bolActual; if (!d) return;
+    var w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; }
+    w.document.write('<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boleto ' + esc(d.numero) + '</title><style>body{font-family:-apple-system,Arial;background:#eef1f6;margin:0;padding:18px}' + BOL_CSS + '@media print{body{background:#fff}.np{display:none}}</style></head><body>' + bolCardHTML(d) + '<div class="np" style="text-align:center;margin-top:16px"><button onclick="window.print()" style="padding:11px 18px;background:#4f46e5;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">Imprimir / Guardar PDF</button></div></body></html>');
+    w.document.close();
+  };
+  function bolRR(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function bolWrap(ctx, text, maxW) { var words = String(text).split(' '), lines = [], cur = ''; for (var i = 0; i < words.length; i++) { var t = cur ? cur + ' ' + words[i] : words[i]; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = words[i]; } else cur = t; } if (cur) lines.push(cur); return lines; }
+  function bolFit(ctx, text, x, y, maxW) { var fs = 26; ctx.font = '800 ' + fs + 'px Arial'; while (ctx.measureText(text).width > maxW && fs > 12) { fs -= 1; ctx.font = '800 ' + fs + 'px Arial'; } ctx.fillText(text, x, y); }
+  function bolCover(ctx, img, x, y, w, h) { var ir = img.width / img.height, tr = w / h, sw, sh, sx, sy; if (ir > tr) { sh = img.height; sw = sh * tr; sx = (img.width - sw) / 2; sy = 0; } else { sw = img.width; sh = sw / tr; sx = 0; sy = (img.height - sh) / 2; } ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h); }
+  function bolCanvas(d, cb) {
+    var build = function (banner) {
+      try {
+        var W = 560, m = 18;
+        var tmp = document.createElement('canvas').getContext('2d'); tmp.font = '800 24px Arial';
+        var pLines = d.premio ? bolWrap(tmp, d.premio.toUpperCase(), W - 2 * m - 44) : [];
+        var H = m + 16 + 64 + 24 + pLines.length * 30 + (d.premio ? 10 : 0) + (banner ? 206 : 0) + 36 + 30 + (d.tel ? 30 : 0) + 14 + (d.fsorteo ? 38 : 0) + 22 + 20 + 72 + 18 + m;
+        var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+        var col = d.color || '#1f4b63';
+        bolRR(ctx, m, m, W - 2 * m, H - 2 * m, 24); ctx.fillStyle = col; ctx.fill();
+        bolRR(ctx, m + 16, m + 16, W - 2 * m - 32, 64, 14); ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#0f172a'; bolFit(ctx, (d.biz || '').toUpperCase(), W / 2, m + 16 + 32, W - 2 * m - 60);
+        var y = m + 16 + 64 + 24;
+        if (d.premio) { ctx.fillStyle = '#fff'; ctx.font = '800 24px Arial'; pLines.forEach(function (ln) { ctx.fillText(ln, W / 2, y); y += 30; }); y += 10; }
+        if (banner) { var bw = W - 2 * m - 32, bh = 190, bx = m + 16; bolRR(ctx, bx, y, bw, bh, 12); ctx.save(); ctx.clip(); bolCover(ctx, banner, bx, y, bw, bh); ctx.restore(); y += bh + 16; }
+        ctx.textAlign = 'left'; ctx.font = '800 20px Arial'; ctx.fillStyle = d.conf ? '#34d399' : '#fbbf24';
+        ctx.fillText(d.conf ? '✓ Pago Verificado' : '• Por confirmar', m + 26, y); y += 36;
+        ctx.fillStyle = '#e6eef3'; ctx.font = '600 19px Arial';
+        ctx.fillText('Comprador: ' + (d.comprador || '—'), m + 26, y); y += 30;
+        if (d.tel) { ctx.fillText('WhatsApp: ' + d.tel, m + 26, y); y += 30; }
+        ctx.fillText('Compra: ' + d.fcompra, m + 26, y); y += 14;
+        if (d.fsorteo) { y += 24; ctx.textAlign = 'center'; ctx.fillStyle = '#cfe3ee'; ctx.font = '800 21px Arial'; ctx.fillText(d.fsorteo, W / 2, y); y += 14; }
+        y += 22;
+        ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(m + 26, y); ctx.lineTo(W - m - 26, y); ctx.stroke(); ctx.setLineDash([]);
+        y += 20;
+        var nbW = W - 2 * m - 52, nbx = m + 26, nbH = 72;
+        bolRR(ctx, nbx, y, nbW, nbH, 12); ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.fillStyle = '#0f172a'; ctx.font = '800 50px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(d.numero, W / 2, y + nbH / 2);
+        cb(cv);
+      } catch (e) { cb(null); }
+    };
+    if (d.banner) { var im = new Image(); try { im.crossOrigin = 'anonymous'; } catch (e) {} im.onload = function () { build(im); }; im.onerror = function () { build(null); }; im.src = d.banner; }
+    else build(null);
+  }
+  window.nxRifaBoletoImg = function (share) {
+    var d = _bolActual; if (!d) return;
+    bolCanvas(d, function (cv) {
+      if (!cv) { toast('err', 'No se pudo generar la imagen', 'Usa Imprimir'); return; }
+      try {
+        cv.toBlob(function (blob) {
+          if (!blob) { toast('err', 'No se pudo'); return; }
+          var fname = 'boleto-' + d.numero + '.png';
+          var file = null; try { file = new File([blob], fname, { type: 'image/png' }); } catch (e) {}
+          if (share && file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: 'Boleto ' + d.numero }).catch(function () {});
+          } else {
+            var url = URL.createObjectURL(blob); var a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+            if (share) toast('info', 'Imagen descargada', 'Adjúntala en WhatsApp');
+          }
+        }, 'image/png');
+      } catch (e) { toast('err', 'No se pudo', 'Usa Imprimir'); }
+    });
+  };
+
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}';
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:ui-monospace,monospace;outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:ui-monospace,monospace;font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}' + BOL_CSS;
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }

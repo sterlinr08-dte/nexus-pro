@@ -460,10 +460,17 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   WhatsApp, **confirmar pago** `nxRifaConfirmar`, **liberar** `nxRifaLiberar` borra
   la fila). CSS `.nxRf*`/`.rfN*`/`.rfKpi`. Helpers locales en el IIFE; sesión vía
   `curSes()` (NO `window.sesion`, que es undefined por el `let sesion`).
-- **PENDIENTE (siguientes tandas):** el
-  **boleto-tarjeta** (imagen PNG/PDF/WhatsApp, estilo el de SL Celular Shop:
-  logo+premio+comprador+WhatsApp+fecha compra+fecha sorteo opcional+número grande) ·
-  **confirmar pagos** (ver voucher con zoom → aprobar) · **cuentas de cobro** +
+- **TANDA 3 (v31.1) HECHA — boleto-tarjeta:** `nxRifaBoleto(id)` abre la tarjeta
+  azul (`bolCardHTML`/`BOL_CSS`: header negocio + banner + premio + estado Pago
+  Verificado/Por confirmar + comprador + WhatsApp + fecha compra + fecha sorteo
+  opcional + número grande). Exporta a **imagen PNG** dibujada en canvas
+  (`bolCanvas`/`bolRR`/`bolWrap`/`bolFit`/`bolCover`, carga el banner async) con
+  `nxRifaBoletoImg(share)` → `navigator.share` (WhatsApp) o descarga; **imprimir/PDF**
+  con `nxRifaBoletoImprimir` (ventana). Botón "Ver boleto" en `gestBoleto` y se abre
+  solo al vender. NOTA: el banner es dataURL (mismo origen) → canvas no se mancha.
+- **PENDIENTE (siguientes tandas):**
+  **cuentas de cobro** + ver voucher con zoom (la confirmación de pago básica YA
+  está en gestBoleto) · **cuentas de cobro** +
   recaudado por cuenta · **vendedores** + liquidación + vista limitada del vendedor ·
   **sorteo/ganador** (registrar número de lotería → muestra ganador) · mejoras
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
