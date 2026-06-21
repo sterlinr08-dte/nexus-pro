@@ -18161,7 +18161,15 @@ try {
         bolRR(ctx, nbx, y, nbW, nbH, 12); ctx.fillStyle = '#fff'; ctx.fill();
         ctx.fillStyle = '#0f172a'; ctx.font = '800 50px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(d.numero, W / 2, y + nbH / 2);
-        cb(cv);
+        // Componer con margen para que WhatsApp muestre el boleto COMPLETO (no lo recorta en la vista previa)
+        var padV = 28;
+        var outH = H + padV * 2;
+        var outW = Math.max(W, Math.round(outH * 0.8));
+        var out = document.createElement('canvas'); out.width = outW; out.height = outH;
+        var octx = out.getContext('2d');
+        octx.fillStyle = '#ffffff'; octx.fillRect(0, 0, outW, outH);
+        octx.drawImage(cv, Math.round((outW - W) / 2), padV);
+        cb(out);
       } catch (e) { cb(null); }
     };
     if (d.banner) { var im = new Image(); try { im.crossOrigin = 'anonymous'; } catch (e) {} im.onload = function () { build(im); }; im.onerror = function () { build(null); }; im.src = d.banner; }
