@@ -50,7 +50,6 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .tel{display:flex;gap:8px}
 .tel select{flex:0 0 100px}
 .tel input{flex:1}
-.more{margin-top:11px;border:0;background:none;color:var(--c);font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:0}
 /* a la suerte */
 .qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
 .qrow button{border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:11px;padding:11px 4px;font-size:14px;font-weight:800;color:#334155;cursor:pointer;line-height:1.1}
@@ -151,9 +150,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var R=null, sold={}, page=0, q="", PER=120;
   var tab="comprar", done=false;
   var cart=[];                          // numeros seleccionados (strings)
-  var moreOpen=false, ctaSel=null, voucherData="", luego=false, doneNums=[], doneId="", qty=1;
+  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
-  var F={nom:"",pais:"+1",tel:"",ced:"",email:"",dir:"",vend:""};
+  var F={nom:"",pais:"+1",tel:""};
 
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c];});}
   function fmt(n){return "RD$ "+Math.round(Number(n||0)).toLocaleString("en-US");}
@@ -202,12 +201,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 
   // ── COMPRAR (1 sola pantalla): datos arriba, números, pago, y barra de total fija
   function viewComprar(){
-    var vsel=(R.vendedores||[]).length?'<label class="fl">¿Quién te lo vendió? <span class="opt">(opcional)</span></label><select id="fVend" class="in"><option value="">— Ninguno / Online —</option>'+(R.vendedores||[]).map(function(v){return '<option value="'+v.id+'"'+(F.vend===v.id?' selected':'')+'>'+esc(v.nombre)+'</option>';}).join('')+'</select>':'';
     var paises=[["+1","🇩🇴 +1"],["+1","🇺🇸 +1"],["+34","🇪🇸 +34"],["+52","🇲🇽 +52"]];
-    var masFields='<label class="fl">Cédula / DNI <span class="opt">(opcional)</span></label><input id="fCed" class="in" inputmode="numeric" placeholder="000-0000000-0" value="'+esc(F.ced)+'">'+
-      '<label class="fl">Correo electrónico <span class="opt">(opcional)</span></label><input id="fEmail" class="in" inputmode="email" placeholder="tucorreo@email.com" value="'+esc(F.email)+'">'+
-      '<label class="fl">Dirección <span class="opt">(opcional)</span></label><input id="fDir" class="in" placeholder="Tu dirección" value="'+esc(F.dir)+'">'+vsel;
-
     var ctas=R.cuentas||[];
     var pago=ctas.length?'<div class="banks">'+ctas.map(function(c){var ic=c.tipo==="tarjeta"?"ti-credit-card":(c.tipo==="movil"?"ti-device-mobile":"ti-building-bank");return '<button type="button" class="bk'+(ctaSel===c.id?" on":"")+'" onclick="window.__pickBank(\''+c.id+'\')"><i class="ti '+ic+'"></i><div><div class="nm">'+esc(c.banco||"Cuenta")+'</div><div class="ti">'+esc(c.tipo||"banco")+'</div></div></button>';}).join('')+'</div><div id="acct"></div>':'<div class="empty">El organizador te dará los datos de pago por WhatsApp.</div>';
 
@@ -216,8 +210,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       '<div class="card"><div class="sec"><div class="nb">1</div><div><h3>Tus datos</h3><small>Para registrar tu compra</small></div></div>'+
         '<label class="fl">Nombre completo <span class="req">*</span></label><input id="fNom" class="in" placeholder="Tu nombre y apellido" autocomplete="name" value="'+esc(F.nom)+'" oninput="window.__sv(\'nom\',this.value)">'+
         '<label class="fl">WhatsApp <span class="req">*</span></label><div class="tel"><select id="fPais" class="in" onchange="window.__sv(\'pais\',this.value)">'+paises.map(function(p){return '<option value="'+p[0]+'"'+(F.pais===p[0]?' selected':'')+'>'+p[1]+'</option>';}).join('')+'</select><input id="fTel" class="in" inputmode="tel" placeholder="809-000-0000" autocomplete="tel" value="'+esc(F.tel)+'" oninput="window.__sv(\'tel\',this.value)"></div>'+
-        '<button class="more" onclick="window.__more()"><i class="ti ti-'+(moreOpen?'minus':'plus')+'"></i> '+(moreOpen?'Menos datos':'Más datos (cédula, correo, dirección)')+'</button>'+
-        '<div id="masBox" style="'+(moreOpen?'':'display:none')+'">'+masFields+'</div></div>'+
+        '</div>'+
       // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
       (R.ocultar_numeros?
         '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar</small></div></div>'+
@@ -234,10 +227,10 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       // 3) Método de pago
       '<div class="card"><div class="sec"><div class="nb">3</div><div><h3>Método de pago</h3><small>Paga y sube tu comprobante</small></div></div>'+
         pago+
-        '<label class="fl">Comprobante de pago (voucher)</label>'+
+        '<label class="fl">Comprobante de pago (voucher) <span class="req">*</span></label>'+
         '<label class="vfile" for="bVou"><i class="ti ti-camera-plus"></i>Toca para subir foto del depósito o transferencia</label>'+
         '<input type="file" id="bVou" accept="image/*" style="display:none" onchange="window.__vou(this)"><div id="vp" class="vprev">'+(voucherData?'<img src="'+voucherData+'">':'')+'</div>'+
-        '<label class="chkbox"><input type="checkbox" id="bLuego" '+(luego?'checked':'')+' onchange="window.__luego(this.checked)"><div class="tx">Enviaré el voucher después<small>Apartas tus números ahora y mandas el comprobante por WhatsApp.</small></div></label>'+
+        '<div style="font-size:11.5px;color:#94a3b8;margin-top:8px;text-align:center">Adjunta tu comprobante para habilitar el botón <b>Confirmar</b>.</div>'+
       '</div>'+
       '</div>';
   }
@@ -260,15 +253,16 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(!cart.length){el.innerHTML="";return;}
     el.innerHTML='<div class="chips"><span class="lbl">Tus números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip"><b>'+esc(n)+'</b><span onclick="window.__toggle(\''+n+'\')">×</span></span>';}).join('')+'</div>';
   }
+  function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && !!voucherData; }
   function cartBar(){
     var bar=document.createElement("div"); bar.className="cart"; bar.id="cartBar";
     bar.innerHTML='<div class="cart-in"><div class="info"><div class="a"><span id="cInfo">'+count()+' '+(count()===1?'ticket':'tickets')+'</span> · '+fmt(R.precio)+' c/u</div><div class="b" id="cTot">'+fmt(total())+'</div></div>'+
-      '<button class="go" id="goBtn" '+(count()?'':'disabled')+' onclick="window.__confirm()"><i class="ti ti-circle-check"></i> Confirmar</button></div>';
+      '<button class="go" id="goBtn" '+(canSubmit()?'':'disabled')+' onclick="window.__confirm()"><i class="ti ti-circle-check"></i> Confirmar</button></div>';
     document.body.appendChild(bar);
   }
   function refreshCart(){ var b=document.getElementById("cartBar"); if(!b){cartBar();return;} var info=b.querySelector("#cInfo"), tot=b.querySelector("#cTot"), go=b.querySelector("#goBtn");
     if(info)info.textContent=count()+' '+(count()===1?'ticket':'tickets'); if(tot)tot.textContent=fmt(total());
-    go.disabled=!count(); }
+    go.disabled=!canSubmit(); }
   window.__qty=function(d,abs){ qty=abs?d:Math.max(1,qty+d); if(qty>200)qty=200;
     var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.textContent=qty; if(t)t.textContent=qty;
     var box=document.querySelector(".qty"); if(box){var minus=box.querySelector("button"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".qn small"); if(sm)sm.textContent=qty===1?'ticket':'tickets';}
@@ -276,10 +270,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   };
 
   window.__tab=function(t){ tab=t; var b=document.getElementById("cartBar"); if(b)b.remove(); render(); };
-  window.__sv=function(k,v){ F[k]=v; };
-  window.__more=function(){ snap(); moreOpen=!moreOpen; render(); };
+  window.__sv=function(k,v){ F[k]=v; refreshCart(); };
   function snap(){ // guarda lo escrito antes de un re-render
-    var ks={nom:"fNom",tel:"fTel",pais:"fPais",ced:"fCed",email:"fEmail",dir:"fDir",vend:"fVend"};
+    var ks={nom:"fNom",tel:"fTel",pais:"fPais"};
     for(var k in ks){ var e=document.getElementById(ks[k]); if(e)F[k]=e.value; }
   }
   window.__q=function(v){q=(v||"").replace(/\D/g,"");page=0;boardInto();};
@@ -305,11 +298,10 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   window.__copy=function(txt,btn){ var done2=function(){var o=btn.innerHTML;btn.innerHTML='<i class="ti ti-check"></i> Copiado';setTimeout(function(){btn.innerHTML=o;},1400);};
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done2,function(){fb(txt);done2();});}else{fb(txt);done2();} };
   function fb(t){try{var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}catch(e){}}
-  window.__luego=function(v){ luego=v; };
   window.__vou=function(input){
     var f=input.files&&input.files[0];if(!f)return;
     if(f.size>12*1024*1024){alert("Imagen muy grande (máx 12MB).");return;}
-    var rd=new FileReader();rd.onload=function(ev){var img=new Image();img.onload=function(){try{var max=1100,w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);voucherData=cv.toDataURL("image/jpeg",0.72);}catch(e){voucherData=ev.target.result;}var p=document.getElementById("vp");if(p)p.innerHTML='<img src="'+voucherData+'">'; var ch=document.getElementById("bLuego"); if(ch){ch.checked=false;luego=false;} };img.src=ev.target.result;};rd.readAsDataURL(f);
+    var rd=new FileReader();rd.onload=function(ev){var img=new Image();img.onload=function(){try{var max=1100,w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);voucherData=cv.toDataURL("image/jpeg",0.72);}catch(e){voucherData=ev.target.result;}var p=document.getElementById("vp");if(p)p.innerHTML='<img src="'+voucherData+'">'; refreshCart(); };img.src=ev.target.result;};rd.readAsDataURL(f);
   };
 
   window.__confirm=function(){
@@ -317,12 +309,11 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(!count()){alert("Elige al menos un ticket.");return;}
     if(!(F.nom||"").trim()){alert("Escribe tu nombre completo.");scrollTo(0,0);return;}
     if(!(F.tel||"").trim()){alert("Escribe tu número de WhatsApp.");scrollTo(0,0);return;}
-    if(!voucherData && !luego){ if(!confirm("No has subido el voucher. ¿Marcamos \"enviaré el voucher después\"?")){return;} luego=true; }
+    if(!voucherData){alert("Adjunta el comprobante de pago para continuar.");return;}
     var btn=document.getElementById("goBtn"); btn.disabled=true; btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Enviando…';
     var tel=(F.pais&&F.pais!=="+1"?F.pais+" ":"")+(F.tel||"").trim();
-    var payload={ rifa_id:id, nombre:(F.nom||"").trim(), telefono:tel, email:(F.email||"").trim()||null,
-      cedula:(F.ced||"").trim()||null, direccion:(F.dir||"").trim()||null, vendedor_id:F.vend||null,
-      cuenta_id:ctaSel||null, voucher:(luego?null:(voucherData||null)) };
+    var payload={ rifa_id:id, nombre:(F.nom||"").trim(), telefono:tel,
+      cuenta_id:ctaSel||null, voucher:voucherData };
     if(R.ocultar_numeros) payload.cantidad=qty; else payload.numeros=cart;
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
@@ -335,14 +326,14 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   // ── LISTO
   function viewListo(){
     var link=doneId?(BOLETO+"?id="+doneId):"";
-    var msg=luego?"Tus números quedaron <b>apartados</b>. Envíanos el voucher por WhatsApp para confirmar tu pago.":"Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
+    var msg="Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
     return '<div class="body"><div class="ok"><div class="ic">✓</div>'+
       '<h2>¡Listo! '+doneNums.length+' '+(doneNums.length===1?'ticket apartado':'tickets apartados')+'</h2>'+
       '<div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
       '<p>'+msg+'</p>'+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+
       '<a class="alt" href="#" onclick="window.__reset();return false;">Comprar más</a></div></div>';
   }
-  window.__reset=function(){ cart=[]; voucherData=""; luego=false; ctaSel=null; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
+  window.__reset=function(){ cart=[]; qty=1; voucherData=""; ctaSel=null; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
 
   // ── VERIFICADOR
   function viewVerificar(){
