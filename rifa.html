@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Comprar boleto · Rifa</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="🎟️ Participa en la rifa">
+<meta property="og:description" content="Elige tu número, sube tu pago y participa. ¡Mucha suerte!">
+<meta property="og:image" content="https://nexusprord.com/icon-512.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+:root{--c:#4f46e5}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#eef1f6;color:#0f172a;-webkit-font-smoothing:antialiased}
+.wrap{max-width:520px;margin:0 auto;min-height:100vh}
+.hero{background:var(--c);color:#fff;padding:0 0 16px}
+.banner{width:100%;display:block}
+.hd{display:flex;align-items:center;gap:10px;padding:13px 16px}
+.hd .lg{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
+.hd b{font-size:15px;font-weight:800}
+.htxt{padding:2px 16px 0}
+.prem{font-size:20px;font-weight:800;line-height:1.15}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px}
+.meta span{background:rgba(255,255,255,.16);padding:5px 11px;border-radius:20px;font-weight:700}
+.prog{height:9px;background:rgba(255,255,255,.25);border-radius:6px;overflow:hidden;margin:11px 16px 0}
+.prog>div{height:100%;background:#fff;border-radius:6px}
+.body{padding:14px}
+.luck{width:100%;border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,#16a34a,#15803d);display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 6px 16px rgba(22,163,74,.35);margin-bottom:14px}
+.srch{position:relative;margin-bottom:9px}
+.srch i{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px}
+.srch input{width:100%;height:42px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:11px;font-size:14px;font-family:ui-monospace,monospace;outline:none}
+.legend{display:flex;gap:12px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .d{width:11px;height:11px;border-radius:3px}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+.n{aspect-ratio:1.4/1;border-radius:8px;border:1.5px solid;font-family:ui-monospace,monospace;font-size:12px;font-weight:800;cursor:pointer;background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+.n.sold{background:#f1f5f9;border-color:#e2e8f0;color:#cbd5e1;cursor:not-allowed}
+.n:not(.sold):active{background:#dcfce7}
+.pager{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px;font-size:13px;font-weight:700;color:#475569}
+.pager button{width:40px;height:40px;border-radius:11px;border:1.5px solid #e2e8f0;background:#fff;font-size:18px;color:var(--c);cursor:pointer}
+.pager button:disabled{opacity:.4}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(15,16,40,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+.sheet{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto;padding:6px 18px calc(20px + env(safe-area-inset-bottom))}
+.grip{width:42px;height:5px;background:#cbd5e1;border-radius:3px;margin:8px auto 12px}
+.sheet h3{margin:0 0 3px;font-size:18px;font-weight:800}
+.bignum{font-size:40px;font-weight:800;font-family:ui-monospace,monospace;color:var(--c);letter-spacing:4px;text-align:center;margin:6px 0 10px}
+label.fl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin:10px 0 5px}
+.in{width:100%;height:46px;padding:0 13px;border:1.5px solid #e2e8f0;border-radius:11px;font-size:15px;outline:none;font-family:inherit}
+.ctas{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-top:6px}
+.ctas .t{font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:6px}
+.cta{display:flex;align-items:center;gap:9px;font-size:13px;padding:5px 0;color:#334155}
+.cta i{color:var(--c);font-size:16px}
+.cta b{font-weight:700}
+.cta span{color:#64748b;font-size:11px}
+.vfile{width:100%;padding:11px;border:1.5px dashed #c7d2fe;border-radius:11px;background:#f8fafc;font-size:13px;color:#475569}
+.vprev{margin-top:8px}.vprev img{max-width:100%;border-radius:10px}
+.submit{width:100%;border:0;border-radius:13px;padding:15px;font-size:16px;font-weight:800;color:#fff;background:var(--c);cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit:disabled{opacity:.6}
+.msg{text-align:center;color:#64748b;font-size:14px;padding:40px 20px;line-height:1.5}
+.spin{width:34px;height:34px;border:3px solid #c7d2fe;border-top-color:var(--c);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ok{text-align:center;padding:30px 20px}
+.ok .ic{width:70px;height:70px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 14px}
+.ok h2{margin:0 0 6px;font-size:22px}.ok p{color:#475569;font-size:14px;margin:0 0 16px;line-height:1.5}
+.ok a{display:inline-block;background:var(--c);color:#fff;text-decoration:none;padding:12px 22px;border-radius:12px;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="msg"><div class="spin"></div>Cargando rifa…</div></div>
+<script>
+(function(){
+  var FUNC="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/rifa";
+  var app=document.getElementById("app");
+  var id=new URLSearchParams(location.search).get("id")||"";
+  var R=null, sold={}, page=0, q="", PER=120, voucherData="", selNum="";
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c];});}
+  function fmt(n){return "RD$ "+Math.round(Number(n||0)).toLocaleString("en-US");}
+  if(!id){app.innerHTML='<div class="msg">Enlace de rifa inválido.</div>';return;}
+  load();
+  function load(){
+    fetch(FUNC+"?id="+encodeURIComponent(id)).then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){
+      R=d; sold={}; (d.vendidos||[]).forEach(function(n){sold[n]=1;});
+      document.documentElement.style.setProperty("--c", d.color||"#4f46e5");
+      render();
+    }).catch(function(){app.innerHTML='<div class="msg">No se pudo cargar la rifa.<br>Verifica el enlace.</div>';});
+  }
+  function pad(n){return String(n).padStart(R.digitos||4,"0");}
+  function render(){
+    var total=R.cantidad||10000, vendN=R.count||0;
+    var pct=total?Math.min(100,Math.round(vendN/total*100)):0;
+    var cerrada=(R.estado==="sorteada"||R.estado==="cerrada");
+    var banner=R.hasImg?'<img class="banner" src="'+FUNC+'?id='+encodeURIComponent(id)+'&img=1" alt="">':'';
+    var fecha=(R.mostrar_fecha!==false&&R.fecha_sorteo)?'<span><i class="ti ti-calendar"></i> '+esc(new Date(R.fecha_sorteo).toLocaleDateString("es-DO",{day:"2-digit",month:"short",year:"numeric"}))+'</span>':'';
+    app.innerHTML='<div class="hero"><div class="hd"><div class="lg"><i class="ti ti-ticket"></i></div><b>'+esc(R.biz||"Rifa")+'</b></div>'+banner+
+      '<div class="htxt"><div class="prem">'+esc(R.premio||R.nombre||"")+'</div><div class="meta"><span><i class="ti ti-coin"></i> '+fmt(R.precio)+'</span>'+fecha+(cerrada?'<span style="background:#dc2626">CERRADA</span>':'')+'</div></div>'+
+      (R.mostrar_progreso!==false?'<div class="prog"><div style="width:'+pct+'%"></div></div>':'')+'</div>'+
+      '<div class="body">'+(cerrada?'<div class="msg">Esta rifa ya está cerrada. ¡Gracias por participar!</div>':
+        '<button class="luck" onclick="window.__luck()"><i class="ti ti-dice-5"></i> Comprar a la suerte</button>'+
+        '<div class="srch"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
+        '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
+        '<div id="bd"></div>')+'</div>';
+    if(!cerrada) boardInto();
+  }
+  function boardInto(){
+    var wrap=document.getElementById("bd"); if(!wrap)return;
+    var total=R.cantidad||10000, nums=[];
+    for(var i=0;i<total;i++){var s=pad(i); if(!q||s.indexOf(q)>=0) nums.push(s);}
+    var pages=Math.max(1,Math.ceil(nums.length/PER)); if(page>=pages)page=0;
+    var slice=nums.slice(page*PER,page*PER+PER);
+    var cells=slice.map(function(s){var so=sold[s]; return '<button class="n'+(so?' sold':'')+'" '+(so?'disabled':'onclick="window.__buy(\''+s+'\')"')+'>'+s+'</button>';}).join('');
+    var pager=pages>1?'<div class="pager"><button onclick="window.__pg(-1)" '+(page<=0?'disabled':'')+'>‹</button><span>Pág '+(page+1)+' / '+pages+'</span><button onclick="window.__pg(1)" '+(page>=pages-1?'disabled':'')+'>›</button></div>':'';
+    wrap.innerHTML='<div class="board">'+(slice.length?cells:'<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;font-size:13px">Sin números con ese filtro</div>')+'</div>'+pager;
+  }
+  window.__q=function(v){q=(v||"").replace(/\D/g,"");page=0;boardInto();};
+  window.__pg=function(d){page+=d;if(page<0)page=0;boardInto();};
+  window.__luck=function(){var total=R.cantidad||10000,av=[];for(var i=0;i<total;i++){var s=pad(i);if(!sold[s])av.push(s);}if(!av.length){alert("Ya no quedan números disponibles.");return;}window.__buy(av[Math.floor(Math.random()*av.length)]);};
+  window.__buy=function(num){
+    selNum=num; voucherData="";
+    var ctas=(R.cuentas||[]).map(function(c){var ic=c.tipo==="tarjeta"?"ti-credit-card":(c.tipo==="movil"?"ti-device-mobile":"ti-building-bank");return '<div class="cta"><i class="ti '+ic+'"></i><div><b>'+esc(c.banco||"")+'</b> '+esc(c.numero_cuenta||"")+(c.titular?'<span> · '+esc(c.titular)+'</span>':'')+'</div></div>';}).join('');
+    var ctaSel=(R.cuentas||[]).length?'<label class="fl">¿A cuál cuenta pagaste?</label><select id="bCta" class="in"><option value="">— Selecciona —</option>'+(R.cuentas||[]).map(function(c){return '<option value="'+c.id+'">'+esc(c.banco||"")+' '+esc(c.numero_cuenta||"")+'</option>';}).join('')+'</select>':'';
+    var ov=document.createElement("div");ov.className="ov";ov.id="buyOv";
+    ov.addEventListener("click",function(e){if(e.target===ov)ov.remove();});
+    ov.innerHTML='<div class="sheet"><div class="grip"></div><h3>Apartar tu número</h3><div class="bignum">'+esc(num)+'</div>'+
+      '<label class="fl">Tu nombre *</label><input id="bNom" class="in" placeholder="Nombre completo">'+
+      '<label class="fl">Tu WhatsApp *</label><input id="bTel" class="in" inputmode="tel" placeholder="809-000-0000">'+
+      (ctas?'<div class="ctas"><div class="t">💳 Paga a una de estas cuentas:</div>'+ctas+'</div>':'')+
+      ctaSel+
+      '<label class="fl">Sube tu comprobante (voucher)</label><input type="file" id="bVou" class="vfile" accept="image/*" onchange="window.__vou(this)"><div id="vp" class="vprev"></div>'+
+      '<button class="submit" id="bSub" onclick="window.__send()"><i class="ti ti-check"></i> Apartar mi número</button>'+
+      '<div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:8px">Tu número queda apartado y el organizador confirmará tu pago.</div></div>';
+    document.body.appendChild(ov);
+    setTimeout(function(){var i=document.getElementById("bNom");if(i)i.focus();},80);
+  };
+  window.__vou=function(input){
+    var f=input.files&&input.files[0];if(!f)return;
+    if(f.size>12*1024*1024){alert("Imagen muy grande (máx 12MB).");return;}
+    var rd=new FileReader();rd.onload=function(ev){var img=new Image();img.onload=function(){try{var max=1000,w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);voucherData=cv.toDataURL("image/jpeg",0.7);}catch(e){voucherData=ev.target.result;}var p=document.getElementById("vp");if(p)p.innerHTML='<img src="'+voucherData+'">';};img.src=ev.target.result;};rd.readAsDataURL(f);
+  };
+  window.__send=function(){
+    var nom=(document.getElementById("bNom").value||"").trim();
+    var tel=(document.getElementById("bTel").value||"").trim();
+    if(!nom){alert("Escribe tu nombre.");return;}
+    if(!tel){alert("Escribe tu WhatsApp.");return;}
+    var cta=document.getElementById("bCta");
+    var btn=document.getElementById("bSub");btn.disabled=true;btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Enviando…';
+    fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({rifa_id:id,numero:selNum,nombre:nom,telefono:tel,cuenta_id:cta?(cta.value||null):null,voucher:voucherData||null})})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+      .then(function(res){
+        if(res.ok&&res.j.ok){ success(res.j.numero,res.j.id); }
+        else { alert(res.j.error||"No se pudo registrar. Intenta otra vez."); btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Apartar mi número'; if(/tomado/i.test(res.j.error||"")){sold[selNum]=1;} }
+      }).catch(function(){alert("Error de conexión. Intenta otra vez.");btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Apartar mi número';});
+  };
+  function success(num,bid){
+    var ov=document.getElementById("buyOv");
+    var link=bid?('https://nexusprord.com/boleto.html?id='+bid):'';
+    var html='<div class="sheet"><div class="grip"></div><div class="ok"><div class="ic">✓</div><h2>¡Listo, número '+esc(num)+'!</h2><p>Tu número quedó <b>apartado</b>. El organizador confirmará tu pago y recibirás tu boleto.</p>'+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+'</div></div>';
+    if(ov)ov.innerHTML=html;
+    sold[num]=1; R.count=(R.count||0)+1; boardInto();
+  }
+})();
+</script>
+</body>
+</html>

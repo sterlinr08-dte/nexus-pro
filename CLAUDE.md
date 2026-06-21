@@ -510,10 +510,20 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   `gestBoleto`. **Estadísticas** (`nxRifaStats`): KPIs (compradores únicos, tickets,
   recaudado) + gráfica de barras **ventas por día** (últimos 14, CSS `.stChart`) + barras
   de **estado de tickets** (confirmado/por confirmar/apartado). CSS `.repItem/.tkRow/.st*`.
-- **PENDIENTE (siguientes tandas):** vista limitada del vendedor (login propio, riesgoso) ·
-  mejoras (combos/paquetes, carrito multi-número) · gráfica medios de pago (pie) · **v2 pública**
-  (landing, cliente elige número + sube voucher, Storage para vouchers/imágenes) ·
-  preview WhatsApp con foto del premio (Worker en dominio propio, riesgoso).
+- **TANDA 10 (v32.7) HECHA — v2 PÚBLICA (cliente compra solo):** función Edge **`rifa`**
+  (`.../functions/v1/rifa`, pública): GET `?id=<rifa>` → JSON (rifa+org+cuentas+vendidos);
+  `&img=1` banner; **POST** {rifa_id,numero,nombre,telefono,cuenta_id,voucher} → inserta
+  boleto (org explícita por el trigger `if null`, estado por_confirmar, origen online; 409 si
+  número tomado). Página **`rifa.html`** (estática en nexusprord.com): banner+premio+precio+
+  progreso + **tablero de números** (disponibles/ocupados, buscador, "a la suerte") → modal
+  comprar (nombre, WhatsApp, ve las cuentas, **sube voucher** comprimido a dataURL) → POST →
+  éxito + link a boleto.html. En `parches.js`: botón **🔗 Link** en el panel (`nxRifaLink`:
+  copiar/abrir/compartir `nexusprord.com/rifa.html?id=`), y **"Voucher"** en gestBoleto
+  (`nxVerVoucher`) muestra el comprobante. OJO: `cargarBoletos` usa select=* (incluye voucher
+  base64) — optimizar a futuro si pesa.
+- **PENDIENTE:** vista limitada del vendedor (login propio) · combos/carrito · gráfica medios
+  de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio, riesgoso) ·
+  apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.

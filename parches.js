@@ -17971,7 +17971,7 @@ try {
     if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra"><i class="ti ti-link"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
@@ -18067,6 +18067,7 @@ try {
       '<a class="btn bsm bc1" href="' + waHref + '" target="_blank" rel="noopener" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</a>' +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver / imagen</button>' +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center" onclick="window.nxRifaEditarBoleto(\'' + b.id + '\')"><i class="ti ti-edit"></i> Editar</button>' +
+      (b.voucher ? '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxVerVoucher(\'' + b.id + '\')"><i class="ti ti-receipt"></i> Voucher</button>' : '') +
       (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
@@ -18132,6 +18133,30 @@ try {
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // ── LINK PÚBLICO DE COMPRA ──
+  window.nxRifaLink = function () {
+    var r = currentRifa(); if (!r) return;
+    cerrarModal('nxLink');
+    var link = 'https://nexusprord.com/rifa.html?id=' + r.id;
+    var ov = document.createElement('div'); ov.id = 'nxLink'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-link"></i> Link público de compra</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxLink\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:12px;color:#475569;margin-bottom:8px">Comparte este enlace para que tus clientes compren su boleto solos (eligen número y suben su pago):</div>' +
+      '<input id="lkInp" readonly value="' + esc(link) + '" onclick="this.select()" style="width:100%;height:42px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#334155">' +
+      '<div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap"><button class="btn bsm bghost" type="button" onclick="window.nxLinkCopiar()"><i class="ti ti-copy"></i> Copiar</button><a class="btn bsm bghost" href="' + esc(link) + '" target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Abrir</a><button class="btn bsm bc1" type="button" onclick="window.nxLinkShare()"><i class="ti ti-brand-whatsapp"></i> Compartir</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxLinkCopiar = function () { var i = document.getElementById('lkInp'); if (!i) return; try { i.select(); document.execCommand('copy'); } catch (e) {} try { if (navigator.clipboard) navigator.clipboard.writeText(i.value); } catch (e) {} toast('ok', 'Link copiado', ''); };
+  window.nxLinkShare = function () { var i = document.getElementById('lkInp'); if (!i) return; var url = i.value; if (navigator.share) { navigator.share({ title: 'Rifa', text: '🎟️ ¡Participa en la rifa! Compra tu boleto aquí:', url: url }).catch(function () {}); } else { window.nxLinkCopiar(); } };
+  window.nxVerVoucher = function (id) {
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b || !b.voucher) { toast('info', 'Sin comprobante'); return; }
+    cerrarModal('nxVou');
+    var ov = document.createElement('div'); ov.id = 'nxVou'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-receipt"></i> Comprobante · ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxVou\').remove()"><i class="ti ti-x"></i></button></div><div style="overflow:auto;flex:1"><img src="' + esc(b.voucher) + '" style="width:100%;border-radius:10px;display:block"></div></div>';
+    document.body.appendChild(ov);
   };
 
   // ── SORTEO / GANADOR ──
