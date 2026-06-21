@@ -503,8 +503,15 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   (`nxRifaMayorComprador`: agrupa por teléfono/nombre, ranking con medallas 🥇🥈🥉, n
   boletos + monto). En el **sorteo**, `nxRifaBuscarGanador` ahora muestra los números
   **Anterior/Posterior** (consolación, con wrap-around `%max`) y quién los tiene. CSS `.rsCon`.
+- **TANDA 9 (v32.4) HECHA — lista de tickets + estadísticas + menú Reportes:** los íconos
+  de reportes del panel se juntaron en un botón **"Reportes"** (`nxRifaReportes` menú con
+  5 opciones). **Lista de tickets** (`nxRifaTickets`/`tkRowsHTML`/`nxTkBuscar`/`nxTkOpen`):
+  todas las ventas con buscador (número/comprador/teléfono), estado y monto; tocar abre
+  `gestBoleto`. **Estadísticas** (`nxRifaStats`): KPIs (compradores únicos, tickets,
+  recaudado) + gráfica de barras **ventas por día** (últimos 14, CSS `.stChart`) + barras
+  de **estado de tickets** (confirmado/por confirmar/apartado). CSS `.repItem/.tkRow/.st*`.
 - **PENDIENTE (siguientes tandas):** vista limitada del vendedor (login propio, riesgoso) ·
-  mejoras (combos/paquetes, carrito multi-número) · **v2 pública**
+  mejoras (combos/paquetes, carrito multi-número) · gráfica medios de pago (pie) · **v2 pública**
   (landing, cliente elige número + sube voucher, Storage para vouchers/imágenes) ·
   preview WhatsApp con foto del premio (Worker en dominio propio, riesgoso).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:

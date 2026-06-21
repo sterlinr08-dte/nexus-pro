@@ -1,7 +1,8 @@
 {
-  "version": "32.3",
+  "version": "32.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas · LISTA DE TICKETS y ESTADÍSTICAS, como el panel de las plataformas): dentro de una rifa, el botón 'Reportes' ahora abre un menú con: 1) LISTA DE TICKETS — todas las ventas con buscador (por número, comprador o teléfono), su estado y monto; tocas una y la gestionas. 2) ESTADÍSTICAS — compradores, tickets y recaudado, una GRÁFICA de ventas por día (últimos 14) y el desglose por estado (confirmados / por confirmar / apartados). 3) Recaudado por cuenta, 4) Liquidación de vendedores y 5) Mayor comprador. (Se juntaron los íconos de reportes en ese solo botón para que el panel se vea más limpio.)",
     "AJUSTE (Rifas · vista del boleto): el botón 'Compartir' ahora es 'Enviar' y va DIRECTO al WhatsApp del cliente con su boleto (igual que en el boleto vendido) — ya no te hace elegir el contacto. Quedan: Imprimir, Guardar (la imagen) y Enviar.",
     "NUEVO (Rifas · MAYOR COMPRADOR y números VECINOS): 1) dentro de una rifa, el botón 👑 muestra el RANKING de quién más boletos ha comprado (con medallas 🥇🥈🥉, cantidad de boletos y monto) — ideal para premiar al mayor comprador. 2) En el SORTEO, al buscar el ganador ahora también se muestran los números ANTERIOR y POSTERIOR (premios de consolación, muy usados en RD) y quién los tiene.",
     "NUEVO (Rifas · VENDEDORES y LIQUIDACIÓN): en la lista de Rifas hay un botón 'Vendedores' para registrar a tu equipo (nombre, teléfono y su % de comisión). Al vender un boleto eliges el vendedor de una lista. Dentro de una rifa, el botón 👥 te muestra la LIQUIDACIÓN: cuántos boletos vendió cada uno, cuánto recaudó, su comisión y CUÁNTO DEBE ENTREGAR (recaudado menos su comisión). Solo cuenta los pagos confirmados.",
