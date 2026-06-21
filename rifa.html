@@ -45,7 +45,7 @@ label.fl{display:block;font-size:11px;font-weight:800;color:#475569;text-transfo
 label.fl:first-child{margin-top:0}
 .opt{color:#94a3b8;text-transform:none;font-weight:600}
 .req{color:#ef4444}
-.in{width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:15px;outline:none;font-family:inherit;background:#fff}
+.in{width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;outline:none;font-family:inherit;background:#fff}
 .in:focus,.srch input:focus{border-color:var(--c)}
 select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 12px center}
 /* a la suerte */
@@ -65,7 +65,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 /* search + board */
 .srch{position:relative;margin-bottom:9px}
 .srch i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:17px}
-.srch input{width:100%;height:44px;padding:0 12px 0 36px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:15px;font-family:ui-monospace,monospace;outline:none;background:#fff}
+.srch input{width:100%;height:44px;padding:0 12px 0 36px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff}
 .legend{display:flex;gap:13px;font-size:11px;color:#475569;font-weight:600;margin-bottom:10px;flex-wrap:wrap}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend .d{width:11px;height:11px;border-radius:3px}
@@ -108,6 +108,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 /* sticky pay bar */
 .cart{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e8edf3;box-shadow:0 -6px 22px rgba(15,23,42,.1);padding:11px 14px calc(11px + env(safe-area-inset-bottom));z-index:30}
 .cart-in{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.miss{max-width:520px;margin:0 auto 7px;font-size:11.5px;font-weight:700;color:#b45309;display:flex;align-items:center;gap:6px}
+.miss i{font-size:14px}
+.wabtn{display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#fff;text-decoration:none;padding:13px 22px;border-radius:13px;font-weight:800;margin:5px}
 .cart .info{flex:1;min-width:0}
 .cart .info .a{font-size:12px;color:#64748b;font-weight:700}
 .cart .info .b{font-size:19px;font-weight:800}
@@ -157,6 +160,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function pad(n){return String(n).padStart(R.digitos||4,"0");}
   function count(){return (R&&R.ocultar_numeros)?qty:cart.length;}
   function total(){return count()*(R.precio||0);}
+  function vouReq(){return !!((R.cuentas||[]).length);}       // si no hay cuentas, el voucher es opcional
+  function limMax(){return parseInt(R.limite_por_persona,10)||0;}
+  function missingText(){var m=[]; if(!count())m.push(R.ocultar_numeros?"elegir cantidad":"elegir un número"); if(!(F.nom||"").trim())m.push("tu nombre"); if(!(F.tel||"").trim())m.push("tu WhatsApp"); if(vouReq()&&!voucherData)m.push("el comprobante"); return m.length?("Falta: "+m.join(" · ")):"";}
   function onlyD(s){return String(s||"").replace(/\D/g,"");}
   function val(idv){var e=document.getElementById(idv);return e?e.value:"";}
   function bannerImg(){return R.hasImg?'<img class="banner" src="'+FUNC+'?id='+encodeURIComponent(id)+'&img=1" alt="">':'';}
@@ -164,7 +170,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   if(!id){app.innerHTML='<div class="msg">Enlace de rifa inválido.</div>';return;}
   load();
   function load(){
-    fetch(FUNC+"?id="+encodeURIComponent(id)).then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){
+    return fetch(FUNC+"?id="+encodeURIComponent(id)).then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){
       R=d; sold={}; (d.vendidos||[]).forEach(function(n){sold[n]=1;});
       document.documentElement.style.setProperty("--c", d.color||"#4f46e5");
       document.documentElement.style.setProperty("--c2", shade(d.color||"#4f46e5",-18));
@@ -210,12 +216,12 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
         '</div>'+
       // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
       (R.ocultar_numeros?
-        '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar</small></div></div>'+
+        '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="qty"><button onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="qn"><b id="qtyN">'+qty+'</b><small>'+(qty===1?'ticket':'tickets')+'</small></div><button onclick="window.__qty(1)">+</button></div>'+
           '<div class="qrow" style="margin-top:12px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<div class="hint"><i class="ti ti-wand"></i> Al confirmar te asignaremos <b id="qtyTxt">'+qty+'</b> número(s) al azar entre los disponibles.</div></div>'
        :
-        '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios</small></div></div>'+
+        '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<button class="luck" onclick="window.__luck(1)"><i class="ti ti-dice-5"></i> Elegir a la suerte</button>'+
           '<div class="srch"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
@@ -224,10 +230,11 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       // 3) Método de pago
       '<div class="card"><div class="sec"><div class="nb">3</div><div><h3>Método de pago</h3><small>Paga y sube tu comprobante</small></div></div>'+
         pago+
-        '<label class="fl">Comprobante de pago (voucher) <span class="req">*</span></label>'+
+        '<label class="fl">Comprobante de pago (voucher) '+(vouReq()?'<span class="req">*</span>':'<span class="opt">(opcional)</span>')+'</label>'+
         '<label class="vfile" for="bVou"><i class="ti ti-camera-plus"></i>Toca para subir foto del depósito o transferencia</label>'+
         '<input type="file" id="bVou" accept="image/*" style="display:none" onchange="window.__vou(this)"><div id="vp" class="vprev">'+(voucherData?'<img src="'+voucherData+'">':'')+'</div>'+
-        '<div style="font-size:11.5px;color:#94a3b8;margin-top:8px;text-align:center">Adjunta tu comprobante para habilitar el botón <b>Confirmar</b>.</div>'+
+        (vouReq()?'<div style="font-size:11.5px;color:#94a3b8;margin-top:8px;text-align:center">Adjunta tu comprobante para habilitar el botón <b>Confirmar</b>.</div>':'')+
+        '<div class="hint" style="margin-top:11px"><i class="ti ti-clock"></i> Tu número queda <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b> mientras el organizador confirma tu pago.</div>'+
       '</div>'+
       '</div>';
   }
@@ -250,17 +257,20 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(!cart.length){el.innerHTML="";return;}
     el.innerHTML='<div class="chips"><span class="lbl">Tus números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip"><b>'+esc(n)+'</b><span onclick="window.__toggle(\''+n+'\')">×</span></span>';}).join('')+'</div>';
   }
-  function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && !!voucherData; }
+  function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && (!vouReq() || !!voucherData); }
   function cartBar(){
     var bar=document.createElement("div"); bar.className="cart"; bar.id="cartBar";
-    bar.innerHTML='<div class="cart-in"><div class="info"><div class="a"><span id="cInfo">'+count()+' '+(count()===1?'ticket':'tickets')+'</span> · '+fmt(R.precio)+' c/u</div><div class="b" id="cTot">'+fmt(total())+'</div></div>'+
+    var miss=missingText();
+    bar.innerHTML='<div class="miss" id="cMiss" style="'+(miss?'':'display:none')+'"><i class="ti ti-info-circle"></i><span>'+esc(miss)+'</span></div>'+
+      '<div class="cart-in"><div class="info"><div class="a"><span id="cInfo">'+count()+' '+(count()===1?'ticket':'tickets')+'</span> · '+fmt(R.precio)+' c/u</div><div class="b" id="cTot">'+fmt(total())+'</div></div>'+
       '<button class="go" id="goBtn" '+(canSubmit()?'':'disabled')+' onclick="window.__confirm()"><i class="ti ti-circle-check"></i> Confirmar</button></div>';
     document.body.appendChild(bar);
   }
-  function refreshCart(){ var b=document.getElementById("cartBar"); if(!b){cartBar();return;} var info=b.querySelector("#cInfo"), tot=b.querySelector("#cTot"), go=b.querySelector("#goBtn");
+  function refreshCart(){ var b=document.getElementById("cartBar"); if(!b){cartBar();return;} var info=b.querySelector("#cInfo"), tot=b.querySelector("#cTot"), go=b.querySelector("#goBtn"), miss=b.querySelector("#cMiss");
     if(info)info.textContent=count()+' '+(count()===1?'ticket':'tickets'); if(tot)tot.textContent=fmt(total());
+    var mt=missingText(); if(miss){ if(mt){miss.style.display='';miss.querySelector("span").textContent=mt;} else miss.style.display='none'; }
     go.disabled=!canSubmit(); }
-  window.__qty=function(d,abs){ qty=abs?d:Math.max(1,qty+d); if(qty>200)qty=200;
+  window.__qty=function(d,abs){ qty=abs?d:Math.max(1,qty+d); if(qty>200)qty=200; if(limMax()&&qty>limMax()){qty=limMax();}
     var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.textContent=qty; if(t)t.textContent=qty;
     var box=document.querySelector(".qty"); if(box){var minus=box.querySelector("button"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".qn small"); if(sm)sm.textContent=qty===1?'ticket':'tickets';}
     refreshCart();
@@ -274,8 +284,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   }
   window.__q=function(v){q=(v||"").replace(/\D/g,"");page=0;boardInto();};
   window.__pg=function(d){page+=d;if(page<0)page=0;boardInto();};
-  window.__toggle=function(n){ if(sold[n])return; var i=cart.indexOf(n); if(i>=0)cart.splice(i,1); else cart.push(n); cart.sort(); boardInto(); refreshCart(); };
+  window.__toggle=function(n){ if(sold[n])return; var i=cart.indexOf(n); if(i>=0){cart.splice(i,1);} else { if(limMax()&&cart.length>=limMax()){alert("Máximo "+limMax()+" tickets por persona.");return;} cart.push(n); } cart.sort(); boardInto(); refreshCart(); };
   window.__luck=function(k){ var totalN=R.cantidad||10000, av=[], selMap={}; cart.forEach(function(n){selMap[n]=1;});
+    if(limMax()){ var room=limMax()-cart.length; if(room<=0){alert("Máximo "+limMax()+" tickets por persona.");return;} k=Math.min(k,room); }
     for(var i=0;i<totalN;i++){var s=pad(i);if(!sold[s]&&!selMap[s])av.push(s);}
     if(!av.length){alert("Ya no quedan números disponibles.");return;}
     for(var j=0;j<k&&av.length;j++){var idx=Math.floor(Math.random()*av.length);cart.push(av[idx]);av.splice(idx,1);}
@@ -306,16 +317,17 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(!count()){alert("Elige al menos un ticket.");return;}
     if(!(F.nom||"").trim()){alert("Escribe tu nombre completo.");scrollTo(0,0);return;}
     if(!(F.tel||"").trim()){alert("Escribe tu número de WhatsApp.");scrollTo(0,0);return;}
-    if(!voucherData){alert("Adjunta el comprobante de pago para continuar.");return;}
+    if(vouReq() && !voucherData){alert("Adjunta el comprobante de pago para continuar.");return;}
     var btn=document.getElementById("goBtn"); btn.disabled=true; btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Enviando…';
     var payload={ rifa_id:id, nombre:(F.nom||"").trim(), telefono:(F.tel||"").trim(),
-      cuenta_id:ctaSel||null, voucher:voucherData };
+      cuenta_id:ctaSel||null, voucher:voucherData||null };
     if(R.ocultar_numeros) payload.cantidad=qty; else payload.numeros=cart;
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
       .then(function(res){
         if(res.ok&&res.j.ok){ doneNums=res.j.numeros||cart; doneId=res.j.id||""; done=true; window.scrollTo(0,0); render(); }
-        else { alert(res.j.error||"No se pudo registrar. Intenta otra vez."); btn.disabled=false; btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar'; if(/tomad/i.test(res.j.error||"")){ load(); } }
+        else { alert(res.j.error||"No se pudo registrar. Intenta otra vez."); btn.disabled=false; btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';
+          if(/tomad/i.test(res.j.error||"")){ load().then(function(){ cart=cart.filter(function(n){return !sold[n];}); render(); }); } }
       }).catch(function(){alert("Error de conexión. Intenta otra vez.");btn.disabled=false;btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';});
   };
 
@@ -323,10 +335,12 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function viewListo(){
     var link=doneId?(BOLETO+"?id="+doneId):"";
     var msg="Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
+    var waTxt=encodeURIComponent('🎟️ '+(R.premio||R.biz||'Rifa')+'\nMis números: '+doneNums.join(", ")+(link?'\nMi boleto: '+link:''));
+    var wa=link?'<a class="wabtn" href="https://api.whatsapp.com/send?text='+waTxt+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
     return '<div class="body"><div class="ok"><div class="ic">✓</div>'+
       '<h2>¡Listo! '+doneNums.length+' '+(doneNums.length===1?'ticket apartado':'tickets apartados')+'</h2>'+
       '<div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
-      '<p>'+msg+'</p>'+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+
+      '<p>'+msg+'</p>'+wa+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+
       '<a class="alt" href="#" onclick="window.__reset();return false;">Comprar más</a></div></div>';
   }
   window.__reset=function(){ cart=[]; qty=1; voucherData=""; ctaSel=null; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
