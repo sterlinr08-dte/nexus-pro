@@ -1,7 +1,8 @@
 {
-  "version": "35.3",
+  "version": "35.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas · tema Automático): ahora puedes elegir entre VARIOS temas para la página pública — Automático, Claro u Oscuro. El 'Automático' toma el color dominante de tu BANNER y decide solo si va claro u oscuro, para que la página combine con la imagen del premio sin que tengas que elegir color a mano.",
     "NUEVO (Rifas · barra de progreso): además del interruptor para mostrar/ocultar la barra, ahora hay otro para mostrar u ocultar el PORCENTAJE (%) dentro de la barra. Así puedes dejar la barra sin revelar el número, o esconder todo.",
     "AJUSTE (Rifas · página pública): el botón 'Consultar mi ticket' ahora va en MAYÚSCULA, y el tutorial '¿Cómo jugar?' trae un paso nuevo: paso 4 'Acepta los términos y condiciones' y 'Recibe tu boleto' pasa a ser el paso 5 (5 pasos en total).",
     "NUEVO (Rifas · tema y colores de la página pública): al crear/editar la rifa ahora eliges el TEMA (Claro o Oscuro/negro) y el COLOR libre que quieras (paleta de colores + un selector para el tono exacto). Además la barra de progreso quedó más vistosa: el porcentaje va adentro, con relleno dorado, llenado animado y un brillo que cruza.",

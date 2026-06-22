@@ -342,9 +342,38 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
       document.documentElement.style.setProperty("--c2", shade(d.color||"#4f46e5",-18));
       document.body.classList.toggle("rdark", d.tema==="oscuro");
       render();
+      if(d.tema==="auto") autoTheme();
     }).catch(function(){app.innerHTML='<div class="msg">No se pudo cargar la rifa.<br>Verifica el enlace.</div>';});
   }
   function shade(hex,p){try{var m=/^#?([0-9a-f]{6})$/i.exec(hex);if(!m)return hex;var n=parseInt(m[1],16),r=(n>>16)&255,g=(n>>8)&255,b=n&255,f=function(x){return Math.max(0,Math.min(255,Math.round(x+x*p/100)));};return "#"+((1<<24)+(f(r)<<16)+(f(g)<<8)+f(b)).toString(16).slice(1);}catch(e){return hex;}}
+  // Tema AUTO: toma el color dominante del banner y decide claro/oscuro
+  function autoTheme(){
+    if(!R.hasImg)return;
+    var img=new Image(); img.crossOrigin="anonymous";
+    img.onload=function(){
+      try{
+        var w=28,h=28,cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        var ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);
+        var d=ctx.getImageData(0,0,w,h).data;
+        var ar=0,ag=0,ab=0,an=0; // promedio (para claro/oscuro)
+        var br=0,bg=0,bb=0,bn=0; // promedio de pixeles vivos (para el acento)
+        for(var i=0;i<d.length;i+=4){var r=d[i],g=d[i+1],b=d[i+2];ar+=r;ag+=g;ab+=b;an++;
+          var mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+          if(mx-mn>45){br+=r;bg+=g;bb+=b;bn++;}}
+        if(!an)return;
+        var R0=Math.round(ar/an),G0=Math.round(ag/an),B0=Math.round(ab/an);
+        var lum=0.299*R0+0.587*G0+0.114*B0;
+        var cr,cg,cb;
+        if(bn>an*0.05){cr=Math.round(br/bn);cg=Math.round(bg/bn);cb=Math.round(bb/bn);}else{cr=R0;cg=G0;cb=B0;}
+        var hex="#"+[cr,cg,cb].map(function(x){return ("0"+(x&255).toString(16)).slice(-2);}).join("");
+        document.documentElement.style.setProperty("--c",hex);
+        document.documentElement.style.setProperty("--c2",shade(hex,-22));
+        document.body.classList.toggle("rdark",lum<120);
+        render();
+      }catch(e){}
+    };
+    img.src=FUNC+"?id="+encodeURIComponent(id)+"&img=1";
+  }
 
   function isCerrada(){return R.estado==="sorteada"||R.estado==="cerrada";}
   function waNum(){var n=onlyD(R.whatsapp||"");if(n.length===10)n="1"+n;return n;}
