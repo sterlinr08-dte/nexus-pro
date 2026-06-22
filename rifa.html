@@ -436,12 +436,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && (!vouReq() || !!voucherData); }
   function checksHTML(){
     function item(idv,lbl,ok){return '<div class="ck'+(ok?' done':'')+'" id="'+idv+'"><span class="b"><i class="ti ti-check"></i></span>'+lbl+'</div>';}
-    var h=item('ckNum',R.ocultar_numeros?'Cantidad':'Número',count()>0)+item('ckNom','Nombre',!!(F.nom||"").trim())+item('ckTel','WhatsApp',!!(F.tel||"").trim());
-    if(vouReq())h+=item('ckVou','Comprobante',!!voucherData);
+    var h=item('ckNom','Datos',!!(F.nom||"").trim()&&!!(F.tel||"").trim())
+      +item('ckNum',R.ocultar_numeros?'Ticket':'Número',count()>0)
+      +item('ckVou','Comprobante',!!voucherData);
     return h;
   }
   function updChecks(){ function ck(idv,ok){var e=document.getElementById(idv);if(e)e.classList.toggle('done',!!ok);}
-    ck('ckNum',count()>0); ck('ckNom',!!(F.nom||"").trim()); ck('ckTel',!!(F.tel||"").trim()); if(vouReq())ck('ckVou',!!voucherData); }
+    ck('ckNom',!!(F.nom||"").trim()&&!!(F.tel||"").trim()); ck('ckNum',count()>0); ck('ckVou',!!voucherData); }
   function cartBar(){
     var bar=document.createElement("div"); bar.className="cart"; bar.id="cartBar";
     bar.innerHTML='<div class="checks" id="cChecks">'+checksHTML()+'</div>'+
