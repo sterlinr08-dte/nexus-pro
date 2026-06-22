@@ -148,6 +148,12 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .hstep .hn{width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .hstep .ht b{display:block;font-size:14px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.2px}
 .hstep .ht span{display:block;font-size:12.5px;color:#475569;line-height:1.45;margin-top:1px}
+/* banner "A JUGAR" entre el tutorial y el formulario */
+.ajugar{display:flex;flex-direction:column;align-items:center;gap:2px;margin:2px 0 12px}
+.ajugar .pill{font-size:25px;font-weight:900;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));padding:11px 36px;border-radius:32px;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(79,70,229,.4);animation:ajPulse 1.5s ease-in-out infinite}
+.ajugar i{font-size:24px;color:var(--c);animation:ajBounce 1.1s ease-in-out infinite}
+@keyframes ajPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes ajBounce{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}
 /* search + board */
 .srch{position:relative;margin-bottom:11px}
 .srch i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--c);font-size:19px}
@@ -357,6 +363,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 
     return '<div class="body">'+
       comoJugarHTML()+
+      '<div class="ajugar"><span class="pill mg-shine">¡A JUGAR!</span><i class="ti ti-chevron-down"></i></div>'+
       // 1) Tus datos
       '<div class="card"><div class="sec"><div class="nb">1</div><div><h3>Tus datos</h3><small>Para registrar tu compra</small></div></div>'+
         '<label class="fl">Nombre completo <span class="req">*</span></label><input id="fNom" class="in" placeholder="Tu nombre y apellido" autocomplete="name" value="'+esc(F.nom)+'" oninput="window.__sv(\'nom\',this.value)">'+
