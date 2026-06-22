@@ -607,8 +607,12 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   elegido), `pkg()/count()/total()` respetan el combo, `paqsHTML()` pinta los combos en el cuadro ②
   (ambos modos), `__pkg` selecciona (fija qty), y `__qty/__toggle/__luck` limpian `pkgSel` si el cliente
   cambia a mano. En modo números visibles, el combo asigna al azar (aviso `.paqNote`). CSS `.paq/.paqs`.
-- **PENDIENTE:** combos/paquetes con precio (UI) HECHO ·
-  gráfica medios de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio,
+- **TANDA 15 (v33.8) HECHA — gráfica MEDIOS DE PAGO (pie):** en `nxRifaStats` se agregó una gráfica
+  de pastel (`conic-gradient`, CSS `.pie/.pieLeg/.pieRow`) que agrupa lo **confirmado** por medio de pago:
+  `metodo_pago` (ventas manuales/vendedor) o, si es null, el nombre del banco de `cuenta_id` (`ctaName`)
+  o 'Sin especificar'. Muestra monto + % por medio. Solo aparece si `recaudado>0`.
+- **PENDIENTE:** combos/paquetes con precio (UI) HECHO · gráfica medios de pago (pie) HECHO ·
+  preview WhatsApp con foto del premio (Worker dominio propio,
   riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
