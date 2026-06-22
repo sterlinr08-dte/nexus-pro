@@ -78,6 +78,18 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .stp .mid small{font-size:12px;color:#94a3b8;font-weight:800;letter-spacing:1px}
 .bigtot{text-align:center;font-size:27px;font-weight:800;color:#334155;margin:14px 0 6px}
 .bigtot b{color:var(--c)}
+/* ✨ animación "magia" (destello + titileo + dígitos con brillo) */
+@keyframes mgGlow{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 0 18px 2px rgba(99,102,241,.40)}}
+@keyframes mgShine{0%{transform:translateX(-140%) skewX(-18deg)}55%,100%{transform:translateX(260%) skewX(-18deg)}}
+@keyframes mgTwinkle{0%,100%{opacity:1;transform:scale(1) rotate(0)}50%{opacity:.4;transform:scale(1.4) rotate(20deg)}}
+@keyframes mgGrad{to{background-position:200% center}}
+.mg-shine{position:relative;overflow:hidden}
+.mg-shine::after{content:"";position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent);transform:translateX(-140%) skewX(-18deg);animation:mgShine 3.6s ease-in-out infinite;pointer-events:none}
+.luck{animation:mgGlow 2.6s ease-in-out infinite}
+.luck i{animation:mgTwinkle 1.8s ease-in-out infinite}
+.luck i:last-child{animation-delay:.9s}
+.srch.mg-glow input{animation:mgGlow 2.6s ease-in-out infinite}
+.mg-digits{background:linear-gradient(90deg,var(--c),#8b5cf6,#22d3ee,var(--c));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:mgGrad 3s linear infinite}
 .hint{margin-top:13px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:11px 13px;font-size:12.5px;color:#166534;font-weight:600;display:flex;gap:8px;align-items:flex-start}
 .hint i{color:#16a34a;font-size:17px;flex:0 0 auto}
 /* search + board */
@@ -273,17 +285,17 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
       (R.ocultar_numeros?
         '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
-          '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
-          '<div class="bigtot">Total: <b id="stTot">'+fmt(total())+'</b></div>'+
+          '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
+          '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
           '<div class="qrow" style="margin-top:6px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<div class="hint"><i class="ti ti-wand"></i> Al confirmar te asignaremos <b id="qtyTxt">'+qty+'</b> número(s) al azar entre los disponibles.</div></div>'
        :
         '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
-          '<button class="luck" onclick="window.__luck(1)"><i class="ti ti-star-filled"></i> Elegir a la suerte <i class="ti ti-star-filled"></i></button>'+
-          '<div class="srch"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
+          '<button class="luck mg-shine" onclick="window.__luck(1)"><i class="ti ti-star-filled"></i> Elegir a la suerte <i class="ti ti-star-filled"></i></button>'+
+          '<div class="srch mg-glow"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
           '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:var(--c)"></i>Elegido</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
-          '<div id="bd"></div><div id="chips"></div><div class="bigtot">Total: <b id="stTot">'+fmt(total())+'</b></div></div>')+
+          '<div id="bd"></div><div id="chips"></div><div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div></div>')+
       // 3) Método de pago
       '<div class="card"><div class="sec"><div class="nb">3</div><div><h3>Método de pago</h3><small>Paga y sube tu comprobante</small></div></div>'+
         pago+
