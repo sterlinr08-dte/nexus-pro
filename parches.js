@@ -18007,7 +18007,8 @@ try {
       '<div class="mt"><span><i class="ti ti-ticket"></i> Vender boleto ' + esc(numero) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRvForm\').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
       '<div style="overflow-y:auto;flex:1">' +
       '<div class="fr"><label>Comprador *</label><input id="rvNom" class="no-upper" placeholder="Nombre del comprador"></div>' +
-      '<div class="fr"><label>WhatsApp / teléfono</label><input id="rvTel" inputmode="tel" placeholder="809-000-0000"></div>' +
+      '<div class="fr"><label>WhatsApp / teléfono</label><input id="rvTel" inputmode="tel" placeholder="809-000-0000" oninput="window.nxRifaPrevBoletos(this.value)"></div>' +
+      '<div id="rvPrev" style="display:none"></div>' +
       '<div class="fr-row"><div class="fr"><label>Precio</label><input id="rvPrecio" data-nx-money inputmode="numeric" value="' + (r.precio_boleto ? Math.round(r.precio_boleto) : '') + '"></div>' +
       '<div class="fr"><label>Método de pago</label><select id="rvMet"><option>Efectivo</option><option>Transferencia</option><option>Depósito</option><option>Tarjeta</option><option>Pago móvil</option></select></div></div>' +
       (_vendedores.length ? '<div class="fr"><label>Vendedor (opcional)</label><select id="rvVendSel"><option value="">— Sin vendedor —</option>' + _vendedores.map(function (v) { return '<option value="' + v.id + '">' + esc(v.nombre || '') + '</option>'; }).join('') + '</select></div>' : '<div class="fr"><label>Vendedor (opcional)</label><input id="rvVend" class="no-upper" placeholder="Quién lo vendió"></div>') +
@@ -18020,6 +18021,28 @@ try {
     document.body.appendChild(ov);
     setTimeout(function () { var i = document.getElementById('rvNom'); if (i) i.focus(); }, 60);
   }
+
+  // Muestra los boletos que ese teléfono YA tiene en esta rifa (cliente repetido)
+  window.nxRifaPrevBoletos = function (tel) {
+    var box = document.getElementById('rvPrev'); if (!box) return;
+    var d = String(tel || '').replace(/\D/g, '');
+    if (d.length < 4) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    var prev = _boletos.filter(function (b) { return b.estado !== 'anulado' && String(b.comprador_telefono || '').replace(/\D/g, '') === d; });
+    if (!prev.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    prev.sort(function (a, b) { return String(a.numero).localeCompare(String(b.numero)); });
+    var nom = (prev[0].comprador_nombre || '').trim();
+    var montoTot = prev.reduce(function (s, b) { return s + (Number(b.precio) || 0); }, 0);
+    var chips = prev.map(function (b) {
+      var col = b.estado === 'confirmado' ? '#16a34a' : (b.estado === 'apartado' ? '#94a3b8' : '#d97706');
+      return '<span style="display:inline-flex;align-items:center;background:' + col + '1a;color:' + col + ';font-weight:800;font-size:11px;padding:2px 8px;border-radius:20px;margin:3px 3px 0 0">' + esc(String(b.numero)) + '</span>';
+    }).join('');
+    box.style.display = 'block';
+    box.innerHTML = '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 10px;margin:0 0 9px">' +
+      '<div style="font-size:11.5px;font-weight:800;color:#1d4ed8;display:flex;align-items:center;gap:5px"><i class="ti ti-user-check"></i> Cliente repetido' + (nom ? ': ' + esc(nom) : '') + '</div>' +
+      '<div style="font-size:10.5px;color:#475569;margin:2px 0 2px">Ya tiene ' + prev.length + ' boleto' + (prev.length > 1 ? 's' : '') + ' en esta rifa · ' + fmt(montoTot) + '</div>' +
+      '<div>' + chips + '</div></div>';
+    var ni = document.getElementById('rvNom'); if (ni && !ni.value.trim() && nom) ni.value = nom;
+  };
 
   window.nxRifaVenderGuardar = async function (numero) {
     var nom = (val('rvNom') || '').trim();
