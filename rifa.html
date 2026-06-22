@@ -241,7 +241,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var tab="comprar", done=false, menuOpen=false;
   var MGSTARS='<div class="mgRise"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
   var cart=[];                          // numeros seleccionados (strings)
-  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null;
+  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null, doneApartado=false;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
   var F={nom:"",tel:""};
 
@@ -463,7 +463,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
       .then(function(res){
-        if(res.ok&&res.j.ok){ doneNums=res.j.numeros||cart; doneId=res.j.id||""; done=true; window.scrollTo(0,0); render(); }
+        if(res.ok&&res.j.ok){ doneNums=res.j.numeros||cart; doneId=res.j.id||""; doneApartado=!!res.j.apartado; done=true; window.scrollTo(0,0); render(); }
         else { alert(res.j.error||"No se pudo registrar. Intenta otra vez."); btn.disabled=false; btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';
           if(/tomad/i.test(res.j.error||"")){ load().then(function(){ cart=cart.filter(function(n){return !sold[n];}); render(); }); } }
       }).catch(function(){alert("Error de conexión. Intenta otra vez.");btn.disabled=false;btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';});
@@ -472,7 +472,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   // ── LISTO
   function viewListo(){
     var link=doneId?(BOLETO+"?id="+doneId):"";
-    var msg="Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
+    var msg=doneApartado
+      ? 'Tu número quedó <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b>. Envía tu comprobante de pago por WhatsApp para confirmarlo; si no, se liberará.'
+      : "Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
     var waTxt=encodeURIComponent('🎟️ '+(R.premio||R.biz||'Rifa')+'\nMis números: '+doneNums.join(", ")+(link?'\nMi boleto: '+link:''));
     var wa=link?'<a class="wabtn mg-shine" href="https://api.whatsapp.com/send?text='+waTxt+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
     return '<div class="body"><div class="ok"><div class="okIc"><div class="ic">✓</div><span class="sp s1">✦</span><span class="sp s2">✦</span><span class="sp s3">✦</span><span class="sp s4">✦</span><span class="sp s5">✦</span></div>'+

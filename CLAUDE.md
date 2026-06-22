@@ -611,9 +611,19 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   de pastel (`conic-gradient`, CSS `.pie/.pieLeg/.pieRow`) que agrupa lo **confirmado** por medio de pago:
   `metodo_pago` (ventas manuales/vendedor) o, si es null, el nombre del banco de `cuenta_id` (`ctaName`)
   o 'Sin especificar'. Muestra monto + % por medio. Solo aparece si `recaudado>0`.
-- **PENDIENTE:** combos/paquetes con precio (UI) HECHO · gráfica medios de pago (pie) HECHO ·
-  preview WhatsApp con foto del premio (Worker dominio propio,
-  riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
+- **TANDA 16 (v33.9) HECHA — APARTADOS CON EXPIRACIÓN (cron):** compras públicas (`rifa.html`) **sin
+  voucher** ahora se crean `estado='apartado'` + `apartado_hasta = now()+apartado_horas` (función `rifa`
+  v9; **con voucher** siguen `por_confirmar`; las ventas de VENDEDOR siguen `por_confirmar`, NO expiran).
+  `pg_cron` (ya activo) job **`rifa_expirar_apartados`** cada 15 min → función SQL `rifa_expirar_apartados()`
+  (security definer) borra `rifa_boletos` con `estado='apartado' AND apartado_hasta<now() AND voucher is
+  null` (libera el número; NUNCA toca pagados/confirmados/con voucher). En `rifa.html`: `doneApartado`
+  (de `res.j.apartado`) cambia el mensaje de éxito a "apartado por X horas, envía el comprobante o se
+  liberará". El estado 'apartado' ya se ve en gestBoleto/tablero (gris) y en el verificador público.
+- **PENDIENTE:** combos/paquetes (UI) HECHO · gráfica medios de pago (pie) HECHO · apartados con
+  expiración (cron) HECHO · **mover vouchers/banners a Storage** (hoy base64 en DB; refactor grande/
+  riesgoso, tocar subida+visualización en parches/rifa.html/vendedor.html/boleto.html+funciones — hacer
+  con cuidado y probado) · **panel SUPERADMIN** del dueño (Fase 4, cross-org, sensible de seguridad —
+  ver SEGURIDAD-PLAN) · preview WhatsApp con foto del premio (Worker dominio propio, riesgoso).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
