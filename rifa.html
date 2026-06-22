@@ -90,17 +90,17 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .luck i:last-child{animation-delay:.9s}
 .srch.mg-glow input{animation:mgGlow 2.6s ease-in-out infinite}
 .mg-card{position:relative;overflow:hidden;border:1.5px solid transparent;animation:mgCardGlow 3s ease-in-out infinite alternate}
-.mgStars{position:absolute;inset:0;pointer-events:none;z-index:2}
-.mgStars i{position:absolute;font-style:normal;color:#a78bfa;text-shadow:0 0 6px rgba(167,139,250,.85),0 0 2px #fff;animation:mgStar 2.4s ease-in-out infinite}
-.mgStars i:nth-child(1){top:12px;right:18px;font-size:15px;animation-delay:0s}
-.mgStars i:nth-child(2){top:44%;right:10px;font-size:11px;animation-delay:.5s}
-.mgStars i:nth-child(3){bottom:16px;right:30px;font-size:13px;animation-delay:1s}
-.mgStars i:nth-child(4){bottom:26px;left:16px;font-size:12px;animation-delay:1.4s}
-.mgStars i:nth-child(5){top:40%;left:9px;font-size:10px;animation-delay:.8s}
-.mgStars i:nth-child(6){top:13px;left:46%;font-size:11px;animation-delay:1.8s}
-.mgStars i:nth-child(7){bottom:46%;left:40%;font-size:9px;animation-delay:.3s}
-.mgStars i:nth-child(8){top:58%;right:36%;font-size:10px;animation-delay:1.2s}
-@keyframes mgStar{0%,100%{opacity:0;transform:scale(.2) rotate(0)}45%,55%{opacity:.95;transform:scale(1) rotate(20deg)}}
+.mgShoot{position:absolute;inset:0;pointer-events:none;z-index:2}
+.sh{position:absolute;width:0;height:0}
+.sh b{position:absolute;display:block;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(167,139,250,.95),0 0 3px #fff;opacity:0;animation:shoot 3.6s ease-in infinite}
+.sh b::after{content:"";position:absolute;top:50%;left:-54px;width:54px;height:2px;transform:translateY(-50%);background:linear-gradient(90deg,rgba(196,181,253,0),rgba(196,181,253,.92));border-radius:2px}
+@keyframes shoot{0%{opacity:0;transform:translateX(-12px)}9%{opacity:1}82%{opacity:1}100%{opacity:0;transform:translateX(155px)}}
+.sh1{top:15px;left:4px;transform:rotate(25deg)}.sh1 b{animation-delay:0s;animation-duration:3.4s}
+.sh2{top:54%;left:-2px;transform:rotate(17deg)}.sh2 b{animation-delay:1.1s;animation-duration:4.1s}
+.sh3{top:30%;left:18px;transform:rotate(33deg)}.sh3 b{animation-delay:2.2s;animation-duration:3.7s}
+.sh4{top:72%;left:26px;transform:rotate(20deg)}.sh4 b{animation-delay:.6s;animation-duration:4.3s}
+.sh5{top:8px;left:42%;transform:rotate(29deg)}.sh5 b{animation-delay:1.7s;animation-duration:3.9s}
+.sh6{top:46%;left:48%;transform:rotate(23deg)}.sh6 b{animation-delay:2.7s;animation-duration:4s}
 @keyframes mgCardGlow{
   0%{box-shadow:0 0 0 2px rgba(99,102,241,.75),0 0 22px 3px rgba(99,102,241,.45),inset 0 0 16px rgba(99,102,241,.05)}
   50%{box-shadow:0 0 0 2.5px rgba(139,92,246,.9),0 0 32px 6px rgba(139,92,246,.6),inset 0 0 20px rgba(139,92,246,.08)}
@@ -216,7 +216,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var id=new URLSearchParams(location.search).get("id")||"";
   var R=null, sold={}, page=0, q="", PER=120;
   var tab="comprar", done=false, menuOpen=false;
-  var MGSTARS='<div class="mgStars"><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>';
+  var MGSTARS='<div class="mgShoot"><span class="sh sh1"><b></b></span><span class="sh sh2"><b></b></span><span class="sh sh3"><b></b></span><span class="sh sh4"><b></b></span><span class="sh sh5"><b></b></span><span class="sh sh6"><b></b></span></div>';
   var cart=[];                          // numeros seleccionados (strings)
   var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
