@@ -499,6 +499,14 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   en el modal de vender (si hay vendedores) → guarda `vendedor_id`+`vendedor_nombre`.
   Botón **👥 en el panel** (`nxRifaLiquidacion`) → agrupa boletos confirmados por
   vendedor, calcula comisión (monto×pct/100) y **"a entregar"** (monto−comisión). CSS `.liqRow`.
+  **EMPLEADOS POR RIFA (v34.3):** `rifa_vendedores.rifa_id` (migración `rifa_vendedores_por_rifa`,
+  nullable; backfill = rifa de la primera venta de cada vendedor). El botón **Vendedores** se movió
+  de la lista al **panel de la rifa** (ícono 👥 junto a Reportes); `nxRifaVendedores` filtra por
+  `vendsRifa()` (= `_vendedores` con `rifa_id===_rifaSel`), titula con el nombre de la rifa, y al
+  CREAR guarda `rifa_id=_rifaSel` (editar NO lo cambia). Selectores de vendedor en vender/editar boleto
+  usan `vendsRifa()`. Función Edge **`vendedor` v2**: `getVendedor` trae `rifa_id`; en `login` si tiene
+  `rifa_id` devuelve SOLO esa rifa (si null = legado, todas las de la org); en `vender` exige
+  `rid===rifa_id`. `ventas` sin cambio (scope por vendedor_id).
 - **TANDA 8 (v32.2) HECHA — mejoras venta:** botón **👑 Mayor comprador** en el panel
   (`nxRifaMayorComprador`: agrupa por teléfono/nombre, ranking con medallas 🥇🥈🥉, n
   boletos + monto). En el **sorteo**, `nxRifaBuscarGanador` ahora muestra los números

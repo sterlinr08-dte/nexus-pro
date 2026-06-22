@@ -17794,7 +17794,6 @@ try {
       '<div class="ch"><div><div class="ct"><i class="ti ti-ticket"></i> Rifas</div><div class="ct-s">' + esc(negocio) + '</div></div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>' +
       '<button class="btn bsm bghost" type="button" onclick="window.nxRifaCuentas()"><i class="ti ti-building-bank"></i> Cuentas</button>' +
-      '<button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()"><i class="ti ti-users"></i> Vendedores</button>' +
       '<button class="btn bsm bc1" type="button" onclick="window.nxRifaNueva()"><i class="ti ti-plus"></i> Nueva rifa</button></div></div>' +
       '<div class="nxRfGrid">' + cards + '</div></div>';
   }
@@ -17976,7 +17975,7 @@ try {
     if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra"><i class="ti ti-link"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()" title="Empleados / vendedores de esta rifa"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra"><i class="ti ti-link"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
@@ -18011,7 +18010,7 @@ try {
       '<div id="rvPrev" style="display:none"></div>' +
       '<div class="fr-row"><div class="fr"><label>Precio</label><input id="rvPrecio" data-nx-money inputmode="numeric" value="' + (r.precio_boleto ? Math.round(r.precio_boleto) : '') + '"></div>' +
       '<div class="fr"><label>Método de pago</label><select id="rvMet"><option>Efectivo</option><option>Transferencia</option><option>Depósito</option><option>Tarjeta</option><option>Pago móvil</option></select></div></div>' +
-      (_vendedores.length ? '<div class="fr"><label>Vendedor (opcional)</label><select id="rvVendSel"><option value="">— Sin vendedor —</option>' + _vendedores.map(function (v) { return '<option value="' + v.id + '">' + esc(v.nombre || '') + '</option>'; }).join('') + '</select></div>' : '<div class="fr"><label>Vendedor (opcional)</label><input id="rvVend" class="no-upper" placeholder="Quién lo vendió"></div>') +
+      (vendsRifa().length ? '<div class="fr"><label>Vendedor (opcional)</label><select id="rvVendSel"><option value="">— Sin vendedor —</option>' + vendsRifa().map(function (v) { return '<option value="' + v.id + '">' + esc(v.nombre || '') + '</option>'; }).join('') + '</select></div>' : '<div class="fr"><label>Vendedor (opcional)</label><input id="rvVend" class="no-upper" placeholder="Quién lo vendió"></div>') +
       (_cuentas.length ? '<div class="fr"><label>Cuenta donde pagó (opcional)</label><select id="rvCuenta"><option value="">— No aplica —</option>' + _cuentas.map(function (c) { return '<option value="' + c.id + '">' + esc(c.banco || '') + (c.numero_cuenta ? ' · ' + esc(c.numero_cuenta) : '') + '</option>'; }).join('') + '</select></div>' : '') +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rvConf" style="width:18px;height:18px"> Pago confirmado (verificado)</label>' +
       '<div style="font-size:11px;color:#94a3b8;padding:0 2px 6px">Sin marcar, queda “Por confirmar” hasta que apruebes el pago.</div>' +
@@ -18119,7 +18118,7 @@ try {
       '<div class="fr"><label>WhatsApp / teléfono</label><input id="beTel" inputmode="tel" value="' + esc(b.comprador_telefono || '') + '"></div>' +
       '<div class="fr-row"><div class="fr"><label>Precio</label><input id="bePrecio" data-nx-money inputmode="numeric" value="' + (b.precio ? Math.round(b.precio) : '') + '"></div>' +
       '<div class="fr"><label>Método de pago</label><select id="beMet"><option value="">—</option>' + metOpts + '</select></div></div>' +
-      (_vendedores.length ? '<div class="fr"><label>Vendedor</label><select id="beVendSel"><option value="">— Sin vendedor —</option>' + _vendedores.map(function (v) { return '<option value="' + v.id + '"' + (String(b.vendedor_id) === String(v.id) ? ' selected' : '') + '>' + esc(v.nombre || '') + '</option>'; }).join('') + '</select></div>' : '') +
+      (vendsRifa().length ? '<div class="fr"><label>Vendedor</label><select id="beVendSel"><option value="">— Sin vendedor —</option>' + vendsRifa().map(function (v) { return '<option value="' + v.id + '"' + (String(b.vendedor_id) === String(v.id) ? ' selected' : '') + '>' + esc(v.nombre || '') + '</option>'; }).join('') + '</select></div>' : '') +
       (_cuentas.length ? '<div class="fr"><label>Cuenta donde pagó</label><select id="beCuenta"><option value="">— No aplica —</option>' + _cuentas.map(function (c) { return '<option value="' + c.id + '"' + (String(b.cuenta_id) === String(c.id) ? ' selected' : '') + '>' + esc(c.banco || '') + (c.numero_cuenta ? ' · ' + esc(c.numero_cuenta) : '') + '</option>'; }).join('') + '</select></div>' : '') +
       '<div class="fr"><label>Estado</label><select id="beEstado"><option value="apartado"' + (b.estado === 'apartado' ? ' selected' : '') + '>Apartado</option><option value="por_confirmar"' + (b.estado === 'por_confirmar' ? ' selected' : '') + '>Por confirmar</option><option value="confirmado"' + (b.estado === 'confirmado' ? ' selected' : '') + '>Pago verificado</option></select></div>' +
       '</div>' +
@@ -18379,16 +18378,21 @@ try {
 
   // ── VENDEDORES + LIQUIDACIÓN ──
   function nombreVend(id) { var v = _vendedores.find(function (x) { return String(x.id) === String(id); }); return v ? v.nombre : ''; }
+  // Vendedores (empleados) de la rifa abierta — cada rifa tiene su propio equipo
+  function vendsRifa() { return _vendedores.filter(function (v) { return String(v.rifa_id || '') === String(_rifaSel || ''); }); }
   async function recargarVend() { try { _vendedores = await getAPI().get('rifa_vendedores', 'select=*&order=nombre.asc') || []; } catch (e) {} }
   window.nxRifaVendedores = function () {
     cerrarModal('nxVends');
-    var lista = _vendedores.length ? _vendedores.map(function (v) {
+    var r = currentRifa();
+    var vs = vendsRifa();
+    var lista = vs.length ? vs.map(function (v) {
       var cod = (v.codigo || '').toUpperCase();
       return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span>' + (cod ? '<span style="display:block;margin-top:3px"><i class="ti ti-key" style="font-size:12px"></i> Código: <b style="font-family:ui-monospace,monospace;letter-spacing:1px;color:#4f46e5">' + esc(cod) + '</b></span>' : '') + '</div></div><div style="display:flex;gap:4px">' + (cod ? '<button class="btn bsm bghost" type="button" title="Compartir acceso" onclick="window.nxVendLink(\'' + v.id + '\')"><i class="ti ti-share" style="color:#16a34a"></i></button>' : '') + '<button class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin vendedores. Agrega a tu equipo para asignar ventas y calcular comisiones.</div>';
     var ov = document.createElement('div'); ov.id = 'nxVends'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-users"></i> Vendedores</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxVends\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:12px;color:#475569;font-weight:700;margin:-2px 0 9px;display:flex;align-items:center;gap:5px"><i class="ti ti-ticket" style="color:#4f46e5"></i> ' + esc((r && r.nombre) || 'Rifa') + '</div>' +
       '<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxVendForm(\'\')"><i class="ti ti-plus"></i> Nuevo vendedor</button>' +
       '<div style="overflow-y:auto;flex:1">' + lista + '</div></div>';
     document.body.appendChild(ov);
@@ -18411,7 +18415,7 @@ try {
     var body = { nombre: nom, telefono: (val('vdTel') || '').trim() || null, comision_pct: Number(String(val('vdCom') || '0').replace(/[^0-9.]/g, '')) || 0 };
     try {
       if (id) await getAPI().patch('rifa_vendedores', 'id=eq.' + id, body);
-      else await getAPI().post('rifa_vendedores', body);
+      else { body.rifa_id = _rifaSel || null; await getAPI().post('rifa_vendedores', body); }
       toast('ok', 'Vendedor guardado', '');
       cerrarModal('nxVendForm');
       await recargarVend();
