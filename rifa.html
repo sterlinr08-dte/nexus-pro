@@ -456,7 +456,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && (!vouReq() || !!voucherData) && acceptedTerms; }
   window.__terms=function(v){ acceptedTerms=!!v; refreshCart(); };
   function termsText(){
-    var emp=(R.biz||R.nombre||"la empresa rifadora");
+    var emp=(R.nombre||R.biz||"la empresa rifadora");
     return 'TÉRMINOS Y CONDICIONES DE LA RIFA PROMOCIONADA POR '+emp+'\n\n'+
     'Yo, en calidad de participante (en lo adelante: “Participante”) de la rifa promocionada por '+emp+' (en lo adelante: “Organizador”), con la compra de uno o más boletos acepto los siguientes términos y condiciones:\n\n'+
     '(1) Reconozco que soy mayor de edad, que cuento con un documento de identificación y me encuentro en República Dominicana;\n\n'+
