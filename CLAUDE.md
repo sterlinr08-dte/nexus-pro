@@ -570,6 +570,19 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   **Vendedores** (`nxRifaVendedores`) muestra el Código y botón **Compartir acceso** (`nxVendLink`:
   navigator.share/clipboard del enlace `vendedor.html?c=CODE`). NO toca la app de seguros ni el login/RLS
   existente (página aparte, patrón público).
+- **TANDA 13 (v33.6) HECHA — REDISEÑO página pública (look plataforma de rifas):** `rifa.html`
+  se repintó al estilo de las plataformas (referencia que mandó el dueño): **cabecera blanca** con
+  logo + nombre + **botón menú** (`__menu`/`menuHTML`: Inicio→comprar, Consultar ticket→verificar,
+  Contacto→WhatsApp, botón grande "Lista de boletos"→verificar); barra de **acento** arriba
+  (`.topaccent`); **botón flotante verde de WhatsApp** (`.wafab`, `wafabAdd`, se posiciona sobre la
+  barra de pago); el bloque de premio pasó a `.prem-blk` (gradiente, esquinas redondeadas). Se
+  quitaron las pestañas (ahora la navegación es por el menú). Controles **glossy/neumórficos**:
+  **stepper redondo grande** (`.stp` − gris / número / + de color, label BOLETOS) en modo
+  `ocultar_numeros`, **Total grande** (`.bigtot`, id `stTot`, lo refresca `refreshCart`/`__qty`),
+  **'Elegir a la suerte'** y buscador tipo **píldora** con sombra. WhatsApp: nuevo campo
+  `rifas.whatsapp_contacto` (migración `rifa_whatsapp_contacto`) + input **'WhatsApp de contacto'**
+  en el form admin (`rfWa` en `nxRifaGuardar`); la función **`rifa` v7** lo devuelve como `whatsapp`
+  (OJO: `organizaciones` NO tiene columna `telefono` — no la metas en el select o rompe la carga).
 - **PENDIENTE:** combos/paquetes con precio (UI) ·
   gráfica medios de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio,
   riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
