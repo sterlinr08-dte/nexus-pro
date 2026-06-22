@@ -172,11 +172,22 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .spin{width:34px;height:34px;border:3px solid #c7d2fe;border-top-color:var(--c);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .ok{text-align:center;padding:34px 20px}
-.ok .ic{width:76px;height:76px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 14px}
-.ok h2{margin:0 0 6px;font-size:23px}.ok p{color:#475569;font-size:14px;margin:0 0 8px;line-height:1.5}
-.ok .nums{font-family:ui-monospace,monospace;font-weight:800;color:var(--c);font-size:16px;margin:6px 0 16px;word-break:break-word}
+.okIc{position:relative;width:76px;height:76px;margin:0 auto 14px}
+.ok .ic{width:76px;height:76px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0;animation:okPop .65s cubic-bezier(.3,1.5,.5,1) both,okGlow 2.4s ease-in-out .7s infinite}
+.okIc .sp{position:absolute;color:#fde047;text-shadow:0 0 6px rgba(250,204,21,.7);animation:spark 1.6s ease-in-out infinite;pointer-events:none}
+.okIc .s1{top:-9px;left:46%;font-size:16px;animation-delay:0s}
+.okIc .s2{top:4px;right:-13px;font-size:12px;animation-delay:.3s}
+.okIc .s3{bottom:-7px;right:4px;font-size:15px;animation-delay:.6s}
+.okIc .s4{bottom:2px;left:-13px;font-size:13px;animation-delay:.9s}
+.okIc .s5{top:0;left:-9px;font-size:11px;animation-delay:1.25s}
+.ok h2{margin:0 0 6px;font-size:23px;animation:okRise .5s ease .15s both}.ok p{color:#475569;font-size:14px;margin:0 0 8px;line-height:1.5;animation:okRise .5s ease .35s both}
+.ok .nums{font-family:ui-monospace,monospace;font-weight:800;font-size:18px;margin:6px 0 16px;word-break:break-word;background:linear-gradient(90deg,var(--c),#8b5cf6,#22d3ee,var(--c));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:okRise .5s ease .3s both,mgGrad 3s linear infinite}
 .ok a{display:inline-block;background:var(--c);color:#fff;text-decoration:none;padding:13px 24px;border-radius:13px;font-weight:800;margin:5px}
 .ok a.alt{background:#f1f5f9;color:var(--c)}
+@keyframes okPop{0%{transform:scale(0) rotate(-30deg);opacity:0}60%{transform:scale(1.18) rotate(8deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes okGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}50%{box-shadow:0 0 0 9px rgba(34,197,94,.12),0 0 24px 4px rgba(34,197,94,.4)}}
+@keyframes okRise{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+@keyframes spark{0%,100%{opacity:0;transform:scale(.3) translateY(0) rotate(0)}50%{opacity:1;transform:scale(1) translateY(-5px) rotate(25deg)}}
 </style>
 </head>
 <body>
@@ -413,8 +424,8 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var link=doneId?(BOLETO+"?id="+doneId):"";
     var msg="Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
     var waTxt=encodeURIComponent('🎟️ '+(R.premio||R.biz||'Rifa')+'\nMis números: '+doneNums.join(", ")+(link?'\nMi boleto: '+link:''));
-    var wa=link?'<a class="wabtn" href="https://api.whatsapp.com/send?text='+waTxt+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
-    return '<div class="body"><div class="ok"><div class="ic">✓</div>'+
+    var wa=link?'<a class="wabtn mg-shine" href="https://api.whatsapp.com/send?text='+waTxt+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
+    return '<div class="body"><div class="ok"><div class="okIc"><div class="ic">✓</div><span class="sp s1">✦</span><span class="sp s2">✦</span><span class="sp s3">✦</span><span class="sp s4">✦</span><span class="sp s5">✦</span></div>'+
       '<h2>¡Listo! '+doneNums.length+' '+(doneNums.length===1?'ticket apartado':'tickets apartados')+'</h2>'+
       '<div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
       '<p>'+msg+'</p>'+wa+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+
