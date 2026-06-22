@@ -50,7 +50,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 .card{background:#fff;border:1px solid #e8edf3;border-radius:16px;padding:15px;margin-bottom:14px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
 .sec{display:flex;align-items:center;gap:9px;margin-bottom:12px}
 .sec .nb{width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-.sec h3{margin:0;font-size:16px;font-weight:800}
+.sec h3{margin:0;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
 .sec small{display:block;color:#94a3b8;font-size:12px;font-weight:600}
 /* forms */
 label.fl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 5px}
@@ -146,7 +146,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .howto{display:flex;flex-direction:column;gap:11px}
 .hstep{display:flex;gap:11px;align-items:flex-start}
 .hstep .hn{width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-.hstep .ht b{display:block;font-size:14px;font-weight:800;color:#0f172a}
+.hstep .ht b{display:block;font-size:14px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.2px}
 .hstep .ht span{display:block;font-size:12.5px;color:#475569;line-height:1.45;margin-top:1px}
 /* search + board */
 .srch{position:relative;margin-bottom:11px}
@@ -356,6 +356,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var pago=ctas.length?'<div class="banks">'+ctas.map(function(c){var ic=c.tipo==="tarjeta"?"ti-credit-card":(c.tipo==="movil"?"ti-device-mobile":"ti-building-bank");return '<button type="button" class="bk'+(ctaSel===c.id?" on":"")+'" onclick="window.__pickBank(\''+c.id+'\')"><i class="ti '+ic+'"></i><div><div class="nm">'+esc(c.banco||"Cuenta")+'</div><div class="ti">'+esc(c.tipo||"banco")+'</div></div></button>';}).join('')+'</div><div id="acct"></div>':'<div class="empty">El organizador le enviará la confirmación por WhatsApp.</div>';
 
     return '<div class="body">'+
+      comoJugarHTML()+
       // 1) Tus datos
       '<div class="card"><div class="sec"><div class="nb">1</div><div><h3>Tus datos</h3><small>Para registrar tu compra</small></div></div>'+
         '<label class="fl">Nombre completo <span class="req">*</span></label><input id="fNom" class="in" placeholder="Tu nombre y apellido" autocomplete="name" value="'+esc(F.nom)+'" oninput="window.__sv(\'nom\',this.value)">'+
@@ -384,14 +385,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
         (vouReq()?'<div style="font-size:11.5px;color:#94a3b8;margin-top:8px;text-align:center">Adjunta tu comprobante para habilitar el botón <b>Confirmar</b>.</div>':'')+
         '<div class="hint" style="margin-top:11px"><i class="ti ti-clock"></i> Tu número queda <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b> mientras el organizador confirma tu pago.</div>'+
       '</div>'+
-      comoJugarHTML()+
       faqHTML()+
       '</div>';
   }
   function comoJugarHTML(){
     var def=[
-      {t:'Elige',d:(R.ocultar_numeros?'Indica cuántos boletos quieres; el sistema te asigna los números al azar.':'Toca los números que quieras o usa “A la suerte”.')},
       {t:'Tus datos',d:'Escribe tu nombre y tu número de WhatsApp.'},
+      {t:'Elige',d:(R.ocultar_numeros?'Indica cuántos boletos quieres; el sistema te asigna los números al azar.':'Toca los números que quieras o usa “A la suerte”.')},
       {t:'Paga',d:'Transfiere a la cuenta indicada y sube la foto de tu comprobante.'},
       {t:'Recibe tu boleto',d:'Te confirmamos y te enviamos tu boleto por WhatsApp.'}
     ];

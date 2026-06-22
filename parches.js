@@ -17732,8 +17732,8 @@ try {
   var _rifaFaqs = [];
   var _rifaTut = [];
   var RIFA_TUT_DEF = [
-    { t: 'Elige', d: 'Elige tus números o la cantidad de boletos que quieras.' },
     { t: 'Tus datos', d: 'Escribe tu nombre y tu número de WhatsApp.' },
+    { t: 'Elige', d: 'Elige tus números o la cantidad de boletos que quieras.' },
     { t: 'Paga', d: 'Transfiere a la cuenta indicada y sube la foto de tu comprobante.' },
     { t: 'Recibe tu boleto', d: 'Te confirmamos y te enviamos tu boleto por WhatsApp.' }
   ];
