@@ -549,7 +549,28 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   al azar entre los disponibles server-side** (lee tomados, calcula libres, random, tope 200) y
   los devuelve; la página los muestra ya comprados en la pantalla de éxito. GET devuelve
   `ocultar_numeros`.
-- **PENDIENTE:** vista limitada del vendedor (login propio) · combos/paquetes con precio (UI) ·
+- **TANDA 12 (v33.0→33.5) HECHA — afinado público + VISTA DEL VENDEDOR:** la página pública
+  `rifa.html` se simplificó (solo nombre+WhatsApp, sin selector de país; voucher obligatorio que
+  habilita Confirmar — opcional si la rifa no tiene cuentas; inputs a 16px anti-zoom iOS; poda los
+  números tomados del carrito tras 409; aviso de apartado X horas; respeta límite por persona;
+  **checklist animado** Número/Nombre/WhatsApp/Comprobante que se marca en verde con `pop` al ir
+  completando; botón verde "Enviar mi boleto por WhatsApp" al terminar). Pestaña 'Verificar' renombrada
+  a **'Consultar ticket'** (botones pill visibles). Función `rifa` **v5**: devuelve apartado_horas,
+  limite_por_persona; **enforce límite por teléfono**; privacidad (no devuelve teléfono al buscar por
+  número). **VENDEDOR (login por código, decisión del dueño: "solo vender, queda por confirmar"):**
+  migración `rifa_vendedor_codigo` (col `codigo` única + default `upper(substr(md5(gen_random_uuid()),1,6))`
+  → cada vendedor nuevo recibe código). Función Edge **`vendedor`** (verify_jwt false): acciones
+  `login` {codigo}→vendedor+org+rifas activas; `vender` {codigo,rifa_id,numeros/cantidad,nombre,telefono,
+  cuenta_id,voucher}→inserta boletos estado 'por_confirmar' origen 'vendedor', scoped a su org (valida
+  rifa.org==vendedor.org), aplica límite; `ventas` {codigo}→sus boletos + recaudado/comisión/a_entregar
+  (solo confirmados). Página estática **`vendedor.html`** (nexusprord.com): login por código (o `?c=CODE`,
+  guarda en sessionStorage) → dashboard 2 pestañas **Vender** (elige rifa, reusa tablero/cantidad vía la
+  función `rifa` GET, datos comprador, registra venta 'por confirmar', comparte boleto al comprador) y
+  **Mis ventas** (KPIs tickets/recaudado/comisión/a entregar + lista). En `parches.js` el gestor
+  **Vendedores** (`nxRifaVendedores`) muestra el Código y botón **Compartir acceso** (`nxVendLink`:
+  navigator.share/clipboard del enlace `vendedor.html?c=CODE`). NO toca la app de seguros ni el login/RLS
+  existente (página aparte, patrón público).
+- **PENDIENTE:** combos/paquetes con precio (UI) ·
   gráfica medios de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio,
   riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
