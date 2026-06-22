@@ -381,7 +381,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
   function navHTML(){
     var logo=R.logo?'<img src="'+esc(R.logo)+'" alt="">':'<i class="ti ti-ticket"></i>';
     return '<div class="topaccent"></div><div class="nav"><div class="lg" onclick="window.__go(\'comprar\')" style="cursor:pointer">'+logo+'</div><div class="ttl"><b>'+esc(R.biz||R.nombre||"Rifa")+'</b>'+((R.biz&&R.nombre)?'<span>'+esc(R.nombre)+'</span>':'')+'</div>'+
-      '<button class="burger" type="button" aria-label="Inicio" onclick="window.__go(\'comprar\')"><i class="ti ti-layout-grid"></i></button></div>';
+      '<button class="burger" type="button" aria-label="Menú" onclick="window.__menu()"><i class="ti ti-'+(menuOpen?'x':'layout-grid')+'"></i></button></div>';
   }
   function menuHTML(){
     var wa=waLink();
