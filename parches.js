@@ -17860,6 +17860,7 @@ try {
       '<input id="rfImg" class="no-upper" value="' + esc(imgUrl) + '" placeholder="o pega un enlace https://..." style="margin-top:7px"></div>' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarFecha"' + (e.mostrar_fecha === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la fecha del sorteo en el boleto</label>' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarProg"' + (e.mostrar_progreso === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la barra de boletos vendidos</label>' +
+      '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarPct"' + (e.mostrar_porcentaje === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar el porcentaje (%) en la barra</label>' +
       '<label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfOcultarNums"' + (e.ocultar_numeros ? ' checked' : '') + ' style="width:18px;height:18px;margin-top:1px"> <span>Ocultar los números en la página pública<br><small style="font-weight:500;color:#94a3b8">El cliente solo elige cuántos tickets quiere y el sistema le asigna números al azar.</small></span></label>' +
       // ── Botones de cantidad rápida (+N) de la página pública
       '<div class="fr"><label>Botones de cantidad rápida (+N)</label><input id="rfAtajos" inputmode="numeric" value="' + (Array.isArray(e.atajos) ? e.atajos.join(', ') : '1, 5, 10, 25') + '" placeholder="1, 5, 10, 25"><div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Cantidades de los botones rápidos en la página. Sepáralas con coma (ej: 1, 5, 10, 25). Déjalo VACÍO para quitar esos botones.</div></div>' +
@@ -17997,6 +17998,7 @@ try {
       imagen: ((val('rfImg') || '').trim() || _rifaImgData || null),
       mostrar_fecha: chk('rfMostrarFecha'),
       mostrar_progreso: chk('rfMostrarProg'),
+      mostrar_porcentaje: chk('rfMostrarPct'),
       ocultar_numeros: chk('rfOcultarNums'),
       whatsapp_contacto: (val('rfWa') || '').trim() || null,
       empresa_nombre: (val('rfEmpNom') || '').trim() || null,

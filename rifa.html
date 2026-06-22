@@ -367,7 +367,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
   function premioHTML(pct,fecha,cerrada){
     return '<div class="prem-blk"><div class="prem">'+esc(R.premio||R.nombre||"")+'</div>'+
       '<div class="meta"><span><i class="ti ti-coin"></i> '+fmt(R.precio)+' c/u</span>'+fecha+(cerrada?'<span class="cerr">CERRADA</span>':'')+'</div>'+
-      (R.mostrar_progreso!==false?'<div class="prog"><div id="progFill" data-pct="'+pct+'"></div><span class="pct">'+pct+'% vendido</span></div>':'')+'</div>';
+      (R.mostrar_progreso!==false?'<div class="prog"><div id="progFill" data-pct="'+pct+'"></div>'+(R.mostrar_porcentaje!==false?'<span class="pct">'+pct+'% vendido</span>':'')+'</div>':'')+'</div>';
   }
   function wafabAdd(cerrada){
     var n=waNum(); if(n.length<8)return;

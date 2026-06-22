@@ -1,7 +1,8 @@
 {
-  "version": "35.2",
+  "version": "35.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas · barra de progreso): además del interruptor para mostrar/ocultar la barra, ahora hay otro para mostrar u ocultar el PORCENTAJE (%) dentro de la barra. Así puedes dejar la barra sin revelar el número, o esconder todo.",
     "AJUSTE (Rifas · página pública): el botón 'Consultar mi ticket' ahora va en MAYÚSCULA, y el tutorial '¿Cómo jugar?' trae un paso nuevo: paso 4 'Acepta los términos y condiciones' y 'Recibe tu boleto' pasa a ser el paso 5 (5 pasos en total).",
     "NUEVO (Rifas · tema y colores de la página pública): al crear/editar la rifa ahora eliges el TEMA (Claro o Oscuro/negro) y el COLOR libre que quieras (paleta de colores + un selector para el tono exacto). Además la barra de progreso quedó más vistosa: el porcentaje va adentro, con relleno dorado, llenado animado y un brillo que cruza.",
     "NUEVO (Rifas · cuentas de cobro): al registrar una cuenta bancaria ahora puedes poner el RNC/Cédula del titular y si la cuenta es de Ahorro o Corriente. Esos datos también salen en la página pública cuando el cliente elige dónde pagar, y los títulos del link quedaron todos en MAYÚSCULA.",
