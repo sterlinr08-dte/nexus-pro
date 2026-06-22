@@ -90,7 +90,10 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .luck i:last-child{animation-delay:.9s}
 .srch.mg-glow input{animation:mgGlow 2.6s ease-in-out infinite}
 .mg-card{border:1.5px solid transparent;animation:mgCardGlow 3s ease-in-out infinite alternate}
-@keyframes mgCardGlow{0%{box-shadow:0 0 0 1.5px rgba(99,102,241,.45),0 8px 26px rgba(99,102,241,.22)}50%{box-shadow:0 0 0 2px rgba(139,92,246,.60),0 10px 32px rgba(139,92,246,.34)}100%{box-shadow:0 0 0 1.5px rgba(34,211,238,.45),0 8px 26px rgba(34,211,238,.22)}}
+@keyframes mgCardGlow{
+  0%{box-shadow:0 0 0 2px rgba(99,102,241,.75),0 0 22px 3px rgba(99,102,241,.45),inset 0 0 16px rgba(99,102,241,.05)}
+  50%{box-shadow:0 0 0 2.5px rgba(139,92,246,.9),0 0 32px 6px rgba(139,92,246,.6),inset 0 0 20px rgba(139,92,246,.08)}
+  100%{box-shadow:0 0 0 2px rgba(34,211,238,.75),0 0 22px 3px rgba(34,211,238,.45),inset 0 0 16px rgba(34,211,238,.05)}}
 .mg-digits{background:linear-gradient(90deg,var(--c),#8b5cf6,#22d3ee,var(--c));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:mgGrad 3s linear infinite}
 .hint{margin-top:13px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:11px 13px;font-size:12.5px;color:#166534;font-weight:600;display:flex;gap:8px;align-items:flex-start}
 .hint i{color:#16a34a;font-size:17px;flex:0 0 auto}
