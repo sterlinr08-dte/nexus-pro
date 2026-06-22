@@ -35,9 +35,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 .menu .lista:active{transform:scale(.97)}
 /* banner + bloque premio */
 .banner{width:100%;display:block}
-.prem-blk{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:16px;margin-bottom:8px;border-radius:0 0 22px 22px}
+.prem-blk{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:16px;margin-bottom:8px;border-radius:0 0 22px 22px;text-align:center}
 .prem{font-size:21px;font-weight:800;line-height:1.15;text-transform:uppercase}
-.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px;justify-content:center}
 .meta span{background:rgba(255,255,255,.16);padding:5px 11px;border-radius:20px;font-weight:700}
 .meta .cerr{background:#dc2626}
 .prog{position:relative;height:24px;background:rgba(0,0,0,.20);border-radius:13px;overflow:hidden;margin-top:13px;box-shadow:inset 0 1px 3px rgba(0,0,0,.28)}
@@ -542,11 +542,12 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
     function item(idv,lbl,ok){return '<div class="ck'+(ok?' done':'')+'" id="'+idv+'"><span class="b"><i class="ti ti-check"></i></span>'+lbl+'</div>';}
     var h=item('ckNom','Datos',!!(F.nom||"").trim()&&!!(F.tel||"").trim())
       +item('ckNum',R.ocultar_numeros?'Ticket':'Número',count()>0)
-      +item('ckVou','Comprobante',!!voucherData);
+      +item('ckVou','Comprobante',!!voucherData)
+      +item('ckTerm','Términos',acceptedTerms);
     return h;
   }
   function updChecks(){ function ck(idv,ok){var e=document.getElementById(idv);if(e)e.classList.toggle('done',!!ok);}
-    ck('ckNom',!!(F.nom||"").trim()&&!!(F.tel||"").trim()); ck('ckNum',count()>0); ck('ckVou',!!voucherData); }
+    ck('ckNom',!!(F.nom||"").trim()&&!!(F.tel||"").trim()); ck('ckNum',count()>0); ck('ckVou',!!voucherData); ck('ckTerm',acceptedTerms); }
   function cartBar(){
     var bar=document.createElement("div"); bar.className="cart"; bar.id="cartBar";
     bar.innerHTML='<div class="checks" id="cChecks">'+checksHTML()+'</div>'+
