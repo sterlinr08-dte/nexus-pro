@@ -281,7 +281,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       return '<button type="button" class="paq'+(String(pkgSel)===String(p.id)?" on":"")+'" onclick="window.__pkg(\''+p.id+'\')"><b>'+Number(p.cantidad||0)+' boletos</b><span class="pr">'+fmt(p.precio)+'</span>'+(p.etiqueta?'<small>'+esc(p.etiqueta)+'</small>':(ah>0?'<small>Ahorras '+fmt(ah)+'</small>':''))+'</button>';
     }).join('')+'</div>'+(pkgSel&&!R.ocultar_numeros?'<div class="paqNote"><i class="ti ti-wand"></i> El combo te asigna los números al azar.</div>':'');
   }
-  function vouReq(){return !!((R.cuentas||[]).length);}       // si no hay cuentas, el voucher es opcional
+  function vouReq(){return true;}                              // el comprobante es obligatorio: sin el, no se habilita Confirmar
   function limMax(){return parseInt(R.limite_por_persona,10)||0;}
   function onlyD(s){return String(s||"").replace(/\D/g,"");}
   function val(idv){var e=document.getElementById(idv);return e?e.value:"";}
