@@ -290,7 +290,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function waLink(txt){var n=waNum();if(n.length<8)return "";return "https://wa.me/"+n+(txt?("?text="+txt):"");}
   function navHTML(){
     var logo=R.logo?'<img src="'+esc(R.logo)+'" alt="">':'<i class="ti ti-ticket"></i>';
-    return '<div class="topaccent"></div><div class="nav"><div class="lg">'+logo+'</div><b>'+esc(R.biz||"Rifa")+'</b>'+
+    return '<div class="topaccent"></div><div class="nav"><div class="lg">'+logo+'</div><b>'+esc(R.nombre||R.biz||"Rifa")+'</b>'+
       '<button class="burger" type="button" aria-label="Menú" onclick="window.__menu()"><i class="ti ti-'+(menuOpen?'x':'layout-grid')+'"></i></button></div>';
   }
   function menuHTML(){
