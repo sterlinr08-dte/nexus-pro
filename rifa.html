@@ -154,14 +154,19 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .ajugar i{font-size:24px;color:var(--c);animation:ajBounce 1.1s ease-in-out infinite}
 @keyframes ajPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @keyframes ajBounce{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}
-/* numeros asignados (modo automatico) + re-tirar */
-.lkbox{margin:10px 0 2px;text-align:center}
-.lkLbl{font-size:11px;font-weight:800;color:#16a34a;margin-bottom:7px;display:flex;align-items:center;justify-content:center;gap:5px}
-.lkNums{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:11px}
-.lkN{font-family:ui-monospace,monospace;font-size:17px;font-weight:800;color:var(--c);background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:11px;padding:6px 12px;letter-spacing:1px;animation:lkPop .3s ease}
-@keyframes lkPop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-.lk-roll{width:100%;border:1.5px solid #e2e8f0;border-radius:30px;padding:13px;font-size:15px;font-weight:800;color:var(--c);background:#fff;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;transition:transform .12s ease,background .15s ease}
-.lk-roll:active{transform:scale(.97);background:#f8fafc}
+/* terminos y condiciones */
+.terms{display:flex;align-items:flex-start;gap:11px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:13px 14px;margin-top:11px;cursor:pointer}
+.terms input{width:24px;height:24px;flex:0 0 auto;accent-color:var(--c);margin-top:1px}
+.terms span{font-size:14px;font-weight:700;color:#0f172a;line-height:1.35}
+.terms a{color:var(--c);text-decoration:underline;font-weight:800}
+.tmodal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0}
+.tbox{background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;animation:tUp .25s ease}
+@keyframes tUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.thd{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #eef1f6;flex:0 0 auto}
+.thd b{font-size:16px;font-weight:800;color:#0f172a}
+.thd button{border:0;background:#f1f5f9;width:34px;height:34px;border-radius:50%;font-size:18px;color:#475569;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tbody{padding:15px 16px;overflow-y:auto;font-size:13px;line-height:1.55;color:#334155;flex:1}
+.tok{margin:12px 16px 16px;border:0;border-radius:28px;padding:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;flex:0 0 auto}
 /* boton Consultar mi ticket (arriba del todo) */
 .ctkBtn{width:100%;border:0;border-radius:30px;padding:14px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,.32);margin-bottom:12px;animation:ctkPulse 1.9s ease-in-out infinite;transition:transform .12s ease}
 .ctkBtn:active{transform:scale(.97)}
@@ -277,7 +282,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var tab="comprar", done=false, menuOpen=false;
   var MGSTARS='<div class="mgRise"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
   var cart=[];                          // numeros seleccionados (strings)
-  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null, doneApartado=false, luckPick=[];
+  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null, doneApartado=false, acceptedTerms=false;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
   var F={nom:"",tel:""};
 
@@ -287,14 +292,6 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function pkg(){return pkgSel?(R.paquetes||[]).filter(function(x){return String(x.id)===String(pkgSel);})[0]:null;}
   function count(){var p=pkg();if(p)return Number(p.cantidad)||0;return (R&&R.ocultar_numeros)?qty:cart.length;}
   function total(){var p=pkg();if(p)return Number(p.precio)||0;return count()*(R.precio||0);}
-  // ── Modo automático: asigna números al azar en el navegador, se muestran y se pueden re-tirar
-  function genLuck(n){var totalN=R.cantidad||10000,av=[];for(var i=0;i<totalN;i++){var s=pad(i);if(!sold[s])av.push(s);}var res=[];for(var k=0;k<n&&av.length;k++){var idx=Math.floor(Math.random()*av.length);res.push(av[idx]);av.splice(idx,1);}res.sort();return res;}
-  function ensureLuck(){ if(!R.ocultar_numeros||pkgSel){return;} var need=count(); if(luckPick.length!==need){luckPick=genLuck(need);} }
-  function luckBoxHTML(){ if(!R.ocultar_numeros||pkgSel)return '';
-    var chips=luckPick.length?'<div class="lkLbl"><i class="ti ti-confetti"></i> Tus números asignados</div><div class="lkNums">'+luckPick.map(function(x){return '<span class="lkN">'+esc(x)+'</span>';}).join('')+'</div>':'';
-    return chips+'<button type="button" class="lk-roll mg-shine" onclick="window.__luckRoll()"><i class="ti ti-dice-5"></i> '+(luckPick.length?'¿No te gustan? Elige a la suerte':'Elegir a la suerte')+'</button>';
-  }
-  window.__luckRoll=function(){ if(pkgSel)return; luckPick=genLuck(count()); var lb=document.getElementById("luckBox"); if(lb)lb.innerHTML=luckBoxHTML(); };
   function paqsHTML(){
     var ps=(R.paquetes||[]); if(!ps.length)return "";
     return '<div class="paqLbl"><i class="ti ti-gift"></i> Combos · ahorra en paquete</div><div class="paqs">'+ps.map(function(p){
@@ -380,7 +377,6 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function viewComprar(){
     var ctas=R.cuentas||[];
     var ATA=Array.isArray(R.atajos)?R.atajos:[1,5,10,25];
-    ensureLuck();
     var pago=ctas.length?'<div class="banks">'+ctas.map(function(c){var ic=c.tipo==="tarjeta"?"ti-credit-card":(c.tipo==="movil"?"ti-device-mobile":"ti-building-bank");return '<button type="button" class="bk'+(ctaSel===c.id?" on":"")+'" onclick="window.__pickBank(\''+c.id+'\')"><i class="ti '+ic+'"></i><div><div class="nm">'+esc(c.banco||"Cuenta")+'</div><div class="ti">'+esc(c.tipo||"banco")+'</div></div></button>';}).join('')+'</div><div id="acct"></div>':'<div class="empty">El organizador le enviará la confirmación por WhatsApp.</div>';
 
     return '<div class="body">'+
@@ -396,7 +392,6 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       (R.ocultar_numeros?
         '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
-          '<div id="luckBox" class="lkbox">'+luckBoxHTML()+'</div>'+
           '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
           (ATA.length?'<div class="qrow" style="margin-top:6px">'+ATA.map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>':'')+
           paqsHTML()+'<div class="hint sm1"><i class="ti ti-wand"></i> Te asignamos <b id="qtyTxt">'+qty+'</b> número(s) al azar.</div></div>'
@@ -415,6 +410,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
         '<input type="file" id="bVou" accept="image/*" style="display:none" onchange="window.__vou(this)"><div id="vp" class="vprev">'+(voucherData?'<img src="'+voucherData+'">':'')+'</div>'+
         (vouReq()?'<div style="font-size:11.5px;color:#94a3b8;margin-top:8px;text-align:center">Adjunta tu comprobante para habilitar el botón <b>Confirmar</b>.</div>':'')+
         '<div class="hint" style="margin-top:11px"><i class="ti ti-clock"></i> Tu número queda <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b> mientras el organizador confirma tu pago.</div>'+
+        '<label class="terms"><input type="checkbox" id="tck"'+(acceptedTerms?' checked':'')+' onchange="window.__terms(this.checked)"><span>Acepto los <a href="#" onclick="window.__showTerms();return false;">términos y condiciones</a>.</span></label>'+
       '</div>'+
       faqHTML()+
       '</div>';
@@ -457,7 +453,31 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(!cart.length){el.innerHTML="";return;}
     el.innerHTML='<div class="chips"><span class="lbl">Tus números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip"><b>'+esc(n)+'</b><span onclick="window.__toggle(\''+n+'\')">×</span></span>';}).join('')+'</div>';
   }
-  function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && (!vouReq() || !!voucherData); }
+  function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && (!vouReq() || !!voucherData) && acceptedTerms; }
+  window.__terms=function(v){ acceptedTerms=!!v; refreshCart(); };
+  function termsText(){
+    var emp=(R.biz||R.nombre||"la empresa rifadora");
+    return 'TÉRMINOS Y CONDICIONES DE LA RIFA PROMOCIONADA POR '+emp+'\n\n'+
+    'Yo, en calidad de participante (en lo adelante: “Participante”) de la rifa promocionada por Rifa2RD, S.R.L. (en lo adelante: “Organizador”), con la compra de uno o más boletos acepto los siguientes términos y condiciones:\n\n'+
+    '(1) Reconozco que soy mayor de edad, que cuento con un documento de identificación y me encuentro en República Dominicana;\n\n'+
+    '(2) Declaro haber leído y tener conocimiento de las bases de esta rifa que ha sido registrada en Pro Consumidor y reconozco que el organizador puede variar estas bases, mediante una notificación a dicho ente regulador conforme la legislación aplicable;\n\n'+
+    '(3) Reconozco que los ganadores de los premios se escogerán al azar;\n\n'+
+    '(4) Declaro que la información de contacto proporcionada es el único mecanismo para ser localizado en caso de resultar ganador y que, si resulto ganador y no puedo ser contactado mediante el número de teléfono proporcionado, el promotor de la rifa elegirá a un ganador alterno según los términos indicados por este;\n\n'+
+    '(5) Si resulto ganador de la rifa, acepto que el organizador puede usar mi nombre, imagen y/o voz (incluyendo fotografía y/o grabación) para anunciarme como ganador de esta rifa por un período de tiempo ilimitado sin remuneración con propósitos publicitarios relacionados con la promoción. Además, acepto participar en cualquier publicidad razonable requerida por el organizador;\n\n'+
+    '(6) Estoy de acuerdo en que, si resulto ganador del sorteo, es posible que se me solicite que brinde más información personal y prueba de mi identidad para confirmar mi elegibilidad para reclamar el premio y transferirme la propiedad del premio;\n\n'+
+    '(7) El premio es intransferible, razón por la cual, no podrá ser cedido, ni negociado, ni canjeado por otro premio, producto, servicio, contraprestación y/o dinero;\n\n'+
+    '(8) Reconozco que debo reclamar el premio personalmente. El premio no puede ser reclamado por un tercero en mi nombre;\n\n'+
+    '(9) El premio es provisto por un tercero ajeno al organizador. Por lo tanto, acepto que el organizador no hace representaciones y no ofrece garantías sobre el premio, su valor o su condición de este. Declaro que libero al organizador de cualquier responsabilidad civil o penal suscitada por cualquier defecto, desperfecto o imperfección que provoque algún daño o reparo como consecuencia del uso del premio;\n\n'+
+    '(10) Si resulto ganador, me comprometo a firmar el acta o documento de entrega y/o cualquier otra documentación que se requiera para la entrega del premio;\n\n'+
+    '(11) Acepto que la información proporcionada al organizador de la rifa sea ingresada en una base de datos y que el organizador podrá usar esta información en cualquier medio para futuros propósitos promocionales, de mercadeo y publicidad sin referencia o pago u otra compensación para el Participante (en cualquier momento podrá solicitar la cancelación de la suscripción en la base de datos);\n\n'+
+    '(12) Debido a las existencias en el mercado, puede existir variación en el color de los premios, pero respetando el mismo modelo del producto; en caso de que el premio ofertado se agote en el país, el organizador contactará al ganador para sustituir el premio por algún otro de características y valor semejantes;\n\n'+
+    '(13) En caso de resultar ganador, acepto asumir íntegramente el costo de los impuestos, gastos legales y trámites necesarios para transferir a mi nombre el premio obtenido.';
+  }
+  window.__showTerms=function(){ var ov=document.getElementById("tmodal"); if(ov)ov.remove();
+    ov=document.createElement("div"); ov.id="tmodal"; ov.className="tmodal"; ov.onclick=function(e){if(e.target===ov)ov.remove();};
+    ov.innerHTML='<div class="tbox"><div class="thd"><b>Términos y condiciones</b><button onclick="document.getElementById(\'tmodal\').remove()"><i class="ti ti-x"></i></button></div><div class="tbody">'+esc(termsText()).replace(/\n/g,"<br>")+'</div><button class="tok" onclick="window.__terms(true);var c=document.getElementById(\'tck\');if(c)c.checked=true;document.getElementById(\'tmodal\').remove();">Aceptar y cerrar</button></div>';
+    document.body.appendChild(ov);
+  };
   function checksHTML(){
     function item(idv,lbl,ok){return '<div class="ck'+(ok?' done':'')+'" id="'+idv+'"><span class="b"><i class="ti ti-check"></i></span>'+lbl+'</div>';}
     var h=item('ckNom','Datos',!!(F.nom||"").trim()&&!!(F.tel||"").trim())
@@ -483,7 +503,6 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(pkgSel){pkgSel=null;render();return;}
     var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.textContent=qty; if(t)t.textContent=qty;
     var box=document.querySelector(".stp"); if(box){var minus=box.querySelector(".minus"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".mid small"); if(sm)sm.textContent=qty===1?'BOLETO':'BOLETOS';}
-    if(R.ocultar_numeros){ luckPick=genLuck(count()); var lb=document.getElementById("luckBox"); if(lb)lb.innerHTML=luckBoxHTML(); }
     refreshCart();
   };
 
@@ -530,16 +549,17 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(!(F.nom||"").trim()){alert("Escribe tu nombre completo.");scrollTo(0,0);return;}
     if(!(F.tel||"").trim()){alert("Escribe tu número de WhatsApp.");scrollTo(0,0);return;}
     if(vouReq() && !voucherData){alert("Adjunta el comprobante de pago para continuar.");return;}
+    if(!acceptedTerms){alert("Debes aceptar los términos y condiciones para continuar.");return;}
     var btn=document.getElementById("goBtn"); btn.disabled=true; btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Enviando…';
     var payload={ rifa_id:id, nombre:(F.nom||"").trim(), telefono:(F.tel||"").trim(),
       cuenta_id:ctaSel||null, voucher:voucherData||null };
-    if(pkgSel) payload.paquete_id=pkgSel; else if(R.ocultar_numeros){ if(luckPick.length) payload.numeros=luckPick; else payload.cantidad=qty; } else payload.numeros=cart;
+    if(pkgSel) payload.paquete_id=pkgSel; else if(R.ocultar_numeros) payload.cantidad=qty; else payload.numeros=cart;
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
       .then(function(res){
         if(res.ok&&res.j.ok){ doneNums=res.j.numeros||cart; doneId=res.j.id||""; doneApartado=!!res.j.apartado; done=true; window.scrollTo(0,0); render(); }
         else { alert(res.j.error||"No se pudo registrar. Intenta otra vez."); btn.disabled=false; btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';
-          if(/tomad/i.test(res.j.error||"")){ load().then(function(){ cart=cart.filter(function(n){return !sold[n];}); if(R.ocultar_numeros){ luckPick=genLuck(count()); } render(); }); } }
+          if(/tomad/i.test(res.j.error||"")){ load().then(function(){ cart=cart.filter(function(n){return !sold[n];}); render(); }); } }
       }).catch(function(){alert("Error de conexión. Intenta otra vez.");btn.disabled=false;btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';});
   };
 
@@ -557,7 +577,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       '<p>'+msg+'</p>'+wa+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+
       '<a class="alt" href="#" onclick="window.__reset();return false;">Comprar más</a></div></div>';
   }
-  window.__reset=function(){ cart=[]; qty=1; pkgSel=null; voucherData=""; ctaSel=null; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
+  window.__reset=function(){ cart=[]; qty=1; pkgSel=null; voucherData=""; ctaSel=null; acceptedTerms=false; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
 
   // ── VERIFICADOR
   function viewVerificar(){
