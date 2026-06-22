@@ -1,7 +1,8 @@
 {
-  "version": "35.4",
+  "version": "36.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (importante · Clientes): la DEUDA ANTERIOR (la que el cliente trajo de ANTES del sistema) ahora va en su PROPIA casilla 'Deuda anterior pendiente' (en rojo) y NO se mezcla con las facturas del mes. Antes se sumaba a la factura y confundía. Ahora ves por separado: el Pendiente de facturas y, abajo en rojo, la Deuda anterior. Los totales del sistema siguen sumando todo lo que el cliente debe (nada se pierde). Para bajar la deuda anterior cuando el cliente te pague lo viejo, usa el botón 'Ajustar' en la ficha del cliente. (Se reacomodaron los 13 clientes que ya tenían deuda anterior sin cambiar lo que deben.)",
     "NUEVO (Rifas · tema Automático): ahora puedes elegir entre VARIOS temas para la página pública — Automático, Claro u Oscuro. El 'Automático' toma el color dominante de tu BANNER y decide solo si va claro u oscuro, para que la página combine con la imagen del premio sin que tengas que elegir color a mano.",
     "NUEVO (Rifas · barra de progreso): además del interruptor para mostrar/ocultar la barra, ahora hay otro para mostrar u ocultar el PORCENTAJE (%) dentro de la barra. Así puedes dejar la barra sin revelar el número, o esconder todo.",
     "AJUSTE (Rifas · página pública): el botón 'Consultar mi ticket' ahora va en MAYÚSCULA, y el tutorial '¿Cómo jugar?' trae un paso nuevo: paso 4 'Acepta los términos y condiciones' y 'Recibe tu boleto' pasa a ser el paso 5 (5 pasos en total).",

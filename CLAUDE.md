@@ -227,6 +227,21 @@ la MISMA org (la isolación por `organizacion_id` se mantiene). Es la Fase 3 de
 `SEGURIDAD-PLAN.md`. Hacerlo con el dueño probando (puede dejar gente afuera si
 sale mal).
 
+### DEUDA ANTERIOR separada de las facturas — v36.0 (decisión del dueño)
+La "deuda anterior al sistema" (la que el cliente trajo de ANTES) ahora vive en su PROPIA
+columna **`clientes.deuda_anterior`**, SEPARADA de las facturas (ya NO se mezcla en `deuda_ant`/
+`deuda_total`). Modelo: `deuda_total`=solo primas facturadas; `pagado`=solo pagos a facturas;
+`pend(c)`=deuda_total−pagado (solo facturas); `deudaAnt(c)`=deuda_anterior; **`pendTot(c)`=
+pend+deudaAnt** (total que debe). El campo del form (`cDeudaIni`, label `cDeudaLbl`) ahora guarda
+`deuda_anterior` (al crear: `deuda_anterior:deudaIni,deuda_total:0`; al editar bloqueado + botón
+"Ajustar" `nxDeudaUnlock` → `datos.deuda_anterior`). La generación de facturas NO cambió (`da=pend(c)`
+ahora excluye la deuda anterior, así que ya no la suma). Display: ficha del cliente y fila de Cobros
+muestran "Deuda anterior" en ROJO aparte; **totales/estado/filtros usan `pendTot`** (getEst, dashboards,
+reportes, filtros "con deuda", selSoloDeuda, sort) para que nada se pierda; **cobro y asientos siguen con
+`pend`** (solo facturas — la deuda anterior se baja a mano con "Ajustar"). Migración hecha (13 clientes,
+RD$ 71,500 → 32,500 pendiente tras aplicar lo pagado a la deuda vieja 1ro; total pendiente intacto
+541,800). NO tocar `reconciliarDeudasClientes` (solo sube deuda_total a las primas, no toca deuda_anterior).
+
 ### Bug de la DEUDA al editar cliente (RAÍZ) — ARREGLADO v30.0 (20-jun-2026)
 Síntoma: clientes salían con un "Pendiente" diminuto o equivocado (p.ej. "RD$ 8")
 y los pagos parecían perderse. **Causa de fondo (la identificó el dueño):** la

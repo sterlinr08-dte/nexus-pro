@@ -1695,12 +1695,12 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <div class="fr"><label>Fecha inicio póliza</label><input type="date" id="cFecIni"/></div>
       <div class="fr"><label>Fecha fin póliza</label><input type="date" id="cFecFin"/></div>
       <div class="fr"><label>Día de facturación (1-28)</label><input type="number" id="cDiaFact" value="1" min="1" max="28" placeholder="Día del mes"/></div>
-      <div class="fr"><label id="cDeudaLbl">Deuda previa RD$ (deuda que el cliente ya tenía antes del sistema)</label>
+      <div class="fr"><label id="cDeudaLbl">Deuda anterior pendiente RD$ (la que el cliente ya tenía ANTES del sistema)</label>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="text" id="cDeudaIni" inputmode="decimal" data-nx-money value="0" placeholder="Ej: 17400" class="no-upper" style="flex:1;min-width:0"/>
           <button type="button" id="cDeudaUnlock" onclick="nxDeudaUnlock()" style="display:none;flex:0 0 auto;background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap"><i class="ti ti-lock-open"></i> Ajustar</button>
         </div>
-        <div id="cDeudaHint" style="display:none;font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">🔒 La deuda se maneja sola con las facturas y los cobros. Está bloqueada para que al editar no se dañe. Toca <b>Ajustar</b> solo si necesitas corregir un error puntual.</div>
+        <div id="cDeudaHint" style="display:none;font-size:10px;color:#64748b;margin-top:4px;line-height:1.4">🔒 Es la deuda que el cliente trajo de ANTES del sistema — va aparte, NO se mezcla con las facturas del mes. Está bloqueada para que al editar no se dañe. Toca <b>Ajustar</b> para bajarla cuando el cliente te pague esa deuda vieja.</div>
       </div>
     </div>
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin:8px 0">
@@ -2463,13 +2463,16 @@ const getTot=c=>{
   return primaT+((c.deps||[]).length*primaD);
 };
 const pend=c=>Math.max(0,(c.deuda_total||0)-(c.pagado||0));
+// Deuda anterior al sistema: vive APARTE, no se mezcla con las facturas. pend()=solo facturas; pendTot()=facturas+deuda anterior (para totales y estado).
+const deudaAnt=c=>Math.max(0,Number(c&&c.deuda_anterior)||0);
+const pendTot=c=>pend(c)+deudaAnt(c);
 const fmt=n=>'RD$ '+Math.round(n||0).toLocaleString('es-DO');
 const fmtN=n=>Math.round(n||0).toLocaleString('es-DO');
 const reciboNoStr=a=>{if(!a||a.recibo_num==null)return'';const y=a.recibo_anio||((a.fecha||'').slice(0,4))||new Date().getFullYear();return y+'-'+String(a.recibo_num).padStart(4,'0');};
 const inits=n=>(n||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
 const gEmp=id=>ST.empresas.find(e=>e.id===id);
 const gAgt=id=>ST.agentes.find(a=>a.id===id);
-const getEst=c=>!c.activo?'Inhabilitado':pend(c)===0?'Al día':c.pagado>0?'Parcial':'Pendiente';
+const getEst=c=>!c.activo?'Inhabilitado':pendTot(c)===0?'Al día':(c.pagado>0||pend(c)===0)?'Parcial':'Pendiente';
 const hoy=()=>new Date().toISOString().slice(0,10);
 const addSaldo=(cod,n)=>{const c=CUENTAS.find(x=>x.cod===cod);if(c)c.saldo+=n;};
 
@@ -3184,7 +3187,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='35.4';
+const APP_VERSION='36.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3687,9 +3690,14 @@ function verCliente(id){
           <div style="font-size:14px;font-weight:700;color:#059669;margin-top:2px">${fmt(getTot(c))}</div>
         </div>
         <div style="background:#fef3c7;border-radius:8px;padding:8px;text-align:center">
-          <div style="font-size:9px;color:#92400e;text-transform:uppercase;font-weight:700">Pendiente</div>
+          <div style="font-size:9px;color:#92400e;text-transform:uppercase;font-weight:700">Pendiente facturas</div>
           <div style="font-size:14px;font-weight:700;color:#92400e;margin-top:2px">${fmt(pend(c))}</div>
         </div>
+        ${(Number(c.deuda_anterior)||0)>0?`<div style="grid-column:1/-1;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:9px;color:#dc2626;text-transform:uppercase;font-weight:700">🔴 Deuda anterior (antes del sistema)</div>
+          <div style="font-size:14px;font-weight:700;color:#dc2626;margin-top:2px">${fmt(c.deuda_anterior)}</div>
+          <div style="font-size:9px;color:#b91c1c;margin-top:1px">No se mezcla con las facturas del mes</div>
+        </div>`:''}
       </div>
     </div>
     
@@ -4128,7 +4136,7 @@ function generarEmailPreview(){
   const nuevosHoy=act.filter(c=>c.created_at?.slice(0,10)===hoyD).length;
   const prima=act.reduce((s,c)=>s+getTot(c),0);
   const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
-  const pend2=act.reduce((s,c)=>s+pend(c),0);
+  const pend2=act.reduce((s,c)=>s+pendTot(c),0);
   const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=(CFG.alertaDias||30);}).length;
   const facHoy=ST.facturas.filter(f=>f.created_at?.slice(0,10)===hoyD).length;
 
@@ -4167,7 +4175,7 @@ function generarParamsEmail(){
   const hoyD=hoy();
   const prima=act.reduce((s,c)=>s+getTot(c),0);
   const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
-  const pend2=act.reduce((s,c)=>s+pend(c),0);
+  const pend2=act.reduce((s,c)=>s+pendTot(c),0);
   const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=(CFG.alertaDias||30);}).length;
   return{
     to_email:_emailCfg.email,
@@ -4331,7 +4339,7 @@ async function cargarDatosNucleo(){
   });
   ST.clientes.forEach(c=>{if(typeof c.deps==='string')try{c.deps=JSON.parse(c.deps);}catch{c.deps=[];}});
   // Coerción defensiva: Supabase devuelve numéricos como texto
-  ST.clientes.forEach(c=>{['deuda_total','pagado','precio_titular','precio_dep','saldo_inicial','saldo_inicial_pagado'].forEach(k=>{if(c[k]!=null&&c[k]!=='')c[k]=Number(c[k]);});});
+  ST.clientes.forEach(c=>{['deuda_total','deuda_anterior','pagado','precio_titular','precio_dep','saldo_inicial','saldo_inicial_pagado'].forEach(k=>{if(c[k]!=null&&c[k]!=='')c[k]=Number(c[k]);});});
   // Cargar auto config
   const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
 }
@@ -4502,7 +4510,7 @@ function actualizarTicker(){
   const inh=ST.clientes.filter(c=>!c.activo).length;
   const prima=act.reduce((s,c)=>s+getTot(c),0);
   const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
-  const pd=act.reduce((s,c)=>s+pend(c),0);
+  const pd=act.reduce((s,c)=>s+pendTot(c),0);
   const polVenc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=CFG.alertaDias;}).length;
   document.getElementById('tkr').innerHTML=`<div class="ti">NEXUS PRO v6 <span class="tu">ONLINE</span></div><div class="ti">PRIMA <span class="tu">${fmt(prima)}</span></div><div class="ti">COBRADO <span class="tu">${fmt(cob)}</span></div><div class="ti">PENDIENTE <span class="td">${fmt(pd)}</span></div><div class="ti">ACTIVOS <span class="tu">${act.length}</span></div><div class="ti">INHABILITADOS <span class="${inh?'td':'tu'}">${inh}</span></div>${polVenc?`<div class="ti">PÓLIZAS POR VENCER <span class="td">${polVenc}</span></div>`:''}`;
   // Badge de Clientes: muestra los clientes nuevos de HOY
@@ -4606,7 +4614,7 @@ function rDash(){
   const inh=ST.clientes.filter(c=>!c.activo).length;
   const prima=act.reduce((s,c)=>s+getTot(c),0);
   const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
-  const pd=act.reduce((s,c)=>s+pend(c),0);
+  const pd=act.reduce((s,c)=>s+pendTot(c),0);
   const ef=(cob+pd)>0?Math.round(cob/(cob+pd)*100):0;
   document.getElementById('kpiG').innerHTML=`
     <div class="kpi k1"><i class="ti ti-users ki"></i><div class="kl">CLIENTES ACTIVOS</div><div class="kv v1">${act.length}</div><div class="ks">${inh} inhabilitados</div></div>
@@ -4630,7 +4638,7 @@ function rDash(){
   const venc=act.filter(c=>{if(!c.fecha_fin)return false;const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);return d>=0&&d<=CFG.alertaDias;}).slice(0,6);
   document.getElementById('dashVenc').innerHTML=venc.length?`<div class="tw"><table><thead><tr><th>CLIENTE</th><th>PÓLIZA</th><th>PLAN</th><th>VENCE</th><th>DÍAS</th></tr></thead><tbody>${venc.map(c=>{const d=Math.ceil((new Date(c.fecha_fin)-new Date())/86400000);const ep=getEstPol(c);return`<tr><td style="font-weight:700">${c.nom}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c4)">${c.numero_poliza||'—'}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${c.fecha_fin}</td><td><span class="badge ${ep.badge}">${d} días</span></td></tr>`;}).join('')}</tbody></table></div>`:`<div class="empty">No hay pólizas por vencer en ${CFG.alertaDias} días ✓</div>`;
   // Saldos pendientes
-  const pends=act.filter(c=>pend(c)>0).slice(0,6);
+  const pends=act.filter(c=>pendTot(c)>0).slice(0,6);
   document.getElementById('dashD').innerHTML=pends.length?`<div class="tw"><table><thead><tr><th>CLIENTE</th><th>PLAN</th><th>PRIMA</th><th>PENDIENTE</th><th>ESTADO</th></tr></thead><tbody>${pends.map(c=>`<tr><td style="font-weight:700;font-size:11px">${c.nom}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(getTot(c))}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c3);font-weight:700">${fmt(pend(c))}</td><td>${estB(c)}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty"><i class="ti ti-circle-check" style="font-size:22px;color:var(--c1);display:block;margin-bottom:6px"></i>TODOS AL DÍA</div>`;
   rChartCobros();
   rWidgetProceso();
@@ -4852,7 +4860,7 @@ function _cliSortVal(c,col){
     case 'empresa':return (gEmp(c.empresa_id)?.nom||'').toLowerCase();
     case 'vigencia':return c.fecha_fin||'';
     case 'prima':return Number(getTot(c)||0);
-    case 'pendiente':return Number(pend(c)||0);
+    case 'pendiente':return Number(pendTot(c)||0);
     case 'estado':return (getEst(c)||'').toLowerCase();
   }
   return '';
@@ -5351,7 +5359,7 @@ const _COLS_COB=['cliente','agente','plan','deuda','cobrado','pendiente','progre
 const _COLS_PAG=['fecha','cliente','monto','metodo','referencia'];
 const _COLS_AGT=['nombre','cargo','licencia','vence','estado'];
 function sortCob(col){_ordToggle('cob',col);rCob();}
-function _cobSortVal(c,col){switch(col){case 'cliente':return (c.nom||'').toLowerCase();case 'agente':return (gAgt(c.agente_id)?.nom||'').toLowerCase();case 'plan':return (c.plan||'').toLowerCase();case 'deuda':return Number(c.deuda_total||0);case 'cobrado':return Number(c.pagado||0);case 'pendiente':return Number(pend(c)||0);case 'progreso':return c.deuda_total>0?(c.pagado||0)/c.deuda_total:1;}return '';}
+function _cobSortVal(c,col){switch(col){case 'cliente':return (c.nom||'').toLowerCase();case 'agente':return (gAgt(c.agente_id)?.nom||'').toLowerCase();case 'plan':return (c.plan||'').toLowerCase();case 'deuda':return Number(c.deuda_total||0);case 'cobrado':return Number(c.pagado||0);case 'pendiente':return Number(pendTot(c)||0);case 'progreso':return c.deuda_total>0?(c.pagado||0)/c.deuda_total:1;}return '';}
 function sortPag(col){_ordToggle('pag',col);aplicarFiltrosPagos();}
 function _pagSortVal(p,col){switch(col){case 'fecha':return (p.fecha||'').slice(0,10);case 'cliente':return (p.cliente_nom||'').toLowerCase();case 'monto':return Number(p.monto||0);case 'metodo':return (p.metodo||'').toLowerCase();case 'referencia':return (p.referencia||'').toLowerCase();}return '';}
 function sortAgt(col){_ordToggle('agt',col);rAgentes();}
@@ -5365,12 +5373,12 @@ function rCob(){
   let activos=ST.clientes.filter(c=>c.activo);
   if(fa)activos=activos.filter(c=>String(c.agente_id)===fa);
   if(q)activos=activos.filter(c=>c.nom.toLowerCase().includes(q)||(c.cedula||'').includes(q)||(c.referencia||'').toLowerCase().includes(q)||(c.numero_poliza||'').toLowerCase().includes(q));
-  if(fest==='deuda')activos=activos.filter(c=>pend(c)>0);
-  else if(fest==='aldia')activos=activos.filter(c=>pend(c)<=0);
+  if(fest==='deuda')activos=activos.filter(c=>pendTot(c)>0);
+  else if(fest==='aldia')activos=activos.filter(c=>pendTot(c)<=0);
   activos=_ordAplicar('cob',activos,_cobSortVal);
   _ordFlechas('cob','sfc_',_COLS_COB);
   if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin resultados</div></td></tr>';return;}
-  tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div></td><td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
+  tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div>${(Number(c.deuda_anterior)||0)>0?`<div style="font-size:8.5px;color:#dc2626;font-weight:700;margin-top:2px">🔴 Deuda ant.: ${fmt(c.deuda_anterior)}</div>`:''}</td><td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
 }
 // ════════ BANCOS - Módulo nativo ════════
 let _bancosCache=[];
@@ -5939,7 +5947,7 @@ function abrirNuevoCli(){
   const cDiaNew=document.getElementById('cDiaFact');if(cDiaNew)cDiaNew.value=autoCfg.dia||1;
   // CREAR: el campo sirve para registrar la deuda PREVIA del cliente (editable, sin candado)
   const cDeudaNew=document.getElementById('cDeudaIni');if(cDeudaNew){cDeudaNew.value='0';cDeudaNew.disabled=false;cDeudaNew._deudaOriginal=0;}
-  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda previa RD$ (deuda que el cliente ya tenía antes del sistema)';
+  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda anterior pendiente RD$ (la que el cliente ya tenía ANTES del sistema)';
    const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='none';
    const hn=document.getElementById('cDeudaHint');if(hn)hn.style.display='none';}
   ['cVip'].forEach(id=>{const e=document.getElementById(id);if(e)e.checked=false;});
@@ -5989,8 +5997,8 @@ function editarCli(id){
   // las facturas y los cobros; dejarla editable en cada edición la dañaba (bug de los RD$ 5/8).
   // Para corregir un error puntual está el botón "Ajustar" (nxDeudaUnlock), deliberado y auditado.
   const cDeudaEd=document.getElementById('cDeudaIni');
-  if(cDeudaEd){cDeudaEd.value=c.deuda_total||0;cDeudaEd.disabled=true;cDeudaEd._deudaOriginal=c.deuda_total||0;}
-  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda total RD$ (bloqueada · se maneja con facturas y cobros)';
+  if(cDeudaEd){cDeudaEd.value=c.deuda_anterior||0;cDeudaEd.disabled=true;cDeudaEd._deudaOriginal=c.deuda_anterior||0;}
+  {const lb=document.getElementById('cDeudaLbl');if(lb)lb.textContent='Deuda anterior pendiente RD$ (bloqueada · ajústala cuando el cliente pague lo viejo)';
    const ub=document.getElementById('cDeudaUnlock');if(ub)ub.style.display='';
    const hn=document.getElementById('cDeudaHint');if(hn)hn.style.display='';}
   const cVipEl=document.getElementById('cVip');if(cVipEl)cVipEl.checked=!!c.vip;
@@ -6122,8 +6130,8 @@ async function guardarCli(){
         const deudaNueva=(window.nxMoney?window.nxMoney.parse(cDeudaEl.value):parseFloat(cDeudaEl.value))||0;
         const deudaOrig=Number(cDeudaEl._deudaOriginal)||0;
         if(Math.round(deudaNueva*100)!==Math.round(deudaOrig*100)){
-          datos.deuda_total=deudaNueva;
-          logAudit('AJUSTE_DEUDA',`${nom} · Deuda ajustada de ${fmt(deudaOrig)} a ${fmt(deudaNueva)}`,'Clientes');
+          datos.deuda_anterior=deudaNueva;
+          logAudit('AJUSTE_DEUDA_ANTERIOR',`${nom} · Deuda anterior ajustada de ${fmt(deudaOrig)} a ${fmt(deudaNueva)}`,'Clientes');
         }
       }
       try{
@@ -6146,13 +6154,13 @@ async function guardarCli(){
       const deudaIni=(window.nxMoney?window.nxMoney.parse(document.getElementById('cDeudaIni')?.value):parseFloat(document.getElementById('cDeudaIni')?.value))||0;
       let res;
       try{
-        res=await API.post('clientes',{...datos,deuda_total:deudaIni,pagado:0,activo:true,numero_poliza:numPol});
+        res=await API.post('clientes',{...datos,deuda_anterior:deudaIni,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
       }catch(eCol){
         const d2={...datos};
         delete d2.created_by_name;delete d2.created_by_user_id;
         delete d2.updated_by_name;delete d2.updated_by_user_id;delete d2.updated_at;
         delete d2.estado_cliente;delete d2.permitir_facturacion;delete d2.pendientes_proceso;delete d2.otro_pendiente_detalle;delete d2.nota_proceso;delete d2.fecha_seguimiento;delete d2.responsable_seguimiento;delete d2.prioridad_proceso;delete d2.porcentaje_progreso;delete d2.vip;
-        res=await API.post('clientes',{...d2,deuda_total:deudaIni,pagado:0,activo:true,numero_poliza:numPol});
+        res=await API.post('clientes',{...d2,deuda_anterior:deudaIni,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
       }
       if(res&&res[0]){res[0].deps=tempDeps;ST.clientes.push(res[0]);}
       logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes');
@@ -6412,7 +6420,7 @@ function rRepAgt(){
   if(cur){const a=ST.agentes.find(x=>String(x.id)===String(cur));if(!a){cont.innerHTML='<div class="empty">Agente no encontrado</div>';return;}cont.innerHTML=detalleAgente(a);return;}
   // ── Si no, overview de todos (tarjetas clicables que abren el detalle) ──
   const act=ST.clientes.filter(c=>c.activo);
-  cont.innerHTML=ST.agentes.map(a=>{const clis=act.filter(c=>c.agente_id===a.id);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pend(c),0);const ef=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const ph=ef>=80?'var(--c1)':ef>=50?'var(--c4)':'var(--c3)';return`<div class="nc p2" style="margin-bottom:8px;cursor:pointer" onclick="abrirAgente('${a.id}')"><div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><div class="av" style="background:rgba(139,92,246,.1);color:var(--c2);width:34px;height:34px;font-size:12px">${inits(a.nom)}</div><div style="flex:1"><div style="font-weight:700">${a.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${a.cargo||''} · Lic: ${a.licencia||'—'}</div></div><div style="text-align:right"><div style="font-weight:700;color:var(--c1);font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} clientes</div></div><div style="width:36px;height:36px;border-radius:50%;background:${ph}18;border:1px solid ${ph};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${ph};font-family:var(--mono)">${ef}%</div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${ef<50?' d':ef<80?' w':''}" style="width:${ef}%"></div></div><div style="text-align:center;font-size:9px;color:var(--c2);font-weight:700;margin-top:6px">👆 Toca para ver sus clientes</div></div>`;}).join('')||'<div class="empty">Sin agentes</div>';
+  cont.innerHTML=ST.agentes.map(a=>{const clis=act.filter(c=>c.agente_id===a.id);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const ef=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const ph=ef>=80?'var(--c1)':ef>=50?'var(--c4)':'var(--c3)';return`<div class="nc p2" style="margin-bottom:8px;cursor:pointer" onclick="abrirAgente('${a.id}')"><div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><div class="av" style="background:rgba(139,92,246,.1);color:var(--c2);width:34px;height:34px;font-size:12px">${inits(a.nom)}</div><div style="flex:1"><div style="font-weight:700">${a.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${a.cargo||''} · Lic: ${a.licencia||'—'}</div></div><div style="text-align:right"><div style="font-weight:700;color:var(--c1);font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} clientes</div></div><div style="width:36px;height:36px;border-radius:50%;background:${ph}18;border:1px solid ${ph};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${ph};font-family:var(--mono)">${ef}%</div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${ef<50?' d':ef<80?' w':''}" style="width:${ef}%"></div></div><div style="text-align:center;font-size:9px;color:var(--c2);font-weight:700;margin-top:6px">👆 Toca para ver sus clientes</div></div>`;}).join('')||'<div class="empty">Sin agentes</div>';
 }
 // Selecciona un agente en el reporte y muestra su detalle
 function abrirAgente(id){const sel=document.getElementById('repAgtSel');if(sel)sel.value=id;rRepAgt();}
@@ -6422,9 +6430,9 @@ function detalleAgente(a){
   const activos=todos.filter(c=>c.activo);
   const prima=activos.reduce((s,c)=>s+getTot(c),0);
   const cob=activos.reduce((s,c)=>s+(c.pagado||0),0);
-  const pd=todos.reduce((s,c)=>s+pend(c),0);
+  const pd=todos.reduce((s,c)=>s+pendTot(c),0);
   const ef=prima>0?Math.round(cob/prima*100):0;
-  const conDeuda=todos.filter(c=>pend(c)>0).length;
+  const conDeuda=todos.filter(c=>pendTot(c)>0).length;
   const inhab=todos.filter(c=>!c.activo).length;
   // # facturas de los clientes de este agente
   const idsCli=new Set(todos.map(c=>String(c.id)));
@@ -6447,8 +6455,8 @@ function detalleAgente(a){
       ${lista}
     </div>`;
 }
-function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pend(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">PLAN ${p.toUpperCase()}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
-function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e,i)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pend(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const hex=COLS[i%COLS.length];return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%;background:${hex}"></div></div></div>`;}).join('');}
+function rRepPlan(){const act=ST.clientes.filter(c=>c.activo),tP=act.reduce((s,c)=>s+getTot(c),0);const planes=['Básico','Superior','Esencial Plus'],ph=['#00e5c7','#8b5cf6','#10b981'];document.getElementById('rPlan').innerHTML=planes.map((p,i)=>{const clis=act.filter(c=>c.plan===p);const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const pct=tP>0?Math.round(prima/tP*100):0;const cobPct=prima>0?Math.round(cob/prima*100):0;return`<div style="border:1px solid ${ph[i]}22;border-radius:var(--r14);padding:13px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:${ph[i]};box-shadow:0 0 6px ${ph[i]}"></div><div style="font-weight:700;font-family:var(--mono)">PLAN ${p.toUpperCase()}</div></div><div><span style="font-weight:700;color:${ph[i]};font-family:var(--mono)">${fmt(prima)}/mes</span><span style="font-size:8px;color:var(--tx3);margin-left:5px">${pct}% cartera</span></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv">${clis.length}</div><div class="sml">CLIENTES</div></div><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div></div><div style="display:flex;justify-content:space-between;font-size:8px;color:var(--tx3);margin-bottom:2px;font-family:var(--mono)"><span>EFECTIVIDAD</span><span>${cobPct}%</span></div><div class="prog"><div class="pf" style="width:${cobPct}%;background:${ph[i]}"></div></div></div>`;}).join('');}
+function rRepEmp(){const act=ST.clientes.filter(c=>c.activo),COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];const empList=[...ST.empresas,{id:null,nom:'Clientes particulares',sector:'—'}];document.getElementById('rEmp').innerHTML=empList.map((e,i)=>{const clis=act.filter(c=>(e.id?c.empresa_id===e.id:!c.empresa_id));if(!clis.length)return'';const prima=clis.reduce((s,c)=>s+getTot(c),0);const cob=clis.reduce((s,c)=>s+(c.pagado||0),0);const pd=clis.reduce((s,c)=>s+pendTot(c),0);const cobPct=prima>0?Math.round(cob/prima*100):0;const byPlan={Básico:0,Superior:0,'Esencial Plus':0};clis.forEach(c=>byPlan[c.plan]=(byPlan[c.plan]||0)+1);const hex=COLS[i%COLS.length];return`<div style="border:1px solid ${hex}22;border-radius:var(--r14);padding:12px;margin-bottom:8px;background:var(--bg2)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px"><div><div style="font-weight:700">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${e.sector||''}</div></div><div style="text-align:right"><div style="font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}/mes</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${clis.length} asegurados</div></div></div><div class="g3" style="margin-bottom:7px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(cob)}</div><div class="sml">COBRADO</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(pd)}</div><div class="sml">PENDIENTE</div></div><div class="sm"><div class="smv" style="font-size:11px">${byPlan['Básico']}/${byPlan['Superior']}/${byPlan['Esencial Plus']}</div><div class="sml">B/S/E+</div></div></div><div class="prog"><div class="pf${cobPct<50?' d':cobPct<80?' w':''}" style="width:${cobPct}%;background:${hex}"></div></div></div>`;}).join('');}
 
 function rRepAging(){
   const cont=document.getElementById('rAging');
@@ -7656,7 +7664,7 @@ function exportarCSV(){
     lista.reduce((s,c)=>s+getTot(c),0),
     lista.reduce((s,c)=>s+(c.deuda_total||0),0),
     lista.reduce((s,c)=>s+(c.pagado||0),0),
-    lista.reduce((s,c)=>s+pend(c),0)
+    lista.reduce((s,c)=>s+pendTot(c),0)
   ]);
   descCSV(rows,`NEXUS_Clientes_${hoy()}.csv`);
   toast('ok','Excel exportado',''+lista.length+' registros con filtros aplicados');
@@ -7871,14 +7879,14 @@ function renderWAClientes(){
   el.innerHTML=act.map((c,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="toggleWACli('wachk_${i}')">
     <input type="checkbox" id="wachk_${i}" data-cid="${c.id}" onchange="updWACount()" style="width:15px;height:15px;cursor:pointer;accent-color:#8b5cf6"/>
     <div class="av" style="background:#eff6ff;color:#1d4ed8;flex-shrink:0">${inits(c.nom)}</div>
-    <div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1e293b">${c.nom}</div><div style="font-size:10px;color:#475569">${c.wa} · ${c.plan}${pend(c)>0?` · <span style="color:#dc2626">Debe ${fmt(pend(c))}</span>`:''}</div></div>
+    <div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1e293b">${c.nom}</div><div style="font-size:10px;color:#475569">${c.wa} · ${c.plan}${pendTot(c)>0?` · <span style="color:#dc2626">Debe ${fmt(pendTot(c))}</span>`:''}</div></div>
   </div>`).join('');
   updWACount();
 }
 
 function toggleWACli(id){const chk=document.getElementById(id);if(chk)chk.checked=!chk.checked;updWACount();}
 function selAllWA(v){document.querySelectorAll('#waClientesList input[type=checkbox]').forEach(c=>c.checked=v);updWACount();}
-function selSoloDeuda(){document.querySelectorAll('#waClientesList input[type=checkbox]').forEach(chk=>{const cid=chk.getAttribute('data-cid');const c=ST.clientes.find(x=>x.id===cid);chk.checked=c&&pend(c)>0;});updWACount();}
+function selSoloDeuda(){document.querySelectorAll('#waClientesList input[type=checkbox]').forEach(chk=>{const cid=chk.getAttribute('data-cid');const c=ST.clientes.find(x=>x.id===cid);chk.checked=c&&pendTot(c)>0;});updWACount();}
 function updWACount(){const n=document.querySelectorAll('#waClientesList input[type=checkbox]:checked').length;document.getElementById('waCountLbl').textContent=`${n} cliente${n!==1?'s':''} seleccionado${n!==1?'s':''}`;}
 
 async function ejecutarWAMasivo(){
