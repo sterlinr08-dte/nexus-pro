@@ -21,16 +21,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 .nav .lg{width:46px;height:46px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--c);overflow:hidden;flex:0 0 auto}
 .nav .lg img{width:100%;height:100%;object-fit:cover}
 .nav b{font-size:16px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.burger{width:46px;height:46px;border-radius:12px;border:0;background:#fff;color:var(--c);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,23,42,.10);flex:0 0 auto}
-.burger:active{transform:scale(.95)}
+.burger{width:46px;height:46px;border-radius:12px;border:1.5px solid #e8edf3;background:#fff;color:var(--c);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:transform .12s ease,background .15s ease}
+.burger:active{transform:scale(.93)}
 /* menu desplegable */
 .menu{background:#fff;border-bottom:2px solid #eef1f6;padding:6px 16px 18px;animation:slidedown .18s ease}
 @keyframes slidedown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 .menu a{display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;font-weight:800;color:#0f172a;padding:13px;text-decoration:none;cursor:pointer;border-radius:12px}
 .menu a:active{background:#f1f5f9}
 .menu a i{font-size:21px;color:var(--c)}
-.menu .lista{margin-top:6px;width:100%;border:0;border-radius:30px;padding:16px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 22px rgba(15,23,42,.18)}
-.menu .lista:active{transform:scale(.98)}
+.menu .lista{margin-top:6px;width:100%;border:0;border-radius:30px;padding:16px;font-size:17px;font-weight:800;color:#fff;background:var(--c);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s ease}
+.menu .lista:active{transform:scale(.97)}
 /* banner + bloque premio */
 .banner{width:100%;display:block}
 .prem-blk{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:16px;margin-bottom:8px;border-radius:0 0 22px 22px}
@@ -41,8 +41,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 .prog{height:9px;background:rgba(255,255,255,.25);border-radius:6px;overflow:hidden;margin-top:11px}
 .prog>div{height:100%;background:#fff;border-radius:6px}
 /* whatsapp flotante */
-.wafab{position:fixed;right:16px;width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:31px;text-decoration:none;box-shadow:0 10px 24px rgba(37,211,102,.5);z-index:40}
-.wafab:active{transform:scale(.94)}
+.wafab{position:fixed;right:16px;width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:31px;text-decoration:none;box-shadow:0 3px 9px rgba(15,23,42,.18);z-index:40;transition:transform .12s ease,filter .15s ease}
+.wafab:active{transform:scale(.92);filter:brightness(.95)}
 .body{padding:14px}
 /* card / section */
 .card{background:#fff;border:1px solid #e8edf3;border-radius:16px;padding:15px;margin-bottom:14px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
@@ -60,19 +60,19 @@ label.fl:first-child{margin-top:0}
 select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 12px center}
 /* atajos glossy */
 .qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
-.qrow button{border:0;background:#fff;border-radius:16px;padding:12px 4px;font-size:15px;font-weight:800;color:var(--c);cursor:pointer;line-height:1.1;box-shadow:0 6px 15px rgba(15,23,42,.09)}
+.qrow button{border:1.5px solid #e2e8f0;background:#fff;border-radius:16px;padding:12px 4px;font-size:15px;font-weight:800;color:var(--c);cursor:pointer;line-height:1.1;transition:transform .12s ease,background .15s ease}
 .qrow button small{display:block;font-size:10px;color:#94a3b8;font-weight:700;margin-top:3px}
-.qrow button:active{transform:scale(.95)}
-.luck{width:100%;border:0;border-radius:30px;padding:15px;font-size:17px;font-weight:800;color:var(--c);background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 8px 22px rgba(15,23,42,.12);margin-bottom:14px}
+.qrow button:active{transform:scale(.93);background:#f8fafc}
+.luck{width:100%;border:1.5px solid #e2e8f0;border-radius:30px;padding:15px;font-size:17px;font-weight:800;color:var(--c);background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;margin-bottom:14px;transition:transform .12s ease,background .15s ease}
 .luck i{color:#f59e0b}
-.luck:active{transform:scale(.98)}
-/* stepper redondo glossy */
+.luck:active{transform:scale(.97);background:#f8fafc}
+/* stepper redondo plano */
 .stp{display:flex;align-items:center;justify-content:center;gap:22px;margin:8px 0 2px}
-.stp button{width:74px;height:74px;border-radius:50%;border:0;font-size:36px;font-weight:800;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
-.stp .minus{background:linear-gradient(145deg,#cbd5e1,#94a3b8);box-shadow:0 8px 18px rgba(100,116,139,.4)}
-.stp .plus{background:linear-gradient(145deg,var(--c),var(--c2));box-shadow:0 8px 18px rgba(15,23,42,.28)}
+.stp button{width:74px;height:74px;border-radius:50%;border:0;font-size:36px;font-weight:800;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:transform .12s ease,filter .15s ease}
+.stp .minus{background:#94a3b8}
+.stp .plus{background:var(--c)}
 .stp button:disabled{opacity:.45}
-.stp button:active{transform:scale(.93)}
+.stp button:active{transform:scale(.9);filter:brightness(.94)}
 .stp .mid{text-align:center;min-width:90px}
 .stp .mid b{font-size:54px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1;color:#0f172a}
 .stp .mid small{font-size:12px;color:#94a3b8;font-weight:800;letter-spacing:1px}
@@ -83,7 +83,8 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 /* search + board */
 .srch{position:relative;margin-bottom:11px}
 .srch i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--c);font-size:19px}
-.srch input{width:100%;height:50px;padding:0 14px 0 44px;border:0;border-radius:28px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff;box-shadow:0 6px 16px rgba(15,23,42,.10)}
+.srch input{width:100%;height:50px;padding:0 14px 0 44px;border:1.5px solid #e2e8f0;border-radius:28px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff;transition:border-color .15s ease}
+.srch input:focus{border-color:var(--c)}
 .legend{display:flex;gap:13px;font-size:11px;color:#475569;font-weight:600;margin-bottom:10px;flex-wrap:wrap}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend .d{width:11px;height:11px;border-radius:3px}
@@ -138,8 +139,9 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .cart .info{flex:1;min-width:0}
 .cart .info .a{font-size:12px;color:#64748b;font-weight:700}
 .cart .info .b{font-size:19px;font-weight:800}
-.cart .go{border:0;border-radius:30px;padding:15px 22px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 8px 18px rgba(15,23,42,.22)}
-.cart .go:active{transform:scale(.97)}
+.cart .go{border:0;border-radius:30px;padding:15px 22px;font-size:16px;font-weight:800;color:#fff;background:var(--c);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:transform .12s ease,filter .15s ease}
+.cart .go:active{transform:scale(.96);filter:brightness(.94)}
+.cart .go:disabled{opacity:.5}
 .cart .go:disabled{opacity:.5}
 /* verificador */
 .vsearch{display:flex;gap:8px;margin-bottom:14px}
