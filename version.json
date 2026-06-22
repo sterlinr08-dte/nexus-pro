@@ -1,7 +1,8 @@
 {
-  "version": "34.9",
+  "version": "35.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas · cuentas de cobro): al registrar una cuenta bancaria ahora puedes poner el RNC/Cédula del titular y si la cuenta es de Ahorro o Corriente. Esos datos también salen en la página pública cuando el cliente elige dónde pagar, y los títulos del link quedaron todos en MAYÚSCULA.",
     "AJUSTE (Rifas): se quitó el botón 'Cuentas' de la lista de rifas porque ya se administra dentro de la creación/edición de cada rifa (botón 'Administrar cuentas de cobro').",
     "AJUSTE (Rifas · página pública): el tutorial '¿Cómo jugar?' ahora va ARRIBA, antes del paso 1. Los pasos por defecto se ordenaron para cuadrar con la página (1 Tus datos, 2 Elige, 3 Paga, 4 Recibe tu boleto). Todos los títulos de las secciones salen en MAYÚSCULA (respetando acentos).",
     "NUEVO (Rifas · tutorial 'Cómo jugar' editable): los pasos del tutorial que ve el cliente en la página pública ahora los escribes tú al crear/editar la rifa (título + explicación de cada paso, con botón para agregar o quitar pasos). Viene con 4 pasos por defecto que puedes cambiar; si los borras todos, el tutorial no aparece. En el menú, el botón grande dice 'JUGAR' y debajo está 'Preguntas frecuentes'.",

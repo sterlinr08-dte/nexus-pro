@@ -18358,7 +18358,8 @@ try {
   window.nxRifaCuentas = function () {
     cerrarModal('nxCtas');
     var lista = _cuentas.length ? _cuentas.map(function (c) {
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '(sin banco)') + '</b><span>' + esc(c.numero_cuenta || '') + (c.titular ? ' · ' + esc(c.titular) : '') + '</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxCuentaForm(\'' + c.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxCuentaEliminar(\'' + c.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      var clase = c.clase === 'ahorro' ? 'Ahorro' : (c.clase === 'corriente' ? 'Corriente' : '');
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '(sin banco)') + (clase ? ' · ' + clase : '') + '</b><span>' + esc(c.numero_cuenta || '') + (c.titular ? ' · ' + esc(c.titular) : '') + (c.rnc_cedula ? ' · ' + esc(c.rnc_cedula) : '') + '</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxCuentaForm(\'' + c.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxCuentaEliminar(\'' + c.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin cuentas. Agrega tus cuentas de banco, tarjeta o pago móvil para cobrar.</div>';
     var ov = document.createElement('div'); ov.id = 'nxCtas'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
@@ -18376,14 +18377,16 @@ try {
       '<div class="fr"><label>Tipo</label><select id="ctTipo"><option value="banco"' + (c.tipo !== 'tarjeta' && c.tipo !== 'movil' ? ' selected' : '') + '>Cuenta bancaria</option><option value="tarjeta"' + (c.tipo === 'tarjeta' ? ' selected' : '') + '>Tarjeta</option><option value="movil"' + (c.tipo === 'movil' ? ' selected' : '') + '>Pago móvil / tPago</option></select></div>' +
       '<div class="fr"><label>Banco / entidad</label><input id="ctBanco" class="no-upper" value="' + esc(c.banco || '') + '" placeholder="Ej: Banreservas"></div>' +
       '<div class="fr"><label>Número de cuenta / teléfono</label><input id="ctNum" class="no-upper" value="' + esc(c.numero_cuenta || '') + '" placeholder="Ej: 9601234567"></div>' +
+      '<div class="fr"><label>Tipo de cuenta (ahorro / corriente)</label><select id="ctClase"><option value=""' + (!c.clase ? ' selected' : '') + '>— No aplica —</option><option value="ahorro"' + (c.clase === 'ahorro' ? ' selected' : '') + '>Ahorro</option><option value="corriente"' + (c.clase === 'corriente' ? ' selected' : '') + '>Corriente</option></select></div>' +
       '<div class="fr"><label>Titular</label><input id="ctTit" class="no-upper" value="' + esc(c.titular || '') + '" placeholder="Nombre del titular"></div>' +
+      '<div class="fr"><label>RNC / Cédula del titular</label><input id="ctRnc" class="no-upper" value="' + esc(c.rnc_cedula || '') + '" placeholder="Ej: 001-1234567-8"></div>' +
       '<div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxCtaForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxCuentaGuardar(\'' + (id || '') + '\')"><i class="ti ti-check"></i> Guardar</button></div></div>';
     document.body.appendChild(ov);
   };
   window.nxCuentaGuardar = async function (id) {
     var banco = (val('ctBanco') || '').trim();
     if (!banco && !(val('ctNum') || '').trim()) { toast('err', 'Falta el banco o el número'); return; }
-    var body = { banco: banco || null, numero_cuenta: (val('ctNum') || '').trim() || null, titular: (val('ctTit') || '').trim() || null, tipo: val('ctTipo') || 'banco' };
+    var body = { banco: banco || null, numero_cuenta: (val('ctNum') || '').trim() || null, titular: (val('ctTit') || '').trim() || null, tipo: val('ctTipo') || 'banco', clase: val('ctClase') || null, rnc_cedula: (val('ctRnc') || '').trim() || null };
     try {
       if (id) await getAPI().patch('rifa_cuentas', 'id=eq.' + id, body);
       else await getAPI().post('rifa_cuentas', body);

@@ -36,7 +36,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 /* banner + bloque premio */
 .banner{width:100%;display:block}
 .prem-blk{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:16px;margin-bottom:8px;border-radius:0 0 22px 22px}
-.prem{font-size:21px;font-weight:800;line-height:1.15}
+.prem{font-size:21px;font-weight:800;line-height:1.15;text-transform:uppercase}
 .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px}
 .meta span{background:rgba(255,255,255,.16);padding:5px 11px;border-radius:20px;font-weight:700}
 .meta .cerr{background:#dc2626}
@@ -61,7 +61,7 @@ label.fl:first-child{margin-top:0}
 .in:focus,.srch input:focus{border-color:var(--c)}
 select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 12px center}
 /* combos / paquetes */
-.paqLbl{font-size:11px;font-weight:800;color:#7c3aed;display:flex;align-items:center;gap:5px;margin:2px 0 6px}
+.paqLbl{font-size:11px;font-weight:800;color:#7c3aed;display:flex;align-items:center;gap:5px;margin:2px 0 6px;text-transform:uppercase;letter-spacing:.3px}
 .paqLbl i{font-size:13px}
 .paqs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px}
 .paq{border:1.5px solid #e2e8f0;border-radius:9px;padding:5px 7px;background:#fff;cursor:pointer;text-align:left;transition:transform .12s ease,border-color .15s ease}
@@ -163,7 +163,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .tbox{background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;animation:tUp .25s ease}
 @keyframes tUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .thd{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #eef1f6;flex:0 0 auto}
-.thd b{font-size:16px;font-weight:800;color:#0f172a}
+.thd b{font-size:16px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.3px}
 .thd button{border:0;background:#f1f5f9;width:34px;height:34px;border-radius:50%;font-size:18px;color:#475569;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .tbody{padding:15px 16px;overflow-y:auto;font-size:13px;line-height:1.55;color:#334155;flex:1}
 .tok{margin:12px 16px 16px;border:0;border-radius:28px;padding:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;flex:0 0 auto}
@@ -260,7 +260,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .okIc .s3{bottom:-7px;right:4px;font-size:15px;animation-delay:.6s}
 .okIc .s4{bottom:2px;left:-13px;font-size:13px;animation-delay:.9s}
 .okIc .s5{top:0;left:-9px;font-size:11px;animation-delay:1.25s}
-.ok h2{margin:0 0 6px;font-size:23px;animation:okRise .5s ease .15s both}.ok p{color:#475569;font-size:14px;margin:0 0 8px;line-height:1.5;animation:okRise .5s ease .35s both}
+.ok h2{margin:0 0 6px;font-size:23px;text-transform:uppercase;animation:okRise .5s ease .15s both}.ok p{color:#475569;font-size:14px;margin:0 0 8px;line-height:1.5;animation:okRise .5s ease .35s both}
 .ok .nums{font-family:ui-monospace,monospace;font-weight:800;font-size:18px;margin:6px 0 16px;word-break:break-word;background:linear-gradient(90deg,var(--c),#8b5cf6,#22d3ee,var(--c));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:okRise .5s ease .3s both,mgGrad 3s linear infinite}
 .ok a{display:inline-block;background:var(--c);color:#fff;text-decoration:none;padding:13px 24px;border-radius:13px;font-weight:800;margin:5px}
 .ok a.alt{background:#f1f5f9;color:var(--c)}
@@ -528,9 +528,11 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   window.__pickBank=function(cid){ ctaSel=cid; var acct=document.getElementById("acct"); var c=(R.cuentas||[]).filter(function(x){return x.id===cid;})[0]; if(!c){return;}
     var btns=document.querySelectorAll(".bk"); (R.cuentas||[]).forEach(function(x,i){if(btns[i])btns[i].classList.toggle("on",x.id===cid);});
     if(!acct)return;
+    var clase=c.clase?(c.clase==="ahorro"?"Ahorro":(c.clase==="corriente"?"Corriente":esc(c.clase))):"";
     acct.innerHTML='<div class="acct">'+
-      '<div class="row"><div><div class="k">Banco</div><div class="vv">'+esc(c.banco||"")+'</div></div></div>'+
+      '<div class="row"><div><div class="k">Banco</div><div class="vv">'+esc(c.banco||"")+(clase?' · '+clase:'')+'</div></div></div>'+
       (c.titular?'<div class="row"><div><div class="k">Titular</div><div class="vv">'+esc(c.titular)+'</div></div></div>':'')+
+      (c.rnc_cedula?'<div class="row"><div><div class="k">RNC / Cédula</div><div class="vv">'+esc(c.rnc_cedula)+'</div></div></div>':'')+
       '<div class="row"><div style="min-width:0"><div class="k">No. de cuenta</div><div class="vv">'+esc(c.numero_cuenta||"")+'</div></div><button class="cpy" onclick="window.__copy(\''+esc(c.numero_cuenta||"").replace(/'/g,"")+'\',this)"><i class="ti ti-copy"></i> Copiar</button></div>'+
       '</div>';
   };
