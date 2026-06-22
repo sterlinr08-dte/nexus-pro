@@ -17803,7 +17803,6 @@ try {
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div><div class="ct"><i class="ti ti-ticket"></i> Rifas</div><div class="ct-s">' + esc(negocio) + '</div></div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>' +
-      '<button class="btn bsm bghost" type="button" onclick="window.nxRifaCuentas()"><i class="ti ti-building-bank"></i> Cuentas</button>' +
       '<button class="btn bsm bc1" type="button" onclick="window.nxRifaNueva()"><i class="ti ti-plus"></i> Nueva rifa</button></div></div>' +
       '<div class="nxRfGrid">' + cards + '</div></div>';
   }
