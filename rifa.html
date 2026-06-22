@@ -90,22 +90,29 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .luck i:last-child{animation-delay:.9s}
 .srch.mg-glow input{animation:mgGlow 2.6s ease-in-out infinite}
 .mg-card{position:relative;overflow:hidden;border:1.5px solid transparent;animation:mgCardGlow 3s ease-in-out infinite alternate}
-.mgShoot{position:absolute;inset:0;pointer-events:none;z-index:2}
-.sh{position:absolute;width:0;height:0}
-.sh b{position:absolute;display:block;width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px rgba(167,139,250,.95),0 0 3px #fff;opacity:0;animation:shoot 3.6s ease-in infinite}
-.sh b::after{content:"";position:absolute;top:50%;left:-54px;width:54px;height:2px;transform:translateY(-50%);background:linear-gradient(90deg,rgba(196,181,253,0),rgba(196,181,253,.92));border-radius:2px}
-@keyframes shoot{0%{opacity:0;transform:translateX(-12px)}9%{opacity:1}82%{opacity:1}100%{opacity:0;transform:translateX(155px)}}
-.sh1{top:15px;left:4px;transform:rotate(25deg)}.sh1 b{animation-delay:0s;animation-duration:3.4s}
-.sh2{top:54%;left:-2px;transform:rotate(17deg)}.sh2 b{animation-delay:1.1s;animation-duration:4.1s}
-.sh3{top:30%;left:18px;transform:rotate(33deg)}.sh3 b{animation-delay:2.2s;animation-duration:3.7s}
-.sh4{top:72%;left:26px;transform:rotate(20deg)}.sh4 b{animation-delay:.6s;animation-duration:4.3s}
-.sh5{top:8px;left:42%;transform:rotate(29deg)}.sh5 b{animation-delay:1.7s;animation-duration:3.9s}
-.sh6{top:46%;left:48%;transform:rotate(23deg)}.sh6 b{animation-delay:2.7s;animation-duration:4s}
-.mgField{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
-.mgField span{position:absolute;top:0;left:0;width:2px;height:2px;border-radius:50%;background:transparent}
-.mgField .f1{animation:twk 2.8s ease-in-out infinite;box-shadow:20px 30px 1px 0 #fff,62px 84px 1px 0 #bfdbfe,112px 22px 1px 0 #fff,154px 120px 1px 0 #ddd6fe,205px 58px 1px 0 #fff,242px 150px 1px 0 #bfdbfe,284px 40px 1px 0 #fff,92px 162px 1px 0 #fff,172px 200px 1px 0 #ddd6fe,260px 108px 1px 0 #fff,320px 96px 1px 0 #bfdbfe}
-.mgField .f2{animation:twk 3.4s ease-in-out infinite;animation-delay:1.3s;box-shadow:36px 92px 1px 0 #bfdbfe,82px 40px 1px 0 #fff,132px 150px 1px 0 #fff,190px 110px 1px 0 #ddd6fe,232px 70px 1px 0 #fff,270px 172px 1px 0 #bfdbfe,50px 180px 1px 0 #fff,104px 112px 1px 0 #fff,160px 52px 1px 0 #ddd6fe,210px 192px 1px 0 #fff,300px 140px 1px 0 #fff}
-@keyframes twk{0%,100%{opacity:.15}50%{opacity:.95}}
+.mgRise{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.mgRise i{position:absolute;bottom:-8px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 6px 1px rgba(167,139,250,.9),0 0 2px #fff;opacity:0;animation:rise linear infinite}
+.mgRise i:nth-child(even){animation-name:riseS;box-shadow:0 0 6px 1px rgba(96,165,250,.9),0 0 2px #fff}
+.mgRise i:nth-child(3n){width:3px;height:3px}
+.mgRise i:nth-child(5n){width:5px;height:5px;box-shadow:0 0 8px 2px rgba(221,214,254,.95),0 0 2px #fff}
+@keyframes rise{0%{opacity:0;transform:translateY(12px) scale(.5)}12%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateY(-300px) scale(1.1)}}
+@keyframes riseS{0%{opacity:0;transform:translate(0,12px) scale(.5)}12%{opacity:1}50%{transform:translate(9px,-150px) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-7px,-300px) scale(1.1)}}
+.mgRise i:nth-child(1){left:6%;animation-duration:5s;animation-delay:0s}
+.mgRise i:nth-child(2){left:14%;animation-duration:6.4s;animation-delay:1.6s}
+.mgRise i:nth-child(3){left:22%;animation-duration:5.6s;animation-delay:.8s}
+.mgRise i:nth-child(4){left:30%;animation-duration:6.9s;animation-delay:2.3s}
+.mgRise i:nth-child(5){left:38%;animation-duration:5.2s;animation-delay:1.1s}
+.mgRise i:nth-child(6){left:46%;animation-duration:6.1s;animation-delay:3s}
+.mgRise i:nth-child(7){left:54%;animation-duration:5.8s;animation-delay:.4s}
+.mgRise i:nth-child(8){left:62%;animation-duration:6.6s;animation-delay:2s}
+.mgRise i:nth-child(9){left:70%;animation-duration:5.4s;animation-delay:1.3s}
+.mgRise i:nth-child(10){left:78%;animation-duration:6.3s;animation-delay:2.7s}
+.mgRise i:nth-child(11){left:86%;animation-duration:5.7s;animation-delay:.9s}
+.mgRise i:nth-child(12){left:92%;animation-duration:6.8s;animation-delay:2.4s}
+.mgRise i:nth-child(13){left:10%;animation-duration:7.1s;animation-delay:3.4s}
+.mgRise i:nth-child(14){left:34%;animation-duration:6.5s;animation-delay:4s}
+.mgRise i:nth-child(15){left:58%;animation-duration:7.3s;animation-delay:3.7s}
+.mgRise i:nth-child(16){left:82%;animation-duration:6.7s;animation-delay:4.4s}
 @keyframes mgCardGlow{
   0%{box-shadow:0 0 0 2px rgba(99,102,241,.75),0 0 22px 3px rgba(99,102,241,.45),inset 0 0 16px rgba(99,102,241,.05)}
   50%{box-shadow:0 0 0 2.5px rgba(139,92,246,.9),0 0 32px 6px rgba(139,92,246,.6),inset 0 0 20px rgba(139,92,246,.08)}
@@ -221,7 +228,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var id=new URLSearchParams(location.search).get("id")||"";
   var R=null, sold={}, page=0, q="", PER=120;
   var tab="comprar", done=false, menuOpen=false;
-  var MGSTARS='<div class="mgField"><span class="f1"></span><span class="f2"></span></div><div class="mgShoot"><span class="sh sh1"><b></b></span><span class="sh sh2"><b></b></span><span class="sh sh3"><b></b></span><span class="sh sh4"><b></b></span><span class="sh sh5"><b></b></span><span class="sh sh6"><b></b></span></div>';
+  var MGSTARS='<div class="mgRise"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
   var cart=[];                          // numeros seleccionados (strings)
   var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
