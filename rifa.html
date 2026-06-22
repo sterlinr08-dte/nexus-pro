@@ -133,6 +133,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .hint i{color:#16a34a;font-size:17px;flex:0 0 auto}
 .hint.sm1{margin-top:10px;padding:6px 10px;border-radius:10px;font-size:10px;line-height:1.2;gap:5px;align-items:center;white-space:nowrap;overflow:hidden}
 .hint.sm1 i{font-size:12px}
+/* preguntas frecuentes */
+.faq{border-top:1px solid #eef1f6}
+.faq summary{font-size:14px;font-weight:700;color:#0f172a;cursor:pointer;padding:11px 2px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--c);font-size:21px;font-weight:800;flex:0 0 auto}
+.faq[open] summary::after{content:"\2212"}
+.faqa{font-size:13px;color:#475569;line-height:1.5;padding:0 2px 12px}
 /* search + board */
 .srch{position:relative;margin-bottom:11px}
 .srch i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--c);font-size:19px}
@@ -291,6 +298,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     return '<div class="menu">'+
       '<a onclick="window.__go(\'comprar\')"><i class="ti ti-home"></i> Inicio</a>'+
       '<a onclick="window.__go(\'verificar\')"><i class="ti ti-circle-check"></i> Consultar ticket</a>'+
+      ((R.faqs&&R.faqs.length)?'<a onclick="window.__faq()"><i class="ti ti-help-circle"></i> Preguntas frecuentes</a>':'')+
       (wa?'<a href="'+wa+'" target="_blank" rel="noopener" onclick="window.__menu()"><i class="ti ti-brand-whatsapp"></i> Contacto</a>':'')+
       '<button class="lista" type="button" onclick="window.__go(\'verificar\')"><i class="ti ti-list-check"></i> Lista de boletos</button>'+
     '</div>';
@@ -331,6 +339,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   }
   window.__menu=function(){ menuOpen=!menuOpen; render(); };
   window.__go=function(t){ tab=t; menuOpen=false; done=false; window.scrollTo(0,0); render(); };
+  window.__faq=function(){ tab="comprar"; menuOpen=false; done=false; render(); setTimeout(function(){ var f=document.getElementById("faqsec"); if(f)f.scrollIntoView({behavior:"smooth",block:"start"}); },130); };
 
   // ── COMPRAR (1 sola pantalla): datos arriba, números, pago, y barra de total fija
   function viewComprar(){
@@ -366,7 +375,14 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
         (vouReq()?'<div style="font-size:11.5px;color:#94a3b8;margin-top:8px;text-align:center">Adjunta tu comprobante para habilitar el botón <b>Confirmar</b>.</div>':'')+
         '<div class="hint" style="margin-top:11px"><i class="ti ti-clock"></i> Tu número queda <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b> mientras el organizador confirma tu pago.</div>'+
       '</div>'+
+      faqHTML()+
       '</div>';
+  }
+  function faqHTML(){
+    var fq=R.faqs||[]; if(!fq.length)return '';
+    return '<div class="card" id="faqsec"><div class="sec"><div class="nb"><i class="ti ti-help-circle"></i></div><div><h3>Preguntas frecuentes</h3><small>Resolvemos tus dudas</small></div></div>'+
+      fq.map(function(f){return '<details class="faq"><summary>'+esc(f.q||'')+'</summary><div class="faqa">'+esc(f.a||'').replace(/\n/g,'<br>')+'</div></details>';}).join('')+
+    '</div>';
   }
   function boardInto(){
     var wrap=document.getElementById("bd"); if(!wrap)return;

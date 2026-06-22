@@ -17729,6 +17729,8 @@ try {
 
   var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [], _paquetes = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
+  var _rifaFaqs = [];
+  var RIFA_COLORS = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#0d9488', '#16a34a', '#d97706', '#dc2626', '#db2777', '#0f172a'];
 
   function ensureView() {
     var v = document.getElementById('v-rifas');
@@ -17804,6 +17806,7 @@ try {
   function abrirRifaForm(r) {
     cerrarModal('nxRifaForm');
     var e = r || {};
+    _rifaFaqs = Array.isArray(e.faqs) ? e.faqs.map(function (f) { return { q: f.q || '', a: f.a || '' }; }) : [];
     var dig = Number(e.cantidad_digitos || 4);
     var imgVal = e.imagen || ''; _rifaImgData = imgVal;
     var imgIsUrl = /^https?:\/\//i.test(imgVal);
@@ -17840,11 +17843,45 @@ try {
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarFecha"' + (e.mostrar_fecha === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la fecha del sorteo en el boleto</label>' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarProg"' + (e.mostrar_progreso === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la barra de boletos vendidos</label>' +
       '<label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfOcultarNums"' + (e.ocultar_numeros ? ' checked' : '') + ' style="width:18px;height:18px;margin-top:1px"> <span>Ocultar los números en la página pública<br><small style="font-weight:500;color:#94a3b8">El cliente solo elige cuántos tickets quiere y el sistema le asigna números al azar.</small></span></label>' +
+      // ── Color del sistema (página pública)
+      '<div class="fr"><label>Color del sistema (página pública)</label><input type="hidden" id="rfColor" value="' + esc(e.color || '') + '">' +
+      '<div id="rfColorSw" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+      RIFA_COLORS.map(function (c) { var on = String(e.color || '').toLowerCase() === c.toLowerCase(); return '<button type="button" data-c="' + c + '" onclick="window.nxRifaColor(\'' + c + '\')" style="width:31px;height:31px;border-radius:50%;background:' + c + ';border:' + (on ? '3px solid #0f172a' : '2px solid #fff') + ';box-shadow:0 0 0 1px #e2e8f0;cursor:pointer;padding:0"></button>'; }).join('') +
+      '<button type="button" data-c="" onclick="window.nxRifaColor(\'\')" title="Color por defecto" style="width:31px;height:31px;border-radius:50%;background:#f1f5f9;border:' + (e.color ? '2px solid #fff' : '3px solid #0f172a') + ';box-shadow:0 0 0 1px #e2e8f0;cursor:pointer;color:#64748b;font-size:14px;display:inline-flex;align-items:center;justify-content:center"><i class="ti ti-ban"></i></button>' +
+      '</div></div>' +
+      // ── Cuentas bancarias de cobro
+      '<div class="fr"><label>Cuentas bancarias de cobro</label><button type="button" class="btn bsm bghost" style="width:100%;justify-content:center" onclick="window.nxRifaCuentas()"><i class="ti ti-building-bank" style="color:#4f46e5"></i> Administrar cuentas de cobro</button><div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Son las cuentas que verá el cliente para pagar. Se comparten entre tus rifas.</div></div>' +
+      // ── Preguntas frecuentes (FAQ) para la página pública
+      '<div class="fr"><label>Preguntas frecuentes (página pública)</label><div id="rfFaqList">' + faqRowsHTML() + '</div>' +
+      '<button type="button" class="btn bsm bghost" style="width:100%;justify-content:center;margin-top:7px" onclick="window.nxRifaFaqAdd()"><i class="ti ti-plus" style="color:#16a34a"></i> Agregar pregunta</button></div>' +
       '</div>' +
       '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxRifaForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRifaGuardar(\'' + (r ? r.id : '') + '\')"><i class="ti ti-check"></i> Guardar</button></div>' +
       '</div>';
     document.body.appendChild(ov);
   }
+
+  window.nxRifaColor = function (c) {
+    var h = document.getElementById('rfColor'); if (h) h.value = c || '';
+    var sw = document.getElementById('rfColorSw'); if (!sw) return;
+    sw.querySelectorAll('button').forEach(function (b) {
+      var bc = String(b.getAttribute('data-c') || '');
+      var on = bc.toLowerCase() === String(c || '').toLowerCase();
+      b.style.border = on ? '3px solid #0f172a' : '2px solid #fff';
+    });
+  };
+  function faqRowsHTML() {
+    if (!_rifaFaqs.length) return '<div style="font-size:11px;color:#94a3b8;padding:4px 2px">Sin preguntas. Agrega las dudas comunes (ej: ¿Cuándo es el sorteo?, ¿Cómo recojo el premio?).</div>';
+    return _rifaFaqs.map(function (f, i) {
+      return '<div style="border:1px solid #e8edf3;border-radius:10px;padding:8px;margin-bottom:7px;background:#fbfcfe">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:10.5px;color:#64748b">Pregunta ' + (i + 1) + '</b><button type="button" class="btn bsm bghost" title="Quitar" onclick="window.nxRifaFaqDel(' + i + ')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
+        '<input class="no-upper" style="margin-bottom:6px" placeholder="Pregunta" value="' + esc(f.q || '') + '" oninput="window.nxRifaFaqSet(' + i + ',\'q\',this.value)">' +
+        '<textarea placeholder="Respuesta" oninput="window.nxRifaFaqSet(' + i + ',\'a\',this.value)" style="width:100%;min-height:50px;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical">' + esc(f.a || '') + '</textarea>' +
+        '</div>';
+    }).join('');
+  }
+  window.nxRifaFaqSet = function (i, k, v) { if (_rifaFaqs[i]) _rifaFaqs[i][k] = v; };
+  window.nxRifaFaqAdd = function () { _rifaFaqs.push({ q: '', a: '' }); var c = document.getElementById('rfFaqList'); if (c) c.innerHTML = faqRowsHTML(); };
+  window.nxRifaFaqDel = function (i) { _rifaFaqs.splice(i, 1); var c = document.getElementById('rfFaqList'); if (c) c.innerHTML = faqRowsHTML(); };
 
   window.nxRifaImgFile = function (input) {
     var f = input.files && input.files[0]; if (!f) return;
@@ -17898,7 +17935,9 @@ try {
       mostrar_fecha: chk('rfMostrarFecha'),
       mostrar_progreso: chk('rfMostrarProg'),
       ocultar_numeros: chk('rfOcultarNums'),
-      whatsapp_contacto: (val('rfWa') || '').trim() || null
+      whatsapp_contacto: (val('rfWa') || '').trim() || null,
+      color: (val('rfColor') || '').trim() || null,
+      faqs: _rifaFaqs.filter(function (f) { return (f.q || '').trim(); }).map(function (f) { return { q: (f.q || '').trim(), a: (f.a || '').trim() }; })
     };
     try {
       if (id) { await getAPI().patch('rifas', 'id=eq.' + id, body); toast('ok', 'Rifa actualizada', nom); }
