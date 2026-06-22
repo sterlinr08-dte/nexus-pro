@@ -17727,7 +17727,7 @@ try {
   function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
   function fechaDMY(d) { if (!d) return ''; try { return new Date(d).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return String(d).slice(0, 10); } }
 
-  var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [];
+  var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [], _paquetes = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
 
   function ensureView() {
@@ -17744,6 +17744,7 @@ try {
     try { _rifas = await getAPI().get('rifas', 'select=*&order=created_at.desc') || []; } catch (e) { _rifas = []; }
     try { _cuentas = await getAPI().get('rifa_cuentas', 'select=*&order=created_at.asc') || []; } catch (e) { _cuentas = []; }
     try { _vendedores = await getAPI().get('rifa_vendedores', 'select=*&order=nombre.asc') || []; } catch (e) { _vendedores = []; }
+    try { _paquetes = await getAPI().get('rifa_paquetes', 'select=*&order=cantidad.asc') || []; } catch (e) { _paquetes = []; }
     _resByRifa = {};
     try {
       var bs = await getAPI().get('rifa_boletos', 'select=rifa_id,precio,estado') || [];
@@ -17975,7 +17976,7 @@ try {
     if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra"><i class="ti ti-link"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra"><i class="ti ti-link"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis"><div class="rfKpi"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
@@ -18272,6 +18273,59 @@ try {
       toast('ok', 'Cuenta eliminada', '');
       window.nxRifaCuentas();
     } catch (e) { toast('err', 'No se pudo'); }
+  };
+  // ── PAQUETES / COMBOS (por rifa) ──
+  async function recargarPaq() { try { _paquetes = await getAPI().get('rifa_paquetes', 'select=*&order=cantidad.asc') || []; } catch (e) {} }
+  window.nxRifaPaquetes = function () {
+    var r = currentRifa(); if (!r) { toast('err', 'Abre una rifa primero'); return; }
+    cerrarModal('nxPaqs');
+    var pb = Number(r.precio_boleto || 0);
+    var mios = _paquetes.filter(function (p) { return String(p.rifa_id) === String(r.id); });
+    var lista = mios.length ? mios.map(function (p) {
+      var normal = pb * Number(p.cantidad || 0), ah = normal - Number(p.precio || 0);
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-package" style="color:#7c3aed"></i><div style="min-width:0"><b>' + Number(p.cantidad || 0) + ' boletos · ' + fmt(p.precio) + '</b><span>' + (p.etiqueta ? esc(p.etiqueta) + ' · ' : '') + (ah > 0 ? 'ahorra ' + fmt(ah) : 'sin descuento') + '</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxPaqForm(\'' + p.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPaqEliminar(\'' + p.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+    }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin paquetes. Crea combos como "5 boletos por RD$400" para vender más.</div>';
+    var ov = document.createElement('div'); ov.id = 'nxPaqs'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-package"></i> Combos / paquetes</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxPaqs\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:11.5px;color:#64748b;margin-bottom:8px">Boleto suelto: <b>' + fmt(pb) + '</b>. Los paquetes aparecen en la página pública de esta rifa.</div>' +
+      '<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxPaqForm(\'\')"><i class="ti ti-plus"></i> Nuevo paquete</button>' +
+      '<div style="overflow-y:auto;flex:1">' + lista + '</div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxPaqForm = function (id) {
+    var p = id ? (_paquetes.find(function (x) { return String(x.id) === String(id); }) || {}) : {};
+    cerrarModal('nxPaqForm');
+    var ov = document.createElement('div'); ov.id = 'nxPaqForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-package"></i> ' + (id ? 'Editar paquete' : 'Nuevo paquete') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxPaqForm\').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div class="fr-row"><div class="fr"><label>Cantidad de boletos</label><input id="pqCant" inputmode="numeric" value="' + esc(p.cantidad != null ? p.cantidad : '') + '" placeholder="5"></div>' +
+      '<div class="fr"><label>Precio del combo (RD$)</label><input id="pqPrecio" inputmode="numeric" value="' + esc(p.precio != null ? p.precio : '') + '" placeholder="400"></div></div>' +
+      '<div class="fr"><label>Etiqueta (opcional)</label><input id="pqEtiq" class="no-upper" value="' + esc(p.etiqueta || '') + '" placeholder="Ej: Combo familiar"></div>' +
+      '<div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxPaqForm\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPaqGuardar(\'' + (id || '') + '\')"><i class="ti ti-check"></i> Guardar</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxPaqGuardar = async function (id) {
+    var r = currentRifa(); if (!r) return;
+    var cant = parseInt(String(val('pqCant') || '').replace(/[^0-9]/g, ''), 10) || 0;
+    var precio = Number(String(val('pqPrecio') || '').replace(/[^0-9.]/g, '')) || 0;
+    if (cant < 1) { toast('err', 'Pon la cantidad de boletos'); return; }
+    if (precio <= 0) { toast('err', 'Pon el precio del combo'); return; }
+    var body = { cantidad: cant, precio: precio, etiqueta: (val('pqEtiq') || '').trim() || null };
+    if (!id) body.rifa_id = r.id;
+    try {
+      if (id) await getAPI().patch('rifa_paquetes', 'id=eq.' + id, body);
+      else await getAPI().post('rifa_paquetes', body);
+      toast('ok', 'Paquete guardado', '');
+      cerrarModal('nxPaqForm');
+      await recargarPaq();
+      window.nxRifaPaquetes();
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxPaqEliminar = async function (id) {
+    if (!confirm('¿Eliminar este paquete?')) return;
+    try { await getAPI().del('rifa_paquetes', 'id=eq.' + id); await recargarPaq(); toast('ok', 'Paquete eliminado', ''); window.nxRifaPaquetes(); }
+    catch (e) { toast('err', 'No se pudo'); }
   };
   window.nxRifaPorCuenta = function () {
     var r = currentRifa(); if (!r) return;

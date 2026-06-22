@@ -58,6 +58,17 @@ label.fl:first-child{margin-top:0}
 .in{width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;outline:none;font-family:inherit;background:#fff}
 .in:focus,.srch input:focus{border-color:var(--c)}
 select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 12px center}
+/* combos / paquetes */
+.paqLbl{font-size:12px;font-weight:800;color:#7c3aed;display:flex;align-items:center;gap:6px;margin:2px 0 8px}
+.paqLbl i{font-size:15px}
+.paqs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.paq{border:1.5px solid #e2e8f0;border-radius:14px;padding:11px;background:#fff;cursor:pointer;text-align:left;transition:transform .12s ease,border-color .15s ease}
+.paq:active{transform:scale(.96)}
+.paq.on{border-color:var(--c);background:#eef2ff;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+.paq b{display:block;font-size:15px;font-weight:800;color:#0f172a}
+.paq .pr{font-size:15px;font-weight:800;color:var(--c)}
+.paq small{display:block;font-size:10.5px;color:#16a34a;font-weight:700;margin-top:2px}
+.paqNote{font-size:11.5px;color:#7c3aed;font-weight:700;display:flex;align-items:center;gap:6px;margin:-4px 0 12px}
 /* atajos glossy */
 .qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
 .qrow button{border:1.5px solid #e2e8f0;background:#fff;border-radius:16px;padding:12px 4px;font-size:15px;font-weight:800;color:var(--c);cursor:pointer;line-height:1.1;transition:transform .12s ease,background .15s ease}
@@ -230,15 +241,23 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var tab="comprar", done=false, menuOpen=false;
   var MGSTARS='<div class="mgRise"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
   var cart=[];                          // numeros seleccionados (strings)
-  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1;
+  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
   var F={nom:"",tel:""};
 
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c];});}
   function fmt(n){return "RD$ "+Math.round(Number(n||0)).toLocaleString("en-US");}
   function pad(n){return String(n).padStart(R.digitos||4,"0");}
-  function count(){return (R&&R.ocultar_numeros)?qty:cart.length;}
-  function total(){return count()*(R.precio||0);}
+  function pkg(){return pkgSel?(R.paquetes||[]).filter(function(x){return String(x.id)===String(pkgSel);})[0]:null;}
+  function count(){var p=pkg();if(p)return Number(p.cantidad)||0;return (R&&R.ocultar_numeros)?qty:cart.length;}
+  function total(){var p=pkg();if(p)return Number(p.precio)||0;return count()*(R.precio||0);}
+  function paqsHTML(){
+    var ps=(R.paquetes||[]); if(!ps.length)return "";
+    return '<div class="paqLbl"><i class="ti ti-gift"></i> Combos · ahorra en paquete</div><div class="paqs">'+ps.map(function(p){
+      var normal=(R.precio||0)*Number(p.cantidad||0), ah=normal-Number(p.precio||0);
+      return '<button type="button" class="paq'+(String(pkgSel)===String(p.id)?" on":"")+'" onclick="window.__pkg(\''+p.id+'\')"><b>'+Number(p.cantidad||0)+' boletos</b><span class="pr">'+fmt(p.precio)+'</span>'+(p.etiqueta?'<small>'+esc(p.etiqueta)+'</small>':(ah>0?'<small>Ahorras '+fmt(ah)+'</small>':''))+'</button>';
+    }).join('')+'</div>'+(pkgSel&&!R.ocultar_numeros?'<div class="paqNote"><i class="ti ti-wand"></i> El combo te asigna los números al azar.</div>':'');
+  }
   function vouReq(){return !!((R.cuentas||[]).length);}       // si no hay cuentas, el voucher es opcional
   function limMax(){return parseInt(R.limite_por_persona,10)||0;}
   function onlyD(s){return String(s||"").replace(/\D/g,"");}
@@ -325,13 +344,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
       (R.ocultar_numeros?
         '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
-          '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
+          paqsHTML()+'<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
           '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
           '<div class="qrow" style="margin-top:6px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<div class="hint"><i class="ti ti-wand"></i> Al confirmar te asignaremos <b id="qtyTxt">'+qty+'</b> número(s) al azar entre los disponibles.</div></div>'
        :
         '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
-          '<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
+          paqsHTML()+'<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<button class="luck mg-shine" onclick="window.__luck(1)"><i class="ti ti-star-filled"></i> Elegir a la suerte <i class="ti ti-star-filled"></i></button>'+
           '<div class="srch mg-glow"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
           '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:var(--c)"></i>Elegido</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
@@ -388,6 +407,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     updChecks();
     go.disabled=!canSubmit(); }
   window.__qty=function(d,abs){ qty=abs?d:Math.max(1,qty+d); if(qty>200)qty=200; if(limMax()&&qty>limMax()){qty=limMax();}
+    if(pkgSel){pkgSel=null;render();return;}
     var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.textContent=qty; if(t)t.textContent=qty;
     var box=document.querySelector(".stp"); if(box){var minus=box.querySelector(".minus"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".mid small"); if(sm)sm.textContent=qty===1?'BOLETO':'BOLETOS';}
     refreshCart();
@@ -401,13 +421,14 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   }
   window.__q=function(v){q=(v||"").replace(/\D/g,"");page=0;boardInto();};
   window.__pg=function(d){page+=d;if(page<0)page=0;boardInto();};
-  window.__toggle=function(n){ if(sold[n])return; var i=cart.indexOf(n); if(i>=0){cart.splice(i,1);} else { if(limMax()&&cart.length>=limMax()){alert("Máximo "+limMax()+" tickets por persona.");return;} cart.push(n); } cart.sort(); boardInto(); refreshCart(); };
-  window.__luck=function(k){ var totalN=R.cantidad||10000, av=[], selMap={}; cart.forEach(function(n){selMap[n]=1;});
+  window.__pkg=function(pid){ if(String(pkgSel)===String(pid)){pkgSel=null;} else { pkgSel=pid; var p=pkg(); if(p)qty=Number(p.cantidad)||1; } window.scrollTo(0,0); render(); };
+  window.__toggle=function(n){ if(sold[n])return; var i=cart.indexOf(n); if(i>=0){cart.splice(i,1);} else { if(limMax()&&cart.length>=limMax()){alert("Máximo "+limMax()+" tickets por persona.");return;} cart.push(n); } cart.sort(); if(pkgSel){pkgSel=null;render();return;} boardInto(); refreshCart(); };
+  window.__luck=function(k){ pkgSel=null; var totalN=R.cantidad||10000, av=[], selMap={}; cart.forEach(function(n){selMap[n]=1;});
     if(limMax()){ var room=limMax()-cart.length; if(room<=0){alert("Máximo "+limMax()+" tickets por persona.");return;} k=Math.min(k,room); }
     for(var i=0;i<totalN;i++){var s=pad(i);if(!sold[s]&&!selMap[s])av.push(s);}
     if(!av.length){alert("Ya no quedan números disponibles.");return;}
     for(var j=0;j<k&&av.length;j++){var idx=Math.floor(Math.random()*av.length);cart.push(av[idx]);av.splice(idx,1);}
-    cart.sort(); boardInto(); refreshCart();
+    cart.sort(); render();
   };
 
   // pago
@@ -438,7 +459,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var btn=document.getElementById("goBtn"); btn.disabled=true; btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Enviando…';
     var payload={ rifa_id:id, nombre:(F.nom||"").trim(), telefono:(F.tel||"").trim(),
       cuenta_id:ctaSel||null, voucher:voucherData||null };
-    if(R.ocultar_numeros) payload.cantidad=qty; else payload.numeros=cart;
+    if(pkgSel) payload.paquete_id=pkgSel; else if(R.ocultar_numeros) payload.cantidad=qty; else payload.numeros=cart;
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
       .then(function(res){
@@ -460,7 +481,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       '<p>'+msg+'</p>'+wa+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+
       '<a class="alt" href="#" onclick="window.__reset();return false;">Comprar más</a></div></div>';
   }
-  window.__reset=function(){ cart=[]; qty=1; voucherData=""; ctaSel=null; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
+  window.__reset=function(){ cart=[]; qty=1; pkgSel=null; voucherData=""; ctaSel=null; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
 
   // ── VERIFICADOR
   function viewVerificar(){

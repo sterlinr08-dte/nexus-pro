@@ -597,7 +597,17 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   SUBEN** (`.mgRise`, 16 partículas `<i>` que ascienden de abajo a arriba con `rise`/`riseS`, tamaños/
   colores/delays variados). Iteración pedida por el dueño: titilar→fugaces→subiendo (quedó en
   "subiendo", aprobado). Todo en el `<style>`/IIFE de `rifa.html`; el cuadro sigue blanco y legible.
-- **PENDIENTE:** combos/paquetes con precio (UI) ·
+- **TANDA 14 (v33.7) HECHA — COMBOS / PAQUETES:** tabla `rifa_paquetes` (ya existía: `cantidad`,
+  `precio`, `etiqueta`, `rifa_id` + org/trigger/RLS) ahora SE USA. En `parches.js`: `_paquetes` cargado
+  en `cargarRifas`; botón **📦** en `renderRifaPanel`; manager `nxRifaPaquetes` (filtra por
+  `currentRifa().id`) + `nxPaqForm/nxPaqGuardar/nxPaqEliminar` + `recargarPaq` (patrón Cuentas;
+  muestra el ahorro vs `precio_boleto*cantidad`). Función Edge **`rifa` v8**: GET devuelve `paquetes[]`;
+  POST acepta **`paquete_id`** → valida que sea de la rifa, fija `cantidad`+asigna números al azar y
+  pone `precio` por boleto = `paquete.precio/cantidad` (cobro exacto). En `rifa.html`: `pkgSel` (paquete
+  elegido), `pkg()/count()/total()` respetan el combo, `paqsHTML()` pinta los combos en el cuadro ②
+  (ambos modos), `__pkg` selecciona (fija qty), y `__qty/__toggle/__luck` limpian `pkgSel` si el cliente
+  cambia a mano. En modo números visibles, el combo asigna al azar (aviso `.paqNote`). CSS `.paq/.paqs`.
+- **PENDIENTE:** combos/paquetes con precio (UI) HECHO ·
   gráfica medios de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio,
   riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
