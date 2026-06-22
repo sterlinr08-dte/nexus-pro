@@ -89,7 +89,18 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .luck i{animation:mgTwinkle 1.8s ease-in-out infinite}
 .luck i:last-child{animation-delay:.9s}
 .srch.mg-glow input{animation:mgGlow 2.6s ease-in-out infinite}
-.mg-card{border:1.5px solid transparent;animation:mgCardGlow 3s ease-in-out infinite alternate}
+.mg-card{position:relative;overflow:hidden;border:1.5px solid transparent;animation:mgCardGlow 3s ease-in-out infinite alternate}
+.mgStars{position:absolute;inset:0;pointer-events:none;z-index:2}
+.mgStars i{position:absolute;font-style:normal;color:#a78bfa;text-shadow:0 0 6px rgba(167,139,250,.85),0 0 2px #fff;animation:mgStar 2.4s ease-in-out infinite}
+.mgStars i:nth-child(1){top:12px;right:18px;font-size:15px;animation-delay:0s}
+.mgStars i:nth-child(2){top:44%;right:10px;font-size:11px;animation-delay:.5s}
+.mgStars i:nth-child(3){bottom:16px;right:30px;font-size:13px;animation-delay:1s}
+.mgStars i:nth-child(4){bottom:26px;left:16px;font-size:12px;animation-delay:1.4s}
+.mgStars i:nth-child(5){top:40%;left:9px;font-size:10px;animation-delay:.8s}
+.mgStars i:nth-child(6){top:13px;left:46%;font-size:11px;animation-delay:1.8s}
+.mgStars i:nth-child(7){bottom:46%;left:40%;font-size:9px;animation-delay:.3s}
+.mgStars i:nth-child(8){top:58%;right:36%;font-size:10px;animation-delay:1.2s}
+@keyframes mgStar{0%,100%{opacity:0;transform:scale(.2) rotate(0)}45%,55%{opacity:.95;transform:scale(1) rotate(20deg)}}
 @keyframes mgCardGlow{
   0%{box-shadow:0 0 0 2px rgba(99,102,241,.75),0 0 22px 3px rgba(99,102,241,.45),inset 0 0 16px rgba(99,102,241,.05)}
   50%{box-shadow:0 0 0 2.5px rgba(139,92,246,.9),0 0 32px 6px rgba(139,92,246,.6),inset 0 0 20px rgba(139,92,246,.08)}
@@ -205,6 +216,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var id=new URLSearchParams(location.search).get("id")||"";
   var R=null, sold={}, page=0, q="", PER=120;
   var tab="comprar", done=false, menuOpen=false;
+  var MGSTARS='<div class="mgStars"><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>';
   var cart=[];                          // numeros seleccionados (strings)
   var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
@@ -300,13 +312,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
         '</div>'+
       // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
       (R.ocultar_numeros?
-        '<div class="card mg-card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
+        '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
           '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
           '<div class="qrow" style="margin-top:6px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<div class="hint"><i class="ti ti-wand"></i> Al confirmar te asignaremos <b id="qtyTxt">'+qty+'</b> número(s) al azar entre los disponibles.</div></div>'
        :
-        '<div class="card mg-card"><div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
+        '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<button class="luck mg-shine" onclick="window.__luck(1)"><i class="ti ti-star-filled"></i> Elegir a la suerte <i class="ti ti-star-filled"></i></button>'+
           '<div class="srch mg-glow"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
