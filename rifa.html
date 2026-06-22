@@ -40,8 +40,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px}
 .meta span{background:rgba(255,255,255,.16);padding:5px 11px;border-radius:20px;font-weight:700}
 .meta .cerr{background:#dc2626}
-.prog{height:9px;background:rgba(255,255,255,.25);border-radius:6px;overflow:hidden;margin-top:11px}
-.prog>div{height:100%;background:#fff;border-radius:6px}
+.prog{position:relative;height:24px;background:rgba(0,0,0,.20);border-radius:13px;overflow:hidden;margin-top:13px;box-shadow:inset 0 1px 3px rgba(0,0,0,.28)}
+.prog>div{height:100%;background:linear-gradient(90deg,#fde68a,#f59e0b);border-radius:13px;position:relative;width:0;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.prog>div::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:translateX(-130%);animation:progShine 2.6s ease-in-out infinite}
+@keyframes progShine{0%{transform:translateX(-130%)}60%,100%{transform:translateX(240%)}}
+.prog .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#1f2937;text-shadow:0 1px 1px rgba(255,255,255,.45);z-index:2;letter-spacing:.3px}
 /* whatsapp flotante */
 .wafab{position:fixed;right:16px;width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:31px;text-decoration:none;box-shadow:0 3px 9px rgba(15,23,42,.18);z-index:40;transition:transform .12s ease,filter .15s ease}
 .wafab:active{transform:scale(.92);filter:brightness(.95)}
@@ -338,7 +341,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function premioHTML(pct,fecha,cerrada){
     return '<div class="prem-blk"><div class="prem">'+esc(R.premio||R.nombre||"")+'</div>'+
       '<div class="meta"><span><i class="ti ti-coin"></i> '+fmt(R.precio)+' c/u</span>'+fecha+(cerrada?'<span class="cerr">CERRADA</span>':'')+'</div>'+
-      (R.mostrar_progreso!==false?'<div class="prog"><div style="width:'+pct+'%"></div></div>':'')+'</div>';
+      (R.mostrar_progreso!==false?'<div class="prog"><div id="progFill" data-pct="'+pct+'"></div><span class="pct">'+pct+'% vendido</span></div>':'')+'</div>';
   }
   function wafabAdd(cerrada){
     var n=waNum(); if(n.length<8)return;
@@ -368,6 +371,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var ow=document.getElementById("wafab"); if(ow)ow.remove();
     if(tab==="comprar"&&!cerrada&&!done){ if(!R.ocultar_numeros)boardInto(); cartBar(); }
     wafabAdd(cerrada);
+    var pf=document.getElementById("progFill"); if(pf){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ pf.style.width=(pf.getAttribute("data-pct")||0)+"%"; }); }); }
   }
   window.__menu=function(){ menuOpen=!menuOpen; render(); };
   window.__go=function(t){ tab=t; menuOpen=false; done=false; window.scrollTo(0,0); render(); };
