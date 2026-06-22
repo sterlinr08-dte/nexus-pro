@@ -1,7 +1,8 @@
 {
-  "version": "33.9",
+  "version": "34.0",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (importante · botones con texto que no se leían): en varias pantallas (Rifas, Punto de Venta, Contabilidad, Bancos…) algunos botones claros con texto — como 'Cuentas', 'Vendedores', 'Categorías', 'Importar', 'Estado de cuenta' — salían aplastados en un círculo pequeño y el texto se cortaba o se montaba sobre el botón de al lado. Era una regla de diseño que achicaba a 32px TODOS esos botones (estaba pensada solo para los de ícono, como editar o borrar). Ahora el botón de solo ícono sigue cuadradito, pero el que lleva texto crece para que SIEMPRE se lea completo. Arreglado de raíz en un solo punto, así no vuelve a pasar en ninguna pantalla.",
     "NUEVO (Multiempresa · PANEL DEL DUEÑO): solo para ti (el administrador dueño), en Multiempresa aparece 'Panel del Dueño' con TODAS tus empresas en una sola pantalla: si están activas, cuándo vencen, cuántos usuarios, cuántas rifas y lo recaudado, cuántas ventas de POS y su total. Ideal para llevar el control general de todo lo que vendes en cada negocio. Es solo lectura y nadie más lo ve.",
     "NUEVO (Rifas · apartados que se liberan solos): cuando alguien compra en la página pública y NO sube el comprobante, su número queda APARTADO por las horas que configures (no 'por confirmar'). Si no manda el comprobante a tiempo, el sistema libera el número solito para que otro pueda jugarlo. Quien sí sube comprobante queda 'por confirmar' como siempre y NUNCA se borra.",
     "NUEVO (Rifas · gráfica de MEDIOS DE PAGO): en Estadísticas de la rifa (botón Reportes → Estadísticas) ahora aparece una gráfica de pastel que muestra cómo te están pagando (efectivo, transferencia, por banco/cuenta…), con el monto y el porcentaje de cada medio sobre lo confirmado. Útil para saber por dónde entra más dinero.",

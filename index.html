@@ -492,8 +492,8 @@ tbody tr{transition:background .12s ease}
 
 /* ════ ICONOS DE ACCIÓN MÁS VISIBLES (Punto 5) ════ */
 .btn.bsm.bghost{
-  width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;
-  border:1.5px solid #e2e8f0;background:#fff;border-radius:8px;transition:all .15s;
+  min-width:32px;height:32px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;
+  border:1.5px solid #e2e8f0;background:#fff;border-radius:8px;transition:all .15s;white-space:nowrap;
 }
 .btn.bsm.bghost i{font-size:15px;color:#475569}
 .btn.bsm.bghost:hover{box-shadow:0 4px 10px rgba(0,0,0,.12)}
@@ -508,7 +508,7 @@ tbody tr{transition:background .12s ease}
 .btn.bsm.bghost[title*="cobros"]:hover i{color:#7c3aed}
 /* En móvil, íconos más grandes para tocar fácil */
 @media(max-width:768px){
-  .btn.bsm.bghost{width:38px;height:38px}
+  .btn.bsm.bghost{min-width:38px;height:38px}
   .btn.bsm.bghost i{font-size:17px}
 }
 
@@ -3184,7 +3184,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='33.9';
+const APP_VERSION='34.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
