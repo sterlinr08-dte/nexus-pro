@@ -1,7 +1,8 @@
 {
-  "version": "34.6",
+  "version": "34.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas · tutorial 'Cómo jugar' editable): los pasos del tutorial que ve el cliente en la página pública ahora los escribes tú al crear/editar la rifa (título + explicación de cada paso, con botón para agregar o quitar pasos). Viene con 4 pasos por defecto que puedes cambiar; si los borras todos, el tutorial no aparece. En el menú, el botón grande dice 'JUGAR' y debajo está 'Preguntas frecuentes'.",
     "NUEVO (Rifas · logo y nombre de empresa por rifa): al crear/editar la rifa ahora puedes ponerle el LOGO de la empresa (subir imagen) y el NOMBRE de la empresa (marca). En la página pública, la cabecera muestra el logo + el nombre de la rifa, y debajo el nombre de la empresa. Es por cada rifa (cada una con su marca) y no afecta al resto del sistema; si lo dejas vacío usa el logo/nombre del negocio.",
     "NUEVO (Rifas · botones rápidos +N editables): los botones de cantidad rápida de la página pública (+1, +5, +10, +25) ahora los configuras tú al crear/editar la rifa. Pon las cantidades que quieras separadas por coma (ej: 1, 3, 10) o déjalo VACÍO para quitarlos. Además, los cuadros de los combos quedaron más pequeños para que ocupen menos.",
     "NUEVO (Rifas · al crear/editar la rifa): ahora desde el formulario de la rifa puedes (1) escribir las PREGUNTAS FRECUENTES con sus respuestas, que el cliente verá en la página pública (sección y enlace en el menú); (2) abrir y administrar tus CUENTAS BANCARIAS de cobro sin salir del formulario; y (3) elegir el COLOR del sistema para la página pública (paleta de colores o 'por defecto'). Cada rifa puede tener su propio color y sus propias preguntas.",

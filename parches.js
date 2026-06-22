@@ -17730,6 +17730,13 @@ try {
   var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [], _paquetes = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
   var _rifaFaqs = [];
+  var _rifaTut = [];
+  var RIFA_TUT_DEF = [
+    { t: 'Elige', d: 'Elige tus números o la cantidad de boletos que quieras.' },
+    { t: 'Tus datos', d: 'Escribe tu nombre y tu número de WhatsApp.' },
+    { t: 'Paga', d: 'Transfiere a la cuenta indicada y sube la foto de tu comprobante.' },
+    { t: 'Recibe tu boleto', d: 'Te confirmamos y te enviamos tu boleto por WhatsApp.' }
+  ];
   var _rifaLogoData = '';
   var RIFA_COLORS = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#0d9488', '#16a34a', '#d97706', '#dc2626', '#db2777', '#0f172a'];
 
@@ -17808,6 +17815,7 @@ try {
     cerrarModal('nxRifaForm');
     var e = r || {};
     _rifaFaqs = Array.isArray(e.faqs) ? e.faqs.map(function (f) { return { q: f.q || '', a: f.a || '' }; }) : [];
+    _rifaTut = Array.isArray(e.tutorial) ? e.tutorial.map(function (s) { return { t: s.t || '', d: s.d || '' }; }) : RIFA_TUT_DEF.map(function (s) { return { t: s.t, d: s.d }; });
     var logoVal = e.empresa_logo || ''; _rifaLogoData = logoVal;
     var logoIsUrl = /^https?:\/\//i.test(logoVal);
     var logoPrev = logoVal ? '<img src="' + esc(logoVal) + '" style="height:54px;border-radius:10px;background:#f1f5f9">' : '';
@@ -17863,6 +17871,10 @@ try {
       '</div></div>' +
       // ── Cuentas bancarias de cobro
       '<div class="fr"><label>Cuentas bancarias de cobro</label><button type="button" class="btn bsm bghost" style="width:100%;justify-content:center" onclick="window.nxRifaCuentas()"><i class="ti ti-building-bank" style="color:#4f46e5"></i> Administrar cuentas de cobro</button><div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Son las cuentas que verá el cliente para pagar. Se comparten entre tus rifas.</div></div>' +
+      // ── Tutorial "¿Cómo jugar?" (pasos) para la página pública
+      '<div class="fr"><label>Tutorial "¿Cómo jugar?" (pasos)</label><div id="rfTutList">' + tutRowsHTML() + '</div>' +
+      '<button type="button" class="btn bsm bghost" style="width:100%;justify-content:center;margin-top:7px" onclick="window.nxRifaTutAdd()"><i class="ti ti-plus" style="color:#16a34a"></i> Agregar paso</button>' +
+      '<div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Pasos que verá el cliente en la página. Bórralos todos para ocultar el tutorial.</div></div>' +
       // ── Preguntas frecuentes (FAQ) para la página pública
       '<div class="fr"><label>Preguntas frecuentes (página pública)</label><div id="rfFaqList">' + faqRowsHTML() + '</div>' +
       '<button type="button" class="btn bsm bghost" style="width:100%;justify-content:center;margin-top:7px" onclick="window.nxRifaFaqAdd()"><i class="ti ti-plus" style="color:#16a34a"></i> Agregar pregunta</button></div>' +
@@ -17894,6 +17906,19 @@ try {
   window.nxRifaFaqSet = function (i, k, v) { if (_rifaFaqs[i]) _rifaFaqs[i][k] = v; };
   window.nxRifaFaqAdd = function () { _rifaFaqs.push({ q: '', a: '' }); var c = document.getElementById('rfFaqList'); if (c) c.innerHTML = faqRowsHTML(); };
   window.nxRifaFaqDel = function (i) { _rifaFaqs.splice(i, 1); var c = document.getElementById('rfFaqList'); if (c) c.innerHTML = faqRowsHTML(); };
+  function tutRowsHTML() {
+    if (!_rifaTut.length) return '<div style="font-size:11px;color:#94a3b8;padding:4px 2px">Sin pasos. El tutorial no aparecerá en la página.</div>';
+    return _rifaTut.map(function (s, i) {
+      return '<div style="border:1px solid #e8edf3;border-radius:10px;padding:8px;margin-bottom:7px;background:#fbfcfe">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:10.5px;color:#64748b">Paso ' + (i + 1) + '</b><button type="button" class="btn bsm bghost" title="Quitar" onclick="window.nxRifaTutDel(' + i + ')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
+        '<input class="no-upper" style="margin-bottom:6px" placeholder="Título (ej: Paga)" value="' + esc(s.t || '') + '" oninput="window.nxRifaTutSet(' + i + ',\'t\',this.value)">' +
+        '<textarea placeholder="Explicación del paso" oninput="window.nxRifaTutSet(' + i + ',\'d\',this.value)" style="width:100%;min-height:46px;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical">' + esc(s.d || '') + '</textarea>' +
+        '</div>';
+    }).join('');
+  }
+  window.nxRifaTutSet = function (i, k, v) { if (_rifaTut[i]) _rifaTut[i][k] = v; };
+  window.nxRifaTutAdd = function () { _rifaTut.push({ t: '', d: '' }); var c = document.getElementById('rfTutList'); if (c) c.innerHTML = tutRowsHTML(); };
+  window.nxRifaTutDel = function (i) { _rifaTut.splice(i, 1); var c = document.getElementById('rfTutList'); if (c) c.innerHTML = tutRowsHTML(); };
 
   window.nxRifaLogoFile = function (input) {
     var f = input.files && input.files[0]; if (!f) return;
@@ -17975,6 +18000,7 @@ try {
       empresa_logo: ((val('rfLogoUrl') || '').trim() || _rifaLogoData || null),
       color: (val('rfColor') || '').trim() || null,
       faqs: _rifaFaqs.filter(function (f) { return (f.q || '').trim(); }).map(function (f) { return { q: (f.q || '').trim(), a: (f.a || '').trim() }; }),
+      tutorial: _rifaTut.filter(function (s) { return (s.t || '').trim() || (s.d || '').trim(); }).map(function (s) { return { t: (s.t || '').trim(), d: (s.d || '').trim() }; }),
       atajos: (function () { var a = (val('rfAtajos') || '').split(',').map(function (s) { return parseInt(String(s).replace(/[^0-9]/g, ''), 10); }).filter(function (n) { return n > 0; }); return Array.from(new Set(a)).sort(function (x, y) { return x - y; }).slice(0, 6); })()
     };
     try {
