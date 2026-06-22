@@ -17735,6 +17735,7 @@ try {
     { t: 'Tus datos', d: 'Escribe tu nombre y tu número de WhatsApp.' },
     { t: 'Elige', d: 'Elige tus números o la cantidad de boletos que quieras.' },
     { t: 'Paga', d: 'Transfiere a la cuenta indicada y sube la foto de tu comprobante.' },
+    { t: 'Acepta los términos y condiciones', d: 'Marca la casilla de aceptación para poder confirmar tu compra.' },
     { t: 'Recibe tu boleto', d: 'Te confirmamos y te enviamos tu boleto por WhatsApp.' }
   ];
   var _rifaLogoData = '';
