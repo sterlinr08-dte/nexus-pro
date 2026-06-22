@@ -18709,3 +18709,51 @@ try {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
+
+// ════════════════════════════════════════════════════════════════════
+// PANEL DEL DUEÑO (SUPERADMIN) — solo lectura, cross-org, gateado por mi_es_superadmin()
+// ════════════════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function _esc(s) { try { return esc(s); } catch (e) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); } }
+  function _fmt(n) { try { return fmt(n); } catch (e) { return 'RD$ ' + (Number(n) || 0).toLocaleString('es-DO'); } }
+
+  async function esSuper() { try { var r = await getAPI().post('rpc/mi_es_superadmin', {}); return r === true || r === 'true'; } catch (e) { return false; } }
+
+  function kpi(l, v) { return '<div style="background:#f8fafc;border-radius:8px;padding:7px 5px;text-align:center"><div style="font-size:8.5px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.2px">' + l + '</div><div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:2px">' + v + '</div></div>'; }
+  function orgCard(o) {
+    var act = o.activo ? '<span style="background:#dcfce7;color:#16a34a;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap">ACTIVA</span>' : '<span style="background:#fee2e2;color:#dc2626;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap">INACTIVA</span>';
+    var vence = o.activo_hasta ? '<div style="font-size:10.5px;color:#b45309;font-weight:600;margin-top:2px"><i class="ti ti-clock"></i> Vence: ' + _esc(new Date(o.activo_hasta).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })) + '</div>' : '';
+    var dom = o.dominio ? ' · ' + _esc(o.dominio) : '';
+    return '<div style="border:1px solid #e8edf3;border-radius:13px;padding:12px;margin-bottom:10px;background:#fff">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="min-width:0"><div style="font-weight:800;font-size:14px;color:#0f172a">' + _esc(o.nombre || '') + '</div><div style="font-size:11px;color:#64748b">@' + _esc(o.slug || '') + ' · ' + _esc(o.tipo || '') + dom + '</div>' + vence + '</div>' + act + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px">' +
+      kpi('Usuarios', o.usuarios || 0) + kpi('Rifas', o.rifas || 0) + kpi('Recaud. rifa', _fmt(o.rifa_recaudado)) +
+      kpi('Ventas POS', o.pos_ventas || 0) + kpi('Total POS', _fmt(o.pos_total)) +
+      '</div></div>';
+  }
+
+  window.nxAbrirSuperadmin = async function () {
+    var prev = document.getElementById('nxSuper'); if (prev) prev.remove();
+    var ov = document.createElement('div'); ov.id = 'nxSuper'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:470px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-crown"></i> Panel del Dueño</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxSuper\').remove()"><i class="ti ti-x"></i></button></div><div id="superBody" style="overflow-y:auto;flex:1"><div style="text-align:center;color:#94a3b8;padding:26px;font-size:13px">Cargando todas las empresas…</div></div></div>';
+    document.body.appendChild(ov);
+    var orgs = []; try { orgs = await getAPI().post('rpc/superadmin_orgs', {}) || []; } catch (e) { orgs = []; }
+    var body = document.getElementById('superBody'); if (!body) return;
+    if (!orgs.length) { body.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:26px;font-size:13px">No hay acceso o no hay empresas.</div>'; return; }
+    var totVentas = orgs.reduce(function (s, o) { return s + (Number(o.pos_total) || 0); }, 0);
+    var totRifa = orgs.reduce(function (s, o) { return s + (Number(o.rifa_recaudado) || 0); }, 0);
+    var activas = orgs.filter(function (o) { return o.activo; }).length;
+    var head = '<div class="rfKpis" style="margin-bottom:12px"><div class="rfKpi"><span>Empresas</span><b>' + orgs.length + '</b></div><div class="rfKpi"><span>Activas</span><b style="color:#16a34a">' + activas + '</b></div><div class="rfKpi"><span>Ventas POS</span><b>' + _fmt(totVentas) + '</b></div><div class="rfKpi"><span>Recaud. rifas</span><b style="color:#4f46e5">' + _fmt(totRifa) + '</b></div></div>';
+    body.innerHTML = head + orgs.map(orgCard).join('');
+  };
+
+  function registrar() { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 9, nombre: 'Panel del Dueño', desc: 'Todas las empresas y sus totales', icon: 'ti-crown', color: '#b45309', bg: '#fffbeb', onclick: 'window.nxAbrirSuperadmin()' }); }
+  function tryReg() { var n = 0; var t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 200); }; t(); }
+  function check(intentos) { esSuper().then(function (ok) { if (ok) { tryReg(); } else if (intentos > 0) { setTimeout(function () { check(intentos - 1); }, 2500); } }); }
+  function init() { setTimeout(function () { check(3); }, 1200); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();

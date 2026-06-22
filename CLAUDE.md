@@ -619,11 +619,21 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   null` (libera el número; NUNCA toca pagados/confirmados/con voucher). En `rifa.html`: `doneApartado`
   (de `res.j.apartado`) cambia el mensaje de éxito a "apartado por X horas, envía el comprobante o se
   liberará". El estado 'apartado' ya se ve en gestBoleto/tablero (gris) y en el verificador público.
+### PANEL DEL DUEÑO (SUPERADMIN, Fase 4) — HECHO v33.9 (cross-org, seguro)
+Acceso **solo lectura** del dueño que ve TODAS las organizaciones en una pantalla. Identidad por
+**`usuarios_sistema.es_superadmin`** (bool; true solo para `sterlin08`, id `43b76117-1731-4299-97e2-d75f7ededf16`).
+Helpers SQL **security definer**: `mi_es_superadmin()` (auth.uid()→profiles→usuarios_sistema) y
+`superadmin_orgs()` (jsonb; si NO es superadmin devuelve `[]`; agrega por org: usuarios, rifas,
+rifa_recaudado [confirmados], pos_ventas, pos_total). Grants a anon/authenticated. Frontend: IIFE al
+final de `parches.js` → módulo "Panel del Dueño" (orden 9) en el hub Multiempresa, **registrado solo si
+`esSuper()`** (RPC `rpc/mi_es_superadmin` con el token de la sesión via `API.token`; reintenta por si la
+sesión tarda). `nxAbrirSuperadmin` (modal `#nxSuper`): KPIs totales + tarjeta por empresa (activa/vence/
+usuarios/rifas/recaudado/ventas POS). NO toca RLS de las tablas; el cruce es solo vía la función definer.
+**Para sumar otro superadmin:** `update usuarios_sistema set es_superadmin=true where id=...`.
 - **PENDIENTE:** combos/paquetes (UI) HECHO · gráfica medios de pago (pie) HECHO · apartados con
-  expiración (cron) HECHO · **mover vouchers/banners a Storage** (hoy base64 en DB; refactor grande/
-  riesgoso, tocar subida+visualización en parches/rifa.html/vendedor.html/boleto.html+funciones — hacer
-  con cuidado y probado) · **panel SUPERADMIN** del dueño (Fase 4, cross-org, sensible de seguridad —
-  ver SEGURIDAD-PLAN) · preview WhatsApp con foto del premio (Worker dominio propio, riesgoso).
+  expiración (cron) HECHO · panel SUPERADMIN HECHO · **mover vouchers/banners a Storage** (hoy base64 en
+  DB; refactor grande/riesgoso, tocar subida+visualización en parches/rifa.html/vendedor.html/boleto.html
+  +funciones — hacer con cuidado y probado) · preview WhatsApp con foto del premio (Worker dominio propio, riesgoso).
   (combos, carrito, anterior/posterior, mayor comprador, WhatsApp auto) · **v2**:
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
