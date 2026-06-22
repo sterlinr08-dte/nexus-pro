@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vendedor · Rifas</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/dist/tabler-icons.min.css">
+<style>
+:root{--c:#4f46e5;--c2:#4338ca}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#eef1f6;color:#0f172a;-webkit-font-smoothing:antialiased}
+.wrap{max-width:520px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:96px}
+.hero{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:14px 16px}
+.hero .top{display:flex;align-items:center;gap:11px}
+.hero .lg{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:19px;overflow:hidden}
+.hero .lg img{width:100%;height:100%;object-fit:cover}
+.hero .nm{font-size:16px;font-weight:800;line-height:1.1}
+.hero .sb{font-size:12px;opacity:.85;font-weight:600}
+.hero .out{margin-left:auto;background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;cursor:pointer}
+.tabs{display:flex;gap:8px;padding:9px 12px;background:#fff;border-bottom:1px solid #e8edf3;position:sticky;top:0;z-index:20}
+.tabs button{flex:1;border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:11px;padding:11px 8px;font-size:14px;font-weight:800;color:#475569;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.tabs button.on{color:#fff;background:var(--c);border-color:var(--c)}
+.body{padding:14px}
+.card{background:#fff;border:1px solid #e8edf3;border-radius:16px;padding:15px;margin-bottom:14px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.sec{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.sec .nb{width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sec h3{margin:0;font-size:16px;font-weight:800}
+.sec small{display:block;color:#94a3b8;font-size:12px;font-weight:600}
+label.fl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 5px}
+label.fl:first-child{margin-top:0}
+.opt{color:#94a3b8;text-transform:none;font-weight:600}.req{color:#ef4444}
+.in{width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;outline:none;font-family:inherit;background:#fff}
+.in:focus{border-color:var(--c)}
+select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 12px center}
+.qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.qrow button{border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:11px;padding:11px 4px;font-size:14px;font-weight:800;color:#334155;cursor:pointer;line-height:1.1}
+.qrow button small{display:block;font-size:10px;color:#94a3b8;font-weight:700;margin-top:2px}
+.luck{width:100%;border:0;border-radius:12px;padding:12px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,#16a34a,#15803d);display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;margin-bottom:12px}
+.qty{display:flex;align-items:center;justify-content:center;gap:18px}
+.qty button{width:54px;height:54px;border-radius:14px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:26px;font-weight:800;color:var(--c);cursor:pointer;line-height:1}
+.qty button:disabled{opacity:.4}
+.qty .qn{text-align:center;min-width:80px}.qty .qn b{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1}.qty .qn small{font-size:12px;color:#94a3b8;font-weight:700}
+.srch{position:relative;margin-bottom:9px}
+.srch i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:17px}
+.srch input{width:100%;height:44px;padding:0 12px 0 36px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff}
+.legend{display:flex;gap:13px;font-size:11px;color:#475569;font-weight:600;margin-bottom:10px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}.legend .d{width:11px;height:11px;border-radius:3px}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+.n{aspect-ratio:1.4/1;border-radius:8px;border:1.5px solid;font-family:ui-monospace,monospace;font-size:12px;font-weight:800;cursor:pointer;background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
+.n.sold{background:#f1f5f9;border-color:#e2e8f0;color:#cbd5e1;cursor:not-allowed}
+.n.sel{background:var(--c);border-color:var(--c);color:#fff}
+.n:not(.sold):active{transform:scale(.93)}
+.pager{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px;font-size:13px;font-weight:700;color:#475569}
+.pager button{width:42px;height:42px;border-radius:11px;border:1.5px solid #e2e8f0;background:#fff;font-size:18px;color:var(--c);cursor:pointer}.pager button:disabled{opacity:.4}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px;padding-top:13px;border-top:1px dashed #e2e8f0}
+.chips .lbl{width:100%;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:#eef2ff;border:1.5px solid #c7d2fe;color:var(--c);font-family:ui-monospace,monospace;font-weight:800;font-size:13px;padding:6px 8px 6px 11px;border-radius:9px}
+.chip span{width:18px;height:18px;border-radius:50%;background:#c7d2fe;color:var(--c);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;font-family:sans-serif}
+.vfile{width:100%;padding:14px;border:1.5px dashed #c7d2fe;border-radius:13px;background:#f8fafc;font-size:13px;color:#475569;text-align:center;cursor:pointer;display:block}
+.vfile i{font-size:24px;color:var(--c);display:block;margin-bottom:5px}
+.vprev{margin-top:10px}.vprev img{max-width:100%;border-radius:11px;border:1px solid #e2e8f0}
+.rifaItem{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1.5px solid #e2e8f0;background:#fff;border-radius:13px;padding:13px;margin-bottom:10px;cursor:pointer}
+.rifaItem .ic{width:42px;height:42px;border-radius:11px;background:#eef2ff;color:var(--c);display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto}
+.rifaItem .nm{font-size:15px;font-weight:800;line-height:1.15}.rifaItem .pr{font-size:12px;color:#64748b;font-weight:700}
+.rifaItem i.go{margin-left:auto;color:#cbd5e1;font-size:20px}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:13px}
+.kpi .k{font-size:11px;color:#94a3b8;font-weight:800;text-transform:uppercase}.kpi .v{font-size:19px;font-weight:800;margin-top:3px}
+.kpi.hl{background:var(--c);border-color:var(--c);color:#fff}.kpi.hl .k{color:rgba(255,255,255,.8)}
+.tk{background:#fff;border:1px solid #e8edf3;border-radius:13px;padding:12px 13px;margin-bottom:9px;display:flex;align-items:center;gap:11px}
+.tk .num{font-family:ui-monospace,monospace;font-size:19px;font-weight:800;color:var(--c)}
+.tk .mid{flex:1;min-width:0}.tk .mid .nm{font-size:14px;font-weight:800}.tk .mid .dt{font-size:11px;color:#94a3b8;font-weight:600}
+.est{font-size:11px;font-weight:800;padding:5px 9px;border-radius:20px;white-space:nowrap}
+.est.ok{background:#dcfce7;color:#16a34a}.est.pend{background:#fef3c7;color:#b45309}.est.apar{background:#e0e7ff;color:#4338ca}
+.cart{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e8edf3;box-shadow:0 -6px 22px rgba(15,23,42,.1);padding:11px 14px calc(11px + env(safe-area-inset-bottom));z-index:30}
+.cart-in{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.cart .info{flex:1;min-width:0}.cart .info .a{font-size:12px;color:#64748b;font-weight:700}.cart .info .b{font-size:19px;font-weight:800}
+.cart .go{border:0;border-radius:12px;padding:14px 18px;font-size:15px;font-weight:800;color:#fff;background:var(--c);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}.cart .go:disabled{opacity:.5}
+.miss{max-width:520px;margin:0 auto 7px;font-size:11.5px;font-weight:700;color:#b45309;display:flex;align-items:center;gap:6px}
+.empty{text-align:center;color:#94a3b8;padding:24px;font-size:13px}
+.msg{text-align:center;color:#64748b;font-size:14px;padding:38px 20px;line-height:1.5}
+.spin{width:34px;height:34px;border:3px solid #c7d2fe;border-top-color:var(--c);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* login */
+.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.login .box{background:#fff;border-radius:20px;padding:28px 22px;box-shadow:0 14px 34px rgba(15,23,42,.12);max-width:360px;width:100%}
+.login .ic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px}
+.login h1{font-size:21px;margin:0 0 4px}.login p{color:#64748b;font-size:13px;margin:0 0 18px}
+.login input{width:100%;height:52px;text-align:center;font-size:22px;font-weight:800;letter-spacing:4px;text-transform:uppercase;border:1.5px solid #e2e8f0;border-radius:13px;font-family:ui-monospace,monospace;outline:none;margin-bottom:12px}
+.login input:focus{border-color:var(--c)}
+.login button{width:100%;border:0;border-radius:13px;padding:15px;font-size:16px;font-weight:800;color:#fff;background:var(--c);cursor:pointer}
+.login .err{color:#dc2626;font-size:13px;font-weight:700;margin-bottom:10px;min-height:18px}
+.ok{text-align:center;padding:30px 20px}.ok .ic2{width:72px;height:72px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 14px}
+.ok h2{margin:0 0 6px;font-size:22px}.ok .nums{font-family:ui-monospace,monospace;font-weight:800;color:var(--c);font-size:16px;margin:6px 0 16px;word-break:break-word}
+.ok a,.ok button{display:inline-block;background:var(--c);color:#fff;text-decoration:none;padding:12px 22px;border-radius:12px;font-weight:800;margin:5px;border:0;cursor:pointer;font-size:15px}
+.ok a.alt,.ok button.alt{background:#f1f5f9;color:var(--c)}
+.wabtn{background:#25d366 !important;color:#fff !important}
+</style>
+</head>
+<body>
+<div id="app"><div class="msg"><div class="spin"></div>Cargando…</div></div>
+<script>
+(function(){
+  var FV="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/vendedor";
+  var FR="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/rifa";
+  var BOLETO="https://nexusprord.com/boleto.html";
+  var app=document.getElementById("app");
+  var CODE="", V=null, tab="vender";
+  var selRifa=null, RB=null, sold={}, cart=[], qty=1, page=0, q="", PER=120, ctaSel=null, voucherData="";
+  var F={nom:"",tel:""}, doneNums=[], doneId="", loginErr="";
+
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c];});}
+  function fmt(n){return "RD$ "+Math.round(Number(n||0)).toLocaleString("en-US");}
+  function pad(n){return String(n).padStart((RB&&RB.digitos)||4,"0");}
+  function val(idv){var e=document.getElementById(idv);return e?e.value:"";}
+  function setTheme(c){document.documentElement.style.setProperty("--c",c||"#4f46e5");document.documentElement.style.setProperty("--c2",shade(c||"#4f46e5",-18));}
+  function shade(hex,p){try{var m=/^#?([0-9a-f]{6})$/i.exec(hex);if(!m)return hex;var n=parseInt(m[1],16),r=(n>>16)&255,g=(n>>8)&255,b=n&255,f=function(x){return Math.max(0,Math.min(255,Math.round(x+x*p/100)));};return "#"+((1<<24)+(f(r)<<16)+(f(g)<<8)+f(b)).toString(16).slice(1);}catch(e){return hex;}}
+
+  // sesion
+  var urlCode=new URLSearchParams(location.search).get("c")||"";
+  CODE=urlCode||sessionStorage.getItem("nxVendCode")||"";
+  if(CODE){ doLogin(CODE,true); } else { renderLogin(); }
+
+  function doLogin(code,silent){
+    if(!silent)loginErr="";
+    fetch(FV,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion:"login",codigo:code})})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+      .then(function(res){
+        if(res.ok&&res.j.ok){ CODE=String(code).trim().toUpperCase(); V=res.j; sessionStorage.setItem("nxVendCode",CODE); setTheme(V.org&&V.org.color); tab="vender"; selRifa=null; render(); }
+        else { sessionStorage.removeItem("nxVendCode"); CODE=""; loginErr=res.j.error||"No se pudo entrar."; renderLogin(); }
+      }).catch(function(){ loginErr="Error de conexión."; renderLogin(); });
+  }
+  window.__logout=function(){ sessionStorage.removeItem("nxVendCode"); CODE="";V=null;selRifa=null;cart=[]; renderLogin(); };
+
+  function renderLogin(){
+    app.innerHTML='<div class="login"><div class="box"><div class="ic"><i class="ti ti-ticket"></i></div>'+
+      '<h1>Vendedor de rifas</h1><p>Escribe tu código de acceso para entrar a tu panel de ventas.</p>'+
+      '<div class="err">'+esc(loginErr)+'</div>'+
+      '<input id="lc" maxlength="12" placeholder="CÓDIGO" value="'+esc(urlCode)+'" autocomplete="off" onkeydown="if(event.key===\'Enter\')window.__login()">'+
+      '<button onclick="window.__login()">Entrar</button></div></div>';
+    setTimeout(function(){var i=document.getElementById("lc");if(i&&!urlCode)i.focus();},60);
+  }
+  window.__login=function(){ var c=(val("lc")||"").trim(); if(c.length<4){loginErr="Código muy corto.";renderLogin();return;} doLogin(c,false); };
+
+  // ── dashboard
+  function render(){
+    var logo=V.org&&V.org.logo?'<img src="'+esc(V.org.logo)+'" alt="">':'<i class="ti ti-user"></i>';
+    var pct=V.vendedor.comision_pct||0;
+    var hero='<div class="hero"><div class="top"><div class="lg">'+logo+'</div><div><div class="nm">'+esc(V.vendedor.nombre)+'</div><div class="sb">'+esc(V.org&&V.org.nombre||"")+(pct?' · comisión '+pct+'%':'')+'</div></div><button class="out" onclick="window.__logout()"><i class="ti ti-logout"></i></button></div></div>';
+    var tabs='<div class="tabs"><button class="'+(tab==="vender"?"on":"")+'" onclick="window.__tab(\'vender\')"><i class="ti ti-shopping-cart"></i> Vender</button>'+
+      '<button class="'+(tab==="ventas"?"on":"")+'" onclick="window.__tab(\'ventas\')"><i class="ti ti-report-money"></i> Mis ventas</button></div>';
+    var content = tab==="ventas" ? '<div class="body" id="ventasBox"><div class="msg"><div class="spin"></div>Cargando…</div></div>'
+      : (selRifa ? viewSell() : viewRifas());
+    app.innerHTML='<div class="wrap">'+hero+tabs+content+'</div>';
+    var old=document.getElementById("cartBar"); if(old)old.remove();
+    if(tab==="vender"&&selRifa){ if(!RB.ocultar_numeros)boardInto(); cartBar(); }
+    if(tab==="ventas") cargarVentas();
+  }
+  window.__tab=function(t){ tab=t; var b=document.getElementById("cartBar"); if(b)b.remove(); render(); };
+
+  function viewRifas(){
+    var rs=V.rifas||[];
+    if(!rs.length) return '<div class="body"><div class="empty">No tienes rifas activas asignadas todavía.</div></div>';
+    return '<div class="body"><div class="sec" style="margin-bottom:10px"><div><h3>Elige la rifa</h3><small>Toca para vender</small></div></div>'+
+      rs.map(function(r){return '<button class="rifaItem" onclick="window.__pick(\''+r.id+'\')"><div class="ic"><i class="ti ti-ticket"></i></div><div><div class="nm">'+esc(r.premio||r.nombre||"Rifa")+'</div><div class="pr">'+fmt(r.precio_boleto)+' c/u</div></div><i class="ti ti-chevron-right go"></i></button>';}).join('')+
+      '</div>';
+  }
+  window.__pick=function(rid){
+    selRifa=(V.rifas||[]).filter(function(r){return r.id===rid;})[0]||null;
+    cart=[];qty=1;voucherData="";ctaSel=null;page=0;q="";
+    app.innerHTML='<div class="msg"><div class="spin"></div>Cargando rifa…</div>';
+    fetch(FR+"?id="+encodeURIComponent(rid)).then(function(r){return r.json();}).then(function(d){
+      RB=d; sold={}; (d.vendidos||[]).forEach(function(n){sold[n]=1;}); render();
+    }).catch(function(){alert("No se pudo cargar la rifa.");selRifa=null;render();});
+  };
+  window.__back=function(){ selRifa=null;RB=null;cart=[];var b=document.getElementById("cartBar");if(b)b.remove(); render(); };
+
+  function count(){return RB.ocultar_numeros?qty:cart.length;}
+  function totalM(){return count()*(RB.precio||0);}
+  function viewSell(){
+    var ctas=RB.cuentas||[];
+    var pago=ctas.length?'<label class="fl">Cuenta donde pagó <span class="opt">(opcional)</span></label><select id="vCta" class="in" onchange="window.__cta(this.value)"><option value="">— Ninguna / efectivo —</option>'+ctas.map(function(c){return '<option value="'+c.id+'"'+(ctaSel===c.id?' selected':'')+'>'+esc(c.banco||"Cuenta")+' '+esc(c.numero_cuenta||"")+'</option>';}).join('')+'</select>':'';
+    var numSec = RB.ocultar_numeros ?
+      '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets?</h3><small>Números al azar</small></div></div>'+
+        '<div class="qty"><button onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="qn"><b id="qtyN">'+qty+'</b><small>'+(qty===1?'ticket':'tickets')+'</small></div><button onclick="window.__qty(1)">+</button></div>'+
+        '<div class="qrow" style="margin-top:12px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(RB.precio||0))+'</small></button>';}).join('')+'</div></div>'
+      :
+      '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>Números</h3><small>Toca uno o varios</small></div></div>'+
+        '<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(RB.precio||0))+'</small></button>';}).join('')+'</div>'+
+        '<button class="luck" onclick="window.__luck(1)"><i class="ti ti-dice-5"></i> A la suerte</button>'+
+        '<div class="srch"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Buscar número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
+        '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Libre</span><span><i class="d" style="background:var(--c)"></i>Elegido</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
+        '<div id="bd"></div><div id="chips"></div></div>';
+    return '<div class="body">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button onclick="window.__back()" style="border:1.5px solid #e2e8f0;background:#fff;border-radius:10px;width:38px;height:38px;color:var(--c);font-size:18px;cursor:pointer"><i class="ti ti-chevron-left"></i></button><div style="font-weight:800;font-size:15px">'+esc(RB.premio||RB.nombre||"Rifa")+'</div></div>'+
+      '<div class="card"><div class="sec"><div class="nb">1</div><div><h3>Datos del comprador</h3></div></div>'+
+        '<label class="fl">Nombre completo <span class="req">*</span></label><input id="vNom" class="in" placeholder="Nombre del comprador" value="'+esc(F.nom)+'" oninput="window.__sv(\'nom\',this.value)">'+
+        '<label class="fl">WhatsApp <span class="req">*</span></label><input id="vTel" class="in" inputmode="tel" placeholder="809-000-0000" value="'+esc(F.tel)+'" oninput="window.__sv(\'tel\',this.value)">'+
+      '</div>'+
+      numSec+
+      '<div class="card"><div class="sec"><div class="nb">3</div><div><h3>Pago</h3><small>Opcional</small></div></div>'+
+        pago+
+        '<label class="fl">Comprobante (voucher) <span class="opt">(opcional)</span></label>'+
+        '<label class="vfile" for="vVou"><i class="ti ti-camera-plus"></i>Subir foto del comprobante</label>'+
+        '<input type="file" id="vVou" accept="image/*" style="display:none" onchange="window.__vou(this)"><div id="vp" class="vprev">'+(voucherData?'<img src="'+voucherData+'">':'')+'</div>'+
+        '<div style="font-size:11.5px;color:#94a3b8;margin-top:9px">El boleto queda <b>por confirmar</b>; el organizador valida el pago.</div>'+
+      '</div></div>';
+  }
+  function boardInto(){
+    var wrap=document.getElementById("bd"); if(!wrap)return;
+    var totalN=RB.cantidad||10000, nums=[];
+    for(var i=0;i<totalN;i++){var s=pad(i); if(!q||s.indexOf(q)>=0) nums.push(s);}
+    var pages=Math.max(1,Math.ceil(nums.length/PER)); if(page>=pages)page=0;
+    var slice=nums.slice(page*PER,page*PER+PER);
+    var selMap={}; cart.forEach(function(n){selMap[n]=1;});
+    var cells=slice.map(function(s){var so=sold[s], se=selMap[s];return '<button class="n'+(so?' sold':(se?' sel':''))+'" '+(so?'disabled':'onclick="window.__toggle(\''+s+'\')"')+'>'+s+'</button>';}).join('');
+    var pager=pages>1?'<div class="pager"><button onclick="window.__pg(-1)" '+(page<=0?'disabled':'')+'>‹</button><span>Pág '+(page+1)+' / '+pages+'</span><button onclick="window.__pg(1)" '+(page>=pages-1?'disabled':'')+'>›</button></div>':'';
+    wrap.innerHTML='<div class="board">'+(slice.length?cells:'<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;font-size:13px">Sin números</div>')+'</div>'+pager;
+    chipsInto();
+  }
+  function chipsInto(){ var el=document.getElementById("chips"); if(!el)return; if(!cart.length){el.innerHTML="";return;}
+    el.innerHTML='<div class="chips"><span class="lbl">Números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip">'+esc(n)+'<span onclick="window.__toggle(\''+n+'\')">×</span></span>';}).join('')+'</div>'; }
+  function canSell(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim(); }
+  function missTxt(){var m=[]; if(!count())m.push(RB.ocultar_numeros?"cantidad":"número"); if(!(F.nom||"").trim())m.push("nombre"); if(!(F.tel||"").trim())m.push("WhatsApp"); return m.length?"Falta: "+m.join(" · "):"";}
+  function cartBar(){ var bar=document.createElement("div");bar.className="cart";bar.id="cartBar"; var mt=missTxt();
+    bar.innerHTML='<div class="miss" id="cMiss" style="'+(mt?'':'display:none')+'"><i class="ti ti-info-circle"></i><span>'+esc(mt)+'</span></div>'+
+      '<div class="cart-in"><div class="info"><div class="a"><span id="cInfo">'+count()+' '+(count()===1?'ticket':'tickets')+'</span></div><div class="b" id="cTot">'+fmt(totalM())+'</div></div>'+
+      '<button class="go" id="goBtn" '+(canSell()?'':'disabled')+' onclick="window.__vender()"><i class="ti ti-circle-check"></i> Registrar venta</button></div>';
+    document.body.appendChild(bar); }
+  function refreshCart(){ var b=document.getElementById("cartBar"); if(!b){cartBar();return;} var inf=b.querySelector("#cInfo"),tot=b.querySelector("#cTot"),go=b.querySelector("#goBtn"),miss=b.querySelector("#cMiss");
+    if(inf)inf.textContent=count()+' '+(count()===1?'ticket':'tickets'); if(tot)tot.textContent=fmt(totalM());
+    var mt=missTxt(); if(miss){if(mt){miss.style.display='';miss.querySelector("span").textContent=mt;}else miss.style.display='none';}
+    go.disabled=!canSell(); }
+  window.__sv=function(k,v){F[k]=v;refreshCart();};
+  window.__cta=function(v){ctaSel=v||null;};
+  window.__q=function(v){q=(v||"").replace(/\D/g,"");page=0;boardInto();};
+  window.__pg=function(d){page+=d;if(page<0)page=0;boardInto();};
+  window.__toggle=function(n){if(sold[n])return;var i=cart.indexOf(n);if(i>=0)cart.splice(i,1);else cart.push(n);cart.sort();boardInto();refreshCart();};
+  window.__luck=function(k){var totalN=RB.cantidad||10000,av=[],sm={};cart.forEach(function(n){sm[n]=1;});for(var i=0;i<totalN;i++){var s=pad(i);if(!sold[s]&&!sm[s])av.push(s);}if(!av.length){alert("No quedan números.");return;}for(var j=0;j<k&&av.length;j++){var x=Math.floor(Math.random()*av.length);cart.push(av[x]);av.splice(x,1);}cart.sort();boardInto();refreshCart();};
+  window.__qty=function(d,abs){qty=abs?d:Math.max(1,qty+d);if(qty>200)qty=200;var n=document.getElementById("qtyN");if(n)n.textContent=qty;var box=document.querySelector(".qty");if(box){var mn=box.querySelector("button");if(mn)mn.disabled=qty<=1;var sm=box.querySelector(".qn small");if(sm)sm.textContent=qty===1?'ticket':'tickets';}refreshCart();};
+  window.__vou=function(input){var f=input.files&&input.files[0];if(!f)return;if(f.size>12*1024*1024){alert("Imagen muy grande.");return;}var rd=new FileReader();rd.onload=function(ev){var img=new Image();img.onload=function(){try{var max=1100,w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);voucherData=cv.toDataURL("image/jpeg",0.72);}catch(e){voucherData=ev.target.result;}var p=document.getElementById("vp");if(p)p.innerHTML='<img src="'+voucherData+'">';};img.src=ev.target.result;};rd.readAsDataURL(f);};
+
+  window.__vender=function(){
+    F.nom=(val("vNom")||"").trim(); F.tel=(val("vTel")||"").trim();
+    if(!count()){alert("Elige al menos un ticket.");return;}
+    if(!F.nom){alert("Escribe el nombre del comprador.");return;}
+    if(!F.tel){alert("Escribe el WhatsApp del comprador.");return;}
+    var btn=document.getElementById("goBtn");btn.disabled=true;btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Registrando…';
+    var payload={accion:"vender",codigo:CODE,rifa_id:selRifa.id,nombre:F.nom,telefono:F.tel,cuenta_id:ctaSel||null,voucher:voucherData||null};
+    if(RB.ocultar_numeros)payload.cantidad=qty;else payload.numeros=cart;
+    fetch(FV,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+      .then(function(res){ if(res.ok&&res.j.ok){ doneNums=res.j.numeros||cart; doneId=res.j.id||""; var b=document.getElementById("cartBar");if(b)b.remove(); viewVenta(); }
+        else { alert(res.j.error||"No se pudo registrar."); btn.disabled=false;btn.innerHTML='<i class="ti ti-circle-check"></i> Registrar venta'; if(/tomad/i.test(res.j.error||"")){window.__pick(selRifa.id);} } })
+      .catch(function(){alert("Error de conexión.");btn.disabled=false;btn.innerHTML='<i class="ti ti-circle-check"></i> Registrar venta';});
+  };
+  function viewVenta(){
+    var link=doneId?(BOLETO+"?id="+doneId):"";
+    var wt=encodeURIComponent('🎟️ '+(RB.premio||"Rifa")+'\nNúmeros: '+doneNums.join(", ")+(link?'\nBoleto: '+link:''));
+    var wa=(F.tel?'https://wa.me/'+ (F.tel.replace(/\D/g,"").length>=10?"1":"") + F.tel.replace(/\D/g,"") +'?text='+wt : 'https://api.whatsapp.com/send?text='+wt);
+    app.innerHTML='<div class="wrap"><div class="body"><div class="ok"><div class="ic2">✓</div>'+
+      '<h2>¡Venta registrada!</h2><div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
+      '<p style="color:#475569;font-size:14px">Quedó <b>por confirmar</b>. El organizador validará el pago.</p>'+
+      '<a class="wabtn" href="'+wa+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar boleto al comprador</a>'+
+      (link?'<a href="'+link+'" target="_blank">Ver boleto</a>':'')+
+      '<button onclick="window.__pick(\''+selRifa.id+'\')">Vender otro</button>'+
+      '<button class="alt" onclick="window.__back()">Otra rifa</button>'+
+      '</div></div></div>';
+    F={nom:"",tel:""};voucherData="";ctaSel=null;cart=[];qty=1;
+  }
+
+  // ── mis ventas
+  function cargarVentas(){
+    var box=document.getElementById("ventasBox"); if(!box)return;
+    fetch(FV,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion:"ventas",codigo:CODE})})
+      .then(function(r){return r.json();}).then(function(d){
+        if(!d.ok){box.innerHTML='<div class="empty">No se pudo cargar.</div>';return;}
+        var k='<div class="kpis"><div class="kpi"><div class="k">Tickets</div><div class="v">'+d.n+'</div></div>'+
+          '<div class="kpi"><div class="k">Recaudado</div><div class="v">'+fmt(d.confirmado)+'</div></div>'+
+          '<div class="kpi"><div class="k">Mi comisión</div><div class="v">'+fmt(d.comision)+'</div></div>'+
+          '<div class="kpi hl"><div class="k">A entregar</div><div class="v">'+fmt(d.a_entregar)+'</div></div></div>'+
+          '<div style="font-size:11.5px;color:#94a3b8;margin:-4px 0 12px;text-align:center">Recaudado y comisión cuentan solo los pagos <b>confirmados</b>.</div>';
+        var ts=d.tickets||[];
+        var list=ts.length?ts.map(function(t){var cls=t.estado==="confirmado"?"ok":(t.estado==="apartado"?"apar":"pend");var lbl=t.estado==="confirmado"?"✓ Pagado":(t.estado==="apartado"?"Apartado":"Por confirmar");var f=t.fecha?new Date(t.fecha).toLocaleDateString("es-DO",{day:"2-digit",month:"short"}):"";return '<div class="tk"><div class="num">'+esc(t.numero)+'</div><div class="mid"><div class="nm">'+esc(t.comprador||"")+'</div><div class="dt">'+esc(f)+' · '+fmt(t.precio)+'</div></div><span class="est '+cls+'">'+lbl+'</span></div>';}).join(''):'<div class="empty">Aún no has registrado ventas.</div>';
+        box.innerHTML=k+list;
+      }).catch(function(){box.innerHTML='<div class="empty">Error de conexión.</div>';});
+  }
+})();
+</script>
+</body>
+</html>

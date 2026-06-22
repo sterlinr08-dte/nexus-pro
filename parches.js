@@ -18300,7 +18300,8 @@ try {
   window.nxRifaVendedores = function () {
     cerrarModal('nxVends');
     var lista = _vendedores.length ? _vendedores.map(function (v) {
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      var cod = (v.codigo || '').toUpperCase();
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span>' + (cod ? '<span style="display:block;margin-top:3px"><i class="ti ti-key" style="font-size:12px"></i> Código: <b style="font-family:ui-monospace,monospace;letter-spacing:1px;color:#4f46e5">' + esc(cod) + '</b></span>' : '') + '</div></div><div style="display:flex;gap:4px">' + (cod ? '<button class="btn bsm bghost" type="button" title="Compartir acceso" onclick="window.nxVendLink(\'' + v.id + '\')"><i class="ti ti-share" style="color:#16a34a"></i></button>' : '') + '<button class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin vendedores. Agrega a tu equipo para asignar ventas y calcular comisiones.</div>';
     var ov = document.createElement('div'); ov.id = 'nxVends'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
@@ -18333,6 +18334,15 @@ try {
       await recargarVend();
       window.nxRifaVendedores();
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  window.nxVendLink = function (id) {
+    var v = _vendedores.find(function (x) { return String(x.id) === String(id); }); if (!v || !v.codigo) { toast('err', 'Sin código'); return; }
+    var cod = String(v.codigo).toUpperCase();
+    var url = 'https://nexusprord.com/vendedor.html?c=' + cod;
+    var txt = 'Hola ' + (v.nombre || '') + ', este es tu acceso de vendedor para las rifas.\n\nEntra aquí: ' + url + '\nTu código: ' + cod;
+    if (navigator.share) { navigator.share({ title: 'Acceso de vendedor', text: txt }).catch(function () {}); }
+    else if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(function () { toast('ok', 'Enlace copiado', cod); }, function () { toast('ok', 'Código ' + cod, url); }); }
+    else { toast('ok', 'Código ' + cod, url); }
   };
   window.nxVendEliminar = async function (id) {
     if (!confirm('¿Eliminar este vendedor?')) return;
