@@ -1725,7 +1725,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;margin:8px 0;background:#eff6ff;padding:8px;border-radius:8px">
         <input type="checkbox" id="cPermFact" checked style="width:18px;height:18px"/>
-        <span><strong>Permitir facturación automática</strong><br><span style="font-size:9px;color:#475569">Si está activo, el cliente entra en la facturación automática según su día configurado. Independiente del estado.</span></span>
+        <span><strong>Permitir facturación automática</strong><br><span style="font-size:9px;color:#475569">Si lo <b>APAGAS</b>, este cliente <b>NO genera factura</b> (cortesía / familiar). Si está activo, entra en la facturación automática según su día.</span></span>
       </label>
       <div style="font-size:9px;color:#475569;margin:8px 0 4px;font-family:var(--mono)">PENDIENTES DEL CLIENTE (marca los que tiene pendientes):</div>
       <div id="cPendientes" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px">
@@ -3187,7 +3187,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='36.0';
+const APP_VERSION='36.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3684,6 +3684,7 @@ function verCliente(id){
 
     <div class="cs-section">
       <div class="cs-section-ttl">Estado financiero</div>
+      ${c.permitir_facturacion===false?`<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:7px 10px;margin-bottom:8px;font-size:11px;font-weight:700;color:#1d4ed8;text-align:center">🚫 Cliente de cortesía — NO se le genera factura automática</div>`:''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div style="background:#f0fdf4;border-radius:8px;padding:8px;text-align:center">
           <div style="font-size:9px;color:#059669;text-transform:uppercase;font-weight:700">Prima/mes</div>
@@ -5058,9 +5059,10 @@ async function _genFacturasInterno(){
   const mes=parseInt(document.getElementById('fMes')?.value||new Date().getMonth()+1);
   const anio=parseInt(document.getElementById('fAnio')?.value||new Date().getFullYear());
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
-  // Solo clientes activos (no inactivos ni suspendidos)
-  const activos=ST.clientes.filter(c=>c.activo);
-  if(!activos.length){toast('warn','Sin clientes activos');return;}
+  // Solo clientes activos (no inactivos ni suspendidos) Y con facturación permitida.
+  // Si "Permitir facturación automática" está APAGADO (familiar/cortesía), el cliente NO genera factura.
+  const activos=ST.clientes.filter(c=>c.activo&&c.permitir_facturacion!==false);
+  if(!activos.length){toast('warn','Sin clientes a facturar');return;}
   toast('info','Generando facturas con NCF...','Por favor espera');
   let n=0,duplicados=0;const nuevasFact=[],nuevosAsi=[],cliAct=[];
   for(const c of activos){
