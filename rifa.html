@@ -341,7 +341,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var content;
     if(done){ content=viewListo(); }
     else if(tab==="verificar"){ content=viewVerificar(); }
-    else if(cerrada){ content='<div class="body">'+(R.numero_ganador!=null?'<div class="card" style="text-align:center"><div class="sec" style="justify-content:center"><h3>Número ganador</h3></div><div style="font-size:34px;color:var(--c);font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px">'+esc(pad(R.numero_ganador))+'</div></div>':'')+'<div class="msg">Esta rifa ya está cerrada. ¡Gracias por participar!</div></div>'; }
+    else if(cerrada){ content='<div class="body">'+(R.numero_ganador!=null?'<div class="card mg-card" style="text-align:center">'+MGSTARS+'<div class="sec" style="justify-content:center"><h3>Número ganador</h3></div><div style="font-size:34px;color:var(--c);font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px">'+esc(pad(R.numero_ganador))+'</div></div>':'')+'<div class="msg">Esta rifa ya está cerrada. ¡Gracias por participar!</div></div>'; }
     else { content=viewComprar(); }
 
     var topHead=done?'':(bannerImg()+premioHTML(pct,fecha,cerrada));
@@ -365,7 +365,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       comoJugarHTML()+
       '<div class="ajugar"><span class="pill mg-shine">¡A JUGAR!</span><i class="ti ti-chevron-down"></i></div>'+
       // 1) Tus datos
-      '<div class="card"><div class="sec"><div class="nb">1</div><div><h3>Tus datos</h3><small>Para registrar tu compra</small></div></div>'+
+      '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">1</div><div><h3>Tus datos</h3><small>Para registrar tu compra</small></div></div>'+
         '<label class="fl">Nombre completo <span class="req">*</span></label><input id="fNom" class="in" placeholder="Tu nombre y apellido" autocomplete="name" value="'+esc(F.nom)+'" oninput="window.__sv(\'nom\',this.value)">'+
         '<label class="fl">WhatsApp <span class="req">*</span></label><input id="fTel" class="in" inputmode="tel" placeholder="809-000-0000" autocomplete="tel" value="'+esc(F.tel)+'" oninput="window.__sv(\'tel\',this.value)">'+
         '</div>'+
@@ -384,7 +384,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
           '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:var(--c)"></i>Elegido</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
           '<div id="bd"></div><div id="chips"></div><div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div></div>')+
       // 3) Método de pago
-      '<div class="card"><div class="sec"><div class="nb">3</div><div><h3>Método de pago</h3><small>Paga y sube tu comprobante</small></div></div>'+
+      '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">3</div><div><h3>Método de pago</h3><small>Paga y sube tu comprobante</small></div></div>'+
         pago+
         '<label class="fl">Comprobante de pago (voucher) '+(vouReq()?'<span class="req">*</span>':'<span class="opt">(opcional)</span>')+'</label>'+
         '<label class="vfile" for="bVou"><i class="ti ti-camera-plus"></i>Toca para subir foto del depósito o transferencia</label>'+
@@ -404,13 +404,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     ];
     var pasos=Array.isArray(R.tutorial)?R.tutorial:def;
     if(!pasos.length)return '';
-    return '<div class="card" id="comojugar"><div class="sec"><div class="nb"><i class="ti ti-player-play"></i></div><div><h3>¿Cómo jugar?</h3><small>Muy fácil, en '+pasos.length+' paso'+(pasos.length===1?'':'s')+'</small></div></div>'+
+    return '<div class="card mg-card" id="comojugar">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-player-play"></i></div><div><h3>¿Cómo jugar?</h3><small>Muy fácil, en '+pasos.length+' paso'+(pasos.length===1?'':'s')+'</small></div></div>'+
       '<div class="howto">'+pasos.map(function(p,i){return '<div class="hstep"><div class="hn">'+(i+1)+'</div><div class="ht"><b>'+esc(p.t)+'</b><span>'+esc(p.d)+'</span></div></div>';}).join('')+'</div>'+
     '</div>';
   }
   function faqHTML(){
     var fq=R.faqs||[]; if(!fq.length)return '';
-    return '<div class="card" id="faqsec"><div class="sec"><div class="nb"><i class="ti ti-help-circle"></i></div><div><h3>Preguntas frecuentes</h3><small>Resolvemos tus dudas</small></div></div>'+
+    return '<div class="card mg-card" id="faqsec">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-help-circle"></i></div><div><h3>Preguntas frecuentes</h3><small>Resolvemos tus dudas</small></div></div>'+
       fq.map(function(f){return '<details class="faq"><summary>'+esc(f.q||'')+'</summary><div class="faqa">'+esc(f.a||'').replace(/\n/g,'<br>')+'</div></details>';}).join('')+
     '</div>';
   }
@@ -535,7 +535,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 
   // ── VERIFICADOR
   function viewVerificar(){
-    return '<div class="body"><div class="card"><div class="sec"><div><h3>Consultar mis tickets</h3><small>Busca por tu WhatsApp o número de ticket</small></div></div>'+
+    return '<div class="body"><div class="card mg-card">'+MGSTARS+'<div class="sec"><div><h3>Consultar mis tickets</h3><small>Busca por tu WhatsApp o número de ticket</small></div></div>'+
       '<div class="vsearch"><input id="vq" class="in" inputmode="numeric" placeholder="Tu WhatsApp o tu número" value="'+esc(window.__vq||"")+'" onkeydown="if(event.key===\'Enter\')window.__verif()"><button onclick="window.__verif()">Buscar</button></div>'+
       '<div id="vres"></div></div></div>';
   }
