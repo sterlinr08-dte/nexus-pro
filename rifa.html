@@ -15,24 +15,34 @@
 html,body{margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#eef1f6;color:#0f172a;-webkit-font-smoothing:antialiased}
 .wrap{max-width:520px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:100px}
-/* hero */
-.hero{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:0 0 16px}
+/* barra de acento + cabecera */
+.topaccent{height:6px;background:linear-gradient(90deg,var(--c),var(--c2))}
+.nav{display:flex;align-items:center;gap:11px;padding:11px 14px;background:#fff;border-bottom:2px solid #eef1f6;position:sticky;top:0;z-index:25}
+.nav .lg{width:46px;height:46px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--c);overflow:hidden;flex:0 0 auto}
+.nav .lg img{width:100%;height:100%;object-fit:cover}
+.nav b{font-size:16px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.burger{width:46px;height:46px;border-radius:12px;border:0;background:#fff;color:var(--c);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,23,42,.10);flex:0 0 auto}
+.burger:active{transform:scale(.95)}
+/* menu desplegable */
+.menu{background:#fff;border-bottom:2px solid #eef1f6;padding:6px 16px 18px;animation:slidedown .18s ease}
+@keyframes slidedown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.menu a{display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;font-weight:800;color:#0f172a;padding:13px;text-decoration:none;cursor:pointer;border-radius:12px}
+.menu a:active{background:#f1f5f9}
+.menu a i{font-size:21px;color:var(--c)}
+.menu .lista{margin-top:6px;width:100%;border:0;border-radius:30px;padding:16px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 22px rgba(15,23,42,.18)}
+.menu .lista:active{transform:scale(.98)}
+/* banner + bloque premio */
 .banner{width:100%;display:block}
-.hd{display:flex;align-items:center;gap:10px;padding:13px 16px}
-.hd .lg{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden}
-.hd .lg img{width:100%;height:100%;object-fit:cover}
-.hd b{font-size:15px;font-weight:800}
-.htxt{padding:2px 16px 0}
+.prem-blk{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:16px;margin-bottom:8px;border-radius:0 0 22px 22px}
 .prem{font-size:21px;font-weight:800;line-height:1.15}
 .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px}
 .meta span{background:rgba(255,255,255,.16);padding:5px 11px;border-radius:20px;font-weight:700}
-.prog{height:9px;background:rgba(255,255,255,.25);border-radius:6px;overflow:hidden;margin:11px 16px 0}
+.meta .cerr{background:#dc2626}
+.prog{height:9px;background:rgba(255,255,255,.25);border-radius:6px;overflow:hidden;margin-top:11px}
 .prog>div{height:100%;background:#fff;border-radius:6px}
-/* tabs */
-.tabs{display:flex;background:#fff;border-bottom:1px solid #e8edf3;position:sticky;top:0;z-index:20}
-.tabs{gap:8px;padding:9px 12px}
-.tabs button{flex:1;border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:11px;padding:11px 8px;font-size:14px;font-weight:800;color:#475569;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
-.tabs button.on{color:#fff;background:var(--c);border-color:var(--c);box-shadow:0 4px 12px rgba(79,70,229,.3)}
+/* whatsapp flotante */
+.wafab{position:fixed;right:16px;width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:31px;text-decoration:none;box-shadow:0 10px 24px rgba(37,211,102,.5);z-index:40}
+.wafab:active{transform:scale(.94)}
 .body{padding:14px}
 /* card / section */
 .card{background:#fff;border:1px solid #e8edf3;border-radius:16px;padding:15px;margin-bottom:14px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
@@ -48,24 +58,32 @@ label.fl:first-child{margin-top:0}
 .in{width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;outline:none;font-family:inherit;background:#fff}
 .in:focus,.srch input:focus{border-color:var(--c)}
 select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 12px center}
-/* a la suerte */
-.qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
-.qrow button{border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:11px;padding:11px 4px;font-size:14px;font-weight:800;color:#334155;cursor:pointer;line-height:1.1}
-.qrow button small{display:block;font-size:10px;color:#94a3b8;font-weight:700;margin-top:2px}
-.qrow button:active{background:#eef2ff;border-color:var(--c)}
-.luck{width:100%;border:0;border-radius:12px;padding:12px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,#16a34a,#15803d);display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 6px 16px rgba(22,163,74,.3);margin-bottom:12px}
-.qty{display:flex;align-items:center;justify-content:center;gap:18px}
-.qty button{width:54px;height:54px;border-radius:14px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:26px;font-weight:800;color:var(--c);cursor:pointer;line-height:1}
-.qty button:disabled{opacity:.4}
-.qty .qn{text-align:center;min-width:80px}
-.qty .qn b{font-size:38px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1}
-.qty .qn small{font-size:12px;color:#94a3b8;font-weight:700}
+/* atajos glossy */
+.qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
+.qrow button{border:0;background:#fff;border-radius:16px;padding:12px 4px;font-size:15px;font-weight:800;color:var(--c);cursor:pointer;line-height:1.1;box-shadow:0 6px 15px rgba(15,23,42,.09)}
+.qrow button small{display:block;font-size:10px;color:#94a3b8;font-weight:700;margin-top:3px}
+.qrow button:active{transform:scale(.95)}
+.luck{width:100%;border:0;border-radius:30px;padding:15px;font-size:17px;font-weight:800;color:var(--c);background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 8px 22px rgba(15,23,42,.12);margin-bottom:14px}
+.luck i{color:#f59e0b}
+.luck:active{transform:scale(.98)}
+/* stepper redondo glossy */
+.stp{display:flex;align-items:center;justify-content:center;gap:22px;margin:8px 0 2px}
+.stp button{width:74px;height:74px;border-radius:50%;border:0;font-size:36px;font-weight:800;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.stp .minus{background:linear-gradient(145deg,#cbd5e1,#94a3b8);box-shadow:0 8px 18px rgba(100,116,139,.4)}
+.stp .plus{background:linear-gradient(145deg,var(--c),var(--c2));box-shadow:0 8px 18px rgba(15,23,42,.28)}
+.stp button:disabled{opacity:.45}
+.stp button:active{transform:scale(.93)}
+.stp .mid{text-align:center;min-width:90px}
+.stp .mid b{font-size:54px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1;color:#0f172a}
+.stp .mid small{font-size:12px;color:#94a3b8;font-weight:800;letter-spacing:1px}
+.bigtot{text-align:center;font-size:27px;font-weight:800;color:#334155;margin:14px 0 6px}
+.bigtot b{color:var(--c)}
 .hint{margin-top:13px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:11px 13px;font-size:12.5px;color:#166534;font-weight:600;display:flex;gap:8px;align-items:flex-start}
 .hint i{color:#16a34a;font-size:17px;flex:0 0 auto}
 /* search + board */
-.srch{position:relative;margin-bottom:9px}
-.srch i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:17px}
-.srch input{width:100%;height:44px;padding:0 12px 0 36px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff}
+.srch{position:relative;margin-bottom:11px}
+.srch i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--c);font-size:19px}
+.srch input{width:100%;height:50px;padding:0 14px 0 44px;border:0;border-radius:28px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff;box-shadow:0 6px 16px rgba(15,23,42,.10)}
 .legend{display:flex;gap:13px;font-size:11px;color:#475569;font-weight:600;margin-bottom:10px;flex-wrap:wrap}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend .d{width:11px;height:11px;border-radius:3px}
@@ -120,7 +138,8 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .cart .info{flex:1;min-width:0}
 .cart .info .a{font-size:12px;color:#64748b;font-weight:700}
 .cart .info .b{font-size:19px;font-weight:800}
-.cart .go{border:0;border-radius:12px;padding:14px 18px;font-size:15px;font-weight:800;color:#fff;background:var(--c);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.cart .go{border:0;border-radius:30px;padding:15px 22px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:0 8px 18px rgba(15,23,42,.22)}
+.cart .go:active{transform:scale(.97)}
 .cart .go:disabled{opacity:.5}
 /* verificador */
 .vsearch{display:flex;gap:8px;margin-bottom:14px}
@@ -155,7 +174,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var app=document.getElementById("app");
   var id=new URLSearchParams(location.search).get("id")||"";
   var R=null, sold={}, page=0, q="", PER=120;
-  var tab="comprar", done=false;
+  var tab="comprar", done=false, menuOpen=false;
   var cart=[];                          // numeros seleccionados (strings)
   var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
@@ -184,18 +203,43 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   }
   function shade(hex,p){try{var m=/^#?([0-9a-f]{6})$/i.exec(hex);if(!m)return hex;var n=parseInt(m[1],16),r=(n>>16)&255,g=(n>>8)&255,b=n&255,f=function(x){return Math.max(0,Math.min(255,Math.round(x+x*p/100)));};return "#"+((1<<24)+(f(r)<<16)+(f(g)<<8)+f(b)).toString(16).slice(1);}catch(e){return hex;}}
 
+  function isCerrada(){return R.estado==="sorteada"||R.estado==="cerrada";}
+  function waNum(){var n=onlyD(R.whatsapp||"");if(n.length===10)n="1"+n;return n;}
+  function waLink(txt){var n=waNum();if(n.length<8)return "";return "https://wa.me/"+n+(txt?("?text="+txt):"");}
+  function navHTML(){
+    var logo=R.logo?'<img src="'+esc(R.logo)+'" alt="">':'<i class="ti ti-ticket"></i>';
+    return '<div class="topaccent"></div><div class="nav"><div class="lg">'+logo+'</div><b>'+esc(R.biz||"Rifa")+'</b>'+
+      '<button class="burger" type="button" aria-label="Menú" onclick="window.__menu()"><i class="ti ti-'+(menuOpen?'x':'layout-grid')+'"></i></button></div>';
+  }
+  function menuHTML(){
+    var wa=waLink();
+    return '<div class="menu">'+
+      '<a onclick="window.__go(\'comprar\')"><i class="ti ti-home"></i> Inicio</a>'+
+      '<a onclick="window.__go(\'verificar\')"><i class="ti ti-circle-check"></i> Consultar ticket</a>'+
+      (wa?'<a href="'+wa+'" target="_blank" rel="noopener" onclick="window.__menu()"><i class="ti ti-brand-whatsapp"></i> Contacto</a>':'')+
+      '<button class="lista" type="button" onclick="window.__go(\'verificar\')"><i class="ti ti-list-check"></i> Lista de boletos</button>'+
+    '</div>';
+  }
+  function premioHTML(pct,fecha,cerrada){
+    return '<div class="prem-blk"><div class="prem">'+esc(R.premio||R.nombre||"")+'</div>'+
+      '<div class="meta"><span><i class="ti ti-coin"></i> '+fmt(R.precio)+' c/u</span>'+fecha+(cerrada?'<span class="cerr">CERRADA</span>':'')+'</div>'+
+      (R.mostrar_progreso!==false?'<div class="prog"><div style="width:'+pct+'%"></div></div>':'')+'</div>';
+  }
+  function wafabAdd(cerrada){
+    var n=waNum(); if(n.length<8)return;
+    var f=document.createElement("a"); f.className="wafab"; f.id="wafab"; f.href=waLink(); f.target="_blank"; f.rel="noopener";
+    f.innerHTML='<i class="ti ti-brand-whatsapp"></i>';
+    var hasCart=(tab==="comprar"&&!cerrada&&!done);
+    f.style.bottom=hasCart?'96px':'calc(18px + env(safe-area-inset-bottom))';
+    document.body.appendChild(f);
+  }
+
   // ── render principal (TODO en una sola pantalla con scroll)
   function render(){
     var totalN=R.cantidad||10000, vendN=R.count||0;
     var pct=totalN?Math.min(100,Math.round(vendN/totalN*100)):0;
-    var cerrada=(R.estado==="sorteada"||R.estado==="cerrada");
+    var cerrada=isCerrada();
     var fecha=(R.mostrar_fecha!==false&&R.fecha_sorteo)?'<span><i class="ti ti-calendar"></i> '+esc(new Date(R.fecha_sorteo).toLocaleDateString("es-DO",{day:"2-digit",month:"short",year:"numeric"}))+'</span>':'';
-    var logo=R.logo?'<img src="'+esc(R.logo)+'" alt="">':'<i class="ti ti-ticket"></i>';
-    var hero='<div class="hero"><div class="hd"><div class="lg">'+logo+'</div><b>'+esc(R.biz||"Rifa")+'</b></div>'+bannerImg()+
-      '<div class="htxt"><div class="prem">'+esc(R.premio||R.nombre||"")+'</div><div class="meta"><span><i class="ti ti-coin"></i> '+fmt(R.precio)+' c/u</span>'+fecha+(cerrada?'<span style="background:#dc2626">CERRADA</span>':'')+'</div></div>'+
-      (R.mostrar_progreso!==false?'<div class="prog"><div style="width:'+pct+'%"></div></div>':'')+'</div>';
-    var tabs='<div class="tabs"><button class="'+(tab==="comprar"?"on":"")+'" onclick="window.__tab(\'comprar\')"><i class="ti ti-shopping-cart"></i> Comprar tickets</button>'+
-      '<button class="'+(tab==="verificar"?"on":"")+'" onclick="window.__tab(\'verificar\')"><i class="ti ti-search"></i> Consultar ticket</button></div>';
 
     var content;
     if(done){ content=viewListo(); }
@@ -203,10 +247,15 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     else if(cerrada){ content='<div class="body">'+(R.numero_ganador!=null?'<div class="card" style="text-align:center"><div class="sec" style="justify-content:center"><h3>Número ganador</h3></div><div style="font-size:34px;color:var(--c);font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px">'+esc(pad(R.numero_ganador))+'</div></div>':'')+'<div class="msg">Esta rifa ya está cerrada. ¡Gracias por participar!</div></div>'; }
     else { content=viewComprar(); }
 
-    app.innerHTML=hero+(done?'':tabs)+content;
-    var old=document.getElementById("cartBar"); if(old)old.remove();
+    var topHead=done?'':(bannerImg()+premioHTML(pct,fecha,cerrada));
+    app.innerHTML=navHTML()+(menuOpen?menuHTML():'')+topHead+content;
+    var oc=document.getElementById("cartBar"); if(oc)oc.remove();
+    var ow=document.getElementById("wafab"); if(ow)ow.remove();
     if(tab==="comprar"&&!cerrada&&!done){ if(!R.ocultar_numeros)boardInto(); cartBar(); }
+    wafabAdd(cerrada);
   }
+  window.__menu=function(){ menuOpen=!menuOpen; render(); };
+  window.__go=function(t){ tab=t; menuOpen=false; done=false; window.scrollTo(0,0); render(); };
 
   // ── COMPRAR (1 sola pantalla): datos arriba, números, pago, y barra de total fija
   function viewComprar(){
@@ -222,16 +271,17 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
       (R.ocultar_numeros?
         '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
-          '<div class="qty"><button onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="qn"><b id="qtyN">'+qty+'</b><small>'+(qty===1?'ticket':'tickets')+'</small></div><button onclick="window.__qty(1)">+</button></div>'+
-          '<div class="qrow" style="margin-top:12px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
+          '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
+          '<div class="bigtot">Total: <b id="stTot">'+fmt(total())+'</b></div>'+
+          '<div class="qrow" style="margin-top:6px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
           '<div class="hint"><i class="ti ti-wand"></i> Al confirmar te asignaremos <b id="qtyTxt">'+qty+'</b> número(s) al azar entre los disponibles.</div></div>'
        :
         '<div class="card"><div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
-          '<button class="luck" onclick="window.__luck(1)"><i class="ti ti-dice-5"></i> Elegir a la suerte</button>'+
+          '<button class="luck" onclick="window.__luck(1)"><i class="ti ti-star-filled"></i> Elegir a la suerte <i class="ti ti-star-filled"></i></button>'+
           '<div class="srch"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
           '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:var(--c)"></i>Elegido</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
-          '<div id="bd"></div><div id="chips"></div></div>')+
+          '<div id="bd"></div><div id="chips"></div><div class="bigtot">Total: <b id="stTot">'+fmt(total())+'</b></div></div>')+
       // 3) Método de pago
       '<div class="card"><div class="sec"><div class="nb">3</div><div><h3>Método de pago</h3><small>Paga y sube tu comprobante</small></div></div>'+
         pago+
@@ -280,11 +330,12 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   }
   function refreshCart(){ var b=document.getElementById("cartBar"); if(!b){cartBar();return;} var info=b.querySelector("#cInfo"), tot=b.querySelector("#cTot"), go=b.querySelector("#goBtn");
     if(info)info.textContent=count()+' '+(count()===1?'ticket':'tickets'); if(tot)tot.textContent=fmt(total());
+    var st=document.getElementById("stTot"); if(st)st.textContent=fmt(total());
     updChecks();
     go.disabled=!canSubmit(); }
   window.__qty=function(d,abs){ qty=abs?d:Math.max(1,qty+d); if(qty>200)qty=200; if(limMax()&&qty>limMax()){qty=limMax();}
     var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.textContent=qty; if(t)t.textContent=qty;
-    var box=document.querySelector(".qty"); if(box){var minus=box.querySelector("button"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".qn small"); if(sm)sm.textContent=qty===1?'ticket':'tickets';}
+    var box=document.querySelector(".stp"); if(box){var minus=box.querySelector(".minus"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".mid small"); if(sm)sm.textContent=qty===1?'BOLETO':'BOLETOS';}
     refreshCart();
   };
 

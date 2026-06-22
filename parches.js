@@ -17832,6 +17832,7 @@ try {
       '<div class="fr"><label>Límite por persona</label><input id="rfLim" inputmode="numeric" value="' + (e.limite_por_persona != null ? e.limite_por_persona : '') + '" placeholder="sin límite"></div>' +
       '<div class="fr"><label>Sortear al vender</label><select id="rfCond"><option value=""' + (!e.condicion_venta ? ' selected' : '') + '>Sin condición</option><option value="80"' + (e.condicion_venta == 80 ? ' selected' : '') + '>80%</option><option value="90"' + (e.condicion_venta == 90 ? ' selected' : '') + '>90%</option><option value="100"' + (e.condicion_venta == 100 ? ' selected' : '') + '>100%</option></select></div>' +
       '</div>' +
+      '<div class="fr"><label>WhatsApp de contacto (página pública)</label><input id="rfWa" inputmode="tel" value="' + esc(e.whatsapp_contacto || '') + '" placeholder="809-000-0000"></div>' +
       '<div class="fr"><label>Imagen / banner (opcional)</label>' +
       '<input type="file" id="rfImgFile" accept="image/*" onchange="window.nxRifaImgFile(this)" style="font-size:12px;padding:9px;border:1.5px dashed #c7d2fe;border-radius:10px;width:100%;background:#f8fafc;color:#475569">' +
       '<div id="rfImgPrev" style="margin-top:7px">' + imgPrev + '</div>' +
@@ -17896,7 +17897,8 @@ try {
       imagen: ((val('rfImg') || '').trim() || _rifaImgData || null),
       mostrar_fecha: chk('rfMostrarFecha'),
       mostrar_progreso: chk('rfMostrarProg'),
-      ocultar_numeros: chk('rfOcultarNums')
+      ocultar_numeros: chk('rfOcultarNums'),
+      whatsapp_contacto: (val('rfWa') || '').trim() || null
     };
     try {
       if (id) { await getAPI().patch('rifas', 'id=eq.' + id, body); toast('ok', 'Rifa actualizada', nom); }
