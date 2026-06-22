@@ -18023,11 +18023,15 @@ try {
   }
 
   // Muestra los boletos que ese teléfono YA tiene en esta rifa (cliente repetido)
+  // Normaliza un telefono a su clave comparable: solo digitos y, si trae el
+  // codigo de pais (1 / +1), se queda con los ultimos 10 digitos. Asi "1809-555-1234",
+  // "+1 809 555 1234" y "809-555-1234" cuentan como el MISMO cliente.
+  function telKey(t) { var d = String(t || '').replace(/\D/g, ''); if (d.length > 10) d = d.slice(-10); return d; }
   window.nxRifaPrevBoletos = function (tel) {
     var box = document.getElementById('rvPrev'); if (!box) return;
-    var d = String(tel || '').replace(/\D/g, '');
-    if (d.length < 4) { box.style.display = 'none'; box.innerHTML = ''; return; }
-    var prev = _boletos.filter(function (b) { return b.estado !== 'anulado' && String(b.comprador_telefono || '').replace(/\D/g, '') === d; });
+    var d = telKey(tel);
+    if (d.length < 7) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    var prev = _boletos.filter(function (b) { return b.estado !== 'anulado' && telKey(b.comprador_telefono) === d; });
     if (!prev.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
     prev.sort(function (a, b) { return String(a.numero).localeCompare(String(b.numero)); });
     var nom = (prev[0].comprador_nombre || '').trim();
