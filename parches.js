@@ -17843,6 +17843,8 @@ try {
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarFecha"' + (e.mostrar_fecha === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la fecha del sorteo en el boleto</label>' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfMostrarProg"' + (e.mostrar_progreso === false ? '' : ' checked') + ' style="width:18px;height:18px"> Mostrar la barra de boletos vendidos</label>' +
       '<label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="rfOcultarNums"' + (e.ocultar_numeros ? ' checked' : '') + ' style="width:18px;height:18px;margin-top:1px"> <span>Ocultar los números en la página pública<br><small style="font-weight:500;color:#94a3b8">El cliente solo elige cuántos tickets quiere y el sistema le asigna números al azar.</small></span></label>' +
+      // ── Botones de cantidad rápida (+N) de la página pública
+      '<div class="fr"><label>Botones de cantidad rápida (+N)</label><input id="rfAtajos" inputmode="numeric" value="' + (Array.isArray(e.atajos) ? e.atajos.join(', ') : '1, 5, 10, 25') + '" placeholder="1, 5, 10, 25"><div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Cantidades de los botones rápidos en la página. Sepáralas con coma (ej: 1, 5, 10, 25). Déjalo VACÍO para quitar esos botones.</div></div>' +
       // ── Color del sistema (página pública)
       '<div class="fr"><label>Color del sistema (página pública)</label><input type="hidden" id="rfColor" value="' + esc(e.color || '') + '">' +
       '<div id="rfColorSw" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
@@ -17937,7 +17939,8 @@ try {
       ocultar_numeros: chk('rfOcultarNums'),
       whatsapp_contacto: (val('rfWa') || '').trim() || null,
       color: (val('rfColor') || '').trim() || null,
-      faqs: _rifaFaqs.filter(function (f) { return (f.q || '').trim(); }).map(function (f) { return { q: (f.q || '').trim(), a: (f.a || '').trim() }; })
+      faqs: _rifaFaqs.filter(function (f) { return (f.q || '').trim(); }).map(function (f) { return { q: (f.q || '').trim(), a: (f.a || '').trim() }; }),
+      atajos: (function () { var a = (val('rfAtajos') || '').split(',').map(function (s) { return parseInt(String(s).replace(/[^0-9]/g, ''), 10); }).filter(function (n) { return n > 0; }); return Array.from(new Set(a)).sort(function (x, y) { return x - y; }).slice(0, 6); })()
     };
     try {
       if (id) { await getAPI().patch('rifas', 'id=eq.' + id, body); toast('ok', 'Rifa actualizada', nom); }

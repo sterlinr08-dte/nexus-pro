@@ -1,7 +1,8 @@
 {
-  "version": "34.4",
+  "version": "34.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas · botones rápidos +N editables): los botones de cantidad rápida de la página pública (+1, +5, +10, +25) ahora los configuras tú al crear/editar la rifa. Pon las cantidades que quieras separadas por coma (ej: 1, 3, 10) o déjalo VACÍO para quitarlos. Además, los cuadros de los combos quedaron más pequeños para que ocupen menos.",
     "NUEVO (Rifas · al crear/editar la rifa): ahora desde el formulario de la rifa puedes (1) escribir las PREGUNTAS FRECUENTES con sus respuestas, que el cliente verá en la página pública (sección y enlace en el menú); (2) abrir y administrar tus CUENTAS BANCARIAS de cobro sin salir del formulario; y (3) elegir el COLOR del sistema para la página pública (paleta de colores o 'por defecto'). Cada rifa puede tener su propio color y sus propias preguntas.",
     "NUEVO (Rifas · empleados POR rifa): ahora cada rifa tiene su PROPIO equipo de vendedores. El botón de Vendedores se movió ADENTRO de cada rifa (ábrela con 'Gestionar' → ícono de personas 👥 arriba), y el gestor muestra el NOMBRE de la rifa (no 'Correduría de Seguros'). Cuando registras un empleado, queda asignado a ESA rifa. Al venderle por su código de acceso, el empleado solo ve y vende SU rifa. Lo que ya tenías se conservó: tu vendedor quedó asignado a la rifa donde ya había vendido.",
     "ARREGLADO (Rifas · reconocer el mismo cliente con o sin el '1'): al vender, el aviso de 'cliente repetido' ahora reconoce el mismo teléfono aunque esté guardado con el código de país o sin él. Da igual si pones '1809-555-1234', '+1 809 555 1234' o '809-555-1234' — el sistema compara por los últimos 10 dígitos y los toma como el MISMO cliente, con guion o sin guion.",

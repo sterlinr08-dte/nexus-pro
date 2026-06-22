@@ -61,13 +61,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 /* combos / paquetes */
 .paqLbl{font-size:11px;font-weight:800;color:#7c3aed;display:flex;align-items:center;gap:5px;margin:2px 0 6px}
 .paqLbl i{font-size:13px}
-.paqs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
-.paq{border:1.5px solid #e2e8f0;border-radius:10px;padding:7px 9px;background:#fff;cursor:pointer;text-align:left;transition:transform .12s ease,border-color .15s ease}
+.paqs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px}
+.paq{border:1.5px solid #e2e8f0;border-radius:9px;padding:5px 7px;background:#fff;cursor:pointer;text-align:left;transition:transform .12s ease,border-color .15s ease}
 .paq:active{transform:scale(.96)}
 .paq.on{border-color:var(--c);background:#eef2ff;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
-.paq b{display:block;font-size:12.5px;font-weight:800;color:#0f172a}
-.paq .pr{font-size:13px;font-weight:800;color:var(--c)}
-.paq small{display:block;font-size:9px;color:#16a34a;font-weight:700;margin-top:1px}
+.paq b{display:block;font-size:11px;font-weight:800;color:#0f172a}
+.paq .pr{font-size:11.5px;font-weight:800;color:var(--c)}
+.paq small{display:block;font-size:8px;color:#16a34a;font-weight:700;margin-top:0}
 .paqNote{font-size:11.5px;color:#7c3aed;font-weight:700;display:flex;align-items:center;gap:6px;margin:-4px 0 12px}
 /* atajos glossy */
 .qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
@@ -344,6 +344,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   // ── COMPRAR (1 sola pantalla): datos arriba, números, pago, y barra de total fija
   function viewComprar(){
     var ctas=R.cuentas||[];
+    var ATA=Array.isArray(R.atajos)?R.atajos:[1,5,10,25];
     var pago=ctas.length?'<div class="banks">'+ctas.map(function(c){var ic=c.tipo==="tarjeta"?"ti-credit-card":(c.tipo==="movil"?"ti-device-mobile":"ti-building-bank");return '<button type="button" class="bk'+(ctaSel===c.id?" on":"")+'" onclick="window.__pickBank(\''+c.id+'\')"><i class="ti '+ic+'"></i><div><div class="nm">'+esc(c.banco||"Cuenta")+'</div><div class="ti">'+esc(c.tipo||"banco")+'</div></div></button>';}).join('')+'</div><div id="acct"></div>':'<div class="empty">El organizador le enviará la confirmación por WhatsApp.</div>';
 
     return '<div class="body">'+
@@ -357,11 +358,11 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
         '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
           '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
-          '<div class="qrow" style="margin-top:6px">'+[1,5,10,25].map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
+          (ATA.length?'<div class="qrow" style="margin-top:6px">'+ATA.map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>':'')+
           paqsHTML()+'<div class="hint sm1"><i class="ti ti-wand"></i> Te asignamos <b id="qtyTxt">'+qty+'</b> número(s) al azar.</div></div>'
        :
         '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
-          paqsHTML()+'<div class="qrow">'+[1,5,10,25].map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>'+
+          paqsHTML()+(ATA.length?'<div class="qrow">'+ATA.map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>':'')+
           '<button class="luck mg-shine" onclick="window.__luck(1)"><i class="ti ti-star-filled"></i> Elegir a la suerte <i class="ti ti-star-filled"></i></button>'+
           '<div class="srch mg-glow"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
           '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:var(--c)"></i>Elegido</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
