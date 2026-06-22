@@ -583,6 +583,20 @@ por cliente con su dominio/logo, venta online (cliente elige número + sube vouc
   `rifas.whatsapp_contacto` (migración `rifa_whatsapp_contacto`) + input **'WhatsApp de contacto'**
   en el form admin (`rfWa` en `nxRifaGuardar`); la función **`rifa` v7** lo devuelve como `whatsapp`
   (OJO: `organizaciones` NO tiene columna `telefono` — no la metas en el select o rompe la carga).
+- **TANDA 13b (afinado visual, sin cambio de versión — `rifa.html` se despliega solo en Cloudflare al
+  pushear a `main`):** checklist Cantidad/Nombre/WhatsApp/Comprobante más compacto. **Botones
+  APLANADOS** (se quitó el 3D/sombras elevadas de stepper, píldoras, buscador, pago, menú) PERO
+  **conservando animaciones** (rebote `:active`, transiciones; el FAB de WhatsApp mantiene sombra
+  suave para "flotar"). **ANIMACIONES "DE MAGIA"** (reutilizables, CSS puro): `.mg-shine` (destello que
+  cruza), estrellas titilantes en "Elegir a la suerte" (`.luck i` con `mgTwinkle`), `.mg-glow` (halo que
+  late en el buscador), `.mg-digits` (dígitos del nº/Total con gradiente animado `mgGrad`
+  índigo→violeta→celeste). **Pantalla de entrega de boletos** (`viewListo`): el ✓ entra con rebote
+  (`okPop`) + aura verde (`okGlow`) + 5 estrellitas (`spark`), números con `mg-digits`, botón WhatsApp
+  con `mg-shine`. **Cuadro ② (elegir números/cantidad) = `.mg-card`** (clase + `MGSTARS` inyectado al
+  inicio del card en sus 2 modos): borde-halo que respira en colores (`mgCardGlow`) + **estrellas que
+  SUBEN** (`.mgRise`, 16 partículas `<i>` que ascienden de abajo a arriba con `rise`/`riseS`, tamaños/
+  colores/delays variados). Iteración pedida por el dueño: titilar→fugaces→subiendo (quedó en
+  "subiendo", aprobado). Todo en el `<style>`/IIFE de `rifa.html`; el cuadro sigue blanco y legible.
 - **PENDIENTE:** combos/paquetes con precio (UI) ·
   gráfica medios de pago (pie) · preview WhatsApp con foto del premio (Worker dominio propio,
   riesgoso) · apartados con expiración (cron) · mover vouchers/banners a Storage (hoy base64 en DB).
