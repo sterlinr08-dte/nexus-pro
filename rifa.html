@@ -154,6 +154,19 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .ajugar i{font-size:24px;color:var(--c);animation:ajBounce 1.1s ease-in-out infinite}
 @keyframes ajPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @keyframes ajBounce{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}
+/* numeros asignados (modo automatico) + re-tirar */
+.lkbox{margin:10px 0 2px;text-align:center}
+.lkLbl{font-size:11px;font-weight:800;color:#16a34a;margin-bottom:7px;display:flex;align-items:center;justify-content:center;gap:5px}
+.lkNums{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:11px}
+.lkN{font-family:ui-monospace,monospace;font-size:17px;font-weight:800;color:var(--c);background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:11px;padding:6px 12px;letter-spacing:1px;animation:lkPop .3s ease}
+@keyframes lkPop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.lk-roll{width:100%;border:1.5px solid #e2e8f0;border-radius:30px;padding:13px;font-size:15px;font-weight:800;color:var(--c);background:#fff;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;transition:transform .12s ease,background .15s ease}
+.lk-roll:active{transform:scale(.97);background:#f8fafc}
+/* boton Consultar mi ticket (arriba del todo) */
+.ctkBtn{width:100%;border:0;border-radius:30px;padding:14px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,.32);margin-bottom:12px;animation:ctkPulse 1.9s ease-in-out infinite;transition:transform .12s ease}
+.ctkBtn:active{transform:scale(.97)}
+.ctkBtn i{font-size:21px}
+@keyframes ctkPulse{0%,100%{box-shadow:0 7px 18px rgba(79,70,229,.28);transform:scale(1)}50%{box-shadow:0 11px 30px rgba(79,70,229,.55);transform:scale(1.015)}}
 /* search + board */
 .srch{position:relative;margin-bottom:11px}
 .srch i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--c);font-size:19px}
@@ -264,7 +277,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var tab="comprar", done=false, menuOpen=false;
   var MGSTARS='<div class="mgRise"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
   var cart=[];                          // numeros seleccionados (strings)
-  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null, doneApartado=false;
+  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null, doneApartado=false, luckPick=[];
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
   var F={nom:"",tel:""};
 
@@ -274,6 +287,14 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function pkg(){return pkgSel?(R.paquetes||[]).filter(function(x){return String(x.id)===String(pkgSel);})[0]:null;}
   function count(){var p=pkg();if(p)return Number(p.cantidad)||0;return (R&&R.ocultar_numeros)?qty:cart.length;}
   function total(){var p=pkg();if(p)return Number(p.precio)||0;return count()*(R.precio||0);}
+  // ── Modo automático: asigna números al azar en el navegador, se muestran y se pueden re-tirar
+  function genLuck(n){var totalN=R.cantidad||10000,av=[];for(var i=0;i<totalN;i++){var s=pad(i);if(!sold[s])av.push(s);}var res=[];for(var k=0;k<n&&av.length;k++){var idx=Math.floor(Math.random()*av.length);res.push(av[idx]);av.splice(idx,1);}res.sort();return res;}
+  function ensureLuck(){ if(!R.ocultar_numeros||pkgSel){return;} var need=count(); if(luckPick.length!==need){luckPick=genLuck(need);} }
+  function luckBoxHTML(){ if(!R.ocultar_numeros||pkgSel)return '';
+    var chips=luckPick.length?'<div class="lkLbl"><i class="ti ti-confetti"></i> Tus números asignados</div><div class="lkNums">'+luckPick.map(function(x){return '<span class="lkN">'+esc(x)+'</span>';}).join('')+'</div>':'';
+    return chips+'<button type="button" class="lk-roll mg-shine" onclick="window.__luckRoll()"><i class="ti ti-dice-5"></i> '+(luckPick.length?'¿No te gustan? Elige a la suerte':'Elegir a la suerte')+'</button>';
+  }
+  window.__luckRoll=function(){ if(pkgSel)return; luckPick=genLuck(count()); var lb=document.getElementById("luckBox"); if(lb)lb.innerHTML=luckBoxHTML(); };
   function paqsHTML(){
     var ps=(R.paquetes||[]); if(!ps.length)return "";
     return '<div class="paqLbl"><i class="ti ti-gift"></i> Combos · ahorra en paquete</div><div class="paqs">'+ps.map(function(p){
@@ -359,9 +380,11 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   function viewComprar(){
     var ctas=R.cuentas||[];
     var ATA=Array.isArray(R.atajos)?R.atajos:[1,5,10,25];
+    ensureLuck();
     var pago=ctas.length?'<div class="banks">'+ctas.map(function(c){var ic=c.tipo==="tarjeta"?"ti-credit-card":(c.tipo==="movil"?"ti-device-mobile":"ti-building-bank");return '<button type="button" class="bk'+(ctaSel===c.id?" on":"")+'" onclick="window.__pickBank(\''+c.id+'\')"><i class="ti '+ic+'"></i><div><div class="nm">'+esc(c.banco||"Cuenta")+'</div><div class="ti">'+esc(c.tipo||"banco")+'</div></div></button>';}).join('')+'</div><div id="acct"></div>':'<div class="empty">El organizador le enviará la confirmación por WhatsApp.</div>';
 
     return '<div class="body">'+
+      '<button class="ctkBtn mg-shine" type="button" onclick="window.__go(\'verificar\')"><i class="ti ti-list-search"></i> Consultar mi ticket</button>'+
       comoJugarHTML()+
       '<div class="ajugar"><span class="pill mg-shine">¡A JUGAR!</span><i class="ti ti-chevron-down"></i></div>'+
       // 1) Tus datos
@@ -373,6 +396,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       (R.ocultar_numeros?
         '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
           '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><b id="qtyN" class="mg-digits">'+qty+'</b><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
+          '<div id="luckBox" class="lkbox">'+luckBoxHTML()+'</div>'+
           '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
           (ATA.length?'<div class="qrow" style="margin-top:6px">'+ATA.map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>':'')+
           paqsHTML()+'<div class="hint sm1"><i class="ti ti-wand"></i> Te asignamos <b id="qtyTxt">'+qty+'</b> número(s) al azar.</div></div>'
@@ -459,6 +483,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     if(pkgSel){pkgSel=null;render();return;}
     var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.textContent=qty; if(t)t.textContent=qty;
     var box=document.querySelector(".stp"); if(box){var minus=box.querySelector(".minus"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".mid small"); if(sm)sm.textContent=qty===1?'BOLETO':'BOLETOS';}
+    if(R.ocultar_numeros){ luckPick=genLuck(count()); var lb=document.getElementById("luckBox"); if(lb)lb.innerHTML=luckBoxHTML(); }
     refreshCart();
   };
 
@@ -508,13 +533,13 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
     var btn=document.getElementById("goBtn"); btn.disabled=true; btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Enviando…';
     var payload={ rifa_id:id, nombre:(F.nom||"").trim(), telefono:(F.tel||"").trim(),
       cuenta_id:ctaSel||null, voucher:voucherData||null };
-    if(pkgSel) payload.paquete_id=pkgSel; else if(R.ocultar_numeros) payload.cantidad=qty; else payload.numeros=cart;
+    if(pkgSel) payload.paquete_id=pkgSel; else if(R.ocultar_numeros){ if(luckPick.length) payload.numeros=luckPick; else payload.cantidad=qty; } else payload.numeros=cart;
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
       .then(function(res){
         if(res.ok&&res.j.ok){ doneNums=res.j.numeros||cart; doneId=res.j.id||""; doneApartado=!!res.j.apartado; done=true; window.scrollTo(0,0); render(); }
         else { alert(res.j.error||"No se pudo registrar. Intenta otra vez."); btn.disabled=false; btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';
-          if(/tomad/i.test(res.j.error||"")){ load().then(function(){ cart=cart.filter(function(n){return !sold[n];}); render(); }); } }
+          if(/tomad/i.test(res.j.error||"")){ load().then(function(){ cart=cart.filter(function(n){return !sold[n];}); if(R.ocultar_numeros){ luckPick=genLuck(count()); } render(); }); } }
       }).catch(function(){alert("Error de conexión. Intenta otra vez.");btn.disabled=false;btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';});
   };
 
