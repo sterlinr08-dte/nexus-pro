@@ -17730,6 +17730,7 @@ try {
   var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [], _paquetes = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
   var _rifaFaqs = [];
+  var _rifaLogoData = '';
   var RIFA_COLORS = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#0d9488', '#16a34a', '#d97706', '#dc2626', '#db2777', '#0f172a'];
 
   function ensureView() {
@@ -17807,6 +17808,9 @@ try {
     cerrarModal('nxRifaForm');
     var e = r || {};
     _rifaFaqs = Array.isArray(e.faqs) ? e.faqs.map(function (f) { return { q: f.q || '', a: f.a || '' }; }) : [];
+    var logoVal = e.empresa_logo || ''; _rifaLogoData = logoVal;
+    var logoIsUrl = /^https?:\/\//i.test(logoVal);
+    var logoPrev = logoVal ? '<img src="' + esc(logoVal) + '" style="height:54px;border-radius:10px;background:#f1f5f9">' : '';
     var dig = Number(e.cantidad_digitos || 4);
     var imgVal = e.imagen || ''; _rifaImgData = imgVal;
     var imgIsUrl = /^https?:\/\//i.test(imgVal);
@@ -17836,6 +17840,12 @@ try {
       '<div class="fr"><label>Sortear al vender</label><select id="rfCond"><option value=""' + (!e.condicion_venta ? ' selected' : '') + '>Sin condición</option><option value="80"' + (e.condicion_venta == 80 ? ' selected' : '') + '>80%</option><option value="90"' + (e.condicion_venta == 90 ? ' selected' : '') + '>90%</option><option value="100"' + (e.condicion_venta == 100 ? ' selected' : '') + '>100%</option></select></div>' +
       '</div>' +
       '<div class="fr"><label>WhatsApp de contacto (página pública)</label><input id="rfWa" inputmode="tel" value="' + esc(e.whatsapp_contacto || '') + '" placeholder="809-000-0000"></div>' +
+      // ── Marca: nombre y logo de la empresa (página pública)
+      '<div class="fr"><label>Nombre de la empresa (marca)</label><input id="rfEmpNom" class="no-upper" value="' + esc(e.empresa_nombre || '') + '" placeholder="Ej: Rifas Yamaha RD"><div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Sale en la cabecera de la página pública, debajo del nombre de la rifa. Vacío = el nombre del negocio.</div></div>' +
+      '<div class="fr"><label>Logo de la empresa</label>' +
+      '<input type="file" id="rfLogoFile" accept="image/*" onchange="window.nxRifaLogoFile(this)" style="font-size:12px;padding:9px;border:1.5px dashed #c7d2fe;border-radius:10px;width:100%;background:#f8fafc;color:#475569">' +
+      '<div id="rfLogoPrev" style="margin-top:7px">' + logoPrev + '</div>' +
+      '<input id="rfLogoUrl" class="no-upper" value="' + esc(logoIsUrl ? logoVal : '') + '" placeholder="o pega un enlace https://..." style="margin-top:7px"></div>' +
       '<div class="fr"><label>Imagen / banner (opcional)</label>' +
       '<input type="file" id="rfImgFile" accept="image/*" onchange="window.nxRifaImgFile(this)" style="font-size:12px;padding:9px;border:1.5px dashed #c7d2fe;border-radius:10px;width:100%;background:#f8fafc;color:#475569">' +
       '<div id="rfImgPrev" style="margin-top:7px">' + imgPrev + '</div>' +
@@ -17885,6 +17895,29 @@ try {
   window.nxRifaFaqAdd = function () { _rifaFaqs.push({ q: '', a: '' }); var c = document.getElementById('rfFaqList'); if (c) c.innerHTML = faqRowsHTML(); };
   window.nxRifaFaqDel = function (i) { _rifaFaqs.splice(i, 1); var c = document.getElementById('rfFaqList'); if (c) c.innerHTML = faqRowsHTML(); };
 
+  window.nxRifaLogoFile = function (input) {
+    var f = input.files && input.files[0]; if (!f) return;
+    if (f.size > 8 * 1024 * 1024) { toast('err', 'Imagen muy grande', 'Máximo 8 MB'); return; }
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var max = 320, w = img.width, h = img.height;
+          if (w > max || h > max) { var s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+          var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          _rifaLogoData = cv.toDataURL('image/png');
+        } catch (er) { _rifaLogoData = ev.target.result; }
+        var p = document.getElementById('rfLogoPrev'); if (p) p.innerHTML = '<img src="' + _rifaLogoData + '" style="height:54px;border-radius:10px;background:#f1f5f9">';
+        var u = document.getElementById('rfLogoUrl'); if (u) u.value = '';
+        try { toast('ok', 'Logo listo', 'Se guarda con la rifa'); } catch (er) {}
+      };
+      img.onerror = function () { toast('err', 'No se pudo leer la imagen'); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
+  };
   window.nxRifaImgFile = function (input) {
     var f = input.files && input.files[0]; if (!f) return;
     if (f.size > 12 * 1024 * 1024) { toast('err', 'Imagen muy grande', 'Máximo 12 MB'); return; }
@@ -17938,6 +17971,8 @@ try {
       mostrar_progreso: chk('rfMostrarProg'),
       ocultar_numeros: chk('rfOcultarNums'),
       whatsapp_contacto: (val('rfWa') || '').trim() || null,
+      empresa_nombre: (val('rfEmpNom') || '').trim() || null,
+      empresa_logo: ((val('rfLogoUrl') || '').trim() || _rifaLogoData || null),
       color: (val('rfColor') || '').trim() || null,
       faqs: _rifaFaqs.filter(function (f) { return (f.q || '').trim(); }).map(function (f) { return { q: (f.q || '').trim(), a: (f.a || '').trim() }; }),
       atajos: (function () { var a = (val('rfAtajos') || '').split(',').map(function (s) { return parseInt(String(s).replace(/[^0-9]/g, ''), 10); }).filter(function (n) { return n > 0; }); return Array.from(new Set(a)).sort(function (x, y) { return x - y; }).slice(0, 6); })()
