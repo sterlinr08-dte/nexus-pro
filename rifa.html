@@ -101,6 +101,11 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .sh4{top:72%;left:26px;transform:rotate(20deg)}.sh4 b{animation-delay:.6s;animation-duration:4.3s}
 .sh5{top:8px;left:42%;transform:rotate(29deg)}.sh5 b{animation-delay:1.7s;animation-duration:3.9s}
 .sh6{top:46%;left:48%;transform:rotate(23deg)}.sh6 b{animation-delay:2.7s;animation-duration:4s}
+.mgField{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.mgField span{position:absolute;top:0;left:0;width:2px;height:2px;border-radius:50%;background:transparent}
+.mgField .f1{animation:twk 2.8s ease-in-out infinite;box-shadow:20px 30px 1px 0 #fff,62px 84px 1px 0 #bfdbfe,112px 22px 1px 0 #fff,154px 120px 1px 0 #ddd6fe,205px 58px 1px 0 #fff,242px 150px 1px 0 #bfdbfe,284px 40px 1px 0 #fff,92px 162px 1px 0 #fff,172px 200px 1px 0 #ddd6fe,260px 108px 1px 0 #fff,320px 96px 1px 0 #bfdbfe}
+.mgField .f2{animation:twk 3.4s ease-in-out infinite;animation-delay:1.3s;box-shadow:36px 92px 1px 0 #bfdbfe,82px 40px 1px 0 #fff,132px 150px 1px 0 #fff,190px 110px 1px 0 #ddd6fe,232px 70px 1px 0 #fff,270px 172px 1px 0 #bfdbfe,50px 180px 1px 0 #fff,104px 112px 1px 0 #fff,160px 52px 1px 0 #ddd6fe,210px 192px 1px 0 #fff,300px 140px 1px 0 #fff}
+@keyframes twk{0%,100%{opacity:.15}50%{opacity:.95}}
 @keyframes mgCardGlow{
   0%{box-shadow:0 0 0 2px rgba(99,102,241,.75),0 0 22px 3px rgba(99,102,241,.45),inset 0 0 16px rgba(99,102,241,.05)}
   50%{box-shadow:0 0 0 2.5px rgba(139,92,246,.9),0 0 32px 6px rgba(139,92,246,.6),inset 0 0 20px rgba(139,92,246,.08)}
@@ -216,7 +221,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
   var id=new URLSearchParams(location.search).get("id")||"";
   var R=null, sold={}, page=0, q="", PER=120;
   var tab="comprar", done=false, menuOpen=false;
-  var MGSTARS='<div class="mgShoot"><span class="sh sh1"><b></b></span><span class="sh sh2"><b></b></span><span class="sh sh3"><b></b></span><span class="sh sh4"><b></b></span><span class="sh sh5"><b></b></span><span class="sh sh6"><b></b></span></div>';
+  var MGSTARS='<div class="mgField"><span class="f1"></span><span class="f2"></span></div><div class="mgShoot"><span class="sh sh1"><b></b></span><span class="sh sh2"><b></b></span><span class="sh sh3"><b></b></span><span class="sh sh4"><b></b></span><span class="sh sh5"><b></b></span><span class="sh sh6"><b></b></span></div>';
   var cart=[];                          // numeros seleccionados (strings)
   var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1;
   // datos del comprador persistidos en estado (sobreviven re-render del tablero)
