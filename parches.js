@@ -17867,7 +17867,10 @@ try {
       '<div id="rfColorSw" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
       RIFA_COLORS.map(function (c) { var on = String(e.color || '').toLowerCase() === c.toLowerCase(); return '<button type="button" data-c="' + c + '" onclick="window.nxRifaColor(\'' + c + '\')" style="width:31px;height:31px;border-radius:50%;background:' + c + ';border:' + (on ? '3px solid #0f172a' : '2px solid #fff') + ';box-shadow:0 0 0 1px #e2e8f0;cursor:pointer;padding:0"></button>'; }).join('') +
       '<button type="button" data-c="" onclick="window.nxRifaColor(\'\')" title="Color por defecto" style="width:31px;height:31px;border-radius:50%;background:#f1f5f9;border:' + (e.color ? '2px solid #fff' : '3px solid #0f172a') + ';box-shadow:0 0 0 1px #e2e8f0;cursor:pointer;color:#64748b;font-size:14px;display:inline-flex;align-items:center;justify-content:center"><i class="ti ti-ban"></i></button>' +
-      '</div></div>' +
+      '<input type="color" title="Elegir otro color" value="' + esc(/^#[0-9a-fA-F]{6}$/.test(e.color || '') ? e.color : '#4f46e5') + '" oninput="window.nxRifaColor(this.value)" style="width:40px;height:31px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0;cursor:pointer;background:#fff">' +
+      '</div><div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Toca un color, o el cuadrito de la derecha para elegir el tono exacto que quieras.</div></div>' +
+      // ── Tema de la página pública (claro / oscuro)
+      '<div class="fr"><label>Tema de la página pública</label><select id="rfTema"><option value="claro"' + (e.tema !== 'oscuro' ? ' selected' : '') + '>Claro (blanco)</option><option value="oscuro"' + (e.tema === 'oscuro' ? ' selected' : '') + '>Oscuro (negro)</option></select></div>' +
       // ── Cuentas bancarias de cobro
       '<div class="fr"><label>Cuentas bancarias de cobro</label><button type="button" class="btn bsm bghost" style="width:100%;justify-content:center" onclick="window.nxRifaCuentas()"><i class="ti ti-building-bank" style="color:#4f46e5"></i> Administrar cuentas de cobro</button><div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Son las cuentas que verá el cliente para pagar. Se comparten entre tus rifas.</div></div>' +
       // ── Tutorial "¿Cómo jugar?" (pasos) para la página pública
@@ -17998,6 +18001,7 @@ try {
       empresa_nombre: (val('rfEmpNom') || '').trim() || null,
       empresa_logo: ((val('rfLogoUrl') || '').trim() || _rifaLogoData || null),
       color: (val('rfColor') || '').trim() || null,
+      tema: val('rfTema') || 'claro',
       faqs: _rifaFaqs.filter(function (f) { return (f.q || '').trim(); }).map(function (f) { return { q: (f.q || '').trim(), a: (f.a || '').trim() }; }),
       tutorial: _rifaTut.filter(function (s) { return (s.t || '').trim() || (s.d || '').trim(); }).map(function (s) { return { t: (s.t || '').trim(), d: (s.d || '').trim() }; }),
       atajos: (function () { var a = (val('rfAtajos') || '').split(',').map(function (s) { return parseInt(String(s).replace(/[^0-9]/g, ''), 10); }).filter(function (n) { return n > 0; }); return Array.from(new Set(a)).sort(function (x, y) { return x - y; }).slice(0, 6); })()

@@ -271,6 +271,31 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 @keyframes okGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}50%{box-shadow:0 0 0 9px rgba(34,197,94,.12),0 0 24px 4px rgba(34,197,94,.4)}}
 @keyframes okRise{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
 @keyframes spark{0%,100%{opacity:0;transform:scale(.3) translateY(0) rotate(0)}50%{opacity:1;transform:scale(1) translateY(-5px) rotate(25deg)}}
+/* ───── TEMA OSCURO (por rifa) ───── */
+body.rdark{background:#0c0e12;color:#e5e7eb}
+body.rdark .nav{background:#13161c;border-bottom-color:#23272f}
+body.rdark .nav .ttl b{color:#f3f4f6}
+body.rdark .nav .ttl span{color:#9aa3af}
+body.rdark .nav .lg{background:#23272f}
+body.rdark .burger{background:#13161c;border-color:#2a2f39}
+body.rdark .menu{background:#13161c}
+body.rdark .menu a{color:#f3f4f6}
+body.rdark .card,body.rdark .tbox{background:#13161c;border-color:#23272f}
+body.rdark .sec h3,body.rdark .stp .mid b,body.rdark .paq b,body.rdark .ok h2,body.rdark .thd b,body.rdark .faq summary,body.rdark .hstep .ht b,body.rdark .acct .vv,body.rdark .bk .nm{color:#f3f4f6}
+body.rdark .sec small,body.rdark .faqa,body.rdark .hstep .ht span,body.rdark .ok p,body.rdark .stp .mid small,body.rdark .acct .k,body.rdark .bk .ti{color:#9aa3af}
+body.rdark .in,body.rdark .srch input,body.rdark .qrow button,body.rdark .paq,body.rdark .luck,body.rdark .lk-roll,body.rdark .vfile,body.rdark .bk,body.rdark .acct,body.rdark .terms{background:#0c0e12;border-color:#2a2f39;color:#e5e7eb}
+body.rdark .in::placeholder,body.rdark .srch input::placeholder{color:#6b7280}
+body.rdark .terms span{color:#e5e7eb}
+body.rdark .bigtot{color:#cbd5e1}
+body.rdark .paq.on{background:#1b2030;border-color:var(--c)}
+body.rdark .n{background:#161b25;border-color:#2a2f39;color:#cbd5e1}
+body.rdark .n.sold{background:#23272f;border-color:#2a2f39;color:#5b6472}
+body.rdark .cart{background:#13161c;border-top-color:#23272f}
+body.rdark .thd{border-bottom-color:#23272f}
+body.rdark .thd button{background:#23272f;color:#cbd5e1}
+body.rdark .tbody{color:#cbd5e1}
+body.rdark .cpy{background:#23272f;color:#e5e7eb}
+body.rdark .msg,body.rdark .empty{color:#9aa3af}
 </style>
 </head>
 <body>
@@ -315,6 +340,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
       R=d; sold={}; (d.vendidos||[]).forEach(function(n){sold[n]=1;});
       document.documentElement.style.setProperty("--c", d.color||"#4f46e5");
       document.documentElement.style.setProperty("--c2", shade(d.color||"#4f46e5",-18));
+      document.body.classList.toggle("rdark", d.tema==="oscuro");
       render();
     }).catch(function(){app.innerHTML='<div class="msg">No se pudo cargar la rifa.<br>Verifica el enlace.</div>';});
   }
