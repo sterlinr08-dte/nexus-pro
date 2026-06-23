@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Muestra · Rifa dentro de BayolCell Taller</title>
+<style>
+  :root{
+    --tw:#0e7490;        /* teal taller (marca BayolCell, ejemplo) */
+    --tw2:#155e75;
+    --tw3:#0c4a5e;
+    --rifa:#4f46e5;      /* indigo de la rifa */
+    --ok:#16a34a;
+    --bg:#eef2f5;
+    --ink:#0f172a;
+    --mut:#64748b;
+    --line:#e2e8f0;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:#0b1220;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);padding:14px}
+  h1.tt{color:#cbd5e1;font-size:16px;text-align:center;font-weight:700;margin:6px 0 2px}
+  p.sub{color:#7c8aa0;text-align:center;font-size:12px;margin:0 0 14px}
+
+  /* selector de vista */
+  .seg{display:flex;gap:6px;max-width:380px;margin:0 auto 16px;background:#13203a;padding:5px;border-radius:14px}
+  .seg button{flex:1;border:0;background:transparent;color:#9fb0c9;font-weight:700;font-size:13px;padding:10px;border-radius:10px;cursor:pointer;transition:.15s}
+  .seg button.on{background:var(--rifa);color:#fff;box-shadow:0 4px 12px rgba(79,70,229,.4)}
+
+  /* marco de teléfono */
+  .phone{max-width:380px;margin:0 auto;background:var(--bg);border-radius:28px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #1e293b;min-height:640px;position:relative}
+  .view{display:none}
+  .view.on{display:block}
+
+  /* topbar */
+  .top{background:linear-gradient(135deg,var(--tw),var(--tw2));color:#fff;padding:14px 14px;display:flex;align-items:center;gap:10px}
+  .top .logo{width:34px;height:34px;border-radius:9px;background:#fff;color:var(--tw);display:grid;place-items:center;font-weight:900;font-size:15px}
+  .top b{font-size:15px;display:block;line-height:1.1}
+  .top small{font-size:10.5px;opacity:.85}
+  .top .burger{margin-left:auto;font-size:20px}
+
+  /* ===== Vista recepcionista ===== */
+  .body{padding:14px}
+  .hi{font-size:13px;color:var(--mut);margin:0 0 12px}
+  .hi b{color:var(--ink)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 6px rgba(15,23,42,.04)}
+  .card h3{margin:0 0 10px;font-size:13.5px;display:flex;align-items:center;gap:7px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .qa{border:0;border-radius:14px;padding:14px 8px;color:#fff;font-weight:700;font-size:12.5px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+  .qa .ic{font-size:22px}
+  .qa.recep{background:linear-gradient(135deg,#0891b2,#0e7490)}
+  .qa.orden{background:linear-gradient(135deg,#475569,#334155)}
+  .qa.busca{background:linear-gradient(135deg,#0d9488,#0f766e)}
+  /* el botón estrella de la rifa */
+  .qa.rifa{grid-column:1/-1;background:linear-gradient(135deg,#4f46e5,#4338ca);position:relative;overflow:hidden;padding:18px}
+  .qa.rifa .ic{font-size:26px}
+  .qa.rifa small{font-weight:500;opacity:.9;font-size:11px}
+  .qa.rifa .shine{position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:sh 3s infinite}
+  @keyframes sh{0%{left:-60%}60%,100%{left:130%}}
+
+  .note{font-size:11px;color:var(--mut);background:#f1f5f9;border-radius:10px;padding:9px 11px;line-height:1.5}
+
+  /* pantalla "generar boleto" (simula vendedor.html embebido) */
+  .sheet{position:absolute;inset:0;background:#0b1220;display:none;flex-direction:column}
+  .sheet.on{display:flex}
+  .sheet .sh-top{background:var(--rifa);color:#fff;padding:13px 14px;display:flex;align-items:center;gap:10px}
+  .sheet .sh-top b{font-size:14px}
+  .sheet .sh-top .x{margin-left:auto;background:rgba(255,255,255,.2);border:0;color:#fff;width:30px;height:30px;border-radius:9px;font-size:16px;cursor:pointer}
+  .sheet .sh-body{flex:1;overflow:auto;padding:14px;background:#f1f5f9}
+  .rfHead{background:linear-gradient(135deg,#4f46e5,#3730a3);color:#fff;border-radius:16px;padding:14px;margin-bottom:12px}
+  .rfHead small{opacity:.85;font-size:11px}
+  .rfHead .pr{font-size:16px;font-weight:800;margin-top:2px}
+  .rfHead .price{margin-top:8px;display:inline-block;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .fld{margin-bottom:10px}
+  .fld label{font-size:11px;color:var(--mut);font-weight:600;display:block;margin-bottom:4px}
+  .fld input{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px;font-size:16px;background:#fff}
+  .nums{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 2px}
+  .nums span{background:#fff;border:1px solid var(--line);border-radius:9px;text-align:center;padding:9px 0;font-weight:700;font-size:13px;color:#334155}
+  .nums span.sel{background:var(--rifa);color:#fff;border-color:var(--rifa)}
+  .nums span.taken{background:#e2e8f0;color:#94a3b8;text-decoration:line-through}
+  .btnbig{width:100%;border:0;border-radius:13px;padding:14px;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--ok),#15803d);margin-top:6px;cursor:pointer}
+
+  /* ===== Vista administrador (sidebar) ===== */
+  .admin{display:flex;min-height:628px}
+  .side{width:128px;background:linear-gradient(180deg,var(--tw2),var(--tw3));color:#fff;padding:12px 0;flex-shrink:0}
+  .side .brand{padding:0 12px 12px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:8px}
+  .side .brand b{font-size:13px}
+  .side .brand small{font-size:9.5px;opacity:.8}
+  .side .grp{font-size:9px;text-transform:uppercase;letter-spacing:.5px;opacity:.6;padding:10px 12px 4px}
+  .side a{display:flex;align-items:center;gap:8px;color:#dbeafe;text-decoration:none;font-size:12px;padding:9px 12px;border-left:3px solid transparent}
+  .side a .ic{font-size:14px;width:18px;text-align:center}
+  .side a.act{background:rgba(79,70,229,.28);border-left-color:#a5b4fc;color:#fff;font-weight:700}
+  .side a.rifa .ic{filter:drop-shadow(0 0 4px rgba(165,180,252,.8))}
+  .lock{margin-left:auto;font-size:9px;opacity:.7}
+
+  .main{flex:1;background:var(--bg);overflow:auto}
+  .mtop{background:#fff;border-bottom:1px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:8px}
+  .mtop b{font-size:14px}
+  .badge{margin-left:auto;font-size:9.5px;background:#eef2ff;color:var(--rifa);font-weight:700;padding:4px 8px;border-radius:20px}
+  .mbody{padding:13px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px}
+  .kpi small{font-size:10px;color:var(--mut);display:block}
+  .kpi b{font-size:17px;color:var(--ink)}
+  .kpi.g b{color:var(--ok)}
+  .kpi.i b{color:var(--rifa)}
+  .bar{height:8px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin:9px 0 4px}
+  .bar i{display:block;height:100%;width:62%;background:linear-gradient(90deg,var(--rifa),#6366f1)}
+  .rowt{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:7px}
+  .rowt .n{background:var(--rifa);color:#fff;font-weight:800;border-radius:9px;padding:6px 9px;font-size:13px}
+  .rowt .nm{font-size:12px;font-weight:600}
+  .rowt .nm small{display:block;color:var(--mut);font-weight:400;font-size:10px}
+  .rowt .st{margin-left:auto;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:20px}
+  .st.ok{background:#dcfce7;color:#15803d}
+  .st.pe{background:#fef3c7;color:#b45309}
+  .mini{font-size:10.5px;color:var(--mut);text-align:center;margin-top:10px;padding:0 8px;line-height:1.5}
+  .foot{color:#5b6b85;font-size:10.5px;text-align:center;max-width:380px;margin:14px auto 0;line-height:1.6}
+</style>
+</head>
+<body>
+  <h1 class="tt">🎟️ La rifa dentro de BayolCell Taller</h1>
+  <p class="sub">Muestra ilustrativa · los colores se ajustan a la marca real</p>
+
+  <div class="seg">
+    <button class="on" onclick="vw('recep',this)">👩‍💼 Recepcionista</button>
+    <button onclick="vw('admin',this)">👑 Administrador</button>
+  </div>
+
+  <!-- =================== VISTA RECEPCIONISTA =================== -->
+  <div class="phone view on" id="v-recep">
+    <div class="top">
+      <div class="logo">B</div>
+      <div><b>BayolCell</b><small>Taller · Recepción</small></div>
+      <div class="burger">☰</div>
+    </div>
+    <div class="body">
+      <p class="hi">Hola, <b>Yamilet</b> 👋 — Recepción / Servicio al cliente</p>
+
+      <div class="card">
+        <h3>⚡ Acciones rápidas</h3>
+        <div class="grid2">
+          <button class="qa recep"><span class="ic">📋</span>Recibir equipo</button>
+          <button class="qa orden"><span class="ic">🔧</span>Ver órdenes</button>
+          <button class="qa busca"><span class="ic">🔍</span>Buscar cliente</button>
+          <button class="qa rifa" onclick="sheet(true)">
+            <span class="shine"></span>
+            <span class="ic">🎟️</span>Generar boleto de la rifa
+            <small>para el cliente que está en recepción</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="note">
+        La recepcionista <b>solo vende</b> el boleto al cliente (queda <b>“por confirmar”</b>).
+        No ve la administración de la rifa ni los reportes — eso es solo del dueño.
+      </div>
+    </div>
+
+    <!-- hoja: generar boleto (simula vendedor.html embebido) -->
+    <div class="sheet" id="sheet">
+      <div class="sh-top">
+        <span>🎟️</span><b>Generar boleto</b>
+        <button class="x" onclick="sheet(false)">✕</button>
+      </div>
+      <div class="sh-body">
+        <div class="rfHead">
+          <small>Rifa de los clientes · BayolCell</small>
+          <div class="pr">🏆 Un iPhone 15 + RD$ 25,000</div>
+          <span class="price">RD$ 200 por número</span>
+        </div>
+        <div class="fld"><label>Nombre del cliente</label><input placeholder="Ej. Juan Pérez"></div>
+        <div class="fld"><label>WhatsApp</label><input placeholder="809-000-0000" inputmode="numeric"></div>
+        <div class="fld">
+          <label>Número (toca el que quiera)</label>
+          <div class="nums">
+            <span>0041</span><span class="taken">0042</span><span class="sel">0043</span>
+            <span>0044</span><span>0045</span><span>0046</span><span class="taken">0047</span>
+            <span>0048</span><span>0049</span><span>0050</span>
+          </div>
+        </div>
+        <button class="btnbig">✓ Registrar boleto (queda por confirmar)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== VISTA ADMINISTRADOR =================== -->
+  <div class="phone view" id="v-admin">
+    <div class="admin">
+      <nav class="side">
+        <div class="brand"><b>BayolCell</b><br><small>Taller</small></div>
+        <div class="grp">Principal</div>
+        <a><span class="ic">📊</span>Inicio</a>
+        <a><span class="ic">📋</span>Recepción</a>
+        <a><span class="ic">🔧</span>Reparaciones</a>
+        <div class="grp">Negocio</div>
+        <a><span class="ic">👥</span>Clientes</a>
+        <a><span class="ic">📦</span>Repuestos</a>
+        <a><span class="ic">💵</span>Caja</a>
+        <div class="grp">Promociones</div>
+        <a class="act rifa"><span class="ic">🎟️</span>Rifa <span class="lock">🔒</span></a>
+      </nav>
+      <div class="main">
+        <div class="mtop"><span>🎟️</span><b>Rifa</b><span class="badge">Solo admin</span></div>
+        <div class="mbody">
+          <div class="kpis">
+            <div class="kpi i"><small>Vendidos</small><b>6,240</b></div>
+            <div class="kpi g"><small>Recaudado</small><b>RD$ 1.24M</b></div>
+            <div class="kpi"><small>Por confirmar</small><b>38</b></div>
+            <div class="kpi"><small>Disponibles</small><b>3,760</b></div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px">
+            <small style="font-size:10px;color:var(--mut)">Progreso de la rifa · 62%</small>
+            <div class="bar"><i></i></div>
+            <small style="font-size:10px;color:var(--mut)">Sorteo: 31 de julio · Lotería Nacional</small>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--mut);margin:4px 0 8px">Últimos boletos</div>
+          <div class="rowt"><span class="n">0043</span><span class="nm">Juan Pérez<small>recepción · Yamilet</small></span><span class="st pe">Por confirmar</span></div>
+          <div class="rowt"><span class="n">7781</span><span class="nm">María de los Santos<small>online</small></span><span class="st ok">Confirmado</span></div>
+          <div class="rowt"><span class="n">1209</span><span class="nm">Pedro Martínez<small>recepción · Yamilet</small></span><span class="st ok">Confirmado</span></div>
+          <p class="mini">El administrador confirma pagos, hace el sorteo y ve reportes.<br>La recepcionista <b>no</b> ve esta pantalla.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">
+    🔑 La rifa vive en tu <b>base compartida de NEXUS</b> (no se copia al taller).<br>
+    El taller solo abre <b>la ventana</b>: recepción → vender · admin → administrar.<br>
+    El alquiler se prende/apaga con <b>activo_hasta</b> de la organización.
+  </p>
+
+<script>
+  function vw(id,btn){
+    document.querySelectorAll('.seg button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+    document.getElementById('v-'+id).classList.add('on');
+  }
+  function sheet(on){ document.getElementById('sheet').classList.toggle('on',on); }
+</script>
+</body>
+</html>
