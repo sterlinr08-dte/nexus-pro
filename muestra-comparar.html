@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>Antes / Después · Rifa</title>
+<style>
+  *{box-sizing:border-box}html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;background:#000;overflow:hidden}
+  .toggle{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:50;display:flex;background:rgba(20,22,32,.82);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);border-radius:30px;padding:5px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  .toggle button{border:0;background:transparent;color:#cbd2e2;font-size:13.5px;font-weight:800;padding:9px 20px;border-radius:24px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+  .toggle button.on{background:#fff;color:#0b0d12;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  .toggle button.on.dark{background:linear-gradient(135deg,#e9c46a,#caa84a);color:#1a1405}
+  .stage{position:fixed;inset:0}
+  iframe{width:100%;height:100%;border:0;display:block}
+  .hint{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:50;background:rgba(20,22,32,.78);backdrop-filter:blur(10px);color:#aeb6c8;font-size:11px;font-weight:700;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);pointer-events:none;animation:fade 4s ease forwards}
+  @keyframes fade{0%,70%{opacity:1}100%{opacity:0}}
+</style></head><body>
+  <div class="toggle">
+    <button id="bA" class="on" onclick="show('a')">☀️ Antes</button>
+    <button id="bD" onclick="show('d')">🌙 Después</button>
+  </div>
+  <div class="stage"><iframe id="fr" src="muestra-antes.html"></iframe></div>
+  <div class="hint">Toca “Antes / Después” para comparar</div>
+<script>
+  function show(w){
+    var fr=document.getElementById('fr'),bA=document.getElementById('bA'),bD=document.getElementById('bD');
+    if(w==='a'){fr.src='muestra-antes.html';bA.classList.add('on');bD.classList.remove('on','dark');}
+    else{fr.src='muestra-rifa-ux.html';bD.classList.add('on','dark');bA.classList.remove('on');}
+  }
+</script>
+</body></html>
