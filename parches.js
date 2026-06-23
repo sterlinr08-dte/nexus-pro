@@ -7120,22 +7120,25 @@
         color: #fff !important;
         position: relative;
         overflow: visible;
+        width: 34px !important; height: 34px !important;
+        min-width: 34px !important; padding: 0 !important;
+        flex: 0 0 auto !important;
         transition: transform .15s ease, box-shadow .2s ease !important;
       }
-      .tn-r > #btnRefrescar i, .tn-r > .notif-bell i { color: #fff !important; }
+      .tn-r > #btnRefrescar i, .tn-r > .notif-bell i { color: #fff !important; font-size: 16px !important; }
       .tn-r > #btnRefrescar {
         background: linear-gradient(150deg,#22d3ee,#8b5cf6 55%,#6d28d9) !important;
         box-shadow:
-          0 8px 18px rgba(109,40,217,.40),
-          inset 0 2px 3px rgba(255,255,255,.6),
-          inset 0 -5px 9px rgba(0,0,0,.20) !important;
+          0 3px 8px rgba(109,40,217,.32),
+          inset 0 1.5px 2px rgba(255,255,255,.55),
+          inset 0 -3px 6px rgba(0,0,0,.18) !important;
       }
       .tn-r > .notif-bell {
         background: linear-gradient(150deg,#fbbf24,#f59e0b 55%,#d97706) !important;
         box-shadow:
-          0 8px 18px rgba(217,119,6,.40),
-          inset 0 2px 3px rgba(255,255,255,.6),
-          inset 0 -5px 9px rgba(0,0,0,.20) !important;
+          0 3px 8px rgba(217,119,6,.32),
+          inset 0 1.5px 2px rgba(255,255,255,.55),
+          inset 0 -3px 6px rgba(0,0,0,.18) !important;
       }
       .tn-r > #btnRefrescar::after, .tn-r > .notif-bell::after {
         content: ''; position: absolute; left: 16%; top: 9%; width: 68%; height: 38%;
@@ -7144,7 +7147,7 @@
         pointer-events: none;
       }
       @media (max-width: 768px) {
-        .tn-r > .notif-bell { width: 40px !important; height: 40px !important; padding: 0 !important; flex-shrink: 0; }
+        .tn-r > #btnRefrescar, .tn-r > .notif-bell { width: 40px !important; height: 40px !important; min-width: 40px !important; padding: 0 !important; flex-shrink: 0; }
       }
       /* Menú, campana y actualizar: rebote tipo goma (jelly) al presionar */
       .tn-tog.nx-spin, .tn-r > .notif-bell.nx-spin, .tn-r > #btnRefrescar.nx-spin {
