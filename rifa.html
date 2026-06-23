@@ -145,6 +145,8 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 .faq summary::after{content:"+";color:var(--c);font-size:21px;font-weight:800;flex:0 0 auto}
 .faq[open] summary::after{content:"\2212"}
 .faqa{font-size:13px;color:#475569;line-height:1.5;padding:0 2px 12px}
+.rtxt{font-size:13.5px;color:#334155;line-height:1.6}
+body.rdark .rtxt{color:#cbd5e1}
 /* como jugar */
 .howto{display:flex;flex-direction:column;gap:11px}
 .hstep{display:flex;gap:11px;align-items:flex-start}
@@ -440,6 +442,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
 
     return '<div class="body">'+
       '<button class="ctkBtn mg-shine" type="button" onclick="window.__go(\'verificar\')"><i class="ti ti-list-search"></i> Consultar mi ticket</button>'+
+      descripcionHTML()+
       comoJugarHTML()+
       '<div class="ajugar"><span class="pill mg-shine">¡A JUGAR!</span><i class="ti ti-chevron-down"></i></div>'+
       // 1) Tus datos
@@ -471,8 +474,17 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
         '<div class="hint" style="margin-top:11px"><i class="ti ti-clock"></i> Tu número queda <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b> mientras el organizador confirma tu pago.</div>'+
         '<label class="terms"><input type="checkbox" id="tck"'+(acceptedTerms?' checked':'')+' onchange="window.__terms(this.checked)"><span>Acepto los <a href="#" onclick="window.__showTerms();return false;">términos y condiciones</a>.</span></label>'+
       '</div>'+
+      sorteoHTML()+
       faqHTML()+
       '</div>';
+  }
+  function descripcionHTML(){
+    var d=(R.descripcion||"").trim(); if(!d)return '';
+    return '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-gift"></i></div><div><h3>El premio</h3><small>Lo que te puedes ganar</small></div></div><div class="rtxt">'+esc(d).replace(/\n/g,"<br>")+'</div></div>';
+  }
+  function sorteoHTML(){
+    var d=(R.como_sorteo||"").trim(); if(!d)return '';
+    return '<div class="card mg-card" id="sorteosec">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-confetti"></i></div><div><h3>¿Cómo es el sorteo?</h3><small>Así se elige el ganador</small></div></div><div class="rtxt">'+esc(d).replace(/\n/g,"<br>")+'</div></div>';
   }
   function comoJugarHTML(){
     var def=[

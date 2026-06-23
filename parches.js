@@ -17833,6 +17833,7 @@ try {
       '<div style="overflow-y:auto;flex:1">' +
       '<div class="fr"><label>Nombre de la rifa *</label><input id="rfNom" class="no-upper" value="' + esc(e.nombre || '') + '" placeholder="Ej: Gran Rifa iPhone"></div>' +
       '<div class="fr"><label>Premio</label><input id="rfPremio" class="no-upper" value="' + esc(e.premio || '') + '" placeholder="Ej: iPhone 16 Pro Max"></div>' +
+      '<div class="fr"><label>Descripción del producto (página pública)</label><textarea id="rfDescripcion" class="no-upper" placeholder="Detalles del premio: modelo, especificaciones, color, valor aproximado, etc." style="width:100%;min-height:60px;padding:9px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:13px;resize:vertical">' + esc(e.descripcion || '') + '</textarea></div>' +
       '<div class="fr-row">' +
       '<div class="fr"><label>Precio del boleto</label><input id="rfPrecio" data-nx-money inputmode="numeric" value="' + (e.precio_boleto ? Math.round(e.precio_boleto) : '') + '" placeholder="0"></div>' +
       '<div class="fr"><label>Dígitos</label><select id="rfDig" onchange="window.nxRifaDigCambio()"><option value="2"' + (dig === 2 ? ' selected' : '') + '>2 (00–99)</option><option value="3"' + (dig === 3 ? ' selected' : '') + '>3 (000–999)</option><option value="4"' + (dig === 4 ? ' selected' : '') + '>4 (0000–9999)</option></select></div>' +
@@ -17880,6 +17881,7 @@ try {
       '<button type="button" class="btn bsm bghost" style="width:100%;justify-content:center;margin-top:7px" onclick="window.nxRifaTutAdd()"><i class="ti ti-plus" style="color:#16a34a"></i> Agregar paso</button>' +
       '<div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Pasos que verá el cliente en la página. Bórralos todos para ocultar el tutorial.</div></div>' +
       // ── Preguntas frecuentes (FAQ) para la página pública
+      '<div class="fr"><label>¿Cómo es el sorteo? (página pública)</label><textarea id="rfComoSorteo" class="no-upper" placeholder="Ej: El sorteo se realiza con la Lotería Nacional el día del cierre. Gana el número que coincida con el primer premio..." style="width:100%;min-height:60px;padding:9px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:13px;resize:vertical">' + esc(e.como_sorteo || '') + '</textarea></div>' +
       '<div class="fr"><label>Preguntas frecuentes (página pública)</label><div id="rfFaqList">' + faqRowsHTML() + '</div>' +
       '<button type="button" class="btn bsm bghost" style="width:100%;justify-content:center;margin-top:7px" onclick="window.nxRifaFaqAdd()"><i class="ti ti-plus" style="color:#16a34a"></i> Agregar pregunta</button></div>' +
       '</div>' +
@@ -17987,6 +17989,8 @@ try {
     var body = {
       nombre: nom,
       premio: (val('rfPremio') || '').trim() || null,
+      descripcion: (val('rfDescripcion') || '').trim() || null,
+      como_sorteo: (val('rfComoSorteo') || '').trim() || null,
       precio_boleto: moneyVal('rfPrecio'),
       cantidad_digitos: dig,
       cantidad_numeros: cant,
