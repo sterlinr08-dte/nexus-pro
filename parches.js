@@ -123,9 +123,9 @@
           width: 100%;
           border: 0;
           background: transparent;
-          border-radius: 12px;
-          padding: 12px;
-          font-size: 14px;
+          border-radius: 11px;
+          padding: 9px 11px;
+          font-size: 13px;
           font-weight: 600;
           color: #0f172a;
           text-align: left;
@@ -145,13 +145,13 @@
         }
         
         .mobile-more-sheet-clean .icon {
-          width: 36px;
-          height: 36px;
+          width: 30px;
+          height: 30px;
           background: #eff6ff;
-          border-radius: 12px;
+          border-radius: 10px;
           display: grid;
           place-items: center;
-          font-size: 18px;
+          font-size: 16px;
         }
 
         /* ═══ BOTÓN FLOTANTE (FAB) + MENÚ ═══ */
@@ -159,7 +159,7 @@
           position: fixed; right: 18px; bottom: 18px; z-index: 9000;
           width: 58px; height: 58px; border-radius: 50%; border: 0;
           background: linear-gradient(135deg,#1e3a6e,#6d28d9);
-          color: #fff; font-size: 26px;
+          color: #fff; font-size: 23px;
           display: flex; align-items: center; justify-content: center;
           box-shadow: 0 10px 26px rgba(109,40,217,.45);
           cursor: pointer; touch-action: manipulation;
@@ -1109,11 +1109,11 @@
         background:#fff !important; color:#0f172a !important;
       }
       #nxModalTransferAgenteV2 .nxTA2-head{
-        display:flex; align-items:center; gap:12px; padding:18px 18px 16px;
+        display:flex; align-items:center; gap:12px; padding:14px 14px 12px;
         background:linear-gradient(135deg,#f5f3ff,#eef2ff); border-bottom:1px solid #eceaf6;
       }
       #nxModalTransferAgenteV2 .nxTA2-head-icon{
-        width:42px; height:42px; flex:0 0 42px; border-radius:13px; color:#fff; font-size:20px;
+        width:36px; height:36px; flex:0 0 36px; border-radius:11px; color:#fff; font-size:18px;
         display:flex; align-items:center; justify-content:center;
         background:linear-gradient(135deg,#7c3aed,#4f46e5); box-shadow:0 8px 18px rgba(79,70,229,.35);
       }
@@ -1125,7 +1125,7 @@
       }
       #nxModalTransferAgenteV2 .nxTA2-close:hover{ background:#fff; color:#0f172a; }
 
-      #nxModalTransferAgenteV2 .nxTA2-body{ padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+      #nxModalTransferAgenteV2 .nxTA2-body{ padding:13px 14px; display:flex; flex-direction:column; gap:10px; }
       #nxModalTransferAgenteV2 .nxTA2-field{ display:flex; flex-direction:column; }
       #nxModalTransferAgenteV2 .nxTA2-field > label{
         font-size:10px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:#475569; margin-bottom:5px;
@@ -1145,13 +1145,13 @@
       }
       #nxModalTransferAgenteV2 .nxTA2-control select{
         appearance:none; -webkit-appearance:none; width:100%; border:none; background:transparent; outline:none;
-        padding:11px 30px 11px 34px; font-size:13px; font-weight:600; color:#0f172a; cursor:pointer;
+        padding:9px 28px 9px 32px; font-size:13px; font-weight:600; color:#0f172a; cursor:pointer;
       }
       #nxModalTransferAgenteV2 .nxTA2-control select:disabled{ color:#475569; cursor:not-allowed; }
 
       #nxModalTransferAgenteV2 .nxTA2-input{
         width:100%; background:#f8fafc; border:1.5px solid #e7ecf3; border-radius:12px;
-        padding:11px 13px; font-size:13px; color:#0f172a; outline:none; transition:border-color .15s, box-shadow .15s, background .15s;
+        padding:9px 11px; font-size:13px; color:#0f172a; outline:none; transition:border-color .15s, box-shadow .15s, background .15s;
       }
       #nxModalTransferAgenteV2 .nxTA2-input:focus{ border-color:#7c3aed; background:#fff; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
 
@@ -1162,14 +1162,14 @@
       }
 
       #nxModalTransferAgenteV2 .nxTA2-amount-box{
-        display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:14px;
+        display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:12px;
         background:linear-gradient(135deg,#faf5ff,#eff6ff); border:1.5px solid #e9d5ff;
         transition:border-color .15s, box-shadow .15s;
       }
       #nxModalTransferAgenteV2 .nxTA2-amount-box:focus-within{ border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
       #nxModalTransferAgenteV2 .nxTA2-amount-cur{ font-size:15px; font-weight:800; color:#7c3aed; }
       #nxModalTransferAgenteV2 .nxTA2-amount input{
-        flex:1; width:100%; border:none; background:transparent; outline:none; font-size:24px; font-weight:800; color:#0f172a;
+        flex:1; width:100%; border:none; background:transparent; outline:none; font-size:20px; font-weight:800; color:#0f172a;
       }
 
       #nxModalTransferAgenteV2 .nxTA2-info{
@@ -1180,7 +1180,7 @@
 
       #nxModalTransferAgenteV2 .nxTA2-foot{ display:flex; gap:10px; padding:14px 18px 18px; border-top:1px solid #f1f5f9; }
       #nxModalTransferAgenteV2 .nxTA2-btn{
-        border:none; border-radius:13px; padding:13px; font-size:13px; font-weight:800; cursor:pointer;
+        border:none; border-radius:12px; padding:11px; font-size:13px; font-weight:800; cursor:pointer;
         display:flex; align-items:center; justify-content:center; gap:7px; transition:transform .12s, box-shadow .12s, background .12s;
       }
       #nxModalTransferAgenteV2 .nxTA2-btn-ghost{ flex:0 0 38%; background:#f1f5f9; color:#475569; }
@@ -2913,11 +2913,11 @@
 
       /* ═══ 4 KPIs PRINCIPALES ═══ */
       .nxDC-kpis-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
-      .nxDC-kpi { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; display:flex; gap:12px; align-items:flex-start; box-shadow:0 1px 3px rgba(0,0,0,.03); }
-      .nxDC-kpi-icon { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:20px; flex:0 0 auto; }
+      .nxDC-kpi { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:12px; display:flex; gap:10px; align-items:flex-start; box-shadow:0 1px 3px rgba(0,0,0,.03); }
+      .nxDC-kpi-icon { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-size:18px; flex:0 0 auto; }
       .nxDC-kpi-body { min-width:0; flex:1; }
       .nxDC-kpi-label { font-size:10px; font-weight:800; color:#475569; letter-spacing:.5px; line-height:1.3; margin-bottom:5px; }
-      .nxDC-kpi-value { font-size:22px; font-weight:900; line-height:1.1; margin-bottom:3px; font-family:var(--mono,'SF Mono',monospace); letter-spacing:-.3px; }
+      .nxDC-kpi-value { font-size:18px; font-weight:900; line-height:1.1; margin-bottom:3px; font-family:var(--mono,'SF Mono',monospace); letter-spacing:-.3px; }
       .nxDC-kpi-sub { font-size:11px; color:#475569; font-weight:500; }
 
       /* ═══ ROW 2 COL ═══ */
@@ -2979,8 +2979,8 @@
       /* ═══ TABLA AGENTES + TRANSFERENCIAS ═══ */
       .nxDC-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
       .nxDC-table { width:100%; border-collapse:collapse; font-size:12px; }
-      .nxDC-table thead th { padding:10px 12px; text-align:left; font-size:9px; font-weight:800; color:#475569; letter-spacing:.6px; background:#f8fafc; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
-      .nxDC-table tbody td { padding:12px; border-bottom:1px solid #f1f5f9; color:#0f172a; font-weight:600; }
+      .nxDC-table thead th { padding:8px 10px; text-align:left; font-size:9px; font-weight:800; color:#475569; letter-spacing:.6px; background:#f8fafc; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+      .nxDC-table tbody td { padding:9px 10px; border-bottom:1px solid #f1f5f9; color:#0f172a; font-weight:600; }
       .nxDC-table tbody tr:last-child td { border-bottom:0; }
       .nxDC-table tfoot td { padding:12px; background:#f8fafc; border-top:2px solid #e2e8f0; font-size:13px; }
       .nxDC-table .nxDC-num { text-align:right; font-family:var(--mono,monospace); white-space:nowrap; }
@@ -3010,7 +3010,7 @@
       .nxDC-caja-cash .nxDC-caja-mini-lbl { color:#059669; }
       .nxDC-caja-pend .nxDC-caja-mini-lbl { color:#d97706; }
       .nxDC-caja-dep  .nxDC-caja-mini-lbl { color:#6d28d9; }
-      .nxDC-caja-mini-val { font-size:18px; font-weight:900; line-height:1.1; font-family:var(--mono,monospace); color:#0f172a; }
+      .nxDC-caja-mini-val { font-size:16px; font-weight:900; line-height:1.1; font-family:var(--mono,monospace); color:#0f172a; }
       .nxDC-caja-cash .nxDC-caja-mini-val { color:#059669; }
       .nxDC-caja-pend .nxDC-caja-mini-val { color:#d97706; }
       .nxDC-caja-dep  .nxDC-caja-mini-val { color:#6d28d9; }
@@ -3190,7 +3190,7 @@
       .nxDC-tx-btn {
         display:inline-flex; align-items:center; justify-content:center; gap:9px;
         background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none;
-        border-radius:14px; padding:13px 18px; font-size:13px; font-weight:800; letter-spacing:.2px;
+        border-radius:12px; padding:11px 14px; font-size:13px; font-weight:800; letter-spacing:.2px;
         cursor:pointer; white-space:nowrap; flex:1 1 auto;
         box-shadow:0 10px 22px rgba(79,70,229,.30); transition:transform .12s ease, box-shadow .12s ease;
       }
@@ -3202,7 +3202,7 @@
       .nxDC-tx-chips { display:grid; gap:11px; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); }
       .nxDC-tx-chip {
         position:relative; display:flex; align-items:center; gap:11px; overflow:hidden;
-        background:#fff; border:1px solid #eef0f6; border-radius:16px; padding:13px 14px;
+        background:#fff; border:1px solid #eef0f6; border-radius:14px; padding:11px 12px;
         box-shadow:0 4px 14px rgba(15,23,42,.05);
       }
       .nxDC-tx-chip::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:#cbd5e1; }
@@ -3210,7 +3210,7 @@
       .nxDC-tx-chip-in::before  { background:#10b981; }
       .nxDC-tx-chip-net::before { background:#6366f1; }
       .nxDC-tx-chip-ico {
-        width:38px; height:38px; flex:0 0 38px; border-radius:12px;
+        width:34px; height:34px; flex:0 0 34px; border-radius:11px;
         display:flex; align-items:center; justify-content:center; font-size:18px;
       }
       .nxDC-tx-chip-body { min-width:0; }
@@ -3225,7 +3225,7 @@
       .nxDC-txp-title { font-size:11px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:6px; letter-spacing:.3px; }
       .nxDC-txp-item {
         display:grid; gap:9px 12px; align-items:center; grid-template-columns:1fr auto;
-        padding:11px; background:#fff; border:1px solid #fde9c8; border-radius:12px;
+        padding:9px; background:#fff; border:1px solid #fde9c8; border-radius:11px;
         box-shadow:0 3px 10px rgba(180,83,9,.06);
       }
       .nxDC-txp-ruta { font-size:12.5px; color:#0f172a; }
