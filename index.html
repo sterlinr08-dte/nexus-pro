@@ -391,7 +391,7 @@ tbody tr:hover td{background:#f8fafc}
   .kpi{padding:12px 10px}
   .kv{font-size:16px}
   /* Botones táctiles */
-  .btn{min-height:36px;padding:6px 12px}
+  .btn{min-height:32px;padding:5px 10px}
   .bxl{min-height:38px;padding:8px 16px}
   /* Modales */
   .overlay{padding:.75rem .5rem}
@@ -559,10 +559,10 @@ body.tema-premium .acc-menu-hd{color:#475569}
 @media(max-width:640px){
   .bcoRow{display:grid !important;grid-template-columns:1fr !important;gap:10px !important;padding:12px !important}
   .bcoActions{display:grid !important;grid-template-columns:1fr 1fr 1fr !important;width:100% !important;gap:5px !important;justify-content:stretch !important}
-  .bcoActions .btn{width:100% !important;min-width:0 !important;min-height:38px !important;padding:6px 4px !important;font-size:9.5px !important;justify-content:center !important;align-items:center !important;display:flex !important;gap:3px !important;white-space:nowrap !important;overflow:hidden !important}
+  .bcoActions .btn{width:100% !important;min-width:0 !important;min-height:34px !important;padding:5px 4px !important;font-size:9.5px !important;justify-content:center !important;align-items:center !important;display:flex !important;gap:3px !important;white-space:nowrap !important;overflow:hidden !important}
   .bcoActions .btn i{font-size:12px !important}
   #bcoForm{grid-template-columns:1fr !important;gap:8px !important}
-  #bcoForm .btn{width:100% !important;min-height:44px !important;justify-content:center !important}
+  #bcoForm .btn{width:100% !important;min-height:40px !important;justify-content:center !important}
   #bcoNuevo{min-height:42px !important;font-size:14px !important}
 }
 .cfg-tabs-bar::-webkit-scrollbar{display:none;height:0}
@@ -736,10 +736,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   text-transform: none !important;
 }
 /* ═══ Pestañas Facturas/Cobros/Pendientes/Historial — control segmentado armónico ═══ */
-.nxft-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:14px;padding:6px;box-shadow:inset 0 1px 2px rgba(15,23,42,.04)}
+.nxft-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;padding:4px;box-shadow:inset 0 1px 2px rgba(15,23,42,.04)}
 @media(min-width:620px){.nxft-tabs{grid-template-columns:repeat(4,1fr)}}
-.nxft-tab{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 10px;border:none;border-radius:10px;background:transparent;color:#475569;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .18s,color .18s,box-shadow .18s,transform .12s}
-.nxft-tab i{font-size:14px;flex-shrink:0}
+.nxft-tab{display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 8px;border:none;border-radius:9px;background:transparent;color:#475569;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .18s,color .18s,box-shadow .18s,transform .12s}
+.nxft-tab i{font-size:13px;flex-shrink:0}
 .nxft-tab:hover{background:rgba(255,255,255,.75);color:#334155}
 .nxft-tab:active{opacity:.72}
 .nxft-tab.is-active{background:linear-gradient(135deg,#1e3a6e,#8b5cf6);color:#fff;box-shadow:0 4px 12px rgba(109,40,217,.32),inset 0 1px 0 rgba(255,255,255,.25)}
@@ -3187,7 +3187,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='36.3';
+const APP_VERSION='36.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5160,11 +5160,11 @@ function rFact(){
         ${f.deuda_ant>0?`<div>${L('Deuda anterior')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}
         <div style="margin-left:auto;text-align:right">${L('Total a pagar')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(f.total)}</div></div>
       </div>
-      ${anul?'':`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:7px"><i class="ti ti-wallet" style="color:#fff!important;font-size:16px"></i> COBRAR</button>`}
-      <div style="display:grid;grid-template-columns:repeat(${nBtns},1fr);gap:6px">
-        <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:11px;padding:9px 6px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:14px"></i> Factura</button>
-        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:11px;padding:9px 6px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:14px"></i> WhatsApp</button>`}
-        ${(!anul&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:11px;padding:9px 6px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:14px"></i> Anular</button>`:''}
+      ${anul?'':`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:12px;padding:8px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:6px"><i class="ti ti-wallet" style="color:#fff!important;font-size:15px"></i> COBRAR</button>`}
+      <div style="display:grid;grid-template-columns:repeat(${nBtns},1fr);gap:5px">
+        <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> Factura</button>
+        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WhatsApp</button>`}
+        ${(!anul&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> Anular</button>`:''}
       </div>
     </div>`;
   }).join('');

@@ -7164,7 +7164,7 @@
         .tn-tog { width: 40px !important; height: 40px !important; }
         .tn-tog i { font-size: 20px !important; }
         .tn-sr { max-width: none !important; display: flex !important; align-items: center !important; }
-        .tn-sr input { height: 40px !important; border-radius: 12px !important; padding: 0 14px 0 36px !important; }
+        .tn-sr input { height: 36px !important; border-radius: 10px !important; padding: 0 14px 0 34px !important; }
         .tn-sr .si { left: 13px !important; font-size: 15px !important; }
       }
     `;

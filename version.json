@@ -1,7 +1,8 @@
 {
-  "version": "36.3",
+  "version": "36.4",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "AJUSTE (pantallas más compactas — primera pasada): achicamos para que NADA se vea gigante. Las pestañas (Facturas/Cobros/Historial) más bajitas y juntas, la barra de búsqueda más fina, y en la tarjeta de cada cliente el botón COBRAR y la fila Factura/WhatsApp/Anular más compactos (con las letras bien adentro). Se ve más ordenado en computadora y en el móvil. Es el primer paso: vamos a ir compactando el resto de las pantallas poco a poco.",
     "ARREGLADO (barra de arriba): los dos botones redondos de colores de la esquina (el morado de 'Actualizar' y el naranja de las notificaciones) se veían como bolas gigantes, sobre todo por el resplandor de color tan fuerte que los rodeaba. Ahora quedan del mismo tamaño parejo que los demás iconos de la barra y con una sombra más discreta, manteniendo el bonito relieve 3D de cristal. Se ve más limpio en computadora y en el móvil.",
     "NUEVO (Rifas · página pública): al crear/editar la rifa ahora puedes escribir la DESCRIPCIÓN DEL PRODUCTO que se rifa (modelo, especificaciones, valor…) que sale arriba en su propio cuadro 'El premio', y un cuadro '¿CÓMO ES EL SORTEO?' que explica cómo se elige el ganador (sale al final, antes de las preguntas frecuentes). Ambos son opcionales y combinan con la animación de los demás cuadros.",
     "NUEVO (Clientes · cliente de cortesía / familiar): si APAGAS el interruptor 'Permitir facturación automática' en la ficha del cliente, ese cliente YA NO genera factura (ideal para familiares o cortesías que no quieres facturar). Antes ese interruptor no hacía nada en la generación; ahora sí lo respeta. En la ficha sale un distintivo azul '🚫 Cliente de cortesía'. OJO: poner el precio especial en 0 NO exonera (eso usa el precio del plan); para no facturar, usa este interruptor.",
