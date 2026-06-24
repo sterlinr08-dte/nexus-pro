@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Muestra · Deuda anterior (doble conteo)</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:#eef2f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0f172a;padding:14px}
+  h1{font-size:16px;text-align:center;margin:4px 0 2px}
+  p.sub{color:#64748b;text-align:center;font-size:12px;margin:0 0 14px}
+  .wrap{max-width:430px;margin:0 auto}
+  /* toggle */
+  .seg{display:flex;gap:6px;background:#e2e8f0;padding:5px;border-radius:14px;margin-bottom:14px}
+  .seg button{flex:1;border:0;background:transparent;color:#475569;font-weight:800;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;transition:.15s}
+  .seg button.on{background:#fff;color:#0f172a;box-shadow:0 2px 6px rgba(15,23,42,.12)}
+  .seg button.on.bad{color:#dc2626}
+  .seg button.on.good{color:#059669}
+  /* resumen por cobrar */
+  .resumen{display:flex;gap:8px;margin-bottom:12px}
+  .rz{flex:1;border-radius:12px;padding:10px 12px}
+  .rz1{background:#eff6ff;border:1px solid #dbeafe}
+  .rz1 .t{font-size:9px;color:#6d28d9;font-weight:800;text-transform:uppercase}
+  .rz1 .v{font-size:18px;font-weight:800;color:#1e3a8a}
+  .rz2{flex:2;border-radius:12px;padding:10px 12px}
+  .rz2 .t{font-size:9px;font-weight:800;text-transform:uppercase}
+  .rz2 .v{font-size:18px;font-weight:800}
+  .bad .rz2{background:#fff1f2;border:1px solid #fecaca}
+  .bad .rz2 .t{color:#b91c1c}.bad .rz2 .v{color:#dc2626}
+  .good .rz2{background:#f0fdf4;border:1px solid #bbf7d0}
+  .good .rz2 .t{color:#15803d}.good .rz2 .v{color:#059669}
+  .flag{font-size:11px;border-radius:10px;padding:8px 11px;margin-bottom:12px;line-height:1.5}
+  .flag.bad{background:#fff1f2;border:1px solid #fecaca;color:#9f1239}
+  .flag.good{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+  /* tarjeta factura (estilo app) */
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .ch{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .nm{font-weight:800;font-size:14.5px;color:#0f172a}
+  .meta{font-size:10.5px;color:#475569;margin-top:3px}
+  .mesb{font-size:9px;color:#92400e;font-weight:700;margin-top:2px}
+  .badge{font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:20px}
+  .bParcial{background:#fef3c7;color:#b45309}
+  .bPend{background:#fee2e2;color:#b91c1c}
+  .row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:11px 0;padding:9px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9}
+  .lbl{font-size:8.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .v12{font-size:12px;font-weight:700;color:#334155}
+  .right{margin-left:auto;text-align:right}
+  .big{font-size:18px;font-weight:800;color:#0f172a}
+  .da-red{color:#dc2626}
+  .danote{font-size:9px;color:#64748b;margin-top:1px;max-width:150px;text-align:right;line-height:1.3}
+  .foot{color:#475569;font-size:11.5px;text-align:center;margin-top:14px;line-height:1.6}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧾 Doble conteo de “deuda anterior”</h1>
+  <p class="sub">Ejemplo real: GEU Josué (debe mayo + junio, RD$ 12.000 cada uno)</p>
+
+  <div class="seg">
+    <button id="bAntes" class="on bad" onclick="ver('antes')">❌ Como está hoy</button>
+    <button id="bDespues" onclick="ver('despues')">✅ Propuesta</button>
+  </div>
+
+  <!-- ===== ANTES ===== -->
+  <div id="antes">
+    <div class="resumen bad">
+      <div class="rz rz1"><div class="t">Facturas</div><div class="v">2</div></div>
+      <div class="rz rz2"><div class="t">Por cobrar</div><div class="v">RD$ 36.000</div></div>
+    </div>
+    <div class="flag bad">⚠️ Suma <b>36.000</b>, pero GEU solo debe <b>24.000</b>. La deuda de mayo (12.000) se cuenta dos veces: en su propia factura Y dentro del total de junio.</div>
+
+    <div class="card">
+      <div class="ch">
+        <div><div class="nm">GEU JOSUE PEÑA</div><div class="meta">Plan Superior · Particular</div><div class="mesb">📅 MAYO 2026</div></div>
+        <span class="badge bPend">PENDIENTE</span>
+      </div>
+      <div class="row">
+        <div><div class="lbl">Prima</div><div class="mono v12">RD$ 12.000</div></div>
+        <div class="right"><div class="lbl">Total a pagar</div><div class="mono big">RD$ 12.000</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div><div class="nm">GEU JOSUE PEÑA</div><div class="meta">Plan Superior · Particular</div><div class="mesb">📅 JUNIO 2026</div></div>
+        <span class="badge bPend">PENDIENTE</span>
+      </div>
+      <div class="row">
+        <div><div class="lbl">Prima</div><div class="mono v12">RD$ 12.000</div></div>
+        <div><div class="lbl">Deuda anterior</div><div class="mono v12 da-red">RD$ 12.000</div></div>
+        <div class="right"><div class="lbl">Total a pagar</div><div class="mono big">RD$ 24.000</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DESPUÉS ===== -->
+  <div id="despues" class="hidden">
+    <div class="resumen good">
+      <div class="rz rz1"><div class="t">Facturas</div><div class="v">2</div></div>
+      <div class="rz rz2"><div class="t">Por cobrar</div><div class="v">RD$ 24.000</div></div>
+    </div>
+    <div class="flag good">✅ Ahora suma <b>24.000</b> = lo que GEU debe de verdad. Cada mes cuenta <b>su propia prima</b>; la deuda de mayo se ve en junio como <b>nota informativa</b>, sin volverse a sumar.</div>
+
+    <div class="card">
+      <div class="ch">
+        <div><div class="nm">GEU JOSUE PEÑA</div><div class="meta">Plan Superior · Particular</div><div class="mesb">📅 MAYO 2026</div></div>
+        <span class="badge bPend">PENDIENTE</span>
+      </div>
+      <div class="row">
+        <div><div class="lbl">Prima</div><div class="mono v12">RD$ 12.000</div></div>
+        <div class="right"><div class="lbl">Falta pagar</div><div class="mono big">RD$ 12.000</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div><div class="nm">GEU JOSUE PEÑA</div><div class="meta">Plan Superior · Particular</div><div class="mesb">📅 JUNIO 2026</div></div>
+        <span class="badge bPend">PENDIENTE</span>
+      </div>
+      <div class="row">
+        <div><div class="lbl">Prima de junio</div><div class="mono v12">RD$ 12.000</div></div>
+        <div class="right"><div class="lbl">Falta pagar (junio)</div><div class="mono big">RD$ 12.000</div></div>
+      </div>
+      <div style="font-size:10.5px;color:#64748b;background:#f8fafc;border-radius:9px;padding:8px 10px;line-height:1.5">
+        ℹ️ <b>Deuda anterior (mayo): RD$ 12.000</b> — ya está contada en la factura de mayo. Se muestra como referencia, <b>no se vuelve a sumar</b>.
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    En la factura <b>impresa/PDF</b> que recibe el cliente, ahí sí puede salir<br>“junio 12.000 + deuda anterior 12.000 = 24.000” (es su estado de cuenta).<br>El cambio es solo en las <b>pantallas internas</b> (lista, “Por cobrar”, Pendientes).<br><b>No toca ningún dato guardado.</b>
+  </div>
+</div>
+
+<script>
+  function ver(q){
+    document.getElementById('antes').classList.toggle('hidden',q!=='antes');
+    document.getElementById('despues').classList.toggle('hidden',q!=='despues');
+    const a=document.getElementById('bAntes'),d=document.getElementById('bDespues');
+    a.className=q==='antes'?'on bad':'';
+    d.className=q==='despues'?'on good':'';
+  }
+</script>
+</body>
+</html>
