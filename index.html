@@ -3192,7 +3192,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='36.7';
+const APP_VERSION='36.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4305,20 +4305,39 @@ function reconciliarDeudasClientes(){
     }
   }catch(e){}
 }
+let _asientosCargados=false,_asientosCargando=null;
+// Carga DIFERIDA de asientos (contabilidad): es la tabla más pesada y que más
+// crece, pero la Contabilidad NO es la pantalla de inicio. Por eso NO bloquea el
+// arranque: se trae en segundo plano y al terminar recalcula los saldos. Las
+// vistas que la usan (mayor/asientos/balance/pyg) la esperan vía nav().
+function cargarAsientosBG(){
+  if(_asientosCargados)return Promise.resolve();
+  if(_asientosCargando)return _asientosCargando;
+  _asientosCargando=API.get('asientos','select=*&order=created_at.desc').then(asi=>{
+    asi=asi||[];
+    // Conservar asientos creados en sesión que el fetch no traiga (carrera)
+    const have=new Set(asi.map(a=>a&&a.id));
+    (ST.asientos||[]).forEach(a=>{if(a&&a.id&&!have.has(a.id))asi.unshift(a);});
+    ST.asientos=asi;_asientosCargados=true;_asientosCargando=null;
+    try{recalcularSaldosContables();}catch(_){}
+  }).catch(_=>{_asientosCargando=null;});
+  return _asientosCargando;
+}
 async function cargarDatosNucleo(){
-  const [emp,agt,cli,fac,asi,usu,cfg]=await Promise.all([
+  _asientosCargados=false;_asientosCargando=null; // recarga fresca de asientos en cada carga
+  const [emp,agt,cli,fac,usu,cfg]=await Promise.all([
     API.get('empresas','select=*&order=nom'),
     API.get('agentes','select=*&order=nom'),
     API.get('clientes','select=*&order=nom'),
     API.get('facturas','select=*&order=created_at.desc'),
-    API.get('asientos','select=*&order=created_at.desc'),
     API.get('usuarios_sistema','select=*&order=nom'),
     API.get('configuracion','select=*'),
   ]);
   ST.empresas=emp||[];ST.agentes=agt||[];ST.clientes=cli||[];
-  ST.facturas=fac||[];ST.asientos=asi||[];ST.usuarios=usu||[];
+  ST.facturas=fac||[];ST.usuarios=usu||[];
+  ST.asientos=ST.asientos||[]; // se llena en segundo plano (cargarAsientosBG)
   try{reconciliarDeudasClientes();}catch(_){}
-  recalcularSaldosContables();
+  cargarAsientosBG(); // sin await: el arranque no espera por la contabilidad
   // Cargar config
   (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});
   actualizarCFG();
@@ -4492,6 +4511,11 @@ function nav(view,el){
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
       email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
+  // Asientos se cargan diferidos: si entras a una vista que los usa antes de que
+  // terminen de bajar, los traemos y re-pintamos esa vista (sub-segundo).
+  if(['mayor','asientos','balance','pyg'].includes(view)&&!_asientosCargados){
+    cargarAsientosBG().then(()=>{if(typeof fn[view]==='function')fn[view]();});
+  }
   // Limpiar campos de búsqueda al cambiar de ventana
   ['gsInput','newArs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.querySelectorAll('.tn-sr input,.gs-input').forEach(i=>{i.value='';});
@@ -5539,22 +5563,46 @@ function aplicarPeriodoPagos(){
   rPagos();
 }
 
+let _pagosPeriodoInit=false;
 async function rPagos(){
   llenarPeriodosPagos();
   const tb=document.getElementById('tbPagos');
   if(!tb)return;
+  const fdEl=document.getElementById('pgFechaD'),fhEl=document.getElementById('pgFechaH');
+  const selP=document.getElementById('pgPeriodo');
+  // Primera vez: mostrar el MES EN CURSO (no "todos los pagos"), para no bajar
+  // miles de abonos al abrir el historial. El usuario puede cambiar el período
+  // (incluido "Todos los pagos") cuando quiera.
+  if(!_pagosPeriodoInit){
+    _pagosPeriodoInit=true;
+    if(selP&&!selP.value&&!(fdEl&&fdEl.value)&&!(fhEl&&fhEl.value)){
+      const hn=new Date(),val=hn.getFullYear()+'-'+(hn.getMonth()+1);
+      if([...selP.options].some(o=>o.value===val))selP.value=val;
+      const {desde,hasta}=periodoPagos(hn.getMonth()+1,hn.getFullYear());
+      const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if(fdEl)fdEl.value=iso(desde);if(fhEl)fhEl.value=iso(hasta);
+    }
+  }
   tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#475569">Cargando pagos...</td></tr>';
-  // Cargar todos los abonos
+  // Pedir SOLO los abonos del rango elegido (filtrado en el servidor). Sin rango
+  // (el usuario eligió "Todos los pagos") trae todo. Tope con lt.(día siguiente)
+  // para incluir el último día, sirva la columna como fecha o como timestamp.
+  const fd=(fdEl&&fdEl.value)||'',fh=(fhEl&&fhEl.value)||'';
+  const addDia=s=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+  let qy='order=fecha.desc';
+  if(fd)qy+='&fecha=gte.'+fd;
+  if(fh)qy+='&fecha=lt.'+addDia(fh);
   let abonos=[];
   try{
-    abonos=await API.get('abonos','select=*&order=fecha.desc')||[];
+    abonos=await API.get('abonos',qy)||[];
   }catch(e){
     tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626">Error al cargar pagos</td></tr>';
     return;
   }
-  // Enriquecer con datos del cliente
+  // Enriquecer con datos del cliente (lookup O(1) con Map)
+  const cliById=new Map(ST.clientes.map(c=>[c.id,c]));
   _pagosCache=abonos.map(a=>{
-    const c=ST.clientes.find(x=>x.id===a.cliente_id);
+    const c=cliById.get(a.cliente_id);
     return{
       ...a,
       cliente_nom:c?.nom||'(cliente eliminado)',

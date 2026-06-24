@@ -1,7 +1,9 @@
 {
-  "version": "36.7",
+  "version": "36.8",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "MEJORA (la app abre más rápido): al entrar, el sistema ya NO espera por la CONTABILIDAD (la tabla de asientos, que es la más pesada y la que más crece) para mostrarte la pantalla. Ahora carga primero lo del día a día (clientes, facturas, cobros) y abre de una vez; la contabilidad se carga sola por detrás en un segundo. Si entras a Mayor/Asientos/Balance/Estado de resultados antes de que termine, se completan al instante. No cambia ningún número ni cálculo.",
+    "MEJORA (Historial de pagos más liviano): al abrir 'Historial' de cobros ahora muestra el MES EN CURSO por defecto (antes bajaba TODOS los pagos del sistema de golpe y se ponía lento con miles). Puedes cambiar el período arriba (o elegir 'Todos los pagos') cuando lo necesites. Trae solo lo del período elegido, así carga mucho más rápido.",
     "NUEVO (Cobros — más rápido de cobrar): al tocar COBRAR, el monto ya viene ESCRITO con lo que el cliente debe (su pendiente). Si te lo van a pagar completo, solo confirmas; y si es un abono parcial, lo borras y pones la cantidad. Un toque menos en lo que más se hace todos los días.",
     "NUEVO (Recibo — meses ya marcados): al abrir un recibo, los MESES PENDIENTES del cliente salen marcados solos (y si no debe nada, el mes actual). Antes había que tocar mes por mes. Igual puedes desmarcar o usar los botones 'Mes actual / Pendientes / Limpiar'.",
     "AJUSTE (Buscar cliente — más fluido): la búsqueda de clientes ya no re-dibuja la lista en cada letra; espera un instante a que termines de escribir. Se siente más ligera y deja de 'trabarse' en el celular al escribir nombres largos.",
