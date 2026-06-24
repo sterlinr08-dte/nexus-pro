@@ -1092,7 +1092,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </button>
             </div>
             <div class="frow">
-              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, apodo, cédula, póliza..." id="cliQ" oninput="rCli()"/></div>
+              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, apodo, cédula, póliza..." id="cliQ" oninput="rCliBuscar()"/></div>
               <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
               <select id="fAgenteCli" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los agentes</option></select>
@@ -3192,7 +3192,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='36.6';
+const APP_VERSION='36.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4877,6 +4877,10 @@ function pintarFlechasCli(){
     if(el)el.textContent=(_cliSort.col===C.toLowerCase())?(_cliSort.dir===1?'▲':'▼'):'';
   });
 }
+// Búsqueda con debounce: re-dibuja la lista solo ~220ms después de la última tecla
+// (antes re-renderizaba la tabla entera en CADA tecla → se sentía pesado en móvil).
+let _rCliDeb=null;
+function rCliBuscar(){ if(_rCliDeb)clearTimeout(_rCliDeb); _rCliDeb=setTimeout(()=>{_rCliDeb=null;rCli();},220); }
 function rCli(){
   llenarFiltroAgentes('fAgenteCli');
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
@@ -5482,7 +5486,10 @@ function abrirAbono(cid){
   // BLINDADO: cargar bancos en el select cuando se abre el modal
   if(typeof window.llenarSelectBancosCobros==='function')window.llenarSelectBancosCobros();
   document.getElementById('abonoI').innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Póliza: <span style="color:var(--c4)">${c.numero_poliza||'—'}</span> · Pendiente: <span style="color:var(--c3);font-weight:700">${fmt(pend(c))}</span></div>`;
-  document.getElementById('aMnt').value='';document.getElementById('aRef').value='';
+  // Pre-llena el monto con lo que el cliente debe (cobro "todo" en 1 toque; editable para abonos parciales)
+  const _pndAbo=pend(c);const _aMntEl=document.getElementById('aMnt');
+  _aMntEl.value=_pndAbo>0?(window.nxMoney?window.nxMoney.format(String(_pndAbo)):_pndAbo):'';
+  document.getElementById('aRef').value='';
   // Llenar selector de agente que cobró — preselecciona el agente del cliente si tiene
   if(document.getElementById('aAgente'))rAgtSel('aAgente',c.agente_id||'');
   const rd=document.getElementById('reciboWAbtn');if(rd)rd.style.display='none';

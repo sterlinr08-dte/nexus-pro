@@ -13449,10 +13449,13 @@
     _recNum = (opts.reciboNum != null && opts.reciboNum !== '') ? Number(opts.reciboNum) : null;
     _recAnio = (opts.reciboAnio != null && opts.reciboAnio !== '') ? Number(opts.reciboAnio) : (_recNum != null ? anioDe(opts.fecha) : null);
     (opts.meses || []).forEach(m => { const k = m.anio + '-' + m.mes; _recSel[k] = true; if (m.monto != null) _recMesMonto[k] = Number(m.monto); });
-    // Preselección automática (solo si no venían meses guardados)
+    // Preselección automática (solo si no venían meses guardados).
+    // Por defecto marca los meses PENDIENTES (o el mes actual si no hay ninguno),
+    // así el recibo abre listo y no hay que tocar mes por mes.
     if (!(opts.meses && opts.meses.length)) {
-      if (opts.preselect === 'pend') { mesesPendientesDe(c).forEach(o => { _recSel[o.anio + '-' + o.mes] = true; }); }
-      if (opts.preselect === 'actual' || (opts.preselect === 'pend' && !Object.keys(_recSel).length)) { const dn = new Date(); _recSel[dn.getFullYear() + '-' + (dn.getMonth() + 1)] = true; }
+      const modo = opts.preselect || 'pend';
+      if (modo === 'pend') { mesesPendientesDe(c).forEach(o => { _recSel[o.anio + '-' + o.mes] = true; }); }
+      if (modo === 'actual' || (modo === 'pend' && !Object.keys(_recSel).length)) { const dn = new Date(); _recSel[dn.getFullYear() + '-' + (dn.getMonth() + 1)] = true; }
     }
     const m = Number(opts.monto) || 0;
     const metodo = opts.metodo || 'Efectivo';
