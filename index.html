@@ -3193,7 +3193,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='37.2';
+const APP_VERSION='37.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4306,7 +4306,30 @@ function reconciliarDeudasClientes(){
     }
   }catch(e){}
 }
-let _asientosCargados=false,_asientosCargando=null;
+// ── Auto-reconciliación del PAGADO: clientes.pagado debe = suma de sus cobros
+// (abonos no anulados). Si un cobro entró por fuera del flujo normal (importación,
+// ajuste a mano) y no sumó al pagado, el pendiente sale inflado. Aquí lo cuadramos
+// SOLO cuando es un hueco claro y NO genera sobrepago (suma de cobros <= deuda):
+// los que pagaron MÁS que su deuda (deuda anterior / adelanto) se dejan intactos
+// para revisión manual. Best-effort, en segundo plano; nunca baja el pagado.
+async function reconciliarPagosClientes(){
+  try{
+    if(!Array.isArray(ST.clientes)||!ST.clientes.length)return;
+    const abonos=await API.get('abonos','select=cliente_id,monto,estado')||[];
+    const sum={};
+    abonos.forEach(a=>{const e=String(a.estado||'').toUpperCase();if(e==='ANULADO'||e==='ELIMINADO'||e==='INACTIVO')return;sum[a.cliente_id]=(sum[a.cliente_id]||0)+(Number(a.monto)||0);});
+    const arreglar=[];
+    ST.clientes.forEach(c=>{
+      const sa=sum[c.id]||0,pg=Number(c.pagado||0),dt=Number(c.deuda_total||0);
+      if(sa>pg+0.5 && sa<=dt+0.5){c.pagado=sa;arreglar.push(c.id);}
+    });
+    if(arreglar.length){
+      arreglar.forEach(id=>{const c=ST.clientes.find(x=>x.id===id);if(c){try{API.patch('clientes',`id=eq.${id}`,{pagado:c.pagado}).catch(()=>{});}catch(e){}}});
+      try{logAudit('PAGADO_RECONCILIADO',`${arreglar.length} cliente(s) tenían cobros sin sumar al pagado — cuadrado automáticamente`,'Cobros');}catch(e){}
+      try{if(typeof rDash==='function')rDash();}catch(e){}
+    }
+  }catch(e){}
+}
 // Carga DIFERIDA de asientos (contabilidad): es la tabla más pesada y que más
 // crece, pero la Contabilidad NO es la pantalla de inicio. Por eso NO bloquea el
 // arranque: se trae en segundo plano y al terminar recalcula los saldos. Las
@@ -4339,6 +4362,7 @@ async function cargarDatosNucleo(){
   ST.asientos=ST.asientos||[]; // se llena en segundo plano (cargarAsientosBG)
   try{reconciliarDeudasClientes();}catch(_){}
   cargarAsientosBG(); // sin await: el arranque no espera por la contabilidad
+  reconciliarPagosClientes(); // sin await: cuadra el pagado con los cobros en segundo plano
   // Cargar config
   (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});
   actualizarCFG();
