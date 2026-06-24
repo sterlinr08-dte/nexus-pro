@@ -9688,13 +9688,20 @@
 
     // Cobros aplicados a cada factura (para descontar lo ya pagado)
     let pagadoPorFactura = {};
+    // Pagos LIGADOS a alguna factura, sumados por cliente: sirve para saber cuánto
+    // del "pagado" del cliente ya está atribuido y cuánto es crédito "flotante".
+    let linkedPaidByCli = {};
+    const facCliente = {};
+    facturas.forEach(f => { facCliente[f.id] = String(f.cliente_id || ''); });
     try {
       const abonos = await getAPI().get('abonos', 'select=factura_id,monto,estado') || [];
       abonos.forEach(a => {
         if (!a.factura_id) return;
         const est = String(a.estado || 'ACTIVO').toUpperCase();
         if (est === 'ANULADO' || est === 'ELIMINADO' || est === 'INACTIVO') return;
-        pagadoPorFactura[a.factura_id] = (pagadoPorFactura[a.factura_id] || 0) + Number(a.monto || 0);
+        const m = Number(a.monto || 0);
+        pagadoPorFactura[a.factura_id] = (pagadoPorFactura[a.factura_id] || 0) + m;
+        const cid = facCliente[a.factura_id]; if (cid) linkedPaidByCli[cid] = (linkedPaidByCli[cid] || 0) + m;
       });
     } catch (e) { console.warn('No se pudieron cargar abonos:', e); }
 
@@ -9721,7 +9728,27 @@
       porCliente[cid].periodos.push({ label: periodoLabel(f), num: periodoNum(f), monto: pendienteDe(f) });
     });
 
-    const lista = Object.values(porCliente).sort((a, b) => b.total - a.total);
+    // ── Descontar el CRÉDITO FLOTANTE del cliente ────────────────────────────
+    // En el seguro, muchos cobros bajan clientes.pagado SIN ligarse a una factura
+    // (abono con factura_id nulo). El cálculo por factura solo veía los pagos
+    // ligados, así que mostraba la factura COMPLETA aunque ya estuviera casi
+    // pagada (ej. María de Lourdes: 3.500 en vez de 200). Aquí tomamos lo que el
+    // cliente pagó y aún NO está atribuido a ninguna factura, y lo aplicamos a sus
+    // meses atrasados del más viejo al más nuevo (igual que cobra el sistema).
+    Object.values(porCliente).forEach(x => {
+      const cli = x.cli || {};
+      let credito = Math.max(0, Number(cli.pagado || 0) - (linkedPaidByCli[String(cli.id || '')] || 0));
+      if (credito > 0) {
+        x.periodos.sort((a, b) => a.num - b.num).forEach(p => {
+          const baja = Math.min(p.monto, credito);
+          p.monto -= baja; credito -= baja;
+        });
+        x.periodos = x.periodos.filter(p => p.monto > 0.009);
+        x.total = x.periodos.reduce((s, p) => s + p.monto, 0);
+      }
+    });
+
+    const lista = Object.values(porCliente).filter(x => x.total > 0.009).sort((a, b) => b.total - a.total);
     const totalGeneral = lista.reduce((s, x) => s + x.total, 0);
 
     renderPendPanel(inner, lista, totalGeneral);
