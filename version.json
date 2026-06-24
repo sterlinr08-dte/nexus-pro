@@ -1,7 +1,8 @@
 {
-  "version": "37.6",
+  "version": "37.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Facturas (movil): se quito la 'Prima' que salia repetida en la tarjeta. Ese espacio ahora muestra, apiladas, la 'Deuda mes anterior' y la 'Deuda antes del sistema', para ver de un vistazo lo que el cliente arrastra. El monto del mes sigue a la derecha en 'Mes actual'.",
     "Facturas: la etiqueta 'Falta pagar (este mes)' ahora dice 'Mes actual' (mas corta y clara).",
     "ARREGLADO (importante · deuda anterior contada dos veces): cuando un cliente debía VARIOS meses, la factura del mes nuevo se 'tragaba' la deuda del mes anterior en su total, así que al ver la lista esa deuda vieja se contaba DOBLE (ej. GEU: mayo 12.000 + junio que mostraba 24.000 = parecía 36.000, cuando solo debe 24.000). Ahora cada mes cuenta SU propia prima y la deuda anterior se muestra como un renglón aparte ('ya contada en su mes') que NO se vuelve a sumar. El 'Por cobrar', la lista de Facturas y el panel de Pendientes ahora cuadran con lo que el cliente debe de verdad. Verificado: los 101 clientes con facturas cuadran. La factura impresa/PDF del cliente NO cambia y no se tocó ningún dato guardado. (Los clientes de un solo mes se ven igual que antes.)",
     "ARREGLADO (URGENTE): la versión anterior (37.3) tenía un error que impedía cargar los datos ('Can't find variable: _asientosCargados') por una línea que se borró sin querer. Quedó corregido. Si te salió el aviso de error al abrir, actualiza y entra normal.",

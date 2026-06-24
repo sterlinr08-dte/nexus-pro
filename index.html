@@ -3193,7 +3193,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='37.6';
+const APP_VERSION='37.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5239,9 +5239,8 @@ function rFact(){
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:11px 0;padding:9px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
-        <div>${L('Prima')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_base)}</div></div>
         ${f.prima_deps>0?`<div>${L('Dependientes')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_deps)}</div></div>`:''}
-        ${f.deuda_ant>0?`<div>${L('Deuda anterior (aparte)')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div><div style="font-size:7.5px;color:#94a3b8">ya contada en su mes</div></div>`:''}
+        ${(f.deuda_ant>0||Number(cli?.deuda_anterior||0)>0)?`<div style="display:flex;flex-direction:column;gap:5px">${f.deuda_ant>0?`<div>${L('Deuda mes anterior')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}${Number(cli?.deuda_anterior||0)>0?`<div>${L('Deuda antes del sistema')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(cli.deuda_anterior)}</div></div>`:''}</div>`:''}
         ${(()=>{const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);const sal=saldoDe(f);const pg=prima-sal;return pg>0.009?`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(sal)}</div><div style="font-size:8.5px;color:#475569;margin-top:1px">Prima ${fmt(prima)} · abonado ${fmt(pg)}</div></div>`:`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(prima)}</div></div>`;})()}
       </div>
       ${anul?'':`<button class="fCobrar" onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:12px;padding:8px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:6px"><i class="ti ti-wallet" style="color:#fff!important;font-size:15px"></i> COBRAR</button>`}
