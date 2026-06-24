@@ -3193,7 +3193,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='37.3';
+const APP_VERSION='37.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4330,6 +4330,7 @@ async function reconciliarPagosClientes(){
     }
   }catch(e){}
 }
+let _asientosCargados=false,_asientosCargando=null;
 // Carga DIFERIDA de asientos (contabilidad): es la tabla más pesada y que más
 // crece, pero la Contabilidad NO es la pantalla de inicio. Por eso NO bloquea el
 // arranque: se trae en segundo plano y al terminar recalcula los saldos. Las
