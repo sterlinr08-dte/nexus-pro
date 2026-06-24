@@ -1,7 +1,9 @@
 {
-  "version": "36.8",
+  "version": "36.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (importante · WhatsApp de clientes): los botones de 'Abrir WhatsApp' y los envíos (recordatorios, recibos) a veces no abrían el chat correcto porque el número se guardaba de formas distintas (a veces con el '1' de país, a veces sin él). Ahora el sistema entiende el número en cualquier formato y SIEMPRE arma bien el enlace (le pone el '1' de RD si hace falta). Además, al guardar el cliente, el WhatsApp queda normalizado. Si tenías clientes con el número 'a medias', ahora sus enlaces funcionan igual.",
+    "NUEVO (Clientes · fechas de póliza): si por error pones la fecha de FIN de la póliza ANTES que la de inicio, el sistema te avisa y no deja guardar hasta corregirlo. Evita pólizas con fechas al revés.",
     "MEJORA (la app abre más rápido): al entrar, el sistema ya NO espera por la CONTABILIDAD (la tabla de asientos, que es la más pesada y la que más crece) para mostrarte la pantalla. Ahora carga primero lo del día a día (clientes, facturas, cobros) y abre de una vez; la contabilidad se carga sola por detrás en un segundo. Si entras a Mayor/Asientos/Balance/Estado de resultados antes de que termine, se completan al instante. No cambia ningún número ni cálculo.",
     "MEJORA (Historial de pagos más liviano): al abrir 'Historial' de cobros ahora muestra el MES EN CURSO por defecto (antes bajaba TODOS los pagos del sistema de golpe y se ponía lento con miles). Puedes cambiar el período arriba (o elegir 'Todos los pagos') cuando lo necesites. Trae solo lo del período elegido, así carga mucho más rápido.",
     "NUEVO (Cobros — más rápido de cobrar): al tocar COBRAR, el monto ya viene ESCRITO con lo que el cliente debe (su pendiente). Si te lo van a pagar completo, solo confirmas; y si es un abono parcial, lo borras y pones la cantidad. Un toque menos en lo que más se hace todos los días.",

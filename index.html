@@ -3192,7 +3192,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='36.8';
+const APP_VERSION='36.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3657,12 +3657,12 @@ function verCliente(id){
       <div class="cs-section-ttl">Información personal</div>
       <div style="font-size:12px;line-height:1.8">
         <div><strong>Cédula:</strong> ${c.cedula||'—'}</div>
-        <div><strong>WhatsApp:</strong> ${c.wa||'—'} ${c.wa?`<a href="https://wa.me/1${c.wa}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a>`:''}</div>
+        <div><strong>WhatsApp:</strong> ${c.wa||'—'} ${nxWa(c.wa)?`<a href="https://wa.me/${nxWa(c.wa)}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a>`:''}</div>
         <div><strong>Teléfono:</strong> ${c.tel||'—'}</div>
         <div><strong>Email:</strong> ${c.email||'—'}</div>
         <div><strong>Dirección:</strong> ${c.dir||'—'}</div>
         ${c.referencia?`<div><strong>Apodo:</strong> ${c.referencia}</div>`:''}
-        ${c.referencia_wa?`<div><strong>📲 WhatsApp ref:</strong> ${c.referencia_wa} <a href="https://wa.me/1${c.referencia_wa}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a></div>`:''}
+        ${c.referencia_wa?`<div><strong>📲 WhatsApp ref:</strong> ${c.referencia_wa} ${nxWa(c.referencia_wa)?`<a href="https://wa.me/${nxWa(c.referencia_wa)}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a>`:''}</div>`:''}
       </div>
     </div>
     
@@ -5278,7 +5278,7 @@ async function enviarWA(fid){
   if(!c?.wa){toast('warn','Sin WhatsApp',c?.nom||'');return;}
   const deudaStr=f.deuda_ant>0?`*Deuda anterior:* RD$ ${fmtN(f.deuda_ant)}`:'';
   const msg=autoCfg.tpl.replace('{{nombre}}',c.nom).replace('{{plan}}',c.plan).replace('{{mes}}',MESES[f.mes-1]+' '+f.anio).replace('{{prima}}',fmtN(f.prima_base+f.prima_deps)).replace('{{deuda}}',deudaStr).replace('{{total}}',fmtN(f.total)).replace('{{poliza}}',c.numero_poliza||'—').replace('{{vence}}',c.fecha_fin||'—').replace('{{empresa}}',CFG.empNom);
-  window.open(`https://wa.me/${c.wa}?text=${encodeURIComponent(msg)}`,'_blank');
+  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
   await API.patch('facturas',`id=eq.${fid}`,{wa_sent:true});f.wa_sent=true;
   toast('ok','WhatsApp abierto',c.nom);rFact();
 }
@@ -5289,7 +5289,7 @@ function enviarWAPoliza(cid){
   const fin=c.fecha_fin?new Date(c.fecha_fin):null;
   const dias=fin?Math.ceil((fin-new Date())/86400000):null;
   const msg=`Estimado/a *${c.nom}*,\n\nLe informamos que su póliza de seguro de salud *${c.numero_poliza||''}* ${dias!==null&&dias<0?'ha *vencido*':`*vence en ${dias} días* (${c.fecha_fin})`}.\n\n*Plan:* ${c.plan}\n*Estado:* ${ep.lbl}\n\nPor favor contáctenos para renovar.\n\n_${CFG.empNom}_`;
-  window.open(`https://wa.me/${c.wa}?text=${encodeURIComponent(msg)}`,'_blank');
+  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
   toast('ok','WA de vencimiento enviado',c.nom);
 }
 
@@ -6126,10 +6126,18 @@ function actualizarProgreso(){
     sel.value='EN_PROCESO';
   }
 }
+// Normaliza un número de WhatsApp a formato internacional RD listo para wa.me:
+// quita todo lo que no sea dígito; si trae 10 dígitos (sin código de país) le
+// antepone el "1" de RD; devuelve '' si quedó demasiado corto para ser válido.
+// Así TODOS los enlaces wa.me funcionan igual, sea el número viejo (10) o nuevo (11).
+function nxWa(num){let d=String(num||'').replace(/\D/g,'');if(d.length===10)d='1'+d;return d.length>=11?d:'';}
 async function guardarCli(){
   // Nombre del cliente (obligatorio)
   const nom=document.getElementById('cNom').value.trim();
   if(!nom){toast('err','Campo requerido','Ingrese el nombre del cliente');return;}
+  // ── Validar coherencia de fechas de póliza ──
+  const _fi=document.getElementById('cFecIni')?.value||'',_ff=document.getElementById('cFecFin')?.value||'';
+  if(_fi&&_ff&&_ff<_fi){toast('err','Fechas invertidas','La fecha de fin de póliza no puede ser anterior a la de inicio');return;}
   // ── Validar cédula duplicada (activos e inhabilitados) ──
   const cedula=document.getElementById('cCed').value.trim();
   if(cedula){
@@ -6157,7 +6165,7 @@ async function guardarCli(){
     precioT=(vt!==''&&vt!=null)?(window.nxMoney?window.nxMoney.parse(vt):parseFloat(vt)):null;
     precioD=(vd!==''&&vd!=null)?(window.nxMoney?window.nxMoney.parse(vd):parseFloat(vd)):null;
   }
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:document.getElementById('cWA').value.replace(/\D/g,''),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:document.getElementById('cRefWa')?.value?.replace(/\D/g,'')||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
+  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:(nxWa(document.getElementById('cWA').value)||document.getElementById('cWA').value.replace(/\D/g,'')),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:(nxWa(document.getElementById('cRefWa')?.value)||document.getElementById('cRefWa')?.value?.replace(/\D/g,''))||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
   // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
   datos.nom=mayus(datos.nom);
   datos.dir=mayus(datos.dir);
@@ -7990,7 +7998,7 @@ Contáctenos para renovar su cobertura.
 
 _${CFG.empNom}_`;
     }
-    window.open(`https://wa.me/${c.wa}?text=${encodeURIComponent(msg)}`,'_blank');
+    window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
     await new Promise(r=>setTimeout(r,800));n++;
   }
   logAudit('WA_MASIVO',`${n} mensajes enviados · tipo: ${_waTipo}`);
@@ -8015,7 +8023,7 @@ function enviarReciboWA(){
 Gracias por su pago.
 
 _${CFG.empNom}_`;
-  window.open(`https://wa.me/${c.wa}?text=${encodeURIComponent(msg)}`,'_blank');
+  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
   logAudit('RECIBO_WA',`Recibo enviado a ${c.nom} · RD$ ${fmtN(monto)}`);
   toast('ok','Recibo enviado por WhatsApp',c.nom);
 }
