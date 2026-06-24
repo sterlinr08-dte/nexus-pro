@@ -1096,6 +1096,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
               <select id="fAgenteCli" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los agentes</option></select>
+              <button id="btnLimpiarCli" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="height:30px;padding:0 10px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx2);font-size:10px;cursor:pointer;display:none;align-items:center;gap:4px"><i class="ti ti-eraser"></i> Limpiar</button>
             </div>
             <div class="tw"><table>
               <thead><tr><th style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
@@ -1792,7 +1793,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     </div>
     <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
     <div style="display:flex;gap:6px;margin-bottom:7px">
-      <input type="text" id="dN" placeholder="Nombre dependiente" style="flex:1;font-size:10px;padding:6px 9px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);outline:none"/>
+      <input type="text" id="dN" placeholder="Nombre dependiente" onkeydown="if(event.key==='Enter'){event.preventDefault();addDep();}" style="flex:1;font-size:10px;padding:6px 9px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);outline:none"/>
       <select id="dR" style="width:105px;font-size:10px;padding:6px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option>Cónyuge</option><option>Hijo/a</option><option>Padre/Madre</option><option>Otro</option></select>
       <button class="btn bsm bc1" onclick="addDep()"><i class="ti ti-plus"></i></button>
     </div>
@@ -3192,7 +3193,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='36.9';
+const APP_VERSION='37.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -4905,12 +4906,19 @@ function pintarFlechasCli(){
 // (antes re-renderizaba la tabla entera en CADA tecla → se sentía pesado en móvil).
 let _rCliDeb=null;
 function rCliBuscar(){ if(_rCliDeb)clearTimeout(_rCliDeb); _rCliDeb=setTimeout(()=>{_rCliDeb=null;rCli();},220); }
+// Limpia búsqueda + filtros de Clientes (los filtros se "pegaban" al navegar)
+function limpiarFiltrosCli(){
+  ['cliQ','fPlan','fEst','fAgenteCli'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  rCli();
+}
 function rCli(){
   llenarFiltroAgentes('fAgenteCli');
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
   const fe=document.getElementById('fEst')?.value||'';
   const fa=document.getElementById('fAgenteCli')?.value||'';
+  // Mostrar el botón "Limpiar" solo si hay algún filtro/búsqueda activo
+  const _bl=document.getElementById('btnLimpiarCli');if(_bl)_bl.style.display=(q||fp||fe||fa)?'inline-flex':'none';
   // Si hay búsqueda activa, mostrar todos los resultados (sin límite de 50)
   if(q&&!_cliVerTodos)_cliVerTodos=true;
   // Contar activos, inhabilitados y VIP
@@ -6308,7 +6316,7 @@ function rAgtSelCli(val){
   const target=val||agenteDeSesion()||ST.agentes[0].id;
   sel.innerHTML=ST.agentes.map(a=>`<option value="${a.id}"${String(a.id)===String(target)?' selected':''}>${a.nom}</option>`).join('');
 }
-function addDep(){const n=document.getElementById('dN').value.trim();if(!n)return;tempDeps.push({nom:n,rel:document.getElementById('dR').value,id:Date.now()});document.getElementById('dN').value='';rDepLM();}
+function addDep(){const n=document.getElementById('dN').value.trim();if(!n)return;tempDeps.push({nom:n,rel:document.getElementById('dR').value,id:Date.now()});const dn=document.getElementById('dN');dn.value='';rDepLM();try{dn.focus();}catch(e){}}
 function rDepLM(){document.getElementById('depLM').innerHTML=tempDeps.map(d=>`<div class="dep-c">${d.nom} <span style="opacity:.5">(${d.rel})</span><button onclick="rmDep(${d.id})">×</button></div>`).join('');}
 function rmDep(id){tempDeps=tempDeps.filter(d=>d.id!==id);rDepLM();}
 
