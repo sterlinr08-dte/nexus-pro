@@ -676,7 +676,9 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
       ? 'Tu número quedó <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b>. Envía tu comprobante de pago por WhatsApp para confirmarlo; si no, se liberará.'
       : "Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
     var waTxt=encodeURIComponent('🎟️ '+(R.premio||R.biz||'Rifa')+'\nMis números: '+doneNums.join(", ")+(link?'\nMi boleto: '+link:''));
-    var wa=link?'<a class="wabtn mg-shine" href="https://api.whatsapp.com/send?text='+waTxt+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
+    var bn=onlyD(F.tel||""); if(bn.length===10)bn="1"+bn;
+    var waHref='https://api.whatsapp.com/send?'+(bn.length>=8?('phone='+bn+'&'):'')+'text='+waTxt;
+    var wa=link?'<a class="wabtn mg-shine" href="'+waHref+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
     return '<div class="body"><div class="ok"><div class="okIc"><div class="ic">✓</div><span class="sp s1">✦</span><span class="sp s2">✦</span><span class="sp s3">✦</span><span class="sp s4">✦</span><span class="sp s5">✦</span></div>'+
       '<h2>¡Listo! '+doneNums.length+' '+(doneNums.length===1?'ticket apartado':'tickets apartados')+'</h2>'+
       '<div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
