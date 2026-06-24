@@ -9705,7 +9705,9 @@
       });
     } catch (e) { console.warn('No se pudieron cargar abonos:', e); }
 
-    const pendienteDe = f => Math.max(0, Number(f.total || 0) - (pagadoPorFactura[f.id] || 0));
+    // Base = PRIMA DEL MES (no el total, que arrastra la deuda anterior y la
+    // contaría dos veces; la deuda vieja ya está en la factura del mes viejo).
+    const pendienteDe = f => Math.max(0, (Number(f.prima_base || 0) + Number(f.prima_deps || 0)) - (pagadoPorFactura[f.id] || 0));
 
     // "Mes actual" = mes de calendario de hoy. Todo mes anterior a hoy que siga
     // pendiente cuenta como atraso de meses anteriores.
