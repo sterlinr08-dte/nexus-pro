@@ -1,7 +1,8 @@
 {
-  "version": "37.8",
+  "version": "37.9",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Rifas): desde la ficha de un boleto (en Pendientes o Confirmados) ahora puedes CAMBIARLE EL NÚMERO si el cliente no quiere ese. Botón 'Cambiar número' (solo administración): escribes el nuevo número o le das 'A la suerte' y toma uno libre; conserva el comprador, el pago y el estado, solo cambia el número. Valida que esté en rango y que no esté ocupado.",
     "NUEVO (Rifas): los 4 cuadros del panel de la rifa ahora se TOCAN y abren su ventana. 'Pend.' abre directo los boletos por confirmar (con un toque ves el voucher y aprobas el pago, sin buscar entre miles de numeros). 'Vendidos' abre todos los boletos, 'Confirm.' los ya verificados, y 'Recaudado' el detalle por cuenta de banco. Cada cuadro tiene una flechita arriba para indicar que es tocable.",
     "Facturas (movil): se quito la 'Prima' que salia repetida en la tarjeta. Ese espacio ahora muestra, apiladas, la 'Deuda mes anterior' y la 'Deuda antes del sistema', para ver de un vistazo lo que el cliente arrastra. El monto del mes sigue a la derecha en 'Mes actual'.",
     "Facturas: la etiqueta 'Falta pagar (este mes)' ahora dice 'Mes actual' (mas corta y clara).",

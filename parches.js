@@ -18248,10 +18248,58 @@ try {
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center" onclick="window.nxRifaEditarBoleto(\'' + b.id + '\')"><i class="ti ti-edit"></i> Editar</button>' +
       (b.voucher ? '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxVerVoucher(\'' + b.id + '\')"><i class="ti ti-receipt"></i> Voucher</button>' : '') +
       (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
+      (esAdmin() ? '<button class="btn bsm bghost" type="button" style="flex:1;min-width:120px;justify-content:center;color:#4338ca" onclick="window.nxRifaCambiarNum(\'' + b.id + '\')"><i class="ti ti-arrows-exchange"></i> Cambiar número</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
     document.body.appendChild(ov);
   }
+
+  // ── CAMBIAR NÚMERO DEL BOLETO (solo administración) ──
+  window.nxRifaCambiarNum = function (id) {
+    if (!esAdmin()) { toast('err', 'Solo administración', 'Esta opción es solo para el administrador'); return; }
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
+    var dig = Number(rg.cantidad_digitos || 4), total = Number(rg.cantidad_numeros || 0);
+    cerrarModal('nxRbGest'); cerrarModal('nxCambNum');
+    var ov = document.createElement('div'); ov.id = 'nxCambNum'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:360px"><div class="mt"><span><i class="ti ti-arrows-exchange"></i> Cambiar número</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxCambNum\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:12.5px;color:#475569;padding:2px 2px 4px">Si el cliente no quiere ese número, asígnale otro <b>disponible</b>. Conserva el comprador y el pago; solo cambia el número.</div>' +
+      '<div style="font-size:12.5px;color:#475569;padding:2px 2px 10px">Boleto actual: <b style="font-family:ui-monospace,monospace;color:#4338ca">' + esc(String(b.numero)) + '</b> · ' + esc(b.comprador_nombre || '—') + '</div>' +
+      '<div class="fr"><label>Nuevo número (0 a ' + (total ? total - 1 : 0) + ')</label><input id="cnNum" inputmode="numeric" maxlength="' + dig + '" placeholder="' + ('0').repeat(dig) + '" value="" style="font-family:ui-monospace,monospace;letter-spacing:2px"></div>' +
+      '<div style="margin-top:4px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaCambNumSuerte(' + dig + ',' + total + ')"><i class="ti ti-dice-5"></i> A la suerte (uno libre)</button></div>' +
+      '<div class="fe" style="margin-top:12px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxCambNum\').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxRifaCambNumGuardar(\'' + b.id + '\')"><i class="ti ti-check"></i> Cambiar</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxRifaCambNumSuerte = function (dig, total) {
+    var avail = [];
+    for (var i = 0; i < total; i++) { var s = String(i).padStart(dig, '0'); if (!_bolMap[s]) avail.push(s); }
+    if (!avail.length) { toast('err', 'Sin disponibles', 'No quedan números libres'); return; }
+    var el = document.getElementById('cnNum'); if (el) el.value = avail[Math.floor(Math.random() * avail.length)];
+  };
+  window.nxRifaCambNumGuardar = async function (id) {
+    if (!esAdmin()) { toast('err', 'Solo administración', ''); return; }
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
+    var dig = Number(rg.cantidad_digitos || 4), total = Number(rg.cantidad_numeros || 0);
+    var raw = (val('cnNum') || '').trim();
+    if (!raw) { toast('err', 'Escribe el número'); return; }
+    if (!/^\d+$/.test(raw)) { toast('err', 'Solo números'); return; }
+    var num = parseInt(raw, 10);
+    if (total && (num < 0 || num >= total)) { toast('err', 'Fuera de rango', 'Debe ser de 0 a ' + (total - 1)); return; }
+    var padded = String(num).padStart(dig, '0');
+    if (padded === String(b.numero)) { toast('info', 'Es el mismo número', ''); return; }
+    var ocup = _bolMap[padded];
+    if (ocup && String(ocup.id) !== String(id)) { toast('err', 'Número ocupado', 'El ' + padded + ' ya lo tiene ' + (ocup.comprador_nombre || 'otro cliente')); return; }
+    try {
+      await getAPI().patch('rifa_boletos', 'id=eq.' + id, { numero: padded });
+      toast('ok', 'Número cambiado', 'Ahora es el ' + padded);
+      cerrarModal('nxCambNum');
+      await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _bolMap[padded]; if (nb) gestBoleto(nb);
+    } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
 
   window.nxRifaEditarBoleto = function (id) {
     var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
