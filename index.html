@@ -3193,7 +3193,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='37.1';
+const APP_VERSION='37.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5147,6 +5147,19 @@ function genFacturasConfirm(){
   }
 }
 
+// Saldo REAL por factura. En el seguro los cobros bajan clientes.pagado y NO se
+// ligan a una factura puntual, así que una factura "Parcial" mostraba su total
+// completo (ej. mayo 3.500) en vez de lo que falta (200). Aquí repartimos el
+// pagado del cliente sobre sus facturas NO anuladas, de la más vieja a la más
+// nueva (igual que cobra el sistema), y devolvemos cuánto queda de cada una.
+function _saldoFacturasCliente(cid){
+  const facs=ST.facturas.filter(f=>String(f.cliente_id)===String(cid)&&f.estado!=='Anulada')
+    .sort((a,b)=>((a.periodo||'')<(b.periodo||'')?-1:(a.periodo||'')>(b.periodo||'')?1:0));
+  const cli=ST.clientes.find(c=>String(c.id)===String(cid));
+  let credito=Number(cli?.pagado||0);const m={};
+  facs.forEach(f=>{const tot=Number(f.total||0);const pay=Math.min(credito,tot);m[f.id]=Math.max(0,tot-pay);credito-=pay;});
+  return m;
+}
 function rFact(){
   llenarFiltroAgentes('fAgenteFact');
   const mes=parseInt(document.getElementById('fMes')?.value||new Date().getMonth()+1);
@@ -5169,7 +5182,10 @@ function rFact(){
   const tb=document.getElementById('tbFact');
   const rz=document.getElementById('factResumen');
   if(!lista.length){tb.innerHTML=`<div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar"'}</div>`;if(rz)rz.innerHTML='';pintarFlechasFact();return;}
-  const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+Number(f.total||0),0);
+  // Saldo real por factura (descuenta el pago del cliente no ligado a la factura)
+  const _saldoMemo={};
+  const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!_saldoMemo[cid])_saldoMemo[cid]=_saldoFacturasCliente(cid);const v=_saldoMemo[cid][f.id];return v!=null?v:Number(f.total||0);};
+  const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+saldoDe(f),0);
   if(rz)rz.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px">
       <div style="flex:1;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#6d28d9;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Facturas</div><div style="font-size:18px;font-weight:800;color:#1e3a8a">${lista.length}</div></div>
       <div style="flex:2;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#c2410c;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Por cobrar</div><div style="font-size:18px;font-weight:800;color:#9a3412">${fmt(porCobrar)}</div></div>
@@ -5199,7 +5215,7 @@ function rFact(){
         <div>${L('Prima')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_base)}</div></div>
         ${f.prima_deps>0?`<div>${L('Dependientes')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_deps)}</div></div>`:''}
         ${f.deuda_ant>0?`<div>${L('Deuda anterior')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}
-        <div style="margin-left:auto;text-align:right">${L('Total a pagar')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(f.total)}</div></div>
+        ${(()=>{const sal=saldoDe(f);const pg=Number(f.total||0)-sal;return pg>0.009?`<div style="margin-left:auto;text-align:right">${L('Falta pagar')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(sal)}</div><div style="font-size:8.5px;color:#475569;margin-top:1px">Factura ${fmt(f.total)} · abonado ${fmt(pg)}</div></div>`:`<div style="margin-left:auto;text-align:right">${L('Total a pagar')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(f.total)}</div></div>`;})()}
       </div>
       ${anul?'':`<button class="fCobrar" onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:12px;padding:8px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:6px"><i class="ti ti-wallet" style="color:#fff!important;font-size:15px"></i> COBRAR</button>`}
       <div class="fActs" style="display:grid;grid-template-columns:repeat(${nBtns},1fr);gap:5px">
