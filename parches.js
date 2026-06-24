@@ -18292,7 +18292,9 @@ try {
     var ocup = _bolMap[padded];
     if (ocup && String(ocup.id) !== String(id)) { toast('err', 'Número ocupado', 'El ' + padded + ' ya lo tiene ' + (ocup.comprador_nombre || 'otro cliente')); return; }
     try {
+      var antes = String(b.numero);
       await getAPI().patch('rifa_boletos', 'id=eq.' + id, { numero: padded });
+      if (typeof window.logAudit === 'function') window.logAudit('RIFA_CAMBIO_NUMERO', (rg.nombre || 'Rifa') + ': ' + antes + ' → ' + padded + ' · ' + (b.comprador_nombre || 's/n') + (b.comprador_telefono ? ' (' + b.comprador_telefono + ')' : ''), 'Rifas');
       toast('ok', 'Número cambiado', 'Ahora es el ' + padded);
       cerrarModal('nxCambNum');
       await cargarBoletos(_rifaSel);
