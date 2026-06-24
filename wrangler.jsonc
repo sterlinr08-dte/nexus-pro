@@ -1,10 +1,17 @@
 {
   // Despliegue de NEXUS PRO en Cloudflare (sitio estático = "assets").
   // No hay build: se sirve el repositorio tal cual (index.html, parches.js, sw.js, etc.).
+  //
+  // worker.js solo se ejecuta para /boleto.html (run_worker_first) y arma la
+  // vista previa (Open Graph) del boleto con banner + número para WhatsApp.
+  // Todo lo demás se sirve estático sin tocar al Worker.
   "name": "nexus-pro",
   "compatibility_date": "2025-06-01",
+  "main": "worker.js",
   "assets": {
     "directory": "./",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": ["/boleto.html"]
   }
 }
