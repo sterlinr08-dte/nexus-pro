@@ -676,11 +676,18 @@ taller) + **llave-puente** automática (SSO estilo Deluxe) → el staff nunca es
   tipo `rifa`, sin dominio (para que la llave-puente caiga directo en rifas y NO choque con el redirect
   del taller, que vive en la org `bayolcell` tipo externa). **id `6698a6b7-d469-471d-9714-6e4541fbb1c5`**.
   Logo/color PENDIENTES (los manda el dueño).
-- **PENDIENTE (el dueño manda los datos):** (1) logo + color → update a la org; (2) usuario del login →
-  crear la **llave-puente** (auth.users + auth.identities + profiles + `usuarios_sistema.organizacion_id`
-  = id de arriba, rol admin para que RLS rifa `mi_rol()='admin' AND organizacion_id=mi_organizacion()` le
-  aplique y vea SOLO sus rifas); (3) SSO config en la org (`auth_url`,`auth_key`,`email_dominio`) +
-  **botón "Rifas" en el repo del taller** (`bayolcell-taller`, base `vkhwdvjtowrhkhqavnvk`, sesión aparte).
+- **HECHO — Llave-puente (usuario `bayolcell`):** cuenta Auth creada y verificada (calcada de Francis):
+  `auth.users` (email `bayolcell@nexus-pro.local`, crypt, token-cols en `''`) + `auth.identities` +
+  `usuarios_sistema` (login `bayolcell`, rol admin, `organizacion_id` = org de arriba) + `profiles`
+  (rol admin, must_change_password=false). Login real (clave en poder del dueño, NO va al repo). Probado:
+  al entrar cae en modo solo-rifas y RLS lo limita a la org bayolcell-rifa. **Se puede probar YA en
+  `nexusprord.com`** con ese usuario (sin esperar el taller).
+- **PENDIENTE (el dueño manda los datos):** (1) logo + color → update a la org; (2) **botón "Rifas" +
+  SSO en el repo del taller** (`bayolcell-taller`, base `vkhwdvjtowrhkhqavnvk`, sesión aparte): el taller
+  hace POST a la auth de NEXUS PRO (`tnwsgcxurfyuszxsewsn.supabase.co`, anon key, email
+  `bayolcell@nexus-pro.local` + clave) y redirige a `nexusprord.com#access_token=...` (flujo implícito);
+  la app cae sola en Rifas por el modo solo-rifas. (La config SSO de la org `organizaciones` es para
+  bridge SALIENTE estilo Deluxe; aquí el bridge es ENTRANTE, vive en el taller, no requiere esos campos.)
 
 ---
 
