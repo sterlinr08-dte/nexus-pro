@@ -105,7 +105,7 @@ select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmln
 (function(){
   var FV="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/vendedor";
   var FR="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/rifa";
-  var BOLETO="https://nexusprord.com/boleto.html";
+  var BOLETO=location.origin+"/boleto.html";
   var app=document.getElementById("app");
   var CODE="", V=null, tab="vender";
   var selRifa=null, RB=null, sold={}, cart=[], qty=1, page=0, q="", PER=120, ctaSel=null, voucherData="";

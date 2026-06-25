@@ -336,7 +336,7 @@ body.rdark .msg,body.rdark .empty{color:#9aa3af}
 <script>
 (function(){
   var FUNC="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/rifa";
-  var BOLETO="https://nexusprord.com/boleto.html";
+  var BOLETO=location.origin+"/boleto.html";
   var app=document.getElementById("app");
   var id=new URLSearchParams(location.search).get("id")||"";
   var R=null, sold={}, page=0, q="", PER=120;

@@ -18419,7 +18419,7 @@ try {
   window.nxRifaLink = function () {
     var r = currentRifa(); if (!r) return;
     cerrarModal('nxLink');
-    var link = 'https://nexusprord.com/rifa.html?id=' + r.id;
+    var link = location.origin + '/rifa.html?id=' + r.id;
     var ov = document.createElement('div'); ov.id = 'nxLink'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-link"></i> Link público de compra</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxLink\').remove()"><i class="ti ti-x"></i></button></div>' +
@@ -18677,7 +18677,7 @@ try {
   window.nxVendLink = function (id) {
     var v = _vendedores.find(function (x) { return String(x.id) === String(id); }); if (!v || !v.codigo) { toast('err', 'Sin código'); return; }
     var cod = String(v.codigo).toUpperCase();
-    var url = 'https://nexusprord.com/vendedor.html?c=' + cod;
+    var url = location.origin + '/vendedor.html?c=' + cod;
     var txt = 'Hola ' + (v.nombre || '') + ', este es tu acceso de vendedor para las rifas.\n\nEntra aquí: ' + url + '\nTu código: ' + cod;
     if (navigator.share) { navigator.share({ title: 'Acceso de vendedor', text: txt }).catch(function () {}); }
     else if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(function () { toast('ok', 'Enlace copiado', cod); }, function () { toast('ok', 'Código ' + cod, url); }); }
@@ -18958,7 +18958,7 @@ try {
   // (iOS exige que navigator.share corra dentro del toque; si se genera después, no envía nada).
   var _bolFile = null, _bolTexto = '';
   var BOL_URL = 'https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/boleto';
-  var BOL_PAGE = 'https://nexusprord.com/boleto.html';
+  var BOL_PAGE = location.origin + '/boleto.html';
   function prepararBolFile() {
     _bolFile = null;
     var d = _bolActual; if (!d) return;
