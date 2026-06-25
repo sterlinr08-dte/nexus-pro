@@ -2602,6 +2602,37 @@ async function nxFinalizarLoginAuth(data,prof,user,recordar){
   try{logAudit('LOGIN_EXITOSO',`${user} (Auth) · ${new Date().toLocaleString('es-DO')}`,'Seguridad');}catch(e){}
   await iniciarApp();
 }
+// ── SSO ENTRANTE: recibir un "pase" (#access_token=...&refresh_token=...) y entrar ya logueado ──
+// Lo usa el puente del taller (ej. BayolCell) para abrir Rifas sin un segundo login.
+// Formato del hash = el mismo que arma este sistema para el SSO saliente.
+async function nxRecibirPaseSSO(){
+  try{
+    const h=window.location.hash||'';
+    const p=new URLSearchParams(h.replace(/^#/,''));
+    const at=p.get('access_token'), rt=p.get('refresh_token');
+    if(!at) throw new Error('sin token');
+    const ei=parseInt(p.get('expires_in')||'3600',10)||3600;
+    // Limpiar el hash de inmediato para NO dejar el token en la URL/historial.
+    try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+    const data={access_token:at,refresh_token:rt||'',expires_in:ei};
+    nxStoreAuth(data); // setea API.token = at
+    // ¿Quién es el usuario del pase? (con el token, su perfil y org)
+    const ru=await fetch(API.url+'/auth/v1/user',{headers:{apikey:API.key,Authorization:'Bearer '+at}});
+    if(!ru.ok) throw new Error('pase inválido o vencido');
+    const u=await ru.json();
+    const profs=await API.get('profiles',`id=eq.${u.id}&select=*`);
+    const prof=profs&&profs[0];
+    if(!prof) throw new Error('perfil no configurado');
+    await nxFinalizarLoginAuth(data,prof,(prof.login||u.email||'usuario'),false);
+    return true;
+  }catch(e){
+    try{ nxClearAuth(); }catch(_){}
+    // Si el pase falla, caer al login normal (sin dejar la pantalla en blanco).
+    try{ const l=document.getElementById('loginScreen'); if(l)l.style.display='flex'; const a=document.getElementById('app'); if(a)a.style.display='none'; }catch(_){}
+    try{ toast('err','No se pudo entrar','El acceso no es válido. Inicia sesión normalmente.'); }catch(_){}
+    return false;
+  }
+}
 async function nxGuardarNuevaPwd(){
   const err=document.getElementById('pwChangeErr');
   const show=(m)=>{if(err){err.textContent=m;err.style.display='block';}};
@@ -3194,7 +3225,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='38.1';
+const APP_VERSION='38.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -7867,6 +7898,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     API.url = url; API.key = key;
     localStorage.setItem('nx_url', url);
     localStorage.setItem('nx_key', key);
+  }
+
+  // ── Pase SSO entrante (#access_token=...): entrar ya logueado, sin pantalla de login ──
+  if((window.location.hash||'').indexOf('access_token=')>=0 && url && key){
+    try{ const l=document.getElementById('loginScreen'); if(l)l.style.display='none'; const st=document.getElementById('setupScreen'); if(st)st.style.display='none'; }catch(e){}
+    nxRecibirPaseSSO();
+    return;
   }
 
   // Verificar sesión activa

@@ -1,7 +1,8 @@
 {
-  "version": "38.1",
+  "version": "38.2",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Interno (Multiempresa/SSO): NEXUS PRO ahora puede 'recibir un pase' (entrar ya logueado desde otro sistema vía token en la URL), sin segundo login. Lo usará el botón 'Rifas' del taller de BayolCell. El token se limpia de la URL al instante. No cambia nada para los usuarios actuales.",
     "Interno (Multiempresa): preparado el modo 'solo Rifas' para organizaciones de tipo rifa (ej. BayolCell). Esas entran directo al módulo de Rifas, con su marca, sin ver seguros ni POS. No cambia nada para los usuarios actuales.",
     "NUEVO (Rifas): el cambio de número de un boleto ahora queda en AUDITORÍA (quién, de qué número a cuál, el comprador y la rifa).",
     "NUEVO (Rifas): desde la ficha de un boleto (en Pendientes o Confirmados) ahora puedes CAMBIARLE EL NÚMERO si el cliente no quiere ese. Botón 'Cambiar número' (solo administración): escribes el nuevo número o le das 'A la suerte' y toma uno libre; conserva el comprador, el pago y el estado, solo cambia el número. Valida que esté en rango y que no esté ocupado.",
