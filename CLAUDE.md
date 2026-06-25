@@ -697,6 +697,19 @@ taller) + **llave-puente** automática (SSO estilo Deluxe) → el staff nunca es
   La app cae sola en Rifas (modo solo-rifa). + logo/color de la org (cosmético). (La config SSO de
   `organizaciones` es para bridge SALIENTE estilo Deluxe; aquí el bridge es ENTRANTE, vive en el taller.)
 
+### Rifa PRESENCIAL de BayolCell (recepción genera boleto) — motor HECHO (chat `RvxXb`)
+Modelo: la rifa es SOLO para clientes que compran/reparan en la tienda (presencial). **Sin link, sin
+página pública, sin "por confirmar".** La RECEPCIÓN genera el boleto con nombre + teléfono → número al
+azar → boleto **confirmado** (precio 0, es de regalo), origen `'taller'`. Una sola rifa activa.
+- **HECHO — motor `recepcion-boleto`** (Edge Function en base taller `vkhwdvjtowrhkhqavnvk`, `verify_jwt:true`):
+  recibe `{nombre, telefono}`, autentica como la cuenta-puente (`bayolcell@nexus-pro.local`, clave server-side),
+  busca la rifa activa de BayolCell (RLS la limita a su org), asigna número libre al azar (reintenta si choca
+  por unique rifa_id+numero), crea el boleto `estado='confirmado' origen='taller' precio:0`, devuelve `{numero}`.
+  OJO: `rifa_boletos` NO tiene `confirmado_at` (solo `estado`). Requiere que el admin haya CREADO una rifa antes.
+- **PENDIENTE — UI en el repo del taller** (`bayolcell-taller`, otra sesión): (1) link "Rifa (admin)" en la
+  barra lateral → abre el panel (vía `puente-rifa` SSO, pestaña nueva); (2) en Recepción de equipo, form
+  nombre+teléfono → llama `recepcion-boleto` → muestra el número. (Código exacto dado al dueño en el chat.)
+
 ### PIVOTE — Rifas MARCA BLANCA bajo el dominio del cliente (decisión dueño, v38.5)
 El dueño decidió el modelo de venta: cada cliente de rifa corre el sistema **bajo SU propio dominio**
 (no redirige a `nexusprord.com`), se ve como suyo, y se quita cuando termina la rifa (alquiler).
