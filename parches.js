@@ -12044,6 +12044,8 @@
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     // Modo TIENDA: el hub Multiempresa no aplica; rebota al Punto de Venta.
     try { if (window.sesion && window.sesion.org && window.sesion.org.tipo === 'tienda') { if (window.nxAbrirPOS) window.nxAbrirPOS(); return; } } catch (e) {}
+    // Modo RIFA: el hub no aplica; rebota al módulo de Rifas.
+    try { if (window.sesion && window.sesion.org && window.sesion.org.tipo === 'rifa') { if (window.nxAbrirRifas) window.nxAbrirRifas(); return; } } catch (e) {}
     const view = ensureHubView();
     if (!view) return;
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
@@ -17674,6 +17676,10 @@
       'body.org-tienda nav.sb,body.org-tienda .sb{display:none!important}',
       'body.org-tienda .tnav{display:none!important}',
       'body.org-tienda .content{padding:0!important}',
+      /* Modo rifa: igual, ocultamos el shell del seguro (el módulo de Rifas se vuelve sistema propio) */
+      'body.org-rifa nav.sb,body.org-rifa .sb{display:none!important}',
+      'body.org-rifa .tnav{display:none!important}',
+      'body.org-rifa .content{padding:0!important}',
       /* Sidebar */
       '.nxTShell{min-height:100vh;min-height:100dvh}',
       '.nxTSide{position:fixed;top:0;left:0;bottom:0;width:240px;z-index:120;display:flex;flex-direction:column;background:linear-gradient(180deg,#1b1f4d,#283593);color:#e9eafb;box-shadow:6px 0 28px rgba(20,16,55,.28);transition:transform .26s cubic-bezier(.4,0,.2,1)}',
@@ -17836,9 +17842,13 @@ try {
         '</div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:13px;padding:34px">Aún no hay rifas.<br>Toca <b>"Nueva rifa"</b> para crear la primera.</div>';
 
+    var soloRifa = !!(_s && _s.org && _s.org.tipo === 'rifa');
+    var backBtn = soloRifa
+      ? '<button class="btn bsm" type="button" onclick="window.logout&&window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>'
+      : '<button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>';
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div><div class="ct"><i class="ti ti-ticket"></i> Rifas</div><div class="ct-s">' + esc(negocio) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' + backBtn +
       '<button class="btn bsm bc1" type="button" onclick="window.nxRifaNueva()"><i class="ti ti-plus"></i> Nueva rifa</button></div></div>' +
       '<div class="nxRfGrid">' + cards + '</div></div>';
   }

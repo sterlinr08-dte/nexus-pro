@@ -1,7 +1,8 @@
 {
-  "version": "38.0",
+  "version": "38.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "Interno (Multiempresa): preparado el modo 'solo Rifas' para organizaciones de tipo rifa (ej. BayolCell). Esas entran directo al módulo de Rifas, con su marca, sin ver seguros ni POS. No cambia nada para los usuarios actuales.",
     "NUEVO (Rifas): el cambio de número de un boleto ahora queda en AUDITORÍA (quién, de qué número a cuál, el comprador y la rifa).",
     "NUEVO (Rifas): desde la ficha de un boleto (en Pendientes o Confirmados) ahora puedes CAMBIARLE EL NÚMERO si el cliente no quiere ese. Botón 'Cambiar número' (solo administración): escribes el nuevo número o le das 'A la suerte' y toma uno libre; conserva el comprador, el pago y el estado, solo cambia el número. Valida que esté en rango y que no esté ocupado.",
     "NUEVO (Rifas): los 4 cuadros del panel de la rifa ahora se TOCAN y abren su ventana. 'Pend.' abre directo los boletos por confirmar (con un toque ves el voucher y aprobas el pago, sin buscar entre miles de numeros). 'Vendidos' abre todos los boletos, 'Confirm.' los ya verificados, y 'Recaudado' el detalle por cuenta de banco. Cada cuadro tiene una flechita arriba para indicar que es tocable.",
