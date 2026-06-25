@@ -661,6 +661,27 @@ usuarios/rifas/recaudado/ventas POS). NO toca RLS de las tablas; el cruce es sol
   página pública online + Storage para vouchers/imágenes. La parte **legal**
   (licencia DCJA) se OMITIÓ del alcance por decisión del dueño.
 
+### Conectar RIFAS a BayolCell (Opción 1 — base compartida) — EN PROGRESO (chat `RvxXb`, v38.1)
+Decisión del dueño: las rifas de BayolCell viven en la base de NEXUS PRO (compartida, separadas por
+`organizacion_id`+RLS), NO se replican en la base del taller. Experiencia: **un solo login** (el del
+taller) + **llave-puente** automática (SSO estilo Deluxe) → el staff nunca escribe una segunda clave.
+- **HECHO — Modo "solo Rifas" (v38.1):** espejo del modo tienda. `organizaciones.tipo='rifa'` → en
+  `index.html`: clase `body.org-rifa` (CSS oculta sidebar/bottom-nav/FAB, igual que `org-tienda`),
+  `aplicarOrgSidebar()` abre `window.nxAbrirRifas()` directo (retry hasta que cargue parches.js),
+  `nav()` y el landing del login rebotan a Rifas, `_orgRifaAplicada`. En `parches.js`:
+  `nxAbrirMultiempresa` rebota a Rifas si tipo rifa; CSS `body.org-rifa`; el botón "Volver" de
+  `renderRifas` se vuelve **"Cerrar sesión"** (`window.logout()`) en modo solo-rifa. Gateado a
+  `tipo='rifa'` → cero efecto para seguros/tienda.
+- **HECHO — Organización "BayolCell Rifas":** fila en `organizaciones` slug `bayolcell-rifa`,
+  tipo `rifa`, sin dominio (para que la llave-puente caiga directo en rifas y NO choque con el redirect
+  del taller, que vive en la org `bayolcell` tipo externa). **id `6698a6b7-d469-471d-9714-6e4541fbb1c5`**.
+  Logo/color PENDIENTES (los manda el dueño).
+- **PENDIENTE (el dueño manda los datos):** (1) logo + color → update a la org; (2) usuario del login →
+  crear la **llave-puente** (auth.users + auth.identities + profiles + `usuarios_sistema.organizacion_id`
+  = id de arriba, rol admin para que RLS rifa `mi_rol()='admin' AND organizacion_id=mi_organizacion()` le
+  aplique y vea SOLO sus rifas); (3) SSO config en la org (`auth_url`,`auth_key`,`email_dominio`) +
+  **botón "Rifas" en el repo del taller** (`bayolcell-taller`, base `vkhwdvjtowrhkhqavnvk`, sesión aparte).
+
 ---
 
 ## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
