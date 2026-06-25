@@ -5199,8 +5199,8 @@
       : 'Cuando vayas a entregar <strong>efectivo en mano</strong> o hacer una <strong>transferencia bancaria</strong> al administrador, regístralo aquí. El admin debe confirmarlo para que se efectúe.';
     const textoBoton = esAdmin() ? 'Registrar nueva entrega' : 'Crear nueva entrega';
     const nota = esAdmin()
-      ? 'Tip: si el cliente depositó directo a tu cuenta al momento de cobrar, el agente puede marcar el checkbox <strong>"Depositado directo a mi cuenta"</strong> en el modal de registrar cobro. Esa entrega aparecerá automáticamente arriba en "PENDIENTES DE CONFIRMAR".'
-      : 'Tip: si al cobrar el cliente depositó directo a la cuenta del admin, puedes marcar el checkbox <strong>"Depositado directo a cuenta admin"</strong> en el modal de registrar cobro. Esa entrega aparecerá automáticamente arriba en "PENDIENTES DE CONFIRMAR".';
+      ? 'Tip: al cobrar con Depósito/Transferencia, elige en <strong>"¿A qué cuenta se depositó?"</strong> la cuenta que recibió el dinero. Si es la tuya se confirma sola; si es de otra cuenta queda en "PENDIENTES DE CONFIRMAR".'
+      : 'Tip: al cobrar con Depósito/Transferencia, elige en <strong>"¿A qué cuenta se depositó?"</strong> la cuenta que recibió el dinero. Si es la tuya se confirma sola; si es de otra cuenta queda en "PENDIENTES DE CONFIRMAR".';
     
     return `
       <div class="nxSL-section nxSL-section-recibir">
@@ -5658,20 +5658,29 @@
     catch(e) { return window.ST || {}; }
   }
 
+  function poblarCuentas() {
+    const sel = document.getElementById('aDirectoCuenta');
+    if (!sel) return;
+    const ags = Array.isArray(st().agentes) ? st().agentes : [];
+    const prev = sel.value;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    sel.innerHTML = '<option value="">— Elige la cuenta —</option>' +
+      ags.filter(a => a && a.activo !== false).map(a => `<option value="${a.id}">${esc(a.nom || '')}</option>`).join('');
+    if (prev && ags.some(a => String(a.id) === String(prev))) sel.value = prev;
+  }
+
   function actualizarVisibilidad() {
     const met = document.getElementById('aMet')?.value || '';
     const wrap = document.getElementById('aDirectoWrap');
     if (!wrap) return;
     const show = (met === 'Transferencia' || met === 'Depósito');
     wrap.style.display = show ? 'block' : 'none';
-    if (!show) {
-      const chk = document.getElementById('aDirectoAdmin');
-      if (chk) chk.checked = false;
-    }
+    if (show) { poblarCuentas(); }
+    else { const sel = document.getElementById('aDirectoCuenta'); if (sel) sel.value = ''; }
   }
 
   function inyectarCheckbox() {
-    if (document.getElementById('aDirectoAdmin')) return true;
+    if (document.getElementById('aDirectoCuenta')) return true;
     const modal = document.getElementById('mAbono');
     if (!modal) return false;
     const refField = modal.querySelector('input#aRef')?.closest('.fr');
@@ -5681,15 +5690,14 @@
     wrap.id = 'aDirectoWrap';
     wrap.style.cssText = 'display:none;margin:8px 0;padding:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px';
     wrap.innerHTML = `
-      <label style="display:flex;align-items:flex-start;gap:8px;font-size:11px;cursor:pointer;line-height:1.4">
-        <input type="checkbox" id="aDirectoAdmin" style="width:18px;height:18px;accent-color:#6d28d9;margin-top:1px;flex:0 0 auto"/>
-        <span>
-          <strong style="color:#1e3a6e;display:block;margin-bottom:3px">Depositado directo a mi cuenta (admin)</strong>
-          <span style="font-size:10px;color:#475569">
-            El cliente depositó/transfirió directo a la cuenta del administrador.
-            NO se le suma al "Dinero en Mano" del agente.
-            Aparecerá en Solicitudes como PENDIENTE DE CONFIRMAR hasta que verifiques el depósito en tu estado de cuenta.
-          </span>
+      <label style="display:block;font-size:11px;line-height:1.4">
+        <strong style="color:#1e3a6e;display:block;margin-bottom:5px">¿A qué cuenta se depositó?</strong>
+        <select id="aDirectoCuenta" style="width:100%;font-size:12px;padding:8px;border:1px solid #bfdbfe;border-radius:8px;background:#fff;color:#1e3a6e">
+          <option value="">— Elige la cuenta —</option>
+        </select>
+        <span style="font-size:10px;color:#475569;display:block;margin-top:5px">
+          El cliente depositó/transfirió a esta cuenta. Queda como PENDIENTE DE CONFIRMAR en Solicitudes
+          hasta verificarlo — salvo que sea tu propia cuenta, que se confirma sola.
         </span>
       </label>
     `;
@@ -5702,6 +5710,25 @@
     return true;
   }
 
+  function esAdminCobro() {
+    try { const s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return !!(s && s.rol === 'admin'); } catch (e) { return false; }
+  }
+  // "Mi cuenta": el agente vinculado al usuario logueado (por nombre); si es admin
+  // y no calza por nombre, usa el agente con cargo ADMIN (ej. ESTERLIN).
+  function miCuentaId() {
+    try {
+      const s = (typeof sesion !== 'undefined') ? sesion : window.sesion; if (!s) return null;
+      const ags = Array.isArray(st().agentes) ? st().agentes : [];
+      const norm = x => String(x || '').trim().toLowerCase();
+      if (s.agente_id) { const byId = ags.find(a => String(a.id) === String(s.agente_id)); if (byId) return byId.id; }
+      const n = norm(s.nom);
+      const byNom = n ? ags.find(a => norm(a.nom) === n) : null;
+      if (byNom) return byNom.id;
+      if (esAdminCobro()) { const adm = ags.find(a => norm(a.cargo) === 'admin'); if (adm) return adm.id; }
+      return null;
+    } catch (e) { return null; }
+  }
+
   function envolverRegAbono() {
     if (typeof window.regAbono !== 'function') return false;
     if (window.__regAbonoEnvuelto) return true;
@@ -5710,16 +5737,25 @@
     const original = window.regAbono;
 
     window.regAbono = async function() {
-      const chk = document.getElementById('aDirectoAdmin');
-      const esDirecto = chk?.checked || false;
+      const sel = document.getElementById('aDirectoCuenta');
+      const cuentaSel = sel?.value || '';
+      const metodoNow = document.getElementById('aMet')?.value || '';
+      const esDepMethod = (metodoNow === 'Transferencia' || metodoNow === 'Depósito');
+
+      // En depósito/transferencia es obligatorio elegir la cuenta.
+      if (esDepMethod && !cuentaSel) {
+        if (typeof window.toast === 'function') window.toast('err', 'Falta la cuenta', 'Elige a qué cuenta se depositó el pago');
+        try { sel?.focus(); } catch (e) {}
+        return;
+      }
+      const esDirecto = esDepMethod && !!cuentaSel;
 
       // Capturar datos ANTES (el original puede modificar el DOM al final)
       let snapshot = null;
       if (esDirecto) {
         const monto = window.nxMoney ? window.nxMoney.parse(document.getElementById('aMnt')?.value) : parseFloat(document.getElementById('aMnt')?.value || 0);
-        const metodo = document.getElementById('aMet')?.value || '';
+        const metodo = metodoNow;
         const ref = (document.getElementById('aRef')?.value || '').trim();
-        const agente = document.getElementById('aAgente')?.value || '';
         let banco = null;
         const bSel = document.getElementById('aBanco')?.value || '';
         if (bSel === 'Otros') {
@@ -5728,7 +5764,7 @@
           banco = bSel;
         }
         const clienteId = (typeof abonoCliId !== 'undefined' ? abonoCliId : window.abonoCliId) || null;
-        snapshot = { monto, metodo, ref, agente, banco, clienteId };
+        snapshot = { monto, metodo, ref, cuenta: cuentaSel, banco, clienteId };
       }
 
       const reciboDiv = document.getElementById('reciboWAbtn');
@@ -5745,23 +5781,28 @@
       const exitoso = (!wasReciboVisible && ahoraReciboVisible) ||
                       (wasBtnVisible && ahoraBtnOculto);
 
-      // Si fue exitoso Y directo → crear entrega_admin
-      if (exitoso && esDirecto && snapshot && snapshot.agente && snapshot.monto > 0) {
+      // Si fue exitoso Y es depósito a una cuenta → crear la entrega para ESA cuenta.
+      if (exitoso && esDirecto && snapshot && snapshot.cuenta && snapshot.monto > 0) {
         try {
           const cliente = (st().clientes || []).find(c => c.id === snapshot.clienteId);
           const nomCli = cliente?.nom || snapshot.clienteId;
           const usr = (typeof sesion !== 'undefined' ? sesion : window.sesion)?.usuario || 'admin';
           const api = getAPI();
+          const miCta = miCuentaId();
+          const autoConf = !!miCta && String(snapshot.cuenta) === String(miCta); // mi propia cuenta → se confirma sola
+          const cuentaNom = ((st().agentes || []).find(a => String(a.id) === String(snapshot.cuenta)) || {}).nom || 'la cuenta';
 
           const payload = {
-            agente_id: snapshot.agente,
+            agente_id: snapshot.cuenta,
             monto: snapshot.monto,
             metodo: snapshot.metodo,
             banco: snapshot.banco,
             referencia: snapshot.ref,
-            nota: `Depósito directo de cliente ${nomCli}`,
+            nota: `Depósito de cliente ${nomCli} a cuenta ${cuentaNom}`,
             fecha: (typeof hoy === 'function' ? hoy() : new Date().toISOString().slice(0,10)),
-            confirmado: false,
+            confirmado: autoConf,
+            confirmado_at: autoConf ? new Date().toISOString() : null,
+            confirmado_por: autoConf ? usr : null,
             depositado: true,
             depositado_at: new Date().toISOString(),
             depositado_banco: snapshot.banco,
@@ -5773,27 +5814,27 @@
           await api.post('entregas_admin', payload);
 
           if (typeof window.toast === 'function') {
-            window.toast('ok', 'Pendiente de confirmar',
-              'Verifica el depósito en tu cuenta y confírmalo en Solicitudes');
+            if (autoConf) window.toast('ok', 'Registrado a tu cuenta', `Depósito a ${cuentaNom} confirmado automáticamente`);
+            else window.toast('ok', 'Pendiente de confirmar', `Depósito a ${cuentaNom}: queda pendiente de verificar en Solicitudes`);
           }
           if (typeof window.logAudit === 'function') {
-            window.logAudit('COBRO_DIRECTO_ADMIN',
-              `${nomCli} depositó RD$ ${snapshot.monto.toLocaleString()} directo a cuenta admin · ${snapshot.banco || ''} · ${snapshot.ref}`,
+            window.logAudit(autoConf ? 'COBRO_DEPOSITO_PROPIO' : 'COBRO_DEPOSITO_CUENTA',
+              `${nomCli} depositó RD$ ${snapshot.monto.toLocaleString()} a cuenta ${cuentaNom}${autoConf ? ' (auto-confirmado)' : ' (pendiente)'} · ${snapshot.banco || ''} · ${snapshot.ref}`,
               'Cobros');
           }
           if (typeof window.nxRefrescarSolicitudes === 'function') {
             await window.nxRefrescarSolicitudes();
           }
         } catch(e) {
-          console.error('Error creando entrega_admin para depósito directo:', e);
+          console.error('Error creando entrega para depósito:', e);
           if (typeof window.toast === 'function') {
-            window.toast('err', 'Aviso',
-              'Cobro guardado, pero no se creó la entrega admin. Verifica que la tabla entregas_admin tenga las columnas es_directo y cobro_id.');
+            window.toast('err', 'Aviso', 'Cobro guardado, pero no se creó la entrega de la cuenta. Avisa al administrador.');
           }
         }
-        // Reset checkbox
-        if (chk) chk.checked = false;
       }
+
+      // Reset selector
+      if (sel) sel.value = '';
 
       return result;
     };

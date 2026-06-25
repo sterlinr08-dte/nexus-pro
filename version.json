@@ -1,7 +1,8 @@
 {
-  "version": "38.2",
+  "version": "38.3",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (Cobros): al cobrar con Depósito o Transferencia, ahora eliges EN CUÁL CUENTA cayó el dinero (Esterlin, Robinson…) en vez del viejo checkbox 'directo a cuenta admin'. Es obligatorio elegir (no deja guardar sin cuenta), y el dinero se acumula en la cuenta seleccionada. Si depositas a TU PROPIA cuenta, se confirma sola (sin pasar por 'aceptar' en Solicitudes, porque fuiste tú); si fue a la cuenta de otro, queda pendiente de confirmar para que esa persona lo verifique.",
     "Interno (Multiempresa/SSO): NEXUS PRO ahora puede 'recibir un pase' (entrar ya logueado desde otro sistema vía token en la URL), sin segundo login. Lo usará el botón 'Rifas' del taller de BayolCell. El token se limpia de la URL al instante. No cambia nada para los usuarios actuales.",
     "Interno (Multiempresa): preparado el modo 'solo Rifas' para organizaciones de tipo rifa (ej. BayolCell). Esas entran directo al módulo de Rifas, con su marca, sin ver seguros ni POS. No cambia nada para los usuarios actuales.",
     "NUEVO (Rifas): el cambio de número de un boleto ahora queda en AUDITORÍA (quién, de qué número a cuál, el comprador y la rifa).",
