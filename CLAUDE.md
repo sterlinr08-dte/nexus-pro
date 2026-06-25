@@ -682,12 +682,20 @@ taller) + **llave-puente** automática (SSO estilo Deluxe) → el staff nunca es
   (rol admin, must_change_password=false). Login real (clave en poder del dueño, NO va al repo). Probado:
   al entrar cae en modo solo-rifas y RLS lo limita a la org bayolcell-rifa. **Se puede probar YA en
   `nexusprord.com`** con ese usuario (sin esperar el taller).
-- **PENDIENTE (el dueño manda los datos):** (1) logo + color → update a la org; (2) **botón "Rifas" +
-  SSO en el repo del taller** (`bayolcell-taller`, base `vkhwdvjtowrhkhqavnvk`, sesión aparte): el taller
-  hace POST a la auth de NEXUS PRO (`tnwsgcxurfyuszxsewsn.supabase.co`, anon key, email
-  `bayolcell@nexus-pro.local` + clave) y redirige a `nexusprord.com#access_token=...` (flujo implícito);
-  la app cae sola en Rifas por el modo solo-rifas. (La config SSO de la org `organizaciones` es para
-  bridge SALIENTE estilo Deluxe; aquí el bridge es ENTRANTE, vive en el taller, no requiere esos campos.)
+- **HECHO — Pieza 1/3: NEXUS PRO recibe el "pase" (SSO entrante, v38.2):** `nxRecibirPaseSSO()` en
+  `index.html` lee `#access_token=...&refresh_token=...&expires_in=...` de la URL al cargar (enganchado en
+  `DOMContentLoaded` antes del login), guarda la sesión (`nxStoreAuth`), trae el perfil y llama
+  `nxFinalizarLoginAuth` → `iniciarApp` → modo solo-rifas. Limpia el hash al instante (token no queda en
+  la URL). Mismo formato de hash que el SSO saliente (Deluxe). Falla → cae al login normal.
+- **HECHO — Pieza 2/3: función puente segura en la base del taller:** Edge Function **`puente-rifa`**
+  desplegada en `vkhwdvjtowrhkhqavnvk` (`verify_jwt:true` → solo staff logueado del taller). Hace POST a
+  la auth de NEXUS PRO con la cuenta-puente (email `bayolcell@nexus-pro.local` + clave **server-side, NO
+  en el navegador ni en el repo**) y devuelve `access_token/refresh_token/expires_in`. CORS abierto.
+- **PENDIENTE — Pieza 3/3: botón "Rifas" en el frontend del taller** (`bayolcell-taller`, sesión aparte —
+  no estuvo en esta sesión): llama a `puente-rifa` con el JWT del usuario del taller, y redirige a
+  `https://nexusprord.com/#access_token=...&refresh_token=...&expires_in=...&token_type=bearer&type=magiclink`.
+  La app cae sola en Rifas (modo solo-rifa). + logo/color de la org (cosmético). (La config SSO de
+  `organizaciones` es para bridge SALIENTE estilo Deluxe; aquí el bridge es ENTRANTE, vive en el taller.)
 
 ---
 
