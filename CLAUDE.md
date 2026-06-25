@@ -697,6 +697,24 @@ taller) + **llave-puente** automática (SSO estilo Deluxe) → el staff nunca es
   La app cae sola en Rifas (modo solo-rifa). + logo/color de la org (cosmético). (La config SSO de
   `organizaciones` es para bridge SALIENTE estilo Deluxe; aquí el bridge es ENTRANTE, vive en el taller.)
 
+### PIVOTE — Rifas MARCA BLANCA bajo el dominio del cliente (decisión dueño, v38.5)
+El dueño decidió el modelo de venta: cada cliente de rifa corre el sistema **bajo SU propio dominio**
+(no redirige a `nexusprord.com`), se ve como suyo, y se quita cuando termina la rifa (alquiler).
+**Entrada elegida: LOGIN DIRECTO en su dominio** (no el botón SSO del taller; el SSO `puente-rifa` queda
+opcional/sin usar para este modelo, pero desplegado por si acaso).
+- **HECHO — Paso 1: enlaces públicos agnósticos de dominio (v38.5):** boleto, página de compra y acceso de
+  vendedor ahora usan `location.origin` (el dominio donde está abierta la app) en vez de `nexusprord.com`
+  fijo. Cambiados: `parches.js` (`BOL_PAGE`, `nxRifaLink`, `nxVendLink`) + `rifa.html`/`vendedor.html`
+  (`BOLETO`). Así todo se queda en el dominio del cliente. En `nexusprord.com` no cambia nada. (Los OG
+  `icon-512.png` quedan como fallback genérico.)
+- **PENDIENTE — Paso 2 (lo hace el dueño en Cloudflare):** apuntar el dominio/subdominio del cliente al
+  Worker `nexus-pro` (Worker → Settings → Domains & Routes → Add Custom Domain). Esperar el SSL. Listo: ese
+  dominio sirve la MISMA app; el cliente entra con su login → modo solo-rifas → su rifa branded.
+- **PENDIENTE — Paso 3 (pulido, código):** marca por hostname (login del dominio sale con logo/color del
+  cliente vía `organizaciones.dominio`) + guard en `doLogin` para no redirigir si `org.dominio` == hostname
+  actual (evitar loop si alguien teclea `user@empresa` en su propio dominio). Cuando el dueño defina el
+  dominio, setear `organizaciones.dominio` para esa org y construir la marca por hostname.
+
 ---
 
 ## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
