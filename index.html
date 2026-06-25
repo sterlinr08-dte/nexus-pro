@@ -1830,6 +1830,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="mt"><span>// REGISTRAR ABONO</span><button class="btn bghost bsm" onclick="closeM('mAbono')"><i class="ti ti-x"></i></button></div>
     <div id="abonoI" style="background:var(--bg3);border-radius:var(--r6);padding:10px;margin-bottom:12px;border:1px solid rgba(0,229,199,.07)"></div>
     <div class="fr"><label>Monto (RD$) *</label><input type="text" id="aMnt" inputmode="decimal" data-nx-money placeholder="0.00"/></div>
+    <div class="fr" id="aDestinoCont" style="display:none"><label>¿A qué aplicar el pago?</label><select id="aDestino" onchange="nxDestinoCambio()" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="facturas">Meses pendientes (lo más viejo primero)</option><option value="deuda_anterior" id="aDestinoDA">Deuda antes del sistema</option></select></div>
     <div class="fr"><label>Método</label><select id="aMet" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarMetodoAbono()"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option><option>Tarjeta</option><option>Depósito</option></select></div>
     <div class="fr" id="aBancoCont" style="display:none"><label>Banco *</label><select id="aBanco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)" onchange="cambiarBancoAbono()"><option value="">Seleccionar banco...</option></select></div>
     <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"/></div>
@@ -3225,7 +3226,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='38.3';
+const APP_VERSION='38.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5614,9 +5615,28 @@ function abrirAbono(cid){
   document.getElementById('aRef').value='';
   // Llenar selector de agente que cobró — preselecciona el agente del cliente si tiene
   if(document.getElementById('aAgente'))rAgtSel('aAgente',c.agente_id||'');
+  // Selector "¿A qué aplicar el pago?": solo aparece si el cliente trae deuda antes del sistema.
+  const _da=deudaAnt(c);const _dc=document.getElementById('aDestinoCont');const _selD=document.getElementById('aDestino');const _optDA=document.getElementById('aDestinoDA');
+  if(_selD)_selD.value='facturas';
+  if(_dc)_dc.style.display=_da>0?'':'none';
+  if(_optDA&&_da>0)_optDA.textContent='Deuda antes del sistema ('+fmt(_da)+')';
   const rd=document.getElementById('reciboWAbtn');if(rd)rd.style.display='none';
   const ba=document.getElementById('btnAbo');if(ba)ba.style.display='';
   openM('mAbono');
+}
+function nxDestinoCambio(){
+  const c=ST.clientes.find(x=>x.id===abonoCliId);if(!c)return;
+  const destino=document.getElementById('aDestino')?.value||'facturas';
+  const infoEl=document.getElementById('abonoI');const aMntEl=document.getElementById('aMnt');
+  if(destino==='deuda_anterior'){
+    const da=deudaAnt(c);
+    if(aMntEl)aMntEl.value=da>0?(window.nxMoney?window.nxMoney.format(String(da)):da):'';
+    if(infoEl)infoEl.innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Aplicando a <span style="color:#f43f5e;font-weight:700">DEUDA ANTES DEL SISTEMA</span> · Deuda: <span style="color:var(--c3);font-weight:700">${fmt(da)}</span></div>`;
+  }else{
+    const p=pend(c);
+    if(aMntEl)aMntEl.value=p>0?(window.nxMoney?window.nxMoney.format(String(p)):p):'';
+    if(infoEl)infoEl.innerHTML=`<div style="font-weight:700;color:var(--c1);font-family:var(--mono);font-size:10px">${c.nom}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px">Póliza: <span style="color:var(--c4)">${c.numero_poliza||'—'}</span> · Pendiente: <span style="color:var(--c3);font-weight:700">${fmt(p)}</span></div>`;
+  }
 }
 let _pagosCache=[];
 
@@ -5996,6 +6016,9 @@ async function regAbono(){
   }
   const c=ST.clientes.find(x=>x.id===abonoCliId);
   if(!c){toast('err','Cliente no encontrado');return;}
+  // Destino del pago: facturas (default) o la bolsa "deuda antes del sistema".
+  const _destino=document.getElementById('aDestino')?.value||'facturas';
+  if(_destino==='deuda_anterior'){await nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar);return;}
   const pendActual=pend(c);
   if(monto>pendActual+0.01&&!confirm(`El monto ${fmt(monto)} excede lo pendiente (${fmt(pendActual)}).\n\n¿Es un pago por adelantado? Aceptar para continuar.`))return;
   const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
@@ -6037,6 +6060,33 @@ async function regAbono(){
     toast('ok','Abono registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
   }catch(e){mostrarError(e.message,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',e.message);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar';
+}
+
+// Pago dirigido a la DEUDA ANTES DEL SISTEMA (baja clientes.deuda_anterior, NO toca facturas).
+async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,bancoGuardar){
+  const da=deudaAnt(c);
+  if(da<=0){toast('err','Sin deuda anterior','Este cliente no tiene deuda antes del sistema');return;}
+  if(monto>da+0.01&&!confirm(`El monto ${fmt(monto)} excede la deuda anterior (${fmt(da)}).\n\nSe bajará la deuda anterior a 0. ¿Continuar?`))return;
+  const btn=document.getElementById('btnAbo');btn.disabled=true;btn.innerHTML='<div class="spin"></div>';
+  try{
+    const nuevaDA=Math.max(0,da-monto);
+    await API.patch('clientes',`id=eq.${c.id}`,{deuda_anterior:nuevaDA});c.deuda_anterior=nuevaDA;
+    let _abonoId=null;const nota='Pago a DEUDA ANTES DEL SISTEMA';
+    try{const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar,nota,tipo:'deuda_anterior'});if(rA&&rA[0])_abonoId=rA[0].id;}
+    catch(e1){try{const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro,banco:bancoGuardar,nota});if(rA&&rA[0])_abonoId=rA[0].id;}
+      catch(e2){const rA=await API.post('abonos',{cliente_id:c.id,monto,metodo,referencia:refValor,fecha:hoy(),agente_cobro:agenteCobro});if(rA&&rA[0])_abonoId=rA[0].id;}}
+    // Asiento contable: Caja/Banco contra Cuentas por cobrar (igual que un cobro normal).
+    const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:(metodo==='Transferencia'||metodo==='Depósito')?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
+    const asi={fecha:hoy(),referencia:'AST-COB-'+((c.numero_poliza?.replace('POL-','').slice(-4))||'0000'),descripcion:`Cobro deuda anterior ${metodo} — ${c.nom} [${c.numero_poliza||'—'}]`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
+    try{const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);recalcularSaldosContables();}catch(e){}
+    const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
+    logAudit('COBRO_DEUDA_ANTERIOR',`${c.nom} · ${fmt(monto)} a deuda anterior · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros');
+    _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:[]};
+    const reciboDiv=document.getElementById('reciboWAbtn');if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
+    document.getElementById('btnAbo').style.display='none';
+    toast('ok','Pago a deuda anterior',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
+  }catch(e){mostrarError(e.message,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',e.message);}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar abono';
 }
 
 // ── EMPRESAS ─────────────────────────────────────────────────────────────────
