@@ -728,6 +728,17 @@ opcional/sin usar para este modelo, pero desplegado por si acaso).
   actual (evitar loop si alguien teclea `user@empresa` en su propio dominio). Cuando el dueño defina el
   dominio, setear `organizaciones.dominio` para esa org y construir la marca por hostname.
 
+### Cliente nuevo: AMATISTA DENTAL (clínica odontología) — base por cliente, EN OTRO CHAT
+Cliente nuevo conseguido por el dueño (chat `RvxXb`). Se construye con el modelo **“base por cliente”**
+(Infoplus): su PROPIA base aislada, entra por `usuario@amatista` desde `nexusprord.com` (el `@` enruta via
+`organizaciones`). **Molde a clonar = Deluxe** (`DELUXE-BEAUTY-CENTER-`, base `mrtqkhachhvsczltwakt`): una
+clínica dental es estructuralmente igual (citas, servicios/tratamientos, clientes/pacientes, facturación,
+caja). Plan: clonar Deluxe → base propia de Amatista → rebrandear → "servicios" = tratamientos dentales.
+**Marca:** "Amatista Dental", logo dorado (diente), color **dorado/oro** (+ acento morado amatista opcional).
+**Pendiente definir con el dueño:** extras dentales (odontograma/historia clínica/presupuestos), dominio
+(propio vs subdominio), usuarios/logins. **Se trabaja en un CHAT APARTE** (no este) para no recargar; este
+chat sigue con NEXUS PRO (seguros/rifas).
+
 ---
 
 ## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
