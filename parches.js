@@ -14077,6 +14077,17 @@
           ${kpi('#d97706', 'ti-alert-triangle', 'Bajo stock', String(bajos), bajos ? 'Revisar productos' : 'Todo en orden')}
         </div>`;
     }
+    let ultVentas = '';
+    if (esTiendaPOS()) {
+      const dd = new Date();
+      const hoyISO = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0') + '-' + String(dd.getDate()).padStart(2, '0');
+      const metV = v => (v.a_credito || Number(v.credito_monto || 0) > 0) ? 'Fiado' : (Number(v.pagado_tarjeta || 0) > 0 ? 'Tarjeta' : Number(v.pagado_transferencia || 0) > 0 ? 'Transferencia' : Number(v.pagado_otro || 0) > 0 ? 'Otro' : 'Efectivo');
+      const vHoy = (_ventas || []).filter(v => String(v.created_at || v.fecha || '').slice(0, 10) === hoyISO && !v.anulada).slice(0, 6);
+      const rows = vHoy.length
+        ? vHoy.map(v => `<div class="nxTVRow"><div class="nxTVL"><span class="nxTVIc"><i class="ti ti-receipt"></i></span><span class="nxTVNm"><b>${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</b><small>${esc(v.cliente_nombre || 'Consumidor final')} · ${metV(v)}</small></span></div><b class="nxTVAmt"${(v.a_credito || Number(v.credito_monto || 0) > 0) ? ' style="color:#4338ca"' : ''}>${fmt(v.total || 0)}</b></div>`).join('')
+        : '<div class="nxTVEmpty">Sin ventas hoy todavía.</div>';
+      ultVentas = `<div class="nxTPanel"><div class="nxTPanelH"><b>Últimas ventas</b><small>Movimiento del día</small></div>${rows}</div>`;
+    }
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
@@ -14085,6 +14096,7 @@
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
         ${grupo('Configuración', tile('ajustes', 'Ajustes', 'ti-settings', '#475569'))}
+        ${ultVentas}
       </div>`;
   }
 
@@ -17754,6 +17766,20 @@
       '.nxTKpiL{font-size:11px;color:#64748b;font-weight:700}',
       '.nxTKpiV{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-top:3px;color:#0f172a}',
       '.nxTKpiS{font-size:10.5px;font-weight:700;margin-top:5px;color:#64748b}',
+      /* Panel "Últimas ventas" del dashboard de tienda */
+      '.nxTPanel{background:#fff;border:1px solid #e2e8f0;border-radius:17px;padding:16px;box-shadow:0 8px 22px rgba(15,23,42,.05);margin-top:20px}',
+      '.nxTPanelH{margin-bottom:6px}',
+      '.nxTPanelH b{font-size:15px;font-weight:800;color:#0f172a}',
+      '.nxTPanelH small{display:block;font-size:11px;color:#94a3b8;font-weight:600;margin-top:1px}',
+      '.nxTVRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid #f1f5f9}',
+      '.nxTVRow:last-child{border-bottom:0}',
+      '.nxTVL{display:flex;align-items:center;gap:10px;min-width:0}',
+      '.nxTVIc{width:34px;height:34px;border-radius:10px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}',
+      '.nxTVNm{min-width:0}',
+      '.nxTVNm b{display:block;font-size:12.5px;font-weight:800;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.nxTVNm small{font-size:10.5px;color:#64748b}',
+      '.nxTVAmt{font-size:14px;font-weight:800;color:#0f172a;white-space:nowrap}',
+      '.nxTVEmpty{padding:16px;text-align:center;color:#94a3b8;font-size:12px}',
       /* Encabezados ordenables (cualquier tabla del POS) */
       '.nxThSort{transition:color .12s}',
       '.nxThSort:hover{color:#4f46e5}',

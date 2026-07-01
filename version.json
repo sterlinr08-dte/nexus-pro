@@ -1,7 +1,8 @@
 {
-  "version": "38.6",
+  "version": "38.7",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (POS tienda): el dashboard de inicio del POS (modo tienda) ahora muestra el panel 'Últimas ventas' con los movimientos del día (número, cliente, método y monto). Completa el look de tienda (sidebar + KPIs + accesos rápidos + últimas ventas). Solo aplica a negocios tipo tienda.",
     "ARREGLO (Inicio de sesión): la contraseña ya no se pone en MAYÚSCULAS. Antes, al mostrar la clave con el ojito o al escribirla en el teléfono, se capitalizaba automáticamente y quedaba mal, impidiendo entrar. Ahora los campos de usuario y contraseña respetan minúsculas/mayúsculas tal como se escriben.",
     "Interno (Rifas marca blanca): los enlaces públicos de la rifa (boleto, página de compra, acceso de vendedor) ahora usan el MISMO dominio donde está abierta la app, no 'nexusprord.com' fijo. Así, cuando un cliente corra su rifa bajo su propio dominio, todo se queda en su dominio (no redirige a NEXUS PRO). No cambia nada en nexusprord.com.",
     "NUEVO (Cobros): ahora al cobrar puedes dirigir el pago a la 'Deuda antes del sistema'. Si el cliente trae deuda vieja, aparece el selector '¿A qué aplicar el pago?' con 'Meses pendientes (automático)' o 'Deuda antes del sistema'. Al elegir la deuda vieja, el pago baja esa deuda directamente (sin tocar las facturas del mes), con su asiento contable y recibo. Si el cliente NO tiene deuda anterior, el cobro se ve igual que siempre.",
