@@ -817,8 +817,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div><div class="lbrand">NEXUS PRO</div><div class="lver">Plataforma de gestión · República Dominicana</div></div>
   </div>
   <div class="lh">Iniciar sesión</div>
-  <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="usuario@empresa" autocomplete="username"/></div>
-  <div class="lfr"><label>Contraseña</label><div style="position:relative"><input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#475569;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
+  <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="usuario@empresa" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"/></div>
+  <div class="lfr"><label>Contraseña</label><div style="position:relative"><input type="password" id="loginPwd" class="no-upper login-input" placeholder="••••••••" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#475569;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
   <div class="lerr" id="loginErr"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
   <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#475569;text-decoration:none">🔒 Probar inicio de sesión seguro (beta)</a></div>
@@ -831,8 +831,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   <div style="background:#fff;border-radius:18px;padding:24px;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="font-size:17px;font-weight:800;color:#0f172a;margin-bottom:4px">🔒 Define tu contraseña</div>
     <div style="font-size:12px;color:#475569;margin-bottom:16px">Primer ingreso seguro. Crea tu contraseña personal (mínimo 6 caracteres).</div>
-    <input type="password" id="pwNew" placeholder="Nueva contraseña" autocomplete="new-password" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;font-size:14px;box-sizing:border-box"/>
-    <input type="password" id="pwNew2" placeholder="Repite la contraseña" autocomplete="new-password" onkeydown="if(event.key==='Enter')nxGuardarNuevaPwd()" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;font-size:14px;box-sizing:border-box"/>
+    <input type="password" id="pwNew" class="no-upper login-input" placeholder="Nueva contraseña" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;font-size:14px;box-sizing:border-box"/>
+    <input type="password" id="pwNew2" class="no-upper login-input" placeholder="Repite la contraseña" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')nxGuardarNuevaPwd()" style="width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:10px;font-size:14px;box-sizing:border-box"/>
     <div id="pwChangeErr" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px"></div>
     <button id="pwChangeBtn" onclick="nxGuardarNuevaPwd()" style="width:100%;padding:9px;background:linear-gradient(135deg,#1e3a6e,#8b5cf6);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Guardar y entrar</button>
   </div>
@@ -3226,7 +3226,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='38.5';
+const APP_VERSION='38.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
