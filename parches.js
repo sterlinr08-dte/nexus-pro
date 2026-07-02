@@ -6176,7 +6176,7 @@
       '.nxPpkChev{width:26px!important;height:26px!important;min-width:26px!important;font-size:14px!important;border-radius:8px!important;background:#f1f5f9!important;color:#94a3b8!important;box-shadow:none!important;display:inline-flex!important;align-items:center;justify-content:center;padding:0!important;transition:transform .18s ease,background .15s,color .15s}',
       '.nxPpkWrap.on .nxPpkChev{background:#ede9fe!important;color:#6d28d9!important}',
       /* Animación "reveal": tarjetas del buscador entran suavemente al hacer scroll */
-      '.nxPpkReveal{opacity:0;transform:translateY(16px);transition:opacity .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1);will-change:opacity,transform}',
+      '.nxPpkReveal{opacity:0;transform:translateY(26px);transition:opacity .72s cubic-bezier(.22,1,.36,1),transform .72s cubic-bezier(.22,1,.36,1);will-change:opacity,transform}',
       '.nxPpkReveal.nxPpkIn{opacity:1;transform:none}'
     ].join('');
     document.head.appendChild(st);
@@ -14463,7 +14463,8 @@
       window.nxProdPickAdd(id);
     }
     _ppkOpen = ''; _ppkSerSel = [];
-    const q = (document.getElementById('ppkQ') || {}).value || ''; pintarProdPick(q);
+    // Al elegir el artículo, cierra la ventana inferior automáticamente.
+    const ov = document.getElementById('nxProdPick'); if (ov) ov.remove();
   };
   // ── Elegir IMEI/serial para una línea de la factura ──
   window.nxFacSerial = async function (i) {
