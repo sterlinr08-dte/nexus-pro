@@ -46,7 +46,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    **sincronizados** para que la app avise "hay actualización").
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **30.0** (ver `index.html` y `version.json`).
+> Versión actual: **39.2** (ver `index.html` y `version.json`).
 
 ---
 
@@ -280,6 +280,66 @@ como está (pendiente 200, decisión del dueño). Nota de modelo: el "Pendiente"
 cliente = `deuda_total - pagado` (`pend(c)`); un cobro suma a `clientes.pagado` e
 inserta fila en `abonos` (seguros) — `agente_cobro` = UUID del agente; estado de
 factura pagada = `'Pagado'`.
+
+### Cobros — a qué CUENTA se depositó + destino del pago (v38.3–38.4, chat `RvxXb`)
+- **Selector "¿A qué cuenta se depositó?" (v38.3, `parches.js` IIFE cobro-directo):** al cobrar con
+  Transferencia/Depósito aparece un selector OBLIGATORIO de agente-cuenta (ESTERLIN/ROBINSON, de
+  `st().agentes`), vacío por defecto (reemplazó el checkbox "Depositado directo a mi cuenta").
+  El wrap de `regAbono` crea la fila en `entregas_admin` con `agente_id = cuenta elegida`; si el que
+  registra deposita a **SU PROPIA cuenta** (`miCuentaId()`: sesión→agente por nombre→admin fallback
+  `cargo==='admin'`) la entrega nace **auto-confirmada** (`confirmado:true` + `confirmado_at/por`,
+  no pasa por Solicitudes). Audit `COBRO_DEPOSITO_PROPIO` / `COBRO_DEPOSITO_CUENTA`.
+- **Destino "Deuda antes del sistema" (v38.4, `index.html`):** en el modal de cobro, si el cliente
+  tiene `deuda_anterior>0` aparece el selector `#aDestino` (Meses pendientes automático / Deuda
+  anterior). Rama `nxRegAbonoDeudaAnterior`: baja `clientes.deuda_anterior`, inserta `abonos`
+  (tipo con fallback), asiento (Caja/Banco vs 1201) y `logAudit('COBRO_DEUDA_ANTERIOR')`. El flujo
+  normal (meses, oldest-first) NO cambió. Elegir mes específico quedó DIFERIDO (decisión dueño).
+- **Display facturas/pendientes (v37.x):** las tarjetas de factura ya calculan con
+  `prima_base+prima_deps` (no el `total` arrastrado, que duplicaba); label "Mes actual"; líneas
+  rojas apiladas "Deuda mes anterior" + "Deuda antes del sistema" separadas. Verificado contra los
+  101 clientes con facturas (0 discrepancias). OJO: `facturas.estado` puede quedar OBSOLETO vs la
+  verdad calculada (asignación oldest-first sobre prima) — para listas de "pendientes de mes X"
+  recalcular, no confiar en el label (resync de estados ofrecido, NO aprobado aún).
+- **Permiso `modificar_precio` para rol agente:** concedido vía `configuracion.roles_perms`
+  (jsonb_set) para que Robinson ponga precios especiales a clientes.
+
+### Rifas — panel admin afinado + preview WhatsApp (v37.8–38.0, chat `RvxXb`)
+- **KPIs del panel clickeables (v37.8):** los 4 tiles (`.rfKpiT`, chevron `::after`) abren
+  `nxRifaTickets(estado,titulo)` filtrado (`_tkEst`), ventanas del sistema (no flotantes), con
+  banner-pista en pendientes.
+- **Cambiar número de boleto — SOLO ADMIN (v37.9–38.0):** en `gestBoleto` (pendientes y
+  confirmados): `nxRifaCambiarNum` → modal con nuevo número o "a la suerte"
+  (`nxRifaCambNumSuerte`); `nxRifaCambNumGuardar` valida rango + ocupación (`_bolMap`), PATCH
+  `numero` y `logAudit('RIFA_CAMBIO_NUMERO','antes → después · comprador (tel)','Rifas')`.
+- **Preview WhatsApp del boleto (SSR, SIN VERIFICAR):** `worker.js` nuevo + `wrangler.jsonc`
+  (`main`, binding `ASSETS`, `run_worker_first:true`): para `/boleto.html?id=` inyecta
+  og:title/description/image dinámicos (banner vía función `boleto` `?id&img=1`), fallback a
+  estático en cualquier error. **Pendiente confirmar en vivo** (probar con un link de boleto NUNCA
+  compartido — WhatsApp cachea el preview por URL; si sigue genérico el Worker no está ejecutando).
+  El botón "Enviar mi boleto por WhatsApp" de `rifa.html` ahora apunta al número del COMPRADOR
+  (`api.whatsapp.com/send?phone=1<tel>`).
+
+### Repintado visual — fondo BLANCO + sombras negras (v38.8–39.2, chat `RvxXb`)
+Pedido del dueño: quitar el "morado" de todo el sistema.
+- **v38.8:** iconos 2.5D (IIFE `__NEXUS_ICONOS_25D__` aplana el 3D), arreglado tile VENDER vacío
+  (`ti-cash-register` NO existe en la webfont Tabler → `ti-shopping-cart`, replace_all), animación
+  reveal del lanzador POS (`.nxPpkReveal` + IntersectionObserver).
+- **v38.9:** `--bg0` `#f0f4f8`→`#ffffff`.
+- **v39.1 (la RAÍZ del morado):** el tema **`body.tema-glass`** pintaba un gradiente lavanda con
+  `!important` que pisaba `--bg0` → ese tema ahora usa `background:#ffffff !important`.
+- **v39.0:** buscador de artículo del POS: animación de deslizamiento más lenta/apreciable y el
+  sheet **se cierra solo** al elegir artículo (`nxProdPickElegir` remueve `#nxProdPick`).
+- **v39.2:** barrido de sombras — 93 `box-shadow` con rgba morado → `rgba(15,23,42,...)` (35 en
+  index.html, 58 en parches.js), SOLO dentro de `box-shadow:` (fondos/bordes/scrollbars morados
+  intactos, Opción B del dueño).
+
+### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
+Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
+medida/presentaciones (stock plano), sin lotes/vencimiento, sin variantes, sin multi-moneda,
+impuestos solo bool `itbis` 18% (falta propina 10%/exento), listas de precios limitadas (3 niveles),
+sin descuento fijo/condiciones de pago/vendedor por cliente, `orden_no` sin flujo real de OC, sin
+devoluciones a proveedor, sin apartados/layaway, `pos_config` mínimo, sin reportes ABC/rotación.
+**Pendiente que el dueño priorice** (respondió "No" a elegir por ahora).
 
 ## Módulos / funcionalidades ya construidas
 
