@@ -1,7 +1,9 @@
 {
-  "version": "39.5",
+  "version": "39.6",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "NUEVO (sincronización en vivo): lo que cobre o edite OTRO usuario ahora se ve en tu pantalla SIN recargar la app. Al volver a la app (cambiar de app en el teléfono y regresar) se re-leen los datos de la base al instante, y estando dentro se re-leen solos cada rato. Antes el refresco solo repintaba lo que ya tenía en memoria — un cobro de Robinson no aparecía hasta cerrar y abrir.",
+    "MEJORA (al instante): al registrar un pago, ahora se actualizan de una vez TODAS las pantallas (Clientes, Facturas, Cobros y el dashboard — antes Clientes y Facturas quedaban con lo viejo hasta navegar). Igual al cambiar un precio: Facturas y Cobros lo reflejan al momento.",
     "ARREGLADO (Facturas · corte 20-al-20): al abrir Facturas ya no sale el mes calendario vacío — ahora sale el MES DE FACTURACIÓN vigente. Como la facturación del mes sale el día 20, hasta el día 19 el mes en curso es el ANTERIOR (ej. el 5 de julio se sigue cobrando JUNIO y eso es lo que se muestra). Del 20 en adelante, el mes nuevo. También el filtro 'Atrasadas' respeta el corte (junio NO es atrasada el 5 de julio) y el botón de generar facturas apunta al mes de corte correcto.",
     "ARREGLADO (de raíz · facturación automática): se encontró y corrigió el módulo del SERVIDOR que genera las facturas solo (corre de madrugada). Tenía 2 fallas: (1) contaba 0 DEPENDIENTES siempre — por eso en junio los clientes con padre/madre/cónyuge salieron sin ese cobro (5 corregidos: se les agregó el dependiente a junio); (2) si el cliente no tenía precio especial usaba el COSTO del plan (RD$ 1,790) en vez del PRECIO (RD$ 4,500). El precio especial siempre lo leyó bien. Julio (día 20) ya saldrá correcto: precio especial si lo tiene, precio del plan si no, y los dependientes contados.",
     "MEJORA (facturación): candado anti-duplicados reforzado — antes de generar facturas, la app consulta la BASE de datos (no solo lo que tiene en pantalla) para no duplicar las que el servidor ya generó de madrugada.",

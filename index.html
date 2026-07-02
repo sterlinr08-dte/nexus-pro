@@ -2360,17 +2360,44 @@ function refrescarVistaActual(){
   try{rNotifs();}catch(e){}
 }
 
+// ── SINCRONIZACIÓN EN VIVO ──────────────────────────────────────────
+// El refresco viejo solo repintaba la MEMORIA: lo que cobraba/editaba OTRO usuario
+// (ej. Robinson en su teléfono) no aparecía hasta recargar la app completa.
+// nxSyncDatos vuelve a LEER clientes+facturas de la base y repinta la vista abierta.
+let _syncBusy=false,_syncLast=0;
+async function nxSyncDatos(force){
+  if(_syncBusy||!sesion)return;
+  if(!force&&Date.now()-_syncLast<45000)return; // máx. 1 lectura cada 45 seg (liviano)
+  _syncBusy=true;
+  try{
+    const [cli,fac]=await Promise.all([
+      API.get('clientes','select=*&order=nom'),
+      API.get('facturas','select=*&order=created_at.desc')
+    ]);
+    if(cli&&cli.length)ST.clientes=cli;
+    if(fac)ST.facturas=fac;
+    ST.clientes.forEach(c=>{if(typeof c.deps==='string')try{c.deps=JSON.parse(c.deps);}catch{c.deps=[];}});
+    ST.clientes.forEach(c=>{['deuda_total','deuda_anterior','pagado','precio_titular','precio_dep','saldo_inicial','saldo_inicial_pagado'].forEach(k=>{if(c[k]!=null&&c[k]!=='')c[k]=Number(c[k]);});});
+    _syncLast=Date.now();
+    refrescarVistaActual();actualizarTicker();
+  }catch(e){console.log('sync:',e.message);}
+  _syncBusy=false;
+}
+
 // Refresco automático cada 30 segundos si la pestaña está visible
+// (repinta al instante + re-lee la base con el acelerador de 45 seg)
 setInterval(()=>{
   if(document.visibilityState==='visible'&&sesion){
     refrescarVistaActual();
+    nxSyncDatos();
   }
 },30000);
 
-// Refrescar al volver a la pestaña del navegador
+// Al VOLVER a la app (cambiar de app en el teléfono y regresar): re-leer la base
+// de una vez — así lo que cobró otro usuario se ve al instante al abrir.
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&sesion){
-    setTimeout(refrescarVistaActual,300);
+    setTimeout(()=>{refrescarVistaActual();nxSyncDatos(true);},300);
   }
 });
 
@@ -3226,7 +3253,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='39.5';
+const APP_VERSION='39.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -6075,6 +6102,7 @@ async function regAbono(){
     if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Abono registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
+    try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){mostrarError(e.message,'Al registrar abono para cliente: '+(c?.nom||'?'));toast('err','Error registrando abono',e.message);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar';
 }
@@ -6102,6 +6130,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
     const reciboDiv=document.getElementById('reciboWAbtn');if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Pago a deuda anterior',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
+    try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
   }catch(e){mostrarError(e.message,'Al registrar pago a deuda anterior: '+(c?.nom||'?'));toast('err','Error',e.message);}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Registrar abono';
 }
@@ -6415,6 +6444,7 @@ async function guardarCli(){
     toast('ok','Cliente actualizado',nom);
       // Si la prima mensual cambió, ofrecer actualizar la factura del mes en curso (si no está pagada)
       if(_primaAntes!=null)await nxSincronizarFacturaPrecio(ST.clientes[idx],_primaAntes);
+      try{rFact();rCob();}catch(_e){} // reflejar el precio nuevo AL INSTANTE también en Facturas y Cobros
     }else{
       // Generar número de póliza automático
       const numPol=await generarNumPoliza();
