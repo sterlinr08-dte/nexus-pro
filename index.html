@@ -3226,7 +3226,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='39.3';
+const APP_VERSION='39.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -5179,10 +5179,15 @@ async function _genFacturasInterno(){
   const activos=ST.clientes.filter(c=>c.activo&&c.permitir_facturacion!==false);
   if(!activos.length){toast('warn','Sin clientes a facturar');return;}
   toast('info','Generando facturas con NCF...','Por favor espera');
+  // Anti-duplicado BLINDADO: consultar la BASE (no solo la memoria). La auto-facturación del
+  // SERVIDOR (cron) puede haber generado ya el período; una sesión abierta con datos viejos
+  // duplicaría las facturas de TODOS los clientes si solo se confía en ST.facturas.
+  const _exist=new Set();
+  try{const fx=await API.get('facturas',`select=cliente_id,estado&periodo=eq.${key}`);(fx||[]).forEach(f=>{if(f.estado!=='Anulada')_exist.add(String(f.cliente_id));});}catch(e){}
   let n=0,duplicados=0;const nuevasFact=[],nuevosAsi=[],cliAct=[];
   for(const c of activos){
     // Anti-duplicado: ya existe factura de este cliente para este período (y no anulada)
-    if(ST.facturas.find(f=>f.cliente_id===c.id&&f.periodo===key&&f.estado!=='Anulada')){duplicados++;continue;}
+    if(_exist.has(String(c.id))||ST.facturas.find(f=>f.cliente_id===c.id&&f.periodo===key&&f.estado!=='Anulada')){duplicados++;continue;}
     // Respetar precio especial si el cliente lo tiene; si no, usar el precio del plan
     const ptCustom=Number(c.precio_titular);
     const pdCustom=Number(c.precio_dep);

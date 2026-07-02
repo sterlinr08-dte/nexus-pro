@@ -333,6 +333,27 @@ Pedido del dueño: quitar el "morado" de todo el sistema.
   index.html, 58 en parches.js), SOLO dentro de `box-shadow:` (fondos/bordes/scrollbars morados
   intactos, Opción B del dueño).
 
+### AUTO-FACTURACIÓN DEL SEGURO: ES DEL SERVIDOR (descubierto y arreglado jul-2026, v39.4)
+**IMPORTANTE:** las facturas mensuales del seguro NO las genera la app — las genera una **función
+Edge `auto-facturacion`** (proyecto `tnwsgcxurfyuszxsewsn`, verify_jwt false) disparada por
+**pg_cron** (`auto-facturacion-diaria` 10:05 UTC + 2 reintentos 10:20/10:35) vía
+`run_auto_facturacion()` → `net.http_post`. Corre TODOS los días; factura solo a los clientes cuyo
+`dia_facturacion` == día de hoy (todos tienen 20). Inserta vía RPC **`crear_factura_auto_tx`**
+(anti-duplicado por período, NCF transaccional en `secuencias_ncf`, `deuda_total += prima`, asiento
+1201/4101). Logs en `auto_jobs_log` y `auto_notificaciones_log`. La v1 (de otro chat, jun-8) tenía 2
+BUGS que dañaron JUNIO: (1) `clientes.deps` es columna **TEXT** y hacía `Array.isArray(deps)` sin
+parsear → **0 dependientes SIEMPRE** (8 clientes sin el cobro del dep en junio; 5 reparados a mano,
+resto pendiente de confirmar precio con el dueño); (2) sin precio especial usaba **`costo_*`**
+(RD$ 1,790, lo que paga el negocio) en vez de **`prima_*`** (RD$ 4,500, lo que paga el cliente) —
+los titulares de junio se corrigieron después a mano. **v2 desplegada y probada** (jul-2): parsea
+deps TEXT, usa prima_*, precio especial manda si >0, `permitir_facturacion` null-safe (null=facturar,
+igual que la app). El generador de la APP (`genFacturas`/`_genFacturasInterno` en index.html) sigue
+existiendo para generación manual; en v39.4 su anti-duplicado consulta la BASE (no solo ST) para no
+duplicar lo que el cron ya generó. El frontend TAMBIÉN tiene `verificarAutoFacturacion()` (timer
+por minuto, `autoCfg` dia 20 / hora 06:10) — redundante con el cron pero inofensivo con el candado.
+OJO frontend: `deps` se parsea al cargar (línea ~4438) y CFG mapea `prima_*`/`dep_*`/`costo_*` de
+`configuracion` (t=prima titular, d=precio dep, cost=costo negocio).
+
 ### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
 Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
 medida/presentaciones (stock plano), sin lotes/vencimiento, sin variantes, sin multi-moneda,
