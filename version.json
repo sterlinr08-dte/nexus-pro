@@ -1,7 +1,8 @@
 {
-  "version": "39.0",
+  "version": "39.1",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (de raíz · el fondo morado): el tono lavanda/morado del fondo venía del tema 'Liquid Glass', que pintaba el fondo con un gradiente azul-lavanda y tapaba el blanco. Ahora ese tema también usa fondo BLANCO. Así ya se ve blanco de verdad, sin el tinte morado.",
     "MEJORA (POS · buscar artículo): la animación de deslizamiento de las tarjetas es un poco más lenta y con más recorrido, para que se aprecie bien. Y al ELEGIR un artículo, la ventana de búsqueda se cierra sola automáticamente (antes se quedaba abierta).",
     "MEJORA (visual): el FONDO de todo el sistema ahora es BLANCO (antes tenía un tono gris-azulado que se veía como lavanda/morado). Se ve más limpio y claro. El sidebar índigo del POS y los colores de acento no cambian.",
     "MEJORA (visual): los íconos pasan de 3D a un estilo 2.5D más plano y limpio (se quitó el brillo/glow pesado, se dejó color + una sombra sutil). Los circulitos del buscador de artículos ahora son más pequeños y ordenados. ARREGLADO: el ícono de VENDER que salía vacío (ahora carrito de compras). NUEVO: en el buscador de artículos del POS, las tarjetas entran con una animación suave al deslizar.",
