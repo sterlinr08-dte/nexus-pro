@@ -3226,7 +3226,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='39.2';
+const APP_VERSION='39.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -6279,6 +6279,34 @@ function actualizarProgreso(){
 // antepone el "1" de RD; devuelve '' si quedó demasiado corto para ser válido.
 // Así TODOS los enlaces wa.me funcionan igual, sea el número viejo (10) o nuevo (11).
 function nxWa(num){let d=String(num||'').replace(/\D/g,'');if(d.length===10)d='1'+d;return d.length>=11?d:'';}
+// ── Sincronizar la factura del mes cuando cambia el precio del cliente (arreglo de raíz) ──
+// Cada factura congela su precio al emitirse. Si se pone un precio personalizado DESPUÉS de
+// facturar el mes, la factura vieja queda con la prima anterior y cualquier "ajuste de deuda"
+// a mano lo revierte la auto-reconciliación (confía en las facturas). Este helper detecta el
+// cambio de prima al guardar y ofrece re-preciar la factura del mes EN CURSO si aún no está pagada.
+async function nxSincronizarFacturaPrecio(cli,primaAntes){
+  try{
+    const primaAhora=getPTReal(cli)+((cli.deps||[]).length*getPDReal(cli));
+    if(Math.round(primaAhora)===Math.round(primaAntes))return;
+    const now=new Date();const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const f=ST.facturas.find(x=>x.cliente_id===cli.id&&x.periodo===key&&x.estado!=='Anulada');
+    if(!f)return;
+    if(f.estado==='Pagado')return; // mes ya cerrado: las facturas pagadas no se tocan
+    const primaFact=Number(f.prima_base||0)+Number(f.prima_deps||0);
+    if(Math.round(primaFact)===Math.round(primaAhora))return; // la factura ya está al precio nuevo
+    const diff=primaAhora-primaFact;
+    const ok=confirm(`${cli.nom} tiene la factura de ${MESES[now.getMonth()]} a ${fmt(primaFact)} y su prima nueva es ${fmt(primaAhora)}.\n\n¿Actualizar TAMBIÉN esa factura al precio nuevo?\nLa deuda del cliente ${diff>0?'subirá':'bajará'} ${fmt(Math.abs(diff))}.\n\n(Si respondes Cancelar, la factura del mes se queda con el precio viejo y el sistema seguirá cobrando según ella.)`);
+    if(!ok)return;
+    const pbN=getPTReal(cli),pdN=(cli.deps||[]).length*getPDReal(cli);
+    const totalN=pbN+pdN+Number(f.deuda_ant||0);
+    await API.patch('facturas',`id=eq.${f.id}`,{prima_base:pbN,prima_deps:pdN,total:totalN});
+    const deudaN=Math.max(0,Number(cli.deuda_total||0)+diff);
+    await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});
+    f.prima_base=pbN;f.prima_deps=pdN;f.total=totalN;cli.deuda_total=deudaN;
+    logAudit('FACTURA_REPRECIADA',`${cli.nom} · Factura ${MESES[now.getMonth()]} ${now.getFullYear()}: ${fmt(primaFact)} → ${fmt(primaAhora)} (cambio de precio) · deuda ${diff>0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas');
+    toast('ok','Factura del mes actualizada',`${MESES[now.getMonth()]}: ${fmt(primaAhora)}`);
+  }catch(e){console.warn('nxSincronizarFacturaPrecio',e);}
+}
 async function guardarCli(){
   // Nombre del cliente (obligatorio)
   const nom=document.getElementById('cNom').value.trim();
@@ -6339,6 +6367,9 @@ async function guardarCli(){
   }
   try{
     if(editCliId){
+      // Prima mensual ANTES de editar (para detectar cambio de precio y ofrecer re-preciar la factura del mes)
+      const _cliAntes=ST.clientes.find(x=>x.id===editCliId);
+      const _primaAntes=_cliAntes?getPTReal(_cliAntes)+((_cliAntes.deps||[]).length*getPDReal(_cliAntes)):null;
       // Ajuste de deuda: si el usuario cambió el campo de deuda, ajustar deuda_total
       const cDeudaEl=document.getElementById('cDeudaIni');
       if(cDeudaEl&&!cDeudaEl.disabled){
@@ -6365,6 +6396,8 @@ async function guardarCli(){
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
       logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes');
     toast('ok','Cliente actualizado',nom);
+      // Si la prima mensual cambió, ofrecer actualizar la factura del mes en curso (si no está pagada)
+      if(_primaAntes!=null)await nxSincronizarFacturaPrecio(ST.clientes[idx],_primaAntes);
     }else{
       // Generar número de póliza automático
       const numPol=await generarNumPoliza();
