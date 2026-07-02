@@ -1,7 +1,8 @@
 {
-  "version": "39.4",
+  "version": "39.5",
   "url": "https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html",
   "cambios": [
+    "ARREGLADO (Facturas · corte 20-al-20): al abrir Facturas ya no sale el mes calendario vacío — ahora sale el MES DE FACTURACIÓN vigente. Como la facturación del mes sale el día 20, hasta el día 19 el mes en curso es el ANTERIOR (ej. el 5 de julio se sigue cobrando JUNIO y eso es lo que se muestra). Del 20 en adelante, el mes nuevo. También el filtro 'Atrasadas' respeta el corte (junio NO es atrasada el 5 de julio) y el botón de generar facturas apunta al mes de corte correcto.",
     "ARREGLADO (de raíz · facturación automática): se encontró y corrigió el módulo del SERVIDOR que genera las facturas solo (corre de madrugada). Tenía 2 fallas: (1) contaba 0 DEPENDIENTES siempre — por eso en junio los clientes con padre/madre/cónyuge salieron sin ese cobro (5 corregidos: se les agregó el dependiente a junio); (2) si el cliente no tenía precio especial usaba el COSTO del plan (RD$ 1,790) en vez del PRECIO (RD$ 4,500). El precio especial siempre lo leyó bien. Julio (día 20) ya saldrá correcto: precio especial si lo tiene, precio del plan si no, y los dependientes contados.",
     "MEJORA (facturación): candado anti-duplicados reforzado — antes de generar facturas, la app consulta la BASE de datos (no solo lo que tiene en pantalla) para no duplicar las que el servidor ya generó de madrugada.",
     "ARREGLADO (de raíz · precio personalizado): cuando le cambias el precio a un cliente que YA tiene la factura del mes generada (y sin pagar), el sistema ahora te pregunta si actualiza TAMBIÉN esa factura al precio nuevo, y cuadra la deuda de una vez. Antes la factura vieja se quedaba con el precio anterior y aunque ajustaras la deuda a mano, el sistema la volvía a subir (eso infló la deuda de 9 clientes en mayo, ej. '¿por qué debe 7,800 si paga 3,300?' — ya corregidos todos).",
