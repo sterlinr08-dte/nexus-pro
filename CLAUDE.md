@@ -138,7 +138,7 @@ Vender NEXUS PRO a varios negocios con **un solo dominio** y **control general**
 - **Pendiente:** Fase 3 para tablas de seguros · Fase 4 = panel de **control general**
   del dueño (superadmin que ve todas las organizaciones) · desplegar BayolCell.
 
-### POS como app independiente para tiendas (decidido 20-jun-2026, EN CONSTRUCCIÓN)
+### POS como app independiente para tiendas (decidido 20-jun-2026, HECHO v38.7)
 Acordado con el dueño en chat `RvxXb`. Vender el **mismo POS** a varios negocios
 (clientes), cada uno entrando a un POS que **se sienta como su propio sistema**:
 - **Formato elegido: BARRA LATERAL** (sidebar índigo a la izquierda con los módulos
@@ -156,10 +156,16 @@ Acordado con el dueño en chat `RvxXb`. Vender el **mismo POS** a varios negocio
   `body.org-tienda` Fase 2 que YA oculta toda la nav de seguros + abre POS directo +
   cambia "Volver" por "Cerrar sesión"). El cliente entra y ve SOLO su POS, sin
   rastro del seguro ni puerta de regreso. La org de seguros (`nexus-pro`) NO cambia.
-- **A construir (Paso 1):** en `parches.js`, que `renderPOS` dibuje el **sidebar +
-  dashboard** cuando `sesion.org.tipo==='tienda'` (reutiliza los 16 renders de
-  módulo que ya existen; solo cambia el "chrome" de navegación). Paso 2: org tienda
-  de prueba. Paso 3: primer cajero con su login (ver sección de roles/login abajo).
+- **HECHO — Paso 1 (sidebar + dashboard):** en `parches.js`, `renderPOS` con
+  `esTienda` usa `shellTienda(body,...)` (barra lateral índigo con secciones
+  Principal/Inventario/Personas y CRM/Finanzas/Sistema + footer usuario + "Cerrar
+  sesión" + área principal con topbar/burger móvil; `nxPosToggleSide` para el drawer).
+  `renderInicio` en modo tienda muestra **KPIs reales** (ventas de hoy, efectivo en
+  caja `_dashKPI`, productos, bajo stock) + accesos rápidos por grupos + panel
+  **"Últimas ventas"** del día (v38.7, desde `_ventas`). Reusa los 16 renders de módulo;
+  solo cambia el "chrome". Gateado a `tipo='tienda'` (seguros/admin siguen con pestañas).
+  CSS `nxT*` en el bloque de estilos del POS. **Pendiente:** Paso 2 org tienda de prueba
+  (Bayolsale ya sirve) · Paso 3 cajeros con su login (ver roles/login abajo).
 
 ### Multi-cliente del POS: aislamiento y personalización (acordado, IMPORTANTE)
 Reglas confirmadas con el dueño (cómo responderle si pregunta de nuevo):
