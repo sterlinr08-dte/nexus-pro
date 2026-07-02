@@ -6156,6 +6156,36 @@
 })();
 
 /* ════════════════════════════════════════════════════════════════
+   NEXUS PRO - ÍCONOS 2.5D (aplana el 3D)
+   Quita el glow de color grande y el brillo glossy fuerte; deja el color +
+   una profundidad SUTIL (2.5D). Se inyecta DESPUÉS del sistema 3D para ganar.
+   ════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  if (window.__NEXUS_ICONOS_25D__) return;
+  window.__NEXUS_ICONOS_25D__ = true;
+  function inject25d() {
+    var prev = document.getElementById('nx-iconos-25d'); if (prev) prev.remove();
+    var st = document.createElement('style'); st.id = 'nx-iconos-25d';
+    st.textContent = [
+      /* Aplana TODOS los cuadros de ícono semántico a 2.5D: sombra suave + leve brillo, sin glow pesado */
+      '.kpi i[class*="ti-"],.qa i[class*="ti-"],.sm i[class*="ti-"],.nc i[class*="ti-"],td i[class*="ti-"],.tw i[class*="ti-"]{',
+      'box-shadow:0 1px 2px rgba(15,23,42,.10),0 2px 6px rgba(15,23,42,.05),inset 0 1px 0 rgba(255,255,255,.5)!important;',
+      '}',
+      /* Chevron del buscador de artículos: círculo pequeño y limpio (no el gran círculo 3D) */
+      '.nxPpkChev{width:26px!important;height:26px!important;min-width:26px!important;font-size:14px!important;border-radius:8px!important;background:#f1f5f9!important;color:#94a3b8!important;box-shadow:none!important;display:inline-flex!important;align-items:center;justify-content:center;padding:0!important;transition:transform .18s ease,background .15s,color .15s}',
+      '.nxPpkWrap.on .nxPpkChev{background:#ede9fe!important;color:#6d28d9!important}',
+      /* Animación "reveal": tarjetas del buscador entran suavemente al hacer scroll */
+      '.nxPpkReveal{opacity:0;transform:translateY(16px);transition:opacity .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1);will-change:opacity,transform}',
+      '.nxPpkReveal.nxPpkIn{opacity:1;transform:none}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', inject25d, { once: true }); else inject25d();
+  try { window.addEventListener('nexus:reinit', inject25d); } catch (e) {}
+})();
+
+/* ════════════════════════════════════════════════════════════════
    NEXUS PRO - BOTÓN "CONSULTAR COBERTURA"
    Abre plataforma externa de ARS en pestaña nueva.
    URL configurable desde Configuración.
@@ -13998,7 +14028,7 @@
         <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
       </div>
       ${previewBar}
-      <div class="nxPosTabs">${tabBtn('inicio', 'Inicio', 'ti-layout-grid')}${tabBtn('vender', 'Vender', 'ti-cash-register')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('inventario', 'Inventario', 'ti-building-warehouse')}${tabBtn('cotizaciones', 'Cotizaciones', 'ti-clipboard-text')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('entidades', 'Entidades', 'ti-address-book')}${tabBtn('crm', 'CRM', 'ti-target-arrow')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('reportes', 'Reportes', 'ti-chart-pie')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
+      <div class="nxPosTabs">${tabBtn('inicio', 'Inicio', 'ti-layout-grid')}${tabBtn('vender', 'Vender', 'ti-shopping-cart')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('inventario', 'Inventario', 'ti-building-warehouse')}${tabBtn('cotizaciones', 'Cotizaciones', 'ti-clipboard-text')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('entidades', 'Entidades', 'ti-address-book')}${tabBtn('crm', 'CRM', 'ti-target-arrow')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('reportes', 'Reportes', 'ti-chart-pie')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'inicio') body = renderInicio();
     else if (_posTab === 'vender') body = renderVender();
@@ -14033,7 +14063,7 @@
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
     const sec = (t, items) => items.trim() ? `<div class="nxTSec">${t}</div>${items}` : '';
-    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-cash-register') + it('factura', 'Factura', 'ti-file-invoice'))
+    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice'))
       + sec('Inventario', it('productos', 'Productos', 'ti-box') + it('inventario', 'Inventario', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
       + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
@@ -14091,7 +14121,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('vender', 'Vender', 'ti-cash-register', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
+        ${grupo('Ventas', tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
         ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
@@ -14274,10 +14304,10 @@
         <div id="ppkList" style="overflow-y:auto;flex:1"></div>
       </div>`;
     document.body.appendChild(ov);
-    pintarProdPick('');
+    pintarProdPick('', true);
     setTimeout(function () { const i = document.getElementById('ppkQ'); if (i) i.focus(); }, 60);
   };
-  function pintarProdPick(q) {
+  function pintarProdPick(q, animate) {
     const wrap = document.getElementById('ppkList'); if (!wrap) return;
     q = (q || '').toLowerCase().trim();
     let lista = _prods;
@@ -14290,7 +14320,7 @@
       const aplica = precioCli(p);
       const abierto = String(_ppkOpen) === String(p.id);
       const precios = `Final: <b style="color:${cliMayor ? '#475569' : '#6d28d9'}">${fmt(pf)}</b>` + (Number(p.precio_mayor || 0) > 0 ? ` · Mayor: <b style="color:${cliMayor ? '#6d28d9' : '#475569'}">${fmt(pm)}</b>` : '');
-      return `<div class="nxPpkWrap${abierto ? ' on' : ''}">
+      return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
         <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')">
           <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.codigo ? ' · ' : ''}<span style="color:${exi <= 0 ? '#dc2626' : '#475569'}">${exi} und</span></div><div style="font-size:10.5px;color:#475569;margin-top:1px">${precios}</div></div>
           <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div><div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#6d28d9;font-size:13px">${fmt(aplica)}</b></div><i class="ti ti-chevron-right nxPpkChev" style="color:#cbd5e1;font-size:18px"></i></div>
@@ -14298,7 +14328,21 @@
         ${abierto ? ppkDetailHTML(p) : ''}
       </div>`; }).join('') || '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>';
     wrap.innerHTML = (total > 400 ? `<div style="font-size:10.5px;color:#475569;margin-bottom:6px">Mostrando 400 de ${total} — escribe para afinar</div>` : '') + `<div class="nxPpkGrid">${rows}</div>`;
+    if (animate) nxPpkSetupReveal();
     if (_ppkOpen) { const p = _prods.find(x => String(x.id) === String(_ppkOpen)); if (p && p.serial) nxCargarSerialesDet(p.id); }
+  }
+  // Animación "reveal": las tarjetas del buscador entran suavemente al hacer scroll.
+  function nxPpkSetupReveal() {
+    try {
+      const root = document.getElementById('ppkList'); if (!root) return;
+      const cards = root.querySelectorAll('.nxPpkReveal');
+      if (!('IntersectionObserver' in window)) { cards.forEach(c => c.classList.add('nxPpkIn')); return; }
+      const io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('nxPpkIn'); io.unobserve(e.target); } });
+      }, { root: root, threshold: 0.05 });
+      let i = 0;
+      cards.forEach(function (c) { c.style.transitionDelay = (Math.min(i, 7) * 45) + 'ms'; i++; io.observe(c); });
+    } catch (e) { }
   }
   function ppkDetailHTML(p) {
     const cli = (_prodPickDest === 'factura') ? clienteSel() : null;
