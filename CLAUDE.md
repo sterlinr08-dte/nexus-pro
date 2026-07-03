@@ -884,6 +884,11 @@ poder del dueño, NO va al repo). Entra con `doctor@geriatra` en nexusprord.com 
 consultorio (modo solo-consultorio). Los 5 pacientes/citas/consultas DEMO se le copiaron a su org
 (cuando empiece a trabajar de verdad, borrar su demo con un delete por organizacion_id).
 **Pendiente:** nombre/marca real del doctor cuando el dueño lo cierre (update organizaciones.nombre).
+**GRADUACIÓN a sistema propio (decidida 3-jul):** el consultorio pasará a **base por cliente**
+clonando el molde AMATISTA (su base `sdxyqaawxomnfhyaxuyo` tiene 50 tablas, ~90% sirve tal cual;
+se descarta lo dental). Se trabaja en un **CHAT APARTE** con su propio contexto:
+**ver `CONSULTORIO-CLAUDE.md`** (en la raíz de este repo) — plan por fases, infra, SSO,
+adaptaciones geriátricas. Pendiente: dueño confirma US$ 10/mes del proyecto Supabase nuevo.
 
 ### Aviso hosting `bayolcell.com` (3-jul-2026, sin resolver)
 Llegó correo de Namecheap: el HOSTING "Stellar" de `bayolcell.com` (dominio del taller) venció el
