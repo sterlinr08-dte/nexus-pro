@@ -1696,7 +1696,23 @@
       enRango(e.fecha, periodoFin ? new Date(new Date(periodoFin).getTime() - 31*24*60*60*1000) : new Date(0), new Date(periodoFin))
     );
 
+    // ── ENTREGAS: dos tipos distintos ──
+    // FÍSICAS (es_directo=false): el agente le ENTREGÓ dinero al admin → restan de su mano.
+    // DIRECTAS (es_directo=true): el cliente depositó DIRECTO en la cuenta bancaria de
+    //   `agente_id`; `cobrado_por` dice quién COBRÓ. Funciona como transferencia instantánea:
+    //   resta de la mano del que cobró y el dinero queda en poder del DUEÑO de la cuenta.
+    //   Si cobró a su PROPIA cuenta, neto 0 (ya está sumado en su "cobrado" y lo tiene él).
+    //   ANTES esto restaba al dueño de la cuenta y dejaba el monto "en mano" del cobrador —
+    //   por eso Robinson aparecía con dinero acumulado que en realidad cayó a la cuenta del admin.
+    const _dirCobrador = e => String(e.cobrado_por || e.agente_id);
+    const _sumaMontos = arr => arr.reduce((s, e) => s + Number(e.monto || 0), 0);
+
     return agentes.map(ag => {
+      const agId = String(ag.id);
+      const entFisicas = arr => _sumaMontos(arr.filter(e => !e.es_directo && String(e.agente_id) === agId));
+      const dirSalen = arr => _sumaMontos(arr.filter(e => e.es_directo && _dirCobrador(e) === agId && String(e.agente_id) !== agId));
+      const dirEntran = arr => _sumaMontos(arr.filter(e => e.es_directo && String(e.agente_id) === agId && _dirCobrador(e) !== agId));
+
       // ── DEL CICLO ──
       const propios = abonosPeriodo.filter(a => String(a.agente_cobro) === String(ag.id));
       const cobrado = propios.reduce((s, a) => s + Number(a.monto || 0), 0);
@@ -1708,10 +1724,8 @@
       const entregadas = transferenciasPeriodo
         .filter(t => String(t.desde_agente) === String(ag.id))
         .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const entregadasAdmin = entregasPeriodo
-        .filter(e => String(e.agente_id) === String(ag.id))
-        .reduce((s, e) => s + Number(e.monto || 0), 0);
-      const enMano = cobrado + recibidas - entregadas - entregadasAdmin;
+      const entregadasAdmin = entFisicas(entregasPeriodo) + dirSalen(entregasPeriodo);
+      const enMano = cobrado + recibidas - entregadas - entregadasAdmin + dirEntran(entregasPeriodo);
 
       // ── ACUMULADO (hasta el fin del ciclo) ──
       const propiosAcum = abonosAcum.filter(a => String(a.agente_cobro) === String(ag.id));
@@ -1722,13 +1736,11 @@
       const entregadasAcum = transferenciasAcum
         .filter(t => String(t.desde_agente) === String(ag.id))
         .reduce((s, t) => s + Number(t.monto || 0), 0);
-      const entregadasAdminAcum = entregasAcum
-        .filter(e => String(e.agente_id) === String(ag.id))
-        .reduce((s, e) => s + Number(e.monto || 0), 0);
+      const entregadasAdminAcum = entFisicas(entregasAcum) + dirSalen(entregasAcum);
       const entregasAdminPendientes = entregasAcum
-        .filter(e => String(e.agente_id) === String(ag.id) && !e.confirmado)
+        .filter(e => String(e.agente_id) === agId && !e.confirmado)
         .reduce((s, e) => s + Number(e.monto || 0), 0);
-      const enManoAcumulado = cobradoAcum + recibidasAcum - entregadasAcum - entregadasAdminAcum;
+      const enManoAcumulado = cobradoAcum + recibidasAcum - entregadasAcum - entregadasAdminAcum + dirEntran(entregasAcum);
 
       return {
         id: ag.id,
@@ -5764,7 +5776,8 @@
           banco = bSel;
         }
         const clienteId = (typeof abonoCliId !== 'undefined' ? abonoCliId : window.abonoCliId) || null;
-        snapshot = { monto, metodo, ref, cuenta: cuentaSel, banco, clienteId };
+        const agenteCobro = document.getElementById('aAgente')?.value || null; // QUIÉN cobró (para acreditar el dinero al agente correcto)
+        snapshot = { monto, metodo, ref, cuenta: cuentaSel, banco, clienteId, agenteCobro };
       }
 
       const reciboDiv = document.getElementById('reciboWAbtn');
@@ -5808,10 +5821,17 @@
             depositado_banco: snapshot.banco,
             es_directo: true,
             cobro_id: snapshot.clienteId,
+            cobrado_por: snapshot.agenteCobro, // el agente que COBRÓ (puede ser distinto al dueño de la cuenta)
             created_by: usr
           };
 
-          await api.post('entregas_admin', payload);
+          try {
+            await api.post('entregas_admin', payload);
+          } catch (ePayload) {
+            // Si la columna cobrado_por no existe aún, guardar sin ella (additivo)
+            const p2 = { ...payload }; delete p2.cobrado_por;
+            await api.post('entregas_admin', p2);
+          }
 
           if (typeof window.toast === 'function') {
             if (autoConf) window.toast('ok', 'Registrado a tu cuenta', `Depósito a ${cuentaNom} confirmado automáticamente`);
