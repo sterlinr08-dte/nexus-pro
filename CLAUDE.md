@@ -877,7 +877,13 @@ KPIs facturado/cobrado/pendiente en la pestaña Consultas). Para vender: crear o
 (org nexus-pro, 3-jul): 5 pacientes geriátricos realistas (Carmen Julia 78, Ramón 82, Mercedes 74,
 José Francisco 80, Ana Dolores 86 — con alergias/crónicas/familiar responsable), 3 citas de "hoy"
 + 2 futuras, 4 consultas con vitales/récipes/precios (1 pendiente de pago a propósito).
-**Pendiente:** nombre/marca del doctor cuando el dueño lo cierre.
+**ACCESO DEL DOCTOR CREADO (3-jul):** org `geriatra` (id `af2aa285-6df5-407a-a2f2-af6178a47209`,
+tipo consultorio, sin dominio) + usuario `doctor` (receta auth completa calcada de bayolcell:
+auth.users `doctor@nexus-pro.local` + identities + usuarios_sistema + profiles; clave temporal en
+poder del dueño, NO va al repo). Entra con `doctor@geriatra` en nexusprord.com → cae directo en su
+consultorio (modo solo-consultorio). Los 5 pacientes/citas/consultas DEMO se le copiaron a su org
+(cuando empiece a trabajar de verdad, borrar su demo con un delete por organizacion_id).
+**Pendiente:** nombre/marca real del doctor cuando el dueño lo cierre (update organizaciones.nombre).
 
 ### Aviso hosting `bayolcell.com` (3-jul-2026, sin resolver)
 Llegó correo de Namecheap: el HOSTING "Stellar" de `bayolcell.com` (dominio del taller) venció el
