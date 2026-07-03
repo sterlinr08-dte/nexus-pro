@@ -815,6 +815,22 @@ opcional/sin usar para este modelo, pero desplegado por si acaso).
   actual (evitar loop si alguien teclea `user@empresa` en su propio dominio). Cuando el dueño defina el
   dominio, setear `organizaciones.dominio` para esa org y construir la marca por hostname.
 
+### CONSULTORIO MÉDICO (geriatra) — módulo demo en Multiempresa (v39.8, chat `RvxXb`)
+Decisión del dueño: NO es base-por-cliente — es un **módulo dentro de NEXUS PRO** (patrón POS/Rifas:
+misma base, `organizacion_id`+trigger+RLS) para PRESENTARLO al doctor; si lo quiere, se le crea su
+org+usuario y ve solo lo suyo. **Tablas** (migración `create_consultorio_tables`): `med_pacientes`
+(ficha geriátrica: contacto_nombre/telefono = familiar responsable, alergias, condiciones,
+medicamentos, ars, sangre), `med_citas` (fecha/hora/motivo/estado pendiente|confirmada|atendida|
+cancelada), `med_consultas` (signos vitales presion/pulso/temperatura/peso/glucosa + diagnostico/
+tratamiento/receta/indicaciones + precio/pagado). **Módulo `parches.js`** (IIFE al final): hub
+Multiempresa orden 5 "Consultorio Médico" (`ti-stethoscope`, teal `#0d9488`), `window.nxAbrirConsultorio`
+(vista `#v-consultorio`), tabs Inicio (KPIs + agenda de hoy + accesos rápidos) / Agenda (por día,
+±día, atender→consulta) / Pacientes (buscador, ficha con alergias en rojo + historial) / Consultas.
+**Récipe imprimible** (`nxMdReceta`: ℞ formato médico RD, firma/exequátur; se abre solo al guardar
+consulta con receta). CSS `nxMd*`. Branding: usa `org.nombre` si `tipo='consultorio'`, si no
+"Consultorio Geriátrico". **Pendiente:** modo solo-consultorio (`tipo='consultorio'` espejo de
+tienda/rifa en index.html) cuando el doctor compre · nombre/marca del doctor.
+
 ### Cliente nuevo: AMATISTA DENTAL (clínica odontología) — base por cliente, EN OTRO CHAT
 Cliente nuevo conseguido por el dueño (chat `RvxXb`). Se construye con el modelo **“base por cliente”**
 (Infoplus): su PROPIA base aislada, entra por `usuario@amatista` desde `nexusprord.com` (el `@` enruta via
