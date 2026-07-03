@@ -39,14 +39,17 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
 - **Sin proceso de build, sin npm, sin bundler.** Se edita el archivo y se sube.
 
 ### Cómo se actualiza la app en producción
-1. La app instalada **descarga `index.html` desde la rama `main`** del repo en
-   GitHub (ver `version.json` → `url`).
-2. Para publicar una novedad: subir `APP_VERSION` en `index.html` (~línea 3131) y
-   `version` + entrada en `cambios[]` de `version.json` (mantenerlos
-   **sincronizados** para que la app avise "hay actualización").
+1. **(v40.0)** La app revisa `version.json` y descarga `index.html` desde **su PROPIO
+   dominio** (`location.origin` — Cloudflare, que publica cada push a `main` en segundos).
+   GitHub raw (`raw.githubusercontent.com/.../main/...`) quedó SOLO como respaldo si el
+   dominio no responde (antes era la fuente principal y daba problemas: caché ~5 min,
+   límites). Funciona igual en dominios de clientes (marca blanca).
+2. Para publicar una novedad: subir `APP_VERSION` en `index.html` y `version` + entrada
+   en `cambios[]` de `version.json` (mantenerlos **sincronizados** para que la app avise
+   "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **39.9** (ver `index.html` y `version.json`).
+> Versión actual: **40.0** (ver `index.html` y `version.json`).
 
 ---
 
