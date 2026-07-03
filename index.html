@@ -3254,9 +3254,14 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='39.9';
+const APP_VERSION='40.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
-const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
+// La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
+// con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
+// location.origin funciona igual en nexusprord.com y en los dominios de clientes (marca blanca).
+// Respaldo: GitHub raw, por si el dominio propio no responde.
+const URL_VERSION=(location.origin&&location.origin.startsWith('http')?location.origin+'/version.json':'https://nexusprord.com/version.json');
+const URL_VERSION_RESPALDO='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
 async function buscarActualizaciones(){
   const btn=document.getElementById('btnBuscarAct');
@@ -4576,25 +4581,30 @@ async function refrescarDatos(btn){
 // Revisa version.json en GitHub; si hay una versión nueva, ofrece aplicarla (recarga limpia)
 async function chequearVersionApp(){
   try{
-    const resp=await fetch(URL_VERSION+'?t='+Date.now());
-    if(!resp.ok)return;
+    let resp=null;
+    try{resp=await fetch(URL_VERSION+'?t='+Date.now());}catch(e){}
+    if(!resp||!resp.ok){try{resp=await fetch(URL_VERSION_RESPALDO+'?t='+Date.now());}catch(e){}}
+    if(!resp||!resp.ok)return;
     const data=await resp.json();
     if(compararVersiones(data.version,APP_VERSION)>0){
       const cambios=(data.cambios||[]).slice(0,6).map(c=>'• '+c).join('\n');
       if(confirm('🎉 NEXUS PRO v'+data.version+' disponible\n\nNovedades:\n'+(cambios||'(correcciones varias)')+'\n\n¿Actualizar la app ahora? Se recargará.')){
         toast('info','Actualizando app...','Aplicando la versión nueva');
-        const url=data.url||'https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html';
+        // Descargar la app nueva del MISMO dominio (Cloudflare); GitHub raw solo como respaldo.
+        const url=(location.origin&&location.origin.startsWith('http')?location.origin+'/index.html':null)||data.url||'https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/index.html';
         try{
           // Limpiar la caché del service worker para no servir lo viejo
           if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}
-          const r=await fetch(url+'?t='+Date.now());
-          if(r.ok){
-            const html=await r.text();
-            if(html.length>10000){
-              try{logAudit('ACTUALIZACION_APLICADA','Actualizado a v'+data.version,'Sistema');}catch(e){}
-              document.open();document.write(html);document.close();
-              return;
-            }
+          let html=null;
+          try{const r=await fetch(url+'?t='+Date.now());if(r.ok)html=await r.text();}catch(e){}
+          // Respaldo: si el dominio propio falló, intentar GitHub raw
+          if((!html||html.length<=10000)&&data.url&&data.url!==url){
+            try{const r2=await fetch(data.url+'?t='+Date.now());if(r2.ok)html=await r2.text();}catch(e){}
+          }
+          if(html&&html.length>10000){
+            try{logAudit('ACTUALIZACION_APLICADA','Actualizado a v'+data.version,'Sistema');}catch(e){}
+            document.open();document.write(html);document.close();
+            return;
           }
         }catch(e){}
         // Respaldo: recarga limpia con cache-bust
