@@ -97,10 +97,33 @@ tiene 50 tablas y **~90% le sirve al geriatra tal cual**:
 - **PENDIENTE de Fase 0:** crear el **usuario auth del doctor** en la base nueva
   (login `doctor@geriatra.local` según convención del molde; la clave la define el
   dueño — NO ponerla en el repo).
-- **SIGUIENTE (Fase 1):** hacerlo en un **chat dedicado al Consultorio** con los repos
-  `amatista-dental` (molde) y `geriatria` (destino) en alcance: clonar Amatista →
-  quitar módulos dentales → rebrandear (teal `#0d9488`) → conectar a la base nueva
-  (`VITE_SUPABASE_URL`/`ANON_KEY` de arriba) → probar local.
+### ✅ FASE 1 (CÓDIGO) COMPLETADA (2026-07-03) — falta SUBIR a `geriatria`
+- Se clonó el molde `amatista-dental`, se **quitaron los módulos dentales**
+  (odontograma, periodontograma, análisis de radiografías, laboratorio: páginas,
+  componentes, tipos, rutas, menú) y se **rebrandeó a teal `#0d9488`** ("Consultorio
+  Geriátrico"). **`npm run build` VERDE** (Vite+React+TS+Tailwind, 1758 módulos).
+- Cambios clave: nuevo `src/lib/clinico.ts` (mueve `GRUPOS_SANGUINEOS` y
+  `ESTADOS_PRESUPUESTO`); paleta teal en `tailwind.config.js` + `src/index.css`;
+  `DOMINIO_USUARIO='@geriatra.local'`; `NEGOCIO.nombre='Consultorio Geriátrico'`;
+  logos nuevos `public/logo.svg` + `public/favicon.svg`; `package.json` name
+  `consultorio-geriatria`; `public/CNAME=geriatra.nexusprord.com`; conectado a la
+  base nueva vía `.env` (gitignored).
+- ⚠️ **NO se pudo hacer `git push` a `sterlinr08-dte/geriatria` desde el chat de
+  NEXUS PRO** (el chat solo tiene permiso de ESCRITURA sobre `nexus-pro`; el proxy
+  da 403 al empujar a otros repos; la herramienta `add_repo` estaba caída). El
+  código terminado se entregó al dueño como **tarball** y quedó **pendiente de subir
+  a `geriatria`**.
+- **Para LANDEARLO en `geriatria`** (desde una sesión con `geriatria` en alcance de
+  escritura — chat dedicado o vía `add_repo`): clonar `amatista-dental`, reaplicar
+  estos cambios (o usar el tarball entregado), crear `.env` con la URL/anon key de
+  arriba, `npm run build` para confirmar verde, y `git push` a `geriatria` (main).
+
+### PENDIENTES tras Fase 1
+- **Subir el código a `geriatria`** (ver arriba).
+- **Usuario auth del doctor** en la base nueva (`doctor@geriatra.local`; clave del dueño).
+- **Fase 2:** adaptaciones geriátricas (ficha con familiar responsable/alergias/
+  crónicas, signos vitales, récipe RD imprimible, WhatsApp de citas).
+- **Fase 3:** deploy Cloudflare Pages + subdominio + llenar `organizaciones` (SSO).
 
 ### Contexto previo (demo dentro de NEXUS PRO)
 - **Módulo demo dentro de NEXUS PRO** (base compartida `tnwsgcxurfyuszxsewsn`,
