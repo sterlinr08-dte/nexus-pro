@@ -46,7 +46,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    **sincronizados** para que la app avise "hay actualización").
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **39.2** (ver `index.html` y `version.json`).
+> Versión actual: **39.9** (ver `index.html` y `version.json`).
 
 ---
 
@@ -353,6 +353,42 @@ duplicar lo que el cron ya generó. El frontend TAMBIÉN tiene `verificarAutoFac
 por minuto, `autoCfg` dia 20 / hora 06:10) — redundante con el cron pero inofensivo con el candado.
 OJO frontend: `deps` se parsea al cargar (línea ~4438) y CFG mapea `prima_*`/`dep_*`/`costo_*` de
 `configuracion` (t=prima titular, d=precio dep, cost=costo negocio).
+
+### FACTURACIÓN SANA DE PUNTA A PUNTA — v39.3→39.7 (jul-2026, chat `RvxXb`)
+Barrido completo pedido por el dueño ("de eso dependen mis ingresos"). Todo HECHO y en vivo:
+- **v39.3 — precio nuevo ↔ factura del mes:** al EDITAR un cliente y cambiarle la prima
+  (`guardarCli` captura `_primaAntes`), si el mes en curso tiene factura SIN pagar con la prima
+  vieja, `nxSincronizarFacturaPrecio` pregunta si la actualiza y cuadra factura+deuda de una
+  (audit `FACTURA_REPRECIADA`). Facturas pagadas NO se tocan. Mata el ciclo: precio nuevo →
+  ajuste a mano → `reconciliarDeudasClientes` lo revertía (eso infló deudas de 9 clientes en mayo).
+- **Datos reparados (SQL, jun-jul):** 9 clientes con factura de mayo al precio viejo corregidos
+  (4 grupo Yilenny a 3,300 + Yensi 3,500/Quilvio 4,000/Argeni 3,500/Luisa Yamel 4,000/Dayeli 5,500);
+  precios confirmados por el dueño: Gilberta 5,000 · Ramón Valdez 4,500 · Amantina 5,000 (quedaron
+  con piquito de mayo por pagar de menos); Donis debe junio; **Mascimina = abuela, NO paga:**
+  facturas anuladas + `permitir_facturacion=false`. Junio reparado: 8 clientes con dependientes
+  facturados en 0 por el bug del servidor (+2,000 c/u, Ada +3,000, Juan Frankelis 4,000+4,000+4,000
+  =12,000/mes confirmado). Geovanny 6,500 y Lucía 6,000 INCLUYEN el dep → precios repartidos en
+  titular+dep para que julio no duplique. José Natividad pagó 18,000 adelantado (4 meses, NO es error).
+- **v39.5 — corte 20-al-20 en la UI:** helper `mesCorte()` (día <20 → mes anterior; enero→dic).
+  `initMesSel` (selector de Facturas), fallbacks de `rFact`/`genFacturas`/`_genFacturasInterno`,
+  filtro "atrasadas" y `genFacturasConfirm` usan el mes de CORTE. Al abrir Facturas el día 5 de
+  julio se ve JUNIO (el mes que se está cobrando), no julio vacío.
+- **v39.6 — sincronización en vivo:** `nxSyncDatos(force)` re-LEE clientes+facturas de la base
+  (throttle 45s) y repinta; enganchado al interval de 30s y a `visibilitychange` (force al volver
+  a la app). Antes el "auto-refresco" solo repintaba memoria → lo que cobraba Robinson no se veía
+  sin recargar. + `regAbono`/`nxRegAbonoDeudaAnterior` ahora repintan también rCli+rFact, y
+  `guardarCli` repinta rFact+rCob.
+- **v39.7 — dinero por agente (Detalles de cobro):** `entregas_admin.cobrado_por` (migración
+  `entregas_admin_cobrado_por`, backfill por cliente+monto y por fecha+monto). En
+  `calcularPorAgente` (parches.js) las entregas DIRECTAS (es_directo, el cliente depositó a la
+  cuenta de `agente_id`) funcionan como transferencia instantánea: RESTAN al que cobró
+  (`cobrado_por`) y quedan en poder del dueño de la cuenta; a la propia cuenta = neto 0 (en su
+  "cobrado"). ANTES restaban al dueño de la cuenta y el cobrador quedaba "con" dinero que nunca
+  tuvo (Robinson salía con ~62k). FÍSICAS (no directo) siguen restando a `agente_id`. El wrap del
+  cobro guarda `cobrado_por` (con fallback si la columna no existe). **CORTE ROBINSON (3-jul):**
+  entrega física de ajuste 19,200 `CORTE-JUL-2026` → acumulado = **16,500** (cifra real acordada);
+  además se borraron 2 duplicados del cobro de Kelvin en entregas_admin (5,000 x3 → x1).
+  OJO efectivo: va al acumulado del **"Agente que cobró"** del modal (no del agente asignado al cliente).
 
 ### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
 Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
@@ -834,8 +870,18 @@ espejo de tienda/rifa en index.html: clase `body.org-consultorio`, `aplicarOrgSi
 "Cerrar sesión" en el hero) + recordatorio de cita por WhatsApp (tel del paciente o del familiar,
 mensaje armado con negocio/fecha/hora) + reporte de ingresos del mes imprimible (`nxMdRepIngresos`,
 KPIs facturado/cobrado/pendiente en la pestaña Consultas). Para vender: crear org `tipo='consultorio'`
-+ usuario (receta auth de siempre) y el doctor entra directo a lo suyo. **Pendiente:** nombre/marca
-del doctor cuando el dueño lo cierre.
++ usuario (receta auth de siempre) y el doctor entra directo a lo suyo. **Datos DEMO sembrados**
+(org nexus-pro, 3-jul): 5 pacientes geriátricos realistas (Carmen Julia 78, Ramón 82, Mercedes 74,
+José Francisco 80, Ana Dolores 86 — con alergias/crónicas/familiar responsable), 3 citas de "hoy"
++ 2 futuras, 4 consultas con vitales/récipes/precios (1 pendiente de pago a propósito).
+**Pendiente:** nombre/marca del doctor cuando el dueño lo cierre.
+
+### Aviso hosting `bayolcell.com` (3-jul-2026, sin resolver)
+Llegó correo de Namecheap: el HOSTING "Stellar" de `bayolcell.com` (dominio del taller) venció el
+3-jul con 72h de gracia (US$ 55.88/año). Es el hosting, NO el dominio (renovación aparte).
+Recomendación dada al dueño: verificar qué sirve ese hosting; si es la app del taller, migrarla
+GRATIS a Cloudflare Pages (como Deluxe/NEXUS) y apuntar el dominio — trabajo del chat del taller
+(`bayolcell-taller`). No renovar desde el link del correo (phishing risk); entrar directo a Namecheap.
 
 ### Cliente nuevo: AMATISTA DENTAL (clínica odontología) — base por cliente, EN OTRO CHAT
 Cliente nuevo conseguido por el dueño (chat `RvxXb`). Se construye con el modelo **“base por cliente”**
