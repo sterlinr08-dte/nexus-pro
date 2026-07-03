@@ -74,6 +74,35 @@ tiene 50 tablas y **~90% le sirve al geriatra tal cual**:
 
 ## Estado actual (lo que YA existe, hecho desde el chat de NEXUS PRO)
 
+### ✅ FASE 0 COMPLETADA (2026-07-03)
+- **Base de datos propia CREADA:** proyecto Supabase **"Consultorio Geriatra"** en la
+  org `sterlinr08` (`gmjedhkktbffnanmebkf`), región `us-east-1`.
+  - **project ref / id:** `xqcrpsqhjznltthnfysw`
+  - **URL:** `https://xqcrpsqhjznltthnfysw.supabase.co`
+  - **anon key:** NO se guarda en el repo — obtenerla con Supabase MCP
+    `get_publishable_keys(project_id='xqcrpsqhjznltthnfysw')` cuando se necesite
+    (para `VITE_SUPABASE_ANON_KEY` y para `auth_key` del SSO en Fase 3).
+- **Esquema clonado FIEL de Amatista** (`sdxyqaawxomnfhyaxuyo`), **sin lo dental**.
+  Verificado exacto: **45 tablas, 45 con RLS, 126 políticas, 25 funciones,
+  37 triggers, 68 FKs, 58 índices, 14 secuencias, 4 extensiones.**
+  - Excluidas: `odontograma`, `periodontograma`, `radiografia_hallazgos`,
+    `ordenes_laboratorio`. `radiografias` se conservó (estudios/imágenes genérico).
+  - Pendiente menor: la VISTA `chat_mis_conversaciones` NO se clonó (solo tablas);
+    recrearla con `CREATE VIEW` si la app la usa.
+- **Repo de la app CREADO (vacío):** `sterlinr08-dte/geriatria` (privado, con README).
+  Falta clonarle el código del molde.
+- **Repo molde (Amatista):** `sterlinr08-dte/amatista-dental`
+  (rama de setup `claude/amatista-dental-setup-qqrmq0`). Dar acceso a Claude para
+  clonarlo en Fase 1.
+- **PENDIENTE de Fase 0:** crear el **usuario auth del doctor** en la base nueva
+  (login `doctor@geriatra.local` según convención del molde; la clave la define el
+  dueño — NO ponerla en el repo).
+- **SIGUIENTE (Fase 1):** hacerlo en un **chat dedicado al Consultorio** con los repos
+  `amatista-dental` (molde) y `geriatria` (destino) en alcance: clonar Amatista →
+  quitar módulos dentales → rebrandear (teal `#0d9488`) → conectar a la base nueva
+  (`VITE_SUPABASE_URL`/`ANON_KEY` de arriba) → probar local.
+
+### Contexto previo (demo dentro de NEXUS PRO)
 - **Módulo demo dentro de NEXUS PRO** (base compartida `tnwsgcxurfyuszxsewsn`,
   tablas `med_pacientes`/`med_citas`/`med_consultas`, aisladas por organización).
 - **Org `geriatra`** en la base NEXUS (id `af2aa285-6df5-407a-a2f2-af6178a47209`,
