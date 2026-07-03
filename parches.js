@@ -19525,3 +19525,169 @@ try {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
+
+/* ===================== MÓDULO CLIENTES SaaS (cobros por sistema/base) =====================
+   Control del DUEÑO: los clientes que pagan mensualidad por su sistema (Deluxe, Amatista,
+   Consultorio...). Tablas saas_suscripciones + saas_pagos (org+RLS). Solo admin. */
+(function () {
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]; }); }
+  function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
+  function toast() { try { return window.toast.apply(null, arguments); } catch (e) {} }
+  function val(id) { var e = document.getElementById(id); return e ? e.value : ''; }
+  function moneyVal(id) { var e = document.getElementById(id); if (!e) return 0; try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(e.value)) || 0; } catch (er) {} return Number(String(e.value).replace(/[^0-9.-]/g, '')) || 0; }
+  function curSes() { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { try { return window.sesion; } catch (_) { return null; } } }
+  function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
+  function cerrar(id) { var o = document.getElementById(id); if (o) o.remove(); }
+  function modal(id, html, maxw) {
+    cerrar(id);
+    var o = document.createElement('div'); o.id = id; o.className = 'nxMdOv';
+    o.innerHTML = '<div class="nxMdModal" style="max-width:' + (maxw || 540) + 'px">' + html + '</div>';
+    o.addEventListener('click', function (ev) { if (ev.target === o) o.remove(); });
+    document.body.appendChild(o);
+  }
+  function mesActual() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function mesNombre(p) { try { return new Date(p + '-15T12:00:00').toLocaleDateString('es-DO', { month: 'long', year: 'numeric' }); } catch (e) { return p; } }
+
+  var _sus = [], _pagos = [];
+  var SA_CSS = '\n.nxSaCard{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px;margin-bottom:9px;box-shadow:0 3px 10px rgba(15,23,42,.05)}\n.nxSaTop{display:flex;align-items:center;gap:10px;margin-bottom:8px}\n.nxSaIco{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#047857;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}\n.nxSaNom{font-weight:800;font-size:13.5px;color:#0f172a;line-height:1.15}\n.nxSaSub{font-size:10.5px;color:#64748b;margin-top:1px}\n.nxSaEst{font-size:10px;font-weight:800;padding:4px 10px;border-radius:999px;flex:none}\n.nxSaMeta{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#475569;margin-bottom:9px}\n.nxSaMeta b{color:#0f172a}\n.nxSaBtns{display:flex;gap:6px;flex-wrap:wrap}\n';
+  function inyectarCSS() { if (document.getElementById('nxSaCSS')) return; var s = document.createElement('style'); s.id = 'nxSaCSS'; s.textContent = SA_CSS; document.head.appendChild(s); if (!document.getElementById('nxMdCSS')) { /* usa modal del consultorio si no está */ var s2 = document.createElement('style'); s2.id = 'nxMdCSS'; s2.textContent = '.nxMdOv{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:18px 10px;overflow:auto}.nxMdModal{background:#fff;border-radius:16px;box-shadow:0 22px 60px rgba(15,23,42,.28);width:100%;padding:16px;margin:auto 0}.nxMdFr{margin-bottom:9px}.nxMdFr label{display:block;font-size:10.5px;font-weight:700;color:#475569;margin-bottom:3px;text-transform:uppercase}.nxMdFr input,.nxMdFr select,.nxMdFr textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:9px 10px;font-size:13px;font-family:inherit}.nxMdG2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nxMdBtns{display:flex;gap:7px;margin-top:12px}.nxMdBtn{flex:1;border:0;border-radius:11px;padding:11px;font-size:13px;font-weight:800;cursor:pointer}.nxMdBtn.p{background:#0d9488;color:#fff}.nxMdBtn.g{background:#f1f5f9;color:#334155}.nxMdKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}.nxMdKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:11px 12px}.nxMdKpi b{display:block;font-size:16px;color:#0f172a}.nxMdKpi span{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase}'; document.head.appendChild(s2); } }
+
+  function ensureView() {
+    var v = document.getElementById('v-saas');
+    if (v) return v;
+    var dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
+    v = document.createElement('div'); v.className = 'view'; v.id = 'v-saas';
+    dash.parentElement.appendChild(v);
+    return v;
+  }
+  async function cargarSaas() {
+    try { _sus = await getAPI().get('saas_suscripciones', 'select=*&order=nombre.asc') || []; } catch (e) { _sus = []; }
+    try { _pagos = await getAPI().get('saas_pagos', 'select=*&order=fecha.desc&limit=500') || []; } catch (e) { _pagos = []; }
+  }
+  function pagosDe(id) { return _pagos.filter(function (p) { return String(p.suscripcion_id) === String(id); }); }
+  function pagadoMes(id) { var m = mesActual(); return pagosDe(id).some(function (p) { return String(p.periodo || '').slice(0, 7) === m; }); }
+
+  window.nxAbrirSaas = async function () {
+    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    inyectarCSS();
+    var view = ensureView(); if (!view) return;
+    document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
+    view.classList.add('on');
+    var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'CLIENTES SaaS';
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div></div></div>';
+    try { await cargarSaas(); renderSaas(view); }
+    catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudo cargar.</div></div>'; }
+  };
+
+  function renderSaas(view) {
+    var m = mesActual();
+    var activos = _sus.filter(function (s) { return s.activo !== false; });
+    var esperado = activos.reduce(function (t, s) { return t + Number(s.mensualidad || 0); }, 0);
+    var cobradoMes = _pagos.filter(function (p) { return String(p.periodo || '').slice(0, 7) === m; }).reduce(function (t, p) { return t + Number(p.monto || 0); }, 0);
+    var alDia = activos.filter(function (s) { return pagadoMes(s.id); }).length;
+    var hoy = new Date().getDate();
+    var cards = _sus.map(function (s) {
+      var pagado = pagadoMes(s.id);
+      var vencido = !pagado && hoy > Number(s.dia_cobro || 1);
+      var est = s.activo === false ? ['#64748b', '#f1f5f9', 'INACTIVO'] : pagado ? ['#16a34a', '#f0fdf4', 'PAGADO ' + mesNombre(m).split(' ')[0].toUpperCase()] : vencido ? ['#dc2626', '#fef2f2', 'VENCIDO'] : ['#d97706', '#fffbeb', 'POR COBRAR'];
+      var ult = pagosDe(s.id)[0];
+      var telW = String(s.whatsapp || '').replace(/\D/g, '');
+      var msg = 'Hola' + (s.contacto ? ' ' + s.contacto : '') + ', le recordamos la mensualidad de su sistema (' + (s.nombre || '') + ') correspondiente a ' + mesNombre(m) + ': ' + fmt(s.mensualidad) + '. ¡Gracias!';
+      return '<div class="nxSaCard">' +
+        '<div class="nxSaTop"><div class="nxSaIco"><i class="ti ti-server-2"></i></div>' +
+        '<div style="flex:1;min-width:0"><div class="nxSaNom">' + esc(s.nombre) + '</div><div class="nxSaSub">' + esc(s.sistema || '') + (s.dominio ? ' · ' + esc(s.dominio) : '') + '</div></div>' +
+        '<span class="nxSaEst" style="background:' + est[1] + ';color:' + est[0] + '">' + est[2] + '</span></div>' +
+        '<div class="nxSaMeta"><span>Mensualidad: <b>' + fmt(s.mensualidad) + '</b></span><span>Día de cobro: <b>' + (s.dia_cobro || 1) + '</b></span>' +
+        (ult ? '<span>Último pago: <b>' + String(ult.fecha).slice(0, 10) + '</b> (' + fmt(ult.monto) + ')</span>' : '<span style="color:#94a3b8">Sin pagos registrados</span>') + '</div>' +
+        '<div class="nxSaBtns">' +
+        '<button class="btn bsm bc1" type="button" onclick="window.nxSaasPago(\'' + s.id + '\')"><i class="ti ti-cash"></i> Registrar pago</button>' +
+        '<button class="btn bsm bghost" type="button" onclick="window.nxSaasHist(\'' + s.id + '\')"><i class="ti ti-history"></i></button>' +
+        (telW ? '<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1' + telW + '?text=' + encodeURIComponent(msg) + '" target="_blank"><i class="ti ti-brand-whatsapp"></i></a>' : '') +
+        '<button class="btn bsm bghost" type="button" onclick="window.nxSaasForm(\'' + s.id + '\')"><i class="ti ti-edit"></i></button>' +
+        '</div></div>';
+    }).join('');
+    view.innerHTML = '<div style="max-width:760px;margin:0 auto">' +
+      '<div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-server-2"></i> Clientes SaaS</div><div class="ct-s">Mensualidades de tus sistemas vendidos · ' + esc(mesNombre(m)) + '</div></div>' +
+      '<div style="display:flex;gap:6px"><button class="btn bsm" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button>' +
+      '<button class="btn bsm bc1" type="button" onclick="window.nxSaasForm()"><i class="ti ti-plus"></i> Cliente</button></div></div>' +
+      '<div class="nxMdKpis">' +
+      '<div class="nxMdKpi"><b>' + fmt(esperado) + '</b><span>Esperado / mes</span></div>' +
+      '<div class="nxMdKpi"><b style="color:#16a34a">' + fmt(cobradoMes) + '</b><span>Cobrado este mes</span></div>' +
+      '<div class="nxMdKpi"><b style="color:#d97706">' + fmt(Math.max(0, esperado - cobradoMes)) + '</b><span>Pendiente</span></div>' +
+      '<div class="nxMdKpi"><b>' + alDia + '/' + activos.length + '</b><span>Al día</span></div>' +
+      '</div>' + (cards || '<div style="text-align:center;color:#64748b;padding:26px;font-size:12px">Sin clientes — agrega el primero</div>') + '</div></div>';
+  }
+
+  window.nxSaasForm = function (id) {
+    var s = id ? _sus.find(function (x) { return String(x.id) === String(id); }) : {};
+    s = s || {};
+    modal('nxSaM', '<div style="font-weight:800;font-size:14px;margin-bottom:10px"><i class="ti ti-server-2" style="color:#047857"></i> ' + (id ? 'Editar cliente' : 'Nuevo cliente SaaS') + '</div>' +
+      '<div class="nxMdFr"><label>Nombre del negocio *</label><input id="saNom" value="' + esc(s.nombre || '') + '"></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Sistema</label><input id="saSis" value="' + esc(s.sistema || '') + '" placeholder="Salón, dental, consultorio..."></div>' +
+      '<div class="nxMdFr"><label>Dominio</label><input id="saDom" value="' + esc(s.dominio || '') + '"></div></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Mensualidad RD$</label><input id="saMen" data-nx-money inputmode="numeric" value="' + (Number(s.mensualidad || 0) ? Math.round(s.mensualidad).toLocaleString('en-US') : '') + '"></div>' +
+      '<div class="nxMdFr"><label>Día de cobro</label><input id="saDia" type="number" min="1" max="28" value="' + (s.dia_cobro || 1) + '"></div></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Contacto</label><input id="saCon" value="' + esc(s.contacto || '') + '"></div>' +
+      '<div class="nxMdFr"><label>WhatsApp</label><input id="saWa" value="' + esc(s.whatsapp || '') + '" placeholder="8095551234"></div></div>' +
+      '<div class="nxMdFr"><label>Nota</label><input id="saNota" value="' + esc(s.nota || '') + '"></div>' +
+      (id ? '<div class="nxMdFr"><label>Estado</label><select id="saAct"><option value="si"' + (s.activo !== false ? ' selected' : '') + '>Activo</option><option value="no"' + (s.activo === false ? ' selected' : '') + '>Inactivo (sistema apagado)</option></select></div>' : '') +
+      '<div class="nxMdBtns"><button class="nxMdBtn g" type="button" onclick="document.getElementById(\'nxSaM\').remove()">Cancelar</button>' +
+      '<button class="nxMdBtn p" type="button" onclick="window.nxSaasGuardar(' + (id ? '\'' + id + '\'' : '') + ')">Guardar</button></div>');
+  };
+  window.nxSaasGuardar = async function (id) {
+    var nom = val('saNom').trim(); if (!nom) { toast('err', 'Falta el nombre'); return; }
+    var d = { nombre: nom.toUpperCase(), sistema: val('saSis').trim() || null, dominio: val('saDom').trim() || null, mensualidad: moneyVal('saMen'), dia_cobro: parseInt(val('saDia')) || 1, contacto: val('saCon').trim() || null, whatsapp: val('saWa').trim() || null, nota: val('saNota').trim() || null };
+    if (id) d.activo = val('saAct') !== 'no';
+    try {
+      if (id) { await getAPI().patch('saas_suscripciones', 'id=eq.' + id, d); var i = _sus.findIndex(function (x) { return String(x.id) === String(id); }); if (i >= 0) _sus[i] = Object.assign({}, _sus[i], d); }
+      else { var r = await getAPI().post('saas_suscripciones', d); if (r && r[0]) _sus.push(r[0]); }
+      try { window.logAudit && window.logAudit(id ? 'SAAS_CLIENTE_EDITADO' : 'SAAS_CLIENTE_NUEVO', nom + ' · ' + fmt(d.mensualidad) + '/mes', 'ClientesSaaS'); } catch (e) {}
+      cerrar('nxSaM'); toast('ok', 'Guardado', nom);
+      var v = document.getElementById('v-saas'); if (v) renderSaas(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxSaasPago = function (id) {
+    var s = _sus.find(function (x) { return String(x.id) === String(id); }); if (!s) return;
+    var m = mesActual();
+    modal('nxSaP', '<div style="font-weight:800;font-size:14px;margin-bottom:2px"><i class="ti ti-cash" style="color:#16a34a"></i> Registrar pago</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:10px">' + esc(s.nombre) + '</div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Monto RD$</label><input id="spMonto" data-nx-money inputmode="numeric" value="' + (Number(s.mensualidad || 0) ? Math.round(s.mensualidad).toLocaleString('en-US') : '') + '"></div>' +
+      '<div class="nxMdFr"><label>Fecha</label><input id="spFecha" type="date" value="' + new Date().toISOString().slice(0, 10) + '"></div></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Mes que cubre</label><input id="spPer" type="month" value="' + m + '"></div>' +
+      '<div class="nxMdFr"><label>Método</label><select id="spMet"><option>Transferencia</option><option>Efectivo</option><option>Depósito</option><option>Otro</option></select></div></div>' +
+      '<div class="nxMdFr"><label>Referencia / nota</label><input id="spRef"></div>' +
+      '<div class="nxMdBtns"><button class="nxMdBtn g" type="button" onclick="document.getElementById(\'nxSaP\').remove()">Cancelar</button>' +
+      '<button class="nxMdBtn p" type="button" onclick="window.nxSaasPagoGuardar(\'' + id + '\')">Registrar</button></div>');
+  };
+  window.nxSaasPagoGuardar = async function (id) {
+    var s = _sus.find(function (x) { return String(x.id) === String(id); }); if (!s) return;
+    var monto = moneyVal('spMonto'); if (!monto || monto <= 0) { toast('err', 'Monto inválido'); return; }
+    try {
+      var r = await getAPI().post('saas_pagos', { suscripcion_id: id, monto: monto, fecha: val('spFecha') || new Date().toISOString().slice(0, 10), periodo: val('spPer') || mesActual(), metodo: val('spMet') || null, referencia: val('spRef').trim() || null });
+      if (r && r[0]) _pagos.unshift(r[0]);
+      try { window.logAudit && window.logAudit('SAAS_PAGO', s.nombre + ' · ' + fmt(monto) + ' · ' + (val('spPer') || mesActual()), 'ClientesSaaS'); } catch (e) {}
+      cerrar('nxSaP'); toast('ok', 'Pago registrado', s.nombre + ' · ' + fmt(monto));
+      var v = document.getElementById('v-saas'); if (v) renderSaas(v);
+    } catch (e) { toast('err', 'No se pudo registrar', String(e && e.message || e)); }
+  };
+  window.nxSaasHist = function (id) {
+    var s = _sus.find(function (x) { return String(x.id) === String(id); }); if (!s) return;
+    var lst = pagosDe(id);
+    var h = lst.length ? lst.map(function (p) {
+      return '<div style="display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span>' + String(p.fecha).slice(0, 10) + ' · ' + esc(mesNombre(String(p.periodo || '').slice(0, 7))) + (p.metodo ? ' · ' + esc(p.metodo) : '') + '</span><b>' + fmt(p.monto) + '</b></div>';
+    }).join('') : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin pagos registrados</div>';
+    var tot = lst.reduce(function (t, p) { return t + Number(p.monto || 0); }, 0);
+    modal('nxSaH', '<div style="font-weight:800;font-size:14px;margin-bottom:2px"><i class="ti ti-history" style="color:#047857"></i> Historial de pagos</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:10px">' + esc(s.nombre) + ' · Total histórico: <b>' + fmt(tot) + '</b></div>' + h +
+      '<div class="nxMdBtns"><button class="nxMdBtn g" type="button" onclick="document.getElementById(\'nxSaH\').remove()">Cerrar</button></div>');
+  };
+
+  function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 8, nombre: 'Clientes SaaS', desc: 'Mensualidades de tus sistemas vendidos', icon: 'ti-server-2', color: '#047857', bg: '#ecfdf5', onclick: 'window.nxAbrirSaas()' }); } catch (e) {} }
+  function init() { inyectarCSS(); var n = 0; var t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 150); }; t(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
