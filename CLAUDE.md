@@ -828,8 +828,14 @@ Multiempresa orden 5 "Consultorio Médico" (`ti-stethoscope`, teal `#0d9488`), `
 ±día, atender→consulta) / Pacientes (buscador, ficha con alergias en rojo + historial) / Consultas.
 **Récipe imprimible** (`nxMdReceta`: ℞ formato médico RD, firma/exequátur; se abre solo al guardar
 consulta con receta). CSS `nxMd*`. Branding: usa `org.nombre` si `tipo='consultorio'`, si no
-"Consultorio Geriátrico". **Pendiente:** modo solo-consultorio (`tipo='consultorio'` espejo de
-tienda/rifa en index.html) cuando el doctor compre · nombre/marca del doctor.
+"Consultorio Geriátrico". **v39.9 — COMPLETO:** modo solo-consultorio HECHO (`tipo='consultorio'`
+espejo de tienda/rifa en index.html: clase `body.org-consultorio`, `aplicarOrgSidebar` abre
+`nxAbrirConsultorio` con retry, guard en `nav()`, landing directo `esModuloDirecto`, botón
+"Cerrar sesión" en el hero) + recordatorio de cita por WhatsApp (tel del paciente o del familiar,
+mensaje armado con negocio/fecha/hora) + reporte de ingresos del mes imprimible (`nxMdRepIngresos`,
+KPIs facturado/cobrado/pendiente en la pestaña Consultas). Para vender: crear org `tipo='consultorio'`
++ usuario (receta auth de siempre) y el doctor entra directo a lo suyo. **Pendiente:** nombre/marca
+del doctor cuando el dueño lo cierre.
 
 ### Cliente nuevo: AMATISTA DENTAL (clínica odontología) — base por cliente, EN OTRO CHAT
 Cliente nuevo conseguido por el dueño (chat `RvxXb`). Se construye con el modelo **“base por cliente”**

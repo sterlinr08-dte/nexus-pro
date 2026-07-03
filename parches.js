@@ -19217,10 +19217,14 @@ try {
     var mesKey = hoy.slice(0, 7);
     var consMes = _cons.filter(function (c) { return String(c.fecha).slice(0, 7) === mesKey; });
     var ingMes = consMes.reduce(function (t, c) { return t + Number(c.precio || 0); }, 0);
+    // Modo SOLO-CONSULTORIO (org tipo 'consultorio'): el doctor no tiene a dónde "volver" — cierra sesión.
+    var btnHdr = org.tipo === 'consultorio'
+      ? '<button class="btn bsm" style="background:rgba(255,255,255,.16);color:#fff;border:0" type="button" onclick="window.logout&&window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>'
+      : '<button class="btn bsm" style="background:rgba(255,255,255,.16);color:#fff;border:0" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button>';
     var head =
       '<div class="nxMdHero"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;position:relative;z-index:1">' +
       '<div><div class="nxMdHeroT"><i class="ti ti-stethoscope"></i> ' + esc(nomNeg) + '</div><div class="nxMdHeroS">Medicina geriátrica · ' + fechaDMY(hoy) + '</div></div>' +
-      '<button class="btn bsm" style="background:rgba(255,255,255,.16);color:#fff;border:0" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button>' +
+      btnHdr +
       '</div></div>';
     var tabs = [['inicio', 'ti-home', 'Inicio'], ['agenda', 'ti-calendar', 'Agenda'], ['pacientes', 'ti-users', 'Pacientes'], ['consultas', 'ti-clipboard-heart', 'Consultas']];
     var tabsH = '<div class="nxMdTabs">' + tabs.map(function (t) { return '<button type="button" class="nxMdTab' + (_mdTab === t[0] ? ' on' : '') + '" onclick="window.nxMdTab(\'' + t[0] + '\')"><i class="ti ' + t[1] + '"></i> ' + t[2] + '</button>'; }).join('') + '</div>';
@@ -19250,13 +19254,22 @@ try {
   function filaCita(c) {
     var e = estCita(c.estado); var p = pacDe(c.paciente_id);
     var ed = p ? edad(p.fecha_nacimiento) : '';
+    // Recordatorio por WhatsApp (al teléfono del paciente o del familiar responsable)
+    var telW = p ? String(p.telefono || p.contacto_telefono || '').replace(/\D/g, '') : '';
+    var wa = '';
+    if (telW && c.estado !== 'atendida' && c.estado !== 'cancelada') {
+      var sw = curSes(); var ow = (sw && sw.org) || {};
+      var neg = (ow.tipo === 'consultorio' && ow.nombre) ? ow.nombre : 'Consultorio Geriátrico';
+      var msg = 'Hola ' + ((p && p.nombre) || '') + ', le recordamos su cita en ' + neg + ' el ' + fechaDMY(c.fecha) + (c.hora ? ' a las ' + c.hora : '') + '. ¡Le esperamos!';
+      wa = '<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1' + telW + '?text=' + encodeURIComponent(msg) + '" target="_blank" title="Recordar por WhatsApp" onclick="event.stopPropagation()"><i class="ti ti-brand-whatsapp"></i></a>';
+    }
     var acc = c.estado === 'atendida' || c.estado === 'cancelada' ? '' :
       '<button class="btn bsm bc1" type="button" onclick="window.nxMdConNueva(\'' + (c.paciente_id || '') + '\',\'' + c.id + '\')" title="Atender"><i class="ti ti-stethoscope"></i></button>' +
       '<button class="btn bsm bghost" type="button" onclick="window.nxMdCitaEstado(\'' + c.id + '\',\'cancelada\')" title="Cancelar"><i class="ti ti-x" style="color:#dc2626"></i></button>';
     return '<div class="nxMdRow"><div class="nxMdHora">' + esc(c.hora || '--:--') + '</div>' +
       '<div style="flex:1;min-width:0"><div class="nxMdNom">' + esc(nomPac(c)) + (ed !== '' ? ' <span style="color:#64748b;font-weight:600;font-size:11px">· ' + ed + ' años</span>' : '') + '</div>' +
       '<div class="nxMdSub">' + esc(c.motivo || 'Consulta') + '</div></div>' +
-      '<span class="nxMdChip" style="background:' + e[1] + ';color:' + e[0] + '">' + e[2] + '</span>' + acc + '</div>';
+      '<span class="nxMdChip" style="background:' + e[1] + ';color:' + e[0] + '">' + e[2] + '</span>' + wa + acc + '</div>';
   }
 
   // ── AGENDA ──
@@ -19388,8 +19401,48 @@ try {
         (Number(c.precio) ? '<span class="nxMdChip" style="background:' + (c.pagado ? '#f0fdf4;color:#16a34a' : '#fffbeb;color:#d97706') + '">' + fmt(c.precio) + (c.pagado ? ' ✓' : '') + '</span>' : '') +
         (c.receta ? '<i class="ti ti-prescription" style="color:#0d9488"></i>' : '') + '</div>';
     }).join('') : '<div class="nxMdEmpty"><i class="ti ti-clipboard-plus"></i>Aún no hay consultas</div>';
-    return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn bc1" type="button" onclick="window.nxMdConNueva()"><i class="ti ti-plus"></i> Nueva consulta</button></div>' + h;
+    // Resumen de ingresos del mes en curso
+    var mesKey = hoyISO().slice(0, 7);
+    var cm = _cons.filter(function (c) { return String(c.fecha).slice(0, 7) === mesKey; });
+    var tot = cm.reduce(function (t, c) { return t + Number(c.precio || 0); }, 0);
+    var cob = cm.filter(function (c) { return c.pagado; }).reduce(function (t, c) { return t + Number(c.precio || 0); }, 0);
+    var ing = '<div class="nxMdKpis" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">' +
+      '<div class="nxMdKpi"><b>' + fmt(tot) + '</b><span>Facturado (mes)</span></div>' +
+      '<div class="nxMdKpi"><b style="color:#16a34a">' + fmt(cob) + '</b><span>Cobrado</span></div>' +
+      '<div class="nxMdKpi"><b style="color:#d97706">' + fmt(tot - cob) + '</b><span>Pendiente</span></div>' +
+      '</div>';
+    return ing + '<div style="display:flex;justify-content:flex-end;gap:7px;margin-bottom:10px">' +
+      '<button class="btn bsm bghost" type="button" onclick="window.nxMdRepIngresos()"><i class="ti ti-printer"></i> Reporte del mes</button>' +
+      '<button class="btn bc1" type="button" onclick="window.nxMdConNueva()"><i class="ti ti-plus"></i> Nueva consulta</button></div>' + h;
   }
+
+  // ── Reporte de ingresos del mes (imprimible) ──
+  window.nxMdRepIngresos = function () {
+    var mesKey = hoyISO().slice(0, 7);
+    var cm = _cons.filter(function (c) { return String(c.fecha).slice(0, 7) === mesKey; })
+      .sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
+    var s = curSes(); var org = (s && s.org) || {};
+    var nomNeg = (org.tipo === 'consultorio' && org.nombre) ? org.nombre : 'Consultorio Geriátrico';
+    var mesNom = new Date(mesKey + '-15T12:00:00').toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+    var tot = 0, cob = 0;
+    var filas = cm.map(function (c) {
+      tot += Number(c.precio || 0); if (c.pagado) cob += Number(c.precio || 0);
+      return '<tr><td>' + String(c.fecha).slice(0, 10) + '</td><td>' + esc(nomPac(c)) + '</td><td>' + esc(c.diagnostico || c.motivo || '') + '</td>' +
+        '<td style="text-align:right">' + fmt(c.precio) + '</td><td style="text-align:center">' + (c.pagado ? '✓ Pagada' : 'Pendiente') + '</td></tr>';
+    }).join('');
+    var w = window.open('', '_blank');
+    if (!w) { toast('err', 'Permite las ventanas emergentes'); return; }
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Ingresos ' + esc(mesNom) + '</title><style>' +
+      'body{font-family:Arial,sans-serif;padding:26px;color:#1e293b}h1{font-size:17px;color:#0f766e;margin:0}small{color:#64748b}' +
+      'table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px}th{background:#f0fdfa;color:#0f766e;text-align:left;padding:7px 8px;border-bottom:2px solid #0d9488}td{padding:6px 8px;border-bottom:1px solid #e2e8f0}' +
+      '.tot{margin-top:14px;font-size:13px;text-align:right}.tot b{font-size:15px;color:#0f766e}@media print{body{padding:12px}}</style></head><body>' +
+      '<h1>' + esc(nomNeg) + '</h1><small>Reporte de consultas e ingresos · ' + esc(mesNom) + ' · ' + cm.length + ' consulta(s)</small>' +
+      '<table><tr><th>Fecha</th><th>Paciente</th><th>Diagnóstico / motivo</th><th style="text-align:right">Precio</th><th style="text-align:center">Estado</th></tr>' +
+      (filas || '<tr><td colspan="5" style="text-align:center;color:#94a3b8">Sin consultas este mes</td></tr>') + '</table>' +
+      '<div class="tot">Facturado: <b>' + fmt(tot) + '</b> · Cobrado: <b style="color:#16a34a">' + fmt(cob) + '</b> · Pendiente: <b style="color:#d97706">' + fmt(tot - cob) + '</b></div>' +
+      '<script>window.print();<\/script></body></html>');
+    w.document.close();
+  };
   window.nxMdConNueva = function (pacId, citaId) {
     var ops = _pacs.filter(function (p) { return p.activo !== false; }).map(function (p) { return '<option value="' + p.id + '"' + (String(p.id) === String(pacId || '') ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('');
     modal('nxMdMCon',

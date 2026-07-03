@@ -225,6 +225,7 @@ input,select,textarea,button{font-family:var(--ff)}
 /* Modo TIENDA (organización tipo 'tienda'): ocultar TODA la navegación de seguros (menú lateral, barra inferior móvil, botón flotante y menú "Más"). Deja solo el Punto de Venta. */
 body.org-tienda .sb-nav,body.org-tienda .mobile-bottom-nav-clean,body.org-tienda .nx-fab,body.org-tienda .nx-menu-backdrop,body.org-tienda .mobile-more-sheet-clean{display:none!important}
 body.org-rifa .sb-nav,body.org-rifa .mobile-bottom-nav-clean,body.org-rifa .nx-fab,body.org-rifa .nx-menu-backdrop,body.org-rifa .mobile-more-sheet-clean{display:none!important}
+body.org-consultorio .sb-nav,body.org-consultorio .mobile-bottom-nav-clean,body.org-consultorio .nx-fab,body.org-consultorio .nx-menu-backdrop,body.org-consultorio .mobile-more-sheet-clean{display:none!important}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
 .ct{font-size:13px;font-weight:700;color:#1e293b;letter-spacing:.1px}.ct-s{font-size:10px;color:var(--tx3);margin-top:2px}
 
@@ -3253,7 +3254,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='39.8';
+const APP_VERSION='39.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 const URL_VERSION='https://raw.githubusercontent.com/sterlinr08-dte/nexus-pro/main/version.json';
 
@@ -3883,22 +3884,26 @@ async function nxCargarOrg(){
     }
     try{ document.body.classList.toggle('org-tienda', !!(sesion.org && sesion.org.tipo==='tienda')); }catch(e){}
     try{ document.body.classList.toggle('org-rifa', !!(sesion.org && sesion.org.tipo==='rifa')); }catch(e){}
+    try{ document.body.classList.toggle('org-consultorio', !!(sesion.org && sesion.org.tipo==='consultorio')); }catch(e){}
   }catch(e){}
 }
 
 // ── Fase 2 multi-empresa: módulos según el TIPO de organización ──
 // 'tienda' → solo Punto de Venta (POS directo). 'rifa' → solo el módulo de Rifas.
-// 'seguros'/otros → comportamiento normal.
+// 'consultorio' → solo el módulo Consultorio Médico. 'seguros'/otros → normal.
 let _orgTiendaAplicada=false;
 let _orgRifaAplicada=false;
+let _orgConsAplicada=false;
 function aplicarOrgSidebar(){
   try{
     const tipo=(sesion&&sesion.org&&sesion.org.tipo)||'seguros';
     const esTienda=tipo==='tienda';
     const esRifa=tipo==='rifa';
+    const esCons=tipo==='consultorio';
     document.body.classList.toggle('org-tienda', esTienda);
     document.body.classList.toggle('org-rifa', esRifa);
-    if(esTienda||esRifa){
+    document.body.classList.toggle('org-consultorio', esCons);
+    if(esTienda||esRifa||esCons){
       // Ocultar todo el menú de seguros (ítems y secciones).
       document.querySelectorAll('.sb-nav .ni, .sb-nav .ss').forEach(n=>{n.style.display='none';});
     }
@@ -3919,6 +3924,15 @@ function aplicarOrgSidebar(){
         else if(n<25){ setTimeout(()=>abrirRifa(n+1),150); }
       };
       abrirRifa(0);
+    }
+    if(esCons && !_orgConsAplicada){
+      // Abrir el módulo Consultorio directo una sola vez.
+      _orgConsAplicada=true;
+      const abrirCons=(n)=>{
+        if(typeof window.nxAbrirConsultorio==='function'){ try{window.nxAbrirConsultorio();}catch(e){} }
+        else if(n<25){ setTimeout(()=>abrirCons(n+1),150); }
+      };
+      abrirCons(0);
     }
   }catch(e){}
 }
@@ -4497,7 +4511,7 @@ async function cargarTodo(){
     // Se hace de inmediato, sin timeout, para no mostrar el dashboard primero.
     const lastView=localStorage.getItem('nx_last_view');
     window.__nxHtmlRestauroVista = true; // avisar al parche que ya restauramos
-    const esModuloDirecto = !!(sesion && sesion.org && (sesion.org.tipo==='tienda'||sesion.org.tipo==='rifa'));
+    const esModuloDirecto = !!(sesion && sesion.org && (sesion.org.tipo==='tienda'||sesion.org.tipo==='rifa'||sesion.org.tipo==='consultorio'));
     if(esModuloDirecto){
       // Modo tienda/rifa: no abrir vistas de seguros; aplicarOrgSidebar abrirá el módulo directo.
     } else if(lastView){
@@ -4597,6 +4611,8 @@ function nav(view,el){
     if(esTienda){ if(typeof window.nxAbrirPOS==='function')window.nxAbrirPOS(); return; }
     const esRifaOrg=(sesion&&sesion.org&&sesion.org.tipo==='rifa')||document.body.classList.contains('org-rifa');
     if(esRifaOrg){ if(typeof window.nxAbrirRifas==='function')window.nxAbrirRifas(); return; }
+    const esConsOrg=(sesion&&sesion.org&&sesion.org.tipo==='consultorio')||document.body.classList.contains('org-consultorio');
+    if(esConsOrg){ if(typeof window.nxAbrirConsultorio==='function')window.nxAbrirConsultorio(); return; }
   }catch(e){}
   // ── Control de acceso a Contabilidad ──
   const vistasContab=['mayor','asientos','balance','pyg','comisiones','rep-agente','rep-plan','rep-empresa','rep-aging','dgii'];
