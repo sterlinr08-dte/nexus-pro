@@ -13823,7 +13823,7 @@
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
   let _reps = [], _fins = [], _finCuotas = [], _repVista = 'activas'; // servicio tecnico + cuotas
   let _apartados = [], _apaPagos = []; // apartados (layaway)
-  let _comboTmp = []; // combo en edición del producto
+  let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
   let _histSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
@@ -15362,7 +15362,7 @@
         : sin ? '<span class="nxInvStk out">● Agotado</span>'
         : bajo ? `<span class="nxInvStk low">● ${Number(p.stock || 0)} quedan</span>`
         : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
-      return `<tr>
+      return `<tr data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.marca || '') + ' ' + (p.referencia || '')).toLowerCase())}">
         <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
         <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
         <td style="text-align:right;white-space:nowrap">${stkCell}</td>
@@ -15370,7 +15370,8 @@
         <td style="white-space:nowrap;text-align:right">${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')"><i class="ti ti-device-mobile"></i></button> ` : ''}<button class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.'}</td></tr>`;
-    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
+    return `<div class="nxLupaBox" style="margin-bottom:8px"><i class="ti ti-search"></i><input placeholder="Buscar producto por nombre, código o marca…" autocomplete="off" oninput="window.nxProdTablaBuscar(this.value)"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
         <button class="btn bsm bghost" type="button" onclick="window.nxPosImportarUI()"><i class="ti ti-file-import"></i> Importar</button>
@@ -15379,6 +15380,10 @@
       ${pills}
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('prod', _prodSort, 'nombre', 'Producto')}${thSort('prod', _prodSort, 'precio', 'Precio', 'right')}${thSort('prod', _prodSort, 'stock', 'Stock', 'right')}${thSort('prod', _prodSort, 'itbis', 'ITBIS', 'center')}<th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
+  window.nxProdTablaBuscar = function (q) {
+    const ql = String(q || '').trim().toLowerCase();
+    document.querySelectorAll('#v-pos tbody tr[data-busca]').forEach(tr => { tr.style.display = (!ql || (tr.getAttribute('data-busca') || '').includes(ql)) ? '' : 'none'; });
+  };
   window.nxProdFiltro = function (f) { _prodFiltro = f || 'todos'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxComboPaint = function () {
     const box = document.getElementById('ppComboList'); if (!box) return;
@@ -15387,11 +15392,28 @@
       return `<span class="nxPosStkB" style="font-size:10px;padding:5px 9px">${esc(cp ? cp.nombre : '?')} ×${Number(c.cantidad || 1)} <b style="color:#dc2626;cursor:pointer;margin-left:4px" onclick="window.nxComboDel(${i})">✕</b></span>`;
     }).join('') : '<span style="font-size:10.5px;color:#94a3b8">Sin artículos de combo</span>';
   };
+  window.nxComboFiltrar = function (q) {
+    const box = document.getElementById('ppComboSug'); if (!box) return;
+    const ql = String(q || '').trim().toLowerCase();
+    _comboSelId = '';
+    if (!ql) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const editId = ((_prods.find(x => false) || {}).id); // placeholder
+    const hits = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '')).toLowerCase().includes(ql)).slice(0, 8);
+    box.innerHTML = hits.length ? hits.map(p => `<div style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid #f1f5f9" onclick="window.nxComboPick('${p.id}')"><b>${esc(p.nombre)}</b>${p.codigo ? ' <span style="color:#94a3b8;font-size:10px">' + esc(p.codigo) + '</span>' : ''}</div>`).join('') : '<div style="padding:10px;font-size:11px;color:#94a3b8">Sin resultados</div>';
+    box.style.display = '';
+  };
+  window.nxComboPick = function (pid) {
+    _comboSelId = pid;
+    const p = _prods.find(x => String(x.id) === String(pid));
+    const inp = document.getElementById('ppComboQ'); if (inp && p) inp.value = p.nombre;
+    const box = document.getElementById('ppComboSug'); if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+  };
   window.nxComboAdd = function () {
-    const pid = val('ppComboSel'); if (!pid) { toast('warn', 'Elige el artículo del combo'); return; }
+    const pid = _comboSelId; if (!pid) { toast('warn', 'Busca y elige el artículo del combo'); return; }
     const cant = Math.max(1, parseInt(val('ppComboCant'), 10) || 1);
     const ex = _comboTmp.find(c => String(c.producto_id) === String(pid));
     if (ex) ex.cantidad = cant; else _comboTmp.push({ producto_id: pid, cantidad: cant });
+    _comboSelId = ''; const _q = document.getElementById('ppComboQ'); if (_q) _q.value = '';
     window.nxComboPaint();
   };
   window.nxComboDel = function (i) { _comboTmp.splice(i, 1); window.nxComboPaint(); };
@@ -15438,9 +15460,10 @@
             ${puedeVerMin() ? `<div class="fr"><label>🔒 Precio MÍNIMO (piso de negociación)</label><input id="ppMinP" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo"></div>` : ''}
           <div class="fr"><label>🧩 Combo: sale JUNTO con este artículo (se factura en RD$ 0 y descuenta stock)</label>
             <div id="ppComboList" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px"></div>
-            <div style="display:flex;gap:6px"><select id="ppComboSel" style="flex:1;min-width:0;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;padding:0 8px;font-size:12px"><option value="">— elegir artículo —</option>${_prods.filter(x => String(x.id) !== String(e.id || '')).map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</select>
+            <div style="display:flex;gap:6px;position:relative"><input id="ppComboQ" class="no-upper" placeholder="Buscar artículo del combo…" autocomplete="off" oninput="window.nxComboFiltrar(this.value)" style="flex:1;min-width:0;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;padding:0 10px;font-size:12px">
             <input id="ppComboCant" inputmode="numeric" value="1" style="width:56px;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;text-align:center;font-weight:700">
             <button class="btn bsm bc1" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
+            <div id="ppComboSug" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 22px rgba(15,23,42,.12);max-height:170px;overflow-y:auto;margin-top:4px"></div>
           </div>
             <div class="fr"><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div>
           </div>
@@ -18033,7 +18056,7 @@
     const cols = REP_ESTADOS.filter(e => e[0] !== 'entregado').map(e => {
       const cards = activas.filter(r => r.estado === e[0]).map(r => {
         const d = repDias(r);
-        return `<button type="button" class="nxRepCard" onclick="window.nxRepVer('${r.id}')">
+        return `<button type="button" class="nxRepCard" data-busca="${esc(((r.cliente_nombre || '') + ' ' + (r.equipo || '') + ' ' + (r.imei || '') + ' ' + (r.numero || '')).toLowerCase())}" onclick="window.nxRepVer('${r.id}')">
           <div class="nxRepNum">${esc(r.numero || '')}<span>${d} día${d === 1 ? '' : 's'}</span></div>
           <div class="nxRepEq">${esc(r.equipo || '')}</div>
           <div class="nxRepCli">${esc(r.cliente_nombre || '')}</div>
@@ -18046,7 +18069,8 @@
     const entregadasHTML = _repVista === 'entregadas'
       ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
       : '';
-    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+    return `<div class="nxLupaBox" style="margin-bottom:8px"><i class="ti ti-search"></i><input placeholder="Buscar por cliente, equipo, IMEI o número…" autocomplete="off" oninput="window.nxRepBuscar(this.value)"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <button class="btn bc1" type="button" onclick="window.nxRepNueva()"><i class="ti ti-plus"></i> Recibir equipo</button>
         <div class="nxInvPills" style="margin:0">
           <button type="button" class="nxInvPill${_repVista !== 'entregadas' ? ' on' : ''}" onclick="window.nxRepVista('activas')">En taller <span>${activas.length}</span></button>
@@ -18055,6 +18079,10 @@
       </div>
       ${_repVista === 'entregadas' ? entregadasHTML : `<div class="nxRepKb">${cols}</div>`}`;
   }
+  window.nxRepBuscar = function (q) {
+    const ql = String(q || '').trim().toLowerCase();
+    document.querySelectorAll('.nxRepCard[data-busca]').forEach(c => { c.style.display = (!ql || (c.getAttribute('data-busca') || '').includes(ql)) ? '' : 'none'; });
+  };
   window.nxRepVista = function (v) { _repVista = v; const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
   window.nxRepNueva = function () {
     cerrarModal('nxRepM');

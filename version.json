@@ -1,7 +1,8 @@
 {
-  "version": "43.2",
+  "version": "43.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "MEJORA (POS · buscadores donde faltaban): auditoría completa de ventanas. (1) El COMBO del producto ahora tiene su buscador con sugerencias — tecleas y eliges, nada de listas larguísimas. (2) La tabla de PRODUCTOS tiene buscador por nombre, código o marca (además de los filtros). (3) REPARACIONES tiene buscador por cliente, equipo, IMEI o número sobre el tablero. Todos con la misma lupa unificada.",
     "NUEVO (POS · COMBOS 🧩): en la ficha del producto ahora defines qué artículos salen JUNTO con él (ej. el iPhone sale con su cargador). Al facturar el teléfono, el sistema agrega solo el cargador a la factura en RD$ 0 ('+ CARGADOR (incluido)') y le da SALIDA del inventario — se acabó el descuadre de cargadores regalados que nunca salían del sistema. Si vendes 3 teléfonos (o eliges 3 IMEI), salen 3 cargadores. El precio del combo va mezclado en el precio de venta del principal.",
     "NUEVO (POS · PRECIO MÍNIMO de negociación 🔒): cada artículo puede tener su precio PISO. Solo lo ven el ADMINISTRADOR y el GERENTE: (1) en la ficha del producto (campo 🔒 Precio MÍNIMO) y (2) discreto en el detalle del buscador de artículos — chiquito arriba del cuadro de precios, donde mira el vendedor y no el cliente. CANDADO doble: si un cajero/vendedor intenta poner un precio por debajo, el sistema lo ajusta al mínimo y avisa; y al cobrar se vuelve a verificar. El admin y el gerente sí pueden bajar del piso cuando haga falta.",
     "ARREGLADO (POS · ventanilla de IMEI): no dejaba seleccionar más de un IMEI (se recortaba a la cantidad de la línea). Ahora marcas TODOS los que quieras y la CANTIDAD de la línea se ajusta sola a los elegidos — marcas 3 IMEI y la factura queda con cantidad 3 automáticamente.",
