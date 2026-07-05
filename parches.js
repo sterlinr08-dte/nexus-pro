@@ -14278,7 +14278,7 @@
     return `<div class="nxFac">
         <div class="nxFacHead">
           <div class="nxFacF" style="grid-column:span 2"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
-          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" id="facNumPrev" onclick="window.nxFacHist(0)" style="cursor:pointer;gap:6px" title="Ver facturas generadas">${proxNumeroFacturaFmt(_facCredito)}<i class="ti ti-search" style="margin-left:auto;font-size:13px;color:#2563eb"></i></div></div>
+          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist(0)" title="Ver todas las facturas" style="font-size:14px;color:#2563eb;cursor:pointer"></i></div></div>
           <div class="nxFacF nxFacFsm"><label>Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"></div>
           <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
           <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito</label></div>
@@ -18106,6 +18106,25 @@
   };
 
 
+
+  // Número CORTO del contador (estilo Infoplus: se ve "5", no "CO00000005")
+  function proxNumeroFacturaCorto(esCredito) {
+    const sq = (_secuencias || []).find(x => x.tipo === (esCredito ? 'factura_credito' : 'factura_contado') && x.activo !== false);
+    if (sq) return String(Number(sq.proximo || 1));
+    const m = String(proxNumeroFacturaFmt(esCredito)).match(/(\d+)\s*$/);
+    return m ? String(parseInt(m[1], 10)) : '1';
+  }
+  // Escribir un número en el contador = BUSCAR esa factura y abrir su ticket
+  window.nxFacBuscarNum = function (v) {
+    const inp = document.getElementById('facNumPrev');
+    const prox = proxNumeroFacturaCorto(_facCredito);
+    const n = parseInt(String(v || '').replace(/\D/g, ''), 10);
+    if (!n || String(n) === prox) { if (inp) inp.value = prox; return; }
+    const hit = (_ventas || []).find(x => { const m = String(x.numero_factura || '').match(/(\d+)\s*$/); return (m && parseInt(m[1], 10) === n) || Number(x.numero) === n; });
+    if (hit) window.nxPosTicket(hit.id);
+    else toast('warn', 'No existe la factura No. ' + n, 'Toca la lupa para ver todas');
+    if (inp) inp.value = prox;
+  };
 
   // ══════════════ HISTORIAL DE FACTURAS desde el contador (lupa) — 10 en 10 ══════════════
   let _fhPage = 0, _fhQ = '';

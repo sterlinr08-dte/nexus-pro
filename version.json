@@ -1,7 +1,8 @@
 {
-  "version": "41.8",
+  "version": "41.9",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "MEJORA (POS · Factura, igualito a Infoplus): el contador ahora muestra solo el NUMERITO corto (5) — la secuencia completa (CO00000005) no estorba y solo se ve al buscar. Y el campo es un BUSCADOR: escribe el número de una factura y dale ENTER — te la trae al instante (su ticket). La lupa al lado sigue mostrando todas de 10 en 10.",
     "NUEVO (POS · Factura): el No. de factura ahora tiene su LUPA — tócala y se abre el historial de TODAS las facturas generadas, apiladas de 10 en 10 con paginación (Anterior/Siguiente), buscador por número o cliente, y tocando cualquiera se abre su ticket. Igual que Infoplus.",
     "MEJORA (POS · orden): se quitó el selector de almacén de arriba en Vender y Factura — el almacén se asignará al EMPLEADO cuando se le cree su acceso (queda en Inventario para las transferencias). Pantalla más limpia para vender.",
     "NUEVO (POS · APARTADOS / layaway): el cliente separa su equipo con un abono y lo completa a su ritmo. Módulo 'Apartados' en Finanzas: crear apartado (artículo, cliente, total, abono inicial y días de plazo), barra de progreso de lo abonado, abonar en 2 toques (entra a caja), recordatorio por WhatsApp con lo que falta, VENCIDO en rojo si pasó el límite, y entregar o cancelar. Todo queda en auditoría.",
