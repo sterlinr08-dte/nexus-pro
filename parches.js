@@ -14343,6 +14343,7 @@
     return `<div class="nxFac">
         <div class="nxFacHead">
           <div class="nxFacF" style="grid-column:span 2"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
+          <div class="nxFacF nxFacFsm"><label>Prefactura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facPrefN" placeholder="No…" inputmode="numeric" title="Escribe el número de la prefactura y ENTER para jalarla" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:14px;color:#7c3aed;font-family:inherit" onkeydown="if(event.key===&#39;Enter&#39;){this.blur()}" onblur="window.nxPrefJalar(this.value)"><i class="ti ti-search" onclick="window.nxPrefLista()" title="Buscar prefacturas guardadas" style="font-size:14px;color:#7c3aed;cursor:pointer"></i></div></div>
           <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist(0)" title="Ver todas las facturas" style="font-size:14px;color:#2563eb;cursor:pointer"></i></div></div>
           <div class="nxFacF nxFacFsm"><label>Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"></div>
           <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
@@ -15105,7 +15106,6 @@
         <div class="nxFacTotR nxFacTotBig"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
       </div>
       <div class="nxFacActions">
-        <button type="button" class="btn bghost bsm" onclick="window.nxPrefLista()"><i class="ti ti-file-description"></i> Prefacturas${_prefs.length ? ' (' + _prefs.length + ')' : ''}</button>
         ${_cart.length ? `<button type="button" class="btn bghost bsm" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar prefactura</button>` : ''}
         ${_cart.length ? `<button type="button" class="btn bghost bsm" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Vaciar</button>` : ''}
         <button type="button" class="btn bc1 nxFacBtn" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
@@ -18361,6 +18361,15 @@
       _cart = []; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  // Escribir el número de una PREFACTURA en la cabecera = jalarla y convertirla en factura
+  window.nxPrefJalar = function (v) {
+    const n = parseInt(String(v || '').replace(/\D/g, ''), 10);
+    const inp = document.getElementById('facPrefN'); if (inp) inp.value = '';
+    if (!n) return;
+    const hit = _prefs.find(p => { const m = String(p.numero || '').match(/(\d+)\s*$/); return m && parseInt(m[1], 10) === n; });
+    if (hit) window.nxPrefFacturar(hit.id);
+    else toast('warn', 'No existe la prefactura No. ' + n, 'Toca la lupa para ver las guardadas');
   };
   window.nxPrefLista = function (q) {
     const ql = String(q || '').trim().toLowerCase();

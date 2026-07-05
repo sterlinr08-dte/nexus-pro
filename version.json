@@ -1,7 +1,8 @@
 {
-  "version": "43.5",
+  "version": "43.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "MEJORA (POS · PREFACTURA con el concepto correcto): es una PREVENTA estilo cotización — NO descuenta inventario ni toca nada al guardarse. En la cabecera de la Factura ahora está el campo PREFACTURA con su LUPA (morado, junto al No. de factura): escribes el número y ENTER (o tocas la lupa y la buscas) → se JALA al cuadro con su cliente y artículos → revisas → cobras y ahí sí se factura y descuenta. 'Guardar prefactura' sigue abajo para crearlas.",
     "NUEVO (POS · INVENTARIO ESTRICTO, decisión del dueño): el sistema YA NO deja vender lo que no hay. (1) Sin stock no se agrega al carrito ni a la factura (aviso: quedan N). (2) Al cobrar se revalida contra el inventario actual. (3) Artículos con IMEI: es OBLIGATORIO elegir los IMEI — se eliminó el 'vender sin IMEI'; si no hay IMEI registrados, no se vende (regístralos en el producto). Los SERVICIOS no llevan stock y se venden siempre.",
     "ARREGLADO (POS · vender sin IMEI): cuando un artículo no tenía IMEI disponibles, el chip era un callejón sin salida y no se podía vender. Ahora dice 'Sin IMEI — tocar para vender igual' y abre la ventanilla con el botón VENDER SIN IMEI — la venta sale aunque el stock esté en cero o negativo.",
     "NUEVO (POS · PREFACTURAS): el vendedor arma el pedido y lo GUARDA como prefactura (PF-00001) sin cobrar; la caja después la abre y la factura. En la pestaña Factura: botón 'Guardar prefactura' y botón 'Prefacturas (N)' con su lista, BUSCADOR por número o cliente, Facturar (carga el pedido completo con su cliente al cuadro) y anular. Todo auditado.",
