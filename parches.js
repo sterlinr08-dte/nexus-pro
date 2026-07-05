@@ -13794,6 +13794,7 @@
   function moneyVal(id) { const e = document.getElementById(id); if (!e) return 0; try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(e.value)) || 0; } catch (er) {} return Number(String(e.value).replace(/[^0-9.-]/g, '')) || 0; }
   function rolReal() { try { var s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return (s && s.rol) || 'admin'; } catch (e) { return 'admin'; } }
   function rolEfectivo() { return _rolPreview || rolReal(); }
+  function puedeVerMin() { const r = rolEfectivo(); return r === 'admin' || r === 'gerente'; }
   function puedeVer(mod) {
     const r = rolEfectivo();
     if (r === 'admin') return true;
@@ -14456,6 +14457,7 @@
             <div class="nxPpkHsep"></div>
             <div class="nxPpkHi"><span>Por mayor</span><b class="${esMayor ? 'ap' : ''}">${fmt(pm)}</b></div>
           </div>
+          ${(puedeVerMin() && Number(p.precio_minimo || 0) > 0) ? `<div style="text-align:right;font-size:9px;color:#b7bfd0;font-weight:800;margin:-2px 0 2px">🔒 mín ${fmt(p.precio_minimo)}</div>` : ''}
           <div class="nxPpkExiH"><span class="nxPpkExiL">Existencia</span>${exiHTML}</div>
           ${p.serial ? '<div id="ppkSer" style="margin-top:4px"><div style="font-size:10px;color:#475569">Cargando seriales…</div></div>' : ''}
           <button class="nxPpkElegir" type="button" onclick="event.stopPropagation();window.nxProdPickElegir('${p.id}')"><i class="ti ti-circle-plus"></i> Elegir — ${fmt(aplica)}</button>
@@ -14601,7 +14603,14 @@
   };
   window.nxFacSerSin = function (i) { const it = _cart[i]; if (!it) return; it._sinSerial = true; it.seriales = []; cerrarModal('nxFacSer'); toast('ok', 'Se venderá sin IMEI', 'No había seriales cargados'); pintarFactura(); };
   window.nxFacCant = function (i, v) { const it = _cart[i]; if (!it) return; const n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0)); if (n === 0) { _cart.splice(i, 1); } else it.cantidad = n; pintarFactura(); };
-  window.nxFacPrecio = function (i, v) { const it = _cart[i]; if (!it) return; it.precio = Math.max(0, parseMoney(v)); pintarFactura(); };
+  window.nxFacPrecio = function (i, v) {
+    const it = _cart[i]; if (!it) return;
+    let nuevo = Math.max(0, parseMoney(v));
+    const p = _prods.find(x => String(x.id) === String(it.producto_id));
+    const min = p ? Number(p.precio_minimo || 0) : 0;
+    if (min > 0 && nuevo < min && !puedeVerMin()) { nuevo = min; toast('warn', 'Precio ajustado al mínimo permitido', 'Ese artículo tiene un piso de negociación'); }
+    it.precio = nuevo; pintarFactura();
+  };
   window.nxFacDesc = function (i, v) { const it = _cart[i]; if (!it) return; it.desc = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0); pintarFactura(); };
   window.nxFacDescTipo = function (i) { const it = _cart[i]; if (!it) return; it.descT = (it.descT === 'mon') ? 'pct' : 'mon'; pintarFactura(); };
   window.nxFacRepaint = function () { const v = document.getElementById('v-pos'); if (v && _posTab === 'factura') pintarFactura(); };
@@ -15172,6 +15181,14 @@
         return;
       }
     }
+    // Piso de negociación: nadie sin permiso factura por debajo del precio mínimo
+    if (!puedeVerMin()) {
+      for (const it of _cart) {
+        const _p = _prods.find(x => String(x.id) === String(it.producto_id));
+        const _min = _p ? Number(_p.precio_minimo || 0) : 0;
+        if (_min > 0 && Number(it.precio) < _min) { toast('err', 'Precio por debajo del mínimo', it.nombre + ' no puede venderse a ese precio'); return; }
+      }
+    }
     const c = leerCobro();
     const cliId = val('posCliId') || null;
     if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a crédito: elige un cliente'); return; }
@@ -15384,6 +15401,7 @@
           </div>
           <div class="fr-row">
             <div class="fr"><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div>
+            ${puedeVerMin() ? `<div class="fr"><label>🔒 Precio MÍNIMO (piso de negociación)</label><input id="ppMinP" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo"></div>` : ''}
             <div class="fr"><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div>
           </div>
           <div class="fr"><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite descuento</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div>
@@ -15415,6 +15433,7 @@
       tipo: tipo,
       stock_min: Number(String(val('ppMin') || '0').replace(/[^0-9.-]/g, '')) || 0,
       garantia_dias: parseInt(val('ppGar'), 10) || 0,
+      ...(document.getElementById('ppMinP') ? { precio_minimo: moneyVal('ppMinP') } : {}),
       serial: val('ppSer') === '1',
       no_descuento: val('ppNoDesc') === '1'
     };
