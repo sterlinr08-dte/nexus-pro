@@ -434,8 +434,11 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +
   botón **"Venta rápida"** en topbar (`.nxTQuick`). MODULOS ahora incluye reparaciones y cuotas
   (roles). `cargarPOS` carga `_reps/_fins/_finCuotas` best-effort.
+- **APARTADOS/layaway HECHO (v41.7):** tablas `pos_apartados` + `pos_apartado_pagos` (org+RLS);
+  tab `apartados` (Finanzas): crear (prompts, numero AP-#####/nextSeq('apartado'), límite en días),
+  abonar (entra a caja si efectivo), WhatsApp con lo que falta, VENCIDO, entregar/cancelar.
 - **PENDIENTE del análisis** (no construido aún): trade-in/compra de usados + costo y condición POR
-  IMEI (requiere extender pos_seriales) · apartados/layaway · escáner con cámara (BarcodeDetector NO
+  IMEI (requiere extender pos_seriales) · escáner con cámara (BarcodeDetector NO
   existe en iPhone/Safari — evaluar librería) · variantes/comparador de producto · asientos contables
   de reparaciones (hoy solo movimiento de caja) · pantallas premium restantes del ZIP (caja/arqueo,
   historial, clientes).
