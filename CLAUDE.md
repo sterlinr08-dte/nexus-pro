@@ -393,6 +393,19 @@ Barrido completo pedido por el dueño ("de eso dependen mis ingresos"). Todo HEC
   además se borraron 2 duplicados del cobro de Kelvin en entregas_admin (5,000 x3 → x1).
   OJO efectivo: va al acumulado del **"Agente que cobró"** del modal (no del agente asignado al cliente).
 
+### POS look premium — diseño Stitch del dueño (v40.2, tanda 1, chat `RvxXb`)
+El dueño subió un ZIP de Google Stitch ("cell phone billing system", 15 pantallas premium estilo
+TechFlow: blanco + azul real #2563eb, sidebar, KPIs, POS con badges de stock y fichas de pago) y
+pidió ADAPTARLO al POS. **Tanda 1 HECHA:** (1) acento del POS violeta→AZUL REAL — swap de colores
+SOLO en la línea `st.textContent` del CSS POS (#6d28d9→#2563eb, #7c3aed→#2563eb, gradientes, etc.);
+(2) `gridHTML` tarjetas de producto con **badge de stock** `.nxPosStkB` (azul STOCK/rojo BAJO por
+`stock_min`/SIN STOCK/teal SERVICIO); (3) carrito "Total a pagar" grande azul (`.nxPosTotPay`);
+(4) modal de cobro con **fichas de pago 1-toque** `.nxPayTiles`/`nxPosPayQuick(id)` (llena ese
+método con el total, limpia el resto; inputs de mixto siguen abajo). CSS nuevo en `st.textContent +=`.
+**Pendientes de tandas siguientes** (pantallas del ZIP en el chat, no en repo): dashboard KPI strip
+estilo TechFlow, inventario premium, clientes, caja/arqueo, historial, kanban reparaciones (módulo
+NUEVO que el POS no tiene — el dueño no lo ha pedido explícito aún).
+
 ### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
 Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
 medida/presentaciones (stock plano), sin lotes/vencimiento, sin variantes, sin multi-moneda,
