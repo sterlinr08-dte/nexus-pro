@@ -1103,3 +1103,17 @@ solo carriles temporales; **el único que importa es `main`**.
 4. El **contexto del proyecto vive en este CLAUDE.md** (no en el chat). El chat es
    desechable; al iniciar, cualquier Claude lee este archivo y ya sabe todo. Tras
    un cambio importante, **actualizar este CLAUDE.md** para que no se desactualice.
+
+### Investigación FACTURACIÓN + AUTOMATIZACIONES (5-jul-2026, web)
+**e-CF DGII obligatorio 15-NOV-2026** para micro/pequeños (prórroga DGII may-2026; multas 5-50
+salarios). Sin e-CF el POS será invendible — ruta: integrar PSFE por API (Alanube, como Alegra).
+**Brechas facturación:** 606/608 (solo hay 607) · retenciones ITBIS/ISR · multi-moneda ·
+plantillas/logo por doc · nota de débito · portal autoconsulta del cliente.
+**AUTOMATIZACIONES que faltan (foco del dueño):** 1) recordatorios de cobro AUTOMÁTICOS
+(fiado/cuotas vencidas) 2) factura RECURRENTE genérica (igualas — generalizar el motor cron del
+seguro al POS) 3) envío auto de factura por correo/WhatsApp al emitir 4) aviso automático de
+estado de reparación 5) alertas diarias de bajo stock 6) apartados por vencer. NEXUS ya tiene la
+infra: pg_cron + Edge Functions + wa.me. WhatsApp 100% auto requiere API de Meta/Twilio (US$ por
+msj); plan pragmático: Fase 1 = "Centro de avisos" cron que detecta vencidos y arma cola con
+WhatsApp 1-toque (gratis) · Fase 2 = correo automático (función enviar-reporte-email existe) ·
+Fase 3 = WhatsApp API real.
