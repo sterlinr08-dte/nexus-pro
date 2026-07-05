@@ -14256,7 +14256,14 @@
   function prodStock(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? Number(p.stock || 0) : 0; }
   function proxNumeroFactura() { let mx = 0; (_ventas || []).forEach(v => { const n = parseInt(v.numero, 10); if (n > mx) mx = n; }); return mx + 1; }
   function prefijoFac(esCredito) { return esCredito ? (_posCfg.prefijo_credito || 'CR') : (_posCfg.prefijo_contado || 'CO'); }
-  function proxNumeroFacturaFmt(esCredito) { const pref = prefijoFac(esCredito); let mx = 0; (_ventas || []).forEach(v => { const nf = String(v.numero_factura || ''); if (nf.indexOf(pref) === 0) { const m = nf.match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } } }); return pref + String(mx + 1).padStart(8, '0'); }
+  function proxNumeroFacturaFmt(esCredito) {
+    // Consecutivo REAL desde pos_secuencias (la memoria vacía hacía que siempre mostrara ...0001)
+    const sq = (_secuencias || []).find(x => x.tipo === (esCredito ? 'factura_credito' : 'factura_contado') && x.activo !== false);
+    if (sq) return (sq.prefijo || prefijoFac(esCredito)) + String(Number(sq.proximo || 1)).padStart(Number(sq.longitud || 8), '0');
+    const pref = prefijoFac(esCredito); let mx = 0;
+    (_ventas || []).forEach(v => { const nf = String(v.numero_factura || ''); if (nf.indexOf(pref) === 0) { const m = nf.match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } } });
+    return pref + String(mx + 1).padStart(8, '0');
+  }
   const NCF_TIPOS = [['sin', 'Sin comprobante'], ['consumo', 'Consumo (B02)'], ['credito_fiscal', 'Crédito Fiscal (B01)'], ['gubernamental', 'Gubernamental (B15)'], ['regimen_especial', 'Régimen Especial (B14)']];
   function renderFactura() {
     if (!_prods.length) {
@@ -15105,14 +15112,20 @@
     if (c.nc > 0) pagosArr.push({ metodo: 'Nota de crédito', monto: c.nc });
     if (c.credito > 0) pagosArr.push({ metodo: 'Crédito', monto: c.credito });
     const metodoLabel = pagosArr.length === 0 ? 'Efectivo' : pagosArr.length === 1 ? pagosArr[0].metodo : 'Mixto';
-    // Número de factura con prefijo según tipo (contado/crédito) y consecutivo por empresa
+    // Número de factura: consecutivo TRANSACCIONAL en pos_secuencias (estilo Infoplus:
+    // nunca retrocede ni se repite, aunque la app se recargue o vendan 2 a la vez).
+    const esCred = c.credito > 0;
     let numFac = '';
-    try {
-      const esCred = c.credito > 0; const pref = prefijoFac(esCred);
-      const last = await getAPI().get('pos_ventas', `a_credito=eq.${esCred}&numero_factura=like.${encodeURIComponent(pref)}*&select=numero_factura&order=created_at.desc&limit=1`);
-      let nx = 1; if (last && last[0] && last[0].numero_factura) { const m = String(last[0].numero_factura).match(/(\d+)\s*$/); if (m) nx = parseInt(m[1], 10) + 1; }
-      numFac = pref + String(nx).padStart(8, '0');
-    } catch (e) {}
+    try { numFac = (await nextSeq(esCred ? 'factura_credito' : 'factura_contado')) || ''; } catch (e) {}
+    if (!numFac) {
+      // Respaldo (secuencia no disponible): último número real en la base + 1
+      try {
+        const pref = prefijoFac(esCred);
+        const last = await getAPI().get('pos_ventas', `a_credito=eq.${esCred}&numero_factura=like.${encodeURIComponent(pref)}*&select=numero_factura&order=created_at.desc&limit=1`);
+        let nx = 1; if (last && last[0] && last[0].numero_factura) { const m = String(last[0].numero_factura).match(/(\d+)\s*$/); if (m) nx = parseInt(m[1], 10) + 1; }
+        numFac = pref + String(nx).padStart(8, '0');
+      } catch (e) {}
+    }
     const body = {
       cliente_id: cliId, cliente_nombre: cliNom, a_credito: c.credito > 0,
       subtotal: c.subtotal, itbis: c.itbis, total: c.total, descuento: c.descMonto,

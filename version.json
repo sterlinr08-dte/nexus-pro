@@ -1,7 +1,8 @@
 {
-  "version": "41.2",
+  "version": "41.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "ARREGLADO (de raíz · contador de factura del POS): el No. de factura siempre mostraba CO00000001 porque se calculaba contando lo que la app tenía en memoria. Ahora funciona como Infoplus: un CONSECUTIVO guardado en la base de datos que nunca retrocede ni se repite — aunque cierres la app, cambies de teléfono o vendan dos personas a la vez. Se sembró arrancando de tus números reales (tu POS va por la CO00000005). El contador se puede ver y ajustar en Ajustes → Secuencias.",
     "ARREGLADO (POS · buscador de artículos): la flechita de cada artículo salía como un cuadro DORADO 3D (se colaba el tema de iconos de colores) — ahora es normal: gris discreta, y azul cuando el artículo está abierto.",
     "NUEVO (POS · garantía por venta): si el producto tiene 'Garantía (días)', al vender se calcula y GRABA la fecha de vencimiento de la garantía de esa venta, y sale impresa en el ticket ('Garantía hasta: 2026-08-04') — el cliente se lleva la prueba y tú tienes el registro.",
     "NUEVO (POS · SERVICIO TÉCNICO / REPARACIONES): módulo completo para tiendas de celulares. Recibes el equipo con todo (cliente, IMEI, falla, estado físico, clave, accesorios, presupuesto y avance) e imprime la ORDEN DE SERVICIO con firma. Tablero KANBAN por estados: Recibido → Diagnóstico → Reparando → Esperando pieza → Listo → Entregado (mueves el equipo con un toque). Botón de WhatsApp que avisa al cliente '¡su equipo está listo!' con el mensaje armado. Al entregar cobras el resto y entra a caja. El avance también entra a caja.",
