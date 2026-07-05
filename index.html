@@ -3254,7 +3254,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='42.3';
+const APP_VERSION='42.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -3879,9 +3879,9 @@ async function nxCargarOrg(){
   try{
     if(!sesion || sesion.org) return;
     let orgId=sesion.organizacion_id;
-    if(!orgId && sesion.id){
-      const u=await API.get('usuarios_sistema',`id=eq.${encodeURIComponent(sesion.id)}&select=organizacion_id`);
-      orgId=(u&&u[0]&&u[0].organizacion_id)||null; sesion.organizacion_id=orgId;
+    if(sesion.id){
+      const u=await API.get('usuarios_sistema',`id=eq.${encodeURIComponent(sesion.id)}&select=organizacion_id,almacen_id`);
+      if(u&&u[0]){ if(!orgId){orgId=u[0].organizacion_id||null; sesion.organizacion_id=orgId;} sesion.almacen_id=u[0].almacen_id||null; }
     }
     if(orgId){
       const orgs=await API.get('organizaciones',`id=eq.${encodeURIComponent(orgId)}&select=*`);

@@ -13869,6 +13869,7 @@
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _apartados = apa || []; _apaPagos = apap || [];
     _almacenes = alm || [];
     if (_almacenes.length) {
+      try { const _ses = curSesPOS(); if (_ses && _ses.almacen_id && _almacenes.find(a => String(a.id) === String(_ses.almacen_id))) _almacenSel = _ses.almacen_id; } catch (e) {}
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
       _stockAlmRows = {}; (stkAlm || []).forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; });
     }
@@ -13972,7 +13973,7 @@
   }
 
   window.nxAbrirPOS = async function () {
-    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    if (!rolReal()) { toast('err', 'Acceso restringido', 'Inicia sesión'); return; }
     const view = ensureView(); if (!view) return;
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
     view.classList.add('on');
@@ -14775,6 +14776,7 @@
       ${!_acceso.length ? `<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxAccesoInit()"><i class="ti ti-sparkles"></i> Crear roles base</button> ` : ''}
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Rol</th><th style="text-align:center">Acceso</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       <button class="btn bsm bghost" type="button" style="margin-top:10px" onclick="window.nxRolNuevo()"><i class="ti ti-plus"></i> Nuevo rol</button>
+      <button class="btn bsm bc1" type="button" style="margin-top:10px" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Crear usuario de staff</button>
       ${verComo}`;
   }
   window.nxAccesoInit = async function () {
@@ -18324,6 +18326,48 @@
       toast('ok', 'Apartado cancelado');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+
+
+  // ══════════════ USUARIOS DE STAFF (cajero/vendedor/gerente con su clave y su almacén) ══════════════
+  window.nxStaffNuevo = function () {
+    const roles = rolesLista().filter(r => r.rol !== 'admin');
+    const rolOpts = roles.length ? roles.map(r => `<option value="${esc(r.rol)}">${esc(r.label)}</option>`).join('') : '<option value="cajero">Cajero</option><option value="vendedor">Vendedor</option><option value="gerente">Gerente</option>';
+    const almOpts = _almacenes.length ? '<div class="fr"><label>Almacén asignado (factura de ahí)</label><select id="stfAlm">' + _almacenes.map(a => `<option value="${a.id}">${esc(a.nombre)}</option>`).join('') + '</select></div>' : '';
+    cerrarModal('nxStaffM');
+    const ov = document.createElement('div'); ov.id = 'nxStaffM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px">
+      <div class="mt"><span><i class="ti ti-user-plus"></i> Crear usuario de staff</span><button class="nxBack" type="button" onclick="document.getElementById('nxStaffM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="fr"><label>Nombre *</label><input id="stfNom" class="no-upper" placeholder="Juan Pérez"></div>
+      <div class="fr-row"><div class="fr"><label>Usuario (para entrar) *</label><input id="stfLogin" class="no-upper" placeholder="juan" autocapitalize="none"></div>
+      <div class="fr"><label>Clave * (mín. 6)</label><input id="stfClave" class="no-upper" placeholder="••••••"></div></div>
+      <div class="fr"><label>Rol</label><select id="stfRol">${rolOpts}</select></div>
+      ${almOpts}
+      <div style="font-size:10.5px;color:#475569;margin-top:2px">El empleado entra en <b>nexusprord.com</b> con su usuario y clave, y ve SOLO los módulos de su rol. Sus datos son los de ESTA empresa.</div>
+      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" id="stfBtn" onclick="window.nxStaffCrear()"><i class="ti ti-check"></i> Crear usuario</button></div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxStaffCrear = async function () {
+    const nombre = val('stfNom').trim(), login = val('stfLogin').trim(), clave = val('stfClave');
+    if (!nombre || !login || !clave) { toast('err', 'Faltan datos', 'Nombre, usuario y clave'); return; }
+    if (clave.length < 6) { toast('err', 'Clave muy corta', 'Mínimo 6 caracteres'); return; }
+    const btn = document.getElementById('stfBtn'); if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
+    try {
+      const api = getAPI();
+      const resp = await fetch((api.url || '') + '/functions/v1/crear-usuario-staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) },
+        body: JSON.stringify({ nombre: nombre, login: login, clave: clave, rol: val('stfRol') || 'cajero', almacen_id: val('stfAlm') || null })
+      });
+      const j = await resp.json().catch(() => ({}));
+      if (!resp.ok || j.error) throw new Error(j.error || ('HTTP ' + resp.status));
+      try { window.logAudit && window.logAudit('STAFF_CREADO', nombre.toUpperCase() + ' · usuario ' + j.login + ' · rol ' + j.rol, 'Usuarios'); } catch (e) {}
+      cerrarModal('nxStaffM');
+      toast('ok', 'Usuario creado', j.login + ' (' + j.rol + ') — ya puede entrar con su clave');
+    } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Crear usuario'; }
   };
 
   // ── CSS + registro en el hub ──

@@ -1,7 +1,8 @@
 {
-  "version": "42.3",
+  "version": "42.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (POS · LOGINS DE STAFF — tanda C): ya puedes crear usuarios para tus empleados. En POS → Ajustes → Roles y accesos → 'Crear usuario de staff': nombre, usuario, clave, ROL (cajero/vendedor/gerente) y su ALMACÉN asignado. El empleado entra en nexusprord.com con su usuario y clave, ve SOLO los módulos de su rol, factura desde SU almacén, y solo puede tocar los datos de SU empresa (aislamiento por organización intacto). PRUEBA SUPERVISADA: crea un cajero de prueba en Bayolsale y verifica antes de darle acceso a empleados reales.",
     "MEJORA (POS · acabado profesional, tanda A): se acabaron las ventanitas feas del navegador (prompt) en Reparaciones, Apartados y Cuotas — ahora todo son MODALES profesionales con validación: Nuevo apartado (formulario completo con artículo, cliente, WhatsApp, total, abono y plazo), Abonar apartado (monto pre-llenado con lo que falta + método), Entregar reparación (monto + método) y Cobrar cuota (monto grande azul + método). Más bonito, más rápido y sin errores de dedo.",
     "ARREGLADO (POS · lupa de facturas): se quedaba en CARGANDO FACTURAS para siempre — la consulta pedía una columna que no existe y fallaba en silencio. Corregido: ya salen todas las facturas de 10 en 10, con las anuladas marcadas en rojo.",
     "ARREGLADO (de raíz · POS lento al abrir): al entrar al Punto de Venta se quedaba 'cargando' varios segundos porque bajaba 16 tablas UNA POR UNA. Ahora baja TODO en paralelo (tarda lo que tarda una sola consulta) y los KPIs del dashboard cargan en segundo plano sin frenar la entrada — el POS abre al instante.",
