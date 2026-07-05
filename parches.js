@@ -14481,12 +14481,10 @@
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=id,serial&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     _ppkSerRows = rows;
-    // Con muchos IMEI, un buscador para teclear los últimos números (filtra y resalta).
-    const buscador = rows.length > 1
-      ? `<input id="ppkSerQ" class="no-upper" inputmode="numeric" autocomplete="off" placeholder="Buscar IMEI…" oninput="window.nxPpkSerFiltrar(this.value)" onclick="event.stopPropagation()" style="width:100%;height:26px;border:1.5px solid #ddd6fe;border-radius:7px;padding:0 8px;font-size:10.5px;font-family:var(--mono,monospace);margin-bottom:5px;outline:none">`
-      : '';
-    box.innerHTML = `<div style="font-size:8px;font-weight:800;color:#a3acba;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">IMEI / Serial · elige el que vas a vender (${rows.length} disp.)</div>`
-      + (rows.length ? buscador + `<div id="ppkSerChips" style="display:flex;gap:4px;flex-wrap:wrap;max-height:120px;overflow-y:auto">${ppkSerChipsHTML('')}</div>` : '<div style="font-size:10px;color:#dc2626">Sin IMEI disponibles. Cárgalos en Productos (botón 📱) o al comprar el equipo.</div>');
+    // Chip compacto estilo Factura: 📱 IMEI · N — tocarlo abre la ventanilla para elegir
+    box.innerHTML = rows.length
+      ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxPpkImei('${pid}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI · ${rows.length}</span>`
+      : '<span class="nxPosImeiB" style="color:#dc2626;cursor:default"><i class="ti ti-device-mobile" style="color:#dc2626"></i> Sin IMEI disponibles</span>';
   }
   // Resalta en el serial la parte que coincide con lo buscado (sin alterar el data-ser real).
   function ppkSerHi(serial, q) {
@@ -14541,17 +14539,23 @@
   window.nxSerialDel = async function (id, pid) {
     try { await getAPI().del('pos_seriales', 'id=eq.' + id); toast('ok', 'Serial eliminado'); window.nxSerialMgr(pid); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid); } catch (e) { toast('err', 'No se pudo'); }
   };
+  // Chip IMEI del buscador: mete el artículo al destino y abre la ventanilla para elegir IMEI
+  window.nxPpkImei = function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    if (!_cart.find(x => String(x.producto_id) === String(id))) {
+      if (_prodPickDest === 'factura') window.nxFacAdd(id); else window.nxPosAdd(id);
+    }
+    _ppkOpen = ''; _ppkSerSel = [];
+    const ov = document.getElementById('nxProdPick'); if (ov) ov.remove();
+    const idx = _cart.findIndex(x => String(x.producto_id) === String(id));
+    if (idx >= 0 && typeof window.nxFacSerial === 'function') setTimeout(() => window.nxFacSerial(idx), 60);
+  };
   window.nxProdPickElegir = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
     if (p.serial) {
-      if (!_ppkSerSel.length) { toast('err', 'Elige el IMEI / serial', 'Toca uno o más de los disponibles'); return; }
-      const seriales = _ppkSerSel.slice();
-      const ex = _cart.find(x => String(x.producto_id) === String(id));
-      if (ex) { ex.cantidad += seriales.length; ex.seriales = (ex.seriales || []).concat(seriales); ex._sinSerial = false; ex.precio = precioCli(p); }
-      else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: seriales.length, itbis: !!p.itbis, desc: 0, descT: 'pct', seriales: seriales });
-      toast('ok', 'Agregado', p.nombre + ' · ' + seriales.map(s => s.serial).join(', '));
-      try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
-      if (_prodPickDest === 'factura') pintarFactura(); else pintarCarrito();
+      // Con IMEI: agrega y abre la ventanilla para elegirlos (mismo flujo del chip 📱)
+      window.nxPpkImei(id);
+      return;
     } else {
       window.nxProdPickAdd(id);
     }
