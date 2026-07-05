@@ -13824,6 +13824,7 @@
   let _reps = [], _fins = [], _finCuotas = [], _repVista = 'activas'; // servicio tecnico + cuotas
   let _apartados = [], _apaPagos = []; // apartados (layaway)
   let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
+  let _prefs = []; // prefacturas abiertas
   let _histSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
@@ -13848,7 +13849,7 @@
     // TODAS las cargas EN PARALELO (antes eran 16 viajes secuenciales: el POS tardaba
     // varios segundos en abrir en el teléfono; ahora tarda lo que tarde UNA consulta).
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
-    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm] = await Promise.all([
+    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm, prefs] = await Promise.all([
       g('pos_categorias', 'select=*&order=orden.asc,nombre.asc'),
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -13865,7 +13866,8 @@
       g('pos_apartados', 'select=*&order=created_at.desc&limit=300'),
       g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
-      g('pos_stock_almacen', 'select=*&limit=20000')
+      g('pos_stock_almacen', 'select=*&limit=20000'),
+      g('pos_prefacturas', 'select=*&estado=eq.abierta&order=created_at.desc&limit=200')
     ]);
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _caja = (cj && cj[0]) || null;
@@ -13873,6 +13875,7 @@
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _apartados = apa || []; _apaPagos = apap || [];
     _almacenes = alm || [];
+    _prefs = prefs || [];
     if (_almacenes.length) {
       try { const _ses = curSesPOS(); if (_ses && _ses.almacen_id && _almacenes.find(a => String(a.id) === String(_ses.almacen_id))) _almacenSel = _ses.almacen_id; } catch (e) {}
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
@@ -14504,7 +14507,7 @@
     // Chip compacto estilo Factura: 📱 IMEI · N — tocarlo abre la ventanilla para elegir
     box.innerHTML = rows.length
       ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxPpkImei('${pid}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI · ${rows.length}</span>`
-      : '<span class="nxPosImeiB" style="color:#dc2626;cursor:default"><i class="ti ti-device-mobile" style="color:#dc2626"></i> Sin IMEI disponibles</span>';
+      : `<span class="nxPosImeiB" style="color:#dc2626" onclick="event.stopPropagation();window.nxPpkImei('${pid}')" title="Vender sin IMEI"><i class="ti ti-device-mobile" style="color:#dc2626"></i> Sin IMEI — tocar para vender igual</span>`;
   }
   // Resalta en el serial la parte que coincide con lo buscado (sin alterar el data-ser real).
   function ppkSerHi(serial, q) {
@@ -15091,6 +15094,8 @@
         <div class="nxFacTotR nxFacTotBig"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
       </div>
       <div class="nxFacActions">
+        <button type="button" class="btn bghost bsm" onclick="window.nxPrefLista()"><i class="ti ti-file-description"></i> Prefacturas${_prefs.length ? ' (' + _prefs.length + ')' : ''}</button>
+        ${_cart.length ? `<button type="button" class="btn bghost bsm" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar prefactura</button>` : ''}
         ${_cart.length ? `<button type="button" class="btn bghost bsm" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Vaciar</button>` : ''}
         <button type="button" class="btn bc1 nxFacBtn" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
       </div>`;
@@ -18320,6 +18325,61 @@
     if (hit) window.nxPosTicket(hit.id);
     else toast('warn', 'No existe la factura No. ' + n, 'Toca la lupa para ver todas');
     if (inp) inp.value = prox;
+  };
+
+
+  // ══════════════ PREFACTURAS (pedido que la caja factura después) ══════════════
+  window.nxPrefGuardar = async function () {
+    if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
+    const t = totales();
+    let numero = null; try { numero = await nextSeq('prefactura'); } catch (e) {}
+    if (!numero) numero = 'PF-' + String(_prefs.length + 1).padStart(5, '0');
+    const cli = clienteSel();
+    try {
+      const r = await getAPI().post('pos_prefacturas', { numero: numero, cliente_id: cli ? cli.id : null, cliente_nombre: cli ? cli.nombre : null, items: _cart, total: t.total, created_by_name: ((curSesPOS() || {}).nom) || null });
+      if (r && r[0]) _prefs.unshift(r[0]);
+      try { window.logAudit && window.logAudit('PREFACTURA_GUARDADA', numero + ' · ' + fmt(t.total) + (cli ? ' · ' + cli.nombre : ''), 'POS'); } catch (e) {}
+      _cart = []; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxPrefLista = function (q) {
+    const ql = String(q || '').trim().toLowerCase();
+    const lista = _prefs.filter(p => !ql || ((p.numero || '') + ' ' + (p.cliente_nombre || '')).toLowerCase().includes(ql));
+    const rows = lista.length ? lista.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9">
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(p.numero || '')}</div>
+        <div style="font-size:10.5px;color:#475569">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div></div>
+        <b style="font-size:12.5px">${fmt(p.total)}</b>
+        <button class="btn bsm bc1" type="button" onclick="window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>
+        <button class="btn bsm bghost" type="button" onclick="window.nxPrefAnular('${p.id}')"><i class="ti ti-x" style="color:#dc2626"></i></button>
+      </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:12px">Sin prefacturas abiertas</div>';
+    cerrarModal('nxPrefM');
+    const ov = document.createElement('div'); ov.id = 'nxPrefM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-file-description"></i> Prefacturas abiertas</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrefM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+      <div class="nxLupaBox"><i class="ti ti-search"></i><input placeholder="Buscar por número o cliente…" value="${esc(ql)}" autocomplete="off" oninput="window.nxPrefLista(this.value)"></div>
+      <div style="overflow-y:auto;flex:1">${rows}</div>
+    </div>`;
+    document.body.appendChild(ov);
+    if (ql) { const i2 = ov.querySelector('.nxLupaBox input'); if (i2) { i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); } }
+  };
+  window.nxPrefFacturar = async function (id) {
+    const p = _prefs.find(x => String(x.id) === String(id)); if (!p) return;
+    if (_cart.length && !confirm('El cuadro tiene artículos. ¿Reemplazarlos con la prefactura ' + (p.numero || '') + '?')) return;
+    _cart = (Array.isArray(p.items) ? p.items : []).map(x => Object.assign({}, x));
+    _factCli = p.cliente_id || '';
+    try { await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'facturada' }); } catch (e) {}
+    _prefs = _prefs.filter(x => String(x.id) !== String(id));
+    cerrarModal('nxPrefM');
+    try { window.logAudit && window.logAudit('PREFACTURA_FACTURADA', (p.numero || '') + ' · ' + fmt(p.total), 'POS'); } catch (e) {}
+    window.nxPosTab('factura');
+    toast('ok', 'Prefactura cargada', (p.numero || '') + ' — revisa y cobra');
+  };
+  window.nxPrefAnular = async function (id) {
+    const p = _prefs.find(x => String(x.id) === String(id)); if (!p) return;
+    if (!confirm('¿Anular la prefactura ' + (p.numero || '') + '?')) return;
+    try { await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'anulada' }); _prefs = _prefs.filter(x => String(x.id) !== String(id)); window.nxPrefLista(); toast('ok', 'Prefactura anulada'); } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
 
   // ══════════════ HISTORIAL DE FACTURAS desde el contador (lupa) — 10 en 10 ══════════════
