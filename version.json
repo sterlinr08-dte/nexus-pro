@@ -1,7 +1,8 @@
 {
-  "version": "40.3",
+  "version": "40.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (POS · look premium, tanda 3 — inventario): la pestaña Productos ahora es un inventario maestro: PASTILLAS DE FILTRO de un toque (Todos / En stock / Bajo stock / Sin stock / Servicios), stock con puntico de color como los sistemas grandes (azul '12 en stock', rojo '2 quedan', 'Agotado'), y el precio muestra debajo el COSTO en gris para ver el margen de un vistazo.",
     "NUEVO (POS · look premium, tanda 2 — dashboard): el inicio de la tienda ahora es un dashboard de verdad: 'Ventas de hoy' con TENDENCIA vs ayer (▲ +12% en verde / ▼ en rojo), KPI nuevo de 'Ventas del mes' con número de facturas y ticket promedio, y las Últimas ventas con su chip de estado de colores (PAGADA verde / FIADO índigo) como sistema profesional.",
     "NUEVO (POS · look premium, tanda 1 del diseño aprobado): (1) el acento del POS pasó de morado a AZUL REAL en todo el módulo (pestañas, precios, botones, números de factura). (2) Las tarjetas de producto en Vender ahora traen su ETIQUETA DE STOCK de colores: azul STOCK: 12, rojo BAJO: 2, SIN STOCK, y verde SERVICIO. (3) El carrito muestra 'Total a pagar' en grande y azul. (4) Al cobrar, FICHAS DE PAGO de un toque (Efectivo, Tarjeta, Transferencia, Cheque, Nota de crédito): tocas una y el total completo se pone solo en ese método — y si el pago es mixto, repartes los montos abajo como siempre.",
     "NUEVO (Multiempresa · Clientes SaaS): control de cobro de los negocios que te pagan mensualidad por su sistema (Deluxe, Amatista, Consultorio…). Cada cliente con su mensualidad, día de cobro y estado del mes (PAGADO / POR COBRAR / VENCIDO en rojo), registrar pago en 2 toques, historial completo, recordatorio de pago por WhatsApp ya escrito, y KPIs del mes (esperado, cobrado, pendiente, al día). Los 3 clientes actuales ya están sembrados — solo ponles su mensualidad con el lápiz.",
