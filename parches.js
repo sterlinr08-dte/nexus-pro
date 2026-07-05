@@ -13781,7 +13781,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['factura', 'Factura'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['factura', 'Factura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -13817,6 +13817,7 @@
   // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
+  let _reps = [], _fins = [], _finCuotas = [], _repVista = 'activas'; // servicio tecnico + cuotas
   let _histSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
@@ -13849,6 +13850,9 @@
     mergeVendedorEntidades();
     try { _secuencias = await getAPI().get('pos_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _secuencias = []; }
     try { _acceso = await getAPI().get('pos_acceso', 'select=*') || []; } catch (e) { _acceso = []; }
+    try { _reps = await getAPI().get('pos_reparaciones', 'select=*&order=created_at.desc&limit=400') || []; } catch (e) { _reps = []; }
+    try { _fins = await getAPI().get('pos_financiamientos', 'select=*&order=created_at.desc&limit=300') || []; } catch (e) { _fins = []; }
+    try { _finCuotas = await getAPI().get('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000') || []; } catch (e) { _finCuotas = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) { _almacenes = []; }
     if (_almacenes.length) {
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
@@ -14053,6 +14057,8 @@
     else if (_posTab === 'reportes') body = renderReportes();
     else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();
+    else if (_posTab === 'reparaciones') body = renderReparaciones();
+    else if (_posTab === 'cuotas') body = renderCuotas();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
     // Shell profesional (barra lateral índigo) para TODOS: tienda y admin.
@@ -14072,10 +14078,10 @@
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
     const sec = (t, items) => items.trim() ? `<div class="nxTSec">${t}</div>${items}` : '';
-    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice'))
+    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('reparaciones', 'Reparaciones', 'ti-tool'))
       + sec('Inventario', it('productos', 'Productos', 'ti-box') + it('inventario', 'Inventario', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
-      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
+      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
@@ -14089,7 +14095,7 @@
           </div>
         </aside>
         <div class="nxTMain">
-          <div class="nxTTop"><button class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><div class="nxTTopBiz">${esc(biz)}</div></div>
+          <div class="nxTTop"><button class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><div class="nxTTopBiz">${esc(biz)}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
           ${previewBar}
           ${body}
         </div>
@@ -14147,10 +14153,10 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
+        ${grupo('Ventas', tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
         ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
-        ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
+        ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
         ${grupo('Configuración', tile('ajustes', 'Ajustes', 'ti-settings', '#475569'))}
         ${ultVentas}
       </div>`;
@@ -15024,6 +15030,14 @@
             <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#475569">Devuelta</span><b id="cobroDev" style="color:#16a34a">RD$ 0</b></div>
             <div id="cobroFiadoNote"></div>
           </div>
+          <div id="finBox" style="display:none;margin-top:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px">
+            <label style="display:flex;gap:7px;align-items:center;font-size:12px;font-weight:800;color:#1e40af;cursor:pointer"><input type="checkbox" id="finChk" style="width:16px;height:16px;accent-color:#2563eb" onchange="window.nxPosCobroCalc()"> Financiar el resto en CUOTAS</label>
+            <div id="finCfg" style="display:none;margin-top:6px">
+              <div class="fr-row"><div class="fr"><label># de cuotas</label><input id="finN" inputmode="numeric" value="4" oninput="window.nxPosCobroCalc()"></div>
+              <div class="fr"><label>Frecuencia</label><select id="finFrec" onchange="window.nxPosCobroCalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div></div>
+              <div id="finPrev" style="font-size:11.5px;color:#1e40af;font-weight:800"></div>
+            </div>
+          </div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
           <button class="btn bghost" type="button" onclick="window.nxPosPagoExacto()">Efectivo exacto</button>
@@ -15059,6 +15073,12 @@
     const rEl = document.getElementById('cobroResto'); if (rEl) rEl.style.color = c.credito > 0 ? '#dc2626' : '#16a34a';
     const note = document.getElementById('cobroFiadoNote');
     if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px">⚠️ Quedan ' + fmt(c.credito) + ' a crédito: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
+    try {
+      const fb = document.getElementById('finBox'), cfg = document.getElementById('finCfg'), chk = document.getElementById('finChk'), pv = document.getElementById('finPrev');
+      if (fb) fb.style.display = (c.credito > 0 && cliId) ? '' : 'none';
+      if (cfg) cfg.style.display = (chk && chk.checked) ? '' : 'none';
+      if (pv && chk && chk.checked) { const n = Math.max(1, parseInt(val('finN')) || 1); pv.textContent = n + ' cuota' + (n > 1 ? 's' : '') + ' de ' + fmt(Math.ceil(c.credito / n)) + ' · ' + (val('finFrec') || 'semanal'); }
+    } catch (e) {}
   };
   window.nxPosConfirmar = async function () {
     if (!_cart.length) return;
@@ -15109,6 +15129,26 @@
       const r = await getAPI().post('pos_ventas', body);
       const venta = (r && r[0]) || null;
       if (!venta) throw new Error('No se pudo registrar la venta');
+      // VENTA EN CUOTAS: si se marcó financiar, crear el plan (best-effort, no rompe la venta)
+      try {
+        const finChk = document.getElementById('finChk');
+        if (finChk && finChk.checked && c.credito > 0 && cliId) {
+          const n = Math.max(1, parseInt(val('finN')) || 1);
+          const frec = val('finFrec') || 'semanal';
+          const paso = frec === 'mensual' ? 30 : frec === 'quincenal' ? 15 : 7;
+          const cuota = Math.round((c.credito / n) * 100) / 100;
+          const rf = await getAPI().post('pos_financiamientos', { venta_id: venta.id, cliente_id: cliId, cliente_nombre: cliNom, descripcion: (_cart[0] ? _cart[0].nombre : 'Venta') + (_cart.length > 1 ? ' +' + (_cart.length - 1) : ''), monto_total: c.total, inicial: c.pagado, monto_financiado: c.credito, cuotas_total: n, cuota_monto: cuota, frecuencia: frec });
+          const fin = rf && rf[0];
+          if (fin) {
+            const cuotas = []; const base = new Date();
+            for (let i = 1; i <= n; i++) { const f = new Date(base.getTime() + paso * i * 86400000); cuotas.push({ financiamiento_id: fin.id, numero: i, fecha_venc: f.toISOString().slice(0, 10), monto: i === n ? Math.round((c.credito - cuota * (n - 1)) * 100) / 100 : cuota }); }
+            const rc = await getAPI().post('pos_fin_cuotas', cuotas);
+            _fins.unshift(fin); (rc || cuotas).forEach(x => _finCuotas.push(x));
+            try { window.logAudit && window.logAudit('POS_FINANCIAMIENTO', cliNom + ' · ' + fmt(c.credito) + ' en ' + n + ' cuotas (' + frec + ')', 'POS'); } catch (e2) {}
+            toast('ok', 'Plan de cuotas creado', n + ' cuotas de ' + fmt(cuota));
+          }
+        }
+      } catch (eFin) { console.error('financiamiento:', eFin); }
       const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null }));
       try { await getAPI().post('pos_venta_items', items); } catch (e) {}
       // Marcar seriales/IMEI vendidos (best-effort)
@@ -17818,6 +17858,223 @@
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
+
+  // ══════════════ SERVICIO TÉCNICO / REPARACIONES (kanban) ══════════════
+  const REP_ESTADOS = [['recibido', 'Recibido', '#64748b'], ['diagnostico', 'Diagnóstico', '#d97706'], ['reparando', 'Reparando', '#2563eb'], ['esperando_pieza', 'Esperando pieza', '#a21caf'], ['listo', 'Listo', '#16a34a'], ['entregado', 'Entregado', '#0f172a']];
+  function repEst(k) { return REP_ESTADOS.find(e => e[0] === k) || REP_ESTADOS[0]; }
+  function repDias(r) { try { return Math.max(0, Math.floor((Date.now() - new Date(r.created_at).getTime()) / 86400000)); } catch (e) { return 0; } }
+  function renderReparaciones() {
+    const activas = _reps.filter(r => r.estado !== 'entregado' && r.estado !== 'cancelado');
+    const vistaLista = _repVista === 'entregadas' ? _reps.filter(r => r.estado === 'entregado') : activas;
+    const cols = REP_ESTADOS.filter(e => e[0] !== 'entregado').map(e => {
+      const cards = activas.filter(r => r.estado === e[0]).map(r => {
+        const d = repDias(r);
+        return `<button type="button" class="nxRepCard" onclick="window.nxRepVer('${r.id}')">
+          <div class="nxRepNum">${esc(r.numero || '')}<span>${d} día${d === 1 ? '' : 's'}</span></div>
+          <div class="nxRepEq">${esc(r.equipo || '')}</div>
+          <div class="nxRepCli">${esc(r.cliente_nombre || '')}</div>
+          <div class="nxRepFalla">${esc((r.falla || '').slice(0, 60))}</div>
+          ${Number(r.presupuesto || 0) > 0 ? `<div class="nxRepPre">${fmt(r.presupuesto)}</div>` : ''}
+        </button>`;
+      }).join('');
+      return `<div class="nxRepCol"><div class="nxRepColH" style="--rc:${e[2]}"><span>${e[1]}</span><b>${activas.filter(r => r.estado === e[0]).length}</b></div>${cards || '<div class="nxRepEmpty">—</div>'}</div>`;
+    }).join('');
+    const entregadasHTML = _repVista === 'entregadas'
+      ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
+      : '';
+    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+        <button class="btn bc1" type="button" onclick="window.nxRepNueva()"><i class="ti ti-plus"></i> Recibir equipo</button>
+        <div class="nxInvPills" style="margin:0">
+          <button type="button" class="nxInvPill${_repVista !== 'entregadas' ? ' on' : ''}" onclick="window.nxRepVista('activas')">En taller <span>${activas.length}</span></button>
+          <button type="button" class="nxInvPill${_repVista === 'entregadas' ? ' on' : ''}" onclick="window.nxRepVista('entregadas')">Entregadas</button>
+        </div>
+      </div>
+      ${_repVista === 'entregadas' ? entregadasHTML : `<div class="nxRepKb">${cols}</div>`}`;
+  }
+  window.nxRepVista = function (v) { _repVista = v; const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
+  window.nxRepNueva = function () {
+    cerrarModal('nxRepM');
+    const ov = document.createElement('div'); ov.id = 'nxRepM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-tool"></i> Recibir equipo</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="overflow-y:auto;flex:1">
+        <div class="fr-row"><div class="fr"><label>Cliente *</label><input id="repCli" class="no-upper" placeholder="Nombre"></div><div class="fr"><label>Teléfono</label><input id="repTel" inputmode="tel" placeholder="8095551234"></div></div>
+        <div class="fr-row"><div class="fr"><label>Equipo *</label><input id="repEq" class="no-upper" placeholder="iPhone 12, Samsung A54..."></div><div class="fr"><label>IMEI / Serie</label><input id="repImei" class="no-upper"></div></div>
+        <div class="fr"><label>Falla que reporta *</label><input id="repFalla" class="no-upper" placeholder="No enciende, pantalla rota..."></div>
+        <div class="fr-row"><div class="fr"><label>Estado físico</label><input id="repFis" class="no-upper" placeholder="Rayado, tapa rota..."></div><div class="fr"><label>Clave / patrón</label><input id="repClave" class="no-upper"></div></div>
+        <div class="fr"><label>Accesorios que deja</label><input id="repAcc" class="no-upper" placeholder="Cargador, forro..."></div>
+        <div class="fr-row"><div class="fr"><label>Presupuesto RD$</label><input id="repPre" data-nx-money inputmode="numeric" placeholder="0"></div><div class="fr"><label>Avance RD$</label><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0"></div></div>
+        <div class="fr"><label>Técnico</label><input id="repTec" class="no-upper" placeholder="Quién repara"></div>
+      </div>
+      <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bc1" type="button" onclick="window.nxRepGuardar()"><i class="ti ti-check"></i> Recibir e imprimir orden</button></div>
+    </div>`;
+    document.body.appendChild(ov); scanMoney(ov);
+  };
+  window.nxRepGuardar = async function () {
+    const cli = val('repCli').trim(), eq = val('repEq').trim(), falla = val('repFalla').trim();
+    if (!cli || !eq || !falla) { toast('err', 'Faltan datos', 'Cliente, equipo y falla son obligatorios'); return; }
+    let numero = null; try { numero = await nextSeq('reparacion'); } catch (e) {}
+    if (!numero) numero = 'REP-' + String((_reps.length + 1)).padStart(5, '0');
+    const abono = moneyVal('repAbo');
+    const d = { numero: numero, cliente_nombre: cli.toUpperCase(), cliente_telefono: val('repTel').trim() || null, equipo: eq, imei: val('repImei').trim() || null, falla: falla, estado_fisico: val('repFis').trim() || null, clave: val('repClave').trim() || null, accesorios: val('repAcc').trim() || null, presupuesto: moneyVal('repPre'), abono: abono, tecnico: val('repTec').trim() || null, estado: 'recibido' };
+    try {
+      const r = await getAPI().post('pos_reparaciones', d);
+      const rep = (r && r[0]) || d;
+      _reps.unshift(rep);
+      if (abono > 0 && _caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Avance reparación ' + numero + ' · ' + d.cliente_nombre, fecha: new Date().toISOString() }); } catch (e) {} }
+      try { window.logAudit && window.logAudit('REP_RECIBIDA', numero + ' · ' + eq + ' · ' + d.cliente_nombre, 'Reparaciones'); } catch (e) {}
+      cerrarModal('nxRepM'); toast('ok', 'Equipo recibido', numero);
+      window.nxRepImprimir(rep.id || null, rep);
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxRepVer = function (id) {
+    const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
+    cerrarModal('nxRepM');
+    const est = repEst(r.estado);
+    const chips = REP_ESTADOS.map(e => `<button type="button" class="nxRepChip${r.estado === e[0] ? ' on' : ''}" style="--rc:${e[2]}" onclick="window.nxRepEstado('${r.id}','${e[0]}')">${e[1]}</button>`).join('');
+    const telW = String(r.cliente_telefono || '').replace(/\D/g, '');
+    const msg = 'Hola ' + (r.cliente_nombre || '') + ', su equipo ' + (r.equipo || '') + ' (' + (r.numero || '') + ') está: ' + est[1].toUpperCase() + (r.estado === 'listo' ? '. ¡Ya puede pasar a recogerlo!' : '.') + (Number(r.presupuesto || 0) > 0 ? ' Presupuesto: ' + fmt(r.presupuesto) + (Number(r.abono || 0) > 0 ? ' (avance ' + fmt(r.abono) + ')' : '') : '');
+    const resto = Math.max(0, Number(r.presupuesto || 0) - Number(r.abono || 0));
+    const ov = document.createElement('div'); ov.id = 'nxRepM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-tool"></i> ${esc(r.numero || 'Reparación')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="overflow-y:auto;flex:1">
+        <div style="font-weight:800;font-size:15px">${esc(r.equipo)}</div>
+        <div style="font-size:11.5px;color:#475569;margin-bottom:2px">${esc(r.cliente_nombre || '')}${r.cliente_telefono ? ' · ' + esc(r.cliente_telefono) : ''}${r.imei ? ' · IMEI ' + esc(r.imei) : ''}</div>
+        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Recibido hace ${repDias(r)} día(s)${r.tecnico ? ' · Téc: ' + esc(r.tecnico) : ''}</div>
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:12px"><b style="color:#9a3412">Falla:</b> ${esc(r.falla || '')}${r.estado_fisico ? '<br><b style="color:#9a3412">Físico:</b> ' + esc(r.estado_fisico) : ''}${r.accesorios ? '<br><b style="color:#9a3412">Dejó:</b> ' + esc(r.accesorios) : ''}</div>
+        <div style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:4px">Estado (toca para mover)</div>
+        <div class="nxRepChips">${chips}</div>
+        <div class="fr" style="margin-top:8px"><label>Diagnóstico / trabajo hecho</label><textarea id="repDiag" rows="2" class="no-upper">${esc(r.diagnostico || '')}</textarea></div>
+        <div class="fr-row"><div class="fr"><label>Presupuesto RD$</label><input id="repPre2" data-nx-money inputmode="numeric" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div><div class="fr"><label>Avance RD$</label><input id="repAbo2" data-nx-money inputmode="numeric" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
+        ${r.estado !== 'entregado' ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 10px;font-size:12px;color:#166534">Al entregar se cobra el resto: <b>${fmt(resto)}</b></div>` : `<div style="font-size:12px;color:#16a34a;font-weight:800">✓ Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>`}
+      </div>
+      <div class="fe" style="margin-top:10px;gap:6px;flex-wrap:wrap">
+        ${telW ? `<a class="btn bghost" style="color:#16a34a" href="https://wa.me/1${telW}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : ''}
+        <button class="btn bghost" type="button" onclick="window.nxRepImprimir('${r.id}')"><i class="ti ti-printer"></i> Orden</button>
+        <button class="btn bghost" type="button" onclick="window.nxRepDet('${r.id}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        ${r.estado !== 'entregado' ? `<button class="btn bc1" type="button" onclick="window.nxRepEntregar('${r.id}')"><i class="ti ti-check"></i> Entregar y cobrar</button>` : ''}
+      </div>
+    </div>`;
+    document.body.appendChild(ov); scanMoney(ov);
+  };
+  window.nxRepEstado = async function (id, est) {
+    const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
+    if (est === 'entregado') { window.nxRepEntregar(id); return; }
+    try { await getAPI().patch('pos_reparaciones', 'id=eq.' + id, { estado: est }); r.estado = est; const el = document.getElementById('v-pos'); if (el && _posTab === 'reparaciones') renderPOS(el); window.nxRepVer(id); try { window.logAudit && window.logAudit('REP_ESTADO', (r.numero || '') + ' → ' + est, 'Reparaciones'); } catch (e2) {} } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+  window.nxRepDet = async function (id) {
+    const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
+    const d = { diagnostico: val('repDiag').trim() || null, presupuesto: moneyVal('repPre2'), abono: moneyVal('repAbo2') };
+    try { await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d); toast('ok', 'Guardado'); } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+  window.nxRepEntregar = async function (id) {
+    const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
+    const resto = Math.max(0, Number(r.presupuesto || 0) - Number(r.abono || 0));
+    const monto = window.nxMoney ? window.nxMoney.parse(prompt('Monto a cobrar al entregar (queda ' + fmt(resto) + '):', Math.round(resto).toLocaleString('en-US')) || '') : parseFloat(prompt('Monto a cobrar:', resto) || '');
+    if (monto == null || isNaN(monto)) return;
+    const metodo = prompt('Método (Efectivo / Transferencia / Tarjeta):', 'Efectivo') || 'Efectivo';
+    try {
+      const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + monto, cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
+      await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d);
+      if (monto > 0 && _caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
+      try { window.logAudit && window.logAudit('REP_ENTREGADA', (r.numero || '') + ' · ' + (r.equipo || '') + ' · cobrado ' + fmt(d.cobrado_monto), 'Reparaciones'); } catch (e) {}
+      toast('ok', 'Entregado y cobrado', fmt(monto));
+      cerrarModal('nxRepM'); const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+  window.nxRepImprimir = function (id, repObj) {
+    const r = repObj || _reps.find(x => String(x.id) === String(id)); if (!r) return;
+    const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
+    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const f = (l, v) => v ? `<tr><td style="color:#64748b;white-space:nowrap;padding:4px 8px 4px 0">${l}</td><td style="font-weight:700">${esc(v)}</td></tr>` : '';
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(r.numero || 'Orden')}</title><style>body{font-family:Arial;padding:24px;color:#1e293b;max-width:520px;margin:0 auto;font-size:13px}h1{font-size:16px;margin:0;color:#1e3a8a}h2{font-size:13px;margin:2px 0 12px;color:#64748b;font-weight:600}table{width:100%;border-collapse:collapse;font-size:12.5px}.tot{margin-top:10px;border-top:2px solid #1e3a8a;padding-top:8px;font-size:13px}.leg{margin-top:14px;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:8px}.fir{margin-top:44px;display:flex;justify-content:space-between;gap:20px;text-align:center;font-size:11px}.fir div{flex:1;border-top:1px solid #1e293b;padding-top:4px}</style></head><body>
+      <h1>${esc(biz)}</h1><h2>ORDEN DE SERVICIO · ${esc(r.numero || '')} · ${new Date().toLocaleDateString('es-DO')}</h2>
+      <table>${f('Cliente', r.cliente_nombre)}${f('Teléfono', r.cliente_telefono)}${f('Equipo', r.equipo)}${f('IMEI / Serie', r.imei)}${f('Falla reportada', r.falla)}${f('Estado físico', r.estado_fisico)}${f('Accesorios', r.accesorios)}${f('Técnico', r.tecnico)}</table>
+      <div class="tot">Presupuesto: <b>${fmt(r.presupuesto || 0)}</b> · Avance: <b>${fmt(r.abono || 0)}</b> · Resta: <b>${fmt(Math.max(0, Number(r.presupuesto || 0) - Number(r.abono || 0)))}</b></div>
+      <div class="leg">El presupuesto puede variar según el diagnóstico final (se le avisará antes de proceder). Equipos no retirados en 30 días luego de estar listos generan cargo de almacenaje y a los 90 días se consideran abandonados. No respondemos por datos: respalde su información.</div>
+      <div class="fir"><div>Recibido por</div><div>Firma del cliente</div></div>
+      <script>window.print();</` + `script></body></html>`);
+    w.document.close();
+  };
+
+  // ══════════════ CUOTAS / FINANCIAMIENTOS ══════════════
+  function cuotasDe(finId) { return _finCuotas.filter(c => String(c.financiamiento_id) === String(finId)).sort((a, b) => a.numero - b.numero); }
+  function hoyISOPos() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function curSesPOS() { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return null; } }
+  function renderCuotas() {
+    const hoyK = hoyISOPos();
+    const activos = _fins.filter(f => f.estado === 'activo');
+    const porCobrar = activos.reduce((t, f) => t + cuotasDe(f.id).filter(c => !c.pagado).reduce((x, c) => x + Number(c.monto || 0), 0), 0);
+    const vencidas = _finCuotas.filter(c => !c.pagado && String(c.fecha_venc) < hoyK && activos.some(f => String(f.id) === String(c.financiamiento_id)));
+    const kpis = `<div class="nxMdKpis" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:10px">
+      <div class="nxMdKpi"><b>${activos.length}</b><span>Planes activos</span></div>
+      <div class="nxMdKpi"><b style="color:#2563eb">${fmt(porCobrar)}</b><span>Por cobrar</span></div>
+      <div class="nxMdKpi"><b style="color:${vencidas.length ? '#dc2626' : '#16a34a'}">${vencidas.length}</b><span>Cuotas vencidas</span></div>
+    </div>`;
+    const rows = _fins.length ? _fins.map(f => {
+      const cs = cuotasDe(f.id); const pag = cs.filter(c => c.pagado).length;
+      const prox = cs.find(c => !c.pagado);
+      const venc = prox && String(prox.fecha_venc) < hoyK;
+      const telW = '';
+      return `<div class="nxSaCard">
+        <div class="nxSaTop"><div class="nxSaIco" style="background:#dbeafe;color:#2563eb"><i class="ti ti-calendar-dollar"></i></div>
+          <div style="flex:1;min-width:0"><div class="nxSaNom">${esc(f.cliente_nombre || '')}</div><div class="nxSaSub">${esc(f.descripcion || '')} · ${pag}/${f.cuotas_total} cuotas pagadas</div></div>
+          <span class="nxSaEst" style="background:${f.estado === 'saldado' ? '#f0fdf4;color:#16a34a' : venc ? '#fef2f2;color:#dc2626' : '#eff6ff;color:#2563eb'}">${f.estado === 'saldado' ? 'SALDADO' : venc ? 'VENCIDO' : 'AL DÍA'}</span></div>
+        <div class="nxSaMeta"><span>Financiado: <b>${fmt(f.monto_financiado)}</b></span><span>Cuota: <b>${fmt(f.cuota_monto)}</b> ${esc(f.frecuencia || '')}</span>${prox ? `<span>Próxima: <b style="color:${venc ? '#dc2626' : '#0f172a'}">${String(prox.fecha_venc).slice(0, 10)}</b></span>` : ''}</div>
+        <div class="nxSaBtns">
+          ${f.estado === 'activo' && prox ? `<button class="btn bsm bc1" type="button" onclick="window.nxFinPagar('${f.id}')"><i class="ti ti-cash"></i> Cobrar cuota ${prox.numero} (${fmt(prox.monto)})</button>` : ''}
+          <button class="btn bsm bghost" type="button" onclick="window.nxFinPlan('${f.id}')"><i class="ti ti-list-numbers"></i></button>
+          <button class="btn bsm bghost" type="button" onclick="window.nxFinContrato('${f.id}')"><i class="ti ti-printer"></i></button>
+        </div></div>`;
+    }).join('') : '<div class="nxRepEmpty" style="padding:24px">Sin financiamientos. Se crean al cobrar una venta marcando "Financiar el resto en CUOTAS".</div>';
+    return kpis + rows;
+  }
+  window.nxFinPlan = function (id) {
+    const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
+    const hoyK = hoyISOPos();
+    const rows = cuotasDe(id).map(c => `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px solid #f1f5f9;font-size:12.5px">
+      <span>#${c.numero} · ${String(c.fecha_venc).slice(0, 10)}</span>
+      <span>${fmt(c.monto)} ${c.pagado ? '<b style="color:#16a34a">✓ ' + (c.fecha_pago ? String(c.fecha_pago).slice(5) : '') + '</b>' : (String(c.fecha_venc) < hoyK ? '<b style="color:#dc2626">VENCIDA</b>' : '<span style="color:#94a3b8">pendiente</span>')}</span></div>`).join('');
+    cerrarModal('nxFinM');
+    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-list-numbers"></i> Plan de ${esc(f.cliente_nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>${rows}</div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxFinPagar = async function (id) {
+    const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
+    const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
+    const metodo = prompt('Cobrar cuota #' + prox.numero + ' de ' + fmt(prox.monto) + '\\nMétodo (Efectivo / Transferencia / Tarjeta):', 'Efectivo');
+    if (!metodo) return;
+    try {
+      await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { pagado: true, fecha_pago: hoyISOPos(), metodo: metodo });
+      prox.pagado = true; prox.fecha_pago = hoyISOPos(); prox.metodo = metodo;
+      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: Number(prox.monto), metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + (f.descripcion || '') }); } catch (e) {} }
+      if (!cuotasDe(id).some(c => !c.pagado)) { try { await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { estado: 'saldado' }); f.estado = 'saldado'; } catch (e) {} }
+      try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(prox.monto), 'Cuotas'); } catch (e) {}
+      toast('ok', 'Cuota cobrada', fmt(prox.monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+  window.nxFinContrato = function (id) {
+    const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
+    const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
+    const rows = cuotasDe(id).map(c => `<tr><td>#${c.numero}</td><td>${String(c.fecha_venc).slice(0, 10)}</td><td style="text-align:right">${fmt(c.monto)}</td><td style="text-align:center">${c.pagado ? '✓ Pagada' : ''}</td></tr>`).join('');
+    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Acuerdo de pago</title><style>body{font-family:Georgia,serif;padding:28px;color:#1e293b;max-width:560px;margin:0 auto;font-size:13px}h1{font-size:16px;margin:0;text-align:center}h2{font-size:12px;text-align:center;color:#64748b;font-weight:600;margin:2px 0 16px}p{line-height:1.55;text-align:justify}table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}th{background:#f8fafc;text-align:left;padding:6px 8px;border-bottom:2px solid #1e293b;font-size:10px;text-transform:uppercase}td{padding:6px 8px;border-bottom:1px solid #e2e8f0}.fir{margin-top:54px;display:flex;justify-content:space-between;gap:24px;text-align:center;font-size:11px}.fir div{flex:1;border-top:1px solid #1e293b;padding-top:4px}</style></head><body>
+      <h1>${esc(biz)}</h1><h2>ACUERDO DE PAGO EN CUOTAS · ${new Date().toLocaleDateString('es-DO')}</h2>
+      <p>El cliente <b>${esc(f.cliente_nombre || '')}</b> adquirió <b>${esc(f.descripcion || '')}</b> por un total de <b>${fmt(f.monto_total)}</b>, entregando un inicial de <b>${fmt(f.inicial)}</b> y financiando <b>${fmt(f.monto_financiado)}</b> en <b>${f.cuotas_total} cuota(s) ${esc(f.frecuencia || '')}(es)</b> de <b>${fmt(f.cuota_monto)}</b>, según el calendario siguiente:</p>
+      <table><tr><th>Cuota</th><th>Vence</th><th style="text-align:right">Monto</th><th></th></tr>${rows}</table>
+      <p style="font-size:11px;color:#475569">El atraso en el pago de las cuotas puede conllevar la suspensión de la garantía y las acciones de cobro correspondientes. El artículo es propiedad del vendedor hasta el pago total.</p>
+      <div class="fir"><div>Por ${esc(biz)}</div><div>El cliente (firma y cédula)</div></div>
+      <script>window.print();</` + `script></body></html>`);
+    w.document.close();
+  };
+
   // ── CSS + registro en el hub ──
   function inyectarCSS() {
     if (document.getElementById('nxPosCSS')) return;
@@ -17825,7 +18082,7 @@
     st.textContent = '.nxPosTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.nxPosTab{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e2e8f0;color:#475569;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}.nxPosTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPosTab i{font-size:15px}.nxPosGridWrap{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:860px){.nxPosGridWrap{grid-template-columns:1fr 340px;align-items:start}.nxPosRight{position:sticky;top:10px}}.nxPosGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.nxPosCard{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:78px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s,opacity .12s}.nxPosCard:active{opacity:.7}.nxPosCard:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#bfdbfe}.nxPosCardNom{font-size:12px;font-weight:700;color:#1e293b;line-height:1.2}.nxPosCardBot{display:flex;justify-content:space-between;align-items:center}.nxPosCardPre{font-size:13px;font-weight:800;color:#2563eb}.nxPosCardStk{font-size:9.5px;color:#475569}.nxPosCart{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.nxPosCartHd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:#475569;margin-bottom:6px}.nxPosCartList{max-height:42vh;overflow-y:auto;margin-bottom:8px}.nxPosCartIt{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9}.nxPosQty{display:flex;align-items:center;gap:6px}.nxPosQty button{width:26px;height:26px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:16px;font-weight:800;color:#475569;cursor:pointer;line-height:1}.nxPosQty span{min-width:18px;text-align:center;font-weight:800;font-size:13px}.nxPosX{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:15px;padding:2px}.nxPosTot{border-top:1px dashed #e2e8f0;padding-top:8px;margin-bottom:10px}.nxPosTotR{display:flex;justify-content:space-between;font-size:12px;color:#475569;padding:2px 0}.nxPosTotBig{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}.nxPosCobrar{width:100%;padding:13px;font-size:15px}.nxFacTop{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}.nxFacCli{flex:1;min-width:180px}.nxFacCli label{display:block;font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacCli select{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFecha{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 14px;text-align:center}.nxFacFecha span{display:block;font-size:9px;color:#475569;font-weight:700;text-transform:uppercase}.nxFacFecha b{font-size:12px;color:#334155}.nxFacAdd{position:relative;margin-bottom:12px}.nxFacAdd>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#475569;font-size:16px;pointer-events:none}.nxFacAdd input{width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid #2563eb;border-radius:11px;font-size:13px;outline:none;background:#fff;color:#1e293b;box-shadow:0 2px 8px rgba(15,23,42,.10);font-family:inherit}.nxFacSug{display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);max-height:300px;overflow-y:auto;padding:4px}.nxFacSugIt{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer}.nxFacSugIt:active,.nxFacSugIt:hover{background:#eff6ff}.nxFacSugNom{font-size:12.5px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFacSugSub{font-size:10px;color:#475569}.nxFacSugPre{font-size:13px;font-weight:800;color:#2563eb;text-align:right;white-space:nowrap}.nxFacSugPre span{display:block;font-size:9px;color:#475569;font-weight:600}.nxFacSugEmpty{padding:12px;text-align:center;color:#475569;font-size:12px}.nxFacTblWrap{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;overflow-x:auto;margin-bottom:12px}.nxFacTbl{width:100%;border-collapse:collapse;min-width:470px}.nxFacTbl thead th{background:#f8fafc;font-size:9.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:9px 10px;border-bottom:1px solid #e2e8f0;white-space:nowrap}.nxFacTbl thead th:nth-child(3),.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5){text-align:right}.nxFacTbl tbody td{padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;vertical-align:middle}.nxFacCod{font-family:var(--mono,monospace);font-size:10.5px;color:#475569;white-space:nowrap}.nxFacDesc{font-weight:600;min-width:130px}.nxFacCant,.nxFacPre,.nxFacImp{text-align:right}.nxFacCant input,.nxFacPre input{width:62px;text-align:right;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nxFacCant input{width:50px}.nxFacImp{font-weight:800;color:#0f172a;white-space:nowrap}.nxFacDel{text-align:center}.nxFacDel button{background:none;border:none;color:#cbd5e1;font-size:16px;cursor:pointer;padding:2px;line-height:1}.nxFacDel button:active,.nxFacDel button:hover{color:#dc2626}.nxFacEmpty{text-align:center;color:#475569;font-size:12px;padding:24px 10px!important}.nxFacTot{border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;margin-bottom:12px;background:#fff}.nxFacTotR{display:flex;justify-content:space-between;font-size:12px;color:#475569;padding:3px 0}.nxFacTotBig{font-size:17px;font-weight:800;color:#0f172a;border-top:1px dashed #e2e8f0;margin-top:4px;padding-top:8px}.nxFacActions{display:flex;gap:8px;justify-content:flex-end;align-items:center}.nxFacBtn{padding:13px 18px;font-size:15px}/* ── Rediseño POS desktop-first ── */#v-pos .nc{max-width:1240px;margin-left:auto;margin-right:auto}.nxPosTabs{gap:2px;border-bottom:2px solid #eef2f7;margin-bottom:16px}.nxPosTab{border:none;background:transparent;color:#475569;border-radius:9px 9px 0 0;padding:10px 16px;border-bottom:3px solid transparent}.nxPosTab:hover{background:#f8fafc;color:#1e293b}.nxPosTab.on{background:transparent;color:#2563eb;border-bottom-color:#2563eb}@media(min-width:900px){.nxPosGridWrap{grid-template-columns:1fr 380px;gap:18px}.nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.nxPosCard{min-height:92px;padding:12px}.nxPosCardNom{font-size:13px}.nxPosCardPre{font-size:15px}.nxPosCart{padding:16px;border-radius:16px;box-shadow:0 6px 22px rgba(15,23,42,.07)}.nxPosCartList{max-height:52vh}.nxFacTbl{min-width:0}.nxFacTbl thead th{font-size:11px;padding:11px 12px}.nxFacTbl tbody td{font-size:13px;padding:11px 12px}.nxFacCant input{width:64px;padding:8px}.nxFacPre input{width:92px;padding:8px}.nxFacTot{max-width:360px;margin-left:auto}.nxFacBtn{padding:14px 26px;font-size:16px}}.nxFacHead{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;align-items:end}.nxFacF label{display:block;font-size:9.5px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}.nxFacF select,.nxFacF input[type=text]{width:100%;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacFsm{max-width:150px}.nxFacNum{height:40px;display:flex;align-items:center;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:15px;font-weight:800;color:#2563eb}.nxFacCred{display:flex;align-items:center;gap:7px;height:40px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;white-space:nowrap}.nxFacCred input{width:17px;height:17px;accent-color:#2563eb}.nxFacExi{text-align:center;font-weight:700;color:#475569}.nxFacExi0{color:#dc2626}.nxFacDsc{text-align:center}.nxFacDscBox{display:inline-flex;align-items:center;border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.nxFacDscBox input{width:46px;text-align:right;padding:6px;border:none;outline:none;font-size:12px;font-weight:700;color:#0f172a;background:transparent;font-family:inherit}.nxFacDscBox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:7px 8px;cursor:pointer;border-left:1px solid #e2e8f0;min-width:34px}.nxFacTbl{min-width:600px}.nxFacTbl thead th:nth-child(3){text-align:center}.nxFacTbl thead th:nth-child(4),.nxFacTbl thead th:nth-child(5),.nxFacTbl thead th:nth-child(7){text-align:right}.nxFacTbl thead th:nth-child(6){text-align:center}.nxFacSubTabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:2px solid #eef2f7;margin-bottom:14px}.nxFacSubTab{border:none;background:transparent;color:#475569;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}.nxFacSubTab:hover{color:#1e293b}.nxFacSubTab.on{color:#2563eb;border-bottom-color:#2563eb}.nxFacF input[type=date]{width:100%;height:40px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;background:#fff;color:#1e293b;font-weight:600;font-family:inherit}.nxFacCliRow{display:flex;gap:6px;align-items:stretch}.nxFacCliRow select{flex:1;min-width:0}.nxFacCliAdd{border:1.5px solid #2563eb;background:#2563eb;color:#fff;border-radius:10px;width:44px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}.nxFacCliAdd:hover{background:#1d4ed8}/* ── Contabilidad ── */.nxCtaRango{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:end}.nxCtaRango .nxFacF{max-width:160px}.nxCtaKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.nxCtaKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxCtaKpiL{font-size:10.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}.nxCtaKpiV{font-size:18px;font-weight:800;line-height:1}.nxCtaTipo{font-size:10px;font-weight:800;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.2px}.nxCtaTipo-activo{background:#eff6ff;color:#2563eb}.nxCtaTipo-pasivo{background:#fff7ed;color:#ea580c}.nxCtaTipo-capital{background:#eff6ff;color:#2563eb}.nxCtaTipo-ingreso{background:#f0fdf4;color:#16a34a}.nxCtaTipo-costo{background:#fef2f2;color:#dc2626}.nxCtaTipo-gasto{background:#fef2f2;color:#b91c1c}.nxCtaAs{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.nxCtaAsHd{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#334155;margin-bottom:8px;gap:8px}.nxCtaOrig{font-size:9px;font-weight:800;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:6px;text-transform:uppercase;margin-left:4px}.nxCtaAsT{width:100%;border-collapse:collapse;font-size:11.5px}.nxCtaAsT th{text-align:left;font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid #eef2f7}.nxCtaAsT td{padding:4px 6px;border-bottom:1px solid #f6f8fb;color:#334155}.nxCtaAsTot td{border-top:1.5px solid #e2e8f0;border-bottom:none!important;padding-top:6px}.nxCtaRep{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}.nxCtaRep table{font-size:12.5px}.nxCtaRep td{padding:5px 6px;color:#334155}.nxCtaSec td{font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;padding-top:12px;border-bottom:1px solid #eef2f7}.nxCtaTotR td{font-weight:800;border-top:1px solid #e2e8f0;color:#0f172a}.nxCtaGran td{font-weight:800;font-size:14px;border-top:2px solid #1e293b;padding-top:8px;color:#0f172a}.nxAsRow{display:grid;grid-template-columns:1fr 92px 92px 28px;gap:6px;margin-bottom:6px;align-items:center}.nxAsRow select,.nxAsRow input{height:38px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 8px;font-size:12px;background:#fff;color:#1e293b;font-family:inherit;width:100%}.nxAsRow input{text-align:right;font-weight:700}.nxAsTot{margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#475569}@media(max-width:520px){.nxAsRow{grid-template-columns:1fr 1fr 1fr 24px}.nxAsRow select{grid-column:1/-1}}/* ── RRHH / Nómina ── */.nxNomRow{display:grid;grid-template-columns:1fr 110px 110px 110px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid #f1f5f9}.nxNomEmp{min-width:0}.nxNomF{display:flex;flex-direction:column;gap:2px}.nxNomF span{font-size:9px;font-weight:800;color:#475569;text-transform:uppercase}.nxNomF input{height:36px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:12px;font-weight:700;text-align:right;background:#fff;color:#0f172a;font-family:inherit}.nxNomNeto{display:flex;flex-direction:column;gap:2px;text-align:right}.nxNomNeto span{font-size:9px;font-weight:800;color:#475569;text-transform:uppercase}.nxNomNeto b{font-size:13px;color:#16a34a}@media(max-width:560px){.nxNomRow{grid-template-columns:1fr 1fr;row-gap:6px}.nxNomEmp{grid-column:1/-1}.nxNomNeto{align-items:flex-end}}/* ── Entidades ── */.nxEntStep{font-size:10px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:.4px;margin:4px 0 8px}.nxEntAfines{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nxEntAfin{display:flex;align-items:center;gap:7px;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;background:#fff}.nxEntAfin input{width:17px;height:17px;accent-color:#2563eb}.nxEntAfin i{color:#2563eb;font-size:15px}.nxEntAfin:has(input:checked){border-color:#2563eb;background:#eff6ff}.nxEntRol{display:inline-block;font-size:9px;font-weight:800;background:#eff6ff;color:#2563eb;padding:2px 7px;border-radius:6px;margin:1px 2px 1px 0}/* ── Inicio / lanzador de apps (Odoo-like) ── */.nxInicio{max-width:1100px;margin:0 auto}.nxIniHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.nxIniHi{font-size:13px;color:#475569;font-weight:600}.nxIniBiz{font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.2px}.nxAppSec{margin-bottom:18px}.nxAppSecT{font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}.nxAppGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}.nxApp{display:flex;flex-direction:column;align-items:center;gap:9px;background:#fff;border:1px solid #e8edf3;border-radius:16px;padding:16px 8px;cursor:pointer;font-family:inherit;transition:transform .12s,box-shadow .12s,border-color .12s}.nxApp:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.08);border-color:#dbe3ee}.nxApp:active{transform:translateY(0)}.nxAppIco{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:26px}.nxAppNom{font-size:12px;font-weight:700;color:#334155;text-align:center;line-height:1.15}@media(min-width:760px){.nxAppGrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}.nxAppIco{width:58px;height:58px;font-size:29px}}/* ── CRM ── */.nxCrmList{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:680px){.nxCrmList{grid-template-columns:1fr 1fr}}.nxCrmCard{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxCrmEt{height:32px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 8px;font-size:11.5px;font-weight:700;color:#334155;background:#fff;font-family:inherit;cursor:pointer}/* ── Almacenes ── */.nxAlmGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}.nxAlmCard{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;background:#fff}.nxAlmChip{display:inline-block;font-size:10px;font-weight:700;background:#ecfeff;color:#0891b2;padding:3px 9px;border-radius:7px}.nxAlmSel{display:flex;align-items:center;gap:8px;margin-bottom:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 12px}.nxAlmSel>i{color:#2563eb;font-size:17px}.nxAlmSel>span{font-size:11px;font-weight:700;color:#475569;white-space:nowrap}.nxAlmSel select{flex:1;max-width:240px;height:34px;border:1.5px solid #bfdbfe;border-radius:8px;padding:0 8px;font-size:12px;font-weight:700;color:#1e3a8a;background:#fff;font-family:inherit}.nxPrevBar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#92400e;font-weight:600}.nxPrevBar .btn{background:#92400e;color:#fff;border:none}.nxPpkGrid{display:flex;flex-direction:column;gap:6px}.nxPpkIt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:#fff;border:1px solid #e8edf3;border-radius:11px;padding:10px 12px;cursor:pointer;font-family:inherit;transition:background .1s,border-color .1s}.nxPpkIt:hover{background:#eff6ff;border-color:#bfdbfe}.nxPpkIt:active{background:#dbeafe}.nxPpkWrap{border:1px solid #e8edf3;border-radius:11px;overflow:hidden;transition:border-color .12s}.nxPpkWrap.on{border-color:#bfdbfe}.nxPpkWrap .nxPpkIt{border:none;border-radius:0;width:100%}.nxPpkChev{transition:transform .2s}.nxPpkWrap.on .nxPpkChev{transform:rotate(90deg);color:#2563eb}.nxPpkDet{overflow:hidden;animation:nxPpkRoll .3s cubic-bezier(.22,1,.36,1)}@keyframes nxPpkRoll{from{max-height:0;opacity:0}to{max-height:520px;opacity:1}}.nxPpkBox{margin:0 8px 9px;background:#f6f7fb;border:1px solid #e2e6ee;border-radius:10px;padding:8px 10px}.nxPpkH{display:flex;align-items:stretch;border:1px solid #e2e6ee;border-radius:9px;background:#fff;overflow:hidden;margin-bottom:7px}.nxPpkHi{flex:1;display:flex;flex-direction:column;gap:1px;padding:6px 8px;text-align:center}.nxPpkHi span{font-size:8px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px}.nxPpkHi b{font-size:14px;font-weight:800;color:#1e293b;line-height:1.1}.nxPpkHi b.ap{color:#2563eb}.nxPpkHsep{width:1px;background:#e2e6ee}.nxPpkExiH{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:2px 0 4px}.nxPpkExiL{font-size:8px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-right:2px}.nxPpkChip{display:inline-block;font-size:9.5px;font-weight:700;background:#fff;padding:2px 7px;border-radius:6px}.nxSerPick{display:inline-block;font-size:10px;font-weight:700;font-family:var(--mono,monospace);background:#fff;border:1.5px solid #bfdbfe;color:#2563eb;padding:3px 9px;border-radius:7px;cursor:pointer;user-select:none}.nxSerPick.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxPpkElegir{width:100%;margin-top:9px;padding:7px 10px;font-size:11.5px;font-weight:700;background:#2563eb;color:#fff;border:none;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:inherit}.nxPpkElegir:active{background:#1d4ed8}.nxPpkElegir i{font-size:14px}/* ── Reportes ── */.nxRepGrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}@media(min-width:760px){.nxRepGrid{grid-template-columns:1.4fr 1fr}}.nxRepCard{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxRepTit{font-size:12px;font-weight:800;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:6px}.nxRepTit i{color:#2563eb}.nxRepBars{display:flex;align-items:flex-end;gap:5px;height:120px;overflow-x:auto;padding-bottom:2px}.nxRepBar{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:30px;flex:1}.nxRepBarV{width:70%;min-width:14px;background:linear-gradient(180deg,#3b82f6,#2563eb);border-radius:5px 5px 0 0}.nxRepBarL{font-size:8.5px;color:#475569;white-space:nowrap}.nxRepMet{margin-bottom:10px}.nxRepMetTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.nxRepMetTop b{color:#0f172a}.nxRepMetBar{height:7px;background:#f1f5f9;border-radius:5px;overflow:hidden}.nxRepMetBar>div{height:100%;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:5px}';
     // ── Adaptación premium (diseño Stitch aprobado): etiquetas de stock, total azul y fichas de pago ──
     // Botones del NÚCLEO (bc1 morado) en azul real DENTRO del POS y sus modales (no toca seguros)
-    st.textContent += '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}.nxPayTiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 10px}.nxPayTile{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 2px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}.nxPayTile i{font-size:17px;color:#475569}.nxPayTile span{font-size:8px;font-weight:800;color:#475569;letter-spacing:.3px}.nxPayTile.on{border-color:#2563eb;background:#eff6ff}.nxPayTile.on i,.nxPayTile.on span{color:#2563eb}@media(max-width:380px){.nxPayTile i{font-size:15px}.nxPayTile{padding:7px 1px}}';
+    st.textContent += '.nxRepKb{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}.nxRepCol{min-width:210px;max-width:240px;flex:1 0 210px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px}.nxRepColH{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--rc,#475569);border-bottom:2px solid var(--rc,#e2e8f0);padding-bottom:6px;margin-bottom:8px}.nxRepColH b{background:#fff;border-radius:7px;padding:1px 7px;font-size:10px}.nxRepCard{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;margin-bottom:7px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(15,23,42,.05)}.nxRepCard:active{opacity:.75}.nxRepNum{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:#2563eb;margin-bottom:2px}.nxRepNum span{color:#94a3b8;font-weight:700}.nxRepEq{font-size:12.5px;font-weight:800;color:#0f172a;line-height:1.15}.nxRepCli{font-size:10.5px;color:#475569}.nxRepFalla{font-size:10px;color:#64748b;margin-top:2px}.nxRepPre{font-size:11.5px;font-weight:800;color:#16a34a;margin-top:3px}.nxRepEmpty{text-align:center;color:#cbd5e1;font-size:11px;padding:10px}.nxRepChips{display:flex;gap:5px;flex-wrap:wrap}.nxRepChip{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}.nxRepChip.on{background:var(--rc,#2563eb);border-color:var(--rc,#2563eb);color:#fff}.nxTQuick{margin-left:auto;border:0;background:#2563eb;color:#fff;border-radius:11px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.3)}.nxTQuick:active{background:#1d4ed8}' + '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}.nxPayTiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 10px}.nxPayTile{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 2px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}.nxPayTile i{font-size:17px;color:#475569}.nxPayTile span{font-size:8px;font-weight:800;color:#475569;letter-spacing:.3px}.nxPayTile.on{border-color:#2563eb;background:#eff6ff}.nxPayTile.on i,.nxPayTile.on span{color:#2563eb}@media(max-width:380px){.nxPayTile i{font-size:15px}.nxPayTile{padding:7px 1px}}';
     document.head.appendChild(st);
     inyectarCSSTienda();
   }
