@@ -18133,7 +18133,7 @@
     const n = parseInt(String(v || '').replace(/\D/g, ''), 10);
     if (!n || String(n) === prox) { if (inp) inp.value = prox; return; }
     if (!(_ventas || []).length) { // cargar de la base y reintentar
-      getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,created_at,anulada&order=created_at.desc&limit=500')
+      getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=500')
         .then(r => { _ventas = r || []; window.nxFacBuscarNum(String(n)); }).catch(() => {});
       return;
     }
@@ -18151,9 +18151,9 @@
     // Cargar las ventas de la BASE si la memoria está vacía (la lupa funciona sin pasar por Historial)
     if (!(_ventas || []).length && !window.__fhCargando) {
       window.__fhCargando = true;
-      getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,created_at,anulada&order=created_at.desc&limit=500')
+      getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=500')
         .then(r => { _ventas = r || []; window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHist(_fhPage); })
-        .catch(() => { window.__fhCargando = false; });
+        .catch(() => { window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHist(_fhPage); });
     }
     let lista = (_ventas || []).slice().sort((a, b) => String(b.created_at || b.fecha || '').localeCompare(String(a.created_at || a.fecha || '')));
     if (qq) lista = lista.filter(v => ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase().includes(qq));
@@ -18161,7 +18161,7 @@
     if (_fhPage >= pags) _fhPage = pags - 1;
     const pagina = lista.slice(_fhPage * 10, _fhPage * 10 + 10);
     const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosTicket('${v.id}')">
-        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${v.anulada ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${(v.anulada || v.estado === 'anulada') ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
         <b style="font-size:12.5px">${fmt(v.total)}</b><span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
       : '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">' + (window.__fhCargando ? 'Cargando facturas…' : 'Sin facturas' + (qq ? ' con esa búsqueda' : '')) + '</div>';
