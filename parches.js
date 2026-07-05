@@ -14346,8 +14346,8 @@
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:580px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-search"></i> Buscar artículo</span><button class="nxBack" type="button" onclick="document.getElementById('nxProdPick').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        <div class="nxFacAdd" style="margin:2px 0 8px"><i class="ti ti-search" style="pointer-events:none"></i><input id="ppkQ" placeholder="Escribe nombre o código… (vacío = todos)" autocomplete="off" oninput="window.nxProdPickFiltrar(this.value)"></div>
-        ${(_prodPickDest === 'factura' && clienteSel()) ? `<div style="font-size:11px;color:#6d28d9;margin:0 0 8px;font-weight:700"><i class="ti ti-user"></i> ${esc(clienteSel().nombre)} — ${clienteSel().nivel_precio === 'mayor' ? 'PRECIO POR MAYOR' : 'precio final'} (se carga solo)</div>` : ''}
+        <div class="nxFacAdd" style="margin:2px 0 8px"><input id="ppkQ" placeholder="Buscar por nombre o código… (vacío = todos)" autocomplete="off" style="padding-left:14px" oninput="window.nxProdPickFiltrar(this.value)"></div>
+        ${(_prodPickDest === 'factura' && clienteSel()) ? `<div style="font-size:11px;color:#2563eb;margin:0 0 8px;font-weight:700"><i class="ti ti-user"></i> ${esc(clienteSel().nombre)} — ${clienteSel().nivel_precio === 'mayor' ? 'PRECIO POR MAYOR' : 'precio final'} (se carga solo)</div>` : ''}
         <div id="ppkList" style="overflow-y:auto;flex:1"></div>
       </div>`;
     document.body.appendChild(ov);
@@ -14366,11 +14366,20 @@
       const pf = Number(p.precio || 0), pm = Number(p.precio_mayor || 0) > 0 ? Number(p.precio_mayor) : pf;
       const aplica = precioCli(p);
       const abierto = String(_ppkOpen) === String(p.id);
-      const precios = `Final: <b style="color:${cliMayor ? '#475569' : '#6d28d9'}">${fmt(pf)}</b>` + (Number(p.precio_mayor || 0) > 0 ? ` · Mayor: <b style="color:${cliMayor ? '#6d28d9' : '#475569'}">${fmt(pm)}</b>` : '');
+      const serv = p.tipo === 'servicio';
+      const min = Number(p.stock_min || 0);
+      const stkChip = serv ? '<span class="nxPosStkB srv">SERVICIO</span>'
+        : exi <= 0 ? '<span class="nxPosStkB out">SIN STOCK</span>'
+        : (min > 0 && exi <= min) ? `<span class="nxPosStkB low">BAJO: ${exi}</span>`
+        : `<span class="nxPosStkB">STOCK: ${exi}</span>`;
+      const precios = `Final: <b style="color:${cliMayor ? '#475569' : '#2563eb'}">${fmt(pf)}</b>` + (Number(p.precio_mayor || 0) > 0 ? ` · Mayor: <b style="color:${cliMayor ? '#2563eb' : '#475569'}">${fmt(pm)}</b>` : '');
+      const aplicaHTML = aplica > 0
+        ? `<div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#2563eb;font-size:14px">${fmt(aplica)}</b>`
+        : '<span class="nxPosStkB" style="background:#fffbeb;color:#d97706">SIN PRECIO</span>';
       return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
         <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')">
-          <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.codigo ? ' · ' : ''}<span style="color:${exi <= 0 ? '#dc2626' : '#475569'}">${exi} und</span></div><div style="font-size:10.5px;color:#475569;margin-top:1px">${precios}</div></div>
-          <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div><div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#6d28d9;font-size:13px">${fmt(aplica)}</b></div><span class="nxPpkChev" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#64748b;line-height:1">&rsaquo;</span></div>
+          <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px">${p.codigo ? '<span>' + esc(p.codigo) + '</span>' : ''}${stkChip}</div><div style="font-size:10.5px;color:#475569;margin-top:2px">${precios}</div></div>
+          <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div>${aplicaHTML}</div><span class="nxPpkChev" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#64748b;line-height:1">&rsaquo;</span></div>
         </div>
         ${abierto ? ppkDetailHTML(p) : ''}
       </div>`; }).join('') || '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>';
