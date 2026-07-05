@@ -14610,8 +14610,29 @@
         ${ajustesNCF()}
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesVendedores()}
+        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
+        <div style="font-size:14px;font-weight:800;color:#dc2626;margin-bottom:4px"><i class="ti ti-trash"></i> Zona de peligro</div>
+        <div style="font-size:12px;color:#475569;margin-bottom:10px;line-height:1.5">Borra las VENTAS, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de PRUEBA de esta empresa. Los productos, clientes, proveedores y ajustes NO se tocan. Úsalo antes de empezar a trabajar de verdad.</div>
+        <button class="btn bsm bc3" type="button" onclick="window.nxLimpiarPruebas()"><i class="ti ti-trash"></i> Borrar datos de prueba</button>
       </div>`;
   }
+  // ── Limpieza de datos de PRUEBA (solo transaccional; catálogos intactos) ──
+  window.nxLimpiarPruebas = function () {
+    if (!esAdmin()) { toast('err', 'Solo el administrador'); return; }
+    const resp = window.prompt('⚠️ Esto BORRA ventas, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de ESTA empresa.\n\nProductos, clientes y ajustes NO se tocan.\n\nEscribe BORRAR para confirmar:');
+    if (String(resp || '').trim().toUpperCase() !== 'BORRAR') { toast('warn', 'Cancelado'); return; }
+    (async () => {
+      const org = (curSesPOS() || {}).organizacion_id;
+      if (!org) { toast('err', 'Sin organización en la sesión'); return; }
+      const tablas = ['pos_venta_items', 'pos_devolucion_items', 'pos_asiento_lineas', 'pos_fin_cuotas', 'pos_apartado_pagos', 'pos_cotizacion_items', 'pos_transferencia_items', 'pos_compra_items', 'pos_compra_pagos', 'pos_abonos', 'pos_devoluciones', 'pos_ventas', 'pos_financiamientos', 'pos_apartados', 'pos_reparaciones', 'pos_caja_movimientos', 'pos_cajas', 'pos_inv_movimientos', 'pos_asientos', 'pos_cotizaciones', 'pos_transferencias', 'pos_compras', 'pos_crm'];
+      toast('info', 'Limpiando…', 'Borrando datos de prueba');
+      let ok = 0, fal = 0;
+      for (const t of tablas) { try { await getAPI().del(t, 'organizacion_id=eq.' + org); ok++; } catch (e) { fal++; } }
+      try { window.logAudit && window.logAudit('LIMPIEZA_DATOS_PRUEBA', ok + ' tabla(s) limpiadas' + (fal ? ' · ' + fal + ' con error' : ''), 'Ajustes'); } catch (e) {}
+      toast('ok', 'Datos de prueba borrados', 'La empresa quedó limpia para trabajar de verdad');
+      const el = document.getElementById('v-pos'); if (el) { try { await cargarPOS(); renderPOS(el); } catch (e) {} }
+    })();
+  };
   function secEjemplo(s) { return (s.prefijo || '') + String(s.proximo || 1).padStart(Number(s.longitud || 5), '0'); }
   function ajustesSecuencias() {
     if (!_secuencias.length) {
@@ -16894,6 +16915,17 @@
       await postAsientoConcepto(fecha, 'Abono cliente' + (cliNom ? ' ' + cliNom : ''), 'cobro', origenId || null, lineas);
     } catch (e) {}
   }
+  // Asiento de INGRESO por servicio (reparaciones/apartados): Debe Caja o Banco / Haber Ventas
+  async function postAsientoServicio(concepto, monto, metodo, origenId) {
+    try {
+      if (!(Number(monto) > 0)) return;
+      const byc = await ctasMap(); if (!Object.keys(byc).length) return;
+      const efe = /efectivo/i.test(metodo || 'Efectivo');
+      const lineas = [lnCta(byc, efe ? '1101' : '1102', efe ? 'Caja' : 'Banco', Number(monto), 0), lnCta(byc, '4101', 'Ventas', 0, Number(monto))].filter(Boolean);
+      if (lineas.length < 2) return;
+      await postAsientoConcepto(hoyISOPos(), concepto, 'servicio', origenId || null, lineas);
+    } catch (e) {}
+  }
   // Borra el/los asiento(s) de un documento (reversa al eliminar/anular)
   async function delAsientoOrigen(tipo, origenId) {
     try {
@@ -17979,6 +18011,7 @@
       const rep = (r && r[0]) || d;
       _reps.unshift(rep);
       if (abono > 0 && _caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Avance reparación ' + numero + ' · ' + d.cliente_nombre, fecha: new Date().toISOString() }); } catch (e) {} }
+      if (abono > 0) { try { await postAsientoServicio('Avance reparación ' + numero + ' · ' + d.cliente_nombre, abono, 'Efectivo', rep.id || null); } catch (e) {} }
       try { window.logAudit && window.logAudit('REP_RECIBIDA', numero + ' · ' + eq + ' · ' + d.cliente_nombre, 'Reparaciones'); } catch (e) {}
       cerrarModal('nxRepM'); toast('ok', 'Equipo recibido', numero);
       window.nxRepImprimir(rep.id || null, rep);
@@ -18049,6 +18082,7 @@
       const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + (monto || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
       await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d);
       if (monto > 0 && _caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
+      try { await postAsientoServicio('Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), monto, metodo, id); } catch (e) {}
       try { window.logAudit && window.logAudit('REP_ENTREGADA', (r.numero || '') + ' · ' + (r.equipo || '') + ' · cobrado ' + fmt(d.cobrado_monto), 'Reparaciones'); } catch (e) {}
       cerrarModal('nxRepEnt'); toast('ok', 'Entregado y cobrado', fmt(monto || 0));
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
@@ -18136,6 +18170,7 @@
       await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { pagado: true, fecha_pago: hoyISOPos(), metodo: metodo });
       prox.pagado = true; prox.fecha_pago = hoyISOPos(); prox.metodo = metodo;
       if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: Number(prox.monto), metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + (f.descripcion || '') }); } catch (e) {} }
+      try { await postAsientoAbono(f.cliente_nombre, Number(prox.monto), /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id); } catch (e) {}
       if (!cuotasDe(id).some(c => !c.pagado)) { try { await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { estado: 'saldado' }); f.estado = 'saldado'; } catch (e) {} }
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(prox.monto), 'Cuotas'); } catch (e) {}
       cerrarModal('nxFinM'); toast('ok', 'Cuota cobrada', fmt(prox.monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
@@ -18283,6 +18318,7 @@
       if (a && abono > 0) {
         try { const rp = await getAPI().post('pos_apartado_pagos', { apartado_id: a.id, monto: abono, metodo: 'Efectivo' }); if (rp && rp[0]) _apaPagos.push(rp[0]); } catch (e) {}
         if (_caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Abono apartado ' + numero + ' · ' + cli.toUpperCase(), fecha: new Date().toISOString() }); } catch (e) {} }
+        try { await postAsientoServicio('Abono apartado ' + numero + ' · ' + cli.toUpperCase(), abono, 'Efectivo', a.id); } catch (e) {}
       }
       try { window.logAudit && window.logAudit('APARTADO_NUEVO', numero + ' · ' + desc + ' · ' + cli.toUpperCase() + ' · ' + fmt(total), 'Apartados'); } catch (e) {}
       cerrarModal('nxApaM'); toast('ok', 'Apartado creado', numero);
@@ -18313,6 +18349,7 @@
       await getAPI().patch('pos_apartados', 'id=eq.' + id, { abonado: nuevo }); a.abonado = nuevo;
       try { const rp = await getAPI().post('pos_apartado_pagos', { apartado_id: id, monto: monto, metodo: metodo }); if (rp && rp[0]) _apaPagos.push(rp[0]); } catch (e) {}
       if (_caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Abono apartado ' + (a.numero || '') + ' · ' + (a.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
+      try { await postAsientoServicio('Abono apartado ' + (a.numero || '') + ' · ' + (a.cliente_nombre || ''), monto, metodo, id); } catch (e) {}
       try { window.logAudit && window.logAudit('APARTADO_ABONO', (a.numero || '') + ' · ' + fmt(monto) + ' · ' + (a.cliente_nombre || ''), 'Apartados'); } catch (e) {}
       cerrarModal('nxApaM');
       toast('ok', 'Abono registrado', fmt(monto) + (nuevo >= Number(a.total) ? ' · ¡COMPLETADO! Ya puede entregarse' : ''));
