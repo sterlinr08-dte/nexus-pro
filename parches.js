@@ -13781,7 +13781,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['factura', 'Factura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -13825,6 +13825,7 @@
   let _apartados = [], _apaPagos = []; // apartados (layaway)
   let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
   let _prefs = []; // prefacturas abiertas
+  let _pcart = [], _pCliId = '', _pSelId = '', _preQ = ''; // módulo Prefactura (preventa)
   let _histSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
@@ -14090,6 +14091,7 @@
     else if (_posTab === 'reportes') body = renderReportes();
     else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();
+    else if (_posTab === 'prefactura') body = renderPrefactura();
     else if (_posTab === 'reparaciones') body = renderReparaciones();
     else if (_posTab === 'cuotas') body = renderCuotas();
     else if (_posTab === 'apartados') body = renderApartados();
@@ -14112,7 +14114,7 @@
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
     const sec = (t, items) => items.trim() ? `<div class="nxTSec">${t}</div>${items}` : '';
-    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('reparaciones', 'Reparaciones', 'ti-tool'))
+    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool'))
       + sec('Inventario', it('productos', 'Productos', 'ti-box') + it('inventario', 'Inventario', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
       + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
@@ -14187,7 +14189,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
+        ${grupo('Ventas', tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
         ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
@@ -15106,7 +15108,6 @@
         <div class="nxFacTotR nxFacTotBig"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
       </div>
       <div class="nxFacActions">
-        ${_cart.length ? `<button type="button" class="btn bghost bsm" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar prefactura</button>` : ''}
         ${_cart.length ? `<button type="button" class="btn bghost bsm" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Vaciar</button>` : ''}
         <button type="button" class="btn bc1 nxFacBtn" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
       </div>`;
@@ -18346,6 +18347,84 @@
     if (inp) inp.value = prox;
   };
 
+
+
+  // ══════════════ MÓDULO PREFACTURA (preventa independiente — NO toca inventario) ══════════════
+  function renderPrefactura() {
+    const cliOpts = `<option value="">— Consumidor final —</option>` + _clientes.filter(c => c.es_cliente !== false).map(c => `<option value="${c.id}"${String(_pCliId) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
+    const filas = _pcart.length ? _pcart.map((it, i) => `<tr>
+        <td style="font-weight:600;font-size:12px">${esc(it.nombre)}</td>
+        <td style="text-align:center"><input value="${it.cantidad}" inputmode="numeric" style="width:52px;text-align:center;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px;font-weight:700" onchange="window.nxPreCant(${i},this.value)"></td>
+        <td style="text-align:right"><input value="${Math.round(it.precio).toLocaleString('en-US')}" inputmode="numeric" style="width:84px;text-align:right;padding:6px;border:1.5px solid #e2e8f0;border-radius:8px;font-weight:700" onchange="window.nxPrePrecio(${i},this.value)"></td>
+        <td style="text-align:right;font-weight:800;white-space:nowrap">${fmt(it.precio * it.cantidad)}</td>
+        <td style="text-align:center"><button style="background:none;border:none;color:#dc2626;font-size:15px;cursor:pointer" onclick="window.nxPreDel(${i})"><i class="ti ti-x"></i></button></td>
+      </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;font-size:12px">Busca artículos arriba — la preventa NO descuenta inventario</td></tr>';
+    const total = _pcart.reduce((t, it) => t + it.precio * it.cantidad, 0);
+    const ql = _preQ.toLowerCase();
+    const abiertas = _prefs.filter(p => !ql || ((p.numero || '') + ' ' + (p.cliente_nombre || '')).toLowerCase().includes(ql));
+    const lista = abiertas.length ? abiertas.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f1f5f9">
+        <div style="flex:1;min-width:0"><b style="font-size:12px;color:#7c3aed">${esc(p.numero || '')}</b> <span style="font-size:10.5px;color:#475569">· ${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art.</span></div>
+        <b style="font-size:12px">${fmt(p.total)}</b>
+        <button class="btn bsm bc1" onclick="window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>
+        <button class="btn bsm bghost" onclick="window.nxPrefAnular('${p.id}')"><i class="ti ti-x" style="color:#dc2626"></i></button>
+      </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:14px;font-size:12px">Sin prefacturas abiertas</div>';
+    return `<div style="max-width:720px">
+      <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:11px;padding:8px 12px;font-size:11.5px;color:#6b21a8;font-weight:600;margin-bottom:10px"><i class="ti ti-info-circle"></i> La PREFACTURA es una preventa: no descuenta inventario ni cobra. Se convierte en factura desde aquí o con la lupa morada de la pestaña Factura.</div>
+      <div class="fr" style="margin-bottom:8px"><label>Cliente</label><select onchange="window.nxPreCli(this.value)">${cliOpts}</select></div>
+      <div style="position:relative;margin-bottom:8px">
+        <div class="nxLupaBox" style="margin:0"><i class="ti ti-search"></i><input id="preQArt" class="no-upper" placeholder="Buscar artículo para la preventa…" autocomplete="off" oninput="window.nxPreFiltrar(this.value)"></div>
+        <div id="preSug" style="display:none;position:absolute;left:0;right:0;top:46px;z-index:30;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 10px 26px rgba(15,23,42,.14);max-height:200px;overflow-y:auto"></div>
+      </div>
+      <div class="tw" style="font-size:11px;margin-bottom:8px"><table style="width:100%"><thead><tr><th>Artículo</th><th style="text-align:center">Cant.</th><th style="text-align:right">Precio</th><th style="text-align:right">Importe</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:15px;font-weight:800">Total: <span style="color:#7c3aed">${fmt(total)}</span></div>
+        <div style="display:flex;gap:6px">${_pcart.length ? `<button class="btn bghost bsm" onclick="window.nxPreLimpiar()"><i class="ti ti-trash"></i></button>` : ''}
+        <button class="btn bc1" ${_pcart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPreGuardar()"><i class="ti ti-device-floppy"></i> Guardar prefactura</button></div>
+      </div>
+      <div style="border-top:1px solid #eef2f7;padding-top:12px">
+        <div style="font-weight:800;font-size:13px;margin-bottom:6px"><i class="ti ti-file-description" style="color:#7c3aed"></i> Prefacturas abiertas (${_prefs.length})</div>
+        <div class="nxLupaBox"><i class="ti ti-search"></i><input placeholder="Buscar por número o cliente…" value="${esc(_preQ)}" autocomplete="off" oninput="window.nxPreListaQ(this.value)"></div>
+        <div id="preLista">${lista}</div>
+      </div>
+    </div>`;
+  }
+  window.nxPreCli = function (v) { _pCliId = v || ''; };
+  window.nxPreListaQ = function (v) { _preQ = String(v || ''); const el = document.getElementById('v-pos'); if (el) { renderPOS(el); setTimeout(() => { const i2 = document.querySelector('#v-pos .nxLupaBox + #preLista') ? null : document.querySelectorAll('#v-pos .nxLupaBox input'); if (i2 && i2.length) { const inp = i2[i2.length - 1]; inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }, 30); } };
+  window.nxPreFiltrar = function (q) {
+    const box = document.getElementById('preSug'); if (!box) return;
+    const ql = String(q || '').trim().toLowerCase();
+    if (!ql) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const hits = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '')).toLowerCase().includes(ql)).slice(0, 8);
+    box.innerHTML = hits.length ? hits.map(p => `<div style="padding:9px 11px;font-size:12px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px" onclick="window.nxPreAdd('${p.id}')"><b>${esc(p.nombre)}</b><span style="color:#7c3aed;font-weight:800;white-space:nowrap">${fmt(precioCli(p))}</span></div>`).join('') : '<div style="padding:10px;font-size:11px;color:#94a3b8">Sin resultados</div>';
+    box.style.display = '';
+  };
+  window.nxPreAdd = function (pid) {
+    const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
+    const ex = _pcart.find(x => String(x.producto_id) === String(pid));
+    if (ex) ex.cantidad += 1; else _pcart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis, desc: 0, descT: 'pct' });
+    const i = document.getElementById('preQArt'); if (i) i.value = '';
+    const b = document.getElementById('preSug'); if (b) { b.style.display = 'none'; b.innerHTML = ''; }
+    const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+  };
+  window.nxPreCant = function (i, v) { const it = _pcart[i]; if (!it) return; const n = Math.max(0, parseInt(String(v).replace(/\D/g, ''), 10) || 0); if (!n) _pcart.splice(i, 1); else it.cantidad = n; const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
+  window.nxPrePrecio = function (i, v) { const it = _pcart[i]; if (!it) return; it.precio = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0); const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
+  window.nxPreDel = function (i) { _pcart.splice(i, 1); const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
+  window.nxPreLimpiar = function () { if (!confirm('¿Vaciar la preventa?')) return; _pcart = []; const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
+  window.nxPreGuardar = async function () {
+    if (!_pcart.length) return;
+    const total = _pcart.reduce((t, it) => t + it.precio * it.cantidad, 0);
+    let numero = null; try { numero = await nextSeq('prefactura'); } catch (e) {}
+    if (!numero) numero = 'PF-' + String(_prefs.length + 1).padStart(5, '0');
+    const cli = _clientes.find(c => String(c.id) === String(_pCliId));
+    try {
+      const r = await getAPI().post('pos_prefacturas', { numero: numero, cliente_id: cli ? cli.id : null, cliente_nombre: cli ? cli.nombre : null, items: _pcart, total: total, created_by_name: ((curSesPOS() || {}).nom) || null });
+      if (r && r[0]) _prefs.unshift(r[0]);
+      try { window.logAudit && window.logAudit('PREFACTURA_GUARDADA', numero + ' · ' + fmt(total) + (cli ? ' · ' + cli.nombre : ''), 'Prefactura'); } catch (e) {}
+      _pcart = []; _pCliId = '';
+      toast('ok', 'Prefactura guardada', numero);
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
 
   // ══════════════ PREFACTURAS (pedido que la caja factura después) ══════════════
   window.nxPrefGuardar = async function () {
