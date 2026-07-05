@@ -1,7 +1,9 @@
 {
-  "version": "41.7",
+  "version": "41.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (POS · Factura): el No. de factura ahora tiene su LUPA — tócala y se abre el historial de TODAS las facturas generadas, apiladas de 10 en 10 con paginación (Anterior/Siguiente), buscador por número o cliente, y tocando cualquiera se abre su ticket. Igual que Infoplus.",
+    "MEJORA (POS · orden): se quitó el selector de almacén de arriba en Vender y Factura — el almacén se asignará al EMPLEADO cuando se le cree su acceso (queda en Inventario para las transferencias). Pantalla más limpia para vender.",
     "NUEVO (POS · APARTADOS / layaway): el cliente separa su equipo con un abono y lo completa a su ritmo. Módulo 'Apartados' en Finanzas: crear apartado (artículo, cliente, total, abono inicial y días de plazo), barra de progreso de lo abonado, abonar en 2 toques (entra a caja), recordatorio por WhatsApp con lo que falta, VENCIDO en rojo si pasó el límite, y entregar o cancelar. Todo queda en auditoría.",
     "MEJORA (POS · orden estilo Infoplus): (1) se acabó la información repetida en el buscador de artículos — la lista muestra solo lo esencial (nombre, código, stock y el precio que APLICA); el detalle de Final/Por Mayor y las existencias por almacén salen al abrir el artículo. (2) El campo de búsqueda con la LUPA quedó IGUALITO en todas partes (Vender, Factura y el buscador): lupa adentro a la izquierda, mismo tamaño, misma forma — y ya no se puede desacomodar en ningún teléfono. La lupa azul es la que abre el catálogo completo.",
     "MEJORA (POS · buscador de artículos renovado): tarjetas más limpias y profesionales — stock con ETIQUETA de color (azul STOCK: 37, rojo BAJO / SIN STOCK, verde SERVICIO) en vez de '37 und' a secas; el precio que aplica en azul y más grande; los artículos SIN PRECIO ya no salen 'RD$ 0' sino con su aviso ámbar SIN PRECIO; se quitó la lupa suelta que quedaba flotando; y se acabó el morado en esa pantalla (todo azul real).",

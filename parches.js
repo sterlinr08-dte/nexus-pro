@@ -14192,7 +14192,7 @@
       const lbl = cid === 'todas' ? 'Todas' : esc(catNombre(cid));
       return `<button type="button" class="btn bsm${_posCat === String(cid) ? ' bc1' : ''}" style="font-size:10px;padding:5px 10px" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
     }).join('');
-    return `${almSelectorHTML()}<div class="nxPosGridWrap">
+    return `<div class="nxPosGridWrap">
         <div class="nxPosLeft">
           <div class="nxLupaBox"><i class="ti ti-search click" onclick="window.nxProdPicker('vender')" title="Ver todos los artículos"></i><input type="text" id="posBuscar" placeholder="Buscar producto (toca la lupa para ver todos)..." autocomplete="off" oninput="window.nxPosBuscar(this.value)"></div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
@@ -14275,10 +14275,10 @@
     }
     const cliOpts = `<option value="">— Consumidor final —</option>` + _clientes.filter(c => c.es_cliente !== false).map(c => `<option value="${c.id}"${String(_factCli) === String(c.id) ? ' selected' : ''}>${esc(c.codigo ? c.codigo + ' · ' : '')}${esc(c.nombre)}${c.nivel_precio === 'mayor' ? ' (por mayor)' : ''}</option>`).join('');
     const ncfOpts = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('');
-    return `${almSelectorHTML()}<div class="nxFac">
+    return `<div class="nxFac">
         <div class="nxFacHead">
           <div class="nxFacF" style="grid-column:span 2"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
-          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" id="facNumPrev">${proxNumeroFacturaFmt(_facCredito)}</div></div>
+          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" id="facNumPrev" onclick="window.nxFacHist(0)" style="cursor:pointer;gap:6px" title="Ver facturas generadas">${proxNumeroFacturaFmt(_facCredito)}<i class="ti ti-search" style="margin-left:auto;font-size:13px;color:#2563eb"></i></div></div>
           <div class="nxFacF nxFacFsm"><label>Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"></div>
           <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
           <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito</label></div>
@@ -18105,6 +18105,38 @@
     w.document.close();
   };
 
+
+
+  // ══════════════ HISTORIAL DE FACTURAS desde el contador (lupa) — 10 en 10 ══════════════
+  let _fhPage = 0, _fhQ = '';
+  window.nxFacHist = function (page, q) {
+    _fhPage = Math.max(0, page || 0); if (q != null) _fhQ = String(q).toLowerCase();
+    const qq = _fhQ;
+    let lista = (_ventas || []).slice().sort((a, b) => String(b.created_at || b.fecha || '').localeCompare(String(a.created_at || a.fecha || '')));
+    if (qq) lista = lista.filter(v => ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase().includes(qq));
+    const pags = Math.max(1, Math.ceil(lista.length / 10));
+    if (_fhPage >= pags) _fhPage = pags - 1;
+    const pagina = lista.slice(_fhPage * 10, _fhPage * 10 + 10);
+    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosTicket('${v.id}')">
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${v.anulada ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
+        <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
+        <b style="font-size:12.5px">${fmt(v.total)}</b><span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
+      : '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">Sin facturas' + (qq ? ' con esa búsqueda' : '') + '</div>';
+    const nav = `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px">
+      <button class="btn bsm bghost" type="button" ${_fhPage <= 0 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHist(${_fhPage - 1})">&lsaquo; Anterior</button>
+      <span style="font-size:11.5px;font-weight:800;color:#475569">Página ${_fhPage + 1} de ${pags} · ${lista.length} factura${lista.length === 1 ? '' : 's'}</span>
+      <button class="btn bsm bghost" type="button" ${_fhPage >= pags - 1 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHist(${_fhPage + 1})">Siguiente &rsaquo;</button></div>`;
+    cerrarModal('nxFacHistM');
+    const ov = document.createElement('div'); ov.id = 'nxFacHistM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-file-invoice"></i> Facturas generadas</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacHistM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+      <div class="nxLupaBox"><i class="ti ti-search"></i><input id="fhQ" placeholder="Buscar por número o cliente…" value="${esc(_fhQ)}" autocomplete="off" oninput="window.nxFacHist(0, this.value)"></div>
+      <div style="overflow-y:auto;flex:1">${rows}</div>${nav}
+    </div>`;
+    document.body.appendChild(ov);
+    const inp = document.getElementById('fhQ'); if (inp && qq) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  };
 
   // ══════════════ APARTADOS (layaway: separar con abonos) ══════════════
   function apaPagosDe(id) { return _apaPagos.filter(p => String(p.apartado_id) === String(id)); }
