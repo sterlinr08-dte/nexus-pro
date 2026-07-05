@@ -14236,12 +14236,21 @@
       const badge = serv ? '<span class="nxPosStkB srv">SERVICIO</span>'
         : out ? '<span class="nxPosStkB out">SIN STOCK</span>'
         : `<span class="nxPosStkB${low ? ' low' : ''}">${low ? 'BAJO' : 'STOCK'}: ${stk}</span>`;
+      const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
+      const imeiChip = p.serial ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
       return `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxVenderSel('${p.id}')">
-        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.marca)}</span>` : '')}</div>
+        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.marca)}</span>` : '')}${imeiChip}</div>
         <div class="nxPosCardBot"><span class="nxPosCardPre">${fmt(p.precio)}</span>${badge}</div>
       </button>`;
     }).join('');
   }
+  // Chip IMEI de la tarjeta: mete el artículo al carrito (si falta) y abre el selector de IMEI
+  window.nxVenderImei = function (pid) {
+    const p = _prods.find(x => String(x.id) === String(pid)); if (!p || !p.serial) return;
+    if (!_cart.find(x => String(x.producto_id) === String(pid))) window.nxPosAdd(pid);
+    const idx = _cart.findIndex(x => String(x.producto_id) === String(pid));
+    if (idx >= 0 && typeof window.nxFacSerial === 'function') window.nxFacSerial(idx);
+  };
   window.nxPosCat = function (cid) { _posCat = String(cid); const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxPosBuscar = function (q) {
     const t = String(q || '').trim().toLowerCase();
@@ -14582,7 +14591,8 @@
     const chk = Array.prototype.slice.call(document.querySelectorAll('#nxFacSer [data-serid]')).filter(c => c.checked).slice(0, it.cantidad);
     it.seriales = chk.map(c => ({ id: c.getAttribute('data-serid'), serial: c.getAttribute('data-serial') }));
     if (it.seriales.length) it._sinSerial = false;
-    cerrarModal('nxFacSer'); pintarFactura();
+    cerrarModal('nxFacSer');
+    if (_posTab === 'vender') { const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML(); pintarCarrito(); } else { pintarFactura(); }
   };
   window.nxFacSerSin = function (i) { const it = _cart[i]; if (!it) return; it._sinSerial = true; it.seriales = []; cerrarModal('nxFacSer'); toast('ok', 'Se venderá sin IMEI', 'No había seriales cargados'); pintarFactura(); };
   window.nxFacCant = function (i, v) { const it = _cart[i]; if (!it) return; const n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0)); if (n === 0) { _cart.splice(i, 1); } else it.cantidad = n; pintarFactura(); };
