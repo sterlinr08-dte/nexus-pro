@@ -13840,27 +13840,39 @@
   let _dashKPI = null;
 
   async function cargarPOS() {
-    _cats = await getAPI().get('pos_categorias', 'select=*&order=orden.asc,nombre.asc') || [];
-    _prods = await getAPI().get('pos_productos', 'select=*&activo=eq.true&order=nombre.asc') || [];
-    try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _clientes = []; }
-    try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _proveedores = []; }
-    try { const cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (cj && cj[0]) || null; } catch (e) { _caja = null; }
-    try { const cf = await getAPI().get('pos_config', 'select=*&limit=1'); if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; } } catch (e) {}
-    try { _ncfSecs = await getAPI().get('pos_ncf_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _ncfSecs = []; }
-    try { _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _vendedores = []; }
-    mergeVendedorEntidades();
-    try { _secuencias = await getAPI().get('pos_secuencias', 'select=*&order=tipo.asc') || []; } catch (e) { _secuencias = []; }
-    try { _acceso = await getAPI().get('pos_acceso', 'select=*') || []; } catch (e) { _acceso = []; }
-    try { _reps = await getAPI().get('pos_reparaciones', 'select=*&order=created_at.desc&limit=400') || []; } catch (e) { _reps = []; }
-    try { _fins = await getAPI().get('pos_financiamientos', 'select=*&order=created_at.desc&limit=300') || []; } catch (e) { _fins = []; }
-    try { _finCuotas = await getAPI().get('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000') || []; } catch (e) { _finCuotas = []; }
-    try { _apartados = await getAPI().get('pos_apartados', 'select=*&order=created_at.desc&limit=300') || []; } catch (e) { _apartados = []; }
-    try { _apaPagos = await getAPI().get('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500') || []; } catch (e) { _apaPagos = []; }
-    try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) { _almacenes = []; }
+    // TODAS las cargas EN PARALELO (antes eran 16 viajes secuenciales: el POS tardaba
+    // varios segundos en abrir en el teléfono; ahora tarda lo que tarde UNA consulta).
+    const g = (t, q) => getAPI().get(t, q).catch(() => null);
+    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm] = await Promise.all([
+      g('pos_categorias', 'select=*&order=orden.asc,nombre.asc'),
+      g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
+      g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
+      g('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc'),
+      g('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'),
+      g('pos_config', 'select=*&limit=1'),
+      g('pos_ncf_secuencias', 'select=*&order=tipo.asc'),
+      g('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc'),
+      g('pos_secuencias', 'select=*&order=tipo.asc'),
+      g('pos_acceso', 'select=*'),
+      g('pos_reparaciones', 'select=*&order=created_at.desc&limit=400'),
+      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
+      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
+      g('pos_apartados', 'select=*&order=created_at.desc&limit=300'),
+      g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
+      g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
+      g('pos_stock_almacen', 'select=*&limit=20000')
+    ]);
+    _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
+    _caja = (cj && cj[0]) || null;
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; }
+    _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
+    _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _apartados = apa || []; _apaPagos = apap || [];
+    _almacenes = alm || [];
     if (_almacenes.length) {
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
-      try { const rows = await getAPI().get('pos_stock_almacen', 'select=*&limit=20000') || []; _stockAlmRows = {}; rows.forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; }); } catch (e) {}
+      _stockAlmRows = {}; (stkAlm || []).forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; });
     }
+    mergeVendedorEntidades();
     mergeProvEntidades();
   }
   async function cargarComprasTab() {
@@ -13969,7 +13981,7 @@
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
     view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando punto de venta...</div></div></div>';
-    try { await cargarPOS(); try { await cargarDashKPI(); } catch (e) {} renderPOS(view); }
+    try { await cargarPOS(); renderPOS(view); cargarDashKPI().then(() => { if (_posTab === 'inicio') { const v2 = document.getElementById('v-pos'); if (v2) renderPOS(v2); } }).catch(() => {}); }
     catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudo cargar el POS.<br><span style="font-size:11px;color:#475569">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
   };
 
@@ -13978,7 +13990,7 @@
     _posTab = t;
     try { document.body.classList.remove('nxTDrawer'); } catch (e) {}
     const view = document.getElementById('v-pos'); if (!view) return;
-    if (t === 'inicio') { try { await cargarDashKPI(); } catch (e) {} }
+    if (t === 'inicio') { cargarDashKPI().then(() => { const v2 = document.getElementById('v-pos'); if (v2 && _posTab === 'inicio') renderPOS(v2); }).catch(() => {}); }
     if (t === 'ventas') { try { await cargarVentas(); } catch (e) {} }
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
     if (t === 'entidades') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {} }

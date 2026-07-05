@@ -1,7 +1,8 @@
 {
-  "version": "42.0",
+  "version": "42.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "ARREGLADO (de raíz · POS lento al abrir): al entrar al Punto de Venta se quedaba 'cargando' varios segundos porque bajaba 16 tablas UNA POR UNA. Ahora baja TODO en paralelo (tarda lo que tarda una sola consulta) y los KPIs del dashboard cargan en segundo plano sin frenar la entrada — el POS abre al instante.",
     "ARREGLADO (POS · lupa de facturas): el historial de facturas generadas salía vacío aunque hubiera facturas — solo leía la memoria. Ahora al abrir la lupa (o al buscar un número con ENTER) carga las facturas DIRECTO de la base de datos: salen todas, de 10 en 10.",
     "MEJORA (POS · Factura, igualito a Infoplus): el contador ahora muestra solo el NUMERITO corto (5) — la secuencia completa (CO00000005) no estorba y solo se ve al buscar. Y el campo es un BUSCADOR: escribe el número de una factura y dale ENTER — te la trae al instante (su ticket). La lupa al lado sigue mostrando todas de 10 en 10.",
     "NUEVO (POS · Factura): el No. de factura ahora tiene su LUPA — tócala y se abre el historial de TODAS las facturas generadas, apiladas de 10 en 10 con paginación (Anterior/Siguiente), buscador por número o cliente, y tocando cualquiera se abre su ticket. Igual que Infoplus.",
