@@ -17915,6 +17915,18 @@
       '.nxTTopBiz{font-weight:800;font-size:15px;color:#0f172a}',
       'body.nxTDrawer .nxTBackdrop{display:block}',
       '}',
+      /* ── BLINDAJE de la barra lateral: gana SIEMPRE sobre el tema glass y los parches de iconos ──
+         (en el tema glass del admin salía translúcida con pastillas blancas — se veía amateur) */
+      'html body .nxTSide{background:linear-gradient(180deg,#1b1f4d,#283593)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important}',
+      'html body .nxTSide .nxTNav{background:transparent!important;border:0!important;box-shadow:none!important;color:#cdd3f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;min-height:0!important}',
+      'html body .nxTSide .nxTNav.on{background:rgba(255,255,255,.16)!important;color:#fff!important}',
+      'html body .nxTSide .nxTNav i,html body .nxTSide .nxTLogout i{background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;min-width:0!important;color:inherit!important;border-radius:0!important;padding:0!important}',
+      'html body .nxTSide .nxTSec{color:#98a1ef!important;background:none!important}',
+      'html body .nxTSide .nxTBrand,html body .nxTSide .nxTFoot{background:transparent!important}',
+      'html body .nxTSide .nxTBiz{color:#fff!important}html body .nxTSide .nxTBiz small{color:#aab2f5!important}',
+      'html body .nxTSide .nxTUser b{color:#fff!important}html body .nxTSide .nxTUser span{color:#aab2f5!important}',
+      'html body .nxTSide .nxTAva{background:rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important}',
+      'html body .nxTSide .nxTLogout{background:rgba(255,255,255,.10)!important;color:#fff!important;border:1px solid rgba(255,255,255,.22)!important;box-shadow:none!important}',
       /* Chips de estado en Últimas ventas (look premium del diseño aprobado) */
       '.nxTVEnd{display:flex;flex-direction:column;align-items:flex-end;gap:3px}',
       '.nxTVSt{font-size:8px;font-weight:800;letter-spacing:.4px;padding:2px 7px;border-radius:6px}',
