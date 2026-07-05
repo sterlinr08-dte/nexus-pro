@@ -456,6 +456,19 @@ C) **LOGINS DE STAFF (lo más importante para vender):** cajeros/empleados con s
    RLS supervisada de SEGURIDAD-PLAN.md.
 D) Asientos contables de reparaciones/apartados + limpieza de datos de PRUEBA por organización.
 
+### Investigación de POS del mercado (5-jul-2026, web) — brechas y precios
+Comparados: Loyverse, Square, Odoo, Alegra RD, SICAR, Bind, RepairDesk (celulares), CellStore, Infoplus.
+**TOP brechas de NEXUS POS (orden de valor RD):** 1) trade-in/usados con costo por IMEI (RepairDesk/
+CellStore) 2) notificación AUTOMÁTICA de estado de reparación (hoy WhatsApp manual) 3) e-CF DGII
+(Alegra/Infoplus la venden de bandera; será objeción) 4) lealtad: puntos/gift cards/crédito tienda
+5) modo OFFLINE (clave con internet RD) 6) login por cajero con PIN + reloj entrada/salida (= Tanda C)
+7) escáner cámara + impresión de etiquetas 8) portal público del cliente (ver estado de reparación +
+cita online — patrón boleto.html serviría) 9) cobro con tarjeta integrado/link de pago (Azul/CardNet)
+10) compatibles + precios por volumen. **Precios mercado:** CellStore US$39 flat ilimitado ·
+RepairDesk 49/149/199 en 3 niveles · Alegra US$25 + módulos (contab 29, e-CF 19) · Loyverse gratis+29.
+**Sugerencia de venta NEXUS:** RD$2,000-2,500/mes flat o 3 niveles (Básico/Pro con reparaciones-cuotas-
+apartados/Premium con contab-nómina-multialmacén) + prueba 14 días.
+
 ### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
 Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
 medida/presentaciones (stock plano), sin lotes/vencimiento, sin variantes, sin multi-moneda,
