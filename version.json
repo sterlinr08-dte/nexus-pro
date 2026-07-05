@@ -1,7 +1,8 @@
 {
-  "version": "43.4",
+  "version": "43.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (POS · INVENTARIO ESTRICTO, decisión del dueño): el sistema YA NO deja vender lo que no hay. (1) Sin stock no se agrega al carrito ni a la factura (aviso: quedan N). (2) Al cobrar se revalida contra el inventario actual. (3) Artículos con IMEI: es OBLIGATORIO elegir los IMEI — se eliminó el 'vender sin IMEI'; si no hay IMEI registrados, no se vende (regístralos en el producto). Los SERVICIOS no llevan stock y se venden siempre.",
     "ARREGLADO (POS · vender sin IMEI): cuando un artículo no tenía IMEI disponibles, el chip era un callejón sin salida y no se podía vender. Ahora dice 'Sin IMEI — tocar para vender igual' y abre la ventanilla con el botón VENDER SIN IMEI — la venta sale aunque el stock esté en cero o negativo.",
     "NUEVO (POS · PREFACTURAS): el vendedor arma el pedido y lo GUARDA como prefactura (PF-00001) sin cobrar; la caja después la abre y la factura. En la pestaña Factura: botón 'Guardar prefactura' y botón 'Prefacturas (N)' con su lista, BUSCADOR por número o cliente, Facturar (carga el pedido completo con su cliente al cuadro) y anular. Todo auditado.",
     "MEJORA (POS · buscadores donde faltaban): auditoría completa de ventanas. (1) El COMBO del producto ahora tiene su buscador con sugerencias — tecleas y eliges, nada de listas larguísimas. (2) La tabla de PRODUCTOS tiene buscador por nombre, código o marca (además de los filtros). (3) REPARACIONES tiene buscador por cliente, equipo, IMEI o número sobre el tablero. Todos con la misma lupa unificada.",

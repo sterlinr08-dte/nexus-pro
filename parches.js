@@ -14249,6 +14249,15 @@
       </button>`;
     }).join('');
   }
+  // POLÍTICA ESTRICTA: no se vende sin stock (los servicios no llevan stock)
+  function stockDisponible(p) { return p && p.tipo !== 'servicio' ? Number(p.stock || 0) : Infinity; }
+  function puedeAgregar(pid, extra) {
+    const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return false;
+    if (p.tipo === 'servicio') return true;
+    const en = _cart.filter(x => String(x.producto_id) === String(pid)).reduce((t, x) => t + Number(x.cantidad || 0), 0);
+    if (en + (extra || 1) > stockDisponible(p)) { toast('err', 'Sin stock disponible', p.nombre + ' — quedan ' + Number(p.stock || 0)); return false; }
+    return true;
+  }
   // COMBO: al vender el principal, sus acompañantes entran a la factura en RD$ 0 y descuentan stock
   function combosDe(p) { const a = p && p.combo_items; return Array.isArray(a) ? a : []; }
   function ajustarCombos(prodId, delta) {
@@ -14278,6 +14287,7 @@
   };
   window.nxPosAdd = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    if (!puedeAgregar(id, 1)) return;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1;
     else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio || 0), cantidad: 1, itbis: !!p.itbis });
@@ -14285,7 +14295,7 @@
     ajustarCombos(p.id, 1);
     pintarCarrito();
   };
-  window.nxPosQty = function (idx, d) { const it = _cart[idx]; if (!it) return; it.cantidad = Math.max(0, it.cantidad + d); if (it.cantidad === 0) _cart.splice(idx, 1); pintarCarrito(); };
+  window.nxPosQty = function (idx, d) { const it = _cart[idx]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; it.cantidad = Math.max(0, it.cantidad + d); if (it.cantidad === 0) _cart.splice(idx, 1); pintarCarrito(); };
   window.nxPosDel = function (idx) { _cart.splice(idx, 1); pintarCarrito(); };
   window.nxPosVaciar = function () { if (!_cart.length) return; if (!confirm('¿Vaciar el carrito?')) return; _cart = []; pintarCarrito(); };
 
@@ -14389,6 +14399,7 @@
   };
   window.nxFacAdd = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    if (!puedeAgregar(id, 1)) return;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1; else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis, desc: 0, descT: 'pct' });
     ajustarCombos(p.id, 1);
@@ -14507,7 +14518,7 @@
     // Chip compacto estilo Factura: 📱 IMEI · N — tocarlo abre la ventanilla para elegir
     box.innerHTML = rows.length
       ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxPpkImei('${pid}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI · ${rows.length}</span>`
-      : `<span class="nxPosImeiB" style="color:#dc2626" onclick="event.stopPropagation();window.nxPpkImei('${pid}')" title="Vender sin IMEI"><i class="ti ti-device-mobile" style="color:#dc2626"></i> Sin IMEI — tocar para vender igual</span>`;
+      : '<span class="nxPosImeiB" style="color:#dc2626;cursor:default"><i class="ti ti-device-mobile" style="color:#dc2626"></i> Sin IMEI — no se puede vender</span>';
   }
   // Resalta en el serial la parte que coincide con lo buscado (sin alterar el data-ser real).
   function ppkSerHi(serial, q) {
@@ -14603,7 +14614,7 @@
         <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Marca los IMEI a vender — <b>la cantidad se ajusta sola</b> a los que elijas.</div>
         ${facSerBuscador}
         <div style="overflow-y:auto;flex:1"><div id="nxFacSerList" class="nxEntAfines" style="grid-template-columns:1fr">${chks}</div></div>
-        <div class="fe" style="margin-top:10px;gap:8px">${rows.length ? '' : `<button class="btn bc4 bsm" type="button" style="margin-right:auto" onclick="window.nxFacSerSin(${i})">Vender sin IMEI</button>`}<button class="btn bghost" type="button" onclick="document.getElementById('nxFacSer').remove()">Cancelar</button>${rows.length ? `<button class="btn bc1" type="button" onclick="window.nxFacSerGuardar(${i})"><i class="ti ti-check"></i> Asignar</button>` : ''}</div>
+        <div class="fe" style="margin-top:10px;gap:8px">${rows.length ? '' : `<span style="margin-right:auto;font-size:11px;color:#dc2626;font-weight:700">Sin IMEI disponibles — registra IMEI para poder vender</span>`}<button class="btn bghost" type="button" onclick="document.getElementById('nxFacSer').remove()">Cancelar</button>${rows.length ? `<button class="btn bc1" type="button" onclick="window.nxFacSerGuardar(${i})"><i class="ti ti-check"></i> Asignar</button>` : ''}</div>
       </div>`;
     document.body.appendChild(ov);
   };
@@ -15198,9 +15209,17 @@
     // IMEI obligatorio: para artículos con serial hay que elegir el/los IMEI antes de cobrar
     for (let i = 0; i < _cart.length; i++) {
       const it = _cart[i]; const p = _prods.find(x => String(x.id) === String(it.producto_id));
-      if (p && p.serial && !it._sinSerial && (it.seriales || []).length < Number(it.cantidad)) {
+      if (p && p.serial && (it.seriales || []).length < Number(it.cantidad)) {
         toast('err', 'Falta elegir el IMEI', p.nombre + ' (' + (it.seriales || []).length + ' de ' + it.cantidad + ')');
         window.nxFacSerial(i);
+        return;
+      }
+    }
+    // POLÍTICA ESTRICTA: sin stock no se factura (revalida contra el inventario actual)
+    for (const it of _cart) {
+      const _p = _prods.find(x => String(x.id) === String(it.producto_id));
+      if (_p && _p.tipo !== 'servicio' && Number(it.cantidad) > Number(_p.stock || 0)) {
+        toast('err', 'Sin stock suficiente', _p.nombre + ' — quedan ' + Number(_p.stock || 0) + ' y la factura pide ' + it.cantidad);
         return;
       }
     }
