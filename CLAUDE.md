@@ -411,6 +411,35 @@ precio. **Pendientes de tandas siguientes** (pantallas del ZIP en el chat, no en
 premium, historial de ventas, clientes, kanban reparaciones (módulo NUEVO que el POS no tiene —
 el dueño no lo ha pedido explícito aún).
 
+### POS tienda de celulares — módulos nuevos v41.0-41.1 (jul-2026, "haz todo" del dueño)
+Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
+- **SERVICIO TÉCNICO / Reparaciones (kanban):** tabla `pos_reparaciones` (org+trigger+RLS; numero,
+  cliente, telefono, equipo, imei, clave, accesorios, falla, estado_fisico, diagnostico, presupuesto,
+  abono, tecnico, estado recibido|diagnostico|reparando|esperando_pieza|listo|entregado|cancelado,
+  cobrado_monto/metodo, entregado_at). Tab `reparaciones` (sidebar Principal): kanban horizontal
+  scroll (`.nxRepKb`), recibir equipo (`nxRepNueva/Guardar` — numero via nextSeq('reparacion') o
+  REP-#####; avance entra a caja mov.), gestionar (`nxRepVer`: chips de estado 1-toque `nxRepEstado`,
+  WhatsApp con mensaje armado, guardar diagnóstico/presupuesto `nxRepDet`), **entregar y cobrar**
+  (`nxRepEntregar`: prompt monto+método, entra a caja si efectivo) y **orden de servicio imprimible**
+  (`nxRepImprimir`, con firma y nota legal 30/90 días). Pilla activas/entregadas (`_repVista`).
+- **VENTA EN CUOTAS:** tablas `pos_financiamientos` + `pos_fin_cuotas` (org+trigger+RLS). En el
+  modal de cobro, si queda crédito y hay cliente → checkbox "Financiar el resto en CUOTAS" (#finChk,
+  finN, finFrec semanal|quincenal|mensual); `nxPosConfirmar` crea plan + calendario (última cuota
+  ajusta el redondeo). Tab `cuotas` (sidebar Finanzas): KPIs, tarjetas por plan (AL DÍA/VENCIDO/
+  SALDADO), **cobrar cuota** (`nxFinPagar`: marca cuota + inserta pos_abonos con caja_id si efectivo
+  + salda el plan al completar), ver plan (`nxFinPlan`) y **ACUERDO DE PAGO imprimible**
+  (`nxFinContrato` con calendario y firmas).
+- **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
+  `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
+- **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +
+  botón **"Venta rápida"** en topbar (`.nxTQuick`). MODULOS ahora incluye reparaciones y cuotas
+  (roles). `cargarPOS` carga `_reps/_fins/_finCuotas` best-effort.
+- **PENDIENTE del análisis** (no construido aún): trade-in/compra de usados + costo y condición POR
+  IMEI (requiere extender pos_seriales) · apartados/layaway · escáner con cámara (BarcodeDetector NO
+  existe en iPhone/Safari — evaluar librería) · variantes/comparador de producto · asientos contables
+  de reparaciones (hoy solo movimiento de caja) · pantallas premium restantes del ZIP (caja/arqueo,
+  historial, clientes).
+
 ### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
 Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
 medida/presentaciones (stock plano), sin lotes/vencimiento, sin variantes, sin multi-moneda,

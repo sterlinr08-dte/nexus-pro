@@ -15149,7 +15149,12 @@
           }
         }
       } catch (eFin) { console.error('financiamiento:', eFin); }
-      const items = _cart.map(it => ({ venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null }));
+      const items = _cart.map(it => {
+        const _p = _prods.find(x => String(x.id) === String(it.producto_id));
+        const gd = _p ? Number(_p.garantia_dias || 0) : 0;
+        const gh = gd > 0 ? new Date(Date.now() + gd * 86400000).toISOString().slice(0, 10) : null;
+        return { venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null, garantia_hasta: gh };
+      });
       try { await getAPI().post('pos_venta_items', items); } catch (e) {}
       // Marcar seriales/IMEI vendidos (best-effort)
       try { for (const it of _cart) { if (it.seriales && it.seriales.length) { for (const s of it.seriales) { getAPI().patch('pos_seriales', 'id=eq.' + s.id, { estado: 'vendido', venta_id: venta.id }).catch(() => {}); } } } } catch (e) {}
@@ -15178,7 +15183,7 @@
   function ticketHTML(v) {
     const e = empInfo();
     const items = v._items || [];
-    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}${it.garantia_hasta ? '<br><span style="font-size:10px;color:#555">Garantía hasta: ' + String(it.garantia_hasta).slice(0, 10) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket No. ${v.numero || ''}</title>
       <style>body{font-family:'Courier New',monospace;color:#111;max-width:300px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
