@@ -1,7 +1,8 @@
 {
-  "version": "41.1",
+  "version": "41.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "ARREGLADO (POS · buscador de artículos): la flechita de cada artículo salía como un cuadro DORADO 3D (se colaba el tema de iconos de colores) — ahora es normal: gris discreta, y azul cuando el artículo está abierto.",
     "NUEVO (POS · garantía por venta): si el producto tiene 'Garantía (días)', al vender se calcula y GRABA la fecha de vencimiento de la garantía de esa venta, y sale impresa en el ticket ('Garantía hasta: 2026-08-04') — el cliente se lleva la prueba y tú tienes el registro.",
     "NUEVO (POS · SERVICIO TÉCNICO / REPARACIONES): módulo completo para tiendas de celulares. Recibes el equipo con todo (cliente, IMEI, falla, estado físico, clave, accesorios, presupuesto y avance) e imprime la ORDEN DE SERVICIO con firma. Tablero KANBAN por estados: Recibido → Diagnóstico → Reparando → Esperando pieza → Listo → Entregado (mueves el equipo con un toque). Botón de WhatsApp que avisa al cliente '¡su equipo está listo!' con el mensaje armado. Al entregar cobras el resto y entra a caja. El avance también entra a caja.",
     "NUEVO (POS · VENTA EN CUOTAS): al cobrar, si queda un resto a crédito con cliente elegido, marcas 'Financiar en CUOTAS', eliges cuántas y la frecuencia (semanal/quincenal/mensual) y el sistema crea el plan completo con su calendario. Módulo 'Cuotas' en Finanzas: planes activos, por cobrar, cuotas VENCIDAS en rojo, cobrar la cuota en 2 toques (entra a caja y al estado de cuenta del cliente), ver el plan e imprimir el ACUERDO DE PAGO con calendario y firmas.",
