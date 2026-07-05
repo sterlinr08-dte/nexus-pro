@@ -1,7 +1,8 @@
 {
-  "version": "41.3",
+  "version": "41.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "ARREGLADO (de raíz · botón dorado 3D del buscador de artículos): la flechita seguía saliendo como cuadro dorado 3D porque el tema de iconos de colores la agarraba por ser un icono. Se cambió por una flecha simple que NINGÚN tema puede pintar — gris discreta, gira al abrir el artículo y se pone azul.",
     "ARREGLADO (de raíz · contador de factura del POS): el No. de factura siempre mostraba CO00000001 porque se calculaba contando lo que la app tenía en memoria. Ahora funciona como Infoplus: un CONSECUTIVO guardado en la base de datos que nunca retrocede ni se repite — aunque cierres la app, cambies de teléfono o vendan dos personas a la vez. Se sembró arrancando de tus números reales (tu POS va por la CO00000005). El contador se puede ver y ajustar en Ajustes → Secuencias.",
     "ARREGLADO (POS · buscador de artículos): la flechita de cada artículo salía como un cuadro DORADO 3D (se colaba el tema de iconos de colores) — ahora es normal: gris discreta, y azul cuando el artículo está abierto.",
     "NUEVO (POS · garantía por venta): si el producto tiene 'Garantía (días)', al vender se calcula y GRABA la fecha de vencimiento de la garantía de esa venta, y sale impresa en el ticket ('Garantía hasta: 2026-08-04') — el cliente se lleva la prueba y tú tienes el registro.",

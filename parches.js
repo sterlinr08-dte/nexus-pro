@@ -14370,7 +14370,7 @@
       return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
         <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')">
           <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.codigo ? ' · ' : ''}<span style="color:${exi <= 0 ? '#dc2626' : '#475569'}">${exi} und</span></div><div style="font-size:10.5px;color:#475569;margin-top:1px">${precios}</div></div>
-          <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div><div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#6d28d9;font-size:13px">${fmt(aplica)}</b></div><i class="ti ti-chevron-right nxPpkChev" style="color:#cbd5e1;font-size:18px"></i></div>
+          <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div><div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#6d28d9;font-size:13px">${fmt(aplica)}</b></div><span class="nxPpkChev" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#64748b;line-height:1">&rsaquo;</span></div>
         </div>
         ${abierto ? ppkDetailHTML(p) : ''}
       </div>`; }).join('') || '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>';
