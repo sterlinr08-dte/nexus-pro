@@ -13781,7 +13781,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['factura', 'Factura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['factura', 'Factura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -13818,6 +13818,7 @@
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
   let _reps = [], _fins = [], _finCuotas = [], _repVista = 'activas'; // servicio tecnico + cuotas
+  let _apartados = [], _apaPagos = []; // apartados (layaway)
   let _histSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
@@ -13853,6 +13854,8 @@
     try { _reps = await getAPI().get('pos_reparaciones', 'select=*&order=created_at.desc&limit=400') || []; } catch (e) { _reps = []; }
     try { _fins = await getAPI().get('pos_financiamientos', 'select=*&order=created_at.desc&limit=300') || []; } catch (e) { _fins = []; }
     try { _finCuotas = await getAPI().get('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000') || []; } catch (e) { _finCuotas = []; }
+    try { _apartados = await getAPI().get('pos_apartados', 'select=*&order=created_at.desc&limit=300') || []; } catch (e) { _apartados = []; }
+    try { _apaPagos = await getAPI().get('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500') || []; } catch (e) { _apaPagos = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) { _almacenes = []; }
     if (_almacenes.length) {
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
@@ -14059,6 +14062,7 @@
     else if (_posTab === 'rrhh') body = renderRRHH();
     else if (_posTab === 'reparaciones') body = renderReparaciones();
     else if (_posTab === 'cuotas') body = renderCuotas();
+    else if (_posTab === 'apartados') body = renderApartados();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
     // Shell profesional (barra lateral índigo) para TODOS: tienda y admin.
@@ -14081,7 +14085,7 @@
     const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('reparaciones', 'Reparaciones', 'ti-tool'))
       + sec('Inventario', it('productos', 'Productos', 'ti-box') + it('inventario', 'Inventario', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
-      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
+      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
@@ -14156,7 +14160,7 @@
         ${grupo('Ventas', tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
         ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
-        ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
+        ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
         ${grupo('Configuración', tile('ajustes', 'Ajustes', 'ti-settings', '#475569'))}
         ${ultVentas}
       </div>`;
@@ -18099,6 +18103,99 @@
       <div class="fir"><div>Por ${esc(biz)}</div><div>El cliente (firma y cédula)</div></div>
       <script>window.print();</` + `script></body></html>`);
     w.document.close();
+  };
+
+
+  // ══════════════ APARTADOS (layaway: separar con abonos) ══════════════
+  function apaPagosDe(id) { return _apaPagos.filter(p => String(p.apartado_id) === String(id)); }
+  function renderApartados() {
+    const hoyK = hoyISOPos();
+    const activos = _apartados.filter(a => a.estado === 'activo');
+    const porCobrar = activos.reduce((t, a) => t + Math.max(0, Number(a.total || 0) - Number(a.abonado || 0)), 0);
+    const kpis = `<div class="nxMdKpis" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:10px">
+      <div class="nxMdKpi"><b>${activos.length}</b><span>Apartados activos</span></div>
+      <div class="nxMdKpi"><b style="color:#2563eb">${fmt(porCobrar)}</b><span>Por completar</span></div>
+      <div class="nxMdKpi"><b style="color:#16a34a">${fmt(activos.reduce((t, a) => t + Number(a.abonado || 0), 0))}</b><span>Abonado en caja</span></div>
+    </div>`;
+    const rows = _apartados.length ? _apartados.map(a => {
+      const falta = Math.max(0, Number(a.total || 0) - Number(a.abonado || 0));
+      const vencido = a.estado === 'activo' && a.fecha_limite && String(a.fecha_limite) < hoyK;
+      const est = a.estado === 'completado' ? ['#16a34a', '#f0fdf4', 'COMPLETADO'] : a.estado === 'cancelado' ? ['#64748b', '#f1f5f9', 'CANCELADO'] : vencido ? ['#dc2626', '#fef2f2', 'VENCIDO'] : ['#db2777', '#fdf2f8', 'APARTADO'];
+      const pct = Number(a.total || 0) > 0 ? Math.min(100, Math.round(Number(a.abonado || 0) / Number(a.total) * 100)) : 0;
+      return `<div class="nxSaCard">
+        <div class="nxSaTop"><div class="nxSaIco" style="background:#fdf2f8;color:#db2777"><i class="ti ti-bookmark"></i></div>
+          <div style="flex:1;min-width:0"><div class="nxSaNom">${esc(a.descripcion || '')}</div><div class="nxSaSub">${esc(a.cliente_nombre || '')}${a.telefono ? ' · ' + esc(a.telefono) : ''}${a.fecha_limite ? ' · límite ' + String(a.fecha_limite).slice(0, 10) : ''}</div></div>
+          <span class="nxSaEst" style="background:${est[1]};color:${est[0]}">${est[2]}</span></div>
+        <div class="nxSaMeta"><span>Total: <b>${fmt(a.total)}</b></span><span>Abonado: <b style="color:#16a34a">${fmt(a.abonado)}</b> (${pct}%)</span><span>Falta: <b style="color:${falta > 0 ? '#dc2626' : '#16a34a'}">${fmt(falta)}</b></span></div>
+        ${a.estado === 'activo' ? `<div class="nxSaBtns">
+          <button class="btn bsm bc1" type="button" onclick="window.nxApaAbonar('${a.id}')"><i class="ti ti-cash"></i> Abonar</button>
+          ${falta <= 0 ? `<button class="btn bsm bc5" type="button" onclick="window.nxApaCompletar('${a.id}')"><i class="ti ti-check"></i> Entregar</button>` : ''}
+          ${(a.telefono || '').replace(/\D/g, '') ? `<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1${String(a.telefono).replace(/\D/g, '')}?text=${encodeURIComponent('Hola ' + (a.cliente_nombre || '') + ', le recordamos su apartado de ' + (a.descripcion || '') + ': abonado ' + fmt(a.abonado) + ', le falta ' + fmt(falta) + (a.fecha_limite ? ' (límite ' + String(a.fecha_limite).slice(0, 10) + ')' : '') + '.')}" target="_blank"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
+          <button class="btn bsm bghost" type="button" onclick="window.nxApaCancelar('${a.id}')"><i class="ti ti-x" style="color:#dc2626"></i></button>
+        </div>` : ''}</div>`;
+    }).join('') : '<div class="nxRepEmpty" style="padding:24px">Sin apartados. El cliente separa su artículo con un abono y lo completa a su ritmo.</div>';
+    return `<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn bc1" type="button" onclick="window.nxApaNuevo()"><i class="ti ti-plus"></i> Nuevo apartado</button></div>` + kpis + rows;
+  }
+  window.nxApaNuevo = function () {
+    const desc = prompt('¿Qué artículo aparta? (nombre del equipo)'); if (!desc) return;
+    const cli = prompt('Nombre del cliente:'); if (!cli) return;
+    const tel = prompt('WhatsApp del cliente (opcional):') || null;
+    const total = window.nxMoney ? window.nxMoney.parse(prompt('Precio TOTAL del artículo:') || '') : parseFloat(prompt('Precio total:') || '');
+    if (!total || total <= 0) { toast('err', 'Precio inválido'); return; }
+    const abono = window.nxMoney ? window.nxMoney.parse(prompt('Abono INICIAL con que lo separa:', '0') || '0') : parseFloat(prompt('Abono inicial:', '0') || '0');
+    const dias = parseInt(prompt('Días de plazo para completarlo (ej. 30):', '30') || '30', 10);
+    const lim = new Date(Date.now() + (dias || 30) * 86400000).toISOString().slice(0, 10);
+    (async () => {
+      try {
+        let numero = null; try { numero = await nextSeq('apartado'); } catch (e) {}
+        if (!numero) numero = 'AP-' + String(_apartados.length + 1).padStart(5, '0');
+        const r = await getAPI().post('pos_apartados', { numero: numero, cliente_nombre: String(cli).toUpperCase(), telefono: tel, descripcion: desc, total: total, abonado: abono || 0, fecha_limite: lim });
+        const a = (r && r[0]); if (a) _apartados.unshift(a);
+        if (a && abono > 0) {
+          try { await getAPI().post('pos_apartado_pagos', { apartado_id: a.id, monto: abono, metodo: 'Efectivo' }); } catch (e) {}
+          if (_caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Abono apartado ' + numero + ' · ' + String(cli).toUpperCase(), fecha: new Date().toISOString() }); } catch (e) {} }
+        }
+        try { window.logAudit && window.logAudit('APARTADO_NUEVO', numero + ' · ' + desc + ' · ' + String(cli).toUpperCase() + ' · ' + fmt(total), 'Apartados'); } catch (e) {}
+        toast('ok', 'Apartado creado', numero);
+        const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+      } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
+    })();
+  };
+  window.nxApaAbonar = async function (id) {
+    const a = _apartados.find(x => String(x.id) === String(id)); if (!a) return;
+    const falta = Math.max(0, Number(a.total || 0) - Number(a.abonado || 0));
+    const monto = window.nxMoney ? window.nxMoney.parse(prompt('Monto del abono (falta ' + fmt(falta) + '):') || '') : parseFloat(prompt('Monto:') || '');
+    if (!monto || monto <= 0) return;
+    const metodo = prompt('Método (Efectivo / Transferencia / Tarjeta):', 'Efectivo') || 'Efectivo';
+    try {
+      const nuevo = Number(a.abonado || 0) + monto;
+      await getAPI().patch('pos_apartados', 'id=eq.' + id, { abonado: nuevo }); a.abonado = nuevo;
+      try { const rp = await getAPI().post('pos_apartado_pagos', { apartado_id: id, monto: monto, metodo: metodo }); if (rp && rp[0]) _apaPagos.push(rp[0]); } catch (e) {}
+      if (_caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Abono apartado ' + (a.numero || '') + ' · ' + (a.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
+      try { window.logAudit && window.logAudit('APARTADO_ABONO', (a.numero || '') + ' · ' + fmt(monto) + ' · ' + (a.cliente_nombre || ''), 'Apartados'); } catch (e) {}
+      toast('ok', 'Abono registrado', fmt(monto) + (nuevo >= Number(a.total) ? ' · ¡COMPLETADO! Ya puede entregarse' : ''));
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+  window.nxApaCompletar = async function (id) {
+    const a = _apartados.find(x => String(x.id) === String(id)); if (!a) return;
+    if (!confirm('¿Entregar el artículo y cerrar el apartado ' + (a.numero || '') + '?')) return;
+    try {
+      await getAPI().patch('pos_apartados', 'id=eq.' + id, { estado: 'completado' }); a.estado = 'completado';
+      try { window.logAudit && window.logAudit('APARTADO_ENTREGADO', (a.numero || '') + ' · ' + (a.descripcion || '') + ' · ' + (a.cliente_nombre || ''), 'Apartados'); } catch (e) {}
+      toast('ok', 'Apartado entregado');
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+  window.nxApaCancelar = async function (id) {
+    const a = _apartados.find(x => String(x.id) === String(id)); if (!a) return;
+    if (!confirm('¿Cancelar el apartado ' + (a.numero || '') + '? (lo abonado: ' + fmt(a.abonado) + ' — acuerda con el cliente la devolución)')) return;
+    try {
+      await getAPI().patch('pos_apartados', 'id=eq.' + id, { estado: 'cancelado' }); a.estado = 'cancelado';
+      try { window.logAudit && window.logAudit('APARTADO_CANCELADO', (a.numero || '') + ' · abonado ' + fmt(a.abonado), 'Apartados'); } catch (e) {}
+      toast('ok', 'Apartado cancelado');
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
 
   // ── CSS + registro en el hub ──
