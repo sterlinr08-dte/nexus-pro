@@ -1,7 +1,8 @@
 {
-  "version": "42.9",
+  "version": "43.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "ARREGLADO (POS · ventanilla de IMEI): no dejaba seleccionar más de un IMEI (se recortaba a la cantidad de la línea). Ahora marcas TODOS los que quieras y la CANTIDAD de la línea se ajusta sola a los elegidos — marcas 3 IMEI y la factura queda con cantidad 3 automáticamente.",
     "MEJORA (POS · buscador de artículos con IMEI): al abrir un artículo que maneja IMEI en el buscador, ya no salen los seriales regados — sale el CHIP con el celularcito 📱 'IMEI · 6' (la cantidad que hay). Lo tocas y se abre LA VENTANILLA con todos los IMEI, su buscador y las palomitas para seleccionar (igual que en la Factura). El botón ELEGIR en artículos con IMEI hace lo mismo: agrega y te abre la ventanilla de una vez.",
     "NUEVO (POS · Vender con IMEI a la vista): los artículos que manejan IMEI/serie ahora muestran su chip con el celularcito 📱 en la tarjeta — 'IMEI · 6' (disponibles) y, si ya está en el carrito, 'IMEI 2/2' (elegidos/cantidad). Tocas el chip y se abre la ventanilla de siempre para ir eligiendo los IMEI (con buscador). Al asignar, el chip y el carrito se actualizan al instante.",
     "NUEVO (endurecimiento · tanda D — contabilidad completa): las REPARACIONES (avance y cobro al entregar), los APARTADOS (todos los abonos) y las CUOTAS ahora generan su ASIENTO CONTABLE automático — Caja/Banco contra Ventas (y las cuotas contra Cuentas por Cobrar). Tu contabilidad cuadra sola con todo el dinero que entra.",

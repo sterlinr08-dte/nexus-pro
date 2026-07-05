@@ -14577,7 +14577,7 @@
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-device-mobile"></i> IMEI · ${esc(prod.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacSer').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Selecciona el/los IMEI a vender (hasta <b>${it.cantidad}</b>).</div>
+        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Marca los IMEI a vender — <b>la cantidad se ajusta sola</b> a los que elijas.</div>
         ${facSerBuscador}
         <div style="overflow-y:auto;flex:1"><div id="nxFacSerList" class="nxEntAfines" style="grid-template-columns:1fr">${chks}</div></div>
         <div class="fe" style="margin-top:10px;gap:8px">${rows.length ? '' : `<button class="btn bc4 bsm" type="button" style="margin-right:auto" onclick="window.nxFacSerSin(${i})">Vender sin IMEI</button>`}<button class="btn bghost" type="button" onclick="document.getElementById('nxFacSer').remove()">Cancelar</button>${rows.length ? `<button class="btn bc1" type="button" onclick="window.nxFacSerGuardar(${i})"><i class="ti ti-check"></i> Asignar</button>` : ''}</div>
@@ -14592,9 +14592,10 @@
   };
   window.nxFacSerGuardar = function (i) {
     const it = _cart[i]; if (!it) return;
-    const chk = Array.prototype.slice.call(document.querySelectorAll('#nxFacSer [data-serid]')).filter(c => c.checked).slice(0, it.cantidad);
+    // SIN tope: marcas los IMEI que quieras y la CANTIDAD de la línea se ajusta sola
+    const chk = Array.prototype.slice.call(document.querySelectorAll('#nxFacSer [data-serid]')).filter(c => c.checked);
     it.seriales = chk.map(c => ({ id: c.getAttribute('data-serid'), serial: c.getAttribute('data-serial') }));
-    if (it.seriales.length) it._sinSerial = false;
+    if (it.seriales.length) { it._sinSerial = false; it.cantidad = it.seriales.length; }
     cerrarModal('nxFacSer');
     if (_posTab === 'vender') { const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML(); pintarCarrito(); } else { pintarFactura(); }
   };
