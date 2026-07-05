@@ -14119,9 +14119,21 @@
     if (esTiendaPOS()) {
       const k = _dashKPI || {};
       const bajos = (_prods || []).filter(p => p.tipo !== 'servicio' && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0).length;
+      // Tendencia vs AYER + ventas del MES (estilo dashboard premium)
+      const dd0 = new Date(); const _iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const ayerD = new Date(dd0.getTime() - 86400000);
+      const vAyer = (_ventas || []).filter(v => String(v.created_at || v.fecha || '').slice(0, 10) === _iso(ayerD) && !v.anulada).reduce((t, v) => t + Number(v.total || 0), 0);
+      const mesK = _iso(dd0).slice(0, 7);
+      const vMesArr = (_ventas || []).filter(v => String(v.created_at || v.fecha || '').slice(0, 7) === mesK && !v.anulada);
+      const vMes = vMesArr.reduce((t, v) => t + Number(v.total || 0), 0);
+      const tkProm = vMesArr.length ? vMes / vMesArr.length : 0;
+      const pct = vAyer > 0 ? Math.round(((k.ventasHoy || 0) - vAyer) / vAyer * 100) : null;
+      const trendHoy = pct == null ? ((k.facturasHoy || 0) + ' factura' + ((k.facturasHoy || 0) === 1 ? '' : 's'))
+        : `<span style="color:${pct >= 0 ? '#16a34a' : '#dc2626'};font-weight:800">${pct >= 0 ? '▲ +' : '▼ '}${pct}%</span> vs ayer`;
       const kpi = (c, ic, l, v, s) => `<div class="nxTKpi"><div class="nxTKpiIc" style="--kc:${c}"><i class="ti ${ic}"></i></div><div class="nxTKpiL">${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
       kpis = `<div class="nxTKpis">
-          ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), (k.facturasHoy || 0) + ' factura' + ((k.facturasHoy || 0) === 1 ? '' : 's'))}
+          ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
+          ${kpi('#2563eb', 'ti-chart-line', 'Ventas del mes', fmt(vMes), vMesArr.length ? vMesArr.length + ' facturas · ticket prom. ' + fmt(tkProm) : 'Sin ventas este mes')}
           ${kpi('#0891b2', 'ti-wallet', 'Efectivo en caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
           ${kpi('#4f46e5', 'ti-box', 'Productos', String((_prods || []).length), (_clientes || []).length + ' clientes')}
           ${kpi('#d97706', 'ti-alert-triangle', 'Bajo stock', String(bajos), bajos ? 'Revisar productos' : 'Todo en orden')}
@@ -14134,7 +14146,10 @@
       const metV = v => (v.a_credito || Number(v.credito_monto || 0) > 0) ? 'Fiado' : (Number(v.pagado_tarjeta || 0) > 0 ? 'Tarjeta' : Number(v.pagado_transferencia || 0) > 0 ? 'Transferencia' : Number(v.pagado_otro || 0) > 0 ? 'Otro' : 'Efectivo');
       const vHoy = (_ventas || []).filter(v => String(v.created_at || v.fecha || '').slice(0, 10) === hoyISO && !v.anulada).slice(0, 6);
       const rows = vHoy.length
-        ? vHoy.map(v => `<div class="nxTVRow"><div class="nxTVL"><span class="nxTVIc"><i class="ti ti-receipt"></i></span><span class="nxTVNm"><b>${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</b><small>${esc(v.cliente_nombre || 'Consumidor final')} · ${metV(v)}</small></span></div><b class="nxTVAmt"${(v.a_credito || Number(v.credito_monto || 0) > 0) ? ' style="color:#4338ca"' : ''}>${fmt(v.total || 0)}</b></div>`).join('')
+        ? vHoy.map(v => {
+          const fiado = v.a_credito || Number(v.credito_monto || 0) > 0;
+          return `<div class="nxTVRow"><div class="nxTVL"><span class="nxTVIc"><i class="ti ti-receipt"></i></span><span class="nxTVNm"><b>${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</b><small>${esc(v.cliente_nombre || 'Consumidor final')} · ${metV(v)}</small></span></div><span class="nxTVEnd"><b class="nxTVAmt">${fmt(v.total || 0)}</b><span class="nxTVSt ${fiado ? 'f' : 'p'}">${fiado ? 'FIADO' : 'PAGADA'}</span></span></div>`;
+        }).join('')
         : '<div class="nxTVEmpty">Sin ventas hoy todavía.</div>';
       ultVentas = `<div class="nxTPanel"><div class="nxTPanelH"><b>Últimas ventas</b><small>Movimiento del día</small></div>${rows}</div>`;
     }
@@ -17891,7 +17906,12 @@
       '.nxTBurger{width:42px;height:42px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;font-size:21px;color:#4f46e5;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-family:inherit}',
       '.nxTTopBiz{font-weight:800;font-size:15px;color:#0f172a}',
       'body.nxTDrawer .nxTBackdrop{display:block}',
-      '}'
+      '}',
+      /* Chips de estado en Últimas ventas (look premium del diseño aprobado) */
+      '.nxTVEnd{display:flex;flex-direction:column;align-items:flex-end;gap:3px}',
+      '.nxTVSt{font-size:8px;font-weight:800;letter-spacing:.4px;padding:2px 7px;border-radius:6px}',
+      '.nxTVSt.p{background:#f0fdf4;color:#16a34a}',
+      '.nxTVSt.f{background:#eef2ff;color:#4338ca}'
     ].join('');
     document.head.appendChild(st);
   }
