@@ -1,7 +1,8 @@
 {
-  "version": "41.9",
+  "version": "42.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "ARREGLADO (POS · lupa de facturas): el historial de facturas generadas salía vacío aunque hubiera facturas — solo leía la memoria. Ahora al abrir la lupa (o al buscar un número con ENTER) carga las facturas DIRECTO de la base de datos: salen todas, de 10 en 10.",
     "MEJORA (POS · Factura, igualito a Infoplus): el contador ahora muestra solo el NUMERITO corto (5) — la secuencia completa (CO00000005) no estorba y solo se ve al buscar. Y el campo es un BUSCADOR: escribe el número de una factura y dale ENTER — te la trae al instante (su ticket). La lupa al lado sigue mostrando todas de 10 en 10.",
     "NUEVO (POS · Factura): el No. de factura ahora tiene su LUPA — tócala y se abre el historial de TODAS las facturas generadas, apiladas de 10 en 10 con paginación (Anterior/Siguiente), buscador por número o cliente, y tocando cualquiera se abre su ticket. Igual que Infoplus.",
     "MEJORA (POS · orden): se quitó el selector de almacén de arriba en Vender y Factura — el almacén se asignará al EMPLEADO cuando se le cree su acceso (queda en Inventario para las transferencias). Pantalla más limpia para vender.",

@@ -18120,6 +18120,11 @@
     const prox = proxNumeroFacturaCorto(_facCredito);
     const n = parseInt(String(v || '').replace(/\D/g, ''), 10);
     if (!n || String(n) === prox) { if (inp) inp.value = prox; return; }
+    if (!(_ventas || []).length) { // cargar de la base y reintentar
+      getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,created_at,anulada&order=created_at.desc&limit=500')
+        .then(r => { _ventas = r || []; window.nxFacBuscarNum(String(n)); }).catch(() => {});
+      return;
+    }
     const hit = (_ventas || []).find(x => { const m = String(x.numero_factura || '').match(/(\d+)\s*$/); return (m && parseInt(m[1], 10) === n) || Number(x.numero) === n; });
     if (hit) window.nxPosTicket(hit.id);
     else toast('warn', 'No existe la factura No. ' + n, 'Toca la lupa para ver todas');
@@ -18131,6 +18136,13 @@
   window.nxFacHist = function (page, q) {
     _fhPage = Math.max(0, page || 0); if (q != null) _fhQ = String(q).toLowerCase();
     const qq = _fhQ;
+    // Cargar las ventas de la BASE si la memoria está vacía (la lupa funciona sin pasar por Historial)
+    if (!(_ventas || []).length && !window.__fhCargando) {
+      window.__fhCargando = true;
+      getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,created_at,anulada&order=created_at.desc&limit=500')
+        .then(r => { _ventas = r || []; window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHist(_fhPage); })
+        .catch(() => { window.__fhCargando = false; });
+    }
     let lista = (_ventas || []).slice().sort((a, b) => String(b.created_at || b.fecha || '').localeCompare(String(a.created_at || a.fecha || '')));
     if (qq) lista = lista.filter(v => ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase().includes(qq));
     const pags = Math.max(1, Math.ceil(lista.length / 10));
@@ -18140,7 +18152,7 @@
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${v.anulada ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
         <b style="font-size:12.5px">${fmt(v.total)}</b><span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
-      : '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">Sin facturas' + (qq ? ' con esa búsqueda' : '') + '</div>';
+      : '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">' + (window.__fhCargando ? 'Cargando facturas…' : 'Sin facturas' + (qq ? ' con esa búsqueda' : '')) + '</div>';
     const nav = `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px">
       <button class="btn bsm bghost" type="button" ${_fhPage <= 0 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHist(${_fhPage - 1})">&lsaquo; Anterior</button>
       <span style="font-size:11.5px;font-weight:800;color:#475569">Página ${_fhPage + 1} de ${pags} · ${lista.length} factura${lista.length === 1 ? '' : 's'}</span>
