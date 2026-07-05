@@ -13789,6 +13789,9 @@
     ['cajero', 'Cajero', ['inicio', 'vender', 'caja', 'clientes', 'ventas']],
     ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'clientes', 'entidades']]
   ];
+  // Lee un campo de dinero (formato RD: punto=miles). FALTABA en este módulo: sin esto,
+  // Reparaciones/Apartados/Cuotas reventaban en silencio al guardar (ReferenceError).
+  function moneyVal(id) { const e = document.getElementById(id); if (!e) return 0; try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(e.value)) || 0; } catch (er) {} return Number(String(e.value).replace(/[^0-9.-]/g, '')) || 0; }
   function rolReal() { try { var s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return (s && s.rol) || 'admin'; } catch (e) { return 'admin'; } }
   function rolEfectivo() { return _rolPreview || rolReal(); }
   function puedeVer(mod) {
