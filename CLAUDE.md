@@ -402,9 +402,14 @@ SOLO en la línea `st.textContent` del CSS POS (#6d28d9→#2563eb, #7c3aed→#25
 `stock_min`/SIN STOCK/teal SERVICIO); (3) carrito "Total a pagar" grande azul (`.nxPosTotPay`);
 (4) modal de cobro con **fichas de pago 1-toque** `.nxPayTiles`/`nxPosPayQuick(id)` (llena ese
 método con el total, limpia el resto; inputs de mixto siguen abajo). CSS nuevo en `st.textContent +=`.
-**Pendientes de tandas siguientes** (pantallas del ZIP en el chat, no en repo): dashboard KPI strip
-estilo TechFlow, inventario premium, clientes, caja/arqueo, historial, kanban reparaciones (módulo
-NUEVO que el POS no tiene — el dueño no lo ha pedido explícito aún).
+**Tanda 2 HECHA (v40.3):** dashboard tienda — KPI 'Ventas de hoy' con tendencia vs ayer (▲/▼ %),
+KPI nuevo 'Ventas del mes' (facturas + ticket promedio), últimas ventas con chip PAGADA/FIADO
+(`.nxTVSt`/`.nxTVEnd` en CSS tienda). **Tanda 3 HECHA (v40.4):** Productos = inventario maestro —
+pastillas de filtro `_prodFiltro`/`nxProdFiltro` (todos/stock/bajo/sin/servicio, `.nxInvPill`),
+stock con punto de color (`.nxInvStk` ok azul/low rojo "N quedan"/out Agotado), costo gris bajo el
+precio. **Pendientes de tandas siguientes** (pantallas del ZIP en el chat, no en repo): caja/arqueo
+premium, historial de ventas, clientes, kanban reparaciones (módulo NUEVO que el POS no tiene —
+el dueño no lo ha pedido explícito aún).
 
 ### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
 Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
