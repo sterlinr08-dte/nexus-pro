@@ -1,7 +1,8 @@
 {
-  "version": "40.6",
+  "version": "40.7",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "ARREGLADO (POS · iconos del dashboard): los iconos de los KPI salían todos iguales (sin su color) en iPhone — el fondo de color usaba una función CSS que iOS viejo no entiende. Ahora cada tarjeta trae su icono con chip de color propio (verde ventas, azul mes, celeste caja, índigo productos, naranja stock) + una línea de color arriba de cada tarjeta, compatible con todos los teléfonos.",
     "ARREGLADO (POS · Inicio): el dashboard nuevo (Ventas de hoy con tendencia vs ayer, Ventas del mes con ticket promedio, y Últimas ventas con chips PAGADA/FIADO) solo se veía en el modo tienda — ahora TAMBIÉN lo ve el administrador al abrir el Punto de Venta desde Multiempresa. Por eso parecía que 'no se aplicaba nada'.",
     "MEJORA (POS · look premium): los botones de acción DENTRO del POS (Guardar ajustes, Nuevo producto, Cobrar, Confirmar venta…) ahora también son AZUL REAL — se acabó el morado que quedaba. La app de seguros conserva sus colores.",
     "NUEVO (POS · look premium, tanda 3 — inventario): la pestaña Productos ahora es un inventario maestro: PASTILLAS DE FILTRO de un toque (Todos / En stock / Bajo stock / Sin stock / Servicios), stock con puntico de color como los sistemas grandes (azul '12 en stock', rojo '2 quedan', 'Agotado'), y el precio muestra debajo el COSTO en gris para ver el margen de un vistazo.",

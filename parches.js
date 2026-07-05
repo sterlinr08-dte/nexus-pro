@@ -14131,7 +14131,7 @@
       const pct = vAyer > 0 ? Math.round(((k.ventasHoy || 0) - vAyer) / vAyer * 100) : null;
       const trendHoy = pct == null ? ((k.facturasHoy || 0) + ' factura' + ((k.facturasHoy || 0) === 1 ? '' : 's'))
         : `<span style="color:${pct >= 0 ? '#16a34a' : '#dc2626'};font-weight:800">${pct >= 0 ? '▲ +' : '▼ '}${pct}%</span> vs ayer`;
-      const kpi = (c, ic, l, v, s) => `<div class="nxTKpi"><div class="nxTKpiIc" style="--kc:${c}"><i class="ti ${ic}"></i></div><div class="nxTKpiL">${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
+      const kpi = (c, ic, l, v, s) => `<div class="nxTKpi" style="border-top:3px solid ${c}"><div class="nxTKpiIc" style="background:${c}1a;color:${c}"><i class="ti ${ic}"></i></div><div class="nxTKpiL">${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
       kpis = `<div class="nxTKpis">
           ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
           ${kpi('#2563eb', 'ti-chart-line', 'Ventas del mes', fmt(vMes), vMesArr.length ? vMesArr.length + ' facturas · ticket prom. ' + fmt(tkProm) : 'Sin ventas este mes')}
@@ -17881,7 +17881,7 @@
       /* Dashboard KPIs */
       '.nxTKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}',
       '.nxTKpi{background:#fff;border:1px solid #e2e8f0;border-radius:17px;padding:15px;box-shadow:0 8px 22px rgba(15,23,42,.05)}',
-      '.nxTKpiIc{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--kc,#4f46e5);background:color-mix(in srgb,var(--kc,#4f46e5) 14%,transparent);margin-bottom:9px}',
+      '.nxTKpiIc{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:9px}',
       '.nxTKpiL{font-size:11px;color:#64748b;font-weight:700}',
       '.nxTKpiV{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-top:3px;color:#0f172a}',
       '.nxTKpiS{font-size:10.5px;font-weight:700;margin-top:5px;color:#64748b}',
