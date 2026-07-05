@@ -443,6 +443,19 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
   de reparaciones (hoy solo movimiento de caja) · pantallas premium restantes del ZIP (caja/arqueo,
   historial, clientes).
 
+### PLAN DE ENDURECIMIENTO del POS antes de VENDER (5-jul-2026, dueño: "tiene deficiencias")
+Auditoría mecánica hecha: TODAS las consultas de lectura pos_*/rrhh_* verificadas contra el esquema
+real — 0 columnas fantasma restantes (la clase de bug de 'anulada'/'deps'). Deficiencias REALES
+identificadas, en orden de ataque acordable:
+A) **UI con prompt()** en Reparaciones/Apartados/Cuotas → cambiar a modales pro con validación (feo
+   y frágil en iPhone; no se puede vender así).
+B) **Compras tab** aún carga 4 consultas secuenciales (lenta) + QA sistemático pestaña por pestaña
+   en móvil con checklist.
+C) **LOGINS DE STAFF (lo más importante para vender):** cajeros/empleados con su clave, su rol
+   (pos_acceso ya existe solo-UI) y su ALMACÉN asignado (pedido del dueño v41.8) — es la Fase 3
+   RLS supervisada de SEGURIDAD-PLAN.md.
+D) Asientos contables de reparaciones/apartados + limpieza de datos de PRUEBA por organización.
+
 ### Análisis POS vs Infoplus (jul-2026, DGII OMITIDA por decisión del dueño)
 Brechas de MODELO detectadas contra el esquema real (34 tablas pos_/rrhh_): sin unidades de
 medida/presentaciones (stock plano), sin lotes/vencimiento, sin variantes, sin multi-moneda,
