@@ -18013,19 +18013,31 @@
     const d = { diagnostico: val('repDiag').trim() || null, presupuesto: moneyVal('repPre2'), abono: moneyVal('repAbo2') };
     try { await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d); toast('ok', 'Guardado'); } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
-  window.nxRepEntregar = async function (id) {
+  window.nxRepEntregar = function (id) {
     const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
     const resto = Math.max(0, Number(r.presupuesto || 0) - Number(r.abono || 0));
-    const monto = window.nxMoney ? window.nxMoney.parse(prompt('Monto a cobrar al entregar (queda ' + fmt(resto) + '):', Math.round(resto).toLocaleString('en-US')) || '') : parseFloat(prompt('Monto a cobrar:', resto) || '');
-    if (monto == null || isNaN(monto)) return;
-    const metodo = prompt('Método (Efectivo / Transferencia / Tarjeta):', 'Efectivo') || 'Efectivo';
+    cerrarModal('nxRepM'); cerrarModal('nxRepEnt');
+    const ov = document.createElement('div'); ov.id = 'nxRepEnt'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px">
+      <div class="mt"><span><i class="ti ti-check"></i> Entregar y cobrar</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepEnt').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(r.equipo || '')} · ${esc(r.cliente_nombre || '')} · resta <b style="color:#dc2626">${fmt(resto)}</b></div>
+      <div class="fr-row"><div class="fr"><label>Monto a cobrar</label><input id="reMonto" data-nx-money inputmode="numeric" value="${Math.round(resto).toLocaleString('en-US')}"></div>
+      <div class="fr"><label>Método</label><select id="reMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div></div>
+      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxRepEntregarGo('${id}')"><i class="ti ti-check"></i> Entregar equipo</button></div>
+    </div>`;
+    document.body.appendChild(ov); scanMoney(ov);
+  };
+  window.nxRepEntregarGo = async function (id) {
+    const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
+    const monto = moneyVal('reMonto'); const metodo = val('reMet') || 'Efectivo';
     try {
-      const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + monto, cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
+      const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + (monto || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
       await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d);
       if (monto > 0 && _caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
       try { window.logAudit && window.logAudit('REP_ENTREGADA', (r.numero || '') + ' · ' + (r.equipo || '') + ' · cobrado ' + fmt(d.cobrado_monto), 'Reparaciones'); } catch (e) {}
-      toast('ok', 'Entregado y cobrado', fmt(monto));
-      cerrarModal('nxRepM'); const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+      cerrarModal('nxRepEnt'); toast('ok', 'Entregado y cobrado', fmt(monto || 0));
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
   window.nxRepImprimir = function (id, repObj) {
@@ -18087,18 +18099,32 @@
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-list-numbers"></i> Plan de ${esc(f.cliente_nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>${rows}</div>`;
     document.body.appendChild(ov);
   };
-  window.nxFinPagar = async function (id) {
+  window.nxFinPagar = function (id) {
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
-    const metodo = prompt('Cobrar cuota #' + prox.numero + ' de ' + fmt(prox.monto) + '\\nMétodo (Efectivo / Transferencia / Tarjeta):', 'Efectivo');
-    if (!metodo) return;
+    cerrarModal('nxFinM');
+    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px">
+      <div class="mt"><span><i class="ti ti-cash"></i> Cobrar cuota ${prox.numero}/${f.cuotas_total}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(f.cliente_nombre || '')} · ${esc(f.descripcion || '')} · vence ${String(prox.fecha_venc).slice(0, 10)}</div>
+      <div style="font-size:22px;font-weight:800;color:#2563eb;margin-bottom:8px">${fmt(prox.monto)}</div>
+      <div class="fr"><label>Método</label><select id="fpMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
+      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxFinPagarGo('${id}')"><i class="ti ti-check"></i> Registrar pago</button></div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxFinPagarGo = async function (id) {
+    const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
+    const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
+    const metodo = val('fpMet') || 'Efectivo';
     try {
       await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { pagado: true, fecha_pago: hoyISOPos(), metodo: metodo });
       prox.pagado = true; prox.fecha_pago = hoyISOPos(); prox.metodo = metodo;
       if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: Number(prox.monto), metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + (f.descripcion || '') }); } catch (e) {} }
       if (!cuotasDe(id).some(c => !c.pagado)) { try { await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { estado: 'saldado' }); f.estado = 'saldado'; } catch (e) {} }
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(prox.monto), 'Cuotas'); } catch (e) {}
-      toast('ok', 'Cuota cobrada', fmt(prox.monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
+      cerrarModal('nxFinM'); toast('ok', 'Cuota cobrada', fmt(prox.monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
@@ -18212,42 +18238,69 @@
     return `<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn bc1" type="button" onclick="window.nxApaNuevo()"><i class="ti ti-plus"></i> Nuevo apartado</button></div>` + kpis + rows;
   }
   window.nxApaNuevo = function () {
-    const desc = prompt('¿Qué artículo aparta? (nombre del equipo)'); if (!desc) return;
-    const cli = prompt('Nombre del cliente:'); if (!cli) return;
-    const tel = prompt('WhatsApp del cliente (opcional):') || null;
-    const total = window.nxMoney ? window.nxMoney.parse(prompt('Precio TOTAL del artículo:') || '') : parseFloat(prompt('Precio total:') || '');
-    if (!total || total <= 0) { toast('err', 'Precio inválido'); return; }
-    const abono = window.nxMoney ? window.nxMoney.parse(prompt('Abono INICIAL con que lo separa:', '0') || '0') : parseFloat(prompt('Abono inicial:', '0') || '0');
-    const dias = parseInt(prompt('Días de plazo para completarlo (ej. 30):', '30') || '30', 10);
-    const lim = new Date(Date.now() + (dias || 30) * 86400000).toISOString().slice(0, 10);
-    (async () => {
-      try {
-        let numero = null; try { numero = await nextSeq('apartado'); } catch (e) {}
-        if (!numero) numero = 'AP-' + String(_apartados.length + 1).padStart(5, '0');
-        const r = await getAPI().post('pos_apartados', { numero: numero, cliente_nombre: String(cli).toUpperCase(), telefono: tel, descripcion: desc, total: total, abonado: abono || 0, fecha_limite: lim });
-        const a = (r && r[0]); if (a) _apartados.unshift(a);
-        if (a && abono > 0) {
-          try { await getAPI().post('pos_apartado_pagos', { apartado_id: a.id, monto: abono, metodo: 'Efectivo' }); } catch (e) {}
-          if (_caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Abono apartado ' + numero + ' · ' + String(cli).toUpperCase(), fecha: new Date().toISOString() }); } catch (e) {} }
-        }
-        try { window.logAudit && window.logAudit('APARTADO_NUEVO', numero + ' · ' + desc + ' · ' + String(cli).toUpperCase() + ' · ' + fmt(total), 'Apartados'); } catch (e) {}
-        toast('ok', 'Apartado creado', numero);
-        const el = document.getElementById('v-pos'); if (el) renderPOS(el);
-      } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
-    })();
+    cerrarModal('nxApaM');
+    const ov = document.createElement('div'); ov.id = 'nxApaM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-bookmark"></i> Nuevo apartado</span><button class="nxBack" type="button" onclick="document.getElementById('nxApaM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="overflow-y:auto;flex:1">
+        <div class="fr"><label>Artículo que aparta *</label><input id="apDesc" class="no-upper" placeholder="iPhone 13 128GB azul..."></div>
+        <div class="fr-row"><div class="fr"><label>Cliente *</label><input id="apCli" class="no-upper" placeholder="Nombre"></div><div class="fr"><label>WhatsApp</label><input id="apTel" inputmode="tel" placeholder="8095551234"></div></div>
+        <div class="fr-row"><div class="fr"><label>Precio TOTAL *</label><input id="apTot" data-nx-money inputmode="numeric" placeholder="0"></div><div class="fr"><label>Abono inicial</label><input id="apAbo" data-nx-money inputmode="numeric" placeholder="0"></div></div>
+        <div class="fr"><label>Días de plazo</label><input id="apDias" inputmode="numeric" value="30"></div>
+      </div>
+      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxApaGuardarNuevo()"><i class="ti ti-check"></i> Crear apartado</button></div>
+    </div>`;
+    document.body.appendChild(ov); scanMoney(ov);
   };
-  window.nxApaAbonar = async function (id) {
+  window.nxApaGuardarNuevo = async function () {
+    const desc = val('apDesc').trim(), cli = val('apCli').trim();
+    const total = moneyVal('apTot'), abono = moneyVal('apAbo');
+    if (!desc || !cli) { toast('err', 'Faltan datos', 'Artículo y cliente son obligatorios'); return; }
+    if (!total || total <= 0) { toast('err', 'Precio inválido', 'Pon el precio total'); return; }
+    if (abono > total) { toast('err', 'El abono es mayor que el total'); return; }
+    const dias = parseInt(val('apDias'), 10) || 30;
+    const lim = new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
+    try {
+      let numero = null; try { numero = await nextSeq('apartado'); } catch (e) {}
+      if (!numero) numero = 'AP-' + String(_apartados.length + 1).padStart(5, '0');
+      const r = await getAPI().post('pos_apartados', { numero: numero, cliente_nombre: cli.toUpperCase(), telefono: val('apTel').trim() || null, descripcion: desc, total: total, abonado: abono || 0, fecha_limite: lim });
+      const a = (r && r[0]); if (a) _apartados.unshift(a);
+      if (a && abono > 0) {
+        try { const rp = await getAPI().post('pos_apartado_pagos', { apartado_id: a.id, monto: abono, metodo: 'Efectivo' }); if (rp && rp[0]) _apaPagos.push(rp[0]); } catch (e) {}
+        if (_caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Abono apartado ' + numero + ' · ' + cli.toUpperCase(), fecha: new Date().toISOString() }); } catch (e) {} }
+      }
+      try { window.logAudit && window.logAudit('APARTADO_NUEVO', numero + ' · ' + desc + ' · ' + cli.toUpperCase() + ' · ' + fmt(total), 'Apartados'); } catch (e) {}
+      cerrarModal('nxApaM'); toast('ok', 'Apartado creado', numero);
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
+  };
+  window.nxApaAbonar = function (id) {
     const a = _apartados.find(x => String(x.id) === String(id)); if (!a) return;
     const falta = Math.max(0, Number(a.total || 0) - Number(a.abonado || 0));
-    const monto = window.nxMoney ? window.nxMoney.parse(prompt('Monto del abono (falta ' + fmt(falta) + '):') || '') : parseFloat(prompt('Monto:') || '');
-    if (!monto || monto <= 0) return;
-    const metodo = prompt('Método (Efectivo / Transferencia / Tarjeta):', 'Efectivo') || 'Efectivo';
+    cerrarModal('nxApaM');
+    const ov = document.createElement('div'); ov.id = 'nxApaM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px">
+      <div class="mt"><span><i class="ti ti-cash"></i> Abonar apartado</span><button class="nxBack" type="button" onclick="document.getElementById('nxApaM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(a.descripcion || '')} · ${esc(a.cliente_nombre || '')} · falta <b style="color:#dc2626">${fmt(falta)}</b></div>
+      <div class="fr-row"><div class="fr"><label>Monto</label><input id="apMonto" data-nx-money inputmode="numeric" value="${Math.round(falta).toLocaleString('en-US')}"></div>
+      <div class="fr"><label>Método</label><select id="apMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div></div>
+      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxApaAbonarGo('${id}')"><i class="ti ti-check"></i> Registrar abono</button></div>
+    </div>`;
+    document.body.appendChild(ov); scanMoney(ov);
+  };
+  window.nxApaAbonarGo = async function (id) {
+    const a = _apartados.find(x => String(x.id) === String(id)); if (!a) return;
+    const monto = moneyVal('apMonto'); const metodo = val('apMet') || 'Efectivo';
+    if (!monto || monto <= 0) { toast('err', 'Monto inválido'); return; }
     try {
       const nuevo = Number(a.abonado || 0) + monto;
       await getAPI().patch('pos_apartados', 'id=eq.' + id, { abonado: nuevo }); a.abonado = nuevo;
       try { const rp = await getAPI().post('pos_apartado_pagos', { apartado_id: id, monto: monto, metodo: metodo }); if (rp && rp[0]) _apaPagos.push(rp[0]); } catch (e) {}
       if (_caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Abono apartado ' + (a.numero || '') + ' · ' + (a.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
       try { window.logAudit && window.logAudit('APARTADO_ABONO', (a.numero || '') + ' · ' + fmt(monto) + ' · ' + (a.cliente_nombre || ''), 'Apartados'); } catch (e) {}
+      cerrarModal('nxApaM');
       toast('ok', 'Abono registrado', fmt(monto) + (nuevo >= Number(a.total) ? ' · ¡COMPLETADO! Ya puede entregarse' : ''));
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
