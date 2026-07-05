@@ -1,7 +1,8 @@
 {
-  "version": "42.5",
+  "version": "42.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "MEJORA (endurecimiento · tanda B): (1) la pestaña COMPRAS del POS ahora abre al instante (bajaba 5 consultas una por una; ahora todas en paralelo). (2) Barrido mecánico de 'funciones fantasma' en TODO el sistema: se encontró y neutralizó una llamada rota que fallaba en silencio cada vez que abrías Auditoría. parches.js quedó 100% limpio de esa familia de errores.",
     "ARREGLADO (POS · Recepción de equipo no guardaba): al tocar Recibir equipo el código fallaba en silencio ANTES de guardar (faltaba la pieza que lee los campos de dinero en ese módulo). Afectaba también a crear/abonar Apartados, Entregar reparación y guardar diagnóstico. Todo guarda de nuevo.",
     "NUEVO (POS · LOGINS DE STAFF — tanda C): ya puedes crear usuarios para tus empleados. En POS → Ajustes → Roles y accesos → 'Crear usuario de staff': nombre, usuario, clave, ROL (cajero/vendedor/gerente) y su ALMACÉN asignado. El empleado entra en nexusprord.com con su usuario y clave, ve SOLO los módulos de su rol, factura desde SU almacén, y solo puede tocar los datos de SU empresa (aislamiento por organización intacto). PRUEBA SUPERVISADA: crea un cajero de prueba en Bayolsale y verifica antes de darle acceso a empleados reales.",
     "MEJORA (POS · acabado profesional, tanda A): se acabaron las ventanitas feas del navegador (prompt) en Reparaciones, Apartados y Cuotas — ahora todo son MODALES profesionales con validación: Nuevo apartado (formulario completo con artículo, cliente, WhatsApp, total, abono y plazo), Abonar apartado (monto pre-llenado con lo que falta + método), Entregar reparación (monto + método) y Cobrar cuota (monto grande azul + método). Más bonito, más rápido y sin errores de dedo.",

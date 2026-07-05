@@ -13880,13 +13880,22 @@
     mergeProvEntidades();
   }
   async function cargarComprasTab() {
-    try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
-    try { if (!_clientes.length) _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
+    // EN PARALELO (antes 5 viajes en fila: la pestaña Compras abría lenta)
+    const g = (t, q) => getAPI().get(t, q).catch(() => null);
+    const [prov, cli, compras, cc, pp] = await Promise.all([
+      g('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc'),
+      _clientes.length ? Promise.resolve(null) : g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
+      g('pos_compras', 'select=*&order=created_at.desc&limit=100'),
+      g('pos_compras', 'select=proveedor_id,total&a_credito=eq.true'),
+      g('pos_compra_pagos', 'select=proveedor_id,monto')
+    ]);
+    if (prov) _proveedores = prov;
+    if (cli) _clientes = cli;
     mergeProvEntidades();
-    try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; } catch (e) { _compras = []; }
+    _compras = compras || [];
     _cxpByProv = {}; _pagosProvByProv = {};
-    try { const cc = await getAPI().get('pos_compras', 'select=proveedor_id,total&a_credito=eq.true') || []; cc.forEach(c => { if (c.proveedor_id) _cxpByProv[c.proveedor_id] = (_cxpByProv[c.proveedor_id] || 0) + Number(c.total || 0); }); } catch (e) {}
-    try { const pp = await getAPI().get('pos_compra_pagos', 'select=proveedor_id,monto') || []; pp.forEach(p => { if (p.proveedor_id) _pagosProvByProv[p.proveedor_id] = (_pagosProvByProv[p.proveedor_id] || 0) + Number(p.monto || 0); }); } catch (e) {}
+    (cc || []).forEach(c => { if (c.proveedor_id) _cxpByProv[c.proveedor_id] = (_cxpByProv[c.proveedor_id] || 0) + Number(c.total || 0); });
+    (pp || []).forEach(x => { if (x.proveedor_id) _pagosProvByProv[x.proveedor_id] = (_pagosProvByProv[x.proveedor_id] || 0) + Number(x.monto || 0); });
   }
   function saldoProv(p) { const id = p && p.id; return Math.max(0, (_cxpByProv[id] || 0) - (_pagosProvByProv[id] || 0)); }
   // Conecta Entidades(es_proveedor) con la lista de proveedores de Compras (additivo, no duplica)

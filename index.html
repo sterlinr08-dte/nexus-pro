@@ -3254,7 +3254,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='42.5';
+const APP_VERSION='42.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -4636,7 +4636,7 @@ function nav(view,el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
-  const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>renderLog('logViewerAudit'),100);},
+  const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>{if(typeof renderLog==='function')renderLog('logViewerAudit');},100);},
       email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Asientos se cargan diferidos: si entras a una vista que los usa antes de que
