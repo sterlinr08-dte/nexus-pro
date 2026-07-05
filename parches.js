@@ -13962,7 +13962,7 @@
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
     view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div><div style="margin-top:8px;font-weight:600">Cargando punto de venta...</div></div></div>';
-    try { await cargarPOS(); if (esTiendaPOS()) { try { await cargarDashKPI(); } catch (e) {} } renderPOS(view); }
+    try { await cargarPOS(); try { await cargarDashKPI(); } catch (e) {} renderPOS(view); }
     catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudo cargar el POS.<br><span style="font-size:11px;color:#475569">' + esc(String(e && e.message || e)) + '</span></div></div>'; }
   };
 
@@ -13971,7 +13971,7 @@
     _posTab = t;
     try { document.body.classList.remove('nxTDrawer'); } catch (e) {}
     const view = document.getElementById('v-pos'); if (!view) return;
-    if (t === 'inicio' && esTiendaPOS()) { try { await cargarDashKPI(); } catch (e) {} }
+    if (t === 'inicio') { try { await cargarDashKPI(); } catch (e) {} }
     if (t === 'ventas') { try { await cargarVentas(); } catch (e) {} }
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
     if (t === 'entidades') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {} }
@@ -14117,7 +14117,7 @@
     const grupo = (titulo, tiles) => tiles.trim() ? `<div class="nxAppSec"><div class="nxAppSecT">${titulo}</div><div class="nxAppGrid">${tiles}</div></div>` : '';
     // KPIs solo en modo tienda (dashboard de su propio sistema)
     let kpis = '';
-    if (esTiendaPOS()) {
+    { // KPIs del POS: ahora para TODOS (tienda y admin)
       const k = _dashKPI || {};
       const bajos = (_prods || []).filter(p => p.tipo !== 'servicio' && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0).length;
       // Tendencia vs AYER + ventas del MES (estilo dashboard premium)
@@ -14141,7 +14141,7 @@
         </div>`;
     }
     let ultVentas = '';
-    if (esTiendaPOS()) {
+    { // Ultimas ventas: ahora para TODOS
       const dd = new Date();
       const hoyISO = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0') + '-' + String(dd.getDate()).padStart(2, '0');
       const metV = v => (v.a_credito || Number(v.credito_monto || 0) > 0) ? 'Fiado' : (Number(v.pagado_tarjeta || 0) > 0 ? 'Tarjeta' : Number(v.pagado_transferencia || 0) > 0 ? 'Transferencia' : Number(v.pagado_otro || 0) > 0 ? 'Otro' : 'Efectivo');
