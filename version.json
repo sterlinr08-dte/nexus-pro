@@ -1,7 +1,8 @@
 {
-  "version": "40.7",
+  "version": "40.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (POS · orden profesional): se acabaron las 16 pestañas amontonadas al abrir el Punto de Venta. Ahora TODOS (administrador incluido) ven el sistema con su BARRA LATERAL profesional: módulos agrupados (Principal / Inventario / Personas y CRM / Finanzas / Sistema), tu usuario abajo y botón 'Volver a Multiempresa'. En el teléfono la barra se esconde y sale con el botón de menú (☰) — pantalla completa para trabajar, como los sistemas grandes.",
     "ARREGLADO (POS · iconos del dashboard): los iconos de los KPI salían todos iguales (sin su color) en iPhone — el fondo de color usaba una función CSS que iOS viejo no entiende. Ahora cada tarjeta trae su icono con chip de color propio (verde ventas, azul mes, celeste caja, índigo productos, naranja stock) + una línea de color arriba de cada tarjeta, compatible con todos los teléfonos.",
     "ARREGLADO (POS · Inicio): el dashboard nuevo (Ventas de hoy con tendencia vs ayer, Ventas del mes con ticket promedio, y Últimas ventas con chips PAGADA/FIADO) solo se veía en el modo tienda — ahora TAMBIÉN lo ve el administrador al abrir el Punto de Venta desde Multiempresa. Por eso parecía que 'no se aplicaba nada'.",
     "MEJORA (POS · look premium): los botones de acción DENTRO del POS (Guardar ajustes, Nuevo producto, Cobrar, Confirmar venta…) ahora también son AZUL REAL — se acabó el morado que quedaba. La app de seguros conserva sus colores.",

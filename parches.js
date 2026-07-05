@@ -13986,7 +13986,7 @@
     renderPOS(view);
   };
 
-  function tabBtn(k, lbl, ic) { if (!puedeVer(k)) return ''; return `<button type="button" class="nxPosTab${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>`; }
+  // (las pestañas-pastilla del POS se retiraron: el shell de barra lateral es para todos)
 
   // ── Ordenamiento por columnas (genérico, reutilizable en cualquier tabla del POS) ──
   // Ordena una copia del arreglo por un getter de valor; respeta dirección.
@@ -14036,20 +14036,8 @@
   };
 
   function renderPOS(view) {
-    const _ses = (typeof sesion !== 'undefined') ? sesion : window.sesion;
-    const esTienda = !!(_ses && _ses.org && _ses.org.tipo === 'tienda');
-    const sub = esTienda ? esc((_ses.org.nombre || 'Mi negocio')) : 'Multiempresa · solo el administrador';
-    const btnTop = esTienda
-      ? `<button class="btn bsm bc3" type="button" onclick="if(window.logout)window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>`
-      : `<button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>`;
     const prevRol = _rolPreview ? (ROLES_DEF.find(r => r[0] === _rolPreview) || [_rolPreview, _rolPreview])[1] : '';
     const previewBar = _rolPreview ? `<div class="nxPrevBar"><span><i class="ti ti-eye"></i> Vista previa como <b>${esc(prevRol)}</b> — así ve el sistema este rol</span><button class="btn bsm" type="button" onclick="window.nxRolPreview('')"><i class="ti ti-x"></i> Salir</button></div>` : '';
-    const head = `<div class="ch">
-        <div><div class="ct"><i class="ti ti-shopping-cart"></i> Punto de Venta</div><div class="ct-s">${sub}</div></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${btnTop}</div>
-      </div>
-      ${previewBar}
-      <div class="nxPosTabs">${tabBtn('inicio', 'Inicio', 'ti-layout-grid')}${tabBtn('vender', 'Vender', 'ti-shopping-cart')}${tabBtn('factura', 'Factura', 'ti-file-invoice')}${tabBtn('productos', 'Productos', 'ti-box')}${tabBtn('inventario', 'Inventario', 'ti-building-warehouse')}${tabBtn('cotizaciones', 'Cotizaciones', 'ti-clipboard-text')}${tabBtn('compras', 'Compras', 'ti-truck-delivery')}${tabBtn('entidades', 'Entidades', 'ti-address-book')}${tabBtn('crm', 'CRM', 'ti-target-arrow')}${tabBtn('clientes', 'Clientes', 'ti-users')}${tabBtn('caja', 'Caja', 'ti-cash')}${tabBtn('ventas', 'Historial', 'ti-history')}${tabBtn('reportes', 'Reportes', 'ti-chart-pie')}${tabBtn('contabilidad', 'Contabilidad', 'ti-book-2')}${tabBtn('rrhh', 'Recursos Humanos', 'ti-users-group')}${tabBtn('ajustes', 'Ajustes', 'ti-settings')}</div>`;
     let body = '';
     if (_posTab === 'inicio') body = renderInicio();
     else if (_posTab === 'vender') body = renderVender();
@@ -14067,9 +14055,9 @@
     else if (_posTab === 'rrhh') body = renderRRHH();
     else if (_posTab === 'ajustes') body = renderAjustes();
     else body = renderVentas();
-    // Modo tienda: shell independiente con barra lateral. Modo admin/multiempresa: pestañas arriba (igual que antes).
-    if (esTienda) view.innerHTML = shellTienda(body, previewBar);
-    else view.innerHTML = `<div class="nc">${head}${body}</div>`;
+    // Shell profesional (barra lateral índigo) para TODOS: tienda y admin.
+    // Antes el admin veía 16 pestañas-pastilla amontonadas — se veía amateur (pedido del dueño).
+    view.innerHTML = shellTienda(body, previewBar);
     if (_posTab === 'vender') pintarCarrito();
     if (_posTab === 'factura') pintarFactura();
   }
@@ -14095,7 +14083,9 @@
           <div class="nxTScroll">${nav}</div>
           <div class="nxTFoot">
             <div class="nxTUser"><div class="nxTAva">${esc(ini)}</div><div><b>${esc(nom)}</b><span>${esc(rol)}</span></div></div>
-            <button class="nxTLogout" type="button" onclick="if(window.logout)window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>
+            ${esTiendaPOS()
+              ? '<button class="nxTLogout" type="button" onclick="if(window.logout)window.logout()"><i class="ti ti-logout"></i> Cerrar sesión</button>'
+              : '<button class="nxTLogout" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>'}
           </div>
         </aside>
         <div class="nxTMain">
