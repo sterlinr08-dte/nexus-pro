@@ -451,9 +451,15 @@ A) **UI con prompt()** en Reparaciones/Apartados/Cuotas → cambiar a modales pr
    y frágil en iPhone; no se puede vender así).
 B) **Compras tab** aún carga 4 consultas secuenciales (lenta) + QA sistemático pestaña por pestaña
    en móvil con checklist.
-C) **LOGINS DE STAFF (lo más importante para vender):** cajeros/empleados con su clave, su rol
-   (pos_acceso ya existe solo-UI) y su ALMACÉN asignado (pedido del dueño v41.8) — es la Fase 3
-   RLS supervisada de SEGURIDAD-PLAN.md.
+C) **LOGINS DE STAFF — HECHO v42.4 (pendiente PRUEBA del dueño):** migración
+   `staff_almacen_y_rls_por_org` (usuarios_sistema.almacen_id + TODAS las políticas pos_*/rrhh_*
+   relajadas de mi_rol()='admin' a mi_rol() is not null — aislamiento por org INTACTO; saas_*/med_*/
+   rifa_* siguen solo-admin). Edge Function **`crear-usuario-staff`** (verify_jwt; valida caller
+   admin por profiles, crea auth.users+usuarios_sistema+profiles con rol y almacen_id, rollback si
+   falla). UI: Ajustes→Roles→"Crear usuario de staff" (`nxStaffNuevo/nxStaffCrear`). Gate de
+   `nxAbrirPOS` ahora por rolReal() (no esAdmin); `cargarPOS` usa sesion.almacen_id como almacén
+   activo; `nxCargarOrg` (index) siempre trae organizacion_id+almacen_id. FALTA: prueba supervisada
+   (crear cajero en Bayolsale, verificar módulos por rol y aislamiento).
 D) Asientos contables de reparaciones/apartados + limpieza de datos de PRUEBA por organización.
 
 ### Investigación de POS del mercado (5-jul-2026, web) — brechas y precios
