@@ -1,7 +1,8 @@
 {
-  "version": "43.1",
+  "version": "43.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (POS · COMBOS 🧩): en la ficha del producto ahora defines qué artículos salen JUNTO con él (ej. el iPhone sale con su cargador). Al facturar el teléfono, el sistema agrega solo el cargador a la factura en RD$ 0 ('+ CARGADOR (incluido)') y le da SALIDA del inventario — se acabó el descuadre de cargadores regalados que nunca salían del sistema. Si vendes 3 teléfonos (o eliges 3 IMEI), salen 3 cargadores. El precio del combo va mezclado en el precio de venta del principal.",
     "NUEVO (POS · PRECIO MÍNIMO de negociación 🔒): cada artículo puede tener su precio PISO. Solo lo ven el ADMINISTRADOR y el GERENTE: (1) en la ficha del producto (campo 🔒 Precio MÍNIMO) y (2) discreto en el detalle del buscador de artículos — chiquito arriba del cuadro de precios, donde mira el vendedor y no el cliente. CANDADO doble: si un cajero/vendedor intenta poner un precio por debajo, el sistema lo ajusta al mínimo y avisa; y al cobrar se vuelve a verificar. El admin y el gerente sí pueden bajar del piso cuando haga falta.",
     "ARREGLADO (POS · ventanilla de IMEI): no dejaba seleccionar más de un IMEI (se recortaba a la cantidad de la línea). Ahora marcas TODOS los que quieras y la CANTIDAD de la línea se ajusta sola a los elegidos — marcas 3 IMEI y la factura queda con cantidad 3 automáticamente.",
     "MEJORA (POS · buscador de artículos con IMEI): al abrir un artículo que maneja IMEI en el buscador, ya no salen los seriales regados — sale el CHIP con el celularcito 📱 'IMEI · 6' (la cantidad que hay). Lo tocas y se abre LA VENTANILLA con todos los IMEI, su buscador y las palomitas para seleccionar (igual que en la Factura). El botón ELEGIR en artículos con IMEI hace lo mismo: agrega y te abre la ventanilla de una vez.",

@@ -13823,6 +13823,7 @@
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
   let _reps = [], _fins = [], _finCuotas = [], _repVista = 'activas'; // servicio tecnico + cuotas
   let _apartados = [], _apaPagos = []; // apartados (layaway)
+  let _comboTmp = []; // combo en edición del producto
   let _histSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
@@ -14245,6 +14246,21 @@
       </button>`;
     }).join('');
   }
+  // COMBO: al vender el principal, sus acompañantes entran a la factura en RD$ 0 y descuentan stock
+  function combosDe(p) { const a = p && p.combo_items; return Array.isArray(a) ? a : []; }
+  function ajustarCombos(prodId, delta) {
+    try {
+      if (!delta) return;
+      const p = _prods.find(x => String(x.id) === String(prodId)); if (!p) return;
+      combosDe(p).forEach(ci => {
+        const cp = _prods.find(x => String(x.id) === String(ci.producto_id)); if (!cp) return;
+        const cant = Math.max(1, Number(ci.cantidad || 1)) * delta;
+        const ex = _cart.find(x => String(x.producto_id) === String(cp.id) && x._combo);
+        if (ex) { ex.cantidad += cant; if (ex.cantidad <= 0) _cart.splice(_cart.indexOf(ex), 1); }
+        else if (cant > 0) _cart.push({ producto_id: cp.id, nombre: '+ ' + cp.nombre + ' (incluido)', precio: 0, cantidad: cant, itbis: false, desc: 0, descT: 'pct', _combo: true });
+      });
+    } catch (e) {}
+  }
   // Chip IMEI de la tarjeta: mete el artículo al carrito (si falta) y abre el selector de IMEI
   window.nxVenderImei = function (pid) {
     const p = _prods.find(x => String(x.id) === String(pid)); if (!p || !p.serial) return;
@@ -14263,6 +14279,7 @@
     if (ex) ex.cantidad += 1;
     else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio || 0), cantidad: 1, itbis: !!p.itbis });
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
+    ajustarCombos(p.id, 1);
     pintarCarrito();
   };
   window.nxPosQty = function (idx, d) { const it = _cart[idx]; if (!it) return; it.cantidad = Math.max(0, it.cantidad + d); if (it.cantidad === 0) _cart.splice(idx, 1); pintarCarrito(); };
@@ -14371,6 +14388,7 @@
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1; else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis, desc: 0, descT: 'pct' });
+    ajustarCombos(p.id, 1);
     const inp = document.getElementById('facBuscar'); if (inp) { inp.value = ''; inp.focus(); }
     const box = document.getElementById('facSug'); if (box) { box.innerHTML = ''; box.style.display = 'none'; }
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
@@ -14597,7 +14615,7 @@
     // SIN tope: marcas los IMEI que quieras y la CANTIDAD de la línea se ajusta sola
     const chk = Array.prototype.slice.call(document.querySelectorAll('#nxFacSer [data-serid]')).filter(c => c.checked);
     it.seriales = chk.map(c => ({ id: c.getAttribute('data-serid'), serial: c.getAttribute('data-serial') }));
-    if (it.seriales.length) { it._sinSerial = false; it.cantidad = it.seriales.length; }
+    if (it.seriales.length) { it._sinSerial = false; const _old = it.cantidad; it.cantidad = it.seriales.length; ajustarCombos(it.producto_id, it.cantidad - _old); }
     cerrarModal('nxFacSer');
     if (_posTab === 'vender') { const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML(); pintarCarrito(); } else { pintarFactura(); }
   };
@@ -15362,11 +15380,27 @@
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('prod', _prodSort, 'nombre', 'Producto')}${thSort('prod', _prodSort, 'precio', 'Precio', 'right')}${thSort('prod', _prodSort, 'stock', 'Stock', 'right')}${thSort('prod', _prodSort, 'itbis', 'ITBIS', 'center')}<th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
   window.nxProdFiltro = function (f) { _prodFiltro = f || 'todos'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxComboPaint = function () {
+    const box = document.getElementById('ppComboList'); if (!box) return;
+    box.innerHTML = _comboTmp.length ? _comboTmp.map((c, i) => {
+      const cp = _prods.find(x => String(x.id) === String(c.producto_id));
+      return `<span class="nxPosStkB" style="font-size:10px;padding:5px 9px">${esc(cp ? cp.nombre : '?')} ×${Number(c.cantidad || 1)} <b style="color:#dc2626;cursor:pointer;margin-left:4px" onclick="window.nxComboDel(${i})">✕</b></span>`;
+    }).join('') : '<span style="font-size:10.5px;color:#94a3b8">Sin artículos de combo</span>';
+  };
+  window.nxComboAdd = function () {
+    const pid = val('ppComboSel'); if (!pid) { toast('warn', 'Elige el artículo del combo'); return; }
+    const cant = Math.max(1, parseInt(val('ppComboCant'), 10) || 1);
+    const ex = _comboTmp.find(c => String(c.producto_id) === String(pid));
+    if (ex) ex.cantidad = cant; else _comboTmp.push({ producto_id: pid, cantidad: cant });
+    window.nxComboPaint();
+  };
+  window.nxComboDel = function (i) { _comboTmp.splice(i, 1); window.nxComboPaint(); };
   window.nxPosNuevoProd = function () { abrirProd(null); };
   window.nxPosEditProd = function (id) { const p = _prods.find(x => String(x.id) === String(id)); if (p) abrirProd(p); };
   function abrirProd(p) {
     cerrarModal('nxPosProd');
     const e = p || {};
+    _comboTmp = combosDe(e).slice();
     const catOpts = _cats.map(c => `<option value="${c.id}"${String(e.categoria_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxPosProd'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
@@ -15402,6 +15436,12 @@
           <div class="fr-row">
             <div class="fr"><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div>
             ${puedeVerMin() ? `<div class="fr"><label>🔒 Precio MÍNIMO (piso de negociación)</label><input id="ppMinP" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo"></div>` : ''}
+          <div class="fr"><label>🧩 Combo: sale JUNTO con este artículo (se factura en RD$ 0 y descuenta stock)</label>
+            <div id="ppComboList" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px"></div>
+            <div style="display:flex;gap:6px"><select id="ppComboSel" style="flex:1;min-width:0;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;padding:0 8px;font-size:12px"><option value="">— elegir artículo —</option>${_prods.filter(x => String(x.id) !== String(e.id || '')).map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</select>
+            <input id="ppComboCant" inputmode="numeric" value="1" style="width:56px;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;text-align:center;font-weight:700">
+            <button class="btn bsm bc1" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
+          </div>
             <div class="fr"><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div>
           </div>
           <div class="fr"><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite descuento</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div>
@@ -15412,6 +15452,7 @@
         </div>
       </div>`;
     document.body.appendChild(ov);
+    setTimeout(() => { try { window.nxComboPaint(); } catch (e) {} }, 30);
     scanMoney(ov);
   }
   window.nxPosGuardarProd = async function (id) {
@@ -15434,6 +15475,7 @@
       stock_min: Number(String(val('ppMin') || '0').replace(/[^0-9.-]/g, '')) || 0,
       garantia_dias: parseInt(val('ppGar'), 10) || 0,
       ...(document.getElementById('ppMinP') ? { precio_minimo: moneyVal('ppMinP') } : {}),
+      combo_items: _comboTmp,
       serial: val('ppSer') === '1',
       no_descuento: val('ppNoDesc') === '1'
     };
