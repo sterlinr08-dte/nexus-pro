@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **40.0** (ver `index.html` y `version.json`).
+> Versión actual: **43.9** (ver `index.html` y `version.json`).
 
 ---
 
@@ -442,6 +442,50 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
   existe en iPhone/Safari — evaluar librería) · variantes/comparador de producto · asientos contables
   de reparaciones (hoy solo movimiento de caja) · pantallas premium restantes del ZIP (caja/arqueo,
   historial, clientes).
+
+
+### POS — sesión maratónica v41.2→43.9 (5-jul-2026, chat `RvxXb`) — RESUMEN PARA RETOMAR
+Todo HECHO, en vivo y probado por sintaxis (detalle en changelog de version.json):
+- **Contador de factura TRANSACCIONAL:** pos_secuencias tipos `factura_contado/credito` (sembrados
+  del máximo real); preview `proxNumeroFacturaFmt` lee la secuencia; número corto estilo Infoplus
+  (`proxNumeroFacturaCorto`); escribir número+ENTER = trae esa factura (`nxFacBuscarNum`); lupa =
+  historial paginado 10 en 10 (`nxFacHist`, carga de la BASE si memoria vacía, select=* — la columna
+  `anulada` NO existe, es `estado`).
+- **PREFACTURA (preventa):** tabla `pos_prefacturas` (items jsonb snapshot). Tab propio 'prefactura'
+  que REUSA renderFactura() (esPreTab() por _posTab): mismos campos+IMEI+combos, NO valida stock,
+  botón morado Guardar (`nxPrefGuardar`). Carritos SEPARADOS factura/prefactura (swap en nxPosTab:
+  _cartFacSaved/_cartPre). En Factura: campo Prefactura con lupa (jalar por número `nxPrefJalar` o
+  lista `nxPrefLista`) → `nxPrefFacturar` carga y al cobrar se vuelve factura real.
+- **INVENTARIO ESTRICTO (decisión dueño):** sin stock no se agrega ni cobra (`puedeAgregar`,
+  revalidación en confirm); IMEI OBLIGATORIO (se eliminó 'vender sin IMEI'/_sinSerial); prefactura
+  exenta. Si un cliente SaaS necesita vender en negativo → hacer interruptor por org.
+- **IMEI UX:** chip 📱 `IMEI · N` / `IMEI n/n` en tarjetas de Vender (`nxVenderImei`) y en el detalle
+  del buscador (`nxPpkImei`; nxCargarSerialesDet ahora pinta chip compacto). Ventanilla `nxFacSerial`
+  SIN tope: la cantidad de la línea se ajusta a los IMEI marcados (nxFacSerGuardar) y sincroniza combos.
+- **COMBOS:** pos_productos.combo_items jsonb [{producto_id,cantidad}]; al vender el principal los
+  acompañantes entran en RD$0 `+ X (incluido)` y descuentan stock (`ajustarCombos` en nxPosAdd/
+  nxFacAdd/ajuste IMEI). UI en ficha de producto con buscador de sugerencias (`nxComboFiltrar/Pick`).
+- **PRECIO MÍNIMO 🔒:** pos_productos.precio_minimo; campo y chip 'mín' SOLO admin/gerente
+  (`puedeVerMin`); candado en nxFacPrecio (ajusta al piso) y en confirm.
+- **CENTRO DE AVISOS 🔔 (automatización fase 1):** tab 'avisos' (renderAvisos, calculado en vivo):
+  cuotas vencidas, apartados por vencer (3d), reparaciones LISTAS sin recoger, bajo stock — cada uno
+  con WhatsApp 1-toque pre-escrito. Fase 2 pendiente: correo auto; Fase 3: WhatsApp API.
+- **Endurecimiento COMPLETO A-D:** A modales pro (adiós prompts — quedó 1 solo en el núcleo seguros,
+  banco de entregas) · B Compras en paralelo + lint de funciones fantasma (renderLog neutralizado en
+  index; parches 100% limpio) · C logins staff (v42.4, PENDIENTE prueba del dueño con cajero en
+  Bayolsale) · D asientos automáticos de reparaciones/apartados/cuotas (postAsientoServicio →
+  1101/1102 vs 4101; cuotas vía postAsientoAbono) + botón 'Borrar datos de prueba' (Ajustes, zona
+  de peligro, escribe BORRAR).
+- **Buscadores unificados (.nxLupaBox):** combo, tabla Productos (`nxProdTablaBuscar`), kanban
+  Reparaciones (`nxRepBuscar`), prefacturas. PENDIENTE: selector de CLIENTE en cobro/factura sigue
+  siendo <select> — necesita buscador (cirugía delicada: re-precia carrito).
+- **BUG CLASE NUEVA descubierto:** helpers que no existen en el IIFE donde se usan (moneyVal faltaba
+  en POS → recepción no guardaba, v42.5). El lint de fantasmas solo detecta nombres globales, NO
+  scoping entre IIFEs — al agregar código a un IIFE verificar que sus helpers existan AHÍ.
+- **PENDIENTES PRIORITARIOS:** prueba del dueño (cajero staff + checklist QA) · e-CF DGII ANTES del
+  15-NOV-2026 (vía PSFE/Alanube) · 606/608 · factura recurrente genérica (clonar motor cron del
+  seguro) · trade-in/usados por IMEI · buscador de cliente en cobro · Fase 2/3 avisos · pantallas
+  premium Caja/Historial · escáner cámara (iPhone limita) · hosting bayolcell.com (VENCIÓ 3-jul+72h).
 
 ### PLAN DE ENDURECIMIENTO del POS antes de VENDER (5-jul-2026, dueño: "tiene deficiencias")
 Auditoría mecánica hecha: TODAS las consultas de lectura pos_*/rrhh_* verificadas contra el esquema
