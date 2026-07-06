@@ -13781,7 +13781,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -13829,6 +13829,8 @@
   let _histSort = { k: 'fecha', d: -1 };
   let _notasCred = []; // historial de notas de crédito (pos_devoluciones)
   let _ncQ = '', _ncDesde = '', _ncHasta = '', _ncSort = { k: 'fecha', d: -1 };
+  let _prefHist = []; // historial COMPLETO de prefacturas (abierta/facturada/anulada)
+  let _phQ = '', _phDesde = '', _phHasta = '', _phEstado = 'todas', _phSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
@@ -13852,7 +13854,7 @@
     // TODAS las cargas EN PARALELO (antes eran 16 viajes secuenciales: el POS tardaba
     // varios segundos en abrir en el teléfono; ahora tarda lo que tarde UNA consulta).
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
-    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm, prefs, notasCred] = await Promise.all([
+    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm, prefs, notasCred, prefAll] = await Promise.all([
       g('pos_categorias', 'select=*&order=orden.asc,nombre.asc'),
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -13871,7 +13873,8 @@
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
       g('pos_stock_almacen', 'select=*&limit=20000'),
       g('pos_prefacturas', 'select=*&estado=eq.abierta&order=created_at.desc&limit=200'),
-      g('pos_devoluciones', 'select=*&order=created_at.desc&limit=500')
+      g('pos_devoluciones', 'select=*&order=created_at.desc&limit=500'),
+      g('pos_prefacturas', 'select=*&order=created_at.desc&limit=500')
     ]);
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _caja = (cj && cj[0]) || null;
@@ -13881,6 +13884,7 @@
     _almacenes = alm || [];
     _prefs = prefs || [];
     _notasCred = notasCred || [];
+    _prefHist = prefAll || [];
     if (_almacenes.length) {
       try { const _ses = curSesPOS(); if (_ses && _ses.almacen_id && _almacenes.find(a => String(a.id) === String(_ses.almacen_id))) _almacenSel = _ses.almacen_id; } catch (e) {}
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
@@ -14071,7 +14075,7 @@
   }
   // Click en encabezado: misma columna invierte; nueva columna ordena (fecha empieza descendente).
   window.nxSort = function (tabla, key) {
-    const st = tabla === 'prod' ? _prodSort : tabla === 'hist' ? _histSort : tabla === 'nc' ? _ncSort : null;
+    const st = tabla === 'prod' ? _prodSort : tabla === 'hist' ? _histSort : tabla === 'nc' ? _ncSort : tabla === 'ph' ? _phSort : null;
     if (!st) return;
     if (st.k === key) st.d = -st.d; else { st.k = key; st.d = (key === 'fecha') ? -1 : 1; }
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
@@ -14106,6 +14110,7 @@
     else if (_posTab === 'rrhh') body = renderRRHH();
     else if (_posTab === 'avisos') body = renderAvisos();
     else if (_posTab === 'notascredito') body = renderNotasCredito();
+    else if (_posTab === 'prefhist') body = renderPrefHist();
     else if (_posTab === 'prefactura') body = renderPrefactura();
     else if (_posTab === 'reparaciones') body = renderReparaciones();
     else if (_posTab === 'cuotas') body = renderCuotas();
@@ -14132,7 +14137,7 @@
     const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool'))
       + sec('Inventario', it('productos', 'Productos', 'ti-box') + it('inventario', 'Inventario', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
-      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
+      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('prefhist', 'Prefacturas', 'ti-files') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
@@ -14204,7 +14209,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c'))}
+        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c') + tile('prefhist', 'Prefacturas', 'ti-files', '#7c3aed'))}
         ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
@@ -18448,7 +18453,7 @@
     const cli = clienteSel();
     try {
       const r = await getAPI().post('pos_prefacturas', { numero: numero, cliente_id: cli ? cli.id : null, cliente_nombre: cli ? cli.nombre : null, items: _cart, total: t.total, created_by_name: ((curSesPOS() || {}).nom) || null });
-      if (r && r[0]) _prefs.unshift(r[0]);
+      if (r && r[0]) { _prefs.unshift(r[0]); _prefHist.unshift(r[0]); }
       try { window.logAudit && window.logAudit('PREFACTURA_GUARDADA', numero + ' · ' + fmt(t.total) + (cli ? ' · ' + cli.nombre : ''), 'POS'); } catch (e) {}
       _cart = []; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
@@ -18492,17 +18497,113 @@
     _factCli = p.cliente_id || '';
     try { await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'facturada' }); } catch (e) {}
     _prefs = _prefs.filter(x => String(x.id) !== String(id));
+    { const h = _prefHist.find(x => String(x.id) === String(id)); if (h) h.estado = 'facturada'; }
     cerrarModal('nxPrefM');
     try { window.logAudit && window.logAudit('PREFACTURA_FACTURADA', (p.numero || '') + ' · ' + fmt(p.total), 'POS'); } catch (e) {}
     window.nxPosTab('factura');
     toast('ok', 'Prefactura cargada', (p.numero || '') + ' — revisa y cobra');
   };
   window.nxPrefAnular = async function (id) {
-    const p = _prefs.find(x => String(x.id) === String(id)); if (!p) return;
+    const p = _prefs.find(x => String(x.id) === String(id)) || _prefHist.find(x => String(x.id) === String(id)); if (!p) return;
     if (!confirm('¿Anular la prefactura ' + (p.numero || '') + '?')) return;
-    try { await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'anulada' }); _prefs = _prefs.filter(x => String(x.id) !== String(id)); window.nxPrefLista(); toast('ok', 'Prefactura anulada'); } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+    try {
+      await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'anulada' });
+      _prefs = _prefs.filter(x => String(x.id) !== String(id));
+      const h = _prefHist.find(x => String(x.id) === String(id)); if (h) h.estado = 'anulada';
+      // Refresca según dónde se anuló: en el Historial repinta la vista; si no, reabre el modal
+      if (_posTab === 'prefhist') { const v = document.getElementById('v-pos'); if (v) renderPOS(v); } else { window.nxPrefLista(); }
+      toast('ok', 'Prefactura anulada');
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
 
+
+  // ══════════════ HISTORIAL DE PREFACTURAS (completo: abiertas/facturadas/anuladas) ══════════════
+  function phFiltradas() {
+    const q = (_phQ || '').trim().toLowerCase();
+    return (_prefHist || []).filter(p => {
+      const e = p.estado || 'abierta';
+      if (_phEstado === 'abiertas' && e !== 'abierta') return false;
+      if (_phEstado === 'facturadas' && e !== 'facturada') return false;
+      if (_phEstado === 'anuladas' && e !== 'anulada') return false;
+      const f = (p.fecha || p.created_at || '').slice(0, 10);
+      if (_phDesde && f < _phDesde) return false;
+      if (_phHasta && f > _phHasta) return false;
+      if (q) { const hay = ((p.numero || '') + ' ' + (p.cliente_nombre || '')).toLowerCase(); if (!hay.includes(q)) return false; }
+      return true;
+    });
+  }
+  function phSortVal(p, k) {
+    if (k === 'numero') return String(p.numero || '').toLowerCase();
+    if (k === 'cliente') return String(p.cliente_nombre || 'Consumidor final').toLowerCase();
+    if (k === 'estado') return String(p.estado || 'abierta');
+    if (k === 'total') return Number(p.total || 0);
+    return String(p.fecha || p.created_at || '');
+  }
+  function phBadge(est) {
+    if (est === 'facturada') return '<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:#dcfce7;color:#166534">FACTURADA</span>';
+    if (est === 'anulada') return '<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:#fee2e2;color:#991b1b">ANULADA</span>';
+    return '<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:#fef3c7;color:#92400e">ABIERTA</span>';
+  }
+  function kpisPH() {
+    const lista = phFiltradas();
+    const abiertas = lista.filter(p => (p.estado || 'abierta') === 'abierta');
+    const val = abiertas.reduce((s, p) => s + Number(p.total || 0), 0);
+    return kpi('Prefacturas', lista.length, '#7c3aed') + kpi('Abiertas', abiertas.length, '#d97706') + kpi('Valor por facturar', fmt(val), '#2563eb');
+  }
+  function filasPH() {
+    const lista = sortRows(phFiltradas(), p => phSortVal(p, _phSort.k), _phSort.d);
+    if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">' + ((_prefHist || []).length ? 'Sin prefacturas con esos filtros' : 'Aún no hay prefacturas. Créalas en la pestaña Prefactura.') + '</td></tr>';
+    return lista.map(p => {
+      const est = p.estado || 'abierta';
+      const nArt = Array.isArray(p.items) ? p.items.length : 0;
+      const acc = est === 'abierta'
+        ? `<button class="btn bsm bc1" onclick="event.stopPropagation();window.nxPrefFacturar('${p.id}')" title="Facturar"><i class="ti ti-cash"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver"><i class="ti ti-eye"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPrefAnular('${p.id}')" title="Anular"><i class="ti ti-x" style="color:#dc2626"></i></button>`
+        : `<button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver"><i class="ti ti-eye"></i></button>`;
+      return `<tr style="cursor:pointer${est === 'anulada' ? ';opacity:.55' : ''}" onclick="window.nxPHVer('${p.id}')">
+        <td style="font-weight:700;color:#1e293b;white-space:nowrap">${esc(p.numero || '')}</td>
+        <td style="color:#475569;white-space:nowrap">${fechaDMY(p.fecha || p.created_at)}</td>
+        <td>${esc(p.cliente_nombre || 'Consumidor final')}<span style="display:block;font-size:9.5px;color:#94a3b8">${nArt} art.${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</span></td>
+        <td style="white-space:nowrap">${phBadge(est)}</td>
+        <td style="text-align:right;font-weight:800;color:#7c3aed;white-space:nowrap">${fmt(p.total)}</td>
+        <td style="text-align:right;white-space:nowrap">${acc}</td>
+      </tr>`;
+    }).join('');
+  }
+  function renderPrefHist() {
+    const pill = (k, lbl) => `<button type="button" class="nxInvPill${_phEstado === k ? ' on' : ''}" onclick="window.nxPHEstado('${k}')">${lbl}</button>`;
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input id="phQ" value="${esc(_phQ)}" oninput="window.nxPHBuscar(this.value)" placeholder="Buscar por No. o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+        <input type="date" id="phDesde" value="${_phDesde}" onchange="window.nxPHFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
+        <input type="date" id="phHasta" value="${_phHasta}" onchange="window.nxPHFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
+        <button class="btn bsm bghost" type="button" onclick="window.nxPHLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
+      </div>
+      <div class="nxInvPills" style="margin-bottom:10px">${pill('todas', 'Todas')}${pill('abiertas', 'Abiertas')}${pill('facturadas', 'Facturadas')}${pill('anuladas', 'Anuladas')}</div>
+      <div id="phKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisPH()}</div>
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('ph', _phSort, 'numero', 'No. PF')}${thSort('ph', _phSort, 'fecha', 'Fecha')}${thSort('ph', _phSort, 'cliente', 'Cliente')}${thSort('ph', _phSort, 'estado', 'Estado')}${thSort('ph', _phSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="phBody">${filasPH()}</tbody></table></div>`;
+  }
+  function pintarPH() { const b = document.getElementById('phBody'); if (b) b.innerHTML = filasPH(); const k = document.getElementById('phKpis'); if (k) k.innerHTML = kpisPH(); }
+  window.nxPHBuscar = function (v) { _phQ = v; pintarPH(); };
+  window.nxPHFecha = function () { _phDesde = val('phDesde') || ''; _phHasta = val('phHasta') || ''; pintarPH(); };
+  window.nxPHEstado = function (e) { _phEstado = e || 'todas'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxPHLimpiar = function () { _phQ = ''; _phDesde = ''; _phHasta = ''; _phEstado = 'todas'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  // Ver el detalle de una prefactura (solo lectura) — su estado y sus artículos
+  window.nxPHVer = function (id) {
+    const p = (_prefHist || []).find(x => String(x.id) === String(id)); if (!p) return;
+    const est = p.estado || 'abierta';
+    const items = Array.isArray(p.items) ? p.items : [];
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad || 0)}</td><td>${esc(it.nombre || '')}</td><td style="text-align:right">${fmt(it.precio || 0)}</td><td style="text-align:right">${fmt(Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px">Sin artículos</td></tr>';
+    cerrarModal('nxPHVerM');
+    const ov = document.createElement('div'); ov.id = 'nxPHVerM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-file-description"></i> Prefactura ${esc(p.numero || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPHVerM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+        <div style="font-size:12px;color:#475569;margin-bottom:8px;line-height:1.6">${phBadge(est)} · <b>${esc(p.cliente_nombre || 'Consumidor final')}</b><br>${fechaDMY(p.fecha || p.created_at)}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div>
+        <div style="overflow-y:auto;flex:1"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:#94a3b8;font-size:10px;text-transform:uppercase"><th style="text-align:left;padding:5px">Cant.</th><th style="text-align:left;padding:5px">Artículo</th><th style="text-align:right;padding:5px">Precio</th><th style="text-align:right;padding:5px">Importe</th></tr></thead><tbody>${filas}</tbody></table></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #eef2f7;margin-top:8px;padding-top:8px"><b style="font-size:13px">TOTAL</b><b style="font-size:16px;color:#7c3aed">${fmt(p.total)}</b></div>
+        ${est === 'abierta' ? `<button class="btn bc1 bsm" type="button" style="margin-top:10px" onclick="document.getElementById('nxPHVerM').remove();window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar esta prefactura</button>` : ''}
+      </div>`;
+    document.body.appendChild(ov);
+  };
 
   // ══════════════ CENTRO DE AVISOS (cola de cobro del día — calculada en vivo) ══════════════
   function renderAvisos() {
