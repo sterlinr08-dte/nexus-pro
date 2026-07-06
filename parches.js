@@ -13949,7 +13949,7 @@
     try {
       const d = new Date();
       const desde = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + 'T00:00:00';
-      const vs = await getAPI().get('pos_ventas', 'select=total&created_at=gte.' + desde) || [];
+      const vs = await getAPI().get('pos_ventas', 'select=total&created_at=gte.' + desde + '&estado=neq.anulada') || [];
       let tot = 0; vs.forEach(v => tot += Number(v.total || 0));
       let cajaEf = null;
       if (_caja) { try { const t = await totalesCaja(_caja); cajaEf = t ? t.esperado : null; } catch (e) {} }
@@ -13962,7 +13962,7 @@
   async function cargarSaldosCli() {
     _fiadoByCli = {}; _abonosByCli = {};
     try {
-      const fi = await getAPI().get('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0') || [];
+      const fi = await getAPI().get('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0&estado=neq.anulada') || [];
       fi.forEach(v => { if (v.cliente_id) _fiadoByCli[v.cliente_id] = (_fiadoByCli[v.cliente_id] || 0) + Number(v.credito_monto || 0); });
       const ab = await getAPI().get('pos_abonos', 'select=cliente_id,monto') || [];
       ab.forEach(a => { if (a.cliente_id) _abonosByCli[a.cliente_id] = (_abonosByCli[a.cliente_id] || 0) + Number(a.monto || 0); });
@@ -15080,10 +15080,11 @@
     try {
       if (!tipoFactura || tipoFactura === 'sin') return null;
       const cod = NCF_MAP[tipoFactura] || tipoFactura;
-      const s = _ncfSecs.find(x => x.tipo === cod && x.activo !== false && Number(x.actual || 0) <= Number(x.hasta || 0));
+      const _hoyNcf = isoHoy();
+      const s = _ncfSecs.find(x => x.tipo === cod && x.activo !== false && Number(x.actual || 0) <= Number(x.hasta || 0) && (!x.vencimiento || String(x.vencimiento).slice(0, 10) >= _hoyNcf));
       if (!s) return null;
       const num = Number(s.actual || s.desde || 1);
-      const ncf = (s.prefijo || tipo) + String(num).padStart(8, '0');
+      const ncf = (s.prefijo || cod) + String(num).padStart(8, '0');
       await getAPI().patch('pos_ncf_secuencias', 'id=eq.' + s.id, { actual: num + 1 });
       s.actual = num + 1;
       return ncf;
@@ -15244,10 +15245,15 @@
     // el mismo producto_id) para que no se cuele una sobreventa repartida en varias líneas.
     const _pedidoPorProd = {};
     for (const it of _cart) { const k = String(it.producto_id); _pedidoPorProd[k] = (_pedidoPorProd[k] || 0) + Number(it.cantidad || 0); }
+    const _aidVal = (_almacenes.length && _almacenSel) ? _almacenSel : null;
     for (const pid in _pedidoPorProd) {
       const _p = _prods.find(x => String(x.id) === pid);
-      if (_p && _p.tipo !== 'servicio' && _pedidoPorProd[pid] > Number(_p.stock || 0)) {
-        toast('err', 'Sin stock suficiente', _p.nombre + ' — quedan ' + Number(_p.stock || 0) + ' y la factura pide ' + _pedidoPorProd[pid]);
+      if (!_p || _p.tipo === 'servicio') continue;
+      // Valida contra el almacén activo si hay fila; si no, cae al stock global (autoritativo)
+      const _row = _aidVal ? _stockAlmRows[stockKey(pid, _aidVal)] : null;
+      const _disp = _row ? Number(_row.stock || 0) : Number(_p.stock || 0);
+      if (_pedidoPorProd[pid] > _disp) {
+        toast('err', 'Sin stock suficiente', _p.nombre + ' — quedan ' + _disp + ' y la factura pide ' + _pedidoPorProd[pid]);
         return;
       }
     }
@@ -15732,6 +15738,17 @@
         }
       } catch (e) {}
       try { await getAPI().patch('pos_seriales', 'venta_id=eq.' + id, { estado: 'disponible', venta_id: null }); } catch (e) {}
+      // A1: revertir el fiado del cliente (en memoria; cargarSaldosCli lo reconstruye de la base)
+      try { if (Number(v.credito_monto || 0) > 0 && v.cliente_id) { _fiadoByCli[v.cliente_id] = Math.max(0, Number(_fiadoByCli[v.cliente_id] || 0) - Number(v.credito_monto || 0)); } } catch (e) {}
+      // A6: cancelar el plan de cuotas de esta venta (pos_fin_cuotas NO tiene columna 'estado')
+      try {
+        const fins = await getAPI().get('pos_financiamientos', 'select=id&venta_id=eq.' + id) || [];
+        for (const f of fins) {
+          await getAPI().patch('pos_financiamientos', 'id=eq.' + f.id, { estado: 'cancelado' }).catch(() => {});
+          const fm = (_fins || []).find(x => String(x.id) === String(f.id)); if (fm) fm.estado = 'cancelado';
+        }
+      } catch (e) {}
+      try { await cargarSaldosCli(); } catch (e) {}
       v.estado = 'anulada';
       toast('ok', 'Factura anulada', 'Stock devuelto y contabilidad revertida');
       pintarHistorial();
@@ -17087,7 +17104,14 @@
       const byc = {}; cu.forEach(x => byc[x.codigo] = x);
       const ln = (cod, nom, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nom, debito: Math.round(d), credito: Math.round(h) }; };
       const caja = Number(c.efe || 0) + Number(c.tar || 0) + Number(c.tra || 0) + Number(c.che || 0) + Number(c.nc || 0);
-      const lineas = [ln('1101', 'Caja', caja, 0), ln('1103', 'Cuentas por cobrar (clientes)', Number(c.credito || 0), 0), ln('4101', 'Ventas', 0, Number(c.subtotal || 0)), ln('2102', 'ITBIS por pagar', 0, Number(c.itbis || 0))].filter(Boolean);
+      // Costo de ventas (COGS): baja el inventario contable en cada venta (Debe 5101 / Haber 1104).
+      // Como pos_venta_items NO guarda costo, se lee de pos_productos.costo.
+      let costo = 0;
+      try {
+        const vitems = await getAPI().get('pos_venta_items', 'select=producto_id,cantidad&venta_id=eq.' + venta.id) || [];
+        for (const it of vitems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') costo += Number(p.costo || 0) * Number(it.cantidad || 0); }
+      } catch (e) {}
+      const lineas = [ln('1101', 'Caja', caja, 0), ln('1103', 'Cuentas por cobrar (clientes)', Number(c.credito || 0), 0), ln('4101', 'Ventas', 0, Number(c.subtotal || 0)), ln('2102', 'ITBIS por pagar', 0, Number(c.itbis || 0)), ln('5101', 'Costo de mercancía vendida', costo, 0), ln('1104', 'Inventario de mercancías', 0, costo)].filter(Boolean);
       if (lineas.length < 2) return;
       const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id });
       const aid = (as && as[0] && as[0].id); if (!aid) return;
@@ -17308,6 +17332,7 @@
   function stockEnAlm(pid, aid) { const r = _stockAlmRows[stockKey(pid, aid)]; return r ? Number(r.stock || 0) : 0; }
   function almTotalUnidades(aid) { let s = 0; Object.keys(_stockAlmRows).forEach(k => { if (k.endsWith('|' + aid)) s += Number(_stockAlmRows[k].stock || 0); }); return s; }
   async function upsertStockAlm(pid, aid, nuevo) {
+    nuevo = Math.max(0, Number(nuevo || 0)); // nunca por debajo de 0 (evita stock de almacén negativo)
     const k = stockKey(pid, aid); const r = _stockAlmRows[k];
     if (r && r.id) { await getAPI().patch('pos_stock_almacen', 'id=eq.' + r.id, { stock: nuevo }); r.stock = nuevo; }
     else { const res = await getAPI().post('pos_stock_almacen', { producto_id: pid, almacen_id: aid, stock: nuevo }); const row = res && res[0]; _stockAlmRows[k] = { id: row ? row.id : null, stock: nuevo }; }
