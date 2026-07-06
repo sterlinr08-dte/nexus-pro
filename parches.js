@@ -20692,6 +20692,23 @@ try {
       '<script>window.print();<\/script></body></html>');
     w.document.close();
   };
+  // Plantilla de examen físico por sistemas (sale con lo normal; el doctor cambia solo lo anormal)
+  var EXAM_SISTEMAS = [
+    ['general', 'Estado general', 'Alerta, orientado, buen estado general, afebril'],
+    ['cabeza', 'Cabeza', 'Normocéfalo, sin lesiones'],
+    ['ojos', 'Ojos', 'Pupilas isocóricas reactivas, conjuntivas normales'],
+    ['orl', 'Oído/Nariz/Garganta', 'Sin secreciones, faringe normal'],
+    ['cuello', 'Cuello', 'Sin adenopatías, tiroides normal, sin ingurgitación yugular'],
+    ['torax', 'Tórax / Pulmones', 'Murmullo vesicular conservado, sin estertores'],
+    ['cardio', 'Cardiovascular', 'Ruidos cardíacos rítmicos, sin soplos'],
+    ['abdomen', 'Abdomen', 'Blando, depresible, no doloroso, sin masas'],
+    ['extremidades', 'Extremidades', 'Sin edema, pulsos presentes, movilidad conservada'],
+    ['neuro', 'Neurológico', 'Sin déficit focal, fuerza y sensibilidad conservadas'],
+    ['piel', 'Piel', 'Íntegra, sin lesiones'],
+    ['mental', 'Estado mental / cognición', 'Sin deterioro evidente'],
+    ['marcha', 'Marcha / equilibrio', 'Marcha estable, sin riesgo de caídas']
+  ];
+  window.nxMdExReset = function () { EXAM_SISTEMAS.forEach(function (s) { var el = document.getElementById('mdEx_' + s[0]); if (el) el.value = s[2]; }); };
   window.nxMdConNueva = function (pacId, citaId) {
     var ops = _pacs.filter(function (p) { return p.activo !== false; }).map(function (p) { return '<option value="' + p.id + '"' + (String(p.id) === String(pacId || '') ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('');
     modal('nxMdMCon',
@@ -20704,6 +20721,9 @@ try {
       '<div class="nxMdFr"><label>Temp. °C</label><input id="mdCoTem" placeholder="36.8"></div>' +
       '<div class="nxMdFr"><label>Peso lb</label><input id="mdCoPes" placeholder="150"></div>' +
       '<div class="nxMdFr"><label>Glucosa</label><input id="mdCoGlu" placeholder="98"></div></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 2px"><span style="font-size:10.5px;font-weight:800;color:#0f766e;text-transform:uppercase;letter-spacing:.4px">Examen físico por sistemas</span><button type="button" onclick="window.nxMdExReset()" style="border:1px solid #99f6e4;background:#f0fdfa;color:#0d9488;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit">Todo normal</button></div>' +
+      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:6px">Ya viene con lo normal — cambia solo lo que encuentres anormal.</div>' +
+      '<div style="display:grid;gap:5px;margin-bottom:8px">' + EXAM_SISTEMAS.map(function (s) { return '<div style="display:grid;grid-template-columns:132px 1fr;gap:8px;align-items:center"><label style="font-size:11px;font-weight:700;color:#0f766e">' + esc(s[1]) + '</label><input id="mdEx_' + s[0] + '" value="' + esc(s[2]) + '" style="width:100%;height:34px;border:1.5px solid #e2e8f0;border-radius:8px;padding:0 9px;font-size:12.5px;color:#0f172a;background:#fff;font-family:inherit;outline:none"></div>'; }).join('') + '</div>' +
       '<div class="nxMdFr"><label>Diagnóstico</label><input id="mdCoDia"></div>' +
       '<div class="nxMdFr"><label>Tratamiento / plan</label><textarea id="mdCoTra" rows="2"></textarea></div>' +
       '<div class="nxMdFr"><label>Récipe (una línea por medicamento)</label><textarea id="mdCoRec" rows="3" placeholder="Losartán 50mg — 1 diaria x 30 días"></textarea></div>' +
@@ -20717,7 +20737,8 @@ try {
   window.nxMdConGuardar = async function () {
     var pid = val('mdCoPac'); if (!pid) { toast('err', 'Falta el paciente'); return; }
     var p = pacDe(pid); var citaId = val('mdCoCita');
-    var d = { paciente_id: pid, paciente_nombre: p ? p.nombre : null, cita_id: citaId || null, fecha: hoyISO(), motivo: val('mdCoMotivo').trim() || null, presion: val('mdCoPre').trim() || null, pulso: val('mdCoPul').trim() || null, temperatura: val('mdCoTem').trim() || null, peso: val('mdCoPes').trim() || null, glucosa: val('mdCoGlu').trim() || null, diagnostico: val('mdCoDia').trim() || null, tratamiento: val('mdCoTra').trim() || null, receta: val('mdCoRec').trim() || null, indicaciones: val('mdCoInd').trim() || null, precio: moneyVal('mdCoPre2'), pagado: val('mdCoPag') === 'si' };
+    var _ex = EXAM_SISTEMAS.map(function (s) { var v = (val('mdEx_' + s[0]) || '').trim(); return v ? s[1] + ': ' + v : ''; }).filter(Boolean).join('\n');
+    var d = { paciente_id: pid, paciente_nombre: p ? p.nombre : null, cita_id: citaId || null, fecha: hoyISO(), motivo: val('mdCoMotivo').trim() || null, presion: val('mdCoPre').trim() || null, pulso: val('mdCoPul').trim() || null, temperatura: val('mdCoTem').trim() || null, peso: val('mdCoPes').trim() || null, glucosa: val('mdCoGlu').trim() || null, examen_fisico: _ex || null, diagnostico: val('mdCoDia').trim() || null, tratamiento: val('mdCoTra').trim() || null, receta: val('mdCoRec').trim() || null, indicaciones: val('mdCoInd').trim() || null, precio: moneyVal('mdCoPre2'), pagado: val('mdCoPag') === 'si' };
     try {
       var r = await getAPI().post('med_consultas', d);
       if (r && r[0]) _cons.unshift(r[0]);
@@ -20734,7 +20755,7 @@ try {
     var sec = function (t, v) { return v ? '<div style="margin-bottom:8px"><b style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + t + '</b><div style="font-size:12.5px;color:#0f172a;white-space:pre-wrap">' + esc(v) + '</div></div>' : ''; };
     modal('nxMdMVer',
       '<div style="font-weight:800;font-size:14px;margin-bottom:2px">' + esc(nomPac(c)) + '</div><div class="nxMdSub" style="margin-bottom:10px">' + fechaDMY(c.fecha) + (Number(c.precio) ? ' · ' + fmt(c.precio) + (c.pagado ? ' (pagada)' : ' (pendiente)') : '') + '</div>' +
-      vitH + sec('Motivo', c.motivo) + sec('Diagnóstico', c.diagnostico) + sec('Tratamiento', c.tratamiento) + sec('Récipe', c.receta) + sec('Indicaciones', c.indicaciones) +
+      vitH + sec('Motivo', c.motivo) + sec('Examen físico', c.examen_fisico) + sec('Diagnóstico', c.diagnostico) + sec('Tratamiento', c.tratamiento) + sec('Récipe', c.receta) + sec('Indicaciones', c.indicaciones) +
       '<div class="nxMdBtns"><button class="nxMdBtn g" type="button" onclick="document.getElementById(\'nxMdMVer\').remove()">Cerrar</button>' +
       (c.receta ? '<button class="nxMdBtn p" type="button" onclick="window.nxMdReceta(\'' + c.id + '\')"><i class="ti ti-printer"></i> Imprimir récipe</button>' : '') + '</div>', 600);
   };
