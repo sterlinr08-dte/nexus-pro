@@ -13817,6 +13817,7 @@
   let _entFiltro = 'todas';
   let _facFecha = '';
   let _facSubTab = 'datos';
+  let _facCatSel = ''; // categoría activa en el rediseño pro de Facturación
   let _histQ = '', _histDesde = '', _histHasta = '';
   // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
   let _prodSort = { k: 'nombre', d: 1 };
@@ -14363,22 +14364,51 @@
     }
     const cliOpts = `<option value="">— Consumidor final —</option>` + _clientes.filter(c => c.es_cliente !== false).map(c => `<option value="${c.id}"${String(_factCli) === String(c.id) ? ' selected' : ''}>${esc(c.codigo ? c.codigo + ' · ' : '')}${esc(c.nombre)}${c.nivel_precio === 'mayor' ? ' (por mayor)' : ''}</option>`).join('');
     const ncfOpts = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('');
-    return `<div class="nxFac">
-        <div class="nxFacHead">
-          <div class="nxFacF" style="grid-column:span 2"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
-          ${esPreTab() ? `<div class="nxFacF nxFacFsm"><label>Prefactura No.</label><div class="nxFacNum" style="gap:6px"><span style="color:#7c3aed">${peekPref()}</span><i class="ti ti-search" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" style="margin-left:auto;font-size:14px;color:#7c3aed;cursor:pointer"></i></div></div>` : `<div class="nxFacF nxFacFsm"><label>Prefactura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facPrefN" placeholder="No…" inputmode="numeric" title="Escribe el número de la prefactura y ENTER para jalarla" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:14px;color:#7c3aed;font-family:inherit" onkeydown="if(event.key===&#39;Enter&#39;){this.blur()}" onblur="window.nxPrefJalar(this.value)"><i class="ti ti-search" onclick="window.nxPrefLista()" title="Buscar prefacturas guardadas" style="font-size:14px;color:#7c3aed;cursor:pointer"></i></div></div>
-          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist(0)" title="Ver todas las facturas" style="font-size:14px;color:#2563eb;cursor:pointer"></i></div></div>`}
-          <div class="nxFacF nxFacFsm"><label>Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"></div>
-          <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
-          <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito</label></div>
+    const pre = esPreTab();
+    const catTabs = `<button type="button" class="nx-inv-tab${_facCatSel === '' ? ' on' : ''}" data-cat="" onclick="window.nxFacCat('')">Todos</button>` + _cats.map(c => `<button type="button" class="nx-inv-tab${String(_facCatSel) === String(c.id) ? ' on' : ''}" data-cat="${c.id}" onclick="window.nxFacCat('${c.id}')">${esc(c.nombre)}</button>`).join('');
+    const numField = pre
+      ? `<div class="nx-inv-field"><div class="nx-inv-label">Prefactura No.</div><div style="display:flex;align-items:center;gap:6px"><span style="font-weight:800;color:#7c3aed;font-size:15px">${peekPref()}</span><i class="ti ti-search" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" style="margin-left:auto;font-size:15px;color:#7c3aed;cursor:pointer"></i></div></div>`
+      : `<div class="nx-inv-field"><div class="nx-inv-label">No. Factura / NCF</div><div style="display:flex;align-items:center;gap:6px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist(0)" title="Ver todas las facturas" style="font-size:15px;color:#2563eb;cursor:pointer"></i></div><label style="display:flex;align-items:center;gap:6px;margin-top:7px;cursor:pointer"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)" style="width:16px;height:16px;accent-color:#2563eb"><span style="font-size:11px;font-weight:700;color:#334155">A crédito (fiado)</span></label></div>`;
+    return `<div class="nx-invoice-pro">
+      <div class="nx-inv-shell">
+        <div class="nx-inv-card">
+          <div class="nx-inv-head">
+            <div class="nx-inv-title">${pre ? 'PREFACTURA' : 'FACTURACIÓN'}</div>
+            <div class="nx-inv-steps">
+              <span class="nx-inv-step on"><span class="nx-inv-stepn ok"><i class="ti ti-check"></i></span> Cliente</span><i class="ti ti-arrow-right"></i>
+              <span class="nx-inv-step on"><span class="nx-inv-stepn">2</span> Productos</span><i class="ti ti-arrow-right"></i>
+              <span class="nx-inv-step"><span class="nx-inv-stepn">3</span> Pago</span><i class="ti ti-arrow-right"></i>
+              <span class="nx-inv-step"><span class="nx-inv-stepn">4</span> Confirmar</span>
+            </div>
+          </div>
+          <div class="nx-inv-info">
+            <div class="nx-inv-field"><div class="nx-inv-label">Cliente</div><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
+            <div class="nx-inv-field"><div class="nx-inv-label">Tipo de comprobante</div><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
+            ${numField}
+            <div class="nx-inv-field"><div class="nx-inv-label">Fecha</div><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-weight:700;color:#0f172a;font-family:inherit;font-size:13.5px"></div>
+          </div>
+          <div class="nx-inv-tabs">${catTabs}</div>
+          <div class="nx-inv-search">
+            <div style="flex:1;position:relative;min-width:0">
+              <input type="text" id="facBuscar" placeholder="Buscar producto por nombre, código, IMEI, serial…" autocomplete="off" oninput="window.nxFacBuscar(this.value)" onfocus="window.nxFacBuscar(this.value)" onkeydown="if(event.key==='Enter'){window.nxFacBuscarEnter(this.value)}">
+              <div id="facSug" class="nxFacSug"></div>
+            </div>
+            <button type="button" class="nx-inv-btn" onclick="window.nxFacScan('imei')"><i class="ti ti-scan"></i> Escanear IMEI</button>
+            <button type="button" class="nx-inv-btn" onclick="window.nxFacScan('code')"><i class="ti ti-barcode"></i> Código de Barras</button>
+          </div>
+          <div class="nx-inv-tblwrap"><div id="facTabla"></div></div>
+          <div class="nx-inv-toolbar">
+            <button type="button" class="nx-inv-toolbtn" onclick="window.nxProdPicker('factura')"><i class="ti ti-plus"></i> Agregar producto</button>
+            <button type="button" class="nx-inv-toolbtn" onclick="window.nxPrefLista()"><i class="ti ti-file-description"></i> Prefacturas</button>
+            <button type="button" class="nx-inv-toolbtn danger" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Limpiar carrito</button>
+          </div>
         </div>
-        <div class="nxFacAdd" style="margin-bottom:12px">
-          <div class="nxLupaBox" style="margin:0;border-color:#2563eb"><i class="ti ti-search click" onclick="window.nxProdPicker('factura')" title="Ver todos los artículos"></i>
-          <input type="text" id="facBuscar" placeholder="Buscar artículo (toca la lupa para ver todos)…" autocomplete="off" oninput="window.nxFacBuscar(this.value)" onfocus="window.nxFacBuscar(this.value)"></div>
-          <div id="facSug" class="nxFacSug"></div>
-        </div>
-        <div id="facTabla"></div>
-      </div>`;
+        <div class="nx-inv-card nx-inv-summary" id="facResumen"></div>
+      </div>
+      <div class="nx-inv-shortcuts">
+        <span><b>F2</b> Buscar producto</span><span><b>Ctrl+B</b> Código de barras</span><span><b>F8</b> Descuento</span><span><b>F9</b> Garantía</span><span><b>F10</b> Limpiar carrito</span><span><b>Alt+P</b> Imprimir</span>
+      </div>
+    </div>`;
   }
   window.nxFacSubTab = function (t) { _facSubTab = t || 'datos'; };
   window.nxFacSetCli = function (v) {
@@ -15105,36 +15135,93 @@
     const cont = document.getElementById('facTabla'); if (!cont) return;
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => {
-      const exi = prodStock(it.producto_id);
       const prod = _prods.find(x => String(x.id) === String(it.producto_id));
-      const serUI = (prod && prod.serial) ? `<div style="margin-top:3px"><button type="button" class="btn bsm bghost" style="font-size:9.5px;padding:2px 8px" onclick="window.nxFacSerial(${i})"><i class="ti ti-device-mobile"></i> IMEI ${(it.seriales || []).length}/${it.cantidad}</button>${(it.seriales || []).length ? ` <span style="font-size:9px;color:#6d28d9;font-family:var(--mono,monospace)">${(it.seriales || []).map(s => esc(s.serial)).join(', ')}</span>` : ''}</div>` : '';
+      const img = (prod && prod.imagen) ? `<img src="${esc(prod.imagen)}" onerror="this.style.display='none'">` : `<div class="nx-inv-noimg"><i class="ti ti-device-mobile"></i></div>`;
+      const gd = prod ? Number(prod.garantia_dias || 0) : 0;
+      const gm = Math.round(gd / 30);
+      const gtxt = gd > 0 ? (gd >= 30 ? gm + (gm === 1 ? ' mes' : ' meses') : gd + ' días') : '';
+      const gbadge = gtxt ? `<span class="nx-inv-badge">${gtxt}</span>` : '<span style="color:#cbd5e1">—</span>';
+      const serTxt = (prod && prod.serial)
+        ? `<button type="button" class="nx-inv-mini" onclick="window.nxFacSerial(${i})"><i class="ti ti-device-mobile"></i> IMEI ${(it.seriales || []).length}/${it.cantidad}</button>${(it.seriales || []).length ? `<div style="margin-top:3px;font-size:10px;color:#6d28d9;font-family:var(--mono,monospace)">${(it.seriales || []).map(s => esc(s.serial)).join(', ')}</div>` : ''}`
+        : '—';
       return `<tr>
-        <td class="nxFacCod">${esc(prodCodigo(it.producto_id) || '—')}</td>
-        <td class="nxFacDesc">${esc(it.nombre)}${serUI}</td>
-        <td class="nxFacExi"><span${exi <= 0 ? ' class="nxFacExi0"' : ''}>${exi}</span></td>
-        <td class="nxFacCant"><input inputmode="numeric" value="${it.cantidad}" onchange="window.nxFacCant(${i},this.value)"></td>
-        <td class="nxFacPre"><input inputmode="decimal" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
-        <td class="nxFacDsc"><div class="nxFacDscBox"><input inputmode="decimal" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
-        <td class="nxFacImp">${fmt(lineImporte(it))}</td>
-        <td class="nxFacDel"><button type="button" onclick="window.nxPosDel(${i});window.nxFacRepaint()"><i class="ti ti-x"></i></button></td>
+        <td data-l="#" style="font-weight:800;color:#94a3b8">${i + 1}</td>
+        <td data-l="Producto"><div class="nx-inv-product">${img}<div style="min-width:0"><div class="nx-inv-pnom">${esc(it.nombre)}</div><div class="nx-inv-pcod">COD: ${esc(prodCodigo(it.producto_id) || '—')}</div></div></div></td>
+        <td data-l="IMEI/Serial" class="nx-inv-serial">${serTxt}</td>
+        <td data-l="Garantía">${gbadge}</td>
+        <td data-l="Precio" style="text-align:right"><input class="nx-inv-pinput" inputmode="decimal" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
+        <td data-l="Cantidad"><div class="nx-inv-qty"><button type="button" onclick="window.nxFacQtyStep(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
+        <td data-l="Descuento"><div class="nx-inv-dscbox"><input inputmode="decimal" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
+        <td data-l="Total" style="text-align:right;font-weight:800;color:#0f172a">${fmt(lineImporte(it))}</td>
+        <td class="nx-inv-del"><button type="button" onclick="window.nxPosDel(${i});window.nxFacRepaint()"><i class="ti ti-x"></i></button></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="8" class="nxFacEmpty">Aún no hay artículos. Búscalos arriba y se agregan a la factura.</td></tr>`;
-    cont.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl">
-        <thead><tr><th>Código</th><th>Descripción</th><th>Exist.</th><th>Cant.</th><th>Precio</th><th>Desc.</th><th>Importe</th><th></th></tr></thead>
+    }).join('') : `<tr><td colspan="9" class="nx-inv-empty">Aún no hay artículos. Búscalos arriba (o escanéalos) y se agregan a la factura.</td></tr>`;
+    cont.innerHTML = `<table class="nx-inv-table">
+        <thead><tr><th>#</th><th>Producto</th><th>IMEI / Serial</th><th>Garantía</th><th style="text-align:right">Precio</th><th>Cantidad</th><th>Descuento</th><th style="text-align:right">Total</th><th></th></tr></thead>
         <tbody>${filas}</tbody>
-      </table></div>
-      <div class="nxFacTot">
-        ${t.descuento > 0 ? `<div class="nxFacTotR"><span>Descuento</span><span style="color:#dc2626">− ${fmt(t.descuento)}</span></div>` : ''}
-        <div class="nxFacTotR"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
-        <div class="nxFacTotR"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
-        <div class="nxFacTotR nxFacTotBig"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
+      </table>`;
+    // Panel derecho: resumen + métodos de pago (abren el modal de cobro) + acciones
+    const res = document.getElementById('facResumen'); if (!res) return;
+    const pre = esPreTab();
+    const metodos = [['Efectivo', 'ti-cash'], ['Tarjeta', 'ti-credit-card'], ['Transferencia', 'ti-building-bank'], ['Financiamiento', 'ti-calendar-dollar'], ['Nota de Crédito', 'ti-file-invoice']];
+    const payAction = pre ? 'window.nxPrefGuardar()' : 'window.nxFacFacturar()';
+    res.innerHTML = `<div class="nx-inv-sumtitle">Resumen de venta</div>
+      <div class="nx-inv-sumrow"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
+      ${t.descuento > 0 ? `<div class="nx-inv-sumrow"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
+      <div class="nx-inv-sumrow"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
+      <div class="nx-inv-total"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
+      ${pre ? '' : `<div class="nx-inv-sumtitle" style="margin-top:18px">Detalle de pago</div>
+      <div class="nx-inv-paylist">${metodos.map(m => `<button type="button" class="nx-inv-payrow" onclick="${payAction}"><i class="ti ${m[1]}"></i> ${m[0]}<span>Registrar</span></button>`).join('')}</div>
+      <div class="nx-inv-pending"><span>Pendiente / Cambio</span><b>${fmt(t.total)}</b></div>`}
+      <div class="nx-inv-sumtitle" style="margin-top:18px">Opciones adicionales</div>
+      <div class="nx-inv-opts">
+        <button type="button" class="nx-inv-opt" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar Prefactura</button>
+        <button type="button" class="nx-inv-opt" onclick="window.nxPosTab('cotizaciones')"><i class="ti ti-clipboard-text"></i> Cotización</button>
+        <button type="button" class="nx-inv-opt" onclick="window.nxPosTab('prefhist')"><i class="ti ti-files"></i> Prefacturas</button>
+        <button type="button" class="nx-inv-opt" onclick="window.nxPosTab('ventas')"><i class="ti ti-history"></i> Historial</button>
       </div>
-      <div class="nxFacActions">
-        ${_cart.length ? `<button type="button" class="btn bghost bsm" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Vaciar</button>` : ''}
-        ${esPreTab()
-          ? `<button type="button" class="btn bc1 nxFacBtn" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPrefGuardar()" style="background:#7c3aed;border-color:#7c3aed"><i class="ti ti-device-floppy"></i> Guardar prefactura ${fmt(t.total)}</button>`
-          : `<button type="button" class="btn bc1 nxFacBtn" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>`}
+      <div class="nx-inv-actions">
+        <button type="button" class="nx-inv-btn danger" onclick="window.nxPosVaciar();window.nxFacRepaint()">Cancelar</button>
+        ${pre
+          ? `<button type="button" class="nx-inv-cobrar" ${_cart.length ? '' : 'disabled'} style="background:#7c3aed" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar · ${fmt(t.total)}</button>`
+          : `<button type="button" class="nx-inv-cobrar" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar · ${fmt(t.total)}</button>`}
       </div>`;
+  }
+  // Stepper de cantidad del rediseño (respeta stock al subir; ajusta combos)
+  window.nxFacQtyStep = function (i, d) { const it = _cart[i]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; const _old = Number(it.cantidad || 0); const n = Math.max(0, _old + d); if (n === 0) { _cart.splice(i, 1); } else { it.cantidad = n; ajustarCombos(it.producto_id, n - _old); } pintarFactura(); };
+  // Filtro por categoría: muestra los artículos de esa categoría en el buscador
+  window.nxFacCat = function (cid) {
+    _facCatSel = String(cid || '');
+    try { document.querySelectorAll('.nx-invoice-pro .nx-inv-tab').forEach(function (b) { b.classList.toggle('on', String(b.getAttribute('data-cat') || '') === _facCatSel); }); } catch (e) {}
+    const box = document.getElementById('facSug'); if (!box) return;
+    const lista = _prods.filter(p => !_facCatSel || String(p.categoria_id) === _facCatSel).slice(0, 40);
+    if (!lista.length) { box.innerHTML = '<div class="nxFacSugEmpty">Sin artículos en esta categoría</div>'; box.style.display = 'block'; return; }
+    box.innerHTML = lista.map(p => `<div class="nxFacSugIt" onclick="window.nxFacSugSel('${p.id}')"><div style="flex:1;min-width:0"><div class="nxFacSugNom">${esc(p.nombre || '')}</div><div class="nxFacSugSub">${p.codigo ? esc(p.codigo) : ''}${p.referencia ? ' · ' + esc(p.referencia) : ''}</div></div><div class="nxFacSugPre">${fmt(precioCli(p))}<span>${Number(p.stock || 0)} und</span></div></div>`).join('');
+    box.style.display = 'block';
+  };
+  // Botones "Escanear": enfocan el buscador (los lectores USB/Bluetooth escriben ahí)
+  window.nxFacScan = function (kind) {
+    const el = document.getElementById('facBuscar'); if (el) { el.focus(); el.placeholder = kind === 'imei' ? 'Escanea o escribe el IMEI / serial…' : 'Escanea o escribe el código de barras…'; }
+    try { toast('info', kind === 'imei' ? 'Listo para escanear IMEI' : 'Listo para escanear código', 'Usa el lector o escribe y presiona Enter'); } catch (e) {}
+  };
+  // Enter en el buscador: si hay un código/serial exacto o un único resultado, agrega el artículo (scanner)
+  window.nxFacBuscarEnter = function (q) {
+    const t = String(q || '').trim().toLowerCase(); if (!t) return;
+    let p = _prods.find(x => String(x.codigo || '').toLowerCase() === t);
+    if (!p) { const hit = _prods.filter(x => ((x.nombre || '') + ' ' + (x.codigo || '') + ' ' + (x.referencia || '')).toLowerCase().includes(t)); if (hit.length === 1) p = hit[0]; }
+    if (!p) return;
+    const box = document.getElementById('facSug'); if (box) { box.innerHTML = ''; box.style.display = 'none'; }
+    const inp = document.getElementById('facBuscar'); if (inp) inp.value = '';
+    if (p.serial) { window.nxFacSugSel(p.id); } else { window.nxFacAdd(p.id); }
+  };
+  // Atajos de teclado, SOLO en Facturación/Prefactura: F2 buscar · F10 limpiar carrito
+  if (!window.__nxInvKeys) {
+    window.__nxInvKeys = true;
+    document.addEventListener('keydown', function (e) {
+      if (_posTab !== 'factura' && _posTab !== 'prefactura') return;
+      if (e.key === 'F2') { e.preventDefault(); const el = document.getElementById('facBuscar'); if (el) el.focus(); }
+      else if (e.key === 'F10') { e.preventDefault(); if (_cart.length) { window.nxPosVaciar(); window.nxFacRepaint(); } }
+    });
   }
 
   // ── Cobrar / checkout ──
@@ -18898,6 +18985,8 @@
     // Botones del NÚCLEO (bc1 morado) en azul real DENTRO del POS y sus modales (no toca seguros)
     st.textContent += '.nxLupaBox{display:flex;align-items:center;gap:8px;border:1.5px solid #cbd5e1;border-radius:11px;background:#fff;padding:0 12px;margin-bottom:8px}.nxLupaBox>i{color:#94a3b8;font-size:16px;flex:none;background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;position:static!important;padding:0!important}.nxLupaBox>i.click{color:#2563eb;cursor:pointer}.nxLupaBox input{flex:1;min-width:0;border:none;outline:none;height:42px;font-size:13px;background:transparent;color:#1e293b;font-family:inherit}' + 'html body .nc i.nxPpkChev,html body i.nxPpkChev{background:#f1f5f9!important;background-image:none!important;color:#64748b!important;box-shadow:none!important;border:0!important;text-shadow:none!important}html body .nc .nxPpkWrap.on i.nxPpkChev,html body .nxPpkWrap.on i.nxPpkChev{background:#dbeafe!important;color:#2563eb!important}';
     st.textContent += '.nxRepKb{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}.nxRepCol{min-width:210px;max-width:240px;flex:1 0 210px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px}.nxRepColH{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--rc,#475569);border-bottom:2px solid var(--rc,#e2e8f0);padding-bottom:6px;margin-bottom:8px}.nxRepColH b{background:#fff;border-radius:7px;padding:1px 7px;font-size:10px}.nxRepCard{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;margin-bottom:7px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(15,23,42,.05)}.nxRepCard:active{opacity:.75}.nxRepNum{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:#2563eb;margin-bottom:2px}.nxRepNum span{color:#94a3b8;font-weight:700}.nxRepEq{font-size:12.5px;font-weight:800;color:#0f172a;line-height:1.15}.nxRepCli{font-size:10.5px;color:#475569}.nxRepFalla{font-size:10px;color:#64748b;margin-top:2px}.nxRepPre{font-size:11.5px;font-weight:800;color:#16a34a;margin-top:3px}.nxRepEmpty{text-align:center;color:#cbd5e1;font-size:11px;padding:10px}.nxRepChips{display:flex;gap:5px;flex-wrap:wrap}.nxRepChip{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}.nxRepChip.on{background:var(--rc,#2563eb);border-color:var(--rc,#2563eb);color:#fff}.nxTQuick{margin-left:auto;border:0;background:#2563eb;color:#fff;border-radius:11px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.3)}.nxTQuick:active{background:#1d4ed8}' + '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}.nxPayTiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 10px}.nxPayTile{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 2px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}.nxPayTile i{font-size:17px;color:#475569}.nxPayTile span{font-size:8px;font-weight:800;color:#475569;letter-spacing:.3px}.nxPayTile.on{border-color:#2563eb;background:#eff6ff}.nxPayTile.on i,.nxPayTile.on span{color:#2563eb}@media(max-width:380px){.nxPayTile i{font-size:15px}.nxPayTile{padding:7px 1px}}';
+    // ── Rediseño PRO de la pantalla de Facturación (mockup BAYOL CELL aprobado) ──
+    st.textContent += '.nx-invoice-pro{color:#0f172a}.nx-inv-shell{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}.nx-inv-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.06)}.nx-inv-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;flex-wrap:wrap;border-bottom:1px solid #f1f5f9}.nx-inv-title{font-size:20px;font-weight:800;letter-spacing:-.02em;color:#0f172a}.nx-inv-steps{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#94a3b8;flex-wrap:wrap}.nx-inv-step{display:inline-flex;align-items:center;gap:6px;font-weight:700}.nx-inv-step.on{color:#2563eb}.nx-inv-stepn{width:20px;height:20px;border-radius:50%;background:#e5e7eb;color:#64748b;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}.nx-inv-step.on .nx-inv-stepn{background:#2563eb;color:#fff}.nx-inv-stepn.ok{background:#16a34a;color:#fff}.nx-inv-steps>i{color:#cbd5e1;font-size:14px}.nx-inv-info{display:grid;grid-template-columns:1.2fr .9fr .9fr .7fr;gap:12px;padding:16px 18px}.nx-inv-field{border:1px solid #e5e7eb;background:#fff;border-radius:12px;padding:10px 12px;min-width:0}.nx-inv-label{font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}.nx-inv-field select{width:100%;border:none;outline:none;background:transparent;font-size:13.5px;font-weight:700;color:#0f172a;font-family:inherit}.nx-inv-tabs{display:flex;gap:8px;padding:12px 18px;overflow-x:auto}.nx-inv-tab{border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:9px 14px;font-weight:700;font-size:12.5px;color:#475569;cursor:pointer;white-space:nowrap;font-family:inherit}.nx-inv-tab.on{background:#2563eb;color:#fff;border-color:#2563eb}.nx-inv-search{display:flex;gap:10px;padding:0 18px 12px;align-items:stretch}.nx-inv-search input{width:100%;border:1px solid #dbe3ef;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;background:#fff;color:#0f172a;font-family:inherit}.nx-inv-search input:focus{border-color:#2563eb}.nx-inv-btn{border:1px solid #dbe3ef;background:#fff;border-radius:12px;padding:11px 14px;font-weight:800;font-size:12.5px;color:#334155;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-family:inherit}.nx-inv-btn i{font-size:15px}.nx-inv-btn.danger{background:#ef4444;color:#fff;border-color:#ef4444}.nx-inv-tblwrap{padding:4px 10px 8px;overflow-x:auto}.nx-inv-table{width:100%;border-collapse:collapse;min-width:640px}.nx-inv-table th{text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;letter-spacing:.3px;font-weight:800;padding:10px 12px;border-bottom:1px solid #e5e7eb;white-space:nowrap}.nx-inv-table td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:middle;font-size:13px;color:#334155}.nx-inv-product{display:flex;align-items:center;gap:10px}.nx-inv-product img{width:44px;height:44px;object-fit:contain;border-radius:10px;background:#f8fafc;flex:none}.nx-inv-noimg{width:44px;height:44px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;flex:none}.nx-inv-noimg i{font-size:20px}.nx-inv-pnom{font-weight:700;color:#0f172a;line-height:1.2}.nx-inv-pcod{font-size:10.5px;color:#2563eb;font-weight:700;margin-top:2px}.nx-inv-serial{font-family:var(--mono,monospace);font-size:11px;color:#475569}.nx-inv-badge{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:800;white-space:nowrap}.nx-inv-mini{border:1.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;border-radius:8px;padding:4px 9px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;gap:4px;align-items:center}.nx-inv-pinput{width:96px;text-align:right;border:1.5px solid #e5e7eb;border-radius:9px;padding:8px;font-size:13px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nx-inv-qty{display:inline-flex;align-items:center;gap:8px}.nx-inv-qty button{width:30px;height:30px;border-radius:9px;border:1.5px solid #e5e7eb;background:#f8fafc;font-size:17px;font-weight:800;color:#475569;cursor:pointer;line-height:1;font-family:inherit}.nx-inv-qty span{min-width:20px;text-align:center;font-weight:800}.nx-inv-dscbox{display:inline-flex;align-items:center;border:1.5px solid #e5e7eb;border-radius:9px;overflow:hidden;background:#fff}.nx-inv-dscbox input{width:52px;text-align:right;border:none;outline:none;padding:8px;font-size:12.5px;font-weight:700;background:transparent;font-family:inherit}.nx-inv-dscbox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:8px;cursor:pointer;border-left:1px solid #e5e7eb;font-family:inherit}.nx-inv-del button{background:none;border:none;color:#f87171;font-size:18px;cursor:pointer;line-height:1}.nx-inv-del button:hover{color:#dc2626}.nx-inv-empty{text-align:center;color:#94a3b8;font-size:13px;padding:30px}.nx-inv-toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px 18px 18px}.nx-inv-toolbtn{border:1.5px dashed #cbd5e1;background:#f8fafc;border-radius:12px;padding:13px;font-weight:800;font-size:12.5px;color:#475569;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px}.nx-inv-toolbtn.danger{border-color:#fecaca;background:#fff5f5;color:#dc2626}.nx-inv-summary{position:sticky;top:12px;align-self:start;padding:18px}.nx-inv-sumtitle{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}.nx-inv-sumrow{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#475569;padding:5px 0}.nx-inv-sumrow b{color:#0f172a;font-weight:700}.nx-inv-total{display:flex;justify-content:space-between;align-items:center;font-size:20px;font-weight:900;color:#2563eb;border-top:1px solid #e5e7eb;padding-top:14px;margin-top:10px}.nx-inv-paylist{display:flex;flex-direction:column;gap:8px}.nx-inv-payrow{display:flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:11px;padding:11px 12px;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#334155;text-align:left}.nx-inv-payrow i{font-size:17px;color:#2563eb}.nx-inv-payrow span{margin-left:auto;font-size:11px;color:#94a3b8;font-weight:700}.nx-inv-payrow:hover{border-color:#bfdbfe;background:#f8faff}.nx-inv-pending{display:flex;justify-content:space-between;align-items:center;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:12px;font-size:12.5px;font-weight:800;color:#92400e}.nx-inv-pending b{font-size:16px}.nx-inv-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nx-inv-opt{border:1px solid #e5e7eb;background:#fff;border-radius:11px;padding:11px 8px;font-size:11.5px;font-weight:800;color:#475569;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;justify-content:center}.nx-inv-opt i{font-size:15px;color:#64748b}.nx-inv-actions{display:flex;gap:10px;margin-top:16px}.nx-inv-cobrar{flex:2;background:#2563eb;color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px}.nx-inv-cobrar:disabled{opacity:.5;cursor:default}.nx-inv-actions .nx-inv-btn.danger{flex:1;justify-content:center}.nx-inv-shortcuts{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding:12px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;font-size:11.5px;color:#64748b}.nx-inv-shortcuts span{display:inline-flex;align-items:center;gap:6px}.nx-inv-shortcuts b{background:#f1f5f9;border-radius:6px;padding:2px 7px;font-size:10.5px;color:#334155;font-weight:800}@media(max-width:980px){.nx-inv-shell{grid-template-columns:1fr}.nx-inv-summary{position:static}.nx-inv-info{grid-template-columns:1fr 1fr}}@media(max-width:640px){.nx-inv-info{grid-template-columns:1fr}.nx-inv-search{flex-direction:column}.nx-inv-table{min-width:0}.nx-inv-table thead{display:none}.nx-inv-table,.nx-inv-table tbody,.nx-inv-table tr,.nx-inv-table td{display:block;width:100%}.nx-inv-table tr{border:1px solid #e5e7eb;border-radius:14px;margin:10px 0;padding:6px 10px}.nx-inv-table td{border:none;border-bottom:1px solid #f6f8fb;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 2px}.nx-inv-table td:last-child{border-bottom:none}.nx-inv-table td::before{content:attr(data-l);font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;flex:none}.nx-inv-table td.nx-inv-del{justify-content:flex-end}.nx-inv-toolbar{grid-template-columns:1fr}.nx-inv-opts{grid-template-columns:1fr}}';
     document.head.appendChild(st);
     inyectarCSSTienda();
   }
