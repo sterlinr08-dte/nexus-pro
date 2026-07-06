@@ -13781,7 +13781,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -13827,6 +13827,8 @@
   let _prefs = []; // prefacturas abiertas
   let _cartFacSaved = [], _cartPre = []; // carritos separados: Factura vs Prefactura
   let _histSort = { k: 'fecha', d: -1 };
+  let _notasCred = []; // historial de notas de crédito (pos_devoluciones)
+  let _ncQ = '', _ncDesde = '', _ncHasta = '', _ncSort = { k: 'fecha', d: -1 };
   let _caja = null, _cajaTot = null, _cierres = [];
   let _proveedores = [], _compras = [], _compraItems = [], _compraImeiBuf = [];
   let _cxpByProv = {}, _pagosProvByProv = {};
@@ -13850,7 +13852,7 @@
     // TODAS las cargas EN PARALELO (antes eran 16 viajes secuenciales: el POS tardaba
     // varios segundos en abrir en el teléfono; ahora tarda lo que tarde UNA consulta).
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
-    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm, prefs] = await Promise.all([
+    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm, prefs, notasCred] = await Promise.all([
       g('pos_categorias', 'select=*&order=orden.asc,nombre.asc'),
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -13868,7 +13870,8 @@
       g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
       g('pos_stock_almacen', 'select=*&limit=20000'),
-      g('pos_prefacturas', 'select=*&estado=eq.abierta&order=created_at.desc&limit=200')
+      g('pos_prefacturas', 'select=*&estado=eq.abierta&order=created_at.desc&limit=200'),
+      g('pos_devoluciones', 'select=*&order=created_at.desc&limit=500')
     ]);
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _caja = (cj && cj[0]) || null;
@@ -13877,6 +13880,7 @@
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _apartados = apa || []; _apaPagos = apap || [];
     _almacenes = alm || [];
     _prefs = prefs || [];
+    _notasCred = notasCred || [];
     if (_almacenes.length) {
       try { const _ses = curSesPOS(); if (_ses && _ses.almacen_id && _almacenes.find(a => String(a.id) === String(_ses.almacen_id))) _almacenSel = _ses.almacen_id; } catch (e) {}
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
@@ -14067,7 +14071,7 @@
   }
   // Click en encabezado: misma columna invierte; nueva columna ordena (fecha empieza descendente).
   window.nxSort = function (tabla, key) {
-    const st = tabla === 'prod' ? _prodSort : tabla === 'hist' ? _histSort : null;
+    const st = tabla === 'prod' ? _prodSort : tabla === 'hist' ? _histSort : tabla === 'nc' ? _ncSort : null;
     if (!st) return;
     if (st.k === key) st.d = -st.d; else { st.k = key; st.d = (key === 'fecha') ? -1 : 1; }
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
@@ -14101,6 +14105,7 @@
     else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();
     else if (_posTab === 'avisos') body = renderAvisos();
+    else if (_posTab === 'notascredito') body = renderNotasCredito();
     else if (_posTab === 'prefactura') body = renderPrefactura();
     else if (_posTab === 'reparaciones') body = renderReparaciones();
     else if (_posTab === 'cuotas') body = renderCuotas();
@@ -14127,7 +14132,7 @@
     const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool'))
       + sec('Inventario', it('productos', 'Productos', 'ti-box') + it('inventario', 'Inventario', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
-      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
+      + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
@@ -14199,7 +14204,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
+        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c'))}
         ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
@@ -15791,6 +15796,7 @@
       const body = { venta_id: v.id, numero: numero, ncf: ncfDev, fecha: isoHoy(), cliente_id: v.cliente_id || null, cliente_nombre: v.cliente_nombre || null, motivo: (val('devMot') || '').trim() || null, subtotal: t.subtotal, itbis: t.itbis, total: t.total, metodo: metodo, estado: 'emitida', created_by_name: nomAdmin() };
       const r = await getAPI().post('pos_devoluciones', body);
       const dev = (r && r[0]) || null; if (!dev) throw new Error('No se pudo registrar');
+      _notasCred.unshift(dev); // aparece de una en el Historial de notas de crédito
       const items = lineas.map(l => ({ devolucion_id: dev.id, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant, precio: Math.round(l.precio), itbis: !!l.itbis, importe: Math.round(l.precio * l.cant) }));
       await getAPI().post('pos_devolucion_items', items);
       // devolver stock
@@ -15833,6 +15839,69 @@
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
+  // ══════════════ HISTORIAL DE NOTAS DE CRÉDITO (mismo patrón detallado que Facturas) ══════════════
+  function ncFiltradas() {
+    const q = (_ncQ || '').trim().toLowerCase();
+    return (_notasCred || []).filter(d => {
+      const f = (d.fecha || d.created_at || '').slice(0, 10);
+      if (_ncDesde && f < _ncDesde) return false;
+      if (_ncHasta && f > _ncHasta) return false;
+      if (q) { const hay = ((d.numero || '') + ' ' + (d.ncf || '') + ' ' + (d.cliente_nombre || '')).toLowerCase(); if (!hay.includes(q)) return false; }
+      return true;
+    });
+  }
+  function ncSortVal(d, k) {
+    if (k === 'numero') return String(d.numero || '').toLowerCase();
+    if (k === 'cliente') return String(d.cliente_nombre || 'Consumidor final').toLowerCase();
+    if (k === 'ncf') return String(d.ncf || '').toLowerCase();
+    if (k === 'total') return Number(d.total || 0);
+    return String(d.fecha || d.created_at || '');
+  }
+  function kpisNC() {
+    const lista = ncFiltradas();
+    const total = lista.reduce((s, d) => s + Number(d.total || 0), 0);
+    const hoyN = (_notasCred || []).filter(d => (d.fecha || d.created_at || '').slice(0, 10) === hoy()).length;
+    return kpi('Notas de crédito', lista.length, '#ea580c') + kpi('Total filtrado', fmt(total), '#dc2626') + kpi('Hoy', hoyN, '#0f172a');
+  }
+  function filasNC() {
+    const lista = sortRows(ncFiltradas(), d => ncSortVal(d, _ncSort.k), _ncSort.d);
+    if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">' + ((_notasCred || []).length ? 'Sin notas de crédito con esos filtros' : 'Aún no hay notas de crédito. Se emiten desde el Historial de facturas (botón de devolución).') + '</td></tr>';
+    return lista.map(d => {
+      const vt = (_ventas || []).find(v => String(v.id) === String(d.venta_id));
+      const fact = vt ? (vt.numero_factura || '#' + vt.numero) : '';
+      return `<tr style="cursor:pointer" onclick="window.nxNCImprimir('${d.id}')">
+        <td style="font-weight:700;color:#1e293b;white-space:nowrap">${esc(d.numero || '')}</td>
+        <td style="color:#475569;white-space:nowrap">${fechaDMY(d.fecha || d.created_at)}</td>
+        <td>${esc(d.cliente_nombre || 'Consumidor final')}${fact ? `<span style="display:block;font-size:9.5px;color:#94a3b8">fact. ${esc(fact)}</span>` : ''}</td>
+        <td style="white-space:nowrap">${d.ncf ? `<span style="font-size:9.5px;font-weight:700;color:#475569">${esc(d.ncf)}</span>` : '<span style="color:#cbd5e1">—</span>'}</td>
+        <td style="text-align:right;font-weight:800;color:#dc2626;white-space:nowrap">${fmt(d.total)}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxNCImprimir('${d.id}')" title="Ver / imprimir"><i class="ti ti-printer"></i></button></td>
+      </tr>`;
+    }).join('');
+  }
+  function renderNotasCredito() {
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input id="ncQ" value="${esc(_ncQ)}" oninput="window.nxNCBuscar(this.value)" placeholder="Buscar por No., NCF o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+        <input type="date" id="ncDesde" value="${_ncDesde}" onchange="window.nxNCFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
+        <input type="date" id="ncHasta" value="${_ncHasta}" onchange="window.nxNCFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
+        <button class="btn bsm bghost" type="button" onclick="window.nxNCLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
+      </div>
+      <div id="ncKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisNC()}</div>
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('nc', _ncSort, 'numero', 'No. NC')}${thSort('nc', _ncSort, 'fecha', 'Fecha')}${thSort('nc', _ncSort, 'cliente', 'Cliente')}${thSort('nc', _ncSort, 'ncf', 'NCF')}${thSort('nc', _ncSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="ncBody">${filasNC()}</tbody></table></div>`;
+  }
+  function pintarNC() { const b = document.getElementById('ncBody'); if (b) b.innerHTML = filasNC(); const k = document.getElementById('ncKpis'); if (k) k.innerHTML = kpisNC(); }
+  window.nxNCBuscar = function (v) { _ncQ = v; pintarNC(); };
+  window.nxNCFecha = function () { _ncDesde = val('ncDesde') || ''; _ncHasta = val('ncHasta') || ''; pintarNC(); };
+  window.nxNCLimpiar = function () { _ncQ = ''; _ncDesde = ''; _ncHasta = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  // Reimprime una nota de crédito: trae sus líneas y la factura afectada, luego usa la impresión existente
+  window.nxNCImprimir = async function (id) {
+    const d = (_notasCred || []).find(x => String(x.id) === String(id)); if (!d) return;
+    let items = [];
+    try { items = await getAPI().get('pos_devolucion_items', 'select=*&devolucion_id=eq.' + id) || []; } catch (e) {}
+    const vt = (_ventas || []).find(v => String(v.id) === String(d.venta_id)) || null;
+    nxDevImprimirObj(Object.assign({}, d, { _items: items, _venta: vt }));
+  };
+
   function renderVentas() {
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
         <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input id="histQ" value="${esc(_histQ)}" oninput="window.nxPosVentasBuscar(this.value)" placeholder="Buscar por No. de factura o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>

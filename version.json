@@ -1,7 +1,8 @@
 {
-  "version": "44.0",
+  "version": "44.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (POS · Historial de NOTAS DE CRÉDITO): las notas de crédito ahora tienen su PROPIA pestaña con historial detallado (menú Finanzas → Notas de crédito, y tile en Inicio). Igual que el Historial de facturas: buscador por número, NCF o cliente, filtros de fecha (Desde/Hasta), totales del período y de hoy, columnas ordenables, y por cada una el botón para VER/IMPRIMIR la nota de crédito de nuevo con su factura afectada. Antes solo se veían mezcladas dentro del historial de facturas; ahora se revisan aparte, completo.",
     "ARREGLADO (POS · No. de factura): al abrir la Factura, el número de factura salía como un texto raro de programación en vez del número que toca (ej. mostraba '${proxNumeroFactura...}' en lugar de '1234'). Fue un desliz al meter el campo de Prefactura al lado. Ya vuelve a mostrar el próximo número de factura correcto.",
     "ARREGLADO (POS · inventario estricto con combos): si un artículo entraba dos veces al carrito (una suelto y otra como parte de un combo), el sistema chequeaba cada línea por separado y dejaba pasar una venta por encima del stock. Ahora suma TODO lo pedido de cada producto (incluyendo lo que trae el combo) antes de cobrar — no se vende más de lo que hay.",
     "NUEVO (POS · CENTRO DE AVISOS 🔔 — automatización fase 1): la cola de cobro del día, calculada SOLA. Menú Principal → Avisos: (1) CUOTAS VENCIDAS con el total por cliente, (2) APARTADOS vencidos o que vencen en 3 días con lo que falta, (3) reparaciones LISTAS sin recoger, (4) BAJO STOCK para comprar. Cada aviso trae su botón de WhatsApp con el mensaje YA ESCRITO (un toque y sale) y el acceso directo al módulo para cobrar. Si todo está al día, te lo dice en verde.",
