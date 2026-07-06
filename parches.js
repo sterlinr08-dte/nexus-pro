@@ -14357,7 +14357,7 @@
         <div class="nxFacHead">
           <div class="nxFacF" style="grid-column:span 2"><label>Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
           ${esPreTab() ? `<div class="nxFacF nxFacFsm"><label>Prefactura No.</label><div class="nxFacNum" style="gap:6px"><span style="color:#7c3aed">${peekPref()}</span><i class="ti ti-search" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" style="margin-left:auto;font-size:14px;color:#7c3aed;cursor:pointer"></i></div></div>` : `<div class="nxFacF nxFacFsm"><label>Prefactura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facPrefN" placeholder="No…" inputmode="numeric" title="Escribe el número de la prefactura y ENTER para jalarla" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:14px;color:#7c3aed;font-family:inherit" onkeydown="if(event.key===&#39;Enter&#39;){this.blur()}" onblur="window.nxPrefJalar(this.value)"><i class="ti ti-search" onclick="window.nxPrefLista()" title="Buscar prefacturas guardadas" style="font-size:14px;color:#7c3aed;cursor:pointer"></i></div></div>
-          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facNumPrev" value="\${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist(0)" title="Ver todas las facturas" style="font-size:14px;color:#2563eb;cursor:pointer"></i></div></div>`}
+          <div class="nxFacF nxFacFsm"><label>No. Factura</label><div class="nxFacNum" style="gap:6px;padding:0 10px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist(0)" title="Ver todas las facturas" style="font-size:14px;color:#2563eb;cursor:pointer"></i></div></div>`}
           <div class="nxFacF nxFacFsm"><label>Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)"></div>
           <div class="nxFacF"><label>Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
           <div class="nxFacF nxFacFcred"><label>Condición</label><label class="nxFacCred"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)"> A crédito</label></div>
@@ -15229,11 +15229,15 @@
         return;
       }
     }
-    // POLÍTICA ESTRICTA: sin stock no se factura (revalida contra el inventario actual)
-    for (const it of _cart) {
-      const _p = _prods.find(x => String(x.id) === String(it.producto_id));
-      if (_p && _p.tipo !== 'servicio' && Number(it.cantidad) > Number(_p.stock || 0)) {
-        toast('err', 'Sin stock suficiente', _p.nombre + ' — quedan ' + Number(_p.stock || 0) + ' y la factura pide ' + it.cantidad);
+    // POLÍTICA ESTRICTA: sin stock no se factura (revalida contra el inventario actual).
+    // Se SUMA la cantidad pedida por producto (incluye las líneas de combo, que comparten
+    // el mismo producto_id) para que no se cuele una sobreventa repartida en varias líneas.
+    const _pedidoPorProd = {};
+    for (const it of _cart) { const k = String(it.producto_id); _pedidoPorProd[k] = (_pedidoPorProd[k] || 0) + Number(it.cantidad || 0); }
+    for (const pid in _pedidoPorProd) {
+      const _p = _prods.find(x => String(x.id) === pid);
+      if (_p && _p.tipo !== 'servicio' && _pedidoPorProd[pid] > Number(_p.stock || 0)) {
+        toast('err', 'Sin stock suficiente', _p.nombre + ' — quedan ' + Number(_p.stock || 0) + ' y la factura pide ' + _pedidoPorProd[pid]);
         return;
       }
     }
@@ -15435,7 +15439,6 @@
     const ql = String(q || '').trim().toLowerCase();
     _comboSelId = '';
     if (!ql) { box.style.display = 'none'; box.innerHTML = ''; return; }
-    const editId = ((_prods.find(x => false) || {}).id); // placeholder
     const hits = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '')).toLowerCase().includes(ql)).slice(0, 8);
     box.innerHTML = hits.length ? hits.map(p => `<div style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid #f1f5f9" onclick="window.nxComboPick('${p.id}')"><b>${esc(p.nombre)}</b>${p.codigo ? ' <span style="color:#94a3b8;font-size:10px">' + esc(p.codigo) + '</span>' : ''}</div>`).join('') : '<div style="padding:10px;font-size:11px;color:#94a3b8">Sin resultados</div>';
     box.style.display = '';
