@@ -15450,6 +15450,9 @@
   function ticketHTML(v) {
     const e = empInfo();
     const items = v._items || [];
+    // RNC/Cédula del comprador (de su ficha; para que un Crédito Fiscal B01 salga válido ante DGII)
+    const _cliT = (v.cliente_id ? _clientes.find(x => String(x.id) === String(v.cliente_id)) : null) || null;
+    const _cliRnc = (_cliT && _cliT.cedula) ? ((_cliT.tipo_persona === 'juridica' ? 'RNC: ' : 'Cédula: ') + esc(_cliT.cedula)) : '';
     const filas = items.map(it => `<tr><td>${Number(it.cantidad)}x ${esc(it.nombre)}${it.serial ? '<br><span style="font-size:10px;color:#555">IMEI: ' + esc(it.serial) + '</span>' : ''}${it.garantia_hasta ? '<br><span style="font-size:10px;color:#555">Garantía hasta: ' + String(it.garantia_hasta).slice(0, 10) + '</span>' : ''}</td><td style="text-align:right">${fmt(it.importe)}</td></tr>`).join('');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket No. ${v.numero || ''}</title>
       <style>body{font-family:'Courier New',monospace;color:#111;max-width:300px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
@@ -15461,7 +15464,7 @@
         <div class="line"></div>
         <div class="c"><b>${v.numero_factura ? ('FACTURA ' + v.numero_factura) : ('TICKET DE VENTA No. ' + (v.numero || ''))}</b></div>
         ${v.ncf ? `<div class="c muted">NCF: <b>${esc(v.ncf)}</b></div>` : ''}
-        <div class="muted">${fechaDMY(v.fecha)}${v.cliente_nombre ? '<br>Cliente: ' + esc(v.cliente_nombre) : ''}</div>
+        <div class="muted">${fechaDMY(v.fecha)}${v.cliente_nombre ? '<br>Cliente: ' + esc(v.cliente_nombre) : ''}${_cliRnc ? '<br>' + _cliRnc : ''}</div>
         <div class="line"></div>
         <table>${filas}</table>
         <div class="line"></div>
@@ -15941,7 +15944,7 @@
         <div class="line"></div>
         <div class="c"><b>NOTA DE CRÉDITO ${esc(dev.numero || '')}</b></div>
         ${dev.ncf ? `<div class="c muted">NCF: <b>${esc(dev.ncf)}</b></div>` : ''}
-        <div class="muted">Fecha: ${fechaDMY(dev.fecha)} · Cliente: <b>${esc(dev.cliente_nombre || 'Consumidor final')}</b><br>Factura afectada: ${esc((dev._venta && (dev._venta.numero_factura || '#' + dev._venta.numero)) || '')}${dev.motivo ? '<br>Motivo: ' + esc(dev.motivo) : ''}</div>
+        <div class="muted">Fecha: ${fechaDMY(dev.fecha)} · Cliente: <b>${esc(dev.cliente_nombre || 'Consumidor final')}</b>${(function () { try { const _c = dev.cliente_id ? _clientes.find(x => String(x.id) === String(dev.cliente_id)) : null; if (_c && _c.cedula) return ' · ' + (_c.tipo_persona === 'juridica' ? 'RNC' : 'Cédula') + ': ' + esc(_c.cedula); } catch (e) {} return ''; })()}<br>Factura afectada: ${esc((dev._venta && (dev._venta.numero_factura || '#' + dev._venta.numero)) || '')}${dev.motivo ? '<br>Motivo: ' + esc(dev.motivo) : ''}</div>
         <table><thead><tr><th>Cant.</th><th>Descripción</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${filas}</tbody></table>
         <table class="tot"><tr><td>Subtotal</td><td class="r">${fmt(dev.subtotal)}</td></tr><tr><td>ITBIS (18%)</td><td class="r">${fmt(dev.itbis)}</td></tr><tr class="gran"><td>TOTAL DEVUELTO</td><td class="r">${fmt(dev.total)}</td></tr></table>
         <div class="muted" style="margin-top:8px">Forma de devolución: ${esc(dev.metodo || '')}</div>
