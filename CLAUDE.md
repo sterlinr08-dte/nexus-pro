@@ -1049,6 +1049,19 @@ chat sigue con NEXUS PRO (seguros/rifas).
 
 ---
 
+### AUDITORÍA DEL POS + FASE 0 (6-jul-2026) — ver `AUDITORIA-POS.md` y `FASE0-CONTEXTO.md`
+Auditoría completa del POS (3 agentes: cobro/dinero, fiscal/DGII, completitud módulo por módulo).
+Veredicto: **21/22 módulos completos, 0 funciones fantasma, el flujo de cobro funciona** — NO hay que
+rehacer nada. Pero NO está listo para vender por: (A) **7 bugs de dinero silenciosos** (fiado no se
+revierte al anular, sin costo de ventas/COGS, stock por almacén negativo, bug `tipo` en `asignarNCF`,
+NC contada como caja, anulación no revierte NCF/cuotas, KPIs suman anuladas) y (B) **fiscal** (sin RNC
+del comprador, sin e-CF DGII obligatoria 15-nov-2026, 607 incompleto, sin 606/608). Todo el detalle con
+evidencia `archivo:línea` está en **`AUDITORIA-POS.md`**. El **código real verbatim** de las funciones
+afectadas + esquemas exactos de tablas (para generar el parche de la Fase 0, p.ej. con ChatGPT) está en
+**`FASE0-CONTEXTO.md`**. Roadmap: Fase 0 (bugs de dinero) → 1 (mínimo fiscal RNC/607/606/608) → 2 (e-CF).
+
+---
+
 ## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
 
 **Estado actual (riesgo conocido):** la app entra con la **anon key** + un login
