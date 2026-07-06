@@ -18478,7 +18478,7 @@
     cerrarModal('nxFinM');
     const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-list-numbers"></i> Plan de ${esc(f.cliente_nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>${rows}</div>`;
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-list-numbers"></i> Plan de ${esc(f.cliente_nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>${rows}<div style="margin-top:10px"><button class="btn bghost bsm" type="button" style="width:100%" onclick="window.nxFinContrato('${f.id}')"><i class="ti ti-printer"></i> Imprimir acuerdo de pago</button></div></div>`;
     document.body.appendChild(ov);
   };
   window.nxFinPagar = function (id) {
@@ -18715,9 +18715,33 @@
         <div style="font-size:12px;color:#475569;margin-bottom:8px;line-height:1.6">${phBadge(est)} · <b>${esc(p.cliente_nombre || 'Consumidor final')}</b><br>${fechaDMY(p.fecha || p.created_at)}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div>
         <div style="overflow-y:auto;flex:1"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:#94a3b8;font-size:10px;text-transform:uppercase"><th style="text-align:left;padding:5px">Cant.</th><th style="text-align:left;padding:5px">Artículo</th><th style="text-align:right;padding:5px">Precio</th><th style="text-align:right;padding:5px">Importe</th></tr></thead><tbody>${filas}</tbody></table></div>
         <div style="display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #eef2f7;margin-top:8px;padding-top:8px"><b style="font-size:13px">TOTAL</b><b style="font-size:16px;color:#7c3aed">${fmt(p.total)}</b></div>
-        ${est === 'abierta' ? `<button class="btn bc1 bsm" type="button" style="margin-top:10px" onclick="document.getElementById('nxPHVerM').remove();window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar esta prefactura</button>` : ''}
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn bghost bsm" type="button" style="flex:1" onclick="window.nxPHImprimir('${p.id}')"><i class="ti ti-printer"></i> Imprimir</button>
+          ${est === 'abierta' ? `<button class="btn bc1 bsm" type="button" style="flex:1" onclick="document.getElementById('nxPHVerM').remove();window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>` : ''}
+        </div>
       </div>`;
     document.body.appendChild(ov);
+  };
+  // Proforma imprimible de una prefactura (documento NO fiscal)
+  window.nxPHImprimir = function (id) {
+    const p = (_prefHist || []).find(x => String(x.id) === String(id)); if (!p) return;
+    const e = empInfo();
+    const items = Array.isArray(p.items) ? p.items : [];
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad || 0)}</td><td>${esc(it.nombre || '')}</td><td class="r">${fmt(it.precio || 0)}</td><td class="r">${fmt(Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Prefactura ${esc(p.numero || '')}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:540px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot{margin-left:auto;max-width:260px}.tot td{border:none;padding:3px 6px}.gran{font-weight:800;font-size:15px;border-top:1.5px solid #111!important}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(e.nom)}</h1>
+        <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
+        <div class="line"></div>
+        <div class="c"><b>PREFACTURA / PROFORMA ${esc(p.numero || '')}</b></div>
+        <div class="muted">Fecha: ${fechaDMY(p.created_at || p.fecha)} · Cliente: <b>${esc(p.cliente_nombre || 'Consumidor final')}</b></div>
+        <table><thead><tr><th>Cant.</th><th>Descripción</th><th class="r">Precio</th><th class="r">Importe</th></tr></thead><tbody>${filas}</tbody></table>
+        <table class="tot"><tr class="gran"><td>TOTAL</td><td class="r">${fmt(p.total)}</td></tr></table>
+        <div class="muted" style="margin-top:8px">Documento no fiscal. No es una factura — vale como cotización / proforma.</div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ══════════════ CENTRO DE AVISOS (cola de cobro del día — calculada en vivo) ══════════════
