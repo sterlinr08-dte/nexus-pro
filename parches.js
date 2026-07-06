@@ -13781,7 +13781,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Productos'], ['inventario', 'Inventario'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -14100,6 +14100,7 @@
     else if (_posTab === 'reportes') body = renderReportes();
     else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();
+    else if (_posTab === 'avisos') body = renderAvisos();
     else if (_posTab === 'prefactura') body = renderPrefactura();
     else if (_posTab === 'reparaciones') body = renderReparaciones();
     else if (_posTab === 'cuotas') body = renderCuotas();
@@ -14123,7 +14124,7 @@
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
     const sec = (t, items) => items.trim() ? `<div class="nxTSec">${t}</div>${items}` : '';
-    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool'))
+    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool'))
       + sec('Inventario', it('productos', 'Productos', 'ti-box') + it('inventario', 'Inventario', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
       + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
@@ -14198,7 +14199,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
+        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569'))}
         ${grupo('Inventario y compras', tile('productos', 'Productos', 'ti-box', '#ea580c') + tile('inventario', 'Inventario', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
@@ -18429,6 +18430,65 @@
     if (!confirm('¿Anular la prefactura ' + (p.numero || '') + '?')) return;
     try { await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'anulada' }); _prefs = _prefs.filter(x => String(x.id) !== String(id)); window.nxPrefLista(); toast('ok', 'Prefactura anulada'); } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
+
+
+  // ══════════════ CENTRO DE AVISOS (cola de cobro del día — calculada en vivo) ══════════════
+  function renderAvisos() {
+    const hoyK = hoyISOPos();
+    const neg = (((curSesPOS() || {}).org || {}).nombre) || empNom() || 'la tienda';
+    const telDe = cid => { const c = _clientes.find(x => String(x.id) === String(cid)); return c ? String(c.telefono || '').replace(/\D/g, '') : ''; };
+    const wa = (tel, msg) => tel ? `<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1${tel}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : '';
+    const fila = (t1, t2, extra) => `<div class="nxMdRow"><div style="flex:1;min-width:0"><div class="nxMdNom" style="font-size:12px">${t1}</div><div class="nxMdSub">${t2}</div></div>${extra}</div>`;
+    // 1) Cuotas vencidas
+    const cuotasV = [];
+    _fins.filter(f => f.estado === 'activo').forEach(f => {
+      const v = _finCuotas.filter(c => String(c.financiamiento_id) === String(f.id) && !c.pagado && String(c.fecha_venc) < hoyK);
+      if (v.length) cuotasV.push({ f: f, cuotas: v, monto: v.reduce((t, c) => t + Number(c.monto || 0), 0) });
+    });
+    const sec1 = cuotasV.length ? cuotasV.map(x => fila(
+      esc(x.f.cliente_nombre || '') + ' · <b style="color:#dc2626">' + fmt(x.monto) + '</b>',
+      x.cuotas.length + ' cuota(s) vencida(s) · ' + esc(x.f.descripcion || ''),
+      wa(telDe(x.f.cliente_id), 'Hola ' + (x.f.cliente_nombre || '') + ', le recordamos que tiene ' + x.cuotas.length + ' cuota(s) vencida(s) por ' + fmt(x.monto) + ' de su ' + (x.f.descripcion || 'compra') + ' en ' + neg + '. ¡Gracias!') +
+      `<button class="btn bsm bc1" onclick="window.nxPosTab('cuotas')"><i class="ti ti-cash"></i></button>`
+    )).join('') : '';
+    // 2) Apartados vencidos o por vencer (3 días)
+    const lim3 = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+    const apas = _apartados.filter(a => a.estado === 'activo' && a.fecha_limite && String(a.fecha_limite) <= lim3 && (Number(a.total || 0) - Number(a.abonado || 0)) > 0);
+    const sec2 = apas.length ? apas.map(a => {
+      const falta = Number(a.total || 0) - Number(a.abonado || 0);
+      const venc = String(a.fecha_limite) < hoyK;
+      return fila(
+        esc(a.cliente_nombre || '') + ' · ' + esc(a.descripcion || ''),
+        (venc ? '<b style="color:#dc2626">VENCIDO</b>' : 'vence ' + String(a.fecha_limite).slice(0, 10)) + ' · falta <b>' + fmt(falta) + '</b>',
+        wa(String(a.telefono || '').replace(/\D/g, ''), 'Hola ' + (a.cliente_nombre || '') + ', su apartado de ' + (a.descripcion || '') + ' en ' + neg + (venc ? ' está VENCIDO' : ' vence el ' + String(a.fecha_limite).slice(0, 10)) + '. Le falta ' + fmt(falta) + ' para completarlo. ¡Le esperamos!') +
+        `<button class="btn bsm bc1" onclick="window.nxPosTab('apartados')"><i class="ti ti-bookmark"></i></button>`);
+    }).join('') : '';
+    // 3) Reparaciones LISTAS sin recoger
+    const listas = _reps.filter(r => r.estado === 'listo');
+    const sec3 = listas.length ? listas.map(r => fila(
+      esc(r.equipo || '') + ' · ' + esc(r.numero || ''),
+      esc(r.cliente_nombre || '') + ' · listo hace ' + repDias(r) + ' día(s)',
+      wa(String(r.cliente_telefono || '').replace(/\D/g, ''), 'Hola ' + (r.cliente_nombre || '') + ', su equipo ' + (r.equipo || '') + ' ya está LISTO en ' + neg + '. ¡Puede pasar a recogerlo!') +
+      `<button class="btn bsm bc1" onclick="window.nxPosTab('reparaciones')"><i class="ti ti-tool"></i></button>`)).join('') : '';
+    // 4) Bajo stock
+    const bajos = _prods.filter(p => p.tipo !== 'servicio' && Number(p.stock_min || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0));
+    const sec4 = bajos.length ? bajos.slice(0, 30).map(p => fila(esc(p.nombre || ''), 'quedan <b style="color:#dc2626">' + Number(p.stock || 0) + '</b> (mínimo ' + Number(p.stock_min) + ')', `<button class="btn bsm bc1" onclick="window.nxPosTab('productos')"><i class="ti ti-box"></i></button>`)).join('') : '';
+    const bloque = (tit, ic, col, html, vacio) => `<div class="nxMdCard"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${col}"><i class="ti ${ic}"></i> ${tit}</div>${html || '<div style="font-size:11.5px;color:#94a3b8;padding:4px">' + vacio + '</div>'}</div>`;
+    const totalPend = cuotasV.length + apas.length + listas.length + bajos.length;
+    return `<div style="max-width:720px">
+      <div class="nxMdKpis" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">
+        <div class="nxMdKpi"><b style="color:${cuotasV.length ? '#dc2626' : '#16a34a'}">${cuotasV.length}</b><span>Cuotas vencidas</span></div>
+        <div class="nxMdKpi"><b style="color:${apas.length ? '#d97706' : '#16a34a'}">${apas.length}</b><span>Apartados por vencer</span></div>
+        <div class="nxMdKpi"><b style="color:${listas.length ? '#2563eb' : '#16a34a'}">${listas.length}</b><span>Listos sin recoger</span></div>
+        <div class="nxMdKpi"><b style="color:${bajos.length ? '#ea580c' : '#16a34a'}">${bajos.length}</b><span>Bajo stock</span></div>
+      </div>
+      ${totalPend === 0 ? '<div style="text-align:center;padding:20px;color:#16a34a;font-weight:800;font-size:14px">✅ Todo al día — nada pendiente de avisar</div>' : ''}
+      ${bloque('Cuotas vencidas — cobrar HOY', 'ti-calendar-dollar', '#dc2626', sec1, 'Ninguna cuota vencida')}
+      ${bloque('Apartados vencidos o por vencer (3 días)', 'ti-bookmark', '#d97706', sec2, 'Ningún apartado en riesgo')}
+      ${bloque('Reparaciones LISTAS sin recoger', 'ti-tool', '#2563eb', sec3, 'Ninguna pendiente de entrega')}
+      ${bloque('Bajo stock — comprar', 'ti-alert-triangle', '#ea580c', sec4, 'Inventario saludable')}
+    </div>`;
+  }
 
   // ══════════════ HISTORIAL DE FACTURAS desde el contador (lupa) — 10 en 10 ══════════════
   let _fhPage = 0, _fhQ = '';
