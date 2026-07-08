@@ -14243,16 +14243,32 @@
     }
     const chips = ['todas'].concat(_cats.map(c => c.id)).map(cid => {
       const lbl = cid === 'todas' ? 'Todas' : esc(catNombre(cid));
-      return `<button type="button" class="btn bsm${_posCat === String(cid) ? ' bc1' : ''}" style="font-size:10px;padding:5px 10px" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
+      return `<button type="button" class="nxRetailChip${_posCat === String(cid) ? ' on' : ''}" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
     }).join('');
-    return `<div class="nxPosGridWrap">
+    return `<div class="nxRetailPOS">
+      <div class="nxRetailHead">
+        <div><span>POS retail</span><b>Punto de Venta</b></div>
+        <button type="button" onclick="window.nxProdPicker('vender')"><i class="ti ti-plus"></i> Agregar producto</button>
+      </div>
+      <div class="nxRetailSearch">
+        <i class="ti ti-search click" onclick="window.nxProdPicker('vender')" title="Ver todos los artículos"></i>
+        <input type="text" id="posBuscar" placeholder="Buscar producto, código o escanear..." autocomplete="off" oninput="window.nxPosBuscar(this.value)">
+        <button type="button" onclick="document.getElementById('posBuscar').focus()"><i class="ti ti-barcode"></i> Escanear</button>
+      </div>
+      <div class="nxRetailFilters">${chips}<button type="button" class="nxRetailChip ghost" onclick="window.nxProdPicker('vender')"><i class="ti ti-grid-dots"></i> Más</button></div>
+      <div class="nxRetailQuick">
+        <button type="button"><i class="ti ti-star"></i> Favoritos</button>
+        <button type="button"><i class="ti ti-discount-2"></i> Promociones</button>
+        <button type="button"><i class="ti ti-flame"></i> Más vendidos</button>
+        <button type="button"><i class="ti ti-clock"></i> Últimos ingresos</button>
+      </div>
+      <div class="nxPosGridWrap">
         <div class="nxPosLeft">
-          <div class="nxLupaBox"><i class="ti ti-search click" onclick="window.nxProdPicker('vender')" title="Ver todos los artículos"></i><input type="text" id="posBuscar" placeholder="Buscar producto (toca la lupa para ver todos)..." autocomplete="off" oninput="window.nxPosBuscar(this.value)"></div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
           <div id="posGrid" class="nxPosGrid">${gridHTML()}</div>
         </div>
         <div class="nxPosRight"><div id="posCartWrap"></div></div>
-      </div>`;
+      </div>
+    </div>`;
   }
   function gridHTML() {
     const lista = _prods.filter(p => _posCat === 'todas' || String(p.categoria_id) === String(_posCat));
@@ -14266,8 +14282,11 @@
         : `<span class="nxPosStkB${low ? ' low' : ''}">${low ? 'BAJO' : 'STOCK'}: ${stk}</span>`;
       const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
       const imeiChip = p.serial ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
+      const img = p.imagen ? `<img src="${esc(p.imagen)}" alt="" onerror="this.closest('.nxRetailImg').classList.add('noimg');this.remove()">` : '<i class="ti ti-package"></i>';
       return `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxVenderSel('${p.id}')">
-        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.marca)}</span>` : '')}${imeiChip}</div>
+        <span class="nxRetailFav"><i class="ti ti-heart"></i></span>
+        <div class="nxRetailImg">${img}</div>
+        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span>${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span>${esc(p.marca)}</span>` : '')}${imeiChip}</div>
         <div class="nxPosCardBot"><span class="nxPosCardPre">${fmt(p.precio)}</span>${badge}</div>
       </button>`;
     }).join('');
@@ -14327,20 +14346,23 @@
     const wrap = document.getElementById('posCartWrap'); if (!wrap) return;
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => `<div class="nxPosCartIt">
-        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nombre)}</div><div style="font-size:10.5px;color:#475569">${fmt(it.precio)} c/u</div></div>
+        <div class="nxRetailCartThumb"><i class="ti ti-package"></i></div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:800;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nombre)}</div><div style="font-size:10.5px;color:#64748b">${fmt(it.precio)} c/u</div></div>
         <div class="nxPosQty"><button type="button" onclick="window.nxPosQty(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" onclick="window.nxPosQty(${i},1)">+</button></div>
         <div style="width:74px;text-align:right;font-weight:800;font-size:12px;color:#0f172a">${fmt(it.precio * it.cantidad)}</div>
         <button type="button" class="nxPosX" onclick="window.nxPosDel(${i})"><i class="ti ti-x"></i></button>
-      </div>`).join('') : '<div style="color:#475569;font-size:12px;padding:18px;text-align:center">Carrito vacío.<br>Toca un producto para agregarlo.</div>';
+      </div>`).join('') : '<div class="nxRetailEmpty"><i class="ti ti-shopping-cart"></i><b>Carrito vacío</b><span>Toca un producto para agregarlo.</span></div>';
     wrap.innerHTML = `<div class="nxPosCart">
-        <div class="nxPosCartHd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span>${_cart.length ? `<button type="button" class="btn bsm bghost" onclick="window.nxPosVaciar()" title="Vaciar"><i class="ti ti-trash" style="color:#dc2626"></i></button>` : ''}</div>
+        <div class="nxPosCartHd"><span><i class="ti ti-user"></i> Cliente<br><b>Consumidor final</b></span>${_cart.length ? `<button type="button" class="nxRetailPlus" onclick="window.nxPosVaciar()" title="Vaciar"><i class="ti ti-trash"></i></button>` : '<button type="button" class="nxRetailPlus"><i class="ti ti-plus"></i></button>'}</div>
         <div class="nxPosCartList">${filas}</div>
+        <button type="button" class="nxRetailDiscount"><i class="ti ti-discount-2"></i> Agregar descuento</button>
         <div class="nxPosTot">
           <div class="nxPosTotR"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
           <div class="nxPosTotR"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
           <div class="nxPosTotPay"><span>Total a pagar</span><b>${fmt(t.total)}</b></div>
         </div>
-        <button class="btn bc1 nxPosCobrar" type="button" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPosCobrar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
+        <div class="nxRetailPayMethods"><button type="button" class="on"><i class="ti ti-cash"></i> Efectivo</button><button type="button"><i class="ti ti-credit-card"></i> Tarjeta</button><button type="button"><i class="ti ti-transfer"></i> Transferencia</button></div>
+        <button class="btn bc1 nxPosCobrar" type="button" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPosCobrar()">Cobrar ${fmt(t.total)} <i class="ti ti-arrow-right"></i></button>
       </div>`;
   }
 
@@ -14373,7 +14395,7 @@
       <div class="nx-inv-shell">
         <div class="nx-inv-card">
           <div class="nx-inv-head">
-            <div class="nx-inv-title">${pre ? 'PREFACTURA' : 'FACTURACIÓN'}</div>
+            <div class="nx-inv-titlebox"><div class="nx-inv-kicker">Punto de venta</div><div class="nx-inv-title">${pre ? 'PREFACTURA' : 'FACTURACIÓN'}</div><div class="nx-inv-subtitle">Busca el artículo, revisa el cliente y cobra sin salir de esta pantalla.</div></div>
             <div class="nx-inv-steps">
               <span class="nx-inv-step on"><span class="nx-inv-stepn ok"><i class="ti ti-check"></i></span> Cliente</span><i class="ti ti-arrow-right"></i>
               <span class="nx-inv-step on"><span class="nx-inv-stepn">2</span> Productos</span><i class="ti ti-arrow-right"></i>
@@ -14388,6 +14410,7 @@
             <div class="nx-inv-field"><div class="nx-inv-label">Fecha</div><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-weight:700;color:#0f172a;font-family:inherit;font-size:13.5px"></div>
           </div>
           <div class="nx-inv-tabs">${catTabs}</div>
+          <div class="nx-inv-guide"><span><i class="ti ti-search"></i> Busca por nombre, código o IMEI</span><span><i class="ti ti-barcode"></i> Escáner: escribe aquí y Enter agrega</span><span><i class="ti ti-user"></i> Cliente opcional: consumidor final por defecto</span></div>
           <div class="nx-inv-search">
             <div style="flex:1;position:relative;min-width:0">
               <input type="text" id="facBuscar" placeholder="Buscar producto por nombre, código, IMEI, serial…" autocomplete="off" oninput="window.nxFacBuscar(this.value)" onfocus="window.nxFacBuscar(this.value)" onkeydown="if(event.key==='Enter'){window.nxFacBuscarEnter(this.value)}">
@@ -19093,6 +19116,139 @@
       '#v-pos .nxPosCobrar{padding:10px;font-size:13px}',
       '#v-pos .nxFacBtn{padding:9px 15px;font-size:13px}',
       '@media(min-width:900px){#v-pos .nxFacBtn{padding:10px 18px;font-size:14px}}',
+      /* Factura/Cobro: encabezado mas claro y guia rapida para el cajero */
+      '.nx-inv-titlebox{min-width:220px}',
+      '.nx-inv-kicker{font-size:10px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px}',
+      '.nx-inv-subtitle{font-size:12px;font-weight:650;color:#64748b;margin-top:3px;max-width:390px;line-height:1.25}',
+      '.nx-inv-guide{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 10px}',
+      '.nx-inv-guide span{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;line-height:1.1}',
+      '.nx-inv-guide i{font-size:14px}',
+      '.nx-inv-summary{box-shadow:0 12px 28px rgba(37,99,235,.10)}',
+      '.nx-inv-total{background:linear-gradient(135deg,#eff6ff,#fff);border:1px solid #bfdbfe;border-radius:14px;padding:13px 14px;margin-top:12px}',
+      '.nx-inv-cobrar{box-shadow:0 10px 20px rgba(37,99,235,.22)}',
+      '.nx-inv-search input{min-height:44px}',
+      '@media(max-width:640px){.nx-inv-head{align-items:flex-start}.nx-inv-steps{font-size:11.5px;gap:5px}.nx-inv-guide{padding:0 12px 10px}.nx-inv-guide span{width:100%;justify-content:flex-start}.nx-inv-search input,.nx-inv-btn,.nx-inv-toolbtn,.nx-inv-cobrar{min-height:46px}.nx-inv-actions{position:sticky;bottom:8px;background:rgba(255,255,255,.96);padding-top:8px;z-index:2}.nx-inv-shortcuts{display:none}}',
+      /* POS look ejecutivo: menos colores gritones, mas aire y lectura de tienda real */
+      '.nxTShell{background:#f5f7fb}',
+      '.nxTMain{background:#f5f7fb}',
+      'html body .nxTSide{background:#0f172a!important;box-shadow:8px 0 24px rgba(15,23,42,.18)!important}',
+      'html body .nxTSide .nxTLogo{background:#2563eb!important;box-shadow:none!important;border-radius:10px!important}',
+      'html body .nxTSide .nxTBiz small{color:#94a3b8!important}',
+      'html body .nxTSide .nxTSec{color:#64748b!important;letter-spacing:.9px!important;margin-top:16px!important}',
+      'html body .nxTSide .nxTNav{color:#cbd5e1!important;border-radius:8px!important;padding:10px 11px!important;margin-bottom:1px!important;font-weight:700!important}',
+      'html body .nxTSide .nxTNav:hover{background:rgba(148,163,184,.12)!important;color:#fff!important}',
+      'html body .nxTSide .nxTNav.on{background:#2563eb!important;color:#fff!important;box-shadow:none!important}',
+      'html body .nxTSide .nxTFoot{border-top:1px solid rgba(148,163,184,.18)!important}',
+      'html body .nxTSide .nxTLogout{background:rgba(148,163,184,.10)!important;border-color:rgba(148,163,184,.16)!important;border-radius:8px!important}',
+      '.nxTTop{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px 10px;box-shadow:0 2px 10px rgba(15,23,42,.04)}',
+      '.nxTQuick{border:0;background:#2563eb;color:#fff;border-radius:10px;padding:10px 13px;font-weight:900;font-family:inherit;box-shadow:none}',
+      '.nxInicio{max-width:1180px!important}',
+      '.nxIniHead{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(15,23,42,.04)}',
+      '.nxIniHi{color:#64748b!important;font-weight:800!important}',
+      '.nxIniBiz{font-size:24px!important;color:#0f172a!important}',
+      '.nxTKpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important;gap:10px!important}',
+      '.nxTKpi{border-radius:12px!important;box-shadow:none!important;border:1px solid #e2e8f0!important;padding:14px!important;background:#fff!important}',
+      '.nxTKpiIc{border-radius:10px!important;background:#eff6ff!important;color:#2563eb!important}',
+      '.nxTKpiV{letter-spacing:0!important}',
+      '.nxAppSecT{color:#475569!important;font-size:11px!important}',
+      '.nxAppGrid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr))!important}',
+      '.nxApp{border-radius:12px!important;box-shadow:none!important;border:1px solid #e2e8f0!important;background:#fff!important;padding:15px 10px!important}',
+      '.nxApp:hover{transform:none!important;border-color:#bfdbfe!important;box-shadow:0 8px 18px rgba(37,99,235,.08)!important}',
+      '.nxAppIco{background:#eff6ff!important;color:#2563eb!important;border-radius:12px!important;box-shadow:none!important}',
+      '.nxAppNom{font-size:12.5px!important;color:#1e293b!important;font-weight:800!important}',
+      '.nxTPanel,.nx-inv-card,.nxPosCart,.nxRepCard,.nxCrmCard,.nxAlmCard{border-radius:12px!important;box-shadow:none!important;border:1px solid #e2e8f0!important}',
+      '.nx-invoice-pro{max-width:1220px;margin:0 auto}',
+      '.nx-inv-shell{grid-template-columns:minmax(0,1fr) 320px!important;gap:12px!important}',
+      '.nx-inv-card{background:#fff!important}',
+      '.nx-inv-head{background:#fff;border-bottom:1px solid #e2e8f0!important;padding:16px 18px!important}',
+      '.nx-inv-title{font-size:22px!important;letter-spacing:0!important}',
+      '.nx-inv-kicker{color:#2563eb!important}',
+      '.nx-inv-steps{background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:6px 8px}',
+      '.nx-inv-step.on{color:#1d4ed8!important}',
+      '.nx-inv-stepn,.nx-inv-step.on .nx-inv-stepn{box-shadow:none!important}',
+      '.nx-inv-info{background:#fff;padding:14px 18px!important;gap:10px!important}',
+      '.nx-inv-field{border-radius:10px!important;background:#f8fafc!important;border-color:#e2e8f0!important}',
+      '.nx-inv-field:focus-within{background:#fff!important;border-color:#2563eb!important;box-shadow:0 0 0 3px rgba(37,99,235,.10)}',
+      '.nx-inv-tabs{padding:8px 18px!important;gap:6px!important}',
+      '.nx-inv-tab{border-radius:999px!important;background:#f8fafc!important;border-color:#e2e8f0!important;padding:8px 13px!important;color:#334155!important}',
+      '.nx-inv-tab.on{background:#2563eb!important;border-color:#2563eb!important;color:#fff!important}',
+      '.nx-inv-guide span{background:#f8fafc!important;border-color:#e2e8f0!important;color:#334155!important;border-radius:8px!important}',
+      '.nx-inv-search{padding:0 18px 12px!important}',
+      '.nx-inv-search input{border-radius:10px!important;border-color:#cbd5e1!important;font-weight:700!important}',
+      '.nx-inv-search input:focus{box-shadow:0 0 0 3px rgba(37,99,235,.10)!important}',
+      '.nx-inv-btn,.nx-inv-toolbtn,.nx-inv-opt{border-radius:10px!important;box-shadow:none!important}',
+      '.nx-inv-tblwrap{padding:6px 12px 10px!important}',
+      '.nx-inv-table th{background:#f8fafc!important;color:#475569!important;border-bottom:1px solid #e2e8f0!important}',
+      '.nx-inv-table td{border-bottom:1px solid #eef2f7!important}',
+      '.nx-inv-product img,.nx-inv-noimg{border-radius:8px!important}',
+      '.nx-inv-summary{top:14px!important;padding:14px!important;border-color:#bfdbfe!important}',
+      '.nx-inv-sumtitle{color:#475569!important}',
+      '.nx-inv-total{background:#0f172a!important;border-color:#0f172a!important;color:#fff!important}',
+      '.nx-inv-total span{color:#fff!important}',
+      '.nx-inv-payrow{border-radius:10px!important;border-color:#e2e8f0!important}',
+      '.nx-inv-payrow:hover{background:#eff6ff!important;border-color:#bfdbfe!important}',
+      '.nx-inv-cobrar{background:#16a34a!important;border-radius:10px!important;box-shadow:none!important;min-height:48px!important}',
+      '.nx-inv-cobrar:hover{background:#15803d!important}',
+      '.nx-inv-actions .nx-inv-btn.danger{background:#fee2e2!important;color:#b91c1c!important;border-color:#fecaca!important}',
+      '@container (max-width:780px){.nx-inv-shell{grid-template-columns:1fr!important}}',
+      '@media(max-width:640px){.nx-inv-steps{border-radius:12px;width:100%}.nx-inv-shell{gap:10px!important}.nx-inv-title{font-size:20px!important}.nxAppGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.nxTKpis{grid-template-columns:1fr 1fr!important}.nxTKpi{padding:12px!important}.nxIniHead{padding:14px!important}.nx-inv-info{padding:12px!important}.nx-inv-tabs{padding:8px 12px!important}.nx-inv-search{padding:0 12px 12px!important}}',
+      /* Vender retail inspirado en sistema POS moderno */
+      '.nxRetailPOS{max-width:1280px;margin:0 auto}',
+      '.nxRetailHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}',
+      '.nxRetailHead span{display:block;font-size:11px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.7px}',
+      '.nxRetailHead b{display:block;font-size:24px;color:#0f172a;line-height:1.05}',
+      '.nxRetailHead button{border:0;background:#2563eb;color:#fff;border-radius:12px;padding:11px 14px;font-weight:900;font-family:inherit;display:inline-flex;gap:7px;align-items:center}',
+      '.nxRetailSearch{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:0;background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:5px;margin-bottom:12px;box-shadow:0 12px 28px rgba(15,23,42,.10)}',
+      '.nxRetailSearch>i{color:#94a3b8;font-size:18px;text-align:center}',
+      '.nxRetailSearch input{height:44px;border:0;outline:0;background:transparent;color:#fff;font-size:14px;font-weight:750;font-family:inherit;min-width:0}',
+      '.nxRetailSearch input::placeholder{color:#94a3b8}',
+      '.nxRetailSearch button{height:42px;border:0;background:#2563eb;color:#fff;border-radius:10px;padding:0 14px;font-weight:900;font-family:inherit;display:inline-flex;align-items:center;gap:7px}',
+      '.nxRetailFilters,.nxRetailQuick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}',
+      '.nxRetailChip,.nxRetailQuick button{border:1px solid #e2e8f0;background:#fff;color:#334155;border-radius:11px;padding:10px 15px;font-size:12px;font-weight:850;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(15,23,42,.03)}',
+      '.nxRetailChip.on{background:#2563eb;border-color:#2563eb;color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.18)}',
+      '.nxRetailChip.ghost{margin-left:auto;background:#f8fafc}',
+      '.nxRetailQuick button{padding:9px 14px;color:#475569;background:#fff}',
+      '.nxRetailQuick button i{color:#2563eb}',
+      '.nxRetailPOS .nxPosGridWrap{grid-template-columns:minmax(0,1fr) 360px!important;gap:14px!important;align-items:start}',
+      '.nxRetailPOS .nxPosGrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:12px!important}',
+      '.nxRetailPOS .nxPosCard{position:relative;min-height:202px!important;border:1px solid #e5e7eb!important;border-radius:14px!important;background:#fff!important;padding:12px!important;text-align:center!important;align-items:center!important;justify-content:flex-start!important;box-shadow:0 2px 10px rgba(15,23,42,.04)!important;overflow:hidden}',
+      '.nxRetailPOS .nxPosCard:hover{border-color:#bfdbfe!important;box-shadow:0 14px 26px rgba(37,99,235,.10)!important;transform:translateY(-1px)}',
+      '.nxRetailFav{position:absolute;right:10px;top:10px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid #e2e8f0;color:#94a3b8;font-size:14px;z-index:2}',
+      '.nxRetailImg{height:84px;width:100%;display:flex;align-items:center;justify-content:center;margin:12px 0 8px;color:#94a3b8;font-size:34px}',
+      '.nxRetailImg img{max-width:92px;max-height:82px;object-fit:contain;display:block}',
+      '.nxRetailImg.noimg{background:#f8fafc;border-radius:12px}',
+      '.nxRetailPOS .nxPosCardNom{font-size:12.5px!important;font-weight:850!important;color:#111827!important;line-height:1.22!important;text-align:center!important;width:100%;min-height:34px}',
+      '.nxRetailPOS .nxPosCardNom span{display:block;font-size:10px;color:#64748b;font-weight:700;margin-top:2px}',
+      '.nxRetailPOS .nxPosCardBot{display:flex!important;flex-direction:column!important;gap:4px!important;align-items:center!important;margin-top:auto!important;width:100%}',
+      '.nxRetailPOS .nxPosCardPre{font-size:15px!important;font-weight:950!important;color:#111827!important}',
+      '.nxRetailPOS .nxPosStkB{background:transparent!important;color:#059669!important;font-size:10px!important;padding:0!important}',
+      '.nxRetailPOS .nxPosStkB.low,.nxRetailPOS .nxPosStkB.out{color:#dc2626!important}',
+      '.nxRetailPOS .nxPosRight{position:sticky;top:12px!important}',
+      '.nxRetailPOS .nxPosCart{border-radius:15px!important;border:1px solid #e2e8f0!important;padding:0!important;overflow:hidden;background:#fff!important;box-shadow:0 12px 28px rgba(15,23,42,.08)!important}',
+      '.nxRetailPOS .nxPosCartHd{margin:0!important;background:#1e1b8f;color:#fff;padding:16px 16px!important;font-size:13px!important;display:flex!important;align-items:center!important}',
+      '.nxRetailPOS .nxPosCartHd span{display:flex;align-items:center;gap:10px;color:#c7d2fe;line-height:1.2}',
+      '.nxRetailPOS .nxPosCartHd span>i{font-size:23px;color:#fff}',
+      '.nxRetailPOS .nxPosCartHd b{display:block;color:#fff;font-size:13px;margin-top:2px}',
+      '.nxRetailPlus{margin-left:auto;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;font-size:17px;cursor:pointer}',
+      '.nxRetailPOS .nxPosCartList{max-height:43vh!important;padding:6px 12px!important;margin:0!important}',
+      '.nxRetailPOS .nxPosCartIt{gap:9px!important;padding:11px 0!important;border-bottom:1px solid #eef2f7!important}',
+      '.nxRetailCartThumb{width:40px;height:40px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;display:grid;place-items:center;color:#64748b;flex:0 0 auto}',
+      '.nxRetailPOS .nxPosQty button{width:24px!important;height:24px!important;border-radius:7px!important;color:#2563eb!important;background:#eff6ff!important;border-color:#dbeafe!important}',
+      '.nxRetailPOS .nxPosQty span{font-size:12px!important}',
+      '.nxRetailDiscount{width:calc(100% - 24px);margin:8px 12px 0;border:1px dashed #cbd5e1;background:#fff;border-radius:10px;padding:10px;color:#4f46e5;font-weight:900;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}',
+      '.nxRetailPOS .nxPosTot{padding:13px 16px 8px!important;margin:0!important;border-top:0!important}',
+      '.nxRetailPOS .nxPosTotR{font-size:12px!important;padding:5px 0!important}',
+      '.nxRetailPOS .nxPosTotPay{border-top:1px solid #e2e8f0!important;margin-top:7px!important;padding-top:12px!important}',
+      '.nxRetailPOS .nxPosTotPay span{font-size:17px!important;color:#111827!important;font-weight:950!important}',
+      '.nxRetailPOS .nxPosTotPay b{font-size:24px!important;color:#312e81!important;font-weight:950!important}',
+      '.nxRetailPayMethods{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 10px}',
+      '.nxRetailPayMethods button{border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:10px 4px;font-size:11px;font-weight:850;color:#475569;font-family:inherit;display:flex;justify-content:center;align-items:center;gap:5px}',
+      '.nxRetailPayMethods button.on{background:#059669;border-color:#059669;color:#fff}',
+      '.nxRetailPOS .nxPosCobrar{margin:0 16px 16px!important;width:calc(100% - 32px)!important;background:#4f46e5!important;border:0!important;border-radius:11px!important;padding:15px!important;font-size:15px!important;font-weight:950!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:10px!important}',
+      '.nxRetailEmpty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:#94a3b8;padding:30px 16px;text-align:center}',
+      '.nxRetailEmpty i{font-size:30px}.nxRetailEmpty b{color:#475569}.nxRetailEmpty span{font-size:12px}',
+      '@media(max-width:980px){.nxRetailPOS .nxPosGridWrap{grid-template-columns:1fr!important}.nxRetailPOS .nxPosRight{position:static}.nxRetailPOS .nxPosCartList{max-height:none!important}}',
+      '@media(max-width:640px){.nxRetailHead{align-items:flex-start}.nxRetailHead b{font-size:21px}.nxRetailHead button{padding:10px}.nxRetailSearch{grid-template-columns:36px minmax(0,1fr)}.nxRetailSearch button{grid-column:1/-1;width:100%;justify-content:center;margin-top:4px}.nxRetailPOS .nxPosGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}.nxRetailPOS .nxPosCard{min-height:188px!important;padding:10px!important}.nxRetailImg{height:72px}.nxRetailQuick{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nxRetailQuick button{white-space:nowrap}.nxRetailFilters{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.nxRetailChip{white-space:nowrap}.nxRetailChip.ghost{margin-left:0}}',
       /* Móvil: sidebar como cajón */
       '@media(max-width:860px){',
       '.nxTSide{transform:translateX(-100%)}',
