@@ -5490,8 +5490,6 @@ function rFact(){
   const atrasadas=filtroEst==='atrasadas';
   let lista;
   if(atrasadas){
-    // "Atrasadas" respeta el corte 20-al-20: antes del día 20, el mes vigente es el anterior
-    // (junio NO es atrasada el 5 de julio — todavía es el mes en curso de cobro).
     const _mc=mesCorte();const hoyKey=`${_mc.anio}-${String(_mc.mes).padStart(2,'0')}`;
     lista=ST.facturas.filter(f=>f.periodo<hoyKey&&f.estado!=='Pagado'&&f.estado!=='Anulada').sort((a,b)=>a.periodo<b.periodo?-1:a.periodo>b.periodo?1:0);
   }else{
@@ -5504,45 +5502,62 @@ function rFact(){
   const tb=document.getElementById('tbFact');
   const rz=document.getElementById('factResumen');
   if(!lista.length){tb.innerHTML=`<div class="empty">${atrasadas?'Sin facturas pendientes de meses anteriores 🎉':'Sin facturas · Presiona "Generar"'}</div>`;if(rz)rz.innerHTML='';pintarFlechasFact();return;}
-  // Saldo real por factura (descuenta el pago del cliente no ligado a la factura)
+  // KPIs
   const _saldoMemo={};
   const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!_saldoMemo[cid])_saldoMemo[cid]=_saldoFacturasCliente(cid);const v=_saldoMemo[cid][f.id];return v!=null?v:(Number(f.prima_base||0)+Number(f.prima_deps||0));};
   const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+saldoDe(f),0);
-  if(rz)rz.innerHTML=`<div class="nx-ins-summary">
-      <div class="nx-ins-kpi"><small>Facturas</small><strong>${lista.length}</strong></div>
-      <div class="nx-ins-kpi money"><small>Por cobrar</small><strong>${fmt(porCobrar)}</strong></div>
-    </div>`;
-  const L=t=>`<div class="nx-ins-label">${t}</div>`;
+  const pagado=lista.filter(f=>f.estado==='Pagado').reduce((s,f)=>s+Number(f.prima_base||0)+Number(f.prima_deps||0),0);
+  if(rz)rz.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px">
+    <div style="background:#e0f2fe;border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase">Facturas</div>
+      <div style="font-size:18px;font-weight:700;color:#0284c7;margin-top:4px">${lista.length}</div>
+    </div>
+    <div style="background:#fef3c7;border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase">Por cobrar</div>
+      <div style="font-size:18px;font-weight:700;color:#ca8a04;margin-top:4px">${fmt(porCobrar)}</div>
+    </div>
+    <div style="background:#dcfce7;border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#166534;text-transform:uppercase">Cobrado</div>
+      <div style="font-size:18px;font-weight:700;color:#22c55e;margin-top:4px">${fmt(pagado)}</div>
+    </div>
+  </div>`;
+  // Tarjetas
   tb.innerHTML=lista.map(f=>{
-    const emp=gEmp(f.empresa_id);
-    const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
     const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
     const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
-    const agTxt=ag?ag.nom:'⚠ Sin agente';
-    const anul=f.estado==='Anulada';
-    const nBtns=anul?1:(f.estado!=='Pagado'?3:2);
-    return `<div class="nx-ins-card ${anul?'is-void':''}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+    const agTxt=ag?ag.nom:'Sin agente';
+    const avg=f.cliente_nom?.split(' ').slice(0,2).map(x=>x.charAt(0).toUpperCase()).join('')||'??';
+    const planTxt=planB(f.plan);
+    const salda=saldoDe(f);
+    const deudaAnt=Number(cli?.deuda_anterior||0);
+    const getEstado=()=>{if(f.estado==='Pagado')return{badge:'aldia',label:'Al Día'};if(f.estado==='Anulada')return{badge:'anulada',label:'Anulada'};if(salda<=0)return{badge:'aldia',label:'Al Día'};if(f.estado==='Parcial')return{badge:'parcial',label:'Parcial'};return{badge:'pendiente',label:'Pendiente'};};
+    const est=getEstado();
+    return `<div class="card" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:14px;transition:all 300ms;position:relative;overflow:hidden;display:flex;flex-direction:column">
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#6d28d9,#7c3aed);transform:scaleX(0);transform-origin:left;transition:transform 300ms"></div>
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6d28d9,#a855f7);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0;box-shadow:0 4px 12px rgba(109,40,217,0.2)">${avg}</div>
         <div style="flex:1;min-width:0">
-          <div onclick="verCliente('${f.cliente_id}')" style="font-weight:800;font-size:14.5px;color:#0f172a;cursor:pointer;line-height:1.2">${f.cliente_nom}</div>
-          <div style="font-size:10.5px;color:#475569;margin-top:3px">${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</div>
-          ${atrasadas?`<div style="font-size:9px;color:#92400e;font-weight:700;margin-top:2px">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <span class="badge ${ec}">${f.estado.toUpperCase()}</span>
-          <div style="margin-top:6px">${planB(f.plan)}</div>
+          <strong style="display:block;font-size:13px;font-weight:900;color:#111827">${f.cliente_nom}</strong>
+          <div style="font-size:10px;color:#64748b;margin-top:2px">👤 ${agTxt}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
+            <span style="display:inline-flex;align-items:center;padding:4px 8px;border-radius:6px;font-size:8px;font-weight:900;text-transform:uppercase;background:#eef2ff;color:#4338ca">${planTxt}</span>
+            <span style="display:inline-flex;align-items:center;padding:4px 8px;border-radius:6px;font-size:8px;font-weight:900;text-transform:uppercase;background:${est.badge==='aldia'?'#dcfce7':est.badge==='pendiente'?'#fee2e2':est.badge==='parcial'?'#fef3c7':'#f1f5f9'};color:${est.badge==='aldia'?'#15803d':est.badge==='pendiente'?'#b91c1c':est.badge==='parcial'?'#92400e':'#6b7280'}">${est.label}</span>
+          </div>
         </div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:11px 0;padding:9px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
-        ${f.prima_deps>0?`<div>${L('Dependientes')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_deps)}</div></div>`:''}
-        ${(f.deuda_ant>0||Number(cli?.deuda_anterior||0)>0)?`<div style="display:flex;flex-direction:column;gap:5px">${f.deuda_ant>0?`<div>${L('Deuda mes anterior')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}${Number(cli?.deuda_anterior||0)>0?`<div>${L('Deuda antes del sistema')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(cli.deuda_anterior)}</div></div>`:''}</div>`:''}
-        ${(()=>{const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);const sal=saldoDe(f);const pg=prima-sal;return pg>0.009?`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(sal)}</div><div style="font-size:8.5px;color:#475569;margin-top:1px">Prima ${fmt(prima)} · abonado ${fmt(pg)}</div></div>`:`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(prima)}</div></div>`;})()}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;padding:10px;background:#f8fafc;border-radius:10px">
+        <div style="display:flex;flex-direction:column">
+          <small style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:3px">Deuda Anterior</small>
+          <strong style="font-size:13px;font-weight:900;font-family:'Courier New',monospace;color:${deudaAnt>0?'#dc2626':'#0f172a'}">${fmt(deudaAnt)}</strong>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <small style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:3px">Mes Actual</small>
+          <strong style="font-size:13px;font-weight:900;font-family:'Courier New',monospace;color:${salda>0?'#dc2626':'#0f172a'}">${fmt(salda)}</strong>
+        </div>
       </div>
-      ${anul?'':`<button class="fCobrar" onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:12px;padding:8px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:6px"><i class="ti ti-wallet" style="color:#fff!important;font-size:15px"></i> COBRAR</button>`}
-      <div class="fActs" style="display:grid;grid-template-columns:repeat(${nBtns},1fr);gap:5px">
-        <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> Factura</button>
-        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WhatsApp</button>`}
-        ${(!anul&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> Anular</button>`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto">
+        <button onclick="cobrarDesdeFact('${f.cliente_id}')" style="background:#10b981;color:#fff;border:none;padding:10px 12px;border-radius:10px;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;letter-spacing:0.03em;transition:all 200ms" onmouseover="this.style.background='#059669';this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)'" onmouseout="this.style.background='#10b981';this.style.boxShadow='none'">💳 Cobrar</button>
+        <button onclick="verFacturaPDF_id('${f.id}')" style="background:#fff;color:#7c3aed;border:2px solid #7c3aed;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;letter-spacing:0.03em;transition:all 200ms" onmouseover="this.style.background='#f3e8ff';this.style.boxShadow='0 4px 12px rgba(124,58,237,0.2)'" onmouseout="this.style.background='#fff';this.style.boxShadow='none'">📄 Factura</button>
       </div>
     </div>`;
   }).join('');
