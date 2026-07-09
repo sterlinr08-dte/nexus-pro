@@ -1788,6 +1788,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="fr"><label>Prima por dependiente (RD$)</label><input type="text" id="cPrecioDep" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
         </div>
         <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 8px"></div>
+        <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Al guardar, este precio se aplica AL INSTANTE a TODAS las facturas pendientes de este cliente (mes en curso y atrasadas) y ajusta su deuda automáticamente. Las facturas ya pagadas no se tocan.</div>
       </div>
     </div>
     <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
@@ -3251,7 +3252,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='45.5';
+const APP_VERSION='45.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5363,37 +5364,12 @@ function rFact(){
       <div class="fActs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:5px">
         <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> Factura</button>
         ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WhatsApp</button>`}
-        ${(!anul&&f.estado!=='Pagado')?`<button onclick="nxEditarPrecioFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#f59e0b)"><i class="ti ti-pencil" style="color:#fff!important;font-size:13px"></i> Precio</button>`:''}
+        ${(!anul&&f.estado!=='Pagado')?`<button onclick="editarCli('${f.cliente_id}')" title="El precio se corrige editando al cliente" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#f59e0b)"><i class="ti ti-pencil" style="color:#fff!important;font-size:13px"></i> Precio</button>`:''}
         ${(!anul&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> Anular</button>`:''}
       </div>
     </div>`;
   }).join('');
   pintarFlechasFact();
-}
-// ── Corregir el precio de una factura PENDIENTE al instante (arregla montos mal generados) ──
-async function nxEditarPrecioFactura(fid){
-  const f=ST.facturas.find(x=>String(x.id)===String(fid)); if(!f)return;
-  if(f.estado==='Anulada'){toast('err','Factura anulada');return;}
-  if(f.estado==='Pagado'){toast('err','Factura pagada','No se cambia el precio de una factura ya pagada. Si hay un error, anúlala.');return;}
-  const primaAct=Number(f.prima_base||0)+Number(f.prima_deps||0);
-  const depsN=Number(f.prima_deps||0);
-  const resp=prompt(`Corregir el precio de la factura de ${f.cliente_nom}\n(${MESES[(f.mes||1)-1]||''} ${f.anio||''}).\n\nPrecio actual del mes: ${fmt(primaAct)}${depsN>0?'\n(incluye '+fmt(depsN)+' de dependientes)':''}\n\nEscribe el precio CORRECTO del mes:`, Math.round(primaAct));
-  if(resp===null)return;
-  const nuevo=Math.round((window.nxMoney&&window.nxMoney.parse)?window.nxMoney.parse(resp):(parseFloat(String(resp).replace(/[^0-9.]/g,''))||0));
-  if(!(nuevo>=0)){toast('err','Precio inválido','Escribe un monto válido');return;}
-  if(nuevo===Math.round(primaAct)){toast('info','Sin cambios','El precio ya es ese');return;}
-  const baseN=Math.max(0,nuevo-depsN);
-  const totalN=baseN+depsN+Number(f.deuda_ant||0);
-  const diff=nuevo-primaAct;
-  const cli=ST.clientes.find(c=>String(c.id)===String(f.cliente_id));
-  try{
-    await API.patch('facturas',`id=eq.${f.id}`,{prima_base:baseN,prima_deps:depsN,total:totalN});
-    f.prima_base=baseN;f.prima_deps=depsN;f.total=totalN;
-    if(cli){const deudaN=Math.max(0,Number(cli.deuda_total||0)+diff);await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});cli.deuda_total=deudaN;}
-    logAudit('FACTURA_PRECIO_CORREGIDO',`${f.cliente_nom} · ${MESES[(f.mes||1)-1]||''} ${f.anio||''}: ${fmt(primaAct)} → ${fmt(nuevo)} · deuda ${diff>=0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas');
-    toast('ok','Precio corregido',`${fmt(nuevo)} — listo para cobrar`);
-    try{rFact();rCob();}catch(e){}
-  }catch(e){toast('err','No se pudo corregir',String(e&&e.message||e));}
 }
 let _factSort={col:'',dir:1};
 function sortFact(col){
@@ -6455,32 +6431,34 @@ function actualizarProgreso(){
 // antepone el "1" de RD; devuelve '' si quedó demasiado corto para ser válido.
 // Así TODOS los enlaces wa.me funcionan igual, sea el número viejo (10) o nuevo (11).
 function nxWa(num){let d=String(num||'').replace(/\D/g,'');if(d.length===10)d='1'+d;return d.length>=11?d:'';}
-// ── Sincronizar la factura del mes cuando cambia el precio del cliente (arreglo de raíz) ──
-// Cada factura congela su precio al emitirse. Si se pone un precio personalizado DESPUÉS de
-// facturar el mes, la factura vieja queda con la prima anterior y cualquier "ajuste de deuda"
-// a mano lo revierte la auto-reconciliación (confía en las facturas). Este helper detecta el
-// cambio de prima al guardar y ofrece re-preciar la factura del mes EN CURSO si aún no está pagada.
+// ── Sincronizar TODAS las facturas PENDIENTES cuando cambia el precio del cliente (arreglo de raíz) ──
+// Cada factura congela su precio al emitirse. Si se corrige el precio del cliente (titular/dependiente,
+// vía "Editar cliente") DESPUÉS de facturar, las facturas SIN PAGAR quedaban con la prima vieja —del mes
+// en curso Y de meses atrasados— y cualquier "ajuste de deuda" a mano lo revertía la auto-reconciliación
+// (que confía en las facturas). Este helper corrige AL INSTANTE, sin preguntar, TODAS las facturas
+// pendientes (no pagadas, no anuladas) del cliente al precio nuevo, y ajusta su deuda por la diferencia
+// total. Las facturas YA PAGADAS o ANULADAS nunca se tocan (si hay un error ahí, se anula y se rehace).
 async function nxSincronizarFacturaPrecio(cli,primaAntes){
   try{
-    const primaAhora=getPTReal(cli)+((cli.deps||[]).length*getPDReal(cli));
-    if(Math.round(primaAhora)===Math.round(primaAntes))return;
-    const _mc=mesCorte();const key=`${_mc.anio}-${String(_mc.mes).padStart(2,'0')}`;
-    const f=ST.facturas.find(x=>x.cliente_id===cli.id&&x.periodo===key&&x.estado!=='Anulada');
-    if(!f)return;
-    if(f.estado==='Pagado')return; // mes ya cerrado: las facturas pagadas no se tocan
-    const primaFact=Number(f.prima_base||0)+Number(f.prima_deps||0);
-    if(Math.round(primaFact)===Math.round(primaAhora))return; // la factura ya está al precio nuevo
-    const diff=primaAhora-primaFact;
-    const ok=confirm(`${cli.nom} tiene la factura de ${MESES[_mc.mes-1]} a ${fmt(primaFact)} y su prima nueva es ${fmt(primaAhora)}.\n\n¿Actualizar TAMBIÉN esa factura al precio nuevo?\nLa deuda del cliente ${diff>0?'subirá':'bajará'} ${fmt(Math.abs(diff))}.\n\n(Si respondes Cancelar, la factura del mes se queda con el precio viejo y el sistema seguirá cobrando según ella.)`);
-    if(!ok)return;
     const pbN=getPTReal(cli),pdN=(cli.deps||[]).length*getPDReal(cli);
-    const totalN=pbN+pdN+Number(f.deuda_ant||0);
-    await API.patch('facturas',`id=eq.${f.id}`,{prima_base:pbN,prima_deps:pdN,total:totalN});
-    const deudaN=Math.max(0,Number(cli.deuda_total||0)+diff);
+    const primaAhora=pbN+pdN;
+    if(Math.round(primaAhora)===Math.round(primaAntes))return;
+    const pendientes=ST.facturas.filter(f=>f.cliente_id===cli.id&&f.estado!=='Pagado'&&f.estado!=='Anulada');
+    let diffTotal=0;const periodos=[];
+    for(const f of pendientes){
+      const primaFact=Number(f.prima_base||0)+Number(f.prima_deps||0);
+      if(Math.round(primaFact)===Math.round(primaAhora))continue; // esa factura ya está al precio nuevo
+      const totalN=pbN+pdN+Number(f.deuda_ant||0);
+      await API.patch('facturas',`id=eq.${f.id}`,{prima_base:pbN,prima_deps:pdN,total:totalN});
+      f.prima_base=pbN;f.prima_deps=pdN;f.total=totalN;
+      diffTotal+=primaAhora-primaFact;periodos.push(`${MESES[(f.mes||1)-1]||''} ${f.anio||''}`);
+    }
+    if(!periodos.length)return;
+    const deudaN=Math.max(0,Number(cli.deuda_total||0)+diffTotal);
     await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});
-    f.prima_base=pbN;f.prima_deps=pdN;f.total=totalN;cli.deuda_total=deudaN;
-    logAudit('FACTURA_REPRECIADA',`${cli.nom} · Factura ${MESES[_mc.mes-1]} ${_mc.anio}: ${fmt(primaFact)} → ${fmt(primaAhora)} (cambio de precio) · deuda ${diff>0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas');
-    toast('ok','Factura del mes actualizada',`${MESES[_mc.mes-1]}: ${fmt(primaAhora)}`);
+    cli.deuda_total=deudaN;
+    logAudit('FACTURA_REPRECIADA',`${cli.nom} · ${periodos.length} factura(s) pendiente(s) (${periodos.join(', ')}) corregida(s) a ${fmt(primaAhora)} · deuda ${diffTotal>=0?'+':'-'}${fmt(Math.abs(diffTotal))}`,'Facturas');
+    toast('ok','Precio corregido al instante',`${periodos.length} factura(s) pendiente(s) actualizadas a ${fmt(primaAhora)}`);
     try{rFact();rCob();}catch(e){}
   }catch(e){console.warn('nxSincronizarFacturaPrecio',e);}
 }
