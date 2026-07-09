@@ -1788,7 +1788,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="fr"><label>Prima por dependiente (RD$)</label><input type="text" id="cPrecioDep" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
         </div>
         <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 8px"></div>
-        <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Al guardar, este precio se aplica AL INSTANTE a TODAS las facturas pendientes de este cliente (mes en curso y atrasadas) y ajusta su deuda automáticamente. Las facturas ya pagadas no se tocan.</div>
+        <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Al guardar, este precio se aplica AL INSTANTE a TODAS las facturas pendientes de este cliente (mes en curso y atrasadas, el MISMO monto para todas) y ajusta su deuda automáticamente. Las facturas ya pagadas no se tocan. Si cada mes atrasado tiene un error DIFERENTE, mejor usa el botón "Precio" de esa factura en particular (pestaña Facturas) en vez de esto.</div>
       </div>
     </div>
     <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
@@ -3252,7 +3252,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='45.8';
+const APP_VERSION='45.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5364,12 +5364,46 @@ function rFact(){
       <div class="fActs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:5px">
         <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> Factura</button>
         ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WhatsApp</button>`}
-        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="editarCli('${f.cliente_id}')" title="El precio se corrige editando al cliente" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#f59e0b)"><i class="ti ti-pencil" style="color:#fff!important;font-size:13px"></i> Precio</button>`:''}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="nxEditarPrecioFactura('${f.id}')" title="Corregir el precio de ESTA factura únicamente" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#f59e0b)"><i class="ti ti-pencil" style="color:#fff!important;font-size:13px"></i> Precio</button>`:''}
         ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> Anular</button>`:''}
       </div>
     </div>`;
   }).join('');
   pintarFlechasFact();
+}
+// ── Corregir el precio de UNA factura pendiente en específico (montos distintos por mes) ──
+// A diferencia de "Editar cliente → Precio personalizado" (que fija el precio DE AHORA EN
+// ADELANTE y sincroniza TODAS las pendientes al mismo monto), esto SOLO toca esta factura —
+// útil cuando cada mes atrasado tiene un error distinto. No cambia precio_titular/precio_dep
+// del cliente, así que no afecta la generación de facturas futuras.
+async function nxEditarPrecioFactura(fid){
+  if(!tienePermiso('modificar_precio')){
+    toast('err','Acceso denegado','Solo el Administrador puede modificar el precio');
+    logAudit('ACCESO_DENEGADO','Intento de corregir precio de factura sin permiso','Facturas');
+    return;
+  }
+  const f=ST.facturas.find(x=>String(x.id)===String(fid)); if(!f)return;
+  if(f.estado==='Anulada'){toast('err','Factura anulada');return;}
+  if(f.estado==='Pagado'){toast('err','Factura pagada','No se cambia el precio de una factura ya pagada. Si hay un error, anúlala.');return;}
+  const primaAct=Number(f.prima_base||0)+Number(f.prima_deps||0);
+  const depsN=Number(f.prima_deps||0);
+  const resp=prompt(`Corregir el precio de la factura de ${f.cliente_nom}\n(${MESES[(f.mes||1)-1]||''} ${f.anio||''}).\n\nPrecio actual del mes: ${fmt(primaAct)}${depsN>0?'\n(incluye '+fmt(depsN)+' de dependientes)':''}\n\nEscribe el precio CORRECTO de ESTE mes (no afecta otros meses):`, Math.round(primaAct));
+  if(resp===null)return;
+  const nuevo=Math.round((window.nxMoney&&window.nxMoney.parse)?window.nxMoney.parse(resp):(parseFloat(String(resp).replace(/[^0-9.]/g,''))||0));
+  if(!(nuevo>=0)){toast('err','Precio inválido','Escribe un monto válido');return;}
+  if(nuevo===Math.round(primaAct)){toast('info','Sin cambios','El precio ya es ese');return;}
+  const baseN=Math.max(0,nuevo-depsN);
+  const totalN=baseN+depsN+Number(f.deuda_ant||0);
+  const diff=nuevo-primaAct;
+  const cli=ST.clientes.find(c=>String(c.id)===String(f.cliente_id));
+  try{
+    await API.patch('facturas',`id=eq.${f.id}`,{prima_base:baseN,prima_deps:depsN,total:totalN});
+    f.prima_base=baseN;f.prima_deps=depsN;f.total=totalN;
+    if(cli){const deudaN=Math.max(0,Number(cli.deuda_total||0)+diff);await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});cli.deuda_total=deudaN;}
+    logAudit('FACTURA_PRECIO_CORREGIDO',`${f.cliente_nom} · ${MESES[(f.mes||1)-1]||''} ${f.anio||''}: ${fmt(primaAct)} → ${fmt(nuevo)} · deuda ${diff>=0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas');
+    toast('ok','Precio corregido',`${fmt(nuevo)} — listo para cobrar`);
+    try{rFact();rCob();}catch(e){}
+  }catch(e){toast('err','No se pudo corregir',String(e&&e.message||e));}
 }
 let _factSort={col:'',dir:1};
 function sortFact(col){
