@@ -1788,7 +1788,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="fr"><label>Prima por dependiente (RD$)</label><input type="text" id="cPrecioDep" inputmode="decimal" data-nx-money placeholder="Precio estándar"/></div>
         </div>
         <div id="precioStdInfo" style="font-size:9px;color:#92400e;background:#fef3c7;border-radius:6px;padding:6px 8px"></div>
-        <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Al guardar, este precio se aplica AL INSTANTE a TODAS las facturas pendientes de este cliente (mes en curso y atrasadas, el MISMO monto para todas) y ajusta su deuda automáticamente. Las facturas ya pagadas no se tocan. Si cada mes atrasado tiene un error DIFERENTE, mejor usa el botón "Precio" de esa factura en particular (pestaña Facturas) en vez de esto.</div>
+        <div style="font-size:9px;color:#92400e;margin-top:6px">⚡ Este precio es la plantilla para las PRÓXIMAS facturas (las que el sistema genere de aquí en adelante). NO cambia ninguna factura ya generada. Para corregir una factura que ya existe y está pendiente (del mes actual o atrasada), ve a Facturas y usa el botón "Precio" de esa factura — ahí mismo te pregunta si ese precio también debe quedar como la plantilla futura.</div>
       </div>
     </div>
     <div style="font-size:9px;font-weight:700;color:var(--c1);margin-bottom:7px;font-family:var(--mono)">// DEPENDIENTES</div>
@@ -3252,7 +3252,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='45.9';
+const APP_VERSION='46.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5372,10 +5372,10 @@ function rFact(){
   pintarFlechasFact();
 }
 // ── Corregir el precio de UNA factura pendiente en específico (montos distintos por mes) ──
-// A diferencia de "Editar cliente → Precio personalizado" (que fija el precio DE AHORA EN
-// ADELANTE y sincroniza TODAS las pendientes al mismo monto), esto SOLO toca esta factura —
-// útil cuando cada mes atrasado tiene un error distinto. No cambia precio_titular/precio_dep
-// del cliente, así que no afecta la generación de facturas futuras.
+// Es el ÚNICO lugar donde se corrige una factura YA GENERADA (mes actual o atrasada) — cada una
+// con su propio monto si hace falta. Al terminar, pregunta si ese precio corregido también debe
+// quedar como la plantilla para las PRÓXIMAS facturas (precio_titular/precio_dep del cliente) o
+// si fue solo para arreglar este mes puntual.
 async function nxEditarPrecioFactura(fid){
   if(!tienePermiso('modificar_precio')){
     toast('err','Acceso denegado','Solo el Administrador puede modificar el precio');
@@ -5403,6 +5403,16 @@ async function nxEditarPrecioFactura(fid){
     logAudit('FACTURA_PRECIO_CORREGIDO',`${f.cliente_nom} · ${MESES[(f.mes||1)-1]||''} ${f.anio||''}: ${fmt(primaAct)} → ${fmt(nuevo)} · deuda ${diff>=0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas');
     toast('ok','Precio corregido',`${fmt(nuevo)} — listo para cobrar`);
     try{rFact();rCob();}catch(e){}
+    // ¿Este precio corregido también se queda como la plantilla para las PRÓXIMAS facturas?
+    if(cli){
+      const permanente=confirm(`El precio de esta factura quedó en ${fmt(nuevo)}.\n\n¿También será el precio de ${cli.nom} de ahora en adelante? El sistema usaría ${fmt(baseN)} en las PRÓXIMAS facturas (titular).\n\nAceptar = Sí, permanente de ahora en adelante.\nCancelar = No, fue solo para corregir ESTE mes — el precio de los próximos meses sigue igual.`);
+      if(permanente){
+        await API.patch('clientes',`id=eq.${cli.id}`,{precio_titular:baseN});
+        cli.precio_titular=baseN;
+        logAudit('CLIENTE_PRECIO_FUTURO',`${cli.nom} · Precio para las próximas facturas actualizado a ${fmt(baseN)} (titular), desde la corrección de ${MESES[(f.mes||1)-1]||''} ${f.anio||''}`,'Clientes');
+        toast('ok','Precio permanente actualizado',`${cli.nom}: ${fmt(baseN)} desde ahora`);
+      }
+    }
   }catch(e){toast('err','No se pudo corregir',String(e&&e.message||e));}
 }
 let _factSort={col:'',dir:1};
@@ -6465,53 +6475,20 @@ function actualizarProgreso(){
 // antepone el "1" de RD; devuelve '' si quedó demasiado corto para ser válido.
 // Así TODOS los enlaces wa.me funcionan igual, sea el número viejo (10) o nuevo (11).
 function nxWa(num){let d=String(num||'').replace(/\D/g,'');if(d.length===10)d='1'+d;return d.length>=11?d:'';}
-// ── Sincronizar TODAS las facturas PENDIENTES cuando cambia el precio del cliente (arreglo de raíz) ──
-// Cada factura congela su precio al emitirse. Si se corrige el precio del cliente (titular/dependiente,
-// vía "Editar cliente") DESPUÉS de facturar, las facturas SIN PAGAR quedaban con la prima vieja —del mes
-// en curso Y de meses atrasados— y cualquier "ajuste de deuda" a mano lo revertía la auto-reconciliación
-// (que confía en las facturas). Este helper corrige AL INSTANTE, sin preguntar, TODAS las facturas
-// pendientes (no pagadas, no anuladas) del cliente al precio nuevo, y ajusta su deuda por la diferencia
-// total. Las facturas YA PAGADAS o ANULADAS nunca se tocan (si hay un error ahí, se anula y se rehace).
-async function nxSincronizarFacturaPrecio(cli,primaAntes){
-  try{
-    const pbN=getPTReal(cli),pdN=(cli.deps||[]).length*getPDReal(cli);
-    const primaAhora=pbN+pdN;
-    if(Math.round(primaAhora)===Math.round(primaAntes))return;
-    const pendientes=ST.facturas.filter(f=>f.cliente_id===cli.id&&f.estado!=='Pagado'&&f.estado!=='Anulada');
-    let diffTotal=0;const periodos=[];
-    for(const f of pendientes){
-      const primaFact=Number(f.prima_base||0)+Number(f.prima_deps||0);
-      if(Math.round(primaFact)===Math.round(primaAhora))continue; // esa factura ya está al precio nuevo
-      const totalN=pbN+pdN+Number(f.deuda_ant||0);
-      await API.patch('facturas',`id=eq.${f.id}`,{prima_base:pbN,prima_deps:pdN,total:totalN});
-      f.prima_base=pbN;f.prima_deps=pdN;f.total=totalN;
-      diffTotal+=primaAhora-primaFact;periodos.push(`${MESES[(f.mes||1)-1]||''} ${f.anio||''}`);
-    }
-    if(!periodos.length)return;
-    const deudaN=Math.max(0,Number(cli.deuda_total||0)+diffTotal);
-    await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});
-    cli.deuda_total=deudaN;
-    logAudit('FACTURA_REPRECIADA',`${cli.nom} · ${periodos.length} factura(s) pendiente(s) (${periodos.join(', ')}) corregida(s) a ${fmt(primaAhora)} · deuda ${diffTotal>=0?'+':'-'}${fmt(Math.abs(diffTotal))}`,'Facturas');
-    toast('ok','Precio corregido al instante',`${periodos.length} factura(s) pendiente(s) actualizadas a ${fmt(primaAhora)}`);
-    try{rFact();rCob();}catch(e){}
-  }catch(e){console.warn('nxSincronizarFacturaPrecio',e);}
-}
-// ── ¿El precio nuevo es PERMANENTE o solo para corregir lo pendiente? ──
-// Las facturas pendientes YA se corrigieron al instante (arriba). Esto decide qué pasa DE AHORA EN
-// ADELANTE: si el precio se queda puesto en el cliente (el sistema seguirá generando las próximas
-// facturas con este monto), o si era solo un arreglo puntual y el precio del cliente debe VOLVER al
-// de antes (para que el próximo mes se facture otra vez con el precio de siempre).
-async function nxPreguntarPermanenciaPrecio(cli,primaAntes,precioTitularAntes,precioDepAntes){
+// ── El precio de "Editar cliente" es SOLO la plantilla para las PRÓXIMAS facturas ──
+// Un solo lugar hace cada cosa, para no confundirse: este campo (precio_titular/precio_dep del
+// cliente) define con qué precio se van a GENERAR las facturas futuras (manual y por el cron del
+// servidor) — no toca ninguna factura ya generada. Para corregir una factura que YA EXISTE y está
+// pendiente (del mes actual o atrasada), se usa el botón "Precio" de ESA factura en la pestaña
+// Facturas (función nxEditarPrecioFactura, más abajo) — cada una con su propio monto si hace falta,
+// y esa misma pantalla pregunta si el precio corregido también debe quedar como la plantilla futura.
+function nxAvisoPrecioCliente(cli,primaAntes){
   try{
     const primaAhora=getPTReal(cli)+((cli.deps||[]).length*getPDReal(cli));
-    if(Math.round(primaAhora)===Math.round(primaAntes))return; // no cambió, nada que preguntar
-    const permanente=confirm(`El precio de ${cli.nom} quedó en ${fmt(primaAhora)} (antes ${fmt(primaAntes)}).\n\n¿Este precio es PERMANENTE? El sistema seguirá generando las PRÓXIMAS facturas con este monto.\n\nAceptar = Sí, permanente de ahora en adelante.\nCancelar = No, fue solo para corregir lo que ya estaba pendiente — el próximo mes se factura otra vez a ${fmt(primaAntes)}.`);
-    if(permanente)return; // ya quedó guardado como precio del cliente; no hay que hacer nada más
-    await API.patch('clientes',`id=eq.${cli.id}`,{precio_titular:precioTitularAntes,precio_dep:precioDepAntes});
-    cli.precio_titular=precioTitularAntes;cli.precio_dep=precioDepAntes;
-    logAudit('PRECIO_CORRECCION_UNICA',`${cli.nom} · ${fmt(primaAhora)} se aplicó SOLO a las facturas ya pendientes; el precio del cliente vuelve a ${fmt(primaAntes)} para los próximos meses`,'Clientes');
-    toast('info','Corrección de una sola vez',`Lo pendiente quedó en ${fmt(primaAhora)}. El próximo mes se factura a ${fmt(primaAntes)}.`);
-  }catch(e){console.warn('nxPreguntarPermanenciaPrecio',e);}
+    if(Math.round(primaAhora)===Math.round(primaAntes))return; // no cambió, nada que avisar
+    toast('info','Precio para las PRÓXIMAS facturas',`${cli.nom}: ${fmt(primaAhora)} desde ahora. Las facturas YA pendientes no cambiaron — corrígelas una por una con el botón "Precio" en Facturas si hace falta.`);
+    logAudit('CLIENTE_PRECIO_FUTURO',`${cli.nom} · Precio para las próximas facturas: ${fmt(primaAntes)} → ${fmt(primaAhora)} (no afecta facturas ya generadas)`,'Clientes');
+  }catch(e){console.warn('nxAvisoPrecioCliente',e);}
 }
 async function guardarCli(){
   // Nombre del cliente (obligatorio)
@@ -6581,8 +6558,6 @@ async function guardarCli(){
       // Prima mensual ANTES de editar (para detectar cambio de precio y ofrecer re-preciar la factura del mes)
       const _cliAntes=ST.clientes.find(x=>x.id===editCliId);
       const _primaAntes=_cliAntes?getPTReal(_cliAntes)+((_cliAntes.deps||[]).length*getPDReal(_cliAntes)):null;
-      const _precioTitularAntes=_cliAntes?.precio_titular??null;
-      const _precioDepAntes=_cliAntes?.precio_dep??null;
       // Ajuste de deuda: si el usuario cambió el campo de deuda, ajustar deuda_total
       const cDeudaEl=document.getElementById('cDeudaIni');
       if(cDeudaEl&&!cDeudaEl.disabled){
@@ -6609,13 +6584,10 @@ async function guardarCli(){
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
       logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes');
     toast('ok','Cliente actualizado',nom);
-      // Si la prima mensual cambió: corrige AL INSTANTE las facturas pendientes (mes actual y atrasadas),
-      // y luego pregunta si el precio nuevo es PERMANENTE o solo para corregir lo ya pendiente.
-      if(_primaAntes!=null&&puedeModPrecio){
-        await nxSincronizarFacturaPrecio(ST.clientes[idx],_primaAntes);
-        await nxPreguntarPermanenciaPrecio(ST.clientes[idx],_primaAntes,_precioTitularAntes,_precioDepAntes);
-      }
-      try{rFact();rCob();}catch(_e){} // reflejar el precio nuevo AL INSTANTE también en Facturas y Cobros
+      // Este precio es la plantilla para las PRÓXIMAS facturas — no toca las que ya están pendientes.
+      // Para corregir una factura ya generada se usa el botón "Precio" de esa factura (Facturas).
+      if(_primaAntes!=null&&puedeModPrecio)nxAvisoPrecioCliente(ST.clientes[idx],_primaAntes);
+      try{rFact();rCob();}catch(_e){} // reflejar el precio nuevo también en Facturas y Cobros
     }else{
       // Generar número de póliza automático
       const numPol=await generarNumPoliza();
