@@ -767,6 +767,108 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 /* Contadores dentro de las pestañas */
 .nxft-tab .nxft-cnt{padding:1px 7px;border-radius:10px;font-size:9px;margin-left:1px;background:rgba(148,163,184,.22);color:inherit}
 .nxft-tab.is-active .nxft-cnt{background:rgba(255,255,255,.25);color:#fff}
+
+/* Facturas de seguros - vista movil SaaS */
+.nx-ins-facturas{background:#f6f8fb}
+.nx-ins-facturas .nxft-tabs{position:sticky;top:0;z-index:6;margin:-2px -2px 12px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-color:#e5e7eb;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+.nx-ins-panel{border:1px solid #e5e7eb!important;border-radius:18px!important;background:#fff!important;box-shadow:0 12px 30px rgba(15,23,42,.07)!important;overflow:hidden}
+.nx-ins-head{margin:-14px -14px 12px;padding:16px 16px 14px;background:linear-gradient(135deg,#ffffff 0%,#eef5ff 100%);border-bottom:1px solid #e5e7eb}
+.nx-ins-head .ct{font-size:18px;letter-spacing:-.01em;color:#0f172a}
+.nx-ins-head .ct-s{color:#64748b;font-weight:600;text-transform:none}
+.nx-ins-filters{display:grid;grid-template-columns:1fr 84px;gap:8px;margin-bottom:10px}
+.nx-ins-filters select{height:42px!important;border:1px solid #dbe3ee!important;border-radius:13px!important;background:#fff!important;color:#0f172a!important;font-size:12px!important;font-weight:800!important;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.nx-ins-filters #fFactEstado{grid-column:1/-1}
+.nx-ins-more{margin-bottom:12px;border:1px solid #e5e7eb;border-radius:14px;background:#fbfdff;overflow:hidden}
+.nx-ins-more summary{cursor:pointer;padding:11px 13px;font-size:11px;font-weight:800;color:#334155;list-style:none}
+.nx-ins-more summary::-webkit-details-marker{display:none}
+.nx-ins-summary{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin-bottom:12px}
+.nx-ins-kpi{border-radius:16px;padding:13px 14px;border:1px solid #e5e7eb;background:#fff;box-shadow:0 8px 18px rgba(15,23,42,.05)}
+.nx-ins-kpi small{display:block;font-size:9px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.nx-ins-kpi strong{display:block;font-size:21px;color:#0f172a;line-height:1}
+.nx-ins-kpi.money{background:linear-gradient(135deg,#172554,#2563eb);border-color:#1d4ed8}
+.nx-ins-kpi.money small,.nx-ins-kpi.money strong{color:#fff}
+.nx-ins-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 10px 24px rgba(15,23,42,.07);overflow:hidden}
+.nx-ins-card.is-void{opacity:.56}
+.nx-ins-card>div:first-child{display:flex!important;justify-content:space-between!important;gap:10px!important;align-items:flex-start!important}
+.nx-ins-card>div:first-child>div:first-child>div:first-child{font-size:15px!important;font-weight:900!important;color:#0f172a!important;letter-spacing:-.01em!important}
+.nx-ins-card>div:first-child>div:first-child>div:nth-child(2){font-size:11px!important;color:#64748b!important;margin-top:5px!important;font-weight:700!important;text-transform:none!important}
+.nx-ins-card>div:nth-child(2){margin:13px 0!important;padding:13px!important;border-radius:16px!important;background:#f8fafc!important;border:1px solid #eef2f7!important}
+.nx-ins-card>div:nth-child(2)>div:last-child{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;width:100%!important}
+.nx-ins-card>div:nth-child(2)>div:last-child>div{margin-left:0!important;text-align:left!important;border-radius:13px!important;background:#fff!important;border:1px solid #e5e7eb!important;padding:9px!important}
+.nx-ins-card .fCobrar{padding:11px!important;border-radius:14px!important;font-size:13px!important;font-weight:900!important;box-shadow:0 10px 20px rgba(16,185,129,.25)!important;margin-bottom:8px!important}
+.nx-ins-card .fActs{gap:7px!important}
+.nx-ins-card .fActs button{padding:9px 6px!important;border-radius:13px!important;font-size:11px!important;font-weight:800!important}
+.nx-ins-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.nx-ins-name{font-size:15px;font-weight:900;color:#0f172a;line-height:1.2;cursor:pointer;letter-spacing:-.01em}
+.nx-ins-meta{font-size:11px;color:#64748b;margin-top:5px;font-weight:700;text-transform:none}
+.nx-ins-period{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:4px 8px;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:10px;font-weight:900}
+.nx-ins-state{text-align:right;flex-shrink:0}
+.nx-ins-amount{margin:13px 0;padding:13px;border-radius:16px;background:#f8fafc;border:1px solid #eef2f7}
+.nx-ins-amount-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-end}
+.nx-ins-label{font-size:9px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.nx-ins-total{font-family:var(--mono);font-size:22px;font-weight:900;color:#0f172a;line-height:1.05}
+.nx-ins-sub{font-size:10px;color:#64748b;margin-top:3px;text-transform:none}
+.nx-ins-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.nx-ins-mini>div{border-radius:13px;background:#fff;border:1px solid #e5e7eb;padding:9px}
+.nx-ins-mini .danger{background:#fff5f5;border-color:#fecaca}
+.nx-ins-mini .danger .nx-ins-val{color:#dc2626}
+.nx-ins-val{font-family:var(--mono);font-size:13px;font-weight:900;color:#334155;margin-top:3px}
+.nx-ins-primary{width:100%;border:none;color:#fff;font-weight:900;font-size:13px;padding:11px;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 10px 20px rgba(16,185,129,.25);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:8px}
+.nx-ins-actions{display:grid;gap:7px}
+.nx-ins-actions button{border:none;color:#fff;font-weight:800;font-size:11px;padding:9px 6px;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.nx-ins-actions i,.nx-ins-primary i{color:#fff!important}
+@media(min-width:720px){.nx-ins-facturas .nxft-tabs{position:static;margin-bottom:12px}.nx-ins-filters{grid-template-columns:140px 90px minmax(180px,1fr)}.nx-ins-filters #fFactEstado{grid-column:auto}.nx-ins-card{padding:16px}.nx-ins-mini{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* NEXUS PRO Facturas v3 */
+.nxFactV3{background:#f7f8fc!important;color:#111827}
+.nxFactV3 .nxft-tabs{background:#fff!important;border:1px solid #e7eaf1!important;border-radius:18px!important;padding:6px!important;box-shadow:0 10px 26px rgba(15,23,42,.06)!important}
+.nxFactV3-shell{border:1px solid #e7eaf1!important;border-radius:24px!important;background:#fff!important;box-shadow:0 18px 44px rgba(15,23,42,.08)!important;padding:18px!important;overflow:hidden}
+.nxFactV3-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin:-18px -18px 18px;padding:20px;background:linear-gradient(135deg,#fff,#f4f0ff 52%,#eef6ff);border-bottom:1px solid #e7eaf1}
+.nxFactV3-breadcrumb{display:flex;align-items:center;gap:7px;color:#64748b;font-size:11px;font-weight:800;text-transform:none;margin-bottom:7px}
+.nxFactV3-title{font-size:24px;font-weight:950;color:#111827;letter-spacing:-.035em;line-height:1}
+.nxFactV3-sub{font-size:12px;color:#64748b;font-weight:650;text-transform:none;margin-top:6px}
+.nxFactV3-generate{border:none;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-size:12px;font-weight:900;padding:10px 13px;box-shadow:0 12px 24px rgba(79,70,229,.22);cursor:pointer;display:flex;align-items:center;gap:7px}
+.nxFactV3-statusTabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:15px;padding-bottom:2px;scrollbar-width:none}
+.nxFactV3-statusTabs::-webkit-scrollbar{display:none}
+.nxFactV3-tab{border:1px solid #e5e7eb;background:#fff;color:#475569;border-radius:999px;padding:9px 13px;font-size:11px;font-weight:900;white-space:nowrap;cursor:pointer;box-shadow:0 6px 14px rgba(15,23,42,.04);display:flex;align-items:center;gap:6px}
+.nxFactV3-tab.is-active{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-color:#6d28d9;color:#fff;box-shadow:0 12px 22px rgba(109,40,217,.24)}
+.nxFactV3-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:15px}
+.nxFactV3-kpi{background:#fff;border:1px solid #e7eaf1;border-radius:18px;padding:14px;box-shadow:0 10px 24px rgba(15,23,42,.055)}
+.nxFactV3-kpi span{display:block;font-size:9px;color:#64748b;font-weight:950;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+.nxFactV3-kpi strong{display:block;font-size:22px;font-weight:950;color:#111827;line-height:1}
+.nxFactV3-kpi.indigo{background:linear-gradient(135deg,#312e81,#7c3aed);border-color:#6d28d9}
+.nxFactV3-kpi.indigo span,.nxFactV3-kpi.indigo strong{color:#fff}
+.nxFactV3-filters{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:16px;background:#f9fafb;border:1px solid #edf0f5;border-radius:20px;padding:12px}
+.nxFactV3-field{position:relative}
+.nxFactV3-field i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}
+.nxFactV3-input,.nxFactV3-select{width:100%;height:42px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;color:#111827;font-size:12px;font-weight:800;outline:none;padding:0 12px;box-shadow:0 1px 2px rgba(15,23,42,.03)}
+.nxFactV3-field .nxFactV3-input{padding-left:36px}
+.nxFactV3-clear{height:42px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;color:#4f46e5;font-size:11px;font-weight:900;cursor:pointer}
+.nxFactV3-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.nxFactV3-card{background:#fff;border:1px solid #e7eaf1;border-radius:22px;padding:16px;box-shadow:0 14px 32px rgba(15,23,42,.075)}
+.nxFactV3-card.is-void{opacity:.58}
+.nxFactV3-cardTop{display:flex;align-items:flex-start;gap:12px}
+.nxFactV3-avatar{width:42px;height:42px;border-radius:16px;background:linear-gradient(135deg,#4f46e5,#a855f7);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:950;font-size:14px;box-shadow:0 12px 22px rgba(79,70,229,.22);flex-shrink:0}
+.nxFactV3-name{font-size:15px;font-weight:950;color:#111827;line-height:1.2;letter-spacing:-.02em;cursor:pointer}
+.nxFactV3-meta{font-size:11px;color:#64748b;margin-top:5px;font-weight:700;text-transform:none}
+.nxFactV3-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
+.nxFactV3-chip{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:950;text-transform:uppercase;letter-spacing:.03em;background:#eef2ff;color:#4338ca}
+.nxFactV3-chip.ok{background:#dcfce7;color:#15803d}.nxFactV3-chip.warn{background:#fef3c7;color:#b45309}.nxFactV3-chip.bad{background:#fee2e2;color:#b91c1c}.nxFactV3-chip.neutral{background:#f1f5f9;color:#475569}
+.nxFactV3-money{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0}
+.nxFactV3-moneyBox{border:1px solid #edf0f5;border-radius:17px;background:#f8fafc;padding:12px}
+.nxFactV3-moneyBox span{display:block;font-size:9px;color:#64748b;font-weight:950;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.nxFactV3-moneyBox strong{display:block;font-family:var(--mono);font-size:16px;font-weight:950;color:#111827}
+.nxFactV3-moneyBox.danger strong{color:#dc2626}
+.nxFactV3-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.nxFactV3-actions button{border:none;border-radius:14px;padding:9px 6px;font-size:10px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;min-width:0}
+.nxFactV3-actions .pay{background:linear-gradient(135deg,#059669,#10b981)}.nxFactV3-actions .invoice{background:linear-gradient(135deg,#4f46e5,#7c3aed)}.nxFactV3-actions .wa{background:linear-gradient(135deg,#16a34a,#22c55e)}.nxFactV3-actions .more{background:linear-gradient(135deg,#475569,#0f172a)}
+.nxFactV3-actions i{color:#fff!important}
+@media(min-width:780px){.nxFactV3-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.nxFactV3-filters{grid-template-columns:1.4fr .8fr .9fr .9fr .9fr .8fr auto}.nxFactV3-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.nxFactV3-shell{border-radius:0!important;border-left:none!important;border-right:none!important;padding:14px!important}.nxFactV3-hero{margin:-14px -14px 14px;padding:16px}.nxFactV3-title{font-size:21px}.nxFactV3-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.nxFactV3-money{grid-template-columns:1fr}.nxFactV3-badges{justify-content:flex-start;margin-left:54px;margin-top:8px}.nxFactV3-cardTop{flex-wrap:wrap}}
+.nxFactV3 .nxFactV3-filters{grid-template-columns:1fr!important}
+.nxFactV3 .nxFactV3-filters #fFactEstado{grid-column:auto!important}
+.nxFactV3 .nxFactV3-filters select,.nxFactV3 .nxFactV3-filters input{height:42px!important;border-radius:14px!important}
+@media(min-width:980px){.nxFactV3 .nxFactV3-filters{grid-template-columns:1.4fr .75fr .9fr .9fr .95fr .85fr auto!important}}
 </style>
 </head>
 <body>
@@ -1123,24 +1225,37 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- FACTURAS + COBROS COMBINADOS -->
-        <div class="view" id="v-facturas">
+        <div class="view nx-ins-facturas nxFactV3" id="v-facturas">
           <!-- Tabs -->
-          <div class="nxft-tabs">
+          <div class="nxft-tabs nx-ins-tabs">
             <button id="tabFact" class="nxft-tab is-active" onclick="switchTab('fact')"><i class="ti ti-file-invoice"></i> Facturas</button>
             <button id="tabCob" class="nxft-tab" onclick="switchTab('cob')"><i class="ti ti-wallet"></i> Cobros</button>
             <button id="tabPagos" class="nxft-tab" onclick="switchTab('pagos')"><i class="ti ti-cash-register"></i> Historial de pagos</button>
           </div>
           <!-- Panel Facturas -->
           <div id="panelFact">
-          <div class="nc">
-            <div class="ch">
-              <div><div class="ct">Facturas</div><div class="ct-s">Cobra y factura a tus clientes</div></div>
-              <button class="btn bsm bc1" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
+          <div class="nc nx-ins-panel nxFactV3-shell">
+            <div class="ch nx-ins-head nxFactV3-hero">
+              <div>
+                <div class="nxFactV3-breadcrumb"><span>Inicio</span><i class="ti ti-chevron-right"></i><strong>Facturas</strong></div>
+                <div class="ct nxFactV3-title">Facturas</div>
+                <div class="ct-s nxFactV3-sub">Cartera, cobros y facturacion de clientes de seguros</div>
+              </div>
+              <button class="nxFactV3-generate" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
             </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-              <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
-              <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
-              <select id="fFactEstado" onchange="rFact()" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;flex:1;min-width:130px">
+            <div class="nxFactV3-statusTabs">
+              <button id="nxFactTabTodas" class="nxFactV3-tab" onclick="nxFactV3SetEstado('todas')"><i class="ti ti-files"></i> Todas</button>
+              <button id="nxFactTabPend" class="nxFactV3-tab is-active" onclick="nxFactV3SetEstado('activas')"><i class="ti ti-clock-dollar"></i> Pendientes</button>
+              <button id="nxFactTabDia" class="nxFactV3-tab" onclick="nxFactV3SetEstado('Pagado')"><i class="ti ti-circle-check"></i> Al dia</button>
+              <button id="nxFactTabVenc" class="nxFactV3-tab" onclick="nxFactV3SetEstado('atrasadas')"><i class="ti ti-alert-triangle"></i> Vencidas</button>
+              <button id="nxFactTabAnu" class="nxFactV3-tab" onclick="nxFactV3SetEstado('Anulada')"><i class="ti ti-ban"></i> Anuladas</button>
+            </div>
+            <div id="factResumen"></div>
+            <div class="nx-ins-filters nxFactV3-filters">
+              <div class="nxFactV3-field"><i class="ti ti-search"></i><input id="fFactQ" class="nxFactV3-input" type="text" placeholder="Buscar cliente..." oninput="rFact()"></div>
+              <select id="fMes" class="nxFactV3-select"></select>
+              <select id="fAnio" class="nxFactV3-select"></select>
+              <select id="fFactEstado" class="nxFactV3-select" onchange="rFact()">
                 <option value="activas">Pendientes</option>
                 <option value="atrasadas">Pendientes meses anteriores</option>
                 <option value="todas">Todas</option>
@@ -1149,16 +1264,18 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                 <option value="Parcial">Parciales</option>
                 <option value="Anulada">Anuladas</option>
               </select>
+              <select id="fAgenteFact" class="nxFactV3-select" onchange="rFact()"><option value="">Todos los agentes</option></select>
+              <input id="fFactRuta" class="nxFactV3-input" type="text" placeholder="Ruta / sector" oninput="rFact()">
+              <select id="fFactTipo" class="nxFactV3-select" onchange="rFact()"><option value="">Todos los tipos</option><option value="empresa">Empresa</option><option value="particular">Particular</option><option value="whatsapp">Con WhatsApp</option><option value="sinwa">Sin WhatsApp</option></select>
+              <button class="nxFactV3-clear" onclick="nxFactV3LimpiarFiltros()"><i class="ti ti-filter-off"></i> Limpiar</button>
             </div>
             <details style="margin-bottom:10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc">
               <summary style="cursor:pointer;padding:8px 12px;font-size:11px;font-weight:700;color:#475569;list-style:none"><i class="ti ti-adjustments-horizontal"></i> Más filtros y herramientas</summary>
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 12px 12px">
-                <select id="fAgenteFact" onchange="rFact()" style="height:32px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:11px"><option value="">Todos los agentes</option></select>
                 <button class="btn bsm bwa" onclick="abrirWAMasivo()"><i class="ti ti-brand-whatsapp"></i> WA masivo</button>
                 <button class="btn bsm bc4" onclick="exportarCSVFacturas()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
               </div>
             </details>
-            <div id="factResumen"></div>
             <div id="tbFact"><div class="loading"><div class="spin"></div></div></div>
           </div>
           </div><!-- /panelFact -->
@@ -3254,7 +3371,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='45.0';
+const APP_VERSION='45.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5332,11 +5449,11 @@ function rFact(){
   const _saldoMemo={};
   const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!_saldoMemo[cid])_saldoMemo[cid]=_saldoFacturasCliente(cid);const v=_saldoMemo[cid][f.id];return v!=null?v:(Number(f.prima_base||0)+Number(f.prima_deps||0));};
   const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+saldoDe(f),0);
-  if(rz)rz.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px">
-      <div style="flex:1;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#6d28d9;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Facturas</div><div style="font-size:18px;font-weight:800;color:#1e3a8a">${lista.length}</div></div>
-      <div style="flex:2;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#c2410c;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Por cobrar</div><div style="font-size:18px;font-weight:800;color:#9a3412">${fmt(porCobrar)}</div></div>
+  if(rz)rz.innerHTML=`<div class="nx-ins-summary">
+      <div class="nx-ins-kpi"><small>Facturas</small><strong>${lista.length}</strong></div>
+      <div class="nx-ins-kpi money"><small>Por cobrar</small><strong>${fmt(porCobrar)}</strong></div>
     </div>`;
-  const L=t=>`<div style="font-size:8.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${t}</div>`;
+  const L=t=>`<div class="nx-ins-label">${t}</div>`;
   tb.innerHTML=lista.map(f=>{
     const emp=gEmp(f.empresa_id);
     const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
@@ -5345,7 +5462,7 @@ function rFact(){
     const agTxt=ag?ag.nom:'⚠ Sin agente';
     const anul=f.estado==='Anulada';
     const nBtns=anul?1:(f.estado!=='Pagado'?3:2);
-    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.05)${anul?';opacity:.55':''}">
+    return `<div class="nx-ins-card ${anul?'is-void':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div style="flex:1;min-width:0">
           <div onclick="verCliente('${f.cliente_id}')" style="font-weight:800;font-size:14.5px;color:#0f172a;cursor:pointer;line-height:1.2">${f.cliente_nom}</div>
@@ -5396,6 +5513,85 @@ function pintarFlechasFact(){
     const el=document.getElementById('sf_'+col);
     if(el)el.textContent=(_factSort.col===col)?(_factSort.dir===1?'▲':'▼'):'';
   });
+}
+
+function nxFactV3SetEstado(est){
+  const s=document.getElementById('fFactEstado');
+  if(s)s.value=est;
+  rFact();
+}
+function nxFactV3PintarTabs(est){
+  const map={todas:'nxFactTabTodas',activas:'nxFactTabPend',Pendiente:'nxFactTabPend',Parcial:'nxFactTabPend',Pagado:'nxFactTabDia',atrasadas:'nxFactTabVenc',Anulada:'nxFactTabAnu'};
+  ['nxFactTabTodas','nxFactTabPend','nxFactTabDia','nxFactTabVenc','nxFactTabAnu'].forEach(id=>{const b=document.getElementById(id);if(b)b.classList.remove('is-active');});
+  const b=document.getElementById(map[est]||'nxFactTabPend');if(b)b.classList.add('is-active');
+}
+function nxFactV3LimpiarFiltros(){
+  const q=document.getElementById('fFactQ'),r=document.getElementById('fFactRuta'),t=document.getElementById('fFactTipo'),a=document.getElementById('fAgenteFact'),e=document.getElementById('fFactEstado');
+  if(q)q.value='';if(r)r.value='';if(t)t.value='';if(a)a.value='';if(e)e.value='activas';
+  rFact();
+}
+function nxFactV3Mas(fid){
+  const f=ST.facturas.find(x=>x.id===fid);
+  if(!f)return;
+  alert('Mas acciones disponibles:\\n\\n- Ver historial\\n- Imprimir\\n- Editar\\n- Anular\\n\\nEste espacio queda preparado para convertirlo en menu desplegable.');
+}
+function rFact(){
+  llenarFiltroAgentes('fAgenteFact');
+  const mes=parseInt(document.getElementById('fMes')?.value||mesCorte().mes);
+  const anio=parseInt(document.getElementById('fAnio')?.value||mesCorte().anio);
+  const key=`${anio}-${String(mes).padStart(2,'0')}`;
+  const filtroEst=document.getElementById('fFactEstado')?.value||'activas';
+  const fa=document.getElementById('fAgenteFact')?.value||'';
+  const q=(document.getElementById('fFactQ')?.value||'').trim().toLowerCase();
+  const ruta=(document.getElementById('fFactRuta')?.value||'').trim().toLowerCase();
+  const tipo=(document.getElementById('fFactTipo')?.value||'').trim();
+  const atrasadas=filtroEst==='atrasadas';
+  const mc=mesCorte();const hoyKey=`${mc.anio}-${String(mc.mes).padStart(2,'0')}`;
+  let lista=atrasadas?ST.facturas.filter(f=>f.periodo<hoyKey&&f.estado!=='Pagado'&&f.estado!=='Anulada').sort((a,b)=>a.periodo<b.periodo?-1:a.periodo>b.periodo?1:0):ST.facturas.filter(f=>f.periodo===key);
+  if(!atrasadas){
+    if(filtroEst==='activas')lista=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada');
+    else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
+  }
+  if(fa){const idsAg=new Set(ST.clientes.filter(c=>String(c.agente_id)===fa).map(c=>String(c.id)));lista=lista.filter(f=>idsAg.has(String(f.cliente_id)));}
+  lista=lista.filter(f=>{
+    const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
+    const emp=gEmp(f.empresa_id);
+    const texto=[f.cliente_nom,f.ncf,f.periodo,cli?.nom,cli?.cedula,cli?.numero_poliza,cli?.wa,cli?.tel,cli?.dir,emp?.nom,emp?.sector].filter(Boolean).join(' ').toLowerCase();
+    const rutaTxt=[cli?.dir,cli?.ruta,cli?.sector,emp?.sector].filter(Boolean).join(' ').toLowerCase();
+    if(q&&!texto.includes(q))return false;
+    if(ruta&&!rutaTxt.includes(ruta))return false;
+    if(tipo==='empresa'&&!f.empresa_id)return false;
+    if(tipo==='particular'&&f.empresa_id)return false;
+    if(tipo==='whatsapp'&&!cli?.wa)return false;
+    if(tipo==='sinwa'&&cli?.wa)return false;
+    return true;
+  });
+  if(_factSort.col){const col=_factSort.col,dir=_factSort.dir;lista.sort((a,b)=>{const va=_factSortVal(a,col),vb=_factSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
+  const tb=document.getElementById('tbFact');
+  const rz=document.getElementById('factResumen');
+  const saldoMemo={};
+  const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!saldoMemo[cid])saldoMemo[cid]=_saldoFacturasCliente(cid);const v=saldoMemo[cid][f.id];return v!=null?v:(Number(f.prima_base||0)+Number(f.prima_deps||0));};
+  const baseKpi=atrasadas?ST.facturas.filter(f=>f.periodo<hoyKey):ST.facturas.filter(f=>f.periodo===key);
+  const kPend=baseKpi.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
+  const kCob=baseKpi.filter(f=>f.estado==='Pagado').reduce((s,f)=>s+Number(f.prima_base||0)+Number(f.prima_deps||0),0);
+  const kPor=baseKpi.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+saldoDe(f),0);
+  if(rz)rz.innerHTML=`<div class="nxFactV3-kpis"><div class="nxFactV3-kpi"><span>Facturas totales</span><strong>${baseKpi.length}</strong></div><div class="nxFactV3-kpi"><span>Pendientes</span><strong>${kPend}</strong></div><div class="nxFactV3-kpi"><span>Cobrado</span><strong>${fmt(kCob)}</strong></div><div class="nxFactV3-kpi indigo"><span>Por cobrar</span><strong>${fmt(kPor)}</strong></div></div>`;
+  nxFactV3PintarTabs(filtroEst);
+  if(!tb)return;
+  if(!lista.length){tb.innerHTML=`<div class="empty">${atrasadas?'Sin facturas vencidas':'Sin facturas con esos filtros'}</div>`;pintarFlechasFact();return;}
+  tb.innerHTML=`<div class="nxFactV3-grid">`+lista.map(f=>{
+    const emp=gEmp(f.empresa_id);
+    const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
+    const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
+    const anul=f.estado==='Anulada';
+    const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
+    const sal=saldoDe(f);
+    const initials=String(f.cliente_nom||'CL').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'CL';
+    const estadoCls=f.estado==='Pagado'?'ok':f.estado==='Parcial'?'warn':f.estado==='Anulada'?'neutral':'bad';
+    const rutaTxt=emp?.sector||cli?.sector||cli?.ruta||cli?.dir||'Sin ruta';
+    return `<div class="nxFactV3-card ${anul?'is-void':''}"><div class="nxFactV3-cardTop"><div class="nxFactV3-avatar">${initials}</div><div style="flex:1;min-width:0"><div onclick="verCliente('${f.cliente_id}')" class="nxFactV3-name">${f.cliente_nom}</div><div class="nxFactV3-meta">${rutaTxt} · Poliza ${cli?.numero_poliza||'sin numero'} · ${ag?.nom||'Sin agente'}</div>${atrasadas?`<div class="nxFactV3-meta">${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}</div><div class="nxFactV3-badges"><span class="nxFactV3-chip">${f.plan||'Plan'}</span><span class="nxFactV3-chip ${estadoCls}">${f.estado}</span></div></div><div class="nxFactV3-money"><div class="nxFactV3-moneyBox danger"><span>Deuda anterior</span><strong>${fmt((Number(f.deuda_ant||0)+Number(cli?.deuda_anterior||0))||0)}</strong></div><div class="nxFactV3-moneyBox"><span>Mes actual</span><strong>${fmt(sal||prima)}</strong></div></div><div class="nxFactV3-actions"><button class="pay" onclick="cobrarDesdeFact('${f.cliente_id}')" ${anul?'disabled':''}><i class="ti ti-wallet"></i> Cobrar</button><button class="invoice" onclick="verFacturaPDF_id('${f.id}')"><i class="ti ti-file-invoice"></i> Facturar</button><button class="wa" onclick="enviarWA('${f.id}')" ${anul?'disabled':''}><i class="ti ti-brand-whatsapp"></i> WhatsApp</button><button class="more" onclick="nxFactV3Mas('${f.id}')"><i class="ti ti-dots"></i> Mas</button></div></div>`;
+  }).join('')+`</div>`;
+  pintarFlechasFact();
 }
 
 async function anularFactura(facturaId){
