@@ -3252,7 +3252,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='45.7';
+const APP_VERSION='45.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5365,7 +5365,7 @@ function rFact(){
         <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> Factura</button>
         ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WhatsApp</button>`}
         ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="editarCli('${f.cliente_id}')" title="El precio se corrige editando al cliente" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#f59e0b)"><i class="ti ti-pencil" style="color:#fff!important;font-size:13px"></i> Precio</button>`:''}
-        ${(!anul&&f.estado!=='Pagado')?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> Anular</button>`:''}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> Anular</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -6462,6 +6462,23 @@ async function nxSincronizarFacturaPrecio(cli,primaAntes){
     try{rFact();rCob();}catch(e){}
   }catch(e){console.warn('nxSincronizarFacturaPrecio',e);}
 }
+// ── ¿El precio nuevo es PERMANENTE o solo para corregir lo pendiente? ──
+// Las facturas pendientes YA se corrigieron al instante (arriba). Esto decide qué pasa DE AHORA EN
+// ADELANTE: si el precio se queda puesto en el cliente (el sistema seguirá generando las próximas
+// facturas con este monto), o si era solo un arreglo puntual y el precio del cliente debe VOLVER al
+// de antes (para que el próximo mes se facture otra vez con el precio de siempre).
+async function nxPreguntarPermanenciaPrecio(cli,primaAntes,precioTitularAntes,precioDepAntes){
+  try{
+    const primaAhora=getPTReal(cli)+((cli.deps||[]).length*getPDReal(cli));
+    if(Math.round(primaAhora)===Math.round(primaAntes))return; // no cambió, nada que preguntar
+    const permanente=confirm(`El precio de ${cli.nom} quedó en ${fmt(primaAhora)} (antes ${fmt(primaAntes)}).\n\n¿Este precio es PERMANENTE? El sistema seguirá generando las PRÓXIMAS facturas con este monto.\n\nAceptar = Sí, permanente de ahora en adelante.\nCancelar = No, fue solo para corregir lo que ya estaba pendiente — el próximo mes se factura otra vez a ${fmt(primaAntes)}.`);
+    if(permanente)return; // ya quedó guardado como precio del cliente; no hay que hacer nada más
+    await API.patch('clientes',`id=eq.${cli.id}`,{precio_titular:precioTitularAntes,precio_dep:precioDepAntes});
+    cli.precio_titular=precioTitularAntes;cli.precio_dep=precioDepAntes;
+    logAudit('PRECIO_CORRECCION_UNICA',`${cli.nom} · ${fmt(primaAhora)} se aplicó SOLO a las facturas ya pendientes; el precio del cliente vuelve a ${fmt(primaAntes)} para los próximos meses`,'Clientes');
+    toast('info','Corrección de una sola vez',`Lo pendiente quedó en ${fmt(primaAhora)}. El próximo mes se factura a ${fmt(primaAntes)}.`);
+  }catch(e){console.warn('nxPreguntarPermanenciaPrecio',e);}
+}
 async function guardarCli(){
   // Nombre del cliente (obligatorio)
   const nom=document.getElementById('cNom').value.trim();
@@ -6488,15 +6505,20 @@ async function guardarCli(){
     btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar cliente';
     toast('err','La operación tardó demasiado','Revisa tu conexión e intenta de nuevo');
   },12000);
+  // Solo quien tiene el permiso puede TOCAR el precio. Si no lo tiene, precio_titular/precio_dep
+  // NI SIQUIERA entran en el guardado — así editar cualquier otro campo del cliente (teléfono, etc.)
+  // nunca borra un precio especial que ya tenía puesto (bug de raíz: antes SIEMPRE se mandaba null).
+  const puedeModPrecio=tienePermiso('modificar_precio');
   let precioT=null, precioD=null;
   const customOn=document.getElementById('cPrecioCustomOn')?.checked;
-  if(customOn && tienePermiso('modificar_precio')){
+  if(customOn && puedeModPrecio){
     const vt=document.getElementById('cPrecioTitular')?.value;
     const vd=document.getElementById('cPrecioDep')?.value;
     precioT=(vt!==''&&vt!=null)?(window.nxMoney?window.nxMoney.parse(vt):parseFloat(vt)):null;
     precioD=(vd!==''&&vd!=null)?(window.nxMoney?window.nxMoney.parse(vd):parseFloat(vd)):null;
   }
-  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:(nxWa(document.getElementById('cWA').value)||document.getElementById('cWA').value.replace(/\D/g,'')),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,precio_titular:precioT,precio_dep:precioD,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:(nxWa(document.getElementById('cRefWa')?.value)||document.getElementById('cRefWa')?.value?.replace(/\D/g,''))||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
+  const datos={nom,cedula:document.getElementById('cCed').value.trim(),wa:(nxWa(document.getElementById('cWA').value)||document.getElementById('cWA').value.replace(/\D/g,'')),tel:document.getElementById('cTel').value.trim(),email:document.getElementById('cEmail').value.trim(),plan:document.getElementById('cPlan').value,ars:document.getElementById('cARS')?.value||null,dia_facturacion:parseInt(document.getElementById('cDiaFact')?.value)||autoCfg.dia||1,empresa_id:document.getElementById('eChips')._sel||null,agente_id:document.getElementById('cAgt').value||null,dir:document.getElementById('cDir').value.trim(),deps:JSON.stringify(tempDeps),tipo_ncf:document.getElementById('cNCF').value,fecha_inicio:document.getElementById('cFecIni').value||null,fecha_fin:document.getElementById('cFecFin').value||null,referencia:document.getElementById('cRef')?.value?.trim()||null,referencia_wa:(nxWa(document.getElementById('cRefWa')?.value)||document.getElementById('cRefWa')?.value?.replace(/\D/g,''))||null,vip:document.getElementById('cVip')?.checked||false,estado_cliente:document.getElementById('cEstadoCli')?.value||'ACTIVO',permitir_facturacion:document.getElementById('cPermFact')?.checked!==false,pendientes_proceso:JSON.stringify([...document.querySelectorAll('.pend-chk:checked')].map(c=>c.value)),otro_pendiente_detalle:document.getElementById('cOtroPend')?.value?.trim()||null,nota_proceso:document.getElementById('cNotaProc')?.value?.trim()||null,fecha_seguimiento:document.getElementById('cFechaSeg')?.value||null,responsable_seguimiento:document.getElementById('cRespSeg')?.value?.trim()||null,prioridad_proceso:document.getElementById('cPrioridad')?.value||'MEDIA',porcentaje_progreso:Math.round(((12-document.querySelectorAll('.pend-chk:checked').length)/12)*100)};
+  if(puedeModPrecio||!editCliId){datos.precio_titular=precioT;datos.precio_dep=precioD;} // en un cliente NUEVO siempre se manda (null = precio estándar)
   // Normalizar campos de texto a MAYÚSCULAS (el email se deja intacto)
   datos.nom=mayus(datos.nom);
   datos.dir=mayus(datos.dir);
@@ -6525,6 +6547,8 @@ async function guardarCli(){
       // Prima mensual ANTES de editar (para detectar cambio de precio y ofrecer re-preciar la factura del mes)
       const _cliAntes=ST.clientes.find(x=>x.id===editCliId);
       const _primaAntes=_cliAntes?getPTReal(_cliAntes)+((_cliAntes.deps||[]).length*getPDReal(_cliAntes)):null;
+      const _precioTitularAntes=_cliAntes?.precio_titular??null;
+      const _precioDepAntes=_cliAntes?.precio_dep??null;
       // Ajuste de deuda: si el usuario cambió el campo de deuda, ajustar deuda_total
       const cDeudaEl=document.getElementById('cDeudaIni');
       if(cDeudaEl&&!cDeudaEl.disabled){
@@ -6551,8 +6575,12 @@ async function guardarCli(){
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
       logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes');
     toast('ok','Cliente actualizado',nom);
-      // Si la prima mensual cambió, ofrecer actualizar la factura del mes en curso (si no está pagada)
-      if(_primaAntes!=null)await nxSincronizarFacturaPrecio(ST.clientes[idx],_primaAntes);
+      // Si la prima mensual cambió: corrige AL INSTANTE las facturas pendientes (mes actual y atrasadas),
+      // y luego pregunta si el precio nuevo es PERMANENTE o solo para corregir lo ya pendiente.
+      if(_primaAntes!=null&&puedeModPrecio){
+        await nxSincronizarFacturaPrecio(ST.clientes[idx],_primaAntes);
+        await nxPreguntarPermanenciaPrecio(ST.clientes[idx],_primaAntes,_precioTitularAntes,_precioDepAntes);
+      }
       try{rFact();rCob();}catch(_e){} // reflejar el precio nuevo AL INSTANTE también en Facturas y Cobros
     }else{
       // Generar número de póliza automático
