@@ -752,6 +752,188 @@
 
 })();
 
+/* ═══════════════════════════════════════════════════════════════════════
+   AGUAPRO ERP DEMO - dentro de Multiempresa
+   Prototipo SaaS para presentar a distribuidoras de agua.
+   No conecta base de datos todavía; no toca lógica existente.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  if (window.__NX_AGUAPRO__) return;
+  window.__NX_AGUAPRO__ = true;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+    });
+  }
+  function fmt(n) {
+    try { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
+    catch (e) { return 'RD$ 0'; }
+  }
+  function ensureView() {
+    var v = document.getElementById('v-aguapro');
+    if (v) return v;
+    var dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
+    v = document.createElement('div');
+    v.className = 'view';
+    v.id = 'v-aguapro';
+    dash.parentElement.appendChild(v);
+    return v;
+  }
+  function inyectarCSS() {
+    if (document.getElementById('nxAguaCSS')) return;
+    var st = document.createElement('style');
+    st.id = 'nxAguaCSS';
+    st.textContent = [
+      '.nxAgua{max-width:1240px;margin:0 auto;color:#0f172a}',
+      '.nxAguaHero{position:relative;overflow:hidden;border-radius:22px;padding:22px;background:linear-gradient(135deg,#ecfeff,#eff6ff 55%,#eef2ff);border:1px solid #dbeafe;margin-bottom:14px}',
+      '.nxAguaHero:after{content:"";position:absolute;right:-42px;top:-50px;width:190px;height:190px;border-radius:999px;background:rgba(14,165,233,.18)}',
+      '.nxAguaHero h2{margin:0;font-size:28px;letter-spacing:-.04em;color:#0f172a}.nxAguaHero p{margin:6px 0 0;color:#475569;font-size:13px;max-width:760px;line-height:1.55}',
+      '.nxAguaTop{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:1}.nxAguaLogo{width:50px;height:50px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#06b6d4,#2563eb);color:#fff;font-size:27px;box-shadow:0 16px 30px rgba(37,99,235,.22)}',
+      '.nxAguaTabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:5px;margin:12px 0}.nxAguaTabs button{white-space:nowrap;border:1px solid #dbeafe;background:#fff;color:#475569;border-radius:999px;padding:9px 13px;font-size:11px;font-weight:850}.nxAguaTabs button.on{background:#2563eb;color:#fff;border-color:#2563eb}',
+      '.nxAguaKpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}.nxAguaKpi{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px;box-shadow:0 10px 24px rgba(15,23,42,.045)}.nxAguaKpi span{display:block;color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}.nxAguaKpi b{display:block;margin-top:6px;font-size:23px;color:#0f172a}',
+      '.nxAguaGrid{display:grid;grid-template-columns:1fr;gap:12px}.nxAguaPanel{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:15px;box-shadow:0 10px 24px rgba(15,23,42,.045)}.nxAguaPanel h3{margin:0 0 12px;font-size:14px;color:#0f172a}',
+      '.nxAguaList{display:grid;gap:9px}.nxAguaRow{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:11px;border:1px solid #edf2f7;border-radius:15px;background:#fff}.nxAguaIco{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#0284c7;background:#e0f2fe;font-size:21px}.nxAguaRow strong,.nxAguaRow span{display:block}.nxAguaRow strong{font-size:13px}.nxAguaRow span{margin-top:3px;color:#64748b;font-size:11px}.nxAguaTag{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:9px;font-weight:900;text-transform:uppercase;background:#dbeafe;color:#1d4ed8}.nxAguaTag.ok{background:#dcfce7;color:#15803d}.nxAguaTag.warn{background:#fef3c7;color:#b45309}.nxAguaTag.bad{background:#fee2e2;color:#b91c1c}',
+      '.nxAguaCards{display:grid;grid-template-columns:1fr;gap:10px}.nxAguaProd{border:1px solid #e2e8f0;border-radius:16px;padding:13px;background:#fff}.nxAguaProdTop{display:flex;gap:10px;align-items:center}.nxAguaProd b{font-size:14px}.nxAguaProd small{display:block;color:#64748b;margin-top:3px}.nxAguaMoney{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.nxAguaMoney div{background:#f8fafc;border-radius:12px;padding:9px}.nxAguaMoney span{font-size:10px;color:#64748b;font-weight:850}.nxAguaMoney strong{display:block;margin-top:3px;font-size:13px}',
+      '.nxAguaPOS{display:grid;grid-template-columns:1fr;gap:12px}.nxAguaCart{background:#0f172a;color:#fff;border-radius:18px;padding:15px}.nxAguaCart h3{color:#fff}.nxAguaCartLine{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:12px}.nxAguaTotal{display:flex;justify-content:space-between;margin-top:14px;font-size:20px;font-weight:950}.nxAguaPay{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.nxAguaPay button{border:0;border-radius:12px;padding:10px;font-size:11px;font-weight:850}.nxAguaPay button:first-child{background:#10b981;color:#fff}',
+      '@media(min-width:780px){.nxAguaKpis{grid-template-columns:repeat(4,minmax(0,1fr))}.nxAguaGrid{grid-template-columns:1fr 1fr}.nxAguaCards{grid-template-columns:repeat(2,minmax(0,1fr))}.nxAguaPOS{grid-template-columns:minmax(0,1fr) 340px}.nxAguaWide{grid-column:1/-1}}',
+      '@media(max-width:560px){.nxAguaHero{border-radius:16px;padding:17px}.nxAguaHero h2{font-size:23px}.nxAguaTop{align-items:flex-start}.nxAguaKpi b{font-size:20px}.nxAguaRow{grid-template-columns:38px 1fr}.nxAguaRow .nxAguaTag{grid-column:2}.nxAguaIco{width:38px;height:38px}}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+
+  var tab = 'dashboard';
+  function setTab(t) {
+    tab = t || 'dashboard';
+    var v = document.getElementById('v-aguapro');
+    if (v) render(v);
+  }
+  window.nxAguaTab = setTab;
+
+  function tabs() {
+    var items = [['dashboard', 'Dashboard'], ['clientes', 'Clientes'], ['productos', 'Productos'], ['pos', 'POS'], ['botellones', 'Botellones'], ['produccion', 'Producción']];
+    return '<div class="nxAguaTabs">' + items.map(function (it) {
+      return '<button type="button" class="' + (tab === it[0] ? 'on' : '') + '" onclick="window.nxAguaTab(\'' + it[0] + '\')">' + it[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  function kpis(arr) {
+    return '<div class="nxAguaKpis">' + arr.map(function (x) { return '<div class="nxAguaKpi"><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('') + '</div>';
+  }
+  function dashboard() {
+    return kpis([['Ventas del día', fmt(18450)], ['Pedidos pendientes', '14'], ['Botellones fuera', '326'], ['Producción hoy', '290']]) +
+      '<div class="nxAguaGrid"><div class="nxAguaPanel"><h3>Alertas operativas</h3><div class="nxAguaList">' +
+      row('ti-alert-triangle', 'Stock crítico', 'Hielo 10 lb por debajo del mínimo', 'Revisar', 'warn') +
+      row('ti-route', 'Ruta Norte', '8 entregas pendientes', 'En ruta', '') +
+      row('ti-bottle', 'Botellones perdidos', '6 unidades por revisar', 'Riesgo', 'bad') +
+      '</div></div><div class="nxAguaPanel"><h3>Top productos</h3><div class="nxAguaList">' +
+      row('ti-droplet', 'Botellón 5 galones', '124 vendidos este mes', fmt(9300), 'ok') +
+      row('ti-bottle', 'Agua 16 oz x24', '38 vendidos este mes', fmt(6840), 'ok') +
+      row('ti-snowflake', 'Hielo 10 lb', '31 vendidos este mes', fmt(2015), 'ok') +
+      '</div></div></div>';
+  }
+  function row(icon, title, sub, tag, cls) {
+    return '<div class="nxAguaRow"><span class="nxAguaIco"><i class="ti ' + icon + '"></i></span><div><strong>' + esc(title) + '</strong><span>' + esc(sub) + '</span></div><span class="nxAguaTag ' + (cls || '') + '">' + esc(tag) + '</span></div>';
+  }
+  function clientes() {
+    return kpis([['Clientes activos', '148'], ['Con deuda', '23'], ['Balance', fmt(86500)], ['Nuevos mes', '11']]) +
+      '<div class="nxAguaPanel"><h3>Clientes recientes</h3><div class="nxAguaList">' +
+      row('ti-building-store', 'Colmado La Bendición', 'Villa Mella · Botellón 5 galones · 809-555-0140', fmt(2500), 'warn') +
+      row('ti-home', 'Residencial Palmeras', 'Los Prados · tarifa especial', 'Al día', 'ok') +
+      row('ti-coffee', 'Cafetería El Punto', 'Ensanche Ozama · crédito 7 días', fmt(6200), 'bad') +
+      '</div></div>';
+  }
+  function productos() {
+    return kpis([['Productos', '42'], ['Stock crítico', '3'], ['Inventario', fmt(245300)], ['Margen prom.', fmt(52)]]) + '<div class="nxAguaCards">' + productCards() + '</div>';
+  }
+  function productCards() {
+    var cards = [
+      ['ti-droplet', 'Botellón Agua 5 Galones', 'AG-001 · Agua', 38, 75, 'Stock 420'],
+      ['ti-bottle', 'Paquete Agua 16 oz x24', 'AG-002 · Embotellada', 115, 180, 'Stock 95'],
+      ['ti-snowflake', 'Funda de Hielo 10 lb', 'HI-001 · Hielo', 35, 65, 'Stock bajo 18'],
+      ['ti-tool', 'Dispensador Manual', 'AC-001 · Accesorios', 90, 175, 'Stock 60']
+    ].map(function (p) {
+      return '<div class="nxAguaProd"><div class="nxAguaProdTop"><span class="nxAguaIco"><i class="ti ' + p[0] + '"></i></span><div><b>' + esc(p[1]) + '</b><small>' + esc(p[2]) + '</small></div></div><div class="nxAguaMoney"><div><span>Costo</span><strong>' + fmt(p[3]) + '</strong></div><div><span>Precio</span><strong>' + fmt(p[4]) + '</strong></div></div><div style="margin-top:9px"><span class="nxAguaTag ' + (/bajo/i.test(p[5]) ? 'warn' : 'ok') + '">' + esc(p[5]) + '</span></div></div>';
+    }).join('');
+    return cards;
+  }
+  function pos() {
+    return '<div class="nxAguaPOS"><div><div class="nxAguaPanel"><h3>Catálogo táctil</h3><div class="nxAguaCards">' +
+      productCards() +
+      '</div></div></div><aside class="nxAguaCart"><h3>Carrito demo</h3><div class="nxAguaCartLine"><span>Botellón 5 galones x3</span><b>' + fmt(225) + '</b></div><div class="nxAguaCartLine"><span>Hielo 10 lb x2</span><b>' + fmt(130) + '</b></div><div class="nxAguaTotal"><span>Total</span><b>' + fmt(355) + '</b></div><div class="nxAguaPay"><button>Efectivo</button><button>Tarjeta</button><button>Transferencia</button><button>Crédito</button></div></aside></div>';
+  }
+  function botellones() {
+    return kpis([['Total', '1,240'], ['Disponibles', '614'], ['En cliente', '326'], ['Proceso', '118']]) +
+      '<div class="nxAguaGrid">' +
+      ['Disponible|BOT-0001|Almacén principal|ok', 'En cliente|BOT-0002|Colmado La Bendición|warn', 'En lavado|BOT-0003|Área de lavado|', 'En llenado|BOT-0004|Línea 1|', 'Dañado|BOT-0005|Revisión|bad', 'Perdido|BOT-0006|Residencial Palmeras|bad'].map(function (s) {
+        var p = s.split('|'); return '<div class="nxAguaPanel">' + row('ti-bottle', p[1], p[2], p[0], p[3]) + '</div>';
+      }).join('') + '</div>';
+  }
+  function produccion() {
+    return kpis([['Producción total', '290'], ['Lavados', '86'], ['Llenados', '72'], ['Dañados', '4']]) +
+      '<div class="nxAguaGrid"><div class="nxAguaPanel"><h3>Flujo</h3><div class="nxAguaList">' +
+      row('ti-wash-machine', 'Lavado', 'Botellones procesados hoy', '86', 'ok') +
+      row('ti-droplet-plus', 'Llenado', 'Botellones listos para sellar', '72', 'ok') +
+      row('ti-rosette-discount-check', 'Sellado', 'Control de calidad', '68', 'ok') +
+      '</div></div><div class="nxAguaPanel"><h3>Turnos</h3><div class="nxAguaList">' +
+      row('ti-user', 'Luis Martínez', '08:00 AM · Lavado', '45', 'ok') +
+      row('ti-user', 'Ana Pérez', '10:30 AM · Llenado', '38', 'warn') +
+      '</div></div></div>';
+  }
+  function body() {
+    if (tab === 'clientes') return clientes();
+    if (tab === 'productos') return productos();
+    if (tab === 'pos') return pos();
+    if (tab === 'botellones') return botellones();
+    if (tab === 'produccion') return produccion();
+    return dashboard();
+  }
+  function render(view) {
+    view.innerHTML = '<div class="nxAgua"><div class="nxAguaHero"><div class="nxAguaTop"><div><h2>AGUAPRO ERP</h2><p>Sistema SaaS multiempresa para plantas purificadoras y distribuidoras de agua. Demo interno para presentar a clientes antes de separarlo con base de datos propia.</p></div><span class="nxAguaLogo"><i class="ti ti-droplet-filled"></i></span></div></div>' + tabs() + body() + '</div>';
+  }
+
+  window.nxAbrirAguaPro = function () {
+    try { if (typeof esAdmin === 'function' && !esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; } } catch (e) {}
+    inyectarCSS();
+    var view = ensureView();
+    if (!view) return;
+    document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
+    view.classList.add('on');
+    document.querySelectorAll('.ni').forEach(function (n) { n.classList.remove('on'); });
+    var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'AGUAPRO ERP';
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    render(view);
+  };
+
+  function registrar() {
+    try {
+      if (window.nxMERegistrar) window.nxMERegistrar({
+        orden: 6,
+        nombre: 'AGUAPRO ERP',
+        desc: 'Distribuidoras de agua, botellones, producción y rutas',
+        icon: 'ti-droplet-filled',
+        color: '#0284c7',
+        bg: '#e0f2fe',
+        onclick: 'window.nxAbrirAguaPro()'
+      });
+    } catch (e) {}
+  }
+  function init() {
+    inyectarCSS();
+    var n = 0;
+    var t = function () {
+      n++;
+      if (window.nxMERegistrar) { registrar(); return; }
+      if (n < 80) setTimeout(t, 150);
+    };
+    t();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
+
 
 /* ==========================================================================
    NEXUS PRO - FASE 2: Reporte premium + Transferencias entre agentes
