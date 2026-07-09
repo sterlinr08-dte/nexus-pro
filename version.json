@@ -1,7 +1,8 @@
 {
-  "version": "45.4",
+  "version": "45.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (Seguros · COBROS rediseñado en tarjetas): la lista de Cobros ya no es una tabla apretada — ahora cada cliente es una TARJETA clara (foto con iniciales, nombre, su agente, plan y estado AL DÍA / PARCIAL / PENDIENTE en color), con la Deuda anterior y lo Pendiente bien separados en ROJO, y dos botones grandes: COBRAR (abre el cobro de siempre) y WHATSAPP, que le manda al cliente DIRECTO a su número un recordatorio con lo que debe (mes pendiente + deuda anterior + total a pagar). Se ve perfecto en el móvil. NO cambia nada del dinero ni del cobro.",
     "Se restauró la versión estable con el arreglo de corregir el precio de una factura al instante (botón PRECIO en cada factura pendiente) y el ciclo 20-al-20 correcto. El rediseño de facturas anterior quedó guardado aparte para retomarlo con calma.",
     "NUEVO (Seguros · corregir el precio de una factura al instante): cada factura PENDIENTE ahora tiene un botón PRECIO — si el monto salió mal, lo corriges ahí mismo, la deuda del cliente se cuadra sola y quedas listo para COBRAR con el precio correcto, todo al instante. ARREGLADO además: al cambiarle la prima a un cliente, el sistema ahora ajusta la factura del MES DE CORTE (ciclo 20-al-20) que se está cobrando — antes miraba el mes del calendario y a veces reprecihaba la factura equivocada. Las facturas ya pagadas NO se tocan; todo queda en auditoría.",
     "ARREGLADO (POS · Facturación cabe sin bajar el zoom): se compactó la pantalla — el panel de resumen más angosto, menos relleno alrededor, los campos de arriba en rejilla pareja 2×2 y la tabla más ajustada. Ahora la factura + resumen caben cómodos a tamaño normal (100%) sin tener que reducir el zoom del navegador. Si el área es muy angosta, el resumen baja debajo, limpio.",

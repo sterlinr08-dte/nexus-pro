@@ -1171,10 +1171,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <select id="fAgenteCob" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
               <select id="fCobEst" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
             </div>
-            <div class="tw"><table>
-              <thead><tr><th style="width:22%;cursor:pointer;user-select:none" onclick="sortCob('cliente')">CLIENTE <span id="sfc_cliente" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCob('agente')">AGENTE <span id="sfc_agente" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCob('plan')">PLAN <span id="sfc_plan" style="color:#6d28d9"></span></th><th style="width:13%;cursor:pointer;user-select:none" onclick="sortCob('deuda')">DEUDA <span id="sfc_deuda" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCob('cobrado')">COBRADO <span id="sfc_cobrado" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCob('pendiente')">PENDIENTE <span id="sfc_pendiente" style="color:#6d28d9"></span></th><th style="width:12%;cursor:pointer;user-select:none" onclick="sortCob('progreso')">PROGRESO <span id="sfc_progreso" style="color:#6d28d9"></span></th><th style="width:10%"></th></tr></thead>
-              <tbody id="tbCob"><tr><td colspan="8"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
-            </table></div>
+            <div id="tbCob" class="nxCobCards"><div class="loading"><div class="spin"></div></div></div>
           </div>
           </div><!-- /panelCob -->
           <!-- Panel Historial de Pagos -->
@@ -3254,7 +3251,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='45.4';
+const APP_VERSION='45.5';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5594,7 +5591,41 @@ function sortPag(col){_ordToggle('pag',col);aplicarFiltrosPagos();}
 function _pagSortVal(p,col){switch(col){case 'fecha':return (p.fecha||'').slice(0,10);case 'cliente':return (p.cliente_nom||'').toLowerCase();case 'monto':return Number(p.monto||0);case 'metodo':return (p.metodo||'').toLowerCase();case 'referencia':return (p.referencia||'').toLowerCase();}return '';}
 function sortAgt(col){_ordToggle('agt',col);rAgentes();}
 function _agtSortVal(a,col){switch(col){case 'nombre':return (a.nom||'').toLowerCase();case 'cargo':return (a.cargo||'').toLowerCase();case 'licencia':return (a.licencia||'').toLowerCase();case 'vence':return a.lic_vence||'';case 'estado':{const v=a.lic_vence?new Date(a.lic_vence):null;const h=new Date();return !a.licencia?'0':!v?'2':v<h?'1':Math.ceil((v-h)/86400000)<=30?'3':'2';}}return '';}
+// CSS de las tarjetas de Cobros (se inyecta una sola vez) — rediseño móvil estilo tarjeta
+function _nxCobCSS(){
+  if(document.getElementById('nxCobCSS'))return;
+  const st=document.createElement('style');st.id='nxCobCSS';
+  st.textContent=`.nxCobCards{display:flex;flex-direction:column;gap:12px}
+  .nxCobCard{background:#fff;border:1px solid #eceef3;border-radius:16px;padding:14px 14px 12px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
+  .nxCobCard .cbHead{display:flex;align-items:center;gap:11px}
+  .nxCobCard .cbAv{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);box-shadow:0 4px 10px rgba(109,40,217,.28)}
+  .nxCobCard .cbWho{flex:1;min-width:0}
+  .nxCobCard .cbNm{font-weight:800;font-size:15px;letter-spacing:-.01em;line-height:1.15;color:#101828;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nxCobCard .cbAg{display:flex;align-items:center;gap:4px;color:#667085;font-size:11.5px;font-weight:600;margin-top:2px}
+  .nxCobCard .cbAg i{font-size:13px}
+  .nxCobCard .cbBadges{display:flex;align-items:center;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+  .nxCobCard .cbBdg{font-size:10px;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+  .nxCobCard .cbBdg.plan{background:#f0ebff;color:#6d28d9}
+  .nxCobCard .cbBdg.parcial{background:#fef3c7;color:#d97706}
+  .nxCobCard .cbBdg.pend{background:#ffe4e6;color:#e11d48}
+  .nxCobCard .cbBdg.aldia{background:#dcfce7;color:#16a34a}
+  .nxCobCard .cbDiv{height:1px;background:#eceef3;margin:12px 0}
+  .nxCobCard .cbFoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .nxCobCard .cbAmt{min-width:84px}
+  .nxCobCard .cbAl{font-size:10px;font-weight:800;color:#667085;text-transform:uppercase;letter-spacing:.03em}
+  .nxCobCard .cbV{font-size:15px;font-weight:800;margin-top:2px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .nxCobCard .cbV.red{color:#e11d48}.nxCobCard .cbV.gray{color:#98a2b3}
+  .nxCobCard .cbActs{margin-left:auto;display:flex;gap:8px}
+  .nxCobCard .cbBtn{display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:11px 15px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;border:none;font-family:inherit}
+  .nxCobCard .cbBtn i{font-size:15px}
+  .nxCobCard .cbBtn.cobrar{background:#16a34a;color:#fff;box-shadow:0 5px 12px rgba(22,163,74,.26)}
+  .nxCobCard .cbBtn.wa{background:#fff;color:#128c7e;border:1.5px solid #6ee7b7}
+  .nxCobCard .cbBtn.wa i{color:#25d366}
+  @media(max-width:460px){.nxCobCard .cbActs{width:100%;margin-left:0;margin-top:6px}.nxCobCard .cbBtn{flex:1;justify-content:center}}`;
+  document.head.appendChild(st);
+}
 function rCob(){
+  _nxCobCSS();
   llenarFiltroAgentes('fAgenteCob');
   const tb=document.getElementById('tbCob');
   const q=(document.getElementById('cobQ')?.value||'').toLowerCase();
@@ -5606,9 +5637,56 @@ function rCob(){
   if(fest==='deuda')activos=activos.filter(c=>pendTot(c)>0);
   else if(fest==='aldia')activos=activos.filter(c=>pendTot(c)<=0);
   activos=_ordAplicar('cob',activos,_cobSortVal);
-  _ordFlechas('cob','sfc_',_COLS_COB);
-  if(!activos.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Sin resultados</div></td></tr>';return;}
-  tb.innerHTML=activos.map(c=>{const pd=pend(c);const pct=c.deuda_total>0?Math.round((c.pagado||0)/c.deuda_total*100):100;const pc=pct>=80?'':pct>=50?' w':' d';return`<tr><td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:rgba(0,229,199,.08);color:var(--c1)">${inits(c.nom)}</div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}</div></div>${(Number(c.deuda_anterior)||0)>0?`<div style="font-size:8.5px;color:#dc2626;font-weight:700;margin-top:2px">🔴 Deuda ant.: ${fmt(c.deuda_anterior)}</div>`:''}</td><td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td><td>${planB(c.plan)}</td><td style="font-family:var(--mono);font-size:9px">${fmt(c.deuda_total||0)}</td><td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(c.pagado||0)}</td><td style="font-family:var(--mono);font-size:9px;font-weight:700;color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td><td><div class="prog"><div class="pf${pc}" style="width:${pct}%"></div></div><div style="font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--mono)">${pct}% cobrado</div></td><td><button class="btn bsm bc1" onclick="abrirAbono('${c.id}')"><i class="ti ti-plus"></i> Abonar</button></td></tr>`;}).join('');
+  if(!activos.length){tb.innerHTML='<div class="empty">Sin resultados</div>';return;}
+  tb.innerHTML=activos.map(c=>{
+    const da=deudaAnt(c);const pd=pend(c);
+    const est=getEst(c);
+    const estCls=est==='Al día'?'aldia':est==='Parcial'?'parcial':'pend';
+    const estLbl=est==='Al día'?'AL DÍA':est==='Parcial'?'PARCIAL':'PENDIENTE';
+    const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));
+    const agHtml=ag?`<i class="ti ti-user"></i> ${escHtml(ag.nom)}`:'<i class="ti ti-alert-triangle" style="color:#ef4444"></i> <span style="color:#ef4444">Sin agente</span>';
+    const planBadge=c.plan?`<span class="cbBdg plan">${escHtml(c.plan==='Esencial Plus'?'ESC+':String(c.plan).toUpperCase())}</span>`:'';
+    return `<div class="nxCobCard">
+      <div class="cbHead">
+        <div class="cbAv">${inits(c.nom)}</div>
+        <div class="cbWho">
+          <div class="cbNm" onclick="verCliente('${c.id}')" style="cursor:pointer" title="Ver resumen del cliente">${escHtml(c.nom)}${c.referencia?` <span style="color:#7c3aed;font-weight:700;font-size:10px">(${escHtml(c.referencia)})</span>`:''}</div>
+          <div class="cbAg">${agHtml}</div>
+        </div>
+        <div class="cbBadges">${planBadge}<span class="cbBdg ${estCls}">${estLbl}</span></div>
+      </div>
+      <div class="cbDiv"></div>
+      <div class="cbFoot">
+        <div class="cbAmt"><div class="cbAl">Deuda anterior</div><div class="cbV ${da>0?'red':'gray'}">${fmt(da)}</div></div>
+        <div class="cbAmt"><div class="cbAl">Pendiente</div><div class="cbV ${pd>0?'red':'gray'}">${fmt(pd)}</div></div>
+        <div class="cbActs">
+          <button class="cbBtn cobrar" onclick="abrirAbono('${c.id}')"><i class="ti ti-cash"></i> COBRAR</button>
+          <button class="cbBtn wa" onclick="nxCobroWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i> WHATSAPP</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+// Recordatorio de cobro por WhatsApp DIRECTO al cliente (texto con lo que debe)
+function nxCobroWA(cid){
+  const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
+  if(!nxWa(c.wa)){toast('warn','Sin WhatsApp',(c.nom||'')+' no tiene número de WhatsApp registrado');return;}
+  const da=deudaAnt(c);const pd=pend(c);const tot=pendTot(c);
+  const _mc=mesCorte();const mesLbl=MESES[_mc.mes-1]+' '+_mc.anio;
+  let cuerpo;
+  if(tot<=0){
+    cuerpo='¡Está al día con sus pagos! Gracias por su confianza. 🙏';
+  }else{
+    const lineas=[];
+    if(pd>0)lineas.push(`*Pendiente (${mesLbl}):* RD$ ${fmtN(pd)}`);
+    if(da>0)lineas.push(`*Deuda anterior:* RD$ ${fmtN(da)}`);
+    lineas.push(`*Total a pagar:* RD$ ${fmtN(tot)}`);
+    cuerpo=`Le recordamos su pago del seguro de salud:\n\n${lineas.join('\n')}\n\nPuede coordinar el pago con su agente. ¡Gracias!`;
+  }
+  const msg=`Estimado/a *${c.nom}*,\n\n${cuerpo}\n\n_${CFG.empNom}_`;
+  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
+  toast('ok','WhatsApp abierto',c.nom);
+  try{logAudit('COBRO_RECORDATORIO_WA',c.nom+' · '+fmt(tot),'Cobros');}catch(e){}
 }
 // ════════ BANCOS - Módulo nativo ════════
 let _bancosCache=[];
