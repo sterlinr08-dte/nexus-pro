@@ -781,16 +781,12 @@
   function ensureView() {
     var v = document.getElementById('v-aguapro');
     if (v) return v;
-    // A diferencia de los demás módulos (POS/Rifas/Consultorio...), AGUAPRO usa un shell
-    // position:fixed;inset:0 para verse como sistema aparte. Si se agrega dentro de
-    // .content/.main (que tienen overflow-y:auto / overflow:hidden), en iOS Safari el
-    // position:fixed puede quedar atrapado dentro de ese contenedor con overflow en vez
-    // de cubrir toda la pantalla. Por eso se cuelga directo de <body> — el mismo patrón
-    // que ya usa la barra inferior móvil (mobile-bottom-nav-clean) para lo mismo.
+    var dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
     v = document.createElement('div');
     v.className = 'view';
     v.id = 'v-aguapro';
-    document.body.appendChild(v);
+    dash.parentElement.appendChild(v);
     return v;
   }
 
@@ -799,7 +795,7 @@
     var st = document.createElement('style');
     st.id = 'nxAguaCSS';
     st.textContent = [
-      '.nxAguaShell{position:fixed;inset:0;z-index:9999;display:grid;grid-template-columns:156px minmax(0,1fr);min-height:100vh;background:#f5f7fb;overflow:hidden;font-family:Inter,"Segoe UI",Arial,sans-serif;color:#172033}',
+      '.nxAguaShell{display:grid;grid-template-columns:156px minmax(0,1fr);background:#f5f7fb;border-radius:16px;overflow:hidden;font-family:Inter,"Segoe UI",Arial,sans-serif;color:#172033}',
       '.nxAguaSide{background:#004a7c;color:#cfe8fb;padding:14px 9px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}.nxAguaBrand{display:flex;align-items:center;gap:8px;color:#fff;font-weight:900;letter-spacing:.02em;padding:0 7px 14px;border-bottom:1px solid rgba(255,255,255,.14);font-size:14px;line-height:1}.nxAguaBrand span{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#36d7ff,#0878c6);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 9px 18px rgba(0,0,0,.20)}.nxAguaBrand small{display:block;font-size:8px;color:#bde7ff;letter-spacing:.12em;margin-top:3px}',
       '.nxAguaTabs{display:grid;gap:3px;margin:0;padding:0;overflow:visible}.nxAguaTabs button{width:100%;display:flex;align-items:center;gap:8px;text-align:left;border:0;background:transparent;color:#d8edff;border-radius:6px;padding:8px 8px;font-size:11px;font-weight:750;line-height:1.15;cursor:pointer}.nxAguaTabs button.on{background:#096db4;color:#fff;box-shadow:inset 3px 0 0 #49c9ff}.nxAguaTabs button i{font-size:14px;min-width:15px}.nxAguaWaterArt{margin-top:auto;border-radius:9px;min-height:100px;background:linear-gradient(180deg,rgba(56,189,248,.20),rgba(255,255,255,.04)),radial-gradient(circle at 50% 16%,rgba(255,255,255,.34),transparent 30%);display:flex;align-items:end;padding:9px;color:#d8edff;font-size:9px;line-height:1.35}',
       '.nxAguaMain{min-width:0;background:#f7f9fd;overflow-y:auto}.nxAguaTopbar{height:54px;background:#fff;border-bottom:1px solid #e3ebf5;display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:2}.nxAguaTopLeft{display:flex;align-items:center;gap:13px}.nxAguaMenuBtn{width:30px;height:30px;border:0;background:#fff;color:#475569;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}.nxAguaTopbar h2{margin:0;font-size:17px;font-weight:800;color:#172033}.nxAguaUser{display:flex;align-items:center;gap:10px;color:#64748b;font-size:10px}.nxAguaAvatar{width:28px;height:28px;border-radius:999px;background:#f3f8ff;border:1px solid #dbeafe;display:flex;align-items:center;justify-content:center;color:#075985;font-weight:900}.nxAguaContent{padding:14px}',
@@ -815,8 +811,11 @@
       '.nxAguaCfgGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.nxAguaCfgTile{background:#fff;border:1px solid #e5edf6;border-radius:10px;padding:16px 10px;text-align:center;cursor:pointer;box-shadow:0 8px 18px rgba(15,45,80,.03)}.nxAguaCfgTile i{font-size:22px;color:#0875c7}.nxAguaCfgTile div{margin-top:8px;font-size:10.5px;font-weight:800;color:#334155}',
       '.nxAguaRoute{display:grid;gap:9px}.nxAguaStep{display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:9px;border-radius:7px;background:#f8fafc;border:1px solid #edf2f7}.nxAguaStepNum{width:30px;height:30px;border-radius:8px;background:#dbeafe;color:#075985;display:flex;align-items:center;justify-content:center;font-weight:950;font-size:11px}.nxAguaStep b{font-size:11px}.nxAguaStep span{display:block;color:#64748b;font-size:10px;margin-top:2px}',
       '@media(max-width:980px){.nxAguaKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.nxAguaDashGrid{grid-template-columns:1fr}.nxAguaPOS{grid-template-columns:1fr}.nxAguaCart{position:static}.nxAguaCfgGrid{grid-template-columns:repeat(2,1fr)}}',
-      '.nxAguaBackdrop{display:none}',
-      '@media(max-width:760px){.nxAguaShell{grid-template-columns:1fr;border-radius:0}.nxAguaSide{position:fixed;left:0;top:0;bottom:0;width:230px;z-index:6;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 0 rgba(0,0,0,0)}.nxAguaSide.open{transform:translateX(0);box-shadow:8px 0 24px rgba(0,0,0,.25)}.nxAguaBackdrop{display:block;position:fixed;inset:0;background:rgba(6,20,35,.5);z-index:5;opacity:0;pointer-events:none;transition:opacity .2s}.nxAguaBackdrop.open{opacity:1;pointer-events:auto}.nxAguaMenuBtn{width:40px;height:40px}.nxAguaMenuBtn i{font-size:19px}.nxAguaTopbar{padding:10px 12px}.nxAguaContent{padding:10px}.nxAguaTable{min-width:640px}.nxAguaPanel{overflow:auto}}',
+      // MÓVIL: sin position:fixed en ningún elemento de aquí (probado en iPhone real que se
+      // quedaba atrapado / roto dentro de .content, que tiene overflow-y:auto). El menú ahora
+      // es un panel NORMAL que empuja el contenido hacia abajo al abrirse, en vez de un cajón
+      // superpuesto — mismo patrón (sin trucos de posicionamiento) que usan POS/Rifas/Consultorio.
+      '@media(max-width:760px){.nxAguaShell{grid-template-columns:1fr;border-radius:0}.nxAguaSide{display:none;width:auto;max-height:60vh}.nxAguaSide.open{display:flex}.nxAguaMenuBtn{width:40px;height:40px}.nxAguaMenuBtn i{font-size:19px}.nxAguaTopbar{padding:10px 12px}.nxAguaContent{padding:10px}.nxAguaTable{min-width:640px}.nxAguaPanel{overflow:auto}}',
       '@media(max-width:560px){.nxAguaKpis{grid-template-columns:1fr 1fr}.nxAguaTopbar h2{font-size:14px}.nxAguaRow{grid-template-columns:30px 1fr}.nxAguaRow .nxAguaTag{grid-column:2}.nxAguaUser span:not(.nxAguaAvatar){display:none}}'
     ].join('');
     document.head.appendChild(st);
@@ -856,7 +855,6 @@
   window.nxAguaToggleSide = function () {
     _sideOpen = !_sideOpen;
     var s = document.querySelector('.nxAguaSide'); if (s) s.classList.toggle('open', _sideOpen);
-    var b = document.querySelector('.nxAguaBackdrop'); if (b) b.classList.toggle('open', _sideOpen);
   };
   window.nxAguaSalir = function () {
     var v = document.getElementById('v-aguapro');
@@ -1655,7 +1653,7 @@
   }
   function render(view) {
     var titles = { dashboard: 'Dashboard', clientes: 'Clientes', productos: 'Inventario', pos: 'Facturación', pedidos: 'Pedidos', rutas: 'Rutas de entrega', botellones: 'Botellones', produccion: 'Producción', caja: 'Cobros / Caja', cxc: 'Cuentas por cobrar', compras: 'Compras', reportes: 'Reportes', config: 'Configuración' };
-    view.innerHTML = '<div class="nxAguaShell"><div class="nxAguaBackdrop' + (_sideOpen ? ' open' : '') + '" onclick="window.nxAguaToggleSide()"></div><aside class="nxAguaSide' + (_sideOpen ? ' open' : '') + '"><div class="nxAguaBrand"><span><i class="ti ti-droplet-filled"></i></span><div>AGUAPRO<small>DISTRIBUIDORA</small></div></div>' + tabsHtml() + '<div class="nxAguaWaterArt">Sistema de facturación, rutas, inventario y botellones para distribuidoras de agua.</div></aside><main class="nxAguaMain"><div class="nxAguaTopbar"><div class="nxAguaTopLeft"><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaToggleSide()"><i class="ti ti-menu-2"></i></button><h2>' + esc(titles[tab] || 'Dashboard') + '</h2></div><div class="nxAguaUser"><i class="ti ti-bell"></i><span>Administrador</span><span class="nxAguaAvatar">A</span><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaSalir()" title="Cerrar"><i class="ti ti-x"></i></button></div></div><div class="nxAguaContent">' + body() + '</div></main></div>';
+    view.innerHTML = '<div class="nxAguaShell"><aside class="nxAguaSide' + (_sideOpen ? ' open' : '') + '"><div class="nxAguaBrand"><span><i class="ti ti-droplet-filled"></i></span><div>AGUAPRO<small>DISTRIBUIDORA</small></div></div>' + tabsHtml() + '<div class="nxAguaWaterArt">Sistema de facturación, rutas, inventario y botellones para distribuidoras de agua.</div></aside><main class="nxAguaMain"><div class="nxAguaTopbar"><div class="nxAguaTopLeft"><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaToggleSide()"><i class="ti ti-menu-2"></i></button><h2>' + esc(titles[tab] || 'Dashboard') + '</h2></div><div class="nxAguaUser"><i class="ti ti-bell"></i><span>Administrador</span><span class="nxAguaAvatar">A</span><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaSalir()" title="Cerrar"><i class="ti ti-x"></i></button></div></div><div class="nxAguaContent">' + body() + '</div></main></div>';
   }
   function rerender() { var v = document.getElementById('v-aguapro'); if (v) render(v); }
   window.cerrarModalAgua = function (id) { cerrarModal(id); };
