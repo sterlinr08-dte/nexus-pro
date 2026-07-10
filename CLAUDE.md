@@ -204,6 +204,31 @@ Aplicar **siempre** al hacer una novedad/actualización:
 **Despliegue:** subir `APP_VERSION` + `version.json`, `node --check parches.js`,
 commit descriptivo y push. La app descarga de `main`.
 
+### REGLAMENTO GLOBAL DE BUSCADORES (decretado por el dueño, 10-jul-2026) — OBLIGATORIO
+TODO buscador del sistema (actual y futuro) debe usar el **componente global
+`nxBuscaHTML(opts)`** definido en `index.html` (junto a los helpers del núcleo, expuesto
+en `window` para parches.js). NO crear buscadores distintos por módulo. El estándar:
+- **Lupa 🔍 + campo JUNTOS** en un solo bloque visual (nunca separados/desalineados).
+- **Tocar la lupa enfoca el campo** (abre el teclado en móvil) — sin segundo toque.
+- **Filtra mientras se escribe**, Enter ejecuta, botón **✕ para limpiar** cuando hay
+  texto (limpiar re-dispara el filtro y devuelve el foco), placeholder descriptivo
+  (ej. "Buscar cliente, factura, IMEI o teléfono").
+- **Diseño uniforme**: 42px de alto exacto (border-box), mismos bordes/radio/estados
+  focus (aro morado)/carga (`.nxBusca-load`)/error (`.nxBusca-err`)/deshabilitado
+  (`.nxBusca-off`); input a 16px (anti-zoom iOS); `aria-label="Abrir búsqueda"`.
+- **Modo compacto** para espacios estrechos: `{compact:true}` muestra solo la lupa y
+  se expande al tocarla (clase `.nxBusca-c`/`.open`).
+- Uso: `nxBuscaHTML({id, placeholder, value, oninput:"miFiltro(this.value)", onenter,
+  compact, disabled})` devuelve el HTML. **IMPORTANTE:** el handler debe repintar SOLO
+  el contenedor de la lista (no la vista completa) para que el campo no pierda el foco
+  al escribir (patrón `#agLW` de AGUAPRO / `#rfBoardWrap` de Rifas).
+- **Estado de migración:** AGUAPRO 100% migrado (6 pestañas, 21 pruebas Playwright en
+  verde). PENDIENTE migrar los ~21 buscadores viejos por tandas: seguros (`.sw` cobQ,
+  gSearch topnav, pgBuscar, auditFiltroUsr), POS (`.nxLupaBox` x5 + inputs inline en
+  NC/Historial/PH/pendientes), Préstamos, Vehículos, Rifas (`.rfSearch` x2),
+  Consultorio (`.nxMdSearch`). Al migrar cada uno: conservar su lógica de filtro,
+  solo cambiar el markup al componente.
+
 ---
 
 ### Secuencias centralizadas (numeración de documentos, v26.8)

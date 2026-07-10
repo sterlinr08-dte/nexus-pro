@@ -2510,6 +2510,48 @@ const getEst=c=>!c.activo?'Inhabilitado':pendTot(c)===0?'Al día':(c.pagado>0||p
 const hoy=()=>new Date().toISOString().slice(0,10);
 const addSaldo=(cod,n)=>{const c=CUENTAS.find(x=>x.cod===cod);if(c)c.saldo+=n;};
 
+// ── BUSCADOR GLOBAL (REGLAMENTO DE BUSCADORES, jul-2026) ─────────────────────
+// Componente único y reutilizable para TODOS los buscadores del sistema:
+// lupa + campo JUNTOS en un solo bloque · tocar la lupa enfoca el campo (abre
+// teclado en móvil) · filtra mientras se escribe · Enter ejecuta · botón ✕
+// para limpiar cuando hay texto · mismos altos/bordes/estados en todo el sistema.
+// Uso: contenedor.innerHTML = nxBuscaHTML({id:'miInput', placeholder:'Buscar…',
+//   value:txtActual, oninput:"miFiltro(this.value)"});   (onenter opcional)
+// Los módulos NUEVOS deben usar esto; los buscadores viejos se migran por tandas.
+function nxBuscaHTML(o){
+  o=o||{};
+  if(!document.getElementById('nxBuscaCSS')){
+    const st=document.createElement('style');st.id='nxBuscaCSS';
+    st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:0;flex:1;transition:border-color .15s,box-shadow .15s}'
+      +'.nxBusca:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.12)}'
+      +'.nxBusca-lupa{width:42px;height:42px;flex:0 0 auto;border:0;background:transparent;color:#64748b;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;touch-action:manipulation}'
+      +'.nxBusca-lupa:focus-visible{outline:2px solid #6d28d9;outline-offset:-2px}'
+      +'.nxBusca-in{flex:1;min-width:0;border:0;background:transparent;height:100%;font-size:16px;color:#0f172a;outline:none;padding:0;font-family:inherit}'
+      +'.nxBusca-in::-webkit-search-cancel-button,.nxBusca-in::-webkit-search-decoration{-webkit-appearance:none}'
+      +'.nxBusca-x{width:30px;height:30px;flex:0 0 auto;margin-right:6px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation}'
+      +'.nxBusca.nxBusca-off{opacity:.55;pointer-events:none}'
+      +'.nxBusca.nxBusca-err{border-color:#dc2626}'
+      +'.nxBusca.nxBusca-load .nxBusca-lupa i{animation:nxBuscaSpin 1s linear infinite}'
+      +'@keyframes nxBuscaSpin{to{transform:rotate(360deg)}}'
+      // compacto (espacios estrechos): solo la lupa hasta que se toca; se expande al abrir
+      +'.nxBusca-c:not(.open){flex:0 0 42px;width:42px}'
+      +'.nxBusca-c:not(.open) .nxBusca-in,.nxBusca-c:not(.open) .nxBusca-x{display:none!important}';
+    document.head.appendChild(st);
+  }
+  const on=o.oninput||'';
+  const enter=o.onenter||on;
+  return '<div class="nxBusca'+(o.compact?' nxBusca-c':'')+(o.disabled?' nxBusca-off':'')+'"'+(o.wrapId?' id="'+o.wrapId+'"':'')+'>'
+    +'<button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button>'
+    +'<input'+(o.id?' id="'+o.id+'"':'')+' type="search" class="nxBusca-in" placeholder="'+escHtml(o.placeholder||'Buscar…')+'" value="'+escHtml(o.value||'')+'" autocomplete="off" oninput="nxBuscaTog(this);'+on+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();'+enter+'}">'
+    +'<button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda"'+(o.value?'':' style="display:none"')+' onclick="nxBuscaClear(this)">✕</button>'
+    +'</div>';
+}
+function nxBuscaLupa(btn){const w=btn.closest('.nxBusca');if(!w)return;w.classList.add('open');const i=w.querySelector('.nxBusca-in');if(i)i.focus();}
+function nxBuscaTog(inp){const w=inp.closest('.nxBusca');const x=w&&w.querySelector('.nxBusca-x');if(x)x.style.display=inp.value?'':'none';}
+function nxBuscaClear(btn){const w=btn.closest('.nxBusca');const i=w&&w.querySelector('.nxBusca-in');if(!i)return;i.value='';btn.style.display='none';i.focus();i.dispatchEvent(new Event('input',{bubbles:true}));}
+// Disponible para parches.js y módulos externos
+window.nxBuscaHTML=nxBuscaHTML;window.nxBuscaLupa=nxBuscaLupa;window.nxBuscaTog=nxBuscaTog;window.nxBuscaClear=nxBuscaClear;
+
 // Recalcula los saldos contables desde los asientos REALES guardados.
 // Los saldos NO son números fijos: se construyen sumando cada asiento.
 function recalcularSaldosContables(){
@@ -3252,7 +3294,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='47.3';
+const APP_VERSION='47.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
