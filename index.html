@@ -640,7 +640,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 
 /* ════ CLIENT NOTES ════ */
 .note-item{background:#fffbeb;border-left:3px solid #f59e0b;padding:10px 12px;border-radius:8px;margin-bottom:8px;font-size:11px}
-.note-ts{font-size:9px;color:#92400e;margin-bottom:4px;font-family:monospace}
+.note-ts{font-size:9px;color:#92400e;margin-bottom:4px;font-family:var(--mono)}
 
 /* ════ ROLES PERMISSIONS ════ */
 .role-card{border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:10px}
@@ -697,7 +697,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .err-action-msg{font-size:12px;color:#334155;line-height:1.6}
 .err-tech{background:#f1f5f9;border-radius:10px;padding:10px 12px;cursor:pointer;margin-bottom:14px}
 .err-tech-ttl{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center}
-.err-tech-body{font-family:monospace;font-size:10px;color:#475569;margin-top:6px;display:none;line-height:1.7;word-break:break-all}
+.err-tech-body{font-family:var(--mono);font-size:10px;color:#475569;margin-top:6px;display:none;line-height:1.7;word-break:break-all}
 .err-tech-body.open{display:block}
 .err-footer{padding:14px 24px 20px;display:flex;gap:8px}
 .err-btn-copy{flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:12px;cursor:pointer;font-weight:600;color:#475569;transition:all .15s}
@@ -713,9 +713,9 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .log-entry.err-log{border-left-color:#ef4444}
 .log-entry.warn-log{border-left-color:#f59e0b}
 .log-entry.info-log{border-left-color:#8b5cf6}
-.log-ts{font-size:9px;color:#475569;font-family:monospace;margin-bottom:3px}
+.log-ts{font-size:9px;color:#475569;font-family:var(--mono);margin-bottom:3px}
 .log-msg{font-weight:600;color:#1e293b;margin-bottom:2px}
-.log-detail{font-size:10px;color:#475569;font-family:monospace;word-break:break-all}
+.log-detail{font-size:10px;color:#475569;font-family:var(--mono);word-break:break-all}
 /* Barra de estado de errores en topnav */
 .err-badge{background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;display:none;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.3px}
 .err-badge.show{display:flex}
@@ -1588,7 +1588,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div style="border:2px dashed #cbd5e1;border-radius:12px;padding:16px;margin-bottom:14px">
                 <div style="font-size:12px;font-weight:700;color:#1e293b;margin-bottom:4px">📋 Aplicar actualización manual</div>
                 <div style="font-size:10px;color:#475569;margin-bottom:10px">Pega aquí el código HTML nuevo que te enviaron y aplícalo en este equipo. Útil para probar antes de subir a GitHub.</div>
-                <textarea id="codigoActualizacion" placeholder="Pega aquí el código HTML completo de la versión nueva..." style="width:100%;min-height:120px;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:monospace;font-size:10px;resize:vertical"></textarea>
+                <textarea id="codigoActualizacion" placeholder="Pega aquí el código HTML completo de la versión nueva..." style="width:100%;min-height:120px;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:var(--mono);font-size:10px;resize:vertical"></textarea>
                 <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
                   <button class="btn bxl" onclick="aplicarCodigoManual()"><i class="ti ti-player-play"></i> Aplicar este código</button>
                   <button class="btn bghost" onclick="document.getElementById('codigoActualizacion').value=''"><i class="ti ti-eraser"></i> Limpiar</button>
@@ -1916,7 +1916,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 <div class="overlay" id="mPDF">
   <div class="modal" style="max-width:600px">
     <div class="mt"><span>// FACTURA / CERTIFICADO PDF</span><button class="btn bghost bsm" onclick="closeM('mPDF')"><i class="ti ti-x"></i></button></div>
-    <div id="pdfContent" style="background:#fff;color:#000;border-radius:var(--r6);padding:20px;font-family:Arial,sans-serif;font-size:12px;border:1px solid var(--bg4)"></div>
+    <div id="pdfContent" style="background:#fff;color:#000;border-radius:var(--r6);padding:20px;font-family:var(--ff);font-size:12px;border:1px solid var(--bg4)"></div>
     <div class="fe" style="margin-top:10px">
       <button class="btn" onclick="closeM('mPDF')">Cerrar</button>
       <button class="btn bc4" onclick="imprimirPDF()"><i class="ti ti-printer"></i> Imprimir / PDF</button>
@@ -2079,7 +2079,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     </div>
     <!-- Vista previa del mensaje -->
     <div style="font-size:10px;font-weight:600;color:#1e293b;margin-bottom:5px">Vista previa del mensaje</div>
-    <div id="waPreviewBox" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;font-size:11px;color:#166534;white-space:pre-line;line-height:1.6;margin-bottom:12px;font-family:monospace;max-height:100px;overflow-y:auto"></div>
+    <div id="waPreviewBox" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;font-size:11px;color:#166534;white-space:pre-line;line-height:1.6;margin-bottom:12px;font-family:var(--mono);max-height:100px;overflow-y:auto"></div>
     <!-- Selección de clientes -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
       <div style="font-size:11px;font-weight:600;color:#1e293b">Seleccionar destinatarios</div>
@@ -3451,7 +3451,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.0';
+const APP_VERSION='48.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -3796,7 +3796,7 @@ function rNotifs(){
         <div style="flex:1">
           <div style="font-size:11px;font-weight:600;color:#1e293b;margin-bottom:2px">${n.ttl}</div>
           <div style="font-size:10px;color:#475569">${n.sub}</div>
-          ${horaTxt?`<div style="font-size:9px;color:#475569;margin-top:3px;font-family:monospace"><i class="ti ti-clock" style="font-size:9px"></i> ${horaTxt}</div>`:''}
+          ${horaTxt?`<div style="font-size:9px;color:#475569;margin-top:3px;font-family:var(--mono)"><i class="ti ti-clock" style="font-size:9px"></i> ${horaTxt}</div>`:''}
         </div>
         ${!leida?'<span style="width:7px;height:7px;border-radius:50%;background:#6d28d9;flex-shrink:0;margin-top:4px"></span>':''}
       </div>
@@ -4166,7 +4166,7 @@ function renderTenants(){
       <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0f1f3d,#6d28d9);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${(t.nom||'E')[0].toUpperCase()}</div>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:700;color:#0f172a">${t.nom}</div>
-        <div style="font-size:10px;color:#475569;font-family:monospace">${t.url.replace('https://','').slice(0,30)}...</div>
+        <div style="font-size:10px;color:#475569;font-family:var(--mono)">${t.url.replace('https://','').slice(0,30)}...</div>
       </div>
       ${t.url===actUrl?'<span style="background:#dcfce7;color:#059669;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px">ACTIVA</span>':''}
       <button onclick="event.stopPropagation();eliminarTenant(${i})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px;padding:0 4px">🗑</button>
@@ -4255,7 +4255,7 @@ function renderTenantsCfg(){
     <thead><tr><th>EMPRESA</th><th>URL</th><th>NOTA</th><th>ESTADO</th><th>ACCIONES</th></tr></thead>
     <tbody>${tenants.map((t,i)=>`<tr>
       <td style="font-weight:700">${t.nom}</td>
-      <td style="font-family:monospace;font-size:9px;color:#475569">${t.url.replace('https://','').slice(0,30)}...</td>
+      <td style="font-family:var(--mono);font-size:9px;color:#475569">${t.url.replace('https://','').slice(0,30)}...</td>
       <td style="font-size:10px;color:#475569">${t.nota||'—'}</td>
       <td>${t.url===actUrl?'<span class="badge bC5">ACTIVA</span>':'<span class="badge bCg">Inactiva</span>'}</td>
       <td style="white-space:nowrap;display:flex;gap:4px">
@@ -4505,7 +4505,7 @@ function renderEmailHistorial(){
     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:4px">
       <i class="ti ti-mail-check" style="color:#059669;font-size:14px"></i>
       <div style="flex:1;font-size:11px;color:#1e293b">Enviado a ${h.email}</div>
-      <div style="font-size:9px;color:#475569;font-family:monospace">${new Date(h.ts).toLocaleString('es-DO').slice(0,16)}</div>
+      <div style="font-size:9px;color:#475569;font-family:var(--mono)">${new Date(h.ts).toLocaleString('es-DO').slice(0,16)}</div>
       <span style="background:${h.tipo==='auto'?'#dcfce7':'#eff6ff'};color:${h.tipo==='auto'?'#059669':'#6d28d9'};font-size:8px;font-weight:700;padding:2px 7px;border-radius:10px">${h.tipo==='auto'?'AUTO':'MANUAL'}</span>
     </div>`).join('');
 }
@@ -5729,7 +5729,7 @@ function verCertificadoPDF(cid){
 function imprimirPDF(){
   const content=document.getElementById('pdfContent').innerHTML;
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>NEXUS PRO · Documento</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#000;font-size:12px}@media print{body{padding:10px}}</style></head><body>${content}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>NEXUS PRO · Documento</title><style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;padding:20px;color:#000;font-size:12px}@media print{body{padding:10px}}</style></head><body>${content}</body></html>`);
   w.document.close();setTimeout(()=>{w.print();},500);
 }
 
@@ -7851,7 +7851,7 @@ async function exportarDocsPDF(){
   }));
 
   const contenido = `
-    <div style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px">
+    <div style="font-family:Segoe UI,system-ui,-apple-system,sans-serif;max-width:800px;margin:0 auto;padding:20px">
       <div style="border-bottom:3px solid #1e3a6e;padding-bottom:16px;margin-bottom:20px;display:flex;justify-content:space-between">
         <div><h1 style="color:#1e3a6e;margin:0">${CFG.empNom}</h1><div style="color:#666">RNC: ${CFG.empRNC} · ${CFG.empTel}</div></div>
         <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:#1e3a6e">EXPEDIENTE DE CLIENTE</div><div style="color:#666">Generado: ${hoy()}</div></div>

@@ -237,6 +237,27 @@ al texto), debe verse más contenido sin scroll, responsive en móvil.
     así que no se pudo ver el "antes" roto, solo confirmar que el "después" no rompe nada en
     120 pruebas Playwright existentes). Pendiente que el dueño confirme en su iPhone tras
     actualizar.
+  - **Seguimiento v48.1 — UNA sola fuente en todo el sistema (incluidos documentos impresos):**
+    el dueño notó que el sistema mezclaba varios estilos de letra; pidió unificar a una sola. Se
+    auditaron TODAS las declaraciones `font-family` de `index.html` y `parches.js` y se
+    clasificaron en dos grupos: (1) **UI en vivo** (misma página, tiene acceso a `:root`) → se
+    apuntaron a las variables ya existentes `var(--ff)` (`'Segoe UI',system-ui,-apple-system,
+    sans-serif`) o `var(--mono)` (`'Cascadia Code','Consolas','Courier New',monospace`) — corregido
+    el shell de AGUAPRO (usaba `Inter`) y los números de boleto de Rifas (usaban
+    `ui-monospace,monospace`, distinto al monoespaciado del resto del sistema); (2) **documentos
+    imprimibles/exportables** (facturas, recibos, tickets del POS, contratos de Préstamos y
+    Vehículos, acuerdo de pago en cuotas, récipe de Consultorio, boleto de Rifas, expediente de
+    cliente): son ventanas `window.open()+document.write()` o divs aparte que NO heredan las
+    variables CSS de la página principal, así que ahí se **hardcodeó el valor literal** (mismos
+    dos stacks de arriba, escritos SIN comillas — `Segoe UI,system-ui,-apple-system,sans-serif` —
+    para no chocar con las comillas de los strings de JS que ya envolvían ese CSS, sea comilla
+    simple, doble o template string). Se reemplazaron Arial/Arial,Helvetica/Arial,sans-serif/
+    -apple-system,Arial/Georgia,serif/'Times New Roman',Georgia,serif/Courier New en TODOS esos
+    documentos. Verificado: `node --check parches.js` limpio, los 3 `<script>` de `index.html`
+    pasan `new Function()`, la app carga en Chromium headless con 0 errores de JS (`body`
+    resuelve a `"Segoe UI", system-ui, -apple-system, sans-serif`), y revisión manual del diff
+    completo confirmando que cada cambio es solo un valor de `font-family` (nada de lógica
+    tocado). Cambio 100% CSS — riesgo de regresión funcional mínimo.
 
 ## Reglas obligatorias en cada cambio (de `REGLAS-ACTUALIZACION.md`)
 
