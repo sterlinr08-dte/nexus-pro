@@ -1137,6 +1137,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div><div class="ct">Facturas</div><div class="ct-s">Cobra y factura a tus clientes</div></div>
               <button class="btn bsm bc1" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
             </div>
+            <div style="margin-bottom:6px"><div class="nxBusca" style="flex:1 1 100%"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." value="" autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
               <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
               <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
@@ -1166,10 +1167,12 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div id="panelCob" style="display:none">
           <div class="nc">
             <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
+            <div class="frow" style="margin-bottom:6px">
+              <div class="nxBusca" style="flex:1 1 100%"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="cobQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." value="" autocomplete="off" oninput="nxBuscaTog(this);rCob()" onkeydown="if(event.key==='Enter'){event.preventDefault();rCob()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
+            </div>
             <div class="frow">
-              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="cobQ" type="search" class="nxBusca-in" placeholder="Buscar cliente..." value="" autocomplete="off" oninput="nxBuscaTog(this);rCob()" onkeydown="if(event.key==='Enter'){event.preventDefault();rCob()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
-              <select id="fAgenteCob" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
-              <select id="fCobEst" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
+              <select id="fAgenteCob" onchange="rCob()" style="height:32px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
+              <select id="fCobEst" onchange="rCob()" style="height:32px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
             </div>
             <div id="tbCob" class="nxCobCards"><div class="loading"><div class="spin"></div></div></div>
           </div>
@@ -2521,7 +2524,7 @@ const addSaldo=(cod,n)=>{const c=CUENTAS.find(x=>x.cod===cod);if(c)c.saldo+=n;};
 function nxBuscaEnsureCSS(){
   if(document.getElementById('nxBuscaCSS'))return;
   const st=document.createElement('style');st.id='nxBuscaCSS';
-  st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:0;flex:1;transition:border-color .15s,box-shadow .15s}'
+  st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:180px;flex:1 1 200px;transition:border-color .15s,box-shadow .15s}'
     +'.nxBusca:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.12)}'
     +'.nxBusca-lupa{width:42px;height:42px;flex:0 0 auto;border:0;background:transparent;color:#64748b;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;touch-action:manipulation}'
     +'.nxBusca-lupa:focus-visible{outline:2px solid #6d28d9;outline-offset:-2px}'
@@ -3451,7 +3454,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.1';
+const APP_VERSION='48.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5521,6 +5524,8 @@ function rFact(){
     else if(filtroEst!=='todas')lista=lista.filter(f=>f.estado===filtroEst);
   }
   if(fa){const idsAg=new Set(ST.clientes.filter(c=>String(c.agente_id)===fa).map(c=>String(c.id)));lista=lista.filter(f=>idsAg.has(String(f.cliente_id)));}
+  const q=(document.getElementById('factQ')?.value||'').toLowerCase().trim();
+  if(q)lista=lista.filter(f=>{const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));return (f.cliente_nom||'').toLowerCase().includes(q)||(cli?.cedula||'').includes(q)||(cli?.numero_poliza||'').toLowerCase().includes(q);});
   if(_factSort.col){const col=_factSort.col,dir=_factSort.dir;lista.sort((a,b)=>{const va=_factSortVal(a,col),vb=_factSortVal(b,col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*dir;});}
   const tb=document.getElementById('tbFact');
   const rz=document.getElementById('factResumen');
@@ -5542,24 +5547,24 @@ function rFact(){
     const agTxt=ag?ag.nom:'⚠ Sin agente';
     const anul=f.estado==='Anulada';
     const nBtns=anul?1:(f.estado!=='Pagado'?3:2);
-    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.05)${anul?';opacity:.55':''}">
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:11px 12px 10px;margin-bottom:9px;box-shadow:0 1px 3px rgba(15,23,42,.05)${anul?';opacity:.55':''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div style="flex:1;min-width:0">
-          <div onclick="verCliente('${f.cliente_id}')" style="font-weight:800;font-size:14.5px;color:#0f172a;cursor:pointer;line-height:1.2">${f.cliente_nom}</div>
-          <div style="font-size:10.5px;color:#475569;margin-top:3px">${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</div>
+          <div onclick="verCliente('${f.cliente_id}')" style="font-weight:800;font-size:14px;letter-spacing:-.01em;color:#101828;cursor:pointer;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.cliente_nom}</div>
+          <div style="font-size:10.5px;color:#667085;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</div>
           ${atrasadas?`<div style="font-size:9px;color:#92400e;font-weight:700;margin-top:2px">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}
         </div>
-        <div style="text-align:right;flex-shrink:0">
+        <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span class="badge ${ec}">${f.estado.toUpperCase()}</span>
-          <div style="margin-top:6px">${planB(f.plan)}</div>
+          ${planB(f.plan)}
         </div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:11px 0;padding:9px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
-        ${f.prima_deps>0?`<div>${L('Dependientes')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#334155">${fmt(f.prima_deps)}</div></div>`:''}
-        ${(f.deuda_ant>0||Number(cli?.deuda_anterior||0)>0)?`<div style="display:flex;flex-direction:column;gap:5px">${f.deuda_ant>0?`<div>${L('Deuda mes anterior')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}${Number(cli?.deuda_anterior||0)>0?`<div>${L('Deuda antes del sistema')}<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626">${fmt(cli.deuda_anterior)}</div></div>`:''}</div>`:''}
-        ${(()=>{const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);const sal=saldoDe(f);const pg=prima-sal;return pg>0.009?`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(sal)}</div><div style="font-size:8.5px;color:#475569;margin-top:1px">Prima ${fmt(prima)} · abonado ${fmt(pg)}</div></div>`:`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:18px;font-weight:800;color:#0f172a">${fmt(prima)}</div></div>`;})()}
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:8px 0;padding:7px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
+        ${f.prima_deps>0?`<div>${L('Dependientes')}<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#334155">${fmt(f.prima_deps)}</div></div>`:''}
+        ${(f.deuda_ant>0||Number(cli?.deuda_anterior||0)>0)?`<div style="display:flex;flex-direction:column;gap:4px">${f.deuda_ant>0?`<div>${L('Deuda mes anterior')}<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}${Number(cli?.deuda_anterior||0)>0?`<div>${L('Deuda antes del sistema')}<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#dc2626">${fmt(cli.deuda_anterior)}</div></div>`:''}</div>`:''}
+        ${(()=>{const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);const sal=saldoDe(f);const pg=prima-sal;return pg>0.009?`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:15px;font-weight:800;color:#0f172a">${fmt(sal)}</div><div style="font-size:8.5px;color:#475569;margin-top:1px">Prima ${fmt(prima)} · abonado ${fmt(pg)}</div></div>`:`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:15px;font-weight:800;color:#0f172a">${fmt(prima)}</div></div>`;})()}
       </div>
-      ${anul?'':`<button class="fCobrar" onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:12px;padding:8px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:6px"><i class="ti ti-wallet" style="color:#fff!important;font-size:15px"></i> COBRAR</button>`}
+      ${anul?'':`<button class="fCobrar" onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:12px;padding:7px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:5px"><i class="ti ti-wallet" style="color:#fff!important;font-size:15px"></i> COBRAR</button>`}
       <div class="fActs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:5px">
         <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> Factura</button>
         ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WhatsApp</button>`}

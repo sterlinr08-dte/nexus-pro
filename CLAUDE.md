@@ -258,6 +258,30 @@ al texto), debe verse más contenido sin scroll, responsive en móvil.
     resuelve a `"Segoe UI", system-ui, -apple-system, sans-serif`), y revisión manual del diff
     completo confirmando que cada cambio es solo un valor de `font-family` (nada de lógica
     tocado). Cambio 100% CSS — riesgo de regresión funcional mínimo.
+  - **Seguimiento v48.2 — bug real en el buscador de Cobros + buscador nuevo en Facturas +
+    tarjetas más compactas:** el dueño mandó capturas de iPhone mostrando la lupa de Cobros
+    "rota" (un pedacito flotando encima del filtro "TODOS LOS AGENTES"). Causa raíz encontrada:
+    `.nxBusca` (el componente global) usa `flex:1` puro (`flex-basis:0%`) — cuando comparte una
+    fila `.frow` con `<select>` que NO se encogen, el flexbox no activa el wrap (porque con
+    basis:0% el navegador no detecta overflow de fila) y en cambio aplasta el buscador por debajo
+    de su propio contenido (el botón de la lupa, 42px, terminaba mostrándose parcialmente
+    encimado). Arreglado de raíz en el componente compartido (`nxBuscaEnsureCSS`, no un parche
+    puntual): `.nxBusca` pasó a `min-width:180px;flex:1 1 200px` — con un `flex-basis` real, el
+    wrap SÍ se activa a tiempo y el buscador nunca se aplasta por debajo de un ancho usable, en
+    NINGÚN lugar del sistema donde se use (beneficia también a Pólizas y cualquier futuro uso).
+    Además, en Cobros y Facturas el buscador se puso en su PROPIA fila (ancho completo) arriba de
+    los filtros de agente/estado, en vez de compartir fila con ellos — más prominente y "bien
+    bonito" como pidió el dueño. **Facturas no tenía buscador** (solo Mes/Año/Estado) — se agregó
+    `factQ` (busca por nombre, cédula o número de póliza, enganchado en `rFact()`). De paso se
+    compactó la tarjeta de Facturas (el dueño: "las letras están muy grandes y no se logra
+    identificar el nombre del cliente"): nombre del cliente con truncado por elipsis (mismo patrón
+    ya usado en la tarjeta de Cobros, `cbNm`), monto de "Mes actual" bajado de 18px a 15px (ya no
+    compite visualmente con el nombre), badges de estado/plan en columna compacta a la derecha
+    (antes con `margin-top:6px` separado, ahora `gap:4px` en flex-column), padding/márgenes de la
+    tarjeta reducidos (`13px`→`11px 12px 10px`, separadores `11px 0`→`8px 0`). Verificado con un
+    repro aislado en Playwright a 390px de ancho usando el markup/CSS REAL extraído del archivo
+    (no una reconstrucción a mano): confirmado que `cobQ`/`factQ` ahora miden el ancho completo de
+    su fila sin superposición, y captura visual del "antes/después" de la tarjeta de Facturas.
 
 ## Reglas obligatorias en cada cambio (de `REGLAS-ACTUALIZACION.md`)
 
