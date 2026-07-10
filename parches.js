@@ -1211,7 +1211,7 @@
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:520px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-clipboard-list"></i> Nuevo pedido</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgPedForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div style="overflow-y:auto;flex:1">' +
-      '<div class="fr"><label>Cliente *</label><select id="agPedCli"><option value="">— Selecciona —</option>' + _ag.clientes.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nombre) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="fr"><label>Cliente *</label><button type="button" class="btn bghost bsm" style="width:100%;justify-content:flex-start" id="agPedCliBtn" onclick="window.nxAguaAbrirBuscadorCliente()"><i class="ti ti-search"></i> <span id="agPedCliDisp">— Buscar cliente —</span></button><input type="hidden" id="agPedCli"></div>' +
       '<div class="fr"><label>Ruta</label><input id="agPedRuta" class="no-upper" placeholder="Ej: Ruta Norte" list="agRutasDL2"></div>' +
       '<datalist id="agRutasDL2">' + Array.from(new Set(_ag.clientes.map(function (x) { return x.ruta; }).filter(Boolean))).map(function (r) { return '<option value="' + esc(r) + '">'; }).join('') + '</datalist>' +
       '<div class="fr"><label>Agregar producto</label><select id="agPedProdSel">' + _ag.productos.map(function (p) { return '<option value="' + p.id + '">' + esc(p.nombre) + ' — ' + fmt(p.precio) + ' (stock ' + Number(p.stock || 0) + ')</option>'; }).join('') + '</select></div>' +
@@ -1221,6 +1221,25 @@
       '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="cerrarModalAgua(\'nxAgPedForm\')">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAguaPedidoGuardar()"><i class="ti ti-check"></i> Guardar pedido</button></div></div>';
     document.body.appendChild(ov);
     pintarPedCart();
+  };
+  // ── Buscador de cliente para "Nuevo pedido" (ModalBusquedaBase, reglamento técnico
+  // 10-jul-2026): _ag.clientes ya está completo en memoria (cargarAgua lo trae entero,
+  // sin paginar), así que aquí se usa en modo "datos" (filtra en JS). Un módulo futuro
+  // con un catálogo real grande usaría cfg.buscar (async, paginado en el servidor) en
+  // vez de cfg.datos — el motor soporta ambos, este caso concreto no lo necesita todavía. ──
+  window.nxAguaAbrirBuscadorCliente = function () {
+    if (typeof ModalBusquedaBase !== 'function') { toastSafe('err', 'Buscador no disponible'); return; }
+    ModalBusquedaBase({
+      id: 'nxAgBuscaCli', titulo: 'Elegir cliente', placeholder: 'Buscar por nombre, teléfono, sector o ruta…',
+      datos: _ag.clientes, camposFiltro: ['nombre', 'telefono', 'sector', 'ruta'],
+      columnas: [{ k: 'nombre', t: 'Nombre' }, { k: 'telefono', t: 'Tel' }, { k: 'sector', t: 'Sector' }, { k: 'ruta', t: 'Ruta' }],
+      vacio: 'Ningún cliente coincide', onElegir: 'nxAguaClienteElegido'
+    });
+  };
+  window.nxAguaClienteElegido = function (row) {
+    if (!row) return;
+    var hid = document.getElementById('agPedCli'); if (hid) hid.value = row.id;
+    var disp = document.getElementById('agPedCliDisp'); if (disp) disp.textContent = row.nombre;
   };
   window.nxAguaPedAddItem = function () {
     var sel = document.getElementById('agPedProdSel'); if (!sel || !sel.value) return;
