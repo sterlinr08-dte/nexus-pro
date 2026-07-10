@@ -1,7 +1,8 @@
 ﻿{
-  "version": "46.3",
+  "version": "46.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "NUEVO (Multiempresa · AGUAPRO visual aprobado v46.4): AGUAPRO ahora se presenta como sistema propio tipo distribuidora de agua, con sidebar azul, topbar blanca, dashboard con KPIs, graficas visuales, tablas profesionales y modulos estilo ERP como el mockup aprobado. Mantiene los datos reales fase 1 sin tocar Seguros.",
     "NUEVO (Multiempresa · AGUAPRO ERP real fase 1): AGUAPRO deja de ser solo demo visual y ahora permite crear clientes, productos, pedidos, registrar cobros, mover pedidos a ruta/entregado y ver caja con datos persistentes. Guarda en configuración existente de NEXUS PRO con respaldo local, sin crear tablas nuevas ni tocar Seguros.",
     "NUEVO (Multiempresa · AGUAPRO ERP demo v46.2): el prototipo de AGUAPRO dentro del hub Multiempresa ahora suma Pedidos, Rutas y Caja, con KPIs, tarjetas comerciales y flujo de entrega para presentarlo mejor a distribuidoras de agua. Sigue siendo demo aislado: no toca Supabase ni lógica existente.",
     "NUEVO (Multiempresa · AGUAPRO ERP demo): se agregó AGUAPRO ERP dentro del hub Multiempresa como prototipo para presentar a distribuidoras de agua. Incluye Dashboard, Clientes, Productos, POS, Botellones y Producción en modo demo, sin tocar Supabase ni la lógica existente.",
