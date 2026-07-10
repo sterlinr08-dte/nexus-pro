@@ -819,7 +819,7 @@
 
   // ── Estado local: cache de las tablas agua_* (una organización a la vez, vía RLS) ──
   var tab = 'dashboard';
-  var _ag = { clientes: [], productos: [], pedidos: [], botellones: [], produccion: [], caja: [], movimientos: [], config: { nombre: 'Distribuidora de Agua', rnc: '', telefono: '', direccion: '' } };
+  var _ag = { clientes: [], productos: [], pedidos: [], botellones: [], produccion: [], caja: [], movimientos: [], proveedores: [], compras: [], config: { nombre: 'Distribuidora de Agua', rnc: '', telefono: '', direccion: '' } };
   var _cargado = false;
   var _cart = []; // usado por Facturación (POS) y por el modal de Nuevo pedido
   var _sideOpen = false;
@@ -837,9 +837,11 @@
         A.get('agua_produccion', 'select=*&order=fecha.desc&limit=200'),
         A.get('agua_caja', 'select=*&order=fecha.desc&limit=500'),
         A.get('agua_movimientos', 'select=*&order=fecha.desc&limit=300'),
-        A.get('agua_config', 'select=*&limit=1')
+        A.get('agua_config', 'select=*&limit=1'),
+        A.get('agua_proveedores', 'select=*&order=nombre.asc'),
+        A.get('agua_compras', 'select=*&order=created_at.desc&limit=300')
       ]);
-      _ag = { clientes: r[0] || [], productos: r[1] || [], pedidos: r[2] || [], botellones: r[3] || [], produccion: r[4] || [], caja: r[5] || [], movimientos: r[6] || [], config: (r[7] && r[7][0]) || CONFIG_DEFAULT };
+      _ag = { clientes: r[0] || [], productos: r[1] || [], pedidos: r[2] || [], botellones: r[3] || [], produccion: r[4] || [], caja: r[5] || [], movimientos: r[6] || [], config: (r[7] && r[7][0]) || CONFIG_DEFAULT, proveedores: r[8] || [], compras: r[9] || [] };
       _cargado = true;
     } catch (e) { console.warn('AGUAPRO cargar:', e && e.message); toastSafe('err', 'AGUAPRO', 'No se pudo cargar la información'); }
     return _ag;
@@ -871,7 +873,11 @@
   function porCobrarTotal() { return _ag.pedidos.filter(pedidoActivo).reduce(function (s, p) { return s + pedidoPendiente(p); }, 0); }
   function stockCritico() { return _ag.productos.filter(function (p) { return Number(p.stock || 0) < 20; }); }
   function botellonesPorEstado(e) { return _ag.botellones.filter(function (b) { return b.estado === e; }).length; }
-  function estadoCls(s) { return /entregado|activo|al d[ií]a|disponible/i.test(s) ? 'ok' : /pendiente|ruta|cr[eé]dito|preparando|en lavado|en llenado/i.test(s) ? 'warn' : 'bad'; }
+  function estadoCls(s) { return /entregado|activo|al d[ií]a|disponible|pagada/i.test(s) ? 'ok' : /pendiente|ruta|cr[eé]dito|preparando|en lavado|en llenado/i.test(s) ? 'warn' : 'bad'; }
+  function proveedorById(id) { return _ag.proveedores.find(function (p) { return p.id === id; }); }
+  function compraPendiente(c) { return Math.max(0, Number(c.total || 0) - Number(c.pagado || 0)); }
+  function deudaProveedor(proveedorId) { return _ag.compras.filter(function (c) { return c.proveedor_id === proveedorId && c.estado !== 'Anulada'; }).reduce(function (s, c) { return s + compraPendiente(c); }, 0); }
+  function porPagarTotal() { return _ag.compras.filter(function (c) { return c.estado !== 'Anulada'; }).reduce(function (s, c) { return s + compraPendiente(c); }, 0); }
 
   // ── UI helpers (piezas reutilizadas por todas las pantallas) ──
   function kpis(arr) {
@@ -925,6 +931,8 @@
     if (pend) alertas.push(row('ti-route', 'Pedidos pendientes', pend + ' pedido(s) por entregar', 'Ver', 'warn'));
     var danados = botellonesPorEstado('Dañado');
     if (danados) alertas.push(row('ti-bottle', 'Botellones dañados', danados + ' unidad(es) por revisar', 'Riesgo', 'bad'));
+    var porPagar = porPagarTotal();
+    if (porPagar > 0) alertas.push(row('ti-shopping-cart', 'Cuentas por pagar', fmt(porPagar) + ' a proveedores', 'Ver', 'warn'));
     return kpis(kpiArr) +
       '<div class="nxAguaDashGrid">' +
       '<div class="nxAguaPanel"><div class="nxAguaModuleTitle"><h3>Ventas de los últimos 7 días</h3><span class="nxAguaTag">RD$</span></div><div class="nxAguaChart">' + barsHtml + '</div></div>' +
@@ -1382,6 +1390,106 @@
       })) + '</div>';
   }
 
+  // ═══ COMPRAS / PROVEEDORES (cuentas por pagar) ═══
+  function comprasView() {
+    var mesActual = hoy().slice(0, 7);
+    var comprasMes = _ag.compras.filter(function (c) { return String(c.fecha || '').slice(0, 7) === mesActual; }).reduce(function (s, c) { return s + Number(c.total || 0); }, 0);
+    return toolbar([['Nuevo proveedor', 'window.nxAguaNuevoProveedor()', '', 'ti-truck'], ['Nueva compra', 'window.nxAguaNuevaCompra()', 'primary']]) +
+      kpis([['Compras del mes', fmt(comprasMes), '', 'ti-shopping-cart'], ['Por pagar', fmt(porPagarTotal()), '', 'ti-cash-banknote'], ['Proveedores', String(_ag.proveedores.length), '', 'ti-truck']]) +
+      '<div class="nxAguaPanel">' + pageTitle('Proveedores', '') + table(['Nombre', 'Teléfono', 'RNC', 'Contacto', 'Debemos', ''], _ag.proveedores.map(function (p) {
+        var d = deudaProveedor(p.id);
+        return '<tr><td>' + esc(p.nombre) + '</td><td>' + esc(p.telefono || '—') + '</td><td>' + esc(p.rnc || '—') + '</td><td>' + esc(p.contacto || '—') + '</td><td style="' + (d > 0 ? 'color:#b91c1c;font-weight:800' : '') + '">' + fmt(d) + '</td><td><div class="nxAguaAct"><button onclick="window.nxAguaEditarProveedor(\'' + p.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
+      })) + '</div>' +
+      '<div class="nxAguaPanel" style="margin-top:10px">' + pageTitle('Compras', '') + table(['Fecha', 'Proveedor', 'Concepto', 'Total', 'Pagado', 'Pendiente', 'Estado', 'Acciones'], _ag.compras.map(function (c) {
+        var pend = compraPendiente(c);
+        return '<tr><td>' + esc(c.fecha || '—') + '</td><td>' + esc(c.proveedor_nom || '—') + '</td><td>' + esc(c.concepto || '—') + '</td><td>' + fmt(c.total) + '</td><td>' + fmt(c.pagado) + '</td><td>' + (pend > 0 ? fmt(pend) : '<span style="color:#16a34a">Pagada</span>') + '</td><td><span class="nxAguaTag ' + estadoCls(c.estado) + '">' + esc((c.estado || '').toUpperCase()) + '</span></td><td><div class="nxAguaAct">' + (pend > 0 ? '<button class="ok" onclick="window.nxAguaPagarCompra(\'' + c.id + '\')">Pagar</button>' : '') + '</div></td></tr>';
+      })) + '</div>';
+  }
+  window.nxAguaNuevoProveedor = function () { abrirProveedorModal(null); };
+  window.nxAguaEditarProveedor = function (id) { abrirProveedorModal(proveedorById(id)); };
+  function abrirProveedorModal(p) {
+    cerrarModal('nxAgProvForm');
+    var ov = document.createElement('div'); ov.id = 'nxAgProvForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-truck"></i> ' + (p ? 'Editar proveedor' : 'Nuevo proveedor') + '</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgProvForm\')"><i class="ti ti-x"></i></button></div>' +
+      '<div class="fr"><label>Nombre *</label><input id="agProvNom" class="no-upper" value="' + esc(p ? p.nombre : '') + '" placeholder="Ej: Distribuidora de Combustible XYZ"></div>' +
+      '<div class="fr-row"><div class="fr"><label>Teléfono</label><input id="agProvTel" inputmode="tel" value="' + esc(p ? p.telefono : '') + '"></div><div class="fr"><label>RNC</label><input id="agProvRnc" value="' + esc(p ? p.rnc : '') + '"></div></div>' +
+      '<div class="fr"><label>Contacto</label><input id="agProvCon" class="no-upper" value="' + esc(p ? p.contacto : '') + '" placeholder="Persona de contacto"></div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="cerrarModalAgua(\'nxAgProvForm\')">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAguaProveedorGuardar(' + (p ? '\'' + p.id + '\'' : 'null') + ')"><i class="ti ti-check"></i> Guardar</button></div></div>';
+    document.body.appendChild(ov);
+    setTimeout(function () { var i = document.getElementById('agProvNom'); if (i) i.focus(); }, 60);
+  }
+  window.nxAguaProveedorGuardar = async function (id) {
+    var nombre = (document.getElementById('agProvNom').value || '').trim();
+    if (!nombre) { toastSafe('err', 'Falta el nombre'); return; }
+    var datos = { nombre: nombre, telefono: (document.getElementById('agProvTel').value || '').trim(), rnc: (document.getElementById('agProvRnc').value || '').trim(), contacto: (document.getElementById('agProvCon').value || '').trim() };
+    var A = getAPI();
+    try {
+      if (id) { await A.patch('agua_proveedores', 'id=eq.' + id, datos); auditSafe('AGUA_PROVEEDOR_EDITADO', nombre, 'AGUAPRO'); }
+      else { await A.post('agua_proveedores', datos); auditSafe('AGUA_PROVEEDOR_NUEVO', nombre, 'AGUAPRO'); }
+      cerrarModal('nxAgProvForm'); await cargarAgua(true); toastSafe('ok', id ? 'Proveedor actualizado' : 'Proveedor creado', nombre); rerender();
+    } catch (e) { toastSafe('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxAguaNuevaCompra = function () {
+    cerrarModal('nxAgCompForm');
+    var ov = document.createElement('div'); ov.id = 'nxAgCompForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-shopping-cart"></i> Nueva compra</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCompForm\')"><i class="ti ti-x"></i></button></div>' +
+      '<div class="fr"><label>Proveedor *</label><select id="agCompProv"><option value="">— Selecciona —</option>' + _ag.proveedores.map(function (p) { return '<option value="' + p.id + '">' + esc(p.nombre) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="fr"><label>Concepto</label><input id="agCompConc" class="no-upper" placeholder="Ej: Combustible, envases, insumos..."></div>' +
+      '<div class="fr"><label>Monto RD$</label><input id="agCompMonto" data-nx-money inputmode="numeric" value="0"></div>' +
+      '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#334155;padding:6px 2px"><input type="checkbox" id="agCompPagada" checked onchange="document.getElementById(\'agCompMetCont\').style.display=this.checked?\'\':\'none\'" style="width:18px;height:18px"> Pagada de una vez (sale de caja)</label>' +
+      '<div id="agCompMetCont" class="fr"><label>Método</label><select id="agCompMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="cerrarModalAgua(\'nxAgCompForm\')">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAguaCompraGuardar()"><i class="ti ti-check"></i> Guardar</button></div></div>';
+    document.body.appendChild(ov); scanMoney(ov);
+  };
+  window.nxAguaCompraGuardar = async function () {
+    var provId = document.getElementById('agCompProv').value;
+    var prov = proveedorById(provId);
+    if (!prov) { toastSafe('err', 'Selecciona un proveedor'); return; }
+    var monto = moneyVal('agCompMonto');
+    if (!(monto > 0)) { toastSafe('err', 'Monto inválido'); return; }
+    var pagadaYa = document.getElementById('agCompPagada').checked;
+    var concepto = (document.getElementById('agCompConc').value || '').trim() || 'Compra';
+    var A = getAPI();
+    try {
+      var compra = await A.post('agua_compras', { proveedor_id: prov.id, proveedor_nom: prov.nombre, concepto: concepto, total: monto, pagado: pagadaYa ? monto : 0, estado: pagadaYa ? 'Pagada' : 'Pendiente' });
+      if (pagadaYa) {
+        await A.post('agua_caja', { tipo: 'Gasto', descripcion: concepto + ' — ' + prov.nombre, metodo: document.getElementById('agCompMet').value, monto: monto, usuario: usuarioActual() });
+      }
+      auditSafe('AGUA_COMPRA_NUEVA', prov.nombre + ' · ' + concepto + ' · ' + fmt(monto), 'AGUAPRO');
+      cerrarModal('nxAgCompForm'); await cargarAgua(true); toastSafe('ok', 'Compra registrada', fmt(monto)); rerender();
+    } catch (e) { toastSafe('err', 'No se pudo registrar', String(e && e.message || e)); }
+  };
+  window.nxAguaPagarCompra = function (id) {
+    var c = _ag.compras.find(function (x) { return x.id === id; }); if (!c) return;
+    var pend = compraPendiente(c);
+    cerrarModal('nxAgPagCompForm');
+    var ov = document.createElement('div'); ov.id = 'nxAgPagCompForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-cash"></i> Pagar a proveedor</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgPagCompForm\')"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:12px;color:#475569;margin-bottom:8px">' + esc(c.proveedor_nom) + ' · ' + esc(c.concepto || '') + ' · Pendiente: <b>' + fmt(pend) + '</b></div>' +
+      '<div class="fr"><label>Monto a pagar RD$</label><input id="agPagCompMonto" data-nx-money inputmode="numeric" value="' + Math.round(pend) + '"></div>' +
+      '<div class="fr"><label>Método</label><select id="agPagCompMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="cerrarModalAgua(\'nxAgPagCompForm\')">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAguaPagarCompraGuardar(\'' + id + '\')"><i class="ti ti-check"></i> Pagar</button></div></div>';
+    document.body.appendChild(ov); scanMoney(ov);
+  };
+  window.nxAguaPagarCompraGuardar = async function (id) {
+    var c = _ag.compras.find(function (x) { return x.id === id; }); if (!c) return;
+    var pend = compraPendiente(c);
+    var monto = moneyVal('agPagCompMonto');
+    if (!(monto > 0)) { toastSafe('err', 'Monto inválido'); return; }
+    if (monto > pend + 0.01) { toastSafe('err', 'El monto excede lo pendiente', 'Pendiente: ' + fmt(pend)); return; }
+    var A = getAPI();
+    try {
+      var nuevoPagado = Number(c.pagado || 0) + monto;
+      await A.patch('agua_compras', 'id=eq.' + c.id, { pagado: nuevoPagado, estado: nuevoPagado >= Number(c.total || 0) ? 'Pagada' : 'Pendiente' });
+      await A.post('agua_caja', { tipo: 'Gasto', descripcion: c.concepto + ' — ' + c.proveedor_nom, metodo: document.getElementById('agPagCompMet').value, monto: monto, usuario: usuarioActual() });
+      auditSafe('AGUA_COMPRA_PAGO', c.proveedor_nom + ' · ' + fmt(monto), 'AGUAPRO');
+      cerrarModal('nxAgPagCompForm'); await cargarAgua(true); toastSafe('ok', 'Pago registrado', fmt(monto)); rerender();
+    } catch (e) { toastSafe('err', 'No se pudo pagar', String(e && e.message || e)); }
+  };
+
   // ═══ REPORTES ═══
   function reportesView() {
     var desde = document.getElementById('agRepDesde') ? document.getElementById('agRepDesde').value : '';
@@ -1403,7 +1511,7 @@
     return '<div class="nxAguaPanel"><div class="nxAguaModuleTitle"><h3>Reporte de ventas</h3></div>' +
       '<div class="fr-row"><div class="fr"><label>Desde</label><input type="date" id="agRepDesde" value="' + esc(desde) + '" onchange="window.nxAguaTab(\'reportes\')"></div><div class="fr"><label>Hasta</label><input type="date" id="agRepHasta" value="' + esc(hasta) + '" onchange="window.nxAguaTab(\'reportes\')"></div></div>' +
       '</div>' +
-      kpis([['Ventas del período', fmt(ventas), '', 'ti-cash'], ['Gastos del período', fmt(gastos), '', 'ti-receipt-tax'], ['Neto', fmt(ventas - gastos), '', 'ti-scale']]) +
+      kpis([['Ventas del período', fmt(ventas), '', 'ti-cash'], ['Gastos del período', fmt(gastos), '', 'ti-receipt-tax'], ['Neto', fmt(ventas - gastos), '', 'ti-scale'], ['Por cobrar (hoy)', fmt(porCobrarTotal()), '', 'ti-users'], ['Por pagar (hoy)', fmt(porPagarTotal()), '', 'ti-shopping-cart']]) +
       '<div class="nxAguaPanel"><h3>Ventas de los últimos 14 días</h3><div class="nxAguaChart">' + barsHtml + '</div></div>';
   }
 
@@ -1527,16 +1635,17 @@
     if (tab === 'produccion') return produccionView();
     if (tab === 'caja') return cajaView();
     if (tab === 'cxc') return cxcView();
+    if (tab === 'compras') return comprasView();
     if (tab === 'reportes') return reportesView();
     if (tab === 'config') return configView();
     return dashboard();
   }
   function tabsHtml() {
-    var items = [['dashboard', 'Dashboard', 'ti-dashboard'], ['clientes', 'Clientes', 'ti-users'], ['pos', 'Facturación', 'ti-file-invoice'], ['pedidos', 'Pedidos', 'ti-clipboard-list'], ['rutas', 'Rutas de entrega', 'ti-route'], ['productos', 'Inventario', 'ti-packages'], ['botellones', 'Botellones', 'ti-bottle'], ['produccion', 'Producción', 'ti-building-factory'], ['caja', 'Cobros / Caja', 'ti-cash'], ['cxc', 'Cuentas por cobrar', 'ti-users-group'], ['reportes', 'Reportes', 'ti-chart-bar'], ['config', 'Configuración', 'ti-settings']];
+    var items = [['dashboard', 'Dashboard', 'ti-dashboard'], ['clientes', 'Clientes', 'ti-users'], ['pos', 'Facturación', 'ti-file-invoice'], ['pedidos', 'Pedidos', 'ti-clipboard-list'], ['rutas', 'Rutas de entrega', 'ti-route'], ['productos', 'Inventario', 'ti-packages'], ['botellones', 'Botellones', 'ti-bottle'], ['produccion', 'Producción', 'ti-building-factory'], ['caja', 'Cobros / Caja', 'ti-cash'], ['cxc', 'Cuentas por cobrar', 'ti-users-group'], ['compras', 'Compras', 'ti-shopping-cart'], ['reportes', 'Reportes', 'ti-chart-bar'], ['config', 'Configuración', 'ti-settings']];
     return '<div class="nxAguaTabs">' + items.map(function (it) { return '<button type="button" class="' + (tab === it[0] ? 'on' : '') + '" onclick="window.nxAguaTab(\'' + it[0] + '\')"><i class="ti ' + it[2] + '"></i>' + it[1] + '</button>'; }).join('') + '</div>';
   }
   function render(view) {
-    var titles = { dashboard: 'Dashboard', clientes: 'Clientes', productos: 'Inventario', pos: 'Facturación', pedidos: 'Pedidos', rutas: 'Rutas de entrega', botellones: 'Botellones', produccion: 'Producción', caja: 'Cobros / Caja', cxc: 'Cuentas por cobrar', reportes: 'Reportes', config: 'Configuración' };
+    var titles = { dashboard: 'Dashboard', clientes: 'Clientes', productos: 'Inventario', pos: 'Facturación', pedidos: 'Pedidos', rutas: 'Rutas de entrega', botellones: 'Botellones', produccion: 'Producción', caja: 'Cobros / Caja', cxc: 'Cuentas por cobrar', compras: 'Compras', reportes: 'Reportes', config: 'Configuración' };
     view.innerHTML = '<div class="nxAguaShell"><aside class="nxAguaSide' + (_sideOpen ? ' open' : '') + '"><div class="nxAguaBrand"><span><i class="ti ti-droplet-filled"></i></span><div>AGUAPRO<small>DISTRIBUIDORA</small></div></div>' + tabsHtml() + '<div class="nxAguaWaterArt">Sistema de facturación, rutas, inventario y botellones para distribuidoras de agua.</div></aside><main class="nxAguaMain"><div class="nxAguaTopbar"><div class="nxAguaTopLeft"><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaToggleSide()"><i class="ti ti-menu-2"></i></button><h2>' + esc(titles[tab] || 'Dashboard') + '</h2></div><div class="nxAguaUser"><i class="ti ti-bell"></i><span>Administrador</span><span class="nxAguaAvatar">A</span><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaSalir()" title="Cerrar"><i class="ti ti-x"></i></button></div></div><div class="nxAguaContent">' + body() + '</div></main></div>';
   }
   function rerender() { var v = document.getElementById('v-aguapro'); if (v) render(v); }
