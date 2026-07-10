@@ -64,6 +64,16 @@
 }
 html,body{height:100%;font-family:var(--ff);background:var(--bg0);color:var(--tx1);font-size:13px}
 input,select,textarea,button{font-family:var(--ff)}
+/* Reset de <select> nativo: sin esto, iOS Safari ignora buena parte del height/padding
+   personalizado y dibuja su propio control del sistema (más alto, forma de píldora) —
+   por eso los selects se veían "gigantes" en el celular aunque el CSS declarara 30-34px.
+   Flecha propia porque quitar la apariencia nativa quita también la flecha del sistema. */
+select{-webkit-appearance:none;-moz-appearance:none;appearance:none;padding-right:26px!important}
+/* Sub-propiedades con !important a propósito: casi todos los <select> del sistema traen
+   "background:#fff" (u otro color) escrito a mano en su style= — ese shorthand inline
+   resetea background-image a "none" y gana por especificidad a un select{} externo sin
+   !important, así que la flecha nunca se pintaba (verificado: quedaba en "none"). */
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 10px center!important;background-size:10px 6px!important}
 
 /* ── LOGIN ── */
 #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;position:relative;overflow:hidden;background:linear-gradient(135deg,#0f2350 0%,#1e3a6e 45%,#2d5a9e 100%)}
@@ -3438,7 +3448,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='47.8';
+const APP_VERSION='47.9';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

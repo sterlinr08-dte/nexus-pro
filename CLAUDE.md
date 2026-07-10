@@ -216,6 +216,27 @@ al texto), debe verse más contenido sin scroll, responsive en móvil.
     buscador modal) repasadas sin regresión — el cambio es solo CSS, ninguna función se tocó.
   - **Pendiente:** el dueño puede pedir ajustar otros menús/paneles a este mismo estándar
     (ej. tabs internas de módulos, no solo el menú lateral principal) si lo nota en otra pantalla.
+  - **Seguimiento v47.9 — causa real de los `<select>` "gigantes" en iPhone:** el dueño reportó
+    con capturas (Facturas: selects "Junio"/"2026"/"Pendientes") que seguía viendo cosas gigantes
+    después del v47.6. NO era el mismo problema del menú — era que **ningún `<select>` del
+    sistema tenía `-webkit-appearance:none`**, así que iOS Safari dibuja el control NATIVO del
+    sistema (más alto, forma de píldora) ignorando buena parte del `height`/`padding` del CSS.
+    Arreglado con un reset GLOBAL en `index.html` (línea ~66, `select{...}`) que aplica a TODOS
+    los `<select>` del sistema de una vez (Seguros/POS/AGUAPRO/Rifas/Consultorio) + flecha propia
+    en SVG (se pierde la del sistema al quitar la apariencia nativa). **Detalle no obvio
+    encontrado en pruebas:** la flecha no se pintaba al inicio — casi todos los `<select>` traen
+    `style="background:#fff"` a mano (shorthand), que resetea `background-image` a `none` y por
+    ser inline le gana a un `select{}` externo sin `!important`; hubo que marcar
+    `background-image`/`background-repeat`/`background-position`/`background-size` con
+    `!important` para que la flecha sí se vea. Los botones COBRAR/FACTURA/WHATSAPP/PRECIO de las
+    tarjetas de Facturas se midieron (26-30px) y NO estaban rotos — el problema real eran
+    específicamente los `<select>`. **Confianza:** alta pero NO verificada en un iPhone real (el
+    entorno de esta sesión no tiene salida a `nexusprord.com` — política de red del entorno,
+    ver `/root/.ccr/README.md`); el diagnóstico se basa en un comportamiento bien conocido de
+    iOS Safari, confirmado indirectamente (headless Chromium no reproduce el bug nativo de iOS,
+    así que no se pudo ver el "antes" roto, solo confirmar que el "después" no rompe nada en
+    120 pruebas Playwright existentes). Pendiente que el dueño confirme en su iPhone tras
+    actualizar.
 
 ## Reglas obligatorias en cada cambio (de `REGLAS-ACTUALIZACION.md`)
 
