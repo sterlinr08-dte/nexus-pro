@@ -204,10 +204,7 @@ input,select,textarea,button{font-family:var(--ff)}
 .tn-tog{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:15px;transition:all .15s;flex-shrink:0}
 .tn-tog:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
 .pttl{font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
-.tn-sr{flex:1;max-width:300px;position:relative}
-.tn-sr input{width:100%;height:34px;border:1.5px solid var(--border);border-radius:10px;background:#f8fafc;color:var(--tx1);font-size:12px;padding:0 12px 0 34px;outline:none;transition:all .15s}
-.tn-sr input:focus{border-color:var(--c1);background:#fff;box-shadow:0 0 0 3px rgba(15,23,42,.08)}
-.tn-sr .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--tx3);font-size:14px;pointer-events:none}
+.tn-sr{flex:1;max-width:300px}
 .tn-r{margin-left:auto;display:flex;align-items:center;gap:6px}
 .tn-b{height:34px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:12px;transition:all .15s;padding:0 12px;gap:5px;white-space:nowrap;font-family:var(--ff);position:relative;font-weight:500}
 .tn-b:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
@@ -287,8 +284,6 @@ tbody tr:hover td{background:#f8fafc}
 .frow{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
 .frow select,.frow input{font-size:10px;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);outline:none}
 .frow input{padding-left:25px}
-.sw{position:relative;flex:1;min-width:120px}
-.sw .si{position:absolute;left:7px;top:50%;transform:translateY(-50%);color:var(--tx3);font-size:12px;pointer-events:none}
 
 /* ── MODALS ── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;backdrop-filter:blur(3px)}
@@ -369,7 +364,6 @@ tbody tr:hover td{background:#f8fafc}
   .tnav{padding:0 10px;padding-top:env(safe-area-inset-top,0);height:52px}
   .pttl{font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis}
   .tn-sr{max-width:160px}
-  .tn-sr input{font-size:11px}
   /* Content móvil */
   .content{padding:10px}
   /* Grids */
@@ -1012,7 +1006,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <header class="tnav">
         <button class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
         <span class="pttl" id="pttl">// DASHBOARD</span>
-        <div class="tn-sr"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar clientes, pólizas... (Enter para buscar)" onkeydown="if(event.key==='Enter')gSearch(this.value)"/></div>
+        <div class="tn-sr"><div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="gSearchIn" type="search" class="nxBusca-in" placeholder="Buscar clientes, pólizas... (Enter para buscar)" value="" autocomplete="off" oninput="nxBuscaTog(this);" onkeydown="if(event.key==='Enter'){event.preventDefault();gSearch(this.value)}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
         <div class="tn-r">
           <button class="tn-b" id="btnRefrescar" onclick="refrescarDatos(this)" title="Actualizar datos"><i class="ti ti-refresh"></i></button>
           <button class="tn-b" id="btnAlertas" onclick="nav('polizas',null)" title="Alertas" style="display:none"><i class="ti ti-bell" style="color:var(--c3)"></i><div class="ndot"></div></button>
@@ -1090,7 +1084,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </button>
             </div>
             <div class="frow">
-              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Nombre, apodo, cédula, póliza..." id="cliQ" oninput="rCliBuscar()"/></div>
+              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="cliQ" type="search" class="nxBusca-in" placeholder="Nombre, apodo, cédula, póliza..." value="" autocomplete="off" oninput="nxBuscaTog(this);rCliBuscar()" onkeydown="if(event.key==='Enter'){event.preventDefault();rCliBuscar()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
               <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
               <select id="fAgenteCli" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los agentes</option></select>
@@ -1108,7 +1102,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="nc">
             <div class="ch"><div><div class="ct">Gestión de pólizas</div><div class="ct-s">vigencia, vencimientos y certificados</div></div><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
             <div class="frow">
-              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Póliza, cliente..." id="polQ" oninput="rPolizas()"/></div>
+              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="polQ" type="search" class="nxBusca-in" placeholder="Póliza, cliente..." value="" autocomplete="off" oninput="nxBuscaTog(this);rPolizas()" onkeydown="if(event.key==='Enter'){event.preventDefault();rPolizas()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
               <select id="polEst" onchange="rPolizas()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
             </div>
             <div class="tw"><table>
@@ -1163,7 +1157,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="nc">
             <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
             <div class="frow">
-              <div class="sw"><i class="ti ti-search si"></i><input type="text" placeholder="Buscar cliente..." id="cobQ" oninput="rCob()"/></div>
+              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="cobQ" type="search" class="nxBusca-in" placeholder="Buscar cliente..." value="" autocomplete="off" oninput="nxBuscaTog(this);rCob()" onkeydown="if(event.key==='Enter'){event.preventDefault();rCob()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
               <select id="fAgenteCob" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
               <select id="fCobEst" onchange="rCob()" style="height:30px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos</option><option value="deuda">Con deuda pendiente</option><option value="aldia">Al día</option></select>
             </div>
@@ -1179,7 +1173,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
               <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:600;color:#6d28d9"></select>
-              <input type="text" id="pgBuscar" placeholder="Buscar cliente..." onkeyup="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="pgBuscar" type="search" class="nxBusca-in" placeholder="Buscar cliente..." value="" autocomplete="off" oninput="nxBuscaTog(this);rPagos()" onkeydown="if(event.key==='Enter'){event.preventDefault();rPagos()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
               <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <select id="pgEmpresa" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todas las empresas</option></select>
@@ -2280,7 +2274,7 @@ function logAudit(accion,detalle='',modulo=''){
   }
   // Refrescar vista si está abierta
   if(document.getElementById('cfgPanel8')?.style.display==='block'){
-    setTimeout(()=>{rAuditoria();const s=document.getElementById('auditC');const t=document.getElementById('auditCfg');if(s&&t)t.innerHTML=s.innerHTML;},100);
+    setTimeout(rAuditoria,100);
   }
   // Auto-refresco: cada acción registrada refresca la vista actual al instante
   if(typeof refrescarVistaActual==='function'){
@@ -2514,26 +2508,37 @@ const addSaldo=(cod,n)=>{const c=CUENTAS.find(x=>x.cod===cod);if(c)c.saldo+=n;};
 // Uso: contenedor.innerHTML = nxBuscaHTML({id:'miInput', placeholder:'Buscar…',
 //   value:txtActual, oninput:"miFiltro(this.value)"});   (onenter opcional)
 // Los módulos NUEVOS deben usar esto; los buscadores viejos se migran por tandas.
+function nxBuscaEnsureCSS(){
+  if(document.getElementById('nxBuscaCSS'))return;
+  const st=document.createElement('style');st.id='nxBuscaCSS';
+  st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:0;flex:1;transition:border-color .15s,box-shadow .15s}'
+    +'.nxBusca:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.12)}'
+    +'.nxBusca-lupa{width:42px;height:42px;flex:0 0 auto;border:0;background:transparent;color:#64748b;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;touch-action:manipulation}'
+    +'.nxBusca-lupa:focus-visible{outline:2px solid #6d28d9;outline-offset:-2px}'
+    // !important: el input puede caer dentro de contenedores viejos con sus propios
+    // ".frow input"/".tn-sr input" etc. (más específicos que .nxBusca-in a secas) —
+    // blindado para que el componente se vea igual sin importar dónde se use (mismo
+    // criterio que el blindaje del sidebar del POS contra el tema glass).
+    +'.nxBusca-in{flex:1;min-width:0;border:0!important;background:transparent!important;height:100%!important;font-size:16px!important;color:#0f172a;outline:none;padding:0!important;font-family:inherit}'
+    +'.nxBusca-in::-webkit-search-cancel-button,.nxBusca-in::-webkit-search-decoration{-webkit-appearance:none}'
+    // blindaje extra contra los TEMAS (premium/glass fuerzan "input{background:...!important}"
+    // con más especificidad que .nxBusca-in sola): el input queda transparente y el color de
+    // fondo real lo pone SIEMPRE el contenedor .nxBusca (mismo idiom "html body .clase" que ya
+    // usa el sidebar del POS para blindarse del tema glass).
+    +'html body .nxBusca .nxBusca-in{background:transparent!important;border:0!important}'
+    +'.nxBusca-x{width:30px;height:30px;flex:0 0 auto;margin-right:6px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation}'
+    +'.nxBusca.nxBusca-off{opacity:.55;pointer-events:none}'
+    +'.nxBusca.nxBusca-err{border-color:#dc2626}'
+    +'.nxBusca.nxBusca-load .nxBusca-lupa i{animation:nxBuscaSpin 1s linear infinite}'
+    +'@keyframes nxBuscaSpin{to{transform:rotate(360deg)}}'
+    // compacto (espacios estrechos): solo la lupa hasta que se toca; se expande al abrir
+    +'.nxBusca-c:not(.open){flex:0 0 42px;width:42px}'
+    +'.nxBusca-c:not(.open) .nxBusca-in,.nxBusca-c:not(.open) .nxBusca-x{display:none!important}';
+  document.head.appendChild(st);
+}
 function nxBuscaHTML(o){
   o=o||{};
-  if(!document.getElementById('nxBuscaCSS')){
-    const st=document.createElement('style');st.id='nxBuscaCSS';
-    st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:0;flex:1;transition:border-color .15s,box-shadow .15s}'
-      +'.nxBusca:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.12)}'
-      +'.nxBusca-lupa{width:42px;height:42px;flex:0 0 auto;border:0;background:transparent;color:#64748b;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;touch-action:manipulation}'
-      +'.nxBusca-lupa:focus-visible{outline:2px solid #6d28d9;outline-offset:-2px}'
-      +'.nxBusca-in{flex:1;min-width:0;border:0;background:transparent;height:100%;font-size:16px;color:#0f172a;outline:none;padding:0;font-family:inherit}'
-      +'.nxBusca-in::-webkit-search-cancel-button,.nxBusca-in::-webkit-search-decoration{-webkit-appearance:none}'
-      +'.nxBusca-x{width:30px;height:30px;flex:0 0 auto;margin-right:6px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation}'
-      +'.nxBusca.nxBusca-off{opacity:.55;pointer-events:none}'
-      +'.nxBusca.nxBusca-err{border-color:#dc2626}'
-      +'.nxBusca.nxBusca-load .nxBusca-lupa i{animation:nxBuscaSpin 1s linear infinite}'
-      +'@keyframes nxBuscaSpin{to{transform:rotate(360deg)}}'
-      // compacto (espacios estrechos): solo la lupa hasta que se toca; se expande al abrir
-      +'.nxBusca-c:not(.open){flex:0 0 42px;width:42px}'
-      +'.nxBusca-c:not(.open) .nxBusca-in,.nxBusca-c:not(.open) .nxBusca-x{display:none!important}';
-    document.head.appendChild(st);
-  }
+  nxBuscaEnsureCSS();
   const on=o.oninput||'';
   const enter=o.onenter||on;
   return '<div class="nxBusca'+(o.compact?' nxBusca-c':'')+(o.disabled?' nxBusca-off':'')+'"'+(o.wrapId?' id="'+o.wrapId+'"':'')+'>'
@@ -2547,6 +2552,11 @@ function nxBuscaTog(inp){const w=inp.closest('.nxBusca');const x=w&&w.querySelec
 function nxBuscaClear(btn){const w=btn.closest('.nxBusca');const i=w&&w.querySelector('.nxBusca-in');if(!i)return;i.value='';btn.style.display='none';i.focus();i.dispatchEvent(new Event('input',{bubbles:true}));}
 // Disponible para parches.js y módulos externos
 window.nxBuscaHTML=nxBuscaHTML;window.nxBuscaLupa=nxBuscaLupa;window.nxBuscaTog=nxBuscaTog;window.nxBuscaClear=nxBuscaClear;
+// Inyectar el CSS YA (no esperar a la primera llamada): hay buscadores viejos
+// escritos a mano como HTML estático (markup exacto de nxBuscaHTML sin invocar
+// la función) que necesitan el estilo desde el arranque, no solo cuando algún
+// módulo JS (AGUAPRO, POS...) llama nxBuscaHTML() por primera vez.
+nxBuscaEnsureCSS();
 
 // ── MODAL DE BÚSQUEDA BASE (reglamento técnico del dueño, 10-jul-2026) ──
 // Distinto de nxBuscaHTML de arriba: aquel filtra una lista YA visible en
@@ -3300,23 +3310,9 @@ function renderUsuariosCfg(){
 
 // ── Auditoría dentro de Configuración (render directo) ─────────────
 function renderAuditoriaCfg(){
-  const cont=document.getElementById('auditCfg');
-  if(!cont)return;
-  // rAuditoria escribe en #auditC; aquí renderizamos en #auditCfg directamente
-  // Creamos un contenedor temporal con el id que rAuditoria espera
-  let temp=document.getElementById('auditC');
-  if(!temp){
-    temp=document.createElement('div');
-    temp.id='auditC';
-    temp.style.display='none';
-    document.body.appendChild(temp);
-  }
+  // rAuditoria ya escribe directo en #auditCfg (antes había un div oculto
+  // intermedio que se copiaba a mano; ya no hace falta) y cubre el caso vacío.
   rAuditoria();
-  if(temp.innerHTML.trim()){
-    cont.innerHTML=temp.innerHTML;
-  }else{
-    cont.innerHTML='<div style="text-align:center;padding:30px;color:#475569;font-size:12px">📋 Aún no hay registros de auditoría.<br>Las acciones del sistema se registrarán aquí automáticamente.</div>';
-  }
 }
 
 // ── Toggle Contabilidad sidebar ────────────────────────────────────
@@ -3438,7 +3434,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='47.6';
+const APP_VERSION='47.7';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -4830,7 +4826,7 @@ function nav(view,el){
   }
   // Limpiar campos de búsqueda al cambiar de ventana
   ['gsInput','newArs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.querySelectorAll('.tn-sr input,.gs-input').forEach(i=>{i.value='';});
+  document.querySelectorAll('#gSearchIn,.gs-input').forEach(i=>{i.value='';});
   const gsr=document.getElementById('gsResults');if(gsr)gsr.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escribe al menos 2 caracteres...</div>';
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
@@ -7453,42 +7449,49 @@ async function rAuto(){
 let _auditPag=1;
 const _auditPorPag=25;
 
+// Arma la barra de filtros UNA sola vez (antes se regeneraba entera —incluido
+// el propio input de búsqueda— en cada tecla, así que el campo perdía el foco
+// a cada letra). Ahora solo #auditRows se repinta al filtrar/paginar.
 function rAuditoria(){
-  const el=document.getElementById('auditC');
+  const cont=document.getElementById('auditCfg');
+  if(!cont)return;
+  if(!AUDIT.length){cont.innerHTML='<div class="empty">Sin registros. Las acciones del sistema aparecen aquí automáticamente.</div>';return;}
+  const fMod=document.getElementById('auditFiltroMod')?.value||'';
+  const fUsr=document.getElementById('auditFiltroUsr')?.value||'';
+  const fFecha=document.getElementById('auditFiltroFecha')?.value||'';
+  const modulos=[...new Set(AUDIT.map(a=>a.modulo||detectarModulo(a.accion)))].sort();
+  cont.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px">
+      <select id="auditFiltroMod" onchange="_auditPag=1;rAuditRows()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px">
+        <option value="">Todos los módulos</option>
+        ${modulos.map(m=>`<option value="${m}" ${m===fMod?'selected':''}>${m}</option>`).join('')}
+      </select>
+      ${nxBuscaHTML({id:'auditFiltroUsr',placeholder:'Buscar usuario...',value:fUsr,oninput:'_auditPag=1;rAuditRows()'})}
+      <input type="date" id="auditFiltroFecha" value="${fFecha}" onchange="_auditPag=1;rAuditRows()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
+      <button class="btn bsm bghost" onclick="limpiarFiltrosAudit()" style="width:auto;padding:0 12px"><i class="ti ti-filter-off"></i> Limpiar</button>
+    </div>
+    <div id="auditRows"></div>
+  `;
+  rAuditRows();
+}
+// Repinta SOLO los resultados (tabla+paginación), sin tocar la barra de filtros
+function rAuditRows(){
+  const el=document.getElementById('auditRows');
   if(!el)return;
-  if(!AUDIT.length){el.innerHTML='<div class="empty">Sin registros. Las acciones del sistema aparecen aquí automáticamente.</div>';return;}
-
-  // Filtros
   const fMod=document.getElementById('auditFiltroMod')?.value||'';
   const fUsr=(document.getElementById('auditFiltroUsr')?.value||'').toLowerCase();
   const fFecha=document.getElementById('auditFiltroFecha')?.value||'';
-
   let lista=AUDIT.filter(a=>{
     if(fMod&&(a.modulo||detectarModulo(a.accion))!==fMod)return false;
     if(fUsr&&!(a.usuario||'').toLowerCase().includes(fUsr))return false;
     if(fFecha&&!(a.ts||'').startsWith(fFecha))return false;
     return true;
   });
-
-  // Módulos únicos para el filtro
-  const modulos=[...new Set(AUDIT.map(a=>a.modulo||detectarModulo(a.accion)))].sort();
-
-  // Paginación
   const totalPag=Math.ceil(lista.length/_auditPorPag)||1;
   if(_auditPag>totalPag)_auditPag=totalPag;
   const ini=(_auditPag-1)*_auditPorPag;
   const pagina=lista.slice(ini,ini+_auditPorPag);
-
   el.innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px">
-      <select id="auditFiltroMod" onchange="_auditPag=1;rAuditoria()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px">
-        <option value="">Todos los módulos</option>
-        ${modulos.map(m=>`<option value="${m}" ${m===fMod?'selected':''}>${m}</option>`).join('')}
-      </select>
-      <input type="text" id="auditFiltroUsr" value="${fUsr}" placeholder="Buscar usuario..." onkeyup="_auditPag=1;rAuditoria()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
-      <input type="date" id="auditFiltroFecha" value="${fFecha}" onchange="_auditPag=1;rAuditoria()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
-      <button class="btn bsm bghost" onclick="limpiarFiltrosAudit()" style="width:auto;padding:0 12px"><i class="ti ti-filter-off"></i> Limpiar</button>
-    </div>
     <div style="font-size:10px;color:#475569;margin-bottom:8px">${lista.length} registro(s) — Página ${_auditPag} de ${totalPag}</div>
     <div class="tw"><table>
       <thead><tr>
@@ -7511,13 +7514,10 @@ function rAuditoria(){
       </tr>`).join('')}</tbody>
     </table></div>
     ${totalPag>1?`<div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
-      <button class="btn bsm bghost" onclick="_auditPag=Math.max(1,_auditPag-1);rAuditoria()" ${_auditPag<=1?'disabled':''} style="width:auto;padding:0 12px"><i class="ti ti-chevron-left"></i> Anterior</button>
+      <button class="btn bsm bghost" onclick="_auditPag=Math.max(1,_auditPag-1);rAuditRows()" ${_auditPag<=1?'disabled':''} style="width:auto;padding:0 12px"><i class="ti ti-chevron-left"></i> Anterior</button>
       <span style="font-size:11px;padding:8px 12px;font-weight:600">${_auditPag} / ${totalPag}</span>
-      <button class="btn bsm bghost" onclick="_auditPag=Math.min(${totalPag},_auditPag+1);rAuditoria()" ${_auditPag>=totalPag?'disabled':''} style="width:auto;padding:0 12px">Siguiente <i class="ti ti-chevron-right"></i></button>
+      <button class="btn bsm bghost" onclick="_auditPag=Math.min(${totalPag},_auditPag+1);rAuditRows()" ${_auditPag>=totalPag?'disabled':''} style="width:auto;padding:0 12px">Siguiente <i class="ti ti-chevron-right"></i></button>
     </div>`:''}`;
-  // Sincronizar la copia que se muestra en Configuración (si existe)
-  const elCfg=document.getElementById('auditCfg');
-  if(elCfg&&elCfg!==el)elCfg.innerHTML=el.innerHTML;
 }
 
 function limpiarFiltrosAudit(){
@@ -7525,7 +7525,7 @@ function limpiarFiltrosAudit(){
     const e=document.getElementById(id);if(e)e.value='';
   });
   _auditPag=1;
-  rAuditoria();
+  rAuditRows();
 }
 function exportarAuditCSV(){
   const rows=[['Timestamp','Usuario','Rol','Acción','Detalle'],...AUDIT.map(a=>[a.ts,a.usuario,a.rol,a.accion,a.detalle])];
@@ -8012,7 +8012,6 @@ body.tema-premium .panel{
   color:#E8EDF7 !important;
   border-color:rgba(255,255,255,.08) !important;
 }
-body.tema-premium .tn-sr input,
 body.tema-premium input,
 body.tema-premium select,
 body.tema-premium textarea{
@@ -8039,8 +8038,6 @@ body.tema-premium [style*="background:white"]{background:#1E293B !important;}
 /* Vista de clientes: pestañas, filtros, subtabs */
 body.tema-premium .cli-subtab{background:#0F172A !important;color:#94A3B8 !important;}
 body.tema-premium .cli-subtab.active-subtab{background:#6D28D9 !important;color:#fff !important;}
-body.tema-premium .sw,
-body.tema-premium .sw input{background:#0F172A !important;color:#E8EDF7 !important;}
 body.tema-premium [style*="background:#f1f5f9"],
 body.tema-premium [style*="background:#f8fafc"],
 body.tema-premium [style*="background:#f8f9fa"],
