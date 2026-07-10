@@ -10775,6 +10775,13 @@
   function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
   function getST() { try { return (typeof ST !== 'undefined') ? ST : (window.ST || {}); } catch (e) { return window.ST || {}; } }
   function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
+  // nxBuscaHTML en caché.
+  function pendBuscador(o) {
+    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
+    o = o || {};
+    return '<input type="text"' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '" style="width:100%;height:38px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">';
+  }
   function fmt(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
   function notify(t, ti, m) { if (typeof window.toast === 'function') window.toast(t, ti, m || ''); }
 
@@ -10925,10 +10932,7 @@
           <div style="font-size:24px;font-weight:900;color:#dc2626;margin-top:2px">${fmt(totalGeneral)}</div>
           <div style="font-size:10px;color:#475569;font-weight:600">${lista.length} cliente(s) con atraso</div>
         </div>` : ''}
-        ${lista.length ? `<div style="position:relative;margin:0 0 12px">
-          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i>
-          <input type="text" id="nxPendBuscar" placeholder="Buscar cliente..." autocomplete="off" oninput="window.nxFiltrarPend(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
-        </div>` : ''}
+        ${lista.length ? `<div style="margin:0 0 12px">${pendBuscador({ id: 'nxPendBuscar', placeholder: 'Buscar cliente...', oninput: 'window.nxFiltrarPend(this.value)' })}</div>` : ''}
         <div>${filas}</div>
       </div>`;
   }
@@ -12903,6 +12907,13 @@
   function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
   function esAdmin() { try { return (typeof sesion !== 'undefined') && sesion && sesion.rol === 'admin'; } catch (e) { try { return window.sesion && window.sesion.rol === 'admin'; } catch (_) { return false; } } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
+  // nxBuscaHTML en caché (mismo criterio que ya usa AGUAPRO/POS).
+  function prBuscador(o) {
+    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
+    o = o || {};
+    return '<div style="position:relative"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>';
+  }
   function fmt(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
   function hoy() { return new Date().toISOString().slice(0, 10); }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
@@ -13098,10 +13109,7 @@
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
           ${chip('todos', 'Todos')}${chip('activos', 'Activos')}${chip('vencidos', 'Vencidos')}${chip('pagados', 'Pagados')}${chip('cuotas', 'Cuotas')}${chip('libre', 'Libres')}${chip('credito', 'Crédito')}
         </div>
-        <div style="position:relative;margin-bottom:10px">
-          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i>
-          <input type="text" id="nxPrBuscar" placeholder="Buscar por nombre o cédula..." autocomplete="off" oninput="window.nxPrestamoFiltrar(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
-        </div>
+        <div style="margin-bottom:10px">${prBuscador({ id: 'nxPrBuscar', placeholder: 'Buscar por nombre o cédula...', oninput: 'window.nxPrestamoFiltrar(this.value)' })}</div>
         <div id="nxPrLista">${cards}</div>
       </div>`;
   }
@@ -13908,6 +13916,13 @@
   function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
   function esAdmin() { try { return (typeof sesion !== 'undefined') && sesion && sesion.rol === 'admin'; } catch (e) { try { return window.sesion && window.sesion.rol === 'admin'; } catch (_) { return false; } } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
+  // nxBuscaHTML en caché (mismo criterio que ya usa AGUAPRO/POS).
+  function vhBuscador(o) {
+    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
+    o = o || {};
+    return '<div style="position:relative"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>';
+  }
   function fmt(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
   function hoy() { return new Date().toISOString().slice(0, 10); }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
@@ -14017,10 +14032,7 @@
           ${kpi('Ganancia realizada', fmt(ganReal), '#059669')}
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chip('todos', 'Todos')}${chip('inventario', 'En inventario')}${chip('vendidos', 'Vendidos')}</div>
-        <div style="position:relative;margin-bottom:10px">
-          <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i>
-          <input type="text" id="nxVhBuscar" placeholder="Buscar por marca, placa, chasis o comprador..." autocomplete="off" oninput="window.nxVehBuscar(this.value)" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">
-        </div>
+        <div style="margin-bottom:10px">${vhBuscador({ id: 'nxVhBuscar', placeholder: 'Buscar por marca, placa, chasis o comprador...', oninput: 'window.nxVehBuscar(this.value)' })}</div>
         <div id="nxVhLista">${cards}</div>
       </div>`;
   }
@@ -14798,7 +14810,7 @@
   function posBuscador(o) {
     if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
     o = o || {};
-    return '<div class="nxLupaBox"><i class="ti ti-search"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '"></div>';
+    return '<div class="nxLupaBox"><i class="ti ti-search"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '"></div>';
   }
   function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
   function hoy() { return new Date().toISOString().slice(0, 10); }
@@ -15703,7 +15715,7 @@
     try { rows = await getAPI().get('pos_seriales', 'select=id,serial&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     const sel = new Set((it.seriales || []).map(s => String(s.id)));
     const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
-    const facSerBuscador = rows.length > 1 ? `<input id="nxFacSerQ" inputmode="numeric" autocomplete="off" placeholder="Buscar IMEI…" oninput="window.nxFacSerFiltrar(this.value)" style="width:100%;height:30px;border:1.5px solid #ddd6fe;border-radius:8px;padding:0 9px;font-size:11px;font-family:var(--mono,monospace);margin-bottom:7px;outline:none">` : '';
+    const facSerBuscador = rows.length > 1 ? '<div style="margin-bottom:7px">' + posBuscador({ id: 'nxFacSerQ', inputmode: 'numeric', placeholder: 'Buscar IMEI…', oninput: 'window.nxFacSerFiltrar(this.value)' }) + '</div>' : '';
     const ov = document.createElement('div'); ov.id = 'nxFacSer'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
@@ -17036,7 +17048,7 @@
   }
   function renderNotasCredito() {
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input id="ncQ" value="${esc(_ncQ)}" oninput="window.nxNCBuscar(this.value)" placeholder="Buscar por No., NCF o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+        <div style="flex:1;min-width:200px">${posBuscador({ id: 'ncQ', value: _ncQ, placeholder: 'Buscar por No., NCF o cliente…', oninput: 'window.nxNCBuscar(this.value)' })}</div>
         <input type="date" id="ncDesde" value="${_ncDesde}" onchange="window.nxNCFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <input type="date" id="ncHasta" value="${_ncHasta}" onchange="window.nxNCFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <button class="btn bsm bghost" type="button" onclick="window.nxNCLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
@@ -17059,7 +17071,7 @@
 
   function renderVentas() {
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input id="histQ" value="${esc(_histQ)}" oninput="window.nxPosVentasBuscar(this.value)" placeholder="Buscar por No. de factura o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+        <div style="flex:1;min-width:200px">${posBuscador({ id: 'histQ', value: _histQ, placeholder: 'Buscar por No. de factura o cliente…', oninput: 'window.nxPosVentasBuscar(this.value)' })}</div>
         <input type="date" id="histDesde" value="${_histDesde}" onchange="window.nxPosHistFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <input type="date" id="histHasta" value="${_histHasta}" onchange="window.nxPosHistFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosHistLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
@@ -19735,7 +19747,7 @@
   function renderPrefHist() {
     const pill = (k, lbl) => `<button type="button" class="nxInvPill${_phEstado === k ? ' on' : ''}" onclick="window.nxPHEstado('${k}')">${lbl}</button>`;
     return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-        <div style="position:relative;flex:1;min-width:200px"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input id="phQ" value="${esc(_phQ)}" oninput="window.nxPHBuscar(this.value)" placeholder="Buscar por No. o cliente…" autocomplete="off" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>
+        <div style="flex:1;min-width:200px">${posBuscador({ id: 'phQ', value: _phQ, placeholder: 'Buscar por No. o cliente…', oninput: 'window.nxPHBuscar(this.value)' })}</div>
         <input type="date" id="phDesde" value="${_phDesde}" onchange="window.nxPHFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <input type="date" id="phHasta" value="${_phHasta}" onchange="window.nxPHFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
         <button class="btn bsm bghost" type="button" onclick="window.nxPHLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
@@ -20196,6 +20208,13 @@ try {
 (function () {
   function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]; }); }
+  // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
+  // nxBuscaHTML en caché (mismo criterio que ya usa AGUAPRO/POS).
+  function rfBuscador(o) {
+    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
+    o = o || {};
+    return '<div class="rfSearch"><i class="ti ti-search"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '"></div>';
+  }
   function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
   function toast() { try { return window.toast.apply(null, arguments); } catch (e) {} }
   function val(id) { var e = document.getElementById(id); return e ? e.value : ''; }
@@ -20574,7 +20593,7 @@ try {
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()" title="Empleados / vendedores de esta rifa"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra"><i class="ti ti-link"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis"><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'\',\'Vendidos\')"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'por_confirmar\',\'Por confirmar\')"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
-      '<div class="rfCtl"><div class="rfSearch"><i class="ti ti-search"></i><input id="rfTabQ" inputmode="numeric" value="' + esc(_tabQ || '') + '" oninput="window.nxRifaBuscar(this.value)" placeholder="Buscar número…"></div><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
+      '<div class="rfCtl">' + rfBuscador({ id: 'rfTabQ', inputmode: 'numeric', value: _tabQ || '', placeholder: 'Buscar número…', oninput: 'window.nxRifaBuscar(this.value)' }) + '<button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
       '<div class="rfLegend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#fde68a"></i>Por confirmar</span><span><i class="d" style="background:#c7d2fe"></i>Confirmado</span><span><i class="d" style="background:#cbd5e1"></i>Apartado</span></div>' +
       '<div id="rfBoardWrap">' + boardHTML(r) + '</div>' +
       '</div>';
@@ -21197,7 +21216,7 @@ try {
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-list-details"></i> ' + esc(ttl) + ' (' + n + ')</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxTks\').remove()"><i class="ti ti-x"></i></button></div>' +
       (_tkEst === 'por_confirmar' && n ? '<div style="font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:7px 10px;margin-bottom:9px">Toca un boleto para ver el voucher y <b>Confirmar</b> el pago.</div>' : '') +
-      '<div class="rfSearch" style="margin-bottom:9px"><i class="ti ti-search"></i><input id="tkQ" inputmode="search" placeholder="Buscar número, comprador o teléfono…" autocomplete="off" oninput="window.nxTkBuscar(this.value)"></div>' +
+      '<div style="margin-bottom:9px">' + rfBuscador({ id: 'tkQ', placeholder: 'Buscar número, comprador o teléfono…', oninput: 'window.nxTkBuscar(this.value)' }) + '</div>' +
       '<div class="tw" style="overflow:auto;flex:1"><table class="tkTbl"><thead><tr><th>No.</th><th>Participante</th><th>Fecha</th><th>Pago</th><th>Monto</th><th>Estado</th><th>Modo</th></tr></thead><tbody id="tkBody">' + tkRowsHTML('') + '</tbody></table></div></div>';
     document.body.appendChild(ov);
   };
@@ -21451,6 +21470,13 @@ try {
 (function () {
   function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]; }); }
+  // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
+  // nxBuscaHTML en caché (mismo criterio que ya usa AGUAPRO/POS).
+  function mdBuscador(o) {
+    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
+    o = o || {};
+    return '<input class="nxMdSearch"' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '">';
+  }
   function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
   function toast() { try { return window.toast.apply(null, arguments); } catch (e) {} }
   function val(id) { var e = document.getElementById(id); return e ? e.value : ''; }
@@ -21637,7 +21663,7 @@ try {
     }).join('');
   }
   function bodyPacientes() {
-    return '<div style="display:flex;gap:8px;margin-bottom:10px"><input class="nxMdSearch" style="margin:0;flex:1" placeholder="Buscar por nombre, cédula o teléfono..." value="' + esc(_mdQ) + '" oninput="window.nxMdBuscar(this.value)">' +
+    return '<div style="display:flex;gap:8px;margin-bottom:10px">' + mdBuscador({ placeholder: 'Buscar por nombre, cédula o teléfono...', value: _mdQ, oninput: 'window.nxMdBuscar(this.value)' }) +
       '<button class="btn bc1" type="button" style="border-radius:999px;flex:none" onclick="window.nxMdPacNuevo()"><i class="ti ti-user-plus"></i></button></div>' +
       '<div id="mdPacLista">' + pacsHTML() + '</div>';
   }

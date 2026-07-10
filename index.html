@@ -2555,9 +2555,12 @@ function nxBuscaHTML(o){
   // (ej. "Vender" del POS, donde la lupa abre el catálogo completo en vez de solo
   // enfocar) pueden pasar su propio handler sin perder el resto del componente.
   const lupaClick=o.onLupa||'nxBuscaLupa(this)';
+  // inputmode: para casos como buscar un número de boleto (Rifas), donde el celular
+  // debe abrir el teclado numérico en vez del alfabético completo.
+  const inputmode=o.inputmode?(' inputmode="'+o.inputmode+'"'):'';
   return '<div class="nxBusca'+(o.compact?' nxBusca-c':'')+(o.disabled?' nxBusca-off':'')+'"'+(o.wrapId?' id="'+o.wrapId+'"':'')+'>'
     +'<button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="'+lupaClick+'"><i class="ti ti-search"></i></button>'
-    +'<input'+(o.id?' id="'+o.id+'"':'')+' type="search" class="nxBusca-in" placeholder="'+escHtml(o.placeholder||'Buscar…')+'" value="'+escHtml(o.value||'')+'" autocomplete="off" oninput="nxBuscaTog(this);'+on+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();'+enter+'}">'
+    +'<input'+(o.id?' id="'+o.id+'"':'')+' type="search" class="nxBusca-in" placeholder="'+escHtml(o.placeholder||'Buscar…')+'" value="'+escHtml(o.value||'')+'" autocomplete="off"'+inputmode+' oninput="nxBuscaTog(this);'+on+'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();'+enter+'}">'
     +'<button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda"'+(o.value?'':' style="display:none"')+' onclick="nxBuscaClear(this)">✕</button>'
     +'</div>';
 }
@@ -3448,7 +3451,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='47.9';
+const APP_VERSION='48.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
