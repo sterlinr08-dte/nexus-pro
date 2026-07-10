@@ -1049,6 +1049,42 @@ chat sigue con NEXUS PRO (seguros/rifas).
 
 ---
 
+### AGUAPRO ERP — módulo para distribuidoras de agua, dentro de Multiempresa (10-jul-2026)
+Módulo nuevo en `parches.js` (IIFE propio, `window.nxAbrirAguaPro`), registrado en el hub Multiempresa
+("AGUAPRO ERP", orden 6). **Historia:** lo construyó Codex (chat aparte) como demo visual, luego lo fue
+ampliando en varias tandas hasta "fase 1 real" — pero guardaba TODO en la tabla global `configuracion`
+(la misma de ARS/roles/email, sin `organizacion_id`) y el candado de "solo Administrador" no funcionaba
+(usaba `esAdmin` sin declararla en su propio IIFE → `typeof esAdmin==='function'` daba falso siempre,
+mismo tipo de bug que el de `moneyVal` del POS v42.5: helper que falta en el scope donde se usa).
+**Auditado y reconstruido de raíz por Claude (10-jul-2026):**
+- **Tablas propias** (migración `create_aguapro_tables` + `create_agua_movimientos_inventario`, proyecto
+  `tnwsgcxurfyuszxsewsn`): `agua_clientes`, `agua_productos`, `agua_pedidos` (items jsonb), `agua_botellones`,
+  `agua_produccion`, `agua_caja`, `agua_movimientos` (kardex) — TODAS con `organizacion_id` + trigger
+  `set_organizacion_id()` + RLS `mi_rol()='admin' AND organizacion_id=mi_organizacion()` (patrón
+  pos_*/rifa_*/med_*/saas_*). Aislamiento real por organización — antes todo se mezclaba en una fila global.
+- **Permiso admin real:** el IIFE ahora define su propio `esAdmin()`/`getAPI()` (patrón obligatorio: CADA
+  IIFE de `parches.js` necesita su propia copia de estos helpers, no son globales).
+- **Bugs de dinero/inventario de la auditoría, corregidos:** cobrar un pedido ya no permite pasarse de lo
+  pendiente (tope validado); cliente y producto se eligen de una lista real (`<select>`, ya no `prompt()`
+  de texto libre que adivinaba con el primer producto si no coincidía); la deuda de cada cliente se calcula
+  SIEMPRE en vivo sumando sus pedidos pendientes (`deudaCliente()`, nunca un campo `balance` estático que se
+  quedaba pegado); los pedidos se pueden CANCELAR y el stock se devuelve solo con su movimiento de reversa;
+  números en formato `es-DO` (antes salían en inglés).
+- **Pantallas con datos reales:** Dashboard (KPIs + gráfica de barras 7 días + donut top productos + alertas,
+  todo calculado de las tablas reales), Clientes, Inventario/Productos (+ kardex de movimientos), Pedidos
+  (con ruta y cancelación), Facturación/POS (carrito con ITBIS 18%, métodos de pago), Botellones (cambio de
+  estado con asignación a cliente), Producción (puede alimentar el inventario), Cobros/Caja (+ registrar
+  gasto), Cuentas por cobrar, Reportes (rango Desde/Hasta). El visual sigue fiel al mockup aprobado por el
+  dueño (sidebar azul marino, topbar blanca, tarjetas KPI, tablas tipo ERP) — CSS reusado de lo que ya había
+  hecho Codex (estaba bien) apenas ajustado.
+- **Configuración** quedó como panel visual (tiles) sin funciones reales todavía — a propósito, para no
+  fingir que algo funciona cuando no: toca un tile y sale "Próximamente".
+- **Pendiente:** Rutas de entrega es una lista agrupada por ruta (sin mapa interactivo real — no hay
+  librería de mapas en el proyecto); Configuración (empresa, impuestos, numeración, WhatsApp, etc.) sigue
+  sin construir; Compras como módulo aparte (hoy los gastos se registran directo en Cobros/Caja).
+
+---
+
 ### AUDITORÍA DEL POS + FASE 0 (6-jul-2026) — ver `AUDITORIA-POS.md` y `FASE0-CONTEXTO.md`
 Auditoría completa del POS (3 agentes: cobro/dinero, fiscal/DGII, completitud módulo por módulo).
 Veredicto: **21/22 módulos completos, 0 funciones fantasma, el flujo de cobro funciona** — NO hay que
