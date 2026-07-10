@@ -1129,6 +1129,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <button id="tabFact" class="nxft-tab is-active" onclick="switchTab('fact')"><i class="ti ti-file-invoice"></i> Facturas</button>
             <button id="tabCob" class="nxft-tab" onclick="switchTab('cob')"><i class="ti ti-wallet"></i> Cobros</button>
             <button id="tabPagos" class="nxft-tab" onclick="switchTab('pagos')"><i class="ti ti-cash-register"></i> Historial de pagos</button>
+            <button id="tabAvisos" class="nxft-tab" onclick="switchTab('avisos')"><i class="ti ti-bell-ringing"></i> Avisos</button>
           </div>
           <!-- Panel Facturas -->
           <div id="panelFact">
@@ -1213,6 +1214,11 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             </table></div>
           </div><!-- /nc -->
         </div><!-- /panelPagos -->
+        <!-- Panel Avisos -->
+        <div id="panelAvisos" style="display:none">
+          <div class="ch" style="margin-bottom:10px"><div><div class="ct">Avisos</div><div class="ct-s">Quién necesita un recordatorio por WhatsApp — 1 toque para enviar</div></div></div>
+          <div id="tbAvisos"><div class="loading"><div class="spin"></div></div></div>
+        </div><!-- /panelAvisos -->
         <div id="panelPend" style="display:none"><div id="nxPendInner"></div></div>
         </div><!-- /v-facturas -->
 
@@ -3454,7 +3460,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.3';
+const APP_VERSION='48.4';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5911,6 +5917,80 @@ function nxCobroWA(cid){
   window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
   toast('ok','WhatsApp abierto',c.nom);
   try{logAudit('COBRO_RECORDATORIO_WA',c.nom+' · '+fmt(tot),'Cobros');}catch(e){}
+}
+
+// ════════ AVISOS — quién necesita un recordatorio, calculado en vivo (1 toque para enviar) ════════
+function _nxAvCSS(){
+  if(document.getElementById('nxAvCSS'))return;
+  const st=document.createElement('style');st.id='nxAvCSS';
+  st.textContent=`.nxAvCard{background:#fff;border:1px solid #eceef3;border-radius:14px;padding:11px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .nxAvHead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .nxAvAv{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px}
+  .nxAvWho{flex:1;min-width:0}
+  .nxAvNm{font-weight:800;font-size:13px;color:#101828;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nxAvSub{font-size:10.5px;color:#667085;margin-top:1px}
+  .nxAvMonto{font-weight:800;font-size:13px;color:#dc2626;font-family:var(--mono);flex-shrink:0;white-space:nowrap}
+  .nxAvBtn{width:100%;border:none;border-radius:9px;padding:9px;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .nxAvBtn.wa{background:linear-gradient(135deg,#1da851,#25d366);color:#fff}
+  .nxAvNoWa{text-align:center;font-size:10.5px;color:#94a3b8;padding:4px}`;
+  document.head.appendChild(st);
+}
+function rAvisos(){
+  _nxAvCSS();
+  const tb=document.getElementById('tbAvisos');if(!tb)return;
+  const act=ST.clientes.filter(c=>c.activo);
+
+  // Facturas atrasadas (de meses anteriores al de corte, sin pagar) — mismo criterio que rFact('atrasadas')
+  const _mc=mesCorte();const hoyKey=`${_mc.anio}-${String(_mc.mes).padStart(2,'0')}`;
+  const facAtrasadas=ST.facturas.filter(f=>f.periodo<hoyKey&&f.estado!=='Pagado'&&f.estado!=='Anulada');
+  const porCliente={};
+  facAtrasadas.forEach(f=>{
+    const cid=String(f.cliente_id);
+    if(!porCliente[cid])porCliente[cid]={cliente_id:f.cliente_id,nom:f.cliente_nom,total:0,meses:0};
+    porCliente[cid].total+=Number(f.total||0);porCliente[cid].meses++;
+  });
+  const atrasadosArr=Object.values(porCliente).sort((a,b)=>b.total-a.total);
+
+  // Pólizas por vencer (dentro de CFG.alertaDias) o ya vencidas
+  const vencerArr=act.filter(c=>{const e=getEstPol(c);return e.est==='gracia'||e.est==='vencida';})
+    .sort((a,b)=>new Date(a.fecha_fin||0)-new Date(b.fecha_fin||0));
+
+  const cardAtraso=o=>{
+    const c=ST.clientes.find(x=>String(x.id)===String(o.cliente_id));
+    const tieneWA=c&&nxWa(c.wa);
+    return `<div class="nxAvCard">
+      <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#f87171,#dc2626)">${inits(o.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(o.nom)}</div><div class="nxAvSub">${o.meses} mes(es) atrasado(s)</div></div><div class="nxAvMonto">${fmt(o.total)}</div></div>
+      ${tieneWA?`<button class="nxAvBtn wa" onclick="nxCobroWA('${o.cliente_id}')"><i class="ti ti-brand-whatsapp"></i> Enviar recordatorio</button>`:`<div class="nxAvNoWa">Sin WhatsApp registrado</div>`}
+    </div>`;
+  };
+  const cardVence=c=>{
+    const e=getEstPol(c);const tieneWA=nxWa(c.wa);
+    return `<div class="nxAvCard">
+      <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#f59e0b,#d97706)">${inits(c.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(c.nom)}</div><div class="nxAvSub" style="color:${e.est==='vencida'?'#dc2626':'#b45309'};font-weight:700">${e.lbl}</div></div></div>
+      ${tieneWA?`<button class="nxAvBtn wa" onclick="nxVencerWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar recordatorio</button>`:`<div class="nxAvNoWa">Sin WhatsApp registrado</div>`}
+    </div>`;
+  };
+
+  tb.innerHTML=`
+    <div class="nc" style="margin-bottom:10px">
+      <div class="ch"><span class="ct"><i class="ti ti-file-alert" style="color:#dc2626"></i> Facturas atrasadas</span><span class="badge bC3">${atrasadosArr.length}</span></div>
+      ${atrasadosArr.length?atrasadosArr.map(cardAtraso).join(''):'<div class="empty">Nadie tiene facturas atrasadas 🎉</div>'}
+    </div>
+    <div class="nc">
+      <div class="ch"><span class="ct"><i class="ti ti-calendar-exclamation" style="color:#d97706"></i> Pólizas por vencer</span><span class="badge bC4">${vencerArr.length}</span></div>
+      ${vencerArr.length?vencerArr.map(cardVence).join(''):'<div class="empty">Ninguna póliza por vencer 🎉</div>'}
+    </div>`;
+}
+// Recordatorio de renovación por WhatsApp (póliza vencida o por vencer)
+function nxVencerWA(cid){
+  const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
+  if(!nxWa(c.wa)){toast('warn','Sin WhatsApp',(c.nom||'')+' no tiene número de WhatsApp registrado');return;}
+  const e=getEstPol(c);
+  const linea=e.est==='vencida'?'ya *venció*':`*vence pronto* (${e.lbl.toLowerCase()})`;
+  const msg=`Estimado/a *${c.nom}*,\n\nLe informamos que su póliza *${c.numero_poliza||'—'}* ${linea}.\n*Fecha de vencimiento:* ${c.fecha_fin||'—'}\n\nContáctenos para renovar su cobertura y evitar interrupciones en su seguro.\n\n_${CFG.empNom}_`;
+  window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');
+  toast('ok','WhatsApp abierto',c.nom);
+  try{logAudit('POLIZA_VENCER_WA',c.nom+' · '+(c.fecha_fin||''),'Avisos');}catch(e2){}
 }
 // ════════ BANCOS - Módulo nativo ════════
 let _bancosCache=[];
@@ -8449,15 +8529,18 @@ function switchTab(tab){
   const pF=document.getElementById('panelFact');
   const pC=document.getElementById('panelCob');
   const pP=document.getElementById('panelPagos');
+  const pA=document.getElementById('panelAvisos');
   const tF=document.getElementById('tabFact');
   const tC=document.getElementById('tabCob');
   const tP=document.getElementById('tabPagos');
+  const tA=document.getElementById('tabAvisos');
   // Ocultar todos
   if(pF)pF.style.display='none';
   if(pC)pC.style.display='none';
   if(pP)pP.style.display='none';
+  if(pA)pA.style.display='none';
   // Resetear todos los tabs
-  [tF,tC,tP].forEach(t=>{if(t)t.classList.remove('is-active');});
+  [tF,tC,tP,tA].forEach(t=>{if(t)t.classList.remove('is-active');});
   // Activar el seleccionado
   if(tab==='fact'){
     if(pF)pF.style.display='';
@@ -8471,6 +8554,10 @@ function switchTab(tab){
     if(pP)pP.style.display='';
     if(tP)tP.classList.add('is-active');
     rPagos();
+  }else if(tab==='avisos'){
+    if(pA)pA.style.display='';
+    if(tA)tA.classList.add('is-active');
+    rAvisos();
   }
 }
 

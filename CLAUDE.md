@@ -1304,6 +1304,42 @@ chat sigue con NEXUS PRO (seguros/rifas).
 
 ---
 
+### Pestaña "Avisos" en Facturas — WhatsApp de 1 toque, automatizaciones fase 1 (10-jul-2026, v48.4)
+El dueño preguntó cómo mandar WhatsApp automático a clientes. Investigado y explicado: NO existe el
+envío 100% automático con WhatsApp normal (`wa.me`) — siempre hace falta que alguien toque "enviar".
+Lo 100% automático de verdad requiere la **API oficial de WhatsApp Business (Meta Cloud API)**: cuenta
+de Meta Business verificada, número dedicado, **plantillas de mensaje pre-aprobadas por Meta** (no se
+puede mandar texto libre fuera de una ventana de 24h sin plantilla aprobada), costo por
+conversación/mensaje y tarjeta de pago en la cuenta de Meta — son trámites del dueño, no algo que se
+resuelva por código. El dueño eligió **mejorar primero lo de 1-toque** (gratis, sin trámites).
+- **HECHO — pestaña "Avisos"** (4ta pestaña en Facturas/Cobros/Historial de pagos, `index.html`):
+  detecta SOLA (sin que el dueño busque a mano) dos grupos, cada uno con botón WhatsApp 1-toque:
+  1. **Facturas atrasadas** (`rAvisos()`, mismo criterio que `rFact('atrasadas')`): agrupa por cliente
+     las facturas de meses anteriores sin pagar, suma el monto, ordena de mayor a menor deuda. Botón
+     reutiliza `nxCobroWA()` (ya existía, usado en Cobros — arma el mensaje con pendiente + deuda
+     anterior + total).
+  2. **Pólizas por vencer**: usa `getEstPol()` (ya existente) para encontrar pólizas en estado
+     `gracia` (dentro de `CFG.alertaDias`, default 30 días) o `vencida`. Botón nuevo `nxVencerWA(cid)`
+     — mensaje de renovación distinto al de cobro (no existía antes como acción de 1 clic; solo vivía
+     enterrado dentro del modal genérico "WA masivo").
+  - Si el cliente no tiene WhatsApp registrado, la tarjeta muestra un aviso en vez de un botón que no
+    serviría (`nxAvNoWa`). CSS nuevo `_nxAvCSS()` (mismo patrón de inyección única que `_nxCobCSS`),
+    tarjetas compactas estilo Cobros (avatar+nombre+badge, sin desbordar en móvil angosto).
+  - `.nxft-tabs` ya soportaba hasta 4 pestañas en su grid responsive (2 columnas en móvil, 4 en
+    escritorio) sin tocar CSS — la 4ta pestaña cayó justo en el patrón existente.
+  - Verificado con Playwright (13 pruebas): no crashea sin datos (`ST.clientes`/`ST.facturas` vacíos
+    por defecto), detecta correctamente atrasados/por-vencer/vencidas con datos simulados, el botón
+    de WhatsApp arma el link `wa.me` con el número y mensaje correctos, oculta el botón cuando no hay
+    WhatsApp registrado, 0 errores de JavaScript.
+- **Deliberadamente NO se agregó** un grupo separado de "deuda anterior" — ya queda cubierto dentro del
+  mismo `nxCobroWA()` (que sí incluye `deuda_anterior` en su mensaje) para no duplicar/confundir con
+  3 grupos que se solapan.
+- **Pendiente si el dueño quiere ir más lejos:** Fase 2 = envío de correo automático (ya existe
+  `enviar-reporte-email` como precedente técnico) · Fase 3 = WhatsApp API real de Meta (requiere que
+  el dueño haga los trámites de cuenta/plantillas primero).
+
+---
+
 ### AGUAPRO ERP — módulo para distribuidoras de agua, dentro de Multiempresa (10-jul-2026)
 Módulo nuevo en `parches.js` (IIFE propio, `window.nxAbrirAguaPro`), registrado en el hub Multiempresa
 ("AGUAPRO ERP", orden 6). **Historia:** lo construyó Codex (chat aparte) como demo visual, luego lo fue
