@@ -1,7 +1,8 @@
 ﻿{
-  "version": "46.5",
+  "version": "46.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "MEJORA (Multiempresa · AGUAPRO pantalla completa v46.6): AGUAPRO ahora abre como un sistema completo independiente, cubriendo el marco visual de NEXUS PRO para parecerse más al mockup aprobado: sidebar azul propio, área blanca de trabajo, topbar de AGUAPRO y botón X para volver. No toca Seguros, Supabase ni la lógica real.",
     "MEJORA (Multiempresa · AGUAPRO más fiel al mockup aprobado v46.5): se ajustó la interfaz visual para parecerse más al diseño de ChatGPT: sidebar azul compacto, topbar blanca, fuente tipo SaaS, KPIs pequeños con distribución de tablero, gráficas y alertas en columnas, tablas más limpias y proporciones más parecidas al sistema de facturación de agua. Mantiene la lógica real fase 1 sin tocar Seguros ni Supabase.",
     "NUEVO (Multiempresa · AGUAPRO visual aprobado v46.4): AGUAPRO ahora se presenta como sistema propio tipo distribuidora de agua, con sidebar azul, topbar blanca, dashboard con KPIs, graficas visuales, tablas profesionales y modulos estilo ERP como el mockup aprobado. Mantiene los datos reales fase 1 sin tocar Seguros.",
     "NUEVO (Multiempresa · AGUAPRO ERP real fase 1): AGUAPRO deja de ser solo demo visual y ahora permite crear clientes, productos, pedidos, registrar cobros, mover pedidos a ruta/entregado y ver caja con datos persistentes. Guarda en configuración existente de NEXUS PRO con respaldo local, sin crear tablas nuevas ni tocar Seguros.",
