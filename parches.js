@@ -799,6 +799,7 @@
       '.nxAguaCards{display:grid;grid-template-columns:1fr;gap:10px}.nxAguaProd{border:1px solid #e2e8f0;border-radius:16px;padding:13px;background:#fff}.nxAguaProdTop{display:flex;gap:10px;align-items:center}.nxAguaProd b{font-size:14px}.nxAguaProd small{display:block;color:#64748b;margin-top:3px}.nxAguaMoney{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.nxAguaMoney div{background:#f8fafc;border-radius:12px;padding:9px}.nxAguaMoney span{font-size:10px;color:#64748b;font-weight:850}.nxAguaMoney strong{display:block;margin-top:3px;font-size:13px}',
       '.nxAguaPOS{display:grid;grid-template-columns:1fr;gap:12px}.nxAguaCart{background:#0f172a;color:#fff;border-radius:18px;padding:15px}.nxAguaCart h3{color:#fff}.nxAguaCartLine{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:12px}.nxAguaTotal{display:flex;justify-content:space-between;margin-top:14px;font-size:20px;font-weight:950}.nxAguaPay{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.nxAguaPay button{border:0;border-radius:12px;padding:10px;font-size:11px;font-weight:850}.nxAguaPay button:first-child{background:#10b981;color:#fff}',
       '.nxAguaActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.nxAguaBtn{border:1px solid #dbeafe;background:#fff;color:#1d4ed8;border-radius:999px;padding:9px 12px;font-size:11px;font-weight:900}.nxAguaBtn.primary{background:#2563eb;color:#fff;border-color:#2563eb}.nxAguaRoute{display:grid;gap:10px}.nxAguaStep{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px;border-radius:14px;background:#f8fafc;border:1px solid #edf2f7}.nxAguaStep b{font-size:12px}.nxAguaStep span{display:block;color:#64748b;font-size:11px;margin-top:2px}.nxAguaStepNum{width:34px;height:34px;border-radius:12px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;font-weight:950}.nxAguaMini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.nxAguaMini div{background:#f8fafc;border:1px solid #edf2f7;border-radius:13px;padding:10px}.nxAguaMini span{font-size:10px;color:#64748b;font-weight:850}.nxAguaMini b{display:block;margin-top:3px;font-size:13px}',
+      '.nxAguaToolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.nxAguaToolbar .nxAguaBtn{background:#f8fafc}.nxAguaEmpty{border:1px dashed #cbd5e1;border-radius:16px;padding:18px;text-align:center;color:#64748b;background:#f8fafc;font-size:12px}.nxAguaRow .nxAguaAct{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.nxAguaAct button{border:1px solid #dbeafe;background:#fff;color:#1d4ed8;border-radius:999px;padding:6px 8px;font-size:9px;font-weight:900}.nxAguaAct button.ok{background:#dcfce7;color:#15803d;border-color:#bbf7d0}.nxAguaAct button.bad{background:#fee2e2;color:#b91c1c;border-color:#fecaca}',
       '@media(min-width:780px){.nxAguaKpis{grid-template-columns:repeat(4,minmax(0,1fr))}.nxAguaGrid{grid-template-columns:1fr 1fr}.nxAguaCards{grid-template-columns:repeat(2,minmax(0,1fr))}.nxAguaPOS{grid-template-columns:minmax(0,1fr) 340px}.nxAguaWide{grid-column:1/-1}}',
       '@media(max-width:560px){.nxAguaHero{border-radius:16px;padding:17px}.nxAguaHero h2{font-size:23px}.nxAguaTop{align-items:flex-start}.nxAguaKpi b{font-size:20px}.nxAguaRow{grid-template-columns:38px 1fr}.nxAguaRow .nxAguaTag{grid-column:2}.nxAguaIco{width:38px;height:38px}}'
     ].join('');
@@ -806,12 +807,105 @@
   }
 
   var tab = 'dashboard';
+  var DATA_KEY = 'aguapro_data_v1';
+  var aguaData = null;
+  function uid(p) { return (p || 'ag') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7); }
+  function seedData() {
+    return {
+      clientes: [
+        { id: uid('cli'), nom: 'Colmado La Bendicion', sector: 'Villa Mella', tel: '809-555-0140', ruta: 'Ruta Norte', balance: 2500, estado: 'Activo' },
+        { id: uid('cli'), nom: 'Residencial Palmeras', sector: 'Los Prados', tel: '809-555-0188', ruta: 'Ruta Este', balance: 0, estado: 'Activo' },
+        { id: uid('cli'), nom: 'Cafeteria El Punto', sector: 'Ensanche Ozama', tel: '809-555-0199', ruta: 'Ruta Sur', balance: 6200, estado: 'Credito' }
+      ],
+      productos: [
+        { id: uid('prd'), nom: 'Botellon Agua 5 Galones', cat: 'Agua', costo: 38, precio: 75, stock: 420 },
+        { id: uid('prd'), nom: 'Paquete Agua 16 oz x24', cat: 'Embotellada', costo: 115, precio: 180, stock: 95 },
+        { id: uid('prd'), nom: 'Funda de Hielo 10 lb', cat: 'Hielo', costo: 35, precio: 65, stock: 18 },
+        { id: uid('prd'), nom: 'Dispensador Manual', cat: 'Accesorios', costo: 90, precio: 175, stock: 60 }
+      ],
+      pedidos: [
+        { id: uid('ped'), num: 'PED-1048', cliente: 'Residencial Palmeras', producto: 'Botellon Agua 5 Galones', qty: 8, total: 600, ruta: 'Ruta Norte', estado: 'En ruta', pagado: 0 },
+        { id: uid('ped'), num: 'PED-1049', cliente: 'Colmado La Bendicion', producto: 'Botellon Agua 5 Galones', qty: 4, total: 300, ruta: 'Ruta Norte', estado: 'Pendiente', pagado: 0 },
+        { id: uid('ped'), num: 'PED-1050', cliente: 'Cafeteria El Punto', producto: 'Paquete Agua 16 oz x24', qty: 3, total: 540, ruta: 'Ruta Sur', estado: 'Credito', pagado: 0 }
+      ],
+      caja: [{ id: uid('mov'), tipo: 'Apertura', desc: 'Fondo inicial', monto: 5000, fecha: new Date().toISOString() }],
+      botellones: { total: 1240, disponibles: 614, cliente: 326, proceso: 118, danados: 4 },
+      produccion: { total: 290, lavado: 86, llenado: 72, sellado: 68 }
+    };
+  }
+  function data() { if (!aguaData) aguaData = seedData(); return aguaData; }
+  async function loadData() {
+    if (aguaData) return aguaData;
+    var local = null;
+    try { local = JSON.parse(localStorage.getItem('nx_' + DATA_KEY) || 'null'); } catch (e) {}
+    aguaData = local || seedData();
+    try {
+      if (typeof cargarConfigSupabase === 'function') {
+        var supa = await cargarConfigSupabase(DATA_KEY);
+        if (supa && supa.clientes && supa.productos) aguaData = supa;
+      }
+    } catch (e) {}
+    try { localStorage.setItem('nx_' + DATA_KEY, JSON.stringify(aguaData)); } catch (e) {}
+    return aguaData;
+  }
+  async function saveData(msg) {
+    data();
+    try { localStorage.setItem('nx_' + DATA_KEY, JSON.stringify(aguaData)); } catch (e) {}
+    try { if (typeof guardarConfigSupabase === 'function') await guardarConfigSupabase(DATA_KEY, aguaData); } catch (e) { console.log('AGUAPRO save:', e.message); }
+    var v = document.getElementById('v-aguapro'); if (v) render(v);
+    try { if (msg && typeof toast === 'function') toast('ok', 'AGUAPRO guardado', msg); } catch (e) {}
+  }
+  function nextPedido() {
+    var nums = data().pedidos.map(function (p) { return parseInt(String(p.num || '').replace(/\D/g, ''), 10) || 1040; });
+    return 'PED-' + (Math.max.apply(Math, nums.concat([1040])) + 1);
+  }
   function setTab(t) {
     tab = t || 'dashboard';
     var v = document.getElementById('v-aguapro');
     if (v) render(v);
   }
   window.nxAguaTab = setTab;
+  window.nxAguaNuevoCliente = async function () {
+    var nom = prompt('Nombre del cliente'); if (!nom) return;
+    var sector = prompt('Sector o ciudad', '') || '';
+    var tel = prompt('Telefono / WhatsApp', '') || '';
+    var ruta = prompt('Ruta', 'Ruta Norte') || 'Ruta Norte';
+    data().clientes.unshift({ id: uid('cli'), nom: nom.trim(), sector: sector.trim(), tel: tel.trim(), ruta: ruta.trim(), balance: 0, estado: 'Activo' });
+    await saveData('Cliente creado');
+  };
+  window.nxAguaNuevoProducto = async function () {
+    var nom = prompt('Nombre del producto'); if (!nom) return;
+    var precio = Number(prompt('Precio de venta', '75') || 0);
+    var costo = Number(prompt('Costo', '38') || 0);
+    var stock = Number(prompt('Existencia', '0') || 0);
+    data().productos.unshift({ id: uid('prd'), nom: nom.trim(), cat: prompt('Categoria', 'Agua') || 'Agua', costo: costo, precio: precio, stock: stock });
+    await saveData('Producto creado');
+  };
+  window.nxAguaNuevoPedido = async function () {
+    var d = data();
+    if (!d.clientes.length || !d.productos.length) return alert('Primero crea cliente y producto.');
+    var cliente = prompt('Cliente', d.clientes[0].nom); if (!cliente) return;
+    var prod = prompt('Producto', d.productos[0].nom); if (!prod) return;
+    var producto = d.productos.find(function (p) { return p.nom.toLowerCase() === prod.toLowerCase(); }) || d.productos[0];
+    var qty = Math.max(1, Number(prompt('Cantidad', '1') || 1));
+    var total = qty * Number(producto.precio || 0);
+    d.pedidos.unshift({ id: uid('ped'), num: nextPedido(), cliente: cliente.trim(), producto: producto.nom, qty: qty, total: total, ruta: prompt('Ruta', 'Ruta Norte') || 'Ruta Norte', estado: 'Pendiente', pagado: 0 });
+    producto.stock = Math.max(0, Number(producto.stock || 0) - qty);
+    await saveData('Pedido creado');
+  };
+  window.nxAguaCobrarPedido = async function (id) {
+    var p = data().pedidos.find(function (x) { return x.id === id; }); if (!p) return;
+    var monto = Number(prompt('Monto cobrado', String(p.total - (p.pagado || 0))) || 0); if (monto <= 0) return;
+    p.pagado = Number(p.pagado || 0) + monto;
+    if (p.pagado >= p.total) p.estado = 'Entregado';
+    data().caja.unshift({ id: uid('mov'), tipo: 'Cobro', desc: p.num + ' - ' + p.cliente, monto: monto, fecha: new Date().toISOString() });
+    await saveData('Cobro registrado');
+  };
+  window.nxAguaEstadoPedido = async function (id, estado) {
+    var p = data().pedidos.find(function (x) { return x.id === id; }); if (!p) return;
+    p.estado = estado;
+    await saveData('Estado actualizado');
+  };
 
   function tabs() {
     var items = [['dashboard', 'Dashboard'], ['clientes', 'Clientes'], ['productos', 'Productos'], ['pos', 'POS'], ['pedidos', 'Pedidos'], ['rutas', 'Rutas'], ['botellones', 'Botellones'], ['produccion', 'Produccion'], ['caja', 'Caja']];
@@ -822,6 +916,13 @@
   function kpis(arr) {
     return '<div class="nxAguaKpis">' + arr.map(function (x) { return '<div class="nxAguaKpi"><span>' + esc(x[0]) + '</span><b>' + esc(x[1]) + '</b></div>'; }).join('') + '</div>';
   }
+  function toolbar(btns) {
+    return '<div class="nxAguaToolbar">' + btns.map(function (b) { return '<button type="button" class="nxAguaBtn ' + (b[2] || '') + '" onclick="' + b[1] + '">' + esc(b[0]) + '</button>'; }).join('') + '</div>';
+  }
+  function empty(msg) { return '<div class="nxAguaEmpty">' + esc(msg) + '</div>'; }
+  function totalCobrado() { return data().caja.reduce(function (s, m) { return s + Number(m.monto || 0); }, 0); }
+  function porCobrar() { return data().pedidos.reduce(function (s, p) { return s + Math.max(0, Number(p.total || 0) - Number(p.pagado || 0)); }, 0); }
+  function estadoCls(s) { return /entregado|activo|al dia/i.test(s) ? 'ok' : /pendiente|ruta|credito/i.test(s) ? 'warn' : 'bad'; }
   function dashboard() {
     return kpis([['Ventas del día', fmt(18450)], ['Pedidos pendientes', '14'], ['Botellones fuera', '326'], ['Producción hoy', '290']]) +
       '<div class="nxAguaGrid"><div class="nxAguaPanel"><h3>Alertas operativas</h3><div class="nxAguaList">' +
@@ -913,6 +1014,72 @@
       row('ti-receipt-tax', 'Gasto combustible', 'CAM-01 - Ruta Norte', fmt(1800), 'warn') +
       '</div></div><div class="nxAguaPanel"><h3>Cuadre rapido</h3><div class="nxAguaMini"><div><span>Efectivo</span><b>' + fmt(18450) + '</b></div><div><span>Transferencia</span><b>' + fmt(9300) + '</b></div><div><span>Tarjeta</span><b>' + fmt(5000) + '</b></div><div><span>Por cobrar</span><b>' + fmt(8500) + '</b></div></div></div></div>';
   }
+  function dashboard() {
+    var d = data();
+    var pend = d.pedidos.filter(function (p) { return p.estado !== 'Entregado'; }).length;
+    var crit = d.productos.filter(function (p) { return Number(p.stock || 0) < 20; });
+    return kpis([['Ventas cobradas', fmt(totalCobrado())], ['Pedidos pendientes', String(pend)], ['Por cobrar', fmt(porCobrar())], ['Produccion hoy', String(d.produccion.total)]]) +
+      '<div class="nxAguaGrid"><div class="nxAguaPanel"><h3>Alertas operativas</h3><div class="nxAguaList">' +
+      (crit.map(function (p) { return row('ti-alert-triangle', 'Stock critico', p.nom + ' por debajo del minimo', 'Revisar', 'warn'); }).join('') || row('ti-circle-check', 'Inventario estable', 'No hay productos por debajo del minimo', 'OK', 'ok')) +
+      row('ti-route', 'Rutas activas', pend + ' pedidos pendientes de entrega', 'Operando', '') +
+      row('ti-bottle', 'Botellones fuera', d.botellones.cliente + ' unidades en clientes', 'Control', 'warn') +
+      '</div></div><div class="nxAguaPanel"><h3>Top productos</h3><div class="nxAguaList">' +
+      d.productos.slice(0, 3).map(function (p) { return row('ti-droplet', p.nom, 'Stock ' + p.stock + ' - ' + p.cat, fmt(p.precio), 'ok'); }).join('') +
+      '</div></div></div><div class="nxAguaActions"><button class="nxAguaBtn primary" type="button" onclick="window.nxAguaNuevoPedido()">Nuevo pedido</button><button class="nxAguaBtn" type="button" onclick="window.nxAguaNuevoCliente()">Nuevo cliente</button><button class="nxAguaBtn" type="button" onclick="window.nxAguaNuevoProducto()">Nuevo producto</button></div>';
+  }
+  function clientes() {
+    var d = data();
+    var deuda = d.clientes.reduce(function (s, c) { return s + Number(c.balance || 0); }, 0);
+    return toolbar([['Nuevo cliente', 'window.nxAguaNuevoCliente()', 'primary']]) +
+      kpis([['Clientes activos', String(d.clientes.length)], ['Con deuda', String(d.clientes.filter(function (c) { return Number(c.balance || 0) > 0; }).length)], ['Balance', fmt(deuda)], ['Rutas', String(new Set(d.clientes.map(function (c) { return c.ruta; })).size)]]) +
+      '<div class="nxAguaPanel"><h3>Clientes</h3><div class="nxAguaList">' +
+      (d.clientes.map(function (c) { return row('ti-building-store', c.nom, (c.sector || 'Sin sector') + ' - ' + (c.ruta || 'Sin ruta') + ' - ' + (c.tel || 'Sin telefono'), Number(c.balance || 0) > 0 ? fmt(c.balance) : 'Al dia', Number(c.balance || 0) > 0 ? 'warn' : 'ok'); }).join('') || empty('No hay clientes creados.')) +
+      '</div></div>';
+  }
+  function productCards() {
+    return data().productos.map(function (p) {
+      return '<div class="nxAguaProd"><div class="nxAguaProdTop"><span class="nxAguaIco"><i class="ti ti-droplet"></i></span><div><b>' + esc(p.nom) + '</b><small>' + esc((p.cat || 'Producto') + ' - Stock ' + (p.stock || 0)) + '</small></div></div><div class="nxAguaMoney"><div><span>Costo</span><strong>' + fmt(p.costo) + '</strong></div><div><span>Precio</span><strong>' + fmt(p.precio) + '</strong></div></div><div style="margin-top:9px"><span class="nxAguaTag ' + (Number(p.stock || 0) < 20 ? 'warn' : 'ok') + '">' + (Number(p.stock || 0) < 20 ? 'Stock bajo' : 'Disponible') + '</span></div></div>';
+    }).join('');
+  }
+  function productos() {
+    var d = data();
+    var inv = d.productos.reduce(function (s, p) { return s + (Number(p.costo || 0) * Number(p.stock || 0)); }, 0);
+    return toolbar([['Nuevo producto', 'window.nxAguaNuevoProducto()', 'primary']]) +
+      kpis([['Productos', String(d.productos.length)], ['Stock critico', String(d.productos.filter(function (p) { return Number(p.stock || 0) < 20; }).length)], ['Inventario', fmt(inv)], ['Categorias', String(new Set(d.productos.map(function (p) { return p.cat; })).size)]]) +
+      '<div class="nxAguaCards">' + (productCards() || empty('No hay productos creados.')) + '</div>';
+  }
+  function pos() {
+    var d = data();
+    return toolbar([['Nuevo pedido', 'window.nxAguaNuevoPedido()', 'primary']]) +
+      '<div class="nxAguaPOS"><div><div class="nxAguaPanel"><h3>Catalogo tactil</h3><div class="nxAguaCards">' + (productCards() || empty('No hay productos.')) + '</div></div></div><aside class="nxAguaCart"><h3>Venta rapida</h3><div class="nxAguaCartLine"><span>Pedidos abiertos</span><b>' + d.pedidos.filter(function (p) { return p.estado !== 'Entregado'; }).length + '</b></div><div class="nxAguaCartLine"><span>Por cobrar</span><b>' + fmt(porCobrar()) + '</b></div><div class="nxAguaTotal"><span>Cobrado</span><b>' + fmt(totalCobrado()) + '</b></div><div class="nxAguaPay"><button onclick="window.nxAguaNuevoPedido()">Crear pedido</button><button onclick="window.nxAguaTab(\'pedidos\')">Ver pedidos</button></div></aside></div>';
+  }
+  function pedidos() {
+    var d = data();
+    return toolbar([['Nuevo pedido', 'window.nxAguaNuevoPedido()', 'primary']]) +
+      kpis([['Pedidos', String(d.pedidos.length)], ['Pendientes', String(d.pedidos.filter(function (p) { return p.estado !== 'Entregado'; }).length)], ['Cobrado', fmt(totalCobrado())], ['Por cobrar', fmt(porCobrar())]]) +
+      '<div class="nxAguaPanel"><h3>Pedidos reales</h3><div class="nxAguaList">' +
+      (d.pedidos.map(function (p) {
+        var sub = p.cliente + ' - ' + p.producto + ' x' + p.qty + ' - ' + p.ruta + ' - Total ' + fmt(p.total);
+        return '<div class="nxAguaRow"><span class="nxAguaIco"><i class="ti ti-clipboard-list"></i></span><div><strong>' + esc(p.num) + '</strong><span>' + esc(sub) + '</span></div><div class="nxAguaAct"><span class="nxAguaTag ' + estadoCls(p.estado) + '">' + esc(p.estado) + '</span><button class="ok" onclick="window.nxAguaCobrarPedido(\'' + p.id + '\')">Cobrar</button><button onclick="window.nxAguaEstadoPedido(\'' + p.id + '\',\'En ruta\')">Ruta</button><button onclick="window.nxAguaEstadoPedido(\'' + p.id + '\',\'Entregado\')">Entregar</button></div></div>';
+      }).join('') || empty('No hay pedidos creados.')) +
+      '</div></div>';
+  }
+  function rutas() {
+    var d = data();
+    var rutas = {};
+    d.pedidos.forEach(function (p) { var r = p.ruta || 'Sin ruta'; if (!rutas[r]) rutas[r] = []; rutas[r].push(p); });
+    return kpis([['Rutas activas', String(Object.keys(rutas).length)], ['Pedidos ruta', String(d.pedidos.filter(function (p) { return p.estado === 'En ruta'; }).length)], ['Entregados', String(d.pedidos.filter(function (p) { return p.estado === 'Entregado'; }).length)], ['Pendientes', String(d.pedidos.filter(function (p) { return p.estado !== 'Entregado'; }).length)]]) +
+      '<div class="nxAguaGrid">' + (Object.keys(rutas).map(function (r) {
+        return '<div class="nxAguaPanel"><h3>' + esc(r) + '</h3><div class="nxAguaRoute">' + rutas[r].map(function (p, i) { return step(i + 1, p.cliente, p.num + ' - ' + p.producto + ' x' + p.qty, p.estado); }).join('') + '</div></div>';
+      }).join('') || empty('No hay rutas con pedidos.')) + '</div>';
+  }
+  function caja() {
+    var d = data();
+    return kpis([['Movimientos', String(d.caja.length)], ['Cobros', fmt(totalCobrado())], ['Por cobrar', fmt(porCobrar())], ['Caja actual', fmt(totalCobrado())]]) +
+      '<div class="nxAguaPanel"><h3>Movimientos de caja</h3><div class="nxAguaList">' +
+      (d.caja.map(function (m) { return row(m.tipo === 'Cobro' ? 'ti-cash' : 'ti-wallet', m.tipo, m.desc || '', fmt(m.monto), m.tipo === 'Cobro' ? 'ok' : ''); }).join('') || empty('No hay movimientos.')) +
+      '</div></div>';
+  }
   function body() {
     if (tab === 'clientes') return clientes();
     if (tab === 'productos') return productos();
@@ -928,7 +1095,7 @@
     view.innerHTML = '<div class="nxAgua"><div class="nxAguaHero"><div class="nxAguaTop"><div><h2>AGUAPRO ERP</h2><p>Sistema SaaS multiempresa para plantas purificadoras y distribuidoras de agua. Demo interno para presentar a clientes antes de separarlo con base de datos propia.</p></div><span class="nxAguaLogo"><i class="ti ti-droplet-filled"></i></span></div></div>' + tabs() + body() + '</div>';
   }
 
-  window.nxAbrirAguaPro = function () {
+  window.nxAbrirAguaPro = async function () {
     try { if (typeof esAdmin === 'function' && !esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; } } catch (e) {}
     inyectarCSS();
     var view = ensureView();
@@ -939,6 +1106,7 @@
     var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'AGUAPRO ERP';
     try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
+    await loadData();
     render(view);
   };
 
