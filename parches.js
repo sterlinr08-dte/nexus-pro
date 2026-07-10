@@ -14793,6 +14793,13 @@
   function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
   function esAdmin() { try { return (typeof sesion !== 'undefined') && sesion && sesion.rol === 'admin'; } catch (e) { try { return window.sesion && window.sesion.rol === 'admin'; } catch (_) { return false; } } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
+  // nxBuscaHTML en caché (mismo criterio que ya usa AGUAPRO).
+  function posBuscador(o) {
+    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
+    o = o || {};
+    return '<div class="nxLupaBox"><i class="ti ti-search"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '"></div>';
+  }
   function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
   function hoy() { return new Date().toISOString().slice(0, 10); }
   function fechaDMY(d) { try { const dt = new Date(d || Date.now()); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); } catch (e) { return ''; } }
@@ -15283,7 +15290,7 @@
     }).join('');
     return `<div class="nxPosGridWrap">
         <div class="nxPosLeft">
-          <div class="nxLupaBox"><i class="ti ti-search click" onclick="window.nxProdPicker('vender')" title="Ver todos los artículos"></i><input type="text" id="posBuscar" placeholder="Buscar producto (toca la lupa para ver todos)..." autocomplete="off" oninput="window.nxPosBuscar(this.value)"></div>
+          ${posBuscador({ id: 'posBuscar', placeholder: 'Buscar producto (toca la lupa para ver todos)...', oninput: 'window.nxPosBuscar(this.value)', onLupa: "window.nxProdPicker('vender')" })}
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
           <div id="posGrid" class="nxPosGrid">${gridHTML()}</div>
         </div>
@@ -15404,7 +15411,7 @@
     const catTabs = `<button type="button" class="nx-inv-tab${_facCatSel === '' ? ' on' : ''}" data-cat="" onclick="window.nxFacCat('')">Todos</button>` + _cats.map(c => `<button type="button" class="nx-inv-tab${String(_facCatSel) === String(c.id) ? ' on' : ''}" data-cat="${c.id}" onclick="window.nxFacCat('${c.id}')">${esc(c.nombre)}</button>`).join('');
     const numField = pre
       ? `<div class="nx-inv-field"><div class="nx-inv-label">Prefactura No.</div><div style="display:flex;align-items:center;gap:6px"><span style="font-weight:800;color:#7c3aed;font-size:15px">${peekPref()}</span><i class="ti ti-search" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" style="margin-left:auto;font-size:15px;color:#7c3aed;cursor:pointer"></i></div></div>`
-      : `<div class="nx-inv-field"><div class="nx-inv-label">No. Factura / NCF</div><div style="display:flex;align-items:center;gap:6px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist(0)" title="Ver todas las facturas" style="font-size:15px;color:#2563eb;cursor:pointer"></i></div><label style="display:flex;align-items:center;gap:6px;margin-top:7px;cursor:pointer"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)" style="width:16px;height:16px;accent-color:#2563eb"><span style="font-size:11px;font-weight:700;color:#334155">A crédito (fiado)</span></label></div>`;
+      : `<div class="nx-inv-field"><div class="nx-inv-label">No. Factura / NCF</div><div style="display:flex;align-items:center;gap:6px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:15px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><i class="ti ti-search" onclick="window.nxFacHist()" title="Ver todas las facturas" style="font-size:15px;color:#2563eb;cursor:pointer"></i></div><label style="display:flex;align-items:center;gap:6px;margin-top:7px;cursor:pointer"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)" style="width:16px;height:16px;accent-color:#2563eb"><span style="font-size:11px;font-weight:700;color:#334155">A crédito (fiado)</span></label></div>`;
     return `<div class="nx-invoice-pro">
       <div class="nx-inv-shell">
         <div class="nx-inv-card">
@@ -15507,7 +15514,7 @@
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:580px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-search"></i> Buscar artículo</span><button class="nxBack" type="button" onclick="document.getElementById('nxProdPick').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        <div class="nxLupaBox"><i class="ti ti-search"></i><input id="ppkQ" placeholder="Buscar por nombre o código… (vacío = todos)" autocomplete="off" oninput="window.nxProdPickFiltrar(this.value)"></div>
+        ${posBuscador({ id: 'ppkQ', placeholder: 'Buscar por nombre o código… (vacío = todos)', oninput: 'window.nxProdPickFiltrar(this.value)' })}
         ${(_prodPickDest === 'factura' && clienteSel()) ? `<div style="font-size:11px;color:#2563eb;margin:0 0 8px;font-weight:700"><i class="ti ti-user"></i> ${esc(clienteSel().nombre)} — ${clienteSel().nivel_precio === 'mayor' ? 'PRECIO POR MAYOR' : 'precio final'} (se carga solo)</div>` : ''}
         <div id="ppkList" style="overflow-y:auto;flex:1"></div>
       </div>`;
@@ -16554,7 +16561,7 @@
         <td style="white-space:nowrap;text-align:right">${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')"><i class="ti ti-device-mobile"></i></button> ` : ''}<button class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.'}</td></tr>`;
-    return `<div class="nxLupaBox" style="margin-bottom:8px"><i class="ti ti-search"></i><input placeholder="Buscar producto por nombre, código o marca…" autocomplete="off" oninput="window.nxProdTablaBuscar(this.value)"></div>
+    return `<div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar producto por nombre, código o marca…', oninput: 'window.nxProdTablaBuscar(this.value)' })}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
@@ -19335,7 +19342,7 @@
     const entregadasHTML = _repVista === 'entregadas'
       ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
       : '';
-    return `<div class="nxLupaBox" style="margin-bottom:8px"><i class="ti ti-search"></i><input placeholder="Buscar por cliente, equipo, IMEI o número…" autocomplete="off" oninput="window.nxRepBuscar(this.value)"></div>
+    return `<div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar por cliente, equipo, IMEI o número…', oninput: 'window.nxRepBuscar(this.value)' })}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <button class="btn bc1" type="button" onclick="window.nxRepNueva()"><i class="ti ti-plus"></i> Recibir equipo</button>
         <div class="nxInvPills" style="margin:0">
@@ -19619,26 +19626,31 @@
     if (hit) window.nxPrefFacturar(hit.id);
     else toast('warn', 'No existe la prefactura No. ' + n, 'Toca la lupa para ver las guardadas');
   };
-  window.nxPrefLista = function (q) {
+  // Modal arma su cáscara UNA vez; el input ya no se destruye en cada tecla (antes
+  // se reconstruía TODO el modal por cada letra y se re-enfocaba a mano como parche).
+  window.nxPrefLista = function () {
+    cerrarModal('nxPrefM');
+    const ov = document.createElement('div'); ov.id = 'nxPrefM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-file-description"></i> Prefacturas abiertas</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrefM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+      ${posBuscador({ id: 'nxPrefQ', placeholder: 'Buscar por número o cliente…', oninput: 'window.nxPrefListaRows(this.value)' })}
+      <div id="nxPrefRows" style="overflow-y:auto;flex:1"></div>
+    </div>`;
+    document.body.appendChild(ov);
+    window.nxPrefListaRows('');
+  };
+  window.nxPrefListaRows = function (q) {
+    const el = document.getElementById('nxPrefRows'); if (!el) return;
     const ql = String(q || '').trim().toLowerCase();
     const lista = _prefs.filter(p => !ql || ((p.numero || '') + ' ' + (p.cliente_nombre || '')).toLowerCase().includes(ql));
-    const rows = lista.length ? lista.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9">
+    el.innerHTML = lista.length ? lista.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(p.numero || '')}</div>
         <div style="font-size:10.5px;color:#475569">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div></div>
         <b style="font-size:12.5px">${fmt(p.total)}</b>
         <button class="btn bsm bc1" type="button" onclick="window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>
         <button class="btn bsm bghost" type="button" onclick="window.nxPrefAnular('${p.id}')"><i class="ti ti-x" style="color:#dc2626"></i></button>
       </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:12px">Sin prefacturas abiertas</div>';
-    cerrarModal('nxPrefM');
-    const ov = document.createElement('div'); ov.id = 'nxPrefM'; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-file-description"></i> Prefacturas abiertas</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrefM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-      <div class="nxLupaBox"><i class="ti ti-search"></i><input placeholder="Buscar por número o cliente…" value="${esc(ql)}" autocomplete="off" oninput="window.nxPrefLista(this.value)"></div>
-      <div style="overflow-y:auto;flex:1">${rows}</div>
-    </div>`;
-    document.body.appendChild(ov);
-    if (ql) { const i2 = ov.querySelector('.nxLupaBox input'); if (i2) { i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); } }
   };
   window.nxPrefFacturar = async function (id) {
     const p = _prefs.find(x => String(x.id) === String(id)); if (!p) return;
@@ -19840,15 +19852,31 @@
 
   // ══════════════ HISTORIAL DE FACTURAS desde el contador (lupa) — 10 en 10 ══════════════
   let _fhPage = 0, _fhQ = '';
-  window.nxFacHist = function (page, q) {
+  // Modal arma su cáscara UNA vez; ni el buscador ni la paginación destruyen el input
+  // al usarse (antes se reconstruía TODO el modal por cada letra/página y se
+  // re-enfocaba a mano como parche).
+  window.nxFacHist = function () {
+    cerrarModal('nxFacHistM');
+    const ov = document.createElement('div'); ov.id = 'nxFacHistM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-file-invoice"></i> Facturas generadas</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacHistM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+      ${posBuscador({ id: 'fhQ', placeholder: 'Buscar por número o cliente…', value: _fhQ, oninput: 'window.nxFacHistRows(0, this.value)' })}
+      <div id="nxFacHistRows" style="overflow-y:auto;flex:1"></div>
+      <div id="nxFacHistNav"></div>
+    </div>`;
+    document.body.appendChild(ov);
+    window.nxFacHistRows(_fhPage);
+  };
+  window.nxFacHistRows = function (page, q) {
     _fhPage = Math.max(0, page || 0); if (q != null) _fhQ = String(q).toLowerCase();
     const qq = _fhQ;
     // Cargar las ventas de la BASE si la memoria está vacía (la lupa funciona sin pasar por Historial)
     if (!(_ventas || []).length && !window.__fhCargando) {
       window.__fhCargando = true;
       getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=500')
-        .then(r => { _ventas = r || []; window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHist(_fhPage); })
-        .catch(() => { window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHist(_fhPage); });
+        .then(r => { _ventas = r || []; window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHistRows(_fhPage); })
+        .catch(() => { window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHistRows(_fhPage); });
     }
     let lista = (_ventas || []).slice().sort((a, b) => String(b.created_at || b.fecha || '').localeCompare(String(a.created_at || a.fecha || '')));
     if (qq) lista = lista.filter(v => ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase().includes(qq));
@@ -19861,19 +19889,12 @@
         <b style="font-size:12.5px">${fmt(v.total)}</b><span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
       : '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">' + (window.__fhCargando ? 'Cargando facturas…' : 'Sin facturas' + (qq ? ' con esa búsqueda' : '')) + '</div>';
     const nav = `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px">
-      <button class="btn bsm bghost" type="button" ${_fhPage <= 0 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHist(${_fhPage - 1})">&lsaquo; Anterior</button>
+      <button class="btn bsm bghost" type="button" ${_fhPage <= 0 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHistRows(${_fhPage - 1})">&lsaquo; Anterior</button>
       <span style="font-size:11.5px;font-weight:800;color:#475569">Página ${_fhPage + 1} de ${pags} · ${lista.length} factura${lista.length === 1 ? '' : 's'}</span>
-      <button class="btn bsm bghost" type="button" ${_fhPage >= pags - 1 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHist(${_fhPage + 1})">Siguiente &rsaquo;</button></div>`;
-    cerrarModal('nxFacHistM');
-    const ov = document.createElement('div'); ov.id = 'nxFacHistM'; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:90vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-file-invoice"></i> Facturas generadas</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacHistM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-      <div class="nxLupaBox"><i class="ti ti-search"></i><input id="fhQ" placeholder="Buscar por número o cliente…" value="${esc(_fhQ)}" autocomplete="off" oninput="window.nxFacHist(0, this.value)"></div>
-      <div style="overflow-y:auto;flex:1">${rows}</div>${nav}
-    </div>`;
-    document.body.appendChild(ov);
-    const inp = document.getElementById('fhQ'); if (inp && qq) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+      <button class="btn bsm bghost" type="button" ${_fhPage >= pags - 1 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHistRows(${_fhPage + 1})">Siguiente &rsaquo;</button></div>`;
+    const rowsEl = document.getElementById('nxFacHistRows'); if (!rowsEl) return;
+    rowsEl.innerHTML = rows;
+    const navEl = document.getElementById('nxFacHistNav'); if (navEl) navEl.innerHTML = nav;
   };
 
   // ══════════════ APARTADOS (layaway: separar con abonos) ══════════════
