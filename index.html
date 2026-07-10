@@ -3454,7 +3454,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.2';
+const APP_VERSION='48.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5820,20 +5820,20 @@ function _nxCobCSS(){
   if(document.getElementById('nxCobCSS'))return;
   const st=document.createElement('style');st.id='nxCobCSS';
   st.textContent=`.nxCobCards{display:flex;flex-direction:column;gap:12px}
-  .nxCobCard{background:#fff;border:1px solid #eceef3;border-radius:16px;padding:14px 14px 12px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
-  .nxCobCard .cbHead{display:flex;align-items:center;gap:11px}
-  .nxCobCard .cbAv{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);box-shadow:0 4px 10px rgba(109,40,217,.28)}
+  .nxCobCard{background:#fff;border:1px solid #eceef3;border-radius:16px;padding:12px 12px 10px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
+  .nxCobCard .cbHead{display:flex;align-items:flex-start;gap:10px}
+  .nxCobCard .cbAv{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);box-shadow:0 4px 10px rgba(109,40,217,.28)}
   .nxCobCard .cbWho{flex:1;min-width:0}
-  .nxCobCard .cbNm{font-weight:800;font-size:15px;letter-spacing:-.01em;line-height:1.15;color:#101828;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .nxCobCard .cbAg{display:flex;align-items:center;gap:4px;color:#667085;font-size:11.5px;font-weight:600;margin-top:2px}
-  .nxCobCard .cbAg i{font-size:13px}
-  .nxCobCard .cbBadges{display:flex;align-items:center;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+  .nxCobCard .cbNm{font-weight:800;font-size:14.5px;letter-spacing:-.01em;line-height:1.2;color:#101828;white-space:normal;overflow-wrap:break-word}
+  .nxCobCard .cbAg{display:flex;align-items:center;gap:4px;color:#667085;font-size:11px;font-weight:600;margin-top:2px}
+  .nxCobCard .cbAg i{font-size:12px}
+  .nxCobCard .cbBadges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
   .nxCobCard .cbBdg{font-size:10px;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
   .nxCobCard .cbBdg.plan{background:#f0ebff;color:#6d28d9}
   .nxCobCard .cbBdg.parcial{background:#fef3c7;color:#d97706}
   .nxCobCard .cbBdg.pend{background:#ffe4e6;color:#e11d48}
   .nxCobCard .cbBdg.aldia{background:#dcfce7;color:#16a34a}
-  .nxCobCard .cbDiv{height:1px;background:#eceef3;margin:12px 0}
+  .nxCobCard .cbDiv{height:1px;background:#eceef3;margin:10px 0}
   .nxCobCard .cbFoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .nxCobCard .cbAmt{min-width:84px}
   .nxCobCard .cbAl{font-size:10px;font-weight:800;color:#667085;text-transform:uppercase;letter-spacing:.03em}
