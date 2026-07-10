@@ -781,12 +781,16 @@
   function ensureView() {
     var v = document.getElementById('v-aguapro');
     if (v) return v;
-    var dash = document.getElementById('v-dashboard');
-    if (!dash || !dash.parentElement) return null;
+    // A diferencia de los demás módulos (POS/Rifas/Consultorio...), AGUAPRO usa un shell
+    // position:fixed;inset:0 para verse como sistema aparte. Si se agrega dentro de
+    // .content/.main (que tienen overflow-y:auto / overflow:hidden), en iOS Safari el
+    // position:fixed puede quedar atrapado dentro de ese contenedor con overflow en vez
+    // de cubrir toda la pantalla. Por eso se cuelga directo de <body> — el mismo patrón
+    // que ya usa la barra inferior móvil (mobile-bottom-nav-clean) para lo mismo.
     v = document.createElement('div');
     v.className = 'view';
     v.id = 'v-aguapro';
-    dash.parentElement.appendChild(v);
+    document.body.appendChild(v);
     return v;
   }
 
