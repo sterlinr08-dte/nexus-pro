@@ -274,10 +274,23 @@ no se mezclan, cada buscador del sistema usa el que corresponde a su caso:
   del texto? 7) ¿cuál es el mensaje de "sin resultados"? 8) ¿cómo se ve en móvil angosto?
   9) ¿qué reemplaza (un `<select>` viejo, un `prompt()`, nada)? 10) confirmar con el dueño el
   caso concreto ANTES de construir el motor genérico a ciegas — no asumir dónde se usa primero.
-- **Estado:** documentado. AÚN NO IMPLEMENTADO — pendiente que el dueño confirme el primer caso
-  concreto (candidato identificado sin construir todavía: el `<select>` de cliente en "Nuevo
-  pedido" de AGUAPRO, que hoy carga TODOS los clientes en un dropdown plano — típico caso que
-  este patrón resuelve cuando el catálogo crece).
+- **Estado — HECHO v47.5 (primer caso real):** motor `ModalBusquedaBase` construido en
+  `index.html` (junto a `nxBuscaHTML`, expuesto en `window`); reusa `nxBuscaHTML` por dentro
+  como caja de búsqueda (los dos reglamentos se complementan, no compiten: uno es el "cómo se ve
+  el campo", el otro es el "contenedor para elegir de un catálogo"). Primer caso concreto:
+  `<select>` de Cliente en "Nuevo pedido" de AGUAPRO → botón que abre `nxAguaAbrirBuscadorCliente()`
+  (busca por nombre/teléfono/sector/ruta, elige, guarda el id en el mismo input oculto `agPedCli`
+  que ya leía `nxAguaPedidoGuardar`). **Nota honesta encontrada al construirlo:** `_ag.clientes`
+  hoy se carga ENTERO en memoria (`cargarAgua`, sin paginar), así que este caso usa el modo
+  `datos:` (filtra en JS, paginación local) — NO ejercita el modo `buscar:` (servidor, async,
+  para catálogos que no caben en memoria), que queda listo para el próximo módulo que sí lo
+  necesite. Verificado con 26 pruebas Playwright (apertura, paginación 20/página, debounce
+  300ms sin perder foco, acentos, teclado ↑↓+Enter, Esc, clic fuera, sin resultados, móvil sin
+  desborde) + las 37 pruebas funcionales de AGUAPRO repasadas sin regresión. Convención de
+  nombres real usada: `nxAgua<Verbo>` en vez de `abrir<Entidad>Buscador()` genérico del
+  reglamento — necesario para no chocar con futuros buscadores de cliente de otros módulos
+  (POS, seguros...) que tienen su propia tabla de clientes. **Pendiente:** migrar el selector de
+  cliente del POS (Factura/Cobro) y otros `<select>` grandes del sistema a este mismo patrón.
 
 ---
 
