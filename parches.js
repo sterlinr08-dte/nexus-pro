@@ -819,11 +819,12 @@
 
   // ── Estado local: cache de las tablas agua_* (una organización a la vez, vía RLS) ──
   var tab = 'dashboard';
-  var _ag = { clientes: [], productos: [], pedidos: [], botellones: [], produccion: [], caja: [], movimientos: [] };
+  var _ag = { clientes: [], productos: [], pedidos: [], botellones: [], produccion: [], caja: [], movimientos: [], config: { nombre: 'Distribuidora de Agua', rnc: '', telefono: '', direccion: '' } };
   var _cargado = false;
   var _cart = []; // usado por Facturación (POS) y por el modal de Nuevo pedido
   var _sideOpen = false;
 
+  var CONFIG_DEFAULT = { nombre: 'Distribuidora de Agua', rnc: '', telefono: '', direccion: '' };
   async function cargarAgua(force) {
     if (_cargado && !force) return _ag;
     var A = getAPI();
@@ -835,9 +836,10 @@
         A.get('agua_botellones', 'select=*&order=codigo.asc'),
         A.get('agua_produccion', 'select=*&order=fecha.desc&limit=200'),
         A.get('agua_caja', 'select=*&order=fecha.desc&limit=500'),
-        A.get('agua_movimientos', 'select=*&order=fecha.desc&limit=300')
+        A.get('agua_movimientos', 'select=*&order=fecha.desc&limit=300'),
+        A.get('agua_config', 'select=*&limit=1')
       ]);
-      _ag = { clientes: r[0] || [], productos: r[1] || [], pedidos: r[2] || [], botellones: r[3] || [], produccion: r[4] || [], caja: r[5] || [], movimientos: r[6] || [] };
+      _ag = { clientes: r[0] || [], productos: r[1] || [], pedidos: r[2] || [], botellones: r[3] || [], produccion: r[4] || [], caja: r[5] || [], movimientos: r[6] || [], config: (r[7] && r[7][0]) || CONFIG_DEFAULT };
       _cargado = true;
     } catch (e) { console.warn('AGUAPRO cargar:', e && e.message); toastSafe('err', 'AGUAPRO', 'No se pudo cargar la información'); }
     return _ag;
@@ -940,7 +942,7 @@
       kpis([['Clientes', String(_ag.clientes.length), '', 'ti-users'], ['Con deuda', String(conDeuda), '', 'ti-alert-circle'], ['Por cobrar', fmt(deudaTot), '', 'ti-cash-banknote'], ['Rutas', String(rutasN), '', 'ti-route']]) +
       '<div class="nxAguaPanel">' + pageTitle('Clientes', '') + table(['Código', 'Cliente', 'Teléfono', 'Sector', 'Ruta', 'Límite crédito', 'Deuda', 'Estado', ''], _ag.clientes.map(function (c, i) {
         var d = deudaCliente(c.id);
-        return '<tr><td>C' + String(i + 1).padStart(4, '0') + '</td><td>' + esc(c.nombre) + '</td><td>' + esc(c.telefono || '—') + '</td><td>' + esc(c.sector || '—') + '</td><td>' + esc(c.ruta || '—') + '</td><td>' + fmt(c.limite_credito || 0) + '</td><td>' + fmt(d) + '</td><td><span class="nxAguaTag ' + (d > 0 ? 'warn' : 'ok') + '">' + (d > 0 ? 'CON DEUDA' : 'AL DÍA') + '</span></td><td><div class="nxAguaAct"><button onclick="window.nxAguaEditarCliente(\'' + c.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
+        return '<tr><td>C' + String(i + 1).padStart(4, '0') + '</td><td>' + esc(c.nombre) + '</td><td>' + esc(c.telefono || '—') + '</td><td>' + esc(c.sector || '—') + '</td><td>' + esc(c.ruta || '—') + '</td><td>' + fmt(c.limite_credito || 0) + '</td><td>' + fmt(d) + '</td><td><span class="nxAguaTag ' + (d > 0 ? 'warn' : 'ok') + '">' + (d > 0 ? 'CON DEUDA' : 'AL DÍA') + '</span></td><td><div class="nxAguaAct"><button onclick="window.nxAguaEstadoCuenta(\'' + c.id + '\')" title="Estado de cuenta"><i class="ti ti-printer"></i></button>' + (c.telefono ? '<button onclick="window.nxAguaEstadoCuentaWA(\'' + c.id + '\')" title="WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>' : '') + '<button onclick="window.nxAguaEditarCliente(\'' + c.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
       })) + '</div>';
   }
   window.nxAguaNuevoCliente = function () { abrirClienteModal(null); };
@@ -1133,6 +1135,8 @@
         var pend2 = pedidoPendiente(p);
         var puedeCancelar = p.estado !== 'Entregado' && p.estado !== 'Cancelado';
         return '<tr><td>PED-' + String(_ag.pedidos.length - i).padStart(4, '0') + '</td><td>' + esc(p.cliente_nom || '—') + '</td><td>' + esc(p.fecha || '—') + '</td><td>' + esc(p.ruta || '—') + '</td><td>' + fmt(p.total) + '</td><td>' + (pend2 > 0 ? fmt(pend2) : '<span style="color:#16a34a">Pagado</span>') + '</td><td><span class="nxAguaTag ' + estadoCls(p.estado) + '">' + esc((p.estado || '').toUpperCase()) + '</span></td><td><div class="nxAguaAct">' +
+          '<button onclick="window.nxAguaTicket(\'' + p.id + '\')" title="Imprimir ticket"><i class="ti ti-printer"></i></button>' +
+          (p.cliente_id ? '<button onclick="window.nxAguaTicketWA(\'' + p.id + '\')" title="Enviar por WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>' : '') +
           (pend2 > 0 ? '<button class="ok" onclick="window.nxAguaCobrarPedido(\'' + p.id + '\')">Cobrar</button>' : '') +
           (p.estado === 'Pendiente' ? '<button onclick="window.nxAguaEstadoPedido(\'' + p.id + '\',\'En ruta\')">Ruta</button>' : '') +
           (p.estado === 'En ruta' ? '<button onclick="window.nxAguaEstadoPedido(\'' + p.id + '\',\'Entregado\')">Entregar</button>' : '') +
@@ -1343,8 +1347,8 @@
     var cobros = totalCobradoHoy(), gastos = totalGastosHoy();
     return toolbar([['Nuevo gasto', 'window.nxAguaNuevoGasto()', '', 'ti-receipt-tax']]) +
       kpis([['Cobros de hoy', fmt(cobros), '', 'ti-cash'], ['Gastos de hoy', fmt(gastos), '', 'ti-receipt-tax'], ['Neto de hoy', fmt(cobros - gastos), '', 'ti-scale'], ['Por cobrar total', fmt(porCobrarTotal()), '', 'ti-users']]) +
-      '<div class="nxAguaPanel">' + pageTitle('Movimientos de caja', '') + table(['Fecha', 'Tipo', 'Cliente / Descripción', 'Método', 'Monto', 'Usuario'], _ag.caja.slice(0, 100).map(function (m) {
-        return '<tr><td>' + new Date(m.fecha || Date.now()).toLocaleString('es-DO') + '</td><td><span class="nxAguaTag ' + (m.tipo === 'Gasto' ? 'bad' : 'ok') + '">' + esc(m.tipo) + '</span></td><td>' + esc(m.cliente_nom || m.descripcion || '—') + '</td><td>' + esc(m.metodo || '—') + '</td><td>' + fmt(m.monto) + '</td><td>' + esc(m.usuario || '—') + '</td></tr>';
+      '<div class="nxAguaPanel">' + pageTitle('Movimientos de caja', '') + table(['Fecha', 'Tipo', 'Cliente / Descripción', 'Método', 'Monto', 'Usuario', ''], _ag.caja.slice(0, 100).map(function (m) {
+        return '<tr><td>' + new Date(m.fecha || Date.now()).toLocaleString('es-DO') + '</td><td><span class="nxAguaTag ' + (m.tipo === 'Gasto' ? 'bad' : 'ok') + '">' + esc(m.tipo) + '</span></td><td>' + esc(m.cliente_nom || m.descripcion || '—') + '</td><td>' + esc(m.metodo || '—') + '</td><td>' + fmt(m.monto) + '</td><td>' + esc(m.usuario || '—') + '</td><td>' + (m.tipo !== 'Gasto' ? '<div class="nxAguaAct"><button onclick="window.nxAguaRecibo(\'' + m.id + '\')" title="Imprimir recibo"><i class="ti ti-printer"></i></button></div>' : '') + '</td></tr>';
       })) + '</div>';
   }
   window.nxAguaNuevoGasto = function () {
@@ -1373,8 +1377,8 @@
     var lista = _ag.clientes.map(function (c) { return { c: c, d: deudaCliente(c.id) }; }).filter(function (x) { return x.d > 0; }).sort(function (a, b) { return b.d - a.d; });
     var total = lista.reduce(function (s, x) { return s + x.d; }, 0);
     return kpis([['Clientes con deuda', String(lista.length), '', 'ti-users'], ['Total por cobrar', fmt(total), '', 'ti-cash-banknote']]) +
-      '<div class="nxAguaPanel">' + pageTitle('Cuentas por cobrar', '') + table(['Cliente', 'Teléfono', 'Ruta', 'Límite crédito', 'Deuda'], lista.map(function (x) {
-        return '<tr><td>' + esc(x.c.nombre) + '</td><td>' + esc(x.c.telefono || '—') + '</td><td>' + esc(x.c.ruta || '—') + '</td><td>' + fmt(x.c.limite_credito || 0) + '</td><td style="color:#b91c1c;font-weight:800">' + fmt(x.d) + '</td></tr>';
+      '<div class="nxAguaPanel">' + pageTitle('Cuentas por cobrar', '') + table(['Cliente', 'Teléfono', 'Ruta', 'Límite crédito', 'Deuda', ''], lista.map(function (x) {
+        return '<tr><td>' + esc(x.c.nombre) + '</td><td>' + esc(x.c.telefono || '—') + '</td><td>' + esc(x.c.ruta || '—') + '</td><td>' + fmt(x.c.limite_credito || 0) + '</td><td style="color:#b91c1c;font-weight:800">' + fmt(x.d) + '</td><td><div class="nxAguaAct"><button onclick="window.nxAguaEstadoCuenta(\'' + x.c.id + '\')" title="Estado de cuenta"><i class="ti ti-printer"></i></button>' + (x.c.telefono ? '<button onclick="window.nxAguaEstadoCuentaWA(\'' + x.c.id + '\')" title="WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>' : '') + '</div></td></tr>';
       })) + '</div>';
   }
 
@@ -1403,14 +1407,114 @@
       '<div class="nxAguaPanel"><h3>Ventas de los últimos 14 días</h3><div class="nxAguaChart">' + barsHtml + '</div></div>';
   }
 
-  // ═══ CONFIGURACIÓN (visual del mockup; funciones detalladas pendientes) ═══
+  // ═══ CONFIGURACIÓN (Empresa ya es real — se usa en los tickets/recibos; el resto sigue pendiente) ═══
   function configView() {
-    var tiles = [['ti-building', 'Empresa'], ['ti-building-store', 'Sucursales'], ['ti-users', 'Usuarios'], ['ti-receipt-2', 'Impuestos'], ['ti-currency-dollar', 'Monedas'], ['ti-printer', 'Impresoras'], ['ti-file-text', 'Plantillas'], ['ti-list-numbers', 'Numeración'], ['ti-brand-whatsapp', 'WhatsApp'], ['ti-mail', 'Correo'], ['ti-database', 'Respaldos'], ['ti-shield-lock', 'Seguridad']];
+    var tiles = [['ti-building', 'Empresa', 'window.nxAguaConfigEmpresa()'], ['ti-building-store', 'Sucursales', 'window.nxAguaProximamente()'], ['ti-users', 'Usuarios', 'window.nxAguaProximamente()'], ['ti-receipt-2', 'Impuestos', 'window.nxAguaProximamente()'], ['ti-currency-dollar', 'Monedas', 'window.nxAguaProximamente()'], ['ti-printer', 'Impresoras', 'window.nxAguaProximamente()'], ['ti-file-text', 'Plantillas', 'window.nxAguaProximamente()'], ['ti-list-numbers', 'Numeración', 'window.nxAguaProximamente()'], ['ti-brand-whatsapp', 'WhatsApp', 'window.nxAguaProximamente()'], ['ti-mail', 'Correo', 'window.nxAguaProximamente()'], ['ti-database', 'Respaldos', 'window.nxAguaProximamente()'], ['ti-shield-lock', 'Seguridad', 'window.nxAguaProximamente()']];
     return '<div class="nxAguaPanel"><h3>Configuración</h3><div class="nxAguaCfgGrid">' + tiles.map(function (t) {
-      return '<div class="nxAguaCfgTile" onclick="window.nxAguaProximamente()"><i class="ti ' + t[0] + '"></i><div>' + t[1] + '</div></div>';
-    }).join('') + '</div><div style="margin-top:10px;font-size:10.5px;color:#94a3b8">Estos ajustes están en el mapa de trabajo — por ahora Clientes, Productos, Pedidos, Facturación, Botellones, Producción y Caja ya funcionan con datos reales.</div></div>';
+      return '<div class="nxAguaCfgTile" onclick="' + t[2] + '"><i class="ti ' + t[0] + '"></i><div>' + t[1] + '</div></div>';
+    }).join('') + '</div><div style="margin-top:10px;font-size:10.5px;color:#94a3b8">El resto de estos ajustes está en el mapa de trabajo — por ahora Empresa, Clientes, Productos, Pedidos, Facturación, Botellones, Producción y Caja ya funcionan con datos reales.</div></div>';
   }
   window.nxAguaProximamente = function () { toastSafe('info', 'Próximamente', 'Esta sección todavía no está construida'); };
+  window.nxAguaConfigEmpresa = function () {
+    var c = _ag.config || CONFIG_DEFAULT;
+    cerrarModal('nxAgCfgForm');
+    var ov = document.createElement('div'); ov.id = 'nxAgCfgForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-building"></i> Datos de la empresa</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCfgForm\')"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:11px;color:#94a3b8;margin-bottom:8px">Estos datos salen en el ticket de venta, el recibo de cobro y el estado de cuenta.</div>' +
+      '<div class="fr"><label>Nombre de la empresa</label><input id="agCfgNom" class="no-upper" value="' + esc(c.nombre || '') + '" placeholder="Distribuidora de Agua"></div>' +
+      '<div class="fr-row"><div class="fr"><label>RNC</label><input id="agCfgRnc" value="' + esc(c.rnc || '') + '"></div><div class="fr"><label>Teléfono</label><input id="agCfgTel" inputmode="tel" value="' + esc(c.telefono || '') + '"></div></div>' +
+      '<div class="fr"><label>Dirección</label><input id="agCfgDir" class="no-upper" value="' + esc(c.direccion || '') + '"></div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="cerrarModalAgua(\'nxAgCfgForm\')">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAguaConfigEmpresaGuardar()"><i class="ti ti-check"></i> Guardar</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxAguaConfigEmpresaGuardar = async function () {
+    var datos = { nombre: (document.getElementById('agCfgNom').value || '').trim() || 'Distribuidora de Agua', rnc: (document.getElementById('agCfgRnc').value || '').trim(), telefono: (document.getElementById('agCfgTel').value || '').trim(), direccion: (document.getElementById('agCfgDir').value || '').trim() };
+    var A = getAPI();
+    try {
+      var existe = await A.get('agua_config', 'select=id&limit=1');
+      if (existe && existe[0]) await A.patch('agua_config', 'id=eq.' + existe[0].id, datos);
+      else await A.post('agua_config', datos);
+      _ag.config = datos;
+      auditSafe('AGUA_CONFIG_EMPRESA', datos.nombre, 'AGUAPRO');
+      cerrarModal('nxAgCfgForm'); toastSafe('ok', 'Datos guardados', datos.nombre); rerender();
+    } catch (e) { toastSafe('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+
+  // ═══ IMPRIMIR / WHATSAPP (ticket de venta, recibo de cobro, estado de cuenta) ═══
+  function printWindow(html) {
+    try { var w = window.open('', '_blank'); if (!w) { toastSafe('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (e) {}
+  }
+  function docHead(titulo) {
+    return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(titulo) + '</title>' +
+      '<style>body{font-family:"Courier New",monospace;color:#111;max-width:320px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head><body>' +
+      '<div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#0875c7;margin:-12px -12px 10px;padding:9px 12px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Arial">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#0875c7;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Arial">🖨️ Imprimir</button></div>';
+  }
+  function empresaHeader() {
+    var c = _ag.config || CONFIG_DEFAULT;
+    return '<h1>' + esc(c.nombre || 'Distribuidora de Agua') + '</h1><div class="c muted">' + (c.rnc ? 'RNC: ' + esc(c.rnc) : '') + (c.telefono ? ' · ' + esc(c.telefono) : '') + '</div><div class="c muted">' + esc(c.direccion || '') + '</div><div class="line"></div>';
+  }
+  window.nxAguaTicket = function (pedidoId) {
+    var p = _ag.pedidos.find(function (x) { return x.id === pedidoId; }); if (!p) return;
+    var filas = (p.items || []).map(function (it) { return '<tr><td>' + Number(it.cantidad) + 'x ' + esc(it.nombre) + '</td><td style="text-align:right">' + fmt(it.precio * it.cantidad) + '</td></tr>'; }).join('');
+    var html = docHead('Ticket ' + (p.cliente_nom || '')) +
+      empresaHeader() +
+      '<div class="c"><b>TICKET DE VENTA</b></div><div class="muted c">' + new Date(p.created_at || Date.now()).toLocaleString('es-DO') + '</div>' +
+      '<div class="muted">Cliente: ' + esc(p.cliente_nom || 'Ocasional') + (p.ruta ? '<br>Ruta: ' + esc(p.ruta) : '') + '</div>' +
+      '<div class="line"></div><table>' + filas + '</table><div class="line"></div>' +
+      '<table><tr><td>Subtotal</td><td style="text-align:right">' + fmt(p.subtotal) + '</td></tr><tr><td>ITBIS (18%)</td><td style="text-align:right">' + fmt(p.itbis) + '</td></tr><tr class="tot big"><td>TOTAL</td><td style="text-align:right">' + fmt(p.total) + '</td></tr></table>' +
+      '<div class="line"></div><div class="muted">Pagado: ' + fmt(p.pagado) + (pedidoPendiente(p) > 0 ? ' · Pendiente: ' + fmt(pedidoPendiente(p)) : '') + '</div>' +
+      '<div class="line"></div><div class="c muted">¡Gracias por su compra!</div>' +
+      '<button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#0875c7;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Arial">🖨️ Imprimir</button>' +
+      '</body></html>';
+    printWindow(html);
+  };
+  window.nxAguaTicketWA = function (pedidoId) {
+    var p = _ag.pedidos.find(function (x) { return x.id === pedidoId; }); if (!p) return;
+    var cli = p.cliente_id ? clienteById(p.cliente_id) : null;
+    if (!cli || !cli.telefono || !window.nxWa || !window.nxWa(cli.telefono)) { toastSafe('warn', 'Sin WhatsApp', 'Este cliente no tiene número guardado'); return; }
+    var c = _ag.config || CONFIG_DEFAULT;
+    var items = (p.items || []).map(function (it) { return '• ' + it.cantidad + 'x ' + it.nombre + ' — ' + fmt(it.precio * it.cantidad); }).join('\n');
+    var msg = 'Su pedido de *' + esc(c.nombre || 'Distribuidora de Agua') + '*:\n\n' + items + '\n\n*Total:* ' + fmt(p.total) + (pedidoPendiente(p) > 0 ? '\n*Pendiente:* ' + fmt(pedidoPendiente(p)) : '\n¡Ya está pagado!') + '\n\n¡Gracias por su compra!';
+    window.open('https://wa.me/' + window.nxWa(cli.telefono) + '?text=' + encodeURIComponent(msg), '_blank');
+  };
+  window.nxAguaRecibo = function (cajaId) {
+    var m = _ag.caja.find(function (x) { return x.id === cajaId; }); if (!m) return;
+    var html = docHead('Recibo de cobro') +
+      empresaHeader() +
+      '<div class="c"><b>RECIBO DE COBRO</b></div><div class="muted c">' + new Date(m.fecha || Date.now()).toLocaleString('es-DO') + '</div>' +
+      '<div class="line"></div><div class="muted">Recibí de: <b>' + esc(m.cliente_nom || 'Cliente ocasional') + '</b></div>' +
+      '<div class="muted">Concepto: ' + esc(m.descripcion || 'Pago') + '</div>' +
+      '<div class="muted">Método: ' + esc(m.metodo || '—') + '</div>' +
+      '<div class="line"></div><table><tr class="tot big"><td>MONTO RECIBIDO</td><td style="text-align:right">' + fmt(m.monto) + '</td></tr></table>' +
+      '<div class="line"></div><div class="c muted">¡Gracias por su pago!</div>' +
+      '<button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#0875c7;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Arial">🖨️ Imprimir</button>' +
+      '</body></html>';
+    printWindow(html);
+  };
+  window.nxAguaEstadoCuenta = function (clienteId) {
+    var cli = clienteById(clienteId); if (!cli) return;
+    var peds = _ag.pedidos.filter(function (p) { return p.cliente_id === clienteId && pedidoActivo(p); });
+    var filas = peds.map(function (p) { var pend = pedidoPendiente(p); return '<tr><td>' + esc(p.fecha || '') + '</td><td>' + fmt(p.total) + '</td><td>' + fmt(p.pagado) + '</td><td style="text-align:right;' + (pend > 0 ? 'color:#b91c1c;font-weight:800' : '') + '">' + fmt(pend) + '</td></tr>'; }).join('');
+    var deuda = deudaCliente(clienteId);
+    var html = docHead('Estado de cuenta') +
+      empresaHeader() +
+      '<div class="c"><b>ESTADO DE CUENTA</b></div><div class="muted c">' + new Date().toLocaleDateString('es-DO') + '</div>' +
+      '<div class="muted">Cliente: <b>' + esc(cli.nombre) + '</b>' + (cli.telefono ? '<br>Tel: ' + esc(cli.telefono) : '') + '</div>' +
+      '<div class="line"></div><table><tr><td><b>Fecha</b></td><td><b>Total</b></td><td><b>Pagado</b></td><td style="text-align:right"><b>Pendiente</b></td></tr>' + (filas || '<tr><td colspan="4" class="c muted">Sin pedidos registrados</td></tr>') + '</table>' +
+      '<div class="line"></div><table><tr class="tot big"><td>TOTAL PENDIENTE</td><td style="text-align:right">' + fmt(deuda) + '</td></tr></table>' +
+      '<button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#0875c7;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Arial">🖨️ Imprimir</button>' +
+      '</body></html>';
+    printWindow(html);
+  };
+  window.nxAguaEstadoCuentaWA = function (clienteId) {
+    var cli = clienteById(clienteId); if (!cli) return;
+    if (!cli.telefono || !window.nxWa || !window.nxWa(cli.telefono)) { toastSafe('warn', 'Sin WhatsApp', 'Este cliente no tiene número guardado'); return; }
+    var c = _ag.config || CONFIG_DEFAULT;
+    var deuda = deudaCliente(clienteId);
+    var msg = 'Estimado/a *' + esc(cli.nombre) + '*,\n\nLe recordamos su estado de cuenta con *' + esc(c.nombre || 'Distribuidora de Agua') + '*:\n\n*Total pendiente:* ' + fmt(deuda) + '\n\n' + (deuda > 0 ? 'Puede coordinar el pago cuando guste. ¡Gracias!' : '¡Está al día! Gracias por su confianza.');
+    window.open('https://wa.me/' + window.nxWa(cli.telefono) + '?text=' + encodeURIComponent(msg), '_blank');
+  };
 
   // ═══ Render general ═══
   function body() {
