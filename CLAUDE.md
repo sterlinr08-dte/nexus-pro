@@ -247,6 +247,17 @@ no se mezclan, cada buscador del sistema usa el que corresponde a su caso:
   `BuscadorClientes`, `BuscadorFacturas`, `BuscadorProductos` — nombre siempre
   `Buscador<Entidad>`. El buscador específico sabe: tabla Supabase, columnas visibles, columnas
   de búsqueda (`ilike`), cómo se pinta cada fila, y qué campo(s) devuelve al elegir.
+- **REGLA (decretada por el dueño, importante): compartir un motor común NO significa un
+  buscador único.** `ModalBusquedaBase` (el motor) SÍ es compartido — pero cada buscador
+  concreto es una **implementación independiente y específica de su módulo**, aunque reutilice
+  funciones/estilos/estructura comunes. Prohibido crear un `BuscadorClientes` "universal" que
+  sirva a la vez a AGUAPRO/POS/Seguros solo porque los tres tienen una tabla de "clientes" —
+  son tablas DISTINTAS (`agua_clientes`/`pos_clientes`/`clientes`), con columnas y RLS propios;
+  mezclarlos en un buscador compartido arriesga traer la tabla equivocada o filtrar por la
+  organización equivocada. Cada módulo construye e invoca SU PROPIO buscador (ej.
+  `nxAguaAbrirBuscadorCliente()` es de AGUAPRO únicamente; el día que se migre el selector de
+  cliente del POS será OTRA función independiente, p.ej. `nxPosAbrirBuscadorCliente()`, con su
+  propia config de tabla/columnas — no una reutilización del de AGUAPRO).
 - **Seguridad / multi-tenant:** toda consulta pasa por `organizacion_id` (RLS ya lo exige en
   las tablas `pos_*`/`agua_*`/`rifa_*`/`med_*`/`saas_*` — el buscador NO puede evadir eso). Texto
   de búsqueda del usuario SIEMPRE va parametrizado en el query string de PostgREST (nunca
