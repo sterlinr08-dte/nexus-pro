@@ -1353,6 +1353,61 @@ afectadas + esquemas exactos de tablas (para generar el parche de la Fase 0, p.e
 
 ---
 
+### REPORTE DIARIO POR CORREO (enviar-reporte-email) — rediseñado v2 (10-jul-2026)
+IMPORTANTE: vive FUERA de este repo. Es una Edge Function de Supabase (proyecto
+tnwsgcxurfyuszxsewsn, verify_jwt:false), NO un archivo de index.html/parches.js. Se edita con
+las herramientas MCP de Supabase (get_edge_function/deploy_edge_function), no con Edit/Write
+normales. Manda un correo con 11 "secciones" (resumen, proceso, cobros_hoy, quien_debe, nuevos,
+vencer, facturas_hoy, comisiones, transferencias, inhabilitados, top_deudores) a empresa_email (todas
+las secciones) + a cada fila activa de reporte_destinatarios (solo sus secciones elegidas, UI en
+Ajustes -> Notificaciones -> "Reportes por empleado", parches.js). Disparado por pg_cron según
+configuracion.reporte_horas/reporte_dias (hoy: solo 18:00 RD, lun-sáb); botón "Enviar reporte de
+prueba" (nxProbarReporte()) llama la función con {forzar:true} para probar sin esperar el cron.
+- Motivo del rediseño: el dueño reportó "los reportes están llegando vacíos". Investigado con las
+  herramientas MCP de Supabase (execute_sql/get_logs/get_edge_function, sin acceso directo por
+  curl -- el proxy de red de esta sesión bloquea *.supabase.co): el envío SÍ funcionaba (logs de
+  auto_notificaciones_log mostraban ok:true todos los días) y SÍ había datos reales (97 clientes
+  activos, RD$143,000 pendiente, cobros diarios reales) -- el problema era de fondo/diseño, no de
+  conexión: (1) Robinson no recibía la sección "resumen" (arreglado -- se le agregó); (2) varias
+  secciones son legítimamente escasas casi todos los días (facturas_hoy solo tiene datos el día 20,
+  transferencias son raras) y con el diseño viejo salían como una línea plana "Sin datos", dando la
+  sensación de un correo vacío aunque técnicamente funcionara; (3) bug real encontrado:
+  "Quién debe"/"Top deudores"/"Pendiente total" del resumen solo miraban pend() (deuda de facturas)
+  e ignoraban clientes.deuda_anterior (la deuda previa al sistema, ver sección "DEUDA ANTERIOR"
+  arriba) -- un cliente cuya ÚNICA deuda fuera anterior al sistema no aparecía como deudor en el
+  reporte. Ahora usa pendTotal()=pend()+deudaAnt(), igual que el resto de la app. (4) bug real:
+  "Transferencias" contaba TODAS (incluidas pendientes/rechazadas, donde el dinero no se movió) --
+  ahora filtra estado='aceptada'. (5) bug de zona horaria: "hoy" se calculaba con la fecha UTC en vez
+  de la fecha de RD, y las ventanas "de hoy" (cobros_hoy/facturas_hoy/nuevos) comparaban contra
+  medianoche UTC en vez de medianoche RD (RD es UTC-4) -- con poco impacto práctico en horario de
+  oficina, pero desalineado en los bordes del día; arreglado con un helper diaRDaUTC() que calcula
+  la ventana exacta del día calendario de RD en instantes UTC reales.
+- Rediseño de contenido ("que nunca se vea vacío"): cobros_hoy y nuevos ahora también muestran el
+  acumulado de los últimos 7 días junto al de hoy (así un día flojo igual trae contexto útil);
+  facturas_hoy explica la fecha de la próxima tanda automática (día 20) en vez de una línea en
+  blanco; "comisiones" se renombró a "Cartera por agente" y ahora suma lo cobrado del mes por cada
+  agente (antes solo contaba clientes asignados, siempre igual y poco informativo) usando
+  abonos.agente_cobro; cada sección vacía tiene un mensaje amigable en vez de una tabla en blanco.
+- Rediseño visual: tarjetas con borde de color a la izquierda por sección (mismo lenguaje visual que
+  el resto del sistema), tipografía Segoe UI unificada (el correo usaba Arial,sans-serif, que quedó
+  fuera de la limpieza de fuentes v48.0 porque esta función no vive en el repo), badges de contador,
+  jerarquía más clara. Todo con estilos en línea (sin <style> ni flexbox/grid) por compatibilidad
+  con Gmail/Outlook.
+- Los 11 IDs de sección NO se tocaron (a propósito): son las mismas claves que ya usa la UI de
+  "Reportes por empleado" (SECCIONES en parches.js) y las que ya están guardadas en
+  reporte_destinatarios.secciones de cada empleado -- cambiar los IDs habría roto sus preferencias
+  guardadas sin aviso.
+- Cómo probar un cambio futuro: esta sesión NO tiene salida de red a *.supabase.co (ni siquiera
+  curl), así que no se puede invocar la función directamente ni ver el HTML real del correo. El único
+  camino es: 1) desplegar con deploy_edge_function, 2) pedirle al dueño que toque "Enviar reporte de
+  prueba" en Ajustes (o esperar al cron 18:00 RD), 3) revisar auto_notificaciones_log (tabla) con
+  execute_sql para confirmar el envío, y 4) el dueño confirma visualmente revisando su correo.
+- OJO credenciales: el archivo de la función trae la clave de aplicación de Gmail en texto plano
+  (GMAIL_PASS, no es una variable de entorno) -- es el patrón que ya traía la función original, no se
+  cambió en este rediseño. Nunca pegar esa clave en archivos del repo ni en scratchpad sin redactar.
+
+---
+
 ## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
 
 **Estado actual (riesgo conocido):** la app entra con la **anon key** + un login
