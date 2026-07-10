@@ -178,17 +178,17 @@ input,select,textarea,button{font-family:var(--ff)}
 .sb-mk{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#60a5fa);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0;box-shadow:0 4px 10px rgba(15,23,42,.4)}
 .sb-nm{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;letter-spacing:.3px}.sb-sm{font-size:8px;color:rgba(255,255,255,.4);font-family:var(--mono);white-space:nowrap}
 .sb.col .sb-nm,.sb.col .sb-sm{display:none}
-.sb-nav{flex:1;padding:8px 6px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0));overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.sb-nav{flex:1;padding:10px 10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0));overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .sb-nav::-webkit-scrollbar{display:none}
-.ss{font-size:8px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;padding:10px 10px 4px;white-space:nowrap;text-transform:uppercase;font-family:var(--mono)}
+.ss{font-size:8px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;padding:12px 4px 5px;white-space:nowrap;text-transform:uppercase;font-family:var(--mono)}
 .sb.col .ss{opacity:0}
-.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;white-space:nowrap;margin-bottom:2px;transition:all .15s;overflow:hidden}
-.ni:hover{background:rgba(255,255,255,.12)}
-.ni.on{background:rgba(139,92,246,.3);box-shadow:inset 3px 0 0 #60a5fa}
-.ni-i{font-size:15px;color:rgba(255,255,255,.6);flex-shrink:0;transition:color .15s}
+.ni{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:8px;cursor:pointer;white-space:nowrap;margin-bottom:1px;transition:background .15s,color .15s;overflow:hidden}
+.ni:hover{background:rgba(255,255,255,.08)}
+.ni.on{background:rgba(139,92,246,.22);box-shadow:inset 2px 0 0 #8b5cf6}
+.ni-i{font-size:14px;color:rgba(255,255,255,.55);flex-shrink:0;transition:color .15s;width:16px;text-align:center}
 .ni.on .ni-i,.ni:hover .ni-i{color:#fff !important}
-.ni-l{font-size:11px;font-weight:500;color:rgba(255,255,255,.7);transition:color .15s;text-transform:uppercase;letter-spacing:.3px}
-.ni.on .ni-l,.ni:hover .ni-l{color:#fff !important;font-weight:600}
+.ni-l{font-size:11px;font-weight:600;color:rgba(255,255,255,.62);transition:color .15s;text-transform:uppercase;letter-spacing:.25px}
+.ni.on .ni-l,.ni:hover .ni-l{color:#fff !important}
 .ni-b{margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;flex-shrink:0}
 .sb.col .ni-l,.sb.col .ni-b{display:none}
 .sb-ft{padding:8px 6px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0}
@@ -488,10 +488,6 @@ tbody tr{transition:background .12s ease}
 ::-webkit-scrollbar-track{background:#f1f5f9}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:#475569}
-/* Sidebar item activo más elegante */
-.ni.on{position:relative}
-.ni.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#60a5fa;border-radius:0 3px 3px 0}
-
 /* ════ ICONOS DE ACCIÓN MÁS VISIBLES (Punto 5) ════ */
 .btn.bsm.bghost{
   min-width:32px;height:32px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;
@@ -970,16 +966,16 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <i class="ti ti-chevron-down" id="icnContab" style="font-size:10px;margin-left:auto;transition:transform .2s;color:rgba(255,255,255,.4)"></i>
         </div>
         <div id="sbContab" style="overflow:hidden;max-height:0;transition:max-height .3s ease;padding-left:8px">
-          <div class="ni" onclick="nav('comisiones',this)" style="padding:6px 10px"><i class="ti ti-percentage ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Comisiones</span></div>
-          <div class="ni" onclick="nav('mayor',this)" style="padding:6px 10px"><i class="ti ti-report-money ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Mayor general</span></div>
-          <div class="ni" onclick="nav('asientos',this)" style="padding:6px 10px"><i class="ti ti-book ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Diario asientos</span></div>
-          <div class="ni" onclick="nav('balance',this)" style="padding:6px 10px"><i class="ti ti-scale ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Balance</span></div>
-          <div class="ni" onclick="nav('pyg',this)" style="padding:6px 10px"><i class="ti ti-chart-line ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">P&amp;G</span></div>
-          <div class="ni" onclick="nav('rep-agente',this)" style="padding:6px 10px"><i class="ti ti-user-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte agente</span></div>
-          <div class="ni" onclick="nav('rep-plan',this)" style="padding:6px 10px"><i class="ti ti-layers ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte plan</span></div>
-          <div class="ni" onclick="nav('rep-empresa',this)" style="padding:6px 10px"><i class="ti ti-building-store ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte empresa</span></div>
-          <div class="ni" onclick="nav('rep-aging',this)" style="padding:6px 10px"><i class="ti ti-clock-dollar ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Aging cartera</span></div>
-          <div class="ni" onclick="nav('dgii',this)" style="padding:6px 10px"><i class="ti ti-receipt-tax ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">DGII / ARS</span></div>
+          <div class="ni" onclick="nav('comisiones',this)" style="padding:4px 9px"><i class="ti ti-percentage ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Comisiones</span></div>
+          <div class="ni" onclick="nav('mayor',this)" style="padding:4px 9px"><i class="ti ti-report-money ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Mayor general</span></div>
+          <div class="ni" onclick="nav('asientos',this)" style="padding:4px 9px"><i class="ti ti-book ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Diario asientos</span></div>
+          <div class="ni" onclick="nav('balance',this)" style="padding:4px 9px"><i class="ti ti-scale ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Balance</span></div>
+          <div class="ni" onclick="nav('pyg',this)" style="padding:4px 9px"><i class="ti ti-chart-line ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">P&amp;G</span></div>
+          <div class="ni" onclick="nav('rep-agente',this)" style="padding:4px 9px"><i class="ti ti-user-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte agente</span></div>
+          <div class="ni" onclick="nav('rep-plan',this)" style="padding:4px 9px"><i class="ti ti-layers ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte plan</span></div>
+          <div class="ni" onclick="nav('rep-empresa',this)" style="padding:4px 9px"><i class="ti ti-building-store ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Reporte empresa</span></div>
+          <div class="ni" onclick="nav('rep-aging',this)" style="padding:4px 9px"><i class="ti ti-clock-dollar ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Aging cartera</span></div>
+          <div class="ni" onclick="nav('dgii',this)" style="padding:4px 9px"><i class="ti ti-receipt-tax ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">DGII / ARS</span></div>
         </div>
 
         <!-- Configuración desplegable -->
@@ -990,19 +986,19 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <i class="ti ti-chevron-down" id="icnConfig" style="font-size:10px;margin-left:4px;transition:transform .2s;color:rgba(255,255,255,.4)"></i>
         </div>
         <div id="sbConfig" style="overflow:hidden;max-height:0;transition:max-height .3s ease;padding-left:8px">
-          <div class="ni" onclick="navConfig(1,this)" style="padding:6px 10px"><i class="ti ti-building ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Empresa y tarifas</span></div>
-          <div class="ni" onclick="navConfig(2,this)" style="padding:6px 10px"><i class="ti ti-mail ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Notificaciones</span></div>
-          <div class="ni" onclick="navConfig(3,this)" style="padding:6px 10px"><i class="ti ti-robot ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Automatización</span></div>
-          <div class="ni" onclick="navConfig(4,this)" style="padding:6px 10px"><i class="ti ti-briefcase ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Empresas</span></div>
-          <div class="ni" onclick="navConfig(5,this)" style="padding:6px 10px"><i class="ti ti-id-badge ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Agentes</span></div>
-          <div class="ni" onclick="navConfig(6,this)" style="padding:6px 10px"><i class="ti ti-users ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Usuarios</span></div>
-          <div class="ni" onclick="navConfig(7,this)" style="padding:6px 10px"><i class="ti ti-shield-lock ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Seguridad / Roles</span></div>
-          <div class="ni" onclick="navConfig(8,this)" style="padding:6px 10px"><i class="ti ti-clipboard-list ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Auditoría</span></div>
-          <div class="ni" onclick="navConfig(9,this)" style="padding:6px 10px"><i class="ti ti-database ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Base de datos</span></div>
-          <div class="ni" onclick="navConfig(10,this)" style="padding:6px 10px"><i class="ti ti-history ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Changelog</span></div>
-          <div class="ni" onclick="navConfig(11,this)" style="padding:6px 10px"><i class="ti ti-target ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Metas</span></div>
-          <div class="ni" onclick="navConfig(12,this)" style="padding:6px 10px"><i class="ti ti-palette ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Apariencia</span></div>
-          <div class="ni" onclick="navConfig(13,this)" style="padding:6px 10px"><i class="ti ti-list-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Coberturas</span></div>
+          <div class="ni" onclick="navConfig(1,this)" style="padding:4px 9px"><i class="ti ti-building ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Empresa y tarifas</span></div>
+          <div class="ni" onclick="navConfig(2,this)" style="padding:4px 9px"><i class="ti ti-mail ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Notificaciones</span></div>
+          <div class="ni" onclick="navConfig(3,this)" style="padding:4px 9px"><i class="ti ti-robot ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Automatización</span></div>
+          <div class="ni" onclick="navConfig(4,this)" style="padding:4px 9px"><i class="ti ti-briefcase ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Empresas</span></div>
+          <div class="ni" onclick="navConfig(5,this)" style="padding:4px 9px"><i class="ti ti-id-badge ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Agentes</span></div>
+          <div class="ni" onclick="navConfig(6,this)" style="padding:4px 9px"><i class="ti ti-users ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Usuarios</span></div>
+          <div class="ni" onclick="navConfig(7,this)" style="padding:4px 9px"><i class="ti ti-shield-lock ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Seguridad / Roles</span></div>
+          <div class="ni" onclick="navConfig(8,this)" style="padding:4px 9px"><i class="ti ti-clipboard-list ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Auditoría</span></div>
+          <div class="ni" onclick="navConfig(9,this)" style="padding:4px 9px"><i class="ti ti-database ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Base de datos</span></div>
+          <div class="ni" onclick="navConfig(10,this)" style="padding:4px 9px"><i class="ti ti-history ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Changelog</span></div>
+          <div class="ni" onclick="navConfig(11,this)" style="padding:4px 9px"><i class="ti ti-target ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Metas</span></div>
+          <div class="ni" onclick="navConfig(12,this)" style="padding:4px 9px"><i class="ti ti-palette ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Apariencia</span></div>
+          <div class="ni" onclick="navConfig(13,this)" style="padding:4px 9px"><i class="ti ti-list-check ni-i" style="font-size:13px"></i><span class="ni-l" style="font-size:10px">Coberturas</span></div>
         </div>
 
       <div class="sb-ft">
@@ -3442,7 +3438,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='47.5';
+const APP_VERSION='47.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

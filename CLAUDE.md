@@ -189,6 +189,34 @@ Reglas confirmadas con el dueño (cómo responderle si pregunta de nuevo):
 
 
 
+### REGLAMENTO DE DISEÑO — BOTONES Y MENÚ LATERAL (decretado por el dueño, 10-jul-2026) — OBLIGATORIO
+Botones compactos estilo Notion/Linear/Stripe Dashboard/iOS en TODOS los menús laterales del
+sistema (no solo colores — proporciones nuevas). Reglas: altura del botón reducida 20-30%,
+sin ocupar el ancho crudo del panel (márgenes laterales visibles), separación vertical entre
+botones reducida, bordes redondeados limpios, icono alineado a la izquierda con separación
+uniforme, texto con más peso (`font-weight` ~600-700), el botón ACTIVO se distingue SOLO por
+color de fondo + color de texto + borde/indicador lateral (nunca sombra flotante extra), el
+resto de botones discretos sin exceso de sombra, iconos SIN aumentar de tamaño (proporcionales
+al texto), debe verse más contenido sin scroll, responsive en móvil.
+- **Estado — HECHO v47.6, en los 3 menús laterales que existen en el sistema** (no hay un solo
+  menú lateral — cada uno con su propio CSS, medido y verificado por separado con Playwright,
+  antes/después en píxeles, no a ojo):
+  - **Seguros (núcleo)** — `.sb`/`.ni` en `index.html`: fila 31px→24px (−23%), márgenes
+    laterales 6px→10px, `font-weight` 500→600, se eliminó el indicador `::before` duplicado
+    (dead code — ya bastaba el `box-shadow` inset). Los 23 subítems de Contabilidad/
+    Configuración se ajustaron en proporción (`padding:6px 10px`→`4px 9px`).
+  - **POS** (`shellTienda`, índigo) — `.nxTNav` en `parches.js`: fila 35px→26px (−26%). El
+    activo pasó de una píldora con degradado + sombra flotante (`box-shadow:0 6px 16px...`) a
+    fondo plano + borde lateral (`box-shadow:inset 2px 0 0 #818cf8`) — mantiene el color índigo
+    de marca, solo se aplanó la sombra. El "blindaje" de `.nxTSide .nxTNav` contra el tema glass
+    (existente desde antes) no tocaba padding/tamaño, así que no chocó con este cambio.
+  - **AGUAPRO** — `.nxAguaTabs button` en `parches.js`: fila 32px→25px (−22%). Ya usaba
+    fondo plano + borde lateral (no tenía el problema de sombra flotante de POS).
+  - Verificado con las 63 pruebas Playwright ya existentes de AGUAPRO (37 funcionales + 26 del
+    buscador modal) repasadas sin regresión — el cambio es solo CSS, ninguna función se tocó.
+  - **Pendiente:** el dueño puede pedir ajustar otros menús/paneles a este mismo estándar
+    (ej. tabs internas de módulos, no solo el menú lateral principal) si lo nota en otra pantalla.
+
 ## Reglas obligatorias en cada cambio (de `REGLAS-ACTUALIZACION.md`)
 
 Aplicar **siempre** al hacer una novedad/actualización:
