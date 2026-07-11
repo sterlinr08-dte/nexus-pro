@@ -1,0 +1,9 @@
+# Cloudflare Workers sirve TODO el repo tal cual como sitio estático
+# (wrangler.jsonc, assets.directory: "./"). Este archivo excluye del
+# despliegue público las herramientas locales de Claude Code — SÍ
+# quedan en git (persisten entre sesiones), pero NUNCA se sirven en
+# nexusprord.com.
+.agents/
+.claude/
+skills-lock.json
+.assetsignore
