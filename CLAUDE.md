@@ -504,6 +504,44 @@ reportes, filtros "con deuda", selSoloDeuda, sort) para que nada se pierda; **co
 RD$ 71,500 → 32,500 pendiente tras aplicar lo pagado a la deuda vieja 1ro; total pendiente intacto
 541,800). NO tocar `reconciliarDeudasClientes` (solo sube deuda_total a las primas, no toca deuda_anterior).
 
+### Bug del ESTADO de factura pegado (RAÍZ) — ARREGLADO v48.5 (11-jul-2026)
+Síntoma reportado por el dueño: facturas con "Mes actual RD$ 0" (o sea, ya pagadas del
+todo) que seguían mostrando la etiqueta "PARCIAL" en vez de "PAGADO". **Causa de raíz
+encontrada en `regAbono()` (index.html):** al registrar un cobro, la actualización de
+`facturas.estado` solo tocaba las filas que estaban en `estado='Pendiente'`
+(`API.patch('facturas','cliente_id=eq...&estado=eq.Pendiente',...)`) — una factura que
+ya había pasado a `'Parcial'` con un abono anterior JAMÁS se volvía a tocar, aunque un
+cobro posterior la terminara de pagar del todo. Coincide exactamente con lo que ya
+advertía este mismo CLAUDE.md desde antes: "`facturas.estado` puede quedar OBSOLETO vs
+la verdad calculada... resync de estados ofrecido, NO aprobado aún" — el dueño lo
+aprobó al ver el caso real en pantalla.
+- **Arreglo de raíz (código):** función nueva `resyncEstadoFacturas(cid)` (junto a
+  `_saldoFacturasCliente`) que recalcula el estado de CADA factura no anulada del
+  cliente contra su saldo real (mismo cálculo que ya usa el monto en pantalla, reparto
+  del `pagado` del cliente de la factura más vieja a la más nueva) y solo hace `PATCH`
+  en las que de verdad cambiaron. Reemplaza el bloque viejo de 4 líneas en `regAbono()`.
+  Probado con 4 casos (mes viejo cubierto + mes nuevo parcial, pago grande que cubre
+  todo, nada pagado, factura anulada que debe ignorarse) contra el código real
+  extraído del archivo — los 4 pasan.
+- **Corrección de datos (una sola vez, vía SQL en Supabase):** se recalcularon las 106
+  facturas activas de la base contra su saldo real. 31 tenían la etiqueta mal — 21 eran
+  clientes que YA habían pagado completo y seguían marcados pendientes/parciales (no
+  hay que cobrarles nada) y **8 eran el caso contrario**: decían "PAGADO" pero en
+  verdad falta un resto (probablemente de una corrección de precio del v39.3 aplicada
+  DESPUÉS de que la factura ya se había marcado pagada a la prima vieja) —
+  **el detalle cliente por cliente (nombre + monto) se le compartió al dueño en el
+  chat, no se guarda aquí por ser información de clientes** — pendiente de que el
+  dueño confirme el cobro de ese resto con cada uno. También apareció una cuenta de
+  prueba del propio dueño (`pagado=0` pero con facturas marcadas Pagado) — es dato
+  de prueba, no un cliente real, se corrigió igual por consistencia pero no aplica cobro.
+- **Nota honesta:** a mitad de la corrección de datos, un primer intento de UPDATE
+  excluyó por error las facturas ya-Pagado del cálculo de la suma acumulada (rompiendo
+  el orden "más vieja primero" para las demás facturas del mismo cliente) y llegó a
+  marcar de más ~24 facturas de junio como pagadas incorrectamente durante unos
+  segundos. Se detectó de inmediato al re-verificar contra el cálculo correcto y se
+  corrigió con un segundo UPDATE antes de dar el trabajo por terminado — confirmado con
+  `0` discrepancias al final. Ninguna factura quedó con un estado incorrecto persistente.
+
 ### Bug de la DEUDA al editar cliente (RAÍZ) — ARREGLADO v30.0 (20-jun-2026)
 Síntoma: clientes salían con un "Pendiente" diminuto o equivocado (p.ej. "RD$ 8")
 y los pagos parecían perderse. **Causa de fondo (la identificó el dueño):** la

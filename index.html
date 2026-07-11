@@ -3460,7 +3460,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.4';
+const APP_VERSION='48.5';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5510,6 +5510,22 @@ function _saldoFacturasCliente(cid){
   facs.forEach(f=>{const tot=Number(f.prima_base||0)+Number(f.prima_deps||0);const pay=Math.min(credito,tot);m[f.id]=Math.max(0,tot-pay);credito-=pay;});
   return m;
 }
+// Recalcula el estado (Pendiente/Parcial/Pagado) de CADA factura del cliente contra su
+// saldo real (_saldoFacturasCliente), factura por factura — reemplaza la lógica vieja que
+// solo tocaba las facturas 'Pendiente' y por eso una que ya estaba 'Parcial' se quedaba
+// pegada así para siempre aunque un cobro posterior la terminara de pagar.
+async function resyncEstadoFacturas(cid){
+  const saldoMap=_saldoFacturasCliente(cid);
+  const facs=ST.facturas.filter(f=>String(f.cliente_id)===String(cid)&&f.estado!=='Anulada');
+  for(const f of facs){
+    const tot=Number(f.prima_base||0)+Number(f.prima_deps||0);
+    const saldo=saldoMap[f.id]??tot;
+    const nuevoEstado=saldo<=0.009?'Pagado':(saldo<tot-0.009?'Parcial':'Pendiente');
+    if(nuevoEstado!==f.estado){
+      try{await API.patch('facturas',`id=eq.${f.id}`,{estado:nuevoEstado});f.estado=nuevoEstado;}catch(e){}
+    }
+  }
+}
 function rFact(){
   llenarFiltroAgentes('fAgenteFact');
   const mes=parseInt(document.getElementById('fMes')?.value||mesCorte().mes);
@@ -6525,10 +6541,7 @@ async function regAbono(){
     recalcularSaldosContables();
     // Capturar los meses que estaban PENDIENTES/PARCIAL antes de marcarlos pagados (para el recibo)
     const _mesesPend=ST.facturas.filter(f=>f.cliente_id===c.id&&(f.estado==='Pendiente'||f.estado==='Parcial')&&f.mes&&f.anio).map(f=>({mes:Number(f.mes),anio:Number(f.anio)}));
-    const pd2=pend(c);
-    if(pd2===0)await API.patch('facturas',`cliente_id=eq.${c.id}&estado=eq.Pendiente`,{estado:'Pagado'});
-    else await API.patch('facturas',`cliente_id=eq.${c.id}&estado=eq.Pendiente`,{estado:'Parcial'});
-    ST.facturas.filter(f=>f.cliente_id===c.id&&f.estado==='Pendiente').forEach(f=>f.estado=pd2===0?'Pagado':'Parcial');
+    await resyncEstadoFacturas(c.id);
     logAudit('ABONO_REGISTRADO',`${fmt(monto)} · ${c.nom}`);
     _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:_mesesPend};
     // Mostrar botón de recibo WA
