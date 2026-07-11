@@ -1692,7 +1692,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="esel" id="eChips"></div>
     <div class="div"></div>
     <div class="gf2">
-      <div class="fr"><label>Nombre completo *</label><input type="text" id="cNom"/></div>
+      <div class="fr"><label>Nombre completo *</label><input type="text" id="cNom" placeholder="Nombres primero, luego Apellidos"/></div>
       <div class="fr"><label>Cédula / RNC</label><input type="text" id="cCed" placeholder="000-0000000-0"/></div>
       <div class="fr"><label>WhatsApp</label><input type="text" id="cWA" placeholder="18091234567"/></div>
       <div class="fr"><label>Teléfono</label><input type="text" id="cTel"/></div>
@@ -3460,7 +3460,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.5';
+const APP_VERSION='48.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
