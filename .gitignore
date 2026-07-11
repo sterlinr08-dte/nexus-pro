@@ -1,0 +1,7 @@
+# Herramientas de Claude Code (skills locales) — NO subir a main.
+# wrangler.jsonc sirve TODO el repo tal cual como sitio estático
+# (assets.directory: "./"), así que estas carpetas quedarían públicas
+# en nexusprord.com si se llegan a commitear.
+.agents/
+.claude/
+skills-lock.json
