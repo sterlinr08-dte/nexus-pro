@@ -923,6 +923,14 @@ tocado en esa pasada). Ahora: fondo `radial-gradient` navy sólido (sin blobs), 
 sólida con sombra real (sin blur), logo/botón en degradado navy→azul `#1e3a6e→#2563eb` (mismo acento
 que el POS), foco de los campos en azul en vez de morado. Verificado con capturas Playwright reales
 (código extraído verbatim del archivo, no una reconstrucción) en 390px y 1280px antes de publicar.
+**Seguimiento v48.15 — quitado el buscador de la barra superior:** el dueño mandó captura de iPhone
+mostrando el buscador chiquito (`.tn-sr`/`#gSearchIn`) apretado entre el menú ☰ y los íconos de la
+derecha, pidió quitarlo (confirmó que fuera de todo el sistema, no solo el celular). Se quitó el div
+del header (`index.html`), el CSS `.tn-sr` (index.html y las reglas móviles en `parches.js`), la
+función `gSearch()` (solo la usaba ese input) y una IIFE completa que ya no tenía propósito
+("ARREGLO DEL BUSCADOR EN MÓVIL" — abría la búsqueda global al tocar ese input, que ya no existe).
+La búsqueda global de pantalla completa (`gsOverlay`/`abrirGlobalSearch`) sigue intacta: botón de
+lupa junto a la campana + atajo Ctrl+K, sin cambios.
 
 ## Módulos / funcionalidades ya construidas
 

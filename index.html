@@ -199,7 +199,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .tn-tog{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:15px;transition:all .15s;flex-shrink:0}
 .tn-tog:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
 .pttl{font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
-.tn-sr{flex:1;max-width:300px}
 .tn-r{margin-left:auto;display:flex;align-items:center;gap:6px}
 .tn-b{height:34px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:12px;transition:all .15s;padding:0 12px;gap:5px;white-space:nowrap;font-family:var(--ff);position:relative;font-weight:500}
 .tn-b:hover{background:var(--c1a);border-color:var(--c1);color:var(--c1)}
@@ -358,7 +357,6 @@ tbody tr:hover td{background:#f8fafc}
   /* Topnav móvil — conservar el espacio de la barra de estado (notch/isla dinámica) en iOS */
   .tnav{padding:0 10px;padding-top:env(safe-area-inset-top,0);height:52px}
   .pttl{font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis}
-  .tn-sr{max-width:160px}
   /* Content móvil */
   .content{padding:10px}
   /* Grids */
@@ -1000,7 +998,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
       <header class="tnav">
         <button class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
         <span class="pttl" id="pttl">// DASHBOARD</span>
-        <div class="tn-sr"><div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="gSearchIn" type="search" class="nxBusca-in" placeholder="Buscar clientes, pólizas... (Enter para buscar)" value="" autocomplete="off" oninput="nxBuscaTog(this);" onkeydown="if(event.key==='Enter'){event.preventDefault();gSearch(this.value)}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
         <div class="tn-r">
           <button class="tn-b" id="btnRefrescar" onclick="refrescarDatos(this)" title="Actualizar datos"><i class="ti ti-refresh"></i></button>
           <button class="tn-b" id="btnAlertas" onclick="nav('polizas',null)" title="Alertas" style="display:none"><i class="ti ti-bell" style="color:var(--c3)"></i><div class="ndot"></div></button>
@@ -3444,7 +3441,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.14';
+const APP_VERSION='48.15';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -4836,7 +4833,7 @@ function nav(view,el){
   }
   // Limpiar campos de búsqueda al cambiar de ventana
   ['gsInput','newArs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.querySelectorAll('#gSearchIn,.gs-input').forEach(i=>{i.value='';});
+  document.querySelectorAll('.gs-input').forEach(i=>{i.value='';});
   const gsr=document.getElementById('gsResults');if(gsr)gsr.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escribe al menos 2 caracteres...</div>';
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
@@ -4844,12 +4841,6 @@ function nav(view,el){
   localStorage.setItem('nx_last_view', view);
   // Log de navegación
   logError('info', 'Navegación: '+(TITLES[view]||view), '', view);
-}
-
-function gSearch(q){
-  if(!q)return;
-  const f=ST.clientes.filter(c=>c.nom.toLowerCase().includes(q.toLowerCase())||(c.cedula||'').includes(q)||(c.numero_poliza||'').toLowerCase().includes(q.toLowerCase()));
-  if(f.length){nav('clientes',null);setTimeout(()=>{document.getElementById('cliQ').value=q;rCli();},50);}
 }
 
 // ── TICKER ───────────────────────────────────────────────────────────────────
