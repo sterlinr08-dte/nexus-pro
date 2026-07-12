@@ -749,10 +749,11 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
   muestra KPIs por tramo + detalle línea por línea (cliente/plan/cuota/vencimiento/días/pendiente/
   mora/total). Verificado con datos simulados (5 escenarios: 3 tramos distintos, pago parcial, cuota
   dentro del período de gracia sin mora) — clasificación de tramos y exclusión de pagadas/no-vencidas
-  correctas.
-  **Pendiente del roadmap más grande** (resto de Nivel 2-3, no urgente): vincular el financiamiento
-  al IMEI específico, refinanciamiento, límite de crédito con bloqueo automático, fiador/codeudor,
-  historial de comportamiento de pago.
+  correctas. **NIVEL 2 CERRADO** (12-jul-2026): "vincular financiamiento al IMEI" se descartó — el
+  dueño aclaró que NO financia celulares (el módulo de Cuotas se usa para otro tipo de mercancía), así
+  que esa pieza no aplica a su negocio real. No construir salvo que lo pida a futuro.
+  **Pendiente del roadmap más grande** (Nivel 3, no urgente, sin pedir aún): refinanciamiento, límite
+  de crédito con bloqueo automático, fiador/codeudor, historial de comportamiento de pago.
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +
