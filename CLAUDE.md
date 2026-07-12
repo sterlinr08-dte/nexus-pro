@@ -790,6 +790,46 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
     creado (solo cancelar todo); (2) sin límite de crédito ni bloqueo automático a un cliente que ya
     está en mora; (3) sin manera de marcar un plan como "incobrable"/dado de baja (solo activo/
     saldado/cancelado); (4) sin reporte histórico (total financiado por mes, mora cobrada acumulada).
+  - **REDISEÑO PREMIUM (v48.16, "quiero como más moderno"):** la pestaña Cuotas se rediseñó por
+    completo, estilo ERP (Odoo/Zoho/Salesforce Financial), a pedido explícito del dueño con un brief
+    detallado + mockup de referencia. **Decisiones confirmadas explícitamente con el dueño antes de
+    construir** (4 preguntas, por conflictos reales con reglas ya establecidas): (1) se queda dentro
+    del POS de siempre, NO es una app aparte con su propio header/menú inferior (el mockup traía eso,
+    se descartó); (2) usa **morado** como color principal — excepción deliberada al azul índigo del
+    resto del POS; (3) usa **Plus Jakarta Sans** — excepción deliberada a la fuente única del sistema
+    (Segoe UI, decretada en v48.1); ambas excepciones cargadas/aplicadas SOLO dentro de `.nxFP` (el
+    contenedor de este módulo), sin tocar nada fuera; (4) NO se le puso buscador en la barra superior
+    (el dueño acababa de pedir quitarlo del sistema completo, v48.15 — habría sido contradictorio).
+    Estructura: tarjeta `.nxFP-hero` (resumen: total por cobrar + prestado/cobrado/vencido/clientes
+    activos, todo real de `_fins`/`_finPagos`), accesos rápidos (`.nxFP-quick`), pestañas de estado
+    con contador (`.nxFP-tabs`, `_finFiltro`), buscador local (`.nxFP-searchRow`, usa `posBuscador`/
+    `nxBuscaHTML` como manda el reglamento — NO es el buscador global que se quitó), tarjetas de
+    préstamo (`.nxFP-card`, avatar de iniciales con color determinístico) y panel de indicadores del
+    mes (`.nxFP-dash`). **5 estados reales, no 3:** se agregó una distinción nueva "VENCIDO" (atrasado
+    pero aún dentro del período de gracia de la mora) vs **"EN MORA"** (atrasado más allá de la gracia,
+    ya generando recargo) — antes solo existía un genérico "vencido"; ambos calculados en vivo con
+    `moraDeCuota`/`diasAtraso`, cero campos nuevos. **"REF: PR-XXXXXX"** del mockup NO es un
+    consecutivo real (`pos_financiamientos` no tiene numeración propia y no se le agregó una para no
+    tocar lógica/esquema) — se deriva del `id` del plan solo para la pantalla. El "+12.5% vs mes
+    anterior" del mockup tampoco se copió tal cual (no hay forma de saber el saldo pendiente de hace
+    un mes, no se guarda ese historial) — se reemplazó por una comparación real y calculable: cobrado
+    este mes vs. cobrado el mes pasado (de `pos_fin_pagos`, que si tiene fecha). **Excel** (botón
+    nuevo, real): exporta a CSV la lista visible, 100% del lado del navegador, sin tocar Supabase.
+    **Nuevo préstamo** navega a Factura con un aviso (no existe alta directa de un plan — solo se
+    crean al cobrar una venta marcando "Financiar en cuotas"). **Cobranza** filtra a Vencidos.
+    **Reporte** abre `nxFinCarteraVencida` (ya existía). **Configuración** salta a Ajustes → mora.
+    Las funciones existentes (`nxFinPlan`, `nxFinPagar`, `nxFinPagarGo`, `nxFinContrato`,
+    `nxFinCarteraVencida`) **no se tocaron** — solo el render/CSS/helpers alrededor. Cero queries
+    nuevas (reusa `_fins`/`_finCuotas`/`_finPagos`/`_clientes` ya cargados en `cargarPOS`), cero
+    cambios de RLS/`organizacion_id`. **Nota sobre el proceso:** el dueño mandó un mockup + código de
+    otra IA (HTML/CSS/JS de un módulo "Financiamiento PRO" standalone, con datos 100% de demo/mentira
+    y el mismo header/buscador/menú inferior ya descartados) pidiendo usarlo "solo como plantilla
+    visual" — se auditó, se descartó como base (no conectado a datos reales, reabría decisiones ya
+    cerradas) y solo se rescató una idea real y útil: el estado vacío con ícono + botón "Nuevo
+    préstamo" (`.nxFP-empty`), que no existía antes. Verificado con capturas Playwright del código
+    real (no una reconstrucción) en 390px/430px/tablet(820px)/escritorio(1400px), sin desbordes.
+    **Publicado primero en rama aparte** (no directo a `main`, a pedido del dueño) para revisión antes
+    de fusionar — ver rama `claude/fin-cuotas-premium`.
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +

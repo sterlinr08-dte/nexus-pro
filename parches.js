@@ -14801,6 +14801,7 @@
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
   let _reps = [], _fins = [], _finCuotas = [], _finPagos = [], _repVista = 'activas'; // servicio tecnico + cuotas
+  let _finFiltro = 'todos', _finQ = ''; // Cuotas premium: pestaña de estado + texto de búsqueda
   let _apartados = [], _apaPagos = []; // apartados (layaway)
   let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
   let _prefs = []; // prefacturas abiertas
@@ -19562,44 +19563,202 @@
   }
   function hoyISOPos() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function curSesPOS() { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return null; } }
-  function renderCuotas() {
-    const hoyK = hoyISOPos();
+
+  // ════════════════════════════════════════════════════════════════════
+  // ── CUOTAS PREMIUM (rediseño v48.16, a pedido del dueño — mismo motor,
+  //    solo interfaz nueva) — helpers de cálculo/clasificación ──
+  // ════════════════════════════════════════════════════════════════════
+  function pendPlan(f) { return cuotasDe(f.id).filter(c => !c.pagado).reduce((s, c) => s + Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)), 0); }
+  function moraPlan(f) { return cuotasDe(f.id).filter(c => !c.pagado).reduce((s, c) => s + moraDeCuota(c), 0); }
+  function diasAtraso(c) {
+    const hoyK = hoyISOPos(); const venc = String(c.fecha_venc || '').slice(0, 10);
+    if (!venc || venc >= hoyK) return 0;
+    return Math.floor((new Date(hoyK + 'T12:00:00') - new Date(venc + 'T12:00:00')) / 86400000);
+  }
+  function finClienteInfo(f) { const c = f.cliente_id ? _clientes.find(x => String(x.id) === String(f.cliente_id)) : null; return { cedula: (c && c.cedula) || '', telefono: (c && c.telefono) || '' }; }
+  // Referencia corta derivada del id del plan (NO es un consecutivo — pos_financiamientos no tiene
+  // numeración propia; se deriva del id ya existente para no tocar Supabase/esquema/lógica).
+  function finRefCorta(f) { return 'PR-' + String(f.id || '').replace(/-/g, '').slice(0, 6).toUpperCase(); }
+  const FIN_AVATAR_COLORES = ['#4f46e5', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626', '#db2777', '#0284c7'];
+  function finIniciales(nombre) {
+    const partes = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+    const ini = partes.length ? (partes[0][0] + (partes[1] ? partes[1][0] : '')).toUpperCase() : '—';
+    let hash = 0; const s = String(nombre || ''); for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+    return { ini: ini, color: FIN_AVATAR_COLORES[hash % FIN_AVATAR_COLORES.length] };
+  }
+  // Clasificación real (5 estados, todos calculados en vivo de datos reales — nada inventado):
+  // activo = al día · vencido = atrasado pero AÚN dentro del período de gracia (sin recargo) ·
+  // en_mora = atrasado más allá de la gracia (ya generando recargo real) · pagado · cancelado.
+  function finEstado(f) {
+    if (f.estado === 'cancelado') return { key: 'cancelado', label: 'CANCELADO' };
+    if (f.estado === 'saldado') return { key: 'pagado', label: 'PAGADO' };
+    const vencidasPlan = cuotasDe(f.id).filter(c => !c.pagado && diasAtraso(c) > 0);
+    if (!vencidasPlan.length) return { key: 'activo', label: 'ACTIVO' };
+    return vencidasPlan.some(c => moraDeCuota(c) > 0) ? { key: 'en_mora', label: 'EN MORA' } : { key: 'vencido', label: 'VENCIDO' };
+  }
+  function finHeroStats() {
     const activos = _fins.filter(f => f.estado === 'activo');
-    const porCobrar = activos.reduce((t, f) => t + cuotasDe(f.id).filter(c => !c.pagado).reduce((x, c) => x + Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)) + moraDeCuota(c), 0), 0);
-    const vencidas = _finCuotas.filter(c => !c.pagado && String(c.fecha_venc) < hoyK && activos.some(f => String(f.id) === String(c.financiamiento_id)));
-    const kpis = `<div class="nxFinKpis">
-      <div class="nxFinKpi"><div class="nxFinKpiIco"><i class="ti ti-file-dollar"></i></div><div class="nxFinKpiTxt"><b>${activos.length}</b><span>Planes activos</span></div></div>
-      <div class="nxFinKpi"><div class="nxFinKpiIco"><i class="ti ti-cash"></i></div><div class="nxFinKpiTxt"><b>${fmt(porCobrar)}</b><span>Por cobrar</span></div></div>
-      <div class="nxFinKpi"><div class="nxFinKpiIco ${vencidas.length ? 'r' : 'g'}"><i class="ti ${vencidas.length ? 'ti-alert-triangle' : 'ti-check'}"></i></div><div class="nxFinKpiTxt"><b>${vencidas.length}</b><span>Cuotas vencidas</span></div></div>
-    </div>
-    ${vencidas.length ? `<div style="margin-bottom:10px"><button class="btn bsm bghost" type="button" onclick="window.nxFinCarteraVencida()"><i class="ti ti-report-money"></i> Cartera vencida (aging)</button></div>` : ''}`;
-    const rows = _fins.length ? _fins.map(f => {
-      const cs = cuotasDe(f.id); const pag = cs.filter(c => c.pagado).length;
-      const prox = cs.find(c => !c.pagado);
-      const venc = prox && String(prox.fecha_venc) < hoyK;
-      const vencidasPlan = cs.filter(c => !c.pagado && String(c.fecha_venc) < hoyK);
-      const diasPara = prox ? Math.ceil((new Date(String(prox.fecha_venc).slice(0, 10) + 'T12:00:00') - new Date(hoyK + 'T12:00:00')) / 86400000) : null;
-      const pronto = !venc && prox && diasPara !== null && diasPara <= 3;
-      const cls = f.estado === 'cancelado' ? 'cancelado' : f.estado === 'saldado' ? 'saldado' : venc ? 'venc' : pronto ? 'pronto' : '';
-      const badgeTxt = f.estado === 'cancelado' ? 'CANCELADO' : f.estado === 'saldado' ? 'SALDADO' : venc ? 'VENCIDO' : pronto ? 'POR VENCER' : 'AL DÍA';
-      const pct = f.cuotas_total ? Math.round(pag / f.cuotas_total * 100) : 0;
-      const moraProx = prox ? moraDeCuota(prox) : 0;
-      return `<div class="nxFinCard ${cls}">
-        <div class="nxFinTop"><div class="nxFinIco"><i class="ti ${f.estado === 'saldado' ? 'ti-circle-check' : 'ti-calendar-dollar'}"></i></div>
-          <div class="nxFinInfo"><div class="nxFinNom">${esc(f.cliente_nombre || '')}</div><div class="nxFinSub">${esc(f.descripcion || '')} · ${pag}/${f.cuotas_total} cuotas</div></div>
-          <span class="nxFinBadge ${cls || 'ok'}">${badgeTxt}</span></div>
-        <div class="nxFinBar"><div class="nxFinBarFill" style="width:${pct}%"></div></div>
-        <div class="nxFinRow">
-          ${f.estado === 'cancelado' ? `<div class="nxFinNextLbl">Plan cancelado — venta anulada</div>` : prox ? `<div><div class="nxFinNextLbl">Próxima cuota ${prox.numero}/${f.cuotas_total}${Number(prox.monto_pagado || 0) > 0 ? ' · abonada ' + fmt(prox.monto_pagado) : ''}</div><div class="nxFinNextAmt">${fmt(Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)) + moraProx)}</div><div class="nxFinNextDate">${venc ? 'venció' : 'vence'} ${String(prox.fecha_venc).slice(0, 10)}${moraProx > 0 ? ' · <span style="color:#dc2626">incl. ' + fmt(moraProx) + ' mora</span>' : ''}</div></div>` : `<div class="nxFinNextLbl">Plan saldado — financiado ${fmt(f.monto_financiado)}</div>`}
-          ${f.estado !== 'cancelado' && vencidasPlan.length > 1 ? `<span class="nxFinOverdueChip">+${vencidasPlan.length - 1} más vencida${vencidasPlan.length - 1 > 1 ? 's' : ''}</span>` : ''}
+    const prestado = _fins.filter(f => f.estado !== 'cancelado').reduce((s, f) => s + Number(f.monto_financiado || 0), 0);
+    const cobrado = (_finPagos || []).reduce((s, p) => s + Number(p.monto || 0), 0);
+    const porCobrar = activos.reduce((s, f) => s + pendPlan(f) + moraPlan(f), 0);
+    const vencido = activos.reduce((s, f) => s + cuotasDe(f.id).filter(c => !c.pagado && diasAtraso(c) > 0).reduce((x, c) => x + Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)) + moraDeCuota(c), 0), 0);
+    const clientesActivos = new Set(activos.map(f => String(f.cliente_id || f.cliente_nombre))).size;
+    return { prestado, cobrado, porCobrar, vencido, clientesActivos };
+  }
+  function finStatsMes() {
+    const ym = hoyISOPos().slice(0, 7);
+    const esperado = _finCuotas.filter(c => String(c.fecha_venc || '').slice(0, 7) === ym).reduce((s, c) => s + Number(c.monto || 0), 0);
+    const cobradoMes = (_finPagos || []).filter(p => String(p.fecha || '').slice(0, 7) === ym).reduce((s, p) => s + Number(p.monto || 0), 0);
+    const cobradoMesAnt = (_finPagos || []).filter(p => { const d = new Date(ym + '-01T12:00:00'); d.setMonth(d.getMonth() - 1); return String(p.fecha || '').slice(0, 7) === (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); }).reduce((s, p) => s + Number(p.monto || 0), 0);
+    const enMoraPlanes = _fins.filter(f => f.estado === 'activo' && cuotasDe(f.id).some(c => !c.pagado && diasAtraso(c) >= 31));
+    const clientesNuevos = new Set(_fins.filter(f => String(f.created_at || '').slice(0, 7) === ym).map(f => String(f.cliente_id || f.cliente_nombre))).size;
+    return { esperado: esperado, cobradoMes: cobradoMes, pctMes: esperado > 0 ? Math.round(cobradoMes / esperado * 100) : 0, tendencia: cobradoMesAnt > 0 ? Math.round((cobradoMes - cobradoMesAnt) / cobradoMesAnt * 100) : null, enMoraCount: enMoraPlanes.length, montoMora31: enMoraPlanes.reduce((s, f) => s + pendPlan(f), 0), clientesNuevos: clientesNuevos };
+  }
+  function finFiltrados() {
+    const q = (_finQ || '').toLowerCase().trim();
+    return _fins.filter(f => {
+      const est = finEstado(f).key;
+      if (_finFiltro === 'activos' && est !== 'activo') return false;
+      if (_finFiltro === 'vencidos' && est !== 'vencido' && est !== 'en_mora') return false;
+      if (_finFiltro === 'pagados' && est !== 'pagado') return false;
+      if (_finFiltro === 'cancelados' && est !== 'cancelado') return false;
+      if (!q) return true;
+      const info = finClienteInfo(f);
+      return [f.cliente_nombre, f.descripcion, info.cedula, info.telefono, finRefCorta(f)].join(' ').toLowerCase().includes(q);
+    });
+  }
+  function finTabsHTML() {
+    const conteo = key => _fins.filter(f => { const e = finEstado(f).key; return key === 'todos' ? true : key === 'vencidos' ? (e === 'vencido' || e === 'en_mora') : key === 'activos' ? e === 'activo' : key === 'pagados' ? e === 'pagado' : e === 'cancelado'; }).length;
+    const tabs = [['todos', 'Todos', 'ti-layout-grid'], ['activos', 'Activos', 'ti-circle-check'], ['vencidos', 'Vencidos', 'ti-alert-triangle'], ['pagados', 'Pagados', 'ti-checks'], ['cancelados', 'Cancelados', 'ti-ban']];
+    return tabs.map(t => `<button type="button" class="nxFP-tab ${_finFiltro === t[0] ? 'on' : ''}" onclick="window.nxFinFiltro('${t[0]}')"><i class="ti ${t[2]}"></i> ${t[1]} <span class="nxFP-tabN">${conteo(t[0])}</span></button>`).join('');
+  }
+  function finCardHTML(f) {
+    const cs = cuotasDe(f.id); const pag = cs.filter(c => c.pagado).length;
+    const prox = cs.find(c => !c.pagado);
+    const est = finEstado(f); const av = finIniciales(f.cliente_nombre); const info = finClienteInfo(f);
+    const balance = pendPlan(f); const atraso = prox ? diasAtraso(prox) : 0;
+    const metaBits = [info.cedula, info.telefono].filter(Boolean).map(esc);
+    return `<div class="nxFP-card">
+      <div class="nxFP-avatar" style="background:${av.color}">${av.ini}</div>
+      <div class="nxFP-cardBody">
+        <div class="nxFP-cardTop"><div class="nxFP-cardNom">${esc(f.cliente_nombre || '')}</div><span class="nxFP-badge ${est.key}">${est.label}</span></div>
+        <div class="nxFP-cardMeta">${metaBits.length ? metaBits.join(' · ') : 'Sin cédula/teléfono registrado'}</div>
+        <div class="nxFP-refRow"><span class="nxFP-ref">REF: ${finRefCorta(f)}</span></div>
+        <div class="nxFP-cardGrid">
+          <div><div class="nxFP-gLbl">Monto prestado</div><div class="nxFP-gVal">${fmt(f.monto_financiado)}</div></div>
+          <div><div class="nxFP-gLbl">Por cobrar</div><div class="nxFP-gVal ${balance > 0 ? 'accent' : ''}">${fmt(balance)}</div></div>
+          <div><div class="nxFP-gLbl">Cuota mensual</div><div class="nxFP-gVal">${fmt(f.cuota_monto)}</div></div>
+          <div>${est.key === 'pagado' ? `<div class="nxFP-gLbl">Estado</div><div class="nxFP-gVal">Completado</div>` : est.key === 'cancelado' ? `<div class="nxFP-gLbl">Estado</div><div class="nxFP-gVal">Anulado</div>` : prox ? `<div class="nxFP-gLbl">${atraso > 0 ? 'Días vencidos' : 'Próximo pago'}</div><div class="nxFP-gVal ${atraso > 0 ? 'danger' : ''}">${atraso > 0 ? atraso + ' días' : String(prox.fecha_venc).slice(0, 10)}</div></div>` : ''}</div>
         </div>
-        <div class="nxFinBtns">
-          ${f.estado === 'activo' && prox ? `<button class="btn bsm bc1" type="button" onclick="window.nxFinPagar('${f.id}')"><i class="ti ti-cash"></i> Cobrar cuota</button>` : ''}
-          <button class="btn bsm bghost" type="button" onclick="window.nxFinPlan('${f.id}')"><i class="ti ti-list-numbers"></i> Ver plan</button>
-          <button class="btn bsm bghost" type="button" onclick="window.nxFinContrato('${f.id}')"><i class="ti ti-printer"></i></button>
-        </div></div>`;
-    }).join('') : '<div class="nxRepEmpty" style="padding:24px">Sin financiamientos. Se crean al cobrar una venta marcando "Financiar el resto en CUOTAS".</div>';
-    return kpis + rows;
+      </div>
+      <div class="nxFP-cardMenuWrap">
+        <button type="button" class="nxFP-menuBtn" aria-label="Más opciones de ${esc(f.cliente_nombre || '')}" onclick="window.nxFinMenu(event,'${f.id}')"><i class="ti ti-dots-vertical"></i></button>
+        <div class="nxFP-menuPop" id="finMenu_${f.id}">
+          ${est.key !== 'pagado' && est.key !== 'cancelado' && prox ? `<button type="button" onclick="window.nxFinMenuGo(event,'${f.id}','pagar')"><i class="ti ti-cash"></i> Cobrar cuota</button>` : ''}
+          <button type="button" onclick="window.nxFinMenuGo(event,'${f.id}','plan')"><i class="ti ti-list-numbers"></i> Ver plan</button>
+          <button type="button" onclick="window.nxFinMenuGo(event,'${f.id}','imprimir')"><i class="ti ti-printer"></i> Imprimir acuerdo</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  function finListaHTML() {
+    const lista = finFiltrados();
+    if (!lista.length) {
+      if (!_fins.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-file-off"></i></div><h3>Aún no hay préstamos</h3><p>Se crean al cobrar una venta marcando "Financiar el resto en CUOTAS".</p><button type="button" class="nxFP-qbtn" style="max-width:220px;margin:14px auto 0" onclick="window.nxFinNuevo()"><div class="nxFP-qico primary"><i class="ti ti-plus"></i></div><span>Nuevo préstamo</span></button></div>`;
+      return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún préstamo coincide con este filtro o búsqueda.</p></div>`;
+    }
+    return lista.map(finCardHTML).join('');
+  }
+  function finRepintarLista() {
+    const el = document.getElementById('finList'); if (el) el.innerHTML = finListaHTML();
+    const lbl = document.getElementById('finTotalLbl'); if (lbl) lbl.textContent = 'Total: ' + finFiltrados().length + (finFiltrados().length === 1 ? ' préstamo' : ' préstamos');
+  }
+  function inyectarFuenteFin() {
+    if (document.getElementById('nxFinFontLink')) return;
+    const l = document.createElement('link'); l.id = 'nxFinFontLink'; l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+    document.head.appendChild(l);
+  }
+  window.nxFinFiltro = function (key) {
+    _finFiltro = key || 'todos';
+    const t = document.getElementById('finTabs'); if (t) t.innerHTML = finTabsHTML();
+    finRepintarLista();
+  };
+  window.nxFinBuscar = function (v) { _finQ = v || ''; finRepintarLista(); };
+  window.nxFinMenu = function (ev, id) {
+    if (ev) ev.stopPropagation();
+    document.querySelectorAll('.nxFP-menuPop.open').forEach(m => { if (m.id !== 'finMenu_' + id) m.classList.remove('open'); });
+    const pop = document.getElementById('finMenu_' + id); if (pop) pop.classList.toggle('open');
+  };
+  window.nxFinMenuGo = function (ev, id, accion) {
+    if (ev) ev.stopPropagation();
+    const pop = document.getElementById('finMenu_' + id); if (pop) pop.classList.remove('open');
+    if (accion === 'pagar') window.nxFinPagar(id);
+    else if (accion === 'plan') window.nxFinPlan(id);
+    else if (accion === 'imprimir') window.nxFinContrato(id);
+  };
+  window.nxFinNuevo = function () {
+    toast('info', 'Cómo crear un préstamo', 'Los préstamos se crean al cobrar una venta — en Factura marca "Financiar el resto en CUOTAS" antes de cobrar.');
+    window.nxPosTab('factura');
+  };
+  window.nxFinCobranza = function () { window.nxFinFiltro('vencidos'); const el = document.getElementById('finListHead'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  window.nxFinConfig = function () {
+    window.nxPosTab('ajustes');
+    setTimeout(function () { const el = document.getElementById('cfgMoraPct'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 200);
+  };
+  window.nxFinExportCSV = function () {
+    const lista = finFiltrados();
+    if (!lista.length) { toast('warn', 'Nada que exportar', 'No hay financiamientos en esta vista'); return; }
+    const filas = [['Cliente', 'Cédula', 'Teléfono', 'Referencia', 'Monto financiado', 'Por cobrar', 'Cuota mensual', 'Próximo pago', 'Estado']];
+    lista.forEach(f => {
+      const info = finClienteInfo(f); const prox = cuotasDe(f.id).find(c => !c.pagado);
+      filas.push([f.cliente_nombre || '', info.cedula || '', info.telefono || '', finRefCorta(f), Math.round(f.monto_financiado || 0), Math.round(pendPlan(f)), Math.round(f.cuota_monto || 0), prox ? String(prox.fecha_venc).slice(0, 10) : '', finEstado(f).label]);
+    });
+    const csv = filas.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'financiamientos_' + hoyISOPos() + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    try { window.logAudit && window.logAudit('POS_FIN_EXPORT_CSV', lista.length + ' financiamientos exportados a CSV', 'Cuotas'); } catch (e) {}
+  };
+  try { document.addEventListener('click', function () { document.querySelectorAll('.nxFP-menuPop.open').forEach(m => m.classList.remove('open')); }); } catch (e) {}
+
+  function renderCuotas() {
+    inyectarFuenteFin();
+    const hero = finHeroStats(); const mes = finStatsMes();
+    const quickBtns = [
+      ['nxFinNuevo', 'ti-plus', 'primary', 'Nuevo préstamo'],
+      ['nxFinCobranza', 'ti-user-dollar', '', 'Cobranza'],
+      ['nxFinExportCSV', 'ti-file-spreadsheet', 'green', 'Excel'],
+      ['nxFinCarteraVencida', 'ti-report-money', 'blue', 'Reporte'],
+      ['nxFinConfig', 'ti-settings', 'gray', 'Configuración']
+    ];
+    return `<div class="nxFP">
+      <div class="nxFP-hero">
+        <div class="nxFP-heroL">
+          <div class="nxFP-heroLbl">RESUMEN GENERAL</div>
+          <div class="nxFP-heroSub">TOTAL POR COBRAR</div>
+          <div class="nxFP-heroNum">${fmt(hero.porCobrar)}</div>
+          <div class="nxFP-heroTrend">Cobrado este mes: ${fmt(mes.cobradoMes)}${mes.tendencia !== null ? ` <span class="${mes.tendencia >= 0 ? 'up' : 'down'}">${mes.tendencia >= 0 ? '▲' : '▼'} ${Math.abs(mes.tendencia)}% vs mes anterior</span>` : ''}</div>
+        </div>
+        <div class="nxFP-heroR">
+          <div class="nxFP-heroStat"><div class="nxFP-heroIco"><i class="ti ti-cash-banknote"></i></div><div><div class="nxFP-heroStatLbl">Prestado</div><div class="nxFP-heroStatVal">${fmt(hero.prestado)}</div></div></div>
+          <div class="nxFP-heroStat"><div class="nxFP-heroIco"><i class="ti ti-hand-click"></i></div><div><div class="nxFP-heroStatLbl">Cobrado</div><div class="nxFP-heroStatVal">${fmt(hero.cobrado)}</div></div></div>
+          <div class="nxFP-heroStat"><div class="nxFP-heroIco warn"><i class="ti ti-clock-exclamation"></i></div><div><div class="nxFP-heroStatLbl">Vencido</div><div class="nxFP-heroStatVal">${fmt(hero.vencido)}</div></div></div>
+          <div class="nxFP-heroStat"><div class="nxFP-heroIco"><i class="ti ti-users"></i></div><div><div class="nxFP-heroStatLbl">Clientes activos</div><div class="nxFP-heroStatVal">${hero.clientesActivos}</div></div></div>
+        </div>
+      </div>
+      <div class="nxFP-secTitle">ACCIONES RÁPIDAS</div>
+      <div class="nxFP-quick">${quickBtns.map(b => `<button type="button" class="nxFP-qbtn" onclick="window.${b[0]}()"><div class="nxFP-qico ${b[2]}"><i class="ti ${b[1]}"></i></div><span>${b[3]}</span></button>`).join('')}</div>
+      <div class="nxFP-tabs" id="finTabs">${finTabsHTML()}</div>
+      <div class="nxFP-searchRow">${posBuscador({ id: 'finQ', placeholder: 'Buscar por nombre, cédula, teléfono o referencia...', value: _finQ, oninput: 'window.nxFinBuscar(this.value)' })}</div>
+      <div class="nxFP-listHead" id="finListHead"><span>LISTA DE FINANCIAMIENTOS</span><span id="finTotalLbl">Total: ${finFiltrados().length} préstamos</span></div>
+      <div id="finList">${finListaHTML()}</div>
+      <div class="nxFP-dash">
+        <div class="nxFP-dcard"><div class="nxFP-dico"><i class="ti ti-calendar-dollar"></i></div><div><div class="nxFP-dlbl">CUOTAS DEL MES</div><div class="nxFP-dval">${fmt(mes.esperado)}</div><div class="nxFP-dsub">Esperado</div></div></div>
+        <div class="nxFP-dcard"><div class="nxFP-dico green"><i class="ti ti-circle-check"></i></div><div><div class="nxFP-dlbl">COBRADO DEL MES</div><div class="nxFP-dval">${fmt(mes.cobradoMes)}</div><div class="nxFP-dsub">${mes.pctMes}% del esperado</div></div></div>
+        <div class="nxFP-dcard"><div class="nxFP-dico red"><i class="ti ti-alert-triangle"></i></div><div><div class="nxFP-dlbl">EN MORA (31+)</div><div class="nxFP-dval">${fmt(mes.montoMora31)}</div><div class="nxFP-dsub">${mes.enMoraCount} préstamos</div></div></div>
+        <div class="nxFP-dcard"><div class="nxFP-dico blue"><i class="ti ti-users"></i></div><div><div class="nxFP-dlbl">CLIENTES NUEVOS</div><div class="nxFP-dval">${mes.clientesNuevos}</div><div class="nxFP-dsub">Este mes</div></div></div>
+      </div>
+    </div>`;
   }
   window.nxFinPlan = function (id) {
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
@@ -20216,14 +20375,50 @@
     // Botones del NÚCLEO (bc1 morado) en azul real DENTRO del POS y sus modales (no toca seguros)
     st.textContent += '.nxLupaBox{display:flex;align-items:center;gap:8px;border:1.5px solid #cbd5e1;border-radius:11px;background:#fff;padding:0 12px;margin-bottom:8px}.nxLupaBox>i{color:#94a3b8;font-size:16px;flex:none;background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;position:static!important;padding:0!important}.nxLupaBox>i.click{color:#2563eb;cursor:pointer}.nxLupaBox input{flex:1;min-width:0;border:none;outline:none;height:42px;font-size:13px;background:transparent;color:#1e293b;font-family:inherit}' + 'html body .nc i.nxPpkChev,html body i.nxPpkChev{background:#f1f5f9!important;background-image:none!important;color:#64748b!important;box-shadow:none!important;border:0!important;text-shadow:none!important}html body .nc .nxPpkWrap.on i.nxPpkChev,html body .nxPpkWrap.on i.nxPpkChev{background:#dbeafe!important;color:#2563eb!important}';
     st.textContent += '.nxRepKb{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}.nxRepCol{min-width:210px;max-width:240px;flex:1 0 210px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px}.nxRepColH{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--rc,#475569);border-bottom:2px solid var(--rc,#e2e8f0);padding-bottom:6px;margin-bottom:8px}.nxRepColH b{background:#fff;border-radius:7px;padding:1px 7px;font-size:10px}.nxRepCard{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;margin-bottom:7px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(15,23,42,.05)}.nxRepCard:active{opacity:.75}.nxRepNum{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:#2563eb;margin-bottom:2px}.nxRepNum span{color:#94a3b8;font-weight:700}.nxRepEq{font-size:12.5px;font-weight:800;color:#0f172a;line-height:1.15}.nxRepCli{font-size:10.5px;color:#475569}.nxRepFalla{font-size:10px;color:#64748b;margin-top:2px}.nxRepPre{font-size:11.5px;font-weight:800;color:#16a34a;margin-top:3px}.nxRepEmpty{text-align:center;color:#cbd5e1;font-size:11px;padding:10px}.nxRepChips{display:flex;gap:5px;flex-wrap:wrap}.nxRepChip{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}.nxRepChip.on{background:var(--rc,#2563eb);border-color:var(--rc,#2563eb);color:#fff}.nxTQuick{margin-left:auto;border:0;background:#2563eb;color:#fff;border-radius:11px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.3)}.nxTQuick:active{background:#1d4ed8}' + '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}.nxPayTiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 10px}.nxPayTile{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 2px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}.nxPayTile i{font-size:17px;color:#475569}.nxPayTile span{font-size:8px;font-weight:800;color:#475569;letter-spacing:.3px}.nxPayTile.on{border-color:#2563eb;background:#eff6ff}.nxPayTile.on i,.nxPayTile.on span{color:#2563eb}@media(max-width:380px){.nxPayTile i{font-size:15px}.nxPayTile{padding:7px 1px}}';
-    // ── Cuotas/Financiamiento: estilo propio (antes prestaba .nxSa* del módulo SaaS) ──
-    st.textContent += '.nxFinKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}.nxFinKpi{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxFinKpiIco{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;background:#e0e7ff;color:#4338ca}.nxFinKpiIco.r{background:#fee2e2;color:#dc2626}.nxFinKpiIco.g{background:#dcfce7;color:#16a34a}.nxFinKpiTxt{min-width:0}.nxFinKpiTxt b{display:block;font-size:16px;font-weight:800;color:#0f172a;line-height:1.15}.nxFinKpiTxt span{font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.3px}' +
-      '.nxFinCard{background:#fff;border:1px solid #e2e8f0;border-left:3px solid #cbd5e1;border-radius:14px;padding:13px 14px;margin-bottom:9px;box-shadow:0 2px 8px rgba(15,23,42,.05)}.nxFinCard.pronto{border-left-color:#d97706}.nxFinCard.venc{border-left-color:#dc2626}.nxFinCard.saldado{border-left-color:#16a34a}.nxFinCard.cancelado{border-left-color:#94a3b8;opacity:.6}' +
-      '.nxFinTop{display:flex;align-items:center;gap:10px;margin-bottom:9px}.nxFinIco{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}.nxFinCard.saldado .nxFinIco{background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#16a34a}.nxFinInfo{flex:1;min-width:0}.nxFinNom{font-weight:800;font-size:13.5px;color:#0f172a;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFinSub{font-size:10.5px;color:#64748b;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-      '.nxFinBadge{font-size:9px;font-weight:800;padding:3px 9px;border-radius:999px;flex:none;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}.nxFinBadge.ok{background:#f1f5f9;color:#475569}.nxFinBadge.pronto{background:#fffbeb;color:#b45309}.nxFinBadge.venc{background:#fef2f2;color:#dc2626}.nxFinBadge.saldado{background:#f0fdf4;color:#16a34a}.nxFinBadge.cancelado{background:#f1f5f9;color:#94a3b8}' +
-      '.nxFinBar{height:5px;background:#f1f5f9;border-radius:5px;overflow:hidden;margin-bottom:9px}.nxFinBarFill{height:100%;border-radius:5px;background:#818cf8;transition:width .3s}.nxFinCard.pronto .nxFinBarFill{background:#f59e0b}.nxFinCard.venc .nxFinBarFill{background:#ef4444}.nxFinCard.saldado .nxFinBarFill{background:#22c55e}' +
-      '.nxFinRow{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin-bottom:10px;flex-wrap:wrap}.nxFinNextLbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px}.nxFinNextAmt{font-size:19px;font-weight:800;color:#2563eb;letter-spacing:-.3px;line-height:1.2}.nxFinCard.venc .nxFinNextAmt{color:#dc2626}.nxFinNextDate{font-size:10.5px;color:#64748b;margin-top:1px}.nxFinOverdueChip{font-size:9px;font-weight:800;background:#fef2f2;color:#dc2626;padding:4px 9px;border-radius:8px;white-space:nowrap}' +
-      '.nxFinBtns{display:flex;gap:6px;flex-wrap:wrap}';
+    // ── Cuotas/Financiamiento PREMIUM (rediseño v48.16, a pedido del dueño): morado + Plus Jakarta
+    //    Sans SOLO dentro de .nxFP — excepción deliberada y confirmada al azul índigo/Segoe UI que
+    //    usa el resto del sistema (ver CLAUDE.md). Mismo motor de datos, cero cambios de lógica. ──
+    st.textContent += '.nxFP,.nxFP *{font-family:"Plus Jakarta Sans",var(--ff),sans-serif}' +
+      '.nxFP{color:#0f172a}' +
+      '.nxFP-hero{background:linear-gradient(120deg,#4f46e5,#7c3aed 55%,#6d28d9);border-radius:18px;padding:22px 24px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;color:#fff;box-shadow:0 16px 36px rgba(76,29,149,.28);margin-bottom:18px}' +
+      '.nxFP-heroLbl{font-size:10.5px;font-weight:700;letter-spacing:.6px;opacity:.75;text-transform:uppercase}.nxFP-heroSub{font-size:12px;font-weight:700;letter-spacing:.4px;opacity:.9;margin-top:10px}.nxFP-heroNum{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-top:2px;font-variant-numeric:tabular-nums}' +
+      '.nxFP-heroTrend{font-size:11.5px;opacity:.85;margin-top:8px;font-weight:600}.nxFP-heroTrend .up{color:#86efac;font-weight:800}.nxFP-heroTrend .down{color:#fca5a5;font-weight:800}' +
+      '.nxFP-heroR{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:16px 28px;align-content:center}' +
+      '.nxFP-heroStat{display:flex;align-items:center;gap:10px}.nxFP-heroIco{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}.nxFP-heroIco.warn{background:rgba(252,165,165,.28);color:#fecaca}' +
+      '.nxFP-heroStatLbl{font-size:10px;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:.3px}.nxFP-heroStatVal{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}' +
+      '.nxFP-secTitle{font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.6px;text-transform:uppercase;margin:4px 0 10px}' +
+      '.nxFP-quick{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}' +
+      '.nxFP-qbtn{display:flex;flex-direction:column;align-items:center;gap:9px;background:#fff;border:1px solid #eef0f5;border-radius:18px;padding:18px 8px;cursor:pointer;font-family:inherit;box-shadow:0 2px 10px rgba(15,23,42,.04);transition:box-shadow .15s,transform .15s}' +
+      '.nxFP-qbtn:hover{box-shadow:0 8px 20px rgba(15,23,42,.08);transform:translateY(-1px)}.nxFP-qbtn:active{transform:translateY(0)}' +
+      '.nxFP-qbtn span{font-size:10px;font-weight:800;letter-spacing:.3px;color:#334155;text-align:center}' +
+      '.nxFP-qico{width:44px;height:44px;border-radius:14px;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:19px}' +
+      '.nxFP-qico.primary{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff}.nxFP-qico.green{background:#dcfce7;color:#16a34a}.nxFP-qico.blue{background:#e0e7ff;color:#4338ca}.nxFP-qico.gray{background:#f1f5f9;color:#64748b}' +
+      '.nxFP-tabs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:14px}' +
+      '.nxFP-tab{flex:none;border:1px solid #e5e7eb;background:#fff;border-radius:12px;padding:9px 15px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-family:inherit;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}' +
+      '.nxFP-tab.on{background:linear-gradient(135deg,#7c3aed,#6d28d9);border-color:#6d28d9;color:#fff}' +
+      '.nxFP-tabN{background:rgba(100,116,139,.12);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:800}.nxFP-tab.on .nxFP-tabN{background:rgba(255,255,255,.22);color:#fff}' +
+      '.nxFP-searchRow{margin-bottom:16px}' +
+      '.nxFP-listHead{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px}' +
+      '.nxFP-card{display:flex;gap:13px;background:#fff;border:1px solid #eef0f5;border-radius:18px;padding:15px 16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,23,42,.04);position:relative}' +
+      '.nxFP-avatar{width:42px;height:42px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13.5px;letter-spacing:.3px}' +
+      '.nxFP-cardBody{flex:1;min-width:0;padding-right:26px}' +
+      '.nxFP-cardTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:3px}.nxFP-cardNom{font-weight:800;font-size:14px;color:#0f172a;line-height:1.25}' +
+      '.nxFP-cardMeta{font-size:11px;color:#64748b;margin-bottom:6px}.nxFP-refRow{margin-bottom:12px}.nxFP-ref{display:inline-block;background:#f5f3ff;color:#7c3aed;font-weight:800;font-size:10px;padding:3px 9px;border-radius:8px;letter-spacing:.2px}' +
+      '.nxFP-badge{font-size:9px;font-weight:800;padding:4px 10px;border-radius:999px;flex:none;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}' +
+      '.nxFP-badge.activo{background:#dcfce7;color:#16a34a}.nxFP-badge.pagado{background:#dbeafe;color:#2563eb}.nxFP-badge.vencido{background:#fef3c7;color:#b45309}.nxFP-badge.en_mora{background:#fee2e2;color:#dc2626}.nxFP-badge.cancelado{background:#f1f5f9;color:#94a3b8}' +
+      '.nxFP-cardGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}' +
+      '.nxFP-gLbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}.nxFP-gVal{font-size:13px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums}.nxFP-gVal.accent{color:#7c3aed}.nxFP-gVal.danger{color:#dc2626}' +
+      '.nxFP-cardMenuWrap{position:absolute;top:14px;right:12px}' +
+      '.nxFP-menuBtn{width:28px;height:28px;border-radius:9px;border:none;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .15s}.nxFP-menuBtn:hover{background:#f1f5f9;color:#475569}' +
+      '.nxFP-menuPop{display:none;position:absolute;top:32px;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:13px;box-shadow:0 12px 28px rgba(15,23,42,.14);padding:6px;min-width:172px;z-index:5}.nxFP-menuPop.open{display:block}' +
+      '.nxFP-menuPop button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;font-family:inherit}.nxFP-menuPop button:hover{background:#f8fafc}.nxFP-menuPop button i{color:#7c3aed;font-size:15px}' +
+      '.nxFP-empty{text-align:center;padding:44px 20px;background:#fff;border:1px dashed #e2e8f0;border-radius:18px}.nxFP-emptyIco{width:52px;height:52px;border-radius:16px;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px}.nxFP-empty h3{font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px}.nxFP-empty p{font-size:12px;color:#64748b;max-width:280px;margin:0 auto}' +
+      '.nxFP-dash{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}' +
+      '.nxFP-dcard{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eef0f5;border-radius:16px;padding:13px 14px}' +
+      '.nxFP-dico{width:34px;height:34px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}.nxFP-dico.green{background:#dcfce7;color:#16a34a}.nxFP-dico.red{background:#fee2e2;color:#dc2626}.nxFP-dico.blue{background:#e0e7ff;color:#4338ca}' +
+      '.nxFP-dlbl{font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.3px}.nxFP-dval{font-size:14px;font-weight:800;color:#0f172a;line-height:1.3;font-variant-numeric:tabular-nums}.nxFP-dsub{font-size:10px;color:#94a3b8;font-weight:600}' +
+      '@media(max-width:900px){.nxFP-hero{flex-direction:column}.nxFP-heroR{grid-template-columns:repeat(2,1fr)}.nxFP-quick{grid-template-columns:repeat(3,1fr)}.nxFP-dash{grid-template-columns:repeat(2,1fr)}}' +
+      '@media(max-width:640px){.nxFP-hero{padding:18px}.nxFP-heroNum{font-size:27px}.nxFP-heroR{grid-template-columns:1fr 1fr;gap:14px}.nxFP-quick{grid-template-columns:repeat(3,1fr);gap:8px}.nxFP-qbtn{padding:13px 4px}.nxFP-qbtn span{font-size:9px}.nxFP-cardGrid{grid-template-columns:1fr 1fr}.nxFP-card{padding:13px 12px}.nxFP-cardBody{padding-right:22px}.nxFP-dash{grid-template-columns:1fr 1fr}}';
     // ── Rediseño PRO de la pantalla de Facturación (mockup BAYOL CELL aprobado) ──
     st.textContent += '.nx-invoice-pro{color:#0f172a;container-type:inline-size}.nx-inv-shell{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}@container (max-width:780px){.nx-inv-shell{grid-template-columns:1fr}.nx-inv-summary{position:static}}.nx-inv-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.06)}.nx-inv-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;flex-wrap:wrap;border-bottom:1px solid #f1f5f9}.nx-inv-title{font-size:20px;font-weight:800;letter-spacing:-.02em;color:#0f172a}.nx-inv-steps{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#94a3b8;flex-wrap:wrap}.nx-inv-step{display:inline-flex;align-items:center;gap:6px;font-weight:700}.nx-inv-step.on{color:#2563eb}.nx-inv-stepn{width:20px;height:20px;border-radius:50%;background:#e5e7eb;color:#64748b;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}.nx-inv-step.on .nx-inv-stepn{background:#2563eb;color:#fff}.nx-inv-stepn.ok{background:#16a34a;color:#fff}.nx-inv-steps>i{color:#cbd5e1;font-size:14px}.nx-inv-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px 16px;align-items:start}@container (max-width:520px){.nx-inv-info{grid-template-columns:1fr}}.nx-inv-field{border:1px solid #e5e7eb;background:#fff;border-radius:12px;padding:10px 12px;min-width:0}.nx-inv-label{font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}.nx-inv-field select{width:100%;border:none;outline:none;background:transparent;font-size:16px;font-weight:700;color:#0f172a;font-family:inherit}.nx-inv-tabs{display:flex;gap:8px;padding:10px 16px;overflow-x:auto}.nx-inv-tab{border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:9px 14px;font-weight:700;font-size:12.5px;color:#475569;cursor:pointer;white-space:nowrap;font-family:inherit}.nx-inv-tab.on{background:#2563eb;color:#fff;border-color:#2563eb}.nx-inv-search{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px 12px;align-items:stretch}.nx-inv-search>div{flex:1 1 220px}.nx-inv-label{white-space:normal;overflow-wrap:anywhere}.nx-inv-search input{width:100%;border:1px solid #dbe3ef;border-radius:12px;padding:12px 14px;font-size:16px;outline:none;background:#fff;color:#0f172a;font-family:inherit}.nx-inv-search input:focus{border-color:#2563eb}.nx-inv-btn{border:1px solid #dbe3ef;background:#fff;border-radius:12px;padding:11px 14px;font-weight:800;font-size:12.5px;color:#334155;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-family:inherit}.nx-inv-btn i{font-size:15px}.nx-inv-btn.danger{background:#ef4444;color:#fff;border-color:#ef4444}.nx-inv-tblwrap{padding:4px 10px 8px;overflow-x:auto}.nx-inv-table{width:100%;border-collapse:collapse;min-width:520px}.nx-inv-table th{text-align:left;font-size:10.5px;color:#64748b;text-transform:uppercase;letter-spacing:.3px;font-weight:800;padding:10px 12px;border-bottom:1px solid #e5e7eb;white-space:nowrap}.nx-inv-table td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:middle;font-size:13px;color:#334155}.nx-inv-product{display:flex;align-items:center;gap:10px}.nx-inv-product img{width:44px;height:44px;object-fit:contain;border-radius:10px;background:#f8fafc;flex:none}.nx-inv-noimg{width:44px;height:44px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;flex:none}.nx-inv-noimg i{font-size:20px}.nx-inv-pnom{font-weight:700;color:#0f172a;line-height:1.2}.nx-inv-pcod{font-size:10.5px;color:#2563eb;font-weight:700;margin-top:2px}.nx-inv-serial{font-family:var(--mono,monospace);font-size:11px;color:#475569}.nx-inv-badge{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#dcfce7;color:#15803d;font-size:11px;font-weight:800;white-space:nowrap}.nx-inv-mini{border:1.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;border-radius:8px;padding:4px 9px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit;display:inline-flex;gap:4px;align-items:center}.nx-inv-iconbtn{border:none;background:none;padding:4px;margin-left:auto;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;line-height:1;flex:none;border-radius:7px;transition:background .15s}.nx-inv-iconbtn:hover{background:#f1f5f9}.nx-inv-pinput{width:96px;text-align:right;border:1.5px solid #e5e7eb;border-radius:9px;padding:8px;font-size:16px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit}.nx-inv-qty{display:inline-flex;align-items:center;gap:8px}.nx-inv-qty button{width:30px;height:30px;border-radius:9px;border:1.5px solid #e5e7eb;background:#f8fafc;font-size:17px;font-weight:800;color:#475569;cursor:pointer;line-height:1;font-family:inherit}.nx-inv-qty span{min-width:20px;text-align:center;font-weight:800}.nx-inv-dscbox{display:inline-flex;align-items:center;border:1.5px solid #e5e7eb;border-radius:9px;overflow:hidden;background:#fff}.nx-inv-dscbox input{width:52px;text-align:right;border:none;outline:none;padding:8px;font-size:16px;font-weight:700;background:transparent;font-family:inherit}.nx-inv-dscbox button{border:none;background:#f1f5f9;color:#475569;font-weight:800;font-size:11px;padding:8px;cursor:pointer;border-left:1px solid #e5e7eb;font-family:inherit}.nx-inv-del button{background:none;border:none;color:#f87171;font-size:18px;cursor:pointer;line-height:1}.nx-inv-del button:hover{color:#dc2626}.nx-inv-empty{text-align:center;color:#94a3b8;font-size:13px;padding:30px}.nx-inv-toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px 18px 18px}.nx-inv-toolbtn{border:1.5px dashed #cbd5e1;background:#f8fafc;border-radius:12px;padding:13px;font-weight:800;font-size:12.5px;color:#475569;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px}.nx-inv-toolbtn.danger{border-color:#fecaca;background:#fff5f5;color:#dc2626}.nx-inv-summary{position:sticky;top:12px;align-self:start;padding:16px}.nx-inv-sumtitle{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}.nx-inv-sumrow{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#475569;padding:5px 0}.nx-inv-sumrow b{color:#0f172a;font-weight:700}.nx-inv-total{display:flex;justify-content:space-between;align-items:center;font-size:20px;font-weight:900;color:#2563eb;border-top:1px solid #e5e7eb;padding-top:14px;margin-top:10px}.nx-inv-paylist{display:flex;flex-direction:column;gap:8px}.nx-inv-payrow{display:flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:11px;padding:11px 12px;background:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#334155;text-align:left}.nx-inv-payrow i{font-size:17px;color:#2563eb}.nx-inv-payrow span{margin-left:auto;font-size:11px;color:#94a3b8;font-weight:700}.nx-inv-payrow:hover{border-color:#bfdbfe;background:#f8faff}.nx-inv-pending{display:flex;justify-content:space-between;align-items:center;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;margin-top:12px;font-size:12.5px;font-weight:800;color:#92400e}.nx-inv-pending b{font-size:16px}.nx-inv-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nx-inv-opt{border:1px solid #e5e7eb;background:#fff;border-radius:11px;padding:11px 8px;font-size:11.5px;font-weight:800;color:#475569;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;justify-content:center}.nx-inv-opt i{font-size:15px;color:#64748b}.nx-inv-actions{display:flex;gap:10px;margin-top:16px}.nx-inv-cobrar{flex:2;background:#2563eb;color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px}.nx-inv-cobrar:disabled{opacity:.5;cursor:default}.nx-inv-actions .nx-inv-btn.danger{flex:1;justify-content:center}.nx-inv-shortcuts{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding:12px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;font-size:11.5px;color:#64748b}.nx-inv-shortcuts span{display:inline-flex;align-items:center;gap:6px}.nx-inv-shortcuts b{background:#f1f5f9;border-radius:6px;padding:2px 7px;font-size:10.5px;color:#334155;font-weight:800}@media(max-width:980px){.nx-inv-shell{grid-template-columns:1fr}.nx-inv-summary{position:static}.nx-inv-info{grid-template-columns:1fr 1fr}}@media(max-width:640px){.nx-inv-info{grid-template-columns:1fr}.nx-inv-search{flex-direction:column}.nx-inv-table{min-width:0}.nx-inv-table thead{display:none}.nx-inv-table,.nx-inv-table tbody,.nx-inv-table tr,.nx-inv-table td{display:block;width:100%}.nx-inv-table tr{border:1px solid #e5e7eb;border-radius:14px;margin:10px 0;padding:6px 10px}.nx-inv-table td{border:none;border-bottom:1px solid #f6f8fb;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 2px}.nx-inv-table td:last-child{border-bottom:none}.nx-inv-table td::before{content:attr(data-l);font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;flex:none}.nx-inv-table td.nx-inv-del{justify-content:flex-end}.nx-inv-toolbar{grid-template-columns:1fr}.nx-inv-opts{grid-template-columns:1fr}}';
     document.head.appendChild(st);
