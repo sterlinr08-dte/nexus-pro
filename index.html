@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>NEXUS PRO — Plataforma de Gestión RD</title>
 
 <!-- ═══ PWA — INSTALABLE EN iOS Y ANDROID ═══ -->
@@ -75,41 +75,26 @@ select{-webkit-appearance:none;-moz-appearance:none;appearance:none;padding-righ
    !important, así que la flecha nunca se pintaba (verificado: quedaba en "none"). */
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 10px center!important;background-size:10px 6px!important}
 
-/* ── LOGIN ── */
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;position:relative;overflow:hidden;background:linear-gradient(135deg,#0f2350 0%,#1e3a6e 45%,#2d5a9e 100%)}
-.lx-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.lx-bg span{position:absolute;border-radius:50%;filter:blur(46px);opacity:.5;will-change:transform}
-.lx-bg span:nth-child(1){width:280px;height:280px;background:#8b5cf6;top:-70px;left:-50px;animation:lxFloat1 15s ease-in-out infinite}
-.lx-bg span:nth-child(2){width:210px;height:210px;background:#22d3ee;bottom:-50px;right:-40px;animation:lxFloat2 17s ease-in-out infinite}
-.lx-bg span:nth-child(3){width:190px;height:190px;background:#6366f1;top:38%;right:-70px;animation:lxFloat3 19s ease-in-out infinite}
-.lx-bg span:nth-child(4){width:160px;height:160px;background:#0ea5e9;bottom:18%;left:-60px;animation:lxFloat1 21s ease-in-out infinite reverse}
-@keyframes lxFloat1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(44px,32px) scale(1.16)}}
-@keyframes lxFloat2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-34px,-44px) scale(1.2)}}
-@keyframes lxFloat3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-52px,22px) scale(1.1)}}
-@media (prefers-reduced-motion:reduce){.lx-bg span{animation:none}}
-.lbox{position:relative;z-index:1;background:rgba(255,255,255,.74);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);border:1px solid rgba(255,255,255,.6);border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:400px;box-shadow:0 30px 70px rgba(8,20,50,.45),inset 0 1px 0 rgba(255,255,255,.7);animation:lxBoxIn .6s cubic-bezier(.2,.8,.3,1) both}
-@keyframes lxBoxIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+/* ── LOGIN (v2 — sin morado, sin glass/blobs, look plano premium) ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;position:relative;overflow:hidden;background:radial-gradient(130% 100% at 18% -10%,#1e3a6e 0%,#132a52 45%,#0a1730 100%)}
+.lbox{position:relative;z-index:1;background:#ffffff;border:1px solid rgba(15,23,42,.06);border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:400px;box-shadow:0 30px 70px rgba(5,12,28,.5);animation:lxBoxIn .5s cubic-bezier(.2,.8,.3,1) both}
+@keyframes lxBoxIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.lbox{animation:none}}
 .llogo{display:flex;align-items:center;gap:10px;margin-bottom:2rem;justify-content:center;flex-direction:column}
-.lmk{width:50px;height:50px;border-radius:15px;background:linear-gradient(150deg,#60a5fa,#8b5cf6 52%,#6d28d9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;position:relative;cursor:pointer;box-shadow:0 16px 32px rgba(15,23,42,.5),inset 0 2px 3px rgba(255,255,255,.6),inset 0 -6px 12px rgba(0,0,0,.22)}
-.lmk::after{content:'';position:absolute;left:14%;top:8%;width:72%;height:42%;border-radius:50%;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.78),rgba(255,255,255,0) 72%);pointer-events:none}
-@keyframes lmkOrbit{0%{box-shadow:0 10px 22px rgba(15,23,42,.5)}25%{box-shadow:12px 0 22px rgba(96,165,250,.5)}50%{box-shadow:0 -10px 22px rgba(15,23,42,.5)}75%{box-shadow:-12px 0 22px rgba(96,165,250,.5)}100%{box-shadow:0 10px 22px rgba(15,23,42,.5)}}
-@media (prefers-reduced-motion:reduce){.lmk{animation:none}}
+.lmk{width:52px;height:52px;border-radius:16px;background:linear-gradient(150deg,#2563eb,#1e3a6e 80%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;position:relative;box-shadow:0 14px 28px rgba(30,58,110,.4),inset 0 2px 3px rgba(255,255,255,.35),inset 0 -6px 10px rgba(0,0,0,.22)}
+.lmk::after{content:'';position:absolute;left:14%;top:8%;width:72%;height:42%;border-radius:50%;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.65),rgba(255,255,255,0) 72%);pointer-events:none}
 .lbrand{font-size:20px;font-weight:700;color:#1e3a6e;letter-spacing:.5px;text-align:center}
 .lver{font-size:10px;color:#475569;font-weight:600;font-family:var(--mono);margin-top:2px;text-align:center}
 .lh{font-size:14px;font-weight:600;color:#1e293b;margin-bottom:1.25rem;text-align:center}
 .lfr{margin-bottom:14px}
 .lfr label{font-size:11px;font-weight:600;color:#475569;display:block;margin-bottom:5px}
-.lfr input{width:100%;padding:10px 13px;border:1.5px solid rgba(203,213,225,.85);border-radius:11px;background:rgba(248,250,252,.85);color:#1e293b;font-size:16px;outline:none;transition:all .18s}
-.lfr input:focus{border-color:#8b5cf6;background:#fff;box-shadow:0 0 0 4px rgba(15,23,42,.14)}
+.lfr input{width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:11px;background:#f8fafc;color:#1e293b;font-size:16px;outline:none;transition:border-color .15s,background .15s,box-shadow .15s}
+.lfr input:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
 .lerr{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:11px;color:#dc2626;margin-bottom:12px;display:none;text-align:center}
-.lbtn{position:relative;overflow:hidden;width:100%;padding:11px;background:linear-gradient(135deg,#1e3a6e,#8b5cf6 60%,#6d28d9);border:none;border-radius:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,box-shadow .2s;margin-top:6px;box-shadow:0 4px 12px rgba(15,23,42,.30),inset 0 1px 0 rgba(255,255,255,.22)}
-.lbtn::after{content:'';position:absolute;top:0;left:-60%;width:38%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-20deg);animation:lbtnShine 3.6s ease-in-out infinite}
-@keyframes lbtnShine{0%,55%{left:-60%}100%{left:135%}}
-@media (prefers-reduced-motion:reduce){.lbtn::after{animation:none;display:none}}
-.lbtn:hover{box-shadow:0 6px 16px rgba(15,23,42,.38)}.lbtn:active{box-shadow:inset 0 2px 6px rgba(0,0,0,.22);filter:brightness(.96)}.lbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.lbtn>*{position:relative;z-index:1}
+.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#1e3a6e,#2563eb);border:none;border-radius:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:box-shadow .2s;margin-top:6px;box-shadow:0 6px 16px rgba(30,58,110,.35)}
+.lbtn:hover{box-shadow:0 8px 20px rgba(30,58,110,.45)}.lbtn:active{box-shadow:inset 0 2px 6px rgba(0,0,0,.22);filter:brightness(.96)}.lbtn:disabled{opacity:.5;cursor:not-allowed}
 .lsetup{text-align:center;margin-top:1rem;font-size:11px;color:#475569}
-.lsetup a{color:#8b5cf6;cursor:pointer;text-decoration:underline}
+.lsetup a{color:#2563eb;cursor:pointer;text-decoration:underline}
 
 /* ── SPLASH (pantalla de bienvenida animada) ── */
 #nxSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
@@ -811,16 +796,15 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
 <!-- ═══════════════ LOGIN ═══════════════ -->
 <div id="loginScreen">
-<div class="lx-bg" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
 <div class="lbox">
   <div class="llogo">
     <div class="lmk"><i class="ti ti-shield-check"></i></div>
     <div><div class="lbrand">NEXUS PRO</div><div class="lver">Plataforma de gestión · República Dominicana</div></div>
   </div>
   <div class="lh">Iniciar sesión</div>
-  <div class="lfr"><label>Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="usuario@empresa" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"/></div>
-  <div class="lfr"><label>Contraseña</label><div style="position:relative"><input type="password" id="loginPwd" class="no-upper login-input" placeholder="••••••••" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#475569;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
-  <div class="lerr" id="loginErr"></div>
+  <div class="lfr"><label for="loginUser">Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="usuario@empresa" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"/></div>
+  <div class="lfr"><label for="loginPwd">Contraseña</label><div style="position:relative"><input type="password" id="loginPwd" class="no-upper login-input" placeholder="••••••••" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar contraseña" aria-label="Mostrar u ocultar contraseña" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#475569;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
+  <div class="lerr" id="loginErr" aria-live="polite"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
   <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#475569;text-decoration:none">🔒 Probar inicio de sesión seguro (beta)</a></div>
   <div class="lsetup"><a onclick="mostrarSetup()">⚙️ Primera vez — conectar base de datos</a></div>
@@ -3460,7 +3444,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.13';
+const APP_VERSION='48.14';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

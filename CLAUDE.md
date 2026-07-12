@@ -890,6 +890,40 @@ sin descuento fijo/condiciones de pago/vendedor por cliente, `orden_no` sin fluj
 devoluciones a proveedor, sin apartados/layaway, `pos_config` mínimo, sin reportes ABC/rotación.
 **Pendiente que el dueño priorice** (respondió "No" a elegir por ahora).
 
+### Skills de diseño instaladas + auditoría Login/Factura (12-jul-2026, v48.14)
+Se instalaron 2 skills de diseño nuevas en el repo (`.agents/skills/` + enlace en `.claude/skills/`,
+mismo patrón que `ui-ux-pro-max`/`emil-design-eng` que ya existían): **`frontend-design`** (oficial de
+Anthropic, guía de dirección estética) y **`web-design-guidelines`** (oficial de Vercel, audita código
+de UI contra sus Web Interface Guidelines — accesibilidad, foco, formularios, animación, etc., las
+trae frescas de GitHub en cada uso). **`huashu-design`** (alchaincyf/huashu-design) se descartó por
+ahora — no es solo texto, trae scripts de Node/paquete npm real para exportar video, y el entorno de
+sesiones remotas bloquea instalar/ejecutar paquetes de terceros por seguridad; si se quiere, el dueño
+lo instala él mismo con `npx -y skills add alchaincyf/huashu-design --skill huashu-design --agent
+claude-code` desde su propia terminal.
+Con esas 2 skills se auditaron **Login** (`index.html`) y **Factura del POS** (`parches.js`) — 10
+hallazgos reales, todos corregidos en v48.14: zoom deshabilitado en TODA la app
+(`maximum-scale=1.0` en el viewport — quitado), labels de Usuario/Contraseña/Cliente/Fecha/etc. no
+conectados al campo (`for=`/`<label>` real agregado), botón mostrar/ocultar contraseña sin
+`aria-label`, error de login sin `aria-live="polite"`, el logo del login tenía `cursor:pointer`
+muerto (sin handler, se quitó), varios `<input>` de Factura con letra <16px causaban zoom automático
+en iPhone (buscador/fecha/precio/descuento/número de factura, subidos a 16px — mismo bug que ya se
+había arreglado en los `<select>` en junio v47.9, ahora en `<input>`), las lupas de
+"Ver prefacturas"/"Ver todas las facturas" eran `<i onclick>` sin teclado ni `aria-label` (ahora
+`<button>` real con clase `.nx-inv-iconbtn`), botones +/− de cantidad y la X de borrar línea sin
+`aria-label`. **El indicador de pasos "Cliente → Productos → Pago → Confirmar" de Factura era
+decorativo** (los dos primeros siempre marcados ✓ sin importar nada) — ahora es real: función
+`facStepsHTML()` (se repinta también dentro de `pintarFactura()` para quedar en vivo) calcula
+`cliOn=!!_factCli`, `prodOn=_cart.length>0`, `pagoOn=prodOn` y marca cada paso según corresponda.
+**Rediseño del Login** (a pedido del dueño, "quiero como más moderno"): se quitaron las 4 manchas de
+color flotantes animadas (`.lx-bg`), el `backdrop-filter` (cristal difuminado) y el brillo animado del
+botón (`lbtnShine`) — todo eso es el "look genérico de plantilla de IA" que ya se había identificado
+como problema en el propio sistema (ver "Repintado visual — fondo BLANCO + sombras negras" v38.8-39.2,
+donde el dueño pidió quitar el morado del POS; el login usaba morado `#8b5cf6`/`#6d28d9` y no se había
+tocado en esa pasada). Ahora: fondo `radial-gradient` navy sólido (sin blobs), tarjeta `.lbox` blanca
+sólida con sombra real (sin blur), logo/botón en degradado navy→azul `#1e3a6e→#2563eb` (mismo acento
+que el POS), foco de los campos en azul en vez de morado. Verificado con capturas Playwright reales
+(código extraído verbatim del archivo, no una reconstrucción) en 390px y 1280px antes de publicar.
+
 ## Módulos / funcionalidades ya construidas
 
 - **Clientes**: ficha, cédula, teléfono, dirección; clientes en proceso.
