@@ -1498,23 +1498,28 @@ prueba" (nxProbarReporte()) llama la función con {forzar:true} para probar sin 
 
 ---
 
-## Seguridad (pendiente — ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
+## Seguridad (ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
 
-**Estado actual (riesgo conocido):** la app entra con la **anon key** + un login
-propio (`usuarios_sistema`, validado en el navegador). **Todas las tablas tienen
-RLS `USING(true)` → abiertas.** Quien extraiga la anon key puede leer/editar todo.
-
-**Plan acordado (Opción A — Supabase Auth, por fases reversibles):**
-- Fase 0: tabla `profiles` + helper `mi_rol()` (no rompe nada).
-- Fase 1: crear usuarios en Auth (correo sintético `login@nexus-pro.local`) en
-  paralelo, sin cambiar el login aún.
-- Fase 2: login con `signInWithPassword` + flag para revertir al login viejo.
-- Fase 3: RLS real por rol, **tabla por tabla**, probando entre cada una.
-- Fase 4: contraseñas y limpieza.
-
-> **Decisión pendiente del usuario** (define la Fase 1): cómo establecen los
-> usuarios su clave nueva — (1) temporal + cambio obligatorio [recomendado],
-> (2) el admin las define, (3) correo + enlace mágico.
+**Plan Opción A — Supabase Auth, por fases reversibles:**
+- Fase 0 ✅: tabla `profiles` + helper `mi_rol()`.
+- Fase 1 ✅: usuarios reales en Auth (correo sintético `<login>@nexus-pro.local` / `@<org>.local`).
+- Fase 2 ✅: login con `signInWithPassword` (activo por defecto, ver "Entrada inteligente" arriba).
+- Fase 3 — **núcleo de Seguros hecho (12-jul-2026), POS ya lo tenía:**
+  - **POS (`pos_*`/`rrhh_*`):** todas con `organizacion_id` + trigger + RLS `mi_rol() is not null AND
+    organizacion_id = mi_organizacion()` (aislamiento por organización, no por rol dentro de la org).
+  - **Núcleo de Seguros (`clientes`, `facturas`, `abonos`, `agentes`, `asientos`, `comisiones`,
+    `configuracion`, `empresas`, `secuencias_ncf`, `recibo_contador`):** **HECHO.** Hallazgo real al
+    auditar (no solo lo que decía este archivo): estas tablas restringían a `authenticated` pero con
+    `USING(true)` — y como NO tienen `organizacion_id`, cualquier cuenta logueada de OTRA organización
+    (Francis/tienda, Doctor/consultorio, BayolCell/rifas) técnicamente podía leer/editar los clientes y
+    facturas del seguro, porque la política no distinguía de qué negocio era la sesión. `recibo_contador`
+    ni siquiera tenía RLS activado (no pedía login). Arreglado: las 10 tablas ahora exigen
+    `mi_rol() is not null AND mi_organizacion() = (id de la org 'nexus-pro')` — verificado antes de
+    aplicar que Esterlin (admin) y Robinson (agente) están bien ligados a esa organización (no se les
+    afecta); las otras 3 cuentas quedan bloqueadas de estas tablas. Reversible con un solo
+    `ALTER POLICY ... USING(true)` si algo se rompe. **No** separa por rol dentro de la org (agente ve
+    todo igual que admin en estas tablas, como ya era) — eso sería una fase aparte si se quiere.
+- Fase 4: contraseñas y limpieza — pendiente.
 
 ---
 
