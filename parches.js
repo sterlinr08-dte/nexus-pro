@@ -16906,7 +16906,27 @@
   window.nxPosHistLimpiar = function () { _histQ = ''; _histDesde = ''; _histHasta = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxPosAnularVenta = async function (id) {
     const v = (_ventas || []).find(x => String(x.id) === String(id)); if (!v) return;
-    if (!confirm('¿Anular la factura ' + (v.numero_factura || '#' + v.numero) + '? Se devolverá el stock.')) return;
+    // A-CRIT: si la venta financió cuotas ya cobradas, calcular cuánto ANTES de tocar nada — hace
+    // falta para avisarle al cajero (ese dinero no lo devuelve el sistema solo) y para no reversar
+    // de más la Cuenta por Cobrar (lo ya cobrado se sacó de 1103 cuota por cuota, no se puede volver
+    // a sacar completo ahora).
+    let _finsVenta = [];
+    let _totalPagadoCuotas = 0;
+    if (Number(v.credito_monto || 0) > 0) {
+      try {
+        _finsVenta = await getAPI().get('pos_financiamientos', 'select=id&venta_id=eq.' + id) || [];
+        if (_finsVenta.length) {
+          const ids = _finsVenta.map(f => f.id);
+          const pagos = await getAPI().get('pos_fin_pagos', 'financiamiento_id=in.(' + ids.join(',') + ')&select=monto') || [];
+          _totalPagadoCuotas = pagos.reduce((t, p) => t + Number(p.monto || 0), 0);
+        }
+      } catch (e) {}
+    }
+    const msgBase = '¿Anular la factura ' + (v.numero_factura || '#' + v.numero) + '? Se devolverá el stock.';
+    const msg = _totalPagadoCuotas > 0
+      ? msgBase + '\n\nOJO: el cliente ya pagó ' + fmt(_totalPagadoCuotas) + ' en cuotas de este financiamiento. Ese dinero hay que devolvérselo (efectivo o nota de crédito) — el sistema NO lo hace solo, es a tu criterio.'
+      : msgBase;
+    if (!confirm(msg)) return;
     try {
       await getAPI().patch('pos_ventas', 'id=eq.' + id, { estado: 'anulada' });
       let _itemsAnul = [];
@@ -16915,23 +16935,31 @@
         for (const it of _itemsAnul) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'anulacion', Number(it.cantidad || 0), prev, ns, (v.numero_factura || v.numero || ''), 'Anulación de factura'); if (_almacenes.length) { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); if (aid) { try { upsertStockAlm(it.producto_id, aid, stockEnAlm(it.producto_id, aid) + Number(it.cantidad || 0)).catch(() => {}); } catch (e) {} } } } }
       } catch (e) {}
       // Asiento inverso de la venta (revierte Ventas + ITBIS contra Caja/CxC)
+      // A-CRIT: si ya se cobraron cuotas de esta venta, ese dinero YA salió de 1103 cuota por
+      // cuota (cada cobro hace su propio Debe Caja/Haber CxC) — reversar la CxC por el monto
+      // financiado COMPLETO otra vez la dejaría sobre-acreditada. Solo se reversa lo que sigue
+      // pendiente; lo ya cobrado se trata igual que el pago inicial (sale de Caja, asumiendo que
+      // se devuelve — el aviso de arriba ya le dijo al cajero que tiene que devolverlo).
       try {
         const byc = await ctasMap();
         if (Object.keys(byc).length) {
-          const caja = Number(v.pagado_efectivo || 0) + Number(v.pagado_tarjeta || 0) + Number(v.pagado_transferencia || 0) + Number(v.pagado_otro || 0);
-          const ln = [lnCta(byc, '4101', 'Ventas', Number(v.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(v.itbis || 0), 0), lnCta(byc, '1101', 'Caja', 0, caja), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, Number(v.credito_monto || 0))].filter(Boolean);
+          const caja = Number(v.pagado_efectivo || 0) + Number(v.pagado_tarjeta || 0) + Number(v.pagado_transferencia || 0) + Number(v.pagado_otro || 0) + _totalPagadoCuotas;
+          const cxcRestante = Math.max(0, Number(v.credito_monto || 0) - _totalPagadoCuotas);
+          const ln = [lnCta(byc, '4101', 'Ventas', Number(v.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(v.itbis || 0), 0), lnCta(byc, '1101', 'Caja', 0, caja), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, cxcRestante)].filter(Boolean);
           if (ln.length >= 2) await postAsientoConcepto(isoHoy(), 'Anulación venta ' + (v.numero_factura || ('No. ' + (v.numero || ''))), 'anulacion', v.id, ln, v.numero_factura || String(v.numero || ''));
         }
       } catch (e) {}
       try { await getAPI().patch('pos_seriales', 'venta_id=eq.' + id, { estado: 'disponible', venta_id: null }); } catch (e) {}
       // A1: revertir el fiado del cliente (en memoria; cargarSaldosCli lo reconstruye de la base)
       try { if (Number(v.credito_monto || 0) > 0 && v.cliente_id) { _fiadoByCli[v.cliente_id] = Math.max(0, Number(_fiadoByCli[v.cliente_id] || 0) - Number(v.credito_monto || 0)); } } catch (e) {}
-      // A6: cancelar el plan de cuotas de esta venta (pos_fin_cuotas NO tiene columna 'estado')
+      // A6/A-CRIT: cancelar el plan de cuotas de esta venta (pos_fin_cuotas NO tiene columna 'estado')
       try {
-        const fins = await getAPI().get('pos_financiamientos', 'select=id&venta_id=eq.' + id) || [];
-        for (const f of fins) {
+        for (const f of _finsVenta) {
           await getAPI().patch('pos_financiamientos', 'id=eq.' + f.id, { estado: 'cancelado' }).catch(() => {});
           const fm = (_fins || []).find(x => String(x.id) === String(f.id)); if (fm) fm.estado = 'cancelado';
+        }
+        if (_finsVenta.length) {
+          try { window.logAudit && window.logAudit('POS_FINANCIAMIENTO_CANCELADO', 'Venta ' + (v.numero_factura || v.numero || '') + ' anulada — plan(es) de cuotas cancelado(s)' + (_totalPagadoCuotas > 0 ? '. Cliente ya había pagado ' + fmt(_totalPagadoCuotas) + ' — PENDIENTE de devolver' : ''), 'POS'); } catch (e2) {}
         }
       } catch (e) {}
       // A6: si la factura tenía NCF fiscal asignado, DGII exige respaldarla con una nota de
@@ -16960,7 +16988,7 @@
       } catch (e) {}
       try { await cargarSaldosCli(); } catch (e) {}
       v.estado = 'anulada';
-      toast('ok', 'Factura anulada', 'Stock devuelto y contabilidad revertida');
+      toast('ok', 'Factura anulada', _totalPagadoCuotas > 0 ? 'Stock devuelto. Recuerda devolverle ' + fmt(_totalPagadoCuotas) + ' al cliente (cuotas ya cobradas)' : 'Stock devuelto y contabilidad revertida');
       pintarHistorial();
     } catch (e) { toast('err', 'No se pudo anular', String(e && e.message || e)); }
   };
@@ -19615,8 +19643,8 @@
       const vencidasPlan = cs.filter(c => !c.pagado && String(c.fecha_venc) < hoyK);
       const diasPara = prox ? Math.ceil((new Date(String(prox.fecha_venc).slice(0, 10) + 'T12:00:00') - new Date(hoyK + 'T12:00:00')) / 86400000) : null;
       const pronto = !venc && prox && diasPara !== null && diasPara <= 3;
-      const cls = f.estado === 'saldado' ? 'saldado' : venc ? 'venc' : pronto ? 'pronto' : '';
-      const badgeTxt = f.estado === 'saldado' ? 'SALDADO' : venc ? 'VENCIDO' : pronto ? 'POR VENCER' : 'AL DÍA';
+      const cls = f.estado === 'cancelado' ? 'cancelado' : f.estado === 'saldado' ? 'saldado' : venc ? 'venc' : pronto ? 'pronto' : '';
+      const badgeTxt = f.estado === 'cancelado' ? 'CANCELADO' : f.estado === 'saldado' ? 'SALDADO' : venc ? 'VENCIDO' : pronto ? 'POR VENCER' : 'AL DÍA';
       const pct = f.cuotas_total ? Math.round(pag / f.cuotas_total * 100) : 0;
       const moraProx = prox ? moraDeCuota(prox) : 0;
       return `<div class="nxFinCard ${cls}">
@@ -19625,8 +19653,8 @@
           <span class="nxFinBadge ${cls || 'ok'}">${badgeTxt}</span></div>
         <div class="nxFinBar"><div class="nxFinBarFill" style="width:${pct}%"></div></div>
         <div class="nxFinRow">
-          ${prox ? `<div><div class="nxFinNextLbl">Próxima cuota ${prox.numero}/${f.cuotas_total}${Number(prox.monto_pagado || 0) > 0 ? ' · abonada ' + fmt(prox.monto_pagado) : ''}</div><div class="nxFinNextAmt">${fmt(Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)) + moraProx)}</div><div class="nxFinNextDate">${venc ? 'venció' : 'vence'} ${String(prox.fecha_venc).slice(0, 10)}${moraProx > 0 ? ' · <span style="color:#dc2626">incl. ' + fmt(moraProx) + ' mora</span>' : ''}</div></div>` : `<div class="nxFinNextLbl">Plan saldado — financiado ${fmt(f.monto_financiado)}</div>`}
-          ${vencidasPlan.length > 1 ? `<span class="nxFinOverdueChip">+${vencidasPlan.length - 1} más vencida${vencidasPlan.length - 1 > 1 ? 's' : ''}</span>` : ''}
+          ${f.estado === 'cancelado' ? `<div class="nxFinNextLbl">Plan cancelado — venta anulada</div>` : prox ? `<div><div class="nxFinNextLbl">Próxima cuota ${prox.numero}/${f.cuotas_total}${Number(prox.monto_pagado || 0) > 0 ? ' · abonada ' + fmt(prox.monto_pagado) : ''}</div><div class="nxFinNextAmt">${fmt(Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)) + moraProx)}</div><div class="nxFinNextDate">${venc ? 'venció' : 'vence'} ${String(prox.fecha_venc).slice(0, 10)}${moraProx > 0 ? ' · <span style="color:#dc2626">incl. ' + fmt(moraProx) + ' mora</span>' : ''}</div></div>` : `<div class="nxFinNextLbl">Plan saldado — financiado ${fmt(f.monto_financiado)}</div>`}
+          ${f.estado !== 'cancelado' && vencidasPlan.length > 1 ? `<span class="nxFinOverdueChip">+${vencidasPlan.length - 1} más vencida${vencidasPlan.length - 1 > 1 ? 's' : ''}</span>` : ''}
         </div>
         <div class="nxFinBtns">
           ${f.estado === 'activo' && prox ? `<button class="btn bsm bc1" type="button" onclick="window.nxFinPagar('${f.id}')"><i class="ti ti-cash"></i> Cobrar cuota</button>` : ''}
@@ -20248,9 +20276,9 @@
     st.textContent += '.nxRepKb{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}.nxRepCol{min-width:210px;max-width:240px;flex:1 0 210px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px}.nxRepColH{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--rc,#475569);border-bottom:2px solid var(--rc,#e2e8f0);padding-bottom:6px;margin-bottom:8px}.nxRepColH b{background:#fff;border-radius:7px;padding:1px 7px;font-size:10px}.nxRepCard{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;margin-bottom:7px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(15,23,42,.05)}.nxRepCard:active{opacity:.75}.nxRepNum{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:#2563eb;margin-bottom:2px}.nxRepNum span{color:#94a3b8;font-weight:700}.nxRepEq{font-size:12.5px;font-weight:800;color:#0f172a;line-height:1.15}.nxRepCli{font-size:10.5px;color:#475569}.nxRepFalla{font-size:10px;color:#64748b;margin-top:2px}.nxRepPre{font-size:11.5px;font-weight:800;color:#16a34a;margin-top:3px}.nxRepEmpty{text-align:center;color:#cbd5e1;font-size:11px;padding:10px}.nxRepChips{display:flex;gap:5px;flex-wrap:wrap}.nxRepChip{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}.nxRepChip.on{background:var(--rc,#2563eb);border-color:var(--rc,#2563eb);color:#fff}.nxTQuick{margin-left:auto;border:0;background:#2563eb;color:#fff;border-radius:11px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.3)}.nxTQuick:active{background:#1d4ed8}' + '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}.nxPayTiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 10px}.nxPayTile{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 2px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}.nxPayTile i{font-size:17px;color:#475569}.nxPayTile span{font-size:8px;font-weight:800;color:#475569;letter-spacing:.3px}.nxPayTile.on{border-color:#2563eb;background:#eff6ff}.nxPayTile.on i,.nxPayTile.on span{color:#2563eb}@media(max-width:380px){.nxPayTile i{font-size:15px}.nxPayTile{padding:7px 1px}}';
     // ── Cuotas/Financiamiento: estilo propio (antes prestaba .nxSa* del módulo SaaS) ──
     st.textContent += '.nxFinKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}.nxFinKpi{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.nxFinKpiIco{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;background:#e0e7ff;color:#4338ca}.nxFinKpiIco.r{background:#fee2e2;color:#dc2626}.nxFinKpiIco.g{background:#dcfce7;color:#16a34a}.nxFinKpiTxt{min-width:0}.nxFinKpiTxt b{display:block;font-size:16px;font-weight:800;color:#0f172a;line-height:1.15}.nxFinKpiTxt span{font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.3px}' +
-      '.nxFinCard{background:#fff;border:1px solid #e2e8f0;border-left:3px solid #cbd5e1;border-radius:14px;padding:13px 14px;margin-bottom:9px;box-shadow:0 2px 8px rgba(15,23,42,.05)}.nxFinCard.pronto{border-left-color:#d97706}.nxFinCard.venc{border-left-color:#dc2626}.nxFinCard.saldado{border-left-color:#16a34a}' +
+      '.nxFinCard{background:#fff;border:1px solid #e2e8f0;border-left:3px solid #cbd5e1;border-radius:14px;padding:13px 14px;margin-bottom:9px;box-shadow:0 2px 8px rgba(15,23,42,.05)}.nxFinCard.pronto{border-left-color:#d97706}.nxFinCard.venc{border-left-color:#dc2626}.nxFinCard.saldado{border-left-color:#16a34a}.nxFinCard.cancelado{border-left-color:#94a3b8;opacity:.6}' +
       '.nxFinTop{display:flex;align-items:center;gap:10px;margin-bottom:9px}.nxFinIco{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}.nxFinCard.saldado .nxFinIco{background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#16a34a}.nxFinInfo{flex:1;min-width:0}.nxFinNom{font-weight:800;font-size:13.5px;color:#0f172a;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFinSub{font-size:10.5px;color:#64748b;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-      '.nxFinBadge{font-size:9px;font-weight:800;padding:3px 9px;border-radius:999px;flex:none;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}.nxFinBadge.ok{background:#f1f5f9;color:#475569}.nxFinBadge.pronto{background:#fffbeb;color:#b45309}.nxFinBadge.venc{background:#fef2f2;color:#dc2626}.nxFinBadge.saldado{background:#f0fdf4;color:#16a34a}' +
+      '.nxFinBadge{font-size:9px;font-weight:800;padding:3px 9px;border-radius:999px;flex:none;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}.nxFinBadge.ok{background:#f1f5f9;color:#475569}.nxFinBadge.pronto{background:#fffbeb;color:#b45309}.nxFinBadge.venc{background:#fef2f2;color:#dc2626}.nxFinBadge.saldado{background:#f0fdf4;color:#16a34a}.nxFinBadge.cancelado{background:#f1f5f9;color:#94a3b8}' +
       '.nxFinBar{height:5px;background:#f1f5f9;border-radius:5px;overflow:hidden;margin-bottom:9px}.nxFinBarFill{height:100%;border-radius:5px;background:#818cf8;transition:width .3s}.nxFinCard.pronto .nxFinBarFill{background:#f59e0b}.nxFinCard.venc .nxFinBarFill{background:#ef4444}.nxFinCard.saldado .nxFinBarFill{background:#22c55e}' +
       '.nxFinRow{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin-bottom:10px;flex-wrap:wrap}.nxFinNextLbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px}.nxFinNextAmt{font-size:19px;font-weight:800;color:#2563eb;letter-spacing:-.3px;line-height:1.2}.nxFinCard.venc .nxFinNextAmt{color:#dc2626}.nxFinNextDate{font-size:10.5px;color:#64748b;margin-top:1px}.nxFinOverdueChip{font-size:9px;font-weight:800;background:#fef2f2;color:#dc2626;padding:4px 9px;border-radius:8px;white-space:nowrap}' +
       '.nxFinBtns{display:flex;gap:6px;flex-wrap:wrap}';

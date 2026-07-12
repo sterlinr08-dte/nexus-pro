@@ -754,6 +754,33 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
   que esa pieza no aplica a su negocio real. No construir salvo que lo pida a futuro.
   **Pendiente del roadmap más grande** (Nivel 3, no urgente, sin pedir aún): refinanciamiento, límite
   de crédito con bloqueo automático, fiador/codeudor, historial de comportamiento de pago.
+  **AUDITORÍA A FONDO (12-jul-2026) + bug crítico arreglado (v48.12):** el dueño pidió auditar el
+  módulo a fondo. Se encontró 1 bug crítico y 1 importante, y se confirmó que el resto (pago parcial,
+  redondeo de cuotas, orden forzado de pago, RLS/aislamiento por org, Centro de Avisos enganchado de
+  verdad) está sano — sin hallazgos del linter de seguridad de Supabase para estas 3 tablas.
+  - **CRÍTICO, ARREGLADO:** anular una venta financiada con cuotas YA cobradas revertía la Cuenta por
+    Cobrar por el monto financiado COMPLETO (como si nada se hubiera pagado), aunque cada cobro de
+    cuota ya había descontado su parte de esa misma cuenta cuota por cuota — dejaba 1103 sobre-
+    acreditada y el dinero ya cobrado sin ningún rastro de que había que devolverlo. `nxPosAnularVenta`
+    ahora: (1) calcula cuánto se cobró ya en cuotas ANTES de tocar nada (suma real de `pos_fin_pagos`,
+    no un campo que se pueda quedar pegado); (2) avisa al cajero con el monto exacto antes de
+    confirmar la anulación ("ese dinero hay que devolvérselo, el sistema no lo hace solo" — es
+    decisión del dueño si es efectivo o nota de crédito, no se asume); (3) el asiento de reversión
+    solo acredita 1103 por lo que de verdad seguía pendiente (`credito_monto - totalPagadoCuotas`), y
+    trata lo ya cobrado igual que el pago inicial (sale de Caja, mismo criterio que ya usaba el código
+    para la porción pagada al contado); (4) `logAudit('POS_FINANCIAMIENTO_CANCELADO', ...)` nuevo con
+    el monto pendiente de devolver — antes cancelar un plan no dejaba ningún rastro de auditoría. Se
+    verificó a mano con partida doble completa (3 asientos: venta financiada → cobro de cuota →
+    anulación) que Debe=Haber cuadra y que 1103/Caja quedan en cero neto, no con saldos fantasma.
+    Efecto colateral corregido de paso: un plan cancelado ya no se muestra como "VENCIDO" en la lista
+    de Cuotas (badge/estado `CANCELADO` nuevo, `.nxFinCard.cancelado`).
+  - **IMPORTANTE, PENDIENTE:** la mora cobrada se mezcla dentro del abono a Cuentas por Cobrar sin
+    reconocerse nunca como ingreso — no hay cuenta contable "Ingresos por mora" ni forma de saber
+    cuánto se ha cobrado de mora en total (afecta `nxFinPagarGo`/`postAsientoAbono`). No arreglado aún.
+  - **Gaps de nivel "pro" identificados, sin construir:** (1) no se puede editar/renegociar un plan ya
+    creado (solo cancelar todo); (2) sin límite de crédito ni bloqueo automático a un cliente que ya
+    está en mora; (3) sin manera de marcar un plan como "incobrable"/dado de baja (solo activo/
+    saldado/cancelado); (4) sin reporte histórico (total financiado por mes, mora cobrada acumulada).
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +
