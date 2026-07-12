@@ -4,6 +4,11 @@
 > venderlo a clientes. Hecho el **6-jul-2026** sobre el código real (`parches.js`).
 > Sirve también como **contexto para una segunda opinión** (ChatGPT u otra herramienta):
 > lee primero la sección "Arquitectura y reglas" para no romper el sistema.
+>
+> **FASE 0 COMPLETA (v48.7, 12-jul-2026).** Los 7 bugs de la Capa A están todos corregidos —
+> ver el detalle de estado en la tabla de abajo. 5 ya estaban arreglados de una sesión anterior
+> (no documentada aquí en su momento); A5 y A6 se cerraron en esta pasada. Queda pendiente la
+> Capa B (fiscal/e-CF) y la Capa C (UX/operación).
 
 ---
 
@@ -46,15 +51,15 @@ No bloquean la venta, y por eso son peligrosos: corrompen los números por debaj
 
 | # | Bug | Evidencia | Estado |
 |---|-----|-----------|--------|
-| A1 | **Fiado no se revierte al anular.** `cargarSaldosCli` reconstruye la deuda con `credito_monto=gt.0` **sin excluir `estado=anulada`**; `nxPosAnularVenta` no resta el saldo. Una venta a crédito anulada sigue como deuda del cliente para siempre. | `parches.js:13965` · `nxPosAnularVenta` ~15719 | ✅ verificado |
-| A2 | **Sin costo de ventas (COGS).** `postAsientoVenta` solo asienta Caja/CxC vs Ventas+ITBIS; falta Debe *Costo de ventas* / Haber *Inventario (1104)*. Como las compras sí debitan 1104, el inventario contable **nunca baja** → activo y ganancia inflados. | `postAsientoVenta` ~17082 | ✅ verificado |
-| A3 | **Stock por almacén puede quedar NEGATIVO.** La revalidación compara contra el stock TOTAL, no contra el del almacén elegido; `upsertStockAlm` escribe sin piso en 0. | ~15247–15252, `upsertStockAlm` ~17310 | audit |
-| A4 | **Bug `tipo` inexistente en `asignarNCF`.** `const ncf = (s.prefijo \|\| tipo)` referencia una variable `tipo` que no existe (el parámetro es `tipoFactura`). Si `prefijo` es vacío → `ReferenceError` atrapado → **venta sin NCF en silencio**. | `parches.js:15086` | ✅ verificado (2 auditorías) |
-| A5 | **"Nota de crédito" como pago se cuenta como efectivo/caja** (1101) y no se valida que exista/pertenezca al cliente ni se marca consumida. | `postAsientoVenta` ~17089 · body ~15294 | audit |
-| A6 | **Anulación incompleta:** no revierte el NCF (fiscalmente exige nota de crédito B04) ni cancela `pos_financiamientos`/`pos_fin_cuotas` de esa venta. | `nxPosAnularVenta` ~15719 | audit |
-| A7 | **KPIs del día suman ventas anuladas** (`cargarDashKPI` no excluye `estado=anulada`). La caja sí las excluye. | `cargarDashKPI` ~13952 | audit |
+| A1 | **Fiado no se revierte al anular.** `cargarSaldosCli` reconstruye la deuda con `credito_monto=gt.0` **sin excluir `estado=anulada`**; `nxPosAnularVenta` no resta el saldo. Una venta a crédito anulada sigue como deuda del cliente para siempre. | `parches.js:13965` · `nxPosAnularVenta` ~15719 | ✅ **ARREGLADO** — `cargarSaldosCli` excluye `estado=neq.anulada`; `nxPosAnularVenta` resta de `_fiadoByCli` |
+| A2 | **Sin costo de ventas (COGS).** `postAsientoVenta` solo asienta Caja/CxC vs Ventas+ITBIS; falta Debe *Costo de ventas* / Haber *Inventario (1104)*. Como las compras sí debitan 1104, el inventario contable **nunca baja** → activo y ganancia inflados. | `postAsientoVenta` ~17082 | ✅ **ARREGLADO** — Debe 5101 Costo de mercancía vendida / Haber 1104, leyendo `pos_productos.costo` |
+| A3 | **Stock por almacén puede quedar NEGATIVO.** La revalidación compara contra el stock TOTAL, no contra el del almacén elegido; `upsertStockAlm` escribe sin piso en 0. | ~15247–15252, `upsertStockAlm` ~17310 | ✅ **ARREGLADO** — revalida contra el almacén activo; `upsertStockAlm` tiene piso `Math.max(0,...)` |
+| A4 | **Bug `tipo` inexistente en `asignarNCF`.** `const ncf = (s.prefijo \|\| tipo)` referencia una variable `tipo` que no existe (el parámetro es `tipoFactura`). Si `prefijo` es vacío → `ReferenceError` atrapado → **venta sin NCF en silencio**. | `parches.js:15086` | ✅ **ARREGLADO** — usa `cod`; de paso ya valida vencimiento de la secuencia |
+| A5 | **"Nota de crédito" como pago se cuenta como efectivo/caja** (1101) y no se valida que exista/pertenezca al cliente ni se marca consumida. | `postAsientoVenta` ~17089 · body ~15294 | ✅ **ARREGLADO (v48.7)** — se valida contra `pos_devoluciones` real del cliente (`estado=emitida`), se marca `estado=aplicada` al usarla; contablemente va a cuenta nueva 2105 (fallback a 1101 si el org no ha recreado su plan de cuentas) |
+| A6 | **Anulación incompleta:** no revierte el NCF (fiscalmente exige nota de crédito B04) ni cancela `pos_financiamientos`/`pos_fin_cuotas` de esa venta. | `nxPosAnularVenta` ~15719 | ✅ **ARREGLADO** — cancela financiamientos/cuotas; **v48.7** además emite automáticamente la NC fiscal B04 (o avisa por audit log + toast si no hay secuencia activa, en vez de fallar en silencio) |
+| A7 | **KPIs del día suman ventas anuladas** (`cargarDashKPI` no excluye `estado=anulada`). La caja sí las excluye. | `cargarDashKPI` ~13952 | ✅ **ARREGLADO** — `&estado=neq.anulada` en la consulta |
 
-*(Son arreglos puntuales, no reconstrucción.)*
+*(Son arreglos puntuales, no reconstrucción. FASE 0 completa al 100% desde v48.7.)*
 
 ---
 
@@ -95,7 +100,7 @@ NC, cotización, conduce, recibo) con RNC de la empresa.**
 
 | Fase | Qué | Tamaño |
 |---|---|---|
-| **0. Frenar la corrupción** | Los 7 bugs de la Capa A (fiado al anular, COGS, stock por almacén, bug NCF `tipo`, NC como pago, anulación completa, KPIs) | 🟢 Rápido |
+| **0. Frenar la corrupción** ✅ | Los 7 bugs de la Capa A (fiado al anular, COGS, stock por almacén, bug NCF `tipo`, NC como pago, anulación completa, KPIs) — **COMPLETA v48.7** | 🟢 Rápido |
 | **1. Mínimo fiscal legal** | RNC del comprador en factura + exigirlo en B01 · 607 completo con export · 606 · 608 | 🟠 Medio |
 | **2. e-CF DGII** | Integrar PSFE (Alanube) — **antes de 15-nov-2026** | 🔴 Grande |
 | **3. Operación** | Buscador de cliente en Cobro/Factura · confirmar/desplegar `crear-usuario-staff` y probar cajero · validar RLS server-side | 🟠 Medio |

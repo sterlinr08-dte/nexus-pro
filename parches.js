@@ -16410,6 +16410,18 @@
     const c = leerCobro();
     const cliId = val('posCliId') || null;
     if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a crédito: elige un cliente'); return; }
+    // A5: validar que la "Nota de crédito" usada como pago exista de verdad, sea de ESTE
+    // cliente y esté disponible (no aplicada ya antes) — evita que se escriba cualquier
+    // monto a mano y se cuele como pago sin respaldo.
+    let _ncAplicar = [];
+    if (c.nc > 0) {
+      if (!cliId) { toast('err', 'Nota de crédito requiere cliente', 'Elige el cliente dueño de la nota de crédito'); return; }
+      let _ncDisp = [];
+      try { _ncDisp = await getAPI().get('pos_devoluciones', 'select=id,numero,total&cliente_id=eq.' + cliId + '&estado=eq.emitida&order=created_at.asc') || []; } catch (e) { _ncDisp = []; }
+      let _rest = c.nc;
+      for (const n of _ncDisp) { if (_rest <= 0.01) break; const t = Number(n.total || 0); if (t > 0 && t <= _rest + 0.01) { _ncAplicar.push(n); _rest -= t; } }
+      if (_rest > 0.01) { toast('err', 'Nota de crédito inválida', 'El monto no coincide con ninguna nota de crédito disponible de este cliente (o ya fue usada)'); return; }
+    }
     const cliNom = cliId ? ((_clientes.find(x => String(x.id) === String(cliId)) || {}).nombre || null) : ((val('posCli') || '').trim() || null);
     const vendId = val('posVendId') || null;
     const vendNom = vendId ? ((_vendedores.find(x => String(x.id) === String(vendId)) || {}).nombre || null) : null;
@@ -16490,6 +16502,8 @@
         try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'venta', -Number(it.cantidad), prev, ns, numFac || ('No. ' + (venta.numero || '')), null); if (_almacenes.length && _almacenSel) { try { upsertStockAlm(it.producto_id, _almacenSel, stockEnAlm(it.producto_id, _almacenSel) - Number(it.cantidad)).catch(() => {}); } catch (e) {} } } } catch (e) {}
       }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
+      // A5: marcar consumidas las notas de crédito que se aplicaron como pago (no reusables)
+      if (_ncAplicar.length) { for (const n of _ncAplicar) { getAPI().patch('pos_devoluciones', 'id=eq.' + n.id, { estado: 'aplicada' }).catch(() => {}); const nm = (_notasCred || []).find(x => String(x.id) === String(n.id)); if (nm) nm.estado = 'aplicada'; } }
       toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
       const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), ncf: ncfAsignado, _items: items });
       _cart = [];
@@ -16872,7 +16886,11 @@
     if (!confirm('¿Anular la factura ' + (v.numero_factura || '#' + v.numero) + '? Se devolverá el stock.')) return;
     try {
       await getAPI().patch('pos_ventas', 'id=eq.' + id, { estado: 'anulada' });
-      try { const items = await getAPI().get('pos_venta_items', 'venta_id=eq.' + id + '&select=producto_id,cantidad'); for (const it of (items || [])) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'anulacion', Number(it.cantidad || 0), prev, ns, (v.numero_factura || v.numero || ''), 'Anulación de factura'); if (_almacenes.length) { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); if (aid) { try { upsertStockAlm(it.producto_id, aid, stockEnAlm(it.producto_id, aid) + Number(it.cantidad || 0)).catch(() => {}); } catch (e) {} } } } } } catch (e) {}
+      let _itemsAnul = [];
+      try {
+        _itemsAnul = await getAPI().get('pos_venta_items', 'venta_id=eq.' + id + '&select=producto_id,cantidad,nombre,precio,itbis') || [];
+        for (const it of _itemsAnul) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'anulacion', Number(it.cantidad || 0), prev, ns, (v.numero_factura || v.numero || ''), 'Anulación de factura'); if (_almacenes.length) { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); if (aid) { try { upsertStockAlm(it.producto_id, aid, stockEnAlm(it.producto_id, aid) + Number(it.cantidad || 0)).catch(() => {}); } catch (e) {} } } } }
+      } catch (e) {}
       // Asiento inverso de la venta (revierte Ventas + ITBIS contra Caja/CxC)
       try {
         const byc = await ctasMap();
@@ -16891,6 +16909,30 @@
         for (const f of fins) {
           await getAPI().patch('pos_financiamientos', 'id=eq.' + f.id, { estado: 'cancelado' }).catch(() => {});
           const fm = (_fins || []).find(x => String(x.id) === String(f.id)); if (fm) fm.estado = 'cancelado';
+        }
+      } catch (e) {}
+      // A6: si la factura tenía NCF fiscal asignado, DGII exige respaldarla con una nota de
+      // crédito B04 (no basta con revertir el asiento). El asiento inverso de arriba YA cuadra
+      // la contabilidad, así que aquí SOLO se emite el documento fiscal (no se vuelve a asentar,
+      // para no duplicar la reversión contable).
+      try {
+        if (v.ncf) {
+          const ncfDev = await asignarNCF('B04');
+          if (ncfDev) {
+            let prevN = []; try { prevN = await getAPI().get('pos_devoluciones', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
+            const numeroDev = (await nextSeq('nota_credito')) || devProxNumero(prevN);
+            const bodyDev = { venta_id: v.id, numero: numeroDev, ncf: ncfDev, fecha: isoHoy(), cliente_id: v.cliente_id || null, cliente_nombre: v.cliente_nombre || null, motivo: 'Anulación de factura completa (' + (v.numero_factura || v.numero || '') + ')', subtotal: Number(v.subtotal || 0), itbis: Number(v.itbis || 0), total: Number(v.total || 0), metodo: 'Anulación', estado: 'emitida', created_by_name: nomAdmin() };
+            const rDev = await getAPI().post('pos_devoluciones', bodyDev);
+            const dev = rDev && rDev[0];
+            if (dev) {
+              _notasCred.unshift(dev);
+              if (_itemsAnul.length) { const itemsDev = _itemsAnul.map(it => ({ devolucion_id: dev.id, producto_id: it.producto_id, nombre: it.nombre, cantidad: it.cantidad, precio: Math.round(it.precio || 0), itbis: it.itbis !== false, importe: Math.round(Number(it.precio || 0) * Number(it.cantidad || 0)) })); try { await getAPI().post('pos_devolucion_items', itemsDev); } catch (e) {} }
+              try { window.logAudit && window.logAudit('POS_ANULACION_NCF', 'Factura ' + (v.numero_factura || v.numero || '') + ' anulada — NC fiscal ' + ncfDev + ' emitida como respaldo', 'POS'); } catch (e2) {}
+            }
+          } else {
+            try { window.logAudit && window.logAudit('POS_ANULACION_NCF_PENDIENTE', 'Factura ' + (v.numero_factura || v.numero || '') + ' (NCF ' + v.ncf + ') anulada SIN nota de crédito fiscal — no hay secuencia B04 activa, revisar manualmente ante DGII', 'POS'); } catch (e2) {}
+            toast('info', 'Falta secuencia B04', 'La factura tenía NCF pero no se pudo emitir la nota de crédito fiscal — configúrala en Ajustes y avisa a contabilidad');
+          }
         }
       } catch (e) {}
       try { await cargarSaldosCli(); } catch (e) {}
@@ -17830,6 +17872,7 @@
     ['2102', 'ITBIS por pagar', 'pasivo', 'acreedora'],
     ['2103', 'Sueldos por pagar', 'pasivo', 'acreedora'],
     ['2104', 'Retenciones por pagar (TSS/ISR)', 'pasivo', 'acreedora'],
+    ['2105', 'Notas de crédito por aplicar', 'pasivo', 'acreedora'],
     ['3101', 'Capital', 'capital', 'acreedora'],
     ['3102', 'Resultados acumulados', 'capital', 'acreedora'],
     ['4101', 'Ventas', 'ingreso', 'acreedora'],
@@ -18248,7 +18291,12 @@
       if (!cu.length) return; // sin plan de cuentas: no se contabiliza
       const byc = {}; cu.forEach(x => byc[x.codigo] = x);
       const ln = (cod, nom, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nom, debito: Math.round(d), credito: Math.round(h) }; };
-      const caja = Number(c.efe || 0) + Number(c.tar || 0) + Number(c.tra || 0) + Number(c.che || 0) + Number(c.nc || 0);
+      // A5: la nota de crédito NO es efectivo — no debe entrar a Caja (1101). Si la org tiene
+      // la cuenta 2105 (Notas de crédito por aplicar) usa esa; si no existe (plan de cuentas
+      // viejo, sin recrear), cae al comportamiento anterior (todo a Caja) para no descuadrar.
+      const ncMonto = Number(c.nc || 0);
+      const ncCta = byc['2105'] ? '2105' : '1101';
+      const caja = Number(c.efe || 0) + Number(c.tar || 0) + Number(c.tra || 0) + Number(c.che || 0) + (ncCta === '1101' ? ncMonto : 0);
       // Costo de ventas (COGS): baja el inventario contable en cada venta (Debe 5101 / Haber 1104).
       // Como pos_venta_items NO guarda costo, se lee de pos_productos.costo.
       let costo = 0;
@@ -18256,7 +18304,7 @@
         const vitems = await getAPI().get('pos_venta_items', 'select=producto_id,cantidad&venta_id=eq.' + venta.id) || [];
         for (const it of vitems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') costo += Number(p.costo || 0) * Number(it.cantidad || 0); }
       } catch (e) {}
-      const lineas = [ln('1101', 'Caja', caja, 0), ln('1103', 'Cuentas por cobrar (clientes)', Number(c.credito || 0), 0), ln('4101', 'Ventas', 0, Number(c.subtotal || 0)), ln('2102', 'ITBIS por pagar', 0, Number(c.itbis || 0)), ln('5101', 'Costo de mercancía vendida', costo, 0), ln('1104', 'Inventario de mercancías', 0, costo)].filter(Boolean);
+      const lineas = [ln('1101', 'Caja', caja, 0), ncCta === '2105' ? ln('2105', 'Notas de crédito por aplicar', ncMonto, 0) : null, ln('1103', 'Cuentas por cobrar (clientes)', Number(c.credito || 0), 0), ln('4101', 'Ventas', 0, Number(c.subtotal || 0)), ln('2102', 'ITBIS por pagar', 0, Number(c.itbis || 0)), ln('5101', 'Costo de mercancía vendida', costo, 0), ln('1104', 'Inventario de mercancías', 0, costo)].filter(Boolean);
       if (lineas.length < 2) return;
       const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id });
       const aid = (as && as[0] && as[0].id); if (!aid) return;

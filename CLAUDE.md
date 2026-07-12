@@ -1425,6 +1425,22 @@ evidencia `archivo:línea` está en **`AUDITORIA-POS.md`**. El **código real ve
 afectadas + esquemas exactos de tablas (para generar el parche de la Fase 0, p.ej. con ChatGPT) está en
 **`FASE0-CONTEXTO.md`**. Roadmap: Fase 0 (bugs de dinero) → 1 (mínimo fiscal RNC/607/606/608) → 2 (e-CF).
 
+**FASE 0 — COMPLETA (v48.7, 12-jul-2026).** Los 7 bugs de la Capa A revisados uno por uno contra el
+código real: 5 ya estaban corregidos (de una sesión anterior, sin documentar en su momento — fiado al
+anular, COGS, stock por almacén, bug NCF, KPIs). Los 2 que faltaban, cerrados ahora: **A5** (nota de
+crédito como pago) — ya no se cuenta como efectivo/caja, se valida contra `pos_devoluciones` real del
+cliente (existe, es suya, no usada) antes de aceptarla, y queda marcada `estado='aplicada'` para que no
+se reuse; contablemente va a una cuenta nueva **2105 "Notas de crédito por aplicar"** (con fallback a
+1101 si la org no ha recreado su plan de cuentas, para no descuadrar). **A6** (NCF perdido al anular) —
+`nxPosAnularVenta` ahora emite automáticamente la nota de crédito fiscal B04 que exige la DGII cuando la
+factura anulada tenía NCF (reusa `asignarNCF('B04')` + inserta en `pos_devoluciones`/`pos_devolucion_items`
+SIN volver a asentar contablemente, porque el asiento inverso que ya existía deja los libros cuadrados —
+evita duplicar la reversión); si no hay secuencia B04 activa, avisa por `logAudit` + toast en vez de
+fallar en silencio. Verificado con `node --check`, revisión manual línea por línea y confirmando que el
+Debe=Haber de los asientos sigue cuadrando en ambos escenarios (con y sin cuenta 2105). Sigue pendiente
+la Capa B completa (fiscal/e-CF) y la Capa C (buscador de cliente en Cobro/Factura, confirmar
+`crear-usuario-staff`, RLS server-side).
+
 ---
 
 ### REPORTE DIARIO POR CORREO (enviar-reporte-email) — rediseñado v2 (10-jul-2026)
