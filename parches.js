@@ -19606,7 +19606,8 @@
       <div class="nxFinKpi"><div class="nxFinKpiIco"><i class="ti ti-file-dollar"></i></div><div class="nxFinKpiTxt"><b>${activos.length}</b><span>Planes activos</span></div></div>
       <div class="nxFinKpi"><div class="nxFinKpiIco"><i class="ti ti-cash"></i></div><div class="nxFinKpiTxt"><b>${fmt(porCobrar)}</b><span>Por cobrar</span></div></div>
       <div class="nxFinKpi"><div class="nxFinKpiIco ${vencidas.length ? 'r' : 'g'}"><i class="ti ${vencidas.length ? 'ti-alert-triangle' : 'ti-check'}"></i></div><div class="nxFinKpiTxt"><b>${vencidas.length}</b><span>Cuotas vencidas</span></div></div>
-    </div>`;
+    </div>
+    ${vencidas.length ? `<div style="margin-bottom:10px"><button class="btn bsm bghost" type="button" onclick="window.nxFinCarteraVencida()"><i class="ti ti-report-money"></i> Cartera vencida (aging)</button></div>` : ''}`;
     const rows = _fins.length ? _fins.map(f => {
       const cs = cuotasDe(f.id); const pag = cs.filter(c => c.pagado).length;
       const prox = cs.find(c => !c.pagado);
@@ -19706,6 +19707,43 @@
       <div class="fir"><div>Por ${esc(biz)}</div><div>El cliente (firma y cédula)</div></div>
       <script>window.print();</` + `script></body></html>`);
     w.document.close();
+  };
+  // Cartera vencida (aging 30/60/90) — cuotas atrasadas de planes activos, agrupadas por tramo de días.
+  window.nxFinCarteraVencida = function () {
+    const hoyK = hoyISOPos();
+    const activos = _fins.filter(f => f.estado === 'activo');
+    const filas = [];
+    activos.forEach(f => {
+      cuotasDe(f.id).filter(c => !c.pagado && String(c.fecha_venc).slice(0, 10) < hoyK).forEach(c => {
+        const dias = Math.floor((new Date(hoyK + 'T12:00:00') - new Date(String(c.fecha_venc).slice(0, 10) + 'T12:00:00')) / 86400000);
+        const pend = Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0));
+        const mora = moraDeCuota(c);
+        const tramo = dias <= 30 ? '1-30' : dias <= 60 ? '31-60' : dias <= 90 ? '61-90' : '90+';
+        filas.push({ cliente: f.cliente_nombre || '', desc: f.descripcion || '', numero: c.numero, venc: String(c.fecha_venc).slice(0, 10), dias, pend, mora, total: pend + mora, tramo });
+      });
+    });
+    filas.sort((a, b) => b.dias - a.dias);
+    const BUCKETS = ['1-30', '31-60', '61-90', '90+'];
+    const sumBucket = t => filas.filter(x => x.tramo === t).reduce((s, x) => s + x.total, 0);
+    const cntBucket = t => filas.filter(x => x.tramo === t).length;
+    const granTotal = filas.reduce((s, x) => s + x.total, 0);
+    const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
+    const kpisHTML = BUCKETS.map(b => `<div class="kp"><b style="color:${b === '90+' ? '#dc2626' : b === '61-90' ? '#ea580c' : b === '31-60' ? '#d97706' : '#b45309'}">${fmt(sumBucket(b))}</b><span>${b} días (${cntBucket(b)})</span></div>`).join('');
+    const rowsHTML = filas.length ? filas.map(x => `<tr><td>${esc(x.cliente)}</td><td>${esc(x.desc)}</td><td>#${x.numero}</td><td>${fechaDMY(x.venc)}</td><td class="r">${x.dias}</td><td class="r">${fmt(x.pend)}</td><td class="r">${x.mora ? fmt(x.mora) : '—'}</td><td class="r"><b>${fmt(x.total)}</b></td></tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:#777;padding:14px">Sin cuotas vencidas — cartera al día</td></tr>';
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cartera vencida — ${esc(biz)}</title>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:760px;margin:0 auto;padding:20px;font-size:12px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.box{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.kp{flex:1;min-width:100px;border:1px solid #e2e8f0;border-radius:10px;padding:9px;text-align:center}.kp b{display:block;font-size:14px}.kp span{font-size:9.5px;color:#555}.sal{font-weight:800;font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <body>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Cerrar</button><button onclick="window.print()" style="background:#fff;color:#1e3a6e;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">🖨️ Imprimir</button></div>
+        <h1>${esc(biz)}</h1>
+        <div class="c"><b>CARTERA VENCIDA · CUOTAS (AGING 30/60/90)</b></div>
+        <div class="c muted">Corte al ${new Date().toLocaleDateString('es-DO')}</div>
+        <div class="box">${kpisHTML}</div>
+        <table><thead><tr><th>Cliente</th><th>Plan</th><th>Cuota</th><th>Venció</th><th class="r">Días</th><th class="r">Pendiente</th><th class="r">Mora</th><th class="r">Total</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+        <div class="line"></div>
+        <div class="c sal">TOTAL VENCIDO: ${fmt(granTotal)}</div>
+        <div class="muted" style="margin-top:14px">Documento informativo generado por NEXUS PRO el ${new Date().toLocaleDateString('es-DO')}.</div>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
 

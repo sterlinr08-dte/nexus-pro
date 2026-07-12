@@ -741,9 +741,18 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
   cuota, solo si está vencida más allá del período de gracia. Se ve en la tarjeta de Cuotas (monto de
   la próxima cuota incluye mora), en `nxFinPlan` (cuota vencida muestra "+RD$X mora") y en el total
   "Por cobrar". `nxFinPagar`/`nxFinPagarGo` prellenan y validan contra pendiente+mora.
-  **Pendiente del roadmap más grande** (resto de Nivel 2-3, no urgente): reporte de cartera vencida
-  (aging 30/60/90), vincular el financiamiento al IMEI específico, refinanciamiento, límite de
-  crédito con bloqueo automático, fiador/codeudor, historial de comportamiento de pago.
+  **Nivel 2 — cartera vencida, aging 30/60/90 (v48.11):** botón "Cartera vencida (aging)" en Cuotas
+  (`nxFinCarteraVencida`, solo visible si hay cuotas vencidas), mismo patrón imprimible que
+  `nxPosEstadoCuenta`/`nxFinContrato` (`window.open`+`document.write`). Recorre las cuotas vencidas de
+  planes activos, clasifica cada una en tramo 1-30/31-60/61-90/90+ según días de atraso (calculado en
+  vivo contra `hoyISOPos()`, igual que `moraDeCuota`), incluye la mora de cada cuota en su total, y
+  muestra KPIs por tramo + detalle línea por línea (cliente/plan/cuota/vencimiento/días/pendiente/
+  mora/total). Verificado con datos simulados (5 escenarios: 3 tramos distintos, pago parcial, cuota
+  dentro del período de gracia sin mora) — clasificación de tramos y exclusión de pagadas/no-vencidas
+  correctas.
+  **Pendiente del roadmap más grande** (resto de Nivel 2-3, no urgente): vincular el financiamiento
+  al IMEI específico, refinanciamiento, límite de crédito con bloqueo automático, fiador/codeudor,
+  historial de comportamiento de pago.
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +
