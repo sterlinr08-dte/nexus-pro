@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **43.9** (ver `index.html` y `version.json`).
+> Versión actual: **48.17** (ver `index.html` y `version.json`).
 
 ---
 
@@ -830,6 +830,45 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
     real (no una reconstrucción) en 390px/430px/tablet(820px)/escritorio(1400px), sin desbordes.
     **Publicado primero en rama aparte** (no directo a `main`, a pedido del dueño) para revisión antes
     de fusionar — ver rama `claude/fin-cuotas-premium`.
+    **CORRECCIÓN IMPORTANTE:** este rediseño (v48.16) se hizo por un malentendido — el brief/mockup del
+    dueño era en realidad para OTRO módulo, "Financiamiento" dentro de Multiempresa (`nxAbrirPrestamos`,
+    tablas `prestamos`/`prestamo_pagos`, préstamos a personas que NO son clientes del seguro), NO para
+    Cuotas del POS. El dueño decidió DEJAR este rediseño de Cuotas como está (mejora extra, aunque no
+    era lo pedido) y pidió aplicar el mismo tratamiento al módulo correcto — ver v48.17 más abajo, en
+    la sección de Préstamos/Financiamiento (Multiempresa).
+
+### Préstamos / "Financiamiento" (Multiempresa) — REDISEÑO PREMIUM v48.17
+Módulo DISTINTO al Cuotas del POS de arriba (no confundir): `window.nxAbrirPrestamos()`, registrado en
+el hub Multiempresa (`nxMERegistrar`, orden 1, "Financiamiento"), tablas `prestamos`/`prestamo_pagos`/
+`prestamos_config` (RLS solo-admin vía `mi_rol()`, sin `organizacion_id` — herramienta de un solo
+dueño, no multi-tenant como el POS). Son préstamos a personas que NO son clientes del seguro, en 3
+modos: `credito` (línea revolvente con interés mensual sobre saldo), `cuotas` (cuotas fijas tipo
+amortización), `libre` (abonos libres contra un total fijo).
+- **Se le aplicó el mismo tratamiento visual premium** que ya tenía Cuotas del POS (`.nxFP-*`, morado,
+  Plus Jakarta Sans) — el CSS/fuente se **compartieron** entre los dos módulos: se extrajo a una
+  función nueva `window.nxFPEnsureCSS()` (patrón `nxBuscaEnsureCSS` del reglamento de buscadores —
+  idempotente, expuesta en `window`, se llama desde ambos módulos por si uno se abre sin que el otro
+  haya cargado antes) en vez de duplicar el CSS dentro de cada uno.
+- **Diferencia real con Cuotas del POS — solo 3 estados, no 5:** este módulo NO tiene concepto de mora/
+  período de gracia ni de cancelación (no hay flujo para cancelar un préstamo aquí) — así que
+  `prEstadoInfo()` solo devuelve `activo`/`vencido`/`pagado`. Se dejó así a propósito, sin inventar
+  "EN MORA"/"CANCELADO" solo para parecerse al otro módulo (principio de no fabricar datos que no
+  existen).
+- **Reusa TODAS las funciones que ya existían**, sin duplicar lógica ni consultas: "Nuevo préstamo" →
+  `nxPrestamoNuevo()`, "Ver detalle"/tocar la tarjeta → `nxPrestamoVer(id)`, "Estado de cuenta" →
+  `nxPrestamoEstadoCuenta(id)`, "WhatsApp" → `nxPrestamoWA(id)`, "Excel" → `nxPrestamoExportar()` (ya
+  existía, exportación CSV real), "Configuración" → `nxPrestamoConfig()` (datos del contrato/legal).
+  Los filtros de estado/tipo (`nxPrestamoFiltroTipo`) y el buscador en vivo (`nxPrestamoFiltrar`, basado
+  en `data-busca` sobre `.nxPrCard` dentro de `#nxPrLista`) tampoco se tocaron — solo cambió el HTML/CSS
+  que pintan `cardHTML(p)`/`renderLista(view)`, no su lógica de filtrado.
+- **2 acciones nuevas, chicas y reales:** "Cobranza" (`window.nxPrestamoCobranza`, solo filtra a
+  Vencidos) y "Reporte" (`window.nxPrestamoReporte`, cartera vencida imprimible ordenada por días de
+  atraso — mismo patrón que `nxFinCarteraVencida` del POS). Menú "..." nuevo por tarjeta
+  (`window.nxPrMenu`/`nxPrMenuGo`).
+- Cero cambios de RLS/esquema — mismas 3 tablas, mismo `mi_rol()`. Verificado con `node --check
+  parches.js` limpio y capturas Playwright del código real (no reconstruido) a 390px/430px/tablet(820px)/
+  escritorio(1400px), sin desbordes. **Publicado primero en rama aparte** (`claude/prestamos-premium`)
+  para revisión antes de fusionar a `main`, mismo criterio que el ciclo anterior.
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +
