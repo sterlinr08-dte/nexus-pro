@@ -774,9 +774,18 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
     anulación) que Debe=Haber cuadra y que 1103/Caja quedan en cero neto, no con saldos fantasma.
     Efecto colateral corregido de paso: un plan cancelado ya no se muestra como "VENCIDO" en la lista
     de Cuotas (badge/estado `CANCELADO` nuevo, `.nxFinCard.cancelado`).
-  - **IMPORTANTE, PENDIENTE:** la mora cobrada se mezcla dentro del abono a Cuentas por Cobrar sin
-    reconocerse nunca como ingreso — no hay cuenta contable "Ingresos por mora" ni forma de saber
-    cuánto se ha cobrado de mora en total (afecta `nxFinPagarGo`/`postAsientoAbono`). No arreglado aún.
+  - **IMPORTANTE, ARREGLADO (v48.13):** la mora cobrada se mezclaba dentro del abono a Cuentas por
+    Cobrar sin reconocerse nunca como ingreso — se cobraba bien en efectivo pero contablemente no
+    había forma de saber cuánto se había cobrado de mora en total. Cuenta nueva `4103 "Ingresos por
+    mora"` en `PLAN_BASE` (fallback a `4102 Otros ingresos` si la org no ha resembrado su plan de
+    cuentas, mismo patrón que `2105` en A5). `postAsientoAbono` ganó un 6to parámetro opcional
+    `moraMonto` que separa el asiento en dos créditos (CxC por el principal + 4103 por la mora) en
+    vez de uno solo. `nxFinPagarGo` calcula `moraPagada` = la mora se cobra DESPUÉS de cubrir el
+    principal de la cuota (si el pago no alcanza a cubrir el principal, no se reconoce mora todavía
+    en ese pago — evita reconocer ingreso de mora antes de tiempo). Para ver el total cobrado de
+    mora en cualquier período: Contabilidad → Libro Mayor → cuenta 4103. Verificado a mano con 3
+    escenarios (mora cobrada completa, pago parcial que no alcanza a cubrir la mora, pago que
+    completa un saldo previo más la mora) — partida doble cuadra en los tres.
   - **Gaps de nivel "pro" identificados, sin construir:** (1) no se puede editar/renegociar un plan ya
     creado (solo cancelar todo); (2) sin límite de crédito ni bloqueo automático a un cliente que ya
     está en mora; (3) sin manera de marcar un plan como "incobrable"/dado de baja (solo activo/

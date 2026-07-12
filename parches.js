@@ -17939,6 +17939,7 @@
     ['3102', 'Resultados acumulados', 'capital', 'acreedora'],
     ['4101', 'Ventas', 'ingreso', 'acreedora'],
     ['4102', 'Otros ingresos', 'ingreso', 'acreedora'],
+    ['4103', 'Ingresos por mora', 'ingreso', 'acreedora'],
     ['5101', 'Costo de mercancía vendida', 'costo', 'deudora'],
     ['6101', 'Sueldos y salarios', 'gasto', 'deudora'],
     ['6102', 'Alquiler', 'gasto', 'deudora'],
@@ -18400,11 +18401,17 @@
     } catch (e) {}
   }
   // Abono de cliente (cobro de fiado): Debe Caja/Banco / Haber Cuentas por cobrar
-  async function postAsientoAbono(cliNom, monto, metodo, fecha, origenId) {
+  async function postAsientoAbono(cliNom, monto, metodo, fecha, origenId, moraMonto) {
     try {
       const byc = await ctasMap(); if (!Object.keys(byc).length) return;
       const efe = (metodo || 'Efectivo') === 'Efectivo';
-      const lineas = [lnCta(byc, efe ? '1101' : '1102', efe ? 'Caja' : 'Banco', Number(monto || 0), 0), lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, Number(monto || 0))];
+      // Mora cobrada: se reconoce como ingreso aparte (no como parte del abono a la CxC), para
+      // que el Estado de Resultados/Libro Mayor muestren cuánta mora se ha cobrado de verdad.
+      // Fallback a 4102 "Otros ingresos" si la org no ha resembrado su plan de cuentas con 4103.
+      const mora = Math.min(Number(moraMonto || 0), Number(monto || 0));
+      const cxc = Number(monto || 0) - mora;
+      const moraCod = byc['4103'] ? '4103' : '4102';
+      const lineas = [lnCta(byc, efe ? '1101' : '1102', efe ? 'Caja' : 'Banco', Number(monto || 0), 0), cxc > 0 ? lnCta(byc, '1103', 'Cuentas por cobrar (clientes)', 0, cxc) : null, mora > 0 ? lnCta(byc, moraCod, moraCod === '4103' ? 'Ingresos por mora' : 'Otros ingresos', 0, mora) : null].filter(Boolean);
       await postAsientoConcepto(fecha, 'Abono cliente' + (cliNom ? ' ' + cliNom : ''), 'cobro', origenId || null, lineas);
     } catch (e) {}
   }
@@ -19703,19 +19710,24 @@
   window.nxFinPagarGo = async function (id) {
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
-    const pend = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)) + moraDeCuota(prox);
+    const pendPrincipal = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0));
+    const moraCuota = moraDeCuota(prox);
+    const pend = pendPrincipal + moraCuota;
     const monto = window.nxMoney ? window.nxMoney.parse(val('fpMonto')) : parseFloat(val('fpMonto'));
     if (!(monto > 0)) { toast('err', 'Monto inválido', 'Debe ser mayor a 0'); return; }
     if (monto > pend + 1) { toast('err', 'Monto muy alto', 'Lo que falta (con mora incluida si aplica) es ' + fmt(pend)); return; }
     const metodo = val('fpMet') || 'Efectivo';
+    // La mora se cobra DESPUÉS de cubrir el principal de la cuota (si el monto no alcanza para
+    // cubrir el principal, no se reconoce mora todavía en este pago).
+    const moraPagada = Math.min(moraCuota, Math.max(0, monto - pendPrincipal));
     try {
       await getAPI().post('pos_fin_pagos', { financiamiento_id: id, cuota_id: prox.id, monto: monto, metodo: metodo, fecha: hoyISOPos() });
       _finPagos.push({ id: 'tmp' + Date.now(), financiamiento_id: id, cuota_id: prox.id, monto: monto, metodo: metodo, fecha: hoyISOPos() });
       resyncCuotasPagos();
       const completa = !!prox.pagado;
       await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { monto_pagado: prox.monto_pagado, pagado: prox.pagado, metodo: metodo, fecha_pago: completa ? hoyISOPos() : null });
-      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: monto, metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + (completa ? '' : ' (abono parcial)') + ' · ' + (f.descripcion || '') }); } catch (e) {} }
-      try { await postAsientoAbono(f.cliente_nombre, monto, /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id); } catch (e) {}
+      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: monto, metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + (completa ? '' : ' (abono parcial)') + (moraPagada > 0 ? ' · incl. ' + fmt(moraPagada) + ' mora' : '') + ' · ' + (f.descripcion || '') }); } catch (e) {} }
+      try { await postAsientoAbono(f.cliente_nombre, monto, /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id, moraPagada); } catch (e) {}
       if (!cuotasDe(id).some(c => !c.pagado)) { try { await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { estado: 'saldado' }); f.estado = 'saldado'; } catch (e) {} }
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(monto) + (completa ? '' : ' (parcial)'), 'Cuotas'); } catch (e) {}
       cerrarModal('nxFinM'); toast('ok', completa ? 'Cuota cobrada' : 'Abono parcial registrado', fmt(monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
