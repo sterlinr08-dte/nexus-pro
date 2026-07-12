@@ -13696,9 +13696,20 @@
       testigo2_cedula: (val('cfgT2Ced') || '').trim() || null,
       updated_at: new Date().toISOString()
     };
+    // UPSERT atómico (antes era patch y, si no encontraba fila, un post de respaldo con el
+    // error silenciado — si algo fallaba (RLS, red, lo que sea) el toast igual decía "Guardado"
+    // sin haber escrito nada. Con on_conflict=id queda en una sola llamada, sin ambigüedad, y
+    // cualquier error real ahora SÍ se muestra.
     try {
-      let r = await getAPI().patch('prestamos_config', 'id=eq.1', body);
-      if (!r || (Array.isArray(r) && r.length === 0)) { try { await getAPI().post('prestamos_config', Object.assign({ id: 1 }, body)); } catch (e) {} }
+      const api = getAPI();
+      const r = await fetch(api.url + '/rest/v1/prestamos_config?on_conflict=id', {
+        method: 'POST',
+        headers: api.hdr({ Prefer: 'resolution=merge-duplicates,return=representation' }),
+        body: JSON.stringify(Object.assign({ id: 1 }, body))
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const rows = await r.json();
+      if (!rows || !rows.length) throw new Error('El servidor no confirmó el guardado');
       _prCfg = Object.assign({}, _prCfg, body);
       cerrarModal('nxPrCfg');
       toast('ok', 'Datos del contrato guardados');
