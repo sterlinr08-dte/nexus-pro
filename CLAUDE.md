@@ -716,10 +716,26 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
 - **VENTA EN CUOTAS:** tablas `pos_financiamientos` + `pos_fin_cuotas` (org+trigger+RLS). En el
   modal de cobro, si queda crédito y hay cliente → checkbox "Financiar el resto en CUOTAS" (#finChk,
   finN, finFrec semanal|quincenal|mensual); `nxPosConfirmar` crea plan + calendario (última cuota
-  ajusta el redondeo). Tab `cuotas` (sidebar Finanzas): KPIs, tarjetas por plan (AL DÍA/VENCIDO/
-  SALDADO), **cobrar cuota** (`nxFinPagar`: marca cuota + inserta pos_abonos con caja_id si efectivo
-  + salda el plan al completar), ver plan (`nxFinPlan`) y **ACUERDO DE PAGO imprimible**
-  (`nxFinContrato` con calendario y firmas).
+  ajusta el redondeo). Tab `cuotas` (sidebar Finanzas): KPIs, tarjetas por plan con estilo propio
+  (`.nxFin*`, v48.8 — barra de progreso + 4 estados AL DÍA/POR VENCER/VENCIDO/SALDADO, antes prestaba
+  el CSS de Clientes SaaS), **cobrar cuota** (`nxFinPagar`: marca cuota + inserta pos_abonos con
+  caja_id si efectivo + salda el plan al completar), ver plan (`nxFinPlan`) y **ACUERDO DE PAGO
+  imprimible** (`nxFinContrato` con calendario y firmas).
+  **Mejoras arquitectónicas v48.9 (Nivel 1 de un roadmap más grande — ver análisis completo en el
+  chat, no repetido aquí):** (1) **pago parcial de cuota** — tabla nueva `pos_fin_pagos` (ledger,
+  org+trigger+RLS patrón POS) es la fuente de verdad; `pos_fin_cuotas.monto_pagado` (columna nueva)
+  y `.pagado` son una CACHÉ recalculada por `resyncCuotasPagos()` cada vez que se carga o se registra
+  un pago (mismo principio que `resyncEstadoFacturas` del seguro — nunca confiar en un booleano
+  solo). `nxFinPagar` ahora deja el monto editable (prellenado con lo que falta de esa cuota, no el
+  total) en vez de forzar a cobrarla completa. (2) **exposición de crédito unificada** — la ficha del
+  cliente en POS (`nxPosCliVer`) ahora suma fiado + cuotas pendientes de TODOS sus planes activos en
+  un solo número "Exposición total" (antes eran dos bolsillos de riesgo que nadie sumaba), con la
+  lista de sus planes y acceso directo a cada uno. (3) las notificaciones de cuotas vencidas por
+  WhatsApp YA EXISTÍAN (`renderAvisos`, Centro de Avisos) — no hubo que construirlas.
+  **Pendiente del roadmap más grande** (Nivel 2-3, no urgente): mora/recargo por atraso (requiere que
+  el dueño decida la política primero), reporte de cartera vencida (aging 30/60/90), vincular el
+  financiamiento al IMEI específico, refinanciamiento, límite de crédito con bloqueo automático,
+  fiador/codeudor, historial de comportamiento de pago.
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +

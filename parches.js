@@ -14877,7 +14877,7 @@
   // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
-  let _reps = [], _fins = [], _finCuotas = [], _repVista = 'activas'; // servicio tecnico + cuotas
+  let _reps = [], _fins = [], _finCuotas = [], _finPagos = [], _repVista = 'activas'; // servicio tecnico + cuotas
   let _apartados = [], _apaPagos = []; // apartados (layaway)
   let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
   let _prefs = []; // prefacturas abiertas
@@ -14910,7 +14910,7 @@
     // TODAS las cargas EN PARALELO (antes eran 16 viajes secuenciales: el POS tardaba
     // varios segundos en abrir en el teléfono; ahora tarda lo que tarde UNA consulta).
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
-    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, apa, apap, alm, stkAlm, prefs, notasCred, prefAll] = await Promise.all([
+    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, finpag, apa, apap, alm, stkAlm, prefs, notasCred, prefAll] = await Promise.all([
       g('pos_categorias', 'select=*&order=orden.asc,nombre.asc'),
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -14924,6 +14924,7 @@
       g('pos_reparaciones', 'select=*&order=created_at.desc&limit=400'),
       g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
       g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
+      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
       g('pos_apartados', 'select=*&order=created_at.desc&limit=300'),
       g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
@@ -14936,7 +14937,8 @@
     _caja = (cj && cj[0]) || null;
     if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
-    _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _apartados = apa || []; _apaPagos = apap || [];
+    _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
+    resyncCuotasPagos();
     _almacenes = alm || [];
     _prefs = prefs || [];
     _notasCred = notasCred || [];
@@ -17270,6 +17272,14 @@
     const totAb = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
     const saldo = Math.max(0, totFiado - totAb);
     _fiadoByCli[id] = totFiado; _abonosByCli[id] = totAb;
+    // Exposición de crédito UNIFICADA: el fiado (arriba) y las cuotas (pos_financiamientos) son
+    // dos bolsillos de riesgo separados que antes nunca se sumaban — un cliente podía tener varios
+    // planes activos + fiado sin que nadie lo viera junto.
+    const finesCli = _fins.filter(f => f.estado === 'activo' && String(f.cliente_id) === String(id));
+    const pendPlan = f => cuotasDe(f.id).filter(c => !c.pagado).reduce((s, c) => s + Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)), 0);
+    const totCuotas = finesCli.reduce((s, f) => s + pendPlan(f), 0);
+    const exposicionTotal = saldo + totCuotas;
+    const planesHTML = finesCli.length ? finesCli.map(f => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(f.descripcion || '')}<div style="color:#475569;font-size:9.5px">${cuotasDe(f.id).filter(c => c.pagado).length}/${f.cuotas_total} cuotas pagadas</div></div><div style="display:flex;align-items:center;gap:6px"><b style="color:#2563eb">${fmt(pendPlan(f))}</b><button class="btn bsm bghost" onclick="document.getElementById('nxPosCli').remove();window.nxFinPlan('${f.id}')" title="Ver plan"><i class="ti ti-list-numbers"></i></button></div></div>`).join('') : '';
     const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(v.numero_factura || v.numero || '')} <span style="color:#475569">${fechaDMY(v.fecha || v.created_at)}</span>${Number(v.credito_monto || 0) < Number(v.total || 0) ? `<div style="color:#475569;font-size:9.5px">Venta ${fmt(v.total)} · fiado</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.credito_monto)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin ventas fiadas</div>';
     const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div><button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCli'; ov.className = 'overlay open';
@@ -17278,9 +17288,12 @@
         <div class="mt"><span><i class="ti ti-user"></i> ${esc(c.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCli').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
           <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div>
+          ${finesCli.length ? `<div style="background:${exposicionTotal > 0 ? '#fef2f2' : '#f0fdf4'};border:1px solid ${exposicionTotal > 0 ? '#fecaca' : '#bbf7d0'};border-radius:10px;padding:9px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase">Exposición total (fiado + cuotas)</span><b style="font-size:16px;color:${exposicionTotal > 0 ? '#dc2626' : '#16a34a'}">${fmt(exposicionTotal)}</b></div>` : ''}
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
             ${kpi('Total a crédito', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
           </div>
+          ${finesCli.length ? `<div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">PLANES DE CUOTAS ACTIVOS (${finesCli.length}) · ${fmt(totCuotas)} pendiente</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:10px">${planesHTML}</div>` : ''}
           ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR ABONO</div>
             <div style="display:flex;gap:6px;margin-bottom:6px"><input id="posAbMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;outline:none"><input id="posAbFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"></div>
@@ -19542,12 +19555,19 @@
 
   // ══════════════ CUOTAS / FINANCIAMIENTOS ══════════════
   function cuotasDe(finId) { return _finCuotas.filter(c => String(c.financiamiento_id) === String(finId)).sort((a, b) => a.numero - b.numero); }
+  // Recalcula monto_pagado/pagado de CADA cuota sumando pos_fin_pagos (la fuente de verdad es el
+  // ledger, nunca el booleano solo) — se corre después de cargar y después de cada pago nuevo.
+  function resyncCuotasPagos() {
+    const porCuota = {};
+    (_finPagos || []).forEach(p => { const k = String(p.cuota_id); porCuota[k] = (porCuota[k] || 0) + Number(p.monto || 0); });
+    (_finCuotas || []).forEach(c => { c.monto_pagado = porCuota[String(c.id)] || 0; c.pagado = c.monto_pagado >= Number(c.monto || 0) - 0.01; });
+  }
   function hoyISOPos() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function curSesPOS() { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return null; } }
   function renderCuotas() {
     const hoyK = hoyISOPos();
     const activos = _fins.filter(f => f.estado === 'activo');
-    const porCobrar = activos.reduce((t, f) => t + cuotasDe(f.id).filter(c => !c.pagado).reduce((x, c) => x + Number(c.monto || 0), 0), 0);
+    const porCobrar = activos.reduce((t, f) => t + cuotasDe(f.id).filter(c => !c.pagado).reduce((x, c) => x + Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)), 0), 0);
     const vencidas = _finCuotas.filter(c => !c.pagado && String(c.fecha_venc) < hoyK && activos.some(f => String(f.id) === String(c.financiamiento_id)));
     const kpis = `<div class="nxFinKpis">
       <div class="nxFinKpi"><div class="nxFinKpiIco"><i class="ti ti-file-dollar"></i></div><div class="nxFinKpiTxt"><b>${activos.length}</b><span>Planes activos</span></div></div>
@@ -19570,7 +19590,7 @@
           <span class="nxFinBadge ${cls || 'ok'}">${badgeTxt}</span></div>
         <div class="nxFinBar"><div class="nxFinBarFill" style="width:${pct}%"></div></div>
         <div class="nxFinRow">
-          ${prox ? `<div><div class="nxFinNextLbl">Próxima cuota ${prox.numero}/${f.cuotas_total}</div><div class="nxFinNextAmt">${fmt(prox.monto)}</div><div class="nxFinNextDate">${venc ? 'venció' : 'vence'} ${String(prox.fecha_venc).slice(0, 10)}</div></div>` : `<div class="nxFinNextLbl">Plan saldado — financiado ${fmt(f.monto_financiado)}</div>`}
+          ${prox ? `<div><div class="nxFinNextLbl">Próxima cuota ${prox.numero}/${f.cuotas_total}${Number(prox.monto_pagado || 0) > 0 ? ' · abonada ' + fmt(prox.monto_pagado) : ''}</div><div class="nxFinNextAmt">${fmt(Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)))}</div><div class="nxFinNextDate">${venc ? 'venció' : 'vence'} ${String(prox.fecha_venc).slice(0, 10)}</div></div>` : `<div class="nxFinNextLbl">Plan saldado — financiado ${fmt(f.monto_financiado)}</div>`}
           ${vencidasPlan.length > 1 ? `<span class="nxFinOverdueChip">+${vencidasPlan.length - 1} más vencida${vencidasPlan.length - 1 > 1 ? 's' : ''}</span>` : ''}
         </div>
         <div class="nxFinBtns">
@@ -19584,9 +19604,13 @@
   window.nxFinPlan = function (id) {
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const hoyK = hoyISOPos();
-    const rows = cuotasDe(id).map(c => `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px solid #f1f5f9;font-size:12.5px">
+    const rows = cuotasDe(id).map(c => {
+      const parcial = !c.pagado && Number(c.monto_pagado || 0) > 0;
+      const estadoTxt = c.pagado ? '<b style="color:#16a34a">✓ ' + (c.fecha_pago ? String(c.fecha_pago).slice(5) : '') + '</b>' : parcial ? '<b style="color:#b45309">parcial: ' + fmt(c.monto_pagado) + '</b>' : (String(c.fecha_venc) < hoyK ? '<b style="color:#dc2626">VENCIDA</b>' : '<span style="color:#94a3b8">pendiente</span>');
+      return `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px solid #f1f5f9;font-size:12.5px">
       <span>#${c.numero} · ${String(c.fecha_venc).slice(0, 10)}</span>
-      <span>${fmt(c.monto)} ${c.pagado ? '<b style="color:#16a34a">✓ ' + (c.fecha_pago ? String(c.fecha_pago).slice(5) : '') + '</b>' : (String(c.fecha_venc) < hoyK ? '<b style="color:#dc2626">VENCIDA</b>' : '<span style="color:#94a3b8">pendiente</span>')}</span></div>`).join('');
+      <span>${fmt(c.monto)} ${estadoTxt}</span></div>`;
+    }).join('');
     cerrarModal('nxFinM');
     const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -19596,13 +19620,15 @@
   window.nxFinPagar = function (id) {
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
+    const pend = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0));
     cerrarModal('nxFinM');
     const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px">
       <div class="mt"><span><i class="ti ti-cash"></i> Cobrar cuota ${prox.numero}/${f.cuotas_total}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(f.cliente_nombre || '')} · ${esc(f.descripcion || '')} · vence ${String(prox.fecha_venc).slice(0, 10)}</div>
-      <div style="font-size:22px;font-weight:800;color:#2563eb;margin-bottom:8px">${fmt(prox.monto)}</div>
+      ${Number(prox.monto_pagado || 0) > 0 ? `<div style="font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 9px;margin-bottom:8px">Ya abonó ${fmt(prox.monto_pagado)} de ${fmt(prox.monto)} a esta cuota — falta ${fmt(pend)}</div>` : ''}
+      <div class="fr"><label>Monto a cobrar ahora (puede ser parcial)</label><input id="fpMonto" data-nx-money inputmode="numeric" value="${Math.round(pend)}" style="font-size:20px;font-weight:800;color:#2563eb"></div>
       <div class="fr"><label>Método</label><select id="fpMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxFinPagarGo('${id}')"><i class="ti ti-check"></i> Registrar pago</button></div>
     </div>`;
@@ -19611,15 +19637,22 @@
   window.nxFinPagarGo = async function (id) {
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
+    const pend = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0));
+    const monto = window.nxMoney ? window.nxMoney.parse(val('fpMonto')) : parseFloat(val('fpMonto'));
+    if (!(monto > 0)) { toast('err', 'Monto inválido', 'Debe ser mayor a 0'); return; }
+    if (monto > pend + 1) { toast('err', 'Monto muy alto', 'Lo que falta de esta cuota es ' + fmt(pend)); return; }
     const metodo = val('fpMet') || 'Efectivo';
     try {
-      await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { pagado: true, fecha_pago: hoyISOPos(), metodo: metodo });
-      prox.pagado = true; prox.fecha_pago = hoyISOPos(); prox.metodo = metodo;
-      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: Number(prox.monto), metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + (f.descripcion || '') }); } catch (e) {} }
-      try { await postAsientoAbono(f.cliente_nombre, Number(prox.monto), /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id); } catch (e) {}
+      await getAPI().post('pos_fin_pagos', { financiamiento_id: id, cuota_id: prox.id, monto: monto, metodo: metodo, fecha: hoyISOPos() });
+      _finPagos.push({ id: 'tmp' + Date.now(), financiamiento_id: id, cuota_id: prox.id, monto: monto, metodo: metodo, fecha: hoyISOPos() });
+      resyncCuotasPagos();
+      const completa = !!prox.pagado;
+      await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { monto_pagado: prox.monto_pagado, pagado: prox.pagado, metodo: metodo, fecha_pago: completa ? hoyISOPos() : null });
+      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: monto, metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + (completa ? '' : ' (abono parcial)') + ' · ' + (f.descripcion || '') }); } catch (e) {} }
+      try { await postAsientoAbono(f.cliente_nombre, monto, /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id); } catch (e) {}
       if (!cuotasDe(id).some(c => !c.pagado)) { try { await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { estado: 'saldado' }); f.estado = 'saldado'; } catch (e) {} }
-      try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(prox.monto), 'Cuotas'); } catch (e) {}
-      cerrarModal('nxFinM'); toast('ok', 'Cuota cobrada', fmt(prox.monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
+      try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(monto) + (completa ? '' : ' (parcial)'), 'Cuotas'); } catch (e) {}
+      cerrarModal('nxFinM'); toast('ok', completa ? 'Cuota cobrada' : 'Abono parcial registrado', fmt(monto) + (f.estado === 'saldado' ? ' · ¡PLAN SALDADO!' : ''));
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
