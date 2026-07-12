@@ -732,10 +732,18 @@ Del análisis vs sistemas de tiendas de celulares, HECHO y en vivo:
   un solo número "Exposición total" (antes eran dos bolsillos de riesgo que nadie sumaba), con la
   lista de sus planes y acceso directo a cada uno. (3) las notificaciones de cuotas vencidas por
   WhatsApp YA EXISTÍAN (`renderAvisos`, Centro de Avisos) — no hubo que construirlas.
-  **Pendiente del roadmap más grande** (Nivel 2-3, no urgente): mora/recargo por atraso (requiere que
-  el dueño decida la política primero), reporte de cartera vencida (aging 30/60/90), vincular el
-  financiamiento al IMEI específico, refinanciamiento, límite de crédito con bloqueo automático,
-  fiador/codeudor, historial de comportamiento de pago.
+  **Nivel 2 — mora configurable (v48.10):** el dueño pidió mora pero dejó el % y los días de gracia a
+  su propio criterio ("el % lo determino yo y los días de gracia"), así que se construyó como AJUSTE,
+  no como valor fijo en código — mismo patrón que `prefijo_contado`/`prefijo_credito`. `pos_config`
+  ganó `mora_pct`/`mora_dias_gracia` (default 0 = desactivada); sección nueva "Recargo por mora" en
+  Ajustes (`nxPosGuardarMora`). `moraDeCuota(c)` calcula EN VIVO (nunca se guarda, mismo principio que
+  `resyncEstadoFacturas`/`resyncCuotasPagos`): recargo ÚNICO (no acumula por día) sobre el monto de la
+  cuota, solo si está vencida más allá del período de gracia. Se ve en la tarjeta de Cuotas (monto de
+  la próxima cuota incluye mora), en `nxFinPlan` (cuota vencida muestra "+RD$X mora") y en el total
+  "Por cobrar". `nxFinPagar`/`nxFinPagarGo` prellenan y validan contra pendiente+mora.
+  **Pendiente del roadmap más grande** (resto de Nivel 2-3, no urgente): reporte de cartera vencida
+  (aging 30/60/90), vincular el financiamiento al IMEI específico, refinanciamiento, límite de
+  crédito con bloqueo automático, fiador/codeudor, historial de comportamiento de pago.
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +

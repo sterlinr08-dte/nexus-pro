@@ -14832,7 +14832,7 @@
   let _factCli = '';
   let _facNCF = 'sin';
   let _facCredito = false;
-  let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR' };
+  let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR', mora_pct: 0, mora_dias_gracia: 0 };
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
@@ -14935,7 +14935,7 @@
     ]);
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR' }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0) }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
@@ -15770,6 +15770,14 @@
         </div>
         <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
+        <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-percentage"></i> Recargo por mora (Cuotas)</div>
+        <div style="font-size:12px;color:#475569;margin-bottom:16px;line-height:1.5">Recargo que se le suma UNA vez a una cuota vencida (no se acumula por día). Déjalo en 0% para no cobrar mora.${_posCfg.mora_pct > 0 ? `<br>Hoy: <b style="color:#dc2626">${_posCfg.mora_pct}%</b> sobre la cuota, después de <b>${_posCfg.mora_dias_gracia}</b> día(s) de gracia.` : '<br><b style="color:#94a3b8">Mora desactivada</b> — no se le cobra recargo a nadie.'}</div>
+        <div class="fr-row">
+          <div class="fr"><label>% de mora</label><input id="cfgMoraPct" inputmode="decimal" value="${_posCfg.mora_pct}" placeholder="0"></div>
+          <div class="fr"><label>Días de gracia</label><input id="cfgMoraDias" inputmode="numeric" value="${_posCfg.mora_dias_gracia}" placeholder="0"></div>
+        </div>
+        <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
+        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesSecuencias()}
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesRoles()}
@@ -16184,8 +16192,21 @@
       const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
       if (ex && ex.length) await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, { prefijo_contado: co, prefijo_credito: cr });
       else await getAPI().post('pos_config', { prefijo_contado: co, prefijo_credito: cr });
-      _posCfg = { prefijo_contado: co, prefijo_credito: cr };
+      _posCfg = Object.assign({}, _posCfg, { prefijo_contado: co, prefijo_credito: cr });
       toast('ok', 'Ajustes guardados', 'Contado: ' + co + ' · Crédito: ' + cr);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxPosGuardarMora = async function () {
+    const pct = Math.max(0, Number(String(val('cfgMoraPct') || '0').replace(',', '.').replace(/[^0-9.]/g, '')) || 0);
+    const dias = Math.max(0, parseInt(val('cfgMoraDias')) || 0);
+    try {
+      const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+      if (ex && ex.length) await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, { mora_pct: pct, mora_dias_gracia: dias });
+      else await getAPI().post('pos_config', { mora_pct: pct, mora_dias_gracia: dias });
+      _posCfg = Object.assign({}, _posCfg, { mora_pct: pct, mora_dias_gracia: dias });
+      try { window.logAudit && window.logAudit('POS_MORA_CONFIG', pct > 0 ? ('Mora ' + pct + '% después de ' + dias + ' día(s) de gracia') : 'Mora desactivada', 'Ajustes'); } catch (e2) {}
+      toast('ok', 'Mora guardada', pct > 0 ? pct + '% después de ' + dias + ' día(s)' : 'Mora desactivada');
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   function pintarFactura() {
@@ -19555,6 +19576,18 @@
 
   // ══════════════ CUOTAS / FINANCIAMIENTOS ══════════════
   function cuotasDe(finId) { return _finCuotas.filter(c => String(c.financiamiento_id) === String(finId)).sort((a, b) => a.numero - b.numero); }
+  // Recargo por mora: % configurable por el dueño (Ajustes), UNA sola vez por cuota vencida (no
+  // se acumula por día), después de los días de gracia que él defina. 0% = mora desactivada.
+  // Se calcula EN VIVO (nunca se guarda), igual que el resto de estados calculados de este módulo.
+  function moraDeCuota(c) {
+    if (!_posCfg.mora_pct || c.pagado) return 0;
+    const hoyK = hoyISOPos();
+    const venc = String(c.fecha_venc || '').slice(0, 10);
+    if (!venc || venc >= hoyK) return 0;
+    const diasAtraso = Math.floor((new Date(hoyK + 'T12:00:00') - new Date(venc + 'T12:00:00')) / 86400000);
+    if (diasAtraso <= Number(_posCfg.mora_dias_gracia || 0)) return 0;
+    return Math.round(Number(c.monto || 0) * Number(_posCfg.mora_pct || 0) / 100);
+  }
   // Recalcula monto_pagado/pagado de CADA cuota sumando pos_fin_pagos (la fuente de verdad es el
   // ledger, nunca el booleano solo) — se corre después de cargar y después de cada pago nuevo.
   function resyncCuotasPagos() {
@@ -19567,7 +19600,7 @@
   function renderCuotas() {
     const hoyK = hoyISOPos();
     const activos = _fins.filter(f => f.estado === 'activo');
-    const porCobrar = activos.reduce((t, f) => t + cuotasDe(f.id).filter(c => !c.pagado).reduce((x, c) => x + Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)), 0), 0);
+    const porCobrar = activos.reduce((t, f) => t + cuotasDe(f.id).filter(c => !c.pagado).reduce((x, c) => x + Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)) + moraDeCuota(c), 0), 0);
     const vencidas = _finCuotas.filter(c => !c.pagado && String(c.fecha_venc) < hoyK && activos.some(f => String(f.id) === String(c.financiamiento_id)));
     const kpis = `<div class="nxFinKpis">
       <div class="nxFinKpi"><div class="nxFinKpiIco"><i class="ti ti-file-dollar"></i></div><div class="nxFinKpiTxt"><b>${activos.length}</b><span>Planes activos</span></div></div>
@@ -19584,13 +19617,14 @@
       const cls = f.estado === 'saldado' ? 'saldado' : venc ? 'venc' : pronto ? 'pronto' : '';
       const badgeTxt = f.estado === 'saldado' ? 'SALDADO' : venc ? 'VENCIDO' : pronto ? 'POR VENCER' : 'AL DÍA';
       const pct = f.cuotas_total ? Math.round(pag / f.cuotas_total * 100) : 0;
+      const moraProx = prox ? moraDeCuota(prox) : 0;
       return `<div class="nxFinCard ${cls}">
         <div class="nxFinTop"><div class="nxFinIco"><i class="ti ${f.estado === 'saldado' ? 'ti-circle-check' : 'ti-calendar-dollar'}"></i></div>
           <div class="nxFinInfo"><div class="nxFinNom">${esc(f.cliente_nombre || '')}</div><div class="nxFinSub">${esc(f.descripcion || '')} · ${pag}/${f.cuotas_total} cuotas</div></div>
           <span class="nxFinBadge ${cls || 'ok'}">${badgeTxt}</span></div>
         <div class="nxFinBar"><div class="nxFinBarFill" style="width:${pct}%"></div></div>
         <div class="nxFinRow">
-          ${prox ? `<div><div class="nxFinNextLbl">Próxima cuota ${prox.numero}/${f.cuotas_total}${Number(prox.monto_pagado || 0) > 0 ? ' · abonada ' + fmt(prox.monto_pagado) : ''}</div><div class="nxFinNextAmt">${fmt(Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)))}</div><div class="nxFinNextDate">${venc ? 'venció' : 'vence'} ${String(prox.fecha_venc).slice(0, 10)}</div></div>` : `<div class="nxFinNextLbl">Plan saldado — financiado ${fmt(f.monto_financiado)}</div>`}
+          ${prox ? `<div><div class="nxFinNextLbl">Próxima cuota ${prox.numero}/${f.cuotas_total}${Number(prox.monto_pagado || 0) > 0 ? ' · abonada ' + fmt(prox.monto_pagado) : ''}</div><div class="nxFinNextAmt">${fmt(Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)) + moraProx)}</div><div class="nxFinNextDate">${venc ? 'venció' : 'vence'} ${String(prox.fecha_venc).slice(0, 10)}${moraProx > 0 ? ' · <span style="color:#dc2626">incl. ' + fmt(moraProx) + ' mora</span>' : ''}</div></div>` : `<div class="nxFinNextLbl">Plan saldado — financiado ${fmt(f.monto_financiado)}</div>`}
           ${vencidasPlan.length > 1 ? `<span class="nxFinOverdueChip">+${vencidasPlan.length - 1} más vencida${vencidasPlan.length - 1 > 1 ? 's' : ''}</span>` : ''}
         </div>
         <div class="nxFinBtns">
@@ -19606,7 +19640,8 @@
     const hoyK = hoyISOPos();
     const rows = cuotasDe(id).map(c => {
       const parcial = !c.pagado && Number(c.monto_pagado || 0) > 0;
-      const estadoTxt = c.pagado ? '<b style="color:#16a34a">✓ ' + (c.fecha_pago ? String(c.fecha_pago).slice(5) : '') + '</b>' : parcial ? '<b style="color:#b45309">parcial: ' + fmt(c.monto_pagado) + '</b>' : (String(c.fecha_venc) < hoyK ? '<b style="color:#dc2626">VENCIDA</b>' : '<span style="color:#94a3b8">pendiente</span>');
+      const mora = moraDeCuota(c);
+      const estadoTxt = c.pagado ? '<b style="color:#16a34a">✓ ' + (c.fecha_pago ? String(c.fecha_pago).slice(5) : '') + '</b>' : parcial ? '<b style="color:#b45309">parcial: ' + fmt(c.monto_pagado) + '</b>' : (String(c.fecha_venc) < hoyK ? '<b style="color:#dc2626">VENCIDA' + (mora > 0 ? ' +' + fmt(mora) + ' mora' : '') + '</b>' : '<span style="color:#94a3b8">pendiente</span>');
       return `<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px solid #f1f5f9;font-size:12.5px">
       <span>#${c.numero} · ${String(c.fecha_venc).slice(0, 10)}</span>
       <span>${fmt(c.monto)} ${estadoTxt}</span></div>`;
@@ -19621,6 +19656,7 @@
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
     const pend = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0));
+    const mora = moraDeCuota(prox);
     cerrarModal('nxFinM');
     const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -19628,7 +19664,8 @@
       <div class="mt"><span><i class="ti ti-cash"></i> Cobrar cuota ${prox.numero}/${f.cuotas_total}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(f.cliente_nombre || '')} · ${esc(f.descripcion || '')} · vence ${String(prox.fecha_venc).slice(0, 10)}</div>
       ${Number(prox.monto_pagado || 0) > 0 ? `<div style="font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 9px;margin-bottom:8px">Ya abonó ${fmt(prox.monto_pagado)} de ${fmt(prox.monto)} a esta cuota — falta ${fmt(pend)}</div>` : ''}
-      <div class="fr"><label>Monto a cobrar ahora (puede ser parcial)</label><input id="fpMonto" data-nx-money inputmode="numeric" value="${Math.round(pend)}" style="font-size:20px;font-weight:800;color:#2563eb"></div>
+      ${mora > 0 ? `<div style="font-size:11px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:6px 9px;margin-bottom:8px">+ ${fmt(mora)} de mora (${_posCfg.mora_pct}% por atraso) — total sugerido ${fmt(pend + mora)}</div>` : ''}
+      <div class="fr"><label>Monto a cobrar ahora (puede ser parcial)</label><input id="fpMonto" data-nx-money inputmode="numeric" value="${Math.round(pend + mora)}" style="font-size:20px;font-weight:800;color:#2563eb"></div>
       <div class="fr"><label>Método</label><select id="fpMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxFinPagarGo('${id}')"><i class="ti ti-check"></i> Registrar pago</button></div>
     </div>`;
@@ -19637,10 +19674,10 @@
   window.nxFinPagarGo = async function (id) {
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const prox = cuotasDe(id).find(c => !c.pagado); if (!prox) return;
-    const pend = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0));
+    const pend = Math.max(0, Number(prox.monto || 0) - Number(prox.monto_pagado || 0)) + moraDeCuota(prox);
     const monto = window.nxMoney ? window.nxMoney.parse(val('fpMonto')) : parseFloat(val('fpMonto'));
     if (!(monto > 0)) { toast('err', 'Monto inválido', 'Debe ser mayor a 0'); return; }
-    if (monto > pend + 1) { toast('err', 'Monto muy alto', 'Lo que falta de esta cuota es ' + fmt(pend)); return; }
+    if (monto > pend + 1) { toast('err', 'Monto muy alto', 'Lo que falta (con mora incluida si aplica) es ' + fmt(pend)); return; }
     const metodo = val('fpMet') || 'Efectivo';
     try {
       await getAPI().post('pos_fin_pagos', { financiamiento_id: id, cuota_id: prox.id, monto: monto, metodo: metodo, fecha: hoyISOPos() });
