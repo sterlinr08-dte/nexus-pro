@@ -12957,6 +12957,11 @@
   //    motor/tablas/RLS de siempre, solo interfaz nueva. Reusa el look
   //    .nxFP-* ya construido para Cuotas del POS, ver window.nxFPEnsureCSS ──
   // ════════════════════════════════════════════════════════════════════
+  // Sigue usada por nxPrestamoVer (detalle del préstamo, con el botón Cobrar) —
+  // NO se tocó ese modal, solo se movió aquí de vuelta el helper que necesita.
+  function kpi(lbl, val, col) {
+    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center"><div style="font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px">${lbl}</div><div style="font-size:15px;font-weight:900;color:${col};margin-top:2px">${val}</div></div>`;
+  }
   const PR_AVATAR_COLORES = ['#4f46e5', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626', '#db2777', '#0284c7'];
   function prIniciales(nombre) {
     const partes = String(nombre || '').trim().split(/\s+/).filter(Boolean);
