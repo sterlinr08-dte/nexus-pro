@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.17** (ver `index.html` y `version.json`).
+> Versión actual: **48.21** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1044,6 +1044,20 @@ función `gSearch()` (solo la usaba ese input) y una IIFE completa que ya no ten
 ("ARREGLO DEL BUSCADOR EN MÓVIL" — abría la búsqueda global al tocar ese input, que ya no existe).
 La búsqueda global de pantalla completa (`gsOverlay`/`abrirGlobalSearch`) sigue intacta: botón de
 lupa junto a la campana + atajo Ctrl+K, sin cambios.
+
+### Iconos 3D en el Dashboard/Inicio (v48.21)
+El dueño mandó una hoja de iconos 3D (cristal, generada por él en ChatGPT a partir de un prompt que
+le armamos) con 18 conceptos para un rediseño tipo "Apple + Odoo + Salesforce". Se auditó cuáles de
+esos 18 correspondían a algo REAL en el Dashboard de Seguros (`.qa-g`, los 6 accesos rápidos que ya
+existían: Facturas/Clientes/Detalles de Cobro/Facturas Pendientes/Reporte DGII/Exportar Excel) —
+solo esos 6 se aplicaron; los otros 12 (Solicitudes, Consultar Cobertura, Mis Cuentas, Nexus Smart
+IA, Contabilidad, Tabla Comparativa, Multiempresa...) no tienen un botón real en esta pantalla hoy,
+así que NO se inventaron accesos nuevos para ellos — quedan disponibles si el dueño los pide después.
+Los 6 iconos se recortaron de la hoja original (Python/Pillow), se guardaron como PNG en
+`dash-icons/` (nombre por archivo: `facturas.png`, `clientes.png`, `detalles-cobro.png`,
+`facturas-pendientes.png`, `reporte-dgii.png`, `exportar-excel.png`) y reemplazan el `<i class="ti
+...">` de cada tile por un `<img class="qa-ico3d">` — el `onclick`/función de cada botón NO cambió,
+solo el icono. CSS nueva: `.qa-ico3d{width:34px;height:34px;object-fit:contain}`.
 
 ## Módulos / funcionalidades ya construidas
 
