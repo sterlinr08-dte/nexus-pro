@@ -1855,10 +1855,18 @@ trabajar en fases pequeñas y verificables (NO se programó el spec completo de 
   error claro ("Falta configurar el secreto...") en vez de fallar en silencio o con un error críptico.
 - Verificado: `node --check parches.js` limpio, los 3 bloques `<script>` de `index.html` pasan
   `new Function()`, `version.json` válido, `get_advisors` sin hallazgos nuevos en `ai_content_items`.
-  NO probado en vivo con una respuesta real de la IA (depende del secreto pendiente arriba) — el flujo
-  de guardado/biblioteca/edición SÍ se revisó contra el código real.
-
----
+- **CONFIRMADO EN VIVO (13-jul-2026):** el dueño configuró el secreto y probó el generador real desde
+  el celular. Se encontraron y corrigieron 2 problemas reales en el camino, ambos del lado de cómo se
+  guardó el secreto en Supabase (no del código): (1) el secreto se había guardado con basura pegada por
+  accidente en el Value (un texto de ~1024 caracteres que empezaba con `"FUNCTION_SLUG:..."`, no la
+  clave real) — se agregó `.trim()` defensivo a la lectura del secreto en el código por si acaso, pero
+  la causa real era el valor guardado; (2) el secreto se había creado con el **nombre** `NEXUS PRO IA`
+  en vez de `ANTHROPIC_API_KEY` exacto — Supabase no relaciona secretos por parecido, el nombre tiene
+  que ser idéntico al que lee `Deno.env.get()`. Para diagnosticar sin exponer la clave completa, se
+  desplegó temporalmente una versión que agregaba al mensaje de error el LARGO y los primeros/últimos
+  caracteres del secreto leído (nunca la clave completa) — se quitó ese código de diagnóstico en cuanto
+  se confirmó que funcionaba, dejando la función limpia en producción (solo con el `.trim()` como mejora
+  permanente). Generación real probada y funcionando desde la app.
 
 ## Seguridad (ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
 
