@@ -22562,6 +22562,14 @@ try {
   function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
   function arr(s) { return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); }
   function csv(a) { if (Array.isArray(a)) return a.join(', '); return a || ''; }
+  function cerrar(id) { var o = document.getElementById(id); if (o) o.remove(); }
+  function modal(id, html, maxw) {
+    cerrar(id);
+    var o = document.createElement('div'); o.id = id; o.className = 'nxMdOv';
+    o.innerHTML = '<div class="nxMdModal" style="max-width:' + (maxw || 540) + 'px">' + html + '</div>';
+    o.addEventListener('click', function (ev) { if (ev.target === o) o.remove(); });
+    document.body.appendChild(o);
+  }
 
   function inyectarCSS() {
     if (!document.getElementById('nxMdCSS')) {
@@ -22608,8 +22616,11 @@ try {
   var _settings = null, _companyNiche = null, _audience = null, _brand = null, _pillars = [], _niches = [], _pilarWork = [], _nicheTpl = null;
   var _wizNicheId, _wizNicheForm = null, _wizObjetivos = null;
   var _pasoActual = 1, _maxPaso = 1, _modoEdicion = false;
+  var _items = [], _genUltimo = null;
   var STEP_LBL = ['Empresa', 'Nicho', 'Objetivos', 'Público', 'Marca', 'Pilares', 'Resumen'];
   var OBJ_LIST = ['Aumentar ventas', 'Dar a conocer la marca', 'Conseguir más clientes nuevos', 'Fidelizar clientes actuales', 'Generar contactos interesados (leads)', 'Educar sobre mis productos o servicios', 'Responder preguntas frecuentes', 'Mejorar mi reputación y reseñas', 'Crecer en redes sociales'];
+  var PLATAFORMAS = ['Instagram', 'Facebook', 'TikTok', 'WhatsApp', 'Google / Reseñas', 'YouTube', 'Otra'];
+  var FORMATOS = ['Publicación', 'Reel / Video corto', 'Historia', 'Carrusel', 'Mensaje de WhatsApp', 'Blog / artículo'];
 
   async function cargarTodo() {
     var r;
@@ -22619,9 +22630,10 @@ try {
     try { r = await getAPI().get('ai_content_brand_profiles', 'select=*'); _brand = (r && r[0]) || null; } catch (e) { _brand = null; }
     try { r = await getAPI().get('ai_content_pillars', 'select=*&order=orden.asc'); _pillars = r || []; } catch (e) { _pillars = []; }
     try { r = await getAPI().get('ai_content_niches', 'select=*&order=orden.asc'); _niches = r || []; } catch (e) { _niches = []; }
+    try { r = await getAPI().get('ai_content_items', 'select=*&order=created_at.desc&limit=300'); _items = r || []; } catch (e) { _items = []; }
     _pilarWork = _pillars.map(function (p) { return Object.assign({}, p); });
     _nicheTpl = (_companyNiche && _companyNiche.niche_id) ? (_niches.find(function (n) { return n.id === _companyNiche.niche_id; }) || null) : null;
-    _wizNicheId = undefined; _wizNicheForm = null; _wizObjetivos = null; _modoEdicion = false;
+    _wizNicheId = undefined; _wizNicheForm = null; _wizObjetivos = null; _modoEdicion = false; _genUltimo = null;
   }
 
   window.nxAbrirAIContent = async function () {
@@ -22941,6 +22953,10 @@ try {
     var objs = s.objetivos || [];
     view.innerHTML = '<div class="nxAiWrap"><div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-sparkles" style="color:#c026d3"></i> NEXUS AI CONTENT</div><div class="ct-s">' + esc(s.nombre_comercial || '') + '</div></div>' +
       '<button class="btn bsm" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div class="nxAiDashG" style="margin-bottom:10px">' +
+      '<div class="nxAiDCard" style="cursor:pointer;border-color:#f0abfc;background:linear-gradient(135deg,#fdf4ff,#fff)" onclick="window.nxAiAbrirGenerador()"><h4 style="color:#c026d3"><i class="ti ti-wand"></i> Generador de contenido IA</h4><div style="font-size:11.5px;color:#334155">Escribe un tema y genera hook, texto, caption, hashtags y CTA con tu marca aplicada</div></div>' +
+      '<div class="nxAiDCard" style="cursor:pointer" onclick="window.nxAiAbrirBiblioteca()"><h4 style="color:#a21caf"><i class="ti ti-bookmark"></i> Biblioteca de contenido</h4><div style="font-size:11.5px;color:#334155">' + (_items.length ? (_items.length + ' pieza' + (_items.length === 1 ? '' : 's') + ' guardada' + (_items.length === 1 ? '' : 's')) : 'Todavía no has guardado nada') + '</div></div>' +
+      '</div>' +
       '<div class="nxAiDashG">' +
       '<div class="nxAiDCard"><h4>Empresa <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(1)"><i class="ti ti-edit"></i></button></h4>' +
       '<div style="font-size:12px;color:#334155">' + esc(s.descripcion_corta || 'Sin descripción') + '<br><span style="color:#94a3b8">' + esc(s.ciudad || '') + (s.ciudad && s.pais ? ', ' : '') + esc(s.pais || '') + '</span></div></div>' +
@@ -22959,12 +22975,138 @@ try {
       '</div>' +
       '<div style="margin-top:16px;font-weight:800;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.3px">Próximamente</div>' +
       '<div class="nxAiDashG" style="margin-top:8px">' +
-      ['Generador de contenido IA', 'Calendario editorial', 'Aprobaciones', 'Publicaciones', 'Analítica', 'Automatizaciones'].map(function (t) {
+      ['Calendario editorial', 'Aprobaciones', 'Publicaciones', 'Analítica', 'Automatizaciones'].map(function (t) {
         return '<div class="nxAiDCard nxAiSoon"><h4 style="color:#94a3b8">' + esc(t) + '<span class="nxAiSoonBadge">PRÓXIMAMENTE</span></h4><div style="font-size:11.5px;color:#94a3b8">Se activa en la próxima fase</div></div>';
       }).join('') +
       '</div>' +
       '</div></div>';
   }
+
+  function pilarOptsHTML(sel) {
+    var opts = '<option value="">Sin pilar específico</option>';
+    (_pillars || []).forEach(function (p) { opts += '<option value="' + p.id + '"' + (String(sel) === String(p.id) ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; });
+    return opts;
+  }
+  function selectOptsHTML(list, sel) { return list.map(function (x) { return '<option' + (sel === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join(''); }
+
+  function renderGenerador(view) {
+    view.innerHTML = '<div class="nxAiWrap"><div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-wand" style="color:#c026d3"></i> Generador de contenido IA</div><div class="ct-s">Genera una pieza de contenido con tu marca ya aplicada</div></div>' +
+      '<button class="btn bsm" type="button" onclick="window.nxAiVolverDash()"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div class="nxAiCard2">' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Pilar de contenido</label><select id="genPilar">' + pilarOptsHTML() + '</select></div>' +
+      '<div class="nxMdFr"><label>Plataforma</label><select id="genPlat">' + selectOptsHTML(PLATAFORMAS, 'Instagram') + '</select></div></div>' +
+      '<div class="nxMdFr"><label>Formato</label><select id="genFormato">' + selectOptsHTML(FORMATOS, 'Publicación') + '</select></div>' +
+      '<div class="nxMdFr"><label>Tema o brief *</label><textarea id="genTema" rows="2" placeholder="Ej. Promoción de fin de semana en accesorios para celular"></textarea></div>' +
+      '<div class="nxMdFr"><label>Instrucciones adicionales (opcional)</label><textarea id="genInstr" rows="2" placeholder="Ej. Menciona que hay envío gratis en pedidos mayores a RD$1,000"></textarea></div>' +
+      '<button class="btn bc1" id="genBtn" type="button" onclick="window.nxAiGenerar()" style="background:#c026d3;width:100%"><i class="ti ti-sparkles"></i> Generar con IA</button>' +
+      '<div id="nxAiResultado" style="margin-top:14px"></div>' +
+      '</div></div></div>';
+  }
+  window.nxAiAbrirGenerador = function () { _genUltimo = null; var v = document.getElementById('v-aicontent'); if (v) renderGenerador(v); };
+  window.nxAiVolverDash = function () { var v = document.getElementById('v-aicontent'); if (v) renderDashboard(v); };
+
+  window.nxAiGenerar = async function () {
+    var tema = val('genTema').trim(); if (!tema) { toast('err', 'Escribe el tema o brief'); return; }
+    var pilarId = val('genPilar') || null;
+    var pilar = pilarId ? _pillars.find(function (p) { return String(p.id) === String(pilarId); }) : null;
+    var plataforma = val('genPlat') || 'Instagram';
+    var formato = val('genFormato') || 'Publicación';
+    var instrucciones = val('genInstr').trim();
+    var btn = document.getElementById('genBtn'); if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
+    var resDiv = document.getElementById('nxAiResultado'); if (resDiv) resDiv.innerHTML = '';
+    try {
+      var api = getAPI();
+      var contexto = {
+        settings: _settings || {}, nicho: _companyNiche || {}, publico: _audience || {}, marca: _brand || {},
+        pilar: pilar ? { nombre: pilar.nombre, formatos: pilar.formatos, plataformas: pilar.plataformas } : null
+      };
+      var resp = await fetch((api.url || '') + '/functions/v1/ai-content-generar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) },
+        body: JSON.stringify({ contexto: contexto, tema: tema, plataforma: plataforma, formato: formato, instrucciones: instrucciones })
+      });
+      var j = await resp.json().catch(function () { return {}; });
+      if (!resp.ok || j.ok === false) throw new Error(j.error || ('HTTP ' + resp.status));
+      _genUltimo = { pilar_id: pilarId || null, tema: tema, plataforma: plataforma, formato: formato, resultado: j.resultado || {} };
+      pintarResultado();
+    } catch (e) { toast('err', 'No se pudo generar', String(e && e.message || e)); }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-sparkles"></i> Generar con IA'; }
+  };
+
+  function pintarResultado() {
+    var resDiv = document.getElementById('nxAiResultado'); if (!resDiv || !_genUltimo) return;
+    var r = _genUltimo.resultado || {};
+    resDiv.innerHTML = '<div style="border-top:1px dashed #e2e8f0;padding-top:12px">' +
+      '<div style="font-weight:800;font-size:12.5px;color:#0f172a;margin-bottom:8px"><i class="ti ti-check" style="color:#16a34a"></i> Listo — puedes ajustar el texto antes de guardar</div>' +
+      '<div class="nxMdFr"><label>Hook / gancho</label><input id="resHook" value="' + esc(r.hook || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Texto / guion</label><textarea id="resTexto" rows="3">' + esc(r.texto || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Caption</label><textarea id="resCaption" rows="3">' + esc(r.caption || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Hashtags (separados por coma)</label><input id="resHashtags" value="' + esc(csv(r.hashtags)) + '"></div>' +
+      '<div class="nxMdFr"><label>Llamado a la acción</label><input id="resCta" value="' + esc(r.cta || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Idea de foto/imagen</label><textarea id="resImg" rows="2">' + esc(r.prompt_imagen || '') + '</textarea></div>' +
+      '<div class="nxAiNav"><button class="btn bghost" type="button" onclick="window.nxAiGenerar()"><i class="ti ti-refresh"></i> Regenerar</button>' +
+      '<button class="btn bc1" type="button" onclick="window.nxAiGuardarItem()" style="background:#c026d3"><i class="ti ti-device-floppy"></i> Guardar en biblioteca</button></div>' +
+      '</div>';
+  }
+  window.nxAiGuardarItem = async function () {
+    if (!_genUltimo) return;
+    var d = {
+      pilar_id: _genUltimo.pilar_id, tema: _genUltimo.tema, plataforma: _genUltimo.plataforma, formato: _genUltimo.formato,
+      hook: val('resHook').trim() || null, texto: val('resTexto').trim() || null, caption: val('resCaption').trim() || null,
+      hashtags: arr(val('resHashtags')), cta: val('resCta').trim() || null, prompt_imagen: val('resImg').trim() || null, estado: 'borrador'
+    };
+    try {
+      var r = await getAPI().post('ai_content_items', d);
+      if (r && r[0]) _items.unshift(r[0]);
+      try { window.logAudit && window.logAudit('AI_CONTENT_GENERADO', d.tema + ' · ' + d.plataforma, 'NexusAIContent'); } catch (e) {}
+      toast('ok', 'Guardado en tu biblioteca');
+      _genUltimo = null;
+      window.nxAiAbrirBiblioteca();
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+
+  function renderBiblioteca(view) {
+    var cards = (_items || []).map(function (it) {
+      var prev = String(it.caption || it.texto || '').slice(0, 90);
+      return '<div class="nxAiDCard"><h4>' + esc(it.tema || 'Sin tema') +
+        '<button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEliminarItem(\'' + it.id + '\')"><i class="ti ti-trash"></i></button>' +
+        '<button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiFavItem(\'' + it.id + '\')"><i class="ti ti-star' + (it.favorito ? '-filled' : '') + '" style="color:' + (it.favorito ? '#d97706' : '#94a3b8') + '"></i></button>' +
+        '</h4><div style="margin-bottom:6px"><span class="nxAiChip">' + esc(it.plataforma || '') + '</span><span class="nxAiChip">' + esc(it.formato || '') + '</span></div>' +
+        '<div style="font-size:11.5px;color:#64748b;margin-bottom:8px">' + esc(prev) + (prev.length >= 90 ? '…' : '') + '</div>' +
+        '<button class="btn bsm" type="button" onclick="window.nxAiVerItem(\'' + it.id + '\')" style="width:100%"><i class="ti ti-eye"></i> Ver completo</button></div>';
+    }).join('');
+    view.innerHTML = '<div class="nxAiWrap"><div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-bookmark" style="color:#a21caf"></i> Biblioteca de contenido</div><div class="ct-s">' + (_items.length) + ' pieza' + (_items.length === 1 ? '' : 's') + ' guardada' + (_items.length === 1 ? '' : 's') + '</div></div>' +
+      '<div style="display:flex;gap:6px"><button class="btn bsm" type="button" onclick="window.nxAiVolverDash()"><i class="ti ti-arrow-left"></i> Volver</button>' +
+      '<button class="btn bsm bc1" type="button" onclick="window.nxAiAbrirGenerador()" style="background:#c026d3"><i class="ti ti-plus"></i> Generar</button></div></div>' +
+      '<div class="nxAiDashG">' + (cards || '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:26px;font-size:12px">Todavía no has generado contenido — toca "Generar" para crear tu primera pieza</div>') + '</div>' +
+      '</div></div>';
+  }
+  window.nxAiAbrirBiblioteca = function () { var v = document.getElementById('v-aicontent'); if (v) renderBiblioteca(v); };
+  window.nxAiFavItem = async function (id) {
+    var it = _items.find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+    var nuevo = !it.favorito;
+    try { await getAPI().patch('ai_content_items', 'id=eq.' + id, { favorito: nuevo }); it.favorito = nuevo; window.nxAiAbrirBiblioteca(); } catch (e) { toast('err', 'No se pudo actualizar'); }
+  };
+  window.nxAiEliminarItem = async function (id) {
+    if (!confirm('¿Eliminar esta pieza de contenido?')) return;
+    try {
+      await getAPI().del('ai_content_items', 'id=eq.' + id);
+      _items = _items.filter(function (x) { return String(x.id) !== String(id); });
+      toast('ok', 'Eliminado'); window.nxAiAbrirBiblioteca();
+    } catch (e) { toast('err', 'No se pudo eliminar'); }
+  };
+  window.nxAiVerItem = function (id) {
+    var it = _items.find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+    modal('nxAiVerM', '<div style="font-weight:800;font-size:14px;margin-bottom:2px"><i class="ti ti-sparkles" style="color:#c026d3"></i> ' + esc(it.tema || '') + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:10px">' + esc(it.plataforma || '') + ' · ' + esc(it.formato || '') + '</div>' +
+      (it.hook ? '<div class="nxMdFr"><label>Hook</label><div style="font-size:13px;color:#0f172a">' + esc(it.hook) + '</div></div>' : '') +
+      (it.texto ? '<div class="nxMdFr"><label>Texto</label><div style="font-size:13px;color:#0f172a;white-space:pre-wrap">' + esc(it.texto) + '</div></div>' : '') +
+      (it.caption ? '<div class="nxMdFr"><label>Caption</label><div style="font-size:13px;color:#0f172a;white-space:pre-wrap">' + esc(it.caption) + '</div></div>' : '') +
+      (it.hashtags && it.hashtags.length ? '<div class="nxMdFr"><label>Hashtags</label><div style="font-size:13px;color:#a21caf">' + esc(csv(it.hashtags)) + '</div></div>' : '') +
+      (it.cta ? '<div class="nxMdFr"><label>CTA</label><div style="font-size:13px;color:#0f172a">' + esc(it.cta) + '</div></div>' : '') +
+      (it.prompt_imagen ? '<div class="nxMdFr"><label>Idea de foto/imagen</label><div style="font-size:12.5px;color:#64748b">' + esc(it.prompt_imagen) + '</div></div>' : '') +
+      '<div class="nxMdBtns"><button class="nxMdBtn g" type="button" onclick="document.getElementById(\'nxAiVerM\').remove()">Cerrar</button></div>', 560);
+  };
 
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 7, nombre: 'NEXUS AI CONTENT', desc: 'Genera contenido y estrategia de marketing con IA', icon: 'ti-sparkles', color: '#c026d3', bg: '#fdf4ff', onclick: 'window.nxAbrirAIContent()' }); } catch (e) {} }
   function init() { inyectarCSS(); var n = 0; var t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 150); }; t(); }

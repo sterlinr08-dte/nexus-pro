@@ -1803,6 +1803,42 @@ trabajar en fases pequeñas y verificables (NO se programó el spec completo de 
   `index.html` (el módulo vive solo en Multiempresa, como estaba decidido) salvo el bump de
   `APP_VERSION`.
 
+**FASE 2 — el generador de contenido con IA (13-jul-2026, v48.23).** Primer pedazo real de generación:
+- **Tabla nueva `ai_content_items`** (mismo patrón org+trigger+RLS): guarda cada pieza generada
+  (hook, texto, caption, hashtags, cta, prompt_imagen, pilar_id opcional, plataforma, formato, estado,
+  favorito). Es a la vez el "borrador" y el "historial" — no hace falta una tabla de log aparte, cada
+  generación que se guarda ES un registro.
+- **Función Edge nueva `ai-content-generar`** (`verify_jwt:true` — a diferencia de `nexus-smart`, SOLO
+  responde a usuarios logueados). La clave de Anthropic se lee con `Deno.env.get('ANTHROPIC_API_KEY')`
+  — **NO** repite el error de `nexus-smart` (clave hardcodeada). Recibe del frontend el contexto ya
+  cargado en memoria (empresa/nicho/público/marca/pilar elegido — el mismo que ya tiene `cargarTodo()`)
+  más el tema/plataforma/formato pedidos, arma un system prompt largo que obliga a la IA a seguir la
+  marca AL PIE DE LA LETRA (tono, tratamiento tú/usted, emojis sí/no, palabras permitidas/prohibidas,
+  temas a evitar del nicho) y pide la respuesta en JSON estricto. Modelo usado:
+  `claude-haiku-4-5-20251001` (el mismo que ya prueba `nexus-smart` en producción — se reusó ese modelo
+  a propósito para no introducir un id de modelo sin probar en este proyecto). La función NO escribe en
+  la base — solo genera y devuelve el JSON; el guardado en `ai_content_items` lo hace el frontend con
+  `getAPI().post(...)` como CUALQUIER otra tabla del sistema (mismo patrón de siempre, RLS de por medio),
+  para no inventar un mecanismo de escritura nuevo solo para este módulo.
+- **UI nueva dentro de NEXUS AI CONTENT:** la tarjeta "Generador de contenido IA" del panel dejó de ser
+  "Próximamente" y ahora es real — abre un formulario (pilar/plataforma/formato/tema/instrucciones) →
+  "Generar con IA" → resultado editable (puedes ajustar cualquier campo antes de guardar) → "Guardar en
+  biblioteca" o "Regenerar". **Biblioteca de contenido** (`nxAiAbrirBiblioteca`) nueva: lista de piezas
+  guardadas con favorito ⭐, ver completo (modal) y eliminar. Calendario/Aprobaciones/Publicaciones/
+  Analítica/Automatizaciones siguen en "Próximamente" — a propósito, no se tocaron.
+- **BLOQUEO REAL encontrado y resuelto con el dueño:** las herramientas MCP de Supabase disponibles en
+  esta sesión NO tienen forma de crear/editar *secrets* de Edge Functions (no hay un tool equivalente a
+  `supabase secrets set`) — eso solo se puede hacer desde el Dashboard de Supabase o el CLI, fuera del
+  alcance de esta sesión. Por eso la función quedó desplegada y lista, pero **el dueño tiene que agregar
+  el secreto `ANTHROPIC_API_KEY`** en Supabase Dashboard → Edge Functions → Secrets (puede reusar el
+  mismo valor que ya usa `nexus-smart`, copiándolo desde ahí, o generar uno nuevo en la consola de
+  Anthropic) antes de que el generador funcione de verdad — mientras tanto, la función responde con un
+  error claro ("Falta configurar el secreto...") en vez de fallar en silencio o con un error críptico.
+- Verificado: `node --check parches.js` limpio, los 3 bloques `<script>` de `index.html` pasan
+  `new Function()`, `version.json` válido, `get_advisors` sin hallazgos nuevos en `ai_content_items`.
+  NO probado en vivo con una respuesta real de la IA (depende del secreto pendiente arriba) — el flujo
+  de guardado/biblioteca/edición SÍ se revisó contra el código real.
+
 ---
 
 ## Seguridad (ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
