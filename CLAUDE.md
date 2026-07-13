@@ -459,7 +459,26 @@ no se mezclan, cada buscador del sistema usa el que corresponde a su caso:
 
 ---
 
-### Secuencias centralizadas (numeración de documentos, v26.8)
+### REGLAMENTO — CADA APP DE MULTIEMPRESA CON SU PROPIO COLOR Y FORMATO (decretado por el dueño, 13-jul-2026) — OBLIGATORIO
+Cada app registrada en el hub de Multiempresa (`nxMERegistrar`) debe mantener su **propia identidad
+visual independiente** — color de acento e ícono propios en el tile del hub, y su propio look interno
+(paleta, y cuando aplique tipografía) — **nunca compartir tema con otra app** ni "heredar" el color de
+otra por accidente al copiar/pegar código de un módulo a otro. Es una regla de ESTILO hacia adelante
+(no se tocó código el día que se decretó, ya se venía cumpliendo en la práctica) — aplicarla en cada
+app nueva y respetarla al tocar una existente:
+- **Ya cumplido, ejemplos reales (no reconstruir, solo referencia):** Financiamiento verde `#059669` ·
+  Vehículos violeta `#6d28d9` · POS índigo `#7c3aed`/`#4f46e5` · Rifas índigo `#4f46e5` · Consultorio
+  Médico teal `#0d9488` · AGUAPRO azul marino (sidebar propio) · Clientes SaaS verde `#047857` · Panel
+  del Dueño ámbar `#b45309` · NEXUS AI CONTENT morado `#c026d3`. Cada uno con su ícono Tabler propio en
+  `nxMERegistrar({icon, color, bg, ...})`.
+- **Excepción ya negociada y documentada (no repetir sin pedirla):** Cuotas del POS y Financiamiento
+  usan morado + Plus Jakarta Sans como excepción deliberada al índigo/Segoe UI del resto — confirmado
+  caso por caso con el dueño (ver "REDISEÑO PREMIUM" más arriba), NO es la regla general.
+- **Al crear una app nueva de Multiempresa:** elegir un color de acento que NO esté ya en uso por otra
+  app del hub (revisar la lista de arriba primero), un ícono Tabler propio, y su propio CSS con
+  prefijo/namespace único (patrón `nxAi*`, `nxSa*`, `nxMd*`, `nxRf*`...) — nunca reusar directamente
+  las clases CSS de otro módulo aunque el HTML se parezca, para no arrastrar su color si ese módulo
+  cambia el suyo después.
 Tabla `pos_secuencias` (tipo único por org, prefijo, longitud, proximo; org+trigger+RLS).
 Helper async `nextSeq(tipo)` lee la fila, devuelve `prefijo+pad(proximo)` y hace
 `proximo+1`; si no hay fila para ese tipo devuelve **null** (los callers caen a su
