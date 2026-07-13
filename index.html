@@ -318,7 +318,6 @@ tbody tr:hover td{background:#f8fafc}
 .qa:hover{border-color:var(--c1);background:#eff6ff;transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .qa:hover .qa-i,.qa:hover .qa-l{color:#1d4ed8}
 .qa-i{font-size:18px;color:#8b5cf6;margin-bottom:6px;display:block;transition:color .13s}
-.qa-ico3d{width:34px;height:34px;object-fit:contain;display:block;margin:0 auto}
 .qa-l{font-size:10px;color:#475569;font-weight:600;transition:color .13s}
 .av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
 .loading{display:flex;align-items:center;justify-content:center;padding:2rem;color:var(--tx3);font-family:var(--mono);font-size:10px;gap:8px}
@@ -1030,12 +1029,12 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="view on" id="v-dashboard">
           <div id="alertasBanner"></div>
           <div class="qa-g">
-            <div class="qa" onclick="nav('facturas',null)"><span class="qa-i"><img class="qa-ico3d" src="dash-icons/facturas.png" alt="" loading="lazy"></span><div class="qa-l">Facturas</div></div>
-            <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><span class="qa-i"><img class="qa-ico3d" src="dash-icons/clientes.png" alt="" loading="lazy"></span><div class="qa-l">CLIENTES</div></div>
-            <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><span class="qa-i"><img class="qa-ico3d" src="dash-icons/detalles-cobro.png" alt="" loading="lazy"></span><div class="qa-l">Detalles de Cobro</div></div>
-            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><span class="qa-i"><img class="qa-ico3d" src="dash-icons/facturas-pendientes.png" alt="" loading="lazy"></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
-            <div class="qa" onclick="nav('dgii',null)"><span class="qa-i"><img class="qa-ico3d" src="dash-icons/reporte-dgii.png" alt="" loading="lazy"></span><div class="qa-l">Reporte DGII</div></div>
-            <div class="qa" onclick="exportarCSV()"><span class="qa-i"><img class="qa-ico3d" src="dash-icons/exportar-excel.png" alt="" loading="lazy"></span><div class="qa-l">Exportar Excel</div></div>
+            <div class="qa" onclick="nav('facturas',null)"><span class="qa-i"><i class="ti ti-file-invoice qa-ico c-azul"></i></span><div class="qa-l">Facturas</div></div>
+            <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)"><span class="qa-i"><i class="ti ti-users qa-ico c-verde"></i></span><div class="qa-l">CLIENTES</div></div>
+            <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()"><span class="qa-i"><i class="ti ti-chart-pie qa-ico c-teal"></i></span><div class="qa-l">Detalles de Cobro</div></div>
+            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><span class="qa-i"><i class="ti ti-file-alert qa-ico c-ambar"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
+            <div class="qa" onclick="nav('dgii',null)"><span class="qa-i"><i class="ti ti-receipt-tax qa-ico c-rojo"></i></span><div class="qa-l">Reporte DGII</div></div>
+            <div class="qa" onclick="exportarCSV()"><span class="qa-i"><i class="ti ti-file-spreadsheet qa-ico c-esmeralda"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
           <div class="kg" id="kpiG"><div class="loading"><div class="spin"></div>Cargando...</div></div>
           <div class="nc"><div class="ch"><div><div class="ct">Resumen de cobros</div><div class="ct-s">últimos 6 meses</div></div></div><div id="chartCobros" style="padding:8px 4px 4px"></div></div>
@@ -3442,7 +3441,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.23';
+const APP_VERSION='48.24';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

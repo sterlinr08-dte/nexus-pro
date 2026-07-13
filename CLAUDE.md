@@ -1078,6 +1078,12 @@ Los 6 iconos se recortaron de la hoja original (Python/Pillow), se guardaron com
 ...">` de cada tile por un `<img class="qa-ico3d">` — el `onclick`/función de cada botón NO cambió,
 solo el icono. CSS nueva: `.qa-ico3d{width:34px;height:34px;object-fit:contain}`.
 
+**REVERTIDO v48.24:** el dueño no quedó contento con el resultado visual — se volvió a los iconos
+Tabler de siempre (`<i class="ti ti-file-invoice qa-ico c-azul">` etc., los mismos 6 con su color por
+tarjeta). El código vuelve a index.html idéntico a antes de v48.21; los `.png` de `dash-icons/`
+quedan en el repo sin usar (no se borraron, no se pidió). Si se retoma un rediseño de iconos del
+Dashboard más adelante, no reusar directo esta hoja sin antes mostrarle una muestra al dueño.
+
 ## Módulos / funcionalidades ya construidas
 
 - **Clientes**: ficha, cédula, teléfono, dirección; clientes en proceso.
