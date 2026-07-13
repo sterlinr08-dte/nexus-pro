@@ -1737,6 +1737,74 @@ prueba" (nxProbarReporte()) llama la función con {forzar:true} para probar sin 
 
 ---
 
+### NEXUS AI CONTENT — marketing y contenido con IA (12/13-jul-2026, v48.22, FASE 1: Base)
+Módulo nuevo en Multiempresa para que cada organización (negocio cliente) configure su marca y
+genere después contenido de marketing con IA. Encargado por el dueño con una especificación muy larga
+(36 secciones, arquitecto de software) pidiendo primero una **auditoría de solo-lectura (FASE 0)** antes
+de tocar nada — se hizo, sin editar archivos ni ejecutar migraciones, y entregó un informe completo
+(arquitectura real, multi-tenant, permisos, componentes reusables, riesgos, plan por fases). El dueño
+confirmó 4 decisiones (todas la opción recomendada) y luego autorizó todo en bloque para construir
+mientras dormía ("hazla completa... tienes todos los permisos y eliges lo más recomendable... mañana lo
+vamos a revisar") — por eso esta fase se construyó y publicó DIRECTO a `main` sin rama de revisión previa
+(a diferencia del patrón habitual de esta sesión de subir cambios grandes a una rama aparte), siguiendo
+el propio reglamento del dueño (punto 1 de "Cómo le gusta trabajar") y la propia regla del spec de
+trabajar en fases pequeñas y verificables (NO se programó el spec completo de una sola vez).
+- **Identificador de tenant: `organizacion_id`** (el mismo de siempre — POS/Rifas/AGUAPRO/Consultorio/
+  Clientes SaaS). El spec original sugería `empresa_id`/`tenant_id`; se descartó de raíz porque
+  `empresas` YA EXISTE y significa las aseguradoras (Humano, Universal...) — usarlo como tenant hubiera
+  sido una colisión conceptual grave. `tenant_id` no se usa en ningún lugar del repo.
+- **Solo dentro de Multiempresa** (no hay entrada en el sidebar principal, decisión confirmada por el
+  dueño) — se registra en el hub con `nxMERegistrar({orden:7, nombre:'NEXUS AI CONTENT', icon:'ti-sparkles',
+  color:'#c026d3'})`. Gateado a `esAdmin()` (patrón simple, igual que Consultorio/SaaS/Financiamiento) —
+  confirmado por el dueño en vez de construir sobre el sistema genérico de roles/permisos
+  (`roles`/`permissions`/`role_permissions`/`user_permissions`), que se auditó y resultó ser código
+  MUERTO (cero referencias en el frontend, RLS sin proteger) — no se tocó ni se construyó encima.
+- **7 tablas nuevas** (`ai_content_settings`, `ai_content_niches`, `ai_content_company_niches`,
+  `ai_content_audiences`, `ai_content_brand_profiles`, `ai_content_pillars`, `ai_content_acceso`),
+  patrón idéntico a `pos_*`/`rifa_*`/`agua_*`/`med_*` (org+trigger `set_organizacion_id()`+RLS
+  `mi_rol() is not null AND organizacion_id = mi_organizacion()`). `ai_content_niches` es la EXCEPCIÓN
+  (catálogo global de plantillas, no tiene `organizacion_id`): lectura pública para cualquier
+  autenticado, escritura solo `mi_rol()='admin'` — sembrado con 10 nichos (tienda/taller de celulares,
+  correduría de seguros, restaurante, barbería/salón, taller mecánico, farmacia, gimnasio, bienes
+  raíces, distribuidora de agua, clínica de odontología); el primero (celulares) trae además
+  `pilares_sugeridos` (13 pilares con color) como ejemplo completo del spec. `ai_content_acceso`
+  (patrón `pos_acceso`) quedó CREADA pero SIN UI todavía — reservada para una fase futura de permisos
+  granulares por rol dentro de la org; por ahora el módulo entero es solo-admin.
+- **Onboarding de 7 pasos** (`window.nxAbrirAIContent`, vista `#v-aicontent`, IIFE propio al final de
+  `parches.js`): Empresa → Nicho (elegir de las 10 plantillas o "Nicho personalizado", con los campos
+  editables antes de guardar) → Objetivos (checkboxes de objetivos comunes + uno libre) → Público
+  (edad/ubicación/intereses/problemas/objeciones/nivel de conocimiento/plataforma preferida) → Marca
+  (3 colores, tipografía, tratamiento tú/usted, estilo visual, tono, emojis sí/no, frase y llamados a
+  la acción, palabras permitidas/prohibidas, estilo fotográfico) → Pilares de contenido (lista editable
+  con nombre/%/formatos/plataformas/color; botón "Usar pilares sugeridos" si el nicho elegido trae
+  `pilares_sugeridos`) → Resumen (revisa todo, botón "Finalizar configuración" marca
+  `onboarding_completado=true`). Cada paso se guarda al tocar "Continuar" (`ai_content_settings.
+  onboarding_paso` avanza en vivo) — si el dueño cierra a mitad de camino, retoma donde se quedó.
+  Al terminar, la pantalla principal es un **resumen tipo tarjetas** (Empresa/Nicho/Objetivos/Público/
+  Marca/Pilares) cada una con su botón de editar (reabre el mismo paso en un modo "editar" que guarda
+  y regresa al resumen sin forzar los pasos siguientes) + una sección **"Próximamente"** con 6 tarjetas
+  atenuadas (Generador de contenido IA, Calendario editorial, Aprobaciones, Publicaciones, Analítica,
+  Automatizaciones) — comunica con claridad qué es esta fase y qué falta, no finge funciones que no
+  existen.
+- **Deliberadamente FUERA de esta fase** (FASE 2 en adelante, según el propio spec del dueño): el
+  generador de contenido con IA en sí (necesita una Edge Function nueva con llamada real a un proveedor
+  de IA), calendario editorial, aprobaciones, publicaciones, analítica, automatizaciones, integraciones,
+  biblioteca de medios, bandeja de tendencias, banco de ideas.
+- **Nota de seguridad encontrada de paso (no corregida, fuera de alcance):** al investigar el precedente
+  de llamadas a IA desde el backend se encontró que la función Edge `nexus-smart` (ya en producción,
+  respalda el chatbot "Nexus Smart IA" del dashboard de Seguros) tiene la clave de Anthropic
+  **hardcodeada en texto plano** en el código de la función (no `Deno.env.get()`) y `verify_jwt:false`
+  (se puede llamar sin sesión). Está limitada a datos de Seguros y usa la SERVICE_ROLE_KEY (salta RLS);
+  NO es multi-tenant. No se tocó (no era el encargo), pero cuando se construya el Generador IA de este
+  módulo (FASE 2) la clave se debe leer con `Deno.env.get()` — no repetir ese error.
+- Verificado: `node --check parches.js` limpio, los 3 bloques `<script>` de `index.html` pasan
+  `new Function()`, `version.json` válido, `get_advisors` de seguridad sin hallazgos nuevos en ninguna
+  de las 7 tablas (mismo listado de siempre, todo en tablas ajenas y ya conocidas). NO se tocó
+  `index.html` (el módulo vive solo en Multiempresa, como estaba decidido) salvo el bump de
+  `APP_VERSION`.
+
+---
+
 ## Seguridad (ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
 
 **Plan Opción A — Supabase Auth, por fases reversibles:**

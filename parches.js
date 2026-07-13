@@ -22546,3 +22546,428 @@ try {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
+
+// ────────────────────────────────────────────────────────────────────────
+// NEXUS AI CONTENT — marketing y contenido con IA (FASE 1: Base)
+// Onboarding: Empresa · Nicho · Objetivos · Público · Marca · Pilares · Resumen.
+// Generador IA / Calendario / Aprobaciones / Publicaciones / Analítica /
+// Automatizaciones quedan para fases siguientes (ver CLAUDE.md).
+// ────────────────────────────────────────────────────────────────────────
+(function () {
+  function getAPI() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]; }); }
+  function toast() { try { return window.toast.apply(null, arguments); } catch (e) {} }
+  function val(id) { var e = document.getElementById(id); return e ? e.value : ''; }
+  function curSes() { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { try { return window.sesion; } catch (_) { return null; } } }
+  function esAdmin() { var s = curSes(); return !!(s && s.rol === 'admin'); }
+  function arr(s) { return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); }
+  function csv(a) { if (Array.isArray(a)) return a.join(', '); return a || ''; }
+
+  function inyectarCSS() {
+    if (!document.getElementById('nxMdCSS')) {
+      var s2 = document.createElement('style'); s2.id = 'nxMdCSS';
+      s2.textContent = '.nxMdOv{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:18px 10px;overflow:auto}.nxMdModal{background:#fff;border-radius:16px;box-shadow:0 22px 60px rgba(15,23,42,.28);width:100%;padding:16px;margin:auto 0}.nxMdFr{margin-bottom:9px}.nxMdFr label{display:block;font-size:10.5px;font-weight:700;color:#475569;margin-bottom:3px;text-transform:uppercase}.nxMdFr input,.nxMdFr select,.nxMdFr textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:9px 10px;font-size:13px;font-family:inherit;box-sizing:border-box}.nxMdG2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nxMdBtns{display:flex;gap:7px;margin-top:12px}.nxMdBtn{flex:1;border:0;border-radius:11px;padding:11px;font-size:13px;font-weight:800;cursor:pointer}.nxMdBtn.p{background:#0d9488;color:#fff}.nxMdBtn.g{background:#f1f5f9;color:#334155}.nxMdKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}.nxMdKpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:11px 12px}.nxMdKpi b{display:block;font-size:16px;color:#0f172a}.nxMdKpi span{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase}';
+      document.head.appendChild(s2);
+    }
+    if (document.getElementById('nxAiCSS')) return;
+    var s = document.createElement('style'); s.id = 'nxAiCSS';
+    s.textContent = '.nxAiWrap{max-width:760px;margin:0 auto}' +
+      '.nxAiSteps{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}' +
+      '.nxAiStep{flex:1;min-width:70px;text-align:center;padding:7px 4px;border-radius:9px;background:#f1f5f9;color:#64748b;font-size:9.5px;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.nxAiStep.on{background:#c026d3;color:#fff}.nxAiStep.done{background:#fae8ff;color:#a21caf}' +
+      '.nxAiCard2{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}' +
+      '.nxAiNiches{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}' +
+      '.nxAiNCard{border:1.5px solid #e2e8f0;border-radius:12px;padding:10px;cursor:pointer;transition:.15s}' +
+      '.nxAiNCard:hover{border-color:#c026d3}.nxAiNCard.on{border-color:#c026d3;background:#fdf4ff}' +
+      '.nxAiNCard b{display:block;font-size:12px;color:#0f172a;margin-bottom:2px}.nxAiNCard span{font-size:10px;color:#64748b;display:block;line-height:1.3}' +
+      '.nxAiChip{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;color:#334155;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;margin:2px 3px 0 0}' +
+      '.nxAiObjs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px;margin-bottom:10px}' +
+      '.nxAiObj{display:flex;align-items:center;gap:7px;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 10px;cursor:pointer;font-size:12px;color:#334155;font-weight:600}' +
+      '.nxAiObj.on{border-color:#c026d3;background:#fdf4ff;color:#a21caf}' +
+      '.nxAiPilar{border:1px solid #e2e8f0;border-radius:12px;padding:10px;margin-bottom:8px}' +
+      '.nxAiPilarTop{display:flex;gap:8px;align-items:center;margin-bottom:6px}' +
+      '.nxAiNav{display:flex;gap:8px;margin-top:14px}.nxAiNav button{flex:1}' +
+      '.nxAiDashG{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}' +
+      '.nxAiDCard{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px}' +
+      '.nxAiDCard h4{margin:0 0 6px;font-size:11px;color:#a21caf;text-transform:uppercase;letter-spacing:.3px}' +
+      '.nxAiSoon{opacity:.6}.nxAiSoonBadge{font-size:8.5px;background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:999px;font-weight:800;margin-left:6px}' +
+      '@media(max-width:480px){.nxMdG2{grid-template-columns:1fr}}';
+    document.head.appendChild(s);
+  }
+
+  function ensureView() {
+    var v = document.getElementById('v-aicontent');
+    if (v) return v;
+    var dash = document.getElementById('v-dashboard');
+    if (!dash || !dash.parentElement) return null;
+    v = document.createElement('div'); v.className = 'view'; v.id = 'v-aicontent';
+    dash.parentElement.appendChild(v);
+    return v;
+  }
+
+  var _settings = null, _companyNiche = null, _audience = null, _brand = null, _pillars = [], _niches = [], _pilarWork = [], _nicheTpl = null;
+  var _wizNicheId, _wizNicheForm = null, _wizObjetivos = null;
+  var _pasoActual = 1, _maxPaso = 1, _modoEdicion = false;
+  var STEP_LBL = ['Empresa', 'Nicho', 'Objetivos', 'Público', 'Marca', 'Pilares', 'Resumen'];
+  var OBJ_LIST = ['Aumentar ventas', 'Dar a conocer la marca', 'Conseguir más clientes nuevos', 'Fidelizar clientes actuales', 'Generar contactos interesados (leads)', 'Educar sobre mis productos o servicios', 'Responder preguntas frecuentes', 'Mejorar mi reputación y reseñas', 'Crecer en redes sociales'];
+
+  async function cargarTodo() {
+    var r;
+    try { r = await getAPI().get('ai_content_settings', 'select=*'); _settings = (r && r[0]) || null; } catch (e) { _settings = null; }
+    try { r = await getAPI().get('ai_content_company_niches', 'select=*&order=es_principal.desc'); _companyNiche = (r && r[0]) || null; } catch (e) { _companyNiche = null; }
+    try { r = await getAPI().get('ai_content_audiences', 'select=*&limit=1'); _audience = (r && r[0]) || null; } catch (e) { _audience = null; }
+    try { r = await getAPI().get('ai_content_brand_profiles', 'select=*'); _brand = (r && r[0]) || null; } catch (e) { _brand = null; }
+    try { r = await getAPI().get('ai_content_pillars', 'select=*&order=orden.asc'); _pillars = r || []; } catch (e) { _pillars = []; }
+    try { r = await getAPI().get('ai_content_niches', 'select=*&order=orden.asc'); _niches = r || []; } catch (e) { _niches = []; }
+    _pilarWork = _pillars.map(function (p) { return Object.assign({}, p); });
+    _nicheTpl = (_companyNiche && _companyNiche.niche_id) ? (_niches.find(function (n) { return n.id === _companyNiche.niche_id; }) || null) : null;
+    _wizNicheId = undefined; _wizNicheForm = null; _wizObjetivos = null; _modoEdicion = false;
+  }
+
+  window.nxAbrirAIContent = async function () {
+    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    inyectarCSS();
+    var view = ensureView(); if (!view) return;
+    document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
+    view.classList.add('on');
+    var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'NEXUS AI CONTENT';
+    try { if (window.innerWidth <= 768 && typeof closeMobSB === 'function') closeMobSB(); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    view.innerHTML = '<div class="nc"><div style="padding:36px;text-align:center;color:#475569"><div class="spin"></div></div></div>';
+    try {
+      await cargarTodo();
+      if (_settings && _settings.onboarding_completado) { _pasoActual = 7; _maxPaso = 7; renderDashboard(view); }
+      else { _pasoActual = (_settings && _settings.onboarding_paso) || 1; _maxPaso = _pasoActual; renderWizard(view); }
+    } catch (e) { view.innerHTML = '<div class="nc"><div style="padding:30px;text-align:center;color:#dc2626;font-size:13px">No se pudo cargar.</div></div>'; }
+  };
+
+  function navHTML(n, hasBack) {
+    if (_modoEdicion) {
+      return '<div class="nxAiNav"><button class="btn bghost" type="button" onclick="window.nxAiCancelarEdicion()">Cancelar</button>' +
+        '<button class="btn bc1" type="button" onclick="window.nxAiGuardarEdicion(' + n + ')" style="background:#c026d3"><i class="ti ti-check"></i> Guardar cambios</button></div>';
+    }
+    return '<div class="nxAiNav">' + (hasBack ? '<button class="btn bghost" type="button" onclick="window.nxAiIr(' + (n - 1) + ')"><i class="ti ti-arrow-left"></i> Atrás</button>' : '') +
+      '<button class="btn bc1" type="button" onclick="window.nxAiGuardarPaso(' + n + ')" style="background:#c026d3">Continuar <i class="ti ti-arrow-right"></i></button></div>';
+  }
+
+  function paso1() {
+    var s = _settings || {};
+    return '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:#0f172a">Datos de tu negocio</div>' +
+      '<div class="nxMdFr"><label>Nombre comercial *</label><input id="aiNom" value="' + esc(s.nombre_comercial || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Descripción corta</label><textarea id="aiDesc" rows="2" placeholder="En una frase, ¿a qué te dedicas?">' + esc(s.descripcion_corta || '') + '</textarea></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>País</label><input id="aiPais" value="' + esc(s.pais || 'República Dominicana') + '"></div>' +
+      '<div class="nxMdFr"><label>Ciudad</label><input id="aiCiudad" value="' + esc(s.ciudad || '') + '"></div></div>' +
+      '<div class="nxMdFr"><label>Dirección</label><input id="aiDir" value="' + esc(s.direccion || '') + '"></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Sitio web</label><input id="aiWeb" value="' + esc(s.sitio_web || '') + '"></div>' +
+      '<div class="nxMdFr"><label>WhatsApp</label><input id="aiWa" value="' + esc(s.whatsapp || '') + '" placeholder="8095551234"></div></div>' +
+      '<div class="nxMdFr"><label>Correo</label><input id="aiCorreo" value="' + esc(s.correo || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Industria / rubro general</label><input id="aiInd" value="' + esc(s.industria_general || '') + '" placeholder="Ej. Venta de celulares, seguros, restaurante..."></div>' +
+      navHTML(1, false);
+  }
+
+  function nicheFormHTML() {
+    var f = _wizNicheForm || {};
+    return '<div style="border-top:1px dashed #e2e8f0;margin-top:6px;padding-top:12px">' +
+      '<div class="nxMdFr"><label>Nombre del nicho</label><input id="aiNiNom" value="' + esc(f.nombre || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Descripción</label><textarea id="aiNiDesc" rows="2">' + esc(f.descripcion || '') + '</textarea></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Productos principales</label><textarea id="aiNiProd" rows="2">' + esc(f.productos_principales || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Servicios principales</label><textarea id="aiNiServ" rows="2">' + esc(f.servicios_principales || '') + '</textarea></div></div>' +
+      '<div class="nxMdFr"><label>Tipo de cliente</label><input id="aiNiTipo" value="' + esc(f.tipo_cliente || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Público objetivo</label><textarea id="aiNiPub" rows="2">' + esc(f.publico_objetivo || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Qué problemas resuelves</label><textarea id="aiNiProb" rows="2">' + esc(f.problemas_resuelve || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Palabras clave (separadas por coma)</label><input id="aiNiKw" value="' + esc(csv(f.palabras_clave)) + '"></div>' +
+      '<div class="nxMdFr"><label>Temas recomendados (separados por coma)</label><input id="aiNiTem" value="' + esc(csv(f.temas_recomendados)) + '"></div>' +
+      '<div class="nxMdFr"><label>Temas a EVITAR (separados por coma)</label><input id="aiNiEvit" value="' + esc(csv(f.temas_prohibidos)) + '"></div>' +
+      '</div>';
+  }
+  function paso2() {
+    if (typeof _wizNicheId === 'undefined' && _companyNiche) {
+      _wizNicheId = _companyNiche.niche_id || null;
+      _wizNicheForm = Object.assign({}, _companyNiche);
+      _nicheTpl = _companyNiche.niche_id ? (_niches.find(function (n) { return n.id === _companyNiche.niche_id; }) || null) : null;
+    }
+    var sel = _wizNicheId;
+    var cards = _niches.map(function (n) {
+      var on = (typeof sel !== 'undefined' && sel === n.id) ? ' on' : '';
+      return '<div class="nxAiNCard' + on + '" onclick="window.nxAiElegirNicho(\'' + n.id + '\')"><b>' + esc(n.nombre) + '</b><span>' + esc(String(n.descripcion || '').slice(0, 70)) + '</span></div>';
+    }).join('');
+    var customOn = (typeof sel !== 'undefined' && sel === null) ? ' on' : '';
+    cards += '<div class="nxAiNCard' + customOn + '" onclick="window.nxAiElegirNicho(null)"><b><i class="ti ti-edit"></i> Nicho personalizado</b><span>Describe tu negocio a tu manera</span></div>';
+    var form = (typeof sel !== 'undefined') ? nicheFormHTML() : '';
+    return '<div style="font-weight:800;font-size:13px;margin-bottom:4px;color:#0f172a">¿A qué se dedica tu negocio?</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Elige la plantilla más parecida — luego puedes ajustar todo.</div>' +
+      '<div class="nxAiNiches">' + cards + '</div>' + form + navHTML(2, true);
+  }
+  window.nxAiElegirNicho = function (id) {
+    _wizNicheId = id;
+    var tpl = id ? _niches.find(function (n) { return n.id === id; }) : null;
+    _wizNicheForm = {
+      nombre: (tpl && tpl.nombre) || (_companyNiche && _companyNiche.nombre) || (_settings && _settings.nombre_comercial) || '',
+      descripcion: (tpl && tpl.descripcion) || '',
+      productos_principales: (tpl && tpl.productos_principales) || '',
+      servicios_principales: (tpl && tpl.servicios_principales) || '',
+      tipo_cliente: (tpl && tpl.tipo_cliente) || '',
+      publico_objetivo: (tpl && tpl.publico_objetivo) || '',
+      problemas_resuelve: (tpl && tpl.problemas_resuelve) || '',
+      palabras_clave: (tpl && tpl.palabras_clave) || [],
+      temas_recomendados: (tpl && tpl.temas_recomendados) || [],
+      temas_prohibidos: (tpl && tpl.temas_prohibidos) || []
+    };
+    _nicheTpl = tpl;
+    var v = document.getElementById('v-aicontent'); if (v) renderWizard(v);
+  };
+
+  function paso3() {
+    var sel = _wizObjetivos || (_settings && _settings.objetivos) || [];
+    var chips = OBJ_LIST.map(function (o) {
+      var on = sel.indexOf(o) >= 0;
+      return '<div class="nxAiObj' + (on ? ' on' : '') + '" onclick="window.nxAiToggleObj(\'' + o + '\')"><i class="ti ti-' + (on ? 'square-rounded-check' : 'square-rounded') + '"></i> ' + esc(o) + '</div>';
+    }).join('');
+    return '<div style="font-weight:800;font-size:13px;margin-bottom:4px;color:#0f172a">¿Qué quieres lograr con tu contenido?</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Elige todos los que apliquen.</div>' +
+      '<div class="nxAiObjs">' + chips + '</div>' +
+      '<div class="nxMdFr"><label>Otro objetivo (opcional)</label><input id="aiObjOtro" value=""></div>' +
+      navHTML(3, true);
+  }
+  window.nxAiToggleObj = function (o) {
+    _wizObjetivos = _wizObjetivos || ((_settings && _settings.objetivos) ? _settings.objetivos.slice() : []);
+    var i = _wizObjetivos.indexOf(o);
+    if (i >= 0) _wizObjetivos.splice(i, 1); else _wizObjetivos.push(o);
+    var v = document.getElementById('v-aicontent'); if (v) renderWizard(v);
+  };
+
+  function paso4() {
+    var a = _audience || {};
+    return '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:#0f172a">Tu público objetivo</div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Edad mínima</label><input id="aiEdadMin" type="number" value="' + (a.edad_min || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Edad máxima</label><input id="aiEdadMax" type="number" value="' + (a.edad_max || '') + '"></div></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Ubicación</label><input id="aiUbic" value="' + esc(a.ubicacion || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Tipo de cliente</label><input id="aiTipoCli" value="' + esc(a.tipo_cliente || '') + '" placeholder="Particular, empresa..."></div></div>' +
+      '<div class="nxMdFr"><label>Poder adquisitivo</label><select id="aiPoder"><option value="">-</option>' + ['Bajo', 'Medio', 'Medio-alto', 'Alto'].map(function (x) { return '<option' + (a.poder_adquisitivo === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
+      '<div class="nxMdFr"><label>Intereses</label><textarea id="aiIntereses" rows="2">' + esc(a.intereses || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Problemas que tiene</label><textarea id="aiProblemas" rows="2">' + esc(a.problemas || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Necesidades</label><textarea id="aiNecesid" rows="2">' + esc(a.necesidades || '') + '</textarea></div>' +
+      '<div class="nxMdFr"><label>Objeciones comunes (por qué no compran)</label><textarea id="aiObjec" rows="2">' + esc(a.objeciones || '') + '</textarea></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Nivel de conocimiento del tema</label><select id="aiNivel"><option value="">-</option>' + ['Principiante', 'Intermedio', 'Experto'].map(function (x) { return '<option' + (a.nivel_conocimiento === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
+      '<div class="nxMdFr"><label>Plataforma más usada</label><select id="aiPlat"><option value="">-</option>' + ['WhatsApp', 'Instagram', 'Facebook', 'TikTok', 'YouTube'].map(function (x) { return '<option' + (a.plataforma_mas_usada === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="nxMdFr"><label>Horarios de mayor actividad</label><input id="aiHorarios" value="' + esc(a.horarios_actividad || '') + '" placeholder="Ej. Noches y fines de semana"></div>' +
+      '<div class="nxMdFr"><label>Cómo prefieren que les hables</label><input id="aiPref" value="' + esc(a.preferencia_comunicacion || '') + '" placeholder="Directo, cercano, formal..."></div>' +
+      navHTML(4, true);
+  }
+
+  function paso5() {
+    var b = _brand || {};
+    var colores = (b.colores && b.colores.length) ? b.colores : ['#c026d3', '#0f172a', '#f8fafc'];
+    return '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:#0f172a">Identidad de marca</div>' +
+      '<div class="nxMdFr"><label>Colores de marca</label><div style="display:flex;gap:8px">' +
+      [0, 1, 2].map(function (i) { return '<input type="color" id="aiColor' + i + '" value="' + esc(colores[i] || '#c026d3') + '" style="width:44px;height:38px;border:1px solid #cbd5e1;border-radius:8px;padding:2px">'; }).join('') +
+      '</div></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Tipografía preferida</label><input id="aiTipog" value="' + esc(b.tipografia || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Tratamiento</label><select id="aiTrato"><option value="tu"' + (b.tratamiento !== 'usted' ? ' selected' : '') + '>Tú (cercano)</option><option value="usted"' + (b.tratamiento === 'usted' ? ' selected' : '') + '>Usted (formal)</option></select></div></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Estilo visual</label><select id="aiEstV"><option value="">-</option>' + ['Moderno', 'Minimalista', 'Elegante', 'Divertido y colorido', 'Corporativo/serio', 'Cálido y cercano', 'Lujo/premium'].map(function (x) { return '<option' + (b.estilo_visual === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
+      '<div class="nxMdFr"><label>Tono de voz</label><select id="aiTono"><option value="">-</option>' + ['Cercano y amigable', 'Profesional', 'Divertido/desenfadado', 'Inspirador', 'Directo/al grano', 'Educativo'].map(function (x) { return '<option' + (b.tono === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div></div>' +
+      '<label style="display:flex;align-items:center;gap:7px;font-size:12px;color:#334155;font-weight:600;margin:4px 0 10px"><input type="checkbox" id="aiEmojis" ' + (b.usa_emojis !== false ? 'checked' : '') + '> Usar emojis en el contenido</label>' +
+      '<div class="nxMdFr"><label>Frase o eslogan</label><input id="aiFrase" value="' + esc(b.frase_comercial || '') + '"></div>' +
+      '<div class="nxMdFr"><label>Llamado a la acción principal</label><input id="aiCta" value="' + esc(b.cta_principal || '') + '" placeholder="Ej. Escríbenos por WhatsApp"></div>' +
+      '<div class="nxMdFr"><label>Otros llamados a la acción (separados por coma)</label><input id="aiCta2" value="' + esc(csv(b.cta_secundarios)) + '"></div>' +
+      '<div class="nxMdG2"><div class="nxMdFr"><label>Palabras que SÍ usar</label><input id="aiPalOk" value="' + esc(csv(b.palabras_permitidas)) + '"></div>' +
+      '<div class="nxMdFr"><label>Palabras que NO usar</label><input id="aiPalNo" value="' + esc(csv(b.palabras_prohibidas)) + '"></div></div>' +
+      '<div class="nxMdFr"><label>Estilo fotográfico</label><select id="aiFoto"><option value="">-</option>' + ['Fotos reales del producto/local', 'Estilo de vida (lifestyle)', 'Ilustraciones/diseño gráfico', 'Minimalista/flat lay', 'Mixto'].map(function (x) { return '<option' + (b.estilo_fotografico === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
+      navHTML(5, true);
+  }
+
+  function paso6() {
+    var rows = (_pilarWork || []).map(function (p, i) {
+      return '<div class="nxAiPilar"><div class="nxAiPilarTop">' +
+        '<input type="color" value="' + esc(p.color || '#c026d3') + '" oninput="window.nxAiPilarSet(' + i + ',\'color\',this.value)" style="width:34px;height:32px;border:1px solid #cbd5e1;border-radius:7px;padding:1px">' +
+        '<input placeholder="Nombre del pilar" value="' + esc(p.nombre || '') + '" oninput="window.nxAiPilarSet(' + i + ',\'nombre\',this.value)" style="flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:7px 9px;font-size:12.5px">' +
+        '<input type="number" min="0" max="100" placeholder="%" value="' + (p.porcentaje || '') + '" oninput="window.nxAiPilarSet(' + i + ',\'porcentaje\',this.value)" style="width:56px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 6px;font-size:12.5px;text-align:center">' +
+        '<button class="btn bsm bghost" type="button" onclick="window.nxAiPilarDel(' + i + ')"><i class="ti ti-trash"></i></button></div>' +
+        '<input placeholder="Formatos (ej. Reel, Carrusel, Historia)" value="' + esc(csv(p.formatos)) + '" oninput="window.nxAiPilarSet(' + i + ',\'formatos\',this.value)" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:11.5px;margin-bottom:5px;box-sizing:border-box">' +
+        '<input placeholder="Plataformas (ej. Instagram, TikTok)" value="' + esc(csv(p.plataformas)) + '" oninput="window.nxAiPilarSet(' + i + ',\'plataformas\',this.value)" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:11.5px;box-sizing:border-box"></div>';
+    }).join('');
+    var tot = (_pilarWork || []).reduce(function (t, p) { return t + (Number(p.porcentaje) || 0); }, 0);
+    var seedBtn = (!(_pilarWork && _pilarWork.length) && _nicheTpl && _nicheTpl.pilares_sugeridos && _nicheTpl.pilares_sugeridos.length) ?
+      '<button class="btn bsm" type="button" onclick="window.nxAiPilarSeed()" style="margin-bottom:10px"><i class="ti ti-wand"></i> Usar pilares sugeridos para ' + esc(_nicheTpl.nombre) + '</button>' : '';
+    return '<div style="font-weight:800;font-size:13px;margin-bottom:4px;color:#0f172a">Pilares de contenido</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Los temas fijos sobre los que vas a publicar (ej. Ofertas, Educativo, Testimonios...).</div>' +
+      seedBtn + rows +
+      '<button class="btn bsm bghost" type="button" onclick="window.nxAiPilarAdd()" style="margin-bottom:6px"><i class="ti ti-plus"></i> Agregar pilar</button>' +
+      (tot > 0 ? '<div style="font-size:11px;color:' + (tot === 100 ? '#16a34a' : '#d97706') + ';font-weight:700;margin-bottom:8px">Total: ' + tot + '%' + (tot !== 100 ? ' (no tiene que sumar 100%, es solo guía)' : '') + '</div>' : '') +
+      navHTML(6, true);
+  }
+  window.nxAiPilarSet = function (i, f, v) { if (_pilarWork && _pilarWork[i]) _pilarWork[i][f] = v; };
+  window.nxAiPilarAdd = function () { _pilarWork = _pilarWork || []; _pilarWork.push({ nombre: '', porcentaje: '', formatos: '', plataformas: '', color: '#c026d3' }); var v = document.getElementById('v-aicontent'); if (v) renderWizard(v); };
+  window.nxAiPilarDel = function (i) { _pilarWork.splice(i, 1); var v = document.getElementById('v-aicontent'); if (v) renderWizard(v); };
+  window.nxAiPilarSeed = function () {
+    if (!_nicheTpl || !_nicheTpl.pilares_sugeridos || !_nicheTpl.pilares_sugeridos.length) return;
+    var sug = _nicheTpl.pilares_sugeridos; var pct = Math.round(100 / sug.length);
+    _pilarWork = sug.map(function (s) { return { nombre: s.nombre || '', porcentaje: pct, formatos: '', plataformas: '', color: s.color || '#c026d3' }; });
+    var v = document.getElementById('v-aicontent'); if (v) renderWizard(v);
+  };
+
+  function paso7() {
+    var s = _settings || {}, f = _wizNicheForm || _companyNiche || {}, b = _brand || {}, a = _audience || {};
+    var objs = _wizObjetivos || s.objetivos || [];
+    return '<div style="font-weight:800;font-size:13px;margin-bottom:10px;color:#0f172a">Resumen — revisa antes de terminar</div>' +
+      '<div style="font-size:12px;color:#334155;line-height:1.7">' +
+      '<b>Negocio:</b> ' + esc(s.nombre_comercial || '-') + ' · ' + esc(s.industria_general || '-') + '<br>' +
+      '<b>Nicho:</b> ' + esc(f.nombre || '-') + '<br>' +
+      '<b>Objetivos:</b> ' + (objs.length ? objs.map(function (o) { return '<span class="nxAiChip">' + esc(o) + '</span>'; }).join('') : '-') + '<br><br>' +
+      '<b>Público:</b> ' + esc(a.tipo_cliente || '-') + (a.edad_min ? (' · ' + a.edad_min + '-' + (a.edad_max || '') + ' años') : '') + '<br>' +
+      '<b>Tono de marca:</b> ' + esc(b.tono || '-') + ' · ' + esc(b.estilo_visual || '-') + '<br>' +
+      '<b>Pilares de contenido:</b> ' + ((_pilarWork || []).length ? (_pilarWork.length + ' definidos') : 'ninguno todavía') +
+      '</div>' +
+      '<div style="background:#fdf4ff;border:1px solid #f5d0fe;border-radius:12px;padding:10px 12px;font-size:11.5px;color:#a21caf;margin-top:12px"><i class="ti ti-info-circle"></i> Con esto ya puedes empezar. El generador de contenido con IA, el calendario y las publicaciones automáticas llegan en la próxima fase.</div>' +
+      '<div class="nxAiNav"><button class="btn bghost" type="button" onclick="window.nxAiIr(6)"><i class="ti ti-arrow-left"></i> Atrás</button>' +
+      '<button class="btn bc1" type="button" onclick="window.nxAiFinalizar()" style="background:#c026d3"><i class="ti ti-check"></i> Finalizar configuración</button></div>';
+  }
+
+  function pasoBodyHTML(n) { switch (n) { case 1: return paso1(); case 2: return paso2(); case 3: return paso3(); case 4: return paso4(); case 5: return paso5(); case 6: return paso6(); case 7: return paso7(); default: return paso1(); } }
+
+  function chromeHTML(bodyHtml) {
+    var dots = STEP_LBL.map(function (l, i) {
+      var n = i + 1, cls = n === _pasoActual ? ' on' : (n < _pasoActual ? ' done' : '');
+      return '<div class="nxAiStep' + cls + '" onclick="window.nxAiIr(' + n + ')">' + n + '. ' + l + '</div>';
+    }).join('');
+    return '<div class="nxAiWrap"><div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-sparkles" style="color:#c026d3"></i> NEXUS AI CONTENT</div><div class="ct-s">Configura tu marca para generar contenido con IA</div></div>' +
+      '<button class="btn bsm" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div class="nxAiSteps">' + dots + '</div>' +
+      '<div class="nxAiCard2">' + bodyHtml + '</div>' +
+      '</div></div>';
+  }
+  function renderWizard(view) { view.innerHTML = chromeHTML(pasoBodyHTML(_pasoActual)); }
+
+  window.nxAiIr = function (n) { if (n < 1 || n > 7) return; if (n > _maxPaso) return; _pasoActual = n; var v = document.getElementById('v-aicontent'); if (v) renderWizard(v); };
+
+  async function guardarPaso1() {
+    var nom = val('aiNom').trim(); if (!nom) { toast('err', 'Falta el nombre comercial'); throw new Error('falta nombre'); }
+    var d = { nombre_comercial: nom, descripcion_corta: val('aiDesc').trim() || null, pais: val('aiPais').trim() || null, ciudad: val('aiCiudad').trim() || null, direccion: val('aiDir').trim() || null, sitio_web: val('aiWeb').trim() || null, whatsapp: val('aiWa').trim() || null, correo: val('aiCorreo').trim() || null, industria_general: val('aiInd').trim() || null };
+    if (_settings && _settings.id) { await getAPI().patch('ai_content_settings', 'id=eq.' + _settings.id, d); Object.assign(_settings, d); }
+    else { var r = await getAPI().post('ai_content_settings', Object.assign({ onboarding_paso: 1, onboarding_completado: false }, d)); if (r && r[0]) _settings = r[0]; }
+    try { window.logAudit && window.logAudit('AI_CONTENT_EMPRESA', nom, 'NexusAIContent'); } catch (e) {}
+  }
+  async function guardarPaso2() {
+    if (typeof _wizNicheId === 'undefined') { toast('err', 'Elige un nicho o "Nicho personalizado"'); throw new Error('sin nicho'); }
+    var nom = val('aiNiNom').trim(); if (!nom) { toast('err', 'Falta el nombre del nicho'); throw new Error('falta'); }
+    var d = { niche_id: _wizNicheId || null, es_principal: true, nombre: nom, descripcion: val('aiNiDesc').trim() || null, productos_principales: val('aiNiProd').trim() || null, servicios_principales: val('aiNiServ').trim() || null, tipo_cliente: val('aiNiTipo').trim() || null, publico_objetivo: val('aiNiPub').trim() || null, problemas_resuelve: val('aiNiProb').trim() || null, palabras_clave: arr(val('aiNiKw')), temas_recomendados: arr(val('aiNiTem')), temas_prohibidos: arr(val('aiNiEvit')), pais: (_settings && _settings.pais) || null, ciudad: (_settings && _settings.ciudad) || null };
+    if (_companyNiche && _companyNiche.id) { await getAPI().patch('ai_content_company_niches', 'id=eq.' + _companyNiche.id, d); Object.assign(_companyNiche, d); }
+    else { var r = await getAPI().post('ai_content_company_niches', d); if (r && r[0]) _companyNiche = r[0]; }
+    _wizNicheForm = Object.assign({}, d);
+    try { window.logAudit && window.logAudit('AI_CONTENT_NICHO', nom, 'NexusAIContent'); } catch (e) {}
+  }
+  async function guardarPaso3() {
+    var objs = (_wizObjetivos || (_settings && _settings.objetivos) || []).slice();
+    var otro = val('aiObjOtro').trim(); if (otro && objs.indexOf(otro) < 0) objs.push(otro);
+    await getAPI().patch('ai_content_settings', 'id=eq.' + _settings.id, { objetivos: objs });
+    _settings.objetivos = objs; _wizObjetivos = objs;
+  }
+  async function guardarPaso4() {
+    var d = { edad_min: val('aiEdadMin') ? parseInt(val('aiEdadMin')) : null, edad_max: val('aiEdadMax') ? parseInt(val('aiEdadMax')) : null, ubicacion: val('aiUbic').trim() || null, tipo_cliente: val('aiTipoCli').trim() || null, poder_adquisitivo: val('aiPoder') || null, intereses: val('aiIntereses').trim() || null, problemas: val('aiProblemas').trim() || null, necesidades: val('aiNecesid').trim() || null, objeciones: val('aiObjec').trim() || null, nivel_conocimiento: val('aiNivel') || null, plataforma_mas_usada: val('aiPlat') || null, horarios_actividad: val('aiHorarios').trim() || null, preferencia_comunicacion: val('aiPref').trim() || null };
+    if (_audience && _audience.id) { await getAPI().patch('ai_content_audiences', 'id=eq.' + _audience.id, d); Object.assign(_audience, d); }
+    else { var r = await getAPI().post('ai_content_audiences', d); if (r && r[0]) _audience = r[0]; }
+  }
+  async function guardarPaso5() {
+    var c0 = document.getElementById('aiColor0'), c1 = document.getElementById('aiColor1'), c2 = document.getElementById('aiColor2');
+    var colores = [c0 ? c0.value : '#c026d3', c1 ? c1.value : '#0f172a', c2 ? c2.value : '#f8fafc'];
+    var d = { colores: colores, tipografia: val('aiTipog').trim() || null, tratamiento: val('aiTrato') || 'tu', estilo_visual: val('aiEstV') || null, tono: val('aiTono') || null, usa_emojis: document.getElementById('aiEmojis').checked, frase_comercial: val('aiFrase').trim() || null, cta_principal: val('aiCta').trim() || null, cta_secundarios: arr(val('aiCta2')), palabras_permitidas: arr(val('aiPalOk')), palabras_prohibidas: arr(val('aiPalNo')), estilo_fotografico: val('aiFoto') || null };
+    if (_brand && _brand.id) { await getAPI().patch('ai_content_brand_profiles', 'id=eq.' + _brand.id, d); Object.assign(_brand, d); }
+    else { var r = await getAPI().post('ai_content_brand_profiles', d); if (r && r[0]) _brand = r[0]; }
+  }
+  async function guardarPaso6() {
+    var work = (_pilarWork || []).filter(function (p) { return String(p.nombre || '').trim(); });
+    var origIds = (_pillars || []).map(function (p) { return p.id; });
+    var keepIds = work.filter(function (p) { return p.id; }).map(function (p) { return p.id; });
+    var toDelete = origIds.filter(function (id) { return keepIds.indexOf(id) < 0; });
+    for (var i = 0; i < toDelete.length; i++) { try { await getAPI().del('ai_content_pillars', 'id=eq.' + toDelete[i]); } catch (e) {} }
+    var saved = [];
+    for (var j = 0; j < work.length; j++) {
+      var p = work[j];
+      var d = { nombre: String(p.nombre).trim(), porcentaje: Number(p.porcentaje) || 0, formatos: arr(p.formatos), plataformas: arr(p.plataformas), color: p.color || '#c026d3', orden: j };
+      if (p.id) { await getAPI().patch('ai_content_pillars', 'id=eq.' + p.id, d); saved.push(Object.assign({}, p, d)); }
+      else { var r = await getAPI().post('ai_content_pillars', d); if (r && r[0]) saved.push(r[0]); }
+    }
+    _pillars = saved; _pilarWork = saved.map(function (p) { return Object.assign({}, p); });
+  }
+
+  window.nxAiGuardarPaso = async function (n) {
+    if (n > 1 && !_settings) { toast('err', 'Falta el paso 1', 'Completa los datos de tu negocio primero'); _pasoActual = 1; var v0 = document.getElementById('v-aicontent'); if (v0) renderWizard(v0); return; }
+    try {
+      if (n === 1) await guardarPaso1();
+      else if (n === 2) await guardarPaso2();
+      else if (n === 3) await guardarPaso3();
+      else if (n === 4) await guardarPaso4();
+      else if (n === 5) await guardarPaso5();
+      else if (n === 6) await guardarPaso6();
+      var np = n + 1; _maxPaso = Math.max(_maxPaso, np); _pasoActual = np;
+      try { await getAPI().patch('ai_content_settings', 'id=eq.' + _settings.id, { onboarding_paso: np }); _settings.onboarding_paso = np; } catch (e) {}
+      var v = document.getElementById('v-aicontent'); if (v) renderWizard(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxAiGuardarEdicion = async function (n) {
+    try {
+      if (n === 1) await guardarPaso1();
+      else if (n === 2) await guardarPaso2();
+      else if (n === 3) await guardarPaso3();
+      else if (n === 4) await guardarPaso4();
+      else if (n === 5) await guardarPaso5();
+      else if (n === 6) await guardarPaso6();
+      toast('ok', 'Guardado');
+      _modoEdicion = false;
+      var v = document.getElementById('v-aicontent'); if (v) renderDashboard(v);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxAiCancelarEdicion = function () { _modoEdicion = false; var v = document.getElementById('v-aicontent'); if (v) renderDashboard(v); };
+  window.nxAiEditar = function (n) {
+    _modoEdicion = true; _pasoActual = n; _maxPaso = Math.max(_maxPaso, n);
+    if (n === 2 && typeof _wizNicheId === 'undefined' && _companyNiche) {
+      _wizNicheId = _companyNiche.niche_id || null; _wizNicheForm = Object.assign({}, _companyNiche);
+      _nicheTpl = _companyNiche.niche_id ? (_niches.find(function (x) { return x.id === _companyNiche.niche_id; }) || null) : null;
+    }
+    var v = document.getElementById('v-aicontent'); if (v) renderWizard(v);
+  };
+  window.nxAiFinalizar = async function () {
+    try {
+      await getAPI().patch('ai_content_settings', 'id=eq.' + _settings.id, { onboarding_completado: true, onboarding_paso: 7 });
+      _settings.onboarding_completado = true; _settings.onboarding_paso = 7;
+      try { window.logAudit && window.logAudit('AI_CONTENT_ONBOARDING_LISTO', (_settings.nombre_comercial || ''), 'NexusAIContent'); } catch (e) {}
+      toast('ok', '¡Listo!', 'Tu perfil de marca está configurado');
+      var v = document.getElementById('v-aicontent'); if (v) renderDashboard(v);
+    } catch (e) { toast('err', 'No se pudo finalizar', String(e && e.message || e)); }
+  };
+
+  function renderDashboard(view) {
+    var s = _settings || {}, f = _companyNiche || {}, b = _brand || {}, a = _audience || {};
+    var objs = s.objetivos || [];
+    view.innerHTML = '<div class="nxAiWrap"><div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-sparkles" style="color:#c026d3"></i> NEXUS AI CONTENT</div><div class="ct-s">' + esc(s.nombre_comercial || '') + '</div></div>' +
+      '<button class="btn bsm" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
+      '<div class="nxAiDashG">' +
+      '<div class="nxAiDCard"><h4>Empresa <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(1)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div style="font-size:12px;color:#334155">' + esc(s.descripcion_corta || 'Sin descripción') + '<br><span style="color:#94a3b8">' + esc(s.ciudad || '') + (s.ciudad && s.pais ? ', ' : '') + esc(s.pais || '') + '</span></div></div>' +
+      '<div class="nxAiDCard"><h4>Nicho <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(2)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div style="font-size:12px;color:#334155;font-weight:700">' + esc(f.nombre || '-') + '</div>' +
+      '<div style="margin-top:4px">' + (f.palabras_clave || []).slice(0, 5).map(function (k) { return '<span class="nxAiChip">' + esc(k) + '</span>'; }).join('') + '</div></div>' +
+      '<div class="nxAiDCard"><h4>Objetivos <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(3)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div>' + (objs.length ? objs.map(function (o) { return '<span class="nxAiChip">' + esc(o) + '</span>'; }).join('') : '<span style="color:#94a3b8;font-size:12px">Ninguno</span>') + '</div></div>' +
+      '<div class="nxAiDCard"><h4>Público <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(4)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div style="font-size:12px;color:#334155">' + esc(a.tipo_cliente || '-') + (a.edad_min ? (' · ' + a.edad_min + '-' + (a.edad_max || '') + ' años') : '') + '<br><span style="color:#94a3b8">' + esc(a.ubicacion || '') + '</span></div></div>' +
+      '<div class="nxAiDCard"><h4>Marca <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(5)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div style="display:flex;gap:5px;margin-bottom:5px">' + (b.colores || []).map(function (c) { return '<span style="width:18px;height:18px;border-radius:5px;background:' + esc(c) + ';border:1px solid #e2e8f0;display:inline-block"></span>'; }).join('') + '</div>' +
+      '<div style="font-size:12px;color:#334155">' + esc(b.tono || '-') + ' · ' + esc(b.estilo_visual || '-') + '</div></div>' +
+      '<div class="nxAiDCard"><h4>Pilares de contenido <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(6)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div>' + ((_pillars || []).length ? _pillars.map(function (p) { return '<span class="nxAiChip">' + esc(p.nombre) + (p.porcentaje ? (' ' + p.porcentaje + '%') : '') + '</span>'; }).join('') : '<span style="color:#94a3b8;font-size:12px">Ninguno</span>') + '</div></div>' +
+      '</div>' +
+      '<div style="margin-top:16px;font-weight:800;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.3px">Próximamente</div>' +
+      '<div class="nxAiDashG" style="margin-top:8px">' +
+      ['Generador de contenido IA', 'Calendario editorial', 'Aprobaciones', 'Publicaciones', 'Analítica', 'Automatizaciones'].map(function (t) {
+        return '<div class="nxAiDCard nxAiSoon"><h4 style="color:#94a3b8">' + esc(t) + '<span class="nxAiSoonBadge">PRÓXIMAMENTE</span></h4><div style="font-size:11.5px;color:#94a3b8">Se activa en la próxima fase</div></div>';
+      }).join('') +
+      '</div>' +
+      '</div></div>';
+  }
+
+  function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 7, nombre: 'NEXUS AI CONTENT', desc: 'Genera contenido y estrategia de marketing con IA', icon: 'ti-sparkles', color: '#c026d3', bg: '#fdf4ff', onclick: 'window.nxAbrirAIContent()' }); } catch (e) {} }
+  function init() { inyectarCSS(); var n = 0; var t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 150); }; t(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
