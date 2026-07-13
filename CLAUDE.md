@@ -903,6 +903,47 @@ amortización), `libre` (abonos libres contra un total fijo).
   cual están en el archivo, con datos simulados servidos por un `window.API.get` de prueba, capturando
   también el estado con scroll (la sección 4 y 5 no caben completas en 390px de alto sin desplazar el
   modal — comportamiento esperado, mismo patrón que `nxPrestamoConfig`).
+  **v48.21 — FICHA DE CLIENTE (a pedido del dueño: "primero hay que poner las partes donde crea el
+  cliente, con todo lo que lleva para crear un cliente en una financiera"):** hasta ahora el préstamo
+  guardaba nombre/cédula/teléfono sueltos en sus propias columnas, sin ficha reutilizable. Confirmado
+  con el dueño el alcance vía pregunta (opción "completa, estilo financiera") antes de tocar el
+  esquema. **Tabla nueva `prestamo_clientes`** (migración `prestamo_clientes`, mismo patrón de RLS que
+  `prestamos`: `mi_rol()='admin'`, sin `organizacion_id`): datos personales (cédula, fecha_nacimiento,
+  estado_civil, nacionalidad), contacto (telefono, telefono_alterno, email, direccion, sector, ciudad,
+  provincia), datos laborales (ocupacion, lugar_trabajo, tipo_ingreso, ingreso_mensual), 2 referencias
+  (nombre/telefono/relacion cada una), fiador/codeudor opcional (tiene_fiador bool + 4 campos), notas.
+  `prestamos.cliente_id` (columna nueva, FK a `prestamo_clientes`, nullable) — **additivo**:
+  `prestamos.nombre/cedula/telefono` NO se tocaron ni se eliminaron (siguen existiendo, ahora se
+  llenan copiando los datos del cliente elegido al guardar, para que `cardHTML`/`nxPrestamoVer`/etc.
+  sigan funcionando sin joins). El único préstamo real que existía (`PRUEBA 1`) se migró solo: se le
+  creó su ficha de cliente con sus mismos datos y quedó enlazado — verificado con `get_advisors`
+  (ningún hallazgo nuevo introducido por la tabla).
+  **UI:** sección 1 del formulario de préstamo (`abrirForm`) pasó de 3 inputs libres a un selector de
+  cliente (`_prClienteSel`, variable de módulo): sin cliente elegido muestra "Buscar cliente" (abre
+  `ModalBusquedaBase` en modo `datos:` — la misma lista `_prClientes` ya cargada en memoria por
+  `cargarClientesPrestamo()`, sin consulta nueva al servidor, igual que el precedente de AGUAPRO) y
+  "Nuevo cliente" (abre la ficha completa `abrirClienteForm(null, callback)` — al guardar, el callback
+  regresa el cliente recién creado y lo deja elegido automáticamente en el préstamo, sin cerrar el
+  flujo). Con cliente elegido se ve una tarjeta compacta (nombre/cédula/teléfono/ocupación) + botón
+  "Cambiar". `nxPrestamoGuardar` ahora exige `_prClienteSel` (si no hay cliente, no deja guardar) y
+  copia `nombre/cedula/telefono` del cliente elegido en vez de leer inputs que ya no existen en el
+  formulario. **Ficha de cliente** (`abrirClienteForm`) reusa el mismo lenguaje visual numerado
+  (`prSec()`) del formulario de préstamo — 6 secciones, casilla "tiene fiador" que muestra/oculta sus
+  4 campos (`nxPrToggleFiador`). **Gestor de clientes independiente** (`window.nxPrestamoClientes`,
+  6to tile nuevo en accesos rápidos): lista+buscador (`prBuscador`, filtro en memoria — es una lista ya
+  cargada en pantalla, por eso NO usa `ModalBusquedaBase` aquí, sigue el reglamento de los 2 patrones
+  de buscador) + "Nuevo cliente" + tocar una fila abre su ficha para editar. Nombrado siguiendo el
+  reglamento (`abrirClienteForm` en vez de un `BuscadorClientes` genérico compartido con otros módulos
+  — cada módulo con tabla de clientes propia construye el suyo, ver reglamento `ModalBusquedaBase`).
+  **CSS compartida `.nxFP-quick` corregida:** tenía `grid-template-columns:repeat(5,1fr)` fijo (contaba
+  con exactamente 5 accesos rápidos); al sumar el 6to tile ("Clientes") se cambió a
+  `repeat(auto-fit,minmax(96px,1fr))` — se adapta solo a cualquier cantidad de tiles sin dejar una fila
+  desbalanceada, y **no cambia nada** para Cuotas del POS (sigue teniendo 5, siguen viéndose iguales:
+  auto-fit con contenedor ancho de sobra produce el mismo resultado que `repeat(5,1fr)`). Verificado
+  con Playwright interactuando de verdad sobre el código real (clic en "Buscar cliente" → aparecen los
+  clientes reales del mock, clic en uno → queda seleccionado, clic en "Nuevo cliente" → llenar →
+  Guardar → vuelve seleccionado al préstamo, abrir el gestor de Clientes, y el grid de 6 tiles en
+  escritorio) — 8 capturas, 0 errores de consola aparte del bloqueo esperado del CDN de íconos.
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +

@@ -12847,6 +12847,8 @@
   let _prestamos = [];
   let _pagosByPrestamo = {};
   let _prCfg = {};
+  let _prClientes = [];
+  let _prClienteSel = null; // cliente elegido/creado dentro del formulario de préstamo abierto
   let _modoForm = 'libre';
   let _prFiltro = 'todos';
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
@@ -12950,6 +12952,11 @@
     _pagosByPrestamo = {};
     pagos.forEach(p => { (_pagosByPrestamo[p.prestamo_id] = _pagosByPrestamo[p.prestamo_id] || []).push(p); });
     try { const cfg = await getAPI().get('prestamos_config', 'select=*&id=eq.1'); _prCfg = (cfg && cfg[0]) || {}; } catch (e) { _prCfg = {}; }
+    await cargarClientesPrestamo();
+  }
+
+  async function cargarClientesPrestamo() {
+    try { _prClientes = await getAPI().get('prestamo_clientes', 'select=*&order=nombre.asc') || []; } catch (e) { _prClientes = []; }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -13057,6 +13064,7 @@
       : (lista.length === 0 ? `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún préstamo coincide con este filtro.</p></div>` : lista.map(cardHTML).join(''));
     const quickBtns = [
       ['nxPrestamoNuevo', 'ti-plus', 'primary', 'Nuevo préstamo'],
+      ['nxPrestamoClientes', 'ti-users', '', 'Clientes'],
       ['nxPrestamoCobranza', 'ti-user-dollar', '', 'Cobranza'],
       ['nxPrestamoExportar', 'ti-file-spreadsheet', 'green', 'Excel'],
       ['nxPrestamoReporte', 'ti-report-money', 'blue', 'Reporte'],
@@ -13289,10 +13297,238 @@
       <span style="font-size:11px;font-weight:800;color:#334155;letter-spacing:.3px;text-transform:uppercase">${esc(title)}</span>
     </div>`;
   }
+
+  // ══════════════════════════════════════════════════════════════════
+  // FICHA DE CLIENTE (prestatario) — v48.21, a pedido del dueño: "primero hay
+  // que poner las partes donde crea el cliente, con todo lo que lleva para
+  // crear un cliente en una financiera". Tabla prestamo_clientes (mismo patrón
+  // de RLS que prestamos: admin-only vía mi_rol(), sin organizacion_id).
+  // Un cliente puede tener varios préstamos (prestamos.cliente_id).
+  // ══════════════════════════════════════════════════════════════════
+  window.__nxPrClienteCB = null; // callback cuando el cliente se crea/edita DESDE el form de préstamo
+
+  function prClienteResumenHTML(c) {
+    const bits = [c.cedula ? 'Céd. ' + esc(c.cedula) : '', c.telefono ? esc(c.telefono) : ''].filter(Boolean).join(' · ');
+    const bits2 = [c.ocupacion ? esc(c.ocupacion) : '', c.email ? esc(c.email) : ''].filter(Boolean).join(' · ');
+    return `<div style="display:flex;align-items:flex-start;gap:10px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px">
+      <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><i class="ti ti-user" style="font-size:16px"></i></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;font-size:13px;color:#1e293b">${esc(c.nombre || '')}</div>
+        ${bits ? `<div style="font-size:11px;color:#5b21b6">${bits}</div>` : ''}
+        ${bits2 ? `<div style="font-size:10.5px;color:#7c3aed">${bits2}</div>` : ''}
+      </div>
+      <button type="button" class="btn bsm" onclick="window.nxPrCambiarCliente()">Cambiar</button>
+    </div>`;
+  }
+  function prPintarClienteSel() {
+    const wrap = document.getElementById('prClienteSelWrap');
+    if (!wrap) return;
+    wrap.innerHTML = _prClienteSel
+      ? prClienteResumenHTML(_prClienteSel)
+      : `<div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn" style="flex:1 1 140px" onclick="window.nxPrBuscarCliente()"><i class="ti ti-search"></i> Buscar cliente</button>
+          <button type="button" class="btn bc1" style="flex:1 1 140px" onclick="window.nxPrNuevoClienteDesdeForm()"><i class="ti ti-user-plus"></i> Nuevo cliente</button>
+        </div>`;
+  }
+  window.nxPrBuscarCliente = function () {
+    window.ModalBusquedaBase({
+      id: 'prCliBuscar', titulo: 'Buscar cliente', placeholder: 'Nombre, cédula o teléfono...',
+      datos: _prClientes, camposFiltro: ['nombre', 'cedula', 'telefono'],
+      columnas: [{ k: 'nombre', t: 'Nombre' }, { k: 'cedula', t: 'Céd' }, { k: 'telefono', t: 'Tel' }],
+      vacio: 'Sin clientes — toca "Nuevo cliente" para crear el primero', onElegir: 'nxPrClienteElegido'
+    });
+  };
+  window.nxPrClienteElegido = function (cliente) { _prClienteSel = cliente; prPintarClienteSel(); };
+  window.nxPrCambiarCliente = function () { _prClienteSel = null; prPintarClienteSel(); };
+  window.nxPrNuevoClienteDesdeForm = function () { abrirClienteForm(null, window.nxPrClienteElegido); };
+
+  // Interruptor "tiene fiador/codeudor" dentro del formulario de cliente.
+  window.nxPrToggleFiador = function () {
+    const box = document.getElementById('pcFiadorBox'), chk = document.getElementById('pcTieneFiador');
+    if (box) box.style.display = (chk && chk.checked) ? 'block' : 'none';
+  };
+
+  function abrirClienteForm(cliente, onSaved) {
+    cerrarModal('nxPrClienteModal');
+    window.__nxPrClienteCB = onSaved || null;
+    const c = cliente || {};
+    const opt = (val, lbl, cur) => `<option value="${val}"${cur === val ? ' selected' : ''}>${lbl}</option>`;
+    const ov = document.createElement('div'); ov.id = 'nxPrClienteModal'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-user"></i> ${cliente ? 'Editar cliente' : 'Nuevo cliente'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrClienteModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding-right:1px">
+          ${prSec(1, 'Datos personales')}
+          <div class="fr"><label>Nombre completo</label><input id="pcNom" class="no-upper" value="${esc(c.nombre || '')}" placeholder="Nombre y apellidos"></div>
+          <div class="fr-row">
+            <div class="fr"><label>Cédula</label><input id="pcCed" class="no-upper" value="${esc(c.cedula || '')}" placeholder="000-0000000-0"></div>
+            <div class="fr"><label>Fecha de nacimiento</label><input id="pcFechaNac" type="date" value="${c.fecha_nacimiento || ''}"></div>
+          </div>
+          <div class="fr-row">
+            <div class="fr"><label>Estado civil</label><select id="pcEstCivil">
+              <option value="">—</option>
+              ${opt('soltero', 'Soltero(a)', c.estado_civil)}${opt('casado', 'Casado(a)', c.estado_civil)}${opt('union_libre', 'Unión libre', c.estado_civil)}${opt('divorciado', 'Divorciado(a)', c.estado_civil)}${opt('viudo', 'Viudo(a)', c.estado_civil)}
+            </select></div>
+            <div class="fr"><label>Nacionalidad</label><input id="pcNacionalidad" class="no-upper" value="${esc(c.nacionalidad || 'Dominicana')}"></div>
+          </div>
+          ${prSec(2, 'Contacto')}
+          <div class="fr-row">
+            <div class="fr"><label>Teléfono</label><input id="pcTel" class="no-upper" value="${esc(c.telefono || '')}" placeholder="809-000-0000"></div>
+            <div class="fr"><label>Teléfono alterno</label><input id="pcTelAlt" class="no-upper" value="${esc(c.telefono_alterno || '')}" placeholder="Opcional"></div>
+          </div>
+          <div class="fr"><label>Email</label><input id="pcEmail" type="email" class="no-upper" value="${esc(c.email || '')}" placeholder="correo@ejemplo.com"></div>
+          <div class="fr"><label>Dirección</label><input id="pcDir" class="no-upper" value="${esc(c.direccion || '')}" placeholder="Calle, número"></div>
+          <div class="fr-row">
+            <div class="fr"><label>Sector</label><input id="pcSector" class="no-upper" value="${esc(c.sector || '')}"></div>
+            <div class="fr"><label>Ciudad</label><input id="pcCiudad" class="no-upper" value="${esc(c.ciudad || '')}"></div>
+            <div class="fr"><label>Provincia</label><input id="pcProvincia" class="no-upper" value="${esc(c.provincia || '')}"></div>
+          </div>
+          ${prSec(3, 'Datos laborales')}
+          <div class="fr-row">
+            <div class="fr"><label>Ocupación</label><input id="pcOcup" class="no-upper" value="${esc(c.ocupacion || '')}" placeholder="Ej: Comerciante"></div>
+            <div class="fr"><label>Lugar de trabajo</label><input id="pcLugarTrab" class="no-upper" value="${esc(c.lugar_trabajo || '')}"></div>
+          </div>
+          <div class="fr-row">
+            <div class="fr"><label>Tipo de ingreso</label><select id="pcTipoIngreso">
+              <option value="">—</option>
+              ${opt('empleado', 'Empleado(a)', c.tipo_ingreso)}${opt('independiente', 'Independiente', c.tipo_ingreso)}${opt('negocio_propio', 'Negocio propio', c.tipo_ingreso)}${opt('pensionado', 'Pensionado(a)', c.tipo_ingreso)}
+            </select></div>
+            <div class="fr"><label>Ingreso mensual (RD$)</label><input id="pcIngreso" data-nx-money inputmode="numeric" value="${c.ingreso_mensual ? Number(c.ingreso_mensual).toLocaleString('en-US') : ''}" placeholder="0"></div>
+          </div>
+          ${prSec(4, 'Referencias personales')}
+          <div class="fr-row">
+            <div class="fr"><label>Referencia 1 — nombre</label><input id="pcRef1Nom" class="no-upper" value="${esc(c.ref1_nombre || '')}"></div>
+            <div class="fr"><label>Teléfono</label><input id="pcRef1Tel" class="no-upper" value="${esc(c.ref1_telefono || '')}"></div>
+          </div>
+          <div class="fr"><label>Relación</label><input id="pcRef1Rel" class="no-upper" value="${esc(c.ref1_relacion || '')}" placeholder="Ej: Hermano, amigo, vecino"></div>
+          <div class="fr-row">
+            <div class="fr"><label>Referencia 2 — nombre</label><input id="pcRef2Nom" class="no-upper" value="${esc(c.ref2_nombre || '')}"></div>
+            <div class="fr"><label>Teléfono</label><input id="pcRef2Tel" class="no-upper" value="${esc(c.ref2_telefono || '')}"></div>
+          </div>
+          <div class="fr"><label>Relación</label><input id="pcRef2Rel" class="no-upper" value="${esc(c.ref2_relacion || '')}" placeholder="Ej: Hermano, amigo, vecino"></div>
+          ${prSec(5, 'Fiador / codeudor (opcional)')}
+          <div class="fr" style="display:flex;align-items:center;gap:8px">
+            <input id="pcTieneFiador" type="checkbox" style="width:auto" onchange="window.nxPrToggleFiador()" ${c.tiene_fiador ? 'checked' : ''}>
+            <label style="margin:0;font-size:12px;font-weight:700;color:#334155;text-transform:none;letter-spacing:0">Este préstamo tendrá fiador/codeudor</label>
+          </div>
+          <div id="pcFiadorBox" style="display:${c.tiene_fiador ? 'block' : 'none'}">
+            <div class="fr-row">
+              <div class="fr"><label>Nombre del fiador</label><input id="pcFiadorNom" class="no-upper" value="${esc(c.fiador_nombre || '')}"></div>
+              <div class="fr"><label>Cédula</label><input id="pcFiadorCed" class="no-upper" value="${esc(c.fiador_cedula || '')}"></div>
+            </div>
+            <div class="fr-row">
+              <div class="fr"><label>Teléfono</label><input id="pcFiadorTel" class="no-upper" value="${esc(c.fiador_telefono || '')}"></div>
+              <div class="fr"><label>Dirección</label><input id="pcFiadorDir" class="no-upper" value="${esc(c.fiador_direccion || '')}"></div>
+            </div>
+          </div>
+          ${prSec(6, 'Notas (opcional)')}
+          <div class="fr"><textarea id="pcNotas" rows="2" class="no-upper" maxlength="500">${esc(c.notas || '')}</textarea></div>
+        </div>
+        <div style="padding-top:10px"><button class="btn bc1" type="button" style="width:100%" onclick="window.nxPrClienteGuardar('${cliente ? cliente.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar cliente</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+    try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
+  }
+
+  window.nxPrClienteGuardar = async function (id) {
+    const nom = (val('pcNom') || '').trim();
+    if (!nom) { toast('err', 'Falta el nombre del cliente'); return; }
+    const datos = {
+      nombre: nom,
+      cedula: (val('pcCed') || '').trim() || null,
+      fecha_nacimiento: val('pcFechaNac') || null,
+      estado_civil: val('pcEstCivil') || null,
+      nacionalidad: (val('pcNacionalidad') || '').trim() || 'Dominicana',
+      telefono: (val('pcTel') || '').trim() || null,
+      telefono_alterno: (val('pcTelAlt') || '').trim() || null,
+      email: (val('pcEmail') || '').trim() || null,
+      direccion: (val('pcDir') || '').trim() || null,
+      sector: (val('pcSector') || '').trim() || null,
+      ciudad: (val('pcCiudad') || '').trim() || null,
+      provincia: (val('pcProvincia') || '').trim() || null,
+      ocupacion: (val('pcOcup') || '').trim() || null,
+      lugar_trabajo: (val('pcLugarTrab') || '').trim() || null,
+      tipo_ingreso: val('pcTipoIngreso') || null,
+      ingreso_mensual: parseMoney(val('pcIngreso')) || null,
+      ref1_nombre: (val('pcRef1Nom') || '').trim() || null,
+      ref1_telefono: (val('pcRef1Tel') || '').trim() || null,
+      ref1_relacion: (val('pcRef1Rel') || '').trim() || null,
+      ref2_nombre: (val('pcRef2Nom') || '').trim() || null,
+      ref2_telefono: (val('pcRef2Tel') || '').trim() || null,
+      ref2_relacion: (val('pcRef2Rel') || '').trim() || null,
+      tiene_fiador: !!(document.getElementById('pcTieneFiador') && document.getElementById('pcTieneFiador').checked),
+      fiador_nombre: (val('pcFiadorNom') || '').trim() || null,
+      fiador_cedula: (val('pcFiadorCed') || '').trim() || null,
+      fiador_telefono: (val('pcFiadorTel') || '').trim() || null,
+      fiador_direccion: (val('pcFiadorDir') || '').trim() || null,
+      notas: (val('pcNotas') || '').trim() || null,
+      updated_at: new Date().toISOString()
+    };
+    try {
+      let row;
+      if (id) { const r = await getAPI().patch('prestamo_clientes', 'id=eq.' + id, datos); row = (r && r[0]) || Object.assign({ id }, datos); }
+      else { datos.created_by_name = nomAdmin(); const r = await getAPI().post('prestamo_clientes', datos); row = r && r[0]; }
+      await cargarClientesPrestamo();
+      cerrarModal('nxPrClienteModal');
+      toast('ok', id ? 'Cliente actualizado' : 'Cliente creado', nom);
+      const cb = window.__nxPrClienteCB; window.__nxPrClienteCB = null;
+      if (typeof cb === 'function' && row) cb(row);
+      const listView = document.getElementById('nxPrClientesLista'); if (listView) prClientesRepintar();
+    } catch (e) { toast('err', 'Error al guardar el cliente', String(e && e.message || e)); }
+  };
+
+  // ── Gestor de clientes (independiente del formulario de préstamo) ──
+  let _prClientesQ = '';
+  function prClientesFiltrados() {
+    const q = (_prClientesQ || '').toLowerCase().trim();
+    if (!q) return _prClientes;
+    return _prClientes.filter(c => [c.nombre, c.cedula, c.telefono, c.email].filter(Boolean).join(' ').toLowerCase().includes(q));
+  }
+  function prClienteRowHTML(c) {
+    const bits = [c.cedula ? 'Céd. ' + esc(c.cedula) : '', c.telefono ? esc(c.telefono) : ''].filter(Boolean).join(' · ');
+    return `<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eef0f5;border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer" onclick="window.nxPrClienteEditar('${c.id}')">
+      <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;font-weight:800;font-size:12px">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;font-size:13px;color:#1e293b">${esc(c.nombre || '')}</div>
+        ${bits ? `<div style="font-size:11px;color:#64748b">${bits}</div>` : ''}
+      </div>
+      <i class="ti ti-chevron-right" style="color:#cbd5e1"></i>
+    </div>`;
+  }
+  function prClientesRepintar() {
+    const box = document.getElementById('nxPrClientesLista'); if (!box) return;
+    const lista = prClientesFiltrados();
+    box.innerHTML = lista.length ? lista.map(prClienteRowHTML).join('') : `<div style="text-align:center;padding:30px 10px;color:#94a3b8;font-size:12px">${_prClientes.length ? 'Nadie coincide con esa búsqueda' : 'Aún no hay clientes registrados'}</div>`;
+  }
+  window.nxPrClientesFiltrar = function (q) { _prClientesQ = q; prClientesRepintar(); };
+  window.nxPrNuevoClienteDesdeGestor = function () { abrirClienteForm(null, null); };
+  window.nxPrClienteEditar = function (id) {
+    const c = _prClientes.find(x => String(x.id) === String(id)); if (!c) return;
+    abrirClienteForm(c, null);
+  };
+  window.nxPrestamoClientes = function () {
+    if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
+    cerrarModal('nxPrClientesModal');
+    _prClientesQ = '';
+    const ov = document.createElement('div'); ov.id = 'nxPrClientesModal'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `
+      <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-users"></i> Clientes</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrClientesModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="margin-bottom:10px">${prBuscador({ id: 'nxPrClientesQ', placeholder: 'Buscar por nombre, cédula o teléfono...', oninput: 'window.nxPrClientesFiltrar(this.value)' })}</div>
+        <button type="button" class="btn bc1" style="width:100%;margin-bottom:10px" onclick="window.nxPrNuevoClienteDesdeGestor()"><i class="ti ti-user-plus"></i> Nuevo cliente</button>
+        <div id="nxPrClientesLista" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch"></div>
+      </div>`;
+    document.body.appendChild(ov);
+    prClientesRepintar();
+  };
+
   function abrirForm(pr) {
     cerrarModal('nxPrModal');
     _modoForm = (pr && pr.modo) || 'libre';
     const p = pr || {};
+    _prClienteSel = (p.cliente_id && _prClientes.find(c => String(c.id) === String(p.cliente_id))) || null;
     const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -13300,11 +13536,7 @@
         <div class="mt"><span><i class="ti ti-cash"></i> ${pr ? 'Editar préstamo' : 'Nuevo préstamo'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding-right:1px">
           ${prSec(1, 'Datos del prestatario')}
-          <div class="fr"><label>Nombre del prestatario</label><input id="prNom" class="no-upper" value="${esc(p.nombre || '')}" placeholder="Nombre completo"></div>
-          <div class="fr-row">
-            <div class="fr"><label>Cédula</label><input id="prCed" class="no-upper" value="${esc(p.cedula || '')}" placeholder="000-0000000-0"></div>
-            <div class="fr"><label>Teléfono</label><input id="prTel" class="no-upper" value="${esc(p.telefono || '')}" placeholder="809-000-0000"></div>
-          </div>
+          <div id="prClienteSelWrap" style="margin-bottom:10px"></div>
           ${prSec(2, 'Información del préstamo')}
           <div class="fr-row">
             <div class="fr"><label>Capital prestado</label><input id="prCap" data-nx-money inputmode="numeric" oninput="window.nxPrRecalc()" value="${p.capital ? Number(p.capital).toLocaleString('en-US') : ''}" placeholder="0"></div>
@@ -13351,13 +13583,14 @@
       </div>`;
     document.body.appendChild(ov);
     pintarModo();
+    prPintarClienteSel();
     if (p.frecuencia) { const s = document.getElementById('prFrec'); if (s) s.value = p.frecuencia; }
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
   }
 
   window.nxPrestamoGuardar = async function (id) {
-    const nom = (val('prNom') || '').trim();
-    if (!nom) { toast('err', 'Falta el nombre'); return; }
+    if (!_prClienteSel) { toast('err', 'Selecciona o crea un cliente', 'Usa "Buscar cliente" o "Nuevo cliente" en la sección 1'); return; }
+    const nom = _prClienteSel.nombre || '';
     const modo = _modoForm || 'libre';
     const fecha = val('prFecha') || hoy();
     const capital = parseMoney(val('prCap'));
@@ -13374,9 +13607,10 @@
       if (total <= 0) { toast('err', c.computa ? 'Revisa el capital, las cuotas y la tasa' : 'Pon el total a devolver'); return; }
     }
     const datos = {
+      cliente_id: _prClienteSel.id,
       nombre: nom,
-      cedula: (val('prCed') || '').trim(),
-      telefono: (val('prTel') || '').trim(),
+      cedula: _prClienteSel.cedula || '',
+      telefono: _prClienteSel.telefono || '',
       capital: capital,
       total_devolver: total,
       tasa_interes: tasaStore,
@@ -19851,7 +20085,7 @@
       '.nxFP-heroStat{display:flex;align-items:center;gap:10px}.nxFP-heroIco{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}.nxFP-heroIco.warn{background:rgba(252,165,165,.28);color:#fecaca}' +
       '.nxFP-heroStatLbl{font-size:10px;font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:.3px}.nxFP-heroStatVal{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}' +
       '.nxFP-secTitle{font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.6px;text-transform:uppercase;margin:4px 0 10px}' +
-      '.nxFP-quick{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}' +
+      '.nxFP-quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:12px;margin-bottom:20px}' +
       '.nxFP-qbtn{display:flex;flex-direction:column;align-items:center;gap:9px;background:#fff;border:1px solid #eef0f5;border-radius:18px;padding:18px 8px;cursor:pointer;font-family:inherit;box-shadow:0 2px 10px rgba(15,23,42,.04);transition:box-shadow .15s,transform .15s}' +
       '.nxFP-qbtn:hover{box-shadow:0 8px 20px rgba(15,23,42,.08);transform:translateY(-1px)}.nxFP-qbtn:active{transform:translateY(0)}' +
       '.nxFP-qbtn span{font-size:10px;font-weight:800;letter-spacing:.3px;color:#334155;text-align:center}' +
