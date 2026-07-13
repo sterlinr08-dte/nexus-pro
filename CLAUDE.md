@@ -869,6 +869,40 @@ amortización), `libre` (abonos libres contra un total fijo).
   parches.js` limpio y capturas Playwright del código real (no reconstruido) a 390px/430px/tablet(820px)/
   escritorio(1400px), sin desbordes. **Publicado primero en rama aparte** (`claude/prestamos-premium`)
   para revisión antes de fusionar a `main`, mismo criterio que el ciclo anterior.
+  **2 hotfixes reales, publicados directo a `main` tras confirmarse en vivo:** **v48.18** — el
+  rediseño había borrado por accidente la función `kpi()` que `nxPrestamoVer` (el detalle, con el
+  botón Cobrar) todavía necesitaba para pintar sus recuadros — sin ella la ventana entera tiraba error
+  al abrir, así que ningún botón de ahí adentro respondía; repuesta en el mismo módulo (patrón "helper
+  faltante en el scope del IIFE", igual que `moneyVal` en el POS v42.5 — al borrar/mover código
+  siempre hay que buscar OTROS usos del mismo helper en el archivo, no solo donde se editó). **v48.19**
+  — "Nombre del acreedor" (Configuración → datos del contrato) parecía no guardar; la causa real:
+  `nxPrestamoGuardarConfig` hacía un PATCH y, si no encontraba fila, un POST de respaldo con el error
+  **silenciado** (`catch(e){}` vacío) — si ese segundo paso fallaba por lo que fuera, el toast decía
+  "Guardado" sin haber escrito nada. Cambiado a un UPSERT atómico (`POST .../prestamos_config?
+  on_conflict=id` + `Prefer:resolution=merge-duplicates`, la tabla es de una sola fila con
+  `id integer primary key check(id=1)`) — un solo paso, sin ambigüedad; cualquier fallo real ahora se
+  muestra como error. Verificado con un UPSERT de prueba en una transacción con `rollback` (Supabase
+  MCP) antes de confiar en el cambio.
+  **v48.20 — formulario "Nuevo/Editar préstamo" con el mismo look premium:** el dueño mandó un mockup
+  (imagen) de un formulario con secciones numeradas 1-5 + tarjetas de resumen + tabla de vista previa
+  de cuotas. Aplicado a `abrirForm(pr)`/`window.nxPrRecalc` (mismos IDs de campo de siempre, mismo
+  `nxPrestamoGuardar` sin tocar): secciones numeradas (`prSec()`, insignia morada), "Resumen del
+  préstamo" ahora son tarjetas (reusa el `kpi()` ya restaurado en v48.18) en vez de un cuadro de texto,
+  y "Vista previa de cuotas" NUEVA — primeras 3 filas de la tabla de amortización EN VIVO mientras se
+  llena el formulario (mismas `amortizar()`/`creditoCalc()` que ya usa `nxPrestamoVer`, con un préstamo
+  "fantasma" `id:'__preview__'` que no choca con ningún préstamo real — `creditoCalc` cae a "sin pagos"
+  para ese id, correcto para uno nuevo, aproximado al editar uno con pagos ya hechos, pero es solo una
+  vista previa, el detalle real después de guardar sigue siendo la fuente de verdad). Contador de
+  caracteres en Notas (0/500, cosmético). **Deliberadamente NO se copiaron 4 piezas del mockup por no
+  existir de verdad:** campo de correo electrónico, campo "día de pago" fijo, los 3 interruptores
+  (pagos anticipados/recordatorios/reporte de buró), y la nota de "los pagos fuera de fecha generan
+  mora" (este módulo, a diferencia de Cuotas del POS, NO calcula mora — ver más arriba). El panel
+  "Cómo funciona" del formulario dice solo hechos reales del sistema. Verificado con Playwright cargando
+  el **código real del módulo dentro de un navegador de verdad** (no una reconstrucción a mano ni stubs
+  de DOM en Node) — la ventaja de este método es que ejecuta `abrirForm`/`nxPrRecalc`/`pintarModo` tal
+  cual están en el archivo, con datos simulados servidos por un `window.API.get` de prueba, capturando
+  también el estado con scroll (la sección 4 y 5 no caben completas en 390px de alto sin desplazar el
+  modal — comportamiento esperado, mismo patrón que `nxPrestamoConfig`).
 - **Garantía por venta (v41.1):** `pos_venta_items.garantia_hasta` (migración) calculada de
   `producto.garantia_dias` al vender; sale en el ticket ("Garantía hasta: ...").
 - **Orden/UX:** shell de barra lateral para TODOS (v40.8) + blindada vs tema glass (v40.9) +
