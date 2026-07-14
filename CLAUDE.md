@@ -1640,6 +1640,66 @@ resuelva por código. El dueño eligió **mejorar primero lo de 1-toque** (grati
   `enviar-reporte-email` como precedente técnico) · Fase 3 = WhatsApp API real de Meta (requiere que
   el dueño haga los trámites de cuenta/plantillas primero).
 
+### FASE 3 — WhatsApp Business API directo con Meta (EN CONSTRUCCIÓN, 13/14-jul-2026)
+El dueño usaba Twilio para WhatsApp; Twilio Fraud Operations **denegó permanentemente** la reactivación
+de su cuenta (reembolso en camino, sin dar la causa exacta pese a pedirla). Se investigó la alternativa
+y se decidió ir **directo con Meta** (WhatsApp Cloud API), sin intermediario/BSP — comparado contra
+360dialog (mejor si no se quiere tocar código propio, tiene cuota mensual) y Gupshup (enfocado en
+India/SSE Asia); Meta directo no tiene cuota mensual y NEXUS PRO ya tiene la infraestructura (Edge
+Functions) para integrarlo sin plataforma intermedia.
+- **Cómo funciona el consentimiento (aclarado al dueño):** Meta NO verifica el consentimiento a nivel de
+  API — es responsabilidad del negocio mantenerlo, y Meta lo hace cumplir indirectamente por su
+  **Quality Rating** (tasa de bloqueos/reportes de los destinatarios): mandarle a quien no autorizó baja
+  la calificación y puede limitar o suspender el número. Por eso el consentimiento se guarda en NEXUS PRO
+  mismo (ver abajo), no porque Meta lo pida en un campo del API.
+- **HECHO — lado de NEXUS PRO (mientras el dueño hace la verificación de negocio en Meta Business
+  Manager, trámite externo de 2-10 días hábiles con RNC/acta constitutiva/factura de servicios):**
+  - **Columna nueva `pos_clientes.acepta_whatsapp`** (bool, default false) + `acepta_whatsapp_fecha`
+    (migración `pos_clientes_consentimiento_whatsapp`). Checkbox **"Acepta recibir avisos por WhatsApp"**
+    en el formulario de Entidades/Clientes del POS (`abrirEntidad`/`nxEntGuardar` en `parches.js`, dentro
+    de `entWaBox`, visible solo si el afín "Cliente" está marcado — mismo patrón que `entClienteBox`).
+    `acepta_whatsapp_fecha` se estampa (`new Date().toISOString()`) solo la primera vez que pasa de
+    false→true (no se reescribe en cada guardado). Se muestra un badge "✓ Acepta WhatsApp" en la ficha
+    del cliente (`nxPosCliVer`). **Es la ÚNICA fuente de consentimiento** — ningún envío automático debe
+    saltarse esta bandera.
+  - **Edge Function `whatsapp-enviar-plantilla`** (`verify_jwt:true` — solo usuarios logueados de NEXUS
+    PRO): recibe `{telefono, plantilla, idioma, parametros[], acepta_whatsapp}`, **rechaza el envío si
+    `acepta_whatsapp !== true`** (el llamador del frontend debe pasar el valor real del cliente, no
+    asumir), arma el payload de plantilla y hace POST a
+    `https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages`. Lee `WHATSAPP_ACCESS_TOKEN` y
+    `WHATSAPP_PHONE_NUMBER_ID` con `Deno.env.get(...).trim()` (mismo hábito de `.trim()` defensivo que
+    se agregó en NEXUS AI CONTENT tras el problema de secretos con espacios/basura) — si faltan, responde
+    con un error claro en vez de fallar en silencio.
+  - **Edge Function `whatsapp-webhook`** (`verify_jwt:**false**` a propósito — Meta necesita llamarla sin
+    sesión): maneja el handshake `GET` de verificación de Meta (`hub.mode`/`hub.verify_token`/
+    `hub.challenge`, comparando contra el secreto `WHATSAPP_WEBHOOK_VERIFY_TOKEN`) y por ahora solo
+    registra los eventos `POST` entrantes con `console.log` (sin escribir en la base todavía — eso es
+    para cuando se decida qué hacer con las respuestas/confirmaciones de entrega).
+  - `get_advisors(security)` corrido después de las 3 piezas: sin hallazgos nuevos en `pos_clientes` ni
+    en ninguna de las dos funciones (mismo listado de siempre, todo en tablas/funciones ajenas ya
+    conocidas).
+- **NO se construyó todavía** (bloqueado por algo que solo el dueño puede resolver, no por código): el
+  botón real de "Enviar recordatorio por WhatsApp API" en el Centro de Avisos u otra pantalla. Falta que
+  el dueño (1) termine la verificación de negocio en Meta Business Manager, (2) cree al menos una
+  **plantilla de mensaje aprobada** (ej. recordatorio de cuota/fiado vencido — ya se le ayudó a redactar
+  un borrador tipo Utility para Twilio, reutilizable en Meta con el mismo criterio: no puede empezar ni
+  terminar con una variable, tiene que ser transaccional/informativa, no promocional), y (3) genere el
+  **token de acceso permanente** + el **Phone Number ID** y los guarde como *Secrets* de Edge Functions en
+  Supabase Dashboard (`WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
+  — nombres EXACTOS, sensibles a mayúsculas/espacios, mismo error que ya pasó con `ANTHROPIC_API_KEY`) y
+  configure la URL del webhook (`https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/whatsapp-webhook`)
+  en Meta for Developers. Construir el botón de envío ANTES de tener una plantilla aprobada real habría
+  significado un botón que nunca funciona — contra el criterio de "no fingir funciones que no existen"
+  que ya se sigue en el resto del sistema (ver NEXUS AI CONTENT). Cuando el dueño tenga esas 3 cosas,
+  retomar: conectar el botón real (probablemente en el Centro de Avisos de POS, `renderAvisos()`, para
+  cuotas/fiado vencido) pasando el nombre de la plantilla aprobada + los parámetros del mensaje.
+- **Precios Meta (jul-2026):** desde jul-2025 se cobra por mensaje ENTREGADO según categoría (Marketing/
+  Utility/Authentication/Service), no por conversación de 24h como antes. Plantillas Utility hoy son
+  gratis para República Dominicana; Service (respuestas fuera de plantilla) se vuelve pago a partir del
+  1-oct-2026. Sin la verificación de negocio completa, el límite es 250 conversaciones/24h.
+- **NEXUS AI CONTENT sigue en PAUSA** (decisión del dueño, problema de configuración del secreto de
+  Anthropic sin resolver del todo — ver sección arriba) — no se retomó en esta fase, es un módulo aparte.
+
 ---
 
 ### AGUAPRO ERP — módulo para distribuidoras de agua, dentro de Multiempresa (10-jul-2026)
@@ -1873,6 +1933,20 @@ trabajar en fases pequeñas y verificables (NO se programó el spec completo de 
   caracteres del secreto leído (nunca la clave completa) — se quitó ese código de diagnóstico en cuanto
   se confirmó que funcionaba, dejando la función limpia en producción (solo con el `.trim()` como mejora
   permanente). Generación real probada y funcionando desde la app.
+- **REGRESIÓN Y PAUSA (13/14-jul-2026):** después de esa confirmación en vivo, el generador volvió a
+  fallar con el mismo `AUTHENTICATION_ERROR` — el diagnóstico (repetido varias veces, con la misma salida
+  de LARGO=1024/`"FUNCTION_SLUG:..."` cada vez) mostró que el secreto en Supabase había vuelto a tener el
+  valor basura, sin que el dueño lo hubiera tocado, a través de 3 intentos de arreglo distintos (renombrar
+  solo, editar el valor, crear una clave nueva desde cero) — se descartó código/deploy desactualizado
+  (`get_logs` confirmó que cada llamada sí llegaba a la versión más reciente de la función) y se descartó
+  la clave en sí (probada directo contra `api.anthropic.com`, válida). Quedó sin resolver — posible bug de
+  propagación de Secrets del lado de Supabase (coincidió con un aviso de "estamos investigando un problema
+  técnico" que el dueño vio en su panel, sin poder confirmarlo de forma independiente porque
+  status.supabase.com no es alcanzable desde este entorno). El dueño pidió **pausar** este esfuerzo (no
+  borrar nada — tablas, funciones y el módulo completo se quedan tal cual, solo no se sigue depurando el
+  secreto por ahora). Si se retoma: repetir el diagnóstico temporal (largo + primeros/últimos caracteres
+  del secreto en el mensaje de error, sin exponer la clave completa) para confirmar si el valor sigue
+  siendo basura, y si es así, es un problema de la plataforma Supabase, no de este código.
 
 ## Seguridad (ver `SEGURIDAD-PLAN.md` y `PLAN-AUTH-OPCION-A.md`)
 

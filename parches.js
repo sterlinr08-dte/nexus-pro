@@ -17330,6 +17330,9 @@
             <div class="fr"><label>Nivel de precio (cliente)</label><select id="entNivel"><option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option></select></div>
             <div class="fr"><label>Límite de crédito</label><input id="entLim" data-nx-money inputmode="numeric" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite"></div>
           </div>
+          <div class="fr-row" id="entWaBox">
+            <div class="fr" style="flex:1 1 100%"><label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="entAceptaWa"${e.acepta_whatsapp ? ' checked' : ''} style="width:16px;height:16px"> Acepta recibir avisos por WhatsApp</label><span style="font-size:10.5px;color:#94a3b8">El cliente autorizó recordatorios de pago/cita por WhatsApp a este número. Sin esto marcado, el sistema no le manda mensajes automáticos.</span></div>
+          </div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxEntForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxEntGuardar('${c ? c.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
       </div>`;
@@ -17337,7 +17340,11 @@
     scanMoney(ov);
     window.nxEntAfinTog();
   }
-  window.nxEntAfinTog = function () { const box = document.getElementById('entClienteBox'); if (box) box.style.display = document.getElementById('ent_es_cliente') && document.getElementById('ent_es_cliente').checked ? '' : 'none'; };
+  window.nxEntAfinTog = function () {
+    const esCli = document.getElementById('ent_es_cliente') && document.getElementById('ent_es_cliente').checked;
+    const box = document.getElementById('entClienteBox'); if (box) box.style.display = esCli ? '' : 'none';
+    const wabox = document.getElementById('entWaBox'); if (wabox) wabox.style.display = esCli ? '' : 'none';
+  };
   window.nxEntTipoTog = function () {
     const jur = (val('entTipoP') === 'juridica');
     const nl = document.getElementById('entNomLbl'); if (nl) nl.textContent = jur ? 'Razón social *' : 'Nombre *';
@@ -17346,12 +17353,16 @@
   window.nxEntGuardar = async function (id) {
     const roles = { es_cliente: !!(document.getElementById('ent_es_cliente') || {}).checked, es_proveedor: !!(document.getElementById('ent_es_proveedor') || {}).checked, es_empleado: !!(document.getElementById('ent_es_empleado') || {}).checked, es_banco: !!(document.getElementById('ent_es_banco') || {}).checked };
     if (!roles.es_cliente && !roles.es_proveedor && !roles.es_empleado && !roles.es_banco) { toast('err', 'Elige al menos un afín', 'Cliente, proveedor, empleado o banco'); return; }
+    const aceptaWaAntes = !!(id && (_clientes.find(x => String(x.id) === String(id)) || {}).acepta_whatsapp);
+    const aceptaWaAhora = !!(document.getElementById('entAceptaWa') || {}).checked;
     const body = Object.assign({
       nombre: (val('entNom') || '').trim(), tipo_persona: val('entTipoP') || 'fisica', codigo: (val('entCod') || '').trim() || null,
       cedula: (val('entCed') || '').trim() || null, telefono: (val('entTel') || '').trim() || null, email: (val('entEmail') || '').trim() || null,
       direccion: (val('entDir') || '').trim() || null, contacto: (val('entCont') || '').trim() || null, representante: (val('entRep') || '').trim() || null,
-      nivel_precio: val('entNivel') || 'final', limite_credito: parseMoney(val('entLim'))
+      nivel_precio: val('entNivel') || 'final', limite_credito: parseMoney(val('entLim')),
+      acepta_whatsapp: aceptaWaAhora
     }, roles);
+    if (aceptaWaAhora && !aceptaWaAntes) body.acepta_whatsapp_fecha = new Date().toISOString();
     if (!body.nombre) { toast('err', 'Falta el nombre / razón social'); return; }
     if (!body.codigo) body.codigo = entCodigoAuto(body);
     try {
@@ -17425,7 +17436,7 @@
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-user"></i> ${esc(c.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCli').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}${c.acepta_whatsapp ? ' · <span style="color:#16a34a;font-weight:700"><i class="ti ti-circle-check"></i> Acepta WhatsApp</span>' : ''}</div>
           ${finesCli.length ? `<div style="background:${exposicionTotal > 0 ? '#fef2f2' : '#f0fdf4'};border:1px solid ${exposicionTotal > 0 ? '#fecaca' : '#bbf7d0'};border-radius:10px;padding:9px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase">Exposición total (fiado + cuotas)</span><b style="font-size:16px;color:${exposicionTotal > 0 ? '#dc2626' : '#16a34a'}">${fmt(exposicionTotal)}</b></div>` : ''}
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
             ${kpi('Total a crédito', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
