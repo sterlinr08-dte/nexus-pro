@@ -1084,6 +1084,35 @@ tarjeta). El código vuelve a index.html idéntico a antes de v48.21; los `.png`
 quedan en el repo sin usar (no se borraron, no se pidió). Si se retoma un rediseño de iconos del
 Dashboard más adelante, no reusar directo esta hoja sin antes mostrarle una muestra al dueño.
 
+### POS · Productos — actualizar precios de todo el catálogo por CSV (v48.26)
+Inspirado en revisar competidores (Púrpura Datos, POSMOVI): el dueño pidió la función de "subir un
+archivo con los precios y que se actualicen junto con el POS", que ninguno de los dos importadores
+que ya existían cubría (`nxPosImportarUI`/`nxPosImportarRun` solo pega el JSON de Infoplus, agrega
+productos NUEVOS y siempre deja precio/costo en 0 — nunca toca productos existentes).
+- **El modal de "Importar" (Productos) ahora tiene 2 modos** (`_impModo`, botones arriba del modal):
+  "Agregar nuevos" (el de siempre, sin cambios) y **"Actualizar precios (CSV)"** (nuevo).
+- **CSV con columna `codigo` obligatoria** (encabezados reconocidos sin importar mayúsculas/acentos:
+  `codigo`/`código`/`code`/`sku`) + las columnas que se quieran actualizar: `precio`, `precio_mayor`
+  (Precio 2/por mayor), `costo`, `stock` — todas opcionales, si una columna no viene en el CSV ese
+  campo del producto **no se toca** (no se pisa con 0 ni se borra). Si el código NO existe en el
+  catálogo pero la fila trae `nombre`, se crea como producto nuevo (igual que "Nuevo producto" pero
+  en lote); si no trae nombre, se cuenta como "sin coincidencia" y se salta.
+  - **Delimitador autodetectado** (`,` o `;` — Excel en español/RD suele exportar CSV con `;` porque
+    usa `,` como separador decimal), soporta campos entre comillas con comas dentro.
+  - **Montos leídos con la misma lógica de `nxMoney.parse`** (reimplementada standalone en
+    `parseCSVGenerico`'s caller vía `window.nxMoney.parse`) — respeta la notación RD ("1.500" = mil
+    quinientos), no `parseFloat` crudo.
+  - Botón **"Descargar plantilla de ejemplo"** (CSV con 2 filas de muestra) para que el dueño no
+    tenga que adivinar el formato exacto.
+  - Actualiza en lotes de 15 en paralelo (`PATCH` por producto, cada uno con `id` distinto — no hay
+    `UPSERT` posible sin una constraint única en `codigo`, que no existe, así que es PATCH individual
+    por fila emparejada) + los nuevos en un solo `POST` en bloque (igual que el importador de
+    Infoplus). Toast final con el resumen: actualizados / creados / sin código / sin coincidencia.
+  - No toca RLS ni esquema — usa la tabla `pos_productos` ya existente. `node --check parches.js`
+    limpio; el parser CSV (delimitador + comillas) se verificó con el código real extraído del
+    archivo (no una reconstrucción), casos: coma con campo entre comillas, punto y coma, precio en
+    notación RD.
+
 ## Módulos / funcionalidades ya construidas
 
 - **Clientes**: ficha, cédula, teléfono, dirección; clientes en proceso.

@@ -14958,6 +14958,7 @@
   // ── Ordenamiento por columnas (tabla → {k:clave, d:dirección 1/-1}) ──
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
+  let _impModo = 'nuevos'; // modal Importar (Productos): nuevos (Infoplus, pegar) | precios (CSV, actualizar existentes)
   let _reps = [], _fins = [], _finCuotas = [], _finPagos = [], _repVista = 'activas'; // servicio tecnico + cuotas
   let _finFiltro = 'todos', _finQ = ''; // Cuotas premium: pestaña de estado + texto de búsqueda
   let _apartados = [], _apaPagos = []; // apartados (layaway)
@@ -16863,26 +16864,135 @@
     const arr = JSON.parse(dstr);
     return Array.isArray(arr) ? arr : [];
   }
-  window.nxPosImportarUI = function () {
+  window.nxPosImportarUI = function (modo) {
+    if (modo) _impModo = modo;
     cerrarModal('nxPosImp');
-    const ov = document.createElement('div'); ov.id = 'nxPosImp'; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-file-import"></i> Importar productos</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosImp').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
+    const tab = (m, l) => `<button type="button" class="btn bsm${_impModo === m ? ' bc1' : ' bghost'}" style="flex:1" onclick="window.nxPosImportarUI('${m}')">${l}</button>`;
+    const cuerpoNuevos = `<div style="font-size:11px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
             Pega aquí el inventario exportado de <b>Infoplus</b> (el texto que empieza con <code>{"d":</code> o con <code>[[</code>).<br>
             Se cargan: <b>descripción, existencia, referencia y marca</b>. El <b>precio y el costo entran en 0</b> — luego los pones tú. No se duplican los códigos que ya existan.
           </div>
           <div class="fr"><label>Datos de Infoplus</label><textarea id="impTxt" class="no-upper" placeholder='{"d":"[[1000,\\"CELULAR...\\",3,\\"128GB\\",\\"M-HORSE\\",\\"\\"]...' style="width:100%;min-height:160px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:11px;font-family:var(--mono);outline:none;resize:vertical"></textarea></div>
-          <div id="impMsg" style="font-size:11px;color:#475569;min-height:16px;margin-top:4px"></div>
-        </div>
+          <div id="impMsg" style="font-size:11px;color:#475569;min-height:16px;margin-top:4px"></div>`;
+    const cuerpoPrecios = `<div style="font-size:11px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.5">
+            Sube un archivo <b>CSV</b> con una columna <b>código</b> (para emparejar con tus productos ya guardados) y las columnas que quieras actualizar: <b>precio, precio_mayor, costo, stock</b>. Si un código no existe y trae <b>nombre</b>, se crea como producto nuevo.
+            <button type="button" class="btn bsm bghost" style="margin-top:6px" onclick="window.nxPosPlantillaCSV()"><i class="ti ti-file-spreadsheet"></i> Descargar plantilla de ejemplo</button>
+          </div>
+          <div class="fr"><label>Archivo CSV</label><input type="file" id="impCsvFile" accept=".csv,text/csv" onchange="window.nxPosImportarPreciosLeer(this)" style="width:100%;padding:9px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px"></div>
+          <div id="impCsvPrev" style="font-size:11px;color:#475569;min-height:16px;margin-top:6px"></div>
+          <div id="impMsg" style="font-size:11px;color:#475569;min-height:16px;margin-top:4px"></div>`;
+    const ov = document.createElement('div'); ov.id = 'nxPosImp'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-file-import"></i> Importar productos</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosImp').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">${tab('nuevos', 'Agregar nuevos')}${tab('precios', 'Actualizar precios (CSV)')}</div>
+        <div style="overflow-y:auto;flex:1">${_impModo === 'precios' ? cuerpoPrecios : cuerpoNuevos}</div>
         <div style="display:flex;gap:8px;padding-top:10px">
           <button class="btn bghost" type="button" style="flex:1" onclick="document.getElementById('nxPosImp').remove()">Cancelar</button>
-          <button class="btn bc1" type="button" style="flex:2" id="impBtn" onclick="window.nxPosImportarRun()"><i class="ti ti-download"></i> Importar</button>
+          ${_impModo === 'precios'
+        ? `<button class="btn bc1" type="button" style="flex:2" id="impBtn" onclick="window.nxPosImportarPreciosRun()" disabled><i class="ti ti-download"></i> Actualizar</button>`
+        : `<button class="btn bc1" type="button" style="flex:2" id="impBtn" onclick="window.nxPosImportarRun()"><i class="ti ti-download"></i> Importar</button>`}
         </div>
       </div>`;
     document.body.appendChild(ov);
+  };
+  window.nxPosPlantillaCSV = function () {
+    const csv = '﻿codigo,nombre,precio,precio_mayor,costo,stock\n1001,CELULAR EJEMPLO 128GB,4500,4200,3200,10\n1002,FUNDA EJEMPLO,350,,180,25\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plantilla_precios_nexuspro.csv';
+    document.body.appendChild(a); a.click(); setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 500);
+  };
+  // Parser CSV sencillo: separador , o ; (autodetectado por la fila de encabezado), soporta campos entre comillas.
+  function parseCSVGenerico(text) {
+    const t = String(text || '').replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+    if (!t) return { headers: [], rows: [] };
+    const lineas = t.split('\n').filter(l => l.trim() !== '');
+    if (!lineas.length) return { headers: [], rows: [] };
+    const delim = (lineas[0].split(';').length > lineas[0].split(',').length) ? ';' : ',';
+    const splitLinea = l => {
+      const out = []; let cur = '', enComillas = false;
+      for (let i = 0; i < l.length; i++) {
+        const ch = l[i];
+        if (ch === '"') { if (enComillas && l[i + 1] === '"') { cur += '"'; i++; } else enComillas = !enComillas; }
+        else if (ch === delim && !enComillas) { out.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      out.push(cur);
+      return out.map(c => c.trim());
+    };
+    const norm = s => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const headers = splitLinea(lineas[0]).map(norm);
+    const rows = lineas.slice(1).map(splitLinea);
+    return { headers, rows };
+  }
+  let _impPreciosFilas = null;
+  window.nxPosImportarPreciosLeer = function (input) {
+    const f = input && input.files && input.files[0];
+    const prev = document.getElementById('impCsvPrev'); const btn = document.getElementById('impBtn');
+    _impPreciosFilas = null; if (btn) btn.disabled = true;
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const { headers, rows } = parseCSVGenerico(String(reader.result || ''));
+        const idxCod = headers.findIndex(h => ['codigo', 'código', 'code', 'sku'].includes(h));
+        if (idxCod === -1) { if (prev) prev.innerHTML = '<span style="color:#dc2626">El CSV necesita una columna "codigo".</span>'; return; }
+        const idxNom = headers.findIndex(h => ['nombre', 'descripcion', 'descripción'].includes(h));
+        const idxPre = headers.findIndex(h => ['precio', 'precio1', 'preciofinal'].includes(h));
+        const idxPre2 = headers.findIndex(h => ['precio2', 'precio_mayor', 'preciomayor', 'mayor'].includes(h));
+        const idxCos = headers.findIndex(h => ['costo', 'cost'].includes(h));
+        const idxStk = headers.findIndex(h => ['stock', 'existencia', 'cantidad'].includes(h));
+        _impPreciosFilas = { idxCod, idxNom, idxPre, idxPre2, idxCos, idxStk, rows };
+        if (prev) prev.innerHTML = rows.length + ' fila(s) leídas del CSV. Columnas detectadas: ' + ['codigo', idxNom > -1 ? 'nombre' : null, idxPre > -1 ? 'precio' : null, idxPre2 > -1 ? 'precio_mayor' : null, idxCos > -1 ? 'costo' : null, idxStk > -1 ? 'stock' : null].filter(Boolean).join(', ') + '.';
+        if (btn) btn.disabled = !rows.length;
+      } catch (e) { if (prev) prev.innerHTML = '<span style="color:#dc2626">No se pudo leer el CSV: ' + esc(String(e && e.message || e)) + '</span>'; }
+    };
+    reader.readAsText(f, 'UTF-8');
+  };
+  window.nxPosImportarPreciosRun = async function () {
+    if (!_impPreciosFilas || !_impPreciosFilas.rows.length) return;
+    const { idxCod, idxNom, idxPre, idxPre2, idxCos, idxStk, rows } = _impPreciosFilas;
+    const msg = document.getElementById('impMsg'); const btn = document.getElementById('impBtn');
+    const setMsg = (t, c) => { if (msg) { msg.textContent = t; msg.style.color = c || '#475569'; } };
+    const porCodigo = new Map(); _prods.forEach(p => { const c = String(p.codigo || '').trim(); if (c) porCodigo.set(c, p); });
+    const nMoney = v => window.nxMoney ? window.nxMoney.parse(v) : (parseFloat(v) || 0);
+    const actualizaciones = [], nuevos = []; let sinCodigo = 0, sinCoincidenciaNiNombre = 0;
+    rows.forEach(r => {
+      const codigo = String(r[idxCod] || '').trim();
+      if (!codigo) { sinCodigo++; return; }
+      const patch = {};
+      if (idxPre > -1 && r[idxPre] !== '' && r[idxPre] != null) patch.precio = nMoney(r[idxPre]);
+      if (idxPre2 > -1 && r[idxPre2] !== '' && r[idxPre2] != null) patch.precio_mayor = nMoney(r[idxPre2]);
+      if (idxCos > -1 && r[idxCos] !== '' && r[idxCos] != null) patch.costo = nMoney(r[idxCos]);
+      if (idxStk > -1 && r[idxStk] !== '' && r[idxStk] != null) patch.stock = Math.round(nMoney(r[idxStk]));
+      const existente = porCodigo.get(codigo);
+      if (existente) { if (Object.keys(patch).length) actualizaciones.push({ id: existente.id, patch }); }
+      else {
+        const nombre = idxNom > -1 ? String(r[idxNom] || '').trim() : '';
+        if (nombre) nuevos.push(Object.assign({ nombre, codigo, precio_credito: patch.precio || 0, itbis: true, tipo: 'producto', stock_min: 0, garantia_dias: 0, serial: false, no_descuento: false, activo: true }, patch));
+        else sinCoincidenciaNiNombre++;
+      }
+    });
+    if (!actualizaciones.length && !nuevos.length) { setMsg('Nada que actualizar — revisa los códigos del CSV.', '#dc2626'); return; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Actualizando...'; }
+    try {
+      let hechos = 0; const total = actualizaciones.length + nuevos.length;
+      const LOTE_PAR = 15;
+      for (let i = 0; i < actualizaciones.length; i += LOTE_PAR) {
+        const grupo = actualizaciones.slice(i, i + LOTE_PAR);
+        await Promise.all(grupo.map(u => getAPI().patch('pos_productos', 'id=eq.' + u.id, u.patch)));
+        hechos += grupo.length;
+        setMsg('Actualizando... ' + hechos + ' / ' + total, '#6d28d9');
+      }
+      if (nuevos.length) { await getAPI().post('pos_productos', nuevos); hechos += nuevos.length; }
+      toast('ok', 'Precios actualizados', actualizaciones.length + ' actualizados' + (nuevos.length ? ' · ' + nuevos.length + ' creados' : '') + (sinCodigo ? ' · ' + sinCodigo + ' sin código' : '') + (sinCoincidenciaNiNombre ? ' · ' + sinCoincidenciaNiNombre + ' sin coincidencia' : ''));
+      cerrarModal('nxPosImp');
+      await cargarPOS();
+      const view = document.getElementById('v-pos'); if (view) renderPOS(view);
+    } catch (e) {
+      setMsg('Error al actualizar: ' + String(e && e.message || e), '#dc2626');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-download"></i> Actualizar'; }
+    }
   };
   window.nxPosImportarRun = async function () {
     const msg = document.getElementById('impMsg'); const btn = document.getElementById('impBtn');
