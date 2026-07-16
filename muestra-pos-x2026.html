@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS PRO X 2026 — Muestra POS (lista)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+:root{
+  --px-blue:#2563eb; --px-blue-d:#1d4ed8; --px-blue-l:#eff6ff;
+  --px-green:#16a34a; --px-green-l:#f0fdf4;
+  --px-bg:#f5f7fa; --px-panel:#ffffff; --px-line:#e8ebf0;
+  --px-txt:#0f172a; --px-txt2:#64748b; --px-txt3:#94a3b8;
+  --px-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+  --px-radius:14px;
+}
+:root[data-theme="dark"]{
+  --px-blue:#3b82f6; --px-blue-d:#2563eb; --px-blue-l:#0f1b33;
+  --px-green:#22c55e; --px-green-l:#0c1f14;
+  --px-bg:#0b0f19; --px-panel:#121826; --px-line:#232b3d;
+  --px-txt:#f1f5f9; --px-txt2:#94a3b8; --px-txt3:#64748b;
+  --px-shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --px-blue:#3b82f6; --px-blue-d:#2563eb; --px-blue-l:#0f1b33;
+    --px-green:#22c55e; --px-green-l:#0c1f14;
+    --px-bg:#0b0f19; --px-panel:#121826; --px-line:#232b3d;
+    --px-txt:#f1f5f9; --px-txt2:#94a3b8; --px-txt3:#64748b;
+    --px-shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--px-bg);color:var(--px-txt);font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.px-banner{background:var(--px-blue-d);color:#fff;font-size:12px;font-weight:600;text-align:center;padding:8px 12px;letter-spacing:.2px}
+.px-banner b{font-weight:800}
+.px-shell{display:grid;grid-template-columns:240px 1fr 360px;grid-template-rows:1fr auto;grid-template-areas:"side main cart" "side bottom bottom";min-height:calc(100vh - 34px)}
+@media (max-width:1180px){.px-shell{grid-template-columns:240px 1fr 320px}}
+@media (max-width:980px){
+  .px-shell{grid-template-columns:1fr;grid-template-areas:"main" "bottom"}
+  .px-side{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:40;transform:translateX(-100%);transition:transform .25s ease}
+  .px-side.open{transform:translateX(0)}
+  .px-cart{position:fixed;top:0;right:0;bottom:0;width:min(400px,92vw);z-index:40;transform:translateX(100%);transition:transform .25s ease;box-shadow:-12px 0 40px rgba(15,23,42,.18)}
+  .px-cart.open{transform:translateX(0)}
+  .px-scrim{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:35;opacity:0;pointer-events:none;transition:opacity .2s}
+  .px-scrim.on{opacity:1;pointer-events:auto}
+}
+
+/* ── Sidebar ── */
+.px-side{grid-area:side;background:var(--px-panel);border-right:1px solid var(--px-line);display:flex;flex-direction:column;padding:18px 14px}
+.px-logo{display:flex;align-items:center;gap:10px;padding:4px 6px 20px}
+.px-logo .mk{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--px-blue),var(--px-blue-d));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px}
+.px-logo b{font-size:14.5px;font-weight:800;letter-spacing:-.2px}
+.px-logo span{display:block;font-size:9.5px;color:var(--px-txt3);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.px-navgrp{margin-top:14px}
+.px-navgrp h6{font-size:10px;font-weight:700;color:var(--px-txt3);text-transform:uppercase;letter-spacing:.5px;margin:0 10px 6px}
+.px-nav{display:flex;flex-direction:column;gap:2px}
+.px-nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--px-txt2);text-decoration:none;font-size:13px;font-weight:600;position:relative}
+.px-nav a i{font-size:17px;width:18px;text-align:center}
+.px-nav a:hover{background:var(--px-bg);color:var(--px-txt)}
+.px-nav a.on{background:var(--px-blue-l);color:var(--px-blue-d);box-shadow:inset 2px 0 0 var(--px-blue)}
+.px-side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--px-line)}
+.px-org{display:flex;align-items:center;gap:9px;padding:8px;border-radius:12px;background:var(--px-bg)}
+.px-org .av{width:32px;height:32px;border-radius:9px;background:var(--px-green-l);color:var(--px-green);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.px-org div b{display:block;font-size:12px;font-weight:700}
+.px-org div span{font-size:10.5px;color:var(--px-txt3)}
+
+/* ── Topbar (main) ── */
+.px-main{grid-area:main;padding:16px 18px 10px;min-width:0}
+.px-topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.px-burger,.px-cartbtn{display:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--px-line);background:var(--px-panel);align-items:center;justify-content:center;color:var(--px-txt2);cursor:pointer}
+@media (max-width:980px){.px-burger{display:flex}.px-cartbtn{display:flex}}
+.px-search{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--px-panel);border:1px solid var(--px-line);border-radius:12px;height:42px;padding:0 12px;box-shadow:var(--px-shadow)}
+.px-search i{color:var(--px-txt3);font-size:17px}
+.px-search input{border:0;outline:0;background:transparent;flex:1;font:inherit;font-size:14px;color:var(--px-txt)}
+.px-themetoggle{width:42px;height:42px;border-radius:12px;border:1px solid var(--px-line);background:var(--px-panel);display:flex;align-items:center;justify-content:center;color:var(--px-txt2);cursor:pointer}
+.px-cats{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:6px;scrollbar-width:none}
+.px-cats::-webkit-scrollbar{display:none}
+.px-chip{flex:0 0 auto;padding:8px 14px;border-radius:999px;border:1px solid var(--px-line);background:var(--px-panel);font-size:12.5px;font-weight:700;color:var(--px-txt2);cursor:pointer;white-space:nowrap}
+.px-chip.on{background:var(--px-blue);border-color:var(--px-blue);color:#fff}
+
+/* ── Lista de productos (NO tarjetas grandes) ── */
+.px-list{background:var(--px-panel);border:1px solid var(--px-line);border-radius:var(--px-radius);box-shadow:var(--px-shadow);overflow:hidden}
+.px-row{display:grid;grid-template-columns:44px 1.6fr 1fr .8fr .9fr auto auto;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--px-line);transition:background .12s}
+.px-row:last-child{border-bottom:0}
+.px-row:hover{background:var(--px-bg)}
+.px-thumb{width:44px;height:44px;border-radius:11px;background:var(--px-blue-l);color:var(--px-blue-d);display:flex;align-items:center;justify-content:center;font-size:19px}
+.px-pname{font-size:13.5px;font-weight:700;color:var(--px-txt)}
+.px-pdesc{font-size:11.5px;color:var(--px-txt3);margin-top:2px}
+.px-meta{font-size:11px;color:var(--px-txt2)}
+.px-meta b{display:block;font-size:9.5px;color:var(--px-txt3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.px-stk{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700}
+.px-stk i{font-size:8px}
+.px-stk.ok{color:var(--px-green)}
+.px-stk.low{color:#d97706}
+.px-stk.out{color:#dc2626}
+.px-price{font-size:14.5px;font-weight:800;color:var(--px-txt);text-align:right;white-space:nowrap}
+.px-fav{width:32px;height:32px;border-radius:9px;border:1px solid var(--px-line);background:var(--px-panel);color:var(--px-txt3);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.px-fav.on{color:#f59e0b;border-color:#fde68a;background:#fffbeb}
+.px-add{width:36px;height:36px;border-radius:10px;border:0;background:var(--px-blue);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,.28)}
+.px-add:active{transform:scale(.94)}
+@media (max-width:760px){
+  .px-row{grid-template-columns:40px 1fr auto auto;grid-template-areas:"thumb name price add" "thumb meta meta fav";row-gap:6px}
+  .px-thumb{grid-area:thumb}.px-pname,.px-pdesc{grid-area:name}.px-price{grid-area:price}.px-add{grid-area:add}
+  .px-meta.cat{display:none}.px-meta.stock{grid-area:meta}.px-fav{grid-area:fav;justify-self:end}
+}
+
+/* ── Panel de cobro (derecha) ── */
+.px-cart{grid-area:cart;background:var(--px-panel);border-left:1px solid var(--px-line);display:flex;flex-direction:column;padding:16px}
+.px-cart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.px-cart-head h5{margin:0;font-size:13px;font-weight:800}
+.px-closecart{display:none;width:32px;height:32px;border-radius:9px;border:1px solid var(--px-line);background:var(--px-panel);align-items:center;justify-content:center;cursor:pointer;color:var(--px-txt2)}
+@media (max-width:980px){.px-closecart{display:flex}}
+.px-cli{display:flex;align-items:center;gap:10px;padding:10px;border:1px dashed var(--px-line);border-radius:12px;margin-bottom:14px;cursor:pointer}
+.px-cli .av{width:36px;height:36px;border-radius:10px;background:var(--px-green-l);color:var(--px-green);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+.px-cli b{font-size:12.5px;display:block}
+.px-cli span{font-size:10.5px;color:var(--px-txt3)}
+.px-items{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;min-height:120px}
+.px-item{display:flex;align-items:center;gap:10px}
+.px-item .nm{flex:1;min-width:0}
+.px-item .nm b{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.px-item .nm span{font-size:10.5px;color:var(--px-txt3)}
+.px-qty{display:flex;align-items:center;gap:6px;background:var(--px-bg);border-radius:8px;padding:3px}
+.px-qty button{width:22px;height:22px;border:0;background:transparent;color:var(--px-txt2);font-weight:800;cursor:pointer;border-radius:6px}
+.px-qty span{font-size:12px;font-weight:800;width:16px;text-align:center}
+.px-item .rm{width:26px;height:26px;border:0;background:transparent;color:#dc2626;cursor:pointer}
+.px-tot{border-top:1px solid var(--px-line);margin-top:12px;padding-top:12px;font-size:12.5px}
+.px-tot .r{display:flex;justify-content:space-between;padding:4px 0;color:var(--px-txt2)}
+.px-tot .r b{color:var(--px-txt);font-weight:700}
+.px-tot .gr{display:flex;justify-content:space-between;font-size:16px;font-weight:800;padding-top:8px;margin-top:4px;border-top:1px dashed var(--px-line)}
+.px-pay{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.px-pay button{padding:10px 6px;border-radius:11px;border:1.5px solid var(--px-line);background:var(--px-panel);font-size:11.5px;font-weight:700;color:var(--px-txt2);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.px-pay button i{font-size:17px}
+.px-pay button.on{border-color:var(--px-blue);color:var(--px-blue-d);background:var(--px-blue-l)}
+.px-cobrar{width:100%;padding:16px;border:0;border-radius:14px;background:var(--px-green);color:#fff;font-size:16px;font-weight:800;letter-spacing:.2px;cursor:pointer;box-shadow:0 10px 24px rgba(22,163,74,.3)}
+.px-cobrar:active{transform:scale(.98)}
+
+/* ── Dashboard inferior ── */
+.px-bottom{grid-area:bottom;padding:4px 18px 20px}
+.px-bh{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
+.px-bh h6{margin:0;font-size:12px;font-weight:800;color:var(--px-txt2);text-transform:uppercase;letter-spacing:.4px}
+.px-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.px-kpi{background:var(--px-panel);border:1px solid var(--px-line);border-radius:12px;padding:12px 14px;box-shadow:var(--px-shadow)}
+.px-kpi .lb{font-size:10.5px;color:var(--px-txt3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:6px}
+.px-kpi .vl{font-size:19px;font-weight:800;margin-top:4px}
+.px-kpi .tr{font-size:10.5px;font-weight:700;margin-top:2px}
+.px-kpi .tr.up{color:var(--px-green)}
+.px-quick{display:flex;gap:8px;flex-wrap:wrap}
+.px-qbtn{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--px-line);background:var(--px-panel);font-size:12px;font-weight:700;color:var(--px-txt2);cursor:pointer}
+.px-qbtn i{color:var(--px-blue)}
+</style>
+</head>
+<body>
+
+<div class="px-banner">🧪 MUESTRA VISUAL — <b>NEXUS PRO X 2026</b> · Datos de ejemplo, no conectado a Supabase · Solo para aprobación, no reemplaza el POS real todavía</div>
+<div class="px-scrim" id="pxScrim" onclick="pxCloseAll()"></div>
+
+<div class="px-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="px-side" id="pxSide">
+    <div class="px-logo"><div class="mk">N</div><div><b>NEXUS PRO X</b><span>2026</span></div></div>
+
+    <div class="px-navgrp">
+      <h6>Principal</h6>
+      <div class="px-nav">
+        <a href="#" class="on"><i class="ti ti-home"></i> Inicio</a>
+        <a href="#"><i class="ti ti-shopping-cart"></i> Ventas</a>
+        <a href="#"><i class="ti ti-history"></i> Historial</a>
+      </div>
+    </div>
+    <div class="px-navgrp">
+      <h6>Inventario</h6>
+      <div class="px-nav">
+        <a href="#"><i class="ti ti-box"></i> Productos</a>
+        <a href="#"><i class="ti ti-truck-delivery"></i> Compras</a>
+        <a href="#"><i class="ti ti-building-warehouse"></i> Almacenes</a>
+      </div>
+    </div>
+    <div class="px-navgrp">
+      <h6>Personas</h6>
+      <div class="px-nav">
+        <a href="#"><i class="ti ti-users"></i> Clientes</a>
+        <a href="#"><i class="ti ti-target-arrow"></i> CRM</a>
+        <a href="#"><i class="ti ti-id-badge-2"></i> RRHH</a>
+      </div>
+    </div>
+    <div class="px-navgrp">
+      <h6>Finanzas</h6>
+      <div class="px-nav">
+        <a href="#"><i class="ti ti-cash-banknote"></i> Caja</a>
+        <a href="#"><i class="ti ti-calendar-dollar"></i> Cuotas</a>
+        <a href="#"><i class="ti ti-bookmark"></i> Apartados</a>
+        <a href="#"><i class="ti ti-calculator"></i> Contabilidad</a>
+        <a href="#"><i class="ti ti-chart-bar"></i> Reportes</a>
+      </div>
+    </div>
+    <div class="px-navgrp">
+      <h6>Sistema</h6>
+      <div class="px-nav">
+        <a href="#"><i class="ti ti-bell-ringing"></i> Avisos</a>
+        <a href="#"><i class="ti ti-settings"></i> Ajustes</a>
+      </div>
+    </div>
+
+    <div class="px-side-foot">
+      <div class="px-org"><div class="av">BC</div><div><b>Bayolsale Celulares</b><span>Esterlin · admin</span></div></div>
+    </div>
+  </aside>
+
+  <!-- CENTRO: catálogo lista -->
+  <main class="px-main">
+    <div class="px-topbar">
+      <button class="px-burger" onclick="pxOpen('pxSide')"><i class="ti ti-menu-2"></i></button>
+      <div class="px-search"><i class="ti ti-search"></i><input placeholder="Buscar producto, código o marca…" oninput="pxFiltrar(this.value)"></div>
+      <button class="px-themetoggle" onclick="pxToggleTheme()" title="Cambiar tema"><i class="ti ti-moon" id="pxThemeIcon"></i></button>
+      <button class="px-cartbtn" onclick="pxOpen('pxCart')"><i class="ti ti-shopping-cart"></i></button>
+    </div>
+    <div class="px-cats" id="pxCats"></div>
+    <div class="px-list" id="pxList"></div>
+  </main>
+
+  <!-- DERECHA: carrito / cobro -->
+  <aside class="px-cart" id="pxCart">
+    <div class="px-cart-head"><h5><i class="ti ti-receipt-2"></i> Venta actual</h5><button class="px-closecart" onclick="pxCloseAll()"><i class="ti ti-x"></i></button></div>
+    <div class="px-cli"><div class="av">CF</div><div><b>Consumidor final</b><span>Toca para elegir cliente</span></div></div>
+    <div class="px-items" id="pxItems"></div>
+    <div class="px-tot">
+      <div class="r">Subtotal <b id="pxSub">RD$ 0</b></div>
+      <div class="r">Descuento <b id="pxDesc">RD$ 0</b></div>
+      <div class="r">ITBIS (18%) <b id="pxItbis">RD$ 0</b></div>
+      <div class="gr">TOTAL <span id="pxGranTot">RD$ 0</span></div>
+    </div>
+    <div class="px-pay">
+      <button class="on" onclick="pxPay(this)"><i class="ti ti-cash"></i> Efectivo</button>
+      <button onclick="pxPay(this)"><i class="ti ti-credit-card"></i> Tarjeta</button>
+      <button onclick="pxPay(this)"><i class="ti ti-transfer"></i> Transferencia</button>
+      <button onclick="pxPay(this)"><i class="ti ti-file-invoice"></i> Crédito</button>
+    </div>
+    <button class="px-cobrar"><i class="ti ti-check"></i> COBRAR</button>
+  </aside>
+
+  <!-- ABAJO: mini dashboard -->
+  <section class="px-bottom">
+    <div class="px-bh"><h6>Resumen de hoy</h6></div>
+    <div class="px-kpis">
+      <div class="px-kpi"><div class="lb"><i class="ti ti-coin"></i> Ventas del día</div><div class="vl">RD$ 48,250</div><div class="tr up">▲ 12% vs ayer</div></div>
+      <div class="px-kpi"><div class="lb"><i class="ti ti-category"></i> Top categoría</div><div class="vl">Celulares</div><div class="tr" style="color:var(--px-txt3)">62% de las ventas</div></div>
+      <div class="px-kpi"><div class="lb"><i class="ti ti-alert-triangle"></i> Productos críticos</div><div class="vl" style="color:#d97706">4</div><div class="tr" style="color:var(--px-txt3)">bajo stock mínimo</div></div>
+      <div class="px-kpi"><div class="lb"><i class="ti ti-receipt"></i> Facturas hoy</div><div class="vl">17</div><div class="tr" style="color:var(--px-txt3)">ticket prom. RD$2,838</div></div>
+    </div>
+    <div class="px-quick">
+      <button class="px-qbtn"><i class="ti ti-file-invoice"></i> Nueva factura</button>
+      <button class="px-qbtn"><i class="ti ti-truck-delivery"></i> Registrar compra</button>
+      <button class="px-qbtn"><i class="ti ti-cash-register"></i> Abrir caja</button>
+      <button class="px-qbtn"><i class="ti ti-file-spreadsheet"></i> Exportar reporte</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const PRODUCTOS = [
+  {id:1,nombre:'iPhone 15 Pro Max',desc:'Titanio Natural · 256GB',cat:'Celulares',cod:'IP15PM256',stock:12,min:3,precio:45000,icon:'ti-device-mobile'},
+  {id:2,nombre:'Samsung Galaxy S24',desc:'Negro · 128GB',cat:'Celulares',cod:'SGS24128',stock:2,min:3,precio:32500,icon:'ti-device-mobile'},
+  {id:3,nombre:'AirPods Pro 2',desc:'Con cancelación de ruido',cat:'Accesorios',cod:'APP2',stock:0,min:2,precio:8900,icon:'ti-headphones'},
+  {id:4,nombre:'Cargador 20W USB-C',desc:'Original, carga rápida',cat:'Accesorios',cod:'CH20W',stock:34,min:10,precio:850,icon:'ti-plug'},
+  {id:5,nombre:'Funda iPhone 15',desc:'Silicona, varios colores',cat:'Accesorios',cod:'FN15SIL',stock:18,min:5,precio:650,icon:'ti-device-mobile'},
+  {id:6,nombre:'Reparación de pantalla',desc:'Servicio técnico · mano de obra',cat:'Servicios',cod:'SRV-PANT',stock:null,min:0,precio:3500,icon:'ti-tool'},
+  {id:7,nombre:'Cable Lightning 1m',desc:'Certificado MFi',cat:'Accesorios',cod:'CBL-LT1',stock:5,min:8,precio:450,icon:'ti-cable'},
+  {id:8,nombre:'Xiaomi Redmi Note 13',desc:'Azul · 256GB',cat:'Celulares',cod:'XRN13256',stock:9,min:3,precio:14500,icon:'ti-device-mobile'},
+];
+const CATS = ['Todos','Celulares','Accesorios','Servicios'];
+let catSel = 'Todos', qFiltro = '', favoritos = new Set(), carrito = [];
+const fmt = n => 'RD$ ' + Math.round(n).toLocaleString('en-US');
+
+function pintarCats(){
+  document.getElementById('pxCats').innerHTML = CATS.map(c =>
+    `<button class="px-chip${c===catSel?' on':''}" onclick="pxCat('${c}')">${c}</button>`).join('');
+}
+window.pxCat = function(c){ catSel = c; pintarCats(); pintarLista(); };
+window.pxFiltrar = function(v){ qFiltro = v.toLowerCase(); pintarLista(); };
+
+function stockInfo(p){
+  if (p.stock === null) return {cls:'ok', txt: 'Servicio'};
+  if (p.stock <= 0) return {cls:'out', txt:'Agotado'};
+  if (p.stock <= p.min) return {cls:'low', txt: p.stock + ' quedan'};
+  return {cls:'ok', txt: p.stock + ' disponibles'};
+}
+function pintarLista(){
+  const lista = PRODUCTOS.filter(p =>
+    (catSel==='Todos'||p.cat===catSel) &&
+    (!qFiltro || (p.nombre+' '+p.cod+' '+p.desc).toLowerCase().includes(qFiltro)));
+  document.getElementById('pxList').innerHTML = lista.length ? lista.map(p=>{
+    const s = stockInfo(p);
+    return `<div class="px-row">
+      <div class="px-thumb"><i class="ti ${p.icon}"></i></div>
+      <div><div class="px-pname">${p.nombre}</div><div class="px-pdesc">${p.desc}</div></div>
+      <div class="px-meta cat"><b>Categoría</b>${p.cat}<div style="color:var(--px-txt3);font-size:10px;margin-top:2px">${p.cod}</div></div>
+      <div class="px-meta stock"><b>Existencia</b><span class="px-stk ${s.cls}"><i class="ti ti-circle-filled"></i>${s.txt}</span></div>
+      <div class="px-price">${fmt(p.precio)}</div>
+      <button class="px-fav${favoritos.has(p.id)?' on':''}" onclick="pxFav(${p.id},this)"><i class="ti ti-star${favoritos.has(p.id)?'-filled':''}"></i></button>
+      <button class="px-add" onclick="pxAdd(${p.id})" ${p.stock===0?'disabled style="opacity:.4;cursor:not-allowed"':''}><i class="ti ti-plus"></i></button>
+    </div>`;
+  }).join('') : '<div style="padding:40px;text-align:center;color:var(--px-txt3);font-size:13px">Sin productos con ese filtro.</div>';
+}
+window.pxFav = function(id, btn){ favoritos.has(id)?favoritos.delete(id):favoritos.add(id); pintarLista(); };
+
+window.pxAdd = function(id){
+  const p = PRODUCTOS.find(x=>x.id===id); if(!p) return;
+  const ex = carrito.find(c=>c.id===id);
+  if (ex) ex.qty++; else carrito.push({id:p.id, nombre:p.nombre, precio:p.precio, qty:1});
+  pintarCarrito();
+  if (window.innerWidth <= 980) pxOpen('pxCart');
+};
+window.pxQty = function(id, d){
+  const it = carrito.find(c=>c.id===id); if(!it) return;
+  it.qty += d; if (it.qty<=0) carrito = carrito.filter(c=>c.id!==id);
+  pintarCarrito();
+};
+window.pxDel = function(id){ carrito = carrito.filter(c=>c.id!==id); pintarCarrito(); };
+
+function pintarCarrito(){
+  const box = document.getElementById('pxItems');
+  box.innerHTML = carrito.length ? carrito.map(it=>`
+    <div class="px-item">
+      <div class="nm"><b>${it.nombre}</b><span>${fmt(it.precio)} c/u</span></div>
+      <div class="px-qty"><button onclick="pxQty(${it.id},-1)">−</button><span>${it.qty}</span><button onclick="pxQty(${it.id},1)">+</button></div>
+      <button class="rm" onclick="pxDel(${it.id})"><i class="ti ti-trash"></i></button>
+    </div>`).join('') : '<div style="text-align:center;color:var(--px-txt3);font-size:12px;padding:24px 0">Carrito vacío — toca ➕ en un producto</div>';
+  const sub = carrito.reduce((s,c)=>s+c.precio*c.qty,0);
+  const itbis = sub*0.18, tot = sub+itbis;
+  document.getElementById('pxSub').textContent = fmt(sub);
+  document.getElementById('pxDesc').textContent = fmt(0);
+  document.getElementById('pxItbis').textContent = fmt(itbis);
+  document.getElementById('pxGranTot').textContent = fmt(tot);
+}
+window.pxPay = function(btn){ document.querySelectorAll('.px-pay button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); };
+
+window.pxOpen = function(id){ document.getElementById(id).classList.add('open'); document.getElementById('pxScrim').classList.add('on'); };
+window.pxCloseAll = function(){ document.getElementById('pxSide').classList.remove('open'); document.getElementById('pxCart').classList.remove('open'); document.getElementById('pxScrim').classList.remove('on'); };
+
+window.pxToggleTheme = function(){
+  const root = document.documentElement;
+  const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  document.getElementById('pxThemeIcon').className = 'ti ti-' + (next==='dark' ? 'sun' : 'moon');
+};
+
+pintarCats(); pintarLista(); pintarCarrito();
+</script>
+</body>
+</html>
