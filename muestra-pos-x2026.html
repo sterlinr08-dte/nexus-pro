@@ -114,10 +114,25 @@ body{margin:0;background:var(--px-bg);color:var(--px-txt);font-family:'Plus Jaka
 .px-cart-head h5{margin:0;font-size:13px;font-weight:800}
 .px-closecart{display:none;width:32px;height:32px;border-radius:9px;border:1px solid var(--px-line);background:var(--px-panel);align-items:center;justify-content:center;cursor:pointer;color:var(--px-txt2)}
 @media (max-width:980px){.px-closecart{display:flex}}
-.px-cli{display:flex;align-items:center;gap:10px;padding:10px;border:1px dashed var(--px-line);border-radius:12px;margin-bottom:14px;cursor:pointer}
+.px-cli{display:flex;align-items:center;gap:10px;padding:10px;border:1px dashed var(--px-line);border-radius:12px;margin-bottom:6px;cursor:pointer}
 .px-cli .av{width:36px;height:36px;border-radius:10px;background:var(--px-green-l);color:var(--px-green);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
 .px-cli b{font-size:12.5px;display:block}
 .px-cli span{font-size:10.5px;color:var(--px-txt3)}
+.px-clidrop{display:none;position:absolute;top:100%;left:0;right:0;z-index:5;background:var(--px-panel);border:1px solid var(--px-line);border-radius:12px;box-shadow:var(--px-shadow);margin-top:4px;overflow:hidden}
+.px-clidrop.open{display:block}
+.px-clidrop input{width:100%;border:0;border-bottom:1px solid var(--px-line);padding:10px 12px;font:inherit;font-size:12.5px;outline:0;background:transparent;color:var(--px-txt)}
+.px-clirow{display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer}
+.px-clirow:hover{background:var(--px-bg)}
+.px-clirow .av{width:28px;height:28px;border-radius:8px;background:var(--px-blue-l);color:var(--px-blue-d);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10.5px;flex:0 0 auto}
+.px-clirow b{font-size:12px;display:block}
+.px-clirow span{font-size:10px;color:var(--px-txt3)}
+.px-fiscal{margin-bottom:14px;display:flex;flex-direction:column;gap:10px}
+.px-flab{font-size:10px;font-weight:700;color:var(--px-txt3);text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:5px}
+.px-chiprow{display:flex;gap:6px;flex-wrap:wrap}
+.px-chiprow button{padding:6px 11px;border-radius:999px;border:1.5px solid var(--px-line);background:var(--px-panel);font-size:11px;font-weight:700;color:var(--px-txt2);cursor:pointer}
+.px-chiprow button.on{background:var(--px-blue);border-color:var(--px-blue);color:#fff}
+.px-ncfline{font-size:11px;color:var(--px-txt2);background:var(--px-blue-l);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:6px}
+.px-ncfline b{color:var(--px-blue-d)}
 .px-items{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;min-height:120px}
 .px-item{display:flex;align-items:center;gap:10px}
 .px-item .nm{flex:1;min-width:0}
@@ -167,8 +182,9 @@ body{margin:0;background:var(--px-bg);color:var(--px-txt);font-family:'Plus Jaka
     <div class="px-navgrp">
       <h6>Principal</h6>
       <div class="px-nav">
-        <a href="#" class="on"><i class="ti ti-home"></i> Inicio</a>
-        <a href="#"><i class="ti ti-shopping-cart"></i> Ventas</a>
+        <a href="#"><i class="ti ti-home"></i> Inicio</a>
+        <a href="#" class="on" id="navVender" onclick="pxVista('vender');return false"><i class="ti ti-shopping-cart"></i> Vender</a>
+        <a href="#" id="navFactura" onclick="pxVista('factura');return false"><i class="ti ti-file-invoice"></i> Factura</a>
         <a href="#"><i class="ti ti-history"></i> Historial</a>
       </div>
     </div>
@@ -225,8 +241,22 @@ body{margin:0;background:var(--px-bg);color:var(--px-txt);font-family:'Plus Jaka
 
   <!-- DERECHA: carrito / cobro -->
   <aside class="px-cart" id="pxCart">
-    <div class="px-cart-head"><h5><i class="ti ti-receipt-2"></i> Venta actual</h5><button class="px-closecart" onclick="pxCloseAll()"><i class="ti ti-x"></i></button></div>
-    <div class="px-cli"><div class="av">CF</div><div><b>Consumidor final</b><span>Toca para elegir cliente</span></div></div>
+    <div class="px-cart-head"><h5 id="pxCartTit"><i class="ti ti-receipt-2"></i> Venta actual</h5><button class="px-closecart" onclick="pxCloseAll()"><i class="ti ti-x"></i></button></div>
+    <div style="position:relative">
+      <div class="px-cli" id="pxCliBox" onclick="pxCliToggle()"><div class="av" id="pxCliAv">CF</div><div><b id="pxCliNom">Consumidor final</b><span id="pxCliSub">Toca para elegir cliente</span></div></div>
+      <div class="px-clidrop" id="pxCliDrop"></div>
+    </div>
+    <div class="px-fiscal" id="pxFiscal" style="display:none">
+      <div class="px-fgrp">
+        <span class="px-flab">Comprobante fiscal</span>
+        <div class="px-chiprow" id="pxCompRow"></div>
+      </div>
+      <div class="px-fgrp">
+        <span class="px-flab">Condición de pago</span>
+        <div class="px-chiprow" id="pxCondRow"></div>
+      </div>
+      <div class="px-ncfline" id="pxNcfLine" style="display:none"><i class="ti ti-hash"></i> NCF a asignar: <b id="pxNcfVal">B01-00003421</b></div>
+    </div>
     <div class="px-items" id="pxItems"></div>
     <div class="px-tot">
       <div class="r">Subtotal <b id="pxSub">RD$ 0</b></div>
@@ -234,13 +264,13 @@ body{margin:0;background:var(--px-bg);color:var(--px-txt);font-family:'Plus Jaka
       <div class="r">ITBIS (18%) <b id="pxItbis">RD$ 0</b></div>
       <div class="gr">TOTAL <span id="pxGranTot">RD$ 0</span></div>
     </div>
-    <div class="px-pay">
+    <div class="px-pay" id="pxPayRow">
       <button class="on" onclick="pxPay(this)"><i class="ti ti-cash"></i> Efectivo</button>
       <button onclick="pxPay(this)"><i class="ti ti-credit-card"></i> Tarjeta</button>
       <button onclick="pxPay(this)"><i class="ti ti-transfer"></i> Transferencia</button>
       <button onclick="pxPay(this)"><i class="ti ti-file-invoice"></i> Crédito</button>
     </div>
-    <button class="px-cobrar"><i class="ti ti-check"></i> COBRAR</button>
+    <button class="px-cobrar" id="pxCobrarBtn"><i class="ti ti-check"></i> COBRAR</button>
   </aside>
 
   <!-- ABAJO: mini dashboard -->
@@ -274,8 +304,71 @@ const PRODUCTOS = [
   {id:8,nombre:'Xiaomi Redmi Note 13',desc:'Azul · 256GB',cat:'Celulares',cod:'XRN13256',stock:9,min:3,precio:14500,icon:'ti-device-mobile'},
 ];
 const CATS = ['Todos','Celulares','Accesorios','Servicios'];
+const CLIENTES = [
+  {id:1,nombre:'María Fernández',doc:'402-1234567-8',tel:'809-555-0142'},
+  {id:2,nombre:'Distribuidora Lopez SRL',doc:'RNC 1-30-12345-6',tel:'809-555-0198'},
+  {id:3,nombre:'Robinson Gómez',doc:'402-9876543-2',tel:'829-555-0177'},
+];
+const COMPROBANTES = ['Consumo','Crédito Fiscal','Gubernamental'];
 let catSel = 'Todos', qFiltro = '', favoritos = new Set(), carrito = [];
+let vista = 'vender', compSel = 'Consumo', condSel = 'Contado', cliSel = null;
 const fmt = n => 'RD$ ' + Math.round(n).toLocaleString('en-US');
+const iniciales = n => n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+window.pxVista = function(v){
+  vista = v;
+  pxCloseAll();
+  document.getElementById('navVender').classList.toggle('on', v==='vender');
+  document.getElementById('navFactura').classList.toggle('on', v==='factura');
+  document.getElementById('pxFiscal').style.display = v==='factura' ? 'flex' : 'none';
+  document.getElementById('pxCartTit').innerHTML = v==='factura'
+    ? '<i class="ti ti-file-invoice"></i> Nueva factura' : '<i class="ti ti-receipt-2"></i> Venta actual';
+  document.getElementById('pxCobrarBtn').innerHTML = v==='factura'
+    ? '<i class="ti ti-file-invoice"></i> GENERAR FACTURA' : '<i class="ti ti-check"></i> COBRAR';
+  if (v==='factura') pintarComp();
+  pintarNcf();
+};
+
+window.pxCliToggle = function(){
+  const drop = document.getElementById('pxCliDrop');
+  const abriendo = !drop.classList.contains('open');
+  drop.classList.toggle('open', abriendo);
+  if (abriendo) pintarCliDrop('');
+};
+function pintarCliDrop(q){
+  const ql = q.toLowerCase();
+  const filas = CLIENTES.filter(c => !ql || c.nombre.toLowerCase().includes(ql) || c.doc.includes(ql));
+  document.getElementById('pxCliDrop').innerHTML =
+    `<input placeholder="Buscar cliente por nombre o cédula/RNC…" value="${q}" oninput="pintarCliDrop(this.value)" onclick="event.stopPropagation()">` +
+    `<div class="px-clirow" onclick="pxCliPick(null)"><div class="av">CF</div><div><b>Consumidor final</b><span>Sin datos fiscales</span></div></div>` +
+    filas.map(c=>`<div class="px-clirow" onclick="pxCliPick(${c.id})"><div class="av">${iniciales(c.nombre)}</div><div><b>${c.nombre}</b><span>${c.doc}</span></div></div>`).join('');
+}
+window.pintarCliDrop = pintarCliDrop;
+window.pxCliPick = function(id){
+  cliSel = id ? CLIENTES.find(c=>c.id===id) : null;
+  document.getElementById('pxCliAv').textContent = cliSel ? iniciales(cliSel.nombre) : 'CF';
+  document.getElementById('pxCliNom').textContent = cliSel ? cliSel.nombre : 'Consumidor final';
+  document.getElementById('pxCliSub').textContent = cliSel ? cliSel.doc + ' · ' + cliSel.tel : 'Toca para elegir cliente';
+  document.getElementById('pxCliDrop').classList.remove('open');
+};
+document.addEventListener('click', e => {
+  const drop = document.getElementById('pxCliDrop');
+  if (drop && drop.classList.contains('open') && !e.target.closest('#pxCliDrop') && !e.target.closest('#pxCliBox')) drop.classList.remove('open');
+});
+
+function pintarComp(){
+  document.getElementById('pxCompRow').innerHTML = COMPROBANTES.map(c =>
+    `<button class="${c===compSel?'on':''}" onclick="pxComp('${c}')">${c}</button>`).join('');
+  document.getElementById('pxCondRow').innerHTML = ['Contado','Crédito'].map(c =>
+    `<button class="${c===condSel?'on':''}" onclick="pxCond('${c}')">${c}</button>`).join('');
+}
+window.pxComp = function(c){ compSel = c; pintarComp(); pintarNcf(); };
+window.pxCond = function(c){ condSel = c; pintarComp(); };
+function pintarNcf(){
+  const linea = document.getElementById('pxNcfLine');
+  if (vista==='factura' && compSel === 'Crédito Fiscal') { linea.style.display='flex'; }
+  else linea.style.display='none';
+}
 
 function pintarCats(){
   document.getElementById('pxCats').innerHTML = CATS.map(c =>
