@@ -15525,17 +15525,19 @@
       + paso(false, false, 4, 'Confirmar');
   }
   function renderFactura() {
+    nxPfEnsureCSS();
     if (!_prods.length) {
       return `<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay artículos.<br>Ve a <b>"Productos"</b> (o usa <b>Importar</b>) y agrégalos.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Ir a Productos</button></div>`;
     }
-    const cliOpts = `<option value="">— Consumidor final —</option>` + _clientes.filter(c => c.es_cliente !== false).map(c => `<option value="${c.id}"${String(_factCli) === String(c.id) ? ' selected' : ''}>${esc(c.codigo ? c.codigo + ' · ' : '')}${esc(c.nombre)}${c.nivel_precio === 'mayor' ? ' (por mayor)' : ''}</option>`).join('');
-    const ncfOpts = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('');
+    const cliActual = _clientes.find(c => String(c.id) === String(_factCli));
+    const cliTxt = cliActual ? (cliActual.codigo ? cliActual.codigo + ' · ' : '') + cliActual.nombre + (cliActual.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+    const ncfChips = NCF_TIPOS.map(t => `<button type="button" class="pf2chip${_facNCF === t[0] ? ' on' : ''}" data-ncf="${t[0]}" onclick="window.nxFacNCFPick('${t[0]}')">${t[1]}</button>`).join('');
     const pre = esPreTab();
     const catTabs = `<button type="button" class="nx-inv-tab${_facCatSel === '' ? ' on' : ''}" data-cat="" onclick="window.nxFacCat('')">Todos</button>` + _cats.map(c => `<button type="button" class="nx-inv-tab${String(_facCatSel) === String(c.id) ? ' on' : ''}" data-cat="${c.id}" onclick="window.nxFacCat('${c.id}')">${esc(c.nombre)}</button>`).join('');
     const numField = pre
       ? `<div class="nx-inv-field"><div class="nx-inv-label">Prefactura No.</div><div style="display:flex;align-items:center;gap:6px"><span style="font-weight:800;color:#7c3aed;font-size:15px">${peekPref()}</span><button type="button" class="nx-inv-iconbtn" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" aria-label="Ver prefacturas guardadas" style="margin-left:auto;color:#7c3aed"><i class="ti ti-search"></i></button></div></div>`
       : `<div class="nx-inv-field"><label class="nx-inv-label" for="facNumPrev">No. Factura / NCF</label><div style="display:flex;align-items:center;gap:6px"><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:16px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"><button type="button" class="nx-inv-iconbtn" onclick="window.nxFacHist()" title="Ver todas las facturas" aria-label="Ver todas las facturas" style="color:#2563eb"><i class="ti ti-search"></i></button></div><label style="display:flex;align-items:center;gap:6px;margin-top:7px;cursor:pointer"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)" style="width:16px;height:16px;accent-color:#2563eb"><span style="font-size:11px;font-weight:700;color:#334155">A crédito (fiado)</span></label></div>`;
-    return `<div class="nx-invoice-pro">
+    return `<div class="nxPf nx-invoice-pro">
       <div class="nx-inv-shell">
         <div class="nx-inv-card">
           <div class="nx-inv-head">
@@ -15543,8 +15545,15 @@
             <div class="nx-inv-steps" id="facSteps">${facStepsHTML()}</div>
           </div>
           <div class="nx-inv-info">
-            <div class="nx-inv-field"><label class="nx-inv-label" for="facCli">Cliente</label><select id="facCli" onchange="window.nxFacSetCli(this.value)">${cliOpts}</select></div>
-            <div class="nx-inv-field"><label class="nx-inv-label" for="facNCF">Tipo de comprobante</label><select id="facNCF" onchange="window.nxFacSetNCF(this.value)">${ncfOpts}</select></div>
+            <div class="nx-inv-field" style="position:relative">
+              <label class="nx-inv-label">Cliente</label>
+              <button type="button" class="pf2clibtn" id="facCliBtn" onclick="window.nxFacCliToggle()"><span id="facCliTxt">${esc(cliTxt)}</span><i class="ti ti-chevron-down"></i></button>
+              <div class="pf2clidrop" id="facCliDrop"></div>
+            </div>
+            <div class="nx-inv-field">
+              <label class="nx-inv-label">Tipo de comprobante</label>
+              <div class="pf2chiprow" id="facNCFChips">${ncfChips}</div>
+            </div>
             ${numField}
             <div class="nx-inv-field"><label class="nx-inv-label" for="facFecha">Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-weight:700;color:#0f172a;font-family:inherit;font-size:16px"></div>
           </div>
@@ -15581,6 +15590,37 @@
   window.nxFacSetFecha = function (v) { _facFecha = v || ''; };
   window.nxFacSetNCF = function (v) { _facNCF = v || 'sin'; };
   window.nxFacSetCredito = function (b) { _facCredito = !!b; const el = document.getElementById('facNumPrev'); if (el) el.textContent = proxNumeroFacturaFmt(_facCredito); };
+  // Chips del comprobante fiscal (look premium) — llaman a nxFacSetNCF (sin cambios) y repintan el estado activo
+  window.nxFacNCFPick = function (v) {
+    window.nxFacSetNCF(v);
+    document.querySelectorAll('#facNCFChips .pf2chip').forEach(b => b.classList.toggle('on', b.getAttribute('data-ncf') === v));
+  };
+  // Selector de cliente con buscador (look premium) — llama a nxFacSetCli (sin cambios) al elegir
+  window.nxFacCliToggle = function () {
+    const drop = document.getElementById('facCliDrop'); if (!drop) return;
+    const abrir = !drop.classList.contains('open');
+    drop.classList.toggle('open', abrir);
+    if (abrir) { pintarFacCliDrop(''); setTimeout(() => { const i = document.getElementById('facCliQ'); if (i) i.focus(); }, 30); }
+  };
+  function pintarFacCliDrop(q) {
+    const drop = document.getElementById('facCliDrop'); if (!drop) return;
+    const ql = String(q || '').toLowerCase();
+    const lista = _clientes.filter(c => c.es_cliente !== false && (!ql || (c.nombre || '').toLowerCase().includes(ql) || (c.codigo || '').toLowerCase().includes(ql) || (c.cedula || '').includes(ql)));
+    drop.innerHTML = `<input id="facCliQ" placeholder="Buscar cliente por nombre, código o cédula…" value="${esc(q || '')}" oninput="window.nxFacCliFiltrar(this.value)" onclick="event.stopPropagation()">` +
+      `<div class="pf2clirow" onclick="window.nxFacCliPick('')"><b>— Consumidor final —</b></div>` +
+      lista.slice(0, 60).map(c => `<div class="pf2clirow" onclick="window.nxFacCliPick('${c.id}')"><b>${esc(c.nombre)}</b><span>${esc(c.codigo || '')}${c.nivel_precio === 'mayor' ? ' · por mayor' : ''}</span></div>`).join('');
+  }
+  window.nxFacCliFiltrar = function (q) { pintarFacCliDrop(q); };
+  window.nxFacCliPick = function (id) {
+    window.nxFacSetCli(id);
+    const txt = document.getElementById('facCliTxt');
+    if (txt) { const c = _clientes.find(x => String(x.id) === String(id)); txt.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final'; }
+    const drop = document.getElementById('facCliDrop'); if (drop) drop.classList.remove('open');
+  };
+  document.addEventListener('click', e => {
+    const drop = document.getElementById('facCliDrop');
+    if (drop && drop.classList.contains('open') && !e.target.closest('#facCliDrop') && !e.target.closest('#facCliBtn')) drop.classList.remove('open');
+  });
   window.nxFacBuscar = function (q) {
     const box = document.getElementById('facSug'); if (!box) return;
     const t = String(q || '').trim().toLowerCase();
@@ -16851,6 +16891,18 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .vprecio{flex:0 0 auto;font-size:13.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;text-align:right}
 .nxPf .vimeib{font-size:9.5px;font-weight:700;background:var(--pf-blue-l);color:var(--pf-blue-d);padding:2px 7px;border-radius:7px;white-space:nowrap;flex:0 0 auto}
 @media(min-width:620px){.nxPf .vstk{display:block;width:96px}}
+.nxPf .pf2clibtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;border:0;background:transparent;padding:0;font:inherit;font-size:16px;font-weight:700;color:var(--pf-txt);cursor:pointer;text-align:left}
+.nxPf .pf2clibtn i{color:var(--pf-txt3);font-size:15px}
+.nxPf .pf2clidrop{display:none;position:absolute;top:100%;left:0;right:0;z-index:20;margin-top:6px;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;box-shadow:var(--pf-shadow);max-height:280px;overflow-y:auto}
+.nxPf .pf2clidrop.open{display:block}
+.nxPf .pf2clidrop input{width:100%;box-sizing:border-box;border:0;border-bottom:1px solid var(--pf-line);padding:11px 12px;font:inherit;font-size:13px;outline:0;background:transparent;color:var(--pf-txt)}
+.nxPf .pf2clirow{display:flex;flex-direction:column;gap:1px;padding:9px 12px;cursor:pointer}
+.nxPf .pf2clirow:hover{background:var(--pf-bg)}
+.nxPf .pf2clirow b{font-size:12.5px;color:var(--pf-txt)}
+.nxPf .pf2clirow span{font-size:10.5px;color:var(--pf-txt3)}
+.nxPf .pf2chiprow{display:flex;gap:6px;flex-wrap:wrap}
+.nxPf .pf2chip{padding:7px 12px;border-radius:999px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.nxPf .pf2chip.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
 `;
     document.head.appendChild(st);
   }

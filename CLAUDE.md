@@ -1189,6 +1189,23 @@ todo de golpe (así lo prefiere siempre el dueño).
     premium de por sí, del rediseño Stitch v40.2-40.4 y el mockup BAYOL CELL aprobado antes). Se
     abordarán en incrementos separados, cada uno probado igual de a fondo antes de publicar, dado
     que ahí vive la lógica de cobro/NCF/crédito más sensible.
+- **Fase 2, continuación (v48.29) — Factura: selector de cliente + comprobante fiscal:** mismo
+  criterio quirúrgico que Vender. En `renderFactura()`: el `<select id="facCli">` se reemplazó por un
+  botón + dropdown con buscador (`nxFacCliToggle`/`pintarFacCliDrop`/`nxFacCliFiltrar`/`nxFacCliPick`,
+  filtra por nombre/código/cédula, patrón igual al buscador de cliente de la muestra); el
+  `<select id="facNCF">` se reemplazó por chips (`nxFacNCFPick`). Ambos son wrappers NUEVOS que
+  llaman a las funciones de siempre (`nxFacSetCli`/`nxFacSetNCF`, sin tocarlas) — se confirmó que
+  esos dos ids no se leían desde ningún otro lugar del archivo antes de cambiarles el control. El
+  resto de `renderFactura` (número de factura/NCF con buscador de facturas, checkbox de crédito,
+  fecha, tabs de categoría, buscador de artículos, tabla, resumen, atajos de teclado) **no se tocó**.
+  Verificado con el código real extraído (`renderFactura`+`inyectarCSS` del POS —hay que tener
+  cuidado, HAY VARIAS FUNCIONES `inyectarCSS()` EN EL ARCHIVO, una por módulo/IIFE; el harness de
+  prueba agarró por error la del principio del archivo la primera vez, no la del POS, hasta que se
+  corrigió— cargados en un navegador real): el buscador de cliente filtra y al elegir actualiza
+  `_factCli` + repinta el carrito con el precio del nivel correcto, los chips de NCF cambian
+  `_facNCF` y su estado visual, sin desbordes en 390px ni escritorio, 0 errores de JS.
+  **PENDIENTE:** la tabla de artículos (precio/cantidad/descuento por línea) y el resumen/modal de
+  pago de Factura, más el panel de carrito de Vender — quedan para los próximos incrementos.
 - **Fase 3 (sidebar para el resto de los ~16 módulos):** sin empezar todavía — depende de que la
   Fase 2 quede resuelta primero (comparten el mismo shell de navegación del POS).
 
