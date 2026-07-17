@@ -15390,37 +15390,40 @@
   }
   window.nxPosSetAlmacen = function (id) { _almacenSel = id; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   function renderVender() {
+    nxPfEnsureCSS();
     if (!_prods.length) {
       return `<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay productos.<br>Ve a <b>"Productos"</b> y agrega el primero.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Agregar producto</button></div>`;
     }
     const chips = ['todas'].concat(_cats.map(c => c.id)).map(cid => {
       const lbl = cid === 'todas' ? 'Todas' : esc(catNombre(cid));
-      return `<button type="button" class="btn bsm${_posCat === String(cid) ? ' bc1' : ''}" style="font-size:10px;padding:5px 10px" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
+      return `<button type="button" class="vchip${_posCat === String(cid) ? ' on' : ''}" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
     }).join('');
-    return `<div class="nxPosGridWrap">
+    return `<div class="nxPf nxPosGridWrap">
         <div class="nxPosLeft">
           ${posBuscador({ id: 'posBuscar', placeholder: 'Buscar producto (toca la lupa para ver todos)...', oninput: 'window.nxPosBuscar(this.value)', onLupa: "window.nxProdPicker('vender')" })}
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
-          <div id="posGrid" class="nxPosGrid">${gridHTML()}</div>
+          <div class="vchiprow">${chips}</div>
+          <div id="posGrid" class="vlist">${gridHTML()}</div>
         </div>
         <div class="nxPosRight"><div id="posCartWrap"></div></div>
       </div>`;
   }
   function gridHTML() {
     const lista = _prods.filter(p => _posCat === 'todas' || String(p.categoria_id) === String(_posCat));
-    if (!lista.length) return '<div style="grid-column:1/-1;color:#475569;font-size:12px;padding:20px;text-align:center">Sin productos en esta categoría</div>';
+    if (!lista.length) return '<div style="color:#475569;font-size:12px;padding:20px;text-align:center">Sin productos en esta categoría</div>';
     return lista.map(p => {
       const serv = p.tipo === 'servicio';
       const stk = Number(p.stock || 0), min = Number(p.stock_min || 0);
       const out = !serv && stk <= 0, low = !serv && !out && min > 0 && stk <= min;
-      const badge = serv ? '<span class="nxPosStkB srv">SERVICIO</span>'
-        : out ? '<span class="nxPosStkB out">SIN STOCK</span>'
-        : `<span class="nxPosStkB${low ? ' low' : ''}">${low ? 'BAJO' : 'STOCK'}: ${stk}</span>`;
+      const stkCls = serv ? 'srv' : out ? 'out' : low ? 'low' : 'ok';
+      const stkTxt = serv ? 'Servicio' : out ? 'Agotado' : (low ? 'Bajo: ' : '') + stk + (serv ? '' : ' und');
       const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
-      const imeiChip = p.serial ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
-      return `<button type="button" class="nxPosCard" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxVenderSel('${p.id}')">
-        <div class="nxPosCardNom">${esc(p.nombre || '')}${p.referencia ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.referencia)}${p.marca ? ' · ' + esc(p.marca) : ''}</span>` : (p.marca ? `<span style="display:block;font-weight:400;font-size:9.5px;color:#475569">${esc(p.marca)}</span>` : '')}${imeiChip}</div>
-        <div class="nxPosCardBot"><span class="nxPosCardPre">${fmt(p.precio)}</span>${badge}</div>
+      const imeiChip = p.serial ? `<span class="vimeib" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
+      const cat = catNombre(p.categoria_id);
+      return `<button type="button" class="nxPosCard vrow" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxVenderSel('${p.id}')">
+        <div class="vthumb"><i class="ti ${serv ? 'ti-tool' : 'ti-box'}"></i></div>
+        <div class="vinfo"><div class="vnom">${esc(p.nombre || '')}${imeiChip}</div><div class="vsub">${esc(p.referencia || p.marca || '')}${cat ? (p.referencia || p.marca ? ' · ' : '') + esc(cat) : ''}</div></div>
+        <div class="vstk"><span class="vstkb ${stkCls}"><i class="ti ti-circle-filled"></i>${stkTxt}</span></div>
+        <div class="vprecio">${fmt(p.precio)}</div>
       </button>`;
     }).join('');
   }
@@ -16826,6 +16829,28 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .ab.g1{background:var(--pf-green);color:#fff}
 .nxPf .ab.g3{background:var(--pf-bg);color:var(--pf-txt2);border:1.5px solid var(--pf-line)}
 .nxPf .ab.g4{background:var(--pf-red-l);color:var(--pf-red);border:1.5px solid var(--pf-red-b)}
+.nxPf .vchiprow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.nxPf .vchip{flex:0 0 auto;padding:7px 13px;border-radius:999px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.nxPf .vchip.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
+.nxPf .vlist{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;box-shadow:var(--pf-shadow);overflow:hidden}
+.nxPf .vlist .vrow{display:flex;flex-direction:row;align-items:center;gap:12px;width:100%;min-height:0;background:var(--pf-panel);border:0;border-bottom:1px solid var(--pf-line);border-radius:0;padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit;transition:background .12s}
+.nxPf .vlist .vrow:last-child{border-bottom:0}
+.nxPf .vlist .vrow:hover{background:var(--pf-bg)}
+.nxPf .vlist .vrow:active{opacity:.85}
+.nxPf .vthumb{width:38px;height:38px;border-radius:10px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}
+.nxPf .vinfo{flex:1;min-width:0}
+.nxPf .vnom{font-size:12.5px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.nxPf .vsub{font-size:10.5px;color:var(--pf-txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.nxPf .vstk{flex:0 0 auto;display:none}
+.nxPf .vstkb{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.nxPf .vstkb i{font-size:7px}
+.nxPf .vstkb.ok{color:var(--pf-green)}
+.nxPf .vstkb.low{color:#d97706}
+.nxPf .vstkb.out{color:var(--pf-red)}
+.nxPf .vstkb.srv{color:var(--pf-blue-d)}
+.nxPf .vprecio{flex:0 0 auto;font-size:13.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;text-align:right}
+.nxPf .vimeib{font-size:9.5px;font-weight:700;background:var(--pf-blue-l);color:var(--pf-blue-d);padding:2px 7px;border-radius:7px;white-space:nowrap;flex:0 0 auto}
+@media(min-width:620px){.nxPf .vstk{display:block;width:96px}}
 `;
     document.head.appendChild(st);
   }

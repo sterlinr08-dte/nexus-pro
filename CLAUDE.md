@@ -1159,9 +1159,38 @@ todo de golpe (así lo prefiere siempre el dueño).
   `pos_niveles_precio`, guardar el precio de un nivel dispara el `PATCH` correcto a
   `pos_producto_niveles` con los 3 campos, y el resumen de la derecha se actualiza en vivo al escribir.
   Sin desbordes en 390px ni en escritorio. `get_advisors` sin hallazgos nuevos en las 2 tablas.
-- **Pendiente (fases siguientes, según lo acordado):** Fase 2 = Vender/Factura con el catálogo en
-  formato lista + panel de cobro (ya aprobado en la muestra). Fase 3 = sidebar reorganizado para el
-  resto de los ~16 módulos del POS.
+
+- **Fase 2, EN PROGRESO (v48.28) — Vender catálogo en lista, HECHO; Factura y carrito, PENDIENTE:**
+  el dueño pidió publicar las fases 2 y 3 de una vez ("Sí, publica todo las dos fase"), pero al leer
+  el código real de Vender/Factura se descubrió que es MUCHO más grande y arriesgado que lo que
+  modelaba la muestra simplificada — el sistema real usa un patrón de "ventanilla" (el catálogo abre
+  un panel expandible en el mismo lugar para elegir precio/IMEI, `nxProdPicker`/`ppkDetailHTML`),
+  más un buscador flotante aparte con el mismo patrón, y Factura tiene selector de cliente + NCF +
+  número de factura + tabla con descuento editable por línea + atajos de teclado + flujo de
+  prefactura — nada de eso estaba en la muestra. Se le explicó esto al dueño y se le preguntó cómo
+  seguir; eligió **"Reconstrucción completa a lista"**, con el entendido explícito de que necesita
+  **varias sesiones y pruebas exhaustivas antes de publicar cada pieza** — no todo de un tirón.
+  - **HECHO — catálogo de Vender (`gridHTML()`) convertido a lista**, quirúrgico: el `onclick`
+    (`nxVenderSel`), el atributo `data-busca` (para `nxPosBuscar`) y la clase `.nxPosCard` se
+    dejaron INTACTOS a propósito — solo cambió el HTML/CSS interno de cada fila (antes tarjeta,
+    ahora fila con miniatura/nombre/categoría/stock con color/precio). Esto significa que la
+    "ventanilla" de precio/IMEI, el buscador, los filtros por categoría y el carrito siguen
+    funcionando exactamente igual — CERO líneas de la lógica de cobro se tocaron. En móvil angosto
+    se oculta la columna de stock para no amontonar (nombre+precio solamente, igual accesible
+    tocando el producto). Estilo premium `.nxPf` reusado (mismo namespace/paleta del formulario de
+    producto de la Fase 1, `nxPfEnsureCSS()` ya se llama desde `renderVender()`).
+  - **Verificado con el código real extraído** (`renderVender`/`gridHTML`/`nxPosCat`/`nxPosBuscar`/
+    `nxVenderSel` tal cual del archivo, cargados en un navegador con datos simulados): filtro por
+    categoría correcto, buscador filtra en vivo, clic en una fila sí llama a `nxProdPicker('vender')`
+    (la ventanilla real), sin desbordes en 390px ni escritorio, 0 errores de JS.
+  - **PENDIENTE de verdad (no completado, para no confundir con "Fase 2 lista"):** Factura
+    (`renderFactura`, la tabla `nx-inv-table`, el resumen `facResumen`) y el panel de carrito de
+    Vender (`pintarCarrito`) **NO se tocaron todavía** — siguen con su diseño de siempre (ya bastante
+    premium de por sí, del rediseño Stitch v40.2-40.4 y el mockup BAYOL CELL aprobado antes). Se
+    abordarán en incrementos separados, cada uno probado igual de a fondo antes de publicar, dado
+    que ahí vive la lógica de cobro/NCF/crédito más sensible.
+- **Fase 3 (sidebar para el resto de los ~16 módulos):** sin empezar todavía — depende de que la
+  Fase 2 quede resuelta primero (comparten el mismo shell de navegación del POS).
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
