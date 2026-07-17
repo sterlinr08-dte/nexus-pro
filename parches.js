@@ -14959,6 +14959,7 @@
   let _prodSort = { k: 'nombre', d: 1 };
   let _prodFiltro = 'todos'; // pastillas del inventario premium: todos|stock|bajo|sin|servicio
   let _impModo = 'nuevos'; // modal Importar (Productos): nuevos (Infoplus, pegar) | precios (CSV, actualizar existentes)
+  let _niveles = [], _prodNiveles = []; // Niveles de precio ilimitados por org (pos_niveles_precio) + precio de cada producto en cada nivel (pos_producto_niveles)
   let _reps = [], _fins = [], _finCuotas = [], _finPagos = [], _repVista = 'activas'; // servicio tecnico + cuotas
   let _finFiltro = 'todos', _finQ = ''; // Cuotas premium: pestaña de estado + texto de búsqueda
   let _apartados = [], _apaPagos = []; // apartados (layaway)
@@ -14993,7 +14994,7 @@
     // TODAS las cargas EN PARALELO (antes eran 16 viajes secuenciales: el POS tardaba
     // varios segundos en abrir en el teléfono; ahora tarda lo que tarde UNA consulta).
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
-    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, finpag, apa, apap, alm, stkAlm, prefs, notasCred, prefAll] = await Promise.all([
+    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, finpag, apa, apap, alm, stkAlm, prefs, notasCred, prefAll, niveles, prodNiveles] = await Promise.all([
       g('pos_categorias', 'select=*&order=orden.asc,nombre.asc'),
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -15014,9 +15015,12 @@
       g('pos_stock_almacen', 'select=*&limit=20000'),
       g('pos_prefacturas', 'select=*&estado=eq.abierta&order=created_at.desc&limit=200'),
       g('pos_devoluciones', 'select=*&order=created_at.desc&limit=500'),
-      g('pos_prefacturas', 'select=*&order=created_at.desc&limit=500')
+      g('pos_prefacturas', 'select=*&order=created_at.desc&limit=500'),
+      g('pos_niveles_precio', 'select=*&activo=eq.true&order=orden.asc,nombre.asc'),
+      g('pos_producto_niveles', 'select=*&limit=20000')
     ]);
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
+    _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
     if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0) }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
@@ -15118,7 +15122,15 @@
   function lineImporte(it) { return lineBase(it) - lineDescMonto(it); }
   // Precio según el nivel del cliente seleccionado (final vs por mayor)
   function clienteSel() { return _clientes.find(x => String(x.id) === String(_factCli)); }
-  function precioCli(p) { const c = clienteSel(); if (c && c.nivel_precio === 'mayor' && Number(p.precio_mayor || 0) > 0) return Number(p.precio_mayor); return Number(p.precio || 0); }
+  function precioCli(p) {
+    const c = clienteSel();
+    if (c && c.nivel_id) {
+      const r = _prodNiveles.find(x => String(x.producto_id) === String(p.id) && String(x.nivel_id) === String(c.nivel_id));
+      if (r && Number(r.precio_contado || 0) > 0) return Number(r.precio_contado);
+    }
+    if (c && c.nivel_precio === 'mayor' && Number(p.precio_mayor || 0) > 0) return Number(p.precio_mayor);
+    return Number(p.precio || 0);
+  }
 
   function totales() {
     let total = 0, itbis = 0, descuento = 0;
@@ -16748,64 +16760,241 @@
   window.nxComboDel = function (i) { _comboTmp.splice(i, 1); window.nxComboPaint(); };
   window.nxPosNuevoProd = function () { abrirProd(null); };
   window.nxPosEditProd = function (id) { const p = _prods.find(x => String(x.id) === String(id)); if (p) abrirProd(p); };
+
+  // ════════════ NEXUS PRO X 2026 — look premium del formulario de producto ════════════
+  // Excepcion deliberada de marca SOLO en este formulario (igual que Cuotas/Financiamiento
+  // premium): Plus Jakarta Sans + paleta azul/blanco/gris/verde, con namespace .nxPf propio.
+  function nxPfEnsureCSS() {
+    if (document.getElementById('nxPfCSS')) return;
+    const link = document.createElement('link'); link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+    document.head.appendChild(link);
+    const st = document.createElement('style'); st.id = 'nxPfCSS';
+    st.textContent = `
+.nxPf{--pf-blue:#2563eb;--pf-blue-d:#1d4ed8;--pf-blue-l:#eff6ff;--pf-green:#16a34a;--pf-green-l:#f0fdf4;--pf-red:#dc2626;--pf-red-l:#fef2f2;--pf-red-b:#fecaca;--pf-bg:#f5f7fa;--pf-panel:#fff;--pf-line:#e8ebf0;--pf-txt:#0f172a;--pf-txt2:#64748b;--pf-txt3:#94a3b8;--pf-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);font-family:'Plus Jakarta Sans',var(--ff);background:var(--pf-bg);color:var(--pf-txt);display:flex;flex-direction:column;max-height:92vh}
+body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b33;--pf-green:#22c55e;--pf-green-l:#0c1f14;--pf-red:#f87171;--pf-red-l:#2a1414;--pf-red-b:#4c1d1d;--pf-bg:#0b0f19;--pf-panel:#121826;--pf-line:#232b3d;--pf-txt:#f1f5f9;--pf-txt2:#94a3b8;--pf-txt3:#64748b}
+.nxPf .head{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--pf-panel);border-bottom:1px solid var(--pf-line)}
+.nxPf .head h3{margin:0;font-size:14.5px;font-weight:800;flex:1;min-width:0}
+.nxPf .body{flex:1;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:14px}
+@media (min-width:900px){.nxPf .body{grid-template-columns:minmax(0,3fr) minmax(0,1fr);align-items:start}}
+.nxPf .card{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;box-shadow:var(--pf-shadow);padding:14px;min-width:0}
+.nxPf .card h4{margin:0 0 12px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:7px}
+.nxPf .g2{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:540px){.nxPf .g2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.nxPf .fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.nxPf .fld label{font-size:10px;font-weight:700;color:var(--pf-txt3);text-transform:uppercase;letter-spacing:.3px}
+.nxPf .inw{position:relative;display:flex;align-items:center}
+.nxPf .inw i{position:absolute;left:11px;color:var(--pf-txt3);font-size:14px}
+.nxPf .inw input,.nxPf .inw select{width:100%;height:40px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-panel);padding:0 10px 0 34px;font:inherit;font-size:12.5px;color:var(--pf-txt);outline:0;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;appearance:none}
+.nxPf .inw input:focus,.nxPf .inw select:focus{border-color:var(--pf-blue);box-shadow:0 0 0 3px var(--pf-blue-l)}
+.nxPf .inw select{padding-right:26px}
+.nxPf .inw .chev{position:absolute;right:11px;left:auto;color:var(--pf-txt3);font-size:13px;pointer-events:none}
+.nxPf .precios{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+@media (min-width:700px){.nxPf .precios{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.nxPf .pcard{border-radius:13px;padding:11px;border:1px solid var(--pf-line);min-width:0}
+.nxPf .pcard .ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;margin-bottom:6px}
+.nxPf .pcard .lb{font-size:9.5px;font-weight:700;color:var(--pf-txt3);text-transform:uppercase;letter-spacing:.3px}
+.nxPf .pcard input{width:100%;height:32px;border-radius:9px;border:1.5px solid var(--pf-line);background:var(--pf-bg);text-align:center;font-weight:700;font-size:12px;color:var(--pf-txt);outline:0;margin-top:6px;box-sizing:border-box}
+.nxPf .pcard input:focus{border-color:var(--pf-blue);background:var(--pf-panel)}
+.nxPf .pblue .ic{background:var(--pf-blue-l);color:var(--pf-blue-d)}
+.nxPf .pgreen .ic{background:var(--pf-green-l);color:var(--pf-green)}
+.nxPf .reglas{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid var(--pf-line);border-radius:11px}
+.nxPf .reglas .ic{width:28px;height:28px;border-radius:8px;background:var(--pf-bg);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.nxPf .reglas select,.nxPf .reglas input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-weight:700;font-size:12px;color:var(--pf-txt);outline:0}
+.nxPf .reglas label{display:block;font-size:9px;font-weight:700;color:var(--pf-txt3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.nxPf .swrow{display:flex;align-items:center;justify-content:space-between}
+.nxPf .sw{position:relative;width:40px;height:23px;border-radius:999px;background:var(--pf-line);border:0;flex:0 0 auto}
+.nxPf .sw::after{content:'';position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.nxPf .soon{font-size:11px;color:var(--pf-txt3);margin-top:8px;background:var(--pf-bg);border-radius:9px;padding:8px 10px;display:flex;gap:6px;align-items:center}
+.nxPf .tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+.nxPf .tbl th{text-align:left;font-size:9px;text-transform:uppercase;color:var(--pf-txt3);font-weight:700;padding:7px 8px;border-bottom:1px solid var(--pf-line)}
+.nxPf .tbl td{padding:7px 8px;border-bottom:1px solid var(--pf-line)}
+.nxPf .tbl input{width:64px;height:28px;border-radius:8px;border:1.5px solid var(--pf-line);background:var(--pf-bg);text-align:center;font-size:11px;font-weight:700;color:var(--pf-txt);box-sizing:border-box}
+.nxPf .nivnew{display:flex;gap:7px;margin-top:10px}
+.nxPf .nivnew input{flex:1;min-width:0;height:36px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-bg);padding:0 10px;font:inherit;font-size:12px;box-sizing:border-box}
+.nxPf .btn2{height:36px;padding:0 12px;border-radius:10px;border:0;background:var(--pf-blue);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer}
+.nxPf .colr{display:flex;flex-direction:column;gap:12px}
+.nxPf .ph{width:100%;aspect-ratio:1.8/1;border-radius:12px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
+.nxPf .srow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px}
+.nxPf .srow .ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
+.nxPf .srow .lb{flex:1;color:var(--pf-txt2)}
+.nxPf .srow b{font-weight:800}
+.nxPf .hr{border:0;border-top:1px dashed var(--pf-line);margin:8px 0}
+.nxPf .actions{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px;background:var(--pf-panel);border-top:1px solid var(--pf-line)}
+@media (min-width:600px){.nxPf .actions{grid-template-columns:repeat(4,1fr)}}
+.nxPf .ab{height:42px;border-radius:12px;border:0;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.nxPf .ab.g1{background:var(--pf-green);color:#fff}
+.nxPf .ab.g3{background:var(--pf-bg);color:var(--pf-txt2);border:1.5px solid var(--pf-line)}
+.nxPf .ab.g4{background:var(--pf-red-l);color:var(--pf-red);border:1.5px solid var(--pf-red-b)}
+`;
+    document.head.appendChild(st);
+  }
+
+  // Siembra los niveles de precio la primera vez que se usan en la organizacion (patron
+  // "Init" de siempre: nxSecInit/nxAccesoInit/nxAlmInit). Additivo — precio/precio_mayor
+  // de siempre se quedan intactos como respaldo, esto NO los borra ni deja de leerlos.
+  let _nivelesIniciando = false;
+  async function nxNivelesInit() {
+    if (_niveles.length || _nivelesIniciando) return;
+    _nivelesIniciando = true;
+    try {
+      const nDet = await getAPI().post('pos_niveles_precio', { nombre: 'Detalle', orden: 1, es_default: true });
+      const nMay = await getAPI().post('pos_niveles_precio', { nombre: 'Mayorista', orden: 2 });
+      _niveles = [].concat(nDet || [], nMay || []);
+      const nivDet = _niveles.find(n => n.es_default), nivMay = _niveles.find(n => !n.es_default);
+      if (nivDet && nivMay && _prods.length) {
+        const filas = [];
+        _prods.forEach(p => {
+          filas.push({ producto_id: p.id, nivel_id: nivDet.id, precio_contado: Number(p.precio || 0), precio_credito: Number(p.precio_credito || p.precio || 0), precio_minimo: Number(p.precio_minimo || 0) });
+          filas.push({ producto_id: p.id, nivel_id: nivMay.id, precio_contado: Number(p.precio_mayor || p.precio || 0), precio_credito: Number(p.precio_mayor || p.precio || 0), precio_minimo: Number(p.precio_minimo || 0) });
+        });
+        const LOTE = 200;
+        for (let i = 0; i < filas.length; i += LOTE) await getAPI().post('pos_producto_niveles', filas.slice(i, i + LOTE));
+        _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || [];
+      }
+    } catch (e) {} finally { _nivelesIniciando = false; }
+  }
+  function nivelPrecioDe(prodId, nivelId) { return _prodNiveles.find(r => String(r.producto_id) === String(prodId) && String(r.nivel_id) === String(nivelId)); }
+  window.nxPfNivelesTabla = function (prodId) {
+    const body = document.getElementById('nxPfNivBody'); if (!body) return;
+    body.innerHTML = _niveles.length ? _niveles.map(n => {
+      const r = nivelPrecioDe(prodId, n.id) || {};
+      return `<tr><td><b>${esc(n.nombre)}</b>${n.es_default ? ' <span style="color:var(--pf-txt3);font-size:9.5px">· por defecto</span>' : ''}</td>
+        <td><input value="${r.precio_contado != null ? Math.round(r.precio_contado) : ''}" id="nxPfNivC_${n.id}" placeholder="0"></td>
+        <td><input value="${r.precio_credito != null ? Math.round(r.precio_credito) : ''}" id="nxPfNivR_${n.id}" placeholder="0"></td>
+        <td><input value="${r.precio_minimo != null ? Math.round(r.precio_minimo) : ''}" id="nxPfNivM_${n.id}" placeholder="0"></td>
+        <td><button class="nxPf ab g3" style="height:30px;width:30px;padding:0" onclick="window.nxPfNivelGuardar('${prodId}','${n.id}')" title="Guardar precio de este nivel"><i class="ti ti-device-floppy"></i></button></td></tr>`;
+    }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--pf-txt3);padding:14px">Sin niveles todavía — crea el primero abajo.</td></tr>`;
+  };
+  window.nxPfNivelGuardar = async function (prodId, nivelId) {
+    const g = id => { const el = document.getElementById(id); return el ? parseMoney(el.value) : null; };
+    const body = { precio_contado: g('nxPfNivC_' + nivelId) || 0, precio_credito: g('nxPfNivR_' + nivelId), precio_minimo: g('nxPfNivM_' + nivelId) };
+    try {
+      const existe = nivelPrecioDe(prodId, nivelId);
+      if (existe) await getAPI().patch('pos_producto_niveles', 'id=eq.' + existe.id, body);
+      else await getAPI().post('pos_producto_niveles', Object.assign({ producto_id: prodId, nivel_id: nivelId }, body));
+      _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || [];
+      toast('ok', 'Precio del nivel guardado');
+      window.nxPfNivelesTabla(prodId);
+    } catch (e) { toast('err', 'No se pudo guardar el nivel', String(e && e.message || e)); }
+  };
+  window.nxPfNivelNuevo = async function (prodId) {
+    const inp = document.getElementById('nxPfNivNomNuevo'); const nombre = (inp && inp.value || '').trim();
+    if (!nombre) { toast('err', 'Escribe el nombre del nivel'); return; }
+    try {
+      const r = await getAPI().post('pos_niveles_precio', { nombre: nombre, orden: _niveles.length + 1 });
+      if (r && r[0]) _niveles.push(r[0]);
+      if (inp) inp.value = '';
+      window.nxPfNivelesTabla(prodId);
+      toast('ok', 'Nivel creado', nombre);
+    } catch (e) { toast('err', 'No se pudo crear el nivel', String(e && e.message || e)); }
+  };
+
   function abrirProd(p) {
     cerrarModal('nxPosProd');
+    nxPfEnsureCSS();
     const e = p || {};
     _comboTmp = combosDe(e).slice();
     const catOpts = _cats.map(c => `<option value="${c.id}"${String(e.categoria_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxPosProd'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `
-      <div class="modal nxPrForm" style="max-width:440px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-box"></i> ${p ? 'Editar producto' : 'Nuevo producto'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosProd').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="overflow-y:auto;flex:1">
-          <div class="fr"><label>Nombre *</label><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div>
-          <div class="fr-row">
-            <div class="fr"><label>Referencia / spec</label><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div>
-            <div class="fr"><label>Marca</label><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div>
+      <div class="modal nxPf" style="max-width:1100px;width:96vw;padding:0;border-radius:20px;overflow:hidden">
+        <div class="head"><i class="ti ti-package" style="color:var(--pf-blue)"></i><h3>${p ? 'Editar artículo — ' + esc(e.nombre || '') : 'Nuevo artículo'}</h3><button class="nxBack" type="button" onclick="document.getElementById('nxPosProd').remove()" style="position:static"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="body">
+          <div>
+
+            <div class="card" style="margin-bottom:12px">
+              <h4><i class="ti ti-info-circle"></i> Información del artículo</h4>
+              <div class="g2">
+                <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
+                <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Mismo código con el que se creó"></div></div>
+                <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
+                <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
+                <div class="fld"><label>Imagen (URL opcional)</label><div class="inw"><i class="ti ti-photo"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div></div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:12px">
+              <h4><i class="ti ti-currency-dollar"></i> Precios</h4>
+              <div class="precios">
+                <div class="pcard pblue"><div class="ic"><i class="ti ti-tag"></i></div><div class="lb">Precio 1 — final</div><input id="ppPre" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0"></div>
+                <div class="pcard pgreen"><div class="ic"><i class="ti ti-building-store"></i></div><div class="lb">Precio 2 — mayor</div><input id="ppPreMay" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio 1"></div>
+                <div class="pcard pblue"><div class="ic"><i class="ti ti-receipt"></i></div><div class="lb">Costo</div><input id="ppCos" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0"></div>
+                ${puedeVerMin() ? `<div class="pcard pgreen"><div class="ic"><i class="ti ti-shield-lock"></i></div><div class="lb">🔒 Precio mínimo</div><input id="ppMinP" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo"></div>` : ''}
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:12px">
+              <h4><i class="ti ti-adjustments"></i> Inventario y reglas</h4>
+              <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                <div class="reglas"><div class="ic"><i class="ti ti-package"></i></div><div><label>Tipo</label><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
+                <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div></div>
+                <div class="reglas"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><label>Stock mínimo (alerta)</label><input id="ppMin" inputmode="numeric" value="${e.stock_min != null ? Number(e.stock_min) : '0'}" placeholder="0"></div></div>
+                <div class="reglas"><div class="ic"><i class="ti ti-shield-check"></i></div><div><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div></div>
+                <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>¿Lleva ITBIS (18%)?</label><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
+                <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div></div>
+                <div class="reglas"><div class="ic"><i class="ti ti-device-mobile"></i></div><div><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div></div>
+              </div>
+              <div class="fld" style="margin-top:10px"><label>🧩 Combo: sale JUNTO con este artículo (se factura en RD$ 0 y descuenta stock)</label>
+                <div id="ppComboList" style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0"></div>
+                <div style="display:flex;gap:6px;position:relative"><input id="ppComboQ" class="no-upper" placeholder="Buscar artículo del combo…" autocomplete="off" oninput="window.nxComboFiltrar(this.value)" style="flex:1;min-width:0;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;padding:0 10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt)">
+                <input id="ppComboCant" inputmode="numeric" value="1" style="width:56px;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;text-align:center;font-weight:700;background:var(--pf-panel);color:var(--pf-txt)">
+                <button class="nxPf ab g1" style="width:38px;padding:0" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
+                <div id="ppComboSug" style="display:none;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;box-shadow:var(--pf-shadow);max-height:170px;overflow-y:auto;margin-top:4px"></div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:12px">
+              <div class="swrow"><b style="font-size:12.5px"><i class="ti ti-discount" style="color:var(--pf-red)"></i> Promociones programadas</b><button class="sw" disabled style="opacity:.5;cursor:not-allowed"></button></div>
+              <div class="soon"><i class="ti ti-clock" style="color:var(--pf-txt3)"></i> Próximamente — todavía no existe en el sistema, se está evaluando construirla.</div>
+            </div>
+
+            <div class="card">
+              <h4><i class="ti ti-layers-linked"></i> Niveles de precio</h4>
+              ${p ? `
+              <div style="overflow-x:auto"><table class="tbl">
+                <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>Mínimo</th><th></th></tr></thead>
+                <tbody id="nxPfNivBody"></tbody>
+              </table></div>
+              <div class="nivnew"><input id="nxPfNivNomNuevo" class="no-upper" placeholder="Nombre del nivel nuevo (ej: Distribuidor)"><button class="btn2" type="button" onclick="window.nxPfNivelNuevo('${p.id}')"><i class="ti ti-plus"></i> Crear nivel</button></div>
+              ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para configurarle precios por nivel.</div>`}
+            </div>
+
           </div>
-          <div class="fr-row">
-            <div class="fr"><label>Código / barra</label><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Opcional"></div>
-            <div class="fr"><label>Categoría</label><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select></div>
+
+          <div class="colr">
+            <div class="card">
+              <h4><i class="ti ti-clipboard-text"></i> Resumen</h4>
+              <div class="ph"><i class="ti ${e.tipo === 'servicio' ? 'ti-tool' : 'ti-box'}"></i></div>
+              <div style="font-size:13.5px;font-weight:800" id="nxPfResNom">${esc(e.nombre || 'Nuevo artículo')}</div>
+              <div style="font-size:10.5px;color:var(--pf-txt3);margin-bottom:8px">${esc(e.referencia || '')}${e.marca ? (e.referencia ? ' · ' : '') + esc(e.marca) : ''}</div>
+              <hr class="hr">
+              <div class="srow"><div class="ic" style="background:var(--pf-blue-l);color:var(--pf-blue-d)"><i class="ti ti-tag"></i></div><div class="lb">Precio final</div><b id="nxPfResPre">${fmt(e.precio || 0)}</b></div>
+              <div class="srow"><div class="ic" style="background:var(--pf-green-l);color:var(--pf-green)"><i class="ti ti-building-store"></i></div><div class="lb">Precio mayor</div><b id="nxPfResMay">${fmt(e.precio_mayor || 0)}</b></div>
+              <hr class="hr">
+              <div class="srow"><div class="ic" style="background:var(--pf-bg);color:var(--pf-txt2)"><i class="ti ti-stack-2"></i></div><div class="lb">Stock</div><b id="nxPfResStk">${e.stock != null ? Number(e.stock) : 0}</b></div>
+              <div class="srow"><div class="ic" style="background:var(--pf-bg);color:var(--pf-txt2)"><i class="ti ti-layers-linked"></i></div><div class="lb">Niveles configurados</div><b>${p ? _prodNiveles.filter(r => String(r.producto_id) === String(p.id)).length : 0}</b></div>
+            </div>
           </div>
-          <div class="fr-row">
-            <div class="fr"><label>Precio 1 — consumidor final (con ITBIS)</label><input id="ppPre" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0"></div>
-            <div class="fr"><label>Precio 2 — por mayor</label><input id="ppPreMay" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio 1"></div>
-          </div>
-          <div class="fr-row">
-            <div class="fr"><label>Costo</label><input id="ppCos" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0"></div>
-            <div class="fr"><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div>
-          </div>
-          <div class="fr-row">
-            <div class="fr"><label>¿Lleva ITBIS (18%)?</label><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div>
-            <div class="fr"><label>Imagen (URL opcional)</label><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div>
-          </div>
-          <div class="fr-row">
-            <div class="fr"><label>Tipo</label><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div>
-            <div class="fr"><label>Stock mínimo (alerta)</label><input id="ppMin" inputmode="numeric" value="${e.stock_min != null ? Number(e.stock_min) : '0'}" placeholder="0"></div>
-          </div>
-          <div class="fr-row">
-            <div class="fr"><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div>
-            ${puedeVerMin() ? `<div class="fr"><label>🔒 Precio MÍNIMO (piso de negociación)</label><input id="ppMinP" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo"></div>` : ''}
-          <div class="fr"><label>🧩 Combo: sale JUNTO con este artículo (se factura en RD$ 0 y descuenta stock)</label>
-            <div id="ppComboList" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px"></div>
-            <div style="display:flex;gap:6px;position:relative"><input id="ppComboQ" class="no-upper" placeholder="Buscar artículo del combo…" autocomplete="off" oninput="window.nxComboFiltrar(this.value)" style="flex:1;min-width:0;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;padding:0 10px;font-size:12px">
-            <input id="ppComboCant" inputmode="numeric" value="1" style="width:56px;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;text-align:center;font-weight:700">
-            <button class="btn bsm bc1" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
-            <div id="ppComboSug" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 22px rgba(15,23,42,.12);max-height:170px;overflow-y:auto;margin-top:4px"></div>
-          </div>
-            <div class="fr"><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div>
-          </div>
-          <div class="fr"><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite descuento</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div>
+
         </div>
-        <div class="fe" style="margin-top:10px;gap:8px">
-          <button class="btn bghost" type="button" onclick="document.getElementById('nxPosProd').remove()">Cancelar</button>
-          <button class="btn bc1" type="button" onclick="window.nxPosGuardarProd('${p ? p.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        <div class="actions">
+          <button class="ab g1" type="button" onclick="window.nxPosGuardarProd('${p ? p.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+          <button class="ab g3" type="button" onclick="document.getElementById('nxPosProd').remove()"><i class="ti ti-x"></i> Cancelar</button>
         </div>
       </div>`;
     document.body.appendChild(ov);
     setTimeout(() => { try { window.nxComboPaint(); } catch (e) {} }, 30);
     scanMoney(ov);
+    ['ppNom', 'ppPre', 'ppPreMay'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfResumen); });
+    if (p) { nxNivelesInit().then(() => window.nxPfNivelesTabla(p.id)); window.nxPfNivelesTabla(p.id); }
+  }
+  function nxPfResumen() {
+    const nomEl = document.getElementById('nxPfResNom'); if (nomEl) nomEl.textContent = val('ppNom') || 'Nuevo artículo';
+    const preEl = document.getElementById('nxPfResPre'); if (preEl) preEl.textContent = fmt(parseMoney(val('ppPre')));
+    const mayEl = document.getElementById('nxPfResMay'); if (mayEl) mayEl.textContent = fmt(parseMoney(val('ppPreMay')));
   }
   window.nxPosGuardarProd = async function (id) {
     const precio = parseMoney(val('ppPre'));
@@ -17437,7 +17626,7 @@
             <div class="fr"><label>Representante</label><input id="entRep" class="no-upper" value="${esc(e.representante || '')}" placeholder="Si es jurídico"></div>
           </div>
           <div class="fr-row" id="entClienteBox">
-            <div class="fr"><label>Nivel de precio (cliente)</label><select id="entNivel"><option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option></select></div>
+            <div class="fr"><label>Nivel de precio (cliente)</label><select id="entNivel">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${String(e.nivel_id) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select></div>
             <div class="fr"><label>Límite de crédito</label><input id="entLim" data-nx-money inputmode="numeric" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite"></div>
           </div>
           <div class="fr-row" id="entWaBox">
@@ -17465,11 +17654,16 @@
     if (!roles.es_cliente && !roles.es_proveedor && !roles.es_empleado && !roles.es_banco) { toast('err', 'Elige al menos un afín', 'Cliente, proveedor, empleado o banco'); return; }
     const aceptaWaAntes = !!(id && (_clientes.find(x => String(x.id) === String(id)) || {}).acepta_whatsapp);
     const aceptaWaAhora = !!(document.getElementById('entAceptaWa') || {}).checked;
+    const nivelVal = val('entNivel') || 'final';
+    const nivelEsCustom = nivelVal.indexOf('nivel:') === 0;
+    const nivelObj = nivelEsCustom ? _niveles.find(n => String(n.id) === nivelVal.slice(6)) : null;
     const body = Object.assign({
       nombre: (val('entNom') || '').trim(), tipo_persona: val('entTipoP') || 'fisica', codigo: (val('entCod') || '').trim() || null,
       cedula: (val('entCed') || '').trim() || null, telefono: (val('entTel') || '').trim() || null, email: (val('entEmail') || '').trim() || null,
       direccion: (val('entDir') || '').trim() || null, contacto: (val('entCont') || '').trim() || null, representante: (val('entRep') || '').trim() || null,
-      nivel_precio: val('entNivel') || 'final', limite_credito: parseMoney(val('entLim')),
+      nivel_id: nivelObj ? nivelObj.id : null,
+      nivel_precio: nivelObj ? (nivelObj.es_default ? 'final' : 'mayor') : nivelVal,
+      limite_credito: parseMoney(val('entLim')),
       acepta_whatsapp: aceptaWaAhora
     }, roles);
     if (aceptaWaAhora && !aceptaWaAntes) body.acepta_whatsapp_fecha = new Date().toISOString();

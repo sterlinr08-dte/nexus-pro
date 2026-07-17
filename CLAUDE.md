@@ -1113,6 +1113,72 @@ productos NUEVOS y siempre deja precio/costo en 0 — nunca toca productos exist
     archivo (no una reconstrucción), casos: coma con campo entre comillas, punto y coma, precio en
     notación RD.
 
+### NEXUS PRO X 2026 — rediseño del POS, FASE 1: formulario de producto + niveles de precio (v48.27)
+El dueño pidió un rediseño premium del POS estilo Stripe/Linear/Apple/ERPNext, inspirado en revisar
+Púrpura Datos y POSMOVI. Por el tamaño (reemplazaría el shell completo del POS que usan Bayolsale/
+BayolCell en producción AHORA MISMO), se acordó construir **primero una muestra visual aparte**
+(ver más abajo) y aprobarla antes de tocar nada real — y entregar la parte real **por fases**, no
+todo de golpe (así lo prefiere siempre el dueño).
+- **Fase 1 (HECHA y en vivo):** el formulario real de "Nuevo/Editar producto" en Productos (POS) se
+  rediseñó con el mismo look de la muestra — tarjetas separadas (Información, Precios, Inventario y
+  reglas, Niveles de precio) + panel de resumen que se actualiza en vivo. Excepción de marca deliberada
+  SOLO en este formulario (mismo criterio que Cuotas/Financiamiento premium): Plus Jakarta Sans +
+  paleta azul/blanco/gris/verde, con namespace CSS propio `.nxPf` (`nxPfEnsureCSS()`, inyecta el CSS +
+  el link de Google Fonts una sola vez, patrón `nxBuscaEnsureCSS`/`nxFPEnsureCSS`).
+- **"Código de barras" = el mismo código de creación del artículo** (pedido explícito del dueño): NO
+  se agregó una columna nueva — el campo reusa el `codigo` de siempre (`pos_productos.codigo`, el mismo
+  que ya existía como "Código / barra"), solo se relabeló para que quede claro que es uno solo.
+- **Niveles de precio ilimitados (pedido explícito del dueño, "habilitar la opción de creación de
+  niveles de precios") — la pieza nueva real de esta fase:** antes el sistema solo tenía 2 precios fijos
+  (`precio`=final, `precio_mayor`=por mayor). Tablas nuevas **`pos_niveles_precio`** (nombre, orden,
+  es_default, org+trigger+RLS patrón POS) y **`pos_producto_niveles`** (producto_id+nivel_id → precio_
+  contado/precio_credito/precio_minimo propios, unique por org+producto+nivel). Se puede crear cuantos
+  niveles se quiera (Detalle, Mayorista, Distribuidor, VIP...) desde la Card 5 del formulario de
+  producto, y cada producto tiene su propio precio por nivel (tabla editable inline, guarda con PATCH/
+  POST por fila). **Aditivo, no reemplaza nada por debajo:** `precio`/`precio_mayor`/`nivel_precio`
+  ('final'|'mayor') de siempre se quedan intactos como respaldo — `precioCli()` primero busca si el
+  cliente tiene un `nivel_id` asignado y existe un precio configurado para ese producto+nivel; si no,
+  cae exactamente al comportamiento de siempre (cero riesgo de romper el cobro en vivo si algo no está
+  configurado). `pos_clientes` ganó la columna `nivel_id` (nullable). Siembra perezosa
+  (`nxNivelesInit()`, patrón `nxSecInit`/`nxAccesoInit`/`nxAlmInit`): la primera vez que se edita un
+  producto en una organización sin niveles, se crean automáticamente "Detalle" (es_default) y
+  "Mayorista", y se copian los precios existentes de TODOS los productos a esos 2 niveles (para no
+  arrancar en blanco). El selector "Nivel de precio (cliente)" en Entidades ahora lista los niveles
+  reales de la organización (si ya existen) en vez de los 2 fijos de antes.
+- **Deliberadamente NO se construyó en esta fase** (no estaba en el pedido explícito, se habría
+  necesitado esquema nuevo sin que el dueño lo pidiera): "Promociones programadas" por producto — la
+  tarjeta se ve en el formulario pero el interruptor está deshabilitado con la nota "Próximamente", en
+  vez de fingir una función que no existe. "Cantidad mínima"/"Crédito %"/"Crédito $"/"Precio anterior"/
+  "% Descuento" del brief original tampoco se agregaron como columnas nuevas — Card 3 se re-diseñó
+  reusando SOLO los campos reales que ya existían (stock, stock mínimo, garantía, ITBIS, serial,
+  descuento permitido).
+- **Verificado con el código real** (no una reconstrucción): se extrajo `abrirProd`/`nxPfNivelesTabla`/
+  `nxPfNivelGuardar`/`nxPfNivelNuevo`/`precioCli` tal cual del archivo y se cargaron en un navegador con
+  datos simulados — el campo de código carga el valor real, la tabla de niveles trae los precios
+  correctos desde `_prodNiveles`, crear un nivel nuevo dispara el `POST` correcto a
+  `pos_niveles_precio`, guardar el precio de un nivel dispara el `PATCH` correcto a
+  `pos_producto_niveles` con los 3 campos, y el resumen de la derecha se actualiza en vivo al escribir.
+  Sin desbordes en 390px ni en escritorio. `get_advisors` sin hallazgos nuevos en las 2 tablas.
+- **Pendiente (fases siguientes, según lo acordado):** Fase 2 = Vender/Factura con el catálogo en
+  formato lista + panel de cobro (ya aprobado en la muestra). Fase 3 = sidebar reorganizado para el
+  resto de los ~16 módulos del POS.
+
+#### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
+Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
+`main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin
+conexión a Supabase. Contiene 3 pantallas aprobadas visualmente por el dueño, sirven de referencia para
+las fases 2 y 3:
+- **Sidebar** reorganizado por grupos (Principal/Inventario/Personas/Finanzas/Sistema) con SOLO módulos
+  reales (nada de "Tesorería"/"NEXUS AI"/"Dashboard" inventados — confirmado explícitamente con el dueño).
+- **Vender**: catálogo en formato LISTA (no tarjetas grandes) — miniatura, nombre, categoría, código,
+  estado de stock, precio, favorito, botón agregar. Carrito a la derecha con métodos de pago y COBRAR.
+- **Factura**: mismo catálogo + selector de cliente con buscador, comprobante fiscal (Consumo/Crédito
+  Fiscal/Gubernamental), condición de pago, NCF a asignar cuando aplica.
+- **Editar producto**: el diseño que se llevó a producción en la Fase 1 (arriba) nació aquí primero.
+- 2 bugs reales de CSS Grid (`min-width:auto` desbordando en móvil) encontrados y corregidos en la
+  muestra ANTES de llevarlos a producción — mismo bug, mismo fix (`minmax(0,1fr)`+`min-width:0`) que se
+  aplicó también al `.nxPf` real.
+
 ## Módulos / funcionalidades ya construidas
 
 - **Clientes**: ficha, cédula, teléfono, dirección; clientes en proceso.
