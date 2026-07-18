@@ -16401,19 +16401,16 @@
         <thead><tr><th>#</th><th>Producto</th><th>IMEI / Serial</th><th>Garantía</th><th style="text-align:right">Precio</th><th>Cantidad</th><th>Descuento</th><th style="text-align:right">Total</th><th></th></tr></thead>
         <tbody>${filas}</tbody>
       </table>`;
-    // Panel derecho: resumen + métodos de pago (abren el modal de cobro) + acciones
+    // Panel derecho: resumen + acciones. El "Detalle de pago" (5 botones que todos abrían la
+    // misma ventana Cobrar) se quitó por redundante — Cobrar ya es el único paso para pagar.
     const res = document.getElementById('facResumen'); if (!res) return;
     const pre = esPreTab();
-    const metodos = [['Efectivo', 'ti-cash'], ['Tarjeta', 'ti-credit-card'], ['Transferencia', 'ti-building-bank'], ['Financiamiento', 'ti-calendar-dollar'], ['Nota de Crédito', 'ti-file-invoice']];
-    const payAction = pre ? 'window.nxPrefGuardar()' : 'window.nxFacFacturar()';
     res.innerHTML = `<div class="nx-inv-sumtitle">Resumen de venta</div>
       <div class="nx-inv-sumrow"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
       ${t.descuento > 0 ? `<div class="nx-inv-sumrow"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
       <div class="nx-inv-sumrow"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
       <div class="nx-inv-total"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
-      ${pre ? '' : `<div class="nx-inv-sumtitle" style="margin-top:18px">Detalle de pago</div>
-      <div class="nx-inv-paylist">${metodos.map(m => `<button type="button" class="nx-inv-payrow" onclick="${payAction}"><i class="ti ${m[1]}"></i> ${m[0]}<span>Registrar</span></button>`).join('')}</div>
-      <div class="nx-inv-pending"><span>Pendiente / Cambio</span><b>${fmt(t.total)}</b></div>`}
+      ${pre ? '' : `<div class="nx-inv-pending" style="margin-top:14px"><span>Pendiente por cobrar</span><b>${fmt(t.total)}</b></div>`}
       <div class="nx-inv-sumtitle" style="margin-top:18px">Opciones adicionales</div>
       <div class="nx-inv-opts">
         <button type="button" class="nx-inv-opt" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar Prefactura</button>

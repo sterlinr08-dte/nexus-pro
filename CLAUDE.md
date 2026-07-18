@@ -1355,6 +1355,20 @@ todo de golpe (así lo prefiere siempre el dueño).
   código real cargado en un navegador con 2 clientes de prueba (uno nivel normal, uno "por mayor"):
   elegir el cliente por mayor cambia el precio del catálogo Y del carrito al instante (de RD$45,000
   a RD$42,000 en la prueba), sin desbordes en 390px ni escritorio.
+- **Factura: quitado el bloque de pago redundante (v48.37):** el dueño mandó 2 fotos — una del
+  panel Resumen actual ("Detalle de pago" con 5 botones Efectivo/Tarjeta/Transferencia/
+  Financiamiento/Nota de Crédito, cada uno "Registrar") y una de referencia de InfoplusWEB (pestaña
+  "Forma de Pago", tabla compacta). Al revisar el código se confirmó que los 5 botones eran 100%
+  redundantes — todos ejecutaban el mismo `onclick` (`window.nxFacFacturar()`/`nxPrefGuardar()`),
+  o sea, cualquiera que tocaras abría la MISMA ventana "Cobrar" sin diferencia real. Se le
+  preguntó al dueño si quería (a) solo quitar la lista redundante o (b) meter los montos de pago
+  editables directo en el Resumen (como Infoplus, más grande/riesgoso porque mueve lógica de cobro
+  real al panel principal) — eligió (a). En `pintarFactura()`: se eliminó el bloque `.nx-inv-paylist`
+  completo (variables `metodos`/`payAction` también removidas, sin otro uso en la función); el
+  panel ahora va de TOTAL directo a "Pendiente por cobrar" (renombrado de "Pendiente / Cambio",
+  más claro) y el botón "Cobrar" de abajo sigue siendo el único paso real para pagar — sin cambio
+  de lógica de cobro. Verificado con el código real de `pintarFactura`/`renderFactura` extraído y
+  cargado en un navegador: el bloque ya no aparece, sin desbordes en 390px ni 1200px.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
