@@ -21268,7 +21268,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     ].join('');
     document.head.appendChild(st);
   }
-  function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 3, nombre: 'Punto de Venta', desc: 'Ventas, productos e inventario', icon: 'ti-shopping-cart', color: '#7c3aed', bg: '#faf5ff', onclick: 'window.nxAbrirPOS()' }); } catch (e) {} }
+  function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 3, nombre: 'Punto de Venta', desc: 'Ventas, productos e inventario', icon: 'ti-shopping-cart', color: '#2563eb', bg: '#eff6ff', onclick: 'window.nxAbrirPOS()' }); } catch (e) {} }
   function init() { inyectarCSS(); let n = 0; const t = function () { n++; if (window.nxMERegistrar) { registrar(); return; } if (n < 80) setTimeout(t, 150); }; t(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();

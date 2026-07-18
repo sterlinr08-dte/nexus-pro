@@ -459,18 +459,23 @@ no se mezclan, cada buscador del sistema usa el que corresponde a su caso:
 
 ---
 
-### REGLAMENTO — CADA APP DE MULTIEMPRESA CON SU PROPIO COLOR Y FORMATO (decretado por el dueño, 13-jul-2026) — OBLIGATORIO
+### REGLAMENTO — CADA APP DE MULTIEMPRESA CON SU PROPIO COLOR Y FORMATO (decretado por el dueño, 13-jul-2026,
+### ampliado a TODOS los proyectos 18-jul-2026 — ver punto 11 de "Cómo le gusta trabajar al dueño") — OBLIGATORIO
 Cada app registrada en el hub de Multiempresa (`nxMERegistrar`) debe mantener su **propia identidad
 visual independiente** — color de acento e ícono propios en el tile del hub, y su propio look interno
 (paleta, y cuando aplique tipografía) — **nunca compartir tema con otra app** ni "heredar" el color de
 otra por accidente al copiar/pegar código de un módulo a otro. Es una regla de ESTILO hacia adelante
 (no se tocó código el día que se decretó, ya se venía cumpliendo en la práctica) — aplicarla en cada
-app nueva y respetarla al tocar una existente:
+app nueva y respetarla al tocar una existente. **18-jul-2026: el dueño la reafirmó como regla GENERAL
+para todo proyecto/sistema** (no solo las apps del hub) — este reglamento queda como el caso particular
+ya escrito para Multiempresa; ver el punto 11 más abajo para el alcance completo.
 - **Ya cumplido, ejemplos reales (no reconstruir, solo referencia):** Financiamiento verde `#059669` ·
-  Vehículos violeta `#6d28d9` · POS índigo `#7c3aed`/`#4f46e5` · Rifas índigo `#4f46e5` · Consultorio
-  Médico teal `#0d9488` · AGUAPRO azul marino (sidebar propio) · Clientes SaaS verde `#047857` · Panel
-  del Dueño ámbar `#b45309` · NEXUS AI CONTENT morado `#c026d3`. Cada uno con su ícono Tabler propio en
-  `nxMERegistrar({icon, color, bg, ...})`.
+  Vehículos violeta `#6d28d9` · POS azul `#2563eb` (el tile del hub se actualizó en v48.32 para calzar
+  con el interior del POS, que pasó de índigo a azul en la Fase 3 de NEXUS PRO X 2026 — antes eran
+  `#7c3aed`/`#4f46e5`, quedó desactualizado un rato hasta que se corrigió) · Rifas índigo `#4f46e5` ·
+  Consultorio Médico teal `#0d9488` · AGUAPRO azul marino (sidebar propio) · Clientes SaaS verde
+  `#047857` · Panel del Dueño ámbar `#b45309` · NEXUS AI CONTENT morado `#c026d3`. Cada uno con su
+  ícono Tabler propio en `nxMERegistrar({icon, color, bg, ...})`.
 - **Excepción ya negociada y documentada (no repetir sin pedirla):** Cuotas del POS y Financiamiento
   usan morado + Plus Jakarta Sans como excepción deliberada al índigo/Segoe UI del resto — confirmado
   caso por caso con el dueño (ver "REDISEÑO PREMIUM" más arriba), NO es la regla general.
@@ -2240,6 +2245,20 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
 9. **Auditoría.** Registrar acciones con `logAudit(accion, detalle, modulo)`.
 10. **Iterativo y constante.** Muchas versiones pequeñas seguidas; mejor entregar
     incrementos probados que grandes cambios de golpe.
+11. **CADA PROYECTO CON SU DISEÑO INDEPENDIENTE (decretado 18-jul-2026) — OBLIGATORIO.**
+    Regla general para TODO trabajo futuro, en cualquier sistema/proyecto (no solo las apps
+    de Multiempresa — ver también el reglamento específico de ahí abajo, que queda como caso
+    particular de esta regla más amplia): **cada proyecto/sistema mantiene su propia
+    identidad visual independiente** — interfaz, iconos, paleta de colores, tipografía, TODO.
+    Nunca copiar/heredar el look de otro proyecto solo por reusar código o por comodidad.
+    Si dos sistemas comparten un motor de código (patrón ya usado: `ModalBusquedaBase`,
+    `nxBuscaHTML`, `nxFPEnsureCSS`), el motor puede ser compartido — pero el **diseño final**
+    (colores, iconos, tipografía) de cada uno se define y confirma aparte, nunca se asume que
+    "como ya se ve bien en el otro proyecto, sirve igual aquí". Antes de aplicar un color/estilo
+    nuevo a un proyecto, verificar que no sea el mismo que ya usa OTRO proyecto del dueño (repasar
+    la lista de colores ya asignados — Deluxe dorado, Amatista dorado/morado, BayolCell su propio,
+    POS azul, Rifas índigo, Consultorio teal, AGUAPRO azul marino, etc.) para no generar confusión
+    entre sistemas.
 
 ### Estilo del changelog (`version.json`)
 - En **español llano, para el usuario final** (no técnico). Explica QUÉ cambió y
