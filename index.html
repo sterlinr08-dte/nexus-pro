@@ -2511,7 +2511,17 @@ const addSaldo=(cod,n)=>{const c=CUENTAS.find(x=>x.cod===cod);if(c)c.saldo+=n;};
 function nxBuscaEnsureCSS(){
   if(document.getElementById('nxBuscaCSS'))return;
   const st=document.createElement('style');st.id='nxBuscaCSS';
-  st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:180px;flex:1 1 200px;transition:border-color .15s,box-shadow .15s}'
+  st.textContent='.nxBusca{position:relative;box-sizing:border-box;display:flex;align-items:center;height:42px;width:100%;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;min-width:180px;flex:0 0 auto;transition:border-color .15s,box-shadow .15s}'
+    // el crecer-para-compartir-fila (flex:1 1 200px) SOLO tiene sentido dentro de una fila de
+    // filtros (.frow, display:flex ROW) — como regla base rompía cualquier buscador metido
+    // directo en un contenedor flex EN COLUMNA (típico de un modal: display:flex;flex-direction:
+    // column), donde ese mismo flex-basis se interpreta sobre el alto en vez del ancho y la caja
+    // termina "gigante", estirada para llenar todo el alto disponible (bug real reportado por
+    // el dueño con capturas, visto en "Facturas generadas" pero afecta a CUALQUIER buscador en
+    // ese tipo de contenedor, por ser el componente global). Con flex:0 0 auto + width:100% de
+    // base, el buscador SIEMPRE mide 42px de alto sin importar el contenedor; solo dentro de
+    // .frow se le devuelve el crecer/encoger para compartir la fila con otros filtros.
+    +'.frow>.nxBusca,.frow .nxBusca{flex:1 1 200px}'
     +'.nxBusca:focus-within{border-color:#6d28d9;box-shadow:0 0 0 3px rgba(109,40,217,.12)}'
     +'.nxBusca-lupa{width:42px;height:42px;flex:0 0 auto;border:0;background:transparent;color:#64748b;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:12px;touch-action:manipulation}'
     +'.nxBusca-lupa:focus-visible{outline:2px solid #6d28d9;outline-offset:-2px}'
@@ -3441,7 +3451,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.37';
+const APP_VERSION='48.38';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

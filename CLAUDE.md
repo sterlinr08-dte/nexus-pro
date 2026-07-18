@@ -382,6 +382,24 @@ en `window` para parches.js). NO crear buscadores distintos por módulo. El est�
   arranque simultáneo de varios servidores de prueba, no la app — confirmado limpio
   repitiendo 3 veces). **Sigue pendiente:** el selector de CLIENTE del POS en cobro/factura
   (sigue siendo `<select>`, ver nota abajo sobre `ModalBusquedaBase`).
+  **BUG REAL encontrado y arreglado de raíz (v48.38) — buscador "gigante" en modales flex-column:**
+  el dueño mandó una captura del buscador de "Facturas generadas" ocupando toda la ventana
+  (estirado a lo alto, con la lupa+placeholder pegados abajo del todo). Causa real: `.nxBusca`
+  tenía `flex:1 1 200px` como regla BASE — pensada para cuando comparte fila con otros filtros
+  (`.frow`, `display:flex` en fila) — pero `nxFacHist` (y cualquier otro modal escrito
+  `display:flex;flex-direction:column`) mete el buscador como hijo DIRECTO de un contenedor en
+  COLUMNA; ahí ese mismo `flex-basis:200px` se interpreta sobre el ALTO en vez del ancho, y con
+  `flex-grow:1` la caja se estira para llenar todo el espacio vertical libre del modal — de ahí
+  el tamaño gigante. Como `.nxBusca` es el componente GLOBAL (el mismo en todo el sistema), el
+  bug no era solo de esa ventana — afecta a cualquier buscador metido directo en un contenedor
+  flex en columna. Arreglado en la raíz (`nxBuscaEnsureCSS()`): la regla base pasó a
+  `flex:0 0 auto;width:100%` (alto fijo de 42px SIEMPRE, sin importar el contenedor), y el
+  crecer/compartir-fila (`flex:1 1 200px`) se movió a una regla más específica
+  `.frow>.nxBusca,.frow .nxBusca` — solo se activa cuando el buscador de verdad está dentro de
+  una fila de filtros. Verificado con el código real de `nxBuscaHTML`/`nxBuscaEnsureCSS`
+  extraído y cargado en un navegador con los 2 casos reales (buscador solo en un modal columna
+  → ahora 42px de alto; buscador junto a un `<select>` en `.frow` → sigue compartiendo el ancho
+  normal) — los dos casos correctos, sin regresión.
 
 ### REGLAMENTO TÉCNICO — `ModalBusquedaBase` (decretado por el dueño, 10-jul-2026) — OBLIGATORIO
 **No es lo mismo que `nxBuscaHTML` de arriba.** Son dos patrones para dos problemas distintos —
