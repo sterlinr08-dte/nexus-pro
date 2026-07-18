@@ -1259,6 +1259,21 @@ todo de golpe (así lo prefiere siempre el dueño).
      campos correctos, Guardar hace el PATCH correcto tanto a `pos_productos` como a
      `pos_producto_niveles` del nivel que estaba seleccionado al momento de guardar, la tabla de
      niveles resalta el nivel actual, y se ve completo sin desbordes en 390px/1280px.
+  - **Seguimiento (v48.34) — ajuste visual pedido por el dueño tras comparar contra su captura de
+    InfoplusWEB:** el dueño mandó 3 capturas reales (una del móvil, una de escritorio, una de la
+    pantalla "Nivel de Precio") pidiendo confirmar si había quedado "exactamente así". Comparación
+    honesta hecha con el código real renderizado en navegador vs las capturas: varias diferencias
+    de fondo son intencionales (nuestro formulario edita producto+nivel en UNA pantalla, Infoplus
+    usa dos; no fingimos Unidad/Localidad/Promociones porque no existen en el sistema) — el dueño
+    confirmó que solo quería ajustar **la parte visual**, no esas diferencias funcionales. Dos
+    cambios: (1) el header ahora pone el botón "Volver" como flecha circular y el título junto con
+    la cajita "Nivel actual/Estado/Actualizado" en la MISMA fila (antes la cajita era una barra
+    aparte de ancho completo debajo); (2) la card "Precios" pasó de cajitas-con-ícono a estilo
+    plano (etiqueta de color arriba + campo con "$" abajo, sin caja ni ícono) — igual que la
+    captura: Precio Lista en negro, Precio Especial en verde, Precio Contado en azul, Precio
+    Crédito en morado. CSS nuevo `.preciosFlat`/`.inw .cur` en `nxPfEnsureCSS()`. Verificado
+    comparando capturas lado a lado del código real contra las 3 imágenes del dueño — sin
+    desbordes en 390px ni 1200px.
 - **Fase 2, continuación (v48.31) — Vender: carrito con el look nuevo:** `pintarCarrito()`
   (panel `#posCartWrap`, a la derecha del catálogo de Vender) restilado al mismo lenguaje visual
   `.nxPf` que ya tenía el catálogo en lista — mismo patrón quirúrgico: los ids (`posCartWrap`) y

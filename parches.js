@@ -16859,6 +16859,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .porange .ic{background:var(--pf-orange-l);color:var(--pf-orange)}
 .nxPf .nivsel{display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .nxPf .nivsel .inw{flex:1;min-width:0}
+.nxPf .preciosFlat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+@media (min-width:700px){.nxPf .preciosFlat{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.nxPf .preciosFlat .fld label{font-size:11.5px;font-weight:800;text-transform:none;letter-spacing:0;color:var(--pf-txt2)}
+.nxPf .inw .cur{position:absolute;left:11px;color:var(--pf-txt3);font-size:13px;font-weight:800}
 .nxPf .reglas{display:flex;align-items:center;gap:9px;padding:9px;border:1px solid var(--pf-line);border-radius:11px}
 .nxPf .reglas .ic{width:28px;height:28px;border-radius:8px;background:var(--pf-bg);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .nxPf .reglas select,.nxPf .reglas input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-weight:700;font-size:12px;color:var(--pf-txt);outline:0}
@@ -17061,12 +17065,18 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPf" style="max-width:1100px;width:96vw;padding:0;border-radius:20px;overflow:hidden">
-        <div class="head"><i class="ti ti-package" style="color:var(--pf-blue)"></i><h3>${p ? 'Editar artículo — ' + esc(e.nombre || '') : 'Nuevo artículo'}</h3><button class="nxBack" type="button" onclick="document.getElementById('nxPosProd').remove()" style="position:static"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        ${p ? `<div class="topinfo">
-          <div class="ti-item"><span>NIVEL ACTUAL</span><b id="nxPfTopNivel">${esc(nivelInicial ? nivelInicial.nombre : '—')}</b></div>
-          <div class="ti-item"><span>ESTADO</span><span class="estado-badge">${e.activo === false ? 'INACTIVO' : 'ACTIVO'}</span></div>
-          <div class="ti-item"><span>ACTUALIZADO</span><b style="font-size:11px;font-weight:700;color:var(--pf-txt2)">${fechaDMY(new Date())}</b></div>
-        </div>` : ''}
+        <div class="head" style="align-items:flex-start;flex-wrap:wrap;row-gap:10px">
+          <button class="nxBack" type="button" onclick="document.getElementById('nxPosProd').remove()" title="Volver" aria-label="Volver" style="position:static;flex:0 0 auto;width:36px;height:36px;padding:0;border-radius:50%;justify-content:center"><i class="ti ti-arrow-left"></i></button>
+          <div style="flex:1;min-width:180px">
+            <h3 style="margin:0">${p ? 'Editar artículo' : 'Nuevo artículo'}</h3>
+            <div style="font-size:11px;color:var(--pf-txt3);margin-top:1px">${p ? esc(e.nombre || '') : 'Crea un artículo nuevo en el catálogo'}</div>
+          </div>
+          ${p ? `<div class="topinfo" style="margin:0;flex:0 1 auto">
+            <div class="ti-item"><span>NIVEL ACTUAL</span><b id="nxPfTopNivel">${esc(nivelInicial ? nivelInicial.nombre : '—')}</b></div>
+            <div class="ti-item"><span>ESTADO</span><span class="estado-badge">${e.activo === false ? 'INACTIVO' : 'ACTIVO'}</span></div>
+            <div class="ti-item"><span>ACTUALIZADO</span><b style="font-size:11px;font-weight:700;color:var(--pf-txt2)">${fechaDMY(new Date())}</b></div>
+          </div>` : ''}
+        </div>
         <div class="body">
           <div>
 
@@ -17085,14 +17095,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 
             <div class="card" style="margin-bottom:12px">
               <h4><span class="bdg green"><i class="ti ti-currency-dollar"></i></span> Precios</h4>
-              <div class="precios">
-                <div class="pcard pblue"><div class="ic"><i class="ti ti-tag"></i></div><div class="lb">Precio Lista</div><input id="ppPre" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0"></div>
-                <div class="pcard pgreen"><div class="ic"><i class="ti ti-discount"></i></div><div class="lb">Precio Especial</div><input id="ppNivEsp" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div>
-                <div class="pcard pblue"><div class="ic"><i class="ti ti-cash"></i></div><div class="lb">Precio Contado</div><input id="ppNivCont" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_contado != null ? Math.round(nivRowInicial.precio_contado) : ''}" placeholder="0" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div>
-                <div class="pcard ppurple"><div class="ic"><i class="ti ti-credit-card"></i></div><div class="lb">Precio Crédito</div><input id="ppNivCred" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_credito != null ? Math.round(nivRowInicial.precio_credito) : ''}" placeholder="0" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div>
-                <div class="pcard pblue"><div class="ic"><i class="ti ti-receipt"></i></div><div class="lb">Costo</div><input id="ppCos" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0"></div>
-                ${puedeVerMin() ? `<div class="pcard pgreen"><div class="ic"><i class="ti ti-shield-lock"></i></div><div class="lb">🔒 Precio mínimo</div><input id="ppMinP" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo"></div>` : ''}
-                <div class="pcard porange"><div class="ic"><i class="ti ti-building-store"></i></div><div class="lb">Precio 2 (mayor, respaldo)</div><input id="ppPreMay" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio lista"></div>
+              <div class="preciosFlat">
+                <div class="fld"><label style="color:var(--pf-txt)">Precio Lista</label><div class="inw"><span class="cur">$</span><input id="ppPre" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
+                <div class="fld"><label style="color:var(--pf-blue-d)">Precio Contado ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCont" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_contado != null ? Math.round(nivRowInicial.precio_contado) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
+                <div class="fld"><label style="color:var(--pf-purple)">Precio Crédito ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCred" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_credito != null ? Math.round(nivRowInicial.precio_credito) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
+                <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                ${puedeVerMin() ? `<div class="fld"><label>🔒 Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
+                <div class="fld"><label>Precio 2 (mayor, respaldo)</label><div class="inw"><span class="cur">$</span><input id="ppPreMay" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio lista" style="padding-left:24px"></div></div>
               </div>
             </div>
 
