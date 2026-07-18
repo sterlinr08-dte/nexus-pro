@@ -1208,6 +1208,52 @@ todo de golpe (así lo prefiere siempre el dueño).
   pago de Factura, más el panel de carrito de Vender — quedan para los próximos incrementos.
 - **Fase 3 (sidebar para el resto de los ~16 módulos):** sin empezar todavía — depende de que la
   Fase 2 quede resuelta primero (comparten el mismo shell de navegación del POS).
+- **Fase 1, continuación (v48.30) — formulario de precios por nivel IGUAL a Infoplus, "Productos"
+  renombrado a "Inventario":** el dueño pidió explícitamente que el POS se viera **tal cual** una
+  captura real que mandó de InfoplusWEB ("Nivel de Precio — Crear/Editar Nivel de Precio", no una
+  interpretación) — mismos campos, mismos colores por card, misma tabla, mismo resumen, misma barra
+  de botones, sin "botón 3D". Dos cambios:
+  1. **Rename "Productos" → "Inventario"** en todo el POS (`MODULOS`, `shellTienda()` nav,
+     `renderInicio()` tiles, mensajes vacíos de Vender/Factura). La pestaña VIEJA "Inventario"
+     (kardex/valoración/ajuste) pasó a llamarse **"Kardex"** para no chocar — es la única función
+     que no tenía análogo directo en la imagen del dueño, resuelta así y confirmada con él. Las
+     claves internas (`productos`/`inventario`, `nxPosTab(...)`) NO cambiaron — solo las etiquetas
+     visibles — así que ningún `onclick`/navegación existente se rompió.
+  2. **`abrirProd()` (el formulario de artículo) reconstruido para calzar con la imagen de Infoplus:**
+     nueva fila superior "NIVEL ACTUAL / ESTADO / FECHA" (`.topinfo`) bajo el encabezado. Card
+     "Información del artículo" ganó un selector **"Nivel de precio a editar"** (`#ppNivelSel`,
+     solo si el producto ya tiene niveles) — cambiarlo dispara `nxPfNivelCambio()`, que recarga
+     Precios y una card NUEVA **"Reglas de Venta"** con los datos de ESE nivel específico (patrón
+     Infoplus: un solo formulario nivel-scoped, no un precio fijo). Card "Precios" pasó a mostrar
+     **Precio Lista** (global, `ppPre`) + **Precio Especial/Precio Contado/Precio Crédito**
+     (por nivel, nuevos ids `ppNivEsp`/`ppNivCont`/`ppNivCred`) + Costo + 🔒Precio mínimo (global) +
+     Precio 2/mayor (global, ahora etiquetado "respaldo" porque los niveles lo superan en la
+     práctica pero se deja intacto por compatibilidad). Card "Reglas de Venta" (icono naranja,
+     nueva) usa las **6 columnas que se agregaron a `pos_producto_niveles` en esta misma sesión**
+     (`precio_especial`, `cantidad_minima`, `credito_pct`, `credito_monto`, `precio_anterior`,
+     `descuento_pct` — antes existían en el esquema pero sin ninguna UI que las usara, ahora sí).
+     Card "Niveles de precio" ganó buscador (`posBuscador`, reglamento de buscadores) y un
+     **badge circular numerado** por nivel (azul = el nivel que estás editando ahora mismo, gris
+     los demás) — igual que la tabla de Infoplus. Panel "Resumen" ganó imagen del producto (o
+     ícono si no tiene), badge ACTIVO/INACTIVO, "Nivel actual", y las 4 filas de precio
+     (Lista/Especial/Contado/Crédito) con chips de color, todas en vivo mientras escribes. **Barra
+     de acciones con los 4 botones exactos de la imagen** (antes solo había 2): **Guardar** (verde
+     sólido, guarda el producto Y el nivel seleccionado en un solo paso vía
+     `nxPfGuardarNivelSiCorresponde()`), **Guardar y Nuevo** (azul sólido, nuevo — guarda y reabre
+     el formulario en blanco, útil para cargar varios artículos seguidos), **Imprimir Etiqueta**
+     (gris outline, nuevo — etiqueta imprimible honesta con nombre+código+precio; NO dibuja un
+     código de barras falso que en realidad no escanearía, mismo criterio de "no fingir" del resto
+     del sistema), **Cancelar** (rojo sólido, antes era outline). Todos los colores/badges nuevos
+     viven en el mismo namespace `.nxPf` de siempre (variables `--pf-orange`/`--pf-purple` nuevas,
+     con su variante de tema oscuro). **Deliberadamente NO se copiaron** los campos "Unidad" y
+     "Localidad" de la imagen de Infoplus — el POS no tiene unidades de medida ni localidades
+     (gap ya documentado en "Análisis POS vs Infoplus" arriba); agregarlos habría sido fingir una
+     función que no existe. Verificado con el código real de `abrirProd`/`nxPfNivelCambio`/
+     `nxPosGuardarProd`/`nxPfGuardarYNuevo`/`nxPfImprimirEtiqueta` extraído tal cual y cargado en un
+     navegador con datos simulados (no una reconstrucción a mano): cambiar de nivel recarga los
+     campos correctos, Guardar hace el PATCH correcto tanto a `pos_productos` como a
+     `pos_producto_niveles` del nivel que estaba seleccionado al momento de guardar, la tabla de
+     niveles resalta el nivel actual, y se ve completo sin desbordes en 390px/1280px.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
