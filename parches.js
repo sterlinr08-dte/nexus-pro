@@ -15577,8 +15577,6 @@
               <input type="text" id="facBuscar" placeholder="Buscar producto por nombre, código, IMEI, serial…" aria-label="Buscar producto por nombre, código, IMEI o serial" autocomplete="off" oninput="window.nxFacBuscar(this.value)" onfocus="window.nxFacBuscar(this.value)" onkeydown="if(event.key==='Enter'){window.nxFacBuscarEnter(this.value)}">
               <div id="facSug" class="nxFacSug"></div>
             </div>
-            <button type="button" class="nx-inv-btn" onclick="window.nxFacScan('imei')"><i class="ti ti-scan"></i> Escanear IMEI</button>
-            <button type="button" class="nx-inv-btn" onclick="window.nxFacScan('code')"><i class="ti ti-barcode"></i> Código de Barras</button>
           </div>
           <div class="nx-inv-tblwrap"><div id="facTabla"></div></div>
           <div class="nx-inv-toolbar">
@@ -15590,7 +15588,7 @@
         <div class="nx-inv-card nx-inv-summary" id="facResumen"></div>
       </div>
       <div class="nx-inv-shortcuts">
-        <span><b>F2</b> Buscar producto</span><span><b>Ctrl+B</b> Código de barras</span><span><b>F8</b> Descuento</span><span><b>F9</b> Garantía</span><span><b>F10</b> Limpiar carrito</span><span><b>Alt+P</b> Imprimir</span>
+        <span><b>F2</b> Buscar producto</span><span><b>F10</b> Limpiar carrito</span>
       </div>
     </div>`;
   }
@@ -16436,11 +16434,6 @@
     if (!lista.length) { box.innerHTML = '<div class="nxFacSugEmpty">Sin artículos en esta categoría</div>'; box.style.display = 'block'; return; }
     box.innerHTML = lista.map(p => `<div class="nxFacSugIt" onclick="window.nxFacSugSel('${p.id}')"><div style="flex:1;min-width:0"><div class="nxFacSugNom">${esc(p.nombre || '')}</div><div class="nxFacSugSub">${p.codigo ? esc(p.codigo) : ''}${p.referencia ? ' · ' + esc(p.referencia) : ''}</div></div><div class="nxFacSugPre">${fmt(precioCli(p))}<span>${Number(p.stock || 0)} und</span></div></div>`).join('');
     box.style.display = 'block';
-  };
-  // Botones "Escanear": enfocan el buscador (los lectores USB/Bluetooth escriben ahí)
-  window.nxFacScan = function (kind) {
-    const el = document.getElementById('facBuscar'); if (el) { el.focus(); el.placeholder = kind === 'imei' ? 'Escanea o escribe el IMEI / serial…' : 'Escanea o escribe el código de barras…'; }
-    try { toast('info', kind === 'imei' ? 'Listo para escanear IMEI' : 'Listo para escanear código', 'Usa el lector o escribe y presiona Enter'); } catch (e) {}
   };
   // Enter en el buscador: si hay un código/serial exacto o un único resultado, agrega el artículo (scanner)
   window.nxFacBuscarEnter = function (q) {

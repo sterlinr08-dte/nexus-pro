@@ -1397,6 +1397,21 @@ todo de golpe (así lo prefiere siempre el dueño).
   ningún id/onclick/lógica se tocó. Verificado con el código real de `renderFactura` extraído y
   cargado en un navegador: el botón aparece primero en el DOM (izquierda), el texto del checkbox
   es el correcto, sin desbordes en 390px.
+- **Factura/Prefactura: botones "Escanear IMEI"/"Código de Barras" quitados por redundantes
+  (v48.40, punto 4 de la lista):** el dueño mandó una captura señalando que esos 2 botones (debajo
+  del buscador de artículos) eran redundantes. Se confirmó en el código: `nxFacScan(kind)` solo
+  hacía `document.getElementById('facBuscar').focus()` + cambiar el placeholder — cero diferencia
+  real entre "IMEI" y "Código de Barras", y cero diferencia con simplemente tocar el buscador (que
+  ya trae el placeholder "por nombre, código, IMEI, serial…" y ya recibe lo que escriba/escanee un
+  lector USB/Bluetooth con solo estar enfocado). Se quitaron los 2 botones + la función `nxFacScan`
+  completa (dead code). **Hallazgo de paso:** el pie de atajos de teclado (`.nx-inv-shortcuts`)
+  anunciaba `Ctrl+B` (Código de barras), `F8` (Descuento), `F9` (Garantía) y `Alt+P` (Imprimir) —
+  ninguno de los 4 estaba realmente conectado a ningún `keydown` en todo el archivo (solo existía
+  el listener de `F2`/`F10`, ver `window.__nxInvKeys`). Como es la MISMA línea/función que se
+  estaba limpiando, se quitaron los 4 atajos falsos también — el pie ahora solo anuncia `F2`
+  (buscar) y `F10` (limpiar carrito), que sí funcionan. Aplica a Factura Y Prefactura porque
+  comparten `renderFactura()`. Verificado con el código real extraído y cargado en un navegador:
+  ni los botones ni los atajos falsos aparecen, sin errores de JS.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
