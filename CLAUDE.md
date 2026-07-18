@@ -1268,13 +1268,40 @@ todo de golpe (así lo prefiere siempre el dueño).
   cual (con stubs solo para helpers de dinero de línea que no hacían falta probar aquí,
   `lineBase`/`lineDescMonto`/`lineImporte`) y cargado en un navegador: los botones −/+ ajustan la
   cantidad y el total de la línea en vivo, sin desbordes en 390px ni escritorio.
-- **PENDIENTE real (Fase 2 aún no cerrada):** la tabla de artículos y el resumen/modal de pago de
-  Factura (`pintarFactura`, clases `nx-inv-*`) siguen con su propio lenguaje visual — de un
-  rediseño premium ANTERIOR (Stitch v40.2-40.4 + mockup BAYOL CELL, ya aprobado por el dueño en su
-  momento), no el `.nxPf`/Plus Jakarta Sans de NEXUS PRO X 2026. Ya tiene precio/cantidad/descuento
-  editables por línea (no hay que construirlos, ya existen) — lo que falta, si el dueño lo pide, es
-  solo re-pintar esas clases al lenguaje visual nuevo, mismo patrón quirúrgico de siempre. Fase 3
-  (sidebar del resto de módulos) sigue sin empezar.
+- **Nota importante sobre Factura (NO requirió trabajo adicional):** al revisar `renderFactura()`
+  para planear el resto de la Fase 2, se confirmó que la tabla de artículos y el resumen/modal de
+  pago (`pintarFactura`, clases `nx-inv-*`, del rediseño premium ANTERIOR Stitch v40.2-40.4 +
+  mockup BAYOL CELL ya aprobado) YA HEREDA el look nuevo — desde v48.29 `renderFactura()` envuelve
+  todo su HTML en `<div class="nxPf nx-invoice-pro">`, y como `font-family` y el azul `#2563eb` de
+  `.nx-inv-*` ya coinciden con la paleta de `.nxPf`, la tipografía Plus Jakarta Sans y el acento
+  azul ya se aplican ahí sin tocar una sola línea de esas clases. Ya tiene precio/cantidad/
+  descuento editables por línea (no hay que construirlos, ya existen). **No se rehizo** (habría
+  sido riesgo innecesario sobre una pantalla de dinero ya aprobada, sin ganancia visual real) — si
+  el dueño pide un día un cambio más profundo de layout ahí, sería aparte y con el mismo cuidado de
+  siempre.
+- **Fase 3 (v48.32) — barra lateral del POS en azul, HECHA (el resto de los módulos internos NO
+  se tocó):** la barra lateral (`shellTienda()`, clases `.nxTSide`/`.nxTNav`/`.nxTBrand`/`.nxTLogo`/
+  `.nxTAva`/`.nxTFoot`, hoy vive en `inyectarCSSTienda()`) pasó del gradiente índigo `#1b1f4d→
+  #283593` (con acento `#6366f1`/`#4338ca`/`#818cf8`) al azul navy→azul `#1e3a6e→#2563eb` — el
+  MISMO gradiente ya aprobado en el Login (v48.14, "mismo acento que el POS"). Cambio quirúrgico
+  puramente de color (hex hardcodeados, mismo patrón que el swap de acento del v40.2): el HTML, la
+  agrupación de secciones (Principal/Inventario/Personas y CRM/Finanzas/Sistema — coincide con los
+  grupos de la muestra `muestra-pos-x2026.html`) y todos los `onclick` de navegación quedaron
+  intactos. Había un bloque "BLINDAJE" aparte (`html body .nxTSide{...!important}`, para que la
+  barra no saliera traslúcida bajo el tema glass) que también forzaba el índigo con `!important` —
+  se actualizó igual, si no el blindaje hubiera pisado el color nuevo. **Deliberadamente NO
+  tocado:** los íconos de cada módulo en el panel de Inicio (`renderInicio()`, `tile(...)`) y de
+  cada KPI conservan su color propio (verde/naranja/cian/rojo/etc.) — es una regla ya establecida
+  ("iconos de módulos conservan su color propio para distinguir de un vistazo"), tocar eso habría
+  sido un error, no una mejora. Tampoco se tocó `.nxThSort` (acento índigo de encabezados
+  ordenables, prefijo distinto `nxTh`, potencialmente compartido con otras pantallas — fuera de
+  alcance) ni los colores decorativos por-tile de `renderInicio()`. **Alcance real de "Fase 3":**
+  es el SHELL (barra lateral + topbar móvil + panel de Inicio), NO un rediseño de los ~15 módulos
+  internos restantes (Compras, RRHH, Contabilidad, Reportes, CRM, etc. — esos siguen con su
+  interfaz de siempre, sin tocar). Verificado con el código real de `inyectarCSS`/
+  `inyectarCSSTienda`/`shellTienda`/`renderInicio` extraído tal cual y cargado en un navegador: el
+  degradado nuevo se confirmó por `getComputedStyle` (no solo a ojo), los 23 botones de navegación
+  siguen llamando a `nxPosTab(...)` correctamente, y no hay desbordes en 390px ni 1280px.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

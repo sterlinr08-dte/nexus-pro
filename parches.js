@@ -15279,6 +15279,7 @@
 
   // ── Envoltorio del POS independiente para tiendas: barra lateral índigo + área principal ──
   function shellTienda(body, previewBar) {
+    nxPfEnsureCSS();
     const _ses = (typeof sesion !== 'undefined') ? sesion : window.sesion;
     const org = (_ses && _ses.org) || {};
     const biz = org.nombre || empNom() || 'Mi negocio';
@@ -21176,21 +21177,21 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       'body.org-rifa .content{padding:0!important}',
       /* Sidebar */
       '.nxTShell{min-height:100vh;min-height:100dvh}',
-      '.nxTSide{position:fixed;top:0;left:0;bottom:0;width:240px;z-index:120;display:flex;flex-direction:column;background:linear-gradient(180deg,#1b1f4d,#283593);color:#e9eafb;box-shadow:6px 0 28px rgba(20,16,55,.28);transition:transform .26s cubic-bezier(.4,0,.2,1)}',
+      '.nxTSide{position:fixed;top:0;left:0;bottom:0;width:240px;z-index:120;display:flex;flex-direction:column;background:linear-gradient(180deg,#1e3a6e,#2563eb);color:#e9eefb;box-shadow:6px 0 28px rgba(15,23,42,.28);transition:transform .26s cubic-bezier(.4,0,.2,1);font-family:"Plus Jakarta Sans",var(--ff)}',
       '.nxTBrand{display:flex;align-items:center;gap:11px;padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08)}',
-      '.nxTLogo{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:linear-gradient(145deg,#6366f1,#4338ca);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.5),inset 0 1px 1px rgba(255,255,255,.4)}',
+      '.nxTLogo{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:linear-gradient(145deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.5),inset 0 1px 1px rgba(255,255,255,.4)}',
       '.nxTBiz{font-weight:800;font-size:14px;line-height:1.1;color:#fff}',
-      '.nxTBiz small{display:block;font-weight:600;font-size:10px;color:#a4abe6;margin-top:3px;letter-spacing:.3px}',
+      '.nxTBiz small{display:block;font-weight:600;font-size:10px;color:#a8c5ec;margin-top:3px;letter-spacing:.3px}',
       '.nxTScroll{flex:1;overflow-y:auto;padding:8px 9px 14px}',
-      '.nxTSec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7f88d4;margin:13px 8px 5px}',
+      '.nxTSec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7ba3d9;margin:13px 8px 5px}',
       '.nxTSec:first-child{margin-top:3px}',
-      '.nxTNav{display:flex;align-items:center;gap:9px;width:100%;border:0;cursor:pointer;background:transparent;color:#cdd3f2;text-align:left;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:1px;font-family:inherit}',
+      '.nxTNav{display:flex;align-items:center;gap:9px;width:100%;border:0;cursor:pointer;background:transparent;color:#c9d9f2;text-align:left;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:1px;font-family:inherit}',
       '.nxTNav i{font-size:15px;width:18px;text-align:center}',
       '.nxTNav:active{background:rgba(255,255,255,.06)}',
-      '.nxTNav.on{background:rgba(99,102,241,.24);color:#fff;box-shadow:inset 2px 0 0 #818cf8}',
+      '.nxTNav.on{background:rgba(59,130,246,.28);color:#fff;box-shadow:inset 2px 0 0 #60a5fa}',
       '.nxTFoot{padding:10px;border-top:1px solid rgba(255,255,255,.08)}',
       '.nxTUser{display:flex;align-items:center;gap:10px;padding:4px 4px 10px}',
-      '.nxTAva{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#818cf8,#4338ca);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;flex-shrink:0}',
+      '.nxTAva{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#60a5fa,#1d4ed8);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;flex-shrink:0}',
       '.nxTUser b{font-size:12.5px;display:block;color:#fff}',
       '.nxTUser span{font-size:10px;color:#a4abe6}',
       '.nxTLogout{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(255,255,255,.07);color:#f1eefb;border:1px solid rgba(255,255,255,.12);padding:9px;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}',
@@ -21215,7 +21216,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxTVRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid #f1f5f9}',
       '.nxTVRow:last-child{border-bottom:0}',
       '.nxTVL{display:flex;align-items:center;gap:10px;min-width:0}',
-      '.nxTVIc{width:34px;height:34px;border-radius:10px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}',
+      '.nxTVIc{width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}',
       '.nxTVNm{min-width:0}',
       '.nxTVNm b{display:block;font-size:12.5px;font-weight:800;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.nxTVNm small{font-size:10.5px;color:#64748b}',
@@ -21243,27 +21244,27 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxTSide.open{transform:translateX(0)}',
       '.nxTMain{margin-left:0;padding:12px 12px 60px}',
       '.nxTTop{display:flex;align-items:center;gap:11px;margin-bottom:14px}',
-      '.nxTBurger{width:42px;height:42px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;font-size:21px;color:#4f46e5;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-family:inherit}',
+      '.nxTBurger{width:42px;height:42px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;font-size:21px;color:#2563eb;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-family:inherit}',
       '.nxTTopBiz{font-weight:800;font-size:15px;color:#0f172a}',
       'body.nxTDrawer .nxTBackdrop{display:block}',
       '}',
       /* ── BLINDAJE de la barra lateral: gana SIEMPRE sobre el tema glass y los parches de iconos ──
          (en el tema glass del admin salía translúcida con pastillas blancas — se veía amateur) */
-      'html body .nxTSide{background:linear-gradient(180deg,#1b1f4d,#283593)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important}',
-      'html body .nxTSide .nxTNav{background:transparent!important;border:0!important;box-shadow:none!important;color:#cdd3f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;min-height:0!important}',
+      'html body .nxTSide{background:linear-gradient(180deg,#1e3a6e,#2563eb)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important}',
+      'html body .nxTSide .nxTNav{background:transparent!important;border:0!important;box-shadow:none!important;color:#c9d9f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;min-height:0!important}',
       'html body .nxTSide .nxTNav.on{background:rgba(255,255,255,.16)!important;color:#fff!important}',
       'html body .nxTSide .nxTNav i,html body .nxTSide .nxTLogout i{background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;min-width:0!important;color:inherit!important;border-radius:0!important;padding:0!important}',
-      'html body .nxTSide .nxTSec{color:#98a1ef!important;background:none!important}',
+      'html body .nxTSide .nxTSec{color:#a3c2ea!important;background:none!important}',
       'html body .nxTSide .nxTBrand,html body .nxTSide .nxTFoot{background:transparent!important}',
-      'html body .nxTSide .nxTBiz{color:#fff!important}html body .nxTSide .nxTBiz small{color:#aab2f5!important}',
-      'html body .nxTSide .nxTUser b{color:#fff!important}html body .nxTSide .nxTUser span{color:#aab2f5!important}',
+      'html body .nxTSide .nxTBiz{color:#fff!important}html body .nxTSide .nxTBiz small{color:#aecbef!important}',
+      'html body .nxTSide .nxTUser b{color:#fff!important}html body .nxTSide .nxTUser span{color:#aecbef!important}',
       'html body .nxTSide .nxTAva{background:rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important}',
       'html body .nxTSide .nxTLogout{background:rgba(255,255,255,.10)!important;color:#fff!important;border:1px solid rgba(255,255,255,.22)!important;box-shadow:none!important}',
       /* Chips de estado en Últimas ventas (look premium del diseño aprobado) */
       '.nxTVEnd{display:flex;flex-direction:column;align-items:flex-end;gap:3px}',
       '.nxTVSt{font-size:8px;font-weight:800;letter-spacing:.4px;padding:2px 7px;border-radius:6px}',
       '.nxTVSt.p{background:#f0fdf4;color:#16a34a}',
-      '.nxTVSt.f{background:#eef2ff;color:#4338ca}'
+      '.nxTVSt.f{background:#eff6ff;color:#1d4ed8}'
     ].join('');
     document.head.appendChild(st);
   }
