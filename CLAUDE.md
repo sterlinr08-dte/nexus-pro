@@ -1387,6 +1387,16 @@ todo de golpe (así lo prefiere siempre el dueño).
   más claro) y el botón "Cobrar" de abajo sigue siendo el único paso real para pagar — sin cambio
   de lógica de cobro. Verificado con el código real de `pintarFactura`/`renderFactura` extraído y
   cargado en un navegador: el bloque ya no aparece, sin desbordes en 390px ni 1200px.
+- **Factura/Prefactura: botón de lupa a la izquierda + checkbox simplificado (v48.39, puntos 2 y 3
+  de la lista "ordenar por lógica"):** en el campo "No. Factura / NCF" (y "Prefactura No."), el
+  botón de lupa (`window.nxFacHist()`/`window.nxPrefLista()`) pasó de estar DESPUÉS del número a
+  estar ANTES (izquierda) — mismo `<button class="nx-inv-iconbtn">`, solo cambió su posición en el
+  HTML. La casilla "A crédito (fiado)" quedó solo **"A crédito"** (confirmado con el dueño cuál de
+  los dos términos dejar — el sistema usa "fiado" coloquialmente en casi todo el resto, pero para
+  esta casilla específica el dueño prefirió el término formal). Cambio puramente de HTML/texto,
+  ningún id/onclick/lógica se tocó. Verificado con el código real de `renderFactura` extraído y
+  cargado en un navegador: el botón aparece primero en el DOM (izquierda), el texto del checkbox
+  es el correcto, sin desbordes en 390px.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
