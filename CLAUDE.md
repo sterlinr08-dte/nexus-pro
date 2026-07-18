@@ -1322,6 +1322,18 @@ todo de golpe (así lo prefiere siempre el dueño).
   `inyectarCSSTienda`/`shellTienda`/`renderInicio` extraído tal cual y cargado en un navegador: el
   degradado nuevo se confirmó por `getComputedStyle` (no solo a ojo), los 23 botones de navegación
   siguen llamando a `nxPosTab(...)` correctamente, y no hay desbordes en 390px ni 1280px.
+- **Orden lógico de campos, pedido a mano (v48.35):** el dueño mandó una foto de la Factura real en
+  vivo (Bayolcell) pidiendo reordenar los campos de arriba "por lógica": el **número de factura va
+  primero (arriba)**, y justo debajo el **Cliente con su buscador** — antes el Cliente salía primero
+  y el número de factura más abajo. En `renderFactura()` (sirve Factura Y Prefactura, gateado por
+  `esPreTab()`) se reordenó el HTML del grid `.nx-inv-info`: ahora es `numField` → Cliente → Tipo de
+  comprobante → Fecha (antes Cliente → Tipo de comprobante → numField → Fecha). Cambio de ORDEN
+  únicamente — ningún id, onclick ni lógica se tocó. Es el primer punto de una lista que el dueño
+  está dando por partes ("vamos a ordenar por lógica") — pendiente confirmar si "Vender" también
+  necesita este mismo campo (hoy Vender no tiene número de factura ni selector de cliente, es
+  catálogo+carrito directo) y esperar los próximos puntos de su lista. Verificado con el código real
+  de `renderFactura` extraído y cargado en un navegador: el orden de las 4 etiquetas se confirmó
+  programáticamente (no solo a ojo), sin desbordes en 390px ni 1200px.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

@@ -15548,6 +15548,7 @@
             <div class="nx-inv-steps" id="facSteps">${facStepsHTML()}</div>
           </div>
           <div class="nx-inv-info">
+            ${numField}
             <div class="nx-inv-field" style="position:relative">
               <label class="nx-inv-label">Cliente</label>
               <button type="button" class="pf2clibtn" id="facCliBtn" onclick="window.nxFacCliToggle()"><span id="facCliTxt">${esc(cliTxt)}</span><i class="ti ti-chevron-down"></i></button>
@@ -15557,7 +15558,6 @@
               <label class="nx-inv-label">Tipo de comprobante</label>
               <div class="pf2chiprow" id="facNCFChips">${ncfChips}</div>
             </div>
-            ${numField}
             <div class="nx-inv-field"><label class="nx-inv-label" for="facFecha">Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-weight:700;color:#0f172a;font-family:inherit;font-size:16px"></div>
           </div>
           <div class="nx-inv-tabs">${catTabs}</div>
