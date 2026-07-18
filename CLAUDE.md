@@ -1412,6 +1412,16 @@ todo de golpe (así lo prefiere siempre el dueño).
   (buscar) y `F10` (limpiar carrito), que sí funcionan. Aplica a Factura Y Prefactura porque
   comparten `renderFactura()`. Verificado con el código real extraído y cargado en un navegador:
   ni los botones ni los atajos falsos aparecen, sin errores de JS.
+- **Factura/Prefactura: botón "Agregar producto" quitado por redundante (v48.41):** mismo patrón
+  que el punto anterior — el dueño señaló que el botón "Agregar producto" (arriba del carrito,
+  abría `window.nxProdPicker('factura')`, el catálogo completo) y el buscador de artículos que ya
+  está justo encima llevan al mismo resultado. Se quitó el botón; el `.nx-inv-toolbar` pasó de 3 a
+  2 columnas (`grid-template-columns:1fr 1fr 1fr` → `1fr 1fr`) para que "Prefacturas" y "Limpiar
+  carrito" queden bien repartidos sin el hueco del tercero. `nxProdPicker` no se tocó (sigue
+  usándose desde Vender al tocar un producto de la lista) — solo se quitó este acceso puntual
+  duplicado. Verificado con el código real de `renderFactura`+`inyectarCSS` (POS) extraído y
+  cargado en un navegador: quedan exactamente 2 botones, sin desbordes en 390px ni escritorio,
+  0 errores de JS.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
