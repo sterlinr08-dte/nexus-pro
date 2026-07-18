@@ -15399,8 +15399,19 @@
       const lbl = cid === 'todas' ? 'Todas' : esc(catNombre(cid));
       return `<button type="button" class="vchip${_posCat === String(cid) ? ' on' : ''}" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
     }).join('');
+    const cliActual = _clientes.find(c => String(c.id) === String(_factCli));
+    const cliTxt = cliActual ? (cliActual.codigo ? cliActual.codigo + ' · ' : '') + cliActual.nombre + (cliActual.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
     return `<div class="nxPf nxPosGridWrap">
         <div class="nxPosLeft">
+          <div class="card" style="margin-bottom:12px">
+            <div class="g2">
+              <div class="fld"><label>No. Factura</label><div class="inw"><i class="ti ti-file-invoice"></i><input value="${esc(proxNumeroFacturaCorto(false))}" readonly style="font-weight:800;color:var(--pf-blue-d);cursor:default"></div></div>
+              <div class="fld" style="position:relative"><label>Cliente</label>
+                <button type="button" class="pf2clibtn" id="facCliBtn" onclick="window.nxFacCliToggle()" style="border:1.5px solid var(--pf-line);border-radius:11px;height:40px;padding:0 12px"><span id="facCliTxt">${esc(cliTxt)}</span><i class="ti ti-chevron-down"></i></button>
+                <div class="pf2clidrop" id="facCliDrop"></div>
+              </div>
+            </div>
+          </div>
           ${posBuscador({ id: 'posBuscar', placeholder: 'Buscar producto (toca la lupa para ver todos)...', oninput: 'window.nxPosBuscar(this.value)', onLupa: "window.nxProdPicker('vender')" })}
           <div class="vchiprow">${chips}</div>
           <div id="posGrid" class="vlist">${gridHTML()}</div>
@@ -15424,7 +15435,7 @@
         <div class="vthumb"><i class="ti ${serv ? 'ti-tool' : 'ti-box'}"></i></div>
         <div class="vinfo"><div class="vnom">${esc(p.nombre || '')}${imeiChip}</div><div class="vsub">${esc(p.referencia || p.marca || '')}${cat ? (p.referencia || p.marca ? ' · ' : '') + esc(cat) : ''}</div></div>
         <div class="vstk"><span class="vstkb ${stkCls}"><i class="ti ti-circle-filled"></i>${stkTxt}</span></div>
-        <div class="vprecio">${fmt(p.precio)}</div>
+        <div class="vprecio">${fmt(precioCli(p))}</div>
       </button>`;
     }).join('');
   }
@@ -15470,7 +15481,7 @@
     if (!puedeAgregar(id, 1)) return;
     const ex = _cart.find(x => String(x.producto_id) === String(id));
     if (ex) ex.cantidad += 1;
-    else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: Number(p.precio || 0), cantidad: 1, itbis: !!p.itbis });
+    else _cart.push({ producto_id: p.id, nombre: p.nombre, precio: precioCli(p), cantidad: 1, itbis: !!p.itbis });
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
     ajustarCombos(p.id, 1);
     pintarCarrito();
@@ -15586,9 +15597,13 @@
   window.nxFacSubTab = function (t) { _facSubTab = t || 'datos'; };
   window.nxFacSetCli = function (v) {
     _factCli = v || '';
-    // re-precia el carrito según el nivel del cliente (final / por mayor)
+    // re-precia el carrito según el nivel del cliente (final / por mayor) — Vender y Factura
+    // comparten el mismo _cart (solo Prefactura tiene el suyo aparte), así que repintar ambas
+    // vistas es seguro: cada una se sale sola si su contenedor no existe en el DOM actual.
     _cart.forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) it.precio = precioCli(p); });
     pintarFactura();
+    try { pintarCarrito(); } catch (e) {}
+    try { const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML(); } catch (e) {}
   };
   window.nxFacSetFecha = function (v) { _facFecha = v || ''; };
   window.nxFacSetNCF = function (v) { _facNCF = v || 'sin'; };

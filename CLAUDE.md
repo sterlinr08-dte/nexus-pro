@@ -1334,6 +1334,27 @@ todo de golpe (así lo prefiere siempre el dueño).
   catálogo+carrito directo) y esperar los próximos puntos de su lista. Verificado con el código real
   de `renderFactura` extraído y cargado en un navegador: el orden de las 4 etiquetas se confirmó
   programáticamente (no solo a ojo), sin desbordes en 390px ni 1200px.
+- **Vender: número de factura + cliente con buscador, y BUG real corregido de paso (v48.36):** el
+  dueño confirmó que quería el mismo patrón de arriba (No. Factura + Cliente) también en Vender.
+  `renderVender()` ganó una card nueva arriba del catálogo con "No. Factura" (preview de solo
+  lectura, `proxNumeroFacturaCorto(false)`) y "Cliente" — este último REUSA literalmente los
+  mismos ids/funciones de Factura (`facCliBtn`/`facCliDrop`/`facCliTxt`,
+  `nxFacCliToggle`/`pintarFacCliDrop`/`nxFacCliPick`) en vez de duplicar el componente: es seguro
+  porque Vender y Factura son pestañas mutuamente excluyentes (nunca están las dos en el DOM a la
+  vez) y además YA COMPARTEN el mismo `_cart` (`nxPosTab` solo separa el carrito de Prefactura,
+  Vender/Factura comparten uno solo) — compartir también `_factCli` es coherente con esa
+  arquitectura ya existente, no una improvisación. **Bug real encontrado al construir esto:**
+  `nxPosAdd` (el que de verdad agrega productos en Vender, vía la ventanilla `nxProdPicker`)
+  usaba `Number(p.precio||0)` — el precio de lista crudo — en vez de `precioCli(p)`, así que
+  Vender SIEMPRE cobraba precio normal sin importar el cliente elegido (solo Factura, con
+  `nxFacAdd`, respetaba el nivel/precio por mayor). Corregido: `nxPosAdd` ahora usa `precioCli(p)`,
+  y `gridHTML()` (la lista del catálogo) también muestra `precioCli(p)` en vez de `p.precio` para
+  que el precio en pantalla ya sea el correcto antes de agregar. `nxFacSetCli` (se dispara al
+  elegir cliente) ahora también llama a `pintarCarrito()` y repinta `#posGrid` — de forma segura,
+  cada llamada se sale sola si su contenedor no existe en la pantalla actual. Verificado con el
+  código real cargado en un navegador con 2 clientes de prueba (uno nivel normal, uno "por mayor"):
+  elegir el cliente por mayor cambia el precio del catálogo Y del carrito al instante (de RD$45,000
+  a RD$42,000 en la prueba), sin desbordes en 390px ni escritorio.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
