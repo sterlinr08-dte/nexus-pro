@@ -1254,6 +1254,27 @@ todo de golpe (así lo prefiere siempre el dueño).
      campos correctos, Guardar hace el PATCH correcto tanto a `pos_productos` como a
      `pos_producto_niveles` del nivel que estaba seleccionado al momento de guardar, la tabla de
      niveles resalta el nivel actual, y se ve completo sin desbordes en 390px/1280px.
+- **Fase 2, continuación (v48.31) — Vender: carrito con el look nuevo:** `pintarCarrito()`
+  (panel `#posCartWrap`, a la derecha del catálogo de Vender) restilado al mismo lenguaje visual
+  `.nxPf` que ya tenía el catálogo en lista — mismo patrón quirúrgico: los ids (`posCartWrap`) y
+  TODOS los `onclick` (`nxPosQty`, `nxPosDel`, `nxPosVaciar`, `nxPosCobrar`) quedaron intactos,
+  solo cambió el HTML/CSS interno. Clases CSS nuevas en `nxPfEnsureCSS()`: `.cartcard`/`.carthd`/
+  `.cartlist`/`.cartitem`/`.citthumb`/`.citqty`/`.cittotal`/`.citdel`/`.carttotals`/`.cartrow`/
+  `.cartpaytot`/`.cartcobrar`. El botón Cobrar reusa la clase `.ab.g1` (verde, la misma de las
+  barras de acción del formulario de producto) en vez de un botón aparte. No hizo falta envolver
+  el panel en otro `.nxPf` — `#posCartWrap` ya vive dentro del `<div class="nxPf nxPosGridWrap">`
+  que `renderVender()` ya abría, así que las variables de color/fuente ya le llegaban heredadas.
+  Verificado con el código real de `pintarCarrito`/`totales`/`gridHTML`/`renderVender` extraído tal
+  cual (con stubs solo para helpers de dinero de línea que no hacían falta probar aquí,
+  `lineBase`/`lineDescMonto`/`lineImporte`) y cargado en un navegador: los botones −/+ ajustan la
+  cantidad y el total de la línea en vivo, sin desbordes en 390px ni escritorio.
+- **PENDIENTE real (Fase 2 aún no cerrada):** la tabla de artículos y el resumen/modal de pago de
+  Factura (`pintarFactura`, clases `nx-inv-*`) siguen con su propio lenguaje visual — de un
+  rediseño premium ANTERIOR (Stitch v40.2-40.4 + mockup BAYOL CELL, ya aprobado por el dueño en su
+  momento), no el `.nxPf`/Plus Jakarta Sans de NEXUS PRO X 2026. Ya tiene precio/cantidad/descuento
+  editables por línea (no hay que construirlos, ya existen) — lo que falta, si el dueño lo pide, es
+  solo re-pintar esas clases al lenguaje visual nuevo, mismo patrón quirúrgico de siempre. Fase 3
+  (sidebar del resto de módulos) sigue sin empezar.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

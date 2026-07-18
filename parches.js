@@ -15480,22 +15480,24 @@
 
   function pintarCarrito() {
     const wrap = document.getElementById('posCartWrap'); if (!wrap) return;
+    nxPfEnsureCSS();
     const t = totales();
-    const filas = _cart.length ? _cart.map((it, i) => `<div class="nxPosCartIt">
-        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.nombre)}</div><div style="font-size:10.5px;color:#475569">${fmt(it.precio)} c/u</div></div>
-        <div class="nxPosQty"><button type="button" onclick="window.nxPosQty(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" onclick="window.nxPosQty(${i},1)">+</button></div>
-        <div style="width:74px;text-align:right;font-weight:800;font-size:12px;color:#0f172a">${fmt(it.precio * it.cantidad)}</div>
-        <button type="button" class="nxPosX" onclick="window.nxPosDel(${i})"><i class="ti ti-x"></i></button>
-      </div>`).join('') : '<div style="color:#475569;font-size:12px;padding:18px;text-align:center">Carrito vacío.<br>Toca un producto para agregarlo.</div>';
-    wrap.innerHTML = `<div class="nxPosCart">
-        <div class="nxPosCartHd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span>${_cart.length ? `<button type="button" class="btn bsm bghost" onclick="window.nxPosVaciar()" title="Vaciar"><i class="ti ti-trash" style="color:#dc2626"></i></button>` : ''}</div>
-        <div class="nxPosCartList">${filas}</div>
-        <div class="nxPosTot">
-          <div class="nxPosTotR"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
-          <div class="nxPosTotR"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
-          <div class="nxPosTotPay"><span>Total a pagar</span><b>${fmt(t.total)}</b></div>
+    const filas = _cart.length ? _cart.map((it, i) => `<div class="cartitem">
+        <div class="citthumb"><i class="ti ti-shopping-bag"></i></div>
+        <div class="citinfo"><div class="citnom">${esc(it.nombre)}</div><div class="citsub">${fmt(it.precio)} c/u</div></div>
+        <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
+        <div class="cittotal">${fmt(it.precio * it.cantidad)}</div>
+        <button type="button" class="citdel" aria-label="Quitar ${esc(it.nombre)} del carrito" onclick="window.nxPosDel(${i})"><i class="ti ti-x"></i></button>
+      </div>`).join('') : '<div class="cartempty"><i class="ti ti-shopping-cart"></i>Carrito vacío.<br>Toca un producto para agregarlo.</div>';
+    wrap.innerHTML = `<div class="cartcard">
+        <div class="carthd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span>${_cart.length ? `<button type="button" class="cartclear" onclick="window.nxPosVaciar()" title="Vaciar" aria-label="Vaciar carrito"><i class="ti ti-trash"></i></button>` : ''}</div>
+        <div class="cartlist">${filas}</div>
+        <div class="carttotals">
+          <div class="cartrow"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
+          <div class="cartrow"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
+          <div class="cartpaytot"><span>Total a pagar</span><b>${fmt(t.total)}</b></div>
         </div>
-        <button class="btn bc1 nxPosCobrar" type="button" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPosCobrar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
+        <button class="ab g1 cartcobrar" type="button" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPosCobrar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
       </div>`;
   }
 
@@ -16922,6 +16924,30 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .pf2chiprow{display:flex;gap:6px;flex-wrap:wrap}
 .nxPf .pf2chip{padding:7px 12px;border-radius:999px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
 .nxPf .pf2chip.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
+.nxPf .cartcard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;box-shadow:var(--pf-shadow);padding:14px}
+.nxPf .carthd{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;font-weight:800;color:var(--pf-txt);margin-bottom:10px}
+.nxPf .carthd i{color:var(--pf-blue);margin-right:5px}
+.nxPf .cartclear{width:30px;height:30px;border-radius:9px;border:1.5px solid var(--pf-red-b);background:var(--pf-red-l);color:var(--pf-red);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.nxPf .cartlist{max-height:38vh;overflow-y:auto;display:flex;flex-direction:column}
+.nxPf .cartempty{text-align:center;padding:24px 10px;color:var(--pf-txt3);font-size:12px}
+.nxPf .cartempty i{font-size:22px;display:block;margin-bottom:6px;color:var(--pf-line)}
+.nxPf .cartitem{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--pf-line)}
+.nxPf .cartitem:last-child{border-bottom:0}
+.nxPf .citthumb{width:32px;height:32px;border-radius:9px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+.nxPf .citinfo{flex:1;min-width:0}
+.nxPf .citnom{font-size:12px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxPf .citsub{font-size:10px;color:var(--pf-txt3);margin-top:1px}
+.nxPf .citqty{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.nxPf .citqty button{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--pf-line);background:var(--pf-bg);color:var(--pf-txt2);font-size:14px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.nxPf .citqty span{min-width:16px;text-align:center;font-size:12px;font-weight:800;color:var(--pf-txt)}
+.nxPf .cittotal{width:64px;text-align:right;font-weight:800;font-size:11.5px;color:var(--pf-txt);flex:0 0 auto}
+.nxPf .citdel{width:24px;height:24px;border-radius:7px;border:0;background:transparent;color:var(--pf-txt3);cursor:pointer;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.nxPf .citdel:hover{color:var(--pf-red)}
+.nxPf .carttotals{border-top:1px dashed var(--pf-line);padding-top:8px;margin-top:6px}
+.nxPf .cartrow{display:flex;justify-content:space-between;font-size:11.5px;color:var(--pf-txt2);padding:3px 0}
+.nxPf .cartpaytot{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;color:var(--pf-txt);padding:8px 0 2px;border-top:1px solid var(--pf-line);margin-top:4px}
+.nxPf .cartpaytot b{font-size:17px;color:var(--pf-blue-d)}
+.nxPf .cartcobrar{width:100%;margin-top:10px;height:46px;font-size:13px}
 `;
     document.head.appendChild(st);
   }
