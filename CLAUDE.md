@@ -1555,6 +1555,38 @@ crédito, Prefacturas, Apartados, Avisos — los 8 módulos de "bajo riesgo" del
 sin empezar: tanda 2 (Reparaciones, Kardex, Historial de ventas, Reportes, Recursos Humanos) y tanda 3
 (Compras, Caja, Contabilidad, Ajustes) — ver plan completo más arriba en "Fase 4".
 
+#### Skill nueva `webapp-testing` + auditoría de accesibilidad de la tanda 1 (19-jul-2026, v48.50)
+Se instaló una 3ra skill de diseño/calidad en el repo (mismo patrón `.agents/skills/`+enlace en
+`.claude/skills/` que `frontend-design`/`web-design-guidelines`): **`webapp-testing`**, oficial de
+`anthropics/skills` (clonada del repo público, copiada tal cual — no vía `npx skills add`, para no
+depender de ejecutar paquetes de terceros). Es el mismo método que ya se usaba a mano toda la sesión
+(extraer código real, cargarlo en un navegador con Playwright, capturar pantalla, revisar consola) pero
+empaquetado con scripts de ayuda (`with_server.py` para manejar el ciclo de vida de un servidor local).
+**Se evaluaron también "Agent Browser" y "Find Skills"** (de una captura que mandó el dueño) — se
+descartaron: no son del repo oficial de Anthropic (que solo tiene `webapp-testing`, `mcp-builder`,
+`frontend-design`, etc.), su origen exacto no se pudo confirmar, y "Agent Browser" hace lo mismo que
+`webapp-testing` (ya con fuente confirmada). "MCP Builder" (sí oficial) se descartó por no aplicar —
+NEXUS PRO no expone un servidor MCP. Las "reglas de Vercel" que mandó ya estaban instaladas
+(`web-design-guidelines`).
+Con `web-design-guidelines` se auditó el código real de los 8 módulos recién rediseñados de la tanda 1
+(mismo patrón que la auditoría de Login/Factura de la v48.14) — 5 hallazgos reales, todos corregidos:
+(1) las filas clicables de tabla en Entidades/Clientes/Notas de crédito/Cotizaciones/Prefacturas
+(`<tr data-row onclick=...>`, patrón nuevo de esta sesión) no eran alcanzables ni operables por teclado
+— se les agregó `tabindex="0" role="button"` + `onkeydown` (Enter/Espacio dispara la misma función que
+el clic); (2) esas mismas filas no tenían un aro de foco visible al llegar por Tab — CSS nuevo
+`.nxPf [data-row]:focus-visible,.nxPf .chip:focus-visible,.nxPf .ab:focus-visible,.nxPf
+.afinchk:focus-visible,.nxPf .oppet:focus-visible{outline:2px solid var(--pf-blue);outline-offset:2px}`
+(cubre de una vez los 3 tipos de fila-clicable/chip/botón/select nuevos de toda la tanda 1, no solo uno);
+(3) el botón de guardar de la tabla de Niveles de precio (Fase 1, `nxPfNivelGuardar`) tenía `title` pero
+no `aria-label`; (4) los campos Teléfono de Entidades (`entTel`) y CRM (`crCli`... `crTel`) no tenían
+`inputmode="tel"` (inconsistente con `apTel` de Apartados, que sí lo tenía) — no abrían el teclado
+numérico en iPhone; (5) los campos Email de esos mismos formularios (`entEmail`/`crEmail`) no tenían
+`type="email"`. Verificado que `.no-upper` (evita el mayúsculas-forzado global) sigue aplicando igual
+después de agregar `type="email"` (confirmado por `getComputedStyle().textTransform`, no se rompió).
+Cero cambios visuales ni de lógica de negocio — solo accesibilidad. Verificado con el código real
+(`renderEntidades`/`abrirEntidad`) extraído y cargado en un navegador: la fila responde a Tab+Enter,
+el aro de foco se ve (`outline:solid rgb(37,99,235)`), los campos tienen el tipo/inputmode correcto.
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin

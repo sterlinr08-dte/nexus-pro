@@ -16903,6 +16903,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .ltbl td{padding:9px 8px;border-bottom:1px solid var(--pf-line);vertical-align:middle}
 .nxPf .ltbl tr[data-row]{cursor:pointer}
 .nxPf .ltbl tr[data-row]:hover td{background:var(--pf-blue-l)}
+.nxPf [data-row]:focus-visible,.nxPf .chip:focus-visible,.nxPf .ab:focus-visible,.nxPf .afinchk:focus-visible,.nxPf .oppet:focus-visible{outline:2px solid var(--pf-blue);outline-offset:2px}
 .nxPf .rolebadge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:var(--pf-blue-l);color:var(--pf-blue-d);font-size:9.5px;font-weight:800;margin:1px 3px 1px 0}
 .nxPf .emptyrow{text-align:center;color:var(--pf-txt3);padding:26px;font-size:12px}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
@@ -17036,7 +17037,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <td><input value="${r.precio_contado != null ? Math.round(r.precio_contado) : ''}" id="nxPfNivC_${n.id}" placeholder="0"></td>
         <td><input value="${r.precio_credito != null ? Math.round(r.precio_credito) : ''}" id="nxPfNivR_${n.id}" placeholder="0"></td>
         <td><input value="${r.precio_minimo != null ? Math.round(r.precio_minimo) : ''}" id="nxPfNivM_${n.id}" placeholder="0"></td>
-        <td><button class="nxPf ab g3" style="height:30px;width:30px;padding:0" onclick="window.nxPfNivelGuardar('${prodId}','${n.id}')" title="Guardar precio de este nivel"><i class="ti ti-device-floppy"></i></button></td></tr>`;
+        <td><button class="nxPf ab g3" style="height:30px;width:30px;padding:0" onclick="window.nxPfNivelGuardar('${prodId}','${n.id}')" title="Guardar precio de este nivel" aria-label="Guardar precio de este nivel"><i class="ti ti-device-floppy"></i></button></td></tr>`;
     }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--pf-txt3);padding:14px">${q ? 'Sin niveles que coincidan.' : 'Sin niveles todavía — crea el primero abajo.'}</td></tr>`;
   };
   window.nxPfNivelGuardar = async function (prodId, nivelId) {
@@ -17838,7 +17839,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     return lista.map(d => {
       const vt = (_ventas || []).find(v => String(v.id) === String(d.venta_id));
       const fact = vt ? (vt.numero_factura || '#' + vt.numero) : '';
-      return `<tr data-row onclick="window.nxNCImprimir('${d.id}')">
+      return `<tr data-row tabindex="0" role="button" onclick="window.nxNCImprimir('${d.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxNCImprimir('${d.id}')}">
         <td style="font-weight:800;white-space:nowrap">${esc(d.numero || '')}</td>
         <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(d.fecha || d.created_at)}</td>
         <td>${esc(d.cliente_nombre || 'Consumidor final')}${fact ? `<span style="display:block;font-size:9.5px;color:var(--pf-txt3)">fact. ${esc(fact)}</span>` : ''}</td>
@@ -17910,7 +17911,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const fil = c => _entFiltro === 'todas' || (_entFiltro === 'clientes' && c.es_cliente) || (_entFiltro === 'proveedores' && c.es_proveedor) || (_entFiltro === 'empleados' && c.es_empleado) || (_entFiltro === 'bancos' && c.es_banco);
     const lista = (_clientes || []).filter(fil);
     const chip = (k, lbl) => `<button type="button" class="chip${_entFiltro === k ? ' on' : ''}" onclick="window.nxEntFiltro('${k}')">${lbl}</button>`;
-    const filas = lista.length ? lista.map(c => `<tr data-row onclick="window.nxEntEdit('${c.id}')">
+    const filas = lista.length ? lista.map(c => `<tr data-row tabindex="0" role="button" onclick="window.nxEntEdit('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxEntEdit('${c.id}')}">
         <td style="font-weight:800;color:var(--pf-blue-d)">${esc(c.codigo || '—')}</td>
         <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
         <td style="text-align:center;font-size:10.5px;color:var(--pf-txt3)">${c.tipo_persona === 'juridica' ? 'Jurídico' : 'Físico'}</td>
@@ -17954,10 +17955,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             <div class="fld" style="margin-bottom:10px"><label id="entNomLbl">${e.tipo_persona === 'juridica' ? 'Razón social *' : 'Nombre *'}</label><div class="inw"><input id="entNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre o razón social"></div></div>
             <div class="g2" style="margin-bottom:10px">
               <div class="fld"><label id="entIdLbl">${e.tipo_persona === 'juridica' ? 'RNC' : 'Cédula / RNC'}</label><div class="inw"><input id="entCed" class="no-upper" value="${esc(e.cedula || '')}" placeholder="000-0000000-0"></div></div>
-              <div class="fld"><label>Teléfono</label><div class="inw"><input id="entTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div></div>
+              <div class="fld"><label>Teléfono</label><div class="inw"><input id="entTel" class="no-upper" inputmode="tel" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div></div>
             </div>
             <div class="g2" style="margin-bottom:10px">
-              <div class="fld"><label>Email</label><div class="inw"><input id="entEmail" class="no-upper" value="${esc(e.email || '')}" placeholder="Opcional"></div></div>
+              <div class="fld"><label>Email</label><div class="inw"><input id="entEmail" class="no-upper" type="email" value="${esc(e.email || '')}" placeholder="Opcional"></div></div>
               <div class="fld"><label>Dirección</label><div class="inw"><input id="entDir" class="no-upper" value="${esc(e.direccion || '')}" placeholder="Opcional"></div></div>
             </div>
             <div class="g2">
@@ -18049,7 +18050,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const conDeuda = lista.filter(c => saldoCli(c) > 0).length;
     const filas = lista.length ? lista.map(c => {
       const sal = saldoCli(c);
-      return `<tr data-row onclick="window.nxPosCliVer('${c.id}')">
+      return `<tr data-row tabindex="0" role="button" onclick="window.nxPosCliVer('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPosCliVer('${c.id}')}">
         <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
         <td style="text-align:right;font-weight:800;color:${sal > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(sal)}</td>
         <td style="text-align:right"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta" aria-label="Ver cuenta"><i class="ti ti-eye"></i></button></td>
@@ -19216,7 +19217,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     nxPfEnsureCSS();
     const filas = _cotizaciones.length ? _cotizaciones.map(c => {
       const est = cotVigente(c);
-      return `<tr data-row onclick="window.nxCotEditar('${c.id}')">
+      return `<tr data-row tabindex="0" role="button" onclick="window.nxCotEditar('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxCotEditar('${c.id}')}">
         <td style="font-weight:800;font-family:var(--mono,monospace);color:var(--pf-blue-d)">${esc(c.numero || '')}</td>
         <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:var(--pf-txt3)">${fechaDMY(c.fecha)}</div></td>
         <td style="text-align:center">${cotEstadoBadge(est)}</td>
@@ -19738,9 +19739,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             <h4><span class="bdg blue"><i class="ti ti-address-book"></i></span> Contacto</h4>
             <div class="g2" style="margin-bottom:10px">
               <div class="fld"><label>Contacto</label><div class="inw"><input id="crCont" class="no-upper" value="${esc(e.contacto || '')}" placeholder="Nombre"></div></div>
-              <div class="fld"><label>Teléfono</label><div class="inw"><input id="crTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-..."></div></div>
+              <div class="fld"><label>Teléfono</label><div class="inw"><input id="crTel" class="no-upper" inputmode="tel" value="${esc(e.telefono || '')}" placeholder="809-..."></div></div>
             </div>
-            <div class="fld"><label>Email</label><div class="inw"><input id="crEmail" class="no-upper" value="${esc(e.email || '')}" placeholder="Opcional"></div></div>
+            <div class="fld"><label>Email</label><div class="inw"><input id="crEmail" class="no-upper" type="email" value="${esc(e.email || '')}" placeholder="Opcional"></div></div>
           </div>
           <div class="card">
             <h4><span class="bdg green"><i class="ti ti-calendar-stats"></i></span> Seguimiento</h4>
@@ -20939,7 +20940,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const acc = est === 'abierta'
         ? `<button class="ab g1" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPrefFacturar('${p.id}')" title="Facturar" aria-label="Facturar"><i class="ti ti-cash"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver" aria-label="Ver"><i class="ti ti-eye"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPrefAnular('${p.id}')" title="Anular" aria-label="Anular"><i class="ti ti-x" style="color:var(--pf-red)"></i></button>`
         : `<button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver" aria-label="Ver"><i class="ti ti-eye"></i></button>`;
-      return `<tr data-row style="${est === 'anulada' ? 'opacity:.55' : ''}" onclick="window.nxPHVer('${p.id}')">
+      return `<tr data-row tabindex="0" role="button" style="${est === 'anulada' ? 'opacity:.55' : ''}" onclick="window.nxPHVer('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPHVer('${p.id}')}">
         <td style="font-weight:800;white-space:nowrap">${esc(p.numero || '')}</td>
         <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(p.fecha || p.created_at)}</td>
         <td>${esc(p.cliente_nombre || 'Consumidor final')}<span style="display:block;font-size:9.5px;color:var(--pf-txt3)">${nArt} art.${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</span></td>
