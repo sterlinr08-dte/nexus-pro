@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.55** (ver `index.html` y `version.json`).
+> Versión actual: **48.56** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1827,6 +1827,27 @@ de tiempo y el Panel lateral deben ser **reales y completos**, no decorativos.
     dueño la pide. Verificado con el código real cargado en un navegador: Tab llega a la fila con el
     `aria-label` correcto, Enter dispara `verCliente` igual que el clic, sin desbordes ni errores de
     JS después del cambio.
+  - **BUG REAL encontrado y arreglado de raíz (v48.56) — número cortado en el celular:** el dueño mandó
+    una captura real de su iPhone (26 facturas, RD$ 114,500 por cobrar) mostrando el recuadro "Por
+    cobrar" con el monto cortado a la mitad ("RD$ 114,50"), algo que los datos de prueba de la sesión
+    (montos más cortos) no habían revelado. **Causa de raíz:** el arreglo `min-width:0` de v48.54 solo
+    se aplicó a `.sf-kpi` (la tarjeta, para que el GRID no la forzara ancha) pero NO al `<div>` interno
+    sin clase que envuelve `.lb`/`.v`/`.sub` — como `.sf-kpi` es `display:flex`, ese div interno seguía
+    con `min-width:auto` (su comportamiento por defecto), así que el número largo lo empujaba más ancho
+    que la tarjeta ya encogida; al no tener la tarjeta `overflow:hidden`, el texto se desbordaba visual
+    pero quedaba TAPADO por la tarjeta vecina (pintada después, con fondo opaco) — parecía un corte
+    limpio pero era una tarjeta pisando a la otra. Arreglado con `.nxSf .sf-kpi>*{min-width:0}` (todos
+    los hijos directos, no solo la tarjeta) + separando el trato: `.lb`/`.sub` (etiquetas) usan
+    `text-overflow:ellipsis` de verdad (con el `white-space:nowrap` que le faltaba a v48.54 para que la
+    elipsis funcionara), pero `.v` (el MONTO) usa `overflow-wrap:break-word` — nunca se trunca un monto
+    de dinero, si no cabe en una línea pasa a una segunda en vez de esconder dígitos. **De paso**,
+    aprovechando que ya se estaba tocando el CSS del `.sf-tbl` responsive, se hicieron las tarjetas de
+    factura/pago en el celular más compactas: los pares ARS/Factura, Fecha/Total y Balance/Estado ahora
+    van 2 por fila (`flex:1 1 45%` en cada `<td>`, Cliente y Acciones siguen a lo ancho completo con
+    `flex:1 1 100%`) — con 26 facturas como las del dueño, la mitad de scroll para verlas todas.
+    Verificado reproduciendo los NÚMEROS REALES de la captura (26 facturas, ~RD$114,009 de prueba, un
+    monto de 6 cifras) en el harness de Playwright — antes del arreglo se repetía el corte, después el
+    monto se ve completo (envuelto en 2 líneas) y sin desbordes ni en el celular ni en escritorio.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

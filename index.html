@@ -634,7 +634,9 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf .sf-btn.ok{background:var(--sf-ok-l);border-color:transparent;color:var(--sf-ok-d)}
 .nxSf .sf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
 .nxSf .sf-kpi{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:14px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start;min-width:0}
-.nxSf .sf-kpi .lb,.nxSf .sf-kpi .v,.nxSf .sf-kpi .sub{overflow:hidden;text-overflow:ellipsis}
+.nxSf .sf-kpi>*{min-width:0}
+.nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxSf .sf-kpi .v{overflow-wrap:break-word;word-break:break-word}
 .nxSf .sf-kpi .ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .nxSf .sf-kpi.blue .ic{background:var(--sf-primary-l);color:var(--sf-primary-d)}
 .nxSf .sf-kpi.warn .ic{background:var(--sf-warn-l);color:var(--sf-warn-d)}
@@ -681,9 +683,10 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf .cli-cell:focus-visible,.nxSf .sf-btn:focus-visible,.nxSf .btn:focus-visible{outline:2px solid var(--sf-primary);outline-offset:-2px}
 @media(max-width:720px){
   .nxSf table.sf-tbl thead{display:none}
-  .nxSf table.sf-tbl,.nxSf table.sf-tbl tbody,.nxSf table.sf-tbl tr,.nxSf table.sf-tbl td{display:block;width:100%;min-width:0}
-  .nxSf table.sf-tbl tr{border:1px solid var(--sf-line);border-radius:12px;margin-bottom:9px;padding:8px 10px;background:var(--sf-card)}
-  .nxSf table.sf-tbl td{border-bottom:none;padding:4px 0;text-align:left!important}
+  .nxSf table.sf-tbl,.nxSf table.sf-tbl tbody{display:block;width:100%;min-width:0}
+  .nxSf table.sf-tbl tr{display:flex;flex-wrap:wrap;column-gap:10px;border:1px solid var(--sf-line);border-radius:12px;margin-bottom:9px;padding:8px 10px;background:var(--sf-card);width:100%;min-width:0}
+  .nxSf table.sf-tbl td{display:block;min-width:0;flex:1 1 45%;border-bottom:none;padding:4px 0;text-align:left!important}
+  .nxSf table.sf-tbl td.cli-cell,.nxSf table.sf-tbl td[data-lb="Acciones"]{flex:1 1 100%}
   .nxSf table.sf-tbl td[data-lb]::before{content:attr(data-lb);display:block;font-size:8.5px;font-weight:800;color:var(--sf-tx3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px}
   .nxSf table.sf-tbl td.sf-tbl-hide-mb{display:none}
 }
@@ -3530,7 +3533,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.55';
+const APP_VERSION='48.56';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
