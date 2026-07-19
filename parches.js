@@ -17252,8 +17252,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             <div class="nxPfProdPanel" data-tab="compras">
               <div class="card">
                 <h4><span class="bdg orange"><i class="ti ti-truck-delivery"></i></span> Compras</h4>
-                <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
                 ${!_proveedores.length ? `<div class="soon"><i class="ti ti-info-circle"></i> Aún no tienes proveedores creados — agrégalos en la pestaña Compras del POS.</div>` : ''}
+                <div id="nxPfProvEntregaBox" style="margin-top:8px"></div>
+                ${p ? `<div style="margin-top:10px"><label style="display:block;font-size:11px;font-weight:700;color:var(--pf-txt3);margin-bottom:6px">Último costo de compra</label><div id="nxPfUltCosto"><div class="soon"><i class="ti ti-loader-2"></i> Consultando…</div></div></div>` : ''}
               </div>
             </div>
 
@@ -17262,7 +17264,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
                 <h4><span class="bdg green"><i class="ti ti-shopping-cart"></i></span> Reglas de venta</h4>
                 <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
                   <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Comisión de venta (%)</label><input id="ppComPct" inputmode="decimal" value="${e.comision_pct != null ? Number(e.comision_pct) : ''}" placeholder="usa la del vendedor"></div></div>
                 </div>
+                <div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> Si la dejas en blanco, se usa la comisión del vendedor (Ajustes → Vendedores). Si la pones aquí, esta comisión manda para este artículo en el reporte de Comisiones.</div>
               </div>
               <div class="card" style="margin-bottom:12px">
                 <div class="fld"><label>🧩 Combo: sale JUNTO con este artículo (se factura en RD$ 0 y descuenta stock)</label>
@@ -17341,11 +17345,32 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     ['ppNom', 'ppPre', 'ppPreMay', 'ppNivEsp', 'ppNivCont', 'ppNivCred'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfResumen); });
     ['ppPre', 'ppCos'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfMargenCalc); });
     nxPfMargenCalc();
+    window.nxPfProvEntrega();
     if (p) {
       if (_niveles.length) window.nxPfNivelesTabla(p.id);
       else nxNivelesInit().then(() => { if (_niveles.length && document.getElementById('nxPosProd')) abrirProd(p); });
+      window.nxPfUltimoCosto(p.id);
     }
   }
+  window.nxPfProvEntrega = function () {
+    const box = document.getElementById('nxPfProvEntregaBox'); if (!box) return;
+    const prov = _proveedores.find(pr => String(pr.id) === String(val('ppProv')));
+    box.innerHTML = (prov && prov.tiempo_entrega_dias != null) ? `<div class="soon"><i class="ti ti-clock"></i> Tiempo de entrega de ${esc(prov.nombre)}: <b>${Number(prov.tiempo_entrega_dias)} día(s)</b></div>` : '';
+  };
+  window.nxPfUltimoCosto = async function (prodId) {
+    const box = document.getElementById('nxPfUltCosto'); if (!box) return;
+    let items = [];
+    try { items = await getAPI().get('pos_compra_items', 'select=costo,cantidad,compra_id&producto_id=eq.' + prodId + '&order=id.desc&limit=20') || []; } catch (e) {}
+    if (!document.getElementById('nxPfUltCosto')) return;
+    if (!items.length) { box.innerHTML = '<div class="soon"><i class="ti ti-info-circle"></i> Sin compras registradas de este artículo todavía.</div>'; return; }
+    let compras = [];
+    try { compras = await getAPI().get('pos_compras', 'select=id,fecha,numero,proveedor_nombre&id=in.(' + items.map(it => it.compra_id).join(',') + ')') || []; } catch (e) {}
+    const cmap = {}; compras.forEach(c => { cmap[c.id] = c; });
+    items.sort((a, b) => { const fa = (cmap[a.compra_id] && cmap[a.compra_id].fecha) || ''; const fb = (cmap[b.compra_id] && cmap[b.compra_id].fecha) || ''; return fb < fa ? -1 : (fb > fa ? 1 : 0); });
+    const ult = items[0]; const c = cmap[ult.compra_id];
+    if (!document.getElementById('nxPfUltCosto')) return;
+    box.innerHTML = `<div class="margbox"><div class="ic"><i class="ti ti-receipt-2"></i></div><div><div class="lb">Costo de la última compra</div><div class="v">${fmt(ult.costo)}</div></div></div>${c ? `<div style="font-size:10.5px;color:var(--pf-txt3);margin-top:4px">Compra No. ${esc(c.numero || '')} · ${fechaDMY(c.fecha)}${c.proveedor_nombre ? ' · ' + esc(c.proveedor_nombre) : ''}</div>` : ''}`;
+  };
   // Pestañas del formulario de artículo (NEXUS PRO 2.5): puramente visual — cada campo
   // conserva su id de siempre, así que nxPfLeerProd/nxPfResumen no necesitan saber en qué
   // pestaña vive cada input.
@@ -17406,7 +17431,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       combo_items: _comboTmp,
       serial: val('ppSer') === '1',
       no_descuento: val('ppNoDesc') === '1',
-      proveedor_id: val('ppProv') || null
+      proveedor_id: val('ppProv') || null,
+      comision_pct: val('ppComPct') !== '' ? Number(val('ppComPct')) : null
     };
   }
   async function nxPfGuardarNivelSiCorresponde(prodId) {
@@ -18564,13 +18590,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <div class="fr-row"><div class="fr"><label>RNC / Cédula</label><input id="pvRnc" class="no-upper" value="${esc(e.rnc || '')}" placeholder="0-00-00000-0"></div><div class="fr"><label>Teléfono</label><input id="pvTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div></div>
           <div class="fr"><label>Contacto</label><input id="pvCon" class="no-upper" value="${esc(e.contacto || '')}" placeholder="Persona de contacto"></div>
           <div class="fr"><label>Dirección</label><input id="pvDir" class="no-upper" value="${esc(e.direccion || '')}" placeholder="Opcional"></div>
+          <div class="fr"><label>Tiempo de entrega (días)</label><input id="pvEntrega" inputmode="numeric" value="${e.tiempo_entrega_dias != null ? Number(e.tiempo_entrega_dias) : ''}" placeholder="Ej: 5"></div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxPosProvForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxPosGuardarProv('${p ? p.id : ''}','${fromCompra ? '1' : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
       </div>`;
     document.body.appendChild(ov);
   }
   window.nxPosGuardarProv = async function (id, fromCompra) {
-    const body = { nombre: (val('pvNom') || '').trim(), rnc: (val('pvRnc') || '').trim() || null, telefono: (val('pvTel') || '').trim() || null, contacto: (val('pvCon') || '').trim() || null, direccion: (val('pvDir') || '').trim() || null };
+    const body = { nombre: (val('pvNom') || '').trim(), rnc: (val('pvRnc') || '').trim() || null, telefono: (val('pvTel') || '').trim() || null, contacto: (val('pvCon') || '').trim() || null, direccion: (val('pvDir') || '').trim() || null, tiempo_entrega_dias: parseInt(val('pvEntrega'), 10) || null };
     if (!body.nombre) { toast('err', 'Pon el nombre del proveedor'); return; }
     try {
       let nuevo = null;
@@ -19980,11 +20007,29 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxRepComisiones = function () {
     const list = ventasRepRango();
     const acc = {};
-    _vendedores.forEach(v => { acc[v.id] = { nombre: v.nombre, pct: Number(v.comision_pct || 0), ventas: 0, monto: 0 }; });
-    list.forEach(v => { if (v.vendedor_id && acc[v.vendedor_id]) { acc[v.vendedor_id].ventas += 1; acc[v.vendedor_id].monto += Number(v.total || 0); } });
+    _vendedores.forEach(v => { acc[v.id] = { nombre: v.nombre, pct: Number(v.comision_pct || 0), ventas: 0, monto: 0, comision: 0 }; });
+    let huboEspecial = false;
+    list.forEach(v => {
+      if (!v.vendedor_id || !acc[v.vendedor_id]) return;
+      const a = acc[v.vendedor_id];
+      a.ventas += 1; a.monto += Number(v.total || 0);
+      const items = repItems(v);
+      if (items.length) {
+        items.forEach(it => {
+          const prod = _prods.find(x => String(x.id) === String(it.producto_id));
+          const especial = prod && prod.comision_pct != null && prod.comision_pct !== '';
+          const pct = especial ? Number(prod.comision_pct) : a.pct;
+          if (especial) huboEspecial = true;
+          const imp = Number(it.importe != null ? it.importe : (Number(it.precio || 0) * Number(it.cantidad || 0)));
+          a.comision += imp * pct / 100;
+        });
+      } else {
+        a.comision += Number(v.total || 0) * a.pct / 100;
+      }
+    });
     const e = empInfo();
     let tM = 0, tC = 0;
-    const filas = Object.values(acc).filter(o => o.ventas > 0).map(o => { const com = o.monto * o.pct / 100; tM += o.monto; tC += com; return `<tr><td>${esc(o.nombre)}</td><td class="r">${o.ventas}</td><td class="r">${fmt(o.monto)}</td><td class="r">${o.pct}%</td><td class="r">${fmt(com)}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">No hay ventas con vendedor asignado en el período.</td></tr>';
+    const filas = Object.values(acc).filter(o => o.ventas > 0).map(o => { tM += o.monto; tC += o.comision; return `<tr><td>${esc(o.nombre)}</td><td class="r">${o.ventas}</td><td class="r">${fmt(o.monto)}</td><td class="r">${o.pct}%</td><td class="r">${fmt(o.comision)}</td></tr>`; }).join('') || '<tr><td colspan="5" style="text-align:center;color:#777;padding:14px">No hay ventas con vendedor asignado en el período.</td></tr>';
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comisiones</title>
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:620px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:5px 6px;border-bottom:1px solid #eee}.r{text-align:right}.tot td{font-weight:800;border-top:1.5px solid #999}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
@@ -19993,7 +20038,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div class="line"></div>
         <div class="c"><b>REPORTE DE COMISIONES</b></div>
         <div class="c muted">Del ${fechaDMY(_repDesde)} al ${fechaDMY(_repHasta)}</div>
-        <table><thead><tr><th>Vendedor</th><th class="r">Ventas</th><th class="r">Monto</th><th class="r">%</th><th class="r">Comisión</th></tr></thead><tbody>${filas}<tr class="tot"><td>TOTALES</td><td class="r"></td><td class="r">${fmt(tM)}</td><td class="r"></td><td class="r">${fmt(tC)}</td></tr></tbody></table>
+        <table><thead><tr><th>Vendedor</th><th class="r">Ventas</th><th class="r">Monto</th><th class="r">% base</th><th class="r">Comisión</th></tr></thead><tbody>${filas}<tr class="tot"><td>TOTALES</td><td class="r"></td><td class="r">${fmt(tM)}</td><td class="r"></td><td class="r">${fmt(tC)}</td></tr></tbody></table>
+        ${huboEspecial ? '<div class="muted">* La comisión ya incluye artículos con una comisión especial propia (distinta al % base del vendedor), configurada en su ficha en Inventario → Ventas.</div>' : ''}
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };

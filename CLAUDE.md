@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.51** (ver `index.html` y `version.json`).
+> Versión actual: **48.52** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1653,6 +1653,50 @@ código, con arquitectura reusable y escalable.
   lotes/vencimiento (Inventario) — ninguno de estos se pidió explícitamente en la Fase 1, se
   agregarán cuando el dueño confirme cuáles quiere y en qué orden (mismo criterio de fases pequeñas
   y verificables de esta sesión, no todo de golpe).
+
+**FASE 2 — HECHA (19-jul-2026, v48.52).** El dueño pidió continuar con lo que quedó pendiente de la
+Fase 1. Se construyeron 2 de los 3 pendientes con efecto real (no decorativo); el tercero se
+deliberadamente diferido porque hacerlo "de verdad" tocaba el cálculo de dinero del carrito:
+- **Compras:** columna nueva `pos_proveedores.tiempo_entrega_dias` (migración
+  `pos_productos_comision_pct_y_proveedor_entrega`, junto con la de abajo) + campo nuevo en el
+  formulario de Proveedores (`abrirProv`/`nxPosGuardarProv`). Al elegir el proveedor preferido en la
+  pestaña Compras del artículo, `window.nxPfProvEntrega()` muestra su tiempo de entrega en vivo
+  (`onchange` del `<select id="ppProv">`). **Último costo de compra** (pieza nueva, sin columna
+  nueva): `window.nxPfUltimoCosto(prodId)` consulta `pos_compra_items` por `producto_id` (patrón ya
+  usado en el resto del sistema: "no depende del embed de PostgREST, carga y une en JS" — se trae
+  `pos_compra_items` y `pos_compras` por separado y se unen por `compra_id` en el navegador, porque
+  `pos_compra_items` no tiene su propia fecha), ordena por la fecha de la compra y muestra el costo +
+  número de compra + proveedor de la más reciente. Carga perezosa al abrir el artículo (solo si
+  `p` existe), igual que el Historial de la Fase 1.
+- **Ventas — comisión por artículo, con efecto real en el Reporte de Comisiones:** columna nueva
+  `pos_productos.comision_pct` (numeric, nullable). Campo "Comisión de venta (%)" en la pestaña
+  Ventas — si se deja en blanco, no cambia nada (sigue el comportamiento de siempre). **Se reescribió
+  `nxRepComisiones`** (antes calculaba la comisión sobre el TOTAL de cada venta, con el % fijo del
+  vendedor) para recorrer los `pos_venta_items` de cada venta (ya vienen cargados en `_repVentas` para
+  el cálculo de ganancia de Reportes, vía `repItems(v)` — no hizo falta ninguna consulta nueva) y usar,
+  por línea, la comisión especial del producto si la tiene o si no la del vendedor — así que agregar el
+  campo SÍ cambia el número que ve el dueño en el reporte, no es un campo de adorno. Columna del reporte
+  renombrada "% base" (ya no representa una sola tasa cuando hay artículos con comisión especial
+  mezclados) + nota al pie cuando aplica. Verificado con datos simulados (una venta con un artículo con
+  comisión especial 3.5% y otro sin ella, cae a la del vendedor 5%): el total calculado fue el correcto
+  a mano.
+- **Deliberadamente NO construido en esta fase — propina legal 10% (Impuestos):** agregar un simple
+  campo `propina`/checkbox en el producto sin sumarlo de verdad al cobro habría sido exactamente el
+  tipo de función fingida que este sistema evita en todas partes (ver NEXUS AI CONTENT, Cuotas,
+  Financiamiento) — un interruptor que no cambia ni un peso del total que paga el cliente. Para que sea
+  real hay que sumarlo al cálculo del carrito en Vender/Factura (junto al ITBIS), al ticket/factura
+  impresos y probablemente a los asientos contables — un cambio de mayor alcance sobre dinero en vivo,
+  que se hace en su propia ronda cuando el dueño lo confirme, no colado dentro de esta fase.
+- Verificado con el código real (`abrirProd`/`nxPfProvEntrega`/`nxPfUltimoCosto`/`nxPfLeerProd`/
+  `nxRepComisiones`) extraído tal cual y cargado en un navegador con datos simulados: el tiempo de
+  entrega cambia al cambiar de proveedor, el último costo trae el de la compra más reciente (no la
+  primera del arreglo — se probó a propósito con 2 compras en orden mezclado), `nxPfLeerProd()`
+  devuelve `comision_pct` correcto, y el Reporte de Comisiones (capturado abriendo la ventana real que
+  genera `window.open`) calculó bien la mezcla de comisión especial + comisión base. Sin desbordes en
+  390px ni escritorio. `node --check parches.js` limpio, `version.json` válido, los 3 `<script>` de
+  `index.html` pasan `new Function()`.
+- **Pendiente real para una fase futura:** propina 10% (requiere tocar Vender/Factura), lotes/
+  vencimiento (Inventario, no se pidió aún), impuestos adicionales más allá de ITBIS.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
