@@ -633,7 +633,8 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf .sf-btn.primary{background:var(--sf-primary);border-color:var(--sf-primary);color:#fff}
 .nxSf .sf-btn.ok{background:var(--sf-ok-l);border-color:transparent;color:var(--sf-ok-d)}
 .nxSf .sf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
-.nxSf .sf-kpi{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:14px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start}
+.nxSf .sf-kpi{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:14px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start;min-width:0}
+.nxSf .sf-kpi .lb,.nxSf .sf-kpi .v,.nxSf .sf-kpi .sub{overflow:hidden;text-overflow:ellipsis}
 .nxSf .sf-kpi .ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .nxSf .sf-kpi.blue .ic{background:var(--sf-primary-l);color:var(--sf-primary-d)}
 .nxSf .sf-kpi.warn .ic{background:var(--sf-warn-l);color:var(--sf-warn-d)}
@@ -664,6 +665,27 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf .sf-empty{text-align:center;color:var(--sf-tx3);padding:20px;font-size:11.5px}
 @media(max-width:900px){.nxSf .sf-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:720px){.nxSf .sf-kpis{grid-template-columns:repeat(2,1fr)}.nxSf .sf-qa{grid-template-columns:repeat(4,1fr)}}
+/* Listas (Clientes/Facturación) dentro de .nxSf: mismo tablero azul Enterprise, sin tocar la lógica de la tabla */
+.nxSf .tw table thead tr{background:var(--sf-primary-l)}
+.nxSf .tw table thead th{color:var(--sf-primary-d);font-weight:800;letter-spacing:.3px}
+.nxSf .tw table tbody tr:hover{background:var(--sf-bg)}
+.nxSf .tw{border-color:var(--sf-line)}
+/* Tabla de Facturación: colapsa a bloques tipo tarjeta en pantallas angostas (mismo <table>, sin duplicar lógica) */
+.nxSf table.sf-tbl{width:100%;border-collapse:collapse}
+.nxSf table.sf-tbl th,.nxSf table.sf-tbl td{padding:10px 12px;font-size:11px;text-align:left;border-bottom:1px solid var(--sf-line)}
+.nxSf table.sf-tbl th{white-space:nowrap}
+.nxSf table.sf-tbl td.r,.nxSf table.sf-tbl th.r{text-align:right}
+.nxSf table.sf-tbl .cli-cell b{display:block;font-size:12px;font-weight:800;color:var(--sf-tx)}
+.nxSf table.sf-tbl .cli-cell span{display:block;font-size:10px;color:var(--sf-tx3);margin-top:1px}
+.nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
+@media(max-width:720px){
+  .nxSf table.sf-tbl thead{display:none}
+  .nxSf table.sf-tbl,.nxSf table.sf-tbl tbody,.nxSf table.sf-tbl tr,.nxSf table.sf-tbl td{display:block;width:100%;min-width:0}
+  .nxSf table.sf-tbl tr{border:1px solid var(--sf-line);border-radius:12px;margin-bottom:9px;padding:8px 10px;background:var(--sf-card)}
+  .nxSf table.sf-tbl td{border-bottom:none;padding:4px 0;text-align:left!important}
+  .nxSf table.sf-tbl td[data-lb]::before{content:attr(data-lb);display:block;font-size:8.5px;font-weight:800;color:var(--sf-tx3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px}
+  .nxSf table.sf-tbl td.sf-tbl-hide-mb{display:none}
+}
 
 /* ════ GLOBAL SEARCH MODAL ════ */
 .gs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:700;display:none;align-items:flex-start;justify-content:center;padding-top:80px;backdrop-filter:blur(4px)}
@@ -1106,7 +1128,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- CLIENTES -->
-        <div class="view" id="v-clientes">
+        <div class="view nxSf" id="v-clientes">
+          <div class="sf-kpis" id="cliKpis">
+            <div class="sf-kpi blue"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Clientes totales</div><div class="v" id="cliKpiTotal">0</div><div class="sub" id="cliKpiTotalSub">0 activos</div></div></div>
+            <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Al día</div><div class="v" id="cliKpiAlDia">0</div><div class="sub">Sin balance pendiente</div></div></div>
+            <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Con balance pendiente</div><div class="v" id="cliKpiPendCount">0</div><div class="sub" id="cliKpiPendRD">RD$ 0 en total</div></div></div>
+            <div class="sf-kpi purple"><div class="ic"><i class="ti ti-calendar-event"></i></div><div><div class="lb">Renuevan este mes</div><div class="v" id="cliKpiRenuevan">0</div><div class="sub">Próximos 30 días</div></div></div>
+          </div>
           <div class="nc">
             <div class="ch">
               <div><div class="ct">Clientes <span id="cliCnt" style="color:var(--tx3);font-weight:400"></span></div><div class="ct-s">con número de póliza y NCF</div></div>
@@ -1171,7 +1199,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <button id="tabAvisos" class="nxft-tab" onclick="switchTab('avisos')"><i class="ti ti-bell-ringing"></i> Avisos</button>
           </div>
           <!-- Panel Facturas -->
-          <div id="panelFact">
+          <div id="panelFact" class="nxSf">
           <div class="nc">
             <div class="ch">
               <div><div class="ct">Facturas</div><div class="ct-s">Cobra y factura a tus clientes</div></div>
@@ -1218,11 +1246,17 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           </div>
           </div><!-- /panelCob -->
           <!-- Panel Historial de Pagos -->
-          <div id="panelPagos" style="display:none">
+          <div id="panelPagos" class="nxSf" style="display:none">
           <div class="nc">
             <div class="ch">
               <div><div class="ct">Historial de pagos</div><div class="ct-s">Todos los cobros y abonos registrados</div></div>
               <button class="btn bsm bc4" onclick="exportarPagosExcel()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+            </div>
+            <div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+              <div class="sf-kpi ok"><div class="ic"><i class="ti ti-cash"></i></div><div><div class="lb">Total cobrado</div><div class="v" id="pgTotalMonto">RD$ 0</div><div class="sub">Este período</div></div></div>
+              <div class="sf-kpi blue"><div class="ic"><i class="ti ti-receipt"></i></div><div><div class="lb">Cantidad de pagos</div><div class="v" id="pgTotalCant">0</div><div class="sub">Este período</div></div></div>
+              <div class="sf-kpi purple"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Clientes que pagaron</div><div class="v" id="pgClientesPagaron">0</div><div class="sub">Este período</div></div></div>
+              <div class="sf-kpi warn"><div class="ic"><i class="ti ti-chart-bar"></i></div><div><div class="lb">Promedio por pago</div><div class="v" id="pgPromedio">RD$ 0</div><div class="sub">Este período</div></div></div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
               <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:600;color:#6d28d9"></select>
@@ -1231,26 +1265,11 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <select id="pgEmpresa" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todas las empresas</option></select>
               <select id="pgAgente" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los agentes</option></select>
+              <select id="pgMetodo" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los métodos</option></select>
+              <select id="pgBanco" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los bancos</option></select>
               <button class="btn bsm bghost" onclick="limpiarFiltrosPagos()"><i class="ti ti-filter-off"></i> Limpiar</button>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px">
-              <div style="background:#f0fdf4;border-radius:10px;padding:12px;text-align:center">
-                <div style="font-size:9px;color:#059669;font-weight:700;text-transform:uppercase">Total cobrado</div>
-                <div id="pgTotalMonto" style="font-size:16px;font-weight:700;color:#059669;margin-top:3px">RD$ 0</div>
-              </div>
-              <div style="background:#eff6ff;border-radius:10px;padding:12px;text-align:center">
-                <div style="font-size:9px;color:#6d28d9;font-weight:700;text-transform:uppercase">Pagos</div>
-                <div id="pgTotalCant" style="font-size:16px;font-weight:700;color:#6d28d9;margin-top:3px">0</div>
-              </div>
-              <div style="background:#fef3c7;border-radius:10px;padding:12px;text-align:center">
-                <div style="font-size:9px;color:#92400e;font-weight:700;text-transform:uppercase">Promedio</div>
-                <div id="pgPromedio" style="font-size:16px;font-weight:700;color:#92400e;margin-top:3px">RD$ 0</div>
-              </div>
-            </div>
-            <div class="tw"><table>
-              <thead><tr><th style="cursor:pointer;user-select:none" onclick="sortPag('fecha')">FECHA <span id="sfp_fecha" style="color:#6d28d9"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('cliente')">CLIENTE <span id="sfp_cliente" style="color:#6d28d9"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('monto')">MONTO <span id="sfp_monto" style="color:#6d28d9"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('metodo')">MÉTODO <span id="sfp_metodo" style="color:#6d28d9"></span></th><th style="cursor:pointer;user-select:none" onclick="sortPag('referencia')">REFERENCIA <span id="sfp_referencia" style="color:#6d28d9"></span></th><th>ACCIONES</th></tr></thead>
-              <tbody id="tbPagos"></tbody>
-            </table></div>
+            <div id="tbPagos"></div>
           </div><!-- /nc -->
         </div><!-- /panelPagos -->
         <!-- Panel Avisos -->
@@ -3510,7 +3529,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.53';
+const APP_VERSION='48.54';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5367,6 +5386,21 @@ function rCli(){
   const cInh=document.getElementById('cntInh');if(cInh)cInh.textContent=totalInh;
   const cVip=document.getElementById('cntVip');if(cVip)cVip.textContent=totalVip;
   const cProc=document.getElementById('cntProc');if(cProc){cProc.textContent=ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length;}
+  // KPIs del encabezado Enterprise (siempre sobre TODOS los clientes, sin importar la sub-pestaña activa)
+  if(document.getElementById('cliKpiTotal')){
+    const activosArr=ST.clientes.filter(c=>c.activo!==false);
+    const alDia=activosArr.filter(c=>pendTot(c)===0).length;
+    const conPend=activosArr.filter(c=>pendTot(c)>0);
+    const totalPendRD=conPend.reduce((s,c)=>s+pendTot(c),0);
+    const hoy3=new Date(),en30=new Date(hoy3.getTime()+30*86400000);
+    const renuevan=activosArr.filter(c=>{if(!c.fecha_fin)return false;const f=new Date(c.fecha_fin+'T12:00:00');return f>=hoy3&&f<=en30;}).length;
+    document.getElementById('cliKpiTotal').textContent=ST.clientes.length;
+    document.getElementById('cliKpiTotalSub').textContent=totalAct+' activos';
+    document.getElementById('cliKpiAlDia').textContent=alDia;
+    document.getElementById('cliKpiPendCount').textContent=conPend.length;
+    document.getElementById('cliKpiPendRD').textContent=fmt(totalPendRD)+' en total';
+    document.getElementById('cliKpiRenuevan').textContent=renuevan;
+  }
   let list=ST.clientes.filter(c=>{
     // Filtro principal: activos, inhabilitados, VIP o en proceso
     const esInhabilitado=c.activo===false;
@@ -5660,45 +5694,41 @@ function rFact(){
   const _saldoMemo={};
   const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!_saldoMemo[cid])_saldoMemo[cid]=_saldoFacturasCliente(cid);const v=_saldoMemo[cid][f.id];return v!=null?v:(Number(f.prima_base||0)+Number(f.prima_deps||0));};
   const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+saldoDe(f),0);
-  if(rz)rz.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px">
-      <div style="flex:1;background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#6d28d9;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Facturas</div><div style="font-size:18px;font-weight:800;color:#1e3a8a">${lista.length}</div></div>
-      <div style="flex:2;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px"><div style="font-size:9px;color:#c2410c;font-weight:800;text-transform:uppercase;letter-spacing:.3px">Por cobrar</div><div style="font-size:18px;font-weight:800;color:#9a3412">${fmt(porCobrar)}</div></div>
+  const pagadasEnLista=lista.filter(f=>f.estado==='Pagado').length;
+  if(rz)rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(3,1fr)">
+      <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas</div><div class="v">${lista.length}</div></div></div>
+      <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Por cobrar</div><div class="v">${fmt(porCobrar)}</div></div></div>
+      <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Pagadas</div><div class="v">${pagadasEnLista}</div></div></div>
     </div>`;
-  const L=t=>`<div style="font-size:8.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${t}</div>`;
-  tb.innerHTML=lista.map(f=>{
+  const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
+  tb.innerHTML=`<table class="sf-tbl"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Factura</th><th>Fecha</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
     const emp=gEmp(f.empresa_id);
     const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
     const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
     const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
     const agTxt=ag?ag.nom:'⚠ Sin agente';
     const anul=f.estado==='Anulada';
-    const nBtns=anul?1:(f.estado!=='Pagado'?3:2);
-    return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:11px 12px 10px;margin-bottom:9px;box-shadow:0 1px 3px rgba(15,23,42,.05)${anul?';opacity:.55':''}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="flex:1;min-width:0">
-          <div onclick="verCliente('${f.cliente_id}')" style="font-weight:800;font-size:14px;letter-spacing:-.01em;color:#101828;cursor:pointer;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.cliente_nom}</div>
-          <div style="font-size:10.5px;color:#667085;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</div>
-          ${atrasadas?`<div style="font-size:9px;color:#92400e;font-weight:700;margin-top:2px">📅 ${MESES[f.mes-1]||''} ${f.anio||''}</div>`:''}
-        </div>
-        <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-          <span class="badge ${ec}">${f.estado.toUpperCase()}</span>
-          ${planB(f.plan)}
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:8px 0;padding:7px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
-        ${f.prima_deps>0?`<div>${L('Dependientes')}<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#334155">${fmt(f.prima_deps)}</div></div>`:''}
-        ${(f.deuda_ant>0||Number(cli?.deuda_anterior||0)>0)?`<div style="display:flex;flex-direction:column;gap:4px">${f.deuda_ant>0?`<div>${L('Deuda mes anterior')}<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#dc2626">${fmt(f.deuda_ant)}</div></div>`:''}${Number(cli?.deuda_anterior||0)>0?`<div>${L('Deuda antes del sistema')}<div style="font-family:var(--mono);font-size:11px;font-weight:700;color:#dc2626">${fmt(cli.deuda_anterior)}</div></div>`:''}</div>`:''}
-        ${(()=>{const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);const sal=saldoDe(f);const pg=prima-sal;return pg>0.009?`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:15px;font-weight:800;color:#0f172a">${fmt(sal)}</div><div style="font-size:8.5px;color:#475569;margin-top:1px">Prima ${fmt(prima)} · abonado ${fmt(pg)}</div></div>`:`<div style="margin-left:auto;text-align:right">${L('Mes actual')}<div style="font-family:var(--mono);font-size:15px;font-weight:800;color:#0f172a">${fmt(prima)}</div></div>`;})()}
-      </div>
-      ${anul?'':`<button class="fCobrar" onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:12px;padding:7px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,.32);background:linear-gradient(135deg,#059669,#10b981);margin-bottom:5px"><i class="ti ti-wallet" style="color:#fff!important;font-size:15px"></i> COBRAR</button>`}
-      <div class="fActs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:5px">
-        <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#6d28d9,#8b5cf6)"><i class="ti ti-file-invoice" style="color:#fff!important;font-size:13px"></i> Factura</button>
-        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#1da851,#25d366)"><i class="ti ti-brand-whatsapp" style="color:#fff!important;font-size:13px"></i> WhatsApp</button>`}
-        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="nxEditarPrecioFactura('${f.id}')" title="Corregir el precio de ESTA factura únicamente" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#b45309,#f59e0b)"><i class="ti ti-pencil" style="color:#fff!important;font-size:13px"></i> Precio</button>`:''}
-        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:10.5px;padding:7px 5px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ef4444)"><i class="ti ti-ban" style="color:#fff!important;font-size:13px"></i> Anular</button>`:''}
-      </div>
-    </div>`;
-  }).join('');
+    const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
+    const sal=saldoDe(f);
+    const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}"`:''} style="padding:5px 8px"><i class="ti ${icon}"></i> ${label}</button>`;
+    return `<tr${anul?' style="opacity:.55"':''}>
+      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" style="cursor:pointer"><b>${f.cliente_nom}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
+      <td data-lb="ARS">${cli?.ars||'—'}</td>
+      <td data-lb="Factura">${f.ncf||'—'}</td>
+      <td data-lb="Fecha">${fCorta(f.created_at)}</td>
+      <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
+      <td data-lb="Total" class="r">${fmt(prima)}</td>
+      <td data-lb="Balance" class="r" style="font-weight:800;color:${sal>0.009?'var(--sf-err)':'var(--sf-tx)'}">${fmt(sal)}</td>
+      <td data-lb="Estado"><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
+      <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+        ${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-wallet','Cobrar')}
+        ${btn(`verFacturaPDF_id('${f.id}')`,'bghost','ti-file-invoice','','Ver factura')}
+        ${anul?'':btn(`enviarWA('${f.id}')`,'bwa','ti-brand-whatsapp','','WhatsApp')}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?btn(`nxEditarPrecioFactura('${f.id}')`,'bghost','ti-pencil','','Corregir precio de esta factura'):''}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?btn(`anularFactura('${f.id}')`,'bc3','ti-ban','','Anular'):''}
+      </div></td>
+    </tr>`;
+  }).join('')+'</tbody></table>';
   pintarFlechasFact();
 }
 // ── Corregir el precio de UNA factura pendiente en específico (montos distintos por mes) ──
@@ -5933,7 +5963,6 @@ function _ordToggle(key,col){const s=_ordTablas[key]||(_ordTablas[key]={col:'',d
 function _ordAplicar(key,list,valFn){const s=_ordTablas[key];if(!s||!s.col)return list;return [...list].sort((a,b)=>{const va=valFn(a,s.col),vb=valFn(b,s.col);let r;if(typeof va==='number'&&typeof vb==='number')r=va-vb;else r=String(va).localeCompare(String(vb),'es');return r*s.dir;});}
 function _ordFlechas(key,prefix,cols){const s=_ordTablas[key]||{col:'',dir:1};cols.forEach(col=>{const el=document.getElementById(prefix+col);if(el)el.textContent=(s.col===col)?(s.dir===1?'▲':'▼'):'';});}
 const _COLS_COB=['cliente','agente','plan','deuda','cobrado','pendiente','progreso'];
-const _COLS_PAG=['fecha','cliente','monto','metodo','referencia'];
 const _COLS_AGT=['nombre','cargo','licencia','vence','estado'];
 function sortCob(col){_ordToggle('cob',col);rCob();}
 function _cobSortVal(c,col){switch(col){case 'cliente':return (c.nom||'').toLowerCase();case 'agente':return (gAgt(c.agente_id)?.nom||'').toLowerCase();case 'plan':return (c.plan||'').toLowerCase();case 'deuda':return Number(c.deuda_total||0);case 'cobrado':return Number(c.pagado||0);case 'pendiente':return Number(pendTot(c)||0);case 'progreso':return c.deuda_total>0?(c.pagado||0)/c.deuda_total:1;}return '';}
@@ -6299,7 +6328,7 @@ async function rPagos(){
       if(fdEl)fdEl.value=iso(desde);if(fhEl)fhEl.value=iso(hasta);
     }
   }
-  tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#475569">Cargando pagos...</td></tr>';
+  tb.innerHTML='<div class="empty"><div class="loading"><div class="spin"></div>Cargando pagos...</div></div>';
   // Pedir SOLO los abonos del rango elegido (filtrado en el servidor). Sin rango
   // (el usuario eligió "Todos los pagos") trae todo. Tope con lt.(día siguiente)
   // para incluir el último día, sirva la columna como fecha o como timestamp.
@@ -6312,7 +6341,7 @@ async function rPagos(){
   try{
     abonos=await API.get('abonos',qy)||[];
   }catch(e){
-    tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626">Error al cargar pagos</td></tr>';
+    tb.innerHTML='<div class="empty" style="color:#dc2626">Error al cargar pagos</div>';
     return;
   }
   // Enriquecer con datos del cliente (lookup O(1) con Map)
@@ -6336,6 +6365,10 @@ async function rPagos(){
   if(selAgt&&selAgt.options.length<=1){
     ST.agentes.forEach(a=>{selAgt.innerHTML+=`<option value="${a.id}">${a.nom}</option>`;});
   }
+  // Método/Banco: opciones reales según lo que trajo esta consulta (no una lista inventada)
+  const selMet=document.getElementById('pgMetodo'),selBco=document.getElementById('pgBanco');
+  if(selMet){const cur=selMet.value;const metodos=[...new Set(_pagosCache.map(p=>p.metodo).filter(Boolean))].sort();selMet.innerHTML='<option value="">Todos los métodos</option>'+metodos.map(m=>`<option value="${m}">${m}</option>`).join('');selMet.value=cur;}
+  if(selBco){const cur=selBco.value;const bancos=[...new Set(_pagosCache.map(p=>p.banco).filter(Boolean))].sort();selBco.innerHTML='<option value="">Todos los bancos</option>'+bancos.map(b=>`<option value="${b}">${b}</option>`).join('');selBco.value=cur;}
   aplicarFiltrosPagos();
 }
 
@@ -6347,49 +6380,58 @@ function aplicarFiltrosPagos(){
   const fh=document.getElementById('pgFechaH')?.value||'';
   const emp=document.getElementById('pgEmpresa')?.value||'';
   const agt=document.getElementById('pgAgente')?.value||'';
+  const met=document.getElementById('pgMetodo')?.value||'';
+  const bco=document.getElementById('pgBanco')?.value||'';
 
   let list=_pagosCache.filter(p=>{
-    if(q&&!(p.cliente_nom||'').toLowerCase().includes(q)&&!(p.referencia_cli||'').toLowerCase().includes(q))return false;
+    if(q&&!(p.cliente_nom||'').toLowerCase().includes(q)&&!(p.referencia_cli||'').toLowerCase().includes(q)&&!(p.referencia||'').toLowerCase().includes(q))return false;
     const fecha=(p.fecha||'').slice(0,10);
     if(fd&&fecha<fd)return false;
     if(fh&&fecha>fh)return false;
     if(emp&&p.empresa_id!==emp)return false;
     if(agt&&p.agente_id!==agt)return false;
+    if(met&&p.metodo!==met)return false;
+    if(bco&&p.banco!==bco)return false;
     return true;
   });
 
   // Resumen
   const total=list.reduce((s,p)=>s+(Number(p.monto)||0),0);
   const prom=list.length?total/list.length:0;
+  const clientesPagaron=new Set(list.map(p=>p.cliente_id).filter(Boolean)).size;
   const elM=document.getElementById('pgTotalMonto');if(elM)elM.textContent=fmt(total);
   const elC=document.getElementById('pgTotalCant');if(elC)elC.textContent=list.length;
+  const elCli=document.getElementById('pgClientesPagaron');if(elCli)elCli.textContent=clientesPagaron;
   const elP=document.getElementById('pgPromedio');if(elP)elP.textContent=fmt(prom);
 
   list=_ordAplicar('pag',list,_pagSortVal);
-  _ordFlechas('pag','sfp_',_COLS_PAG);
   if(!list.length){
-    tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:#475569">No hay pagos que coincidan con los filtros</td></tr>';
+    tb.innerHTML='<div class="empty">No hay pagos que coincidan con los filtros</div>';
     return;
   }
   const puedeEdit=tienePermiso('payments_edit');
   const puedeDel=tienePermiso('payments_delete');
-  tb.innerHTML=list.map(p=>`<tr>
-    <td style="font-size:10px">${(p.fecha||'').slice(0,10)}</td>
-    <td style="font-weight:700;font-size:11px;cursor:pointer" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')"`:''} title="Ver resumen del cliente">${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-size:9px">(${p.referencia_cli})</span>`:''}${reciboNoStr(p)?`<div style="font-size:8px;color:#1e3a6e;font-weight:700" title="No. de recibo">🧾 ${reciboNoStr(p)}</div>`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?`<div style="font-size:8px;color:#6d28d9;font-weight:600" title="Meses que cubre este pago">📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}</div>`:''}</td>
-    <td style="font-weight:700;color:#059669">${fmt(p.monto)}</td>
-    <td style="font-size:10px">${p.metodo||'—'}</td>
-    <td style="font-size:10px">${p.referencia||'—'}</td>
-    <td style="white-space:nowrap">
+  const fHora=s=>{if(!s)return'—';try{return new Date(s).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(e){return'—';}};
+  tb.innerHTML=`<table class="sf-tbl"><thead><tr><th style="cursor:pointer" onclick="sortPag('fecha')">Fecha ${_ordArrow('pag','fecha')}</th><th>Hora</th><th class="col-cli" style="cursor:pointer" onclick="sortPag('cliente')">Cliente ${_ordArrow('pag','cliente')}</th><th style="cursor:pointer" onclick="sortPag('metodo')">Método ${_ordArrow('pag','metodo')}</th><th>Banco</th><th class="r" style="cursor:pointer" onclick="sortPag('monto')">Monto ${_ordArrow('pag','monto')}</th><th>Usuario</th><th class="r">Acciones</th></tr></thead><tbody>`+list.map(p=>`<tr>
+    <td data-lb="Fecha">${(p.fecha||'').slice(0,10)}</td>
+    <td data-lb="Hora" class="sf-tbl-hide-mb">${fHora(p.fecha)}</td>
+    <td data-lb="Cliente" class="cli-cell" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')" style="cursor:pointer"`:''}><b>${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-weight:600">(${p.referencia_cli})</span>`:''}</b><span>${reciboNoStr(p)?`🧾 ${reciboNoStr(p)}`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?` · 📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}`:''}</span></td>
+    <td data-lb="Método">${p.metodo||'—'}</td>
+    <td data-lb="Banco">${p.banco||'—'}</td>
+    <td data-lb="Monto" class="r" style="font-weight:800;color:var(--sf-ok-d)">${fmt(p.monto)}</td>
+    <td data-lb="Usuario">${p.created_by_name||p.agente_cobro||'—'}</td>
+    <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
       ${p.cliente_id?`<button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${p.id}','${p.cliente_id}')" title="Recibo de pago"><i class="ti ti-receipt"></i></button>`:''}
       ${p.comprobante_url?`<button class="btn bsm" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${p.comprobante_url}')" title="Ver bauche"><i class="ti ti-eye"></i></button>`:''}
       ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar"><i class="ti ti-edit"></i></button>`:''}
       ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
-    </td>
-  </tr>`).join('');
+    </div></td>
+  </tr>`).join('')+'</tbody></table>';
 }
+function _ordArrow(key,col){const s=_ordTablas[key];return (s&&s.col===col)?`<span style="color:#6d28d9">${s.dir===1?'▲':'▼'}</span>`:'';}
 
 function limpiarFiltrosPagos(){
-  ['pgBuscar','pgFechaD','pgFechaH','pgEmpresa','pgAgente'].forEach(id=>{
+  ['pgBuscar','pgFechaD','pgFechaH','pgEmpresa','pgAgente','pgMetodo','pgBanco'].forEach(id=>{
     const e=document.getElementById(id);if(e)e.value='';
   });
   aplicarFiltrosPagos();

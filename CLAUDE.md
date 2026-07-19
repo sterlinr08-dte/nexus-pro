@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.53** (ver `index.html` y `version.json`).
+> Versión actual: **48.54** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1749,11 +1749,69 @@ de tiempo y el Panel lateral deben ser **reales y completos**, no decorativos.
   `max-width:100%;min-width:0` a `.sf-id`; reverificado sin desbordes en 390px ni en escritorio
   (1040px), 0 errores de JS. `node --check parches.js` limpio, `version.json` válido, los 3
   `<script>` de `index.html` pasan `new Function()`.
-- **Pendiente (no autorizado todavía para pasar a real):** las otras 3 pantallas de la muestra
-  (lista de Clientes, tabla de Facturación sin columna de póliza, Historial de Pagos rediseñado)
-  siguen existiendo SOLO en la muestra standalone — el dueño únicamente confirmó la Ficha del
-  cliente hasta ahora ("Pregunta 2 si completa / Pregunta 1 que viva en modal / Grande" respondía
-  específicamente a las 2 preguntas de la Ficha). Retomar cuando el dueño dé luz verde para esas 3.
+- **Las otras 3 pantallas de la muestra, LLEVADAS A REAL (19-jul-2026, v48.54):** el dueño confirmó
+  "Si todo" (todo lo que faltaba de la muestra) — Clientes, Facturas e Historial de pagos.
+  - **Decisiones tomadas con el dueño ANTES de programar** (2 preguntas por `AskUserQuestion`, porque
+    la realidad del código no calzaba con la muestra): (1) **Facturas real NO era una tabla — eran
+    TARJETAS** (`rFact()`, ya afinadas para el celular en varias versiones anteriores, ver Stitch
+    v40.2-40.4 y BAYOL CELL); la muestra mostraba una tabla de escritorio. Se le explicó el riesgo
+    (pantalla de facturas más usada, tabla ancha = scroll horizontal en el celular) y el dueño eligió
+    **convertir a tabla de verdad como la muestra** (no quedarse en tarjetas) — se construyó con
+    colapso responsive real (mismo `<table>`, CSS lo convierte en bloques tipo tarjeta en móvil, no
+    hay dos renders separados que se puedan desincronizar). (2) El spec de Historial de Pagos pedía
+    un badge de "Estado del pago" (Completado/Parcial/Reversado/Anulado) — se verificó la base
+    (`abonos.estado`) y solo tiene `NULL` o `'ACTIVO'`, ese concepto no existe de verdad en los datos;
+    el dueño eligió **quitar la columna** en vez de fingir un dato falso (mismo criterio de "no
+    fingir funciones que no existen" del resto del sistema).
+  - **Clientes (`rCli()`):** solo reskin — se envolvió la vista en `.nxSf` (mismo namespace/paleta
+    azul de la Ficha del cliente) y se le agregaron 4 KPIs reales arriba (clientes totales/al día/con
+    balance pendiente/renuevan este mes, calculados sobre `ST.clientes` completo, no sobre la
+    sub-pestaña activa). La tabla (filtros, sub-pestañas Activos/Proceso/VIP/Inhabilitados, orden,
+    paginación "Ver todos", menú de acciones) **no se tocó** — solo hereda el header/hover azules por
+    CSS. Cero cambios de columnas.
+  - **Facturas (`rFact()`), tarjetas → tabla real:** columnas Cliente (nombre+agente+empresa) / ARS
+    (`cliente.ars`) / Factura (`factura.ncf`, el comprobante fiscal — no existe un "número de factura"
+    separado en el esquema) / Fecha (`factura.created_at`) / Vencimiento (`cliente.fecha_fin`, la
+    vigencia de la póliza — no existe una fecha de vencimiento por factura) / Total / Balance (el
+    saldo real, `_saldoFacturasCliente`, sin cambios) / Estado / Acciones (mismos botones y mismas
+    funciones reales: `cobrarDesdeFact`/`verFacturaPDF_id`/`enviarWA`/`nxEditarPrecioFactura`/
+    `anularFactura`, mismo *gating* por `tienePermiso`). CSS nuevo reusable `table.sf-tbl` (dentro de
+    `.nxSf`): en escritorio es una tabla normal; en `@media(max-width:720px)` cada fila se convierte
+    en un bloque tipo tarjeta (`display:block` + `data-lb` como etiqueta de cada dato) — mismo patrón
+    para Historial de Pagos. El resumen de arriba (`factResumen`) pasó de 2 a 3 KPIs (Facturas/Por
+    cobrar/Pagadas), reusando `.sf-kpis`.
+  - **Historial de pagos (`rPagos()`/`aplicarFiltrosPagos()`):** se auditó el esquema real de
+    `abonos` antes de prometer columnas — tiene de verdad `banco`, `factura_id`, `agente_cobro`,
+    `created_by_name`, `comprobante_url` (la UI vieja solo mostraba Fecha/Cliente/Monto/Método/
+    Referencia, ignorando datos que ya existían). Columnas nuevas reales: **Hora** (misma columna
+    `fecha`, es timestamp completo) y **Usuario** (`created_by_name`, con `agente_cobro` de respaldo
+    si el primero está vacío — 99% de los pagos tienen al menos uno de los dos). `factura_id` NO se
+    agregó como columna (solo 3% de los pagos lo tienen poblado — hubiera sido una columna casi
+    siempre vacía). 2 filtros nuevos: **Banco** y **Método**, poblados con las opciones que de verdad
+    trajo la consulta (no una lista inventada). KPIs de 3 a 4 (se agregó "Clientes que pagaron",
+    cuenta de `cliente_id` únicos). Se quitó la columna "Estado del pago" por la razón de arriba. Los
+    encabezados ahora son de verdad ordenables con flechas visibles (`sortPag`/`_ordArrow`) — la
+    lógica de orden YA EXISTÍA en el código pero nunca estaba conectada a ningún `<th>` clicable (una
+    pieza "dormida" desde antes, cero riesgo activarla ahora).
+  - **2 bugs reales de desborde en el celular, encontrados y arreglados ANTES de publicar** (con el
+    método de siempre: extraer el código real, cargarlo en un navegador con datos simulados, medir):
+    (1) una regla global vieja `@media(max-width:480px){table{min-width:500px}}` (pensada para que
+    OTRAS tablas del sistema hicieran scroll horizontal en vez de aplastarse) le pisaba el ancho a la
+    tabla NUEVA `.sf-tbl`, que estaba diseñada para colapsar a bloques en vez de hacer scroll —
+    arreglado agregando `min-width:0` a la regla de colapso de `.sf-tbl` (más específica, gana la
+    pelea de especificidad CSS). (2) las tarjetas KPI (`.sf-kpi`) no tenían `min-width:0` — mismo bug
+    de "grid con `min-width:auto`" ya documentado varias veces en este archivo — con `grid-template-
+    columns:repeat(3,1fr)` en Facturas, el contenido de una tarjeta empujaba su columna más ancha que
+    su 1fr en pantallas angostas. Arreglado agregando `min-width:0` a `.sf-kpi` (beneficia TODOS los
+    usos de esa clase, incluida la Ficha del cliente). Reverificado tras los 2 arreglos: `scrollWidth
+    === clientWidth` exacto (390px) en las 3 pantallas, 0 errores de JS, datos correctos (KPIs, tabla,
+    botones de acción probados con clics reales contra las funciones reales).
+  - Verificado con el código real extraído (no una reconstrucción): se construyó un extractor propio
+    (balance de llaves real, no rangos de línea a mano — la lección de la sesión de la Ficha del
+    cliente, donde un rango de línea mal cortado causó un `SyntaxError` difícil de diagnosticar) para
+    sacar `rCli`/`rFact`/`rPagos`/`aplicarFiltrosPagos` y sus ~25 helpers reales tal cual del archivo,
+    cargados en un navegador con datos simulados (3 clientes, 2 facturas, 3 abonos). `node --check
+    parches.js` limpio, `version.json` válido, los 3 `<script>` de `index.html` pasan `new Function()`.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
