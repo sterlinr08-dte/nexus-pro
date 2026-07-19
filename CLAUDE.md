@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.21** (ver `index.html` y `version.json`).
+> Versión actual: **48.51** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1586,6 +1586,73 @@ después de agregar `type="email"` (confirmado por `getComputedStyle().textTrans
 Cero cambios visuales ni de lógica de negocio — solo accesibilidad. Verificado con el código real
 (`renderEntidades`/`abrirEntidad`) extraído y cargado en un navegador: la fila responde a Tab+Enter,
 el aro de foco se ve (`outline:solid rgb(37,99,235)`), los campos tienen el tipo/inputmode correcto.
+
+### NEXUS PRO 2.5 — rediseño del formulario de Artículos/Servicios, FASE 1 (19-jul-2026, v48.51)
+El dueño pidió un rediseño grande y completo del formulario de artículo (`abrirProd`, pestaña
+Inventario del POS): 10 pestañas (Información General, Precios, Costos, Inventario, Impuestos,
+Compras, Ventas, Multiempresa, Integraciones, Historial), reusando el patrón organizativo de
+Infoplus (no su visual — el POS ya tiene su propia identidad `.nxPf` azul/Plus Jakarta Sans, ver
+regla de "cada proyecto con su diseño independiente"), sin romper funciones existentes ni duplicar
+código, con arquitectura reusable y escalable.
+- **Decisión de arquitectura bloqueante, resuelta con el dueño ANTES de programar:** la pestaña
+  "Multiempresa" del spec original era ambigua — podía significar (A) **multi-sucursal dentro de
+  la MISMA organización** (extender el Multi-almacén que ya existe, `pos_almacenes`/
+  `pos_stock_almacen`) o (B) **multi-empresa real** (un mismo artículo compartido entre
+  organizaciones DISTINTAS, ej. Bayolsale y BayolCell) — algo que HOY no existe: cada organización
+  tiene su catálogo 100% aislado por `organizacion_id`+RLS (el modelo de seguridad de todo el
+  sistema). El dueño confirmó **Opción A (multi-sucursal)** — bajo riesgo, no toca el aislamiento
+  entre organizaciones. Esto se resolvió con una pregunta directa ANTES de tocar una sola línea de
+  código, porque la Opción B habría exigido rediseñar el modelo de RLS de toda la aplicación.
+- **HECHO — Fase 1 completa:** `abrirProd()` se reestructuró en pestañas (`.nxPfProdTabs`/
+  `.nxPfProdPanel`, CSS nuevo en `nxPfEnsureCSS()`) — cambio **puramente de organización visual**:
+  cada campo conserva EXACTAMENTE el mismo `id` de siempre (`ppNom`, `ppPre`, `ppCos`, `ppStk`...),
+  así que `nxPfLeerProd()`/`nxPfResumen()`/`nxPfNivelCambio()` y el resto de funciones que leen por
+  id no necesitaron cambiar — las pestañas son solo contenedores que se muestran/ocultan
+  (`window.nxPfProdTab(key)`), cero riesgo de romper el guardado. Reparto de las cards existentes:
+  Información (nombre/categoría/código/referencia/marca/imagen/**tipo**, movido aquí desde
+  Inventario), Precios (precio lista/especial/contado/crédito/precio2-mayor + Reglas de Venta por
+  nivel + gestor de Niveles de precio, todo igual que antes), Costos (costo + 🔒precio mínimo,
+  movidos aquí desde Precios), Inventario (stock/stock mínimo/garantía/serial-IMEI), Impuestos
+  (solo ITBIS), Ventas (permite descuento + combo + promociones "próximamente").
+- **3 piezas genuinamente NUEVAS en esta fase** (no eran reorganización, se construyeron desde
+  cero): (1) **Costos: margen bruto en vivo** (`nxPfMargenCalc()`, escucha `input` en
+  `ppPre`/`ppCos`, muestra % y RD$ de utilidad, con color según el margen — rojo si negativo,
+  naranja si <15%, verde si mayor) — cálculo 100% en el navegador, no toca la base. (2) **Compras:
+  proveedor preferido** — columna nueva `pos_productos.proveedor_id` (uuid nullable, FK a
+  `pos_proveedores`, migración `pos_productos_proveedor_id`, aditiva y sin impacto en filas
+  existentes) + selector `<select id="ppProv">` poblado con `_proveedores` (la lista que ya carga
+  Compras) — se guarda desde `nxPfLeerProd()`. (3) **Sucursales (multi-sucursal, la pestaña
+  "Multiempresa" ya resuelta como Opción A):** lista de solo lectura del stock del artículo en
+  cada almacén (`stockEnAlm(p.id, a.id)`, helper que YA existía del Multi-almacén) — solo se
+  muestra si la organización tiene más de un almacén activo; si no, explica por qué no aplica. Para
+  MOVER stock entre sucursales sigue usando Kardex → Multi-almacén (no se duplicó esa lógica, solo
+  se enlaza con un botón). (4) **Historial:** kardex de ESE artículo (`pos_inv_movimientos`
+  filtrado por `producto_id`, reusa la tabla que ya alimenta el Kardex general) cargado de forma
+  perezosa (`window.nxPfHistorialCargar`, solo al abrir esa pestaña, una vez por apertura del
+  modal) — evita una consulta extra si el dueño nunca la abre.
+- **Deliberadamente NO construido en esta fase** (criterio de "no fingir funciones que no
+  existen", igual que Cuotas/Financiamiento/NEXUS AI CONTENT): la pestaña **Integraciones**
+  (publicar a WhatsApp Catálogo, tienda virtual, marketplace) muestra honestamente "Próximamente"
+  — no hay ninguna de esas integraciones construida todavía, un interruptor falso habría sido peor
+  que no ponerlo. Tampoco se agregaron "Unidad"/"Localidad" (ya se había decidido explícitamente en
+  v48.30 que el POS no maneja unidades de medida ni localidades — no se contradice esa decisión sin
+  que el dueño lo pida de nuevo).
+- Verificado con Playwright cargando el **código real de la sección del POS** extraído tal cual del
+  archivo (`abrirProd`/`nxPfProdTab`/`nxPfHistorialCargar`/`nxPfMargenCalc`/`nxPfLeerProd`, con
+  hooks de prueba temporales solo en la copia de prueba, nunca en el archivo real) en un navegador
+  con datos simulados (producto existente con proveedor y 2 almacenes con stock distinto): las 10
+  pestañas cambian una por una sin dejar dos paneles visibles a la vez, el margen se recalcula en
+  vivo al cambiar el costo, el selector de proveedor carga las opciones y conserva el seleccionado,
+  la pestaña Sucursales muestra el stock correcto de cada almacén, el historial muestra el estado
+  vacío correctamente (sin movimientos todavía), y `nxPfLeerProd()` devuelve `proveedor_id`
+  correctamente tanto al editar como al crear un artículo nuevo (`null` si no se elige ninguno).
+  Sin desbordes horizontales en 390px ni en escritorio (1280px). `node --check parches.js` limpio,
+  los 3 `<script>` de `index.html` pasan `new Function()`, `version.json` válido.
+- **Pendiente (fases siguientes, NO empezadas):** enriquecer Compras (tiempo de entrega, último
+  costo de compra), comisión de venta por artículo (Ventas), impuestos adicionales (propina 10%),
+  lotes/vencimiento (Inventario) — ninguno de estos se pidió explícitamente en la Fase 1, se
+  agregarán cuando el dueño confirme cuáles quiere y en qué orden (mismo criterio de fases pequeñas
+  y verificables de esta sesión, no todo de golpe).
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

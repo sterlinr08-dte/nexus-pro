@@ -16904,6 +16904,19 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .ltbl tr[data-row]{cursor:pointer}
 .nxPf .ltbl tr[data-row]:hover td{background:var(--pf-blue-l)}
 .nxPf [data-row]:focus-visible,.nxPf .chip:focus-visible,.nxPf .ab:focus-visible,.nxPf .afinchk:focus-visible,.nxPf .oppet:focus-visible{outline:2px solid var(--pf-blue);outline-offset:2px}
+.nxPf .nxPfProdTabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:14px;border-bottom:1px solid var(--pf-line);-webkit-overflow-scrolling:touch}
+.nxPf .nxPfProdTabs button{flex:0 0 auto;display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+.nxPf .nxPfProdTabs button.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
+.nxPf .nxPfProdTabs button:focus-visible{outline:2px solid var(--pf-blue);outline-offset:2px}
+.nxPf .nxPfProdPanel{display:none}
+.nxPf .nxPfProdPanel.on{display:block}
+.nxPf .margbox{display:flex;align-items:center;gap:10px;background:var(--pf-bg);border:1px solid var(--pf-line);border-radius:12px;padding:12px 14px;margin-top:10px}
+.nxPf .margbox .ic{width:38px;height:38px;border-radius:10px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}
+.nxPf .margbox .v{font-size:19px;font-weight:800;color:var(--pf-txt)}
+.nxPf .margbox .lb{font-size:10.5px;color:var(--pf-txt3);font-weight:700;text-transform:uppercase}
+.nxPf .almrow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--pf-line);border-radius:10px;margin-bottom:6px;background:var(--pf-panel)}
+.nxPf .almrow b{font-size:13px;color:var(--pf-txt)}
+.nxPf .hist tr td{font-size:11.5px}
 .nxPf .rolebadge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:var(--pf-blue-l);color:var(--pf-blue-d);font-size:9.5px;font-weight:800;margin:1px 3px 1px 0}
 .nxPf .emptyrow{text-align:center;color:var(--pf-txt3);padding:26px;font-size:12px}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
@@ -17125,89 +17138,170 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div class="body">
           <div>
 
-            <div class="card" style="margin-bottom:12px">
-              <h4><span class="bdg blue"><i class="ti ti-info-circle"></i></span> Información del artículo</h4>
-              ${tieneNiveles ? `<div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" onchange="window.nxPfNivelCambio('${p.id}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>` : ''}
-              <div class="g2">
-                <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
-                <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
-                <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Mismo código con el que se creó"></div></div>
-                <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
-                <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
-                <div class="fld"><label>Imagen (URL opcional)</label><div class="inw"><i class="ti ti-photo"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div></div>
-              </div>
+            <div class="nxPfProdTabs" role="tablist">
+              <button type="button" data-tabbtn="info" class="on" onclick="window.nxPfProdTab('info')"><i class="ti ti-info-circle"></i> Información</button>
+              <button type="button" data-tabbtn="precios" onclick="window.nxPfProdTab('precios')"><i class="ti ti-currency-dollar"></i> Precios</button>
+              <button type="button" data-tabbtn="costos" onclick="window.nxPfProdTab('costos')"><i class="ti ti-receipt-2"></i> Costos</button>
+              <button type="button" data-tabbtn="inventario" onclick="window.nxPfProdTab('inventario')"><i class="ti ti-adjustments"></i> Inventario</button>
+              <button type="button" data-tabbtn="impuestos" onclick="window.nxPfProdTab('impuestos')"><i class="ti ti-percentage"></i> Impuestos</button>
+              <button type="button" data-tabbtn="compras" onclick="window.nxPfProdTab('compras')"><i class="ti ti-truck-delivery"></i> Compras</button>
+              <button type="button" data-tabbtn="ventas" onclick="window.nxPfProdTab('ventas')"><i class="ti ti-shopping-cart"></i> Ventas</button>
+              <button type="button" data-tabbtn="multiempresa" onclick="window.nxPfProdTab('multiempresa')"><i class="ti ti-building-store"></i> Sucursales</button>
+              <button type="button" data-tabbtn="integraciones" onclick="window.nxPfProdTab('integraciones')"><i class="ti ti-plug-connected"></i> Integraciones</button>
+              <button type="button" data-tabbtn="historial" onclick="window.nxPfProdTab('historial','${p ? p.id : ''}')"><i class="ti ti-history"></i> Historial</button>
             </div>
 
-            <div class="card" style="margin-bottom:12px">
-              <h4><span class="bdg green"><i class="ti ti-currency-dollar"></i></span> Precios</h4>
-              <div class="preciosFlat">
-                <div class="fld"><label style="color:var(--pf-txt)">Precio Lista</label><div class="inw"><span class="cur">$</span><input id="ppPre" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
-                <div class="fld"><label style="color:var(--pf-blue-d)">Precio Contado ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCont" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_contado != null ? Math.round(nivRowInicial.precio_contado) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
-                <div class="fld"><label style="color:var(--pf-purple)">Precio Crédito ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCred" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_credito != null ? Math.round(nivRowInicial.precio_credito) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
-                <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                ${puedeVerMin() ? `<div class="fld"><label>🔒 Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
-                <div class="fld"><label>Precio 2 (mayor, respaldo)</label><div class="inw"><span class="cur">$</span><input id="ppPreMay" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio lista" style="padding-left:24px"></div></div>
-              </div>
-            </div>
-
-            <div class="card" style="margin-bottom:12px">
-              <h4><span class="bdg orange"><i class="ti ti-scale"></i></span> Reglas de Venta${tieneNiveles ? ' <span style="font-weight:600;color:var(--pf-txt3);font-size:10.5px">— por nivel de precio</span>' : ''}</h4>
-              ${tieneNiveles ? `
-              <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-                <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Cantidad Mínima</label><input id="ppNivCantMin" inputmode="numeric" value="${nivRowInicial.cantidad_minima != null ? Number(nivRowInicial.cantidad_minima) : 1}" placeholder="1"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Crédito (%)</label><input id="ppNivCredPct" inputmode="decimal" value="${nivRowInicial.credito_pct != null ? Number(nivRowInicial.credito_pct) : ''}" placeholder="0"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-currency-dollar"></i></div><div><label>Crédito ($)</label><input id="ppNivCredMonto" data-nx-money inputmode="numeric" value="${nivRowInicial.credito_monto != null ? Math.round(nivRowInicial.credito_monto) : ''}" placeholder="0"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-history"></i></div><div><label>Precio Anterior</label><input id="ppNivAnterior" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_anterior != null ? Math.round(nivRowInicial.precio_anterior) : ''}" placeholder="0"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>% Descuento</label><input id="ppNivDescPct" inputmode="decimal" value="${nivRowInicial.descuento_pct != null ? Number(nivRowInicial.descuento_pct) : ''}" placeholder="0"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-shield-lock"></i></div><div><label>🔒 Precio Mínimo (nivel)</label><input id="ppNivMin" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_minimo != null ? Math.round(nivRowInicial.precio_minimo) : ''}" placeholder="0"></div></div>
-              </div>
-              ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero (y crea al menos un nivel de precio) para configurar sus reglas de venta.</div>`}
-            </div>
-
-            <div class="card" style="margin-bottom:12px">
-              <h4><span class="bdg blue"><i class="ti ti-adjustments"></i></span> Inventario y stock</h4>
-              <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-                <div class="reglas"><div class="ic"><i class="ti ti-package"></i></div><div><label>Tipo</label><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><label>Stock mínimo (alerta)</label><input id="ppMin" inputmode="numeric" value="${e.stock_min != null ? Number(e.stock_min) : '0'}" placeholder="0"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-shield-check"></i></div><div><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>¿Lleva ITBIS (18%)?</label><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div></div>
-                <div class="reglas"><div class="ic"><i class="ti ti-device-mobile"></i></div><div><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div></div>
-              </div>
-              <div class="fld" style="margin-top:10px"><label>🧩 Combo: sale JUNTO con este artículo (se factura en RD$ 0 y descuenta stock)</label>
-                <div id="ppComboList" style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0"></div>
-                <div style="display:flex;gap:6px;position:relative"><input id="ppComboQ" class="no-upper" placeholder="Buscar artículo del combo…" autocomplete="off" oninput="window.nxComboFiltrar(this.value)" style="flex:1;min-width:0;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;padding:0 10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt)">
-                <input id="ppComboCant" inputmode="numeric" value="1" style="width:56px;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;text-align:center;font-weight:700;background:var(--pf-panel);color:var(--pf-txt)">
-                <button class="nxPf ab g1" style="width:38px;padding:0" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
-                <div id="ppComboSug" style="display:none;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;box-shadow:var(--pf-shadow);max-height:170px;overflow-y:auto;margin-top:4px"></div>
-              </div>
-            </div>
-
-            <div class="card" style="margin-bottom:12px">
-              <div class="swrow"><b style="font-size:12.5px;display:flex;align-items:center;gap:9px"><span class="bdg red"><i class="ti ti-discount"></i></span> Promociones programadas</b><button class="sw" disabled style="opacity:.5;cursor:not-allowed"></button></div>
-              <div class="soon"><i class="ti ti-clock" style="color:var(--pf-txt3)"></i> Próximamente — todavía no existe en el sistema, se está evaluando construirla.</div>
-            </div>
-
-            <div class="card">
-              <h4><span class="bdg blue"><i class="ti ti-layers-linked"></i></span> Niveles de precio</h4>
-              ${p ? `
-              <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + p.id + "',{q:this.value})" })}</div>
-              <div style="overflow-x:auto"><table class="tbl">
-                <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>Mínimo</th><th></th></tr></thead>
-                <tbody id="nxPfNivBody"></tbody>
-              </table></div>
-              <div class="nivnew">
-                <div class="nivnewgrid">
-                  <div class="fld"><label>Nombre del nivel nuevo</label><input id="nxPfNivNomNuevo" class="no-upper" placeholder="Ej: Distribuidor"></div>
-                  <div class="fld"><label>Contado</label><input id="nxPfNivNuevoCont" inputmode="numeric" placeholder="0"></div>
-                  <div class="fld"><label>Crédito</label><input id="nxPfNivNuevoCred" inputmode="numeric" placeholder="0"></div>
-                  <div class="fld"><label>Mínimo</label><input id="nxPfNivNuevoMin" inputmode="numeric" placeholder="0"></div>
+            <div class="nxPfProdPanel on" data-tab="info">
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg blue"><i class="ti ti-info-circle"></i></span> Información del artículo</h4>
+                <div class="g2">
+                  <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
+                  <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                  <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Mismo código con el que se creó"></div></div>
+                  <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
+                  <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
+                  <div class="fld"><label>Imagen (URL opcional)</label><div class="inw"><i class="ti ti-photo"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div></div>
+                  <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-package"></i><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
                 </div>
-                <button class="btn2" type="button" onclick="window.nxPfNivelNuevo('${p.id}')"><i class="ti ti-plus"></i> Crear nivel</button>
               </div>
-              ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para configurarle precios por nivel.</div>`}
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="precios">
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg green"><i class="ti ti-currency-dollar"></i></span> Precios</h4>
+                ${tieneNiveles ? `<div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" onchange="window.nxPfNivelCambio('${p.id}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>` : ''}
+                <div class="preciosFlat">
+                  <div class="fld"><label style="color:var(--pf-txt)">Precio Lista</label><div class="inw"><span class="cur">$</span><input id="ppPre" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                  <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
+                  <div class="fld"><label style="color:var(--pf-blue-d)">Precio Contado ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCont" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_contado != null ? Math.round(nivRowInicial.precio_contado) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
+                  <div class="fld"><label style="color:var(--pf-purple)">Precio Crédito ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCred" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_credito != null ? Math.round(nivRowInicial.precio_credito) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
+                  <div class="fld"><label>Precio 2 (mayor, respaldo)</label><div class="inw"><span class="cur">$</span><input id="ppPreMay" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio lista" style="padding-left:24px"></div></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg orange"><i class="ti ti-scale"></i></span> Reglas de Venta${tieneNiveles ? ' <span style="font-weight:600;color:var(--pf-txt3);font-size:10.5px">— por nivel de precio</span>' : ''}</h4>
+                ${tieneNiveles ? `
+                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                  <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Cantidad Mínima</label><input id="ppNivCantMin" inputmode="numeric" value="${nivRowInicial.cantidad_minima != null ? Number(nivRowInicial.cantidad_minima) : 1}" placeholder="1"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Crédito (%)</label><input id="ppNivCredPct" inputmode="decimal" value="${nivRowInicial.credito_pct != null ? Number(nivRowInicial.credito_pct) : ''}" placeholder="0"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-currency-dollar"></i></div><div><label>Crédito ($)</label><input id="ppNivCredMonto" data-nx-money inputmode="numeric" value="${nivRowInicial.credito_monto != null ? Math.round(nivRowInicial.credito_monto) : ''}" placeholder="0"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-history"></i></div><div><label>Precio Anterior</label><input id="ppNivAnterior" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_anterior != null ? Math.round(nivRowInicial.precio_anterior) : ''}" placeholder="0"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>% Descuento</label><input id="ppNivDescPct" inputmode="decimal" value="${nivRowInicial.descuento_pct != null ? Number(nivRowInicial.descuento_pct) : ''}" placeholder="0"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-shield-lock"></i></div><div><label>🔒 Precio Mínimo (nivel)</label><input id="ppNivMin" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_minimo != null ? Math.round(nivRowInicial.precio_minimo) : ''}" placeholder="0"></div></div>
+                </div>
+                ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero (y crea al menos un nivel de precio) para configurar sus reglas de venta.</div>`}
+              </div>
+
+              <div class="card">
+                <h4><span class="bdg blue"><i class="ti ti-layers-linked"></i></span> Niveles de precio</h4>
+                ${p ? `
+                <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + p.id + "',{q:this.value})" })}</div>
+                <div style="overflow-x:auto"><table class="tbl">
+                  <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>Mínimo</th><th></th></tr></thead>
+                  <tbody id="nxPfNivBody"></tbody>
+                </table></div>
+                <div class="nivnew">
+                  <div class="nivnewgrid">
+                    <div class="fld"><label>Nombre del nivel nuevo</label><input id="nxPfNivNomNuevo" class="no-upper" placeholder="Ej: Distribuidor"></div>
+                    <div class="fld"><label>Contado</label><input id="nxPfNivNuevoCont" inputmode="numeric" placeholder="0"></div>
+                    <div class="fld"><label>Crédito</label><input id="nxPfNivNuevoCred" inputmode="numeric" placeholder="0"></div>
+                    <div class="fld"><label>Mínimo</label><input id="nxPfNivNuevoMin" inputmode="numeric" placeholder="0"></div>
+                  </div>
+                  <button class="btn2" type="button" onclick="window.nxPfNivelNuevo('${p.id}')"><i class="ti ti-plus"></i> Crear nivel</button>
+                </div>
+                ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para configurarle precios por nivel.</div>`}
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="costos">
+              <div class="card">
+                <h4><span class="bdg blue"><i class="ti ti-receipt-2"></i></span> Costos</h4>
+                <div class="preciosFlat">
+                  <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                  ${puedeVerMin() ? `<div class="fld"><label>🔒 Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
+                </div>
+                <div class="margbox">
+                  <div class="ic"><i class="ti ti-chart-line"></i></div>
+                  <div><div class="lb">Margen bruto (Precio Lista vs Costo)</div><div class="v" id="nxPfMargV">—</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="inventario">
+              <div class="card">
+                <h4><span class="bdg blue"><i class="ti ti-adjustments"></i></span> Inventario y stock</h4>
+                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                  <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><label>Stock mínimo (alerta)</label><input id="ppMin" inputmode="numeric" value="${e.stock_min != null ? Number(e.stock_min) : '0'}" placeholder="0"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-shield-check"></i></div><div><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-device-mobile"></i></div><div><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="impuestos">
+              <div class="card">
+                <h4><span class="bdg blue"><i class="ti ti-percentage"></i></span> Impuestos</h4>
+                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                  <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>¿Lleva ITBIS (18%)?</label><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="compras">
+              <div class="card">
+                <h4><span class="bdg orange"><i class="ti ti-truck-delivery"></i></span> Compras</h4>
+                <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                ${!_proveedores.length ? `<div class="soon"><i class="ti ti-info-circle"></i> Aún no tienes proveedores creados — agrégalos en la pestaña Compras del POS.</div>` : ''}
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="ventas">
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg green"><i class="ti ti-shopping-cart"></i></span> Reglas de venta</h4>
+                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                  <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div></div>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:12px">
+                <div class="fld"><label>🧩 Combo: sale JUNTO con este artículo (se factura en RD$ 0 y descuenta stock)</label>
+                  <div id="ppComboList" style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0"></div>
+                  <div style="display:flex;gap:6px;position:relative"><input id="ppComboQ" class="no-upper" placeholder="Buscar artículo del combo…" autocomplete="off" oninput="window.nxComboFiltrar(this.value)" style="flex:1;min-width:0;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;padding:0 10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt)">
+                  <input id="ppComboCant" inputmode="numeric" value="1" style="width:56px;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;text-align:center;font-weight:700;background:var(--pf-panel);color:var(--pf-txt)">
+                  <button class="nxPf ab g1" style="width:38px;padding:0" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
+                  <div id="ppComboSug" style="display:none;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;box-shadow:var(--pf-shadow);max-height:170px;overflow-y:auto;margin-top:4px"></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="swrow"><b style="font-size:12.5px;display:flex;align-items:center;gap:9px"><span class="bdg red"><i class="ti ti-discount"></i></span> Promociones programadas</b><button class="sw" disabled style="opacity:.5;cursor:not-allowed"></button></div>
+                <div class="soon"><i class="ti ti-clock" style="color:var(--pf-txt3)"></i> Próximamente — todavía no existe en el sistema, se está evaluando construirla.</div>
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="multiempresa">
+              <div class="card">
+                <h4><span class="bdg blue"><i class="ti ti-building-store"></i></span> Disponibilidad por sucursal</h4>
+                ${(p && _almacenes.length > 1) ? `
+                ${_almacenes.map(a => `<div class="almrow"><b>${esc(a.nombre)}</b><span>${fmtN(stockEnAlm(p.id, a.id))} en stock</span></div>`).join('')}
+                <div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> Para mover stock entre sucursales usa <b>Kardex → Multi-almacén</b>.</div>
+                <button class="btn bghost" type="button" style="margin-top:8px" onclick="document.getElementById('nxPosProd').remove();window.nxPosTab('inventario')"><i class="ti ti-arrow-right"></i> Ir a Kardex</button>
+                ` : (p ? `<div class="soon"><i class="ti ti-info-circle"></i> Esta organización solo tiene una sucursal/almacén activo — el stock del artículo es único. Activa más sucursales en Kardex → Multi-almacén para verlas aquí.</div>` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para ver su disponibilidad por sucursal.</div>`)}
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="integraciones">
+              <div class="card">
+                <h4><span class="bdg purple"><i class="ti ti-plug-connected"></i></span> Integraciones</h4>
+                <div class="soon"><i class="ti ti-clock" style="color:var(--pf-txt3)"></i> Próximamente — publicar este artículo a WhatsApp Catálogo, tienda virtual o un marketplace todavía no existe en el sistema, se está evaluando construirlo.</div>
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="historial">
+              <div class="card">
+                <h4><span class="bdg blue"><i class="ti ti-history"></i></span> Movimientos de este artículo</h4>
+                ${p ? `<div id="nxPfHistBody"><div class="soon"><i class="ti ti-loader-2"></i> Cargando movimientos…</div></div>` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para ver su historial de movimientos.</div>`}
+              </div>
             </div>
 
           </div>
@@ -17245,10 +17339,42 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     setTimeout(() => { try { window.nxComboPaint(); } catch (e) {} }, 30);
     scanMoney(ov);
     ['ppNom', 'ppPre', 'ppPreMay', 'ppNivEsp', 'ppNivCont', 'ppNivCred'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfResumen); });
+    ['ppPre', 'ppCos'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfMargenCalc); });
+    nxPfMargenCalc();
     if (p) {
       if (_niveles.length) window.nxPfNivelesTabla(p.id);
       else nxNivelesInit().then(() => { if (_niveles.length && document.getElementById('nxPosProd')) abrirProd(p); });
     }
+  }
+  // Pestañas del formulario de artículo (NEXUS PRO 2.5): puramente visual — cada campo
+  // conserva su id de siempre, así que nxPfLeerProd/nxPfResumen no necesitan saber en qué
+  // pestaña vive cada input.
+  window.nxPfProdTab = function (key, prodId) {
+    const modal = document.getElementById('nxPosProd'); if (!modal) return;
+    modal.querySelectorAll('.nxPfProdPanel').forEach(el => el.classList.toggle('on', el.getAttribute('data-tab') === key));
+    modal.querySelectorAll('.nxPfProdTabs button').forEach(b => b.classList.toggle('on', b.getAttribute('data-tabbtn') === key));
+    if (key === 'historial' && prodId) window.nxPfHistorialCargar(prodId);
+  };
+  window.nxPfHistorialCargar = async function (prodId) {
+    const box = document.getElementById('nxPfHistBody'); if (!box || box.dataset.cargado === '1') return;
+    box.dataset.cargado = '1';
+    let movs = [];
+    try { movs = await getAPI().get('pos_inv_movimientos', 'select=*&producto_id=eq.' + prodId + '&order=fecha.desc&limit=200') || []; } catch (e) {}
+    if (!document.getElementById('nxPfHistBody')) return;
+    if (!movs.length) { box.innerHTML = '<div class="emptyrow"><i class="ti ti-history"></i><br>Sin movimientos todavía. Se registran al vender, comprar, devolver o ajustar inventario.</div>'; return; }
+    box.innerHTML = `<div style="overflow-x:auto"><table class="ltbl hist"><thead><tr><th>Fecha</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Referencia</th></tr></thead><tbody>${movs.map(m => {
+      const t = (typeof MOV_LBL !== 'undefined' && MOV_LBL[m.tipo]) ? MOV_LBL[m.tipo] : [m.tipo, '#111'];
+      const c = Number(m.cantidad || 0);
+      return `<tr><td>${fechaDMY(m.fecha)}</td><td>${esc(t[0])}</td><td style="text-align:right;color:${c < 0 ? '#b91c1c' : '#15803d'}">${c > 0 ? '+' : ''}${fmtN(c)}</td><td style="text-align:right">${m.stock_nuevo != null ? fmtN(m.stock_nuevo) : ''}</td><td>${esc(m.referencia || m.motivo || '')}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+  };
+  function nxPfMargenCalc() {
+    const box = document.getElementById('nxPfMargV'); if (!box) return;
+    const precio = parseMoney(val('ppPre')), costo = parseMoney(val('ppCos'));
+    if (!precio) { box.textContent = '—'; box.style.color = ''; return; }
+    const pct = ((precio - costo) / precio) * 100;
+    box.textContent = pct.toFixed(1).replace('.', ',') + '% · ' + fmt(precio - costo) + ' de utilidad';
+    box.style.color = pct < 0 ? '#dc2626' : (pct < 15 ? '#ea580c' : '#16a34a');
   }
   function nxPfResumen() {
     const nomEl = document.getElementById('nxPfResNom'); if (nomEl) nomEl.textContent = val('ppNom') || 'Nuevo artículo';
@@ -17279,7 +17405,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       ...(document.getElementById('ppMinP') ? { precio_minimo: moneyVal('ppMinP') } : {}),
       combo_items: _comboTmp,
       serial: val('ppSer') === '1',
-      no_descuento: val('ppNoDesc') === '1'
+      no_descuento: val('ppNoDesc') === '1',
+      proveedor_id: val('ppProv') || null
     };
   }
   async function nxPfGuardarNivelSiCorresponde(prodId) {
