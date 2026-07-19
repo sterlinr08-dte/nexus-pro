@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.52** (ver `index.html` y `version.json`).
+> Versión actual: **48.53** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1697,6 +1697,63 @@ deliberadamente diferido porque hacerlo "de verdad" tocaba el cálculo de dinero
   `index.html` pasan `new Function()`.
 - **Pendiente real para una fase futura:** propina 10% (requiere tocar Vender/Factura), lotes/
   vencimiento (Inventario, no se pidió aún), impuestos adicionales más allá de ITBIS.
+
+### SEGUROS — Ficha del cliente, rediseño Enterprise (19-jul-2026, v48.53)
+El dueño pidió un rediseño visual completo del núcleo de Seguros (spec "NEXUS PRO SEGUROS 2026 –
+REDISEÑO VISUAL ENTERPRISE", solo capa visual, prohibido tocar lógica/Supabase/consultas). Por el
+tamaño se construyó primero una **muestra standalone** (`muestra-ficha-cliente-enterprise.html`,
+scratchpad, NUNCA publicada — instrucción explícita del dueño "no lo publiques, me lo enseñas
+primero", mostrada solo vía el visor de Artifacts) con 4 pantallas aprobadas una por una en varias
+rondas: lista de Clientes, tabla de Facturación (sin columna "Número de Póliza", columna Cliente
+más ancha con nombre+empresa, columnas finales Cliente/ARS/Factura/Fecha/Vencimiento/Total/
+Balance/Estado/Acciones), Historial de Pagos (KPIs, 8 filtros, columnas con método de pago con
+icono, panel lateral con resumen del pago), y la Ficha del cliente. Modo oscuro fue removido de la
+muestra a pedido del dueño (una sola paleta clara). Preguntado cómo debía vivir la Ficha del cliente
+real, el dueño respondió: **sigue siendo un modal (no página aparte), pero grande** — y que la Línea
+de tiempo y el Panel lateral deben ser **reales y completos**, no decorativos.
+- **HECHO — `verCliente(id)` reescrito por completo** (antes un modal chico `.cs-panel` de
+  `400px`, ahora `width:min(1040px,95vw)`; en móvil `@media(max-width:720px)` pasa a pantalla
+  completa). Contenido nuevo dentro de un namespace propio `.nxSf` (paleta azul `#2563EB`, SOLO
+  dentro de `.cs-body` — no toca el resto de Seguros, que sigue con su violeta de siempre):
+  encabezado (avatar+nombre+badge de estado+plan+agente+balance+WhatsApp/Editar), 4 KPIs
+  (facturas totales, pendiente, prima/mes, vigencia de póliza), y 3 columnas — **Línea de tiempo**
+  (nueva, ver abajo), **Historial de facturas** (`sfFacturaCard`, reusa el 100% de la lógica/botones
+  reales de `rFact()`: mismos badges por estado, mismas funciones `cobrarDesdeFact`/
+  `verFacturaPDF_id`/`enviarWA`/`nxEditarPrecioFactura`/`anularFactura`, mismo gating por
+  `tienePermiso`), y un panel de Acciones rápidas + Información + Notas internas.
+- **NUEVO — Línea de tiempo real** (`cargarTimelineCliente`, async, carga perezosa después de
+  pintar el modal): mezcla 4 fuentes sin inventar ninguna tabla nueva para las primeras 3 —
+  `c.created_at` (cliente registrado, ya en memoria), `ST.facturas` filtradas por `cliente_id` (ya
+  en memoria, factura emitida/anulada), `abonos` vía `API.get` (mismo patrón que
+  `verHistorialAbonos`, pago recibido) — y **`auditoria`** para los eventos administrativos
+  (editado/inhabilitado/documento subido/ajuste de deuda/precio corregido), que SÍ necesitó una
+  columna nueva: **`auditoria.cliente_id`** (migración `auditoria_cliente_id`, uuid nullable +
+  índice, additiva). `logAudit(accion,detalle,modulo,clienteId)` ganó un 4to parámetro opcional
+  (default `null`) — los ~40 call-sites existentes que NO lo pasan siguen funcionando exactamente
+  igual; se actualizaron 9 call-sites concretos para pasar el cliente correcto
+  (`FACTURA_PRECIO_CORREGIDO`, `FACTURA_ANULADA`, `COBRO_REGISTRADO`, `COBRO_DEUDA_ANTERIOR`,
+  `AJUSTE_DEUDA_ANTERIOR`, `CLIENTE_EDITADO`, `CLIENTE_NUEVO`, `CLIENTE_INHABILITADO`,
+  `DOCUMENTO_SUBIDO`). **Nota honesta:** los eventos de auditoría de ANTES de esta versión no
+  tienen `cliente_id` — la línea de tiempo solo empieza a completarse del todo desde ahora en
+  adelante, no es retroactiva.
+- **Verificado con el código real** (no una reconstrucción): se extrajo `verCliente`/
+  `sfFacturaCard`/`cargarTimelineCliente` tal cual del archivo junto con los helpers reales que usan
+  (`getTot`/`pend`/`deudaAnt`/`pendTot`/`getEst`/`getEstPol`/`fmt`/`planB`/`nxWa`/`tienePermiso`/
+  `escHtml`, y las declaraciones reales `let ST/CFG/sesion`), cargados en un navegador con datos
+  simulados (un cliente con facturas, dependientes, deuda anterior, un pago y un evento de
+  auditoría). **Bug real encontrado y corregido ANTES de publicar:** en móvil (390px) el nombre del
+  cliente se salía del modal (`.sf-id{flex:0 0 auto}` sin `min-width:0`/`max-width:100%` — un item
+  flex sin esas dos propiedades toma el ancho de su contenido sin envolver, aunque el padre tenga
+  `flex-wrap:wrap`), el modal lo recortaba en silencio (`overflow:hidden`) sin generar scroll de
+  página — por eso no se notaba con una revisión superficial. Arreglado agregando
+  `max-width:100%;min-width:0` a `.sf-id`; reverificado sin desbordes en 390px ni en escritorio
+  (1040px), 0 errores de JS. `node --check parches.js` limpio, `version.json` válido, los 3
+  `<script>` de `index.html` pasan `new Function()`.
+- **Pendiente (no autorizado todavía para pasar a real):** las otras 3 pantallas de la muestra
+  (lista de Clientes, tabla de Facturación sin columna de póliza, Historial de Pagos rediseñado)
+  siguen existiendo SOLO en la muestra standalone — el dueño únicamente confirmó la Ficha del
+  cliente hasta ahora ("Pregunta 2 si completa / Pregunta 1 que viva en modal / Grande" respondía
+  específicamente a las 2 preguntas de la Ficha). Retomar cuando el dueño dé luz verde para esas 3.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

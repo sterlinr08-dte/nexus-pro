@@ -597,8 +597,8 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .fav-star.active{color:#f59e0b}
 .fav-star:hover{transform:scale(1.2)}
 
-/* ════ CLIENT SUMMARY PANEL ════ */
-.cs-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.97);opacity:0;visibility:hidden;width:min(400px,86vw);max-height:80vh;background:#fff;border-radius:28px;box-shadow:0 25px 60px rgba(0,0,0,.4);z-index:600;display:flex;flex-direction:column;overflow:hidden;transition:opacity .22s ease,transform .22s ease}
+/* ════ CLIENT SUMMARY PANEL (ficha Enterprise, v48.53) ════ */
+.cs-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.97);opacity:0;visibility:hidden;width:min(1040px,95vw);max-height:90vh;background:#fff;border-radius:22px;box-shadow:0 25px 60px rgba(0,0,0,.4);z-index:600;display:flex;flex-direction:column;overflow:hidden;transition:opacity .22s ease,transform .22s ease}
 .cs-panel.open{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
 .cs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:599;display:none}
 .cs-overlay.show{display:block}
@@ -606,6 +606,64 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .cs-body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding-bottom:calc(18px + env(safe-area-inset-bottom,0))}
 .cs-section{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f1f5f9}
 .cs-section-ttl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#475569;margin-bottom:8px}
+@media(max-width:720px){.cs-panel{width:100vw;max-height:100vh;height:100vh;border-radius:0;top:0;left:0;transform:translateY(8px);}.cs-panel.open{transform:translateY(0)}}
+
+/* ── nxSf: ficha Enterprise del cliente — namespace propio, azul #2563EB, DENTRO de .cs-body ── */
+.nxSf{--sf-bg:#F6F8FB;--sf-card:#FFFFFF;--sf-line:#E7EBF3;--sf-primary:#2563EB;--sf-primary-l:#EAF1FF;--sf-primary-d:#1D4ED8;
+  --sf-ok:#22C55E;--sf-ok-l:#E8F9EF;--sf-ok-d:#0F9D50;--sf-warn:#F59E0B;--sf-warn-l:#FEF3DC;--sf-warn-d:#B45309;
+  --sf-err:#EF4444;--sf-err-l:#FDEBEB;--sf-err-d:#DC2626;--sf-tx:#111827;--sf-tx2:#6B7280;--sf-tx3:#94A0B4;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--sf-tx)}
+.nxSf .sf-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--sf-card);border:1px solid var(--sf-line);
+  border-radius:16px;padding:14px 16px;margin-bottom:12px}
+.nxSf .sf-ava{width:48px;height:48px;border-radius:50%;background:var(--sf-primary-l);color:var(--sf-primary-d);display:flex;
+  align-items:center;justify-content:center;font-size:16px;font-weight:800;flex:0 0 auto}
+.nxSf .sf-id{flex:0 0 auto;max-width:100%;min-width:0}
+.nxSf .sf-id h2{margin:0 0 4px;font-size:16px;font-weight:800;letter-spacing:-.2px}
+.nxSf .sf-badge{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 9px;border-radius:999px;font-size:10px;font-weight:800}
+.nxSf .sf-badge.ok{background:var(--sf-ok-l);color:var(--sf-ok-d)}
+.nxSf .sf-badge.warn{background:var(--sf-warn-l);color:var(--sf-warn-d)}
+.nxSf .sf-badge.err{background:var(--sf-err-l);color:var(--sf-err-d)}
+.nxSf .sf-facts{display:flex;flex-wrap:wrap;gap:18px;flex:1;min-width:200px}
+.nxSf .sf-fact .lb{font-size:9px;color:var(--sf-tx3);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.nxSf .sf-fact b{display:block;font-size:12.5px;font-weight:700;margin-top:1px}
+.nxSf .sf-fact.err b{color:var(--sf-err)}
+.nxSf .sf-actions{display:flex;gap:8px;flex:0 0 auto}
+.nxSf .sf-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:9px;font-size:12px;
+  font-weight:700;border:1.5px solid var(--sf-line);background:var(--sf-card);color:var(--sf-tx);cursor:pointer;white-space:nowrap}
+.nxSf .sf-btn.primary{background:var(--sf-primary);border-color:var(--sf-primary);color:#fff}
+.nxSf .sf-btn.ok{background:var(--sf-ok-l);border-color:transparent;color:var(--sf-ok-d)}
+.nxSf .sf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.nxSf .sf-kpi{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:14px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start}
+.nxSf .sf-kpi .ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.nxSf .sf-kpi.blue .ic{background:var(--sf-primary-l);color:var(--sf-primary-d)}
+.nxSf .sf-kpi.warn .ic{background:var(--sf-warn-l);color:var(--sf-warn-d)}
+.nxSf .sf-kpi.ok .ic{background:var(--sf-ok-l);color:var(--sf-ok-d)}
+.nxSf .sf-kpi.purple .ic{background:#F1EBFF;color:#7C3AED}
+.nxSf .sf-kpi .lb{font-size:10.5px;color:var(--sf-tx2);font-weight:600}
+.nxSf .sf-kpi .v{font-size:16px;font-weight:800;margin-top:2px}
+.nxSf .sf-kpi .sub{font-size:10px;color:var(--sf-tx3);margin-top:2px}
+.nxSf .sf-grid{display:grid;grid-template-columns:220px minmax(0,1fr) 220px;gap:12px;align-items:start}
+.nxSf .sf-grid>*{min-width:0}
+.nxSf .sf-panel{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:16px;padding:14px}
+.nxSf .sf-panel h3{font-size:12.5px;font-weight:800;margin:0 0 10px}
+.nxSf .sf-tl-item{display:flex;gap:9px;position:relative;padding-bottom:16px}
+.nxSf .sf-tl-item:last-child{padding-bottom:0}
+.nxSf .sf-tl-item::before{content:'';position:absolute;left:12px;top:24px;bottom:0;width:1.5px;background:var(--sf-line)}
+.nxSf .sf-tl-item:last-child::before{display:none}
+.nxSf .sf-tl-dot{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:#fff;z-index:1}
+.nxSf .sf-tl-b b{display:block;font-size:11.5px;font-weight:700}
+.nxSf .sf-tl-b .when{font-size:9.5px;color:var(--sf-tx3);margin:1px 0 1px}
+.nxSf .sf-tl-b .desc{font-size:10.5px;color:var(--sf-tx2)}
+.nxSf .sf-qa{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.nxSf .sf-qa-tile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;border-radius:11px;
+  border:1px solid var(--sf-line);background:var(--sf-bg);cursor:pointer;text-align:center}
+.nxSf .sf-qa-tile:hover{border-color:var(--sf-primary)}
+.nxSf .sf-qa-tile .ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nxSf .sf-qa-tile span{font-size:9.5px;font-weight:700;color:var(--sf-tx2);line-height:1.2}
+.nxSf .sf-fcard{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:12px;padding:10px 11px;margin-bottom:8px}
+.nxSf .sf-empty{text-align:center;color:var(--sf-tx3);padding:20px;font-size:11.5px}
+@media(max-width:900px){.nxSf .sf-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:720px){.nxSf .sf-kpis{grid-template-columns:repeat(2,1fr)}.nxSf .sf-qa{grid-template-columns:repeat(4,1fr)}}
 
 /* ════ GLOBAL SEARCH MODAL ════ */
 .gs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:700;display:none;align-items:flex-start;justify-content:center;padding-top:80px;backdrop-filter:blur(4px)}
@@ -2255,14 +2313,15 @@ function logError(tipo, titulo, detalle, modulo){
   }catch(e){}
 }
 
-function logAudit(accion,detalle='',modulo=''){
+function logAudit(accion,detalle='',modulo='',clienteId=null){
   const entry={
     ts:new Date().toISOString(),
     usuario:sesion?.nom||'Sistema',
     rol:sesion?.rol||'—',
     accion,
     detalle,
-    modulo:modulo||detectarModulo(accion)
+    modulo:modulo||detectarModulo(accion),
+    cliente_id:clienteId||null
   };
   AUDIT.unshift(entry);
   if(AUDIT.length>300)AUDIT.pop();
@@ -3451,7 +3510,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.52';
+const APP_VERSION='48.53';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -3902,102 +3961,162 @@ document.addEventListener('keydown',e=>{
 });
 
 // ── PANEL RESUMEN DEL CLIENTE ──────────────────────────────────────
+// Tarjeta de UNA factura (reusa exactamente el markup/acciones de rFact(), solo sin el nombre del
+// cliente/agente porque ya estamos dentro de su ficha) — usada por verCliente() en "Historial de facturas".
+function sfFacturaCard(f){
+  const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
+  const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
+  const anul=f.estado==='Anulada';
+  const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
+  const sal=(f.estado==='Pagado')?0:prima;// nxSf usa el saldo simple; el detalle exacto sigue disponible en Facturas
+  const pg=prima-sal;
+  return `<div class="sf-fcard${anul?' style="opacity:.55"':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div style="font-weight:800;font-size:12.5px">${MESES[(f.mes||1)-1]||''} ${f.anio||''}</div>
+          <div style="font-size:10px;color:var(--sf-tx3)">${planB(f.plan)}</div>
+        </div>
+        <span class="badge ${ec}" style="font-size:9px">${f.estado.toUpperCase()}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin:7px 0;padding:6px 0;border-top:1px solid var(--sf-line)">
+        <div style="font-size:9px;color:var(--sf-tx3)">${pg>0.009?`Prima ${fmt(prima)} · abonado ${fmt(pg)}`:'Mes actual'}</div>
+        <b style="font-size:13px">${fmt(sal)}</b>
+      </div>
+      ${anul?'':`<button onclick="cobrarDesdeFact('${f.cliente_id}')" style="width:100%;border:none;color:#fff;font-weight:800;font-size:11px;padding:6px;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#059669,#10b981);margin-bottom:5px">💰 COBRAR</button>`}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:4px">
+        <button onclick="verFacturaPDF_id('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#6d28d9,#8b5cf6)">Factura</button>
+        ${anul?'':`<button onclick="enviarWA('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#1da851,#25d366)">WhatsApp</button>`}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?`<button onclick="nxEditarPrecioFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#b45309,#f59e0b)">Precio</button>`:''}
+        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?`<button onclick="anularFactura('${f.id}')" style="border:none;color:#fff;font-weight:700;font-size:9.5px;padding:6px 3px;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#dc2626,#ef4444)">Anular</button>`:''}
+      </div>
+    </div>`;
+}
+// Línea de tiempo del cliente (carga perezosa, después de pintar la ficha): mezcla fuentes que YA
+// existen — cliente creado (c.created_at), facturas (ST.facturas, en memoria) y pagos (tabla
+// `abonos`) — con la tabla `auditoria` (editado/inhabilitado/anulaciones/documentos/ajustes de
+// deuda), ahora filtrable por `cliente_id`. Los eventos de auditoría de ANTES de esta versión no
+// tienen cliente_id (quedan fuera) — el histórico empieza a completarse desde ahora en adelante.
+async function cargarTimelineCliente(id){
+  const box=document.getElementById('sfTimeline');if(!box)return;
+  const c=ST.clientes.find(x=>x.id===id);if(!c)return;
+  const eventos=[];
+  if(c.created_at)eventos.push({ts:c.created_at,ic:'ti-user-plus',cls:'blue',tit:'Cliente registrado',desc:c.created_by_name?`Por ${c.created_by_name}`:'Registro inicial'});
+  ST.facturas.filter(f=>String(f.cliente_id)===String(id)).forEach(f=>{
+    if(f.created_at)eventos.push({ts:f.created_at,ic:'ti-file-invoice',cls:'blue',tit:'Factura emitida',desc:`${MESES[(f.mes||1)-1]||''} ${f.anio||''} · ${fmt(Number(f.prima_base||0)+Number(f.prima_deps||0))}`});
+    if(f.estado==='Anulada'&&f.updated_at)eventos.push({ts:f.updated_at,ic:'ti-ban',cls:'err',tit:'Factura anulada',desc:`${MESES[(f.mes||1)-1]||''} ${f.anio||''}`});
+  });
+  try{
+    const abonos=await API.get('abonos',`cliente_id=eq.${id}&order=fecha.desc&limit=30`)||[];
+    abonos.forEach(a=>eventos.push({ts:a.created_at||a.fecha,ic:'ti-cash',cls:'ok',tit:'Pago recibido',desc:`${fmt(a.monto)} · ${a.metodo||''}`}));
+  }catch(e){}
+  try{
+    const aud=await API.get('auditoria',`cliente_id=eq.${id}&order=ts.desc&limit=30`)||[];
+    const ICONS={CLIENTE_EDITADO:['ti-edit','blue','Cliente editado'],CLIENTE_INHABILITADO:['ti-user-off','err','Cliente inhabilitado'],DOCUMENTO_SUBIDO:['ti-file-upload','purple','Documento agregado'],AJUSTE_DEUDA_ANTERIOR:['ti-adjustments','warn','Deuda anterior ajustada'],FACTURA_PRECIO_CORREGIDO:['ti-pencil','warn','Precio de factura corregido']};
+    aud.forEach(a=>{const info=ICONS[a.accion];if(!info)return;eventos.push({ts:a.ts,ic:info[0],cls:info[1],tit:info[2],desc:a.detalle||''});});
+  }catch(e){}
+  if(!document.getElementById('sfTimeline'))return;// el modal pudo cerrarse mientras cargaba
+  if(!eventos.length){box.innerHTML='<div class="sf-empty">Sin eventos todavía</div>';return;}
+  eventos.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const fCorta=s=>{try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s||'').slice(0,10);}};
+  box.innerHTML=eventos.slice(0,15).map(e=>`<div class="sf-tl-item">
+      <div class="sf-tl-dot" style="background:var(--sf-${e.cls==='purple'?'primary':e.cls==='warn'?'warn':e.cls==='err'?'err':e.cls==='ok'?'ok':'primary'})"><i class="ti ${e.ic}" style="font-size:12px"></i></div>
+      <div class="sf-tl-b"><b>${e.tit}</b><div class="when">${fCorta(e.ts)}</div><div class="desc">${escHtml(e.desc)}</div></div>
+    </div>`).join('');
+}
 function verCliente(id){
   const c=ST.clientes.find(x=>x.id===id);
   if(!c)return;
-  document.getElementById('csNom').textContent=c.nom+(c.referencia?` (${c.referencia})`:'');
+  document.getElementById('csNom').textContent='Ficha del cliente';
   const fav=esFavorito(id);
   const notas=getNotas(id);
   const emp=gEmp(c.empresa_id)?.nom||'Particular';
   const agt=gAgt(c.agente_id)?.nom||'Sin asignar';
-  const fFB=(s)=>{if(!s)return '—';try{const d=new Date(s);return d.toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(e){return String(s).slice(0,16).replace('T',' ');}};
+  const fCorta=(s)=>{if(!s)return '—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
+  const estado=getEst(c);
+  const estBadgeCls=estado==='Al día'?'ok':estado==='Inhabilitado'?'err':'warn';
+  const estPol=getEstPol(c);
+  const facturasCli=ST.facturas.filter(f=>String(f.cliente_id)===String(id)).sort((a,b)=>(b.periodo||'').localeCompare(a.periodo||''));
+  const facPend=facturasCli.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
+  const facPagadas=facturasCli.filter(f=>f.estado==='Pagado').length;
   document.getElementById('csBody').innerHTML=`
-    <div style="text-align:center;margin-bottom:14px">
-      <span class="fav-star ${fav?'active':''}" onclick="toggleFav('${id}')" style="font-size:19px">★</span>
-      ${fav?'<span style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px">CLIENTE VIP</span>':''}
-    </div>
-    
-    <div class="cs-section">
-      <div class="cs-section-ttl">Información personal</div>
-      <div style="font-size:12px;line-height:1.8">
-        <div><strong>Cédula:</strong> ${c.cedula||'—'}</div>
-        <div><strong>WhatsApp:</strong> ${c.wa||'—'} ${nxWa(c.wa)?`<a href="https://wa.me/${nxWa(c.wa)}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a>`:''}</div>
-        <div><strong>Teléfono:</strong> ${c.tel||'—'}</div>
-        <div><strong>Email:</strong> ${c.email||'—'}</div>
-        <div><strong>Dirección:</strong> ${c.dir||'—'}</div>
-        ${c.referencia?`<div><strong>Apodo:</strong> ${c.referencia}</div>`:''}
-        ${c.referencia_wa?`<div><strong>📲 WhatsApp ref:</strong> ${c.referencia_wa} ${nxWa(c.referencia_wa)?`<a href="https://wa.me/${nxWa(c.referencia_wa)}" target="_blank" style="color:#25d366;text-decoration:none;font-weight:700">Abrir</a>`:''}</div>`:''}
-      </div>
-    </div>
-    
-    <div class="cs-section">
-      <div class="cs-section-ttl">Póliza</div>
-      <div style="font-size:12px;line-height:1.8">
-        <div><strong>Número:</strong> ${c.numero_poliza||'Sin póliza'}</div>
-        <div><strong>Plan:</strong> ${planB(c.plan)}</div>
-        <div><strong>ARS:</strong> ${c.ars||'—'}</div>
-        <div><strong>Vigencia:</strong> ${c.fecha_inicio||'—'} al ${c.fecha_fin||'—'}</div>
-        <div><strong>Empresa:</strong> ${emp}</div>
-        <div><strong>Agente:</strong> ${agt}</div>
-      </div>
-    </div>
-
-    <div class="cs-section">
-      <div class="cs-section-ttl">Registro</div>
-      <div style="background:linear-gradient(145deg,#eff6ff,#f8fbff);border:1px solid #dbeafe;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.7;box-shadow:0 3px 10px rgba(15,23,42,.10)">
-        <div><strong>🆕 Creado por:</strong> ${c.created_by_name||'—'}</div>
-        <div><strong>📅 Fecha de creación:</strong> ${fFB(c.created_at)}</div>
-        ${c.updated_by_name?`<div style="margin-top:4px;color:var(--tx2)"><strong>✏️ Última edición:</strong> ${c.updated_by_name} · ${fFB(c.updated_at||c.created_at)}</div>`:''}
-      </div>
-    </div>
-
-    <div class="cs-section">
-      <div class="cs-section-ttl">Estado financiero</div>
-      ${c.permitir_facturacion===false?`<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:7px 10px;margin-bottom:8px;font-size:11px;font-weight:700;color:#1d4ed8;text-align:center">🚫 Cliente de cortesía — NO se le genera factura automática</div>`:''}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:#f0fdf4;border-radius:8px;padding:8px;text-align:center">
-          <div style="font-size:9px;color:#059669;text-transform:uppercase;font-weight:700">Prima/mes</div>
-          <div style="font-size:14px;font-weight:700;color:#059669;margin-top:2px">${fmt(getTot(c))}</div>
+    <div class="nxSf">
+      <div class="sf-head">
+        <div class="sf-ava">${inits(c.nom)}</div>
+        <div class="sf-id">
+          <h2>${c.nom}${c.referencia?` (${c.referencia})`:''}</h2>
+          <span class="sf-badge ${estBadgeCls}">● ${estado}</span>
+          ${fav?'<span class="sf-badge warn" style="margin-left:4px">★ VIP</span>':''}
+          ${c.permitir_facturacion===false?'<span class="sf-badge" style="background:var(--sf-primary-l);color:var(--sf-primary-d);margin-left:4px">🚫 Cortesía</span>':''}
         </div>
-        <div style="background:#fef3c7;border-radius:8px;padding:8px;text-align:center">
-          <div style="font-size:9px;color:#92400e;text-transform:uppercase;font-weight:700">Pendiente facturas</div>
-          <div style="font-size:14px;font-weight:700;color:#92400e;margin-top:2px">${fmt(pend(c))}</div>
+        <div class="sf-facts">
+          <div class="sf-fact"><span class="lb">Cliente desde</span><b>${fCorta(c.created_at)}</b></div>
+          <div class="sf-fact"><span class="lb">Plan</span><b>${planB(c.plan)}</b></div>
+          <div class="sf-fact"><span class="lb">Agente</span><b>${agt}</b></div>
+          <div class="sf-fact err"><span class="lb">Balance pendiente</span><b>${fmt(pendTot(c))}</b></div>
         </div>
-        ${(Number(c.deuda_anterior)||0)>0?`<div style="grid-column:1/-1;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px;text-align:center">
-          <div style="font-size:9px;color:#dc2626;text-transform:uppercase;font-weight:700">🔴 Deuda anterior (antes del sistema)</div>
-          <div style="font-size:14px;font-weight:700;color:#dc2626;margin-top:2px">${fmt(c.deuda_anterior)}</div>
-          <div style="font-size:9px;color:#b91c1c;margin-top:1px">No se mezcla con las facturas del mes</div>
-        </div>`:''}
+        <div class="sf-actions">
+          ${nxWa(c.wa)?`<a class="sf-btn ok" href="https://wa.me/${nxWa(c.wa)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>`:''}
+          <button class="sf-btn primary" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
+          <span class="fav-star ${fav?'active':''}" onclick="toggleFav('${id}')" style="font-size:19px;cursor:pointer;align-self:center" title="Marcar VIP">★</span>
+        </div>
       </div>
-    </div>
-    
-    <div class="cs-section">
-      <div class="cs-section-ttl">📝 Notas internas</div>
-      <div id="csNotas">
-        ${notas.map(n=>`<div class="note-item"><div class="note-ts">${n.ts.slice(0,16).replace('T',' ')}</div>${n.txt}</div>`).join('')||'<div style="color:#475569;font-size:11px">Sin notas</div>'}
+
+      <div class="sf-kpis">
+        <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas totales</div><div class="v">${facturasCli.length}</div><div class="sub">${facPagadas} pagadas</div></div></div>
+        <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Pendiente</div><div class="v">${fmt(pend(c))}</div><div class="sub">${facPend} factura(s)</div></div></div>
+        <div class="sf-kpi ok"><div class="ic"><i class="ti ti-cash"></i></div><div><div class="lb">Prima / mes</div><div class="v">${fmt(getTot(c))}</div><div class="sub">Cobrado: ${fmt(c.pagado||0)}</div></div></div>
+        <div class="sf-kpi purple"><div class="ic"><i class="ti ti-calendar-event"></i></div><div><div class="lb">Vigencia póliza</div><div class="v" style="font-size:12.5px">${estPol.lbl}</div><div class="sub">${c.fecha_fin?('Vence '+fCorta(c.fecha_fin)):'Sin fecha'}</div></div></div>
       </div>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <input type="text" id="csNuevaNota" placeholder="Agregar nota..." style="flex:1;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
-        <button class="btn bc1" onclick="agregarNota('${id}')"><i class="ti ti-plus"></i></button>
+
+      <div class="sf-grid">
+        <div class="sf-panel">
+          <h3>Línea de tiempo</h3>
+          <div id="sfTimeline"><div class="sf-empty"><i class="ti ti-loader-2"></i> Cargando…</div></div>
+        </div>
+
+        <div class="sf-panel">
+          <h3>Historial de facturas</h3>
+          ${facturasCli.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">${facturasCli.slice(0,12).map(sfFacturaCard).join('')}</div>`:'<div class="sf-empty">Sin facturas generadas todavía</div>'}
+        </div>
+
+        <div>
+          <div class="sf-panel" style="margin-bottom:10px">
+            <h3>Acciones rápidas</h3>
+            <div class="sf-qa">
+              <div class="sf-qa-tile" onclick="abrirDocs('${id}')"><div class="ic" style="background:var(--sf-primary-l);color:var(--sf-primary-d)"><i class="ti ti-folder"></i></div><span>Documentos</span></div>
+              <div class="sf-qa-tile" onclick="verHistorialAbonos('${id}')"><div class="ic" style="background:var(--sf-ok-l);color:var(--sf-ok-d)"><i class="ti ti-history"></i></div><span>Abonos</span></div>
+              <div class="sf-qa-tile" onclick="verFacturaPDF('${id}');cerrarClientSummary()"><div class="ic" style="background:#F1EBFF;color:#7C3AED"><i class="ti ti-file-certificate"></i></div><span>PDF</span></div>
+            </div>
+          </div>
+          <div class="sf-panel" style="margin-bottom:10px">
+            <h3>Información</h3>
+            <div style="font-size:11.5px;line-height:1.9;color:var(--sf-tx2)">
+              <div><b style="color:var(--sf-tx)">Cédula:</b> ${c.cedula||'—'}</div>
+              <div><b style="color:var(--sf-tx)">Teléfono:</b> ${c.tel||'—'}</div>
+              <div><b style="color:var(--sf-tx)">Email:</b> ${c.email||'—'}</div>
+              <div><b style="color:var(--sf-tx)">Dirección:</b> ${c.dir||'—'}</div>
+              ${c.referencia_wa?`<div><b style="color:var(--sf-tx)">WhatsApp ref:</b> ${c.referencia_wa} ${nxWa(c.referencia_wa)?`<a href="https://wa.me/${nxWa(c.referencia_wa)}" target="_blank" style="color:#25d366;font-weight:700">Abrir</a>`:''}</div>`:''}
+              <div><b style="color:var(--sf-tx)">Póliza:</b> ${c.numero_poliza||'Sin póliza'}</div>
+              <div><b style="color:var(--sf-tx)">ARS:</b> ${c.ars||'—'}</div>
+              <div><b style="color:var(--sf-tx)">Empresa:</b> ${emp}</div>
+              <div><b style="color:var(--sf-tx)">Dependientes:</b> ${(c.deps||[]).length}</div>
+              ${deudaAnt(c)>0?`<div style="color:var(--sf-err);font-weight:700;margin-top:4px">🔴 Deuda antes del sistema: ${fmt(c.deuda_anterior)}</div>`:''}
+            </div>
+          </div>
+          <div class="sf-panel">
+            <h3>Notas internas</h3>
+            <div id="csNotas">
+              ${notas.map(n=>`<div class="note-item"><div class="note-ts">${n.ts.slice(0,16).replace('T',' ')}</div>${n.txt}</div>`).join('')||'<div style="color:var(--sf-tx3);font-size:11px">Sin notas</div>'}
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <input type="text" id="csNuevaNota" placeholder="Agregar nota..." style="flex:1;padding:7px 10px;border:1.5px solid var(--sf-line);border-radius:8px;font-size:11px"/>
+              <button class="btn bc1" onclick="agregarNota('${id}')"><i class="ti ti-plus"></i></button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <div class="cs-section">
-      <div class="cs-section-ttl">📜 Histórico</div>
-      <div style="font-size:11px;color:#475569;line-height:1.8">
-        <div>📅 Registrado: ${c.created_at?.slice(0,10)||'—'}</div>
-        <div>👥 Dependientes: ${(c.deps||[]).length}</div>
-        <div>📄 Facturas generadas: ${ST.facturas.filter(f=>f.cliente_id===id).length}</div>
-        <div>💰 Total cobrado: ${fmt(c.pagado||0)}</div>
-      </div>
-    </div>
-    
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px">
-      <button class="btn bc1" style="width:100%" onclick="editarCli('${id}');cerrarClientSummary()"><i class="ti ti-edit"></i> Editar</button>
-      <button class="btn bc4" style="width:100%" onclick="abrirDocs('${id}');cerrarClientSummary()"><i class="ti ti-folder"></i> Documentos</button>
-      <button class="btn bc5" style="width:100%" onclick="verFacturaPDF('${id}');cerrarClientSummary()"><i class="ti ti-file-certificate"></i> PDF</button>
-    </div>
-    <button class="btn bc2" style="width:100%;margin-top:6px" onclick="verHistorialAbonos('${id}')"><i class="ti ti-history"></i> Ver historial de abonos</button>`;
+    </div>`;
+  cargarTimelineCliente(id);
   document.getElementById('csPanel').classList.add('open');
   document.getElementById('csOverlay').classList.add('show');
 }
@@ -5611,7 +5730,7 @@ async function nxEditarPrecioFactura(fid){
     await API.patch('facturas',`id=eq.${f.id}`,{prima_base:baseN,prima_deps:depsN,total:totalN});
     f.prima_base=baseN;f.prima_deps=depsN;f.total=totalN;
     if(cli){const deudaN=Math.max(0,Number(cli.deuda_total||0)+diff);await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});cli.deuda_total=deudaN;}
-    logAudit('FACTURA_PRECIO_CORREGIDO',`${f.cliente_nom} · ${MESES[(f.mes||1)-1]||''} ${f.anio||''}: ${fmt(primaAct)} → ${fmt(nuevo)} · deuda ${diff>=0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas');
+    logAudit('FACTURA_PRECIO_CORREGIDO',`${f.cliente_nom} · ${MESES[(f.mes||1)-1]||''} ${f.anio||''}: ${fmt(primaAct)} → ${fmt(nuevo)} · deuda ${diff>=0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas',f.cliente_id);
     toast('ok','Precio corregido',`${fmt(nuevo)} — listo para cobrar`);
     try{rFact();rCob();}catch(e){}
     // ¿Este precio corregido también se queda como la plantilla para las PRÓXIMAS facturas?
@@ -5681,7 +5800,7 @@ async function anularFactura(facturaId){
         try{recalcularSaldosContables();}catch(_){}
       }
     }catch(eRev){console.warn('No se pudo revertir contablemente la anulación:',eRev);}
-    logAudit('FACTURA_ANULADA',`Factura ${f.ncf||f.periodo||''} de ${f.cliente_nom} · ${fmt(f.total)} · Motivo: ${motivo.trim()}`,'Facturas');
+    logAudit('FACTURA_ANULADA',`Factura ${f.ncf||f.periodo||''} de ${f.cliente_nom} · ${fmt(f.total)} · Motivo: ${motivo.trim()}`,'Facturas',f.cliente_id);
     rFact();
     if(typeof rDash==='function')rDash();
     toast('ok','Factura anulada',f.cliente_nom);
@@ -6519,7 +6638,7 @@ async function regAbono(){
       }
     }
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
-    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros');
+    logAudit('COBRO_REGISTRADO',`${c.nom} · ${fmt(monto)} · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros',c.id);
     const cuentaDr=metodo==='Cheque'?{cod:'1102',nom:'Cheques en tránsito'}:metodo==='Transferencia'||metodo==='Depósito'?{cod:'1103',nom:'Depósitos bancarios'}:{cod:'1101',nom:'Efectivo'};
     const asi={fecha:hoy(),referencia:'AST-COB-'+((c.numero_poliza?.replace('POL-','').slice(-4))||'0000'),descripcion:`Cobro ${metodo} — ${c.nom} [${c.numero_poliza||'—'}] Plan ${c.plan}`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
     const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);
@@ -6557,7 +6676,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
     const asi={fecha:hoy(),referencia:'AST-COB-'+((c.numero_poliza?.replace('POL-','').slice(-4))||'0000'),descripcion:`Cobro deuda anterior ${metodo} — ${c.nom} [${c.numero_poliza||'—'}]`,cuenta_dr_cod:cuentaDr.cod,cuenta_dr_nom:cuentaDr.nom,monto_dr:monto,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar — Clientes',monto_cr:monto};
     try{const r=await API.post('asientos',asi);if(r&&r[0])ST.asientos.unshift(r[0]);recalcularSaldosContables();}catch(e){}
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
-    logAudit('COBRO_DEUDA_ANTERIOR',`${c.nom} · ${fmt(monto)} a deuda anterior · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros');
+    logAudit('COBRO_DEUDA_ANTERIOR',`${c.nom} · ${fmt(monto)} a deuda anterior · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros',c.id);
     _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:[]};
     const reciboDiv=document.getElementById('reciboWAbtn');if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
     document.getElementById('btnAbo').style.display='none';
@@ -6850,7 +6969,7 @@ async function guardarCli(){
         const deudaOrig=Number(cDeudaEl._deudaOriginal)||0;
         if(Math.round(deudaNueva*100)!==Math.round(deudaOrig*100)){
           datos.deuda_anterior=deudaNueva;
-          logAudit('AJUSTE_DEUDA_ANTERIOR',`${nom} · Deuda anterior ajustada de ${fmt(deudaOrig)} a ${fmt(deudaNueva)}`,'Clientes');
+          logAudit('AJUSTE_DEUDA_ANTERIOR',`${nom} · Deuda anterior ajustada de ${fmt(deudaOrig)} a ${fmt(deudaNueva)}`,'Clientes',editCliId);
         }
       }
       try{
@@ -6864,7 +6983,7 @@ async function guardarCli(){
         await API.patch('clientes',`id=eq.${editCliId}`,d2);
       }
       const idx=ST.clientes.findIndex(x=>x.id===editCliId);ST.clientes[idx]={...ST.clientes[idx],...datos,deps:tempDeps};
-      logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes');
+      logAudit('CLIENTE_EDITADO',nom+(precioT!=null||precioD!=null?' · Precio personalizado aplicado':''),'Clientes',editCliId);
     toast('ok','Cliente actualizado',nom);
       // Este precio es la plantilla para las PRÓXIMAS facturas — no toca las que ya están pendientes.
       // Para corregir una factura ya generada se usa el botón "Precio" de esa factura (Facturas).
@@ -6886,7 +7005,7 @@ async function guardarCli(){
         res=await API.post('clientes',{...d2,deuda_anterior:deudaIni,deuda_total:0,pagado:0,activo:true,numero_poliza:numPol});
       }
       if(res&&res[0]){res[0].deps=tempDeps;ST.clientes.push(res[0]);}
-      logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes');
+      logAudit('CLIENTE_NUEVO',`${nom} · ${numPol}`+(precioT!=null||precioD!=null?' · Precio personalizado':''),'Clientes',res&&res[0]?res[0].id:null);
     toast('ok',`Cliente registrado · Póliza: ${numPol}`,nom);
     }
     closeM('mCli');rCli();rDash();actualizarTicker();verificarAlertas();
@@ -6926,7 +7045,7 @@ async function confirmarInhab(){
   try{
     await API.patch('clientes',`id=eq.${inhabCliId}`,{activo:false,motivo_inhab:motivo,nota_inhab:nota});
     if(pend(c)>0){const asi={fecha:hoy(),referencia:'AST-BAJA',descripcion:`Baja póliza: ${c.nom} [${c.numero_poliza||'—'}] — ${motivo}`,cuenta_dr_cod:'2101',cuenta_dr_nom:'Cuentas por pagar',monto_dr:0,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar',monto_cr:pend(c)};const r=await API.post('asientos',asi);if(r&&r[0]){ST.asientos.unshift(r[0]);recalcularSaldosContables();}}
-    c.activo=false;logAudit('CLIENTE_INHABILITADO',`${c.nom} · ${c.numero_poliza||'—'} · Motivo: ${motivo}${nota?' · '+nota:''}`,'Clientes');
+    c.activo=false;logAudit('CLIENTE_INHABILITADO',`${c.nom} · ${c.numero_poliza||'—'} · Motivo: ${motivo}${nota?' · '+nota:''}`,'Clientes',c.id);
     closeM('mInhab');toast('warn','Cliente inhabilitado — póliza cancelada',c.nom);rCli();rDash();actualizarTicker();
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
@@ -7833,7 +7952,7 @@ async function subirDoc(tipo, input){
     }
 
     card.classList.remove('uploading');
-    logAudit('DOCUMENTO_SUBIDO', `${tipoInfo?.lbl||tipo} — ${ST.clientes.find(c=>c.id===_docsCliId)?.nom||''}`);
+    logAudit('DOCUMENTO_SUBIDO', `${tipoInfo?.lbl||tipo} — ${ST.clientes.find(c=>c.id===_docsCliId)?.nom||''}`,'',_docsCliId);
     toast('ok', `${tipoInfo?.lbl||tipo} subido`, file.name);
 
   }catch(e){
