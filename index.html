@@ -678,6 +678,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf table.sf-tbl .cli-cell b{display:block;font-size:12px;font-weight:800;color:var(--sf-tx)}
 .nxSf table.sf-tbl .cli-cell span{display:block;font-size:10px;color:var(--sf-tx3);margin-top:1px}
 .nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
+.nxSf .cli-cell:focus-visible,.nxSf .sf-btn:focus-visible,.nxSf .btn:focus-visible{outline:2px solid var(--sf-primary);outline-offset:-2px}
 @media(max-width:720px){
   .nxSf table.sf-tbl thead{display:none}
   .nxSf table.sf-tbl,.nxSf table.sf-tbl tbody,.nxSf table.sf-tbl tr,.nxSf table.sf-tbl td{display:block;width:100%;min-width:0}
@@ -1265,8 +1266,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <select id="pgEmpresa" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todas las empresas</option></select>
               <select id="pgAgente" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los agentes</option></select>
-              <select id="pgMetodo" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los métodos</option></select>
-              <select id="pgBanco" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los bancos</option></select>
+              <select id="pgMetodo" aria-label="Filtrar por método de pago" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los métodos</option></select>
+              <select id="pgBanco" aria-label="Filtrar por banco" onchange="aplicarFiltrosPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todos los bancos</option></select>
               <button class="btn bsm bghost" onclick="limpiarFiltrosPagos()"><i class="ti ti-filter-off"></i> Limpiar</button>
             </div>
             <div id="tbPagos"></div>
@@ -3529,7 +3530,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.54';
+const APP_VERSION='48.55';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5710,9 +5711,9 @@ function rFact(){
     const anul=f.estado==='Anulada';
     const prima=Number(f.prima_base||0)+Number(f.prima_deps||0);
     const sal=saldoDe(f);
-    const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}"`:''} style="padding:5px 8px"><i class="ti ${icon}"></i> ${label}</button>`;
+    const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''} style="padding:5px 8px"><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
     return `<tr${anul?' style="opacity:.55"':''}>
-      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" style="cursor:pointer"><b>${f.cliente_nom}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
+      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS">${cli?.ars||'—'}</td>
       <td data-lb="Factura">${f.ncf||'—'}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
@@ -6415,16 +6416,16 @@ function aplicarFiltrosPagos(){
   tb.innerHTML=`<table class="sf-tbl"><thead><tr><th style="cursor:pointer" onclick="sortPag('fecha')">Fecha ${_ordArrow('pag','fecha')}</th><th>Hora</th><th class="col-cli" style="cursor:pointer" onclick="sortPag('cliente')">Cliente ${_ordArrow('pag','cliente')}</th><th style="cursor:pointer" onclick="sortPag('metodo')">Método ${_ordArrow('pag','metodo')}</th><th>Banco</th><th class="r" style="cursor:pointer" onclick="sortPag('monto')">Monto ${_ordArrow('pag','monto')}</th><th>Usuario</th><th class="r">Acciones</th></tr></thead><tbody>`+list.map(p=>`<tr>
     <td data-lb="Fecha">${(p.fecha||'').slice(0,10)}</td>
     <td data-lb="Hora" class="sf-tbl-hide-mb">${fHora(p.fecha)}</td>
-    <td data-lb="Cliente" class="cli-cell" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')" style="cursor:pointer"`:''}><b>${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-weight:600">(${p.referencia_cli})</span>`:''}</b><span>${reciboNoStr(p)?`🧾 ${reciboNoStr(p)}`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?` · 📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}`:''}</span></td>
+    <td data-lb="Cliente" class="cli-cell" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(p.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${p.cliente_id}')}" style="cursor:pointer"`:''}><b>${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-weight:600">(${p.referencia_cli})</span>`:''}</b><span>${reciboNoStr(p)?`🧾 ${reciboNoStr(p)}`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?` · 📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}`:''}</span></td>
     <td data-lb="Método">${p.metodo||'—'}</td>
     <td data-lb="Banco">${p.banco||'—'}</td>
     <td data-lb="Monto" class="r" style="font-weight:800;color:var(--sf-ok-d)">${fmt(p.monto)}</td>
     <td data-lb="Usuario">${p.created_by_name||p.agente_cobro||'—'}</td>
     <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
-      ${p.cliente_id?`<button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${p.id}','${p.cliente_id}')" title="Recibo de pago"><i class="ti ti-receipt"></i></button>`:''}
-      ${p.comprobante_url?`<button class="btn bsm" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${p.comprobante_url}')" title="Ver bauche"><i class="ti ti-eye"></i></button>`:''}
-      ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar"><i class="ti ti-edit"></i></button>`:''}
-      ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
+      ${p.cliente_id?`<button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${p.id}','${p.cliente_id}')" title="Recibo de pago" aria-label="Recibo de pago"><i class="ti ti-receipt" aria-hidden="true"></i></button>`:''}
+      ${p.comprobante_url?`<button class="btn bsm" style="background:#10b981;color:#fff" onclick="window.nxVerComprobante&&window.nxVerComprobante('${p.comprobante_url}')" title="Ver bauche" aria-label="Ver bauche"><i class="ti ti-eye" aria-hidden="true"></i></button>`:''}
+      ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${p.id}','${p.cliente_id}')" title="Editar" aria-label="Editar pago"><i class="ti ti-edit" aria-hidden="true"></i></button>`:''}
+      ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${p.id}','${p.cliente_id}')" title="Eliminar" aria-label="Eliminar pago"><i class="ti ti-trash" aria-hidden="true"></i></button>`:''}
     </div></td>
   </tr>`).join('')+'</tbody></table>';
 }

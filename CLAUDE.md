@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.54** (ver `index.html` y `version.json`).
+> Versión actual: **48.55** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1812,6 +1812,21 @@ de tiempo y el Panel lateral deben ser **reales y completos**, no decorativos.
     sacar `rCli`/`rFact`/`rPagos`/`aplicarFiltrosPagos` y sus ~25 helpers reales tal cual del archivo,
     cargados en un navegador con datos simulados (3 clientes, 2 facturas, 3 abonos). `node --check
     parches.js` limpio, `version.json` válido, los 3 `<script>` de `index.html` pasan `new Function()`.
+  - **Seguimiento (v48.55) — auditoría de accesibilidad:** con la skill `web-design-guidelines`
+    (mismo patrón que Login/Factura v48.14 y la tanda 1 del POS v48.50). 5 arreglos reales en las
+    filas/botones NUEVOS de esta versión: las celdas de Cliente en Facturas e Historial de pagos
+    (`.cli-cell`, antes solo `onclick`) ganaron `tabindex="0" role="button" aria-label` + `onkeydown`
+    (Enter/Espacio); los botones de solo-ícono (Ver factura/WhatsApp/Precio/Anular en Facturas;
+    Recibo/Bauche/Editar/Eliminar en Pagos) ganaron `aria-label` (antes solo `title`, insuficiente
+    para lectores de pantalla); los selects nuevos `pgMetodo`/`pgBanco` ganaron `aria-label`; nuevo
+    `:focus-visible` (aro azul, `var(--sf-primary)`) para `.cli-cell`/`.sf-btn`/`.btn` dentro de
+    `.nxSf` (no existía ninguno ahí, a diferencia de `.nxPf` que ya lo tiene desde v48.50). **Quedó
+    fuera de esta pasada** (gap pre-existente, no introducido esta versión, requiere tocar más código
+    compartido): las cabeceras ordenables `<th onclick="sortPag/sortCli/sortFact(...)">` tampoco
+    tienen teclado ni `aria-sort` — mismo patrón en las 3 tablas, se deja para una pasada aparte si el
+    dueño la pide. Verificado con el código real cargado en un navegador: Tab llega a la fila con el
+    `aria-label` correcto, Enter dispara `verCliente` igual que el clic, sin desbordes ni errores de
+    JS después del cambio.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
