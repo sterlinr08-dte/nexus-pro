@@ -666,7 +666,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf .sf-fcard{background:var(--sf-card);border:1px solid var(--sf-line);border-radius:12px;padding:10px 11px;margin-bottom:8px}
 .nxSf .sf-empty{text-align:center;color:var(--sf-tx3);padding:20px;font-size:11.5px}
 @media(max-width:900px){.nxSf .sf-grid{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:720px){.nxSf .sf-kpis{grid-template-columns:repeat(2,1fr)}.nxSf .sf-qa{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:720px){.nxSf .sf-kpis{grid-template-columns:repeat(2,1fr)}.nxSf .sf-qa{grid-template-columns:repeat(4,1fr)}.nxSf .sf-kpi-wide{grid-column:1/-1}}
 /* Listas (Clientes/Facturación) dentro de .nxSf: mismo tablero azul Enterprise, sin tocar la lógica de la tabla */
 .nxSf .tw table thead tr{background:var(--sf-primary-l)}
 .nxSf .tw table thead th{color:var(--sf-primary-d);font-weight:800;letter-spacing:.3px}
@@ -3533,7 +3533,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.57';
+const APP_VERSION='48.58';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5702,7 +5702,7 @@ function rFact(){
   if(rz)rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas</div><div class="v">${lista.length}</div></div></div>
       <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Por cobrar</div><div class="v">${fmt(porCobrar)}</div></div></div>
-      <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Pagadas</div><div class="v">${pagadasEnLista}</div></div></div>
+      <div class="sf-kpi ok sf-kpi-wide"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Pagadas</div><div class="v">${pagadasEnLista}</div></div></div>
     </div>`;
   const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
   tb.innerHTML=`<table class="sf-tbl"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Factura</th><th>Fecha</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{

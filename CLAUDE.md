@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.57** (ver `index.html` y `version.json`).
+> Versión actual: **48.58** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1861,6 +1861,14 @@ de tiempo y el Panel lateral deben ser **reales y completos**, no decorativos.
     abajo), dando a cada recuadro el ancho real que necesita. Con eso el monto cabe en 1-2 líneas
     limpias y las etiquetas se leen completas. Verificado con los mismos números reales de la captura
     del dueño (26 facturas, RD$114,009 de prueba) en 390px: 2 columnas prolijas, sin desbordes.
+  - **Seguimiento (v48.58) — pulido pedido por el dueño:** con los 3 recuadros ya arreglados (2 arriba
+    + 1 solo abajo en el celular), el dueño pidió mejorar ese acomodo — el recuadro solitario
+    ("Pagadas") dejaba espacio vacío a la derecha. Se le agregó una clase `sf-kpi-wide` (solo al 3er
+    recuadro del resumen de Facturas) que en `@media(max-width:720px)` hace `grid-column:1/-1` — se
+    estira a todo el ancho cuando queda solo, sin espacio vacío. En computadora no se toca (los 3
+    siguen parejos en una fila, la regla vive dentro del mismo media query que ya reacomoda a 2
+    columnas). Verificado con el código real en un navegador: 390px sin espacio vacío ni desbordes,
+    1280px sigue igual que antes del cambio.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
