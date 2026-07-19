@@ -1541,6 +1541,20 @@ cargado en un navegador con backend simulado: abonar mueve el `abonado` correcta
 % de la barra, el botón "Entregar" aparece solo cuando ya no falta nada, crear un apartado nuevo manda
 el POST correcto a `pos_apartados`, sin desbordes en 390px ni escritorio.
 
+**Tanda 1, pieza 7/8 — Avisos (v48.49), HECHA — TANDA 1 COMPLETA:** `renderAvisos()` envuelto en
+`.nxPf`, reusa `kpiPf`/`.kpirow`. Las 4 secciones (antes `.nxMdCard`/`.nxMdKpis`/`.nxMdRow`, clases
+GLOBALES prestadas de Consultorio Médico) pasaron a `.card` + una fila nueva `.avrow`. Los botones
+"ir al módulo" pasaron a `.ab g2` (icono) y el de WhatsApp a `.ab g3` con el verde de marca vía estilo
+en línea (mismo criterio que los demás módulos: WhatsApp no tiene un color fijo en la paleta `.nxPf`).
+Cero cambios en el CÁLCULO de qué avisar (cuotas vencidas, apartados por vencer, reparaciones listas,
+bajo stock) ni en el texto de los mensajes de WhatsApp — solo el HTML/CSS alrededor. Verificado con el
+código real extraído y cargado en un navegador con datos simulados de las 4 categorías: los KPI, las
+4 secciones y los enlaces de WhatsApp arman el mensaje correcto, sin desbordes en 390px ni escritorio.
+**Con esta pieza termina la tanda 1 completa** (Entidades, Clientes, CRM, Cotizaciones, Notas de
+crédito, Prefacturas, Apartados, Avisos — los 8 módulos de "bajo riesgo" del plan). Quedan pendientes,
+sin empezar: tanda 2 (Reparaciones, Kardex, Historial de ventas, Reportes, Recursos Humanos) y tanda 3
+(Compras, Caja, Contabilidad, Ajustes) — ver plan completo más arriba en "Fase 4".
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin

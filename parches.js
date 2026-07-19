@@ -16916,6 +16916,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .apabar{height:6px;background:var(--pf-bg);border-radius:99px;overflow:hidden;margin-top:8px}
 .nxPf .apabar>div{height:100%;background:var(--pf-blue);border-radius:99px}
 .nxPf .apabtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.nxPf .avrow{display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid var(--pf-line)}
+.nxPf .avrow:last-child{border-bottom:none}
 .nxPf .ph{width:100%;aspect-ratio:1.8/1;border-radius:12px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
 .nxPf .srow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px}
 .nxPf .srow .ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
@@ -21022,11 +21024,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 
   // ══════════════ CENTRO DE AVISOS (cola de cobro del día — calculada en vivo) ══════════════
   function renderAvisos() {
+    nxPfEnsureCSS();
     const hoyK = hoyISOPos();
     const neg = (((curSesPOS() || {}).org || {}).nombre) || empNom() || 'la tienda';
     const telDe = cid => { const c = _clientes.find(x => String(x.id) === String(cid)); return c ? String(c.telefono || '').replace(/\D/g, '') : ''; };
-    const wa = (tel, msg) => tel ? `<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1${tel}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : '';
-    const fila = (t1, t2, extra) => `<div class="nxMdRow"><div style="flex:1;min-width:0"><div class="nxMdNom" style="font-size:12px">${t1}</div><div class="nxMdSub">${t2}</div></div>${extra}</div>`;
+    const wa = (tel, msg) => tel ? `<a class="ab g3" style="height:30px;width:auto;padding:0 10px;color:#16a34a" href="https://wa.me/1${tel}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : '';
+    const fila = (t1, t2, extra) => `<div class="avrow"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:12px">${t1}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${t2}</div></div><div style="display:flex;gap:6px;align-items:center">${extra}</div></div>`;
     // 1) Cuotas vencidas
     const cuotasV = [];
     _fins.filter(f => f.estado === 'activo').forEach(f => {
@@ -21034,10 +21037,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       if (v.length) cuotasV.push({ f: f, cuotas: v, monto: v.reduce((t, c) => t + Number(c.monto || 0), 0) });
     });
     const sec1 = cuotasV.length ? cuotasV.map(x => fila(
-      esc(x.f.cliente_nombre || '') + ' · <b style="color:#dc2626">' + fmt(x.monto) + '</b>',
+      esc(x.f.cliente_nombre || '') + ' · <b style="color:var(--pf-red)">' + fmt(x.monto) + '</b>',
       x.cuotas.length + ' cuota(s) vencida(s) · ' + esc(x.f.descripcion || ''),
       wa(telDe(x.f.cliente_id), 'Hola ' + (x.f.cliente_nombre || '') + ', le recordamos que tiene ' + x.cuotas.length + ' cuota(s) vencida(s) por ' + fmt(x.monto) + ' de su ' + (x.f.descripcion || 'compra') + ' en ' + neg + '. ¡Gracias!') +
-      `<button class="btn bsm bc1" onclick="window.nxPosTab('cuotas')"><i class="ti ti-cash"></i></button>`
+      `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('cuotas')" aria-label="Ir a Cuotas"><i class="ti ti-cash"></i></button>`
     )).join('') : '';
     // 2) Apartados vencidos o por vencer (3 días)
     const lim3 = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
@@ -21047,9 +21050,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const venc = String(a.fecha_limite) < hoyK;
       return fila(
         esc(a.cliente_nombre || '') + ' · ' + esc(a.descripcion || ''),
-        (venc ? '<b style="color:#dc2626">VENCIDO</b>' : 'vence ' + String(a.fecha_limite).slice(0, 10)) + ' · falta <b>' + fmt(falta) + '</b>',
+        (venc ? '<b style="color:var(--pf-red)">VENCIDO</b>' : 'vence ' + String(a.fecha_limite).slice(0, 10)) + ' · falta <b>' + fmt(falta) + '</b>',
         wa(String(a.telefono || '').replace(/\D/g, ''), 'Hola ' + (a.cliente_nombre || '') + ', su apartado de ' + (a.descripcion || '') + ' en ' + neg + (venc ? ' está VENCIDO' : ' vence el ' + String(a.fecha_limite).slice(0, 10)) + '. Le falta ' + fmt(falta) + ' para completarlo. ¡Le esperamos!') +
-        `<button class="btn bsm bc1" onclick="window.nxPosTab('apartados')"><i class="ti ti-bookmark"></i></button>`);
+        `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('apartados')" aria-label="Ir a Apartados"><i class="ti ti-bookmark"></i></button>`);
     }).join('') : '';
     // 3) Reparaciones LISTAS sin recoger
     const listas = _reps.filter(r => r.estado === 'listo');
@@ -21057,24 +21060,24 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       esc(r.equipo || '') + ' · ' + esc(r.numero || ''),
       esc(r.cliente_nombre || '') + ' · listo hace ' + repDias(r) + ' día(s)',
       wa(String(r.cliente_telefono || '').replace(/\D/g, ''), 'Hola ' + (r.cliente_nombre || '') + ', su equipo ' + (r.equipo || '') + ' ya está LISTO en ' + neg + '. ¡Puede pasar a recogerlo!') +
-      `<button class="btn bsm bc1" onclick="window.nxPosTab('reparaciones')"><i class="ti ti-tool"></i></button>`)).join('') : '';
+      `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('reparaciones')" aria-label="Ir a Reparaciones"><i class="ti ti-tool"></i></button>`)).join('') : '';
     // 4) Bajo stock
     const bajos = _prods.filter(p => p.tipo !== 'servicio' && Number(p.stock_min || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0));
-    const sec4 = bajos.length ? bajos.slice(0, 30).map(p => fila(esc(p.nombre || ''), 'quedan <b style="color:#dc2626">' + Number(p.stock || 0) + '</b> (mínimo ' + Number(p.stock_min) + ')', `<button class="btn bsm bc1" onclick="window.nxPosTab('productos')"><i class="ti ti-box"></i></button>`)).join('') : '';
-    const bloque = (tit, ic, col, html, vacio) => `<div class="nxMdCard"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${col}"><i class="ti ${ic}"></i> ${tit}</div>${html || '<div style="font-size:11.5px;color:#94a3b8;padding:4px">' + vacio + '</div>'}</div>`;
+    const sec4 = bajos.length ? bajos.slice(0, 30).map(p => fila(esc(p.nombre || ''), 'quedan <b style="color:var(--pf-red)">' + Number(p.stock || 0) + '</b> (mínimo ' + Number(p.stock_min) + ')', `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('productos')" aria-label="Ir a Inventario"><i class="ti ti-box"></i></button>`)).join('') : '';
+    const bloque = (tit, ic, col, html, vacio) => `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${col};display:flex;align-items:center;gap:7px"><i class="ti ${ic}"></i> ${tit}</div>${html || `<div style="font-size:11.5px;color:var(--pf-txt3);padding:4px">${vacio}</div>`}</div>`;
     const totalPend = cuotasV.length + apas.length + listas.length + bajos.length;
-    return `<div style="max-width:720px">
-      <div class="nxMdKpis" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">
-        <div class="nxMdKpi"><b style="color:${cuotasV.length ? '#dc2626' : '#16a34a'}">${cuotasV.length}</b><span>Cuotas vencidas</span></div>
-        <div class="nxMdKpi"><b style="color:${apas.length ? '#d97706' : '#16a34a'}">${apas.length}</b><span>Apartados por vencer</span></div>
-        <div class="nxMdKpi"><b style="color:${listas.length ? '#2563eb' : '#16a34a'}">${listas.length}</b><span>Listos sin recoger</span></div>
-        <div class="nxMdKpi"><b style="color:${bajos.length ? '#ea580c' : '#16a34a'}">${bajos.length}</b><span>Bajo stock</span></div>
+    return `<div class="nxPf" style="max-width:720px">
+      <div class="kpirow">
+        ${kpiPf('Cuotas vencidas', cuotasV.length, cuotasV.length ? 'var(--pf-red)' : 'var(--pf-green)')}
+        ${kpiPf('Apartados por vencer', apas.length, apas.length ? 'var(--pf-orange)' : 'var(--pf-green)')}
+        ${kpiPf('Listos sin recoger', listas.length, listas.length ? 'var(--pf-blue)' : 'var(--pf-green)')}
+        ${kpiPf('Bajo stock', bajos.length, bajos.length ? 'var(--pf-orange)' : 'var(--pf-green)')}
       </div>
-      ${totalPend === 0 ? '<div style="text-align:center;padding:20px;color:#16a34a;font-weight:800;font-size:14px">✅ Todo al día — nada pendiente de avisar</div>' : ''}
-      ${bloque('Cuotas vencidas — cobrar HOY', 'ti-calendar-dollar', '#dc2626', sec1, 'Ninguna cuota vencida')}
-      ${bloque('Apartados vencidos o por vencer (3 días)', 'ti-bookmark', '#d97706', sec2, 'Ningún apartado en riesgo')}
-      ${bloque('Reparaciones LISTAS sin recoger', 'ti-tool', '#2563eb', sec3, 'Ninguna pendiente de entrega')}
-      ${bloque('Bajo stock — comprar', 'ti-alert-triangle', '#ea580c', sec4, 'Inventario saludable')}
+      ${totalPend === 0 ? '<div style="text-align:center;padding:20px;color:var(--pf-green);font-weight:800;font-size:14px">✅ Todo al día — nada pendiente de avisar</div>' : ''}
+      ${bloque('Cuotas vencidas — cobrar HOY', 'ti-calendar-dollar', 'var(--pf-red)', sec1, 'Ninguna cuota vencida')}
+      ${bloque('Apartados vencidos o por vencer (3 días)', 'ti-bookmark', 'var(--pf-orange)', sec2, 'Ningún apartado en riesgo')}
+      ${bloque('Reparaciones LISTAS sin recoger', 'ti-tool', 'var(--pf-blue)', sec3, 'Ninguna pendiente de entrega')}
+      ${bloque('Bajo stock — comprar', 'ti-alert-triangle', 'var(--pf-orange)', sec4, 'Inventario saludable')}
     </div>`;
   }
 
