@@ -20836,13 +20836,17 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // Modal arma su cáscara UNA vez; el input ya no se destruye en cada tecla (antes
   // se reconstruía TODO el modal por cada letra y se re-enfocaba a mano como parche).
   window.nxPrefLista = function () {
+    nxPfEnsureCSS();
     cerrarModal('nxPrefM');
     const ov = document.createElement('div'); ov.id = 'nxPrefM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-file-description"></i> Prefacturas abiertas</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrefM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-      ${posBuscador({ id: 'nxPrefQ', placeholder: 'Buscar por número o cliente…', oninput: 'window.nxPrefListaRows(this.value)' })}
-      <div id="nxPrefRows" style="overflow-y:auto;flex:1"></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head">
+        <button class="nxBack" type="button" onclick="document.getElementById('nxPrefM').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button>
+        <h3><i class="ti ti-file-description"></i> Prefacturas abiertas</h3>
+      </div>
+      <div style="padding:14px 14px 0">${posBuscador({ id: 'nxPrefQ', placeholder: 'Buscar por número o cliente…', oninput: 'window.nxPrefListaRows(this.value)' })}</div>
+      <div id="nxPrefRows" style="overflow-y:auto;flex:1;padding:6px 14px 14px"></div>
     </div>`;
     document.body.appendChild(ov);
     window.nxPrefListaRows('');
@@ -20851,13 +20855,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const el = document.getElementById('nxPrefRows'); if (!el) return;
     const ql = String(q || '').trim().toLowerCase();
     const lista = _prefs.filter(p => !ql || ((p.numero || '') + ' ' + (p.cliente_nombre || '')).toLowerCase().includes(ql));
-    el.innerHTML = lista.length ? lista.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9">
-        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(p.numero || '')}</div>
-        <div style="font-size:10.5px;color:#475569">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div></div>
+    el.innerHTML = lista.length ? lista.map(p => `<div class="oppcard" style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:var(--pf-blue-d)">${esc(p.numero || '')}</div>
+        <div style="font-size:10.5px;color:var(--pf-txt3)">${esc(p.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(p.items) ? p.items.length : 0)} art. · ${String(p.created_at || '').slice(0, 16).replace('T', ' ')}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div></div>
         <b style="font-size:12.5px">${fmt(p.total)}</b>
-        <button class="btn bsm bc1" type="button" onclick="window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>
-        <button class="btn bsm bghost" type="button" onclick="window.nxPrefAnular('${p.id}')"><i class="ti ti-x" style="color:#dc2626"></i></button>
-      </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:18px;font-size:12px">Sin prefacturas abiertas</div>';
+        <button class="ab g1" style="height:32px;width:auto;padding:0 10px" type="button" onclick="window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>
+        <button class="ab g3" style="height:32px;width:32px;padding:0" type="button" onclick="window.nxPrefAnular('${p.id}')" aria-label="Anular"><i class="ti ti-x" style="color:var(--pf-red)"></i></button>
+      </div>`).join('') : '<div class="emptyrow">Sin prefacturas abiertas</div>';
   };
   window.nxPrefFacturar = async function (id) {
     const p = _prefs.find(x => String(x.id) === String(id)); if (!p) return;
@@ -20918,38 +20922,43 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const lista = phFiltradas();
     const abiertas = lista.filter(p => (p.estado || 'abierta') === 'abierta');
     const val = abiertas.reduce((s, p) => s + Number(p.total || 0), 0);
-    return kpi('Prefacturas', lista.length, '#7c3aed') + kpi('Abiertas', abiertas.length, '#d97706') + kpi('Valor por facturar', fmt(val), '#2563eb');
+    return kpiPf('Prefacturas', lista.length, 'var(--pf-purple)') + kpiPf('Abiertas', abiertas.length, 'var(--pf-orange)') + kpiPf('Valor por facturar', fmt(val), 'var(--pf-blue)');
   }
   function filasPH() {
     const lista = sortRows(phFiltradas(), p => phSortVal(p, _phSort.k), _phSort.d);
-    if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">' + ((_prefHist || []).length ? 'Sin prefacturas con esos filtros' : 'Aún no hay prefacturas. Créalas en la pestaña Prefactura.') + '</td></tr>';
+    if (!lista.length) return `<tr><td colspan="6" class="emptyrow">${(_prefHist || []).length ? 'Sin prefacturas con esos filtros' : 'Aún no hay prefacturas. Créalas en la pestaña Prefactura.'}</td></tr>`;
     return lista.map(p => {
       const est = p.estado || 'abierta';
       const nArt = Array.isArray(p.items) ? p.items.length : 0;
       const acc = est === 'abierta'
-        ? `<button class="btn bsm bc1" onclick="event.stopPropagation();window.nxPrefFacturar('${p.id}')" title="Facturar"><i class="ti ti-cash"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver"><i class="ti ti-eye"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPrefAnular('${p.id}')" title="Anular"><i class="ti ti-x" style="color:#dc2626"></i></button>`
-        : `<button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver"><i class="ti ti-eye"></i></button>`;
-      return `<tr style="cursor:pointer${est === 'anulada' ? ';opacity:.55' : ''}" onclick="window.nxPHVer('${p.id}')">
-        <td style="font-weight:700;color:#1e293b;white-space:nowrap">${esc(p.numero || '')}</td>
-        <td style="color:#475569;white-space:nowrap">${fechaDMY(p.fecha || p.created_at)}</td>
-        <td>${esc(p.cliente_nombre || 'Consumidor final')}<span style="display:block;font-size:9.5px;color:#94a3b8">${nArt} art.${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</span></td>
+        ? `<button class="ab g1" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPrefFacturar('${p.id}')" title="Facturar" aria-label="Facturar"><i class="ti ti-cash"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver" aria-label="Ver"><i class="ti ti-eye"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPrefAnular('${p.id}')" title="Anular" aria-label="Anular"><i class="ti ti-x" style="color:var(--pf-red)"></i></button>`
+        : `<button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver" aria-label="Ver"><i class="ti ti-eye"></i></button>`;
+      return `<tr data-row style="${est === 'anulada' ? 'opacity:.55' : ''}" onclick="window.nxPHVer('${p.id}')">
+        <td style="font-weight:800;white-space:nowrap">${esc(p.numero || '')}</td>
+        <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(p.fecha || p.created_at)}</td>
+        <td>${esc(p.cliente_nombre || 'Consumidor final')}<span style="display:block;font-size:9.5px;color:var(--pf-txt3)">${nArt} art.${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</span></td>
         <td style="white-space:nowrap">${phBadge(est)}</td>
-        <td style="text-align:right;font-weight:800;color:#7c3aed;white-space:nowrap">${fmt(p.total)}</td>
-        <td style="text-align:right;white-space:nowrap">${acc}</td>
+        <td style="text-align:right;font-weight:800;color:var(--pf-purple);white-space:nowrap">${fmt(p.total)}</td>
+        <td style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()">${acc}</td>
       </tr>`;
     }).join('');
   }
   function renderPrefHist() {
-    const pill = (k, lbl) => `<button type="button" class="nxInvPill${_phEstado === k ? ' on' : ''}" onclick="window.nxPHEstado('${k}')">${lbl}</button>`;
-    return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+    nxPfEnsureCSS();
+    const pill = (k, lbl) => `<button type="button" class="chip${_phEstado === k ? ' on' : ''}" onclick="window.nxPHEstado('${k}')">${lbl}</button>`;
+    return `<div class="nxPf">
+      <div class="toolbar2">
         <div style="flex:1;min-width:200px">${posBuscador({ id: 'phQ', value: _phQ, placeholder: 'Buscar por No. o cliente…', oninput: 'window.nxPHBuscar(this.value)' })}</div>
-        <input type="date" id="phDesde" value="${_phDesde}" onchange="window.nxPHFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
-        <input type="date" id="phHasta" value="${_phHasta}" onchange="window.nxPHFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
-        <button class="btn bsm bghost" type="button" onclick="window.nxPHLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="date" id="phDesde" value="${_phDesde}" onchange="window.nxPHFecha()" title="Desde" class="datef">
+          <input type="date" id="phHasta" value="${_phHasta}" onchange="window.nxPHFecha()" title="Hasta" class="datef">
+          <button class="ab g3 sm" type="button" onclick="window.nxPHLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
+        </div>
       </div>
-      <div class="nxInvPills" style="margin-bottom:10px">${pill('todas', 'Todas')}${pill('abiertas', 'Abiertas')}${pill('facturadas', 'Facturadas')}${pill('anuladas', 'Anuladas')}</div>
-      <div id="phKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisPH()}</div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('ph', _phSort, 'numero', 'No. PF')}${thSort('ph', _phSort, 'fecha', 'Fecha')}${thSort('ph', _phSort, 'cliente', 'Cliente')}${thSort('ph', _phSort, 'estado', 'Estado')}${thSort('ph', _phSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="phBody">${filasPH()}</tbody></table></div>`;
+      <div class="chiprow" style="margin-bottom:12px">${pill('todas', 'Todas')}${pill('abiertas', 'Abiertas')}${pill('facturadas', 'Facturadas')}${pill('anuladas', 'Anuladas')}</div>
+      <div class="kpirow" id="phKpis">${kpisPH()}</div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr>${thSort('ph', _phSort, 'numero', 'No. PF')}${thSort('ph', _phSort, 'fecha', 'Fecha')}${thSort('ph', _phSort, 'cliente', 'Cliente')}${thSort('ph', _phSort, 'estado', 'Estado')}${thSort('ph', _phSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="phBody">${filasPH()}</tbody></table></div>
+    </div>`;
   }
   function pintarPH() { const b = document.getElementById('phBody'); if (b) b.innerHTML = filasPH(); const k = document.getElementById('phKpis'); if (k) k.innerHTML = kpisPH(); }
   window.nxPHBuscar = function (v) { _phQ = v; pintarPH(); };
@@ -20958,21 +20967,29 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxPHLimpiar = function () { _phQ = ''; _phDesde = ''; _phHasta = ''; _phEstado = 'todas'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   // Ver el detalle de una prefactura (solo lectura) — su estado y sus artículos
   window.nxPHVer = function (id) {
+    nxPfEnsureCSS();
     const p = (_prefHist || []).find(x => String(x.id) === String(id)); if (!p) return;
     const est = p.estado || 'abierta';
     const items = Array.isArray(p.items) ? p.items : [];
-    const filas = items.map(it => `<tr><td>${Number(it.cantidad || 0)}</td><td>${esc(it.nombre || '')}</td><td style="text-align:right">${fmt(it.precio || 0)}</td><td style="text-align:right">${fmt(Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px">Sin artículos</td></tr>';
+    const filas = items.map(it => `<tr><td>${Number(it.cantidad || 0)}</td><td>${esc(it.nombre || '')}</td><td style="text-align:right">${fmt(it.precio || 0)}</td><td style="text-align:right">${fmt(Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('') || '<tr><td colspan="4" class="emptyrow">Sin artículos</td></tr>';
     cerrarModal('nxPHVerM');
     const ov = document.createElement('div'); ov.id = 'nxPHVerM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-file-description"></i> Prefactura ${esc(p.numero || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPHVerM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        <div style="font-size:12px;color:#475569;margin-bottom:8px;line-height:1.6">${phBadge(est)} · <b>${esc(p.cliente_nombre || 'Consumidor final')}</b><br>${fechaDMY(p.fecha || p.created_at)}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div>
-        <div style="overflow-y:auto;flex:1"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="color:#94a3b8;font-size:10px;text-transform:uppercase"><th style="text-align:left;padding:5px">Cant.</th><th style="text-align:left;padding:5px">Artículo</th><th style="text-align:right;padding:5px">Precio</th><th style="text-align:right;padding:5px">Importe</th></tr></thead><tbody>${filas}</tbody></table></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #eef2f7;margin-top:8px;padding-top:8px"><b style="font-size:13px">TOTAL</b><b style="font-size:16px;color:#7c3aed">${fmt(p.total)}</b></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn bghost bsm" type="button" style="flex:1" onclick="window.nxPHImprimir('${p.id}')"><i class="ti ti-printer"></i> Imprimir</button>
-          ${est === 'abierta' ? `<button class="btn bc1 bsm" type="button" style="flex:1" onclick="document.getElementById('nxPHVerM').remove();window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>` : ''}
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+        <div class="head">
+          <button class="nxBack" type="button" onclick="document.getElementById('nxPHVerM').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button>
+          <h3><i class="ti ti-file-description"></i> Prefactura ${esc(p.numero || '')}</h3>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+          <div class="card">
+            <div style="font-size:12px;color:var(--pf-txt2);line-height:1.6">${phBadge(est)} · <b>${esc(p.cliente_nombre || 'Consumidor final')}</b><br>${fechaDMY(p.fecha || p.created_at)}${p.created_by_name ? ' · ' + esc(p.created_by_name) : ''}</div>
+            <div style="overflow-x:auto;margin-top:10px"><table class="ltbl"><thead><tr><th>Cant.</th><th>Artículo</th><th style="text-align:right">Precio</th><th style="text-align:right">Importe</th></tr></thead><tbody>${filas}</tbody></table></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--pf-line);margin-top:8px;padding-top:8px"><b style="font-size:13px">TOTAL</b><b style="font-size:16px;color:var(--pf-purple)">${fmt(p.total)}</b></div>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:0${est === 'abierta' ? '' : ';grid-template-columns:1fr'}">
+          <button class="ab g3" type="button" onclick="window.nxPHImprimir('${p.id}')"><i class="ti ti-printer"></i> Imprimir</button>
+          ${est === 'abierta' ? `<button class="ab g1" type="button" onclick="document.getElementById('nxPHVerM').remove();window.nxPrefFacturar('${p.id}')"><i class="ti ti-cash"></i> Facturar</button>` : ''}
         </div>
       </div>`;
     document.body.appendChild(ov);

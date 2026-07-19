@@ -1514,6 +1514,21 @@ sin tocar su color índigo, fuera de alcance de esta tanda). Verificado con el c
 cargado en un navegador: los KPI, el orden de columnas (`nxSort`) y el clic en fila (imprimir) siguen
 funcionando, sin desbordes en 390px ni escritorio.
 
+**Tanda 1, pieza 5/8 — Prefacturas (v48.47), HECHA:** dos superficies distintas, ambas tocadas.
+`renderPrefHist()` (pestaña "Prefacturas" del sidebar, historial completo) envuelto en `.nxPf`, reusa
+`kpiPf`/`.toolbar2`/`.datef`/`.ltbl`/`.emptyrow`; el helper local `pill()` pasó de la clase global
+`.nxInvPill` (compartida con Inventario/Kardex, tanda 2, fuera de alcance) a `.chip`/`.chip.on` —
+cambio seguro porque es un helper LOCAL de esta función, no toca la clase `.nxInvPill` en sí.
+`nxPHVer()` (modal de detalle de una prefactura) reconstruido en tarjeta `.nxPf`. Por separado,
+`nxPrefLista()`/`nxPrefListaRows()` (la ventana rápida "Prefacturas abiertas" que se abre con la lupa
+desde Factura — un modal aparte del historial, mismo dato `_prefs`) también se pasó a `.nxPf`, cada
+fila ahora es un `.oppcard` (reusa la clase creada para CRM). `kpisPH()`/`filasPH()`/`phBadge()`
+confirmadas como exclusivas de este módulo antes de tocarlas (no compartidas con Historial). Se dejó
+sin tocar `nxPHImprimir` (documento imprimible, mismo criterio que `nxCotImprimir`) y `thSort`/
+`.nxThSort` (clase global compartida, fuera de alcance). Verificado con el código real extraído
+(`renderPrefHist`, `nxPHVer`, `nxPrefLista`, `nxPrefListaRows`) cargado en un navegador: los KPI, los
+filtros, el detalle y la ventana rápida funcionan, sin desbordes en 390px ni escritorio.
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin
