@@ -16912,6 +16912,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .oppcard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 12px;margin-bottom:8px}
 .nxPf .oppet{height:30px;border-radius:8px;border:1.5px solid var(--pf-line);background:var(--pf-bg);color:var(--pf-txt);font-size:11px;font-weight:700;padding:0 8px;font-family:inherit}
 .nxPf .datef{height:38px;padding:0 10px;border:1.5px solid var(--pf-line);border-radius:10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt);font-family:inherit}
+.nxPf .apacard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:14px;padding:13px 14px;margin-bottom:10px}
+.nxPf .apabar{height:6px;background:var(--pf-bg);border-radius:99px;overflow:hidden;margin-top:8px}
+.nxPf .apabar>div{height:100%;background:var(--pf-blue);border-radius:99px}
+.nxPf .apabtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .nxPf .ph{width:100%;aspect-ratio:1.8/1;border-radius:12px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
 .nxPf .srow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px}
 .nxPf .srow .ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
@@ -21124,46 +21128,70 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // ══════════════ APARTADOS (layaway: separar con abonos) ══════════════
   function apaPagosDe(id) { return _apaPagos.filter(p => String(p.apartado_id) === String(id)); }
   function renderApartados() {
+    nxPfEnsureCSS();
     const hoyK = hoyISOPos();
     const activos = _apartados.filter(a => a.estado === 'activo');
     const porCobrar = activos.reduce((t, a) => t + Math.max(0, Number(a.total || 0) - Number(a.abonado || 0)), 0);
-    const kpis = `<div class="nxMdKpis" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:10px">
-      <div class="nxMdKpi"><b>${activos.length}</b><span>Apartados activos</span></div>
-      <div class="nxMdKpi"><b style="color:#2563eb">${fmt(porCobrar)}</b><span>Por completar</span></div>
-      <div class="nxMdKpi"><b style="color:#16a34a">${fmt(activos.reduce((t, a) => t + Number(a.abonado || 0), 0))}</b><span>Abonado en caja</span></div>
+    const kpis = `<div class="kpirow">
+      ${kpiPf('Apartados activos', activos.length, 'var(--pf-txt)')}
+      ${kpiPf('Por completar', fmt(porCobrar), 'var(--pf-blue)')}
+      ${kpiPf('Abonado en caja', fmt(activos.reduce((t, a) => t + Number(a.abonado || 0), 0)), 'var(--pf-green)')}
     </div>`;
     const rows = _apartados.length ? _apartados.map(a => {
       const falta = Math.max(0, Number(a.total || 0) - Number(a.abonado || 0));
       const vencido = a.estado === 'activo' && a.fecha_limite && String(a.fecha_limite) < hoyK;
       const est = a.estado === 'completado' ? ['#16a34a', '#f0fdf4', 'COMPLETADO'] : a.estado === 'cancelado' ? ['#64748b', '#f1f5f9', 'CANCELADO'] : vencido ? ['#dc2626', '#fef2f2', 'VENCIDO'] : ['#db2777', '#fdf2f8', 'APARTADO'];
       const pct = Number(a.total || 0) > 0 ? Math.min(100, Math.round(Number(a.abonado || 0) / Number(a.total) * 100)) : 0;
-      return `<div class="nxSaCard">
-        <div class="nxSaTop"><div class="nxSaIco" style="background:#fdf2f8;color:#db2777"><i class="ti ti-bookmark"></i></div>
-          <div style="flex:1;min-width:0"><div class="nxSaNom">${esc(a.descripcion || '')}</div><div class="nxSaSub">${esc(a.cliente_nombre || '')}${a.telefono ? ' · ' + esc(a.telefono) : ''}${a.fecha_limite ? ' · límite ' + String(a.fecha_limite).slice(0, 10) : ''}</div></div>
-          <span class="nxSaEst" style="background:${est[1]};color:${est[0]}">${est[2]}</span></div>
-        <div class="nxSaMeta"><span>Total: <b>${fmt(a.total)}</b></span><span>Abonado: <b style="color:#16a34a">${fmt(a.abonado)}</b> (${pct}%)</span><span>Falta: <b style="color:${falta > 0 ? '#dc2626' : '#16a34a'}">${fmt(falta)}</b></span></div>
-        ${a.estado === 'activo' ? `<div class="nxSaBtns">
-          <button class="btn bsm bc1" type="button" onclick="window.nxApaAbonar('${a.id}')"><i class="ti ti-cash"></i> Abonar</button>
-          ${falta <= 0 ? `<button class="btn bsm bc5" type="button" onclick="window.nxApaCompletar('${a.id}')"><i class="ti ti-check"></i> Entregar</button>` : ''}
-          ${(a.telefono || '').replace(/\D/g, '') ? `<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1${String(a.telefono).replace(/\D/g, '')}?text=${encodeURIComponent('Hola ' + (a.cliente_nombre || '') + ', le recordamos su apartado de ' + (a.descripcion || '') + ': abonado ' + fmt(a.abonado) + ', le falta ' + fmt(falta) + (a.fecha_limite ? ' (límite ' + String(a.fecha_limite).slice(0, 10) + ')' : '') + '.')}" target="_blank"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
-          <button class="btn bsm bghost" type="button" onclick="window.nxApaCancelar('${a.id}')"><i class="ti ti-x" style="color:#dc2626"></i></button>
+      return `<div class="apacard">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span class="bdg" style="width:34px;height:34px;background:#fdf2f8;color:#db2777"><i class="ti ti-bookmark"></i></span>
+          <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:13px">${esc(a.descripcion || '')}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(a.cliente_nombre || '')}${a.telefono ? ' · ' + esc(a.telefono) : ''}${a.fecha_limite ? ' · límite ' + String(a.fecha_limite).slice(0, 10) : ''}</div></div>
+          <span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap;background:${est[1]};color:${est[0]}">${est[2]}</span>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:11px;color:var(--pf-txt2)"><span>Total: <b>${fmt(a.total)}</b></span><span>Abonado: <b style="color:var(--pf-green)">${fmt(a.abonado)}</b> (${pct}%)</span><span>Falta: <b style="color:${falta > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(falta)}</b></span></div>
+        <div class="apabar"><div style="width:${pct}%"></div></div>
+        ${a.estado === 'activo' ? `<div class="apabtns">
+          <button class="ab g2" style="height:32px;width:auto;padding:0 12px" type="button" onclick="window.nxApaAbonar('${a.id}')"><i class="ti ti-cash"></i> Abonar</button>
+          ${falta <= 0 ? `<button class="ab g1" style="height:32px;width:auto;padding:0 12px" type="button" onclick="window.nxApaCompletar('${a.id}')"><i class="ti ti-check"></i> Entregar</button>` : ''}
+          ${(a.telefono || '').replace(/\D/g, '') ? `<a class="ab g3" style="height:32px;width:32px;padding:0;color:#16a34a" href="https://wa.me/1${String(a.telefono).replace(/\D/g, '')}?text=${encodeURIComponent('Hola ' + (a.cliente_nombre || '') + ', le recordamos su apartado de ' + (a.descripcion || '') + ': abonado ' + fmt(a.abonado) + ', le falta ' + fmt(falta) + (a.fecha_limite ? ' (límite ' + String(a.fecha_limite).slice(0, 10) + ')' : '') + '.')}" target="_blank" aria-label="WhatsApp"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
+          <button class="ab g3" style="height:32px;width:32px;padding:0" type="button" onclick="window.nxApaCancelar('${a.id}')" aria-label="Cancelar"><i class="ti ti-x" style="color:var(--pf-red)"></i></button>
         </div>` : ''}</div>`;
-    }).join('') : '<div class="nxRepEmpty" style="padding:24px">Sin apartados. El cliente separa su artículo con un abono y lo completa a su ritmo.</div>';
-    return `<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn bc1" type="button" onclick="window.nxApaNuevo()"><i class="ti ti-plus"></i> Nuevo apartado</button></div>` + kpis + rows;
+    }).join('') : '<div class="emptyrow">Sin apartados. El cliente separa su artículo con un abono y lo completa a su ritmo.</div>';
+    return `<div class="nxPf">
+      <div class="toolbar2" style="justify-content:flex-end"><button class="ab g2 sm" type="button" onclick="window.nxApaNuevo()"><i class="ti ti-plus"></i> Nuevo apartado</button></div>
+      ${kpis}
+      ${rows}
+    </div>`;
   }
   window.nxApaNuevo = function () {
+    nxPfEnsureCSS();
     cerrarModal('nxApaM');
     const ov = document.createElement('div'); ov.id = 'nxApaM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-bookmark"></i> Nuevo apartado</span><button class="nxBack" type="button" onclick="document.getElementById('nxApaM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div style="overflow-y:auto;flex:1">
-        <div class="fr"><label>Artículo que aparta *</label><input id="apDesc" class="no-upper" placeholder="iPhone 13 128GB azul..."></div>
-        <div class="fr-row"><div class="fr"><label>Cliente *</label><input id="apCli" class="no-upper" placeholder="Nombre"></div><div class="fr"><label>WhatsApp</label><input id="apTel" inputmode="tel" placeholder="8095551234"></div></div>
-        <div class="fr-row"><div class="fr"><label>Precio TOTAL *</label><input id="apTot" data-nx-money inputmode="numeric" placeholder="0"></div><div class="fr"><label>Abono inicial</label><input id="apAbo" data-nx-money inputmode="numeric" placeholder="0"></div></div>
-        <div class="fr"><label>Días de plazo</label><input id="apDias" inputmode="numeric" value="30"></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head">
+        <button class="nxBack" type="button" onclick="document.getElementById('nxApaM').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
+        <h3><i class="ti ti-bookmark"></i> Nuevo apartado</h3>
       </div>
-      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxApaGuardarNuevo()"><i class="ti ti-check"></i> Crear apartado</button></div>
+      <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <h4><span class="bdg blue"><i class="ti ti-box"></i></span> Artículo y cliente</h4>
+          <div class="fld" style="margin-bottom:10px"><label>Artículo que aparta *</label><div class="inw"><input id="apDesc" class="no-upper" placeholder="iPhone 13 128GB azul..."></div></div>
+          <div class="g2">
+            <div class="fld"><label>Cliente *</label><div class="inw"><input id="apCli" class="no-upper" placeholder="Nombre"></div></div>
+            <div class="fld"><label>WhatsApp</label><div class="inw"><input id="apTel" inputmode="tel" placeholder="8095551234"></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Precio y plazo</h4>
+          <div class="g2" style="margin-bottom:10px">
+            <div class="fld"><label>Precio TOTAL *</label><div class="inw"><span class="cur">$</span><input id="apTot" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Abono inicial</label><div class="inw"><span class="cur">$</span><input id="apAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
+          </div>
+          <div class="fld"><label>Días de plazo</label><div class="inw"><input id="apDias" inputmode="numeric" value="30"></div></div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:0;grid-template-columns:1fr"><button class="ab g1" type="button" onclick="window.nxApaGuardarNuevo()"><i class="ti ti-check"></i> Crear apartado</button></div>
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
   };
@@ -21191,17 +21219,27 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
   };
   window.nxApaAbonar = function (id) {
+    nxPfEnsureCSS();
     const a = _apartados.find(x => String(x.id) === String(id)); if (!a) return;
     const falta = Math.max(0, Number(a.total || 0) - Number(a.abonado || 0));
     cerrarModal('nxApaM');
     const ov = document.createElement('div'); ov.id = 'nxApaM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px">
-      <div class="mt"><span><i class="ti ti-cash"></i> Abonar apartado</span><button class="nxBack" type="button" onclick="document.getElementById('nxApaM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(a.descripcion || '')} · ${esc(a.cliente_nombre || '')} · falta <b style="color:#dc2626">${fmt(falta)}</b></div>
-      <div class="fr-row"><div class="fr"><label>Monto</label><input id="apMonto" data-nx-money inputmode="numeric" value="${Math.round(falta).toLocaleString('en-US')}"></div>
-      <div class="fr"><label>Método</label><select id="apMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div></div>
-      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxApaAbonarGo('${id}')"><i class="ti ti-check"></i> Registrar abono</button></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:400px;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head">
+        <button class="nxBack" type="button" onclick="document.getElementById('nxApaM').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
+        <h3><i class="ti ti-cash"></i> Abonar apartado</h3>
+      </div>
+      <div style="padding:14px">
+        <div class="card">
+          <div style="font-size:11.5px;color:var(--pf-txt2);margin-bottom:10px">${esc(a.descripcion || '')} · ${esc(a.cliente_nombre || '')} · falta <b style="color:var(--pf-red)">${fmt(falta)}</b></div>
+          <div class="g2">
+            <div class="fld"><label>Monto</label><div class="inw"><span class="cur">$</span><input id="apMonto" data-nx-money inputmode="numeric" value="${Math.round(falta).toLocaleString('en-US')}" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Método</label><div class="inw"><select id="apMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><i class="ti ti-chevron-down chev"></i></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="actions" style="margin-top:0;grid-template-columns:1fr"><button class="ab g1" type="button" onclick="window.nxApaAbonarGo('${id}')"><i class="ti ti-check"></i> Registrar abono</button></div>
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
   };

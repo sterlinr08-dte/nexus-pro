@@ -1529,6 +1529,18 @@ sin tocar `nxPHImprimir` (documento imprimible, mismo criterio que `nxCotImprimi
 (`renderPrefHist`, `nxPHVer`, `nxPrefLista`, `nxPrefListaRows`) cargado en un navegador: los KPI, los
 filtros, el detalle y la ventana rápida funcionan, sin desbordes en 390px ni escritorio.
 
+**Tanda 1, pieza 6/8 — Apartados (v48.48), HECHA:** `renderApartados()` envuelto en `.nxPf`, reusa
+`kpiPf`/`.kpirow`/`.toolbar2`. Las tarjetas de apartado (antes `.nxSaCard`/`.nxSaTop`/`.nxSaEst`, clases
+GLOBALES tomadas prestadas del módulo Clientes SaaS) pasaron a una clase nueva propia `.apacard` +
+barra de progreso `.apabar` (ancho = % abonado) + fila de botones `.apabtns`. El badge de estado
+(APARTADO/VENCIDO/COMPLETADO/CANCELADO) se dejó con color inline dinámico, mismo criterio que
+`cotEstadoBadge`/`phBadge`/CRM (dato calculado, no una paleta fija). `nxApaNuevo()` y `nxApaAbonar()`
+(los 2 modales) reconstruidos en tarjetas `.nxPf`. `nxApaCompletar`/`nxApaCancelar` no tienen HTML
+propio (solo `confirm()` + PATCH), no requirieron cambios. Verificado con el código real extraído y
+cargado en un navegador con backend simulado: abonar mueve el `abonado` correctamente y actualiza el
+% de la barra, el botón "Entregar" aparece solo cuando ya no falta nada, crear un apartado nuevo manda
+el POST correcto a `pos_apartados`, sin desbordes en 390px ni escritorio.
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin
