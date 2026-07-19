@@ -1492,6 +1492,18 @@ Verificado con el código real extraído y cargado en un navegador con backend s
 el cambio de etapa mandan el PATCH correcto, guardar manda el POST correcto con el consecutivo
 `nextSeq('crm')`, sin desbordes en 390px ni escritorio.
 
+**Tanda 1, pieza 3/8 — Cotizaciones (v48.45), HECHA:** `renderCotizaciones()` envuelto en `.nxPf`
+(`.ltbl` con fila clicable para editar). `abrirCotizacion()` reconstruido en 3 tarjetas (Datos de la
+cotización / Productos / Notas). **Decisión deliberada de alcance:** la tabla de líneas de producto
+(`pintarCotTabla()`, clases `.nxFacTbl`/`.nxFacAdd` globales — las mismas del viejo Factura pre-v40.2)
+NO se reconstruyó — ya usa el mismo azul `#2563eb` y, al quedar anidada dentro del `.nxPf` nuevo,
+hereda Plus Jakarta Sans por CSS normal de todos modos, así que se ve consistente sin el riesgo de
+tocar la lógica de línea/descuento/totales que comparte con otros módulos. Mismo criterio que ya se
+usó con la tabla de Factura en la Fase 2 ("no se rehízo, ya hereda el look"). Verificado con el código
+real extraído (incluye `lineBase`/`lineImporte`/`cotTotales`) y cargado en un navegador: agregar un
+producto calcula bien el total con ITBIS, guardar manda el POST correcto a `pos_cotizaciones` +
+`pos_cotizacion_items`, sin desbordes en 390px ni escritorio.
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin

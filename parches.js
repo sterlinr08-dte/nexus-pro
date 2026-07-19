@@ -19201,22 +19201,25 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     return 'vigente';
   }
   function renderCotizaciones() {
+    nxPfEnsureCSS();
     const filas = _cotizaciones.length ? _cotizaciones.map(c => {
       const est = cotVigente(c);
-      return `<tr>
-        <td style="font-weight:700;font-family:var(--mono,monospace);font-size:11px">${esc(c.numero || '')}</td>
-        <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:#475569">${fechaDMY(c.fecha)}</div></td>
+      return `<tr data-row onclick="window.nxCotEditar('${c.id}')">
+        <td style="font-weight:800;font-family:var(--mono,monospace);color:var(--pf-blue-d)">${esc(c.numero || '')}</td>
+        <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:var(--pf-txt3)">${fechaDMY(c.fecha)}</div></td>
         <td style="text-align:center">${cotEstadoBadge(est)}</td>
-        <td style="text-align:right;font-weight:700">${fmt(c.total)}</td>
-        <td style="text-align:right;white-space:nowrap">
-          <button class="btn bsm bghost" title="Imprimir" onclick="window.nxCotImprimir('${c.id}')"><i class="ti ti-printer"></i></button>
-          ${est === 'vigente' || est === 'vencida' ? `<button class="btn bsm bc1" title="Convertir en venta" onclick="window.nxCotConvertir('${c.id}')"><i class="ti ti-arrow-right"></i></button>` : ''}
-          <button class="btn bsm bghost" title="Editar" onclick="window.nxCotEditar('${c.id}')"><i class="ti ti-edit"></i></button>
+        <td style="text-align:right;font-weight:800">${fmt(c.total)}</td>
+        <td style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()">
+          <button class="ab g3" style="height:30px;width:30px;padding:0" title="Imprimir" onclick="window.nxCotImprimir('${c.id}')" aria-label="Imprimir"><i class="ti ti-printer"></i></button>
+          ${est === 'vigente' || est === 'vencida' ? `<button class="ab g1" style="height:30px;width:30px;padding:0" title="Convertir en venta" onclick="window.nxCotConvertir('${c.id}')" aria-label="Convertir en venta"><i class="ti ti-arrow-right"></i></button>` : ''}
+          <button class="ab g3" style="height:30px;width:30px;padding:0" title="Editar" onclick="window.nxCotEditar('${c.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button>
         </td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">Aún no hay cotizaciones. Crea la primera.</td></tr>';
-    return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
-      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+    }).join('') : `<tr><td colspan="5" class="emptyrow">Aún no hay cotizaciones. Crea la primera.</td></tr>`;
+    return `<div class="nxPf">
+      <div class="toolbar2"><button class="ab g2 sm" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+    </div>`;
   }
   window.nxCotNueva = function () { _cotEdit = { id: null, cliente_id: '', cliente_nombre: '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; abrirCotizacion(); };
   window.nxCotEditar = async function (id) {
@@ -19226,23 +19229,41 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     abrirCotizacion();
   };
   function abrirCotizacion() {
+    nxPfEnsureCSS();
     cerrarModal('nxCotForm');
     const cliOpts = '<option value="">— Cliente / consumidor final —</option>' + _clientes.map(c => `<option value="${c.id}"${String(_cotEdit.cliente_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
     const prodList = _prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     const ov = document.createElement('div'); ov.id = 'nxCotForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal" style="max-width:640px;max-height:94vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-clipboard-text"></i> ${_cotEdit.id ? 'Editar' : 'Nueva'} cotización</span><button class="nxBack" type="button" onclick="document.getElementById('nxCotForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div class="fr-row">
-          <div class="fr" style="flex:2"><label>Cliente</label><select id="cotCli" onchange="window.nxCotSetCli(this.value)">${cliOpts}</select></div>
-          <div class="fr"><label>Fecha</label><input type="date" id="cotFecha" value="${_cotEdit.fecha}" onchange="window.nxCotField('fecha',this.value)"></div>
-          <div class="fr"><label>Validez (días)</label><input id="cotVal" inputmode="numeric" value="${_cotEdit.validez_dias}" onchange="window.nxCotField('validez_dias',this.value)"></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:640px;max-height:94vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+        <div class="head">
+          <button class="nxBack" type="button" onclick="document.getElementById('nxCotForm').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
+          <h3><i class="ti ti-clipboard-text"></i> ${_cotEdit.id ? 'Editar' : 'Nueva'} cotización</h3>
         </div>
-        <div class="nxFacAdd" style="margin:4px 0 10px"><i class="ti ti-search"></i><input list="cotProds" id="cotBuscar" placeholder="Escribe un producto y elígelo para agregar..." autocomplete="off" onchange="window.nxCotAdd(this.value)"><datalist id="cotProds">${prodList}</datalist></div>
-        <div id="cotTabla" style="overflow-y:auto;flex:1"></div>
-        <div id="cotTot" class="nxAsTot"></div>
-        <div class="fr"><label>Notas (opcional)</label><input id="cotNotas" class="no-upper" value="${esc(_cotEdit.notas || '')}" placeholder="Condiciones, entrega..." onchange="window.nxCotField('notas',this.value)"></div>
-        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxCotForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxCotGuardar()"><i class="ti ti-device-floppy"></i> Guardar cotización</button></div>
+        <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+          <div class="card">
+            <h4><span class="bdg purple"><i class="ti ti-file-description"></i></span> Datos de la cotización</h4>
+            <div class="fld" style="margin-bottom:10px"><label>Cliente</label><div class="inw"><select id="cotCli" onchange="window.nxCotSetCli(this.value)">${cliOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
+            <div class="g2">
+              <div class="fld"><label>Fecha</label><div class="inw"><input type="date" id="cotFecha" value="${_cotEdit.fecha}" onchange="window.nxCotField('fecha',this.value)"></div></div>
+              <div class="fld"><label>Validez (días)</label><div class="inw"><input id="cotVal" inputmode="numeric" value="${_cotEdit.validez_dias}" onchange="window.nxCotField('validez_dias',this.value)"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h4><span class="bdg blue"><i class="ti ti-shopping-cart"></i></span> Productos</h4>
+            <div class="nxFacAdd" style="margin:0 0 10px"><i class="ti ti-search"></i><input list="cotProds" id="cotBuscar" placeholder="Escribe un producto y elígelo para agregar..." autocomplete="off" onchange="window.nxCotAdd(this.value)"><datalist id="cotProds">${prodList}</datalist></div>
+            <div id="cotTabla"></div>
+            <div id="cotTot" class="nxAsTot" style="margin-top:8px"></div>
+          </div>
+          <div class="card">
+            <h4><span class="bdg green"><i class="ti ti-notes"></i></span> Notas</h4>
+            <div class="fld"><label>Notas (opcional)</label><div class="inw"><input id="cotNotas" class="no-upper" value="${esc(_cotEdit.notas || '')}" placeholder="Condiciones, entrega..." onchange="window.nxCotField('notas',this.value)"></div></div>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:0">
+          <button class="ab g3" type="button" onclick="document.getElementById('nxCotForm').remove()">Cancelar</button>
+          <button class="ab g1" type="button" onclick="window.nxCotGuardar()"><i class="ti ti-device-floppy"></i> Guardar cotización</button>
+        </div>
       </div>`;
     document.body.appendChild(ov);
     pintarCotTabla();
