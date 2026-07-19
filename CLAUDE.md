@@ -1504,6 +1504,16 @@ real extraído (incluye `lineBase`/`lineImporte`/`cotTotales`) y cargado en un n
 producto calcula bien el total con ITBIS, guardar manda el POST correcto a `pos_cotizaciones` +
 `pos_cotizacion_items`, sin desbordes en 390px ni escritorio.
 
+**Tanda 1, pieza 4/8 — Notas de crédito (v48.46), HECHA:** `renderNotasCredito()` envuelto en `.nxPf`,
+reusa `kpiPf`/`.kpirow`/`.toolbar2`/`.emptyrow` de las piezas anteriores + `.datef` nuevo (inputs de
+fecha Desde/Hasta con el mismo estilo). `kpisNC()`/`filasNC()` (exclusivas de este módulo, no
+compartidas con Historial — verificado antes de tocarlas) actualizadas a `kpiPf`/colores `var(--pf-*)`.
+El buscador sigue usando `posBuscador()` (reglamento de buscadores, sin tocar) y los encabezados
+ordenables siguen usando `thSort()`/`.nxThSort` (clase GLOBAL compartida con Historial — deliberadamente
+sin tocar su color índigo, fuera de alcance de esta tanda). Verificado con el código real extraído y
+cargado en un navegador: los KPI, el orden de columnas (`nxSort`) y el clic en fila (imprimir) siguen
+funcionando, sin desbordes en 390px ni escritorio.
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin

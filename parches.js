@@ -16911,6 +16911,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .afinchk.on{border-color:var(--pf-blue);background:var(--pf-blue-l);color:var(--pf-blue-d)}
 .nxPf .oppcard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 12px;margin-bottom:8px}
 .nxPf .oppet{height:30px;border-radius:8px;border:1.5px solid var(--pf-line);background:var(--pf-bg);color:var(--pf-txt);font-size:11px;font-weight:700;padding:0 8px;font-family:inherit}
+.nxPf .datef{height:38px;padding:0 10px;border:1.5px solid var(--pf-line);border-radius:10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt);font-family:inherit}
 .nxPf .ph{width:100%;aspect-ratio:1.8/1;border-radius:12px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
 .nxPf .srow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px}
 .nxPf .srow .ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
@@ -17823,33 +17824,38 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const lista = ncFiltradas();
     const total = lista.reduce((s, d) => s + Number(d.total || 0), 0);
     const hoyN = (_notasCred || []).filter(d => (d.fecha || d.created_at || '').slice(0, 10) === hoy()).length;
-    return kpi('Notas de crédito', lista.length, '#ea580c') + kpi('Total filtrado', fmt(total), '#dc2626') + kpi('Hoy', hoyN, '#0f172a');
+    return kpiPf('Notas de crédito', lista.length, 'var(--pf-orange)') + kpiPf('Total filtrado', fmt(total), 'var(--pf-red)') + kpiPf('Hoy', hoyN, 'var(--pf-txt)');
   }
   function filasNC() {
     const lista = sortRows(ncFiltradas(), d => ncSortVal(d, _ncSort.k), _ncSort.d);
-    if (!lista.length) return '<tr><td colspan="6" style="text-align:center;padding:24px;color:#475569;font-size:12px">' + ((_notasCred || []).length ? 'Sin notas de crédito con esos filtros' : 'Aún no hay notas de crédito. Se emiten desde el Historial de facturas (botón de devolución).') + '</td></tr>';
+    if (!lista.length) return `<tr><td colspan="6" class="emptyrow">${(_notasCred || []).length ? 'Sin notas de crédito con esos filtros' : 'Aún no hay notas de crédito. Se emiten desde el Historial de facturas (botón de devolución).'}</td></tr>`;
     return lista.map(d => {
       const vt = (_ventas || []).find(v => String(v.id) === String(d.venta_id));
       const fact = vt ? (vt.numero_factura || '#' + vt.numero) : '';
-      return `<tr style="cursor:pointer" onclick="window.nxNCImprimir('${d.id}')">
-        <td style="font-weight:700;color:#1e293b;white-space:nowrap">${esc(d.numero || '')}</td>
-        <td style="color:#475569;white-space:nowrap">${fechaDMY(d.fecha || d.created_at)}</td>
-        <td>${esc(d.cliente_nombre || 'Consumidor final')}${fact ? `<span style="display:block;font-size:9.5px;color:#94a3b8">fact. ${esc(fact)}</span>` : ''}</td>
-        <td style="white-space:nowrap">${d.ncf ? `<span style="font-size:9.5px;font-weight:700;color:#475569">${esc(d.ncf)}</span>` : '<span style="color:#cbd5e1">—</span>'}</td>
-        <td style="text-align:right;font-weight:800;color:#dc2626;white-space:nowrap">${fmt(d.total)}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxNCImprimir('${d.id}')" title="Ver / imprimir"><i class="ti ti-printer"></i></button></td>
+      return `<tr data-row onclick="window.nxNCImprimir('${d.id}')">
+        <td style="font-weight:800;white-space:nowrap">${esc(d.numero || '')}</td>
+        <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(d.fecha || d.created_at)}</td>
+        <td>${esc(d.cliente_nombre || 'Consumidor final')}${fact ? `<span style="display:block;font-size:9.5px;color:var(--pf-txt3)">fact. ${esc(fact)}</span>` : ''}</td>
+        <td style="white-space:nowrap">${d.ncf ? `<span style="font-size:9.5px;font-weight:700;color:var(--pf-txt3)">${esc(d.ncf)}</span>` : '<span style="color:var(--pf-line)">—</span>'}</td>
+        <td style="text-align:right;font-weight:800;color:var(--pf-red);white-space:nowrap">${fmt(d.total)}</td>
+        <td style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="window.nxNCImprimir('${d.id}')" title="Ver / imprimir" aria-label="Ver / imprimir"><i class="ti ti-printer"></i></button></td>
       </tr>`;
     }).join('');
   }
   function renderNotasCredito() {
-    return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+    nxPfEnsureCSS();
+    return `<div class="nxPf">
+      <div class="toolbar2">
         <div style="flex:1;min-width:200px">${posBuscador({ id: 'ncQ', value: _ncQ, placeholder: 'Buscar por No., NCF o cliente…', oninput: 'window.nxNCBuscar(this.value)' })}</div>
-        <input type="date" id="ncDesde" value="${_ncDesde}" onchange="window.nxNCFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
-        <input type="date" id="ncHasta" value="${_ncHasta}" onchange="window.nxNCFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
-        <button class="btn bsm bghost" type="button" onclick="window.nxNCLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="date" id="ncDesde" value="${_ncDesde}" onchange="window.nxNCFecha()" title="Desde" class="datef">
+          <input type="date" id="ncHasta" value="${_ncHasta}" onchange="window.nxNCFecha()" title="Hasta" class="datef">
+          <button class="ab g3 sm" type="button" onclick="window.nxNCLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
+        </div>
       </div>
-      <div id="ncKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisNC()}</div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('nc', _ncSort, 'numero', 'No. NC')}${thSort('nc', _ncSort, 'fecha', 'Fecha')}${thSort('nc', _ncSort, 'cliente', 'Cliente')}${thSort('nc', _ncSort, 'ncf', 'NCF')}${thSort('nc', _ncSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="ncBody">${filasNC()}</tbody></table></div>`;
+      <div class="kpirow" id="ncKpis">${kpisNC()}</div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr>${thSort('nc', _ncSort, 'numero', 'No. NC')}${thSort('nc', _ncSort, 'fecha', 'Fecha')}${thSort('nc', _ncSort, 'cliente', 'Cliente')}${thSort('nc', _ncSort, 'ncf', 'NCF')}${thSort('nc', _ncSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="ncBody">${filasNC()}</tbody></table></div>
+    </div>`;
   }
   function pintarNC() { const b = document.getElementById('ncBody'); if (b) b.innerHTML = filasNC(); const k = document.getElementById('ncKpis'); if (k) k.innerHTML = kpisNC(); }
   window.nxNCBuscar = function (v) { _ncQ = v; pintarNC(); };
