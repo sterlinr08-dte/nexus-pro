@@ -16909,6 +16909,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
 .nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
 .nxPf .afinchk.on{border-color:var(--pf-blue);background:var(--pf-blue-l);color:var(--pf-blue-d)}
+.nxPf .oppcard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+.nxPf .oppet{height:30px;border-radius:8px;border:1.5px solid var(--pf-line);background:var(--pf-bg);color:var(--pf-txt);font-size:11px;font-weight:700;padding:0 8px;font-family:inherit}
 .nxPf .ph{width:100%;aspect-ratio:1.8/1;border-radius:12px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
 .nxPf .srow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px}
 .nxPf .srow .ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
@@ -19619,45 +19621,47 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   function crmAbierta(o) { return ['nuevo', 'contactado', 'cotizado'].indexOf(o.etapa) >= 0; }
   async function cargarCRM() { try { _crm = await getAPI().get('pos_crm', 'select=*&order=created_at.desc&limit=400') || []; } catch (e) { _crm = []; } }
   function renderCRM() {
+    nxPfEnsureCSS();
     const abiertas = _crm.filter(crmAbierta);
     const pipeline = abiertas.reduce((s, o) => s + Number(o.monto_estimado || 0), 0);
     const ganadas = _crm.filter(o => o.etapa === 'ganado');
     const montoGan = ganadas.reduce((s, o) => s + Number(o.monto_estimado || 0), 0);
-    const kpi = (l, v, c) => `<div class="nxCtaKpi"><div class="nxCtaKpiL">${l}</div><div class="nxCtaKpiV" style="color:${c}">${v}</div></div>`;
     const fil = o => _crmFiltro === 'todas' || (_crmFiltro === 'abiertas' && crmAbierta(o)) || _crmFiltro === o.etapa;
     const lista = _crm.filter(fil);
-    const chip = (k, lbl) => `<button type="button" class="btn bsm${_crmFiltro === k ? ' bc1' : ' bghost'}" onclick="window.nxCrmFiltro('${k}')">${lbl}</button>`;
+    const chip = (k, lbl) => `<button type="button" class="chip${_crmFiltro === k ? ' on' : ''}" onclick="window.nxCrmFiltro('${k}')">${lbl}</button>`;
     const etOpts = o => CRM_ETAPAS.map(e => `<option value="${e[0]}"${o.etapa === e[0] ? ' selected' : ''}>${e[1]}</option>`).join('');
     const cards = lista.length ? lista.map(o => {
       const et = crmEt(o.etapa);
       const cli = o.cliente_id ? (_clientes.find(x => String(x.id) === String(o.cliente_id)) || {}).nombre : '';
-      return `<div class="nxCrmCard" style="border-left:4px solid ${et[2]}">
+      return `<div class="oppcard" style="border-left:4px solid ${et[2]}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <div style="min-width:0"><div style="font-weight:800;font-size:13px;color:#0f172a">${esc(o.nombre)}</div><div style="font-size:10.5px;color:#475569">${esc(cli || o.contacto || 'Sin contacto')}${o.telefono ? ' · ' + esc(o.telefono) : ''}</div></div>
+          <div style="min-width:0"><div style="font-weight:800;font-size:13px">${esc(o.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(cli || o.contacto || 'Sin contacto')}${o.telefono ? ' · ' + esc(o.telefono) : ''}</div></div>
           <div style="text-align:right;white-space:nowrap"><div style="font-weight:800;color:${et[2]}">${fmt(o.monto_estimado)}</div></div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px">
-          <select class="nxCrmEt" onchange="window.nxCrmEtapa('${o.id}',this.value)">${etOpts(o)}</select>
-          <div style="display:flex;gap:4px">
-            ${o.etapa !== 'perdido' ? `<button class="btn bsm bc1" onclick="window.nxCrmVender('${o.id}')" title="Convertir en venta"><i class="ti ti-cash"></i></button>` : ''}
-            ${o.telefono && waNum(o.telefono) ? `<a class="btn bsm bwa" href="https://wa.me/${waNum(o.telefono)}" target="_blank"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
-            <button class="btn bsm bghost" onclick="window.nxCrmEdit('${o.id}')"><i class="ti ti-edit"></i></button>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:9px">
+          <select class="oppet" onchange="window.nxCrmEtapa('${o.id}',this.value)">${etOpts(o)}</select>
+          <div style="display:flex;gap:5px">
+            ${o.etapa !== 'perdido' ? `<button class="ab g1" style="height:30px;width:30px;padding:0" onclick="window.nxCrmVender('${o.id}')" title="Convertir en venta" aria-label="Convertir en venta"><i class="ti ti-cash"></i></button>` : ''}
+            ${o.telefono && waNum(o.telefono) ? `<a class="ab g3" style="height:30px;width:30px;padding:0;color:#16a34a" href="https://wa.me/${waNum(o.telefono)}" target="_blank" aria-label="WhatsApp"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
+            <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="window.nxCrmEdit('${o.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button>
           </div>
         </div>
-        ${o.proxima_accion ? `<div style="font-size:10px;color:#ea580c;margin-top:6px"><i class="ti ti-calendar"></i> Próx.: ${fechaDMY(o.proxima_accion)}</div>` : ''}
+        ${o.proxima_accion ? `<div style="font-size:10px;color:var(--pf-orange);margin-top:7px"><i class="ti ti-calendar"></i> Próx.: ${fechaDMY(o.proxima_accion)}</div>` : ''}
       </div>`;
-    }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:24px">Sin oportunidades. Toca "Nueva oportunidad".</div>';
-    return `<div class="nxCtaKpis" style="margin-bottom:12px">
-        ${kpi('Oportunidades abiertas', abiertas.length, '#6d28d9')}
-        ${kpi('En pipeline', fmt(pipeline), '#7c3aed')}
-        ${kpi('Ganadas', ganadas.length, '#16a34a')}
-        ${kpi('Monto ganado', fmt(montoGan), '#16a34a')}
+    }).join('') : `<div class="emptyrow">Sin oportunidades. Toca "Nueva oportunidad".</div>`;
+    return `<div class="nxPf">
+      <div class="kpirow">
+        ${kpiPf('Oportunidades abiertas', abiertas.length, 'var(--pf-purple)')}
+        ${kpiPf('En pipeline', fmt(pipeline), 'var(--pf-purple)')}
+        ${kpiPf('Ganadas', ganadas.length, 'var(--pf-green)')}
+        ${kpiPf('Monto ganado', fmt(montoGan), 'var(--pf-green)')}
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
-        <button class="btn bsm bc1" type="button" onclick="window.nxCrmNueva()"><i class="ti ti-plus"></i> Nueva oportunidad</button>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:auto">${chip('abiertas', 'Abiertas')}${chip('nuevo', 'Nuevo')}${chip('contactado', 'Contactado')}${chip('cotizado', 'Cotizado')}${chip('ganado', 'Ganadas')}${chip('perdido', 'Perdidas')}</div>
+      <div class="toolbar2">
+        <button class="ab g2 sm" type="button" onclick="window.nxCrmNueva()"><i class="ti ti-plus"></i> Nueva oportunidad</button>
+        <div class="chiprow">${chip('abiertas', 'Abiertas')}${chip('nuevo', 'Nuevo')}${chip('contactado', 'Contactado')}${chip('cotizado', 'Cotizado')}${chip('ganado', 'Ganadas')}${chip('perdido', 'Perdidas')}</div>
       </div>
-      <div class="nxCrmList">${cards}</div>`;
+      <div>${cards}</div>
+    </div>`;
   }
   window.nxCrmFiltro = function (k) { _crmFiltro = k; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxCrmEtapa = async function (id, etapa) {
@@ -19676,38 +19680,49 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxCrmNueva = function () { abrirCrm(null); };
   window.nxCrmEdit = function (id) { const o = _crm.find(x => String(x.id) === String(id)); if (o) abrirCrm(o); };
   function abrirCrm(o) {
+    nxPfEnsureCSS();
     cerrarModal('nxCrmForm');
     const e = o || {};
     const cliOpts = '<option value="">— Sin enlazar —</option>' + _clientes.filter(c => c.es_cliente !== false).map(c => `<option value="${c.id}"${String(e.cliente_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
     const etOpts = CRM_ETAPAS.map(x => `<option value="${x[0]}"${e.etapa === x[0] ? ' selected' : ''}>${x[1]}</option>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxCrmForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-target-arrow"></i> ${o ? 'Editar oportunidad' : 'Nueva oportunidad'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxCrmForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="overflow-y:auto;flex:1">
-          <div class="fr"><label>Nombre de la oportunidad *</label><input id="crNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Ej: Venta 5 laptops a Colmado X"></div>
-          <div class="fr-row">
-            <div class="fr"><label>Cliente (opcional)</label><select id="crCli">${cliOpts}</select></div>
-            <div class="fr"><label>Etapa</label><select id="crEt">${etOpts}</select></div>
-          </div>
-          <div class="fr-row">
-            <div class="fr"><label>Contacto</label><input id="crCont" class="no-upper" value="${esc(e.contacto || '')}" placeholder="Nombre"></div>
-            <div class="fr"><label>Teléfono</label><input id="crTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-..."></div>
-          </div>
-          <div class="fr-row">
-            <div class="fr"><label>Monto estimado</label><input id="crMonto" data-nx-money inputmode="numeric" value="${e.monto_estimado ? Math.round(e.monto_estimado) : ''}" placeholder="0"></div>
-            <div class="fr"><label>Próxima acción</label><input type="date" id="crProx" value="${esc((e.proxima_accion || '').slice(0, 10))}"></div>
-          </div>
-          <div class="fr-row">
-            <div class="fr"><label>Fuente</label><input id="crFuente" class="no-upper" value="${esc(e.fuente || '')}" placeholder="Referido, redes..."></div>
-            <div class="fr"><label>Email</label><input id="crEmail" class="no-upper" value="${esc(e.email || '')}" placeholder="Opcional"></div>
-          </div>
-          <div class="fr"><label>Notas</label><input id="crNotas" class="no-upper" value="${esc(e.notas || '')}" placeholder="Detalle del seguimiento"></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+        <div class="head">
+          <button class="nxBack" type="button" onclick="document.getElementById('nxCrmForm').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
+          <h3><i class="ti ti-target-arrow"></i> ${o ? 'Editar oportunidad' : 'Nueva oportunidad'}</h3>
         </div>
-        <div class="fe" style="margin-top:10px;gap:8px">
-          ${o ? `<button class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxCrmDel('${o.id}')"><i class="ti ti-trash"></i></button>` : ''}
-          <button class="btn bghost" type="button" onclick="document.getElementById('nxCrmForm').remove()">Cancelar</button>
-          <button class="btn bc1" type="button" onclick="window.nxCrmGuardar('${o ? o.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+          <div class="card">
+            <h4><span class="bdg purple"><i class="ti ti-target-arrow"></i></span> Oportunidad</h4>
+            <div class="fld" style="margin-bottom:10px"><label>Nombre de la oportunidad *</label><div class="inw"><input id="crNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Ej: Venta 5 laptops a Colmado X"></div></div>
+            <div class="g2">
+              <div class="fld"><label>Cliente (opcional)</label><div class="inw"><select id="crCli">${cliOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
+              <div class="fld"><label>Etapa</label><div class="inw"><select id="crEt">${etOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h4><span class="bdg blue"><i class="ti ti-address-book"></i></span> Contacto</h4>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="fld"><label>Contacto</label><div class="inw"><input id="crCont" class="no-upper" value="${esc(e.contacto || '')}" placeholder="Nombre"></div></div>
+              <div class="fld"><label>Teléfono</label><div class="inw"><input id="crTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-..."></div></div>
+            </div>
+            <div class="fld"><label>Email</label><div class="inw"><input id="crEmail" class="no-upper" value="${esc(e.email || '')}" placeholder="Opcional"></div></div>
+          </div>
+          <div class="card">
+            <h4><span class="bdg green"><i class="ti ti-calendar-stats"></i></span> Seguimiento</h4>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="fld"><label>Monto estimado</label><div class="inw"><span class="cur">$</span><input id="crMonto" data-nx-money inputmode="numeric" value="${e.monto_estimado ? Math.round(e.monto_estimado) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+              <div class="fld"><label>Próxima acción</label><div class="inw"><input type="date" id="crProx" value="${esc((e.proxima_accion || '').slice(0, 10))}"></div></div>
+            </div>
+            <div class="fld" style="margin-bottom:10px"><label>Fuente</label><div class="inw"><input id="crFuente" class="no-upper" value="${esc(e.fuente || '')}" placeholder="Referido, redes..."></div></div>
+            <div class="fld"><label>Notas</label><div class="inw"><input id="crNotas" class="no-upper" value="${esc(e.notas || '')}" placeholder="Detalle del seguimiento"></div></div>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:0${o ? ';grid-template-columns:auto 1fr 1fr' : ''}">
+          ${o ? `<button class="ab g4" type="button" style="width:44px;padding:0" onclick="window.nxCrmDel('${o.id}')" aria-label="Eliminar"><i class="ti ti-trash"></i></button>` : ''}
+          <button class="ab g3" type="button" onclick="document.getElementById('nxCrmForm').remove()">Cancelar</button>
+          <button class="ab g1" type="button" onclick="window.nxCrmGuardar('${o ? o.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
         </div>
       </div>`;
     document.body.appendChild(ov);

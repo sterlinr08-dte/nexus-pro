@@ -1481,6 +1481,17 @@ filtros repintan la lista, las pastillas de afines cambian de color al tocarlas,
 POST correcto a `pos_clientes` con todos los campos, los KPI de Clientes muestran los números
 correctos, y no hay desbordes en 390px ni escritorio.
 
+**Tanda 1, pieza 2/8 — CRM (v48.44), HECHA:** `renderCRM()` envuelto en `.nxPf`, reusa `kpiPf`/
+`.kpirow`/`.toolbar2`/`.chip`/`.emptyrow` ya creados para Entidades/Clientes. Tarjetas de oportunidad
+nuevas (`.oppcard`, borde izquierdo del color de la etapa — dato dinámico, se queda como estilo en
+línea a propósito) + selector de etapa compacto (`.oppet`). `abrirCrm()` reconstruido en 3 tarjetas
+(Oportunidad/Contacto/Seguimiento) igual que el patrón de `abrirEntidad`; el botón eliminar (solo al
+editar) se acomoda con una columna extra en `.actions` (`grid-template-columns:auto 1fr 1fr`). Cero
+cambios de lógica — mismos ids, mismas funciones (`nxCrmEtapa`/`nxCrmVender`/`nxCrmGuardar`/`nxCrmDel`).
+Verificado con el código real extraído y cargado en un navegador con backend simulado: los filtros y
+el cambio de etapa mandan el PATCH correcto, guardar manda el POST correcto con el consecutivo
+`nextSeq('crm')`, sin desbordes en 390px ni escritorio.
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin
