@@ -1256,7 +1256,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div><div class="ct">Historial de pagos</div><div class="ct-s">Todos los cobros y abonos registrados</div></div>
               <button class="btn bsm bc4" onclick="exportarPagosExcel()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             </div>
-            <div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+            <div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
               <div class="sf-kpi ok"><div class="ic"><i class="ti ti-cash"></i></div><div><div class="lb">Total cobrado</div><div class="v" id="pgTotalMonto">RD$ 0</div><div class="sub">Este período</div></div></div>
               <div class="sf-kpi blue"><div class="ic"><i class="ti ti-receipt"></i></div><div><div class="lb">Cantidad de pagos</div><div class="v" id="pgTotalCant">0</div><div class="sub">Este período</div></div></div>
               <div class="sf-kpi purple"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Clientes que pagaron</div><div class="v" id="pgClientesPagaron">0</div><div class="sub">Este período</div></div></div>
@@ -3533,7 +3533,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.56';
+const APP_VERSION='48.57';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5699,7 +5699,7 @@ function rFact(){
   const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!_saldoMemo[cid])_saldoMemo[cid]=_saldoFacturasCliente(cid);const v=_saldoMemo[cid][f.id];return v!=null?v:(Number(f.prima_base||0)+Number(f.prima_deps||0));};
   const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+saldoDe(f),0);
   const pagadasEnLista=lista.filter(f=>f.estado==='Pagado').length;
-  if(rz)rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(3,1fr)">
+  if(rz)rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas</div><div class="v">${lista.length}</div></div></div>
       <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Por cobrar</div><div class="v">${fmt(porCobrar)}</div></div></div>
       <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Pagadas</div><div class="v">${pagadasEnLista}</div></div></div>

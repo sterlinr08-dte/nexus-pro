@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.56** (ver `index.html` y `version.json`).
+> Versión actual: **48.57** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1848,6 +1848,19 @@ de tiempo y el Panel lateral deben ser **reales y completos**, no decorativos.
     Verificado reproduciendo los NÚMEROS REALES de la captura (26 facturas, ~RD$114,009 de prueba, un
     monto de 6 cifras) en el harness de Playwright — antes del arreglo se repetía el corte, después el
     monto se ve completo (envuelto en 2 líneas) y sin desbordes ni en el celular ni en escritorio.
+  - **Seguimiento (v48.57) — el mismo arreglo dejó el número partido letra por letra:** el dueño mandó
+    otra captura mostrando "RD$ 114,500" partido en 4 líneas ("RD"/"$"/"114,"/"500"), y las etiquetas
+    de arriba cortadas ("FAC…", "POR …", "PAG…"). Causa: el resumen de Facturas forzaba
+    `grid-template-columns:repeat(3,1fr)` en LÍNEA (estilo inline) para sus 3 recuadros — un inline
+    style siempre le gana a la regla `@media` que reduce a 2 columnas en móvil (exactamente el mismo
+    tipo de bug de especificidad que causó el desborde de 513px en v48.54), así que en el celular
+    igual intentaba meter 3 columnas en ~360px, dejando ~100px por recuadro — ahí ni la etiqueta ni el
+    monto caben en una línea sana. Cambiado a `repeat(auto-fit,minmax(150px,1fr))` (mismo criterio que
+    ya usaba Historial de pagos, subido de 130px a 150px por el mismo motivo): en escritorio se ven los
+    3 recuadros igual que siempre: en el celular el grid se acomoda solo a 2 columnas (el tercero pasa
+    abajo), dando a cada recuadro el ancho real que necesita. Con eso el monto cabe en 1-2 líneas
+    limpias y las etiquetas se leen completas. Verificado con los mismos números reales de la captura
+    del dueño (26 facturas, RD$114,009 de prueba) en 390px: 2 columnas prolijas, sin desbordes.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
