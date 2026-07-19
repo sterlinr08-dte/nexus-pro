@@ -502,6 +502,17 @@ ya escrito para Multiempresa; ver el punto 11 más abajo para el alcance complet
   prefijo/namespace único (patrón `nxAi*`, `nxSa*`, `nxMd*`, `nxRf*`...) — nunca reusar directamente
   las clases CSS de otro módulo aunque el HTML se parezca, para no arrastrar su color si ese módulo
   cambia el suyo después.
+- **Aclaración explícita del dueño (19-jul-2026) — CERO arrastre visual de NEXUS PRO en un proyecto
+  nuevo:** cuando el dueño manda una imagen/mockup/frontend de referencia para un sistema NUEVO de
+  Multiempresa, ese proyecto se construye siguiendo ESA imagen al 100% — nunca copiando/heredando
+  iconos, iconos 3D/cristal, paleta, tipografía ni ningún elemento visual ya usado en NEXUS PRO
+  (núcleo de Seguros o cualquier otra app del hub). No es solo "un color distinto" (eso ya lo cubre
+  el punto de arriba) — es que el proyecto nuevo debe sentirse construido desde cero, con identidad
+  propia de punta a punta, sin que se le "pegue" nada del sistema madre por copiar/pegar código o por
+  costumbre. Ejemplo de lo que NO se debe repetir: los iconos 3D de cristal que se probaron en el
+  Dashboard de Seguros (v48.21) y se revirtieron por no gustarle al dueño (v48.24) — esa hoja de
+  iconos NO debe reusarse ni sugerirse como base para ningún proyecto nuevo, cada uno arranca en
+  blanco a partir de lo que el dueño mande para ESE proyecto específico.
 Tabla `pos_secuencias` (tipo único por org, prefijo, longitud, proximo; org+trigger+RLS).
 Helper async `nextSeq(tipo)` lee la fila, devuelve `prefijo+pad(proximo)` y hace
 `proximo+1`; si no hay fila para ese tipo devuelve **null** (los callers caen a su
