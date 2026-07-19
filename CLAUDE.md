@@ -1292,6 +1292,24 @@ todo de golpe (así lo prefiere siempre el dueño).
     Crédito en morado. CSS nuevo `.preciosFlat`/`.inw .cur` en `nxPfEnsureCSS()`. Verificado
     comparando capturas lado a lado del código real contra las 3 imágenes del dueño — sin
     desbordes en 390px ni 1200px.
+  - **Seguimiento (v48.42) — crear un nivel de precio nuevo en un solo paso:** antes, "Crear
+    nivel" (tarjeta "Niveles de precio" del formulario de artículo) solo pedía el NOMBRE — el
+    nivel se creaba vacío y había que ir fila por fila en la tabla de abajo para ponerle
+    Contado/Crédito/Mínimo después (dos pasos separados). El dueño pidió ordenar ese flujo para
+    que sea un solo paso. `nxPfNivelNuevo(prodId)` ahora lee también 3 inputs nuevos
+    (`nxPfNivNuevoCont`/`nxPfNivNuevoCred`/`nxPfNivNuevoMin`, mismo `parseMoney` que el resto del
+    formulario) y, si al menos uno trae valor, hace un segundo `POST` a `pos_producto_niveles`
+    inmediatamente después de crear el nivel (mismo patrón que `nxPfNivelGuardar`) — el nivel
+    aparece completo en la tabla sin un paso aparte. Si se dejan los 3 en blanco, el nivel se crea
+    vacío igual que antes (no rompe el caso de "configurar los precios después"). HTML: el antiguo
+    `<input>` de nombre + botón en una fila (`.nivnew` flex) pasó a un `.nivnewgrid` (grid 2
+    columnas en móvil con el nombre ocupando la fila completa, 4 columnas en escritorio) con los 4
+    campos etiquetados (`.fld`), y el botón "Crear nivel" (`.btn2`) quedó debajo, a todo lo ancho.
+    Verificado con el código real (`abrirProd`/`nxPfNivelNuevo`/`nxPfNivelesTabla`) extraído y
+    cargado en un navegador con un backend simulado: crear un nivel con precios manda un solo
+    `POST` a `pos_niveles_precio` seguido de un `POST` a `pos_producto_niveles` con los 3 montos
+    correctos, la tabla se repinta con el nivel nuevo ya con sus precios, el formulario se limpia,
+    y no hay desbordes en 390px ni 1200px.
 - **Fase 2, continuación (v48.31) — Vender: carrito con el look nuevo:** `pintarCarrito()`
   (panel `#posCartWrap`, a la derecha del catálogo de Vender) restilado al mismo lenguaje visual
   `.nxPf` que ya tenía el catálogo en lista — mismo patrón quirúrgico: los ids (`posCartWrap`) y

@@ -16882,9 +16882,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .nivbadge{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;background:var(--pf-txt3)}
 .nxPf .nivbadge.cur{background:var(--pf-blue)}
 .nxPf .nivsearch{margin-bottom:10px}
-.nxPf .nivnew{display:flex;gap:7px;margin-top:10px}
-.nxPf .nivnew input{flex:1;min-width:0;height:36px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-bg);padding:0 10px;font:inherit;font-size:12px;box-sizing:border-box}
-.nxPf .btn2{height:36px;padding:0 12px;border-radius:10px;border:0;background:var(--pf-blue);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer}
+.nxPf .nivnew{margin-top:10px}
+.nxPf .nivnewgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.nxPf .nivnewgrid .fld:first-child{grid-column:1/-1}
+@media (min-width:560px){.nxPf .nivnewgrid{grid-template-columns:1.6fr 1fr 1fr 1fr}.nxPf .nivnewgrid .fld:first-child{grid-column:auto}}
+.nxPf .nivnew input{width:100%;height:36px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-bg);padding:0 10px;font:inherit;font-size:12px;box-sizing:border-box}
+.nxPf .btn2{width:100%;height:36px;padding:0 12px;border-radius:10px;border:0;background:var(--pf-blue);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer}
 .nxPf .colr{display:flex;flex-direction:column;gap:12px}
 .nxPf .ph{width:100%;aspect-ratio:1.8/1;border-radius:12px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
 .nxPf .srow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px}
@@ -17022,14 +17025,22 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxPfNivelNuevo = async function (prodId) {
     const inp = document.getElementById('nxPfNivNomNuevo'); const nombre = (inp && inp.value || '').trim();
     if (!nombre) { toast('err', 'Escribe el nombre del nivel'); return; }
+    const g = id => { const el = document.getElementById(id); return el ? parseMoney(el.value) : 0; };
+    const cont = g('nxPfNivNuevoCont'), cred = g('nxPfNivNuevoCred'), min = g('nxPfNivNuevoMin');
     try {
       const r = await getAPI().post('pos_niveles_precio', { nombre: nombre, orden: _niveles.length + 1 });
-      if (r && r[0]) _niveles.push(r[0]);
+      const nuevo = r && r[0];
+      if (nuevo) _niveles.push(nuevo);
+      if (nuevo && prodId && (cont || cred || min)) {
+        await getAPI().post('pos_producto_niveles', { producto_id: prodId, nivel_id: nuevo.id, precio_contado: cont, precio_credito: cred, precio_minimo: min });
+        _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || [];
+      }
       if (inp) inp.value = '';
+      ['nxPfNivNuevoCont', 'nxPfNivNuevoCred', 'nxPfNivNuevoMin'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       const sel = document.getElementById('ppNivelSel');
-      if (sel) { sel.innerHTML = nxPfNivelSelOpts(r && r[0] ? r[0].id : sel.value); window.nxPfNivelCambio(prodId); }
+      if (sel) { sel.innerHTML = nxPfNivelSelOpts(nuevo ? nuevo.id : sel.value); window.nxPfNivelCambio(prodId); }
       window.nxPfNivelesTabla(prodId);
-      toast('ok', 'Nivel creado', nombre);
+      toast('ok', 'Nivel creado', nombre + (cont || cred || min ? ' con sus precios' : ''));
     } catch (e) { toast('err', 'No se pudo crear el nivel', String(e && e.message || e)); }
   };
   // Cambiar el "Nivel de Precio a editar" recarga Precios/Reglas de Venta con los datos de ESE nivel
@@ -17157,7 +17168,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
                 <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>Mínimo</th><th></th></tr></thead>
                 <tbody id="nxPfNivBody"></tbody>
               </table></div>
-              <div class="nivnew"><input id="nxPfNivNomNuevo" class="no-upper" placeholder="Nombre del nivel nuevo (ej: Distribuidor)"><button class="btn2" type="button" onclick="window.nxPfNivelNuevo('${p.id}')"><i class="ti ti-plus"></i> Crear nivel</button></div>
+              <div class="nivnew">
+                <div class="nivnewgrid">
+                  <div class="fld"><label>Nombre del nivel nuevo</label><input id="nxPfNivNomNuevo" class="no-upper" placeholder="Ej: Distribuidor"></div>
+                  <div class="fld"><label>Contado</label><input id="nxPfNivNuevoCont" inputmode="numeric" placeholder="0"></div>
+                  <div class="fld"><label>Crédito</label><input id="nxPfNivNuevoCred" inputmode="numeric" placeholder="0"></div>
+                  <div class="fld"><label>Mínimo</label><input id="nxPfNivNuevoMin" inputmode="numeric" placeholder="0"></div>
+                </div>
+                <button class="btn2" type="button" onclick="window.nxPfNivelNuevo('${p.id}')"><i class="ti ti-plus"></i> Crear nivel</button>
+              </div>
               ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para configurarle precios por nivel.</div>`}
             </div>
 
