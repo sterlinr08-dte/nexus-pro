@@ -1452,6 +1452,35 @@ todo de golpe (así lo prefiere siempre el dueño).
   cargado en un navegador: quedan exactamente 2 botones, sin desbordes en 390px ni escritorio,
   0 errores de JS.
 
+#### Fase 4 — módulos internos pendientes del rediseño, por tandas (19-jul-2026 en adelante)
+El dueño pidió planear (con el método de "El Arquitecto", ver `/home/user/the-architect` — clon de
+referencia fuera del repo, NO se mezcla con nexus-pro) el orden para aplicarle el look `.nxPf` a los
+~17 módulos internos del POS que el Fase 3 (shell/sidebar) no tocó. Plan acordado, 3 tandas por riesgo:
+- **Tanda 1 (bajo riesgo — listas/catálogos):** Entidades · Clientes · CRM · Cotizaciones · Notas de
+  crédito · Prefacturas (historial) · Apartados · Avisos.
+- **Tanda 2 (riesgo medio — flujos con más pasos):** Reparaciones · Kardex · Historial de ventas ·
+  Reportes · Recursos Humanos.
+- **Tanda 3 (riesgo alto — dinero/contabilidad):** Compras · Caja (arqueo) · Contabilidad · Ajustes.
+Cada módulo se toca uno a la vez, verificado con Playwright contra el código real antes de publicar,
+igual que el resto de esta sesión — no hay rama aparte para esto, va directo a `main` incremental.
+
+**Tanda 1, pieza 1/8 — Entidades + Clientes (v48.43), HECHA:** ambas comparten el modal `abrirEntidad`.
+CSS nuevo reusable en `nxPfEnsureCSS()` para todo lo que sigue en esta tanda: `.kpirow`/`.kpitile`
+(tarjetas KPI), `.toolbar2` (botón principal + chips), `.chip`/`.chip.on` (pastillas de filtro), `.ltbl`
+(tabla de lista con filas clicables `tr[data-row]`), `.rolebadge`, `.emptyrow`, `.afinrow`/`.afinchk`
+(pastillas de "afines" del formulario de entidad). Se agregó `kpiPf()` (helper nuevo, NO se tocó el
+`kpi()` viejo que todavía usa la pestaña Historial sin rediseñar — cambiarlo habría roto esa pestaña,
+que no está en esta tanda). `renderEntidades()` y `renderClientes()` envueltos en `<div class="nxPf">`;
+`abrirEntidad()` reconstruido como modal de tarjetas (¿Qué es esta entidad? / Datos / Cliente /
+WhatsApp) en vez del formulario `.nxPrForm`/`.fr-row` viejo — mismos ids de campo, mismas funciones
+(`nxEntGuardar`/`nxEntTipoTog`), cero cambios de lógica. `nxEntAfinTog()` ganó la responsabilidad
+adicional de alternar la clase `.on` de cada pastilla de rol en vivo (antes solo mostraba/ocultaba
+las cajas de Cliente/WhatsApp). Verificado con el código real (`renderEntidades`/`abrirEntidad`/
+`nxEntAfinTog`/`renderClientes`) extraído y cargado en un navegador con un backend simulado: los
+filtros repintan la lista, las pastillas de afines cambian de color al tocarlas, guardar manda el
+POST correcto a `pos_clientes` con todos los campos, los KPI de Clientes muestran los números
+correctos, y no hay desbordes en 390px ni escritorio.
+
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en
 `main` — a pedido del dueño, para revisar antes de tocar el POS real). Datos 100% de ejemplo, sin

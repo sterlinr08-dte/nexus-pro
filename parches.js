@@ -16889,6 +16889,26 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .nivnew input{width:100%;height:36px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-bg);padding:0 10px;font:inherit;font-size:12px;box-sizing:border-box}
 .nxPf .btn2{width:100%;height:36px;padding:0 12px;border-radius:10px;border:0;background:var(--pf-blue);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer}
 .nxPf .colr{display:flex;flex-direction:column;gap:12px}
+.nxPf .kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.nxPf .kpitile{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:10px 12px}
+.nxPf .kpitile .l{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--pf-txt3)}
+.nxPf .kpitile .v{font-size:15px;font-weight:800;color:var(--pf-txt);margin-top:2px}
+.nxPf .toolbar2{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
+.nxPf .ab.sm{height:38px;padding:0 16px;width:auto;flex:0 0 auto}
+.nxPf .chiprow{display:flex;gap:6px;flex-wrap:wrap}
+.nxPf .chip{height:32px;padding:0 13px;border-radius:9px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.nxPf .chip.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
+.nxPf .ltbl{width:100%;border-collapse:collapse;font-size:12px}
+.nxPf .ltbl th{text-align:left;font-size:9.5px;text-transform:uppercase;color:var(--pf-txt3);font-weight:800;padding:8px;border-bottom:1px solid var(--pf-line)}
+.nxPf .ltbl td{padding:9px 8px;border-bottom:1px solid var(--pf-line);vertical-align:middle}
+.nxPf .ltbl tr[data-row]{cursor:pointer}
+.nxPf .ltbl tr[data-row]:hover td{background:var(--pf-blue-l)}
+.nxPf .rolebadge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:var(--pf-blue-l);color:var(--pf-blue-d);font-size:9.5px;font-weight:800;margin:1px 3px 1px 0}
+.nxPf .emptyrow{text-align:center;color:var(--pf-txt3);padding:26px;font-size:12px}
+.nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
+.nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
+.nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
+.nxPf .afinchk.on{border-color:var(--pf-blue);background:var(--pf-blue-l);color:var(--pf-blue-d)}
 .nxPf .ph{width:100%;aspect-ratio:1.8/1;border-radius:12px;background:var(--pf-blue-l);color:var(--pf-blue-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px}
 .nxPf .srow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11.5px}
 .nxPf .srow .ic{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
@@ -17853,6 +17873,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('hist', _histSort, 'numero', 'No. Factura')}${thSort('hist', _histSort, 'fecha', 'Fecha')}${thSort('hist', _histSort, 'cliente', 'Cliente')}${thSort('hist', _histSort, 'tipo', 'Tipo')}${thSort('hist', _histSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>`;
   }
   function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
+  // Version .nxPf del kpi() de arriba — SOLO para pestañas ya envueltas en <div class="nxPf">
+  // (kpi() se deja intacta para las pestañas que aún no se han rediseñado, como Historial).
+  function kpiPf(lbl, v, col) { return `<div class="kpitile"><div class="l">${esc(lbl)}</div><div class="v" style="${col ? 'color:' + col : ''}">${v}</div></div>`; }
 
   // ════════════════════════════════════════════════════════════════════
   // ── MÓDULO ENTIDADES (maestro de terceros estilo Infoplus) ──
@@ -17861,7 +17884,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // ════════════════════════════════════════════════════════════════════
   const ENT_ROLES = [['es_cliente', 'Cliente', 'ti-user'], ['es_proveedor', 'Proveedor', 'ti-truck-delivery'], ['es_empleado', 'Empleado', 'ti-id-badge-2'], ['es_banco', 'Entidad bancaria', 'ti-building-bank']];
   function entRolesBadges(c) {
-    return ENT_ROLES.filter(r => c[r[0]]).map(r => `<span class="nxEntRol">${r[1]}</span>`).join('') || '<span style="color:#cbd5e1;font-size:10px">—</span>';
+    return ENT_ROLES.filter(r => c[r[0]]).map(r => `<span class="rolebadge">${r[1]}</span>`).join('') || '<span style="color:var(--pf-txt3);font-size:10px">—</span>';
   }
   function entCodigoAuto(c) {
     const pref = c.es_cliente ? 'CL' : c.es_proveedor ? 'PR' : c.es_empleado ? 'EM' : c.es_banco ? 'BC' : 'EN';
@@ -17869,69 +17892,89 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     return pref + '-' + String(mx + 1).padStart(4, '0');
   }
   function renderEntidades() {
+    nxPfEnsureCSS();
     const fil = c => _entFiltro === 'todas' || (_entFiltro === 'clientes' && c.es_cliente) || (_entFiltro === 'proveedores' && c.es_proveedor) || (_entFiltro === 'empleados' && c.es_empleado) || (_entFiltro === 'bancos' && c.es_banco);
     const lista = (_clientes || []).filter(fil);
-    const chip = (k, lbl) => `<button type="button" class="btn bsm${_entFiltro === k ? ' bc1' : ' bghost'}" onclick="window.nxEntFiltro('${k}')">${lbl}</button>`;
-    const filas = lista.length ? lista.map(c => `<tr onclick="window.nxEntEdit('${c.id}')" style="cursor:pointer">
-        <td class="nxFacCod" style="font-weight:700;color:#6d28d9">${esc(c.codigo || '—')}</td>
-        <td><div style="font-weight:700;font-size:12px">${esc(c.nombre)}</div><div style="font-size:10px;color:#475569">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
-        <td style="text-align:center;font-size:10.5px;color:#475569">${c.tipo_persona === 'juridica' ? 'Jurídico' : 'Físico'}</td>
+    const chip = (k, lbl) => `<button type="button" class="chip${_entFiltro === k ? ' on' : ''}" onclick="window.nxEntFiltro('${k}')">${lbl}</button>`;
+    const filas = lista.length ? lista.map(c => `<tr data-row onclick="window.nxEntEdit('${c.id}')">
+        <td style="font-weight:800;color:var(--pf-blue-d)">${esc(c.codigo || '—')}</td>
+        <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
+        <td style="text-align:center;font-size:10.5px;color:var(--pf-txt3)">${c.tipo_persona === 'juridica' ? 'Jurídico' : 'Físico'}</td>
         <td>${entRolesBadges(c)}</td>
-        <td style="text-align:right"><button class="btn bsm bc1" onclick="event.stopPropagation();window.nxEntEdit('${c.id}')"><i class="ti ti-edit"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin entidades con ese filtro. Toca "Nueva entidad".</td></tr>';
-    return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
-        <button class="btn bsm bc1" type="button" onclick="window.nxEntNueva()"><i class="ti ti-plus"></i> Nueva entidad</button>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:auto">${chip('todas', 'Todas')}${chip('clientes', 'Clientes')}${chip('proveedores', 'Proveedores')}${chip('empleados', 'Empleados')}${chip('bancos', 'Bancos')}</div>
+        <td style="text-align:right"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxEntEdit('${c.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button></td>
+      </tr>`).join('') : `<tr><td colspan="5" class="emptyrow">Sin entidades con ese filtro. Toca "Nueva entidad".</td></tr>`;
+    return `<div class="nxPf">
+      <div class="toolbar2">
+        <button class="ab g2 sm" type="button" onclick="window.nxEntNueva()"><i class="ti ti-plus"></i> Nueva entidad</button>
+        <div class="chiprow">${chip('todas', 'Todas')}${chip('clientes', 'Clientes')}${chip('proveedores', 'Proveedores')}${chip('empleados', 'Empleados')}${chip('bancos', 'Bancos')}</div>
       </div>
-      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Código</th><th>Nombre</th><th style="text-align:center">Tipo</th><th>Roles</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Código</th><th>Nombre</th><th style="text-align:center">Tipo</th><th>Roles</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+    </div>`;
   }
   window.nxEntFiltro = function (k) { _entFiltro = k; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxEntNueva = function () { abrirEntidad(null, { es_cliente: true }); };
   window.nxEntEdit = function (id) { const c = _clientes.find(x => String(x.id) === String(id)); if (c) abrirEntidad(c, null); };
   function abrirEntidad(c, defs) {
+    nxPfEnsureCSS();
     cerrarModal('nxEntForm');
     const e = c || defs || {};
-    const rolChk = ENT_ROLES.map(r => `<label class="nxEntAfin"><input type="checkbox" id="ent_${r[0]}"${e[r[0]] ? ' checked' : ''} onchange="window.nxEntAfinTog()"><i class="ti ${r[2]}"></i> ${r[1]}</label>`).join('');
+    const rolChk = ENT_ROLES.map(r => `<label class="afinchk${e[r[0]] ? ' on' : ''}" id="afinlbl_${r[0]}"><input type="checkbox" id="ent_${r[0]}"${e[r[0]] ? ' checked' : ''} onchange="window.nxEntAfinTog()"><i class="ti ${r[2]}"></i> ${r[1]}</label>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxEntForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-address-book"></i> ${c ? 'Editar entidad' : 'Nueva entidad'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxEntForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="overflow-y:auto;flex:1">
-          <div class="nxEntStep">PASO 1 · ¿Qué es esta entidad? (afines)</div>
-          <div class="nxEntAfines">${rolChk}</div>
-          <div class="nxEntStep" style="margin-top:14px">PASO 2 · Datos</div>
-          <div class="fr-row">
-            <div class="fr"><label>Tipo</label><select id="entTipoP" onchange="window.nxEntTipoTog()"><option value="fisica"${e.tipo_persona !== 'juridica' ? ' selected' : ''}>Persona física</option><option value="juridica"${e.tipo_persona === 'juridica' ? ' selected' : ''}>Persona jurídica (empresa)</option></select></div>
-            <div class="fr"><label>Código</label><input id="entCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Automático"></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+        <div class="head">
+          <button class="nxBack" type="button" onclick="document.getElementById('nxEntForm').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
+          <h3><i class="ti ti-address-book"></i> ${c ? 'Editar entidad' : 'Nueva entidad'}</h3>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+          <div class="card">
+            <h4><span class="bdg blue"><i class="ti ti-tags"></i></span> ¿Qué es esta entidad?</h4>
+            <div class="afinrow">${rolChk}</div>
           </div>
-          <div class="fr"><label id="entNomLbl">${e.tipo_persona === 'juridica' ? 'Razón social *' : 'Nombre *'}</label><input id="entNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre o razón social"></div>
-          <div class="fr-row">
-            <div class="fr"><label id="entIdLbl">${e.tipo_persona === 'juridica' ? 'RNC' : 'Cédula / RNC'}</label><input id="entCed" class="no-upper" value="${esc(e.cedula || '')}" placeholder="000-0000000-0"></div>
-            <div class="fr"><label>Teléfono</label><input id="entTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div>
+          <div class="card">
+            <h4><span class="bdg green"><i class="ti ti-id"></i></span> Datos</h4>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="fld"><label>Tipo</label><div class="inw"><select id="entTipoP" onchange="window.nxEntTipoTog()"><option value="fisica"${e.tipo_persona !== 'juridica' ? ' selected' : ''}>Persona física</option><option value="juridica"${e.tipo_persona === 'juridica' ? ' selected' : ''}>Persona jurídica (empresa)</option></select><i class="ti ti-chevron-down chev"></i></div></div>
+              <div class="fld"><label>Código</label><div class="inw"><input id="entCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Automático"></div></div>
+            </div>
+            <div class="fld" style="margin-bottom:10px"><label id="entNomLbl">${e.tipo_persona === 'juridica' ? 'Razón social *' : 'Nombre *'}</label><div class="inw"><input id="entNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre o razón social"></div></div>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="fld"><label id="entIdLbl">${e.tipo_persona === 'juridica' ? 'RNC' : 'Cédula / RNC'}</label><div class="inw"><input id="entCed" class="no-upper" value="${esc(e.cedula || '')}" placeholder="000-0000000-0"></div></div>
+              <div class="fld"><label>Teléfono</label><div class="inw"><input id="entTel" class="no-upper" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div></div>
+            </div>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="fld"><label>Email</label><div class="inw"><input id="entEmail" class="no-upper" value="${esc(e.email || '')}" placeholder="Opcional"></div></div>
+              <div class="fld"><label>Dirección</label><div class="inw"><input id="entDir" class="no-upper" value="${esc(e.direccion || '')}" placeholder="Opcional"></div></div>
+            </div>
+            <div class="g2">
+              <div class="fld"><label>Contacto</label><div class="inw"><input id="entCont" class="no-upper" value="${esc(e.contacto || '')}" placeholder="Persona de contacto"></div></div>
+              <div class="fld"><label>Representante</label><div class="inw"><input id="entRep" class="no-upper" value="${esc(e.representante || '')}" placeholder="Si es jurídico"></div></div>
+            </div>
           </div>
-          <div class="fr-row">
-            <div class="fr"><label>Email</label><input id="entEmail" class="no-upper" value="${esc(e.email || '')}" placeholder="Opcional"></div>
-            <div class="fr"><label>Dirección</label><input id="entDir" class="no-upper" value="${esc(e.direccion || '')}" placeholder="Opcional"></div>
+          <div class="card" id="entClienteBox">
+            <h4><span class="bdg purple"><i class="ti ti-user-dollar"></i></span> Cliente</h4>
+            <div class="g2">
+              <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${String(e.nivel_id) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
+              <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">$</span><input id="entLim" data-nx-money inputmode="numeric" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
+            </div>
           </div>
-          <div class="fr-row">
-            <div class="fr"><label>Contacto</label><input id="entCont" class="no-upper" value="${esc(e.contacto || '')}" placeholder="Persona de contacto"></div>
-            <div class="fr"><label>Representante</label><input id="entRep" class="no-upper" value="${esc(e.representante || '')}" placeholder="Si es jurídico"></div>
-          </div>
-          <div class="fr-row" id="entClienteBox">
-            <div class="fr"><label>Nivel de precio (cliente)</label><select id="entNivel">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${String(e.nivel_id) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select></div>
-            <div class="fr"><label>Límite de crédito</label><input id="entLim" data-nx-money inputmode="numeric" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite"></div>
-          </div>
-          <div class="fr-row" id="entWaBox">
-            <div class="fr" style="flex:1 1 100%"><label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="entAceptaWa"${e.acepta_whatsapp ? ' checked' : ''} style="width:16px;height:16px"> Acepta recibir avisos por WhatsApp</label><span style="font-size:10.5px;color:#94a3b8">El cliente autorizó recordatorios de pago/cita por WhatsApp a este número. Sin esto marcado, el sistema no le manda mensajes automáticos.</span></div>
+          <div class="card" id="entWaBox">
+            <h4><span class="bdg orange"><i class="ti ti-brand-whatsapp"></i></span> WhatsApp</h4>
+            <label style="display:flex;align-items:center;gap:9px;font-weight:700;font-size:12px;cursor:pointer"><input type="checkbox" id="entAceptaWa"${e.acepta_whatsapp ? ' checked' : ''} style="width:17px;height:17px;accent-color:var(--pf-blue)"> Acepta recibir avisos por WhatsApp</label>
+            <div style="font-size:10.5px;color:var(--pf-txt3);margin-top:6px">El cliente autorizó recordatorios de pago/cita por WhatsApp a este número. Sin esto marcado, el sistema no le manda mensajes automáticos.</div>
           </div>
         </div>
-        <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxEntForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxEntGuardar('${c ? c.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+        <div class="actions" style="margin-top:0">
+          <button class="ab g4" type="button" onclick="document.getElementById('nxEntForm').remove()"><i class="ti ti-x"></i> Cancelar</button>
+          <button class="ab g1" type="button" onclick="window.nxEntGuardar('${c ? c.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        </div>
       </div>`;
     document.body.appendChild(ov);
     scanMoney(ov);
     window.nxEntAfinTog();
   }
   window.nxEntAfinTog = function () {
+    ENT_ROLES.forEach(r => { const chk = document.getElementById('ent_' + r[0]); const lbl = document.getElementById('afinlbl_' + r[0]); if (lbl) lbl.classList.toggle('on', !!(chk && chk.checked)); });
     const esCli = document.getElementById('ent_es_cliente') && document.getElementById('ent_es_cliente').checked;
     const box = document.getElementById('entClienteBox'); if (box) box.style.display = esCli ? '' : 'none';
     const wabox = document.getElementById('entWaBox'); if (wabox) wabox.style.display = esCli ? '' : 'none';
@@ -17986,24 +18029,27 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 
   // ── TAB: CLIENTES (fiado / cuentas por cobrar) ──
   function renderClientes() {
+    nxPfEnsureCSS();
     const lista = _clientes.filter(c => c.es_cliente !== false);
     const totalCobrar = lista.reduce((s, c) => s + saldoCli(c), 0);
     const conDeuda = lista.filter(c => saldoCli(c) > 0).length;
     const filas = lista.length ? lista.map(c => {
       const sal = saldoCli(c);
-      return `<tr onclick="window.nxPosCliVer('${c.id}')" style="cursor:pointer">
-        <td><div style="font-weight:700;font-size:12px">${esc(c.nombre)}</div><div style="font-size:10px;color:#475569">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
-        <td style="text-align:right;font-weight:800;color:${sal > 0 ? '#dc2626' : '#16a34a'}">${fmt(sal)}</td>
-        <td style="text-align:right"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta"><i class="ti ti-eye"></i></button></td>
+      return `<tr data-row onclick="window.nxPosCliVer('${c.id}')">
+        <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
+        <td style="text-align:right;font-weight:800;color:${sal > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(sal)}</td>
+        <td style="text-align:right"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta" aria-label="Ver cuenta"><i class="ti ti-eye"></i></button></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin clientes. Toca "Nuevo cliente".</td></tr>';
-    return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
-        ${kpi('Clientes', lista.length, '#6d28d9')}
-        ${kpi('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? '#dc2626' : '#16a34a')}
-        ${kpi('Con deuda', conDeuda, '#ea580c')}
+    }).join('') : `<tr><td colspan="3" class="emptyrow">Sin clientes. Toca "Nuevo cliente".</td></tr>`;
+    return `<div class="nxPf">
+      <div class="kpirow">
+        ${kpiPf('Clientes', lista.length, 'var(--pf-purple)')}
+        ${kpiPf('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
+        ${kpiPf('Con deuda', conDeuda, 'var(--pf-orange)')}
       </div>
-      <div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
+      <div class="toolbar2"><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+    </div>`;
   }
   window.nxPosNuevoCli = function () { abrirEntidad(null, { es_cliente: true }); };
   window.nxPosEditCli = function (id) { const c = _clientes.find(x => String(x.id) === String(id)); if (c) abrirEntidad(c, null); };
