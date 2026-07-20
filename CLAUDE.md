@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.59** (ver `index.html` y `version.json`).
+> Versión actual: **48.60** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1903,6 +1903,25 @@ reales (`ARS Humano` ×29, `ARS SENASA` ×27, `ARS Universal` ×1; el resto son 
   errores de JS. Los logos en sí no se pudieron ver renderizados en este entorno (sin salida a un
   servidor real desde el navegador de prueba) — confirmar visualmente en `nexusprord.com` una vez
   publicado.
+
+### Pólizas, Agentes y Empresas — mismo look Enterprise (v48.60)
+El dueño pidió seguir extendiendo el rediseño azul Enterprise (Clientes/Facturas/Ficha/Historial de
+pagos) al resto de Seguros. Se hicieron las 3 más simples/bajo riesgo primero (listas y catálogos, sin
+convertir tarjetas↔tabla como se hizo con Facturas): **Pólizas** (`rPolizas()`, envuelta en `.nxSf` +
+4 KPIs nuevos: total/vigentes/en gracia/vencidas, calculados sobre la misma lista base antes de aplicar
+búsqueda/filtro — igual patrón que los KPIs de Clientes), **Agentes** (`rAgentes()`, envuelta en `.nxSf`
++ 4 KPIs: total/licencia vigente/por vencer/vencida, reusando la misma categorización que ya calculaba
+cada fila de la tabla) y **Empresas** (`rEmpGrd()`, envuelta en `.nxSf` + 3 KPIs: empresas/asegurados/
+prima mensual total; las tarjetas por empresa conservan su color propio por índice — rasgo deliberado
+que no se tocó). Nueva clase `.nxSf .sf-kpi.err` (roja, `--sf-err-l`/`--sf-err-d`) — no existía un
+modificador de color rojo para las tarjetas KPI, solo blue/ok/warn/purple; se agregó siguiendo el mismo
+patrón que los demás. Cero cambios de columnas, filtros, orden ni funciones — solo el header/hover de
+las tablas (ya heredado del CSS `.nxSf .tw table` que se creó para Clientes) y los recuadros nuevos.
+Verificado con el código real (`rPolizas`/`rAgentes`/`rEmpGrd` extraídos tal cual, con datos simulados)
+cargado en un navegador: los KPIs muestran los números correctos, sin desbordes en 390px ni 1280px, 0
+errores de JS. **Pendiente si el dueño quiere seguir:** Comisiones, Contabilidad (Mayor/Diario/Balance/
+Estado de Resultados/Balance General) y Reportes — mayor riesgo por ser pantallas financieras, se
+abordarían con más cuidado y probablemente en tandas más chicas.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

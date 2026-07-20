@@ -642,6 +642,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf .sf-kpi.warn .ic{background:var(--sf-warn-l);color:var(--sf-warn-d)}
 .nxSf .sf-kpi.ok .ic{background:var(--sf-ok-l);color:var(--sf-ok-d)}
 .nxSf .sf-kpi.purple .ic{background:#F1EBFF;color:#7C3AED}
+.nxSf .sf-kpi.err .ic{background:var(--sf-err-l);color:var(--sf-err-d)}
 .nxSf .sf-kpi .lb{font-size:10.5px;color:var(--sf-tx2);font-weight:600}
 .nxSf .sf-kpi .v{font-size:16px;font-weight:800;margin-top:2px}
 .nxSf .sf-kpi .sub{font-size:10px;color:var(--sf-tx3);margin-top:2px}
@@ -1179,7 +1180,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- PÓLIZAS -->
-        <div class="view" id="v-polizas">
+        <div class="view nxSf" id="v-polizas">
+          <div class="sf-kpis" id="polKpis">
+            <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-certificate"></i></div><div><div class="lb">Total pólizas</div><div class="v" id="polKpiTotal">0</div></div></div>
+            <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Vigentes</div><div class="v" id="polKpiVigentes">0</div></div></div>
+            <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">En gracia</div><div class="v" id="polKpiGracia">0</div></div></div>
+            <div class="sf-kpi err"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Vencidas</div><div class="v" id="polKpiVencidas">0</div></div></div>
+          </div>
           <div class="nc">
             <div class="ch"><div><div class="ct">Gestión de pólizas</div><div class="ct-s">vigencia, vencimientos y certificados</div></div><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
             <div class="frow">
@@ -1285,7 +1292,12 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div><!-- /v-facturas -->
 
         <!-- EMPRESAS -->
-        <div class="view" id="v-empresas">
+        <div class="view nxSf" id="v-empresas">
+          <div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))" id="empKpis">
+            <div class="sf-kpi blue"><div class="ic"><i class="ti ti-building"></i></div><div><div class="lb">Empresas</div><div class="v" id="empKpiTotal">0</div></div></div>
+            <div class="sf-kpi purple"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Asegurados</div><div class="v" id="empKpiClientes">0</div></div></div>
+            <div class="sf-kpi ok"><div class="ic"><i class="ti ti-cash"></i></div><div><div class="lb">Prima mensual total</div><div class="v" id="empKpiPrima">RD$ 0</div></div></div>
+          </div>
           <div class="nc">
             <div class="ch"><span class="ct">Empresas cotizantes</span><button class="btn bxl bsm" onclick="openM('mEmp')"><i class="ti ti-plus"></i> Nueva</button></div>
             <div id="empGrd" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px"></div>
@@ -1293,7 +1305,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- AGENTES -->
-        <div class="view" id="v-agentes">
+        <div class="view nxSf" id="v-agentes">
+          <div class="sf-kpis" id="agtKpis">
+            <div class="sf-kpi blue"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Total agentes</div><div class="v" id="agtKpiTotal">0</div></div></div>
+            <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Licencia vigente</div><div class="v" id="agtKpiVigente">0</div></div></div>
+            <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Por vencer</div><div class="v" id="agtKpiPorVencer">0</div></div></div>
+            <div class="sf-kpi err"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Vencida</div><div class="v" id="agtKpiVencida">0</div></div></div>
+          </div>
           <div class="nc">
             <div class="ch"><span class="ct">Agentes / Corredores</span><button class="btn bxl bsm" onclick="openM('mAgente')"><i class="ti ti-plus"></i> Nuevo agente</button></div>
             <div class="tw"><table>
@@ -3533,7 +3551,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.59';
+const APP_VERSION='48.60';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5534,6 +5552,13 @@ function rPolizas(){
   const q=(document.getElementById('polQ')?.value||'').toLowerCase();
   const fe=document.getElementById('polEst')?.value||'';
   let list=ST.clientes.filter(c=>c.activo);
+  if(document.getElementById('polKpiTotal')){
+    const ests=list.map(c=>getEstPol(c).est);
+    document.getElementById('polKpiTotal').textContent=list.length;
+    document.getElementById('polKpiVigentes').textContent=ests.filter(e=>e==='vigente').length;
+    document.getElementById('polKpiGracia').textContent=ests.filter(e=>e==='gracia').length;
+    document.getElementById('polKpiVencidas').textContent=ests.filter(e=>e==='vencida').length;
+  }
   if(q)list=list.filter(c=>c.nom.toLowerCase().includes(q)||(c.numero_poliza||'').toLowerCase().includes(q));
   if(fe)list=list.filter(c=>getEstPol(c).est===fe);
   const tb=document.getElementById('tbPol');
@@ -6763,6 +6788,12 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
 function rEmpGrd(){
   const COLS=['#00e5c7','#8b5cf6','#10b981','#fbbf24','#f43f5e'];
   const grid=document.getElementById('empGrd');
+  if(document.getElementById('empKpiTotal')){
+    const clisAct=ST.clientes.filter(c=>c.activo&&c.empresa_id);
+    document.getElementById('empKpiTotal').textContent=ST.empresas.length;
+    document.getElementById('empKpiClientes').textContent=clisAct.length;
+    document.getElementById('empKpiPrima').textContent=fmt(clisAct.reduce((s,c)=>s+getTot(c),0));
+  }
   if(!ST.empresas.length){grid.innerHTML='<div class="empty">Sin empresas</div>';return;}
   grid.innerHTML=ST.empresas.map((e,i)=>{const hex=COLS[i%COLS.length];const clis=ST.clientes.filter(c=>c.empresa_id===e.id&&c.activo);const prima=clis.reduce((s,c)=>s+getTot(c),0);return`<div class="nc" style="border-color:${hex}22;padding:12px"><div style="width:30px;height:30px;border-radius:var(--r6);background:${hex}15;display:flex;align-items:center;justify-content:center;margin-bottom:8px"><i class="ti ti-building" style="font-size:15px;color:${hex}"></i></div><div style="font-weight:700;font-size:12px;margin-bottom:2px">${e.nom}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);margin-bottom:7px">${e.rnc?`RNC: ${e.rnc} · `:''} ${e.sector||''} · ${e.contacto||''}</div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:9px;color:var(--tx3)">${clis.length} asegurados</span><span style="font-size:9px;font-weight:700;color:${hex};font-family:var(--mono)">${fmt(prima)}</span></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" onclick="editarEmp('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn bsm bc3" onclick="eliminarEmp('${e.id}')"><i class="ti ti-trash"></i></button></div></div>`;}).join('');
 }
@@ -6789,6 +6820,20 @@ async function eliminarEmp(id){if(ST.clientes.find(c=>c.empresa_id===id)){toast(
 function rAgentes(){
   const tb=document.getElementById('tbAgt');
   _ordFlechas('agt','sfa_',_COLS_AGT);
+  if(document.getElementById('agtKpiTotal')){
+    const hoyK=new Date();
+    const cats=ST.agentes.map(a=>{
+      const vence=a.lic_vence?new Date(a.lic_vence):null;
+      if(!a.licencia||!vence)return'sin';
+      if(vence<hoyK)return'vencida';
+      if(Math.ceil((vence-hoyK)/86400000)<=30)return'porVencer';
+      return'vigente';
+    });
+    document.getElementById('agtKpiTotal').textContent=ST.agentes.length;
+    document.getElementById('agtKpiVigente').textContent=cats.filter(c=>c==='vigente').length;
+    document.getElementById('agtKpiPorVencer').textContent=cats.filter(c=>c==='porVencer').length;
+    document.getElementById('agtKpiVencida').textContent=cats.filter(c=>c==='vencida').length;
+  }
   if(!ST.agentes.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Sin agentes</div></td></tr>';return;}
   tb.innerHTML=_ordAplicar('agt',ST.agentes,_agtSortVal).map(a=>{
     const vence=a.lic_vence?new Date(a.lic_vence):null;
