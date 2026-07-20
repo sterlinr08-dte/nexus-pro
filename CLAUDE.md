@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.58** (ver `index.html` y `version.json`).
+> Versión actual: **48.59** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1869,6 +1869,40 @@ de tiempo y el Panel lateral deben ser **reales y completos**, no decorativos.
     siguen parejos en una fila, la regla vive dentro del mismo media query que ya reacomoda a 2
     columnas). Verificado con el código real en un navegador: 390px sin espacio vacío ni desbordes,
     1280px sigue igual que antes del cambio.
+
+### Logos de las ARS (v48.59)
+El dueño pidió mostrar el logo de la ARS del cliente en vez de solo el nombre en texto. `clientes.ars`
+es texto libre (sin tabla propia) — se auditó la base real: solo 3 ARS en uso de verdad por clientes
+reales (`ARS Humano` ×29, `ARS SENASA` ×27, `ARS Universal` ×1; el resto son `(sin ARS)`/`Otra ARS`).
+- **Origen de los logos — limitación real de este entorno:** este entorno de sesión tiene el acceso de
+  red restringido por política (confirmado con `curl`/`WebFetch` — ambos dan 403 contra CUALQUIER host,
+  no solo uno en particular; es una restricción de egress, no algo que se pueda evadir). Por eso NO se
+  pudieron buscar/descargar los logos automáticamente — **el dueño los mandó directamente como archivos
+  adjuntos en el chat** (6 en total: `senasa.jpg`, `humano.webp`, `universal.png`, más `meta-salud.png`,
+  `la-monumental.png`, `futuro.jpg` por si algún cliente futuro usa esas). Nota real encontrada al
+  investigar: "ARS Humano" se rebrandeó a **"Primera ARS de Humano"** (confirmado con el logo real que
+  mandó el dueño, coincide con lo que ya se sabía por fuera) — el mapa cubre ambos nombres.
+- **Guardados en `/ars-logos/`** (raíz del repo, mismo patrón que `icon-*.png` — Cloudflare los sirve
+  tal cual, sin build).
+- **"Mapa fijo en el código"** (decisión del dueño, no un catálogo editable): `const ARS_LOGOS` en
+  `index.html` (junto a `planB`/`estB`) — texto de `clientes.ars` en minúsculas → nombre de archivo.
+  `arsLogoUrl(ars)` arma la URL **absoluta** (`location.origin+'/ars-logos/...'`) a propósito: los
+  documentos impresos (Factura/Certificado/Expediente) abren en una ventana `about:blank`
+  (`window.open('','_blank')+document.write`) donde una ruta relativa no resuelve bien — con
+  `location.origin` funciona igual en la app normal y en esas ventanas. `arsLogoHTML(ars,alto)` arma
+  `<img>`+texto; si la ARS no tiene logo en el mapa, cae solo al texto de siempre (nunca un ícono roto).
+- **Conectado en 4 lugares:** tabla de Facturas (columna ARS), Ficha del cliente (panel Información),
+  y 3 documentos impresos que ya mostraban o podían mostrar la ARS (`generarHTMLFactura` — el campo ARS
+  no existía ahí, se agregó de paso; `generarHTMLCertificado`; expediente de cliente). En la lista de
+  Clientes **no hay columna ARS** (nunca la tuvo) — en vez de agregar una columna nueva angosta más, se
+  puso un ícono chico junto a la cédula del cliente (no se tocó el avatar con iniciales, para no verse
+  inconsistente entre filas con/sin ARS reconocida).
+  Verificado con el código real cargado en un navegador (datos de prueba con `ars:'ARS Humano'`/`'ARS
+  Universal'`/`'ARS SENASA'`, los mismos textos reales de la base): la URL de la imagen se arma
+  correctamente (`location.origin+'/ars-logos/humano.webp'`), sin desbordes en 390px ni 1280px, 0
+  errores de JS. Los logos en sí no se pudieron ver renderizados en este entorno (sin salida a un
+  servidor real desde el navegador de prueba) — confirmar visualmente en `nexusprord.com` una vez
+  publicado.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

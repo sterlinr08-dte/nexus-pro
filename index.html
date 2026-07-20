@@ -3533,7 +3533,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.58';
+const APP_VERSION='48.59';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -4120,7 +4120,7 @@ function verCliente(id){
               <div><b style="color:var(--sf-tx)">Dirección:</b> ${c.dir||'—'}</div>
               ${c.referencia_wa?`<div><b style="color:var(--sf-tx)">WhatsApp ref:</b> ${c.referencia_wa} ${nxWa(c.referencia_wa)?`<a href="https://wa.me/${nxWa(c.referencia_wa)}" target="_blank" style="color:#25d366;font-weight:700">Abrir</a>`:''}</div>`:''}
               <div><b style="color:var(--sf-tx)">Póliza:</b> ${c.numero_poliza||'Sin póliza'}</div>
-              <div><b style="color:var(--sf-tx)">ARS:</b> ${c.ars||'—'}</div>
+              <div><b style="color:var(--sf-tx)">ARS:</b> ${arsLogoHTML(c.ars,18)}</div>
               <div><b style="color:var(--sf-tx)">Empresa:</b> ${emp}</div>
               <div><b style="color:var(--sf-tx)">Dependientes:</b> ${(c.deps||[]).length}</div>
               ${deudaAnt(c)>0?`<div style="color:var(--sf-err);font-weight:700;margin-top:4px">🔴 Deuda antes del sistema: ${fmt(c.deuda_anterior)}</div>`:''}
@@ -5033,6 +5033,31 @@ function verificarAlertas(){
 function planB(p){const m={Básico:'bC1',Superior:'bC2','Esencial Plus':'bCg'};return`<span class="badge ${m[p]||'bCg'}">${p==='Esencial Plus'?'ESC+':p.toUpperCase()}</span>`;}
 function estB(c){const e=getEst(c),m={'Al día':'bC1','Parcial':'bC4','Pendiente':'bC3','Inhabilitado':'bCoff'};return`<span class="badge ${m[e]||'bCg'}">${e.toUpperCase()}</span>`;}
 
+// ── Logos de ARS (mapa fijo — el dueño manda los archivos, no se buscan/inventan) ──────────────
+// Cubre variantes reales que ya existen en clientes.ars (texto libre) + sinónimos comunes.
+const ARS_LOGOS={
+  'ars humano':'humano.webp','humano':'humano.webp','primera ars':'humano.webp','ars primera':'humano.webp',
+  'ars senasa':'senasa.jpg','senasa':'senasa.jpg',
+  'ars universal':'universal.png','universal':'universal.png',
+  'ars futuro':'futuro.jpg','futuro':'futuro.jpg',
+  'ars meta salud':'meta-salud.png','meta salud':'meta-salud.png',
+  'la monumental':'la-monumental.png','la monumental de seguros':'la-monumental.png','monumental':'la-monumental.png'
+};
+function arsLogoUrl(ars){
+  if(!ars)return null;
+  const k=String(ars).trim().toLowerCase();
+  // Absoluta a propósito: los documentos impresos abren en una ventana about:blank
+  // (window.open('','_blank')+document.write) donde una ruta relativa no resuelve bien.
+  return ARS_LOGOS[k]?(location.origin+'/ars-logos/'+ARS_LOGOS[k]):null;
+}
+// alt=ars evita un "alt vacío" en un logo que SÍ es informativo (identifica la aseguradora)
+function arsLogoHTML(ars,h){
+  h=h||18;
+  const url=arsLogoUrl(ars);
+  if(!url)return escHtml(ars||'—');
+  return `<span style="display:inline-flex;align-items:center;gap:5px"><img src="${url}" alt="${escHtml(ars)}" style="height:${h}px;max-width:${h*3}px;object-fit:contain;vertical-align:middle"> ${escHtml(ars)}</span>`;
+}
+
 // ── NCF ──────────────────────────────────────────────────────────────────────
 async function generarNCF(tipo='B02'){
   if(!tipo||tipo==='SIN')return null; // Sin comprobante fiscal
@@ -5462,7 +5487,7 @@ function rCli(){
       </div>`;
     }
     return`<tr style="${!c.activo?'opacity:.5':''}">
-      <td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono)">${c.cedula||''}</div>${c.created_by_name?`<div style="font-size:7.5px;color:#475569" title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</div>`:''}${procInfo}</div></div></td>
+      <td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);display:flex;align-items:center;gap:4px">${c.cedula||''}${arsLogoUrl(c.ars)?`<img src="${arsLogoUrl(c.ars)}" alt="${escHtml(c.ars)}" title="${escHtml(c.ars)}" style="height:12px;max-width:34px;object-fit:contain">`:''}</div>${c.created_by_name?`<div style="font-size:7.5px;color:#475569" title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</div>`:''}${procInfo}</div></div></td>
       <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
       <td>${planB(c.plan)}</td>
       <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
@@ -5717,7 +5742,7 @@ function rFact(){
     const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''} style="padding:5px 8px"><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
     return `<tr${anul?' style="opacity:.55"':''}>
       <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
-      <td data-lb="ARS">${cli?.ars||'—'}</td>
+      <td data-lb="ARS">${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Factura">${f.ncf||'—'}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
       <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
@@ -5910,6 +5935,7 @@ function generarHTMLFactura(f,c,emp){
     ${c?.cedula?`<div style="font-size:11px;color:#666">Cédula: ${c.cedula}</div>`:''}
     ${c?.numero_poliza?`<div style="font-size:11px;color:#0C447C;font-weight:600">Póliza: ${c.numero_poliza}</div>`:''}
     ${emp?`<div style="font-size:11px;color:#666">Empresa: ${emp.nom}</div>`:''}
+    ${c?.ars?`<div style="font-size:11px;color:#666;margin-top:2px">ARS: ${arsLogoHTML(c.ars,16)}</div>`:''}
   </div>
   <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
     <thead><tr style="background:#0C447C;color:#fff"><th style="padding:8px;text-align:left">Concepto</th><th style="padding:8px;text-align:right">Monto</th></tr></thead>
@@ -5941,6 +5967,7 @@ function generarHTMLCertificado(c){
         <div style="font-weight:700;font-size:15px;color:#000">${c.nom}</div>
         ${c.cedula?`<div style="font-size:11px">Cédula: ${c.cedula}</div>`:''}
         ${emp?`<div style="font-size:11px">Empresa: ${emp.nom}</div>`:''}
+        ${c.ars?`<div style="font-size:11px;margin-top:2px">ARS: ${arsLogoHTML(c.ars,16)}</div>`:''}
       </div>
       <div>
         <div style="font-size:10px;color:#666;margin-bottom:3px">DATOS DE LA PÓLIZA</div>
@@ -8107,7 +8134,7 @@ async function exportarDocsPDF(){
       <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:20px;border:1px solid #e2e8f0">
         <div style="font-size:18px;font-weight:700">${c?.nom||''}</div>
         <div style="color:#666;margin-top:4px">Cédula: ${c?.cedula||'—'} · Póliza: ${c?.numero_poliza||'—'} · Plan: ${c?.plan||''}</div>
-        <div style="color:#666">ARS: ${c?.ars||'—'} · Vigencia: ${c?.fecha_inicio||'—'} al ${c?.fecha_fin||'—'}</div>
+        <div style="color:#666">ARS: ${arsLogoHTML(c?.ars,16)} · Vigencia: ${c?.fecha_inicio||'—'} al ${c?.fecha_fin||'—'}</div>
       </div>
       <h2 style="color:#1e3a6e;margin-bottom:16px">Documentos adjuntos (${docs.length})</h2>
       ${docsHTML.join('')}
