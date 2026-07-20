@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.64** (ver `index.html` y `version.json`).
+> Versión actual: **48.65** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2047,6 +2047,56 @@ una nota de texto sin rastrear fecha).
   reparación aún en el taller con la garantía activada en Ajustes, y garantía desactivada) — los 4
   calculan y arman el HTML esperado. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
   pasan `new Function()`.
+
+### POS · Patrón/PIN visual en Reparaciones (v48.65)
+Segundo ítem de la comparación contra "Richard Celulares Servicio Técnico" (ver v48.64) — el campo
+"Clave / patrón" de Reparaciones era un simple `<input>` de texto libre. Al auditar antes de tocar código
+se encontró algo más importante que la falta de UI bonita: **la clave se guardaba pero JAMÁS se volvía a
+mostrar en ningún lado** (ni en el detalle de la reparación, ni en la orden impresa, ni en la tarjeta del
+kanban) — el campo existía en la base de datos pero era efectivamente invisible para el técnico que la
+necesita para trabajar el equipo. Se corrigieron ambas cosas juntas.
+- **Sin columna nueva:** se decidió a propósito NO agregar columnas (`patron`/`pin` separados) — todo
+  sigue viviendo en `pos_reparaciones.clave` (texto), con un prefijo `tipo:valor` (`patron:1-2-3-6-9`,
+  `pin:4521`, `otro:contraseña libre`). **Retrocompatible:** texto ya guardado ANTES de esta versión (sin
+  ningún prefijo, como se guardaba antes) se interpreta automáticamente como tipo `otro` — se sigue viendo
+  igual que siempre, nunca se pierde ni se rompe un dato viejo (verificado con un caso de prueba real:
+  `"Contraseña vieja sin prefijo"` cae en la pestaña "Otro" con el texto intacto).
+  - Se abstiene de tocar RLS/esquema. Precedente: mismo espíritu que la garantía (v48.64), aditivo.
+- **Widget reusable (`claveCapturaHTML(key, raw)` + helpers `nxClaveTab/Dot/Limpiar/Pin/PinDel/OtroInput`),
+  no un componente aparte:** 3 pestañas — **Patrón** (malla 3x3, tocar los puntos en orden — cada punto
+  tocado se numera solo con el orden en que se marcó, no hace falta arrastrar/dibujar líneas, más simple y
+  confiable en una ventana modal con scroll que un gesto de arrastre preciso), **PIN** (teclado numérico
+  0-9 + borrar + limpiar, muestra puntos `●` mientras se teclea), **Otro** (campo de texto libre, para
+  contraseñas alfanuméricas, "sin clave" o "solo huella" — no todos los equipos usan patrón/PIN). El
+  estado vive en un objeto global `_claveCap` indexado por una `key` de texto (`'repNueva'` para recibir
+  equipo, `'repEdit_'+id` para cada reparación abierta en el detalle) — mismo patrón de estado-por-clave ya
+  usado en el resto del sistema (`_ordTablas`, `_stockAlmRows`, etc.).
+- **Se usa en 2 lugares del formulario/detalle** (ambos alimentan el mismo helper, cero lógica
+  duplicada): (1) `nxRepNueva` (recibir equipo) — al guardar, `nxRepGuardar` lee `nxClaveValor('repNueva')`
+  en vez del viejo `val('repClave')`. (2) `nxRepVer` (detalle) — el widget vive DIRECTAMENTE en el modal,
+  precargado con `r.clave`, editable en el momento; el botón "Guardar" que ya existía (`nxRepDet`, antes
+  solo guardaba diagnóstico/presupuesto/avance) ahora también guarda `nxClaveValor('repEdit_'+id)` — no
+  hizo falta un modal ni un botón "editar" aparte.
+- **Se MUESTRA (antes no se mostraba en ningún lado) en 3 lugares, todos leyendo el mismo dato guardado
+  con el mismo parser (`claveParse`), cero lógica repetida:** (1) tarjeta del kanban — un ícono 🔒 chiquito
+  junto al nombre del equipo, solo si hay clave guardada (para saber de un vistazo sin abrir cada
+  reparación); (2) el propio widget editable de `nxRepVer` ya lo muestra al estar precargado; (3) orden de
+  servicio imprimible (`nxRepImprimir`) — línea nueva "Clave / patrón del equipo" con `claveImprimirHTML`
+  (mismo parser, pero con estilos en línea porque esa página vive en una ventana `document.write()`
+  totalmente aparte que no hereda el CSS de la app — mismo criterio ya usado con `garantiaLinea`).
+- **CSS nuevo `.nxClave*`** agregado al mismo bloque `st.textContent+=` del resto del CSS del POS (patrón
+  ya establecido en el archivo, no un `<style>` aparte) — pestañas, malla de puntos (captura, 40px, y
+  solo-lectura, 22px más chica para la orden impresa/tarjetas), teclado numérico, todo con la paleta azul
+  `#2563eb` ya usada en el resto del POS.
+- **Verificado con Playwright interactuando de VERDAD con el DOM** (no solo revisar el HTML generado):
+  se extrajo el bloque de funciones real de `parches.js` (con balance de código, no un rango de línea a
+  mano) y el CSS real inyectado, se cargó en un navegador, y se **tocaron** los puntos de la malla en el
+  orden 1→2→3→6→9 (confirmando que el resumen y el valor codificado salen en ese orden exacto), se
+  **tecleó** un PIN dígito por dígito con clics reales sobre los botones del teclado, se escribió texto en
+  la pestaña "Otro", y se confirmó el caso de retrocompatibilidad (texto viejo sin prefijo → pestaña
+  "Otro" con el valor intacto). También se probaron `claveDisplayHTML`/`claveImprimirHTML` con los 3 tipos
+  y con valor vacío (devuelve `null`, no un bloque vacío feo). Capturas de pantalla del patrón y del PIN
+  revisadas visualmente. Sin desbordes en 320px ni 360px. `node --check parches.js` limpio.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

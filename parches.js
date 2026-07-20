@@ -20430,6 +20430,106 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 
 
   // ══════════════ SERVICIO TÉCNICO / REPARACIONES (kanban) ══════════════
+  // ── Clave / patrón del equipo (patrón visual 3x3, PIN o texto libre) ──
+  // Se guarda TODO en la misma columna de texto pos_reparaciones.clave, con un prefijo
+  // tipo:valor ("patron:1-2-3", "pin:4521", "otro:contraseña123") — así no hizo falta
+  // ninguna columna nueva. Texto viejo sin prefijo (capturado antes de esta versión) se
+  // interpreta como tipo "otro" — nunca se pierde ni se rompe un dato ya guardado.
+  let _claveCap = {};
+  function claveParse(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return { tipo: 'patron', patron: [], pin: '', otro: '' };
+    const m = s.match(/^(patron|pin|otro):([\s\S]*)$/);
+    if (!m) return { tipo: 'otro', patron: [], pin: '', otro: s };
+    if (m[1] === 'patron') return { tipo: 'patron', patron: m[2] ? m[2].split('-').filter(Boolean).map(Number) : [], pin: '', otro: '' };
+    if (m[1] === 'pin') return { tipo: 'pin', patron: [], pin: m[2] || '', otro: '' };
+    return { tipo: 'otro', patron: [], pin: '', otro: m[2] || '' };
+  }
+  function claveEncode(st) {
+    if (!st) return '';
+    if (st.tipo === 'patron') return st.patron.length ? ('patron:' + st.patron.join('-')) : '';
+    if (st.tipo === 'pin') return st.pin ? ('pin:' + st.pin) : '';
+    return st.otro ? ('otro:' + st.otro) : '';
+  }
+  function nxClaveBodyHTML(key) {
+    const st = _claveCap[key] || { tipo: 'patron', patron: [], pin: '', otro: '' };
+    if (st.tipo === 'pin') {
+      const disp = st.pin ? st.pin.split('').map(() => '●').join(' ') : 'Sin PIN';
+      const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button type="button" class="nxClaveKey" onclick="window.nxClavePin('${key}',${n})">${n}</button>`).join('');
+      return `<div class="nxClavePinDisp">${disp}</div><div class="nxClaveKeypad">${nums}<button type="button" class="nxClaveKey" onclick="window.nxClavePinDel('${key}')"><i class="ti ti-backspace"></i></button><button type="button" class="nxClaveKey" onclick="window.nxClavePin('${key}',0)">0</button><button type="button" class="nxClaveKey" onclick="window.nxClaveLimpiar('${key}')"><i class="ti ti-x"></i></button></div>`;
+    }
+    if (st.tipo === 'otro') {
+      return `<input type="text" class="no-upper" value="${esc(st.otro)}" placeholder="Ej: contraseña, sin clave, solo huella..." oninput="window.nxClaveOtroInput('${key}', this.value)" style="width:100%">`;
+    }
+    const dots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => { const i = st.patron.indexOf(n); return `<button type="button" class="nxClaveDot${i >= 0 ? ' on' : ''}" onclick="window.nxClaveDot('${key}',${n})">${i >= 0 ? (i + 1) : ''}</button>`; }).join('');
+    const resumen = st.patron.length ? ('Orden: ' + st.patron.join(' → ')) : 'Toca los puntos en el orden del patrón';
+    return `<div class="nxClaveGrid">${dots}</div><div class="nxClaveResumen">${resumen}</div><button type="button" class="nxClaveBorrar" onclick="window.nxClaveLimpiar('${key}')"><i class="ti ti-eraser"></i> Borrar</button>`;
+  }
+  function claveCapturaHTML(key, raw) {
+    _claveCap[key] = claveParse(raw);
+    const tipo = _claveCap[key].tipo;
+    const tab = (t, lbl) => `<button type="button" class="nxClaveTab${tipo === t ? ' on' : ''}" onclick="window.nxClaveTab('${key}','${t}')">${lbl}</button>`;
+    return `<div class="nxClaveWrap">
+      <div class="nxClaveTabs">${tab('patron', 'Patrón')}${tab('pin', 'PIN')}${tab('otro', 'Otro')}</div>
+      <div id="claveBody_${key}">${nxClaveBodyHTML(key)}</div>
+    </div>`;
+  }
+  window.nxClaveTab = function (key, tipo) {
+    if (!_claveCap[key]) _claveCap[key] = { tipo: 'patron', patron: [], pin: '', otro: '' };
+    _claveCap[key].tipo = tipo;
+    const wrap = document.getElementById('claveBody_' + key); if (!wrap) return;
+    const tabs = wrap.parentElement.querySelectorAll('.nxClaveTab');
+    const ord = ['patron', 'pin', 'otro'];
+    tabs.forEach((b, i) => b.classList.toggle('on', ord[i] === tipo));
+    wrap.innerHTML = nxClaveBodyHTML(key);
+  };
+  window.nxClaveDot = function (key, n) {
+    const st = _claveCap[key]; if (!st) return;
+    if (st.patron.indexOf(n) < 0 && st.patron.length < 9) st.patron.push(n);
+    const wrap = document.getElementById('claveBody_' + key); if (wrap) wrap.innerHTML = nxClaveBodyHTML(key);
+  };
+  window.nxClaveLimpiar = function (key) {
+    const st = _claveCap[key]; if (!st) return;
+    st.patron = []; st.pin = ''; st.otro = '';
+    const wrap = document.getElementById('claveBody_' + key); if (wrap) wrap.innerHTML = nxClaveBodyHTML(key);
+  };
+  window.nxClavePin = function (key, d) {
+    const st = _claveCap[key]; if (!st) return;
+    if (st.pin.length >= 8) return;
+    st.pin += String(d);
+    const wrap = document.getElementById('claveBody_' + key); if (wrap) wrap.innerHTML = nxClaveBodyHTML(key);
+  };
+  window.nxClavePinDel = function (key) {
+    const st = _claveCap[key]; if (!st) return;
+    st.pin = st.pin.slice(0, -1);
+    const wrap = document.getElementById('claveBody_' + key); if (wrap) wrap.innerHTML = nxClaveBodyHTML(key);
+  };
+  window.nxClaveOtroInput = function (key, v) {
+    const st = _claveCap[key]; if (st) st.otro = v;
+  };
+  function nxClaveValor(key) { return claveEncode(_claveCap[key]); }
+  // Muestra la clave ya guardada (solo lectura) — reusa el mismo parseo, tanto en la app
+  // como en la orden impresa (esta última con estilos en línea, ver claveImprimirHTML).
+  function claveDisplayHTML(raw) {
+    const st = claveParse(raw);
+    if (st.tipo === 'patron' && st.patron.length) {
+      const dots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => { const i = st.patron.indexOf(n); return `<span class="nxClaveDotRO${i >= 0 ? ' on' : ''}">${i >= 0 ? (i + 1) : ''}</span>`; }).join('');
+      return `<div class="nxClaveGridRO">${dots}</div>`;
+    }
+    if (st.tipo === 'pin' && st.pin) return `<div class="nxClavePinRO">${esc(st.pin)}</div>`;
+    if (st.tipo === 'otro' && st.otro) return `<div style="font-size:12px">${esc(st.otro)}</div>`;
+    return null;
+  }
+  function claveImprimirHTML(raw) {
+    const st = claveParse(raw);
+    if (st.tipo === 'patron' && st.patron.length) {
+      const dots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => { const i = st.patron.indexOf(n); return `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1.5px solid ${i >= 0 ? '#1e3a8a' : '#cbd5e1'};background:${i >= 0 ? '#1e3a8a' : '#fff'};color:${i >= 0 ? '#fff' : '#94a3b8'};font-size:9px;font-weight:700;margin:1px">${i >= 0 ? (i + 1) : ''}</span>`; }).join('');
+      return `<div style="display:grid;grid-template-columns:repeat(3,22px);gap:2px;margin-top:3px">${dots}</div>`;
+    }
+    if (st.tipo === 'pin' && st.pin) return `<div style="font-family:monospace;font-size:13px;font-weight:700;letter-spacing:3px;margin-top:3px">${esc(st.pin)}</div>`;
+    if (st.tipo === 'otro' && st.otro) return `<div style="font-size:11px;margin-top:2px">${esc(st.otro)}</div>`;
+    return null;
+  }
   const REP_ESTADOS = [['recibido', 'Recibido', '#64748b'], ['diagnostico', 'Diagnóstico', '#d97706'], ['reparando', 'Reparando', '#2563eb'], ['esperando_pieza', 'Esperando pieza', '#a21caf'], ['listo', 'Listo', '#16a34a'], ['entregado', 'Entregado', '#0f172a']];
   function repEst(k) { return REP_ESTADOS.find(e => e[0] === k) || REP_ESTADOS[0]; }
   function repDias(r) { try { return Math.max(0, Math.floor((Date.now() - new Date(r.created_at).getTime()) / 86400000)); } catch (e) { return 0; } }
@@ -20450,7 +20550,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         const d = repDias(r);
         return `<button type="button" class="nxRepCard" data-busca="${esc(((r.cliente_nombre || '') + ' ' + (r.equipo || '') + ' ' + (r.imei || '') + ' ' + (r.numero || '')).toLowerCase())}" onclick="window.nxRepVer('${r.id}')">
           <div class="nxRepNum">${esc(r.numero || '')}<span>${d} día${d === 1 ? '' : 's'}</span></div>
-          <div class="nxRepEq">${esc(r.equipo || '')}</div>
+          <div class="nxRepEq">${esc(r.equipo || '')}${claveDisplayHTML(r.clave) ? ' <i class="ti ti-lock" style="color:#94a3b8;font-size:11px" title="Tiene clave/patrón guardado"></i>' : ''}</div>
           <div class="nxRepCli">${esc(r.cliente_nombre || '')}</div>
           <div class="nxRepFalla">${esc((r.falla || '').slice(0, 60))}</div>
           ${Number(r.presupuesto || 0) > 0 ? `<div class="nxRepPre">${fmt(r.presupuesto)}</div>` : ''}
@@ -20486,7 +20586,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div class="fr-row"><div class="fr"><label>Cliente *</label><input id="repCli" class="no-upper" placeholder="Nombre"></div><div class="fr"><label>Teléfono</label><input id="repTel" inputmode="tel" placeholder="8095551234"></div></div>
         <div class="fr-row"><div class="fr"><label>Equipo *</label><input id="repEq" class="no-upper" placeholder="iPhone 12, Samsung A54..."></div><div class="fr"><label>IMEI / Serie</label><input id="repImei" class="no-upper"></div></div>
         <div class="fr"><label>Falla que reporta *</label><input id="repFalla" class="no-upper" placeholder="No enciende, pantalla rota..."></div>
-        <div class="fr-row"><div class="fr"><label>Estado físico</label><input id="repFis" class="no-upper" placeholder="Rayado, tapa rota..."></div><div class="fr"><label>Clave / patrón</label><input id="repClave" class="no-upper"></div></div>
+        <div class="fr"><label>Estado físico</label><input id="repFis" class="no-upper" placeholder="Rayado, tapa rota..."></div>
+        <div class="fr"><label>Clave / patrón del equipo</label>${claveCapturaHTML('repNueva', '')}</div>
         <div class="fr"><label>Accesorios que deja</label><input id="repAcc" class="no-upper" placeholder="Cargador, forro..."></div>
         <div class="fr-row"><div class="fr"><label>Presupuesto RD$</label><input id="repPre" data-nx-money inputmode="numeric" placeholder="0"></div><div class="fr"><label>Avance RD$</label><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0"></div></div>
         <div class="fr"><label>Técnico</label><input id="repTec" class="no-upper" placeholder="Quién repara"></div>
@@ -20501,7 +20602,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     let numero = null; try { numero = await nextSeq('reparacion'); } catch (e) {}
     if (!numero) numero = 'REP-' + String((_reps.length + 1)).padStart(5, '0');
     const abono = moneyVal('repAbo');
-    const d = { numero: numero, cliente_nombre: cli.toUpperCase(), cliente_telefono: val('repTel').trim() || null, equipo: eq, imei: val('repImei').trim() || null, falla: falla, estado_fisico: val('repFis').trim() || null, clave: val('repClave').trim() || null, accesorios: val('repAcc').trim() || null, presupuesto: moneyVal('repPre'), abono: abono, tecnico: val('repTec').trim() || null, estado: 'recibido' };
+    const d = { numero: numero, cliente_nombre: cli.toUpperCase(), cliente_telefono: val('repTel').trim() || null, equipo: eq, imei: val('repImei').trim() || null, falla: falla, estado_fisico: val('repFis').trim() || null, clave: nxClaveValor('repNueva') || null, accesorios: val('repAcc').trim() || null, presupuesto: moneyVal('repPre'), abono: abono, tecnico: val('repTec').trim() || null, estado: 'recibido' };
     try {
       const r = await getAPI().post('pos_reparaciones', d);
       const rep = (r && r[0]) || d;
@@ -20533,6 +20634,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:12px"><b style="color:#9a3412">Falla:</b> ${esc(r.falla || '')}${r.estado_fisico ? '<br><b style="color:#9a3412">Físico:</b> ' + esc(r.estado_fisico) : ''}${r.accesorios ? '<br><b style="color:#9a3412">Dejó:</b> ' + esc(r.accesorios) : ''}</div>
         <div style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:4px">Estado (toca para mover)</div>
         <div class="nxRepChips">${chips}</div>
+        <div class="fr" style="margin-top:8px"><label>Clave / patrón del equipo</label>${claveCapturaHTML('repEdit_' + r.id, r.clave || '')}</div>
         <div class="fr" style="margin-top:8px"><label>Diagnóstico / trabajo hecho</label><textarea id="repDiag" rows="2" class="no-upper">${esc(r.diagnostico || '')}</textarea></div>
         <div class="fr-row"><div class="fr"><label>Presupuesto RD$</label><input id="repPre2" data-nx-money inputmode="numeric" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div><div class="fr"><label>Avance RD$</label><input id="repAbo2" data-nx-money inputmode="numeric" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
         ${r.estado !== 'entregado' ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 10px;font-size:12px;color:#166534">Al entregar se cobra el resto: <b>${fmt(resto)}</b>${_posCfg.garantia_rep_dias > 0 ? ` · se le dará ${_posCfg.garantia_rep_dias} día(s) de garantía` : ''}</div>` : `<div style="font-size:12px;color:#16a34a;font-weight:800">✓ Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>${garantiaInfo(r) ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${garantiaInfo(r).vigente ? '#16a34a' : '#dc2626'}"><i class="ti ti-shield-check"></i> Garantía ${garantiaInfo(r).vigente ? 'vigente hasta' : 'vencida el'} ${garantiaInfo(r).fecha}</div>` : ''}`}
@@ -20553,7 +20655,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   };
   window.nxRepDet = async function (id) {
     const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
-    const d = { diagnostico: val('repDiag').trim() || null, presupuesto: moneyVal('repPre2'), abono: moneyVal('repAbo2') };
+    const d = { diagnostico: val('repDiag').trim() || null, presupuesto: moneyVal('repPre2'), abono: moneyVal('repAbo2'), clave: nxClaveValor('repEdit_' + id) || null };
     try { await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d); toast('ok', 'Guardado'); } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
   window.nxRepEntregar = function (id) {
@@ -20592,9 +20694,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const f = (l, v) => v ? `<tr><td style="color:#64748b;white-space:nowrap;padding:4px 8px 4px 0">${l}</td><td style="font-weight:700">${esc(v)}</td></tr>` : '';
     const g = garantiaInfo(r);
     const garantiaLinea = g ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${g.vigente ? '#166534' : '#991b1b'}">Garantía de esta reparación ${g.vigente ? 'hasta' : 'vencida el'} ${g.fecha}</div>` : (r.estado !== 'entregado' && _posCfg.garantia_rep_dias > 0 ? `<div style="margin-top:6px;font-size:11px;color:#64748b">Esta reparación incluye ${_posCfg.garantia_rep_dias} día(s) de garantía a partir de la entrega.</div>` : '');
+    const claveHTML = claveImprimirHTML(r.clave);
+    const claveLinea = claveHTML ? `<div style="margin-top:8px"><div style="color:#64748b;font-size:11px;font-weight:600">Clave / patrón del equipo</div>${claveHTML}</div>` : '';
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(r.numero || 'Orden')}</title><style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;padding:24px;color:#1e293b;max-width:520px;margin:0 auto;font-size:13px}h1{font-size:16px;margin:0;color:#1e3a8a}h2{font-size:13px;margin:2px 0 12px;color:#64748b;font-weight:600}table{width:100%;border-collapse:collapse;font-size:12.5px}.tot{margin-top:10px;border-top:2px solid #1e3a8a;padding-top:8px;font-size:13px}.leg{margin-top:14px;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:8px}.fir{margin-top:44px;display:flex;justify-content:space-between;gap:20px;text-align:center;font-size:11px}.fir div{flex:1;border-top:1px solid #1e293b;padding-top:4px}</style></head><body>
       <h1>${esc(biz)}</h1><h2>ORDEN DE SERVICIO · ${esc(r.numero || '')} · ${new Date().toLocaleDateString('es-DO')}</h2>
       <table>${f('Cliente', r.cliente_nombre)}${f('Teléfono', r.cliente_telefono)}${f('Equipo', r.equipo)}${f('IMEI / Serie', r.imei)}${f('Falla reportada', r.falla)}${f('Estado físico', r.estado_fisico)}${f('Accesorios', r.accesorios)}${f('Técnico', r.tecnico)}</table>
+      ${claveLinea}
       <div class="tot">Presupuesto: <b>${fmt(r.presupuesto || 0)}</b> · Avance: <b>${fmt(r.abono || 0)}</b> · Resta: <b>${fmt(Math.max(0, Number(r.presupuesto || 0) - Number(r.abono || 0)))}</b></div>
       ${garantiaLinea}
       <div class="leg">El presupuesto puede variar según el diagnóstico final (se le avisará antes de proceder). Equipos no retirados en 30 días luego de estar listos generan cargo de almacenaje y a los 90 días se consideran abandonados. No respondemos por datos: respalde su información.</div>
@@ -21538,6 +21643,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     // Botones del NÚCLEO (bc1 morado) en azul real DENTRO del POS y sus modales (no toca seguros)
     st.textContent += '.nxLupaBox{display:flex;align-items:center;gap:8px;border:1.5px solid #cbd5e1;border-radius:11px;background:#fff;padding:0 12px;margin-bottom:8px}.nxLupaBox>i{color:#94a3b8;font-size:16px;flex:none;background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;position:static!important;padding:0!important}.nxLupaBox>i.click{color:#2563eb;cursor:pointer}.nxLupaBox input{flex:1;min-width:0;border:none;outline:none;height:42px;font-size:13px;background:transparent;color:#1e293b;font-family:inherit}' + 'html body .nc i.nxPpkChev,html body i.nxPpkChev{background:#f1f5f9!important;background-image:none!important;color:#64748b!important;box-shadow:none!important;border:0!important;text-shadow:none!important}html body .nc .nxPpkWrap.on i.nxPpkChev,html body .nxPpkWrap.on i.nxPpkChev{background:#dbeafe!important;color:#2563eb!important}';
     st.textContent += '.nxRepKb{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}.nxRepCol{min-width:210px;max-width:240px;flex:1 0 210px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px}.nxRepColH{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--rc,#475569);border-bottom:2px solid var(--rc,#e2e8f0);padding-bottom:6px;margin-bottom:8px}.nxRepColH b{background:#fff;border-radius:7px;padding:1px 7px;font-size:10px}.nxRepCard{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;margin-bottom:7px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(15,23,42,.05)}.nxRepCard:active{opacity:.75}.nxRepNum{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:#2563eb;margin-bottom:2px}.nxRepNum span{color:#94a3b8;font-weight:700}.nxRepEq{font-size:12.5px;font-weight:800;color:#0f172a;line-height:1.15}.nxRepCli{font-size:10.5px;color:#475569}.nxRepFalla{font-size:10px;color:#64748b;margin-top:2px}.nxRepPre{font-size:11.5px;font-weight:800;color:#16a34a;margin-top:3px}.nxRepEmpty{text-align:center;color:#cbd5e1;font-size:11px;padding:10px}.nxRepChips{display:flex;gap:5px;flex-wrap:wrap}.nxRepChip{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}.nxRepChip.on{background:var(--rc,#2563eb);border-color:var(--rc,#2563eb);color:#fff}.nxTQuick{margin-left:auto;border:0;background:#2563eb;color:#fff;border-radius:11px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.3)}.nxTQuick:active{background:#1d4ed8}' + '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}.nxPayTiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 10px}.nxPayTile{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 2px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}.nxPayTile i{font-size:17px;color:#475569}.nxPayTile span{font-size:8px;font-weight:800;color:#475569;letter-spacing:.3px}.nxPayTile.on{border-color:#2563eb;background:#eff6ff}.nxPayTile.on i,.nxPayTile.on span{color:#2563eb}@media(max-width:380px){.nxPayTile i{font-size:15px}.nxPayTile{padding:7px 1px}}';
+    st.textContent += '.nxClaveWrap{border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#f8fafc}.nxClaveTabs{display:flex;gap:4px;margin-bottom:8px}.nxClaveTab{flex:1;border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:8px;padding:7px 4px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}.nxClaveTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxClaveGrid{display:grid;grid-template-columns:repeat(3,40px);gap:8px;justify-content:center;margin:6px auto}.nxClaveDot{width:40px;height:40px;border-radius:50%;border:2px solid #cbd5e1;background:#fff;color:#94a3b8;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}.nxClaveDot.on{border-color:#2563eb;background:#2563eb;color:#fff}.nxClaveResumen{text-align:center;font-size:11px;color:#475569;margin:6px 0;font-family:var(--mono,monospace)}.nxClaveBorrar{display:flex;align-items:center;justify-content:center;gap:4px;margin:0 auto;border:none;background:none;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;padding:4px;font-family:inherit}.nxClavePinDisp{text-align:center;font-size:20px;font-weight:800;letter-spacing:6px;color:#0f172a;margin-bottom:8px;min-height:26px}.nxClaveKeypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:220px;margin:0 auto}.nxClaveKey{height:42px;border:1.5px solid #e2e8f0;background:#fff;border-radius:9px;font-size:15px;font-weight:800;color:#1e293b;cursor:pointer;font-family:inherit}.nxClaveKey:active{background:#eff6ff}.nxClaveGridRO{display:inline-grid;grid-template-columns:repeat(3,22px);gap:3px;vertical-align:middle}.nxClaveDotRO{width:22px;height:22px;border-radius:50%;border:1.5px solid #cbd5e1;color:#94a3b8;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}.nxClaveDotRO.on{border-color:#2563eb;background:#2563eb;color:#fff}.nxClavePinRO{font-family:var(--mono,monospace);font-size:16px;font-weight:800;letter-spacing:5px;color:#0f172a}';
     // ── Cuotas/Financiamiento PREMIUM: CSS compartida, ver window.nxFPEnsureCSS ──
     window.nxFPEnsureCSS();
     // ── Rediseño PRO de la pantalla de Facturación (mockup BAYOL CELL aprobado) ──
