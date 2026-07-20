@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.62** (ver `index.html` y `version.json`).
+> Versión actual: **48.63** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1966,10 +1966,39 @@ de cálculos**. Concretamente:
   `new Function()`.
 - **Con esta versión termina la ronda completa del rediseño Enterprise del núcleo de Seguros** — las 10
   pantallas principales (Clientes, Facturas, Ficha del cliente, Historial de pagos, Pólizas, Agentes,
-  Empresas, Comisiones, Contabilidad×4, Reportes×5) comparten ya la misma paleta azul `.nxSf`. Pendiente
-  si el dueño quiere seguir: aplicar el mismo tratamiento a Ajustes/Configuración y Usuarios (`v-config`,
-  `v-usuarios`), que no se tocaron en esta ronda por no haber sido parte del pedido original (la muestra
-  aprobada era solo sobre las pantallas operativas del día a día).
+  Empresas, Comisiones, Contabilidad×4, Reportes×5) comparten ya la misma paleta azul `.nxSf`.
+
+### Ajustes y Usuarios — cierre final de la ronda Enterprise (v48.63)
+El dueño pidió sumar las últimas 2 pantallas que habían quedado fuera: **Ajustes/Configuración**
+(`v-config`, 14 pestañas: Empresa y Tarifas/Notificaciones/Automatización/Empresas cotizantes/Agentes/
+Usuarios/Roles y Permisos/Auditoría/Mis Bases/Changelog/Metas/Apariencia/Coberturas de planes/Bancos) y
+**Usuarios del sistema** (`v-usuarios`, tabla aparte fuera de Ajustes).
+- **Auditoría previa obligatoria (antes de tocar nada):** se revisaron TODOS los bloques `.g3`/`.sm` de
+  `v-config` uno por uno para no repetir el error de convertir algo a `.sf-kpi` que en realidad NO es un
+  resumen de solo-lectura. Resultado: los 4 `.g3` de la pestaña "Empresa y Tarifas" (Costos/Primas
+  titular/Primas dependiente/Comisión agente) y el de "Metas mensuales" son **formularios de entrada**
+  (`.fr`+`<input>`, precios y metas que el dueño edita) — `.sf-kpi` es una tarjeta de SOLO LECTURA
+  (ícono+etiqueta+valor), meterle inputs adentro la habría roto. Se dejaron intactos a propósito. El
+  progreso de metas (`#metasProgress`, `rMetasProgress()`) usa su propio patrón de barras (`.meta-card`/
+  `.meta-row`), tampoco es un `.g3`/`.sm` — no se tocó. **Conclusión: Ajustes no tiene ningún resumen
+  KPI real que convertir**, así que el cambio fue "wrap-only" — mismo criterio que ya se usó en Reportes
+  y en la tabla de Cotizaciones (envolver en `.nxSf` sin tocar el contenido, cuando el contenido ya está
+  bien y no hay riesgo/beneficio en reconstruirlo).
+- **Cambio real:** se agregó la clase `nxSf` a los contenedores de `v-config` y `v-usuarios` — cero HTML
+  interno tocado, cero función JS tocada. Las tablas de Agentes y Usuarios (dentro de Ajustes y en la
+  pantalla aparte de Usuarios) heredan automáticamente el encabezado/hover azul
+  (`.nxSf .tw table thead tr{background:var(--sf-primary-l)}`, la misma regla de siempre) — beneficio
+  gratis sin tocar `rAgentes`/la carga de `tbUsu`.
+- **Verificado con el código real:** se extrajo el HTML de `v-usuarios` tal cual del archivo (balance de
+  `<div>` real, no un rango de línea a mano) y se cargó en un navegador con 2 usuarios de prueba — el
+  encabezado de la tabla midió `rgb(234,241,255)` (`--sf-primary-l`, confirmando que la herencia de CSS
+  funciona), el botón "Nuevo usuario" no se movió ni cambió de color, sin desbordes. Para `v-config` (327
+  líneas, 14 pestañas) se confirmó por inspección exhaustiva de cada `.g3`/`.sm` en el archivo real que
+  ninguno se vería afectado por la clase nueva — no se armó un harness completo de las 14 pestañas por no
+  haber ningún JS/HTML interno que cambiara (el único cambio real, la clase en el `<div>` padre, ya se
+  había verificado inerte contra `.g3`/`.sm`/`.conr`/`.fr` en las rondas anteriores).
+- **Con esta versión, las 12 pantallas del núcleo de Seguros (las 10 anteriores + Ajustes + Usuarios)
+  comparten la misma identidad visual azul Enterprise — cierra por completo el pedido del dueño.**
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
