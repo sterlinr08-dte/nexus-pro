@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.60** (ver `index.html` y `version.json`).
+> Versión actual: **48.61** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1922,6 +1922,60 @@ cargado en un navegador: los KPIs muestran los números correctos, sin desbordes
 errores de JS. **Pendiente si el dueño quiere seguir:** Comisiones, Contabilidad (Mayor/Diario/Balance/
 Estado de Resultados/Balance General) y Reportes — mayor riesgo por ser pantallas financieras, se
 abordarían con más cuidado y probablemente en tandas más chicas.
+
+### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
+El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
+VIDEO — se le aclaró que eso genera archivos de video, no anima una app en vivo, y no encaja con la regla
+de "sin build/npm/bundler" del proyecto; confirmó por `AskUserQuestion` que lo que quiere es **movimiento
+real dentro de la interfaz**, no un video promocional). Se construyó un **vocabulario de animación
+reusable** en el `<style>` central de `index.html` (después de las reglas de `.toast`, antes de que
+termine el bloque `<style>` en la línea ~838) en vez de animaciones puntuales sueltas — mismo criterio de
+"un motor compartido, no copiar/pegar por pantalla" que ya usa el resto del sistema (`nxBuscaHTML`,
+`ModalBusquedaBase`).
+- **2 keyframes nuevos, ambos dentro de `@media(prefers-reduced-motion:no-preference)`** (si el usuario
+  tiene activada la preferencia de accesibilidad "reducir movimiento" del sistema operativo, **ninguna**
+  de estas animaciones se aplica — todo aparece instantáneo, como antes; verificado con
+  `reducedMotion:'reduce'` de Playwright, `animationName` computado da `'none'`):
+  `@keyframes nxPopIn` (fade+scale sutil, para que algo "aparezca" con un poco de rebote —
+  `cubic-bezier(.34,1.56,.64,1)`, la misma curva "spring" que ya se usaba en el `tIn` del toast) y
+  `@keyframes nxFadeUp` (fade+translateY, para listas que entran una detrás de otra).
+- **Conectados a clases que YA existen y se repiten por todo el sistema** (cero HTML nuevo, cero
+  cambio de lógica, solo la regla CSS que dispara la animación):
+  - `.overlay.open .modal{animation:nxPopIn...}` — el modal/ventana emergente de TODO el núcleo de
+    Seguros (decenas de pantallas comparten esta única clase) ahora aparece con un pop suave en vez de
+    salir de golpe. Como es la clase padre (`.overlay`) la que cambia de `display:none` a `display:flex`
+    al abrir, la animación del hijo (`.modal`) se reinicia sola cada vez que se abre un modal — no hizo
+    falta tocar `openM()`/`closeM()` ni ningún `onclick` existente.
+  - `.nxSf .sf-kpis .sf-kpi` / `.nxPf .kpirow .kpitile` — las tarjetas KPI de TODAS las pantallas
+    Enterprise ya rediseñadas esta sesión (Clientes/Facturas/Ficha del cliente/Historial de
+    pagos/Pólizas/Agentes/Empresas en Seguros, y Entidades/Clientes/CRM/etc. en el POS) entran en fila
+    con `animation-delay` escalonado por `nth-child` (1º a 4º, 0.02s a 0.17s) — se ven "aparecer" una
+    detrás de otra en vez de todas de golpe. Como estos KPIs son elementos ESTÁTICOS del HTML de cada
+    vista (los números se actualizan con `textContent`, no se reconstruye el `<div>` en cada filtro), la
+    animación solo se dispara una vez al cargar la pantalla, no se repite en cada tecla de un buscador.
+  - `.qa-g .qa` — los accesos rápidos del Dashboard de Seguros (6 tarjetas) con el mismo patrón
+    escalonado (hasta el 6º hijo).
+  - `.toast{animation:tIn...}` — se mantuvo la misma animación `tIn` (slide desde la derecha) pero se
+    cambió el "timing" de `ease` a `cubic-bezier(.34,1.56,.64,1)` (rebote sutil tipo spring) y la
+    duración de `.2s` a `.35s` — mismo mecanismo de siempre (`toast()` en `index.html`), cero cambios de
+    JS, solo la curva de animación se siente con más vida.
+- **Deliberadamente NO se tocó** ningún `:active`/`transform:scale` en botones — el propio CLAUDE.md
+  (regla #2 de "Cómo le gusta trabajar el dueño") advierte contra `transform:scale/translate` en `:active`
+  dentro de ventanas con `backdrop-filter` por el bug de "botones que se inflan" en iPhone; esta tanda se
+  limitó a animaciones de ENTRADA (aparecer en pantalla), no de toque, para no arriesgar ese bug conocido.
+  Tampoco se animaron las filas de tabla (`.sf-tbl tr`) porque esas SÍ se reconstruyen en cada tecla de
+  búsqueda — animarlas habría hecho parpadear la lista mientras el usuario escribe.
+- **Verificado con Playwright** (harness con el CSS real extraído de `index.html`, cero reconstrucción):
+  se confirmó por `getComputedStyle(...).animationName` que `nxFadeUp`/`nxPopIn`/`tIn` sí se aplican en
+  modo de movimiento normal y que se vuelven `'none'` en modo `prefers-reduced-motion:reduce`, captura de
+  pantalla del modal+KPIs+accesos rápidos sin errores de JS. `node --check parches.js` limpio; corregido
+  de paso un defecto en el propio método de verificación de esta sesión: el chequeo de "los 3 `<script>`
+  de `index.html` pasan `new Function()`" venía filtrando por accidente el script PRINCIPAL (423KB) fuera
+  de la validación desde hacía tiempo — el filtro buscaba la palabrita `src=` en el texto COMPLETO de
+  cada script (no solo en su etiqueta de apertura), y el script principal genera HTML con atributos
+  `src=` (imágenes, iframes) dentro de su propio código, así que el filtro lo excluía por error y solo
+  validaba los 2 scripts cortos. Corregido para revisar `src=` únicamente en la etiqueta `<script ...>`
+  de apertura — confirmado que los 3 scripts (1,423 / 423,569 / 681 caracteres) pasan `new Function()`.
 
 #### Muestra visual — NEXUS PRO X 2026 (rama aparte, referencia para las fases siguientes)
 Archivo standalone `muestra-pos-x2026.html`, publicado en la rama `claude/pos-x2026-muestra` (NO en

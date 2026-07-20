@@ -334,9 +334,24 @@ tbody tr:hover td{background:#f8fafc}
 .pol-vigente{color:var(--c1)}.pol-vencida{color:var(--c3)}.pol-gracia{color:var(--c4)}.pol-sin{color:var(--tx3)}
 /* Toasts */
 #toastS{position:fixed;bottom:14px;right:14px;display:flex;flex-direction:column;gap:5px;z-index:100001;max-width:270px;pointer-events:none}
-.toast{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:11px;display:flex;align-items:center;gap:8px;animation:tIn .2s ease;border-left:4px solid var(--c1);box-shadow:0 8px 24px rgba(0,0,0,.12);pointer-events:all}
+.toast{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:11px;display:flex;align-items:center;gap:8px;animation:tIn .35s cubic-bezier(.34,1.56,.64,1);border-left:4px solid var(--c1);box-shadow:0 8px 24px rgba(0,0,0,.12);pointer-events:all}
 .toast.err{border-left-color:#dc2626}.toast.warn{border-left-color:#d97706}.toast.ok{border-left-color:#059669}
 @keyframes tIn{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
+/* ── ANIMACIONES DEL SISTEMA (movimiento sutil, respeta accesibilidad) ── */
+@media (prefers-reduced-motion:no-preference){
+  @keyframes nxPopIn{0%{opacity:0;transform:scale(.94) translateY(6px)}100%{opacity:1;transform:none}}
+  @keyframes nxFadeUp{0%{opacity:0;transform:translateY(9px)}100%{opacity:1;transform:none}}
+  .overlay.open .modal{animation:nxPopIn .26s cubic-bezier(.34,1.56,.64,1) both}
+  .nxSf .sf-kpis .sf-kpi,.nxPf .kpirow .kpitile{animation:nxFadeUp .34s ease both}
+  .nxSf .sf-kpis .sf-kpi:nth-child(1),.nxPf .kpirow .kpitile:nth-child(1){animation-delay:.02s}
+  .nxSf .sf-kpis .sf-kpi:nth-child(2),.nxPf .kpirow .kpitile:nth-child(2){animation-delay:.07s}
+  .nxSf .sf-kpis .sf-kpi:nth-child(3),.nxPf .kpirow .kpitile:nth-child(3){animation-delay:.12s}
+  .nxSf .sf-kpis .sf-kpi:nth-child(4),.nxPf .kpirow .kpitile:nth-child(4){animation-delay:.17s}
+  .qa-g .qa{animation:nxFadeUp .3s ease both}
+  .qa-g .qa:nth-child(1){animation-delay:.02s}.qa-g .qa:nth-child(2){animation-delay:.05s}
+  .qa-g .qa:nth-child(3){animation-delay:.08s}.qa-g .qa:nth-child(4){animation-delay:.11s}
+  .qa-g .qa:nth-child(5){animation-delay:.14s}.qa-g .qa:nth-child(6){animation-delay:.17s}
+}
 .ti-b{flex:1}.ti-t{font-weight:700;color:#1e293b}.ti-m{font-size:10px;color:#475569;margin-top:1px;font-family:var(--mono)}
 /* PDF print area */
 @media print{body{background:#fff;color:#000}.no-print{display:none!important}#pdfArea{display:block!important}}
@@ -3551,7 +3566,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.60';
+const APP_VERSION='48.61';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
