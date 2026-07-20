@@ -1337,7 +1337,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- COMISIONES -->
-        <div class="view" id="v-comisiones">
+        <div class="view nxSf" id="v-comisiones">
           <div class="nc p5">
             <div class="ch">
               <div><div class="ct">Comisiones por agente</div><div class="ct-s">cálculo automático con retención ITBIS</div></div>
@@ -1353,7 +1353,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- MAYOR -->
-        <div class="view" id="v-mayor">
+        <div class="view nxSf" id="v-mayor">
           <div class="g2">
             <div class="nc"><div class="ch"><div class="ct">Plan de cuentas</div></div><div id="mayorC"></div></div>
             <div class="nc p2"><div class="ch"><div class="ct">Resumen</div><button class="btn bsm bc2" onclick="abrirAsiento()"><i class="ti ti-plus"></i> Asiento</button></div><div id="resumC"></div></div>
@@ -1361,7 +1361,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- ASIENTOS -->
-        <div class="view" id="v-asientos">
+        <div class="view nxSf" id="v-asientos">
           <div class="nc p2">
             <div class="ch"><span class="ct">Diario de asientos</span><button class="btn bsm bc2" onclick="abrirAsiento()"><i class="ti ti-plus"></i> Nuevo</button></div>
             <div id="asientosC"><div class="loading"><div class="spin"></div></div></div>
@@ -1369,7 +1369,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- BALANCE -->
-        <div class="view" id="v-balance">
+        <div class="view nxSf" id="v-balance">
           <div class="g2">
             <div class="nc"><div class="ch"><div class="ct">Activos</div></div><div id="balA"></div></div>
             <div class="nc p3"><div class="ch"><div class="ct">Pasivos y Patrimonio</div></div><div id="balP"></div></div>
@@ -1377,7 +1377,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- P&G -->
-        <div class="view" id="v-pyg">
+        <div class="view nxSf" id="v-pyg">
           <div class="nc"><div class="ch"><span class="ct">Estado de Resultados P&amp;G</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:var(--r8)">
               <span style="font-size:9px;font-weight:700;color:var(--tx2);font-family:var(--mono)">PERÍODO CONTABLE (mes calendario):</span>
@@ -1388,13 +1388,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         </div>
 
         <!-- REPORTES -->
-        <div class="view" id="v-rep-agente"><div class="nc"><div class="ch"><span class="ct">Reporte por agente</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div style="margin-bottom:10px"><select id="repAgtSel" onchange="rRepAgt()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;background:var(--card,#fff)"><option value="">— Todos los agentes —</option></select></div><div id="rAgt"></div></div></div>
-        <div class="view" id="v-rep-plan"><div class="nc"><div class="ch"><span class="ct">Reporte por plan</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rPlan"></div></div></div>
-        <div class="view" id="v-rep-empresa"><div class="nc"><div class="ch"><span class="ct">Reporte por empresa</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rEmp"></div></div></div>
-        <div class="view" id="v-rep-aging"><div class="nc"><div class="ch"><span class="ct">Aging de cartera — Antigüedad de la deuda</span></div><div id="rAging"></div></div></div>
+        <div class="view nxSf" id="v-rep-agente"><div class="nc"><div class="ch"><span class="ct">Reporte por agente</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div style="margin-bottom:10px"><select id="repAgtSel" onchange="rRepAgt()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;background:var(--card,#fff)"><option value="">— Todos los agentes —</option></select></div><div id="rAgt"></div></div></div>
+        <div class="view nxSf" id="v-rep-plan"><div class="nc"><div class="ch"><span class="ct">Reporte por plan</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rPlan"></div></div></div>
+        <div class="view nxSf" id="v-rep-empresa"><div class="nc"><div class="ch"><span class="ct">Reporte por empresa</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i></button></div><div id="rEmp"></div></div></div>
+        <div class="view nxSf" id="v-rep-aging"><div class="nc"><div class="ch"><span class="ct">Aging de cartera — Antigüedad de la deuda</span></div><div id="rAging"></div></div></div>
 
         <!-- DGII -->
-        <div class="view" id="v-dgii">
+        <div class="view nxSf" id="v-dgii">
           <div class="nc p4">
             <div class="ch"><div><div class="ct">Reportes DGII / ARS</div><div class="ct-s">Formatos oficiales República Dominicana</div></div></div>
             <div class="g2" style="margin-bottom:10px">
@@ -3566,7 +3566,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.61';
+const APP_VERSION='48.62';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7247,10 +7247,10 @@ async function calcularComisiones(){
   const totalITBIS=resultados.reduce((s,r)=>s+r.itbis,0);
   const totalNeto=resultados.reduce((s,r)=>s+r.comNeta,0);
   el.innerHTML=`
-    <div class="g3" style="margin-bottom:12px">
-      <div class="sm"><div class="smv" style="color:var(--c5);font-size:13px">${fmt(totalBruto)}</div><div class="sml">COMISIÓN BRUTA</div></div>
-      <div class="sm"><div class="smv" style="color:var(--c3);font-size:13px">${fmt(totalITBIS)}</div><div class="sml">ITBIS 18% RETENCIÓN</div></div>
-      <div class="sm"><div class="smv" style="color:var(--c1);font-size:13px">${fmt(totalNeto)}</div><div class="sml">NETO A PAGAR</div></div>
+    <div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:12px">
+      <div class="sf-kpi blue"><div class="ic"><i class="ti ti-cash"></i></div><div><div class="lb">Comisión bruta</div><div class="v">${fmt(totalBruto)}</div></div></div>
+      <div class="sf-kpi warn"><div class="ic"><i class="ti ti-receipt-tax"></i></div><div><div class="lb">ITBIS 18% retención</div><div class="v">${fmt(totalITBIS)}</div></div></div>
+      <div class="sf-kpi ok"><div class="ic"><i class="ti ti-wallet"></i></div><div><div class="lb">Neto a pagar</div><div class="v">${fmt(totalNeto)}</div></div></div>
     </div>
     <div class="tw"><table>
       <thead><tr><th style="width:28%">AGENTE</th><th style="width:10%">CLIENTES</th><th style="width:15%">PRIMA TOTAL</th><th style="width:10%">% COM.</th><th style="width:14%">COM. BRUTA</th><th style="width:11%">ITBIS 18%</th><th style="width:14%">NETO A PAGAR</th></tr></thead>
@@ -7277,7 +7277,7 @@ function rMayor(){
   document.getElementById('mayorC').innerHTML=tipos.map(t=>{const ctas=CUENTAS.filter(c=>c.tipo===t);const tot=ctas.reduce((s,c)=>s+c.saldo,0);return`<div style="margin-bottom:10px"><div style="font-size:8px;font-weight:700;color:${colors[t]};font-family:var(--mono);letter-spacing:.8px;margin-bottom:5px">${t.toUpperCase()}</div>${ctas.map(c=>`<div class="conr"><span style="font-family:var(--mono);font-size:8px;color:var(--tx3)">${c.cod}</span><span style="font-size:9px">${c.nom}</span><span class="${t==='Ingreso'||t==='Activo'||t==='Patrimonio'?'cdr':'ccr'}" style="font-family:var(--mono);font-size:9px">${fmt(c.saldo)}</span></div>`).join('')}<div style="display:flex;justify-content:flex-end;font-family:var(--mono);font-size:9px;font-weight:700;color:${colors[t]};padding:3px 0">SUBTOTAL: ${fmt(tot)}</div></div>`;}).join('');
   const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);
   const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;
-  document.getElementById('resumC').innerHTML=`<div class="g3" style="margin-bottom:10px"><div class="sm"><div class="smv" style="color:var(--c1);font-size:12px">${fmt(CUENTAS.filter(c=>c.tipo==='Activo').reduce((s,c)=>s+c.saldo,0))}</div><div class="sml">ACTIVOS</div></div><div class="sm"><div class="smv" style="color:var(--c3);font-size:12px">${fmt(CUENTAS.filter(c=>c.tipo==='Pasivo').reduce((s,c)=>s+c.saldo,0))}</div><div class="sml">PASIVOS</div></div><div class="sm"><div class="smv" style="color:var(--c5);font-size:12px">${fmt(ing)}</div><div class="sml">INGRESOS</div></div></div><div class="conr"><span>Ingresos</span><span class="cdr" style="font-family:var(--mono)">${fmt(ing)}</span></div><div class="conr"><span>Gastos</span><span class="ccr" style="font-family:var(--mono)">(${fmt(gast)})</span></div><div class="conr" style="border-top:1px solid rgba(0,229,199,.1);margin-top:5px;padding-top:5px"><span style="color:var(--c4)">UTILIDAD NETA</span><span class="ctot" style="font-family:var(--mono);font-size:13px">${fmt(util)}</span></div><div style="margin-top:10px"><button class="btn bsm bc2" onclick="abrirAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>`;
+  document.getElementById('resumC').innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:10px"><div class="sf-kpi blue"><div class="ic"><i class="ti ti-building-bank"></i></div><div><div class="lb">Activos</div><div class="v">${fmt(CUENTAS.filter(c=>c.tipo==='Activo').reduce((s,c)=>s+c.saldo,0))}</div></div></div><div class="sf-kpi warn"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Pasivos</div><div class="v">${fmt(CUENTAS.filter(c=>c.tipo==='Pasivo').reduce((s,c)=>s+c.saldo,0))}</div></div></div><div class="sf-kpi ok"><div class="ic"><i class="ti ti-trending-up"></i></div><div><div class="lb">Ingresos</div><div class="v">${fmt(ing)}</div></div></div></div><div class="conr"><span>Ingresos</span><span class="cdr" style="font-family:var(--mono)">${fmt(ing)}</span></div><div class="conr"><span>Gastos</span><span class="ccr" style="font-family:var(--mono)">(${fmt(gast)})</span></div><div class="conr" style="border-top:1px solid rgba(0,229,199,.1);margin-top:5px;padding-top:5px"><span style="color:var(--c4)">UTILIDAD NETA</span><span class="ctot" style="font-family:var(--mono);font-size:13px">${fmt(util)}</span></div><div style="margin-top:10px"><button class="btn bsm bc2" onclick="abrirAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button></div>`;
 }
 function abrirAsiento(){editAsiId=null;const opts=CUENTAS.map(c=>`<option value="${c.cod}">${c.cod} · ${c.nom}</option>`).join('');document.getElementById('asiCtaDr').innerHTML=opts;document.getElementById('asiCtaCr').innerHTML=opts;document.getElementById('asiFecha').value=hoy();['asiRef','asiDesc','asiMntDr','asiMntCr'].forEach(id=>document.getElementById(id).value='');const btn=document.getElementById('btnAsi');if(btn)btn.innerHTML='<i class="ti ti-check"></i> Registrar';openM('mAsiento');}
 let editAsiId=null;

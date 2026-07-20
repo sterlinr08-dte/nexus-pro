@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.61** (ver `index.html` y `version.json`).
+> Versión actual: **48.62** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1922,6 +1922,54 @@ cargado en un navegador: los KPIs muestran los números correctos, sin desbordes
 errores de JS. **Pendiente si el dueño quiere seguir:** Comisiones, Contabilidad (Mayor/Diario/Balance/
 Estado de Resultados/Balance General) y Reportes — mayor riesgo por ser pantallas financieras, se
 abordarían con más cuidado y probablemente en tandas más chicas.
+
+### Comisiones, Contabilidad y Reportes — mismo look Enterprise, cierre de la ronda (v48.62)
+El dueño confirmó seguir ("Look ENTERPRISES") con las pantallas que habían quedado pendientes por ser más
+riesgosas (dinero). Se completó con el mismo criterio de todas las anteriores: **wrap visual, cero cambio
+de cálculos**. Concretamente:
+- **Comisiones** (`#v-comisiones`, `calcularComisiones()`): la vista ganó la clase `nxSf`. El resumen de 3
+  cajas grises (`.g3`/`.sm`, "COMISIÓN BRUTA"/"ITBIS 18% RETENCIÓN"/"NETO A PAGAR") se reemplazó por
+  `.sf-kpis`/`.sf-kpi` (azul/ámbar/verde, con `grid-template-columns:repeat(auto-fit,minmax(150px,1fr))`
+  — el mismo patrón "auto-fit" que ya evitó el bug de columnas fijas en Facturas, así que no hacía falta
+  reaprender esa lección). La tabla de agentes (`.tw table`) no se tocó — al quedar dentro de `.nxSf`
+  hereda automáticamente el encabezado/hover azul (`.nxSf .tw table thead tr{background:var(--sf-primary-l)}`,
+  la misma regla que ya beneficiaba a Clientes/Pólizas/Agentes/Empresas desde antes). `exportarComisionesCsv`
+  no se tocó.
+- **Contabilidad — las 4 vistas:** `#v-mayor` (Plan de cuentas + Resumen), `#v-asientos` (Diario),
+  `#v-balance` (Balance de Comprobación) y `#v-pyg` (Estado de Resultados) ganaron la clase `nxSf`. Solo
+  `rMayor()` tenía un resumen tipo `.g3`/`.sm` (Activos/Pasivos/Ingresos) — se convirtió a `.sf-kpis`/
+  `.sf-kpi` igual que Comisiones. El resto de cada pantalla (`rAsientos`, `rBalance`, `rPYG`) usa filas
+  `.conr`/`.cdr`/`.ccr`/`.ctot` que YA se ven bien en cualquier fondo — no se tocaron, solo heredan el
+  contexto `.nxSf` sin cambiar nada (se confirmó que no existe ninguna regla `.nxSf .conr{...}` que las
+  fuera a repintar por accidente).
+- **Reportes — las 5 vistas:** `#v-rep-agente`, `#v-rep-plan`, `#v-rep-empresa`, `#v-rep-aging` y `#v-dgii`
+  ganaron la clase `nxSf` únicamente (wrap-only, sin tocar el JS de `rRepAgt`/`detalleAgente`/render de
+  plan/empresa/aging/DGII) — mismo criterio que ya se usó en la Fase 2 del POS con la tabla de líneas de
+  Cotizaciones ("no se rehízo, ya hereda el look, evita el riesgo de tocar lógica compartida"). Estas 5
+  pantallas usan tarjetas por agente/fila con su propio estilo (`.nc p2`, `.g3` anidado por tarjeta) que
+  no chocan visualmente al quedar dentro de `.nxSf` — se dejaron intactas a propósito en vez de convertir
+  cada tarjeta repetida a `.sf-kpi` (mayor riesgo de tocar plantillas con muchas interpolaciones anidadas,
+  sin beneficio visual claro sobre lo que ya existía).
+- **Por qué se cuidó más que las pantallas anteriores:** todo lo tocado aquí es DINERO real (comisiones a
+  pagar, plan de cuentas, asientos, balance). Se verificó explícitamente, antes de tocar código, cuáles
+  clases CSS existentes (`.g3`, `.sm`, `.conr`) NO tienen ninguna regla `.nxSf .g3{...}`/`.nxSf .sm{...}`
+  que las repintara sin querer, y se limitó el cambio a: (1) agregar la clase `nxSf` al contenedor, (2)
+  reemplazar el único patrón `.g3`/`.sm` de resumen por `.sf-kpis`/`.sf-kpi` en Comisiones y en el Resumen
+  de Contabilidad — ninguna fórmula, ningún `reduce()`, ningún nombre de campo se tocó.
+- **Verificado con el código real** (`calcularComisiones`/`rMayor` extraídos tal cual del archivo, con
+  balance de llaves real — no un rango de línea a mano) cargados en un navegador con datos simulados (2
+  agentes, 3 clientes, plan de cuentas de 6 cuentas): los montos de Comisiones (bruta/ITBIS/neta por
+  agente y el total) y de Contabilidad (activos/pasivos/ingresos/gastos/utilidad) calculan exactamente
+  igual que antes, las tarjetas KPI aparecen con el mismo colorido y la misma animación de entrada
+  escalonada del resto del sistema, sin desbordes en 390px ni 1280px, 0 errores de JS. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` (1,423 / 423,878 / 681 caracteres) pasan
+  `new Function()`.
+- **Con esta versión termina la ronda completa del rediseño Enterprise del núcleo de Seguros** — las 10
+  pantallas principales (Clientes, Facturas, Ficha del cliente, Historial de pagos, Pólizas, Agentes,
+  Empresas, Comisiones, Contabilidad×4, Reportes×5) comparten ya la misma paleta azul `.nxSf`. Pendiente
+  si el dueño quiere seguir: aplicar el mismo tratamiento a Ajustes/Configuración y Usuarios (`v-config`,
+  `v-usuarios`), que no se tocaron en esta ronda por no haber sido parte del pedido original (la muestra
+  aprobada era solo sobre las pantallas operativas del día a día).
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
