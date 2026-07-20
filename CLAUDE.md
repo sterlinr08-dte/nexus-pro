@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.63** (ver `index.html` y `version.json`).
+> Versión actual: **48.64** (ver `index.html` y `version.json`).
 
 ---
 
@@ -1999,6 +1999,54 @@ Usuarios/Roles y Permisos/Auditoría/Mis Bases/Changelog/Metas/Apariencia/Cobert
   había verificado inerte contra `.g3`/`.sm`/`.conr`/`.fr` en las rondas anteriores).
 - **Con esta versión, las 12 pantallas del núcleo de Seguros (las 10 anteriores + Ajustes + Usuarios)
   comparten la misma identidad visual azul Enterprise — cierra por completo el pedido del dueño.**
+
+### POS · Garantía de reparación (v48.64)
+El dueño mandó una captura de un sistema de la competencia ("Richard Celulares Servicio Técnico") pidiendo
+comparar contra el módulo de Reparaciones — de la lista de diferencias reales (patrón/PIN visual, tipo de
+equipo con íconos, recargo por atraso, fecha de entrega prometida, servicio rápido, cédula), eligió empezar
+por **la garantía**, algo que hoy NO existe de verdad: la nota legal fija en la orden impresa habla de
+**almacenaje** (cargo si no retiran el equipo en 30/90 días), no de garantía sobre la reparación en sí.
+Antes de tocar código se preguntó por `AskUserQuestion` cómo debía funcionar — el dueño eligió **días
+fijos configurables en Ajustes** (mismo patrón que la mora de Cuotas, no un valor por-reparación ni solo
+una nota de texto sin rastrear fecha).
+- **Esquema (aditivo, aplicado directo con las herramientas MCP de Supabase — proyecto `tnwsgcxurfyuszxsewsn`):**
+  `pos_config.garantia_rep_dias` (integer, default 0 = desactivada, mismo criterio que `mora_pct`) y
+  `pos_reparaciones.garantia_hasta` (date, nullable — se llena SOLO al entregar, nunca antes). Verificado
+  con `get_advisors(security)`: sin hallazgos nuevos en ninguna de las 2 tablas.
+- **Ajustes → "Garantía de reparación":** input de días + botón Guardar (`window.nxPosGuardarGarantiaRep`),
+  calcado del patrón de "Recargo por mora" (`nxPosGuardarMora`) — mismo UPSERT contra `pos_config`, mismo
+  `logAudit`. `_posCfg` ganó `garantia_rep_dias` (default 0 en el objeto local y en la carga real de
+  `cargarPOS`).
+- **Cálculo al entregar (`nxRepEntregarGo`):** si `garantia_rep_dias>0`, se calcula
+  `entregado_at + N días` y se guarda en `garantia_hasta` — **UNA sola vez**, en el momento exacto de la
+  entrega (no se recalcula después ni se actualiza si el dueño cambia el ajuste más tarde, igual que la
+  mora nunca reescribe cuotas ya vencidas). **Bug evitado a propósito:** la fecha se arma con
+  `getFullYear()/getMonth()/getDate()` (como `hoyISOPos()`), NO con `.toISOString().slice(0,10)` — ese
+  segundo método usa UTC y en Republica Dominicana (UTC-4) puede correr la fecha un día si se entrega de
+  noche; se evitó desde el diseño, no se descubrió después.
+- **Helper nuevo `garantiaInfo(r)`:** vive junto a `repEst`/`repDias` (mismo IIFE de Reparaciones — el
+  archivo ya advertía sobre el "bug clase nueva" de helpers que faltan en el IIFE donde se usan, así que se
+  puso junto a sus vecinos a propósito). Devuelve `null` si la reparación no tiene `garantia_hasta`
+  (nunca se entregó o la garantía estaba apagada), o `{vigente, fecha}` comparando contra `hoyISOPos()`.
+- **Se muestra en 3 lugares, reusando el mismo helper (nada de lógica repetida):** (1) detalle de la
+  reparación (`nxRepVer`) — verde "vigente hasta X" o rojo "vencida el X"; mientras sigue en el taller,
+  muestra un aviso informativo de cuántos días de garantía se le darán al entregar, solo si la garantía
+  está activada; (2) lista de "Entregadas" — mismo badge compacto junto a la fecha de entrega; (3) orden de
+  servicio imprimible (`nxRepImprimir`) — igual criterio: entregada con garantía muestra la fecha exacta,
+  todavía en el taller muestra la promesa ("incluye N días de garantía a partir de la entrega"), y si la
+  garantía está desactivada no aparece ninguna línea.
+- **Deliberadamente NO construido en esta pasada** (no fue lo que el dueño pidió, y habría sido inventar
+  una función que no existe): un flujo de "reclamo de garantía" que reabra la orden original o la vincule
+  a una nueva — hoy la garantía es informativa (se sabe si un equipo entregado sigue cubierto), no hay
+  botón de "reabrir por garantía". Si el dueño lo pide, sería un paso aparte.
+- **Reparaciones entregadas ANTES de esta versión** se quedan sin `garantia_hasta` (no es retroactivo,
+  mismo criterio ya usado con la línea de tiempo de la Ficha del cliente v48.53) — no se inventó una
+  fecha para historial viejo.
+- **Verificado con el código real** (no una reconstrucción): se extrajo `garantiaInfo`/`hoyISOPos`
+  textualmente de `parches.js` con un script Node y se probó con 4 escenarios (garantía vigente, vencida,
+  reparación aún en el taller con la garantía activada en Ajustes, y garantía desactivada) — los 4
+  calculan y arman el HTML esperado. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

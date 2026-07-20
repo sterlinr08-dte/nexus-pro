@@ -14913,7 +14913,7 @@
   let _factCli = '';
   let _facNCF = 'sin';
   let _facCredito = false;
-  let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR', mora_pct: 0, mora_dias_gracia: 0 };
+  let _posCfg = { prefijo_contado: 'CO', prefijo_credito: 'CR', mora_pct: 0, mora_dias_gracia: 0, garantia_rep_dias: 0 };
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
@@ -15022,7 +15022,7 @@
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0) }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0) }; }
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
@@ -15937,6 +15937,11 @@
         </div>
         <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
+        <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-shield-check"></i> Garantía de reparación</div>
+        <div style="font-size:12px;color:#475569;margin-bottom:16px;line-height:1.5">Días de garantía que se le da al cliente sobre el trabajo de reparación (no sobre el equipo en sí). Se calcula sola desde la fecha de entrega. Déjalo en 0 para no ofrecer garantía.${_posCfg.garantia_rep_dias > 0 ? `<br>Hoy: <b style="color:#16a34a">${_posCfg.garantia_rep_dias} día(s)</b> desde que se entrega el equipo.` : '<br><b style="color:#94a3b8">Garantía desactivada</b> — no se le promete garantía a nadie.'}</div>
+        <div class="fr"><label>Días de garantía</label><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div>
+        <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarGarantiaRep()"><i class="ti ti-device-floppy"></i> Guardar garantía</button>
+        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesSecuencias()}
         <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesRoles()}
@@ -16365,6 +16370,18 @@
       _posCfg = Object.assign({}, _posCfg, { mora_pct: pct, mora_dias_gracia: dias });
       try { window.logAudit && window.logAudit('POS_MORA_CONFIG', pct > 0 ? ('Mora ' + pct + '% después de ' + dias + ' día(s) de gracia') : 'Mora desactivada', 'Ajustes'); } catch (e2) {}
       toast('ok', 'Mora guardada', pct > 0 ? pct + '% después de ' + dias + ' día(s)' : 'Mora desactivada');
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  window.nxPosGuardarGarantiaRep = async function () {
+    const dias = Math.max(0, parseInt(val('cfgGarantiaRepDias')) || 0);
+    try {
+      const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+      if (ex && ex.length) await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, { garantia_rep_dias: dias });
+      else await getAPI().post('pos_config', { garantia_rep_dias: dias });
+      _posCfg = Object.assign({}, _posCfg, { garantia_rep_dias: dias });
+      try { window.logAudit && window.logAudit('POS_GARANTIA_REP_CONFIG', dias > 0 ? ('Garantía ' + dias + ' día(s)') : 'Garantía desactivada', 'Ajustes'); } catch (e2) {}
+      toast('ok', 'Garantía guardada', dias > 0 ? dias + ' día(s)' : 'Garantía desactivada');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
@@ -20416,6 +20433,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   const REP_ESTADOS = [['recibido', 'Recibido', '#64748b'], ['diagnostico', 'Diagnóstico', '#d97706'], ['reparando', 'Reparando', '#2563eb'], ['esperando_pieza', 'Esperando pieza', '#a21caf'], ['listo', 'Listo', '#16a34a'], ['entregado', 'Entregado', '#0f172a']];
   function repEst(k) { return REP_ESTADOS.find(e => e[0] === k) || REP_ESTADOS[0]; }
   function repDias(r) { try { return Math.max(0, Math.floor((Date.now() - new Date(r.created_at).getTime()) / 86400000)); } catch (e) { return 0; } }
+  // Garantía de la reparación (no del equipo): vive en r.garantia_hasta (fecha), se calcula UNA vez
+  // al entregar según los días configurados en Ajustes — nunca se recalcula sola después.
+  function garantiaInfo(r) {
+    if (!r.garantia_hasta) return null;
+    const hoyK = hoyISOPos();
+    const vigente = String(r.garantia_hasta).slice(0, 10) >= hoyK;
+    const fFmt = String(r.garantia_hasta).slice(0, 10).split('-').reverse().join('/');
+    return { vigente: vigente, fecha: fFmt };
+  }
   function renderReparaciones() {
     const activas = _reps.filter(r => r.estado !== 'entregado' && r.estado !== 'cancelado');
     const vistaLista = _repVista === 'entregadas' ? _reps.filter(r => r.estado === 'entregado') : activas;
@@ -20433,7 +20459,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       return `<div class="nxRepCol"><div class="nxRepColH" style="--rc:${e[2]}"><span>${e[1]}</span><b>${activas.filter(r => r.estado === e[0]).length}</b></div>${cards || '<div class="nxRepEmpty">—</div>'}</div>`;
     }).join('');
     const entregadasHTML = _repVista === 'entregadas'
-      ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
+      ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => { const g = garantiaInfo(r); return `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}${g ? ` · <span style="color:${g.vigente ? '#16a34a' : '#dc2626'};font-weight:700">garantía ${g.vigente ? 'hasta ' + g.fecha : 'vencida'}</span>` : ''}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`; }).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
       : '';
     return `<div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar por cliente, equipo, IMEI o número…', oninput: 'window.nxRepBuscar(this.value)' })}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
@@ -20509,7 +20535,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div class="nxRepChips">${chips}</div>
         <div class="fr" style="margin-top:8px"><label>Diagnóstico / trabajo hecho</label><textarea id="repDiag" rows="2" class="no-upper">${esc(r.diagnostico || '')}</textarea></div>
         <div class="fr-row"><div class="fr"><label>Presupuesto RD$</label><input id="repPre2" data-nx-money inputmode="numeric" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div><div class="fr"><label>Avance RD$</label><input id="repAbo2" data-nx-money inputmode="numeric" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
-        ${r.estado !== 'entregado' ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 10px;font-size:12px;color:#166534">Al entregar se cobra el resto: <b>${fmt(resto)}</b></div>` : `<div style="font-size:12px;color:#16a34a;font-weight:800">✓ Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>`}
+        ${r.estado !== 'entregado' ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 10px;font-size:12px;color:#166534">Al entregar se cobra el resto: <b>${fmt(resto)}</b>${_posCfg.garantia_rep_dias > 0 ? ` · se le dará ${_posCfg.garantia_rep_dias} día(s) de garantía` : ''}</div>` : `<div style="font-size:12px;color:#16a34a;font-weight:800">✓ Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>${garantiaInfo(r) ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${garantiaInfo(r).vigente ? '#16a34a' : '#dc2626'}"><i class="ti ti-shield-check"></i> Garantía ${garantiaInfo(r).vigente ? 'vigente hasta' : 'vencida el'} ${garantiaInfo(r).fecha}</div>` : ''}`}
       </div>
       <div class="fe" style="margin-top:10px;gap:6px;flex-wrap:wrap">
         ${telW ? `<a class="btn bghost" style="color:#16a34a" href="https://wa.me/1${telW}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : ''}
@@ -20550,6 +20576,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const monto = moneyVal('reMonto'); const metodo = val('reMet') || 'Efectivo';
     try {
       const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + (monto || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
+      if (_posCfg.garantia_rep_dias > 0) { const gh = new Date(); gh.setDate(gh.getDate() + Number(_posCfg.garantia_rep_dias)); d.garantia_hasta = gh.getFullYear() + '-' + String(gh.getMonth() + 1).padStart(2, '0') + '-' + String(gh.getDate()).padStart(2, '0'); }
       await getAPI().patch('pos_reparaciones', 'id=eq.' + id, d); Object.assign(r, d);
       if (monto > 0 && _caja && /efectivo/i.test(metodo)) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: monto, concepto: 'Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), fecha: new Date().toISOString() }); } catch (e) {} }
       try { await postAsientoServicio('Cobro reparación ' + (r.numero || '') + ' · ' + (r.cliente_nombre || ''), monto, metodo, id); } catch (e) {}
@@ -20563,10 +20590,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
     const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     const f = (l, v) => v ? `<tr><td style="color:#64748b;white-space:nowrap;padding:4px 8px 4px 0">${l}</td><td style="font-weight:700">${esc(v)}</td></tr>` : '';
+    const g = garantiaInfo(r);
+    const garantiaLinea = g ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${g.vigente ? '#166534' : '#991b1b'}">Garantía de esta reparación ${g.vigente ? 'hasta' : 'vencida el'} ${g.fecha}</div>` : (r.estado !== 'entregado' && _posCfg.garantia_rep_dias > 0 ? `<div style="margin-top:6px;font-size:11px;color:#64748b">Esta reparación incluye ${_posCfg.garantia_rep_dias} día(s) de garantía a partir de la entrega.</div>` : '');
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(r.numero || 'Orden')}</title><style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;padding:24px;color:#1e293b;max-width:520px;margin:0 auto;font-size:13px}h1{font-size:16px;margin:0;color:#1e3a8a}h2{font-size:13px;margin:2px 0 12px;color:#64748b;font-weight:600}table{width:100%;border-collapse:collapse;font-size:12.5px}.tot{margin-top:10px;border-top:2px solid #1e3a8a;padding-top:8px;font-size:13px}.leg{margin-top:14px;font-size:10px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:8px}.fir{margin-top:44px;display:flex;justify-content:space-between;gap:20px;text-align:center;font-size:11px}.fir div{flex:1;border-top:1px solid #1e293b;padding-top:4px}</style></head><body>
       <h1>${esc(biz)}</h1><h2>ORDEN DE SERVICIO · ${esc(r.numero || '')} · ${new Date().toLocaleDateString('es-DO')}</h2>
       <table>${f('Cliente', r.cliente_nombre)}${f('Teléfono', r.cliente_telefono)}${f('Equipo', r.equipo)}${f('IMEI / Serie', r.imei)}${f('Falla reportada', r.falla)}${f('Estado físico', r.estado_fisico)}${f('Accesorios', r.accesorios)}${f('Técnico', r.tecnico)}</table>
       <div class="tot">Presupuesto: <b>${fmt(r.presupuesto || 0)}</b> · Avance: <b>${fmt(r.abono || 0)}</b> · Resta: <b>${fmt(Math.max(0, Number(r.presupuesto || 0) - Number(r.abono || 0)))}</b></div>
+      ${garantiaLinea}
       <div class="leg">El presupuesto puede variar según el diagnóstico final (se le avisará antes de proceder). Equipos no retirados en 30 días luego de estar listos generan cargo de almacenaje y a los 90 días se consideran abandonados. No respondemos por datos: respalde su información.</div>
       <div class="fir"><div>Recibido por</div><div>Firma del cliente</div></div>
       <script>window.print();</` + `script></body></html>`);
