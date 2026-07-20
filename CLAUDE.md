@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.65** (ver `index.html` y `version.json`).
+> Versión actual: **48.66** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2097,6 +2097,33 @@ necesita para trabajar el equipo. Se corrigieron ambas cosas juntas.
   "Otro" con el valor intacto). También se probaron `claveDisplayHTML`/`claveImprimirHTML` con los 3 tipos
   y con valor vacío (devuelve `null`, no un bloque vacío feo). Capturas de pantalla del patrón y del PIN
   revisadas visualmente. Sin desbordes en 320px ni 360px. `node --check parches.js` limpio.
+
+### Seguros · Cobros — el recibo de pago "no se veía" (v48.66)
+El dueño reportó: "cuando un cliente me hace un pago, yo quiero mandarle ese recibo de pago y no veo la
+opción". El sistema de recibos YA existe y es robusto (numeración consecutiva, meses guardados en BD para
+auditoría, PDF/WhatsApp/Compartir — ver sección "Recibos de pago" en el listado de módulos) — la función
+no faltaba, estaba **escondida**. Causa de raíz encontrada en `regAbono()`/`nxRegAbonoDeudaAnterior()`
+(`index.html`): al registrar un abono, el aviso verde "¿Enviar recibo?" (`#reciboWAbtn`) solo se mostraba
+`if(reciboDiv&&c.wa)` — si el cliente NO tenía WhatsApp guardado en su ficha, el `<div>` se quedaba en
+`display:none` para siempre, **sin ningún mensaje que explicara por qué** — para el dueño, la opción
+simplemente no existía. Coincide exactamente con la queja: pasa con cualquier cliente sin WhatsApp en su
+ficha (común, no es un caso raro).
+- **Arreglo de raíz:** el aviso ahora SIEMPRE aparece después de un pago exitoso (`mostrarCajaRecibo(c)`,
+  helper nuevo, reemplaza el `if(...&&c.wa)` duplicado que había en los 2 lugares donde se registra un
+  abono). Adentro, el botón de WhatsApp (`#btnReciboWA`) se oculta individualmente si no hay `c.wa` — pero
+  en su lugar aparece un botón nuevo **"Ver / compartir recibo"** (`#btnReciboVer`, llama al
+  `nxReciboMeses()` que YA existía y ya sabe reusar el pago recién registrado — número, monto y meses via
+  `_ultimoAbono` — sin necesidad de re-teclear nada) + un mensaje corto (`#reciboSinWA`) explicando que no
+  hay WhatsApp y qué hacer en su lugar. Dentro del recibo completo que abre ese botón, "Compartir"
+  (share nativo) e "Imprimir/PDF" YA estaban siempre disponibles (no dependen de WhatsApp) — solo hacía
+  falta un camino visible para llegar ahí cuando no hay WhatsApp.
+- **Cero cambios en la lógica de generación del recibo** (numeración, meses cubiertos, texto del mensaje,
+  guardado en `abonos.meses_cubiertos`) — el arreglo es 100% de visibilidad/UX en el modal de Cobro.
+- **Verificado con el código real** (`mostrarCajaRecibo` extraída tal cual del archivo, con balance de
+  llaves real) cargado en un navegador con 2 casos simulados (cliente con WhatsApp / sin WhatsApp):
+  con WhatsApp se ven ambos botones; sin WhatsApp desaparece el de WhatsApp y aparecen el botón alterno +
+  el mensaje explicativo — nunca queda la caja completamente vacía o ausente. Capturas de pantalla de los
+  2 casos revisadas. `node --check` limpio en los 3 `<script>` de `index.html`.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

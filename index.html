@@ -1939,10 +1939,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="fr" id="aBancoOtrosCont" style="display:none"><label>Especificar banco *</label><input type="text" id="aBancoOtros" placeholder="Nombre del banco" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"/></div>
     <div class="fr"><label>Agente / corredor que cobró</label><select id="aAgente" style="width:100%;font-size:11px;padding:7px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg3);color:var(--tx1)"><option value="">Sin asignar</option></select></div>
     <div class="fr"><label>Referencia</label><input type="text" id="aRef" placeholder="Número de cheque, ref..."/></div>
-    <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a;display:flex;align-items:center;gap:8px">
-      <i class="ti ti-check-circle" style="font-size:16px"></i>
-      <span>Abono registrado — ¿Enviar recibo por WhatsApp?</span>
-      <button class="btn bwa bsm" style="margin-left:auto" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Enviar recibo</button>
+    <div id="reciboWAbtn" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;color:#16a34a">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="ti ti-check-circle" style="font-size:16px"></i><span>Abono registrado — envía el recibo</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn bwa bsm" id="btnReciboWA" onclick="enviarReciboWA()"><i class="ti ti-brand-whatsapp"></i> Enviar recibo</button>
+        <button class="btn bsm bc1" id="btnReciboVer" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Ver / compartir recibo</button>
+      </div>
+      <div id="reciboSinWA" style="display:none;font-size:10px;color:#92400e;margin-top:4px">Este cliente no tiene WhatsApp registrado — usa "Ver / compartir recibo" para imprimirlo o compartirlo por otra vía.</div>
     </div>
     <div style="margin-bottom:8px"><button class="btn bsm" style="width:100%;justify-content:center" onclick="window.nxReciboMeses&&window.nxReciboMeses()"><i class="ti ti-receipt"></i> Recibo de pago (meses adelantados)</button></div>
     <div class="fe"><button class="btn" onclick="closeM('mAbono')">Cerrar</button><button class="btn bxl" onclick="regAbono()" id="btnAbo"><i class="ti ti-check"></i> Registrar abono</button></div>
@@ -3566,7 +3569,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.65';
+const APP_VERSION='48.66';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6704,6 +6707,16 @@ async function verHistorialAbonos(clienteId){
   }
 }
 
+// Muestra la caja "envía el recibo" tras registrar un abono — SIEMPRE visible (antes se
+// escondía por completo y sin aviso si el cliente no tenía WhatsApp registrado).
+function mostrarCajaRecibo(c){
+  const reciboDiv=document.getElementById('reciboWAbtn');if(!reciboDiv)return;
+  const btnWA=document.getElementById('btnReciboWA');const avisoSinWA=document.getElementById('reciboSinWA');
+  const tieneWA=!!(c&&c.wa);
+  if(btnWA)btnWA.style.display=tieneWA?'':'none';
+  if(avisoSinWA)avisoSinWA.style.display=tieneWA?'none':'';
+  reciboDiv.style.display='block';
+}
 async function regAbono(){
   const monto=window.nxMoney?window.nxMoney.parse(document.getElementById('aMnt').value):parseFloat(document.getElementById('aMnt').value);
   if(!monto||monto<=0){toast('err','Monto inválido','Mayor a 0');return;}
@@ -6761,9 +6774,7 @@ async function regAbono(){
     await resyncEstadoFacturas(c.id);
     logAudit('ABONO_REGISTRADO',`${fmt(monto)} · ${c.nom}`);
     _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:_mesesPend};
-    // Mostrar botón de recibo WA
-    const reciboDiv=document.getElementById('reciboWAbtn');
-    if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
+    mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Abono registrado',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
@@ -6791,7 +6802,7 @@ async function nxRegAbonoDeudaAnterior(c,monto,metodo,refValor,agenteCobro,banco
     const agNom=agenteCobro?(gAgt(agenteCobro)?.nom||''):'';
     logAudit('COBRO_DEUDA_ANTERIOR',`${c.nom} · ${fmt(monto)} a deuda anterior · ${metodo}`+(bancoGuardar?` · ${bancoGuardar}`:'')+(agNom?` · Cobró: ${agNom}`:''),'Cobros',c.id);
     _ultimoAbono={cliente:c.id,monto,abonoId:_abonoId,mesesPend:[]};
-    const reciboDiv=document.getElementById('reciboWAbtn');if(reciboDiv&&c.wa){reciboDiv.style.display='flex';}
+    mostrarCajaRecibo(c);
     document.getElementById('btnAbo').style.display='none';
     toast('ok','Pago a deuda anterior',`${fmt(monto)} — ${c.nom}`);rCob();rDash();actualizarTicker();
     try{rCli();rFact();}catch(_e){} // reflejar el pago AL INSTANTE también en Clientes y Facturas
