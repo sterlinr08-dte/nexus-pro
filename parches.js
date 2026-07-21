@@ -17303,16 +17303,18 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .vnom{font-size:12.5px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
 .nxPf .vsub{font-size:10.5px;color:var(--pf-txt3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .nxPf .vstk{flex:0 0 auto;display:none}
-.nxPf .vstkb{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;white-space:nowrap}
-.nxPf .vstkb i{font-size:7px}
-.nxPf .vstkb.ok{color:var(--pf-green)}
-.nxPf .vstkb.low{color:#d97706}
-.nxPf .vstkb.out{color:var(--pf-red)}
-.nxPf .vstkb.srv{color:var(--pf-blue-d)}
-.nxPf .vprecio{flex:0 0 auto;font-size:13.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;text-align:right}
+.nxPf .vstkb{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;white-space:nowrap;padding:3px 9px 3px 7px;border-radius:999px}
+.nxPf .vstkb i{font-size:6px}
+.nxPf .vstkb.ok{background:var(--pf-green-l);color:var(--pf-green)}
+.nxPf .vstkb.low{background:var(--pf-orange-l);color:#d97706}
+.nxPf .vstkb.out{background:var(--pf-red-l);color:var(--pf-red)}
+.nxPf .vstkb.srv{background:var(--pf-blue-l);color:var(--pf-blue-d)}
+.nxPf .vprecio{flex:0 0 auto;font-size:13.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
 .nxPf .vimeib{font-size:9.5px;font-weight:700;background:var(--pf-blue-l);color:var(--pf-blue-d);padding:2px 7px;border-radius:7px;white-space:nowrap;flex:0 0 auto}
-.nxPf .vfav{border:0;background:transparent;color:var(--pf-line);cursor:pointer;font-size:18px;padding:4px;flex:none;display:flex;align-items:center;justify-content:center;line-height:1}
+.nxPf .vfav{width:30px;height:30px;border-radius:8px;border:0;background:transparent;color:var(--pf-line);cursor:pointer;font-size:16px;padding:0;flex:none;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .12s,color .12s}
+.nxPf .vfav:hover{background:var(--pf-bg);color:var(--pf-txt3)}
 .nxPf .vfav.on{color:#f59e0b}
+.nxPf .vfav.on:hover{background:var(--pf-orange-l)}
 .nxPf .vfav:focus-visible{outline:2px solid var(--pf-blue);outline-offset:1px;border-radius:6px}
 .nxPf .vrow[role="button"]:focus-visible{outline:2px solid var(--pf-blue);outline-offset:-2px}
 @media(min-width:620px){.nxPf .vstk{display:block;width:96px}}

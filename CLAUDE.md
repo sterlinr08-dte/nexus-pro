@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.81** (ver `index.html` y `version.json`).
+> Versión actual: **48.82** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2874,6 +2874,40 @@ al sistema real, verificado antes de publicar cada uno — igual disciplina que 
     caracteres) pasan `new Function()`; `version.json` válido.
 - **Pendiente:** el resto de la migración módulo por módulo — el dueño la va confirmando pieza a pieza,
   igual que el resto de esta sesión (nunca todo de golpe sobre pantallas que ya funcionan en producción).
+- **Paso 3, segunda pieza (v48.82) — Vender: badges de stock + botón favorito.** El dueño reportó
+  "La parte visual y formato sigue igual" después de v48.77 — correcto: esa pieza solo tocó el menú
+  lateral y la franja de KPI de Inicio; la pantalla que el cajero usa TODO el día (Vender, catálogo +
+  carrito) seguía con su CSS de antes, sin ningún rastro del Sistema de Diseño nuevo. Se confirmó
+  extrayendo el código real de `renderVender()`/`gridHTML()`/`pintarCarrito()` (no una suposición) y
+  cargándolo en un navegador: en efecto, cero clases nuevas ahí, mismo look `.nxPf` azul/blanco de
+  siempre. Primer ajuste real en esa pantalla, quirúrgico como toda la sesión — **cero IDs, cero
+  `onclick`, cero lógica tocada**, solo las 2 reglas CSS más visibles:
+  - `.vstkb` (la etiqueta de stock — "5 und"/"Bajo: 1 und"/"Agotado"/"Servicio", una por producto en la
+    lista de Vender): pasó de texto de color suelto con un puntito (`color:var(--pf-green)` etc.) a
+    **pastilla con fondo tenue del mismo color** (`background:var(--pf-green-l);color:var(--pf-green)`,
+    mismo patrón `.ds-badge` de la muestra aprobada) — los 4 tokens `-l` (verde/naranja/rojo/azul) YA
+    existían en `.nxPf` con su propia variante de tema oscuro (`body.tema-oscuro .nxPf{--pf-green-l:...}`
+    etc.), así que el cambio se ve bien en los 2 temas sin tocar ningún token nuevo.
+  - `.vfav` (la estrella de favorito de cada producto, de la Fase 4 de NEXUS PRO 2.5): pasó de ícono
+    suelto sin área de toque visible a **botón cuadrado 30×30 con esquinas redondeadas** que resalta el
+    fondo al pasar el cursor/dedo (`:hover{background:var(--pf-bg)}`) — mismo patrón `.ds-btn-icon` de
+    la muestra. El precio (`.vprecio`) ganó `font-variant-numeric:tabular-nums` (los dígitos de dinero
+    alinean en columna, mismo criterio ya usado en las pantallas Enterprise de Seguros).
+  - **Deliberadamente NO tocado en esta pieza:** los chips de categoría (`.vchip`, filled-azul-cuando-
+    activo) se dejaron igual a propósito — ese mismo patrón de "pastilla llena cuando está activa" se
+    repite en Reparaciones/Inventario/Notas de crédito (`.nxRepChip`/`.nxInvPill`), cambiarlo solo en
+    Vender habría roto la consistencia visual entre pantallas sin ganancia real. El resto de Vender
+    (miniatura `.vthumb`, fila `.vrow`, panel del carrito `.cartcard`) ya usaba bordes/sombras/radios
+    muy cercanos al lenguaje de la muestra (`--pf-shadow` ya es casi idéntico a `--shadow-md` de la
+    muestra) — no hacía falta tocarlos. Factura/Prefactura/Cotizaciones (que comparten helpers con
+    Vender pero tienen su propio CSS `.nx-inv-*`/`.nxFacTbl`) quedan para las próximas piezas.
+  - **Verificado con el código real** (`gridHTML`/`pintarCarrito`/`nxPfEnsureCSS` extraídos tal cual del
+    archivo, balance de llaves real) cargado en un navegador con datos simulados (producto con stock
+    normal/bajo/agotado + un servicio): las 4 pastillas de estado se ven con su color correcto en tema
+    claro Y en `body.tema-oscuro`, sin desbordes en 390px ni 1000px, 0 errores de JS. `node --check
+    parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  - **Pendiente:** seguir la migración a Factura, al panel del carrito completo, y al resto de las
+    ~19 pantallas del POS — pieza por pieza, cada una probada antes de publicar, mismo criterio.
 
 ### NEXUS PRO 2.5 — REDISEÑO DEL POS, filosofía InfoPlus sin copiar su lógica (21-jul-2026, en progreso)
 El dueño mandó una especificación larga y muy detallada ("NEXUS PRO 2.5 – REDISEÑO DEL PUNTO DE VENTA")
