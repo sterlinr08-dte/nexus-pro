@@ -15089,16 +15089,48 @@
     const esperado = Number(caja.monto_inicial || 0) + efe + abEfe + ent - sal;
     return { efe: efe, tar: tar, tra: tra, cre: cre, abEfe: abEfe, abOtro: abOtro, ent: ent, sal: sal, esperado: esperado, movs: movs, nventas: ventas.length };
   }
-  // ── KPIs del dashboard de tienda (ventas de hoy, caja). Best-effort, no rompe si falla ──
+  // ── KPIs del Dashboard Operativo (Fase 7): ventas hoy, caja, utilidad, garantías, compras pendientes.
+  // Equipos pendientes / inventario crítico / clientes esperando NO se guardan aquí — se calculan en
+  // vivo desde _reps/_prods/_prefs (ya en memoria por cargarPOS) directo en renderInicio(). Best-effort:
+  // cada pieza tiene su propio try/catch, un fallo nunca tumba el resto del dashboard.
   async function cargarDashKPI() {
     try {
       const d = new Date();
       const desde = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + 'T00:00:00';
-      const vs = await getAPI().get('pos_ventas', 'select=total&created_at=gte.' + desde + '&estado=neq.anulada') || [];
-      let tot = 0; vs.forEach(v => tot += Number(v.total || 0));
+      const [vs, garIt, comprasCred, comprasPag] = await Promise.all([
+        getAPI().get('pos_ventas', 'select=id,total&created_at=gte.' + desde + '&estado=neq.anulada').catch(() => []),
+        getAPI().get('pos_venta_items', 'select=id,garantia_hasta&garantia_hasta=not.is.null').catch(() => []),
+        getAPI().get('pos_compras', 'select=total&a_credito=eq.true').catch(() => []),
+        getAPI().get('pos_compra_pagos', 'select=monto').catch(() => [])
+      ]);
+      let tot = 0; (vs || []).forEach(v => tot += Number(v.total || 0));
       let cajaEf = null;
       if (_caja) { try { const t = await totalesCaja(_caja); cajaEf = t ? t.esperado : null; } catch (e) {} }
-      _dashKPI = { ventasHoy: tot, facturasHoy: vs.length, cajaEf: cajaEf };
+      // Utilidad de hoy: misma fórmula que Reportes (importe sin ITBIS − costo del producto), acotada a hoy.
+      let utilidadHoy = 0;
+      try {
+        const ids = (vs || []).map(v => v.id).filter(Boolean);
+        if (ids.length) {
+          const its = await getAPI().get('pos_venta_items', 'select=producto_id,cantidad,precio,importe,itbis&venta_id=in.(' + ids.join(',') + ')') || [];
+          its.forEach(it => {
+            const cant = Number(it.cantidad || 0), imp = Number(it.importe != null ? it.importe : (Number(it.precio || 0) * cant));
+            const sinItbis = it.itbis ? imp - (imp * 18 / 118) : imp;
+            utilidadHoy += sinItbis - prodCosto(it.producto_id) * cant;
+          });
+        }
+      } catch (e) {}
+      // Garantías vigentes de TODO el sistema: productos vendidos (consulta arriba, columna real
+      // pos_venta_items.garantia_hasta) + reparaciones entregadas (_reps ya en memoria, mismo criterio
+      // que garantiaInfo()/Cliente 360°/Artículo 360°).
+      const hoyK = hoyISOPos();
+      const garVigentesProd = (garIt || []).filter(it => String(it.garantia_hasta).slice(0, 10) >= hoyK).length;
+      const garVigentesRep = (_reps || []).filter(r => r.garantia_hasta && String(r.garantia_hasta).slice(0, 10) >= hoyK).length;
+      // Compras pendientes (cuenta por pagar): misma fórmula que saldoProv(), agregada sobre TODOS los
+      // proveedores en vez de uno solo.
+      let credTot = 0; (comprasCred || []).forEach(c => credTot += Number(c.total || 0));
+      let pagTot = 0; (comprasPag || []).forEach(p => pagTot += Number(p.monto || 0));
+      const comprasPendientes = Math.max(0, credTot - pagTot);
+      _dashKPI = { ventasHoy: tot, facturasHoy: (vs || []).length, cajaEf: cajaEf, utilidadHoy: utilidadHoy, garantiasVigentes: garVigentesProd + garVigentesRep, comprasPendientes: comprasPendientes };
     } catch (e) { _dashKPI = null; }
   }
   async function cargarVentas() {
@@ -15315,36 +15347,60 @@
   }
 
   // ── INICIO: lanzador de apps estilo Odoo ──
+  // ── Dashboard Operativo (Fase 7): refresco automático mientras el usuario está en "Inicio" ──
+  // Solo refetea lo que depende de la base (ventas/caja/utilidad/garantías/compras); Equipos pendientes,
+  // Inventario crítico y Clientes esperando se recalculan del mismo tick pero desde los arreglos que YA
+  // están en memoria (_reps/_prods/_prefs) — no se vuelven a pedir a la base cada 30s para no cargar la
+  // red con consultas repetidas mientras el usuario simplemente mira el tablero.
+  let __nxDashRefreshOn = false;
+  function iniciarRefrescoDashboard() {
+    if (__nxDashRefreshOn) return;
+    __nxDashRefreshOn = true;
+    setInterval(function () {
+      if (document.hidden) return;
+      if (_posTab !== 'inicio') return;
+      cargarDashKPI().then(function () {
+        const v2 = document.getElementById('v-pos');
+        if (v2 && _posTab === 'inicio') renderPOS(v2);
+      }).catch(function () {});
+    }, 30000);
+  }
   function renderInicio() {
+    iniciarRefrescoDashboard();
     const _ses = (typeof sesion !== 'undefined') ? sesion : window.sesion;
     const negocio = (_ses && _ses.org && _ses.org.nombre) || empNom() || 'Mi negocio';
     const h = new Date().getHours();
     const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
     const tile = (tab, label, icon, color) => puedeVer(tab) ? `<button type="button" class="nxApp" onclick="window.nxPosTab('${tab}')"><span class="nxAppIco" style="background:${color}1a;color:${color}"><i class="ti ${icon}"></i></span><span class="nxAppNom">${label}</span></button>` : '';
     const grupo = (titulo, tiles) => tiles.trim() ? `<div class="nxAppSec"><div class="nxAppSecT">${titulo}</div><div class="nxAppGrid">${tiles}</div></div>` : '';
-    // KPIs solo en modo tienda (dashboard de su propio sistema)
+    // Dashboard Operativo (Fase 7): 8 indicadores en tiempo real — para TODOS los modos (tienda y admin).
     let kpis = '';
-    { // KPIs del POS: ahora para TODOS (tienda y admin)
+    {
       const k = _dashKPI || {};
-      const bajos = (_prods || []).filter(p => p.tipo !== 'servicio' && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0).length;
-      // Tendencia vs AYER + ventas del MES (estilo dashboard premium)
+      const criticos = (_prods || []).filter(p => p.tipo !== 'servicio' && Number(p.stock_min || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0)).length;
+      const equiposPend = (_reps || []).filter(r => r.estado !== 'entregado' && r.estado !== 'cancelado').length;
+      // "Clientes esperando" = prefacturas SIN facturar todavía (carrito armado, cliente esperando a
+      // completar su compra) — _prefs ya viene precargado filtrado por estado='abierta' desde cargarPOS.
+      const esperando = (_prefs || []).length;
+      const esperandoVal = (_prefs || []).reduce((s, p) => s + Number(p.total || 0), 0);
+      // Tendencia vs AYER (para el sub-texto de "Ventas de hoy")
       const dd0 = new Date(); const _iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       const ayerD = new Date(dd0.getTime() - 86400000);
       const vAyer = (_ventas || []).filter(v => String(v.created_at || v.fecha || '').slice(0, 10) === _iso(ayerD) && !v.anulada).reduce((t, v) => t + Number(v.total || 0), 0);
-      const mesK = _iso(dd0).slice(0, 7);
-      const vMesArr = (_ventas || []).filter(v => String(v.created_at || v.fecha || '').slice(0, 7) === mesK && !v.anulada);
-      const vMes = vMesArr.reduce((t, v) => t + Number(v.total || 0), 0);
-      const tkProm = vMesArr.length ? vMes / vMesArr.length : 0;
       const pct = vAyer > 0 ? Math.round(((k.ventasHoy || 0) - vAyer) / vAyer * 100) : null;
       const trendHoy = pct == null ? ((k.facturasHoy || 0) + ' factura' + ((k.facturasHoy || 0) === 1 ? '' : 's'))
         : `<span style="color:${pct >= 0 ? '#16a34a' : '#dc2626'};font-weight:800">${pct >= 0 ? '▲ +' : '▼ '}${pct}%</span> vs ayer`;
+      const margenPct = (k.ventasHoy || 0) > 0 && k.utilidadHoy != null ? Math.round(k.utilidadHoy / k.ventasHoy * 100) + '% margen' : 'Sin ventas hoy';
       const kpi = (c, ic, l, v, s) => `<div class="nxTKpi" style="border-top:3px solid ${c}"><div class="nxTKpiIc" style="background:${c}1a;color:${c}"><i class="ti ${ic}"></i></div><div class="nxTKpiL">${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
       kpis = `<div class="nxTKpis">
           ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
-          ${kpi('#2563eb', 'ti-chart-line', 'Ventas del mes', fmt(vMes), vMesArr.length ? vMesArr.length + ' facturas · ticket prom. ' + fmt(tkProm) : 'Sin ventas este mes')}
-          ${kpi('#0891b2', 'ti-wallet', 'Efectivo en caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
-          ${kpi('#4f46e5', 'ti-box', 'Productos', String((_prods || []).length), (_clientes || []).length + ' clientes')}
-          ${kpi('#d97706', 'ti-alert-triangle', 'Bajo stock', String(bajos), bajos ? 'Revisar productos' : 'Todo en orden')}
+          ${kpi('#0891b2', 'ti-wallet', 'Caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
+          ${kpi('#7c3aed', 'ti-trending-up', 'Utilidad', k.utilidadHoy != null ? fmt(k.utilidadHoy) : '—', margenPct)}
+          ${kpi('#ea580c', 'ti-tool', 'Equipos pendientes', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día')}
+          ${kpi('#2563eb', 'ti-shield-check', 'Garantías', k.garantiasVigentes != null ? String(k.garantiasVigentes) : '—', 'Vigentes')}
+          ${kpi('#d97706', 'ti-alert-triangle', 'Inventario crítico', String(criticos), criticos ? 'Revisar productos' : 'Todo en orden')}
+          ${kpi('#dc2626', 'ti-truck-delivery', 'Compras pendientes', k.comprasPendientes != null ? fmt(k.comprasPendientes) : '—', 'Por pagar a proveedores')}
+          ${kpi('#db2777', 'ti-clock', 'Clientes esperando', String(esperando), esperando ? fmt(esperandoVal) + ' por facturar' : 'Nadie esperando')}
         </div>`;
     }
     let ultVentas = '';

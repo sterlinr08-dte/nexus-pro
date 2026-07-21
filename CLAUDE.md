@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.72** (ver `index.html` y `version.json`).
+> Versión actual: **48.73** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2521,6 +2521,70 @@ construir vistas nuevas.
 - **Con esta pieza el "Plan Maestro NEXUS PRO POS 3.0" tiene sus 6 fases pedidas hasta ahora
   completas** (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Artículo 360° Fase 4, Kardex
   Inteligente Fase 5, Buscador Universal Fase 6) — quedan las fases 7-10 si el dueño las manda.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 7 — Dashboard Operativo (21-jul-2026, v48.73)
+El dueño pidió indicadores en tiempo real: Ventas hoy, Caja, Utilidad, Equipos pendientes, Garantías,
+Inventario crítico, Compras pendientes, Clientes esperando. Investigado antes de programar (agente de
+exploración): la pantalla "Inicio" del POS (`renderInicio()`) YA es, de hecho, el dashboard operativo del
+sistema — el propio código trae comentarios explícitos "KPIs del POS: ahora para TODOS (tienda y admin)" y
+"Últimas ventas: ahora para TODOS", confirmando que hace tiempo dejó de ser solo un lanzador de apps. Por
+eso la Fase 7 se construyó como una AMPLIACIÓN de esa pantalla existente (5 tiles → 8, la lista exacta del
+dueño) en vez de una pantalla nueva paralela — evita el riesgo real de tener dos "Ventas de hoy" en dos
+pantallas distintas que algún día muestren números distintos.
+- **Mapeo de cada indicador a datos reales (nunca inventados), con el trabajo de investigación primero:**
+  - **Ventas hoy / Caja** — ya existían (`_dashKPI.ventasHoy`/`cajaEf`, vía `cargarDashKPI()` y
+    `totalesCaja()`, ya usaba la fórmula real `monto_inicial + efectivo_ventas + efectivo_abonos +
+    entradas − salidas`). Sin cambios en su fórmula, solo se conservan.
+  - **Utilidad** — NUEVA: misma fórmula exacta que ya usa Reportes (`importe_sin_ITBIS − costo_producto`
+    por línea, sumado), acotada a las ventas de HOY. `cargarDashKPI()` ahora trae también
+    `pos_venta_items` de las ventas de hoy (por `venta_id=in.(...)`) y reusa `prodCosto()` (ya existente,
+    lee `_prods.costo` en memoria) — no se reinventa la fórmula, se llama la misma lógica con un rango
+    de fechas más chico.
+  - **Equipos pendientes** — NUEVA pero SIN consulta nueva: `_reps.filter(r => r.estado!=='entregado' &&
+    r.estado!=='cancelado').length` — el mismo filtro que ya usa `renderReparaciones()` para su vista
+    "activas", `_reps` ya viene precargado por `cargarPOS()`.
+  - **Garantías** — NUEVA: une las dos mismas fuentes que ya usan Cliente 360°/Artículo 360°
+    (`pos_venta_items.garantia_hasta` + `_reps.garantia_hasta`) pero a nivel de TODO el sistema, contando
+    solo las vigentes (`>= hoyISOPos()`, mismo criterio que `garantiaInfo()`). Requiere una consulta
+    nueva y ligera (`pos_venta_items?garantia_hasta=not.is.null`, columnas mínimas) porque no existe
+    ningún arreglo global con esto ya en memoria.
+  - **Inventario crítico** — NUEVA pero SIN consulta nueva: mismo filtro que ya usa el Centro de Avisos
+    (`stock_min>0 && stock<=stock_min`, excluyendo servicios) sobre `_prods` ya en memoria.
+  - **Compras pendientes** — NUEVA: misma fórmula que `saldoProv()` (cuenta por pagar = créditos de
+    compra − pagos a proveedor) pero AGREGADA sobre todos los proveedores en vez de uno solo — consulta
+    ligera nueva (`pos_compras?a_credito=eq.true` + `pos_compra_pagos`, sin traer el detalle completo que
+    sí carga `cargarComprasTab()` para la pestaña Compras).
+  - **Clientes esperando** — decisión de criterio explícita (mismo tipo de llamada que "Orden" en la
+    Fase 6, documentada aquí y en el changelog): se interpretó como **prefacturas sin facturar todavía**
+    (`_prefs`, ya precargado por `cargarPOS()` filtrado por `estado=eq.abierta`) — un carrito ya armado
+    con el cliente esperando a que se complete su compra es la señal más real y ya existente en el
+    sistema de "alguien está esperando". Cero consulta nueva, dato ya en memoria.
+- **Refresco automático ("tiempo real"):** antes `renderInicio()` solo se recalculaba al abrir el POS o
+  al navegar manualmente a "Inicio" — si el usuario se quedaba parado ahí, los números NO se
+  actualizaban solos. `iniciarRefrescoDashboard()` (nueva, con guardia `__nxDashRefreshOn` contra
+  duplicados, mismo patrón `setInterval`+`document.hidden` ya usado en otras partes del sistema, ver
+  líneas 3909-3913/6664-6668/8334-8338) arranca un ciclo de 30s que solo actúa si el usuario sigue en
+  "Inicio" y la pestaña del navegador está visible — vuelve a llamar `cargarDashKPI()` y repinta. Se
+  invoca desde dentro de `renderInicio()` (arranca solo la primera vez que se pinta esa pantalla, la
+  guardia evita que cada repintado cree un intervalo nuevo).
+- **Asimetría deliberada y documentada:** el ciclo de 30s solo vuelve a pedir a la base los 5 indicadores
+  que dependen de una consulta (Ventas hoy, Caja, Utilidad, Garantías, Compras pendientes) — Equipos
+  pendientes, Inventario crítico y Clientes esperando se recalculan del MISMO tick pero desde los
+  arreglos que ya están en memoria (`_reps`/`_prods`/`_prefs`), sin volver a pedirlos a la base cada 30s
+  (evita cargar la red de más solo porque el usuario está mirando el tablero quieto). Si el dueño visita
+  Reparaciones/Inventario/Prefacturas en otra pestaña del POS mientras tanto, esos 3 números se
+  actualizan solos en el próximo tick porque ya están viendo los arreglos frescos.
+- Verificado con Playwright + Node, código real extraído del archivo (no una reconstrucción): 18
+  comprobaciones — las 5 fórmulas de `cargarDashKPI()` contra datos simulados (ventas de hoy excluyendo
+  una anulada, caja con monto inicial+efectivo+abono+entrada−salida, utilidad con ITBIS y sin, garantías
+  vigentes vs. vencidas de ambas fuentes, compras pendientes con un proveedor sin crédito que no debe
+  contar), los 8 tiles aparecen en el HTML con sus valores correctos, la tendencia "vs ayer" calcula bien
+  el porcentaje, y la guardia del refresco automático confirma que repintar la pantalla varias veces NO
+  crea intervalos duplicados. Captura de pantalla a 390px con el CSS real (`.nxTKpis` con
+  `auto-fit,minmax(150px,1fr)`, sin cambios) confirmando 2 columnas parejas sin desbordes — el grid ya
+  era responsive de antes, solo pasó de acomodar 5 tiles a 8. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** las fases 8-10 del Plan Maestro si el dueño las manda.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
