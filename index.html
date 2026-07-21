@@ -2372,6 +2372,29 @@ function logError(tipo, titulo, detalle, modulo){
   }catch(e){}
 }
 
+// Fase 8 (Auditoría Completa): etiqueta legible del dispositivo (Móvil/Escritorio + SO + navegador),
+// a partir del user-agent del propio navegador — no requiere ningún permiso ni consulta externa.
+// Es solo el RESPALDO/etiqueta amigable: la IP real y el user-agent crudo quedan garantizados del
+// lado del SERVIDOR (trigger set_auditoria_metadata en la tabla auditoria, lee la petición real vía
+// PostgREST) — así ningún registro se queda sin IP/dispositivo aunque este cálculo falle.
+function dispositivoActual(){
+  try{
+    const ua=navigator.userAgent||'';
+    const movil=/Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+    let so='Otro';
+    if(/Windows/i.test(ua))so='Windows';
+    else if(/Android/i.test(ua))so='Android';
+    else if(/iPhone|iPad|iPod/i.test(ua))so='iOS';
+    else if(/Mac OS X/i.test(ua))so='Mac';
+    else if(/Linux/i.test(ua))so='Linux';
+    let nav='Otro';
+    if(/Edg\//i.test(ua))nav='Edge';
+    else if(/Chrome\//i.test(ua)&&!/Edg\//i.test(ua))nav='Chrome';
+    else if(/Firefox\//i.test(ua))nav='Firefox';
+    else if(/Safari\//i.test(ua)&&!/Chrome\//i.test(ua))nav='Safari';
+    return (movil?'Móvil':'Escritorio')+' · '+so+' · '+nav;
+  }catch(e){return null;}
+}
 function logAudit(accion,detalle='',modulo='',clienteId=null){
   const entry={
     ts:new Date().toISOString(),
@@ -2380,7 +2403,14 @@ function logAudit(accion,detalle='',modulo='',clienteId=null){
     accion,
     detalle,
     modulo:modulo||detectarModulo(accion),
-    cliente_id:clienteId||null
+    cliente_id:clienteId||null,
+    device:dispositivoActual(),
+    // Sucursal: solo tiene sentido en el POS (multi-almacén); el núcleo de Seguros no maneja
+    // sucursales, así que aquí queda null (no hay nada que "adivinar" ni fingir).
+    sucursal:(typeof window.nxSucursalActual==='function')?window.nxSucursalActual():null
+    // ip: NO se manda desde aquí a propósito — el navegador no tiene forma confiable de saber su
+    // propia IP pública (y si la mandara, el usuario podría falsearla desde la consola). La IP real
+    // se captura del lado del SERVIDOR (trigger set_auditoria_metadata), sin excepciones.
   };
   AUDIT.unshift(entry);
   if(AUDIT.length>300)AUDIT.pop();
@@ -3569,7 +3599,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='48.73';
+const APP_VERSION='48.74';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7858,22 +7888,26 @@ function rAuditRows(){
     <div style="font-size:10px;color:#475569;margin-bottom:8px">${lista.length} registro(s) — Página ${_auditPag} de ${totalPag}</div>
     <div class="tw"><table>
       <thead><tr>
-        <th style="width:15%">FECHA/HORA</th>
-        <th style="width:14%">USUARIO</th>
-        <th style="width:9%">ROL</th>
-        <th style="width:12%">MÓDULO</th>
-        <th style="width:9%">ORIGEN</th>
-        <th style="width:16%">ACCIÓN</th>
+        <th style="width:13%">FECHA/HORA</th>
+        <th style="width:12%">USUARIO</th>
+        <th style="width:8%">ROL</th>
+        <th style="width:10%">MÓDULO</th>
+        <th style="width:13%">DISPOSITIVO</th>
+        <th style="width:10%">SUCURSAL</th>
+        <th style="width:9%">IP</th>
+        <th style="width:13%">ACCIÓN</th>
         <th>DESCRIPCIÓN</th>
       </tr></thead>
       <tbody>${pagina.map(a=>`<tr>
         <td style="font-size:10px;color:#475569">${(a.ts||'').replace('T',' ').slice(0,19)}</td>
-        <td style="font-weight:600;font-size:10px">${a.usuario||'—'}</td>
+        <td style="font-weight:600;font-size:10px">${escHtml(a.usuario||'—')}</td>
         <td><span class="badge ${a.rol==='admin'?'bC3':a.rol==='supervisor'?'bC2':'bC1'}">${(a.rol||'—').toUpperCase()}</span></td>
         <td><span class="badge bCg">${a.modulo||detectarModulo(a.accion)}</span></td>
-        <td style="font-size:9px;color:#475569">${a.origen||'web'}</td>
-        <td style="font-size:10px;font-weight:600;color:#1d4ed8">${a.accion||'—'}</td>
-        <td style="font-size:10px;color:#475569">${a.detalle||'—'}</td>
+        <td style="font-size:9px;color:#475569" title="${escHtml(a.device||'')}">${escHtml(a.device||'—')}</td>
+        <td style="font-size:9px;color:#475569">${escHtml(a.sucursal||'—')}</td>
+        <td style="font-size:9px;color:#475569;font-family:var(--mono)">${escHtml(a.ip||'—')}</td>
+        <td style="font-size:10px;font-weight:600;color:#1d4ed8">${escHtml(a.accion||'—')}</td>
+        <td style="font-size:10px;color:#475569">${escHtml(a.detalle||'—')}</td>
       </tr>`).join('')}</tbody>
     </table></div>
     ${totalPag>1?`<div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
@@ -7891,7 +7925,8 @@ function limpiarFiltrosAudit(){
   rAuditRows();
 }
 function exportarAuditCSV(){
-  const rows=[['Timestamp','Usuario','Rol','Acción','Detalle'],...AUDIT.map(a=>[a.ts,a.usuario,a.rol,a.accion,a.detalle])];
+  const rows=[['Timestamp','Usuario','Rol','Módulo','Dispositivo','Sucursal','IP','Acción','Detalle'],
+    ...AUDIT.map(a=>[a.ts,a.usuario,a.rol,a.modulo||detectarModulo(a.accion),a.device||'',a.sucursal||'',a.ip||'',a.accion,a.detalle])];
   descCSV(rows,'Auditoria_'+hoy()+'.csv');toast('ok','Auditoría exportada');
 }
 

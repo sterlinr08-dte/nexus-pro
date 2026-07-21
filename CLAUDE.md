@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.73** (ver `index.html` y `version.json`).
+> Versión actual: **48.74** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2585,6 +2585,83 @@ pantallas distintas que algún día muestren números distintos.
   era responsive de antes, solo pasó de acomodar 5 tiles a 8. `node --check parches.js` limpio; los 3
   `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 - **Pendiente:** las fases 8-10 del Plan Maestro si el dueño las manda.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 8 — Auditoría Completa (21-jul-2026, v48.74)
+El dueño pidió que cada registro de auditoría capture, sin excepciones: Usuario, Fecha, Hora, IP,
+Sucursal, Dispositivo, Acción. Investigado antes de programar (agente de exploración + consultas SQL
+directas a la base real): `logAudit(accion,detalle,modulo,clienteId)` (`index.html`, reusada tal cual por
+TODO `parches.js` vía `window.logAudit`, sin ninguna copia propia) ya manda `usuario`/`rol`/`accion`/
+`detalle`/`modulo`/`cliente_id` — pero la tabla `auditoria` **YA TENÍA** columnas `ip` y `device` desde
+hace tiempo (texto, nullable) que **NUNCA se habían llenado**: consulta real contra los 2,268 registros
+existentes → `con_ip:0, con_device:0`. No era un campo que faltara programar desde cero — era un campo
+fantasma, exactamente la misma clase de bug que el "ORIGEN" que la pantalla de Auditoría ya mostraba
+(`a.origen||'web'`) sin que `logAudit` lo hubiera escrito jamás (dead code puro).
+- **Decisión de arquitectura clave — IP capturada del lado del SERVIDOR, no por el navegador:** el
+  navegador no tiene forma confiable de saber su propia IP pública (necesitaría llamar a un servicio
+  externo, lento y con fallos), y si se le pidiera que la reportara él mismo, un usuario podría falsearla
+  desde la consola del navegador antes de que el registro llegue a la base — un dato de auditoría que se
+  puede mentir a sí mismo no sirve para "sin excepciones". Se investigó (documentación oficial de
+  Supabase vía `search_docs`) que PostgREST expone los headers reales de cada petición a Postgres a
+  través de `current_setting('request.headers', true)::json`, incluido `x-forwarded-for` — mismo mecanismo
+  documentado que usa Supabase para sus propios rate-limits. Se construyó un trigger `BEFORE INSERT` en
+  `auditoria` — **mismo patrón exacto que `set_organizacion_id()`** (`SECURITY DEFINER` +
+  `SET search_path TO 'public'`, ya establecido en el proyecto) — que llena `ip` (de `x-forwarded-for`,
+  con respaldo `cf-connecting-ip`) y `device` (de `user-agent`) **solo si el navegador no mandó nada**,
+  así que es un candado de "sin excepciones" real: aunque el código del frontend tuviera un bug o se le
+  olvidara mandar el dato, el registro igual queda completo. Migración `auditoria_sucursal_y_metadata_trigger`
+  (aditiva): columna nueva `sucursal` (text) + función `set_auditoria_metadata()` + trigger
+  `trg_auditoria_metadata`. `get_advisors(security)` solo marcó la función nueva con la MISMA advertencia
+  ya aceptada para `set_organizacion_id()` (función `SECURITY DEFINER` alcanzable por RPC) — riesgo nulo en
+  la práctica (Postgres rechaza ejecutar una función de trigger fuera de un trigger real).
+- **Dispositivo — legible, no un user-agent crudo:** `dispositivoActual()` (helper nuevo en `index.html`,
+  junto a `logAudit`) arma una etiqueta corta desde `navigator.userAgent` (`"Móvil · iOS · Safari"`,
+  `"Escritorio · Windows · Chrome"`...) — no había ningún helper reusable para esto en el sistema
+  (`isMobile()` de `parches.js` solo mira el ancho de la ventana, no el tipo de dispositivo real). El
+  user-agent CRUDO también se guarda como respaldo vía el trigger (por si el frontend cambia o falla),
+  pero lo que ve el dueño en pantalla es la etiqueta legible.
+- **Sucursal — solo donde de verdad existe el concepto:** `window.nxSucursalActual()` (helper nuevo en
+  `parches.js`, junto a `almNombre()`) devuelve el nombre del almacén ACTIVO (`_almacenSel`, el que de
+  verdad se está usando en ese momento — no el almacén "home" del usuario, que podría no coincidir si
+  cambió de almacén en la sesión) SOLO si la organización tiene Multi-almacén activado; si no, `null`
+  honesto. `logAudit()` llama a esta función si existe (`typeof window.nxSucursalActual==='function'`) —
+  el núcleo de Seguros, que NO tiene concepto de sucursal, simplemente nunca la define, así que ahí el
+  campo queda vacío sin fingir un dato que no existe.
+- **Pantalla de Auditoría (`rAuditRows()`), actualizada:** se reemplazó la columna muerta "ORIGEN"
+  (siempre mostraba el literal `'web'`, cero datos reales detrás — limpieza de código muerto, regla
+  #1 de "Depurar" del propio reglamento de este archivo) por **DISPOSITIVO** real, y se agregaron
+  **SUCURSAL** e **IP** — la tabla ya vivía dentro del wrapper `.tw` (scroll horizontal propio, mismo
+  patrón que el resto de tablas anchas del sistema), así que las 2 columnas nuevas no rompen el layout,
+  solo alargan el scroll horizontal de la tabla — la página en sí nunca se desborda. `exportarAuditCSV()`
+  ahora exporta también Módulo/Dispositivo/Sucursal/IP (antes solo 5 columnas, ninguna de las nuevas).
+- **Bug real de seguridad menor, encontrado y corregido de paso (mismo criterio que las auditorías de
+  accesibilidad de v48.14/v48.50/v48.55 — arreglar lo que se encuentra al tocar la misma función):** las
+  columnas Usuario/Acción/Descripción de `rAuditRows()` **nunca escapaban su contenido** (`${a.detalle}`
+  directo, sin `escHtml()`) — cualquier texto guardado en `detalle` (que en varios call-sites viene de
+  campos que un admin escribe a mano, como el nombre de un cliente) se interpretaba como HTML real al
+  pintarse en pantalla. Confirmado con una prueba real (`detalle:'<script>alert(1)</script>'`) que SÍ se
+  ejecutaba antes del arreglo. Corregido envolviendo las 3 columnas en `escHtml()`, igual que ya se hace
+  con el resto de campos de esa misma fila.
+- **Alcance de "sin excepciones", aclarado (decisión de criterio, documentada aquí):** esta fase
+  **endurece el REGISTRO de auditoría** — garantiza que cada vez que `logAudit()` se llama, las 7 columnas
+  quedan completas (con `null` honesto donde de verdad no aplica, como Sucursal en Seguros). **NO** agrega
+  `logAudit()` a acciones del sistema que hoy no lo llaman — eso sería una auditoría completa de code
+  coverage sobre ~24,000 líneas de código con cientos de posibles puntos de mutación, un proyecto aparte
+  de mucho mayor alcance y riesgo que no fue lo pedido. Los ~111 call-sites existentes (index.html+parches.js)
+  ya cubren las acciones sensibles documentadas de siempre (login, clientes, facturas, cobros, config,
+  POS, rifas, consultorio, staff...).
+- Verificado con Playwright, código real extraído del archivo (no una reconstrucción): 18 comprobaciones
+  — `dispositivoActual()` contra 5 user-agents reales distintos (iPhone/Safari, Android/Chrome, Windows/
+  Chrome, Mac/Safari, Windows/Edge) da la etiqueta correcta en los 5; `logAudit()` sin contexto POS manda
+  `sucursal:null` y NUNCA manda `ip` (la pone el trigger); `logAudit()` CON contexto POS (almacén activo
+  simulado) manda el nombre de sucursal correcto; sin almacenes configurados vuelve a `null` sin fallar;
+  la tabla pinta las 3 columnas nuevas con los datos reales y con guiones cuando faltan; el intento de
+  XSS queda escapado; el CSV exporta las 9 columnas con los valores correctos. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido; columna
+  `sucursal` y trigger confirmados en vivo contra la base real.
+- **Con esta pieza el "Plan Maestro NEXUS PRO POS 3.0" tiene sus 7 fases pedidas hasta ahora completas**
+  (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Artículo 360° Fase 4, Kardex Inteligente Fase 5,
+  Buscador Universal Fase 6, Dashboard Operativo Fase 7, Auditoría Completa Fase 8) — quedan las fases
+  9-10 si el dueño las manda.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

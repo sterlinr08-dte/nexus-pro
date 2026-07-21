@@ -20200,6 +20200,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   const MOV_LBL = { venta: ['Venta', '#dc2626'], compra: ['Compra', '#16a34a'], devolucion: ['Devolución', '#6d28d9'], anulacion: ['Anulación', '#475569'], ajuste: ['Ajuste', '#ea580c'], apertura: ['Apertura', '#7c3aed'], transferencia: ['Transferencia', '#0891b2'] };
   function almPrincipal() { return _almacenes.find(a => a.es_principal) || _almacenes[0] || null; }
   function almNombre(id) { const a = _almacenes.find(x => String(x.id) === String(id)); return a ? a.nombre : ''; }
+  // Fase 8 (Auditoría Completa): nombre del almacén/sucursal ACTIVO en este momento, para que
+  // logAudit() (núcleo de Seguros, index.html) lo mande en cada registro sin tener que conocer
+  // la estructura interna del POS. Solo devuelve algo si la organización tiene Multi-almacén
+  // activado (_almacenes con datos) — si no, null es la respuesta honesta (no hay sucursal que reportar).
+  window.nxSucursalActual = function () {
+    try { return (_almacenes && _almacenes.length && _almacenSel) ? (almNombre(_almacenSel) || null) : null; } catch (e) { return null; }
+  };
   function stockKey(pid, aid) { return String(pid) + '|' + String(aid); }
   function stockEnAlm(pid, aid) { const r = _stockAlmRows[stockKey(pid, aid)]; return r ? Number(r.stock || 0) : 0; }
   function almTotalUnidades(aid) { let s = 0; Object.keys(_stockAlmRows).forEach(k => { if (k.endsWith('|' + aid)) s += Number(_stockAlmRows[k].stock || 0); }); return s; }
