@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.78** (ver `index.html` y `version.json`).
+> Versión actual: **48.79** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2934,6 +2934,59 @@ tener el plan aprobado.
 - **Pendiente:** Fase 2 (Cotizaciones → `_cart` + buscador estándar), Fase 3 (botón Finalizar aditivo),
   Fase 4 (favoritos/recientes) — cada una se construye y confirma por separado, mismo criterio de toda
   la sesión.
+- **FASE 2 — HECHA (v48.79): "Guardar Cotización" directo desde el carrito, sin cambiar de pantalla.**
+  **Corrección de rumbo durante la construcción (documentada, no oculta):** el plan original de la Fase 2
+  (ver arriba) proponía Cotización como un TERCER MODO de `renderFactura()`/`pintarFactura()`, igual que
+  Prefactura (`_posTab==='cotizacion'`, carrito propio `_cartCot`, intercambio de carrito en `nxPosTab`).
+  Se construyó completo y se probó con un harness de Node — y ahí se encontró el problema: el intercambio
+  de carrito (mismo patrón que ya usa Prefactura) significa que entrar a un modo dedicado **vacía el
+  carrito activo** (arranca desde el carrito propio de ESE modo, que empieza vacío) — exactamente el
+  comportamiento correcto para Prefactura, pero el OPUESTO de lo que se necesitaba aquí: la meta era que
+  el cajero pudiera decidir "Cotización" SIN perder lo que ya armó. Construir una pantalla dedicada para
+  cotización terminaba repitiendo el mismo problema de fragmentación que esta fase buscaba resolver — solo
+  que con mejor UI. Se revirtió esa pieza (`esCotTab`, `_cartCot`, el intercambio de carrito de 3 vías, el
+  título/numField/pending-block de 3 vías) ANTES de publicar, y se reemplazó por el diseño correcto: **un
+  botón que guarda directo, sin cambiar `_posTab`** — exactamente el mismo patrón que ya usa "Guardar
+  Prefactura" (que tampoco navega a ninguna pantalla, solo lee `_cart` tal cual está y lo guarda). Este
+  cambio de rumbo se detectó ANTES de publicar (durante las pruebas con el código real, nunca llegó a
+  producción) — se documenta aquí igual, con la misma honestidad que el resto de este archivo, porque
+  es información real de por qué la solución final es como es.
+  - **Lo construido de verdad:** botón **"Guardar Cotización"** en el panel "Opciones adicionales" de
+    Factura/Prefactura (`.nx-inv-opts`, junto a "Guardar Prefactura"/"Prefacturas"/"Historial") —
+    reemplaza al botón viejo "Cotización" (que antes solo saltaba a la lista, `nxPosTab('cotizaciones')`,
+    sin guardar nada). Función nueva `window.nxCotGuardarDesdeCart()` (junto a `nxPrefGuardar`, mismo
+    patrón): lee `_cart`/`clienteSel()`/`totales()` **tal cual están en la pantalla actual** (Vender,
+    Factura o Prefactura — no le importa en cuál), consume `nextSeq('cotizacion')` (mismo consecutivo
+    COT-0001 que ya usa el modal clásico, con el mismo respaldo `cotProxNumero()` si la secuencia no
+    está sembrada), y postea a **las mismas tablas** `pos_cotizaciones`+`pos_cotizacion_items` que usa
+    `nxCotGuardar()` (el modal clásico) — mapeando cada línea del carrito con `lineDescMonto`/
+    `lineImporte`, igual que ya hace ese modal con `_cotEdit.lineas`. Registra en el Motor de Documentos
+    (`registrarDocumento('cotizacion',...)`), limpia `_cart`, y salta a la lista de Cotizaciones
+    (`nxPosTab('cotizaciones')`) para que el cajero vea confirmado que se guardó. Botón deshabilitado
+    (`disabled` + `.nx-inv-opt:disabled{opacity:.45}`, regla CSS nueva) cuando el carrito está vacío.
+  - **Por qué es seguro:** es la MISMA tabla, MISMO esquema, MISMA numeración que el modal clásico de
+    Cotizaciones (`abrirCotizacion`/`nxCotGuardar`/`nxCotConvertir`, todos intactos, cero líneas
+    tocadas) — lo que se crea desde el carrito se ve, se edita y se convierte en factura exactamente
+    igual que una cotización creada por el camino de siempre. **Única limitación consciente:** siempre
+    crea una cotización NUEVA con `validez_dias=15` (el valor por defecto de siempre) — editar una ya
+    guardada, o cambiarle la validez, se sigue haciendo desde la lista con el modal clásico (que sí tiene
+    ese campo). No se le agregó un campo de validez a este botón rápido para no complicar el panel de
+    resumen con un campo que el flujo de "decidir al final" no pidió.
+  - **Verificado con dos harnesses de Node contra el código real extraído** (balance de llaves real, no
+    reconstrucción a mano): (1) el diseño descartado — confirmó el problema real del intercambio de
+    carrito (11 aserciones, incluida la prueba que expuso el bug de raíz) antes de decidir revertirlo;
+    (2) el diseño final — 12 aserciones: guarda con el número real de la secuencia, cliente correcto,
+    total correcto, items correctos, registra en el Motor de Documentos, limpia el carrito, salta a la
+    lista, funciona igual llamado desde Factura o desde Prefactura, cae al número de respaldo si no hay
+    secuencia sembrada, y un carrito vacío no guarda nada (solo avisa). Más una verificación visual en
+    Playwright del panel "Opciones adicionales" real (CSS extraído de la función real `inyectarCSS` del
+    POS) en 390px/1000px: el botón se ve bien en los 2 estados (activo/deshabilitado), sin desbordes.
+    `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+    `version.json` válido. Diff final: 3 cambios quirúrgicos (un botón, una función nueva, una regla CSS)
+    — nada de lo revertido quedó rastro en el archivo (confirmado con grep de `esCotTab`/`_cartCot`/
+    `nxIrACotizar`/`peekCot`: cero resultados).
+- **Pendiente:** Fase 3 (botón "Finalizar" real, aditivo — Facturar/Guardar Preventa/Guardar Cotización
+  como una sola decisión al final), Fase 4 (favoritos/recientes de producto).
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
