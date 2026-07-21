@@ -47,7 +47,6 @@ jobs:
   const st=document.createElement('style');
   st.id='nx-prefactura-visual-25';
   st.textContent=`
-  /* Alcance estricto: solo la vista Prefactura/Preventa */
   #v-prefactura{--pv-bg:#f4f6f9;--pv-panel:#fff;--pv-line:#e5e9f0;--pv-text:#172033;--pv-muted:#667085;--pv-primary:#3157d5;--pv-primary-soft:#eef2ff;--pv-ok:#14805e;--pv-danger:#c73333;background:var(--pv-bg)!important}
   #v-prefactura .nxPf{max-width:1500px;margin:0 auto;padding:14px 16px 28px!important;color:var(--pv-text)}
   #v-prefactura .nxPf>.ph,#v-prefactura .nxPf .ph{background:transparent!important;border:0!important;box-shadow:none!important;padding:4px 2px 14px!important;margin-bottom:0!important}
@@ -140,4 +139,4 @@ jobs:
           git commit -m "POS: rediseño visual Prefactura 2.5 [prefactura-patch]"
           git push origin HEAD:feat/prefactura-visual-2-5
 
-# trigger: workflow registrado en main
+# trigger: permisos confirmados por el propietario
