@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.66** (ver `index.html` y `version.json`).
+> Versión actual: **48.67** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2124,6 +2124,73 @@ ficha (común, no es un caso raro).
   con WhatsApp se ven ambos botones; sin WhatsApp desaparece el de WhatsApp y aparecen el botón alterno +
   el mensaje explicativo — nunca queda la caja completamente vacía o ausente. Capturas de pantalla de los
   2 casos revisadas. `node --check` limpio en los 3 `<script>` de `index.html`.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 1 (21-jul-2026, v48.67) — "Plan Maestro NEXUS PRO POS 3.0"
+El dueño mandó un plan maestro de 10 fases (solo detalló la Fase 1) pidiendo un **motor universal de
+documentos** que relacione Cotización/Pedido/Prefactura/Factura/Garantía/Devolución/Orden de trabajo —
+cada uno con ID interno, código visible, documento origen/destino, estado e historial — con la
+restricción explícita **"No modificar la lógica actual de facturación"**. Confirmado con el dueño antes
+de programar: vive DENTRO del POS (no un módulo aparte), directo a `main` (sin rama de revisión), y el
+alcance real de esta Fase 1 es la cadena que el dueño dibujó a mano: **Cotización → Prefactura → Factura
+→ Garantía** (los otros 3 tipos del plan original — Pedido, Devolución, Orden de trabajo — quedan para
+fases futuras, el diccionario `DOC_ICONO`/`DOC_NOMBRE` ya está preparado para agregarlos sin tocar el
+motor).
+- **Diseño elegido — capa de RELACIONES aditiva, nunca reemplaza nada:** se investigó primero (agente de
+  exploración) cómo se conectan HOY `nxCotConvertir`/`nxPrefFacturar`/`nxPosConfirmar` — confirmado que
+  NO existe ningún enlace real entre una cotización y la factura que nace de ella (el carrito se llena
+  con los mismos datos, pero no queda ningún rastro de "esta factura vino de esa cotización"). En vez de
+  tocar `pos_cotizaciones`/`pos_prefacturas`/`pos_ventas`/`pos_venta_items` (arriesgar la lógica de
+  facturación que el dueño pidió explícitamente no tocar), se creó una tabla-índice nueva
+  **`pos_documentos`** (tipo, código visible, `tabla_origen`+`registro_id` → apunta a la fila real que ya
+  existía, `documento_padre_id` autoreferencial para la cadena, cliente_id, monto, estado) +
+  **`pos_documento_eventos`** (historial: `documento_id`, evento, detalle, quién) — mismo patrón
+  org+trigger `set_organizacion_id()`+RLS `mi_rol() is not null AND organizacion_id=mi_organizacion()`
+  que TODAS las tablas `pos_*` (clonado con introspección SQL directa de una tabla hermana para no
+  adivinar el patrón). `get_advisors(security)` sin hallazgos nuevos.
+- **Helpers nuevos** (junto a `nextSeq`, mismo IIFE del POS): `registrarDocumento(tipo, codigo,
+  tablaOrigen, registroId, opts)` (inserta en `pos_documentos` + loguea el evento "creado", envuelto en
+  try/catch — NUNCA bloquea el flujo real de cobro si algo falla), `registrarEventoDoc(...)`,
+  `buscarDocumentoDe(tablaOrigen, registroId)` (encuentra el documento ya registrado de una fila real sin
+  tener que pasar IDs a mano por todo el flujo de conversión). Variable de módulo `_facOrigenDoc`
+  (mismo patrón que `_factCli`/`_cart` — viaja en memoria mientras el carrito pasa de pantalla en
+  pantalla, se limpia apenas se consume para no "pegar" un origen viejo a una venta sin relación real).
+- **Enganchado en los 3 puntos reales de conversión, sin tocar su lógica de negocio** (solo se agregó
+  código nuevo alrededor, cada uno en su propio try/catch): `nxCotGuardar` (registra la cotización nueva),
+  `nxCotConvertir` (busca su documento y lo deja como "origen pendiente"), `nxPrefGuardar` (registra la
+  prefactura con `documento_padre_id` = el origen pendiente, si lo hay), `nxPrefFacturar` (vuelve a dejar
+  el origen pendiente, esta vez apuntando a la prefactura), y `nxPosConfirmar` (al confirmar el cobro:
+  registra la factura con su padre correcto —cotización o prefactura, lo que corresponda— y, por cada
+  línea del carrito que trae garantía, registra un documento de garantía hijo de esa factura, usando
+  `nextSeq('garantia')` con el mismo patrón de respaldo `'GAR-'+...` que ya usan Reparaciones/Prefacturas
+  si la secuencia no está sembrada para esa org).
+- **UI de solo lectura para verificar la cadena — `window.nxDocCadena(tabla, registroId)`:** modal nuevo
+  (estilo `.nxPf`/`.oppcard`) que sube hasta la raíz de la cadena (hasta 10 saltos) y baja recorriendo
+  TODOS los niveles de descendientes (no solo hijos directos — un `while` por niveles, para que abrir
+  "Ver cadena" desde la cotización también muestre la factura y las garantías que nacieron 2-3 pasos más
+  adelante, no solo el siguiente eslabón). Si el documento es de antes de esta versión (sin relación
+  registrada), avisa con un toast en vez de fallar. Botón **"Ver cadena"** (🔀) agregado en 3 lugares:
+  lista de Cotizaciones (solo si `est==='convertida'`), historial de Prefacturas (solo si
+  `est==='facturada'`) e Historial de facturas (solo si no está anulada) — los 3 con
+  `event.stopPropagation()` porque la fila entera ya tiene su propio `onclick`.
+- **Deliberadamente NO se tocó** ninguna tabla/función existente de facturación — se verificó línea por
+  línea que el único cambio dentro de `nxPosConfirmar` fue capturar la respuesta del POST de
+  `pos_venta_items` (antes se descartaba con `catch(e){}` vacío; hacía falta el `id` real de cada línea
+  para poder enlazar su garantía) y agregar el bloque nuevo de registro DESPUÉS de que la venta ya se
+  guardó — si el motor de documentos falla por cualquier razón, la venta ya está hecha y cobrada, nunca
+  se revierte ni se bloquea por esto.
+- **Verificado con el código real** (no una reconstrucción): se extrajeron `registrarDocumento`/
+  `registrarEventoDoc`/`buscarDocumentoDe`/`nxDocCadena` tal cual del archivo (balance de llaves real) y
+  se simuló la cadena completa contra una base en memoria (Cotización → convertir → Prefactura →
+  facturar → Factura con 3 líneas, 2 con garantía y 1 sin) — confirmado que cada eslabón guarda el
+  `documento_padre_id` correcto, que la garantía NO se crea para la línea sin `garantia_hasta`, que
+  `nxDocCadena` arma la cadena completa (ascendente + TODOS los descendientes) se abra desde cualquier
+  punto de la cadena, y que un documento sin relación no rompe nada (toast de aviso). `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` (1,423 / 424,234 / 681 caracteres) pasan
+  `new Function()`; `version.json` válido.
+- **Pendiente:** el resto del "Plan Maestro POS 3.0" (fases 2-10) — el dueño las irá mandando conforme
+  avancen; el motor ya está preparado para sumar Pedido/Devolución/Orden de trabajo sin rediseñar nada
+  (son entradas nuevas en `DOC_ICONO`/`DOC_NOMBRE` + una llamada a `registrarDocumento` en su punto de
+  creación real, mismo patrón ya probado).
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

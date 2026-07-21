@@ -15385,6 +15385,80 @@
       return fmt;
     } catch (e) { return null; }
   }
+
+  // ══════════════ MOTOR DE DOCUMENTOS (Fase 1: Cotización → Prefactura → Factura → Garantía) ══════════════
+  // Capa de RELACIONES aditiva: pos_documentos NUNCA reemplaza pos_cotizaciones/pos_prefacturas/
+  // pos_ventas/pos_venta_items — solo guarda un espejo (tipo, código visible, a qué tabla/fila real
+  // apunta, de qué documento viene) para poder trazar la cadena completa. Cero cambios a la lógica
+  // de facturación existente: todo esto es un try/catch aparte que nunca bloquea el flujo real.
+  // `_facOrigenDoc` viaja en memoria (mismo patrón que `_factCli`/`_cart`) mientras el carrito pasa
+  // de una pantalla a otra — se limpia apenas se consume, para no "pegar" un origen viejo a una
+  // venta nueva sin relación.
+  let _facOrigenDoc = null;
+  async function registrarDocumento(tipo, codigo, tablaOrigen, registroId, opts) {
+    opts = opts || {};
+    try {
+      const body = { tipo: tipo, codigo: codigo || null, tabla_origen: tablaOrigen, registro_id: registroId, documento_padre_id: opts.padreId || null, cliente_id: opts.clienteId || null, monto: (opts.monto != null ? opts.monto : null), estado: opts.estado || 'vigente' };
+      const r = await getAPI().post('pos_documentos', body);
+      const doc = r && r[0];
+      if (doc) registrarEventoDoc(doc.id, 'creado', codigo || tipo).catch(() => {});
+      return doc || null;
+    } catch (e) { console.warn('motor de documentos (registrar):', e); return null; }
+  }
+  async function registrarEventoDoc(documentoId, evento, detalle) {
+    if (!documentoId) return null;
+    try { return await getAPI().post('pos_documento_eventos', { documento_id: documentoId, evento: evento, detalle: detalle || null, created_by_name: nomAdmin() }); }
+    catch (e) { console.warn('motor de documentos (evento):', e); return null; }
+  }
+  // Busca el documento ya registrado de una fila real (para enlazar sin duplicar ni tener que
+  // pasar el id del documento a mano por todo el flujo de conversión).
+  async function buscarDocumentoDe(tablaOrigen, registroId) {
+    try { const r = await getAPI().get('pos_documentos', 'tabla_origen=eq.' + tablaOrigen + '&registro_id=eq.' + registroId + '&order=created_at.desc&limit=1'); return (r && r[0]) || null; } catch (e) { return null; }
+  }
+  const DOC_ICONO = { cotizacion: 'ti-clipboard-text', prefactura: 'ti-file-description', factura: 'ti-receipt', garantia: 'ti-shield-check' };
+  const DOC_NOMBRE = { cotizacion: 'Cotización', prefactura: 'Prefactura', factura: 'Factura', garantia: 'Garantía' };
+  // Ventana de solo lectura: sube hasta la raíz de la cadena y baja a los documentos hijos
+  // (ej. desde una factura ves de qué cotización/prefactura vino y qué garantías generó).
+  window.nxDocCadena = async function (tabla, registroId) {
+    let doc = null;
+    try { doc = await buscarDocumentoDe(tabla, registroId); } catch (e) {}
+    if (!doc) { toast('warn', 'Sin cadena registrada', 'Este documento es de antes del motor de documentos, o aún no tiene relación'); return; }
+    const cadena = [doc]; let cur = doc; let guard = 0;
+    while (cur.documento_padre_id && guard++ < 10) {
+      let padre = null; try { const r = await getAPI().get('pos_documentos', 'id=eq.' + cur.documento_padre_id); padre = r && r[0]; } catch (e) {}
+      if (!padre) break; cadena.unshift(padre); cur = padre;
+    }
+    // Descendientes de TODOS los niveles (no solo hijos directos) — para que "Ver cadena" desde una
+    // cotización también muestre la factura/garantía que nacieron de su prefactura, no solo un nivel.
+    let hijos = [];
+    try {
+      let nivel = [doc.id]; let guard2 = 0; const vistos = new Set([doc.id]);
+      while (nivel.length && guard2++ < 8) {
+        let nuevos = [];
+        for (const pid of nivel) {
+          const r = await getAPI().get('pos_documentos', 'documento_padre_id=eq.' + pid + '&order=created_at.asc');
+          for (const d of (r || [])) { if (!vistos.has(d.id)) { vistos.add(d.id); nuevos.push(d); } }
+        }
+        if (!nuevos.length) break;
+        hijos.push(...nuevos); nivel = nuevos.map(d => d.id);
+      }
+    } catch (e) {}
+    const fila = (d, esActual) => `<div class="oppcard" style="display:flex;align-items:center;gap:8px${esActual ? ';border-color:var(--pf-blue);background:var(--pf-blue-l)' : ''}">
+        <div style="background:var(--pf-blue-l);color:var(--pf-blue-d);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${DOC_ICONO[d.tipo] || 'ti-file'}"></i></div>
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px">${esc(d.codigo || d.tipo)}</div><div style="font-size:10px;color:var(--pf-txt3)">${DOC_NOMBRE[d.tipo] || d.tipo} · ${String(d.created_at || '').slice(0, 16).replace('T', ' ')}${d.monto != null ? ' · ' + fmt(d.monto) : ''}</div></div>
+      </div>`;
+    const flecha = '<div style="text-align:center;color:var(--pf-txt3);font-size:13px;margin:2px 0">↓</div>';
+    const cuerpo = cadena.map((d, i) => fila(d, String(d.id) === String(doc.id)) + (i < cadena.length - 1 ? flecha : '')).join('')
+      + (hijos.length ? flecha + hijos.map(h => fila(h, false)).join('<div style="height:6px"></div>') : '');
+    cerrarModal('nxDocCadenaM');
+    const ov = document.createElement('div'); ov.id = 'nxDocCadenaM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:420px">
+      <div class="head"><button class="nxBack" type="button" onclick="document.getElementById('nxDocCadenaM').remove()" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button><h3><i class="ti ti-git-branch"></i> Cadena del documento</h3></div>
+      <div style="padding:14px;overflow-y:auto">${cuerpo}</div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
   function almSelectorHTML() {
     if (_almacenes.length < 2) return '';
     return `<div class="nxAlmSel"><i class="ti ti-building-warehouse"></i><span>Almacén activo:</span><select onchange="window.nxPosSetAlmacen(this.value)">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>`;
@@ -16681,7 +16755,24 @@
         const gh = gd > 0 ? new Date(Date.now() + gd * 86400000).toISOString().slice(0, 10) : null;
         return { venta_id: venta.id, producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad, itbis: it.itbis, descuento: Math.round(lineDescMonto(it)), importe: Math.round(lineImporte(it)), serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null, garantia_hasta: gh };
       });
-      try { await getAPI().post('pos_venta_items', items); } catch (e) {}
+      let itemsInsertados = null;
+      try { itemsInsertados = await getAPI().post('pos_venta_items', items); } catch (e) {}
+      // Motor de documentos: registrar la factura (con su origen si venía de cotización/prefactura)
+      // y una garantía por cada línea que la trae — best-effort, nunca bloquea el cobro.
+      try {
+        const padreId = (_facOrigenDoc && _facOrigenDoc.documentoId) || null;
+        const docFactura = await registrarDocumento('factura', numFac || ('No. ' + (venta.numero || '')), 'pos_ventas', venta.id, { padreId: padreId, clienteId: cliId, monto: c.total, estado: 'completada' });
+        if (docFactura) {
+          for (let gi = 0; gi < items.length; gi++) {
+            const it = items[gi]; if (!it.garantia_hasta) continue;
+            const itemRegId = (itemsInsertados && itemsInsertados[gi] && itemsInsertados[gi].id) || venta.id;
+            let codGar = null; try { codGar = await nextSeq('garantia'); } catch (e2) {}
+            if (!codGar) codGar = 'GAR-' + String(Date.now()).slice(-8) + '-' + gi;
+            registrarDocumento('garantia', codGar, 'pos_venta_items', itemRegId, { padreId: docFactura.id, clienteId: cliId, estado: 'vigente' }).catch(() => {});
+          }
+        }
+      } catch (eDoc) { console.warn('motor de documentos (factura):', eDoc); }
+      _facOrigenDoc = null;
       // Marcar seriales/IMEI vendidos (best-effort)
       try { for (const it of _cart) { if (it.seriales && it.seriales.length) { for (const s of it.seriales) { getAPI().patch('pos_seriales', 'id=eq.' + s.id, { estado: 'vendido', venta_id: venta.id }).catch(() => {}); } } } } catch (e) {}
       // Asignar NCF fiscal si hay secuencia activa para el tipo elegido (best-effort)
@@ -19397,6 +19488,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <button class="ab g3" style="height:30px;width:30px;padding:0" title="Imprimir" onclick="window.nxCotImprimir('${c.id}')" aria-label="Imprimir"><i class="ti ti-printer"></i></button>
           ${est === 'vigente' || est === 'vencida' ? `<button class="ab g1" style="height:30px;width:30px;padding:0" title="Convertir en venta" onclick="window.nxCotConvertir('${c.id}')" aria-label="Convertir en venta"><i class="ti ti-arrow-right"></i></button>` : ''}
           <button class="ab g3" style="height:30px;width:30px;padding:0" title="Editar" onclick="window.nxCotEditar('${c.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button>
+          ${est === 'convertida' ? `<button class="ab g3" style="height:30px;width:30px;padding:0" title="Ver cadena" onclick="window.nxDocCadena('pos_cotizaciones','${c.id}')" aria-label="Ver cadena del documento"><i class="ti ti-git-branch"></i></button>` : ''}
         </td>
       </tr>`;
     }).join('') : `<tr><td colspan="5" class="emptyrow">Aún no hay cotizaciones. Crea la primera.</td></tr>`;
@@ -19485,6 +19577,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (!_cotEdit.lineas.length) { toast('err', 'Agrega al menos un producto'); return; }
     const tt = cotTotales(_cotEdit.lineas);
     const numero = _cotEdit.numero || (await nextSeq('cotizacion')) || cotProxNumero();
+    const esNueva = !_cotEdit.id;
     const body = { numero: numero, cliente_id: _cotEdit.cliente_id || null, cliente_nombre: _cotEdit.cliente_nombre || null, fecha: _cotEdit.fecha || isoHoy(), validez_dias: Number(_cotEdit.validez_dias || 15), subtotal: tt.subtotal, itbis: tt.itbis, descuento: tt.descuento, total: tt.total, notas: (_cotEdit.notas || '').trim() || null, created_by_name: nomAdmin() };
     try {
       let cotId = _cotEdit.id;
@@ -19493,6 +19586,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       if (!cotId) throw new Error('No se pudo guardar');
       const items = _cotEdit.lineas.map(l => ({ cotizacion_id: cotId, producto_id: l.producto_id, nombre: l.nombre, precio: Math.round(l.precio), cantidad: l.cantidad, itbis: !!l.itbis, descuento: Math.round(lineDescMonto(l)), importe: Math.round(lineImporte(l)) }));
       await getAPI().post('pos_cotizacion_items', items);
+      if (esNueva) registrarDocumento('cotizacion', numero, 'pos_cotizaciones', cotId, { clienteId: body.cliente_id, monto: body.total }).catch(() => {});
       cerrarModal('nxCotForm'); toast('ok', 'Cotización guardada', numero);
       await cargarCotizaciones(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
@@ -19505,6 +19599,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     _cart = items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: Number(it.precio || 0), cantidad: Number(it.cantidad || 1), itbis: it.itbis !== false, desc: 0, descT: 'pct' }));
     _factCli = c.cliente_id || '';
     try { await getAPI().patch('pos_cotizaciones', 'id=eq.' + id, { estado: 'convertida' }); } catch (e) {}
+    try { const doc = await buscarDocumentoDe('pos_cotizaciones', id); if (doc) { _facOrigenDoc = { tipo: 'cotizacion', documentoId: doc.id }; registrarEventoDoc(doc.id, 'convertido_a_carrito', 'Cargada en Factura para cobrar').catch(() => {}); } } catch (e) {}
     toast('ok', 'Cotización cargada', 'Completa el cobro en Factura');
     _posTab = 'factura'; const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
@@ -21135,6 +21230,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const r = await getAPI().post('pos_prefacturas', { numero: numero, cliente_id: cli ? cli.id : null, cliente_nombre: cli ? cli.nombre : null, items: _cart, total: t.total, created_by_name: ((curSesPOS() || {}).nom) || null });
       if (r && r[0]) { _prefs.unshift(r[0]); _prefHist.unshift(r[0]); }
       try { window.logAudit && window.logAudit('PREFACTURA_GUARDADA', numero + ' · ' + fmt(t.total) + (cli ? ' · ' + cli.nombre : ''), 'POS'); } catch (e) {}
+      if (r && r[0]) {
+        const padreId = (_facOrigenDoc && _facOrigenDoc.documentoId) || null;
+        const doc = await registrarDocumento('prefactura', numero, 'pos_prefacturas', r[0].id, { padreId: padreId, clienteId: cli ? cli.id : null, monto: t.total });
+        if (doc) _facOrigenDoc = { tipo: 'prefactura', documentoId: doc.id };
+      }
       _cart = []; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
@@ -21185,6 +21285,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (_posTab === 'prefactura') _cartFacSaved = _items; else _cart = _items;
     _factCli = p.cliente_id || '';
     try { await getAPI().patch('pos_prefacturas', 'id=eq.' + id, { estado: 'facturada' }); } catch (e) {}
+    try { const doc = await buscarDocumentoDe('pos_prefacturas', id); if (doc) { _facOrigenDoc = { tipo: 'prefactura', documentoId: doc.id }; registrarEventoDoc(doc.id, 'convertido_a_carrito', 'Cargada en Factura para cobrar').catch(() => {}); } } catch (e) {}
     _prefs = _prefs.filter(x => String(x.id) !== String(id));
     { const h = _prefHist.find(x => String(x.id) === String(id)); if (h) h.estado = 'facturada'; }
     cerrarModal('nxPrefM');
@@ -21247,7 +21348,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const nArt = Array.isArray(p.items) ? p.items.length : 0;
       const acc = est === 'abierta'
         ? `<button class="ab g1" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPrefFacturar('${p.id}')" title="Facturar" aria-label="Facturar"><i class="ti ti-cash"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver" aria-label="Ver"><i class="ti ti-eye"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPrefAnular('${p.id}')" title="Anular" aria-label="Anular"><i class="ti ti-x" style="color:var(--pf-red)"></i></button>`
-        : `<button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver" aria-label="Ver"><i class="ti ti-eye"></i></button>`;
+        : `<button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPHVer('${p.id}')" title="Ver" aria-label="Ver"><i class="ti ti-eye"></i></button>${est === 'facturada' ? ` <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxDocCadena('pos_prefacturas','${p.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch"></i></button>` : ''}`;
       return `<tr data-row tabindex="0" role="button" style="${est === 'anulada' ? 'opacity:.55' : ''}" onclick="window.nxPHVer('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPHVer('${p.id}')}">
         <td style="font-weight:800;white-space:nowrap">${esc(p.numero || '')}</td>
         <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(p.fecha || p.created_at)}</td>
@@ -21426,7 +21527,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosTicket('${v.id}')">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${(v.anulada || v.estado === 'anulada') ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
-        <b style="font-size:12.5px">${fmt(v.total)}</b><span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
+        <b style="font-size:12.5px">${fmt(v.total)}</b>${!(v.anulada || v.estado === 'anulada') ? `<button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="event.stopPropagation();window.nxDocCadena('pos_ventas','${v.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch" style="font-size:13px"></i></button>` : ''}<span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
       : '<div style="text-align:center;color:#475569;padding:20px;font-size:12px">' + (window.__fhCargando ? 'Cargando facturas…' : 'Sin facturas' + (qq ? ' con esa búsqueda' : '')) + '</div>';
     const nav = `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px">
       <button class="btn bsm bghost" type="button" ${_fhPage <= 0 ? 'disabled style="opacity:.4"' : ''} onclick="window.nxFacHistRows(${_fhPage - 1})">&lsaquo; Anterior</button>
