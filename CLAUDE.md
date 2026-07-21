@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.70** (ver `index.html` y `version.json`).
+> Versión actual: **48.71** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2388,6 +2388,72 @@ sin ningún registro en el kardex.
   módulo de producción/ensamblaje dentro del POS, ya tienen su tipo de movimiento listo en el enum —
   solo hace falta la UI que llame a `moverStock(prod, 'taller'/'produccion', delta, opts)`, mismo
   patrón que los demás.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 4 — Artículo 360° (21-jul-2026, v48.71)
+El dueño mandó la Fase 4 del plan (fuera de orden — llegó después de la Fase 5/Kardex, no antes):
+"Cada artículo tendrá: Existencia, Costo, Precio, Utilidad, Proveedores, Compras, Ventas, Garantías,
+Taller, IMEI, Kardex." Mismo patrón exacto que Cliente 360° (Fase 3): una función nueva de solo
+lectura, `window.nxArticulo360(id)`, que junta en una sola pantalla lo que ya vive repartido —
+**sin inventar ningún dato**, reusando toda la infraestructura ya construida en fases anteriores.
+- **Investigación previa (agente de exploración) antes de programar:** confirmó que el formulario
+  `abrirProd` (10 pestañas de NEXUS PRO 2.5, Fases 1-2) ya tenía piezas parciales de esto —
+  `nxPfUltimoCosto` (solo la ÚLTIMA compra, no el historial), `nxPfHistorialCargar` (kardex por
+  producto, ya listo para reusar tal cual), `_prodNiveles`/`_niveles` (niveles de precio, ya
+  cargados en memoria, sin necesitar query nueva), y la pestaña Sucursales (`stockEnAlm`). Ninguna
+  de esas piezas junta todo en una vista de solo-lectura — `abrirProd` es un formulario de EDICIÓN,
+  no un dashboard 360°, así que se construyó una función nueva y separada en vez de seguir
+  expandiendo el formulario.
+- **Las 11 secciones, cada una con su fuente real:**
+  - **Existencia:** `p.stock` total + desglose por almacén (`stockEnAlm`) si hay más de uno.
+  - **Costo:** `p.costo` actual + historial COMPLETO de compras (mismo join `pos_compra_items`↔
+    `pos_compras` que ya usaba `nxPfUltimoCosto`, pero mostrando la lista entera, no solo la más
+    reciente).
+  - **Precio:** lista/mayor/mínimo + cada nivel de precio configurado (`_prodNiveles` filtrado por
+    `producto_id`, unido a `_niveles` por `nivel_id` — ambos arrays ya en memoria, cero queries
+    nuevas).
+  - **Utilidad:** margen unitario (`(precio-costo)/precio`, misma fórmula que `nxPfMargenCalc`) +
+    una utilidad ESTIMADA de las ventas — con un aviso honesto explícito: `pos_venta_items` no
+    guarda el costo que tenía el producto el día que se vendió cada unidad (confirmado por el propio
+    comentario del código en `nxPosConfirmar`: *"Como pos_venta_items NO guarda costo, se lee de
+    pos_productos.costo"*), así que la utilidad de ventas mostrada usa el costo de HOY, no el
+    histórico — no se finge una precisión que los datos no tienen.
+  - **Proveedores:** TODOS los que de verdad aparecen en el historial de compras de ese artículo
+    (derivado de la misma consulta de Compras, sin query aparte), no solo el campo "proveedor
+    preferido" — el preferido se marca con una insignia si coincide.
+  - **Compras / Ventas:** listas completas (hasta 100 líneas cada una), uniendo
+    `pos_compra_items`↔`pos_compras` y `pos_venta_items`↔`pos_ventas` con el mismo patrón de mapas
+    en memoria (`cmap`/`vmap`) ya usado en Cliente 360° y en `nxPfUltimoCosto`.
+  - **Garantías:** de las unidades YA vendidas de este artículo (`pos_venta_items.garantia_hasta`),
+    vigente/vencida calculado en vivo contra `hoyISOPos()` — mismo criterio que Cliente 360°.
+  - **Taller — APROXIMADO, con aviso explícito:** se confirmó con el agente de exploración que
+    `pos_reparaciones` NO tiene `producto_id` (ni ahí ni en ningún otro lugar del archivo hay cruce
+    con el catálogo) — solo el campo de texto libre `equipo`. Se empareja por coincidencia del
+    nombre normalizado (`equipo` contiene el nombre del producto, o viceversa) contra `_reps` (ya en
+    memoria) — mismo criterio honesto que el emparejamiento por teléfono de Recepciones en Cliente
+    360°, con su propio aviso visible en la sección.
+  - **IMEI:** `pos_seriales` filtrado por `producto_id` (FK real, exacto — a diferencia de Taller),
+    con estado disponible/vendido y, si está vendido, el cliente (cruzado con el mapa de Ventas ya
+    cargado).
+  - **Kardex:** `pos_inv_movimientos` filtrado por `producto_id` — el MISMO dato real que ya
+    alimenta la pestaña "Historial" de `abrirProd` desde la Fase 5 (Kardex Inteligente), aquí
+    presentado como línea de tiempo (mismo lenguaje visual `↓` de las Fases 1-2 del Motor de
+    Documentos) en vez de tabla.
+- **Entrada:** botón nuevo (🪪 `ti-id-badge-2`, título "Ver 360°") en la fila de cada producto en
+  Inventario (`renderProductos`), junto a los botones de IMEI/Editar/Borrar que ya existían — mismo
+  patrón visual local de esa fila (`btn bsm bghost`, sin migrar toda la pantalla a `.nxPf`, fuera de
+  alcance de esta fase).
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción): harness
+  con un producto de prueba completo (2 compras, 2 ventas —una anulada—, 2 niveles de precio, 2
+  seriales —uno vendido, uno disponible—, garantías vigente y vencida, una reparación que coincide
+  por nombre y otra que no, 4 movimientos de kardex de 4 tipos distintos) cargado en un navegador
+  real: las 11 secciones muestran los conteos/montos correctos, el emparejamiento aproximado de
+  Taller solo trae la reparación que de verdad coincide por nombre, sin errores de JS y sin
+  desbordes horizontales en 390px ni 800px (`scrollWidth === clientWidth` exacto en ambos). `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Con esta pieza el "Plan Maestro NEXUS PRO POS 3.0" tiene sus 5 fases pedidas hasta ahora
+  completas** (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Kardex Inteligente Fase 5,
+  Artículo 360° Fase 4) — quedan las fases 6-10 si el dueño las manda.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
