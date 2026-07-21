@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.67** (ver `index.html` y `version.json`).
+> Versión actual: **48.68** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2191,6 +2191,71 @@ motor).
   avancen; el motor ya está preparado para sumar Pedido/Devolución/Orden de trabajo sin rediseñar nada
   (son entradas nuevas en `DOC_ICONO`/`DOC_NOMBRE` + una llamada a `registrarDocumento` en su punto de
   creación real, mismo patrón ya probado).
+
+### POS · MOTOR DE DOCUMENTOS, FASE 2 — Línea de tiempo universal (21-jul-2026, v48.68)
+El dueño pidió la Fase 2 con un ejemplo concreto: cada documento debe tener un historial completo con
+hora exacta — "08:05 Creado → 08:08 Cliente cambiado → 08:12 Artículo agregado → 08:15 Precio
+modificado → 08:17 Facturado". `pos_documento_eventos` ya existía desde la Fase 1 (se usaba solo para
+'creado'/'convertido_a_carrito') — Fase 2 amplía qué eventos reales se detectan y construye la ventana
+de línea de tiempo. **Mismo criterio que toda la sesión: NUNCA se inventa un evento — cada línea sale
+de una comparación real contra el estado anterior guardado, o de una acción real que de verdad ocurrió.**
+- **Dónde aplica de verdad la edición granular — investigado ANTES de programar:** de los 3 tipos de
+  documento (Cotización/Prefactura/Factura), solo **Cotización tiene un flujo real de "editar algo ya
+  guardado"** (`nxCotEditar` carga una cotización existente, se modifica en pantalla, `nxCotGuardar` la
+  vuelve a guardar). Prefactura se crea una sola vez desde el carrito y no tiene "editar" (solo se
+  factura o se queda abierta); Factura, una vez confirmada, no se edita (solo se anula). Por eso
+  "Cliente cambiado"/"Artículo agregado"/"Precio modificado"/"Cantidad modificada" se implementaron
+  SOLO en el ciclo de edición de Cotizaciones — el único lugar donde esos cambios son datos reales, no
+  fabricados. No se forzó una edición falsa en Prefactura/Factura solo para parecerse al ejemplo.
+- **`diffCotizacion(orig, edit)`** (helper nuevo, junto a `registrarDocumento`): compara el snapshot
+  tomado al abrir para editar contra el estado a punto de guardar y devuelve SOLO los eventos que de
+  verdad cambiaron — cliente (por `cliente_id`), artículos agregados/quitados (por `producto_id`, no
+  por posición en el arreglo), precio modificado y cantidad modificada (por línea que sobrevive en
+  ambos estados). Si no cambió nada, devuelve `[]` (no se loguea "edición" vacía). `_cotEditSnapshot`
+  (variable de módulo nueva, junto a `_cotEdit`) se toma con `JSON.parse(JSON.stringify(...))` en
+  `nxCotEditar()` — copia profunda real, no una referencia que se mutaría junto con `_cotEdit` al
+  editar en pantalla. En `nxCotNueva()` se limpia a `null` (una cotización nueva no tiene snapshot
+  contra qué comparar). `nxCotGuardar()`: en el camino de EDICIÓN (`cotId` ya existía, no en el de
+  crear) llama `diffCotizacion(_cotEditSnapshot, _cotEdit)` tras el `PATCH` exitoso y loguea cada
+  evento detectado contra el documento real (`buscarDocumentoDe('pos_cotizaciones', cotId)`).
+- **Propagación de "Facturado" a TODA la cadena, no solo el eslabón inmediato:** antes (Fase 1) solo se
+  sabía que una factura vino de tal prefactura/cotización viendo la cadena hacia ABAJO desde la
+  cotización. Ahora, en `nxPosConfirmar`, justo después de registrar el documento de la factura, se
+  camina hacia ARRIBA por `documento_padre_id` (mismo patrón guard-con-tope-10 que ya usaba
+  `nxDocCadena` para el ascenso) y se loguea un evento `'facturado'` en CADA ancestro — así la
+  cotización original también muestra "Facturado" en su propia línea de tiempo aunque haya pasado por
+  una prefactura en el medio, sin necesidad de "adivinar" la cadena completa después.
+- **`window.nxDocCadena` ampliado (mismo modal de la Fase 1, no uno nuevo):** (1) cada nodo de la
+  cadena/hijos ahora es CLICABLE (menos el nodo actual) — tocarlo reabre la misma ventana anclada en
+  ESE documento, para "caminar" toda la cadena sin cerrar y reabrir manualmente
+  (`tabindex/role="button"/onkeydown` para que también funcione por teclado); (2) sección nueva
+  **"Línea de tiempo"** debajo de la cadena: trae `pos_documento_eventos` del documento ANCLADO
+  (`documento_id=eq.<id del doc que se abrió>`, ordenado por `created_at.asc`) y la pinta con el mismo
+  lenguaje visual de flechas `↓` que ya usaba la cadena arriba — hora `HH:MM` en negrita, nombre del
+  evento (`EVENTO_NOMBRE`, mapa nuevo de claves→español), y el detalle real debajo si lo hay. Si el
+  documento no tiene ningún evento (caso límite, no debería pasar en la práctica ya que `creado` es
+  automático), muestra "Sin eventos registrados todavía." en vez de una sección vacía o rota.
+- **Cada documento solo muestra SU PROPIO historial** (a propósito, no el de sus documentos
+  relacionados) — la factura no "hereda" los eventos de la cotización que le dio origen; para ver el
+  historial de la cotización hay que tocar su nodo en la cadena y saltar ahí. Mantiene cada línea de
+  tiempo honesta: solo cuenta lo que le pasó a ESE documento en particular.
+- **Verificado con el código real** (no una reconstrucción): se extrajeron `diffCotizacion`,
+  `registrarDocumento`/`registrarEventoDoc`/`buscarDocumentoDe`, `nxDocCadena` y el bloque exacto de
+  propagación de `nxPosConfirmar` tal cual del archivo, y se simuló: (1) `diffCotizacion` con los 4
+  tipos de cambio del ejemplo del dueño (cliente/agregar/quitar/precio) más 2 casos límite (sin
+  cambios reales → `[]`; solo cambia cantidad → detecta SOLO ese evento, no falsos positivos) — los 7
+  casos correctos; (2) una cotización editada DOS veces de verdad (cambia cliente, luego agrega
+  artículo y cambia precio) que se convierte en prefactura y se factura — la línea de tiempo de la
+  cotización mostró los 6 eventos en el ORDEN correcto con horas reales (Creado → Cliente cambiado →
+  Artículo agregado → Precio modificado → Cargado para facturar → Facturado), la prefactura mostró su
+  propio historial con el detalle correcto ("Facturada como B0200005678"), la factura mostró SOLO su
+  propio "Creado" (sin heredar nada de sus documentos padre), un nodo de la cadena resultó clicable
+  hacia el documento correcto y el nodo actual no se autoenlaza, y un documento sin eventos mostró el
+  aviso honesto en vez de romperse. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
+- **Pendiente:** el resto del Plan Maestro (Fases 3-10) — llegará por partes, mismo criterio de esta
+  sesión: confirmar el alcance real con el dueño antes de programar, no inventar funciones para
+  "completar" un ejemplo si el sistema no tiene un dato real detrás.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

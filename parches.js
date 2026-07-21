@@ -14980,7 +14980,7 @@
   let _ctaDesde = '', _ctaHasta = '', _ctaMayorSel = '';
   let _asEdit = null; // { fecha, concepto, lineas:[{cuenta_id,debito,credito}] }
   // ── Cotizaciones ──
-  let _cotizaciones = [], _cotEdit = null;
+  let _cotizaciones = [], _cotEdit = null, _cotEditSnapshot = null;
   // ── Reportes ──
   let _repDesde = '', _repHasta = '', _repVentas = [];
   // ── Recursos Humanos ──
@@ -15417,6 +15417,37 @@
   }
   const DOC_ICONO = { cotizacion: 'ti-clipboard-text', prefactura: 'ti-file-description', factura: 'ti-receipt', garantia: 'ti-shield-check' };
   const DOC_NOMBRE = { cotizacion: 'Cotización', prefactura: 'Prefactura', factura: 'Factura', garantia: 'Garantía' };
+  // ══════════════ MOTOR DE DOCUMENTOS (Fase 2: Línea de tiempo universal) ══════════════
+  // Cada documento ya tiene su propio historial en pos_documento_eventos (se venía usando solo para
+  // 'creado'/'convertido_a_carrito'). Fase 2 amplía qué eventos reales se detectan y agrega la
+  // ventana de línea de tiempo — NUNCA se inventa un evento: todo sale de una comparación real
+  // contra el estado anterior guardado, o de una acción real que de verdad ocurrió.
+  const EVENTO_NOMBRE = { creado: 'Creado', convertido_a_carrito: 'Cargado para facturar', cliente_cambiado: 'Cliente cambiado', articulo_agregado: 'Artículo agregado', articulo_quitado: 'Artículo quitado', precio_modificado: 'Precio modificado', cantidad_modificada: 'Cantidad modificada', facturado: 'Facturado' };
+  // Compara el estado YA GUARDADO (snapshot tomado al abrir para editar) contra el estado a punto de
+  // guardar, y devuelve SOLO los eventos que de verdad cambiaron (nunca fabrica uno que no ocurrió).
+  function diffCotizacion(orig, edit) {
+    const eventos = [];
+    if (!orig) return eventos;
+    if (String(orig.cliente_id || '') !== String(edit.cliente_id || '')) {
+      eventos.push({ evento: 'cliente_cambiado', detalle: (orig.cliente_nombre || 'Consumidor final') + ' → ' + (edit.cliente_nombre || 'Consumidor final') });
+    }
+    const nombreCorto = arr => arr.map(l => l.nombre).slice(0, 3).join(', ') + (arr.length > 3 ? ' +' + (arr.length - 3) + ' más' : '');
+    const mapOrig = new Map((orig.lineas || []).map(l => [String(l.producto_id), l]));
+    const mapEdit = new Map((edit.lineas || []).map(l => [String(l.producto_id), l]));
+    const agregados = (edit.lineas || []).filter(l => !mapOrig.has(String(l.producto_id)));
+    const quitados = (orig.lineas || []).filter(l => !mapEdit.has(String(l.producto_id)));
+    if (agregados.length) eventos.push({ evento: 'articulo_agregado', detalle: nombreCorto(agregados) });
+    if (quitados.length) eventos.push({ evento: 'articulo_quitado', detalle: nombreCorto(quitados) });
+    const precioCambios = [], cantCambios = [];
+    mapEdit.forEach((le, pid) => {
+      const lo = mapOrig.get(pid); if (!lo) return;
+      if (Number(lo.precio) !== Number(le.precio)) precioCambios.push(le.nombre + ': ' + fmt(lo.precio) + ' → ' + fmt(le.precio));
+      if (Number(lo.cantidad) !== Number(le.cantidad)) cantCambios.push(le.nombre + ': ' + lo.cantidad + ' → ' + le.cantidad);
+    });
+    if (precioCambios.length) eventos.push({ evento: 'precio_modificado', detalle: precioCambios.slice(0, 3).join('; ') + (precioCambios.length > 3 ? ' +' + (precioCambios.length - 3) + ' más' : '') });
+    if (cantCambios.length) eventos.push({ evento: 'cantidad_modificada', detalle: cantCambios.slice(0, 3).join('; ') + (cantCambios.length > 3 ? ' +' + (cantCambios.length - 3) + ' más' : '') });
+    return eventos;
+  }
   // Ventana de solo lectura: sube hasta la raíz de la cadena y baja a los documentos hijos
   // (ej. desde una factura ves de qué cotización/prefactura vino y qué garantías generó).
   window.nxDocCadena = async function (tabla, registroId) {
@@ -15443,19 +15474,40 @@
         hijos.push(...nuevos); nivel = nuevos.map(d => d.id);
       }
     } catch (e) {}
-    const fila = (d, esActual) => `<div class="oppcard" style="display:flex;align-items:center;gap:8px${esActual ? ';border-color:var(--pf-blue);background:var(--pf-blue-l)' : ''}">
+    // Nodos de la cadena son clicables (menos el actual) para "caminar" el documento completo sin
+    // cerrar y reabrir — cada uno reabre esta misma ventana anclada en ESE documento.
+    const fila = (d, esActual) => {
+      const estilo = 'display:flex;align-items:center;gap:8px;cursor:' + (esActual ? 'default' : 'pointer') + (esActual ? ';border-color:var(--pf-blue);background:var(--pf-blue-l)' : '');
+      const nav = "window.nxDocCadena('" + d.tabla_origen + "','" + d.registro_id + "')";
+      const attrs = esActual ? '' : ` tabindex="0" role="button" aria-label="Ver ${esc(d.codigo || d.tipo)}" onclick="${nav}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${nav}}"`;
+      return `<div class="oppcard" style="${estilo}"${attrs}>
         <div style="background:var(--pf-blue-l);color:var(--pf-blue-d);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${DOC_ICONO[d.tipo] || 'ti-file'}"></i></div>
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px">${esc(d.codigo || d.tipo)}</div><div style="font-size:10px;color:var(--pf-txt3)">${DOC_NOMBRE[d.tipo] || d.tipo} · ${String(d.created_at || '').slice(0, 16).replace('T', ' ')}${d.monto != null ? ' · ' + fmt(d.monto) : ''}</div></div>
       </div>`;
+    };
     const flecha = '<div style="text-align:center;color:var(--pf-txt3);font-size:13px;margin:2px 0">↓</div>';
     const cuerpo = cadena.map((d, i) => fila(d, String(d.id) === String(doc.id)) + (i < cadena.length - 1 ? flecha : '')).join('')
       + (hijos.length ? flecha + hijos.map(h => fila(h, false)).join('<div style="height:6px"></div>') : '');
+    // Fase 2: línea de tiempo del documento ANCLADO (el que se abrió) — historial real de
+    // pos_documento_eventos, nunca inventado (si no hay eventos, se dice claro que no hay).
+    let eventos = [];
+    try { eventos = await getAPI().get('pos_documento_eventos', 'documento_id=eq.' + doc.id + '&order=created_at.asc') || []; } catch (e) {}
+    const filaEv = ev => `<div style="text-align:center">
+        <div style="font-weight:800;font-size:12px;color:var(--pf-blue-d)">${String(ev.created_at || '').slice(11, 16)}</div>
+        <div style="font-size:12.5px;font-weight:700;margin-top:2px">${esc(EVENTO_NOMBRE[ev.evento] || ev.evento)}</div>
+        ${ev.detalle ? `<div style="font-size:10.5px;color:var(--pf-txt3);margin-top:2px">${esc(ev.detalle)}</div>` : ''}
+      </div>`;
+    const cuerpoEventos = eventos.length ? eventos.map((ev, i) => filaEv(ev) + (i < eventos.length - 1 ? flecha : '')).join('') : '<div class="emptyrow">Sin eventos registrados todavía.</div>';
     cerrarModal('nxDocCadenaM');
     const ov = document.createElement('div'); ov.id = 'nxDocCadenaM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPf" style="max-width:420px">
       <div class="head"><button class="nxBack" type="button" onclick="document.getElementById('nxDocCadenaM').remove()" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button><h3><i class="ti ti-git-branch"></i> Cadena del documento</h3></div>
-      <div style="padding:14px;overflow-y:auto">${cuerpo}</div>
+      <div style="padding:14px;overflow-y:auto">
+        ${cuerpo}
+        <div style="display:flex;align-items:center;gap:8px;margin:18px 0 12px;color:var(--pf-txt3)"><div style="flex:1;height:1px;background:var(--pf-blue-l)"></div><span style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em"><i class="ti ti-clock-hour-4"></i> Línea de tiempo — ${esc(doc.codigo || doc.tipo)}</span><div style="flex:1;height:1px;background:var(--pf-blue-l)"></div></div>
+        ${cuerpoEventos}
+      </div>
     </div>`;
     document.body.appendChild(ov);
   };
@@ -16761,7 +16813,8 @@
       // y una garantía por cada línea que la trae — best-effort, nunca bloquea el cobro.
       try {
         const padreId = (_facOrigenDoc && _facOrigenDoc.documentoId) || null;
-        const docFactura = await registrarDocumento('factura', numFac || ('No. ' + (venta.numero || '')), 'pos_ventas', venta.id, { padreId: padreId, clienteId: cliId, monto: c.total, estado: 'completada' });
+        const codFac = numFac || ('No. ' + (venta.numero || ''));
+        const docFactura = await registrarDocumento('factura', codFac, 'pos_ventas', venta.id, { padreId: padreId, clienteId: cliId, monto: c.total, estado: 'completada' });
         if (docFactura) {
           for (let gi = 0; gi < items.length; gi++) {
             const it = items[gi]; if (!it.garantia_hasta) continue;
@@ -16770,6 +16823,15 @@
             if (!codGar) codGar = 'GAR-' + String(Date.now()).slice(-8) + '-' + gi;
             registrarDocumento('garantia', codGar, 'pos_venta_items', itemRegId, { padreId: docFactura.id, clienteId: cliId, estado: 'vigente' }).catch(() => {});
           }
+        }
+        // Fase 2 (línea de tiempo): que TODA la cadena de arriba (prefactura, cotización...) también
+        // vea "Facturado" en su propio historial, no solo el eslabón inmediato.
+        let curPadreId = padreId, guardF = 0;
+        while (curPadreId && guardF++ < 10) {
+          let padreDoc = null; try { const r = await getAPI().get('pos_documentos', 'id=eq.' + curPadreId); padreDoc = r && r[0]; } catch (e3) {}
+          if (!padreDoc) break;
+          registrarEventoDoc(padreDoc.id, 'facturado', 'Facturada como ' + codFac).catch(() => {});
+          curPadreId = padreDoc.documento_padre_id;
         }
       } catch (eDoc) { console.warn('motor de documentos (factura):', eDoc); }
       _facOrigenDoc = null;
@@ -19497,11 +19559,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
     </div>`;
   }
-  window.nxCotNueva = function () { _cotEdit = { id: null, cliente_id: '', cliente_nombre: '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; abrirCotizacion(); };
+  window.nxCotNueva = function () { _cotEdit = { id: null, cliente_id: '', cliente_nombre: '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; _cotEditSnapshot = null; abrirCotizacion(); };
   window.nxCotEditar = async function (id) {
     const c = _cotizaciones.find(x => String(x.id) === String(id)); if (!c) return;
     let items = []; try { items = await getAPI().get('pos_cotizacion_items', 'select=*&cotizacion_id=eq.' + id) || []; } catch (e) {}
     _cotEdit = { id: c.id, cliente_id: c.cliente_id || '', cliente_nombre: c.cliente_nombre || '', fecha: String(c.fecha).slice(0, 10), validez_dias: c.validez_dias || 15, notas: c.notas || '', estado: c.estado, lineas: items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: Number(it.precio || 0), cantidad: Number(it.cantidad || 1), itbis: it.itbis !== false, desc: 0, descT: 'pct' })) };
+    // Fotografía del estado ya guardado (para el motor de documentos: al volver a guardar, se compara
+    // contra esto y se loguean SOLO los cambios reales — cliente/artículos/precio/cantidad).
+    _cotEditSnapshot = JSON.parse(JSON.stringify(_cotEdit));
     abrirCotizacion();
   };
   function abrirCotizacion() {
@@ -19586,7 +19651,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       if (!cotId) throw new Error('No se pudo guardar');
       const items = _cotEdit.lineas.map(l => ({ cotizacion_id: cotId, producto_id: l.producto_id, nombre: l.nombre, precio: Math.round(l.precio), cantidad: l.cantidad, itbis: !!l.itbis, descuento: Math.round(lineDescMonto(l)), importe: Math.round(lineImporte(l)) }));
       await getAPI().post('pos_cotizacion_items', items);
-      if (esNueva) registrarDocumento('cotizacion', numero, 'pos_cotizaciones', cotId, { clienteId: body.cliente_id, monto: body.total }).catch(() => {});
+      if (esNueva) { registrarDocumento('cotizacion', numero, 'pos_cotizaciones', cotId, { clienteId: body.cliente_id, monto: body.total }).catch(() => {}); }
+      else {
+        // Motor de documentos: se editó una cotización ya guardada — loguear SOLO lo que de verdad cambió.
+        try {
+          const cambios = diffCotizacion(_cotEditSnapshot, _cotEdit);
+          if (cambios.length) { const doc = await buscarDocumentoDe('pos_cotizaciones', cotId); if (doc) cambios.forEach(ev => registrarEventoDoc(doc.id, ev.evento, ev.detalle).catch(() => {})); }
+        } catch (eDiff) { console.warn('motor de documentos (diff cotización):', eDiff); }
+      }
+      _cotEditSnapshot = null;
       cerrarModal('nxCotForm'); toast('ok', 'Cotización guardada', numero);
       await cargarCotizaciones(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
