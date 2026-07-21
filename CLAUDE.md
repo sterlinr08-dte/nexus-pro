@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.77** (ver `index.html` y `version.json`).
+> Versión actual: **48.78** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2874,6 +2874,66 @@ al sistema real, verificado antes de publicar cada uno — igual disciplina que 
     caracteres) pasan `new Function()`; `version.json` válido.
 - **Pendiente:** el resto de la migración módulo por módulo — el dueño la va confirmando pieza a pieza,
   igual que el resto de esta sesión (nunca todo de golpe sobre pantallas que ya funcionan en producción).
+
+### NEXUS PRO 2.5 — REDISEÑO DEL POS, filosofía InfoPlus sin copiar su lógica (21-jul-2026, en progreso)
+El dueño mandó una especificación larga y muy detallada ("NEXUS PRO 2.5 – REDISEÑO DEL PUNTO DE VENTA")
+pidiendo explícitamente **NO cambiar la lógica comercial** — mantener la misma filosofía operativa de
+InfoPlus (Cotización→Preventa→Factura, un solo Punto de Venta, decisión "Finalizar" al final) pero con
+interfaz moderna — y pidió, **antes de escribir código**: (1) analizar el POS actual, (2) compararlo
+contra la filosofía InfoPlus, (3) identificar diferencias funcionales, (4) proponer mejoras sin alterar
+el flujo comercial, (5) presentar un plan por fases. Se hizo así, en ese orden, sin tocar código hasta
+tener el plan aprobado.
+- **Investigación (agente de exploración, 30 llamadas de herramienta, evidencia archivo:línea real):**
+  hallazgo clave — **Vender, Factura y Prefactura YA son literalmente la misma pantalla.**
+  `renderPrefactura()` es un wrapper de una línea (`return renderFactura()`); el modo se activa con una
+  sola bandera `_posTab==='prefactura'` (`esPreTab()`); los 3 comparten `_cart`/`_factCli`. La única
+  pieza genuinamente aislada es **Cotizaciones**: usa una estructura de líneas propia (`_cotEdit.lineas`,
+  no `_cart`), un modal aparte (`abrirCotizacion()`), y un buscador de productos con `<datalist>` HTML5
+  nativo (no el componente de búsqueda del resto del sistema). Tampoco existe hoy un botón "Finalizar"
+  único — son 4 entradas separadas en el menú, elegidas ANTES de armar el pedido (al revés del pedido).
+  Otros gaps reales encontrados: el panel de cliente en Factura solo mostraba código+nombre+nivel (sin
+  teléfono/balance/crédito disponible/última compra, aunque `saldoCli()` ya existe y se usa en otras
+  pantallas); no existe ningún concepto de favoritos/recientes de producto; no existe campo de peso en
+  `pos_productos`; el margen de la venta en curso no se muestra en ningún resumen de cobro (solo existe
+  como métrica del día en el Dashboard o del producto en su ficha/Artículo 360°).
+- **3 decisiones confirmadas con el dueño por `AskUserQuestion` antes de tocar código** (todas la opción
+  recomendada): (1) el botón "Finalizar" se agrega de forma **aditiva** — las 4 pestañas actuales
+  (Vender/Factura/Prefactura/Cotizaciones) se quedan funcionando exactamente igual, el camino unificado
+  se SUMA, no reemplaza nada (cero riesgo de romper el hábito de los cajeros ya entrenados); (2) el campo
+  "Peso" del brief queda **fuera de alcance** (el negocio real —celulares/accesorios— no vende por peso);
+  (3) el margen visible en el resumen de cobro queda **fuera de alcance por ahora** (ni admin ni gerente,
+  se decide después si hace falta).
+- **Plan por fases acordado:** Fase 1 (bajo riesgo, panel de cliente enriquecido) → Fase 2 (riesgo medio,
+  migrar Cotizaciones a compartir `_cart`+buscador estándar, mismo patrón que ya usa Prefactura) → Fase 3
+  (riesgo medio-alto, el botón "Finalizar" real) → Fase 4 (favoritos/recientes de producto).
+- **FASE 1 — HECHA (v48.78): panel de cliente enriquecido en Vender y Factura.** Nuevo bloque
+  `facCliInfoHTML(c)` (junto a `saldoCli`/`waNum`, mismo IIFE): teléfono (si tiene), **Balance** (
+  `saldoCli(c)`, en rojo si `>0`), **Crédito disponible** (`limite_credito - saldo`, solo si el cliente
+  tiene límite configurado — si no, no se muestra esa pastilla, no se finge un dato que no aplica), y
+  **Última compra** — esta última resuelta APARTE y perezosa (`cargarUltimaCompraCli(id)`, con caché
+  `_ultCompraCache` para no volver a golpear la red si el cajero re-selecciona el mismo cliente), mismo
+  criterio ya usado en Artículo 360°/`nxPfUltimoCosto` para no retrasar el primer pintado de la pantalla
+  de cobro (la más usada de todo el POS). El bloque vive en un contenedor de ID estable
+  (`id="facCliInfoWrap"`, presente en Vender Y Factura — pestañas mutuamente excluyentes, mismo patrón ya
+  establecido para `facCliBtn`/`facCliDrop`/`facCliTxt`); `nxFacSetCli()` ahora también llama a
+  `pintarFacCliInfo()` (repintado puntual, ya que esa función no reconstruye toda la pantalla) para que
+  el panel se actualice al cambiar de cliente a mitad de sesión, no solo en el primer pintado. Consumidor
+  final sigue sin mostrar nada (mismo comportamiento de antes, `facCliInfoHTML(null)===''`). CSS nuevo
+  `.pf2cliinfo`/`.pf2cliinfo-i` en `nxPfEnsureCSS()`, con una regla `.card .pf2cliinfo` para no duplicar
+  el padding horizontal cuando el bloque vive dentro de una `.card` ya paddeada (Vender) vs. cuando es un
+  hijo directo de `.nx-inv-card` sin padding propio (Factura) — mismo tipo de ajuste de especificidad ya
+  documentado varias veces en este archivo. **Deliberadamente NO tocado en esta fase:** Cotizaciones,
+  el botón Finalizar, favoritos/recientes — quedan para las Fases 2-4, confirmadas pieza por pieza.
+  Verificado: 15 aserciones contra el código real extraído (`facCliInfoHTML`/`cargarUltimaCompraCli`/
+  `pintarFacCliInfo`) — balance con color de alerta correcto, crédito disponible solo si hay límite,
+  caché evita una segunda consulta a la red al re-seleccionar el mismo cliente, cliente sin compras
+  muestra "Sin compras registradas" en vez de romperse, `pintarFacCliInfo()` no truena si el contenedor
+  no existe en el DOM actual — más una verificación visual en navegador (Playwright, código y CSS reales
+  extraídos de `nxPfEnsureCSS`) en 390px/1280px, sin desbordes, 0 errores de JS. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** Fase 2 (Cotizaciones → `_cart` + buscador estándar), Fase 3 (botón Finalizar aditivo),
+  Fase 4 (favoritos/recientes) — cada una se construye y confirma por separado, mismo criterio de toda
+  la sesión.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

@@ -14965,6 +14965,7 @@
   let _apartados = [], _apaPagos = []; // apartados (layaway)
   let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
   let _prefs = []; // prefacturas abiertas
+  let _ultCompraCache = {}; // cliente_id -> texto ya resuelto de "última compra" (panel de cliente en Vender/Factura)
   let _cartFacSaved = [], _cartPre = []; // carritos separados: Factura vs Prefactura
   let _histSort = { k: 'fecha', d: -1 };
   let _notasCred = []; // historial de notas de crédito (pos_devoluciones)
@@ -15147,6 +15148,35 @@
   }
   function saldoCli(c) { const id = c && c.id; return Math.max(0, (_fiadoByCli[id] || 0) - (_abonosByCli[id] || 0)); }
   function waNum(t) { let d = String(t || '').replace(/\D/g, ''); if (d.length === 10) d = '1' + d; return d.length >= 11 ? d : ''; }
+
+  // ── Panel de cliente en Vender/Factura: teléfono, balance, crédito disponible, última compra ──
+  // (Sistema de Diseño POS, Fase 1). Teléfono/balance/crédito son síncronos (ya están en memoria);
+  // "última compra" se resuelve aparte, perezoso, para no cargar la pantalla de cobro más lenta —
+  // mismo criterio que nxPfUltimoCosto/nxPfHistorialCargar (Artículo 360°).
+  function facCliInfoHTML(c) {
+    if (!c) return '';
+    const saldo = saldoCli(c);
+    const lim = Number(c.limite_credito || 0);
+    const credDisp = lim > 0 ? Math.max(0, lim - saldo) : null;
+    return `<div class="pf2cliinfo" id="facCliInfo">
+      ${c.telefono ? `<span class="pf2cliinfo-i"><i class="ti ti-phone"></i>${esc(c.telefono)}</span>` : ''}
+      <span class="pf2cliinfo-i${saldo > 0 ? ' warn' : ''}"><i class="ti ti-wallet"></i>Balance: ${fmt(saldo)}</span>
+      ${lim > 0 ? `<span class="pf2cliinfo-i"><i class="ti ti-credit-card"></i>Crédito disp.: ${fmt(credDisp)}</span>` : ''}
+      <span class="pf2cliinfo-i" id="facCliUltCompra"><i class="ti ti-history"></i>Última compra: <span class="ld">…</span></span>
+    </div>`;
+  }
+  function cargarUltimaCompraCli(id) {
+    if (!id) return;
+    const pinta = txt => { const e = document.getElementById('facCliUltCompra'); if (e) e.innerHTML = '<i class="ti ti-history"></i>Última compra: ' + txt; };
+    if (_ultCompraCache[id] !== undefined) { pinta(_ultCompraCache[id]); return; }
+    getAPI().get('pos_ventas', 'select=created_at,total&cliente_id=eq.' + id + '&estado=neq.anulada&order=created_at.desc&limit=1')
+      .then(r => {
+        const v = r && r[0];
+        const txt = v ? esc(fechaDMY(String(v.created_at).slice(0, 10))) + ' · ' + fmt(v.total || 0) : 'Sin compras registradas';
+        _ultCompraCache[id] = txt;
+        pinta(txt);
+      }).catch(() => { pinta('—'); });
+  }
 
   // ── Importe de línea con descuento (% o $) ──
   function lineBase(it) { return Number(it.precio || 0) * Number(it.cantidad || 0); }
@@ -15588,6 +15618,7 @@
     }).join('');
     const cliActual = _clientes.find(c => String(c.id) === String(_factCli));
     const cliTxt = cliActual ? (cliActual.codigo ? cliActual.codigo + ' · ' : '') + cliActual.nombre + (cliActual.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+    programarCargaUltimaCompra(cliActual && cliActual.id);
     return `<div class="nxPf nxPosGridWrap">
         <div class="nxPosLeft">
           <div class="card" style="margin-bottom:12px">
@@ -15598,6 +15629,7 @@
                 <div class="pf2clidrop" id="facCliDrop"></div>
               </div>
             </div>
+            <div id="facCliInfoWrap">${facCliInfoHTML(cliActual)}</div>
           </div>
           ${posBuscador({ id: 'posBuscar', placeholder: 'Buscar producto (toca la lupa para ver todos)...', oninput: 'window.nxPosBuscar(this.value)', onLupa: "window.nxProdPicker('vender')" })}
           <div class="vchiprow">${chips}</div>
@@ -15732,6 +15764,7 @@
     }
     const cliActual = _clientes.find(c => String(c.id) === String(_factCli));
     const cliTxt = cliActual ? (cliActual.codigo ? cliActual.codigo + ' · ' : '') + cliActual.nombre + (cliActual.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+    programarCargaUltimaCompra(cliActual && cliActual.id);
     const ncfChips = NCF_TIPOS.map(t => `<button type="button" class="pf2chip${_facNCF === t[0] ? ' on' : ''}" data-ncf="${t[0]}" onclick="window.nxFacNCFPick('${t[0]}')">${t[1]}</button>`).join('');
     const pre = esPreTab();
     const catTabs = `<button type="button" class="nx-inv-tab${_facCatSel === '' ? ' on' : ''}" data-cat="" onclick="window.nxFacCat('')">Todos</button>` + _cats.map(c => `<button type="button" class="nx-inv-tab${String(_facCatSel) === String(c.id) ? ' on' : ''}" data-cat="${c.id}" onclick="window.nxFacCat('${c.id}')">${esc(c.nombre)}</button>`).join('');
@@ -15758,6 +15791,7 @@
             </div>
             <div class="nx-inv-field"><label class="nx-inv-label" for="facFecha">Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-weight:700;color:#0f172a;font-family:inherit;font-size:16px"></div>
           </div>
+          <div id="facCliInfoWrap">${facCliInfoHTML(cliActual)}</div>
           <div class="nx-inv-tabs">${catTabs}</div>
           <div class="nx-inv-search">
             <div style="flex:1;position:relative;min-width:0">
@@ -15778,6 +15812,18 @@
       </div>
     </div>`;
   }
+  // "Última compra" se resuelve aparte (perezoso) para no retrasar el primer pintado de Factura/Vender.
+  function programarCargaUltimaCompra(cliId) { if (cliId) setTimeout(() => cargarUltimaCompraCli(cliId), 0); }
+  // Repinta el panel de teléfono/balance/crédito/última compra cuando el cliente cambia DESPUÉS del
+  // primer pintado (nxFacSetCli no reconstruye renderFactura/renderVender completos, solo la tabla
+  // y el resumen — así que este panel necesita su propio repintado puntual, mismo patrón ya usado
+  // por pintarCarrito()/gridHTML() dentro de la misma función).
+  function pintarFacCliInfo() {
+    const wrap = document.getElementById('facCliInfoWrap'); if (!wrap) return;
+    const c = _clientes.find(x => String(x.id) === String(_factCli));
+    wrap.innerHTML = facCliInfoHTML(c);
+    programarCargaUltimaCompra(c && c.id);
+  }
   window.nxFacSubTab = function (t) { _facSubTab = t || 'datos'; };
   window.nxFacSetCli = function (v) {
     _factCli = v || '';
@@ -15788,6 +15834,7 @@
     pintarFactura();
     try { pintarCarrito(); } catch (e) {}
     try { const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML(); } catch (e) {}
+    try { pintarFacCliInfo(); } catch (e) {}
   };
   window.nxFacSetFecha = function (v) { _facFecha = v || ''; };
   window.nxFacSetNCF = function (v) { _facNCF = v || 'sin'; };
@@ -17223,6 +17270,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .pf2chiprow{display:flex;gap:6px;flex-wrap:wrap}
 .nxPf .pf2chip{padding:7px 12px;border-radius:999px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
 .nxPf .pf2chip.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
+.nxPf .pf2cliinfo{display:flex;flex-wrap:wrap;gap:6px 14px;padding:9px 16px 3px;font-size:11.5px;color:var(--pf-txt2)}
+.nxPf .card .pf2cliinfo{padding-left:0;padding-right:0}
+.nxPf .pf2cliinfo-i{display:inline-flex;align-items:center;gap:5px;font-weight:600}
+.nxPf .pf2cliinfo-i i{font-size:13px;color:var(--pf-txt3)}
+.nxPf .pf2cliinfo-i.warn{color:var(--pf-red);font-weight:700}
+.nxPf .pf2cliinfo-i.warn i{color:var(--pf-red)}
+.nxPf .pf2cliinfo-i .ld{opacity:.5}
 .nxPf .cartcard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;box-shadow:var(--pf-shadow);padding:14px}
 .nxPf .carthd{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;font-weight:800;color:var(--pf-txt);margin-bottom:10px}
 .nxPf .carthd i{color:var(--pf-blue);margin-right:5px}
