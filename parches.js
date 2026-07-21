@@ -15296,6 +15296,7 @@
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
           <div class="nxTBrand"><div class="nxTLogo"><i class="ti ti-building-store"></i></div><div class="nxTBiz">${esc(biz)}<small>PUNTO DE VENTA</small></div></div>
+          <button type="button" class="nxTSearchBtn" onclick="window.nxBuscadorUniversal()"><i class="ti ti-search"></i> Buscar todo <span class="nxTSearchKbd">Ctrl K</span></button>
           <div class="nxTScroll">${nav}</div>
           <div class="nxTFoot">
             <div class="nxTUser"><div class="nxTAva">${esc(ini)}</div><div><b>${esc(nom)}</b><span>${esc(rol)}</span></div></div>
@@ -15305,7 +15306,7 @@
           </div>
         </aside>
         <div class="nxTMain">
-          <div class="nxTTop"><button class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><div class="nxTTopBiz">${esc(biz)}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
+          <div class="nxTTop"><button class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><button class="nxTSearchBtnM" type="button" onclick="window.nxBuscadorUniversal()" aria-label="Buscar en todo el sistema"><i class="ti ti-search"></i></button><div class="nxTTopBiz">${esc(biz)}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
           ${previewBar}
           ${body}
         </div>
@@ -18740,6 +18741,145 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       seccion('ti-fingerprint', 'IMEI (' + seriales.length + ')', '#475569', imeiHTML) +
       seccion('ti-clock-hour-4', 'Kardex', 'var(--pf-blue)', kardexHTML);
   };
+  // ══════════════ BUSCADOR UNIVERSAL (Plan Maestro POS 3.0, Fase 6) ══════════════
+  // "Una sola búsqueda para: Cliente, IMEI, Factura, Serie, Artículo, Recepción, Garantía,
+  // Proveedor, Orden. Sin importar el módulo." — se abre desde cualquier pantalla del POS
+  // (barra lateral en escritorio, ícono en la barra superior en móvil, o Ctrl+K) y busca en
+  // TODAS las categorías de una vez, no solo en la pestaña donde estés parado.
+  // IMEI y Serie son la MISMA columna real (pos_seriales.serial) — no se inventó un campo
+  // "serie" aparte que no existe; se muestran juntos bajo una sola categoría "IMEI / Serie".
+  // "Orden" = pos_compras.orden_no (el número de orden de compra que ya existía en el
+  // esquema, sin flujo de OC formal, pero es el único dato real que se llama "orden" en
+  // todo el módulo — no se confunde con "Recepción", que es su propia categoría aparte).
+  let _univS = { q: '', timer: null, token: 0, sel: -1, flat: [], resultados: [], cargando: false };
+  const UNIV_CAT_LBL = { cliente: 'Clientes', factura: 'Facturas', articulo: 'Artículos', imei: 'IMEI / Serie', recepcion: 'Recepciones', garantia: 'Garantías', proveedor: 'Proveedores', orden: 'Órdenes' };
+  const UNIV_CAT_ORDEN = ['cliente', 'factura', 'articulo', 'imei', 'recepcion', 'garantia', 'proveedor', 'orden'];
+  function univNorm(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function univIlike(q) { return encodeURIComponent(String(q || '').replace(/[%_,*()]/g, ' ').trim()); }
+  // ── Categorías EN MEMORIA (instantáneas, ya cargadas por cargarPOS — sin red) ──
+  function univBuscarClientes(qn) {
+    return (_clientes || []).filter(c => univNorm(c.nombre).includes(qn) || univNorm(c.telefono).includes(qn) || univNorm(c.cedula).includes(qn) || univNorm(c.codigo).includes(qn)).slice(0, 5)
+      .map(c => ({ cat: 'cliente', icono: 'ti-user', titulo: c.nombre, sub: (c.cedula || c.telefono || ''), accion: () => window.nxCliente360(c.id) }));
+  }
+  function univBuscarArticulos(qn) {
+    return (_prods || []).filter(p => univNorm(p.nombre).includes(qn) || univNorm(p.codigo).includes(qn) || univNorm(p.referencia).includes(qn) || univNorm(p.marca).includes(qn)).slice(0, 5)
+      .map(p => ({ cat: 'articulo', icono: 'ti-box', titulo: p.nombre, sub: (p.codigo ? p.codigo + ' · ' : '') + fmt(p.precio), accion: () => window.nxArticulo360(p.id) }));
+  }
+  function univBuscarProveedores(qn) {
+    return (_proveedores || []).filter(pv => univNorm(pv.nombre).includes(qn) || univNorm(pv.rnc).includes(qn) || univNorm(pv.telefono).includes(qn)).slice(0, 5)
+      .map(pv => ({ cat: 'proveedor', icono: 'ti-truck', titulo: pv.nombre, sub: (pv.rnc || pv.telefono || ''), accion: () => window.nxPosProvVer(pv.id) }));
+  }
+  function univBuscarRecepciones(qn) {
+    return (_reps || []).filter(r => univNorm(r.numero).includes(qn) || univNorm(r.equipo).includes(qn) || univNorm(r.imei).includes(qn) || univNorm(r.cliente_nombre).includes(qn) || univNorm(r.cliente_telefono).includes(qn)).slice(0, 5)
+      .map(r => { const est = repEst(r.estado); return { cat: 'recepcion', icono: 'ti-tool', titulo: (r.numero || '') + ' · ' + (r.equipo || ''), sub: (r.cliente_nombre || '') + ' · ' + est[1], accion: () => window.nxRepVer(r.id) }; });
+  }
+  // ── Categorías EN VIVO (no están garantizadas en memoria — un query chico y acotado c/u) ──
+  async function univBuscarFacturas(q) {
+    try {
+      const s = univIlike(q);
+      const rows = await getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,estado,created_at&or=(numero_factura.ilike.*' + s + '*,cliente_nombre.ilike.*' + s + '*)&order=created_at.desc&limit=6') || [];
+      return rows.map(v => ({ cat: 'factura', icono: 'ti-file-invoice', titulo: v.numero_factura || ('No. ' + (v.numero || '')), sub: (v.cliente_nombre || 'Consumidor final') + ' · ' + fmt(v.total) + (v.estado === 'anulada' ? ' · ANULADA' : ''), accion: () => { if (!(_ventas || []).find(x => String(x.id) === String(v.id))) _ventas.unshift(v); window.nxPosTicket(v.id); } }));
+    } catch (e) { return []; }
+  }
+  async function univBuscarImei(q) {
+    try {
+      const s = univIlike(q);
+      const rows = await getAPI().get('pos_seriales', 'select=id,serial,estado,producto_id&serial=ilike.*' + s + '*&order=created_at.desc&limit=6') || [];
+      return rows.map(ser => { const p = (_prods || []).find(x => String(x.id) === String(ser.producto_id)); return { cat: 'imei', icono: 'ti-fingerprint', titulo: ser.serial, sub: (p ? p.nombre : 'Artículo') + ' · ' + (ser.estado === 'vendido' ? 'Vendido' : 'Disponible'), accion: () => { if (p) window.nxArticulo360(p.id); else toast('warn', 'Artículo no encontrado'); } }; });
+    } catch (e) { return []; }
+  }
+  async function univBuscarGarantias(q) {
+    try {
+      const s = univIlike(q);
+      const rows = await getAPI().get('pos_documentos', 'select=id,codigo,tabla_origen,registro_id,monto,created_at&tipo=eq.garantia&codigo=ilike.*' + s + '*&order=created_at.desc&limit=6') || [];
+      return rows.map(d => ({ cat: 'garantia', icono: 'ti-shield-check', titulo: d.codigo, sub: (d.monto != null ? fmt(d.monto) : ''), accion: () => window.nxDocCadena(d.tabla_origen, d.registro_id) }));
+    } catch (e) { return []; }
+  }
+  async function univBuscarOrdenes(q) {
+    try {
+      const s = univIlike(q);
+      const rows = await getAPI().get('pos_compras', 'select=id,numero,orden_no,proveedor_nombre,total,fecha&orden_no=ilike.*' + s + '*&order=fecha.desc&limit=6') || [];
+      return rows.map(c => ({ cat: 'orden', icono: 'ti-clipboard-list', titulo: 'Orden ' + (c.orden_no || ''), sub: (c.proveedor_nombre || '') + ' · Compra No. ' + (c.numero || '') + ' · ' + fmt(c.total), accion: () => { if (!(_compras || []).find(x => String(x.id) === String(c.id))) _compras.unshift(c); window.nxPosCompraVer(c.id); } }));
+    } catch (e) { return []; }
+  }
+  function pintarUnivResultados() {
+    const el = document.getElementById('nxUnivResults'); if (!el) return;
+    const porCat = {}; (_univS.resultados || []).forEach(r => { (porCat[r.cat] = porCat[r.cat] || []).push(r); });
+    const flat = []; let html = '';
+    UNIV_CAT_ORDEN.forEach(cat => {
+      const items = porCat[cat]; if (!items || !items.length) return;
+      html += `<div class="nxUnivCat">${esc(UNIV_CAT_LBL[cat])}</div>`;
+      items.forEach(r => {
+        const idx = flat.length; flat.push(r);
+        html += `<div class="nxUnivRow" data-idx="${idx}" tabindex="0" role="button" aria-label="${esc(r.titulo)}" onclick="window.nxBuscUnivElegir(${idx})" onkeydown="if(event.key==='Enter'){window.nxBuscUnivElegir(${idx})}"><div class="nxUnivRowIcon"><i class="ti ${r.icono}"></i></div><div class="nxUnivRowInfo"><div class="nxUnivRowT">${esc(r.titulo)}</div><div class="nxUnivRowS">${esc(r.sub || '')}</div></div></div>`;
+      });
+    });
+    _univS.flat = flat;
+    if (!flat.length) html = _univS.cargando ? '<div class="nxUnivHint"><i class="ti ti-loader-2"></i> Buscando en todo el sistema…</div>' : '<div class="nxUnivHint">Sin resultados.</div>';
+    el.innerHTML = html;
+    marcarUnivSel();
+  }
+  function marcarUnivSel() {
+    const el = document.getElementById('nxUnivResults'); if (!el) return;
+    const rows = el.querySelectorAll('.nxUnivRow');
+    rows.forEach((r, i) => r.classList.toggle('sel', i === _univS.sel));
+    if (_univS.sel >= 0 && rows[_univS.sel]) rows[_univS.sel].scrollIntoView({ block: 'nearest' });
+  }
+  window.nxBuscUnivElegir = function (idx) {
+    const r = _univS.flat[idx]; if (!r) return;
+    window.nxBuscUnivCerrar();
+    try { r.accion(); } catch (e) {}
+  };
+  window.nxBuscUnivInput = function (v) {
+    _univS.q = v; _univS.sel = -1;
+    clearTimeout(_univS.timer);
+    const q = String(v || '').trim();
+    const el = document.getElementById('nxUnivResults');
+    if (q.length < 2) { _univS.resultados = []; _univS.cargando = false; if (el) el.innerHTML = '<div class="nxUnivHint">Escribe al menos 2 letras para buscar en todo el sistema.</div>'; return; }
+    const qn = univNorm(q);
+    const myToken = ++_univS.token;
+    _univS.resultados = [].concat(univBuscarClientes(qn), univBuscarArticulos(qn), univBuscarProveedores(qn), univBuscarRecepciones(qn));
+    _univS.cargando = true;
+    pintarUnivResultados();
+    _univS.timer = setTimeout(async () => {
+      const [facturas, imei, garantias, ordenes] = await Promise.all([univBuscarFacturas(q), univBuscarImei(q), univBuscarGarantias(q), univBuscarOrdenes(q)]);
+      if (myToken !== _univS.token) return; // el usuario ya escribió algo distinto — se descarta esta respuesta vieja
+      _univS.resultados = _univS.resultados.concat(facturas, imei, garantias, ordenes);
+      _univS.cargando = false;
+      pintarUnivResultados();
+    }, 300);
+  };
+  window.nxBuscUnivKey = function (ev) {
+    if (ev.key === 'Escape') { window.nxBuscUnivCerrar(); return; }
+    if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp' && ev.key !== 'Enter') return;
+    const n = _univS.flat.length; if (!n) return;
+    if (ev.key === 'Enter') { ev.preventDefault(); if (_univS.sel >= 0) window.nxBuscUnivElegir(_univS.sel); return; }
+    ev.preventDefault();
+    _univS.sel = ev.key === 'ArrowDown' ? Math.min(n - 1, _univS.sel + 1) : Math.max(0, _univS.sel - 1);
+    marcarUnivSel();
+  };
+  window.nxBuscUnivCerrar = function () { cerrarModal('nxUnivS'); };
+  window.nxBuscadorUniversal = function () {
+    nxPfEnsureCSS();
+    cerrarModal('nxUnivS');
+    _univS = { q: '', timer: null, token: 0, sel: -1, flat: [], resultados: [], cargando: false };
+    const ov = document.createElement('div'); ov.id = 'nxUnivS'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) window.nxBuscUnivCerrar(); });
+    ov.innerHTML = `<div class="nxUnivBox">
+        <div class="nxUnivHead"><i class="ti ti-search"></i><input id="nxUnivIn" type="text" placeholder="Cliente, factura, IMEI, artículo, proveedor, recepción, garantía, orden…" oninput="window.nxBuscUnivInput(this.value)" onkeydown="window.nxBuscUnivKey(event)"><button type="button" class="nxUnivClose" onclick="window.nxBuscUnivCerrar()" aria-label="Cerrar"><i class="ti ti-x"></i></button></div>
+        <div id="nxUnivResults" class="nxUnivResults"><div class="nxUnivHint">Escribe al menos 2 letras para buscar en todo el sistema.</div></div>
+      </div>`;
+    document.body.appendChild(ov);
+    setTimeout(() => { const inp = document.getElementById('nxUnivIn'); if (inp) inp.focus(); }, 60);
+  };
+  // Atajo Ctrl+K — SOLO si el POS está montado en pantalla (no interfiere con el buscador global de Seguros)
+  if (!window.__nxUnivKeys) {
+    window.__nxUnivKeys = true;
+    document.addEventListener('keydown', function (e) {
+      if (!document.getElementById('v-pos')) return;
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); window.nxBuscadorUniversal(); }
+    });
+  }
   window.nxPosEstadoCuenta = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
     let ventas = [], abonos = [];
@@ -22177,6 +22317,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxTLogo{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:linear-gradient(145deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.5),inset 0 1px 1px rgba(255,255,255,.4)}',
       '.nxTBiz{font-weight:800;font-size:14px;line-height:1.1;color:#fff}',
       '.nxTBiz small{display:block;font-weight:600;font-size:10px;color:#a8c5ec;margin-top:3px;letter-spacing:.3px}',
+      /* Buscador Universal — entrada siempre visible en la barra lateral (fija en escritorio) */
+      '.nxTSearchBtn{display:flex;align-items:center;gap:9px;width:calc(100% - 18px);margin:10px 9px 4px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#c9d9f2;text-align:left;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}',
+      '.nxTSearchBtn i{font-size:14px}',
+      '.nxTSearchBtn:active{background:rgba(255,255,255,.13)}',
+      '.nxTSearchKbd{margin-left:auto;font-size:9px;font-weight:800;background:rgba(255,255,255,.14);border-radius:5px;padding:2px 6px;letter-spacing:.3px}',
       '.nxTScroll{flex:1;overflow-y:auto;padding:8px 9px 14px}',
       '.nxTSec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7ba3d9;margin:13px 8px 5px}',
       '.nxTSec:first-child{margin-top:3px}',
@@ -22196,6 +22341,21 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxTMain .nxInicio,.nxTMain .nxCtaRep{max-width:1100px}',
       '.nxTTop{display:none}',
       '.nxTBackdrop{display:none;position:fixed;inset:0;background:rgba(15,16,40,.45);z-index:115}',
+      /* Buscador Universal — overlay (Cliente/IMEI/Serie/Factura/Artículo/Recepción/Garantía/Proveedor/Orden) */
+      '.nxUnivBox{background:#fff;border-radius:16px;max-width:560px;width:92vw;max-height:74vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,.35);margin:0 auto}',
+      '.nxUnivHead{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #e2e8f0;flex-shrink:0}',
+      '.nxUnivHead>i{font-size:18px;color:#2563eb;flex-shrink:0}',
+      '.nxUnivHead input{flex:1;min-width:0;border:0;outline:0;font-size:15px;font-family:inherit;background:transparent}',
+      '.nxUnivClose{border:0;background:#f1f5f9;color:#475569;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}',
+      '.nxUnivResults{overflow-y:auto;padding:8px}',
+      '.nxUnivHint{text-align:center;color:#94a3b8;padding:30px 14px;font-size:12.5px}',
+      '.nxUnivCat{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#94a3b8;padding:10px 10px 4px}',
+      '.nxUnivRow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer}',
+      '.nxUnivRow:active,.nxUnivRow.sel{background:#eff6ff}',
+      '.nxUnivRowIcon{width:32px;height:32px;border-radius:8px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}',
+      '.nxUnivRowInfo{flex:1;min-width:0}',
+      '.nxUnivRowT{font-size:12.5px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.nxUnivRowS{font-size:10.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       /* Dashboard KPIs */
       '.nxTKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}',
       '.nxTKpi{background:#fff;border:1px solid #e2e8f0;border-radius:17px;padding:15px;box-shadow:0 8px 22px rgba(15,23,42,.05)}',
@@ -22240,13 +22400,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxTMain{margin-left:0;padding:12px 12px 60px}',
       '.nxTTop{display:flex;align-items:center;gap:11px;margin-bottom:14px}',
       '.nxTBurger{width:42px;height:42px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;font-size:21px;color:#2563eb;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-family:inherit}',
-      '.nxTTopBiz{font-weight:800;font-size:15px;color:#0f172a}',
+      '.nxTSearchBtnM{width:42px;height:42px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;font-size:17px;color:#2563eb;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-family:inherit}',
+      '.nxTTopBiz{font-weight:800;font-size:15px;color:#0f172a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       'body.nxTDrawer .nxTBackdrop{display:block}',
       '}',
       /* ── BLINDAJE de la barra lateral: gana SIEMPRE sobre el tema glass y los parches de iconos ──
          (en el tema glass del admin salía translúcida con pastillas blancas — se veía amateur) */
       'html body .nxTSide{background:linear-gradient(180deg,#1e3a6e,#2563eb)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important}',
       'html body .nxTSide .nxTNav{background:transparent!important;border:0!important;box-shadow:none!important;color:#c9d9f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;min-height:0!important}',
+      'html body .nxTSide .nxTSearchBtn{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:none!important;color:#c9d9f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important}',
       'html body .nxTSide .nxTNav.on{background:rgba(255,255,255,.16)!important;color:#fff!important}',
       'html body .nxTSide .nxTNav i,html body .nxTSide .nxTLogout i{background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;min-width:0!important;color:inherit!important;border-radius:0!important;padding:0!important}',
       'html body .nxTSide .nxTSec{color:#a3c2ea!important;background:none!important}',

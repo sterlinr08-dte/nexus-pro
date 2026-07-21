@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.71** (ver `index.html` y `version.json`).
+> Versión actual: **48.72** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2454,6 +2454,73 @@ lectura, `window.nxArticulo360(id)`, que junta en una sola pantalla lo que ya vi
 - **Con esta pieza el "Plan Maestro NEXUS PRO POS 3.0" tiene sus 5 fases pedidas hasta ahora
   completas** (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Kardex Inteligente Fase 5,
   Artículo 360° Fase 4) — quedan las fases 6-10 si el dueño las manda.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 6 — Buscador Universal (21-jul-2026, v48.72)
+El dueño pidió una sola búsqueda que encuentre Cliente/IMEI/Factura/Serie/Artículo/Recepción/Garantía/
+Proveedor/Orden **sin importar el módulo** en el que esté parado. Investigado antes de programar (agente
+de exploración, la más grande de la sesión): (1) Seguros ya tiene un buscador global propio
+(`gsOverlay`/`abrirGlobalSearch`, Ctrl+K) pero es 100% en memoria y vive solo en el núcleo de Seguros —
+no sirve de motor para el POS, que tiene datos distintos y volúmenes distintos; (2) de las 8 categorías
+pedidas, `cargarPOS()` ya deja **4 en memoria de forma garantizada** (`_clientes`, `_prods`,
+`_proveedores`, `_reps` — confirmado revisando sus 23 consultas de precarga) pero **las otras 4 NO**
+(`_ventas`/`_compras` solo cargan cuando se abre su pestaña; `pos_documentos` —el Motor de Documentos de
+las Fases 1-2— nunca se precarga en bloque en ningún lado) — esto decidió la arquitectura: memoria =
+instantáneo sin debounce, remoto = con debounce; (3) `.nxTTop` (la barra superior del POS) es
+`display:none` en escritorio y solo se activa dentro de `@media(max-width:860px)` — por eso hacen falta
+**2 botones de entrada**, uno en la barra lateral (siempre visible en escritorio) y otro en la barra
+superior móvil, ninguno de los dos solo alcanza todos los tamaños de pantalla; (4) ya existían funciones
+reales para "abrir el registro completo" de la mayoría de estas categorías — se reusaron TODAS en vez de
+construir vistas nuevas.
+- **Overlay único `#nxUnivS`/`.nxUnivBox`**, mismo lenguaje visual `.nxPf` del resto del rediseño del
+  POS. `UNIV_CAT_LBL`/`UNIV_CAT_ORDEN` (8 categorías, orden fijo de despliegue). `univNorm(s)` (minúsculas
+  + sin acentos, para comparar en memoria) y `univIlike(q)` (sanea `% _ , * ( )` antes de mandar el
+  término a un filtro PostgREST `ilike`, seguido de `encodeURIComponent` — cumple el propio "REGLAMENTO
+  TÉCNICO — ModalBusquedaBase" de este archivo sobre no interpolar texto de usuario crudo en `or=(...)`).
+  **En memoria, instantáneo, sin debounce:** Clientes, Artículos, Proveedores, Recepciones (`.filter()`
+  directo sobre los arreglos que `cargarPOS()` ya garantiza cargados, capado a 5 por categoría).
+  **Remoto, debounce 300ms + contador `token` contra respuestas viejas** (mismo patrón defensivo que
+  `ModalBusquedaBase`, no el de `gsOverlay` que no tiene ninguno): Facturas (`pos_ventas`, por número/NCF/
+  cliente), Garantías (`pos_documentos` tipo='garantia', por código), Proveedores… ya en memoria, IMEI/
+  Serie (`pos_seriales.serial`), Órdenes (`pos_compras.orden_no`) — capado `limit=6` cada una.
+- **2 categorías pedidas por separado se unieron a propósito, con aviso honesto:** "IMEI" y "Serie" son
+  literalmente la MISMA columna (`pos_seriales.serial`) — se muestran juntas como **"IMEI / Serie"** en
+  vez de fingir 2 fuentes de datos distintas que no existen.
+- **"Orden" se interpretó como `pos_compras.orden_no`** (columna real confirmada por SQL directo) — es
+  una decisión de criterio (podría haberse leído distinto), documentada aquí y en el changelog.
+- **Saltar al registro completo reusa funciones YA EXISTENTES, cero vistas nuevas duplicadas:**
+  Cliente→`nxCliente360` (Fase 3), Artículo→`nxArticulo360` (Fase 4), Proveedor→`nxPosProvVer`,
+  Recepción→`nxRepVer`, Factura→si la fila remota no está todavía en `_ventas` se le hace `unshift` antes
+  de llamar a `nxPosTicket` (mismo patrón "puente en memoria" que Fase 6 de Cliente 360°), IMEI→salta
+  directo al `nxArticulo360` del producto dueño del serial (que ya tiene su propia sección IMEI),
+  Garantía→`nxDocCadena('pos_venta_items', registro_id)` (reusa DIRECTO el visor de cadena del Motor de
+  Documentos, Fases 1-2), Orden→se hace `unshift` en `_compras` si hace falta y se llama a
+  `nxPosCompraVer`.
+- **Entrada:** botón **"Buscar todo"** en `.nxTBrand` (barra lateral, con chip `Ctrl K`) + ícono de lupa
+  nuevo en `.nxTTop` (fila superior móvil) — los 2 llaman a `window.nxBuscadorUniversal()`. Atajo global
+  `Ctrl+K`/`Cmd+K` con guardia `window.__nxUnivKeys` (mismo patrón que el guard de `F2`/`F10` del
+  buscador de Factura) + comprobación `document.getElementById('v-pos')` para que sea un no-op fuera del
+  POS y no choque con el Ctrl+K propio de `gsOverlay` en Seguros.
+- **Bug real encontrado y corregido ANTES de publicar:** al escribir `univNorm` por primera vez, el
+  regex de rango unicode `\u0300-\u036f` (quita acentos para comparar) se corrompio en caracteres crudos
+  dentro del archivo (confirmado con `cat -A`, bytes ilegibles) — pasaba `node --check` (sintaxis válida)
+  pero habría dejado la búsqueda sin acentos rota en silencio. Detectado por auto-revisión (no por un
+  test fallido) al hacer `grep` de la función recién escrita; corregido con un script Python
+  (`re.sub` con función de reemplazo, para evitar que Python interprete `\u` en el string de reemplazo) y
+  reverificado.
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción): harness con
+  datos simulados en las 8 categorías, 16 comprobaciones — Ctrl+K abre, menos de 2 letras muestra ayuda
+  sin buscar, resultado en memoria aparece ANTES del debounce (cliente), resultado remoto aparece
+  DESPUÉS del debounce (factura) y ambos quedan agrupados por categoría, un artículo se encuentra por
+  nombre y (a propósito) NO trae resultados de IMEI para ese mismo término (confirma que IMEI solo
+  empareja por el valor real del serial, no por el nombre del producto dueño), el IMEI exacto sí se
+  encuentra, Garantía/Orden/Proveedor/Recepción se encuentran cada uno en su categoría, flechas ↓
+  seleccionan la primera fila y Enter dispara su acción y cierra, un clic directo en un resultado de IMEI
+  salta a `nxArticulo360` del producto correcto, Escape cierra. Las 16 pasaron; captura de pantalla a
+  390px sin desbordes ni errores de consola. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Con esta pieza el "Plan Maestro NEXUS PRO POS 3.0" tiene sus 6 fases pedidas hasta ahora
+  completas** (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Artículo 360° Fase 4, Kardex
+  Inteligente Fase 5, Buscador Universal Fase 6) — quedan las fases 7-10 si el dueño las manda.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
