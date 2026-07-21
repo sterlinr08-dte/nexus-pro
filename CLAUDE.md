@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.76** (ver `index.html` y `version.json`).
+> Versión actual: **48.77** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2803,6 +2803,77 @@ lenguaje natural para ser útil.
   Universal Fase 6, Dashboard Operativo Fase 7, Auditoría Completa Fase 8, Automatizaciones Fase 9, IA
   NEXUS Fase 10). Pendiente si el dueño quiere seguir: nada del plan original — cualquier trabajo nuevo
   sería un plan aparte que él mismo defina.
+
+### POS · SISTEMA DE DISEÑO — rediseño premium por módulos (21-jul-2026, en progreso, v48.77)
+Tras cerrar el "Plan Maestro POS 3.0" (0 funcionalidades nuevas pendientes), el dueño pidió algo distinto:
+**"No quiero agregar funcionalidades nuevas. Quiero crear el Design System oficial de PUNTO DE VENTA,
+Rediseña completamente la interfaz siguiendo un estilo premium inspirado en Linear, Stripe, Shopify y
+Raycast. Conserva toda la lógica existente. Solo cambia la experiencia visual, el layout y los
+componentes reutilizables. Después de crear el Design System, iremos migrando cada módulo uno por uno
+sin romper el funcionamiento actual."** Plan de 3 pasos acordado con él mismo: (1) construir el Design
+System como muestra aparte para aprobar, (2) confirmar la dirección visual, (3) migrar módulo por módulo
+al sistema real, verificado antes de publicar cada uno — igual disciplina que el resto de esta sesión.
+- **Paso 1 — muestra standalone (`design-system.html`, scratchpad, NUNCA publicada al repo):** tokens
+  (color/tipografía/espaciado/elevación/movimiento) + componentes (botones/campos/badges/tabs/tabla/
+  franja de KPI/tarjetas/modal/toast/paleta de comandos) + una "Pantalla compuesta" (el Dashboard
+  Operativo armado solo con los componentes). Publicada primero como Artifact para que el dueño la
+  revisara. **2 rondas de feedback real, no cosméticas:**
+  1. El dueño: "Está aplicado ??" / "Igual que antes" — mandó una captura REAL de `nexusprord.com` en
+     vivo (el dashboard actual: tarjetas con borde superior de color arcoíris, íconos en esfera 3D con
+     degradado, fondo lavanda). La primera versión de la muestra (fondo navy calcado del sidebar real,
+     tarjetas KPI con la misma silueta "tarjeta+ícono flotante" solo que aplanada) todavía se sentía
+     igual en estructura, no solo en color.
+  2. Revisión de fondo, no un ajuste de paleta: **la barra lateral pasó de navy (idéntico al sidebar
+     real) a "chrome" gris grafito fijo** (no cambia con el tema claro/oscuro — mismo lenguaje que
+     Linear/Vercel/Raycast, que nunca aclaran su barra de herramientas aunque el resto de la app sí
+     cambie), con acento nuevo `--accent-2` índigo (`#6366f1`) para logo/estado activo, sin tocar el
+     azul `#2563eb` de marca que sigue en botones/estados. **Los KPI dejaron de ser una rejilla de
+     tarjetas sueltas con ícono en caja de color** (la misma silueta que ya tiene la app real, solo con
+     estilos distintos) **y pasaron a una FRANJA con divisores finos** (patrón real del dashboard de
+     Stripe: "Gross volume | New customers | ..." en una sola fila con líneas, no N tarjetas) — el
+     número queda como único protagonista, el color se reduce a un glifo chico junto a la etiqueta. Esta
+     fue la diferencia que de verdad rompió el parecido estructural, no solo cromático.
+  3. Héroe reescrito más audaz (38px→52px, trama de puntos enmascarada de fondo, degradado en el
+     titular, dos manchas de luz azul+índigo) — lenguaje de "portada de sistema de diseño", no de panel
+     operativo, deliberadamente distinto del resto de la app.
+  Verificado en cada ronda con Playwright a 1440px/390px: cero desbordes, cero errores de consola.
+- **Paso 2 — aprobación:** el dueño confirmó con "Si aplícalo" — luz verde para empezar el paso 3.
+- **Paso 3 — EN PROGRESO, primera pieza real aplicada (v48.77): Menú lateral + Inicio.** Cambios
+  quirúrgicos en `parches.js` (`shellTienda()`, `inyectarCSSTienda()`, `renderInicio()`) — **cero IDs,
+  cero `onclick`, cero lógica tocada, solo CSS/HTML del "vestido"**, mismo criterio de toda la sesión:
+  - `.nxTSide` (sidebar real): del degradado `#1e3a6e→#2563eb` (navy) al graphite `#14161f→#0a0b10`,
+    acento activo de `rgba(59,130,246,.28)`+barra azul a `rgba(99,102,241,.16)`+barra índigo `#6366f1`,
+    `.nxTLogo`/`.nxTAva` con degradado índigo→azul. El bloque **BLINDAJE** (`!important` contra el tema
+    glass, ya existía desde antes para que el sidebar no saliera translúcido) se actualizó en paralelo
+    con los MISMOS valores nuevos — si no, el blindaje habría forzado el navy viejo de vuelta por encima
+    del CSS base (aprendizaje ya documentado en este archivo: cualquier cambio de color al sidebar
+    real SIEMPRE tiene que tocar las 2 copias, la base y el blindaje).
+  - `.nxTKpis`/`.nxTKpi` (los 8 indicadores de Inicio — Ventas de hoy/Caja/Utilidad/Equipos pendientes/
+    Garantías/Inventario crítico/Compras pendientes/Clientes esperando, construidos en la Fase 7 del
+    Plan Maestro): de `grid-template-columns:repeat(auto-fit,minmax(150px,1fr))` con tarjetas
+    individuales (`border-top:3px solid ${color}` + ícono en caja de color, exactamente el patrón que el
+    dueño señaló como "igual que antes" en su captura) a una **franja única** (`border-top`+`border-left`
+    en el contenedor, `border-right`+`border-bottom` en cada celda — técnica de lattice que no depende
+    de cuántas columnas haya, sirve igual para 4 como para 8 celdas sin matemática de `nth-child`).
+    El helper `kpi()` de `renderInicio()` se simplificó para no pintar más el `<div class="nxTKpiIc">`
+    (caja de ícono de color) — ahora es un glifo de 12px junto a la etiqueta. `.nxTKpiIc` quedó como CSS
+    muerto sin usar (verificado que no lo usaba nada más en todo el archivo antes de dejar de pintarlo).
+  - **Deliberadamente NO tocado en esta pieza** (queda para las siguientes, "módulo por módulo" tal como
+    lo pidió el dueño): los tiles del lanzador de apps (`.nxApp`/`.nxAppSec`, la rejilla de accesos
+    rápidos debajo de los KPI) siguen con su estilo de siempre — es una rejilla plana y neutra (no
+    glosy/degradada como las tarjetas viejas de KPI), no chocaba con el problema real que señaló el
+    dueño, así que no se arriesgó tocarla sin necesidad en esta pasada. El resto de las ~20 pantallas
+    del POS (Vender, Factura, Inventario, Compras, Clientes, CRM, Caja, Contabilidad, Reportes...)
+    siguen exactamente igual — se migran de a una en las próximas piezas.
+  - **Verificado con el código real** (no una reconstrucción): se extrajeron `shellTienda`/
+    `renderInicio`/`iniciarRefrescoDashboard`/`inyectarCSSTienda` tal cual del archivo (balance de
+    llaves real) y se cargaron en un navegador con datos simulados — el sidebar se ve graphite con
+    acento índigo, la franja de KPI se ve como una sola pieza con divisores (no 8 tarjetas sueltas), el
+    cajón lateral en móvil abre/cierra igual que siempre, sin desbordes en 390px ni 1440px, 0 errores de
+    consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` (1,423 / 426,472 / 681
+    caracteres) pasan `new Function()`; `version.json` válido.
+- **Pendiente:** el resto de la migración módulo por módulo — el dueño la va confirmando pieza a pieza,
+  igual que el resto de esta sesión (nunca todo de golpe sobre pantallas que ya funcionan en producción).
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

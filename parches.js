@@ -15394,7 +15394,7 @@
       const trendHoy = pct == null ? ((k.facturasHoy || 0) + ' factura' + ((k.facturasHoy || 0) === 1 ? '' : 's'))
         : `<span style="color:${pct >= 0 ? '#16a34a' : '#dc2626'};font-weight:800">${pct >= 0 ? '▲ +' : '▼ '}${pct}%</span> vs ayer`;
       const margenPct = (k.ventasHoy || 0) > 0 && k.utilidadHoy != null ? Math.round(k.utilidadHoy / k.ventasHoy * 100) + '% margen' : 'Sin ventas hoy';
-      const kpi = (c, ic, l, v, s) => `<div class="nxTKpi" style="border-top:3px solid ${c}"><div class="nxTKpiIc" style="background:${c}1a;color:${c}"><i class="ti ${ic}"></i></div><div class="nxTKpiL">${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
+      const kpi = (c, ic, l, v, s) => `<div class="nxTKpi"><div class="nxTKpiL"><i class="ti ${ic}" style="color:${c}"></i> ${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
       kpis = `<div class="nxTKpis">
           ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
           ${kpi('#0891b2', 'ti-wallet', 'Caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
@@ -22535,32 +22535,35 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       'body.org-rifa nav.sb,body.org-rifa .sb{display:none!important}',
       'body.org-rifa .tnav{display:none!important}',
       'body.org-rifa .content{padding:0!important}',
-      /* Sidebar */
+      /* Sidebar — Design System v1 (chrome de herramienta, graphite oscuro fijo, no cambia con
+         el tema claro/oscuro de la app, mismo lenguaje que Linear/Vercel/Raycast; acento índigo→
+         azul en vez del navy plano de antes. Aprobado por el dueño en la muestra del sistema de
+         diseño antes de aplicarse aquí) */
       '.nxTShell{min-height:100vh;min-height:100dvh}',
-      '.nxTSide{position:fixed;top:0;left:0;bottom:0;width:240px;z-index:120;display:flex;flex-direction:column;background:linear-gradient(180deg,#1e3a6e,#2563eb);color:#e9eefb;box-shadow:6px 0 28px rgba(15,23,42,.28);transition:transform .26s cubic-bezier(.4,0,.2,1);font-family:"Plus Jakarta Sans",var(--ff)}',
+      '.nxTSide{position:fixed;top:0;left:0;bottom:0;width:240px;z-index:120;display:flex;flex-direction:column;background:linear-gradient(180deg,#14161f,#0a0b10);color:#e7eaf2;box-shadow:6px 0 28px rgba(15,23,42,.28);transition:transform .26s cubic-bezier(.4,0,.2,1);font-family:"Plus Jakarta Sans",var(--ff)}',
       '.nxTBrand{display:flex;align-items:center;gap:11px;padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08)}',
-      '.nxTLogo{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:linear-gradient(145deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.5),inset 0 1px 1px rgba(255,255,255,.4)}',
+      '.nxTLogo{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:linear-gradient(145deg,#6366f1,#2563eb);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 6px 16px rgba(79,70,229,.4)}',
       '.nxTBiz{font-weight:800;font-size:14px;line-height:1.1;color:#fff}',
-      '.nxTBiz small{display:block;font-weight:600;font-size:10px;color:#a8c5ec;margin-top:3px;letter-spacing:.3px}',
+      '.nxTBiz small{display:block;font-weight:600;font-size:10px;color:rgba(231,234,242,.5);margin-top:3px;letter-spacing:.3px}',
       /* Buscador Universal — entrada siempre visible en la barra lateral (fija en escritorio) */
-      '.nxTSearchBtn{display:flex;align-items:center;gap:9px;width:calc(100% - 18px);margin:10px 9px 4px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#c9d9f2;text-align:left;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}',
+      '.nxTSearchBtn{display:flex;align-items:center;gap:9px;width:calc(100% - 18px);margin:10px 9px 4px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(231,234,242,.68);text-align:left;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}',
       '.nxTSearchBtn i{font-size:14px}',
-      '.nxTSearchBtn:active{background:rgba(255,255,255,.13)}',
-      '.nxTSearchKbd{margin-left:auto;font-size:9px;font-weight:800;background:rgba(255,255,255,.14);border-radius:5px;padding:2px 6px;letter-spacing:.3px}',
+      '.nxTSearchBtn:active{background:rgba(255,255,255,.1)}',
+      '.nxTSearchKbd{margin-left:auto;font-size:9px;font-weight:800;background:rgba(255,255,255,.12);border-radius:5px;padding:2px 6px;letter-spacing:.3px}',
       '.nxTScroll{flex:1;overflow-y:auto;padding:8px 9px 14px}',
-      '.nxTSec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7ba3d9;margin:13px 8px 5px}',
+      '.nxTSec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(231,234,242,.36);margin:13px 8px 5px}',
       '.nxTSec:first-child{margin-top:3px}',
-      '.nxTNav{display:flex;align-items:center;gap:9px;width:100%;border:0;cursor:pointer;background:transparent;color:#c9d9f2;text-align:left;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:1px;font-family:inherit}',
+      '.nxTNav{display:flex;align-items:center;gap:9px;width:100%;border:0;cursor:pointer;background:transparent;color:rgba(231,234,242,.68);text-align:left;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:1px;font-family:inherit}',
       '.nxTNav i{font-size:15px;width:18px;text-align:center}',
       '.nxTNav:active{background:rgba(255,255,255,.06)}',
-      '.nxTNav.on{background:rgba(59,130,246,.28);color:#fff;box-shadow:inset 2px 0 0 #60a5fa}',
+      '.nxTNav.on{background:rgba(99,102,241,.16);color:#fff;box-shadow:inset 2px 0 0 #6366f1}',
       '.nxTFoot{padding:10px;border-top:1px solid rgba(255,255,255,.08)}',
       '.nxTUser{display:flex;align-items:center;gap:10px;padding:4px 4px 10px}',
-      '.nxTAva{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#60a5fa,#1d4ed8);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;flex-shrink:0}',
+      '.nxTAva{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#818cf8,#4f46e5);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;flex-shrink:0}',
       '.nxTUser b{font-size:12.5px;display:block;color:#fff}',
-      '.nxTUser span{font-size:10px;color:#a4abe6}',
-      '.nxTLogout{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(255,255,255,.07);color:#f1eefb;border:1px solid rgba(255,255,255,.12);padding:9px;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}',
-      '.nxTLogout:active{background:rgba(255,255,255,.13)}',
+      '.nxTUser span{font-size:10px;color:rgba(231,234,242,.5)}',
+      '.nxTLogout{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(255,255,255,.06);color:#f1f2f8;border:1px solid rgba(255,255,255,.1);padding:9px;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}',
+      '.nxTLogout:active{background:rgba(255,255,255,.12)}',
       /* Área principal */
       '.nxTMain{margin-left:240px;min-width:0;padding:18px 18px 60px}',
       '.nxTMain .nxInicio,.nxTMain .nxCtaRep{max-width:1100px}',
@@ -22581,13 +22584,18 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxUnivRowInfo{flex:1;min-width:0}',
       '.nxUnivRowT{font-size:12.5px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.nxUnivRowS{font-size:10.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-      /* Dashboard KPIs */
-      '.nxTKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}',
-      '.nxTKpi{background:#fff;border:1px solid #e2e8f0;border-radius:17px;padding:15px;box-shadow:0 8px 22px rgba(15,23,42,.05)}',
-      '.nxTKpiIc{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:9px}',
-      '.nxTKpiL{font-size:11px;color:#64748b;font-weight:700}',
-      '.nxTKpiV{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-top:3px;color:#0f172a}',
-      '.nxTKpiS{font-size:10.5px;font-weight:700;margin-top:5px;color:#64748b}',
+      /* Dashboard KPIs — Design System v1: franja con divisores finos (patrón real de Stripe
+         Dashboard), no una rejilla de tarjetas sueltas con ícono flotante en degradado — el
+         número manda, el color queda en un glifo chico junto a la etiqueta. Aprobado por el
+         dueño en la muestra del sistema de diseño antes de aplicarse aquí. */
+      '.nxTKpis{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #e2e8f0;border-left:1px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff;margin-bottom:18px}',
+      '.nxTKpi{padding:16px 18px 15px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;min-width:0}',
+      '.nxTKpiL{font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:5px}',
+      '.nxTKpiL i{font-size:12px}',
+      '.nxTKpiV{font-size:25px;font-weight:800;letter-spacing:-.02em;margin-top:7px;color:#0f172a;font-variant-numeric:tabular-nums;line-height:1.08}',
+      '.nxTKpiS{font-size:11px;font-weight:600;margin-top:6px;color:#64748b}',
+      '@media(max-width:900px){.nxTKpis{grid-template-columns:repeat(2,1fr)}}',
+      '@media(max-width:480px){.nxTKpi{padding:13px 14px 12px}.nxTKpiV{font-size:21px}}',
       /* Panel "Últimas ventas" del dashboard de tienda */
       '.nxTPanel{background:#fff;border:1px solid #e2e8f0;border-radius:17px;padding:16px;box-shadow:0 8px 22px rgba(15,23,42,.05);margin-top:20px}',
       '.nxTPanelH{margin-bottom:6px}',
@@ -22630,18 +22638,19 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       'body.nxTDrawer .nxTBackdrop{display:block}',
       '}',
       /* ── BLINDAJE de la barra lateral: gana SIEMPRE sobre el tema glass y los parches de iconos ──
-         (en el tema glass del admin salía translúcida con pastillas blancas — se veía amateur) */
-      'html body .nxTSide{background:linear-gradient(180deg,#1e3a6e,#2563eb)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important}',
-      'html body .nxTSide .nxTNav{background:transparent!important;border:0!important;box-shadow:none!important;color:#c9d9f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;min-height:0!important}',
-      'html body .nxTSide .nxTSearchBtn{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:none!important;color:#c9d9f2!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important}',
-      'html body .nxTSide .nxTNav.on{background:rgba(255,255,255,.16)!important;color:#fff!important}',
+         (en el tema glass del admin salía translúcida con pastillas blancas — se veía amateur).
+         Mismos valores del chrome graphite de arriba, repetidos con !important a propósito. */
+      'html body .nxTSide{background:linear-gradient(180deg,#14161f,#0a0b10)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important}',
+      'html body .nxTSide .nxTNav{background:transparent!important;border:0!important;box-shadow:none!important;color:rgba(231,234,242,.68)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;min-height:0!important}',
+      'html body .nxTSide .nxTSearchBtn{background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.1)!important;box-shadow:none!important;color:rgba(231,234,242,.68)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important}',
+      'html body .nxTSide .nxTNav.on{background:rgba(99,102,241,.16)!important;color:#fff!important;box-shadow:inset 2px 0 0 #6366f1!important}',
       'html body .nxTSide .nxTNav i,html body .nxTSide .nxTLogout i{background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;min-width:0!important;color:inherit!important;border-radius:0!important;padding:0!important}',
-      'html body .nxTSide .nxTSec{color:#a3c2ea!important;background:none!important}',
+      'html body .nxTSide .nxTSec{color:rgba(231,234,242,.36)!important;background:none!important}',
       'html body .nxTSide .nxTBrand,html body .nxTSide .nxTFoot{background:transparent!important}',
-      'html body .nxTSide .nxTBiz{color:#fff!important}html body .nxTSide .nxTBiz small{color:#aecbef!important}',
-      'html body .nxTSide .nxTUser b{color:#fff!important}html body .nxTSide .nxTUser span{color:#aecbef!important}',
-      'html body .nxTSide .nxTAva{background:rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important}',
-      'html body .nxTSide .nxTLogout{background:rgba(255,255,255,.10)!important;color:#fff!important;border:1px solid rgba(255,255,255,.22)!important;box-shadow:none!important}',
+      'html body .nxTSide .nxTBiz{color:#fff!important}html body .nxTSide .nxTBiz small{color:rgba(231,234,242,.5)!important}',
+      'html body .nxTSide .nxTUser b{color:#fff!important}html body .nxTSide .nxTUser span{color:rgba(231,234,242,.5)!important}',
+      'html body .nxTSide .nxTAva{background:rgba(99,102,241,.28)!important;color:#fff!important;box-shadow:none!important}',
+      'html body .nxTSide .nxTLogout{background:rgba(255,255,255,.08)!important;color:#fff!important;border:1px solid rgba(255,255,255,.16)!important;box-shadow:none!important}',
       /* Chips de estado en Últimas ventas (look premium del diseño aprobado) */
       '.nxTVEnd{display:flex;flex-direction:column;align-items:flex-end;gap:3px}',
       '.nxTVSt{font-size:8px;font-weight:800;letter-spacing:.4px;padding:2px 7px;border-radius:6px}',
