@@ -15728,6 +15728,10 @@
           <div class="cartrow"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
           <div class="cartpaytot"><span>Total a pagar</span><b>${fmt(t.total)}</b></div>
         </div>
+        <div class="cartsave">
+          <button type="button" class="cartsavebtn" ${_cart.length ? '' : 'disabled'} onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Prefactura</button>
+          <button type="button" class="cartsavebtn" ${_cart.length ? '' : 'disabled'} onclick="window.nxCotGuardarDesdeCart()"><i class="ti ti-clipboard-text"></i> Cotización</button>
+        </div>
         <button class="ab g1 cartcobrar" type="button" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPosCobrar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
       </div>`;
   }
@@ -17301,6 +17305,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .cartpaytot{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;color:var(--pf-txt);padding:8px 0 2px;border-top:1px solid var(--pf-line);margin-top:4px}
 .nxPf .cartpaytot b{font-size:17px;color:var(--pf-blue-d)}
 .nxPf .cartcobrar{width:100%;margin-top:10px;height:46px;font-size:13px}
+.nxPf .cartsave{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.nxPf .cartsavebtn{height:38px;border-radius:11px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;min-width:0}
+.nxPf .cartsavebtn:disabled{opacity:.45;cursor:default}
+.nxPf .cartsavebtn i{font-size:13px;flex:none}
+.nxPf .cartsavebtn span,.nxPf .cartsavebtn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 `;
     document.head.appendChild(st);
   }

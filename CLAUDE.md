@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.79** (ver `index.html` y `version.json`).
+> Versión actual: **48.80** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2987,6 +2987,34 @@ tener el plan aprobado.
     `nxIrACotizar`/`peekCot`: cero resultados).
 - **Pendiente:** Fase 3 (botón "Finalizar" real, aditivo — Facturar/Guardar Preventa/Guardar Cotización
   como una sola decisión al final), Fase 4 (favoritos/recientes de producto).
+- **FASE 3 — HECHA (v48.80): "Vender" gana los mismos 3 caminos que ya tenían Factura/Prefactura.**
+  Al revisar qué faltaba de verdad para "el usuario decide AL FINAL: Facturar / Guardar Preventa /
+  Guardar Cotización", se confirmó que Factura/Prefactura YA tenían los 3 caminos visibles desde la
+  Fase 2 (Cobrar/Guardar · el panel "Opciones adicionales" con Guardar Prefactura + Guardar Cotización)
+  — el hueco real era **Vender**, la pantalla más rápida del sistema (la que abre el botón "Venta
+  rápida" del topbar), que solo tenía "Cobrar". Se decidió NO construir un botón "Finalizar" nuevo con
+  menú desplegable (más riesgo, un componente nuevo) — en vez de eso, **sumar las 2 piezas que ya
+  existían** (`nxPrefGuardar`/`nxCotGuardarDesdeCart`, de la Fase 2) directo al carrito de Vender,
+  mismo patrón visual que ya se ve bien en Factura, más simple y más rápido de verificar.
+  - `pintarCarrito()` (el panel del carrito en Vender): fila nueva `.cartsave` (grid 2 columnas) entre
+    los totales y el botón grande "Cobrar" — "Prefactura" (`nxPrefGuardar()`) y "Cotización"
+    (`nxCotGuardarDesdeCart()`), ambas ya construidas y probadas en la Fase 2, CERO lógica nueva, solo
+    HTML/CSS. Botones deshabilitados (`disabled`, regla `.cartsavebtn:disabled{opacity:.45}`) si el
+    carrito está vacío — mismo criterio que "Cobrar" ya usaba.
+  - **Cero cambios de lógica de negocio:** ambas funciones ya estaban probadas (Fase 2) y no les
+    importa desde qué pestaña se llaman — leen `_cart`/`clienteSel()`/`totales()` tal cual están en
+    pantalla. `nxPrefGuardar()` deja al cajero en Vender con el carrito vacío, listo para la próxima
+    venta (no navega). `nxCotGuardarDesdeCart()` salta a la lista de Cotizaciones para confirmar el
+    guardado — mismo comportamiento ya establecido en Factura/Prefactura, deliberadamente sin crear un
+    camino distinto solo porque ahora se llama desde otra pantalla (consistencia > personalización).
+  - Verificado con Playwright, código real extraído de `pintarCarrito`/`totales`/`lineImporte`/
+    `nxPfEnsureCSS` (CSS real, no reconstruido) y cargado en un navegador: los 2 botones nuevos se ven
+    bien alineados junto a "Cobrar", se apagan correctamente con el carrito vacío, sin desbordes en
+    390px ni 1000px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+    `index.html` pasan `new Function()`; `version.json` válido.
+  - **Con esta pieza cierra la Fase 3** — las 3 pantallas donde se arma una venta (Vender, Factura,
+    Prefactura) ofrecen ya el mismo menú de decisión final.
+- **Pendiente:** Fase 4 (favoritos/recientes de producto) — última fase del plan NEXUS PRO 2.5.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
