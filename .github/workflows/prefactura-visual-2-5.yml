@@ -41,3 +41,5 @@ jobs:
             git commit -m "POS: rediseño visual Prefactura 2.5 [prefactura-patch]"
             git push origin HEAD:feat/prefactura-visual-2-5
           fi
+
+# trigger: ejecución solicitada por el propietario
