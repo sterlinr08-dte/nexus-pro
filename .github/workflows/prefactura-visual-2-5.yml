@@ -4,15 +4,14 @@ on:
   push:
     branches:
       - feat/prefactura-visual-2-5
-    paths:
-      - .github/workflows/prefactura-visual-2-5.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   patch-prefactura:
-    if: ${{ !contains(github.event.head_commit.message, '[prefactura-patch]') }}
+    if: ${{ !contains(github.event.head_commit.message || '', '[prefactura-patch]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Descargar rama
@@ -21,122 +20,24 @@ jobs:
           ref: feat/prefactura-visual-2-5
           fetch-depth: 0
 
-      - name: Aplicar parche visual aislado
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import json, re
+      - name: Aplicar parche visual
+        run: python3 .github/scripts/apply_prefactura_visual.py
 
-          p = Path('parches.js')
-          src = p.read_text(encoding='utf-8')
-          marker = 'NEXUS PREFactura Visual 2.5 — v48.83'
-          if marker in src:
-              print('El parche ya existe; no se duplica.')
-          else:
-              patch = r'''
-
-/* ═══════════════════════════════════════════════════════════════════════
-   NEXUS PREFactura Visual 2.5 — v48.83
-   Capa exclusivamente visual. No altera guardado, inventario, NCF,
-   impuestos, Supabase ni flujo comercial.
-   ═══════════════════════════════════════════════════════════════════════ */
-(function nxPrefacturaVisual25(){
-  'use strict';
-  if(document.getElementById('nx-prefactura-visual-25')) return;
-  const st=document.createElement('style');
-  st.id='nx-prefactura-visual-25';
-  st.textContent=`
-  #v-prefactura{--pv-bg:#f4f6f9;--pv-panel:#fff;--pv-line:#e5e9f0;--pv-text:#172033;--pv-muted:#667085;--pv-primary:#3157d5;--pv-primary-soft:#eef2ff;--pv-ok:#14805e;--pv-danger:#c73333;background:var(--pv-bg)!important}
-  #v-prefactura .nxPf{max-width:1500px;margin:0 auto;padding:14px 16px 28px!important;color:var(--pv-text)}
-  #v-prefactura .nxPf>.ph,#v-prefactura .nxPf .ph{background:transparent!important;border:0!important;box-shadow:none!important;padding:4px 2px 14px!important;margin-bottom:0!important}
-  #v-prefactura .nxPf .ph h1,#v-prefactura .nxPf .ph h2,#v-prefactura .nxPf .ph .pt{font-size:21px!important;line-height:1.2!important;font-weight:800!important;letter-spacing:-.02em!important;color:var(--pv-text)!important}
-  #v-prefactura .nxPf .ph p,#v-prefactura .nxPf .ph .ps{color:var(--pv-muted)!important;font-size:11.5px!important}
-  #v-prefactura .nxPf .card,#v-prefactura .nxPf .cartcard,#v-prefactura .nxPf .nx-inv-card,#v-prefactura .nxPf .nxFacCard{background:var(--pv-panel)!important;border:1px solid var(--pv-line)!important;border-radius:14px!important;box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.05)!important}
-  #v-prefactura .nxPf .venderlayout,#v-prefactura .nxPf .nx-inv-layout,#v-prefactura .nxPf .fac-layout{gap:14px!important;align-items:start!important}
-  #v-prefactura .nxPf .cartcard{position:sticky!important;top:12px!important;overflow:hidden!important}
-  #v-prefactura .nxPf .clibox,#v-prefactura .nxPf .nx-inv-client,#v-prefactura .nxPf .faccli{background:#fbfcfe!important;border:1px solid var(--pv-line)!important;border-radius:12px!important;padding:11px 12px!important}
-  #v-prefactura .nxPf label{font-size:10px!important;font-weight:750!important;letter-spacing:.025em!important;color:#596579!important}
-  #v-prefactura .nxPf input,#v-prefactura .nxPf select,#v-prefactura .nxPf textarea{border:1px solid #d9dfe8!important;border-radius:9px!important;background:#fff!important;color:var(--pv-text)!important;min-height:38px!important;box-shadow:none!important;transition:border-color .14s,box-shadow .14s!important}
-  #v-prefactura .nxPf input:focus,#v-prefactura .nxPf select:focus,#v-prefactura .nxPf textarea:focus{border-color:#6f85df!important;box-shadow:0 0 0 3px rgba(49,87,213,.11)!important;outline:0!important}
-  #v-prefactura .nxPf .vsearch,#v-prefactura .nxPf .nx-inv-search,#v-prefactura .nxPf [class*="search"]{border-radius:11px!important}
-  #v-prefactura .nxPf .vsearch input,#v-prefactura .nxPf .nx-inv-search input{height:44px!important;font-size:13px!important;padding-left:40px!important}
-  #v-prefactura .nxPf .vrow,#v-prefactura .nxPf .cartitem,#v-prefactura .nxPf .nx-inv-row,#v-prefactura .nxPf .nxFacTbl tbody tr{border-color:#edf0f4!important;transition:background .12s,border-color .12s!important}
-  #v-prefactura .nxPf .vrow:hover,#v-prefactura .nxPf .cartitem:hover,#v-prefactura .nxPf .nx-inv-row:hover,#v-prefactura .nxPf .nxFacTbl tbody tr:hover{background:#f8faff!important}
-  #v-prefactura .nxPf .vnom,#v-prefactura .nxPf .cartnom,#v-prefactura .nxPf .nx-inv-name{font-weight:750!important;color:var(--pv-text)!important}
-  #v-prefactura .nxPf .vprecio,#v-prefactura .nxPf .cartprice,#v-prefactura .nxPf .nx-inv-money,#v-prefactura .nxPf .nxFacTbl td:last-child{font-variant-numeric:tabular-nums!important;font-weight:750!important}
-  #v-prefactura .nxPf .qtybtn,#v-prefactura .nxPf [class*="qty"] button{border:1px solid #dfe4ec!important;background:#fff!important;border-radius:8px!important;min-width:30px!important;min-height:30px!important;color:#344054!important}
-  #v-prefactura .nxPf .carttot,#v-prefactura .nxPf .carttotals,#v-prefactura .nxPf .nx-inv-summary{background:#fafbfc!important;border-top:1px solid var(--pv-line)!important;padding:12px 14px!important}
-  #v-prefactura .nxPf .cartrow{color:var(--pv-muted)!important;font-size:11.5px!important}
-  #v-prefactura .nxPf .cartrow span:last-child{color:var(--pv-text)!important;font-variant-numeric:tabular-nums!important;font-weight:650!important}
-  #v-prefactura .nxPf .cartpaytot{margin-top:8px!important;padding-top:12px!important;border-top:1px solid #dfe4ec!important}
-  #v-prefactura .nxPf .cartpaytot span{font-size:12px!important;color:#344054!important}
-  #v-prefactura .nxPf .cartpaytot b{font-size:22px!important;letter-spacing:-.025em!important;color:#172033!important;font-variant-numeric:tabular-nums!important}
-  #v-prefactura .nxPf .cartsave{gap:8px!important;margin-top:11px!important}
-  #v-prefactura .nxPf .cartsavebtn{height:39px!important;border:1px solid #d8deea!important;border-radius:9px!important;background:#fff!important;color:#344054!important;font-weight:750!important;box-shadow:0 1px 1px rgba(16,24,40,.03)!important}
-  #v-prefactura .nxPf .cartsavebtn:hover{background:#f7f9fc!important;border-color:#bcc6d8!important}
-  #v-prefactura .nxPf .cartcobrar,#v-prefactura .nxPf .g1{height:46px!important;border-radius:10px!important;background:#3157d5!important;border:1px solid #294bc0!important;color:#fff!important;font-weight:800!important;box-shadow:0 5px 14px rgba(49,87,213,.22)!important}
-  #v-prefactura .nxPf .cartcobrar:hover,#v-prefactura .nxPf .g1:hover{filter:brightness(.98)!important;box-shadow:0 7px 18px rgba(49,87,213,.27)!important}
-  #v-prefactura .nxPf button:focus-visible{outline:2px solid #6f85df!important;outline-offset:2px!important}
-  #v-prefactura .nxPf .badge,#v-prefactura .nxPf [class*="status"],#v-prefactura .nxPf [class*="estado"]{border-radius:999px!important;font-weight:750!important}
-  @media(max-width:768px){
-    #v-prefactura .nxPf{padding:10px 10px 104px!important}
-    #v-prefactura .nxPf .ph h1,#v-prefactura .nxPf .ph h2,#v-prefactura .nxPf .ph .pt{font-size:18px!important}
-    #v-prefactura .nxPf .venderlayout,#v-prefactura .nxPf .nx-inv-layout,#v-prefactura .nxPf .fac-layout{display:block!important}
-    #v-prefactura .nxPf .cartcard{position:relative!important;top:auto!important;margin-top:12px!important;border-radius:13px!important}
-    #v-prefactura .nxPf .cartsavebtn{height:42px!important;font-size:10.5px!important}
-    #v-prefactura .nxPf .cartcobrar{height:50px!important;font-size:13px!important}
-    #v-prefactura .nxPf input,#v-prefactura .nxPf select{font-size:16px!important}
-  }
-  body.tema-oscuro #v-prefactura,body.tema-premium #v-prefactura{--pv-bg:#101521;--pv-panel:#171e2b;--pv-line:#2a3445;--pv-text:#edf2fa;--pv-muted:#a5b0c2}
-  body.tema-oscuro #v-prefactura .nxPf .card,body.tema-oscuro #v-prefactura .nxPf .cartcard,body.tema-premium #v-prefactura .nxPf .card,body.tema-premium #v-prefactura .nxPf .cartcard{background:var(--pv-panel)!important}
-  body.tema-oscuro #v-prefactura .nxPf input,body.tema-oscuro #v-prefactura .nxPf select,body.tema-premium #v-prefactura .nxPf input,body.tema-premium #v-prefactura .nxPf select{background:#111827!important;color:var(--pv-text)!important;border-color:#354158!important}
-  `;
-  document.head.appendChild(st);
-})();
-'''
-              p.write_text(src + patch, encoding='utf-8')
-
-          idx = Path('index.html')
-          text = idx.read_text(encoding='utf-8')
-          text2, n = re.subn(r"const APP_VERSION='48\.82';", "const APP_VERSION='48.83';", text, count=1)
-          if n != 1 and "const APP_VERSION='48.83';" not in text:
-              raise SystemExit('No se encontró APP_VERSION 48.82 en index.html')
-          idx.write_text(text2, encoding='utf-8')
-
-          vp = Path('version.json')
-          data = json.loads(vp.read_text(encoding='utf-8'))
-          data['version'] = '48.83'
-          cambios = data.setdefault('cambios', [])
-          msg = ('MEJORADO (POS · Prefactura/Preventa — rediseño visual 2.5): nueva jerarquía visual '
-                 'exclusiva para Prefactura en PC y móvil: superficies más limpias, campos compactos, '
-                 'carrito más legible, totales con mayor protagonismo y acciones mejor organizadas. '
-                 'No cambia la lógica comercial, inventario, impuestos, NCF, Supabase ni el proceso de guardado.')
-          if msg not in cambios:
-              cambios.insert(0, msg)
-          vp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          PY
-
-      - name: Validar sintaxis
-        shell: bash
+      - name: Validar archivos
         run: |
           node --check parches.js
           python3 -m json.tool version.json >/dev/null
-          python3 - <<'PY'
-          from pathlib import Path
-          s=Path('index.html').read_text(encoding='utf-8')
-          assert "const APP_VERSION='48.83';" in s
-          assert 'NEXUS PREFactura Visual 2.5 — v48.83' in Path('parches.js').read_text(encoding='utf-8')
-          print('Validación básica correcta')
-          PY
+          grep -q "const APP_VERSION='48.83';" index.html
+          grep -q "NEXUS PREFactura Visual 2.5 — v48.83" parches.js
 
       - name: Confirmar cambios en la rama
-        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add parches.js index.html version.json
-          git commit -m "POS: rediseño visual Prefactura 2.5 [prefactura-patch]"
-          git push origin HEAD:feat/prefactura-visual-2-5
-
-# trigger: permisos confirmados por el propietario
+          if git diff --cached --quiet; then
+            echo "No hay cambios nuevos para confirmar."
+          else
+            git commit -m "POS: rediseño visual Prefactura 2.5 [prefactura-patch]"
+            git push origin HEAD:feat/prefactura-visual-2-5
+          fi
