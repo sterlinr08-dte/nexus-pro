@@ -1,9 +1,9 @@
-name: Aplicar rediseño visual Prefactura 2.5
+name: Aplicar corrección visual Prefactura 48.84
 
 on:
   push:
     branches:
-      - feat/prefactura-visual-2-5
+      - fix/prefactura-visual-48-84
   workflow_dispatch:
 
 permissions:
@@ -17,18 +17,19 @@ jobs:
       - name: Descargar rama
         uses: actions/checkout@v4
         with:
-          ref: feat/prefactura-visual-2-5
+          ref: fix/prefactura-visual-48-84
           fetch-depth: 0
 
-      - name: Aplicar parche visual
+      - name: Aplicar corrección visual
         run: python3 .github/scripts/apply_prefactura_visual.py
 
       - name: Validar archivos
         run: |
           node --check parches.js
           python3 -m json.tool version.json >/dev/null
-          grep -q "const APP_VERSION='48.83';" index.html
-          grep -q "NEXUS PREFactura Visual 2.5 — v48.83" parches.js
+          grep -q "const APP_VERSION='48.84';" index.html
+          grep -q "NEXUS PREFactura Visual 2.5 — v48.84" parches.js
+          grep -q "nx-prefactura-real" parches.js
 
       - name: Confirmar cambios en la rama
         run: |
@@ -38,8 +39,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No hay cambios nuevos para confirmar."
           else
-            git commit -m "POS: rediseño visual Prefactura 2.5 [prefactura-patch]"
-            git push origin HEAD:feat/prefactura-visual-2-5
+            git commit -m "POS: corregir alcance visual Prefactura 48.84 [prefactura-patch]"
+            git push origin HEAD:fix/prefactura-visual-48-84
           fi
-
-# trigger: ejecución solicitada por el propietario
