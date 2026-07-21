@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.80** (ver `index.html` y `version.json`).
+> Versión actual: **48.81** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3015,6 +3015,46 @@ tener el plan aprobado.
   - **Con esta pieza cierra la Fase 3** — las 3 pantallas donde se arma una venta (Vender, Factura,
     Prefactura) ofrecen ya el mismo menú de decisión final.
 - **Pendiente:** Fase 4 (favoritos/recientes de producto) — última fase del plan NEXUS PRO 2.5.
+- **FASE 4 — HECHA (v48.81): Favoritos y Recientes en el catálogo de Vender — CIERRA NEXUS PRO 2.5.**
+  Columna nueva **`pos_productos.favorito`** (boolean, default false, migración `pos_productos_favorito`,
+  aditiva — `_prods` ya carga con `select=*`, no hizo falta tocar ninguna consulta). `get_advisors`
+  sin hallazgos nuevos.
+  - **Favoritos:** cada fila de `gridHTML()` gana una estrella (`.vfav`, `ti-star`/`ti-star-filled`) —
+    **decisión de arquitectura obligatoria antes de tocar el HTML:** la fila de producto (`.nxPosCard`)
+    era un `<button>`, y un `<button>` NO puede contener otro `<button>` (HTML inválido — el navegador
+    reordena el DOM en silencio, rompiendo el layout). Se cambió la fila de `<button>` a
+    `<div role="button" tabindex="0" onkeydown="Enter/Espacio">` (mismo patrón ya usado en las filas
+    clicables de la tanda 1 de Fase 4 del rediseño Enterprise) — así el botón de estrella real puede
+    vivir dentro sin violar anidado, con `event.stopPropagation()` para que tocar la estrella nunca
+    seleccione el producto (y viceversa). `window.nxProdFavToggle(id)` — optimista en memoria (se ve
+    al instante) + `PATCH` real a `pos_productos`, revierte si la red falla.
+  - **Recientes — dato real, no inventado:** un chip nuevo `🕒 Recientes` (junto a `⭐ Favoritos`, ambos
+    como pseudo-categorías `__fav__`/`__recientes__` que `gridHTML()` interpreta aparte de las
+    categorías reales de `_cats`, mismo helper `window.nxPosCat` de siempre). `cargarProdsRecientes()`
+    trae `pos_venta_items` (`select=producto_id&order=id.desc&limit=80`), deduplica a los últimos ~12
+    productos DISTINTOS vendidos de verdad (más reciente primero) — **perezoso**: solo se dispara la
+    primera vez que el cajero toca ese chip (`_prodsRecientesIds` arranca en `null`, se cachea después),
+    para no cargarle una consulta de más a la pantalla más usada del sistema a quien nunca usa ese chip.
+  - Estados vacíos honestos: "Sin favoritos todavía. Toca la ☆..." / "Sin ventas recientes todavía." —
+    nunca una lista vacía sin explicación ni (peor) el catálogo completo por error.
+  - **Deliberadamente NO tocado:** el formulario de producto (`abrirProd`) no ganó un checkbox de
+    favorito — la estrella en el catálogo ya es la única entrada, agregar una segunda habría sido
+    redundante. Tampoco se guardó ningún estado de "favorito" a nivel de usuario/cajero (es a nivel de
+    catálogo de la organización, como el resto de `pos_productos` — no existe un concepto de "mis
+    favoritos" por persona en el POS).
+  - **Verificado con dos rondas:** (1) harness de Node con el código real extraído — 18 aserciones
+    (fila es `<div>` no `<button>`, con `role`/`tabindex`/`onkeydown`; la estrella SÍ es un `<button>`
+    real con `stopPropagation`; filtro Favoritos muestra solo lo marcado; filtro Recientes deduplica y
+    ordena correctamente; el toggle es optimista, hace el PATCH correcto, y revierte si falla; el chip
+    Recientes solo dispara la consulta la primera vez). (2) Playwright con el DOM real de un navegador
+    — confirmado por `tagName` que las filas son `DIV` (nunca `BUTTON`, cero riesgo de anidado
+    inválido), un clic real en la estrella NO seleccionó el producto, un clic real en la fila SÍ lo
+    seleccionó, sin desbordes en 390px ni 900px. `node --check parches.js` limpio; los 3 `<script>` de
+    `index.html` pasan `new Function()`; `version.json` válido.
+- **Con esta pieza el plan "NEXUS PRO 2.5 — REDISEÑO DEL POS" queda completo** (Fase 1 panel de cliente,
+  Fase 2 Cotización directa desde el carrito, Fase 3 Vender con las 3 opciones de siempre, Fase 4
+  Favoritos/Recientes) — misma filosofía operativa de InfoPlus, interfaz moderna, cero cambios a la
+  lógica comercial.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

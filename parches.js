@@ -14966,6 +14966,7 @@
   let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
   let _prefs = []; // prefacturas abiertas
   let _ultCompraCache = {}; // cliente_id -> texto ya resuelto de "última compra" (panel de cliente en Vender/Factura)
+  let _prodsRecientesIds = null; // ids de los últimos productos VENDIDOS de verdad (null = todavía no se ha cargado, perezoso)
   let _cartFacSaved = [], _cartPre = []; // carritos separados: Factura vs Prefactura
   let _histSort = { k: 'fecha', d: -1 };
   let _notasCred = []; // historial de notas de crédito (pos_devoluciones)
@@ -15612,7 +15613,12 @@
     if (!_prods.length) {
       return `<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay productos.<br>Ve a <b>"Inventario"</b> y agrega el primero.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Agregar producto</button></div>`;
     }
-    const chips = ['todas'].concat(_cats.map(c => c.id)).map(cid => {
+    // Favoritos/Recientes van ANTES de las categorías reales — mismos chips `.vchip`, mismo helper
+    // `window.nxPosCat`, solo que estos 2 valores son pseudo-categorías que `gridHTML()` interpreta
+    // aparte (no hay una categoría real "favorito" en pos_categorias).
+    const chipsEsp = `<button type="button" class="vchip${_posCat === '__fav__' ? ' on' : ''}" onclick="window.nxPosCat('__fav__')">⭐ Favoritos</button>`
+      + `<button type="button" class="vchip${_posCat === '__recientes__' ? ' on' : ''}" onclick="window.nxPosCat('__recientes__')">🕒 Recientes</button>`;
+    const chips = chipsEsp + ['todas'].concat(_cats.map(c => c.id)).map(cid => {
       const lbl = cid === 'todas' ? 'Todas' : esc(catNombre(cid));
       return `<button type="button" class="vchip${_posCat === String(cid) ? ' on' : ''}" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
     }).join('');
@@ -15639,8 +15645,19 @@
       </div>`;
   }
   function gridHTML() {
-    const lista = _prods.filter(p => _posCat === 'todas' || String(p.categoria_id) === String(_posCat));
-    if (!lista.length) return '<div style="color:#475569;font-size:12px;padding:20px;text-align:center">Sin productos en esta categoría</div>';
+    let lista, vacioMsg;
+    if (_posCat === '__fav__') {
+      lista = _prods.filter(p => p.favorito);
+      vacioMsg = 'Sin favoritos todavía. Toca la ☆ de un producto para agregarlo.';
+    } else if (_posCat === '__recientes__') {
+      const byId = new Map(_prods.map(p => [String(p.id), p]));
+      lista = (_prodsRecientesIds || []).map(id => byId.get(String(id))).filter(Boolean);
+      vacioMsg = 'Sin ventas recientes todavía.';
+    } else {
+      lista = _prods.filter(p => _posCat === 'todas' || String(p.categoria_id) === String(_posCat));
+      vacioMsg = 'Sin productos en esta categoría';
+    }
+    if (!lista.length) return `<div style="color:#475569;font-size:12px;padding:20px;text-align:center">${vacioMsg}</div>`;
     return lista.map(p => {
       const serv = p.tipo === 'servicio';
       const stk = Number(p.stock || 0), min = Number(p.stock_min || 0);
@@ -15650,12 +15667,17 @@
       const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
       const imeiChip = p.serial ? `<span class="vimeib" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
       const cat = catNombre(p.categoria_id);
-      return `<button type="button" class="nxPosCard vrow" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" onclick="window.nxVenderSel('${p.id}')">
+      const favLbl = p.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos';
+      // El botón de favorito es un <button> real — la fila NO puede serlo (los <button> no aceptan
+      // <button> anidados, el navegador los reordenaría en silencio) — por eso es un <div> con
+      // role="button"+tabindex+onkeydown, mismo patrón ya usado en las filas clicables de la tanda 1.
+      return `<div class="nxPosCard vrow" data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase())}" tabindex="0" role="button" onclick="window.nxVenderSel('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxVenderSel('${p.id}')}">
         <div class="vthumb"><i class="ti ${serv ? 'ti-tool' : 'ti-box'}"></i></div>
         <div class="vinfo"><div class="vnom">${esc(p.nombre || '')}${imeiChip}</div><div class="vsub">${esc(p.referencia || p.marca || '')}${cat ? (p.referencia || p.marca ? ' · ' : '') + esc(cat) : ''}</div></div>
         <div class="vstk"><span class="vstkb ${stkCls}"><i class="ti ti-circle-filled"></i>${stkTxt}</span></div>
         <div class="vprecio">${fmt(precioCli(p))}</div>
-      </button>`;
+        <button type="button" class="vfav${p.favorito ? ' on' : ''}" onclick="event.stopPropagation();window.nxProdFavToggle('${p.id}')" aria-label="${favLbl}" title="${favLbl}"><i class="ti ${p.favorito ? 'ti-star-filled' : 'ti-star'}"></i></button>
+      </div>`;
     }).join('');
   }
   // POLÍTICA ESTRICTA: no se vende sin stock (los servicios no llevan stock)
@@ -15690,7 +15712,35 @@
     const idx = _cart.findIndex(x => String(x.producto_id) === String(pid));
     if (idx >= 0 && typeof window.nxFacSerial === 'function') window.nxFacSerial(idx);
   };
-  window.nxPosCat = function (cid) { _posCat = String(cid); const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
+  window.nxPosCat = function (cid) {
+    _posCat = String(cid);
+    // "Recientes" se carga perezosa (una sola vez, cacheada en _prodsRecientesIds) — así el cajero
+    // que nunca toca ese chip no paga el costo de esa consulta en cada visita a Vender.
+    if (_posCat === '__recientes__' && _prodsRecientesIds === null) {
+      cargarProdsRecientes().then(() => { const g = document.getElementById('posGrid'); if (g && _posCat === '__recientes__') g.innerHTML = gridHTML(); });
+    }
+    const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+  };
+  // Últimos productos VENDIDOS de verdad (no "agregados al carrito", no inventado) — mismo criterio
+  // de "no fingir datos" que el resto de la sesión: una sola consulta liviana a pos_venta_items,
+  // deduplicada a los últimos ~12 productos distintos, más reciente primero.
+  async function cargarProdsRecientes() {
+    try {
+      const rows = await getAPI().get('pos_venta_items', 'select=producto_id&order=id.desc&limit=80') || [];
+      const vistos = new Set(); const ids = [];
+      rows.forEach(r => { const id = String(r.producto_id || ''); if (id && !vistos.has(id)) { vistos.add(id); ids.push(id); } });
+      _prodsRecientesIds = ids.slice(0, 12);
+    } catch (e) { _prodsRecientesIds = []; }
+  }
+  // Favorito: toggle simple, optimista en memoria + PATCH real (mismo patrón que el resto del POS).
+  window.nxProdFavToggle = async function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    const nuevo = !p.favorito;
+    p.favorito = nuevo; // optimista: se ve al instante, sin esperar la red
+    const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML();
+    try { await getAPI().patch('pos_productos', 'id=eq.' + id, { favorito: nuevo }); }
+    catch (e) { p.favorito = !nuevo; const g2 = document.getElementById('posGrid'); if (g2) g2.innerHTML = gridHTML(); toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
   window.nxPosBuscar = function (q) {
     const t = String(q || '').trim().toLowerCase();
     document.querySelectorAll('#posGrid .nxPosCard').forEach(c => { const b = c.getAttribute('data-busca') || ''; c.style.display = (!t || b.includes(t)) ? '' : 'none'; });
@@ -17261,6 +17311,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .vstkb.srv{color:var(--pf-blue-d)}
 .nxPf .vprecio{flex:0 0 auto;font-size:13.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;text-align:right}
 .nxPf .vimeib{font-size:9.5px;font-weight:700;background:var(--pf-blue-l);color:var(--pf-blue-d);padding:2px 7px;border-radius:7px;white-space:nowrap;flex:0 0 auto}
+.nxPf .vfav{border:0;background:transparent;color:var(--pf-line);cursor:pointer;font-size:18px;padding:4px;flex:none;display:flex;align-items:center;justify-content:center;line-height:1}
+.nxPf .vfav.on{color:#f59e0b}
+.nxPf .vfav:focus-visible{outline:2px solid var(--pf-blue);outline-offset:1px;border-radius:6px}
+.nxPf .vrow[role="button"]:focus-visible{outline:2px solid var(--pf-blue);outline-offset:-2px}
 @media(min-width:620px){.nxPf .vstk{display:block;width:96px}}
 .nxPf .pf2clibtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;border:0;background:transparent;padding:0;font:inherit;font-size:16px;font-weight:700;color:var(--pf-txt);cursor:pointer;text-align:left}
 .nxPf .pf2clibtn i{color:var(--pf-txt3);font-size:15px}
