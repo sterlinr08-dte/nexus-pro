@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.75** (ver `index.html` y `version.json`).
+> Versión actual: **48.76** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2725,6 +2725,84 @@ de diseño de fondo que vale la pena dejar escrita:
   (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Artículo 360° Fase 4, Kardex Inteligente Fase 5,
   Buscador Universal Fase 6, Dashboard Operativo Fase 7, Auditoría Completa Fase 8, Automatizaciones
   Fase 9) — queda la fase 10 si el dueño la manda.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 10 (final) — IA NEXUS / Recomendaciones (21-jul-2026, v48.76)
+El dueño pidió que el sistema RECOMIENDE 8 cosas: Compras, Reposición, Promociones, Clientes inactivos,
+Productos lentos, Productos estrella, Márgenes bajos, Riesgos de inventario. Investigado antes de
+programar (agente de exploración): decisión de arquitectura clave tomada ANTES de escribir código —
+**esto NO llama a ningún modelo de lenguaje** (nada de Anthropic/OpenAI). Las 8 categorías pedidas son
+clásicos de analítica de retail (rotación, cobertura de stock, márgenes, inactividad de clientes) —
+perfectamente calculables de forma determinística sobre los datos reales que el sistema ya tiene, sin
+necesitar generación de texto por IA. Se evitó a propósito repetir el problema real que ya sufrió
+**NEXUS AI CONTENT** en esta misma sesión (quedó en pausa por un secreto de Anthropic mal configurado en
+Supabase) — una pantalla de recomendaciones que depende de una API externa para funcionar es más frágil,
+más lenta y tiene un costo por uso, sin que ninguna de las 8 categorías pedidas necesite generación de
+lenguaje natural para ser útil.
+- **Reusa umbrales YA establecidos en el sistema, no inventa cortes nuevos:** margen bajo = mismo
+  `<15%` de `nxPfMargenCalc` (Fase 1 de NEXUS PRO 2.5); stock crítico = mismo
+  `stock_min>0 && stock<=stock_min` ya usado en Avisos/Inicio/Inventario.
+- **Núcleo: UN solo análisis por producto, reusado por las 6 secciones de productos** (single source of
+  truth, mismo criterio que ya se aplicó en el Dashboard Operativo de la Fase 7 para no calcular "lo
+  mismo" dos veces con fórmulas ligeramente distintas). `iaAnalisisProductos()` calcula, por cada
+  producto no-servicio: `vend30`/`monto30` (ventas de los últimos 30 días, vía `iaVentasPorProducto()`,
+  que reusa `_repVentas` ya cargado por `cargarReportes()` pero con una ventana de fecha PROPIA y FIJA de
+  30 días — deliberadamente NO usa `_repDesde`/`_repHasta`, que son el filtro mutable de la pantalla
+  Reportes y podrían estar en cualquier rango cuando el usuario entra a esta pestaña nueva), `velDia`
+  (velocidad diaria), `diasCobertura` (stock/velDia — cuántos días de inventario quedan al ritmo
+  actual), `margenPct`, `critico`, y el `proveedor` asociado (de `p.proveedor_id`, ya en memoria desde
+  la Fase 1 de NEXUS PRO 2.5, cero consulta nueva).
+  - **Riesgos de inventario:** `velDia>0 && diasCobertura<=7` — se está vendiendo Y se agota en una
+    semana o menos al ritmo actual.
+  - **Compras:** `critico && vend30>0` — bajo el mínimo que el dueño configuró Y con demanda real (no
+    tiene caso "recomendar comprar" algo que nadie compra solo porque el mínimo quedó mal calibrado).
+  - **Reposición:** para la lista de Compras, cantidad sugerida = `ceil(velDia*30 - stock)` — cuánto
+    comprar para cubrir 30 días de venta al ritmo actual.
+  - **Promociones:** `vend30===0 && stock>0` — cero ventas en 30 días con inventario real disponible,
+    ordenado por capital inmovilizado (`stock*costo`) descendente.
+  - **Productos lentos:** `vend30>0 && stock>0`, ranking de los que menos se vendieron (no cero — ese
+    caso ya es "Promociones", categorías distintas y complementarias, no duplicadas).
+  - **Productos estrella:** TOP 10 por `monto30` (no por cantidad — coincide con el criterio que ya usa
+    el TOP 10 de Reportes, aunque acá se reagrupa por `producto_id` real en vez de por `nombre` como hace
+    Reportes, para no separar accidentalmente un mismo producto que fue renombrado en su historial).
+  - **Márgenes bajos:** `margenPct<15`, ordenado del peor margen al mejor, tope 20.
+  - **Clientes inactivos:** NUEVO — no existía ningún dato cacheado de "última compra" en `pos_clientes`
+    (confirmado por la auditoría, cero columnas de fidelidad en todo el proyecto). `cargarIAClientes()`
+    trae `pos_ventas` (`cliente_id,created_at,total`, `estado=neq.anulada`, límite 5000) y agrupa en JS
+    la fecha más reciente por cliente (mismo patrón que `cargarSaldosCli()`). Solo cuentan como
+    "inactivos" los clientes que **SÍ compraron antes** pero no en 60+ días — un cliente que nunca ha
+    comprado es un prospecto, no un inactivo, y se excluye a propósito (criterio de no fingir una
+    categoría que no aplica). Botón de WhatsApp de 1-toque para reconectar, mismo patrón que Avisos.
+- **Entrada nueva:** módulo `'ia'` agregado a `MODULOS` (aparece automático para admin/gerente vía
+  `_MODKEYS.slice()`/`.filter()`, NO se agregó a los arreglos de `cajero`/`vendedor` — mismo criterio que
+  Reportes/Compras/Contabilidad, ya reservados a roles de gestión), tile nuevo en `renderInicio()` y
+  entrada en `shellTienda()` (grupo nuevo "Inteligencia", color `#9333ea` — confirmado sin choque contra
+  ningún color ya usado ni en el hub de Multiempresa ni en los tiles de `renderInicio`, ver "REGLAMENTO
+  — cada app con su propio color"), ícono `ti-brain` (deliberadamente distinto de `ti-sparkles`, ya usado
+  por NEXUS AI CONTENT en el hub — evita que dos módulos de "IA" en el sistema compartan el mismo ícono).
+- **BUG real encontrado y corregido ANTES de publicar (con datos de prueba, no en producción):** al
+  simular una organización SIN historial de ventas cargado (`_repVentas` vacío — org nueva, o esta
+  pestaña es la primera que visita el usuario), "Promociones" marcaba **el catálogo entero** como
+  candidato a liquidar — porque técnicamente `vend30=0` para TODO cuando no hay ningún dato con qué
+  compararlo, un falso positivo masivo y engañoso. Corregido con una guardia `sinDatos` (calculada antes
+  de los filtros, `!_repVentas || !_repVentas.length`) que deja "Promociones" vacía y honesta
+  ("Sin excedentes detectados") en vez de acusar productos sin ninguna base real. **Márgenes bajos NO
+  se tocó** con esta guardia — es la única sección que no depende de ventas (margen = precio−costo,
+  estático), así que sigue siendo útil incluso sin ningún historial de ventas todavía.
+- Verificado con Playwright, código real extraído del archivo (no una reconstrucción): harness con 4
+  productos (uno crítico+vendiéndose=riesgo+compra+reposición+estrella a la vez, uno con cero ventas y
+  stock=promoción, uno con margen 10%=bajo, uno sano con alto volumen=estrella) y 3 clientes (uno
+  inactivo a 90 días con una venta ANULADA más reciente que debía excluirse del cálculo — confirmado que
+  si sale la fecha de la venta real, no la anulada —, uno activo a 5 días, uno que nunca ha comprado) —
+  27 comprobaciones: las 8 secciones clasifican correctamente, los servicios quedan excluidos del
+  análisis, el cliente sin historial no aparece como "inactivo", el WhatsApp arma el enlace correcto, el
+  caso "sin datos" deja Promociones vacía pero Márgenes bajos sigue funcionando, y sin desbordes en
+  390px. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Con esta pieza el "Plan Maestro NEXUS PRO POS 3.0" queda con sus 10 fases completas** (Motor de
+  Documentos Fases 1-2, Cliente 360° Fase 3, Artículo 360° Fase 4, Kardex Inteligente Fase 5, Buscador
+  Universal Fase 6, Dashboard Operativo Fase 7, Auditoría Completa Fase 8, Automatizaciones Fase 9, IA
+  NEXUS Fase 10). Pendiente si el dueño quiere seguir: nada del plan original — cualquier trabajo nuevo
+  sería un plan aparte que él mismo defina.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

@@ -14917,7 +14917,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Inventario'], ['inventario', 'Kardex'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Inventario'], ['inventario', 'Kardex'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['ia', 'IA NEXUS'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -15220,6 +15220,7 @@
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     if (t === 'reportes') { try { await cargarReportes(); } catch (e) {} }
+    if (t === 'ia') { try { await Promise.all([cargarReportes(), cargarIAClientes()]); } catch (e) {} }
     if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
     if (t === 'inventario') { try { _invProdSel = ''; await cargarInventario(); } catch (e) {} }
     if (t === 'crm') { try { if (!_clientes.length) _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarCRM(); } catch (e) {} }
@@ -15291,6 +15292,7 @@
     else if (_posTab === 'caja') body = renderCaja();
     else if (_posTab === 'contabilidad') body = renderContabilidad();
     else if (_posTab === 'reportes') body = renderReportes();
+    else if (_posTab === 'ia') body = renderIA();
     else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();
     else if (_posTab === 'avisos') body = renderAvisos();
@@ -15324,6 +15326,7 @@
       + sec('Inventario', it('productos', 'Inventario', 'ti-box') + it('inventario', 'Kardex', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
       + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('prefhist', 'Prefacturas', 'ti-files') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
+      + sec('Inteligencia', it('ia', 'IA NEXUS', 'ti-brain'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
@@ -15424,6 +15427,7 @@
         ${grupo('Inventario y compras', tile('productos', 'Inventario', 'ti-box', '#ea580c') + tile('inventario', 'Kardex', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
+        ${grupo('Inteligencia', tile('ia', 'IA NEXUS', 'ti-brain', '#9333ea'))}
         ${grupo('Configuración', tile('ajustes', 'Ajustes', 'ti-settings', '#475569'))}
         ${ultVentas}
       </div>`;
@@ -22109,6 +22113,151 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       ${bloque('Apartados vencidos o por vencer (3 días)', 'ti-bookmark', 'var(--pf-orange)', sec2, 'Ningún apartado en riesgo')}
       ${bloque('Reparaciones LISTAS sin recoger', 'ti-tool', 'var(--pf-blue)', sec3, 'Ninguna pendiente de entrega')}
       ${bloque('Bajo stock — comprar', 'ti-alert-triangle', 'var(--pf-orange)', sec4, 'Inventario saludable')}
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // ── MÓDULO IA NEXUS (Fase 10 del Plan Maestro POS 3.0) — recomendaciones ──
+  // ════════════════════════════════════════════════════════════════════
+  // Analítica DETERMINÍSTICA sobre datos reales (nunca llama a ningún modelo de lenguaje): confiable,
+  // gratis, instantánea, sin depender de un secreto/API externa (ver NEXUS AI CONTENT — quedó en pausa
+  // por un problema de configuración de la clave de Anthropic; esta pantalla no puede fallar por eso
+  // porque no llama a ninguna IA generativa). Reusa los mismos umbrales YA establecidos en el sistema:
+  // margen bajo <15% (idéntico a `nxPfMargenCalc`) y stock crítico `stock<=stock_min` (idéntico a
+  // Avisos/Inicio) — no se inventan cortes nuevos donde ya existe uno.
+  let _iaClientesUlt = null; // cliente_id -> {fecha, veces, montoTotal} de su última compra, bajo demanda
+  async function cargarIAClientes() {
+    try {
+      const rows = await getAPI().get('pos_ventas', 'select=cliente_id,created_at,total&cliente_id=not.is.null&estado=neq.anulada&order=created_at.desc&limit=5000') || [];
+      const ult = {};
+      rows.forEach(v => {
+        const cid = String(v.cliente_id);
+        if (!ult[cid]) ult[cid] = { fecha: v.created_at, veces: 0, montoTotal: 0 };
+        ult[cid].veces++; ult[cid].montoTotal += Number(v.total || 0);
+      });
+      _iaClientesUlt = ult;
+    } catch (e) { _iaClientesUlt = _iaClientesUlt || {}; }
+  }
+  // Ventas por producto en una ventana FIJA de N días — independiente del filtro de fechas que el
+  // usuario haya dejado en la pestaña Reportes (_repDesde/_repHasta son de ESA pantalla, no de esta).
+  // Reusa `_repVentas` (ya trae los venta_items unidos por `cargarReportes()`) — cero consultas nuevas.
+  function iaVentasPorProducto(dias) {
+    const desdeK = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
+    const porProd = {};
+    (_repVentas || []).forEach(v => {
+      if (repFecha(v) < desdeK) return;
+      repItems(v).forEach(it => {
+        const pid = String(it.producto_id || ''); if (!pid) return;
+        const cant = Number(it.cantidad || 0);
+        const imp = Number(it.importe != null ? it.importe : (Number(it.precio || 0) * cant));
+        if (!porProd[pid]) porProd[pid] = { cant: 0, monto: 0 };
+        porProd[pid].cant += cant; porProd[pid].monto += imp;
+      });
+    });
+    return porProd;
+  }
+  // Núcleo: UN análisis por producto (velocidad de venta, días de cobertura, margen), calculado una
+  // sola vez y reusado por las 6 secciones de productos — single source of truth, nadie recalcula su
+  // propia versión de "qué tan rápido se vende esto".
+  function iaAnalisisProductos() {
+    const vend = iaVentasPorProducto(30);
+    return (_prods || []).filter(p => p.tipo !== 'servicio').map(p => {
+      const stock = Number(p.stock || 0), stockMin = Number(p.stock_min || 0);
+      const v30 = vend[String(p.id)] || { cant: 0, monto: 0 };
+      const velDia = v30.cant / 30;
+      const diasCobertura = velDia > 0 ? stock / velDia : (stock > 0 ? Infinity : 0);
+      const precio = Number(p.precio || 0), costo = Number(p.costo || 0);
+      const margenPct = precio > 0 ? (precio - costo) / precio * 100 : null;
+      const critico = stockMin > 0 && stock <= stockMin;
+      const proveedor = p.proveedor_id ? ((_proveedores || []).find(x => String(x.id) === String(p.proveedor_id)) || null) : null;
+      return { p: p, stock: stock, stockMin: stockMin, vend30: v30.cant, monto30: v30.monto, velDia: velDia, diasCobertura: diasCobertura, margenPct: margenPct, critico: critico, proveedor: proveedor };
+    });
+  }
+  function renderIA() {
+    nxPfEnsureCSS();
+    const an = iaAnalisisProductos();
+    // Sin historial de ventas cargado (org nueva, o todavía no se ha llamado cargarReportes) no hay
+    // señal real de "esto no se vende" — con vend30=0 para TODO, "Promociones" marcaría el catálogo
+    // entero como candidato a liquidar, un falso positivo masivo. Se calcula ANTES de filtrar para
+    // poder usarlo como guardia solo donde de verdad hace falta (ver punto 4).
+    const sinDatos = !_repVentas || !_repVentas.length;
+    // 1) Riesgos de inventario: se está vendiendo Y se agota pronto (≤7 días de cobertura al ritmo actual)
+    const riesgos = an.filter(x => x.velDia > 0 && x.diasCobertura <= 7).sort((a, b) => a.diasCobertura - b.diasCobertura);
+    // 2) Compras: bajo el mínimo YA configurado por el dueño Y con demanda real (no tiene caso comprar
+    // algo que nadie compra solo porque el mínimo está mal calibrado)
+    const compras = an.filter(x => x.critico && x.vend30 > 0).sort((a, b) => a.diasCobertura - b.diasCobertura);
+    // 3) Reposición: cantidad sugerida para cubrir 30 días de venta al ritmo actual, sobre la lista de Compras
+    const reposicion = compras.map(x => Object.assign({}, x, { sugerido: Math.max(1, Math.ceil(x.velDia * 30 - x.stock)) }));
+    // 4) Promociones: CERO ventas en 30 días con stock real disponible — candidatos a liquidar. Exige
+    // `!sinDatos`: sin historial de ventas, "cero ventas" no significa nada (nunca se pudo saber).
+    const promos = sinDatos ? [] : an.filter(x => x.vend30 === 0 && x.stock > 0).sort((a, b) => (b.stock * Number(b.p.costo || 0)) - (a.stock * Number(a.p.costo || 0)));
+    // 5) Productos lentos: SÍ vendieron pero poco (no cero) — ranking informativo de los más flojos
+    const lentos = an.filter(x => x.vend30 > 0 && x.stock > 0).sort((a, b) => a.vend30 - b.vend30).slice(0, 15);
+    // 6) Productos estrella: TOP por monto vendido en 30 días
+    const estrellas = an.filter(x => x.vend30 > 0).sort((a, b) => b.monto30 - a.monto30).slice(0, 10);
+    // 7) Márgenes bajos: mismo umbral <15% de nxPfMargenCalc, sobre productos con precio configurado
+    const margenBajo = an.filter(x => x.margenPct != null && x.margenPct < 15).sort((a, b) => a.margenPct - b.margenPct).slice(0, 20);
+    // 8) Clientes inactivos: compraron antes pero no en 60+ días (excluye clientes que NUNCA han
+    // comprado — esos son prospectos, no clientes "inactivos")
+    const inactivos = [];
+    if (_iaClientesUlt) {
+      (_clientes || []).forEach(c => {
+        const u = _iaClientesUlt[String(c.id)]; if (!u) return;
+        const dias = Math.floor((Date.now() - new Date(u.fecha).getTime()) / 86400000);
+        if (dias >= 60) inactivos.push({ c: c, dias: dias, veces: u.veces, montoTotal: u.montoTotal });
+      });
+      inactivos.sort((a, b) => b.dias - a.dias);
+    }
+    const fila = (t1, t2, extra) => `<div class="avrow"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:12px">${t1}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${t2}</div></div><div style="display:flex;gap:6px;align-items:center">${extra}</div></div>`;
+    const bloque = (tit, ic, col, html, vacio) => `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${col};display:flex;align-items:center;gap:7px"><i class="ti ${ic}"></i> ${tit}</div>${html || `<div style="font-size:11.5px;color:var(--pf-txt3);padding:4px">${vacio}</div>`}</div>`;
+    const verProd = pid => `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxArticulo360('${pid}')" aria-label="Ver artículo 360"><i class="ti ti-id-badge-2"></i></button>`;
+    const verCli = cid => `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxCliente360('${cid}')" aria-label="Ver cliente 360"><i class="ti ti-id-badge-2"></i></button>`;
+
+    const secRiesgos = riesgos.length ? riesgos.slice(0, 20).map(x => fila(esc(x.p.nombre || ''),
+      (x.diasCobertura <= 0 ? '<b style="color:var(--pf-red)">SIN STOCK</b>' : 'quedan <b style="color:var(--pf-red)">' + Math.floor(x.diasCobertura) + ' día(s)</b>') + ' de inventario al ritmo actual de venta',
+      verProd(x.p.id))).join('') : '';
+    const secCompras = compras.length ? compras.slice(0, 20).map(x => fila(esc(x.p.nombre || ''),
+      'quedan <b>' + x.stock + '</b> (mínimo ' + x.stockMin + ')' + (x.proveedor ? ' · ' + esc(x.proveedor.nombre || '') : ' · sin proveedor asignado'),
+      verProd(x.p.id))).join('') : '';
+    const secReposicion = reposicion.length ? reposicion.slice(0, 20).map(x => fila(esc(x.p.nombre || ''),
+      'comprar <b style="color:var(--pf-blue)">' + x.sugerido + ' unid.</b> para cubrir 30 días al ritmo actual de venta',
+      verProd(x.p.id))).join('') : '';
+    const secPromos = promos.length ? promos.slice(0, 20).map(x => fila(esc(x.p.nombre || ''),
+      x.stock + ' unid. sin venderse en 30 días · ' + fmt(x.stock * Number(x.p.costo || 0)) + ' de capital inmovilizado',
+      verProd(x.p.id))).join('') : '';
+    const secLentos = lentos.length ? lentos.map(x => fila(esc(x.p.nombre || ''),
+      'solo ' + x.vend30 + ' unid. vendida(s) en 30 días · quedan ' + x.stock + ' en inventario',
+      verProd(x.p.id))).join('') : '';
+    const secEstrellas = estrellas.length ? estrellas.map(x => fila(esc(x.p.nombre || ''),
+      x.vend30 + ' unid. · ' + fmt(x.monto30) + ' vendido en 30 días',
+      verProd(x.p.id))).join('') : '';
+    const secMargen = margenBajo.length ? margenBajo.map(x => fila(esc(x.p.nombre || ''),
+      '<b style="color:' + (x.margenPct < 0 ? 'var(--pf-red)' : 'var(--pf-orange)') + '">' + x.margenPct.toFixed(1).replace('.', ',') + '%</b> de margen · precio ' + fmt(x.p.precio || 0) + ' · costo ' + fmt(x.p.costo || 0),
+      verProd(x.p.id))).join('') : '';
+    const secInactivos = inactivos.length ? inactivos.slice(0, 30).map(x => {
+      const tel = String(x.c.telefono || '').replace(/\D/g, '');
+      const wa = tel ? `<a class="ab g3" style="height:30px;width:auto;padding:0 10px;color:#16a34a" href="https://wa.me/1${tel}?text=${encodeURIComponent('Hola ' + (x.c.nombre || '') + ', te extrañamos en ' + (empNom() || 'la tienda') + '. ¿Te ayudamos con algo?')}" target="_blank" aria-label="Avisar por WhatsApp"><i class="ti ti-brand-whatsapp"></i></a>` : '';
+      return fila(esc(x.c.nombre || ''), 'sin comprar hace <b style="color:var(--pf-orange)">' + x.dias + ' días</b> · ' + x.veces + ' compra(s) · ' + fmt(x.montoTotal) + ' histórico', wa + verCli(x.c.id));
+    }).join('') : '';
+
+    return `<div class="nxPf" style="max-width:820px">
+      <div style="font-weight:800;font-size:15px;margin-bottom:2px;display:flex;align-items:center;gap:7px"><i class="ti ti-brain" style="color:#9333ea"></i> IA NEXUS — Recomendaciones</div>
+      <div style="font-size:11px;color:var(--pf-txt3);margin-bottom:12px">Analítica sobre tus datos reales de los últimos 30 días — se recalcula cada vez que entras aquí, no es una lista fija.</div>
+      <div class="kpirow">
+        ${kpiPf('Riesgos de inventario', riesgos.length, riesgos.length ? 'var(--pf-red)' : 'var(--pf-green)')}
+        ${kpiPf('Compras sugeridas', compras.length, compras.length ? 'var(--pf-orange)' : 'var(--pf-green)')}
+        ${kpiPf('Márgenes bajos', margenBajo.length, margenBajo.length ? 'var(--pf-orange)' : 'var(--pf-green)')}
+        ${kpiPf('Clientes inactivos', inactivos.length, inactivos.length ? 'var(--pf-blue)' : 'var(--pf-green)')}
+      </div>
+      ${sinDatos ? '<div style="text-align:center;padding:20px;color:var(--pf-txt3);font-size:12px">Aún no hay suficientes ventas registradas para calcular recomendaciones.</div>' : ''}
+      ${bloque('Riesgos de inventario — se agotan pronto', 'ti-alert-triangle', 'var(--pf-red)', secRiesgos, 'Nada en riesgo de quiebre')}
+      ${bloque('Compras — reponer ya', 'ti-truck-delivery', 'var(--pf-orange)', secCompras, 'Nada por debajo del mínimo con demanda real')}
+      ${bloque('Reposición sugerida', 'ti-package', 'var(--pf-blue)', secReposicion, 'Nada que reponer por ahora')}
+      ${bloque('Promociones — candidatos a liquidar', 'ti-tag', 'var(--pf-purple)', secPromos, 'Sin excedentes detectados')}
+      ${bloque('Productos lentos', 'ti-trending-down', 'var(--pf-txt3)', secLentos, 'Sin datos suficientes todavía')}
+      ${bloque('Productos estrella', 'ti-star', 'var(--pf-green)', secEstrellas, 'Sin ventas en los últimos 30 días')}
+      ${bloque('Márgenes bajos', 'ti-percentage', 'var(--pf-orange)', secMargen, 'Todos los productos con margen saludable')}
+      ${bloque('Clientes inactivos (60+ días)', 'ti-user-off', 'var(--pf-blue)', secInactivos, 'Todos tus clientes han comprado recientemente')}
     </div>`;
   }
 
