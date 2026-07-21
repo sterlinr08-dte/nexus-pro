@@ -18376,7 +18376,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       return `<tr data-row tabindex="0" role="button" onclick="window.nxPosCliVer('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPosCliVer('${c.id}')}">
         <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
         <td style="text-align:right;font-weight:800;color:${sal > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(sal)}</td>
-        <td style="text-align:right"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta" aria-label="Ver cuenta"><i class="ti ti-eye"></i></button></td>
+        <td style="text-align:right;white-space:nowrap"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta" aria-label="Ver cuenta"><i class="ti ti-eye"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxCliente360('${c.id}')" title="Ver 360°" aria-label="Ver ficha 360 del cliente"><i class="ti ti-id-badge-2"></i></button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="3" class="emptyrow">Sin clientes. Toca "Nuevo cliente".</td></tr>`;
     return `<div class="nxPf">
@@ -18434,6 +18434,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${abonosHTML}</div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px">
+          <button class="btn bsm bghost" type="button" onclick="document.getElementById('nxPosCli').remove();window.nxCliente360('${id}')"><i class="ti ti-id-badge-2"></i> Ver 360°</button>
           ${waNum(c.telefono) ? `<button class="btn bwa bsm" type="button" onclick="window.nxPosCliWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
           <button class="btn bsm bghost" type="button" onclick="window.nxPosEstadoCuenta('${id}')"><i class="ti ti-printer"></i> Estado de cuenta</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxPosEditCli('${id}')"><i class="ti ti-edit"></i> Editar</button>
@@ -18442,6 +18443,156 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       </div>`;
     document.body.appendChild(ov);
     scanMoney(ov);
+  };
+  // ══════════════ CLIENTE 360° — todo el cliente en una sola pantalla (Plan Maestro POS 3.0, Fase 3) ══════════════
+  // Reúne, SIN inventar nada, lo que ya vive repartido en el sistema: facturas/cotizaciones (por
+  // cliente_id), garantías y línea de tiempo (motor de documentos de las Fases 1-2), fiado+cuotas
+  // (mismo cálculo que nxPosCliVer), y equipos/IMEI/recepciones (pos_venta_items.serial +
+  // pos_reparaciones). Solo lectura — no cambia ninguna tabla.
+  window.nxCliente360 = async function (id) {
+    const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
+    nxPfEnsureCSS();
+    cerrarModal('nxCli360');
+    const ov = document.createElement('div'); ov.id = 'nxCli360'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:660px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head"><button class="nxBack" type="button" onclick="document.getElementById('nxCli360').remove()" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button><h3><i class="ti ti-id-badge-2"></i> ${esc(c.nombre)} — Cliente 360°</h3></div>
+      <div id="nxCli360Body" style="padding:14px;overflow-y:auto;flex:1"><div class="emptyrow"><i class="ti ti-loader-2"></i> Cargando historial completo…</div></div>
+    </div>`;
+    document.body.appendChild(ov);
+
+    // ── Recolectar todo en paralelo (best-effort, cada tabla con su propio try/catch) ──
+    let ventas = [], cotizaciones = [], abonos = [], docs = [], items = [];
+    try { ventas = await getAPI().get('pos_ventas', 'select=*&cliente_id=eq.' + id + '&order=created_at.desc') || []; } catch (e) {}
+    try { cotizaciones = await getAPI().get('pos_cotizaciones', 'select=*&cliente_id=eq.' + id + '&order=created_at.desc') || []; } catch (e) {}
+    try { abonos = await getAPI().get('pos_abonos', 'select=*&cliente_id=eq.' + id + '&order=fecha.desc') || []; } catch (e) {}
+    try { docs = await getAPI().get('pos_documentos', 'select=*&cliente_id=eq.' + id + '&order=created_at.asc') || []; } catch (e) {}
+    const ventaIds = ventas.map(v => v.id);
+    if (ventaIds.length) { try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=in.(' + ventaIds.join(',') + ')') || []; } catch (e) {} }
+    // Recepciones NO tienen cliente_id de origen (se escriben a mano nombre+teléfono al recibir el
+    // equipo) — se emparejan por teléfono normalizado como respaldo honesto, sin fingir un enlace
+    // exacto que la base no tiene. Reusa `_reps` (ya cargado en memoria por cargarPOS).
+    const telDig = s => String(s || '').replace(/\D/g, '').slice(-10);
+    const telC = telDig(c.telefono);
+    const reps = (_reps || []).filter(r => String(r.cliente_id) === String(id) || (telC && telDig(r.cliente_telefono) === telC));
+    const finesCli = (_fins || []).filter(f => String(f.cliente_id) === String(id));
+    let finPagos = [];
+    if (finesCli.length) { try { finPagos = await getAPI().get('pos_fin_pagos', 'select=*&financiamiento_id=in.(' + finesCli.map(f => f.id).join(',') + ')&order=fecha.desc') || []; } catch (e) {} }
+
+    const bodyEl = document.getElementById('nxCli360Body'); if (!bodyEl) return; // se cerró mientras cargaba
+
+    // ── Créditos (mismo cálculo que nxPosCliVer) ──
+    const ventasCredito = ventas.filter(v => Number(v.credito_monto || 0) > 0);
+    const totFiado = ventasCredito.reduce((s, v) => s + Number(v.credito_monto || 0), 0);
+    const totAbFiado = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
+    const saldoFiado = Math.max(0, totFiado - totAbFiado);
+    const pendPlan = f => (_finCuotas || []).filter(x => String(x.financiamiento_id) === String(f.id) && !x.pagado).reduce((s, x) => s + Math.max(0, Number(x.monto || 0) - Number(x.monto_pagado || 0)), 0);
+    const cuotasActivas = finesCli.filter(f => f.estado === 'activo');
+    const totCuotasPend = cuotasActivas.reduce((s, f) => s + pendPlan(f), 0);
+    const exposicion = saldoFiado + totCuotasPend;
+
+    // ── Garantías: de productos comprados (pos_venta_items.garantia_hasta) + reparaciones entregadas ──
+    const hoyK = hoyISOPos();
+    const garantias = items.filter(it => it.garantia_hasta).map(it => ({ tipo: 'Producto', nombre: it.nombre, hasta: it.garantia_hasta }))
+      .concat(reps.filter(r => r.garantia_hasta).map(r => ({ tipo: 'Reparación', nombre: r.equipo || r.numero || '', hasta: r.garantia_hasta })))
+      .map(g => Object.assign(g, { vigente: String(g.hasta).slice(0, 10) >= hoyK }));
+
+    // ── Equipos / IMEI: mismos datos, dos vistas (lista con contexto vs. números sueltos) ──
+    const equipos = items.filter(it => it.serial).map(it => ({ nombre: it.nombre, imei: it.serial, origen: 'Comprado', fecha: (ventas.find(v => String(v.id) === String(it.venta_id)) || {}).created_at }))
+      .concat(reps.filter(r => r.equipo || r.imei).map(r => ({ nombre: r.equipo || 'Equipo', imei: r.imei || '', origen: 'Recepción ' + (r.numero || ''), fecha: r.created_at })));
+    const imeis = [...new Set(equipos.map(e => e.imei).filter(Boolean))];
+
+    // ── Pagos: fiado (pos_abonos) + cuotas (pos_fin_pagos), fusionados y ordenados ──
+    const pagos = abonos.map(a => ({ monto: a.monto, fecha: a.fecha, metodo: a.metodo, tipo: 'Cobro fiado', detalle: a.nota }))
+      .concat(finPagos.map(p => ({ monto: p.monto, fecha: p.fecha, metodo: p.metodo, tipo: 'Pago de cuota', detalle: p.referencia })))
+      .sort((x, y) => String(y.fecha || '').localeCompare(String(x.fecha || '')));
+
+    const badge = (txt, color, bg) => `<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap;background:${bg};color:${color}">${esc(txt)}</span>`;
+    const seccion = (icono, titulo, color, contenidoHTML) => `<div class="card" style="padding:11px 12px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="background:${color}22;color:${color};width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${icono}"></i></span><b style="font-size:12.5px">${esc(titulo)}</b></div>
+        ${contenidoHTML}
+      </div>`;
+    const fila = html => `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9;font-size:11.5px">${html}</div>`;
+
+    // 1) Datos generales
+    const datosGenerales = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:11.5px">
+        <div><span style="color:var(--pf-txt3)">Código</span><br><b>${esc(c.codigo || '—')}</b></div>
+        <div><span style="color:var(--pf-txt3)">Cédula/RNC</span><br><b>${esc(c.cedula || '—')}</b></div>
+        <div><span style="color:var(--pf-txt3)">Teléfono</span><br><b>${esc(c.telefono || '—')}</b></div>
+        <div><span style="color:var(--pf-txt3)">Email</span><br><b>${esc(c.email || '—')}</b></div>
+        <div><span style="color:var(--pf-txt3)">Dirección</span><br><b>${esc(c.direccion || '—')}</b></div>
+        <div><span style="color:var(--pf-txt3)">Cliente desde</span><br><b>${String(c.created_at || '').slice(0, 10).split('-').reverse().join('/') || '—'}</b></div>
+      </div>${c.acepta_whatsapp ? '<div style="margin-top:6px">' + badge('✓ Acepta WhatsApp', '#16a34a', '#f0fdf4') + '</div>' : ''}`;
+
+    // 2) Facturas (TODAS, no solo fiadas)
+    const facturasHTML = ventas.length ? ventas.map(v => fila(`
+        <div style="flex:1;min-width:0"><b>${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</b><div style="color:var(--pf-txt3);font-size:10px">${String(v.created_at || '').slice(0, 10).split('-').reverse().join('/')}</div></div>
+        ${v.estado === 'anulada' ? badge('ANULADA', '#dc2626', '#fef2f2') : v.a_credito ? badge('FIADO', '#d97706', '#fffbeb') : badge('PAGADA', '#16a34a', '#f0fdf4')}
+        <b style="min-width:70px;text-align:right">${fmt(v.total)}</b>
+        <button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket" aria-label="Ver ticket"><i class="ti ti-receipt" style="font-size:12px"></i></button>
+      `)).join('') : '<div class="emptyrow">Sin facturas.</div>';
+
+    // 3) Cotizaciones
+    const cotizacionesHTML = cotizaciones.length ? cotizaciones.map(cot => fila(`
+        <div style="flex:1;min-width:0"><b>${esc(cot.numero || '')}</b><div style="color:var(--pf-txt3);font-size:10px">${String(cot.fecha || cot.created_at || '').slice(0, 10).split('-').reverse().join('/')}</div></div>
+        ${badge((cot.estado || 'vigente').toUpperCase(), cot.estado === 'convertida' ? '#16a34a' : cot.estado === 'vencida' ? '#dc2626' : '#2563eb', cot.estado === 'convertida' ? '#f0fdf4' : cot.estado === 'vencida' ? '#fef2f2' : '#eff6ff')}
+        <b style="min-width:70px;text-align:right">${fmt(cot.total)}</b>
+      `)).join('') : '<div class="emptyrow">Sin cotizaciones.</div>';
+
+    // 4) Garantías
+    const garantiasHTML = garantias.length ? garantias.map(g => fila(`
+        <div style="flex:1;min-width:0">${badge(g.tipo, '#7c3aed', '#f5f3ff')} <b style="margin-left:4px">${esc(g.nombre)}</b></div>
+        ${badge(g.vigente ? 'VIGENTE' : 'VENCIDA', g.vigente ? '#16a34a' : '#dc2626', g.vigente ? '#f0fdf4' : '#fef2f2')}
+        <span style="color:var(--pf-txt3);min-width:60px;text-align:right;font-size:10.5px">${String(g.hasta).slice(0, 10).split('-').reverse().join('/')}</span>
+      `)).join('') : '<div class="emptyrow">Sin garantías registradas.</div>';
+
+    // 5) Recepciones (servicio técnico)
+    const recepcionesHTML = reps.length ? reps.map(r => { const est = repEst(r.estado); const gi = garantiaInfo(r); return fila(`
+        <div style="flex:1;min-width:0"><b>${esc(r.numero || '')}</b> <span style="color:var(--pf-txt3)">${esc(r.equipo || '')}</span><div style="color:var(--pf-txt3);font-size:10px">${String(r.created_at || '').slice(0, 10).split('-').reverse().join('/')}${gi ? ' · garantía ' + (gi.vigente ? 'vigente' : 'vencida') + ' ' + gi.fecha : ''}</div></div>
+        ${badge(est[1].toUpperCase(), '#fff', est[2])}
+      `); }).join('') : '<div class="emptyrow">Sin recepciones de equipo (emparejado por cliente y, si no coincide, por teléfono).</div>';
+
+    // 6) Créditos
+    const creditosHTML = `<div class="kpirow" style="margin-bottom:6px">
+        ${kpiPf('Fiado pendiente', fmt(saldoFiado), saldoFiado > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
+        ${kpiPf('Cuotas pendientes', fmt(totCuotasPend), totCuotasPend > 0 ? 'var(--pf-orange)' : 'var(--pf-green)')}
+        ${kpiPf('Exposición total', fmt(exposicion), exposicion > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
+      </div>${cuotasActivas.length ? cuotasActivas.map(f => fila(`<div style="flex:1;min-width:0">${esc(f.descripcion || '')}</div><b style="color:var(--pf-blue)">${fmt(pendPlan(f))}</b><button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="document.getElementById('nxCli360').remove();window.nxFinPlan('${f.id}')" title="Ver plan" aria-label="Ver plan de cuotas"><i class="ti ti-list-numbers" style="font-size:12px"></i></button>`)).join('') : ''}`;
+
+    // 7) Pagos (fusión de cobros de fiado + pagos de cuota)
+    const pagosHTML = pagos.length ? pagos.map(p => fila(`
+        <div style="flex:1;min-width:0"><b style="color:var(--pf-green)">${fmt(p.monto)}</b> <span style="color:var(--pf-txt3);font-size:10.5px">${p.tipo}${p.metodo ? ' · ' + esc(p.metodo) : ''}</span></div>
+        <span style="color:var(--pf-txt3);font-size:10.5px">${String(p.fecha || '').slice(0, 10).split('-').reverse().join('/')}</span>
+      `)).join('') : '<div class="emptyrow">Sin pagos registrados.</div>';
+
+    // 8) Equipos
+    const equiposHTML = equipos.length ? equipos.map(e => fila(`
+        <div style="flex:1;min-width:0"><b>${esc(e.nombre)}</b>${e.imei ? ' <span style="color:var(--pf-txt3);font-family:monospace;font-size:10.5px">' + esc(e.imei) + '</span>' : ''}</div>
+        ${badge(e.origen, '#2563eb', '#eff6ff')}
+      `)).join('') : '<div class="emptyrow">Sin equipos registrados.</div>';
+
+    // 9) IMEI (lista compacta, solo los números)
+    const imeiHTML = imeis.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${imeis.map(n => `<span style="font-family:monospace;font-size:11px;font-weight:700;background:#f1f5f9;border-radius:6px;padding:4px 8px">${esc(n)}</span>`).join('')}</div>` : '<div class="emptyrow">Sin IMEI/serial registrados.</div>';
+
+    // 10) Historial: línea de tiempo de TODOS los documentos del cliente (motor de documentos, Fases 1-2)
+    const flechaTL = '<div style="text-align:center;color:var(--pf-txt3);font-size:12px;margin:1px 0">↓</div>';
+    const historialHTML = docs.length ? docs.map((d, i) => `<div class="oppcard" style="display:flex;align-items:center;gap:8px;cursor:pointer" tabindex="0" role="button" aria-label="Ver ${esc(d.codigo || d.tipo)}" onclick="document.getElementById('nxCli360').remove();window.nxDocCadena('${d.tabla_origen}','${d.registro_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('nxCli360').remove();window.nxDocCadena('${d.tabla_origen}','${d.registro_id}')}">
+        <div style="background:var(--pf-blue-l);color:var(--pf-blue-d);width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${DOC_ICONO[d.tipo] || 'ti-file'}" style="font-size:13px"></i></div>
+        <div style="flex:1;min-width:0"><b style="font-size:11.5px">${esc(d.codigo || d.tipo)}</b> <span style="color:var(--pf-txt3);font-size:10px">${DOC_NOMBRE[d.tipo] || d.tipo}</span></div>
+        <span style="color:var(--pf-txt3);font-size:10px">${String(d.created_at || '').slice(0, 16).replace('T', ' ')}</span>
+      </div>${i < docs.length - 1 ? flechaTL : ''}`).join('') : '<div class="emptyrow">Sin documentos relacionados todavía (motor de documentos).</div>';
+
+    bodyEl.innerHTML =
+      seccion('ti-user', 'Datos generales', 'var(--pf-blue)', datosGenerales) +
+      seccion('ti-file-invoice', 'Facturas (' + ventas.length + ')', '#2563eb', facturasHTML) +
+      seccion('ti-clipboard-text', 'Cotizaciones (' + cotizaciones.length + ')', '#0891b2', cotizacionesHTML) +
+      seccion('ti-shield-check', 'Garantías (' + garantias.length + ')', '#7c3aed', garantiasHTML) +
+      seccion('ti-tool', 'Recepciones (' + reps.length + ')', '#d97706', recepcionesHTML) +
+      seccion('ti-credit-card', 'Créditos', '#dc2626', creditosHTML) +
+      seccion('ti-cash', 'Pagos (' + pagos.length + ')', '#16a34a', pagosHTML) +
+      seccion('ti-device-mobile', 'Equipos (' + equipos.length + ')', '#0f172a', equiposHTML) +
+      seccion('ti-fingerprint', 'IMEI (' + imeis.length + ')', '#475569', imeiHTML) +
+      seccion('ti-clock-hour-4', 'Historial', 'var(--pf-blue)', historialHTML);
   };
   window.nxPosEstadoCuenta = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;

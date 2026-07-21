@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.68** (ver `index.html` y `version.json`).
+> Versión actual: **48.69** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2256,6 +2256,55 @@ de una comparación real contra el estado anterior guardado, o de una acción re
 - **Pendiente:** el resto del Plan Maestro (Fases 3-10) — llegará por partes, mismo criterio de esta
   sesión: confirmar el alcance real con el dueño antes de programar, no inventar funciones para
   "completar" un ejemplo si el sistema no tiene un dato real detrás.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 3 — Cliente 360° (21-jul-2026, v48.69)
+El dueño pidió que al abrir un cliente se vea TODO en una sola pantalla: Datos generales, Facturas,
+Cotizaciones, Garantías, Recepciones, Créditos, Pagos, Equipos, IMEI, Historial.
+- **No se tocó `nxPosCliVer`** (el modal existente, enfocado en fiado/cobranza — se sigue usando igual
+  en los flujos de cobro) — se construyó **`window.nxCliente360(id)`** como función NUEVA y aparte,
+  siguiendo el criterio de toda la sesión (aditivo, nunca reemplazar algo que ya funciona). Entrada
+  doble: botón nuevo (🪪 `ti-id-badge-2`) junto a "Ver cuenta" en la fila de la lista de Clientes, y
+  botón **"Ver 360°"** en el footer del propio `nxPosCliVer` (para quien ya está ahí y quiere ver más).
+- **Investigación de esquema ANTES de programar (con SQL real, no supuestos):** se confirmó columna por
+  columna qué tablas de verdad tienen `cliente_id` como FK real (`pos_ventas`, `pos_cotizaciones`,
+  `pos_abonos`, `pos_documentos`, `pos_financiamientos`) y cuál NO — **`pos_reparaciones` no tiene
+  `cliente_id`**, solo `cliente_nombre`/`cliente_telefono` de texto libre (se escriben a mano al recibir
+  el equipo, sin selector de cliente). En vez de fingir un enlace exacto que la base no tiene, las
+  Recepciones se emparejan por **teléfono normalizado** (últimos 10 dígitos) contra `_reps` (ya cargado
+  en memoria por `cargarPOS`) — aproximado mas no inventado, y se documenta la limitación en el propio
+  changelog. `pos_seriales`/`pos_venta_items.serial` sí están bien enlazados (vía `venta_id`→
+  `pos_ventas.cliente_id`), así que Equipos/IMEI son exactos, no aproximados.
+- **Qué junta cada sección (todo lectura, cero tablas nuevas, cero cambios de esquema):**
+  Datos generales (`c` ya en memoria); Facturas = **TODAS** las de `pos_ventas` del cliente (no solo
+  las fiadas, a diferencia de `nxPosCliVer`) con badge ANULADA/FIADO/PAGADA; Cotizaciones de
+  `pos_cotizaciones`; **Garantías** = unión de `pos_venta_items.garantia_hasta` (producto vendido) +
+  `pos_reparaciones.garantia_hasta` (reparación entregada, reusa `garantiaInfo()` de v48.64) — un
+  mismo concepto real desde 2 fuentes distintas, con badge VIGENTE/VENCIDA calculado en vivo contra
+  `hoyISOPos()`; Recepciones = `_reps` filtrado (badge de estado reusa `repEst()`/`REP_ESTADOS`
+  existentes); **Créditos** = mismo cálculo de `nxPosCliVer` (fiado pendiente + cuotas pendientes +
+  exposición total); **Pagos** = fusión real de `pos_abonos` (cobros de fiado) + `pos_fin_pagos` (pagos
+  de cuota), ordenados por fecha — antes vivían en 2 pantallas separadas, sin un solo lugar para verlos
+  juntos; **Equipos** = `pos_venta_items` con `serial` + reparaciones con `equipo`/`imei`, cada uno con
+  badge de origen (Comprado / Recepción); **IMEI** = los mismos seriales de arriba, deduplicados
+  (`Set`) y mostrados como chips sueltos para copiar rápido; **Historial** = línea de tiempo de
+  **TODOS** los `pos_documentos` del cliente (cotización+prefactura+factura+garantía, Motor de
+  Documentos Fases 1-2), reusando el mismo lenguaje visual de flechas `↓` de `nxDocCadena` — cada fila
+  es clicable y abre `nxDocCadena(tabla_origen, registro_id)` directo, conectando la Fase 3 con la
+  infraestructura de las 2 fases anteriores en vez de duplicar lógica.
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción): se armó un
+  harness con un cliente de prueba con datos en TODAS las tablas (3 facturas —pagada/fiada/anulada—, 2
+  cotizaciones, 2 garantías —una vigente futura, una vencida—, 2 recepciones —una empareja por
+  teléfono, la otra no—, 1 plan de cuotas con pagos mixtos, 3 pagos fusionados, 2 equipos con el mismo
+  IMEI deduplicado a 1, y 3 documentos con cadena real) cargado en un navegador real: las 10 secciones
+  muestran los conteos y montos correctos, los badges de estado calculan bien (incluida la fecha real
+  del sistema para vigente/vencida), tocar una fila de Historial dispara `nxDocCadena` con la tabla/id
+  correctos, tocar un botón de Ticket dispara `nxPosTicketVenta`, sin errores de JS y sin desbordes
+  horizontales en 390px ni 800px (`scrollWidth === clientWidth` exacto en ambos). `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** si el dueño lo pide, agregar `pos_reparaciones.cliente_id` como columna real (aditiva,
+  nullable) para que las recepciones nuevas queden enlazadas de forma exacta en vez de por teléfono —
+  no se hizo en esta fase porque no fue lo pedido explícitamente y el emparejamiento por teléfono ya
+  resuelve el caso real sin tocar esquema.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
