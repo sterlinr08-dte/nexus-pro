@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.74** (ver `index.html` y `version.json`).
+> Versión actual: **48.75** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2662,6 +2662,69 @@ fantasma, exactamente la misma clase de bug que el "ORIGEN" que la pantalla de A
   (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Artículo 360° Fase 4, Kardex Inteligente Fase 5,
   Buscador Universal Fase 6, Dashboard Operativo Fase 7, Auditoría Completa Fase 8) — quedan las fases
   9-10 si el dueño las manda.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 9 — Automatizaciones (21-jul-2026, v48.75)
+El dueño pidió que "Factura creada" dispare automáticamente toda una cadena: descontar inventario →
+actualizar caja → actualizar cliente → actualizar estadísticas → actualizar utilidad → crear historial.
+Investigado antes de programar (agente de exploración, auditoría línea por línea de `nxPosConfirmar` —
+la función real que crea la venta, `parches.js:16749-16918` antes de este cambio): **la gran mayoría de
+esa cadena YA era 100% automática**, construida en fases anteriores de esta misma sesión, y por una razón
+de diseño de fondo que vale la pena dejar escrita:
+- **Por qué no hacía falta "conectar" nada — el sistema no cachea agregados, los calcula en vivo:**
+  Caja (`totalesCaja()`, ya existente), Estadísticas (`cargarReportes()`) y Utilidad (`cargarDashKPI()`,
+  Fase 7) NO leen un número guardado que alguien tenga que ir actualizando — vuelven a sumar
+  `pos_ventas`/`pos_venta_items`/`pos_abonos`/`pos_caja_movimientos` **desde cero cada vez que se
+  consultan**. Eso significa que "actualizar caja/estadísticas/utilidad" no es un paso que `nxPosConfirmar`
+  tenga que ejecutar — ya está automáticamente al día por construcción, sin ningún riesgo de quedar
+  desactualizado (no existe ninguna tabla `pos_estadisticas`/`pos_resumen` en todo el proyecto — grep
+  exhaustivo confirmado en 0 resultados). Es un diseño MÁS robusto que una cadena de "actualizar X"
+  explícita: nada puede quedar a medias porque no hay nada que sincronizar.
+  - **Inventario:** confirmado automático — cada línea del carrito pasa por `moverStock(p,'venta',...)`
+    (Fase 5, `parches.js:16903-16905`), best-effort, después de crear la venta.
+  - **Cliente (deuda/fiado):** confirmado automático — `saldoCli()` se calcula en vivo desde
+    `pos_ventas.credito_monto`/`pos_abonos`; `nxPosConfirmar` solo hace un ajuste optimista en memoria
+    (`_fiadoByCli[cliId]+=c.credito`, línea 16906) para que la UI no espere un refetch, pero el dato de
+    verdad sigue viniendo de la base. **Aclarado explícitamente (decisión de alcance, no un gap):** NO
+    existen columnas de fidelidad tipo "última compra"/"visitas"/"puntos" en `pos_clientes` — no es que
+    se olvidaran actualizar, es que ese concepto (programa de lealtad) nunca se pidió ni se construyó en
+    NEXUS PRO POS. No se inventó nada nuevo ahí — sería una función completamente aparte.
+  - **Historial:** confirmado automático — Motor de Documentos (`registrarDocumento('factura',...)`,
+    Fases 1-2) + Kardex (`logMov` dentro de `moverStock`, Fase 5) ya dejan rastro completo de cada venta.
+- **Los 2 huecos reales que SÍ se cerraron, con línea exacta encontrada por la auditoría:**
+  1. **Nunca existía un `logAudit` genérico de "factura creada".** El único `logAudit` dentro de
+     `nxPosConfirmar` era para el plan de cuotas (`POS_FINANCIAMIENTO`, si aplicaba) — el evento más común
+     de todo el POS (cobrar una venta) no dejaba NINGÚN rastro en la pantalla de Auditoría (Fase 8), a
+     diferencia de la anulación de venta, que sí lo tiene. Se agregó `logAudit('POS_VENTA_CREADA', numFac
+     + monto + cliente + método, 'POS')` justo antes del toast de éxito — mismo criterio best-effort que
+     el resto de la función (`try{}catch{}`, nunca puede bloquear el cobro). Como beneficio gratis de la
+     Fase 8 (ya construida), este registro sale automáticamente con usuario/fecha/hora/IP/sucursal/
+     dispositivo sin tocar nada más.
+  2. **El `INSERT` de `pos_venta_items` es silencioso por diseño** (correcto — nunca debe revertir una
+     venta ya cobrada), pero si de verdad fallaba (ej. un corte de red a mitad de la operación), la venta
+     quedaba "exitosa" SIN sus líneas, degradando en silencio el resto de la cadena para esa transacción
+     (Reportes/Utilidad la subestiman, esa factura sale sin garantías, sin nada que avisara que pasó). Se
+     agregó una comprobación (`itemsInsertados.length !== items.length`) que deja un
+     `logAudit('POS_VENTA_ITEMS_INCOMPLETOS', 'Factura X — se guardaron N de M línea(s)', 'POS')` — SOLO
+     un aviso, no bloquea ni reintenta (reintentar podría duplicar líneas; bloquear violaría la regla ya
+     establecida de "nunca revertir un cobro ya hecho").
+- **Deliberadamente NO se construyó:** ninguna tabla de caché/resumen nueva, ningún sistema de puntos o
+  fidelidad de cliente, ningún cambio al comportamiento best-effort ya establecido (todos los pasos
+  secundarios de `nxPosConfirmar` — líneas, documentos, seriales, NCF, asiento contable, stock, cliente,
+  notas de crédito — siguen sin poder bloquear ni revertir una venta ya cobrada; se confirmó con la
+  auditoría que el ÚNICO punto que de verdad puede impedir la venta es que el `INSERT` de `pos_ventas`
+  en sí falle, línea 16838-16840, que es correcto).
+- Verificado con Playwright, código real extraído de `nxPosConfirmar` (14,171 caracteres, la función
+  completa, no una reconstrucción) cargado en un navegador con un backend simulado: 3 escenarios —
+  venta con todas las líneas guardadas (solo dispara `POS_VENTA_CREADA`, con el detalle correcto de
+  número/monto/cliente/método), venta con líneas parcialmente guardadas y venta con fallo total al
+  guardar las líneas (ambas disparan `POS_VENTA_ITEMS_INCOMPLETOS` con el conteo correcto, Y en los 3
+  casos la venta se sigue creando igual — confirmado que `pos_ventas` se postea siempre, el fallo de
+  líneas nunca bloquea el cobro). `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
+- **Con esta pieza el "Plan Maestro NEXUS PRO POS 3.0" tiene sus 8 fases pedidas hasta ahora completas**
+  (Motor de Documentos Fases 1-2, Cliente 360° Fase 3, Artículo 360° Fase 4, Kardex Inteligente Fase 5,
+  Buscador Universal Fase 6, Dashboard Operativo Fase 7, Auditoría Completa Fase 8, Automatizaciones
+  Fase 9) — queda la fase 10 si el dueño la manda.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

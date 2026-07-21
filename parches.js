@@ -16866,6 +16866,14 @@
       });
       let itemsInsertados = null;
       try { itemsInsertados = await getAPI().post('pos_venta_items', items); } catch (e) {}
+      // Fase 9 (Automatizaciones): el INSERT de arriba es best-effort a propósito (nunca debe revertir
+      // una venta ya cobrada) — pero si de verdad no se guardaron todas las líneas, eso degrada en
+      // silencio el resto de la cadena automática de esta factura (Reportes/Utilidad la subestiman,
+      // Kardex/garantías quedan incompletos). En vez de bloquear o reintentar (arriesgaría duplicar o sí
+      // bloquear un cobro ya hecho), se deja un rastro real en Auditoría para que no pase inadvertido.
+      if (!itemsInsertados || itemsInsertados.length !== items.length) {
+        try { window.logAudit && window.logAudit('POS_VENTA_ITEMS_INCOMPLETOS', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — se guardaron ' + ((itemsInsertados && itemsInsertados.length) || 0) + ' de ' + items.length + ' línea(s)', 'POS'); } catch (e2) {}
+      }
       // Motor de documentos: registrar la factura (con su origen si venía de cotización/prefactura)
       // y una garantía por cada línea que la trae — best-effort, nunca bloquea el cobro.
       try {
@@ -16906,6 +16914,11 @@
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       // A5: marcar consumidas las notas de crédito que se aplicaron como pago (no reusables)
       if (_ncAplicar.length) { for (const n of _ncAplicar) { getAPI().patch('pos_devoluciones', 'id=eq.' + n.id, { estado: 'aplicada' }).catch(() => {}); const nm = (_notasCred || []).find(x => String(x.id) === String(n.id)); if (nm) nm.estado = 'aplicada'; } }
+      // Fase 9 (Automatizaciones): rastro de auditoría genérico de "factura creada" — antes solo existía
+      // logAudit para el financiamiento (si aplicaba) y para la anulación, nunca para el cobro exitoso en
+      // sí. Con esto, filtrar Auditoría por Facturas/POS ya muestra cada venta real, con quién/cuándo/
+      // dispositivo/sucursal/IP (todo eso ya lo garantiza logAudit desde la Fase 8, sin tocar nada aquí).
+      try { window.logAudit && window.logAudit('POS_VENTA_CREADA', (numFac || ('No. ' + (venta.numero || ''))) + ' · ' + fmt(c.total) + (cliNom ? ' · ' + cliNom : '') + ' · ' + metodoLabel, 'POS'); } catch (e2) {}
       toast('ok', c.credito > 0 ? 'Venta registrada (parte fiada)' : 'Venta registrada', 'No. ' + (venta.numero || '') + ' · ' + fmt(c.total));
       const ventaTicket = Object.assign({}, body, { id: venta.id, numero: venta.numero, fecha: venta.fecha || new Date().toISOString(), ncf: ncfAsignado, _items: items });
       _cart = [];
