@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.69** (ver `index.html` y `version.json`).
+> Versión actual: **48.70** (ver `index.html` y `version.json`).
 
 ---
 
@@ -2305,6 +2305,89 @@ Cotizaciones, Garantías, Recepciones, Créditos, Pagos, Equipos, IMEI, Historia
   nullable) para que las recepciones nuevas queden enlazadas de forma exacta en vez de por teléfono —
   no se hizo en esta fase porque no fue lo pedido explícitamente y el emparejamiento por teléfono ya
   resuelve el caso real sin tocar esquema.
+
+### POS · MOTOR DE DOCUMENTOS, FASE 5 — Kardex Inteligente (21-jul-2026, v48.70)
+El dueño pidió: "No modificar inventario directamente. Todo movimiento deberá provenir de: Compra,
+Venta, Ajuste, Transferencia, Garantía, Taller, Producción. Con historial completo." Antes de tocar
+código se auditó (agente de exploración, línea por línea) TODO el archivo buscando cada sitio que
+cambia `pos_productos.stock`/`pos_stock_almacen.stock` — encontró 9 sitios reales que YA pasaban por
+`logMov()` (venta, anulación, devolución, compra, reversa de compra, 2 ramas de ajuste manual, entrada
+y salida de transferencia) y, más importante, **3 huecos reales** donde el stock se pisaba en silencio
+sin ningún registro en el kardex.
+- **Los 2 funnels nuevos (único camino permitido en todo el archivo para tocar stock):**
+  `moverStock(prod, tipo, delta, opts)` — mueve el TOTAL de un producto (y, si se pasa `almacenId`,
+  ese almacén por el mismo delta); valida `tipo` contra `MOV_TIPOS_VALIDOS` (rechaza con `null` si no
+  es uno de los válidos, sin tocar nada), calcula `stock_anterior`/`stock_nuevo`, hace el `PATCH`,
+  llama a `logMov()` y sincroniza el almacén — todo en un solo lugar. `moverStockTransferencia(prod,
+  cantidad, aidOrigen, aidDestino, ...)` — mueve SOLO el stock por-almacén (el total nunca cambia en
+  una transferencia interna, es el mismo inventario cambiando de sitio). `MOV_TIPOS_VALIDOS` tiene 10
+  valores: los 7 que pidió el dueño (`compra`/`venta`/`ajuste`/`transferencia`/`garantia`/`taller`/
+  `produccion`) + 3 subtipos reales que YA existían en producción y siguen siendo eventos genuinos
+  (`devolucion`/`anulacion`/`apertura` — este último reservado desde hace tiempo en `MOV_LBL` pero
+  nunca usado hasta ahora). `garantia`/`taller`/`produccion` quedan válidos en el enum pero SIN ningún
+  flujo real que los dispare todavía — confirmado con la auditoría que Reparaciones (Taller) no
+  consume piezas de `pos_productos` hoy (solo tiene un campo de costo manual, `costo_piezas`, sin
+  ligar a productos), y que "Producción" solo existe en AGUAPRO (`agua_productos`, una tabla
+  completamente distinta) — no se inventó un flujo falso solo para tener dónde usar el tipo, mismo
+  criterio de "no fingir" del resto del sistema.
+- **Los 9 sitios reales migrados, mismo resultado numérico de antes** (refactor puro, verificado con
+  pruebas que reproducen cada fórmula exacta): `nxPosConfirmar` (venta, sin piso en 0 — igual que
+  antes, el inventario estricto ya impide vender sin stock), `nxPosAnularVenta` (anulación),
+  `nxDevGuardar` (devolución), `nxPosGuardarCompra` (compra, con el costo del producto actualizado en
+  el MISMO `PATCH` vía `opts.extra`), `nxPosDelCompra` (reversa de compra, con piso en 0 — igual que
+  antes), `nxInvGuardarAjuste` (las 2 ramas: con almacén y sin almacén), `nxAlmGuardarTransfer` (ahora
+  una sola llamada a `moverStockTransferencia` por línea, en vez de 6 líneas duplicadas de
+  `upsertStockAlm`+`logMov`×2).
+- **Los 3 huecos reales, cerrados:**
+  1. **`nxPosGuardarProd`/`nxPfGuardarYNuevo`** (formulario Nuevo/Editar producto): el campo Stock del
+     formulario (`#ppStk`) se mandaba SIEMPRE dentro del mismo `PATCH` que el resto de los campos —
+     editar el nombre o el precio de un producto pisaba su stock en silencio, sin ningún rastro en el
+     kardex. Se factorizó un helper común nuevo `nxPfGuardarProdComun(id)` (ambas funciones lo llaman,
+     eliminando además la duplicación exacta que ya tenían) que separa el `stock` del resto del
+     `PATCH` y, SOLO si de verdad cambió, lo aplica con `moverStock('ajuste')` — si el usuario no tocó
+     el campo, no se genera ningún movimiento (verificado con prueba específica: cero ruido en el
+     kardex cuando el stock no cambia). Al crear un producto nuevo con stock inicial, ese stock ahora
+     entra como `'apertura'`, no como un valor mudo en el INSERT.
+  2. **`nxPosImportarPreciosRun`** (actualización masiva de precios/stock por CSV): la columna Stock
+     del CSV se aplicaba con `PATCH` directo en lotes de 15, sin ningún `logMov`. Ahora, por cada fila
+     con columna de stock, se separa del resto del `patch` (precio/costo siguen en el `PATCH` normal)
+     y el cambio de stock —si de verdad cambia— pasa por `moverStock('ajuste', ..., {referencia:
+     'Importación CSV'})`. Los productos NUEVOS que trae el mismo CSV con stock inicial se crean en 0
+     y ese stock entra como `'apertura'`.
+  3. **Altas nuevas por CSV/Infoplus con stock inicial** (`nxPosImportarPreciosRun` rama de nuevos,
+     `nxPosImportarRun` del importador Infoplus): antes el stock inicial se horneaba directo en el
+     `INSERT`, sin generar el primer registro del kardex de ese producto. Ahora se crean en 0 y, tras
+     el `INSERT` (se usa la respuesta real de Supabase para tener el `id`/fila real de cada producto
+     creado, zip por índice — mismo patrón ya usado en el Motor de Documentos Fase 1 con
+     `pos_venta_items`), cada uno con stock inicial > 0 recibe su movimiento `'apertura'`.
+- **CHECK constraint aditivo en `pos_inv_movimientos.tipo`** (migración
+  `pos_inv_movimientos_tipo_check`): restringe la columna a los 10 valores reales de
+  `MOV_TIPOS_VALIDOS` — verificado ANTES de aplicarlo que los datos ya existentes (`venta`,
+  `transferencia`, `compra`) caben sin conflicto. Es el candado real a nivel de base: de aquí en
+  adelante, ningún movimiento con un `tipo` inventado o mal escrito puede llegar a la tabla, se
+  rechaza en el `INSERT`. `get_advisors(security)` sin hallazgos nuevos.
+- **Por qué NO se agregó un trigger que bloquee el `PATCH` directo a `pos_productos.stock`:** se
+  consideró y se descartó — un trigger a nivel de base que impida cualquier escritura de `stock` fuera
+  de un camino "marcado" es mucho más invasivo (arriesga romper algo que hoy funciona bien, sin forma
+  simple y segura de que el trigger sepa "esta escritura vino de moverStock" dentro de una API REST
+  sin sesión de transacción compartida) que el valor que aporta, dado que el código YA queda 100%
+  centralizado del lado de la aplicación — el archivo entero fue auditado y confirmado sin ningún
+  `PATCH`/`POST` a `pos_productos` con `stock` fuera de `moverStock` (verificado con grep final tras
+  el refactor). El candado real y de bajo riesgo quedó del lado del `tipo` (CHECK constraint).
+- **Verificado con pruebas** (no una reconstrucción — `moverStock`/`moverStockTransferencia`/`logMov`/
+  `upsertStockAlm`/`stockEnAlm` extraídos tal cual del archivo): 10 escenarios que reproducen cada
+  fórmula exacta de los 9 sitios migrados y los 3 huecos cerrados — venta con piso desactivado
+  (permite negativo, igual que antes), ajuste con piso en 0 (nunca baja de cero, igual que antes),
+  compra con costo en el mismo `PATCH`, tipo inválido rechazado sin tocar nada, los 10 tipos válidos
+  confirmados uno por uno, transferencia que NO toca el total del producto (invariante suma-de-
+  almacenes = total verificada), ajuste por almacén, alta con `'apertura'` (kardex que antes no
+  existía), y edición de producto sin cambio real de stock que no genera ningún movimiento — los 10
+  pasan. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** cuando exista un flujo real de consumo de piezas en Reparaciones (Taller) o algún
+  módulo de producción/ensamblaje dentro del POS, ya tienen su tipo de movimiento listo en el enum —
+  solo hace falta la UI que llame a `moverStock(prod, 'taller'/'produccion', delta, opts)`, mismo
+  patrón que los demás.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

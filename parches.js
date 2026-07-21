@@ -16844,7 +16844,7 @@
       try { postAsientoVenta(venta, c); } catch (e) {}
       // descontar stock (best-effort; los servicios no manejan stock)
       for (const it of _cart) {
-        try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev - Number(it.cantidad); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'venta', -Number(it.cantidad), prev, ns, numFac || ('No. ' + (venta.numero || '')), null); if (_almacenes.length && _almacenSel) { try { upsertStockAlm(it.producto_id, _almacenSel, stockEnAlm(it.producto_id, _almacenSel) - Number(it.cantidad)).catch(() => {}); } catch (e) {} } } } catch (e) {}
+        try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { moverStock(p, 'venta', -Number(it.cantidad), { piso0: false, referencia: numFac || ('No. ' + (venta.numero || '')), almacenId: _almacenSel }).catch(() => {}); } } catch (e) {}
       }
       if (c.credito > 0 && cliId) { _fiadoByCli[cliId] = (_fiadoByCli[cliId] || 0) + c.credito; }
       // A5: marcar consumidas las notas de crédito que se aplicaron como pago (no reusables)
@@ -17627,33 +17627,48 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || [];
     } catch (e) { toast('err', 'El producto se guardó, pero el nivel de precio no se pudo guardar', String(e && e.message || e)); }
   }
-  window.nxPosGuardarProd = async function (id) {
+  // Guardado común de Nuevo/Editar producto (Kardex Inteligente): el campo Stock del formulario
+  // NUNCA pisa `pos_productos.stock` directo — se separa del PATCH normal y, si de verdad cambió,
+  // pasa por `moverStock()` ('ajuste' al editar, 'apertura' al crear con stock inicial) para que
+  // quede en el kardex igual que cualquier otro movimiento. Devuelve {prodId,nombre} o null.
+  async function nxPfGuardarProdComun(id) {
     const body = nxPfLeerProd();
-    if (!body.nombre) { toast('err', 'Pon el nombre del producto'); return; }
+    if (!body.nombre) { toast('err', 'Pon el nombre del producto'); return null; }
+    const stockNuevo = Number(body.stock || 0);
+    delete body.stock;
     try {
-      let prodId = id;
-      if (id) await getAPI().patch('pos_productos', 'id=eq.' + id, body);
-      else { const r = await getAPI().post('pos_productos', body); prodId = r && r[0] && r[0].id; }
+      let prodId = id, prod = null;
+      if (id) {
+        await getAPI().patch('pos_productos', 'id=eq.' + id, body);
+        prod = _prods.find(x => String(x.id) === String(id));
+        if (!prod) { try { const r = await getAPI().get('pos_productos', 'id=eq.' + id); prod = r && r[0]; } catch (e) {} }
+      } else {
+        body.stock = 0; // se crea en 0; el stock inicial (si trae) entra como movimiento 'apertura' abajo
+        const r = await getAPI().post('pos_productos', body);
+        prod = r && r[0]; prodId = prod && prod.id;
+        delete body.stock;
+      }
+      if (prod && prod.id) {
+        const delta = stockNuevo - Number(prod.stock || 0);
+        if (delta !== 0) await moverStock(prod, id ? 'ajuste' : 'apertura', delta, { referencia: id ? 'Edición de producto' : 'Alta de producto', motivo: id ? 'Cambio de stock desde el formulario' : 'Stock inicial' });
+      }
       if (prodId) await nxPfGuardarNivelSiCorresponde(prodId);
-      toast('ok', id ? 'Producto actualizado' : 'Producto agregado', body.nombre);
-      cerrarModal('nxPosProd');
-      await cargarPOS();
-      const view = document.getElementById('v-pos'); if (view) renderPOS(view);
-    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+      return { prodId: prodId, nombre: body.nombre };
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); return null; }
+  }
+  window.nxPosGuardarProd = async function (id) {
+    const r = await nxPfGuardarProdComun(id); if (!r) return;
+    toast('ok', id ? 'Producto actualizado' : 'Producto agregado', r.nombre);
+    cerrarModal('nxPosProd');
+    await cargarPOS();
+    const view = document.getElementById('v-pos'); if (view) renderPOS(view);
   };
   window.nxPfGuardarYNuevo = async function (id) {
-    const body = nxPfLeerProd();
-    if (!body.nombre) { toast('err', 'Pon el nombre del producto'); return; }
-    try {
-      let prodId = id;
-      if (id) await getAPI().patch('pos_productos', 'id=eq.' + id, body);
-      else { const r = await getAPI().post('pos_productos', body); prodId = r && r[0] && r[0].id; }
-      if (prodId) await nxPfGuardarNivelSiCorresponde(prodId);
-      toast('ok', 'Guardado', body.nombre + ' — listo para el siguiente');
-      await cargarPOS();
-      const view = document.getElementById('v-pos'); if (view) renderPOS(view);
-      abrirProd(null);
-    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+    const r = await nxPfGuardarProdComun(id); if (!r) return;
+    toast('ok', 'Guardado', r.nombre + ' — listo para el siguiente');
+    await cargarPOS();
+    const view = document.getElementById('v-pos'); if (view) renderPOS(view);
+    abrirProd(null);
   };
   // Etiqueta imprimible honesta: nombre + codigo como texto + precio. No dibuja un codigo de
   // barras falso que en realidad no escanearia — mismo criterio de "no fingir" del resto del sistema.
@@ -17798,12 +17813,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       if (idxPre > -1 && r[idxPre] !== '' && r[idxPre] != null) patch.precio = nMoney(r[idxPre]);
       if (idxPre2 > -1 && r[idxPre2] !== '' && r[idxPre2] != null) patch.precio_mayor = nMoney(r[idxPre2]);
       if (idxCos > -1 && r[idxCos] !== '' && r[idxCos] != null) patch.costo = nMoney(r[idxCos]);
-      if (idxStk > -1 && r[idxStk] !== '' && r[idxStk] != null) patch.stock = Math.round(nMoney(r[idxStk]));
+      // El stock del CSV NUNCA se mete en el PATCH directo (Kardex Inteligente) — se separa y,
+      // si de verdad cambia, se aplica más abajo con moverStock('ajuste') para que quede en el kardex.
+      let stockCsv = null;
+      if (idxStk > -1 && r[idxStk] !== '' && r[idxStk] != null) stockCsv = Math.round(nMoney(r[idxStk]));
       const existente = porCodigo.get(codigo);
-      if (existente) { if (Object.keys(patch).length) actualizaciones.push({ id: existente.id, patch }); }
+      if (existente) { if (Object.keys(patch).length || stockCsv != null) actualizaciones.push({ id: existente.id, patch: patch, stockCsv: stockCsv, prod: existente }); }
       else {
         const nombre = idxNom > -1 ? String(r[idxNom] || '').trim() : '';
-        if (nombre) nuevos.push(Object.assign({ nombre, codigo, precio_credito: patch.precio || 0, itbis: true, tipo: 'producto', stock_min: 0, garantia_dias: 0, serial: false, no_descuento: false, activo: true }, patch));
+        if (nombre) nuevos.push(Object.assign({ nombre, codigo, precio_credito: patch.precio || 0, itbis: true, tipo: 'producto', stock_min: 0, garantia_dias: 0, serial: false, no_descuento: false, activo: true }, patch, { stock: 0, _stockInicial: stockCsv || 0 }));
         else sinCoincidenciaNiNombre++;
       }
     });
@@ -17814,11 +17832,19 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const LOTE_PAR = 15;
       for (let i = 0; i < actualizaciones.length; i += LOTE_PAR) {
         const grupo = actualizaciones.slice(i, i + LOTE_PAR);
-        await Promise.all(grupo.map(u => getAPI().patch('pos_productos', 'id=eq.' + u.id, u.patch)));
+        await Promise.all(grupo.map(async u => {
+          if (Object.keys(u.patch).length) { try { await getAPI().patch('pos_productos', 'id=eq.' + u.id, u.patch); } catch (e) {} }
+          if (u.stockCsv != null) { const delta = u.stockCsv - Number(u.prod.stock || 0); if (delta !== 0) { try { await moverStock(u.prod, 'ajuste', delta, { referencia: 'Importación CSV', motivo: 'Actualización masiva de stock' }); } catch (e) {} } }
+        }));
         hechos += grupo.length;
         setMsg('Actualizando... ' + hechos + ' / ' + total, '#6d28d9');
       }
-      if (nuevos.length) { await getAPI().post('pos_productos', nuevos); hechos += nuevos.length; }
+      if (nuevos.length) {
+        const body = nuevos.map(n => { const c = Object.assign({}, n); delete c._stockInicial; return c; });
+        const ins = await getAPI().post('pos_productos', body) || [];
+        ins.forEach((row, idx) => { const stockInicial = Number((nuevos[idx] && nuevos[idx]._stockInicial) || 0); if (row && stockInicial > 0) moverStock(row, 'apertura', stockInicial, { referencia: 'Importación CSV', motivo: 'Alta con stock inicial' }).catch(() => {}); });
+        hechos += nuevos.length;
+      }
       toast('ok', 'Precios actualizados', actualizaciones.length + ' actualizados' + (nuevos.length ? ' · ' + nuevos.length + ' creados' : '') + (sinCodigo ? ' · ' + sinCodigo + ' sin código' : '') + (sinCoincidenciaNiNombre ? ' · ' + sinCoincidenciaNiNombre + ' sin coincidencia' : ''));
       cerrarModal('nxPosImp');
       await cargarPOS();
@@ -17850,7 +17876,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         marca: String(r[4] != null ? r[4] : '').trim() || null,
         imagen: null,
         precio: 0, precio_credito: 0, costo: 0,
-        stock: Number(String(r[2] != null ? r[2] : 0).replace(/[^0-9.-]/g, '')) || 0,
+        stock: 0, // se crea en 0; el stock inicial real entra como movimiento 'apertura' abajo (Kardex Inteligente)
+        _stockInicial: Number(String(r[2] != null ? r[2] : 0).replace(/[^0-9.-]/g, '')) || 0,
         itbis: true, tipo: 'producto', stock_min: 0, garantia_dias: 0,
         serial: false, no_descuento: false, activo: true
       });
@@ -17860,7 +17887,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     try {
       const LOTE = 200; let hechos = 0;
       for (let i = 0; i < nuevos.length; i += LOTE) {
-        await getAPI().post('pos_productos', nuevos.slice(i, i + LOTE));
+        const lote = nuevos.slice(i, i + LOTE);
+        const body = lote.map(n => { const c = Object.assign({}, n); delete c._stockInicial; return c; });
+        const ins = await getAPI().post('pos_productos', body) || [];
+        ins.forEach((row, idx) => { const stockInicial = Number((lote[idx] && lote[idx]._stockInicial) || 0); if (row && stockInicial > 0) moverStock(row, 'apertura', stockInicial, { referencia: 'Importación Infoplus', motivo: 'Alta con stock inicial' }).catch(() => {}); });
         hechos += Math.min(LOTE, nuevos.length - i);
         setMsg('Importando... ' + hechos + ' / ' + nuevos.length, '#6d28d9');
       }
@@ -17965,7 +17995,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       let _itemsAnul = [];
       try {
         _itemsAnul = await getAPI().get('pos_venta_items', 'venta_id=eq.' + id + '&select=producto_id,cantidad,nombre,precio,itbis') || [];
-        for (const it of _itemsAnul) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'anulacion', Number(it.cantidad || 0), prev, ns, (v.numero_factura || v.numero || ''), 'Anulación de factura'); if (_almacenes.length) { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); if (aid) { try { upsertStockAlm(it.producto_id, aid, stockEnAlm(it.producto_id, aid) + Number(it.cantidad || 0)).catch(() => {}); } catch (e) {} } } } }
+        for (const it of _itemsAnul) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); moverStock(p, 'anulacion', Number(it.cantidad || 0), { referencia: (v.numero_factura || v.numero || ''), motivo: 'Anulación de factura', almacenId: aid }).catch(() => {}); } }
       } catch (e) {}
       // Asiento inverso de la venta (revierte Ventas + ITBIS contra Caja/CxC)
       // A-CRIT: si ya se cobraron cuotas de esta venta, ese dinero YA salió de 1103 cuota por
@@ -18093,7 +18123,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const items = lineas.map(l => ({ devolucion_id: dev.id, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant, precio: Math.round(l.precio), itbis: !!l.itbis, importe: Math.round(l.precio * l.cant) }));
       await getAPI().post('pos_devolucion_items', items);
       // devolver stock
-      for (const l of lineas) { try { const p = _prods.find(x => String(x.id) === String(l.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = prev + Number(l.cant || 0); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'devolucion', Number(l.cant || 0), prev, ns, (dev.numero || ''), 'Devolución'); if (_almacenes.length) { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); if (aid) { try { upsertStockAlm(l.producto_id, aid, stockEnAlm(l.producto_id, aid) + Number(l.cant || 0)).catch(() => {}); } catch (e) {} } } } } catch (e) {}
+      for (const l of lineas) { try { const p = _prods.find(x => String(x.id) === String(l.producto_id)); if (p && p.tipo !== 'servicio') { const aid = v.almacen_id || (almPrincipal() && almPrincipal().id); moverStock(p, 'devolucion', Number(l.cant || 0), { referencia: (dev.numero || ''), motivo: 'Devolución', almacenId: aid }).catch(() => {}); } } catch (e) {}
       }
       // si se rebaja a cuenta del cliente (fiado), bajar su saldo
       if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
@@ -18809,7 +18839,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const compra = (r && r[0]) || null; if (!compra) throw new Error('No se pudo registrar');
       const items = _compraItems.map(it => ({ compra_id: compra.id, producto_id: it.producto_id, nombre: it.nombre, cantidad: it.cantidad, costo: it.costo, importe: Math.round(it.costo * it.cantidad) }));
       try { await getAPI().post('pos_compra_items', items); } catch (e) {}
-      for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { const prev = Number(p.stock || 0); const ns = prev + Number(it.cantidad); p.stock = ns; p.costo = it.costo; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns, costo: it.costo }).catch(() => {}); logMov(p, 'compra', Number(it.cantidad), prev, ns, (compra.numero || ''), 'Compra'); if (almCompra) { try { upsertStockAlm(it.producto_id, almCompra, stockEnAlm(it.producto_id, almCompra) + Number(it.cantidad)).catch(() => {}); } catch (e) {} } } } catch (e) {} }
+      for (const it of _compraItems) { try { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) { moverStock(p, 'compra', Number(it.cantidad), { referencia: (compra.numero || ''), motivo: 'Compra', almacenId: almCompra, extra: { costo: it.costo } }).catch(() => {}); } } catch (e) {} }
       if (aCred && provId) { _cxpByProv[provId] = (_cxpByProv[provId] || 0) + subtotal; }
       // Registrar IMEI/seriales de los equipos comprados (entran como disponibles, ligados a esta compra)
       try { for (const it of _compraItems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.serial && it.imeis) { const ims = String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean); if (ims.length) getAPI().post('pos_seriales', ims.map(s => ({ producto_id: it.producto_id, serial: s, estado: 'disponible', almacen_id: almCompra, compra_id: compra.id, notas: 'Compra ' + (compra.numero || '') }))).catch(() => {}); } } } catch (e) {}
@@ -18872,7 +18902,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       try {
         const items = await getAPI().get('pos_compra_items', 'select=producto_id,cantidad&compra_id=eq.' + id) || [];
         const aid = (compra && compra.almacen_id) || (_almacenes.length && almPrincipal() && almPrincipal().id) || null;
-        for (const it of items) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { const prev = Number(p.stock || 0); const ns = Math.max(0, prev - Number(it.cantidad || 0)); p.stock = ns; getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: ns }).catch(() => {}); logMov(p, 'ajuste', -Number(it.cantidad || 0), prev, ns, 'Compra eliminada', 'Reversa de compra'); if (aid) { try { upsertStockAlm(it.producto_id, aid, Math.max(0, stockEnAlm(it.producto_id, aid) - Number(it.cantidad || 0))).catch(() => {}); } catch (e) {} } } }
+        for (const it of items) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') { moverStock(p, 'ajuste', -Number(it.cantidad || 0), { referencia: 'Compra eliminada', motivo: 'Reversa de compra', almacenId: aid }).catch(() => {}); } }
       } catch (e) {}
       await delAsientoOrigen('compra', id);
       await getAPI().del('pos_compras', 'id=eq.' + id);
@@ -19871,6 +19901,49 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   async function logMov(prod, tipo, cantidad, stockAnterior, stockNuevo, referencia, motivo) {
     try { await getAPI().post('pos_inv_movimientos', { producto_id: prod.id, producto_nombre: prod.nombre, tipo: tipo, cantidad: cantidad, stock_anterior: stockAnterior, stock_nuevo: stockNuevo, referencia: referencia || null, motivo: motivo || null, created_by_name: (typeof nomAdmin === 'function' ? nomAdmin() : null) }); } catch (e) {}
   }
+  // ══════════════ KARDEX INTELIGENTE (Fase 5, Plan Maestro POS 3.0) ══════════════
+  // "No modificar inventario directamente. Todo movimiento deberá provenir de: Compra, Venta,
+  // Ajuste, Transferencia, Garantía, Taller, Producción. Con historial completo." — regla del
+  // dueño. `moverStock`/`moverStockTransferencia` son el ÚNICO camino permitido para cambiar
+  // `pos_productos.stock`/`pos_stock_almacen.stock` en todo el archivo — cualquier código nuevo
+  // que necesite tocar stock pasa por aquí, nunca con un `getAPI().patch('pos_productos',
+  // {stock:...})` suelto. `garantia`/`taller`/`producción` quedan reservados en el enum, listos
+  // para cuando exista un flujo real que los dispare (hoy Reparaciones no consume piezas del
+  // inventario ni existe un módulo de producción dentro del POS — no se inventó uno solo para
+  // tener dónde usar el tipo, mismo criterio de "no fingir" del resto del sistema).
+  const MOV_TIPOS_VALIDOS = ['compra', 'venta', 'ajuste', 'transferencia', 'garantia', 'taller', 'produccion', 'devolucion', 'anulacion', 'apertura'];
+  // Mueve el stock TOTAL de un producto (y, si se pasa almacenId, también ESE almacén por el
+  // mismo delta — nunca al revés). delta positivo = entra, negativo = sale. `opts.piso0` (default
+  // true) evita bajar de 0; `opts.extra` son campos adicionales para fusionar en el mismo PATCH
+  // (ej. costo en una compra). Devuelve el stock nuevo, o null si el tipo no es válido.
+  async function moverStock(prod, tipo, delta, opts) {
+    opts = opts || {};
+    if (!prod || !prod.id) return null;
+    if (MOV_TIPOS_VALIDOS.indexOf(tipo) === -1) { console.warn('moverStock: tipo de movimiento inválido:', tipo); return null; }
+    delta = Number(delta || 0);
+    const prev = Number(prod.stock || 0);
+    let ns = prev + delta;
+    if (opts.piso0 !== false) ns = Math.max(0, ns);
+    prod.stock = ns;
+    const body = Object.assign({ stock: ns }, opts.extra || null);
+    if (opts.extra && Object.prototype.hasOwnProperty.call(opts.extra, 'costo')) prod.costo = opts.extra.costo;
+    try { await getAPI().patch('pos_productos', 'id=eq.' + prod.id, body); } catch (e) {}
+    logMov(prod, tipo, delta, prev, ns, opts.referencia || null, opts.motivo || null).catch(() => {});
+    if (_almacenes.length && opts.almacenId) {
+      try { await upsertStockAlm(prod.id, opts.almacenId, stockEnAlm(prod.id, opts.almacenId) + delta); } catch (e) {}
+    }
+    return ns;
+  }
+  // Transferencia entre almacenes: mueve SOLO el stock por-almacén (origen −cantidad, destino
+  // +cantidad) — el TOTAL del producto no cambia (sigue siendo el mismo inventario, solo de sitio).
+  async function moverStockTransferencia(prod, cantidad, aidOrigen, aidDestino, referencia, motivoSalida, motivoEntrada) {
+    cantidad = Number(cantidad || 0);
+    const so = stockEnAlm(prod.id, aidOrigen), sd = stockEnAlm(prod.id, aidDestino);
+    await upsertStockAlm(prod.id, aidOrigen, so - cantidad);
+    await upsertStockAlm(prod.id, aidDestino, sd + cantidad);
+    await logMov(prod, 'transferencia', -cantidad, so, so - cantidad, referencia, motivoSalida);
+    await logMov(prod, 'transferencia', cantidad, sd, sd + cantidad, referencia, motivoEntrada);
+  }
   async function cargarInventario() {
     try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=200') || []; } catch (e) { _invMovs = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) {}
@@ -19981,16 +20054,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         // ajuste por almacén: el conteo es de ESE almacén; el total cambia por la diferencia
         const curAlm = stockEnAlm(pid, aid); const delta = nuevo - curAlm;
         if (delta === 0) { toast('ok', 'Sin cambios', 'El stock ya coincide'); cerrarModal('nxInvAjuste'); return; }
-        const totPrev = Number(p.stock || 0); const totNew = Math.max(0, totPrev + delta);
-        await getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: totNew }); p.stock = totNew;
-        try { await upsertStockAlm(pid, aid, nuevo); } catch (e) {}
-        await logMov(p, 'ajuste', delta, totPrev, totNew, 'Ajuste · ' + almNombre(aid), motivo);
+        await moverStock(p, 'ajuste', delta, { referencia: 'Ajuste · ' + almNombre(aid), motivo: motivo, almacenId: aid });
         toast('ok', 'Inventario ajustado', almNombre(aid) + ': ' + fmtN(curAlm) + ' → ' + fmtN(nuevo));
       } else {
         const prev = Number(p.stock || 0); const delta = nuevo - prev;
         if (delta === 0) { toast('ok', 'Sin cambios', 'El stock ya coincide'); cerrarModal('nxInvAjuste'); return; }
-        await getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: nuevo }); p.stock = nuevo;
-        await logMov(p, 'ajuste', delta, prev, nuevo, 'Ajuste manual', motivo);
+        await moverStock(p, 'ajuste', delta, { referencia: 'Ajuste manual', motivo: motivo });
         toast('ok', 'Inventario ajustado', p.nombre + ': ' + fmtN(prev) + ' → ' + fmtN(nuevo));
       }
       cerrarModal('nxInvAjuste');
@@ -20102,12 +20171,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       await getAPI().post('pos_transferencia_items', lineas.map(l => ({ transferencia_id: tid, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant })));
       const ref = numero + ' · ' + almNombre(oid) + ' → ' + almNombre(did);
       for (const l of lineas) {
-        const so = stockEnAlm(l.producto_id, oid), sd = stockEnAlm(l.producto_id, did);
-        await upsertStockAlm(l.producto_id, oid, so - l.cant);
-        await upsertStockAlm(l.producto_id, did, sd + l.cant);
         const p = _prods.find(x => String(x.id) === String(l.producto_id)) || { id: l.producto_id, nombre: l.nombre };
-        await logMov(p, 'transferencia', -l.cant, so, so - l.cant, ref, 'Salida ' + numero);
-        await logMov(p, 'transferencia', l.cant, sd, sd + l.cant, ref, 'Entrada ' + numero);
+        await moverStockTransferencia(p, l.cant, oid, did, ref, 'Salida ' + numero, 'Entrada ' + numero);
       }
       cerrarModal('nxAlmTransf');
       toast('ok', 'Despacho ' + numero, lineas.length + ' artículo(s)');
