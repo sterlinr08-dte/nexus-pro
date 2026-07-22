@@ -15168,6 +15168,7 @@
         <div class="pf2clicard-id">
           <div class="pf2clicard-nom">${esc(c.nombre || '')}<span class="pf2clicard-badge${activo ? '' : ' off'}">${activo ? 'Activo' : 'Inactivo'}</span></div>
           <div class="pf2clicard-sub">${[c.cedula ? (c.tipo_persona === 'juridica' ? 'RNC: ' : 'Céd: ') + esc(c.cedula) : '', c.telefono ? esc(c.telefono) : '', c.email ? esc(c.email) : ''].filter(Boolean).join(' · ')}</div>
+          ${c.direccion ? `<div class="pf2clicard-sub">${esc(c.direccion)}</div>` : ''}
         </div>
         <button type="button" class="pf2clicard-perfil" onclick="window.nxCliente360('${c.id}')" title="Ver perfil del cliente"><i class="ti ti-id-badge-2"></i> Ver perfil</button>
       </div>
@@ -16749,6 +16750,7 @@
       </div>
       <div class="nx-inv-actions">
         <button type="button" class="nx-inv-btn danger" onclick="window.nxFacCancelar()">Cancelar</button>
+        <button type="button" class="nx-inv-btn" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacVistaPrevia()"><i class="ti ti-eye"></i> Vista previa</button>
         ${pre ? `<button type="button" class="nx-inv-btn" ${_cart.length ? '' : 'disabled'} style="border-color:#c4b5fd;color:#6d28d9" onclick="window.nxPrefGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>` : ''}
         ${pre
           ? `<button type="button" class="nx-inv-cobrar" ${_cart.length ? '' : 'disabled'} style="background:#7c3aed" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar · ${fmt(t.total)}</button>`
@@ -22021,6 +22023,44 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         ${anulada ? '' : `<button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDevNueva('${v.id}')"><i class="ti ti-receipt-refund"></i> Nota de crédito</button>
         <button type="button" class="nx-inv-btn danger" onclick="document.getElementById('nxFacVerM').remove();window.nxPosAnularVenta('${v.id}')"><i class="ti ti-ban"></i> Anular</button>`}
       </div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+
+  // Vista previa del documento en curso — SOLO LECTURA, NO escribe nada (ni en pos_ventas ni en
+  // pos_prefacturas): arma el mismo cuadro visual que nxFacVerVenta pero con los datos que hay AHORA
+  // en pantalla (_cart/cliente/comprobante/fecha), para revisar antes de tocar Cobrar/Guardar.
+  window.nxFacVistaPrevia = function () {
+    if (!_cart.length) { toast('warn', 'El carrito está vacío', 'Agrega artículos para ver la vista previa'); return; }
+    const cli = clienteSel();
+    const t = totales();
+    const pre = esPreTab();
+    const tipoLbl = (NCF_TIPOS.find(x => x[0] === _facNCF) || [null, 'Sin comprobante'])[1];
+    const filas = _cart.map(it => `<tr><td data-l="Cant.">${Number(it.cantidad || 0)}</td><td data-l="Artículo">${esc(it.nombre || '')}</td><td class="r" data-l="Precio">${fmt(it.precio || 0)}</td><td class="r" data-l="Importe">${fmt(lineImporte(it))}</td></tr>`).join('');
+    cerrarModal('nxFacPrevM');
+    const ov = document.createElement('div'); ov.id = 'nxFacPrevM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="nx-inv-head" style="border-bottom:1px solid #f1f5f9">
+        <div class="nx-inv-title">${pre ? 'PREFACTURA' : 'FACTURA'}<span class="nx-inv-draft" style="color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe">VISTA PREVIA</span></div>
+        <button class="nxBack" type="button" onclick="document.getElementById('nxFacPrevM').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:14px 16px">
+        <div class="nx-inv-info" style="padding:0 0 12px;grid-template-columns:1fr 1fr">
+          <div class="nx-inv-field"><div class="nx-inv-label">Cliente</div><div style="font-weight:700;font-size:14px">${esc(cli ? cli.nombre : 'Consumidor final')}</div></div>
+          <div class="nx-inv-field"><div class="nx-inv-label">Tipo de comprobante</div><div style="font-weight:700;font-size:14px">${esc(tipoLbl)}</div></div>
+          <div class="nx-inv-field"><div class="nx-inv-label">Fecha</div><div style="font-weight:700;font-size:14px">${fechaDMY(_facFecha || hoy())}</div></div>
+          <div class="nx-inv-field"><div class="nx-inv-label">Condición</div><div style="font-weight:700;font-size:14px">${_facCredito ? 'Crédito' : 'Contado'}</div></div>
+        </div>
+        <div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:12px">
+          <table class="nx-inv-table" style="min-width:0"><thead><tr><th>Cant.</th><th>Artículo</th><th style="text-align:right">Precio</th><th style="text-align:right">Importe</th></tr></thead><tbody>${filas}</tbody></table>
+        </div>
+        <div class="nx-inv-sumrow" style="margin-top:12px"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
+        ${t.descuento > 0 ? `<div class="nx-inv-sumrow"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
+        <div class="nx-inv-sumrow"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
+        <div class="nx-inv-total" style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:10px"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;text-align:center">Vista previa — nada se ha guardado todavía.</div>
     </div>`;
     document.body.appendChild(ov);
   };

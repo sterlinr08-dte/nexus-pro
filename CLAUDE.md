@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.92** (ver `index.html` y `version.json`).
+> Versión actual: **48.93** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3324,6 +3324,59 @@ el código real antes de tocar nada (mismo criterio de siempre — no asumir).
   Nota de crédito ni Anular), tocar "Imprimir" llama a `nxPosTicketVenta` con el id correcto, y los 3
   escenarios de `precioCli()` calculan el precio correcto — sin desbordes en 390px, 812px (el mismo ancho
   de la captura real que mandó el dueño desde su iPhone en horizontal) ni 1100px, 0 errores de JS. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+
+### POS · Factura — segundo mockup de ChatGPT auditado, 2 piezas reales agregadas (22-jul-2026, v48.93)
+El dueño mandó "Ahora continuamos con Factura" con otro mockup de ChatGPT (mismo formato que el de
+Prefactura — incluye su propio "PROMPT PARA CLOUD (claude)"). Mismo criterio de auditoría de siempre:
+comparar cada pieza del mockup contra el código/esquema real ANTES de construir, no copiar a ciegas.
+- **La mayor parte de lo pedido YA estaba construido** (confirmado, no reconstruido): buscar/elegir
+  cliente (`nxFacCliToggle`), buscar producto por código/nombre/referencia (`facBuscar`), editar cantidad/
+  descuento por línea (`nxFacQtyStep`/`nxFacDesc`, con IMEI y Garantía que el mockup ni sabía que existían),
+  ITBIS por artículo (ya viene del catálogo), resumen económico en vivo (`nx-inv-summary`), guardar como
+  borrador (= "Guardar Prefactura", ya en el panel de opciones desde v48.29), y la historia completa de
+  "buscar una prefactura y convertirla en factura manteniendo cliente y artículos" (`nxPrefLista`+
+  `nxPrefFacturar`, reforzada con la lupa nueva de v48.92).
+- **2 piezas nuevas y reales:**
+  1. **Dirección del cliente en la tarjeta** (`facCliInfoHTML`, la misma tarjeta compartida entre Vender/
+     Factura/Prefactura desde v48.90): se agregó una línea con `c.direccion` (columna real de
+     `pos_clientes`, ya usada en Entidades/`nxPosCliVer`, solo no se mostraba aquí) — debajo de RNC/
+     teléfono/correo, solo si el cliente la tiene, sin dejar ningún espacio vacío si no.
+  2. **"Vista previa"** (`window.nxFacVistaPrevia()`, botón nuevo en `.nx-inv-actions`, junto a
+     "Cancelar"): abre un modal de SOLO LECTURA (mismo lenguaje visual `.nx-inv-*` que `nxFacVerVenta`,
+     la ventana de "ver factura del historial" de v48.92 — comparten estilo, no lógica) con lo que HAY
+     en pantalla ahora mismo (cliente, tipo de comprobante, fecha, condición de pago, artículos,
+     subtotal/descuento/ITBIS/total) — **no escribe nada** (ni `pos_ventas` ni `pos_prefacturas`), es
+     puro cálculo con `_cart`/`clienteSel()`/`totales()` ya en memoria. Deshabilitado si el carrito está
+     vacío. Con esto el dueño puede revisar el documento completo antes de tocar Cobrar/Guardar, tal
+     como pedía el mockup ("Vista previa del documento" en la lista de funcionalidades clave).
+- **Piezas del mockup deliberadamente NO construidas, con su razón real (mismo criterio de "no fingir
+  funciones que no existen" de siempre):**
+  - **"Duplicar"** — no hay qué duplicar: la pantalla antes de guardar es un documento en blanco, no un
+    registro existente. (Mismo botón que ya se había descartado en el mockup de Prefactura, v48.90.)
+  - **Badge "AUTORIZADO"** — un documento que todavía se está armando no tiene ningún estado real de
+    autorización (eso solo ocurre al consumir el NCF en `nxPosConfirmar`) — mostrarlo antes sería un dato
+    inventado, exactamente lo que este archivo evita en cada módulo.
+  - **Ícono de escanear código de barras** — ya documentado como gap real del sistema
+    ("escáner con cámara — BarcodeDetector NO existe en iPhone/Safari — evaluar librería", sección de
+    investigación POS vs mercado) — agregar el ícono sin la función real detrás habría sido un botón
+    muerto.
+  - **"+ Agregar producto"** — se había quitado a propósito en v48.41 por redundante con el buscador; no
+    se reabre esa decisión sin que el dueño lo pida de nuevo explícitamente (mismo criterio aplicado en
+    el mockup de Prefactura).
+  - **Selector de "Moneda"** — el sistema no maneja multi-moneda (gap ya documentado en "Análisis POS vs
+    Infoplus"); un selector con una sola opción real (DOP) habría sido decorativo, no funcional.
+  - **Campo de "Hora" separado** — la fecha ya guarda hora automáticamente (`created_at`/`fecha`
+    timestamp completo); pedirle al cajero que la teclee a mano sería trabajo extra sin beneficio real.
+  - **"Vencimiento"** — no existe un concepto de fecha de vencimiento por factura en el esquema actual
+    (`pos_ventas` no tiene esa columna); agregarla sin un flujo real detrás (recordatorios, mora, etc.)
+    habría sido un campo huérfano.
+- Verificado con Playwright, código real extraído del archivo (no una reconstrucción): la dirección se
+  muestra cuando el cliente la tiene y el bloque no aparece vacío cuando no, el botón "Vista previa" se
+  deshabilita con el carrito vacío, y al tocarlo abre el modal con cliente/comprobante/fecha/condición/
+  artículos/subtotal/ITBIS/total exactamente correctos (probado con un cliente jurídico con RNC completo
+  y una línea con descuento e ITBIS) — sin desbordes en 375-414px ni 1000px, 0 errores de JS. `node
   --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
   válido.
 
