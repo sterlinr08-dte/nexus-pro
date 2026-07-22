@@ -25229,65 +25229,7 @@ try {
 
 
 
-/* ═══════════════════════════════════════════════════════════════════════
-   NEXUS PREFactura Visual 2.5 — v48.84
-   Corrige el alcance: detecta la vista real por su encabezado y aplica
-   la clase visual al contenedor activo. Solo presentación.
-   ═══════════════════════════════════════════════════════════════════════ */
-(function nxPrefacturaVisual2484(){
-  'use strict';
-  if(document.getElementById('nx-prefactura-visual-2484')) return;
 
-  function normalizar(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
-  function marcarVista(){
-    document.querySelectorAll('.nx-prefactura-real').forEach(el=>el.classList.remove('nx-prefactura-real'));
-    const candidatos=[...document.querySelectorAll('h1,h2,h3,.pt,.ph,.page-title,[data-title]')];
-    const titulo=candidatos.find(el=>{
-      const t=normalizar(el.textContent||el.getAttribute('data-title'));
-      return t.includes('prefactura')||t.includes('preventa');
-    });
-    if(!titulo)return;
-    const raiz=titulo.closest('[id^="v-"],.view,.page,.nxPf,.panel,main,section')||titulo.parentElement;
-    if(raiz)raiz.classList.add('nx-prefactura-real');
-  }
-
-  const st=document.createElement('style');
-  st.id='nx-prefactura-visual-2484';
-  st.textContent=`
-  .nx-prefactura-real{--pv-bg:#f4f6f9;--pv-panel:#fff;--pv-line:#e5e9f0;--pv-text:#172033;--pv-muted:#667085;--pv-primary:#3157d5;background:var(--pv-bg)!important}
-  .nx-prefactura-real.nxPf,.nx-prefactura-real .nxPf{max-width:1500px;margin:0 auto;padding:14px 16px 28px!important;color:var(--pv-text)}
-  .nx-prefactura-real .ph{background:transparent!important;border:0!important;box-shadow:none!important;padding:4px 2px 14px!important;margin-bottom:0!important}
-  .nx-prefactura-real .ph h1,.nx-prefactura-real .ph h2,.nx-prefactura-real .ph .pt{font-size:21px!important;line-height:1.2!important;font-weight:800!important;letter-spacing:-.02em!important;color:var(--pv-text)!important}
-  .nx-prefactura-real .ph p,.nx-prefactura-real .ph .ps{color:var(--pv-muted)!important;font-size:11.5px!important}
-  .nx-prefactura-real .card,.nx-prefactura-real .cartcard,.nx-prefactura-real .nx-inv-card,.nx-prefactura-real .nxFacCard{background:var(--pv-panel)!important;border:1px solid var(--pv-line)!important;border-radius:14px!important;box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.05)!important}
-  .nx-prefactura-real .venderlayout,.nx-prefactura-real .nx-inv-layout,.nx-prefactura-real .fac-layout{gap:14px!important;align-items:start!important}
-  .nx-prefactura-real .cartcard{position:sticky!important;top:12px!important;overflow:hidden!important}
-  .nx-prefactura-real .clibox,.nx-prefactura-real .nx-inv-client,.nx-prefactura-real .faccli{background:#fbfcfe!important;border:1px solid var(--pv-line)!important;border-radius:12px!important;padding:11px 12px!important}
-  .nx-prefactura-real label{font-size:10px!important;font-weight:750!important;letter-spacing:.025em!important;color:#596579!important}
-  .nx-prefactura-real input,.nx-prefactura-real select,.nx-prefactura-real textarea{border:1px solid #d9dfe8!important;border-radius:9px!important;background:#fff!important;color:var(--pv-text)!important;min-height:38px!important;box-shadow:none!important;transition:border-color .14s,box-shadow .14s!important}
-  .nx-prefactura-real input:focus,.nx-prefactura-real select:focus,.nx-prefactura-real textarea:focus{border-color:#6f85df!important;box-shadow:0 0 0 3px rgba(49,87,213,.11)!important;outline:0!important}
-  .nx-prefactura-real .vsearch input,.nx-prefactura-real .nx-inv-search input{height:44px!important;font-size:13px!important;padding-left:40px!important}
-  .nx-prefactura-real .vrow,.nx-prefactura-real .cartitem,.nx-prefactura-real .nx-inv-row,.nx-prefactura-real .nxFacTbl tbody tr{border-color:#edf0f4!important;transition:background .12s,border-color .12s!important}
-  .nx-prefactura-real .vrow:hover,.nx-prefactura-real .cartitem:hover,.nx-prefactura-real .nx-inv-row:hover,.nx-prefactura-real .nxFacTbl tbody tr:hover{background:#f8faff!important}
-  .nx-prefactura-real .vnom,.nx-prefactura-real .cartnom,.nx-prefactura-real .nx-inv-name{font-weight:750!important;color:var(--pv-text)!important}
-  .nx-prefactura-real .vprecio,.nx-prefactura-real .cartprice,.nx-prefactura-real .nx-inv-money,.nx-prefactura-real .nxFacTbl td:last-child{font-variant-numeric:tabular-nums!important;font-weight:750!important}
-  .nx-prefactura-real .carttot,.nx-prefactura-real .carttotals,.nx-prefactura-real .nx-inv-summary{background:#fafbfc!important;border-top:1px solid var(--pv-line)!important;padding:12px 14px!important}
-  .nx-prefactura-real .cartpaytot b{font-size:22px!important;letter-spacing:-.025em!important;color:#172033!important;font-variant-numeric:tabular-nums!important}
-  .nx-prefactura-real .cartsavebtn{height:39px!important;border:1px solid #d8deea!important;border-radius:9px!important;background:#fff!important;color:#344054!important;font-weight:750!important}
-  .nx-prefactura-real .cartcobrar,.nx-prefactura-real .g1{height:46px!important;border-radius:10px!important;background:#3157d5!important;border:1px solid #294bc0!important;color:#fff!important;font-weight:800!important;box-shadow:0 5px 14px rgba(49,87,213,.22)!important}
-  @media(max-width:768px){
-    .nx-prefactura-real.nxPf,.nx-prefactura-real .nxPf{padding:10px 10px 104px!important}
-    .nx-prefactura-real .venderlayout,.nx-prefactura-real .nx-inv-layout,.nx-prefactura-real .fac-layout{display:block!important}
-    .nx-prefactura-real .cartcard{position:relative!important;top:auto!important;margin-top:12px!important}
-    .nx-prefactura-real input,.nx-prefactura-real select{font-size:16px!important}
-  }
-  body.tema-oscuro .nx-prefactura-real,body.tema-premium .nx-prefactura-real{--pv-bg:#101521;--pv-panel:#171e2b;--pv-line:#2a3445;--pv-text:#edf2fa;--pv-muted:#a5b0c2}
-  `;
-  document.head.appendChild(st);
-  marcarVista();
-  new MutationObserver(()=>requestAnimationFrame(marcarVista)).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
-  document.addEventListener('click',()=>setTimeout(marcarVista,80),true);
-})();
 
 /* NEXUS POS 2.5 — VENDER CATALOGO — START */
 (function () {
@@ -25595,3 +25537,186 @@ try {
   window.addEventListener('resize', schedule, { passive:true });
 })();
 /* NEXUS POS 2.5 — VENDER CATALOGO — END */
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NEXUS PREFactura Visual 2.5 — v48.85
+   Sprint 1: cabecera, pasos y formulario móvil. Solo presentación.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function nxPrefacturaVisual2485(){
+  'use strict';
+  if(document.getElementById('nx-prefactura-visual-2485')) return;
+
+  function normalizar(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+  function marcarVista(){
+    document.querySelectorAll('.nx-prefactura-real').forEach(el=>el.classList.remove('nx-prefactura-real'));
+    const candidatos=[...document.querySelectorAll('h1,h2,h3,.pt,.ph,.page-title,[data-title]')];
+    const titulo=candidatos.find(el=>{
+      const t=normalizar(el.textContent||el.getAttribute('data-title'));
+      return t.includes('prefactura')||t.includes('preventa');
+    });
+    if(!titulo)return;
+    const raiz=titulo.closest('[id^="v-"],.view,.page,.nxPf,.panel,main,section')||titulo.parentElement;
+    if(raiz)raiz.classList.add('nx-prefactura-real');
+  }
+
+  const st=document.createElement('style');
+  st.id='nx-prefactura-visual-2485';
+  st.textContent=`
+  .nx-prefactura-real{--pf-bg:#f4f7fb;--pf-card:#fff;--pf-line:#e2e8f0;--pf-text:#0f172a;--pf-muted:#64748b;--pf-blue:#2563eb;background:var(--pf-bg)!important}
+  .nx-prefactura-real.nxPf,.nx-prefactura-real .nxPf{max-width:1480px;margin:0 auto;padding:16px 18px 32px!important;color:var(--pf-text)}
+  .nx-prefactura-real .ph{background:linear-gradient(135deg,#ffffff,#f8fbff)!important;border:1px solid var(--pf-line)!important;border-radius:18px!important;padding:18px 20px!important;margin-bottom:14px!important;box-shadow:0 10px 28px rgba(15,23,42,.06)!important}
+  .nx-prefactura-real .ph h1,.nx-prefactura-real .ph h2,.nx-prefactura-real .ph .pt{font-size:24px!important;line-height:1.15!important;font-weight:850!important;letter-spacing:-.025em!important;color:var(--pf-text)!important}
+  .nx-prefactura-real .ph p,.nx-prefactura-real .ph .ps{font-size:12px!important;color:var(--pf-muted)!important;margin-top:4px!important}
+  .nx-prefactura-real .steps,.nx-prefactura-real .stepper,.nx-prefactura-real [class*="step"]{gap:8px!important}
+  .nx-prefactura-real .step,.nx-prefactura-real [class*="step-"]{border-radius:999px!important}
+  .nx-prefactura-real .card,.nx-prefactura-real .cartcard,.nx-prefactura-real .nx-inv-card,.nx-prefactura-real .nxFacCard{background:var(--pf-card)!important;border:1px solid var(--pf-line)!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(15,23,42,.05)!important}
+  .nx-prefactura-real label{display:block!important;font-size:11px!important;font-weight:800!important;letter-spacing:.025em!important;color:#475569!important;margin-bottom:6px!important}
+  .nx-prefactura-real input,.nx-prefactura-real select,.nx-prefactura-real textarea{width:100%;min-height:42px!important;border:1px solid #d8dee9!important;border-radius:11px!important;background:#fff!important;color:var(--pf-text)!important;box-shadow:none!important;padding:10px 12px!important}
+  .nx-prefactura-real input:focus,.nx-prefactura-real select:focus,.nx-prefactura-real textarea:focus{border-color:#7aa2ff!important;box-shadow:0 0 0 4px rgba(37,99,235,.10)!important;outline:0!important}
+  .nx-prefactura-real button,.nx-prefactura-real .btn{border-radius:11px!important;min-height:40px!important;font-weight:800!important}
+  .nx-prefactura-real .g1,.nx-prefactura-real .cartcobrar{background:var(--pf-blue)!important;color:#fff!important;border:1px solid #1d4ed8!important;box-shadow:0 7px 16px rgba(37,99,235,.22)!important}
+  @media(max-width:768px){
+    .nx-prefactura-real.nxPf,.nx-prefactura-real .nxPf{padding:10px 10px 110px!important}
+    .nx-prefactura-real .ph{padding:14px!important;border-radius:15px!important;margin-bottom:10px!important}
+    .nx-prefactura-real .ph h1,.nx-prefactura-real .ph h2,.nx-prefactura-real .ph .pt{font-size:22px!important}
+    .nx-prefactura-real .steps,.nx-prefactura-real .stepper,.nx-prefactura-real [class*="step"]{display:flex!important;flex-wrap:wrap!important;row-gap:8px!important;column-gap:6px!important}
+    .nx-prefactura-real .card,.nx-prefactura-real .cartcard,.nx-prefactura-real .nx-inv-card,.nx-prefactura-real .nxFacCard{border-radius:14px!important;margin-bottom:10px!important}
+    .nx-prefactura-real input,.nx-prefactura-real select,.nx-prefactura-real textarea{font-size:16px!important;min-height:46px!important}
+    .nx-prefactura-real button,.nx-prefactura-real .btn{min-height:44px!important}
+  }
+  body.tema-oscuro .nx-prefactura-real,body.tema-premium .nx-prefactura-real{--pf-bg:#0f172a;--pf-card:#172033;--pf-line:#2b3950;--pf-text:#f8fafc;--pf-muted:#a8b3c7}
+  `;
+  document.head.appendChild(st);
+  marcarVista();
+  new MutationObserver(()=>requestAnimationFrame(marcarVista)).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+  document.addEventListener('click',()=>setTimeout(marcarVista,80),true);
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NEXUS PREFactura Mobile Fix — v48.86
+   Corrige desborde horizontal, número cortado y distribución móvil.
+   Solo presentación.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function nxPrefacturaMobile2486(){
+  'use strict';
+  if(document.getElementById('nx-prefactura-mobile-2486')) return;
+
+  function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+  function marcar(){
+    const vistas=[...document.querySelectorAll('.nx-prefactura-real')];
+    document.body.classList.toggle('nx-prefactura-open', vistas.length>0);
+    vistas.forEach(v=>{
+      v.querySelectorAll('label,.label,.fg label,.fl').forEach(l=>{
+        const t=norm(l.textContent);
+        if(t.includes('prefactura no')){
+          const card=l.closest('.card,.nxFacCard,.fg,.form-group,.field,section,div');
+          if(card) card.classList.add('nx-pf-number-card');
+        }
+      });
+      const candidatos=[...v.querySelectorAll('div,section,nav')].filter(el=>{
+        const t=norm(el.textContent);
+        return t.includes('cliente')&&t.includes('productos')&&t.includes('pago')&&t.includes('confirmar')&&t.length<120;
+      }).sort((a,b)=>a.querySelectorAll('*').length-b.querySelectorAll('*').length);
+      if(candidatos[0]) candidatos[0].classList.add('nx-pf-stepper-mobile');
+    });
+  }
+
+  const st=document.createElement('style');
+  st.id='nx-prefactura-mobile-2486';
+  st.textContent=`
+  @media(max-width:768px){
+    html,body{overflow-x:hidden!important;max-width:100%!important}
+    body.nx-prefactura-open .main,body.nx-prefactura-open .content,body.nx-prefactura-open [class*="main"]{margin-left:0!important;max-width:100%!important}
+    .nx-prefactura-real{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;overflow-x:hidden!important}
+    .nx-prefactura-real.nxPf,.nx-prefactura-real .nxPf{width:100%!important;max-width:100%!important;min-width:0!important;padding-left:10px!important;padding-right:10px!important;overflow-x:hidden!important}
+    .nx-prefactura-real .card,.nx-prefactura-real .cartcard,.nx-prefactura-real .nx-inv-card,.nx-prefactura-real .nxFacCard,.nx-prefactura-real .fg,.nx-prefactura-real .form-group{width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden!important}
+    .nx-prefactura-real *{min-width:0}
+    .nx-prefactura-real .nx-pf-number-card{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-items:start!important}
+    .nx-prefactura-real .nx-pf-number-card>*{width:100%!important;max-width:100%!important;min-width:0!important}
+    .nx-prefactura-real .nx-pf-number-card input,.nx-prefactura-real .nx-pf-number-card select,.nx-prefactura-real .nx-pf-number-card .input,.nx-prefactura-real .nx-pf-number-card [class*="input"]{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+    .nx-prefactura-real .nx-pf-number-card [style*="justify-content:space-between"],.nx-prefactura-real .nx-pf-number-card [style*="justify-content: space-between"]{justify-content:flex-start!important;flex-wrap:wrap!important;gap:8px!important}
+    .nx-prefactura-real .nx-pf-stepper-mobile{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;width:100%!important;max-width:100%!important}
+    .nx-prefactura-real .nx-pf-stepper-mobile>*{width:100%!important;max-width:100%!important;min-width:0!important}
+    .nx-prefactura-real .nx-pf-stepper-mobile>*:has(>span:only-child){min-width:0!important}
+    .nx-prefactura-real .ph{overflow:hidden!important}
+    .nx-prefactura-real .ph h1,.nx-prefactura-real .ph h2,.nx-prefactura-real .ph .pt{white-space:normal!important;overflow-wrap:anywhere!important}
+    body.nx-prefactura-open .nx-fab{right:14px!important;bottom:92px!important;width:54px!important;height:54px!important}
+  }
+  `;
+  document.head.appendChild(st);
+  marcar();
+  new MutationObserver(()=>requestAnimationFrame(marcar)).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+  document.addEventListener('click',()=>setTimeout(marcar,60),true);
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NEXUS PREFactura Visual Directa — v48.87
+   Prueba visual evidente y rediseño directo sobre la vista detectada.
+   Solo presentación.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function nxPrefacturaVisualDirecta2487(){
+  'use strict';
+  if(document.getElementById('nx-prefactura-directa-2487')) return;
+
+  function norm(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+
+  function localizar(){
+    const titulos=[...document.querySelectorAll('h1,h2,h3,.pt,.page-title,.ph')];
+    const titulo=titulos.find(el=>norm(el.textContent).includes('prefactura'));
+    if(!titulo) return null;
+    let root=titulo.closest('[id^="v-"],.view,.page,.panel,main,section,.nxPf') || titulo.parentElement;
+    if(!root) return null;
+    root.classList.add('nx-pf-2487-root');
+    return {root,titulo};
+  }
+
+  function aplicar(){
+    const hit=localizar();
+    document.body.classList.toggle('nx-pf-2487-open',!!hit);
+    if(!hit) return;
+    const {root,titulo}=hit;
+
+    if(!root.querySelector('.nx-pf-2487-banner')){
+      const banner=document.createElement('div');
+      banner.className='nx-pf-2487-banner';
+      banner.innerHTML='<div><span class="nx-pf-dot"></span><b>PREFactura 2.5</b><small>Nueva experiencia visual activa</small></div><span class="nx-pf-chip">BORRADOR</span>';
+      const anchor=titulo.closest('.ph') || titulo;
+      anchor.parentNode.insertBefore(banner,anchor);
+    }
+
+    const cards=[...root.querySelectorAll('.card,.nxFacCard,.fg,.form-group,section')];
+    cards.slice(0,8).forEach((el,i)=>el.setAttribute('data-nx-pf-card',String(i+1)));
+  }
+
+  const st=document.createElement('style');
+  st.id='nx-prefactura-directa-2487';
+  st.textContent=`
+  .nx-pf-2487-root{--nx-pf-bg:#eef4ff;--nx-pf-card:#ffffff;--nx-pf-line:#d9e4f7;--nx-pf-text:#11203b;--nx-pf-blue:#155eef;background:linear-gradient(180deg,#eaf2ff 0,#f7faff 280px,#f8fafc 100%)!important}
+  .nx-pf-2487-root .nx-pf-2487-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,#0f3d91,#155eef);color:#fff;box-shadow:0 16px 36px rgba(21,94,239,.28)}
+  .nx-pf-2487-banner>div{display:flex;align-items:center;gap:10px;min-width:0}.nx-pf-2487-banner b{font-size:18px;letter-spacing:-.02em}.nx-pf-2487-banner small{font-size:11px;color:#dbe8ff;white-space:nowrap}.nx-pf-dot{width:10px;height:10px;border-radius:50%;background:#43d17a;box-shadow:0 0 0 5px rgba(67,209,122,.18)}
+  .nx-pf-chip{font-size:10px;font-weight:900;letter-spacing:.08em;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28)}
+  .nx-pf-2487-root .ph{background:transparent!important;border:0!important;box-shadow:none!important;padding:2px 2px 12px!important}
+  .nx-pf-2487-root .ph h1,.nx-pf-2487-root .ph h2,.nx-pf-2487-root .ph .pt{font-size:28px!important;color:var(--nx-pf-text)!important}
+  .nx-pf-2487-root [data-nx-pf-card]{background:var(--nx-pf-card)!important;border:1px solid var(--nx-pf-line)!important;border-radius:18px!important;box-shadow:0 10px 30px rgba(31,78,140,.08)!important;padding:16px!important}
+  .nx-pf-2487-root label{color:#50627d!important;font-size:11px!important;font-weight:850!important;letter-spacing:.03em!important}
+  .nx-pf-2487-root input,.nx-pf-2487-root select,.nx-pf-2487-root textarea{border:1px solid #cfdcf0!important;border-radius:12px!important;background:#fbfdff!important;box-shadow:inset 0 1px 0 rgba(17,32,59,.02)!important}
+  .nx-pf-2487-root input:focus,.nx-pf-2487-root select:focus,.nx-pf-2487-root textarea:focus{border-color:#155eef!important;box-shadow:0 0 0 4px rgba(21,94,239,.12)!important}
+  .nx-pf-2487-root button,.nx-pf-2487-root .btn{border-radius:12px!important}
+  @media(max-width:768px){
+    body.nx-pf-2487-open{overflow-x:hidden!important}
+    .nx-pf-2487-root{width:100%!important;max-width:100%!important;margin:0!important;overflow-x:hidden!important}
+    .nx-pf-2487-root .nx-pf-2487-banner{margin:8px 10px 12px;padding:14px;border-radius:16px}
+    .nx-pf-2487-banner>div{align-items:flex-start;flex-direction:column;gap:3px}.nx-pf-2487-banner small{white-space:normal}.nx-pf-2487-banner b{font-size:17px}
+    .nx-pf-2487-root .ph h1,.nx-pf-2487-root .ph h2,.nx-pf-2487-root .ph .pt{font-size:24px!important}
+    .nx-pf-2487-root [data-nx-pf-card]{margin:0 10px 10px!important;padding:14px!important;border-radius:16px!important;max-width:calc(100% - 20px)!important}
+    .nx-pf-2487-root input,.nx-pf-2487-root select,.nx-pf-2487-root textarea{font-size:16px!important;max-width:100%!important}
+  }
+  `;
+  document.head.appendChild(st);
+  aplicar();
+  new MutationObserver(()=>requestAnimationFrame(aplicar)).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+  document.addEventListener('click',()=>setTimeout(aplicar,70),true);
+})();

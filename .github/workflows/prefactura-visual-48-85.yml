@@ -1,0 +1,44 @@
+name: Aplicar Sprint 1 visual Prefactura 48.85
+
+on:
+  push:
+    branches:
+      - ui/prefactura-2-5-sprint-1
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-prefactura:
+    if: ${{ !contains(github.event.head_commit.message || '', '[prefactura-2485]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar rama
+        uses: actions/checkout@v4
+        with:
+          ref: ui/prefactura-2-5-sprint-1
+          fetch-depth: 0
+
+      - name: Aplicar Sprint 1 visual
+        run: python3 .github/scripts/apply_prefactura_visual_2485.py
+
+      - name: Validar archivos
+        run: |
+          node --check parches.js
+          python3 -m json.tool version.json >/dev/null
+          grep -q "const APP_VERSION='48.85';" index.html
+          grep -q "NEXUS PREFactura Visual 2.5 — v48.85" parches.js
+          grep -q "nx-prefactura-visual-2485" parches.js
+
+      - name: Confirmar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add parches.js index.html version.json
+          if git diff --cached --quiet; then
+            echo "No hay cambios nuevos para confirmar."
+          else
+            git commit -m "POS: Prefactura 2.5 Sprint 1 visual 48.85 [prefactura-2485]"
+            git push origin HEAD:ui/prefactura-2-5-sprint-1
+          fi
