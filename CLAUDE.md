@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.88** (ver `index.html` y `version.json`).
+> Versión actual: **48.89** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3136,6 +3136,78 @@ manual — SIGUEN en el repo, no se tocaron, solo se limpió lo que ya habían g
   este sistema. El método que SÍ funciona (usado en toda esta sesión): editar directo el HTML/CSS que ya
   generan las funciones reales (`renderVender`/`gridHTML`/`pintarCarrito`/`renderFactura`), usando los
   ids/clases reales documentados en este archivo — no un detector que adivina en tiempo de ejecución.
+
+### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
+El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
+vendiéndolo — quiere catálogo de cuentas bien organizado, costo/ganancia/destino contable por artículo, y
+botones estándar (Guardar/Imprimir/Guardar e imprimir/Cancelar/Cerrar/Devolver/buscador/tabulación) en
+todas las pantallas transaccionales. Aclaración honesta: este entorno no tiene salida a internet, no se
+pudo navegar InfoplusWEB en vivo — la auditoría se hizo 100% contra el código real de `parches.js` (3
+agentes de investigación en paralelo, con evidencia archivo:línea, sin inventar nada).
+- **Contabilidad — hallazgos:** el núcleo de partida doble es real (Debe=Haber y Activo=Pasivo+Capital se
+  validan de verdad), catálogo de cuentas con código editable desde la UI, 4 reportes + Balance General.
+  Gaps reales: sin jerarquía de cuentas (todo plano), **falla en silencio** si el plan de cuentas no existe
+  (las ventas dejan de contabilizarse sin ningún aviso), devoluciones no revierten el inventario contable,
+  nómina agrupa todas las deducciones en una sola cuenta, sin centro de costo/presupuesto/cierre de período.
+- **Costo/margen/destino por artículo — hallazgo más importante:** hoy **TODAS las ventas van a una sola
+  cuenta de ingreso (4101)**, sin importar qué se vendió — no existe ningún campo de "cuenta contable" en
+  `pos_productos` ni en `pos_categorias`, así que no se puede saber cuánto generó cada línea de negocio por
+  separado en el Estado de Resultados. Además, el costo de una venta se recalcula SIEMPRE con el costo de
+  HOY (`pos_venta_items` no guarda un snapshot del costo real del día de la venta — confirmado en el INSERT
+  real de `nxPosConfirmar`), y el costeo es "última compra" puro, sin promedio ponderado.
+- **Botones estándar — hallazgos:** el botón "Cancelar" de Prefactura/Factura en realidad solo vaciaba el
+  carrito (llamaba a `nxPosVaciar`), dejando cliente/NCF/fecha intactos — no era un cancelar real. Prefactura
+  no tenía forma de imprimir antes de guardar ni combo "Guardar e imprimir" (Compras SÍ lo tenía, era el
+  patrón a copiar). Sin botón "Devolver" accesible desde dentro de Factura/el ticket — solo desde Historial.
+  3 patrones de icono de cierre distintos coexisten en el sistema, sin estándar único.
+- **Plan de 3 fases acordado con el dueño** (por orden de riesgo, confirmado — se empezó por la Fase A que
+  es justo lo que pidió abrir la conversación): **Fase A** (botones de Prefactura/Factura, bajo riesgo) →
+  **Fase B** (costo y destino contable por artículo, riesgo medio) → **Fase C** (contabilidad más robusta:
+  aviso si falta plan de cuentas, reversar inventario en devoluciones, separar retenciones de nómina, alto
+  riesgo por tocar dinero directamente). Fase A es la única hecha hasta ahora.
+- **FASE A — HECHA (v48.89), 3 cambios quirúrgicos, cero lógica de cobro/inventario/contabilidad tocada:**
+  1. **`nxFacCancelar()` nuevo** (junto a `nxFacSetCredito`, mismo IIFE): reusa EXACTAMENTE el mismo reset
+     de estado que el sistema ya usa tras un cobro exitoso (`_cart=[]`, `_factCli=''`, `_facNCF='sin'`,
+     `_facCredito=false`, `_facFecha=''`, `_facSubTab='datos'`, seguido de `renderPOS(view)` — un
+     re-render completo, no un repintado parcial, para que el botón de cliente/chips de NCF/fecha se
+     limpien visualmente también). Pide confirmación SOLO si hay algo que perder (carrito, cliente,
+     crédito o NCF distinto de "sin") — cancelar un formulario vacío no interrumpe con un diálogo inútil.
+     Reemplaza el `onclick="window.nxPosVaciar();window.nxFacRepaint()"` de siempre.
+  2. **Combo "Guardar e imprimir" en Prefactura** (mismo patrón visual que ya usa Compras — Cancelar/
+     Guardar e imprimir/Guardar en una fila): `nxPrefGuardar(imprimir)` ganó un parámetro opcional — si es
+     `true`, después de guardar con éxito llama a `window.nxPHImprimir(r[0].id)` (la función de impresión
+     que YA existía, usada desde el historial de Prefacturas — se reusó tal cual, sin duplicar lógica de
+     impresión). El botón "Guardar Prefactura" del panel "Opciones adicionales" se ocultó cuando ya se está
+     EN la pestaña Prefactura (era redundante con el botón grande de abajo, que hace lo mismo) — se sigue
+     mostrando en Factura, para poder guardar una factura en curso como prefactura en su lugar.
+  3. **Botón "Devolver" en el ticket** (`ticketHTML`, el recibo que abre `nxPosConfirmar` al cobrar y
+     `nxFacBuscarNum` al buscar una factura por número): usa `window.opener.nxDevNueva(id)` — el ticket es
+     una ventana `window.open('','_blank')` aparte, así que llama a la función real del sistema en la
+     ventana que lo abrió (mismo origen, `window.opener` disponible) en vez de duplicar la lógica de
+     devolución. Gateado a `!v.anulada` — mismo criterio exacto que ya usaba el botón de Devolver en la
+     fila de Historial (`!anulada`), para no ofrecer devolver algo ya anulado. Si se abre el ticket fuera
+     del flujo normal (sin `opener`), muestra un aviso claro en vez de fallar en silencio.
+  - CSS: `.nx-inv-actions` ganó `flex-wrap:wrap` + `.nx-inv-btn{flex:1 1 auto}` +
+    `.nx-inv-cobrar{flex:2 1 160px}` (antes `flex:2` sin base, podía apretar el botón de en medio en
+    Prefactura con 3 botones) + regla móvil nueva (`@media max-width:640px`) que apila los 3 botones en
+    columna — mismo criterio de resiliencia que ya usaba Compras (`flex-wrap:wrap` sin básculas fijas).
+  - **Bug real encontrado y corregido DURANTE la verificación, no en producción:** el primer harness de
+    prueba midió 13px de desborde horizontal en 390px — se investigó a fondo (comparando contra una copia
+    sin los cambios de esta fase) y se confirmó que el desborde **no lo causaban los botones nuevos**
+    (quitarlos del DOM de prueba no cambiaba el número) — el harness de prueba le faltaba el mismo reset
+    `*{box-sizing:border-box;margin:0;padding:0}` que sí tiene `index.html` real (línea 38). Con el reset
+    correcto, cero desbordes en las 4 combinaciones (Factura/Prefactura × 390px/1000px). Es una lección
+    metodológica, no un bug del sistema: al construir un harness aislado para una pantalla que vive dentro
+    de `.nxPf`, hay que copiar el reset global real de `index.html`, no uno inventado a mano.
+  - **Verificado:** `nxFacCancelar` probado con 3 escenarios reales (nada que perder → sin confirmar;
+    confirm=false → no resetea; confirm=true → resetea los 6 campos) — los 3 pasan. El ticket probado con
+    venta normal (botón Devolver presente, usa `window.opener`) y venta anulada (botón ausente) — ambos
+    casos correctos. Capturas Playwright de Factura y Prefactura en 390px/1000px sin desbordes. `node
+    --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+    válido.
+- **Pendiente:** Fase B (destino contable configurable por producto/categoría + snapshot de costo real por
+  venta) y Fase C (robustez de Contabilidad) — quedan para cuando el dueño confirme seguir, cada una se
+  construye y prueba por separado dado que tocan dinero/reportes financieros directamente.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
