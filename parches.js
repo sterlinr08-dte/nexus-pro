@@ -17240,11 +17240,6 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .nivbadge{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;background:var(--pf-txt3)}
 .nxPf .nivbadge.cur{background:var(--pf-blue)}
 .nxPf .nivsearch{margin-bottom:10px}
-.nxPf .nivnew{margin-top:10px}
-.nxPf .nivnewgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:8px}
-.nxPf .nivnewgrid .fld:first-child{grid-column:1/-1}
-@media (min-width:560px){.nxPf .nivnewgrid{grid-template-columns:1.6fr 1fr 1fr 1fr}.nxPf .nivnewgrid .fld:first-child{grid-column:auto}}
-.nxPf .nivnew input{width:100%;height:36px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-bg);padding:0 10px;font:inherit;font-size:12px;box-sizing:border-box}
 .nxPf .btn2{width:100%;height:36px;padding:0 12px;border-radius:10px;border:0;background:var(--pf-blue);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer}
 .nxPf .colr{display:flex;flex-direction:column;gap:12px}
 .nxPf .kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
@@ -17373,6 +17368,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .cartsavebtn:disabled{opacity:.45;cursor:default}
 .nxPf .cartsavebtn i{font-size:13px;flex:none}
 .nxPf .cartsavebtn span,.nxPf .cartsavebtn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxPf .rentbox{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:560px){.nxPf .rentbox{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.nxPf .rentbox>div{background:var(--pf-bg);border:1px solid var(--pf-line);border-radius:12px;padding:10px 12px;min-width:0}
+.nxPf .rentbox .lb{display:block;font-size:9.5px;font-weight:800;color:var(--pf-txt3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.nxPf .rentbox b{font-size:15px;font-weight:800;color:var(--pf-txt)}
+.nxPf .nivnuevobdg{display:inline-flex;align-items:center;font-size:8.5px;font-weight:800;color:#fff;background:var(--pf-blue);padding:2px 7px;border-radius:999px;letter-spacing:.3px;margin-left:4px;vertical-align:middle}
+.nxPf .ab:disabled{opacity:.55;cursor:default}
+.nxPf .nxSpin{display:inline-block;animation:nxPfSpin .8s linear infinite}
+@keyframes nxPfSpin{to{transform:rotate(360deg)}}
 `;
     document.head.appendChild(st);
   }
@@ -17402,8 +17406,23 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     } catch (e) {} finally { _nivelesIniciando = false; }
   }
   function nivelPrecioDe(prodId, nivelId) { return _prodNiveles.find(r => String(r.producto_id) === String(prodId) && String(r.nivel_id) === String(nivelId)); }
+  // ── Borrador en memoria del formulario "Nuevo/Editar artículo" (NEXUS PRO POS — rediseño
+  // Información/Precios y Niveles/Inventario/Reglas Adicionales): mientras el modal está abierto,
+  // crear un nivel de precio nuevo o anotarle un precio a un artículo NO dispara ningún POST/PATCH —
+  // todo se guarda aquí y se persiste de un tirón cuando se toca "Guardar". `pfDraftReset()` se llama
+  // cada vez que se abre el modal (nuevo o editar), así que nunca arrastra datos de una apertura previa.
+  let _pfDraft = null, _pfTmpSeq = 0, _pfGuardando = false;
+  function pfDraftReset() { _pfDraft = { nivelesNuevos: [], precios: {} }; _pfTmpSeq = 0; }
+  function pfNivelesTodos() { return (_niveles || []).concat((_pfDraft && _pfDraft.nivelesNuevos) || []); }
+  function pfEsNivelNuevo(nivelId) { return !!(_pfDraft && _pfDraft.nivelesNuevos.some(n => String(n.id) === String(nivelId))); }
+  // Precio/reglas de un nivel para ESTE artículo: primero lo que el usuario anotó en este formulario
+  // (aún sin guardar), si no lo que ya existe guardado en pos_producto_niveles.
+  function pfPrecioNivelDe(prodId, nivelId) {
+    if (_pfDraft && _pfDraft.precios[nivelId]) return _pfDraft.precios[nivelId];
+    return nivelPrecioDe(prodId, nivelId) || {};
+  }
   function nxPfNivelSelOpts(selId) {
-    return _niveles.map(n => `<option value="${n.id}"${selId && String(n.id) === String(selId) ? ' selected' : ''}>${esc(n.nombre)}${n.es_default ? ' (por defecto)' : ''}</option>`).join('');
+    return pfNivelesTodos().map(n => `<option value="${n.id}"${selId && String(n.id) === String(selId) ? ' selected' : ''}>${esc(n.nombre)}${n.es_default ? ' (por defecto)' : ''}${pfEsNivelNuevo(n.id) ? ' — nuevo' : ''}</option>`).join('');
   }
   window.nxPfNivelesTabla = function (prodId, opts) {
     opts = opts || {};
@@ -17411,57 +17430,113 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const selEl = document.getElementById('ppNivelSel');
     const curId = opts.cur || (selEl ? selEl.value : '');
     const q = (opts.q || '').trim().toLowerCase();
-    const lista = _niveles.filter(n => !q || n.nombre.toLowerCase().includes(q));
+    const costo = parseMoney(val('ppCos'));
+    const lista = pfNivelesTodos().filter(n => !q || n.nombre.toLowerCase().includes(q));
     body.innerHTML = lista.length ? lista.map((n, i) => {
-      const r = nivelPrecioDe(prodId, n.id) || {};
+      const r = pfPrecioNivelDe(prodId, n.id);
       const cur = String(n.id) === String(curId);
+      const nuevo = pfEsNivelNuevo(n.id);
+      const cont = Number(r.precio_contado || 0);
+      const margen = (cont > 0) ? (((cont - costo) / cont) * 100) : null;
+      const margenHTML = margen == null ? '<span style="color:var(--pf-txt3)">—</span>' : `<span style="color:${margen < 0 ? '#dc2626' : (margen < 15 ? '#ea580c' : '#16a34a')};font-weight:700">${margen.toFixed(0)}%</span>`;
       return `<tr${cur ? ' style="background:var(--pf-blue-l)"' : ''}>
-        <td><span class="nivbadge${cur ? ' cur' : ''}">${i + 1}</span> <b>${esc(n.nombre)}</b>${n.es_default ? ' <span style="color:var(--pf-txt3);font-size:9.5px">· por defecto</span>' : ''}</td>
-        <td><input value="${r.precio_contado != null ? Math.round(r.precio_contado) : ''}" id="nxPfNivC_${n.id}" placeholder="0"></td>
-        <td><input value="${r.precio_credito != null ? Math.round(r.precio_credito) : ''}" id="nxPfNivR_${n.id}" placeholder="0"></td>
-        <td><input value="${r.precio_minimo != null ? Math.round(r.precio_minimo) : ''}" id="nxPfNivM_${n.id}" placeholder="0"></td>
-        <td><button class="nxPf ab g3" style="height:30px;width:30px;padding:0" onclick="window.nxPfNivelGuardar('${prodId}','${n.id}')" title="Guardar precio de este nivel" aria-label="Guardar precio de este nivel"><i class="ti ti-device-floppy"></i></button></td></tr>`;
-    }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--pf-txt3);padding:14px">${q ? 'Sin niveles que coincidan.' : 'Sin niveles todavía — crea el primero abajo.'}</td></tr>`;
+        <td><span class="nivbadge${cur ? ' cur' : ''}">${i + 1}</span> <b>${esc(n.nombre)}</b>${n.es_default ? ' <span style="color:var(--pf-txt3);font-size:9.5px">· por defecto</span>' : ''}${nuevo ? ' <span class="nivnuevobdg">NUEVO</span>' : ''}</td>
+        <td>${r.precio_contado ? fmt(r.precio_contado) : '<span style="color:var(--pf-txt3)">—</span>'}</td>
+        <td>${r.precio_credito ? fmt(r.precio_credito) : '<span style="color:var(--pf-txt3)">—</span>'}</td>
+        <td>${margenHTML}</td>
+        <td style="white-space:nowrap">
+          <button class="nxPf ab g3" style="height:30px;width:30px;padding:0" onclick="const s=document.getElementById('ppNivelSel');if(s){s.value='${n.id}';window.nxPfNivelCambio('${prodId}');}" title="Editar precios de este nivel" aria-label="Editar precios de este nivel"><i class="ti ti-pencil"></i></button>
+          ${nuevo ? `<button class="nxPf ab g4" style="height:30px;width:30px;padding:0" onclick="window.nxPfNivelEliminarNuevo('${n.id}','${prodId}')" title="Quitar este nivel nuevo" aria-label="Quitar este nivel nuevo"><i class="ti ti-trash"></i></button>` : ''}
+        </td></tr>`;
+    }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--pf-txt3);padding:14px">${q ? 'Sin niveles que coincidan.' : 'Sin niveles todavía — crea el primero con "+ Crear nivel de precio".'}</td></tr>`;
   };
-  window.nxPfNivelGuardar = async function (prodId, nivelId) {
+  // Anota (en el borrador, NO en Supabase todavía) los precios/reglas del nivel indicado — única
+  // fuente real: los campos del panel "Reglas de Venta" cuando ese nivel es el seleccionado en
+  // ppNivelSel; si se llama para un nivel que NO es el seleccionado, conserva lo que ya tenía
+  // (evita pisar con datos de otro nivel que están en pantalla).
+  window.nxPfNivelPrecioInput = function (prodId, nivelId) {
     const g = id => { const el = document.getElementById(id); return el ? parseMoney(el.value) : null; };
-    const body = { precio_contado: g('nxPfNivC_' + nivelId) || 0, precio_credito: g('nxPfNivR_' + nivelId), precio_minimo: g('nxPfNivM_' + nivelId) };
-    try {
-      const existe = nivelPrecioDe(prodId, nivelId);
-      if (existe) await getAPI().patch('pos_producto_niveles', 'id=eq.' + existe.id, body);
-      else await getAPI().post('pos_producto_niveles', Object.assign({ producto_id: prodId, nivel_id: nivelId }, body));
-      _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || [];
-      toast('ok', 'Precio del nivel guardado');
-      window.nxPfNivelesTabla(prodId);
-    } catch (e) { toast('err', 'No se pudo guardar el nivel', String(e && e.message || e)); }
+    const gN = (id, def) => { const el = document.getElementById(id); if (!el || el.value === '') return def; return Number(el.value); };
+    const prev = pfPrecioNivelDe(prodId, nivelId);
+    const sel = document.getElementById('ppNivelSel');
+    const esElSeleccionado = sel && String(sel.value) === String(nivelId);
+    if (!esElSeleccionado) return; // nada que anotar: los campos en pantalla son de otro nivel
+    const body = {
+      precio_contado: g('ppNivCont') || 0,
+      precio_credito: g('ppNivCred'),
+      precio_especial: g('ppNivEsp'),
+      precio_minimo: g('ppNivMin'),
+      cantidad_minima: gN('ppNivCantMin', 1),
+      credito_pct: gN('ppNivCredPct', null),
+      credito_monto: g('ppNivCredMonto'),
+      precio_anterior: g('ppNivAnterior'),
+      descuento_pct: gN('ppNivDescPct', null)
+    };
+    _pfDraft.precios[nivelId] = body;
+    nxPfResumen();
   };
-  window.nxPfNivelNuevo = async function (prodId) {
-    const inp = document.getElementById('nxPfNivNomNuevo'); const nombre = (inp && inp.value || '').trim();
+  // Abre el panel compacto "+ Crear nivel de precio" — el nivel NO se crea en Supabase aquí, se
+  // guarda en el borrador y aparece marcado NUEVO en la tabla; se crea de verdad al Guardar el artículo.
+  window.nxPfNivelModalAbrir = function (prodId) {
+    cerrarModal('nxPfNivelM');
+    const ov = document.createElement('div'); ov.id = 'nxPfNivelM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:420px">
+      <div class="head"><h3 style="margin:0"><i class="ti ti-layers-linked"></i> Crear nivel de precio</h3><button class="nxBack" type="button" onclick="document.getElementById('nxPfNivelM').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button></div>
+      <div style="padding:14px">
+        <div class="fld" style="margin-bottom:10px"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="nxPfNivMNom" class="no-upper" placeholder="Ej: Distribuidor"></div></div>
+        <div class="fld" style="margin-bottom:10px"><label>Descripción (opcional)</label><div class="inw"><i class="ti ti-file-description"></i><input id="nxPfNivMDesc" class="no-upper" placeholder="Ej: para clientes con volumen alto"></div></div>
+        <div class="g2" style="margin-bottom:10px">
+          <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-adjustments-horizontal"></i><select id="nxPfNivMTipo"><option value="fijo">Precio fijo</option><option value="descuento">Descuento porcentual</option><option value="margen">Margen</option></select></div></div>
+          <div class="fld"><label>Color (opcional)</label><div class="inw" style="padding-left:0"><input id="nxPfNivMColor" type="color" value="#2563eb" style="width:100%;height:40px;border:1.5px solid var(--pf-line);border-radius:11px;padding:2px;cursor:pointer"></div></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px"><input type="checkbox" id="nxPfNivMActivo" checked style="width:16px;height:16px;accent-color:var(--pf-blue)"><span style="font-size:12.5px;font-weight:700;color:var(--pf-txt)">Nivel activo</span></label>
+      </div>
+      <div class="actions" style="grid-template-columns:1fr 1fr">
+        <button class="ab g4" type="button" onclick="document.getElementById('nxPfNivelM').remove()">Cancelar</button>
+        <button class="ab g1" type="button" onclick="window.nxPfNivelModalGuardar('${prodId}')"><i class="ti ti-check"></i> Guardar nivel</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    setTimeout(() => { const i = document.getElementById('nxPfNivMNom'); if (i) i.focus(); }, 30);
+  };
+  window.nxPfNivelModalGuardar = function (prodId) {
+    const nombre = (val('nxPfNivMNom') || '').trim();
     if (!nombre) { toast('err', 'Escribe el nombre del nivel'); return; }
-    const g = id => { const el = document.getElementById(id); return el ? parseMoney(el.value) : 0; };
-    const cont = g('nxPfNivNuevoCont'), cred = g('nxPfNivNuevoCred'), min = g('nxPfNivNuevoMin');
-    try {
-      const r = await getAPI().post('pos_niveles_precio', { nombre: nombre, orden: _niveles.length + 1 });
-      const nuevo = r && r[0];
-      if (nuevo) _niveles.push(nuevo);
-      if (nuevo && prodId && (cont || cred || min)) {
-        await getAPI().post('pos_producto_niveles', { producto_id: prodId, nivel_id: nuevo.id, precio_contado: cont, precio_credito: cred, precio_minimo: min });
-        _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || [];
-      }
-      if (inp) inp.value = '';
-      ['nxPfNivNuevoCont', 'nxPfNivNuevoCred', 'nxPfNivNuevoMin'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-      const sel = document.getElementById('ppNivelSel');
-      if (sel) { sel.innerHTML = nxPfNivelSelOpts(nuevo ? nuevo.id : sel.value); window.nxPfNivelCambio(prodId); }
-      window.nxPfNivelesTabla(prodId);
-      toast('ok', 'Nivel creado', nombre + (cont || cred || min ? ' con sus precios' : ''));
-    } catch (e) { toast('err', 'No se pudo crear el nivel', String(e && e.message || e)); }
+    const yaExiste = pfNivelesTodos().some(n => n.nombre.trim().toLowerCase() === nombre.toLowerCase());
+    if (yaExiste) { toast('err', 'Ya existe un nivel con ese nombre'); return; }
+    const nuevo = {
+      id: 'tmp_' + (++_pfTmpSeq),
+      nombre: nombre,
+      descripcion: (val('nxPfNivMDesc') || '').trim() || null,
+      tipo: val('nxPfNivMTipo') || 'fijo',
+      color: val('nxPfNivMColor') || null,
+      activo: !!(document.getElementById('nxPfNivMActivo') && document.getElementById('nxPfNivMActivo').checked),
+      orden: pfNivelesTodos().length + 1,
+      es_default: false
+    };
+    _pfDraft.nivelesNuevos.push(nuevo);
+    cerrarModal('nxPfNivelM');
+    const sel = document.getElementById('ppNivelSel');
+    if (sel) { sel.innerHTML = nxPfNivelSelOpts(nuevo.id); window.nxPfNivelCambio(prodId); }
+    window.nxPfNivelesTabla(prodId);
+    toast('ok', 'Nivel agregado', nombre + ' — se crea al guardar el artículo');
+  };
+  window.nxPfNivelEliminarNuevo = function (tempId, prodId) {
+    if (!_pfDraft) return;
+    _pfDraft.nivelesNuevos = _pfDraft.nivelesNuevos.filter(n => String(n.id) !== String(tempId));
+    delete _pfDraft.precios[tempId];
+    const sel = document.getElementById('ppNivelSel');
+    if (sel && String(sel.value) === String(tempId)) { sel.innerHTML = nxPfNivelSelOpts(''); window.nxPfNivelCambio(prodId); }
+    window.nxPfNivelesTabla(prodId);
   };
   // Cambiar el "Nivel de Precio a editar" recarga Precios/Reglas de Venta con los datos de ESE nivel
-  // (patron Infoplus: un solo formulario, nivel-scoped, en vez de precio fijo unico).
+  // (patron Infoplus: un solo formulario, nivel-scoped, en vez de precio fijo unico). Lee del borrador
+  // primero (pfPrecioNivelDe) para que un precio recién anotado no se pierda al cambiar de nivel y volver.
   window.nxPfNivelCambio = function (prodId) {
     const sel = document.getElementById('ppNivelSel'); if (!sel) return;
     const nivelId = sel.value;
-    const r = nivelPrecioDe(prodId, nivelId) || {};
+    const r = pfPrecioNivelDe(prodId, nivelId);
     const setM = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v != null && v !== '') ? Math.round(Number(v)) : ''; };
     const setN = (id, v, def) => { const el = document.getElementById(id); if (el) el.value = (v != null && v !== '') ? Number(v) : (def != null ? def : ''); };
     setM('ppNivEsp', r.precio_especial);
@@ -17473,22 +17548,24 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     setM('ppNivCredMonto', r.credito_monto);
     setM('ppNivAnterior', r.precio_anterior);
     setN('ppNivDescPct', r.descuento_pct, '');
-    const n = _niveles.find(x => String(x.id) === String(nivelId));
+    const n = pfNivelesTodos().find(x => String(x.id) === String(nivelId));
     const lbl = document.getElementById('nxPfTopNivel'); if (lbl) lbl.textContent = n ? n.nombre : '—';
     const lbl2 = document.getElementById('nxPfResNivel'); if (lbl2) lbl2.textContent = n ? n.nombre : '—';
     window.nxPfNivelesTabla(prodId);
     nxPfResumen();
   };
 
-  function abrirProd(p) {
+  function abrirProd(p, _mantenerBorrador) {
     cerrarModal('nxPosProd');
     nxPfEnsureCSS();
+    if (!_mantenerBorrador) pfDraftReset();
     const e = p || {};
     _comboTmp = combosDe(e).slice();
     const catOpts = _cats.map(c => `<option value="${c.id}"${String(e.categoria_id) === String(c.id) ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('');
-    const tieneNiveles = !!(p && _niveles.length);
-    const nivelInicial = tieneNiveles ? (_niveles.find(n => n.es_default) || _niveles[0]) : null;
-    const nivRowInicial = (tieneNiveles && nivelInicial) ? (nivelPrecioDe(p.id, nivelInicial.id) || {}) : {};
+    const prodId = p ? p.id : '';
+    const nivelInicial = _niveles.find(n => n.es_default) || _niveles[0] || null;
+    const nivRowInicial = nivelInicial ? pfPrecioNivelDe(prodId, nivelInicial.id) : {};
+    const nivelesCount = p ? _prodNiveles.filter(r => String(r.producto_id) === String(p.id)).length : 0;
     const ov = document.createElement('div'); ov.id = 'nxPosProd'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -17510,129 +17587,120 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 
             <div class="nxPfProdTabs" role="tablist">
               <button type="button" data-tabbtn="info" class="on" onclick="window.nxPfProdTab('info')"><i class="ti ti-info-circle"></i> Información</button>
-              <button type="button" data-tabbtn="precios" onclick="window.nxPfProdTab('precios')"><i class="ti ti-currency-dollar"></i> Precios</button>
-              <button type="button" data-tabbtn="costos" onclick="window.nxPfProdTab('costos')"><i class="ti ti-receipt-2"></i> Costos</button>
-              <button type="button" data-tabbtn="inventario" onclick="window.nxPfProdTab('inventario')"><i class="ti ti-adjustments"></i> Inventario</button>
-              <button type="button" data-tabbtn="impuestos" onclick="window.nxPfProdTab('impuestos')"><i class="ti ti-percentage"></i> Impuestos</button>
-              <button type="button" data-tabbtn="compras" onclick="window.nxPfProdTab('compras')"><i class="ti ti-truck-delivery"></i> Compras</button>
-              <button type="button" data-tabbtn="ventas" onclick="window.nxPfProdTab('ventas')"><i class="ti ti-shopping-cart"></i> Ventas</button>
-              <button type="button" data-tabbtn="multiempresa" onclick="window.nxPfProdTab('multiempresa')"><i class="ti ti-building-store"></i> Sucursales</button>
-              <button type="button" data-tabbtn="integraciones" onclick="window.nxPfProdTab('integraciones')"><i class="ti ti-plug-connected"></i> Integraciones</button>
-              <button type="button" data-tabbtn="historial" onclick="window.nxPfProdTab('historial','${p ? p.id : ''}')"><i class="ti ti-history"></i> Historial</button>
+              <button type="button" data-tabbtn="precios" onclick="window.nxPfProdTab('precios')"><i class="ti ti-currency-dollar"></i> Precios y Niveles</button>
+              <button type="button" data-tabbtn="inventario" onclick="window.nxPfProdTab('inventario','${prodId}')"><i class="ti ti-adjustments"></i> Inventario</button>
+              <button type="button" data-tabbtn="reglas" onclick="window.nxPfProdTab('reglas')"><i class="ti ti-list-check"></i> Reglas Adicionales</button>
             </div>
 
             <div class="nxPfProdPanel on" data-tab="info">
               <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg blue"><i class="ti ti-info-circle"></i></span> Información del artículo</h4>
+                <h4><span class="bdg blue"><i class="ti ti-id-badge-2"></i></span> Identificación</h4>
                 <div class="g2">
                   <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
                   <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
                   <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Mismo código con el que se creó"></div></div>
                   <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
                   <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
-                  <div class="fld"><label>Imagen (URL opcional)</label><div class="inw"><i class="ti ti-photo"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div></div>
                   <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-package"></i><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
                 </div>
+              </div>
+
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg orange"><i class="ti ti-receipt-2"></i></span> Compra y fiscalidad</h4>
+                <div class="g2">
+                  <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                  ${puedeVerMin() ? `<div class="fld"><label>🔒 Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
+                  <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                  <div class="fld"><label>¿Lleva ITBIS (18%)?</label><div class="inw"><i class="ti ti-percentage"></i><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
+                </div>
+                ${!_proveedores.length ? `<div class="soon"><i class="ti ti-info-circle"></i> Aún no tienes proveedores creados — agrégalos en la pestaña Compras del POS.</div>` : ''}
+                <div id="nxPfProvEntregaBox" style="margin-top:8px"></div>
+                ${p ? `<div style="margin-top:10px"><label style="display:block;font-size:11px;font-weight:700;color:var(--pf-txt3);margin-bottom:6px">Último costo de compra</label><div id="nxPfUltCosto"><div class="soon"><i class="ti ti-loader-2"></i> Consultando…</div></div></div>` : ''}
+              </div>
+
+              <div class="card">
+                <h4><span class="bdg purple"><i class="ti ti-photo"></i></span> Multimedia</h4>
+                <div class="fld"><label>Imagen (URL opcional)</label><div class="inw"><i class="ti ti-photo"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div></div>
               </div>
             </div>
 
             <div class="nxPfProdPanel" data-tab="precios">
               <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg green"><i class="ti ti-currency-dollar"></i></span> Precios</h4>
-                ${tieneNiveles ? `<div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" onchange="window.nxPfNivelCambio('${p.id}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>` : ''}
-                <div class="preciosFlat">
+                <h4><span class="bdg blue"><i class="ti ti-chart-line"></i></span> Resumen de rentabilidad</h4>
+                <div class="rentbox">
+                  <div><span class="lb">Costo</span><b id="nxPfRentCosto">${fmt(e.costo || 0)}</b></div>
+                  <div><span class="lb">Precio principal</span><b id="nxPfRentPrecio">${fmt(e.precio || 0)}</b></div>
+                  <div><span class="lb">Ganancia</span><b id="nxPfRentGan">${fmt((e.precio || 0) - (e.costo || 0))}</b></div>
+                  <div><span class="lb">Margen</span><b id="nxPfRentMargen">—</b></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg green"><i class="ti ti-currency-dollar"></i></span> Precio principal</h4>
+                <div class="preciosFlat" style="grid-template-columns:repeat(2,minmax(0,1fr))">
                   <div class="fld"><label style="color:var(--pf-txt)">Precio Lista</label><div class="inw"><span class="cur">$</span><input id="ppPre" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                  <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
-                  <div class="fld"><label style="color:var(--pf-blue-d)">Precio Contado ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCont" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_contado != null ? Math.round(nivRowInicial.precio_contado) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
-                  <div class="fld"><label style="color:var(--pf-purple)">Precio Crédito ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCred" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_credito != null ? Math.round(nivRowInicial.precio_credito) : ''}" placeholder="0" style="padding-left:24px" ${tieneNiveles ? '' : 'disabled title="Guarda el artículo y crea un nivel primero"'}></div></div>
                   <div class="fld"><label>Precio 2 (mayor, respaldo)</label><div class="inw"><span class="cur">$</span><input id="ppPreMay" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio lista" style="padding-left:24px"></div></div>
                 </div>
               </div>
 
               <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg orange"><i class="ti ti-scale"></i></span> Reglas de Venta${tieneNiveles ? ' <span style="font-weight:600;color:var(--pf-txt3);font-size:10.5px">— por nivel de precio</span>' : ''}</h4>
-                ${tieneNiveles ? `
-                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-                  <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Cantidad Mínima</label><input id="ppNivCantMin" inputmode="numeric" value="${nivRowInicial.cantidad_minima != null ? Number(nivRowInicial.cantidad_minima) : 1}" placeholder="1"></div></div>
-                  <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Crédito (%)</label><input id="ppNivCredPct" inputmode="decimal" value="${nivRowInicial.credito_pct != null ? Number(nivRowInicial.credito_pct) : ''}" placeholder="0"></div></div>
-                  <div class="reglas"><div class="ic"><i class="ti ti-currency-dollar"></i></div><div><label>Crédito ($)</label><input id="ppNivCredMonto" data-nx-money inputmode="numeric" value="${nivRowInicial.credito_monto != null ? Math.round(nivRowInicial.credito_monto) : ''}" placeholder="0"></div></div>
-                  <div class="reglas"><div class="ic"><i class="ti ti-history"></i></div><div><label>Precio Anterior</label><input id="ppNivAnterior" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_anterior != null ? Math.round(nivRowInicial.precio_anterior) : ''}" placeholder="0"></div></div>
-                  <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>% Descuento</label><input id="ppNivDescPct" inputmode="decimal" value="${nivRowInicial.descuento_pct != null ? Number(nivRowInicial.descuento_pct) : ''}" placeholder="0"></div></div>
-                  <div class="reglas"><div class="ic"><i class="ti ti-shield-lock"></i></div><div><label>🔒 Precio Mínimo (nivel)</label><input id="ppNivMin" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_minimo != null ? Math.round(nivRowInicial.precio_minimo) : ''}" placeholder="0"></div></div>
-                </div>
-                ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero (y crea al menos un nivel de precio) para configurar sus reglas de venta.</div>`}
-              </div>
-
-              <div class="card">
                 <h4><span class="bdg blue"><i class="ti ti-layers-linked"></i></span> Niveles de precio</h4>
-                ${p ? `
-                <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + p.id + "',{q:this.value})" })}</div>
+                <div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" data-prod="${prodId}" onchange="window.nxPfNivelCambio('${prodId}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + prodId + "',{q:this.value})" })}</div>
                 <div style="overflow-x:auto"><table class="tbl">
-                  <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>Mínimo</th><th></th></tr></thead>
+                  <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>Margen</th><th></th></tr></thead>
                   <tbody id="nxPfNivBody"></tbody>
                 </table></div>
-                <div class="nivnew">
-                  <div class="nivnewgrid">
-                    <div class="fld"><label>Nombre del nivel nuevo</label><input id="nxPfNivNomNuevo" class="no-upper" placeholder="Ej: Distribuidor"></div>
-                    <div class="fld"><label>Contado</label><input id="nxPfNivNuevoCont" inputmode="numeric" placeholder="0"></div>
-                    <div class="fld"><label>Crédito</label><input id="nxPfNivNuevoCred" inputmode="numeric" placeholder="0"></div>
-                    <div class="fld"><label>Mínimo</label><input id="nxPfNivNuevoMin" inputmode="numeric" placeholder="0"></div>
-                  </div>
-                  <button class="btn2" type="button" onclick="window.nxPfNivelNuevo('${p.id}')"><i class="ti ti-plus"></i> Crear nivel</button>
-                </div>
-                ` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para configurarle precios por nivel.</div>`}
+                <button class="btn2" type="button" style="margin-top:10px" onclick="window.nxPfNivelModalAbrir('${prodId}')"><i class="ti ti-plus"></i> Crear nivel de precio</button>
               </div>
-            </div>
 
-            <div class="nxPfProdPanel" data-tab="costos">
               <div class="card">
-                <h4><span class="bdg blue"><i class="ti ti-receipt-2"></i></span> Costos</h4>
-                <div class="preciosFlat">
-                  <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                  ${puedeVerMin() ? `<div class="fld"><label>🔒 Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
+                <h4><span class="bdg orange"><i class="ti ti-scale"></i></span> Reglas de venta <span style="font-weight:600;color:var(--pf-txt3);font-size:10.5px">— por el nivel seleccionado arriba</span></h4>
+                <div class="g2">
+                  <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="fld"><label style="color:var(--pf-blue-d)">Precio Contado ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCont" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_contado != null ? Math.round(nivRowInicial.precio_contado) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="fld"><label style="color:var(--pf-purple)">Precio Crédito ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCred" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_credito != null ? Math.round(nivRowInicial.precio_credito) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-shield-lock"></i></div><div><label>🔒 Precio Mínimo (nivel)</label><input id="ppNivMin" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_minimo != null ? Math.round(nivRowInicial.precio_minimo) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Cantidad Mínima</label><input id="ppNivCantMin" inputmode="numeric" value="${nivRowInicial.cantidad_minima != null ? Number(nivRowInicial.cantidad_minima) : 1}" placeholder="1" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Crédito (%)</label><input id="ppNivCredPct" inputmode="decimal" value="${nivRowInicial.credito_pct != null ? Number(nivRowInicial.credito_pct) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-currency-dollar"></i></div><div><label>Crédito ($)</label><input id="ppNivCredMonto" data-nx-money inputmode="numeric" value="${nivRowInicial.credito_monto != null ? Math.round(nivRowInicial.credito_monto) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-history"></i></div><div><label>Precio Anterior</label><input id="ppNivAnterior" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_anterior != null ? Math.round(nivRowInicial.precio_anterior) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>% Descuento</label><input id="ppNivDescPct" inputmode="decimal" value="${nivRowInicial.descuento_pct != null ? Number(nivRowInicial.descuento_pct) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                 </div>
-                <div class="margbox">
-                  <div class="ic"><i class="ti ti-chart-line"></i></div>
-                  <div><div class="lb">Margen bruto (Precio Lista vs Costo)</div><div class="v" id="nxPfMargV">—</div></div>
-                </div>
+                ${!_niveles.length ? `<div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> Crea el primer nivel de precio arriba para empezar a configurar sus reglas.</div>` : ''}
               </div>
             </div>
 
             <div class="nxPfProdPanel" data-tab="inventario">
-              <div class="card">
+              <div class="card" style="margin-bottom:12px">
                 <h4><span class="bdg blue"><i class="ti ti-adjustments"></i></span> Inventario y stock</h4>
-                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                <div class="g2">
                   <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><label>Stock mínimo (alerta)</label><input id="ppMin" inputmode="numeric" value="${e.stock_min != null ? Number(e.stock_min) : '0'}" placeholder="0"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-shield-check"></i></div><div><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-device-mobile"></i></div><div><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div></div>
                 </div>
               </div>
-            </div>
 
-            <div class="nxPfProdPanel" data-tab="impuestos">
-              <div class="card">
-                <h4><span class="bdg blue"><i class="ti ti-percentage"></i></span> Impuestos</h4>
-                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-                  <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>¿Lleva ITBIS (18%)?</label><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="nxPfProdPanel" data-tab="compras">
-              <div class="card">
-                <h4><span class="bdg orange"><i class="ti ti-truck-delivery"></i></span> Compras</h4>
-                <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
-                ${!_proveedores.length ? `<div class="soon"><i class="ti ti-info-circle"></i> Aún no tienes proveedores creados — agrégalos en la pestaña Compras del POS.</div>` : ''}
-                <div id="nxPfProvEntregaBox" style="margin-top:8px"></div>
-                ${p ? `<div style="margin-top:10px"><label style="display:block;font-size:11px;font-weight:700;color:var(--pf-txt3);margin-bottom:6px">Último costo de compra</label><div id="nxPfUltCosto"><div class="soon"><i class="ti ti-loader-2"></i> Consultando…</div></div></div>` : ''}
-              </div>
-            </div>
-
-            <div class="nxPfProdPanel" data-tab="ventas">
               <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg green"><i class="ti ti-shopping-cart"></i></span> Reglas de venta</h4>
-                <div class="g2" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+                <h4><span class="bdg blue"><i class="ti ti-building-store"></i></span> Disponibilidad por sucursal</h4>
+                ${(p && _almacenes.length > 1) ? `
+                ${_almacenes.map(a => `<div class="almrow"><b>${esc(a.nombre)}</b><span>${fmtN(stockEnAlm(p.id, a.id))} en stock</span></div>`).join('')}
+                <div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> Para mover stock entre sucursales usa <b>Kardex → Multi-almacén</b>.</div>
+                <button class="btn bghost" type="button" style="margin-top:8px" onclick="document.getElementById('nxPosProd').remove();window.nxPosTab('inventario')"><i class="ti ti-arrow-right"></i> Ir a Kardex</button>
+                ` : (p ? `<div class="soon"><i class="ti ti-info-circle"></i> Esta organización solo tiene una sucursal/almacén activo — el stock del artículo es único. Activa más sucursales en Kardex → Multi-almacén para verlas aquí.</div>` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para ver su disponibilidad por sucursal.</div>`)}
+              </div>
+
+              <div class="card">
+                <h4><span class="bdg blue"><i class="ti ti-history"></i></span> Movimientos de este artículo</h4>
+                ${p ? `<div id="nxPfHistBody"><div class="soon"><i class="ti ti-loader-2"></i> Cargando movimientos…</div></div>` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para ver su historial de movimientos.</div>`}
+              </div>
+            </div>
+
+            <div class="nxPfProdPanel" data-tab="reglas">
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg green"><i class="ti ti-shopping-cart"></i></span> Reglas de venta del artículo</h4>
+                <div class="g2">
                   <div class="reglas"><div class="ic"><i class="ti ti-discount-2"></i></div><div><label>¿Permite descuento?</label><select id="ppNoDesc"><option value="0"${!e.no_descuento ? ' selected' : ''}>Sí, permite</option><option value="1"${e.no_descuento ? ' selected' : ''}>No (precio fijo)</option></select></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Comisión de venta (%)</label><input id="ppComPct" inputmode="decimal" value="${e.comision_pct != null ? Number(e.comision_pct) : ''}" placeholder="usa la del vendedor"></div></div>
                 </div>
@@ -17647,34 +17715,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
                   <div id="ppComboSug" style="display:none;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;box-shadow:var(--pf-shadow);max-height:170px;overflow-y:auto;margin-top:4px"></div>
                 </div>
               </div>
-              <div class="card">
+              <div class="card" style="margin-bottom:12px">
                 <div class="swrow"><b style="font-size:12.5px;display:flex;align-items:center;gap:9px"><span class="bdg red"><i class="ti ti-discount"></i></span> Promociones programadas</b><button class="sw" disabled style="opacity:.5;cursor:not-allowed"></button></div>
                 <div class="soon"><i class="ti ti-clock" style="color:var(--pf-txt3)"></i> Próximamente — todavía no existe en el sistema, se está evaluando construirla.</div>
               </div>
-            </div>
-
-            <div class="nxPfProdPanel" data-tab="multiempresa">
-              <div class="card">
-                <h4><span class="bdg blue"><i class="ti ti-building-store"></i></span> Disponibilidad por sucursal</h4>
-                ${(p && _almacenes.length > 1) ? `
-                ${_almacenes.map(a => `<div class="almrow"><b>${esc(a.nombre)}</b><span>${fmtN(stockEnAlm(p.id, a.id))} en stock</span></div>`).join('')}
-                <div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> Para mover stock entre sucursales usa <b>Kardex → Multi-almacén</b>.</div>
-                <button class="btn bghost" type="button" style="margin-top:8px" onclick="document.getElementById('nxPosProd').remove();window.nxPosTab('inventario')"><i class="ti ti-arrow-right"></i> Ir a Kardex</button>
-                ` : (p ? `<div class="soon"><i class="ti ti-info-circle"></i> Esta organización solo tiene una sucursal/almacén activo — el stock del artículo es único. Activa más sucursales en Kardex → Multi-almacén para verlas aquí.</div>` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para ver su disponibilidad por sucursal.</div>`)}
-              </div>
-            </div>
-
-            <div class="nxPfProdPanel" data-tab="integraciones">
               <div class="card">
                 <h4><span class="bdg purple"><i class="ti ti-plug-connected"></i></span> Integraciones</h4>
                 <div class="soon"><i class="ti ti-clock" style="color:var(--pf-txt3)"></i> Próximamente — publicar este artículo a WhatsApp Catálogo, tienda virtual o un marketplace todavía no existe en el sistema, se está evaluando construirlo.</div>
-              </div>
-            </div>
-
-            <div class="nxPfProdPanel" data-tab="historial">
-              <div class="card">
-                <h4><span class="bdg blue"><i class="ti ti-history"></i></span> Movimientos de este artículo</h4>
-                ${p ? `<div id="nxPfHistBody"><div class="soon"><i class="ti ti-loader-2"></i> Cargando movimientos…</div></div>` : `<div class="soon"><i class="ti ti-info-circle"></i> Guarda el artículo primero para ver su historial de movimientos.</div>`}
               </div>
             </div>
 
@@ -17689,7 +17736,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
                 <span class="estado-badge">${e.activo === false ? 'INACTIVO' : 'ACTIVO'}</span>
               </div>
               <div style="font-size:10.5px;color:var(--pf-txt3);margin-bottom:8px">${esc(e.referencia || '')}${e.marca ? (e.referencia ? ' · ' : '') + esc(e.marca) : ''}</div>
-              ${tieneNiveles ? `<div style="font-size:10px;color:var(--pf-txt3);margin-bottom:6px">Nivel actual: <b id="nxPfResNivel" style="color:var(--pf-txt)">${esc(nivelInicial.nombre)}</b></div>` : ''}
+              ${nivelInicial ? `<div style="font-size:10px;color:var(--pf-txt3);margin-bottom:6px">Nivel actual: <b id="nxPfResNivel" style="color:var(--pf-txt)">${esc(nivelInicial.nombre)}</b></div>` : ''}
               <hr class="hr">
               <div class="srow"><div class="ic" style="background:var(--pf-blue-l);color:var(--pf-blue-d)"><i class="ti ti-tag"></i></div><div class="lb">Precio Lista</div><b id="nxPfResPre">${fmt(e.precio || 0)}</b></div>
               <div class="srow"><div class="ic" style="background:var(--pf-green-l);color:var(--pf-green)"><i class="ti ti-discount"></i></div><div class="lb">Precio Especial</div><b id="nxPfResEsp">${fmt(nivRowInicial.precio_especial || 0)}</b></div>
@@ -17697,14 +17744,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
               <div class="srow"><div class="ic" style="background:var(--pf-purple-l);color:var(--pf-purple)"><i class="ti ti-credit-card"></i></div><div class="lb">Precio Crédito</div><b id="nxPfResCred">${fmt(nivRowInicial.precio_credito || 0)}</b></div>
               <hr class="hr">
               <div class="srow"><div class="ic" style="background:var(--pf-bg);color:var(--pf-txt2)"><i class="ti ti-stack-2"></i></div><div class="lb">Stock</div><b id="nxPfResStk">${e.stock != null ? Number(e.stock) : 0}</b></div>
-              <div class="srow"><div class="ic" style="background:var(--pf-bg);color:var(--pf-txt2)"><i class="ti ti-layers-linked"></i></div><div class="lb">Niveles configurados</div><b>${p ? _prodNiveles.filter(r => String(r.producto_id) === String(p.id)).length : 0}</b></div>
+              <div class="srow"><div class="ic" style="background:var(--pf-bg);color:var(--pf-txt2)"><i class="ti ti-layers-linked"></i></div><div class="lb">Niveles configurados</div><b id="nxPfResNivCount">${nivelesCount}</b></div>
             </div>
           </div>
 
         </div>
         <div class="actions">
-          <button class="ab g1" type="button" onclick="window.nxPosGuardarProd('${p ? p.id : ''}')"><i class="ti ti-check"></i> Guardar</button>
-          <button class="ab g2" type="button" onclick="window.nxPfGuardarYNuevo('${p ? p.id : ''}')"><i class="ti ti-plus"></i> Guardar y Nuevo</button>
+          <button class="ab g1" type="button" onclick="window.nxPosGuardarProd('${prodId}')"><i class="ti ti-check"></i> Guardar</button>
+          <button class="ab g2" type="button" onclick="window.nxPfGuardarYNuevo('${prodId}')"><i class="ti ti-plus"></i> Guardar y Nuevo</button>
           <button class="ab g3" type="button" onclick="window.nxPfImprimirEtiqueta()"><i class="ti ti-printer"></i> Imprimir Etiqueta</button>
           <button class="ab g4" type="button" onclick="document.getElementById('nxPosProd').remove()"><i class="ti ti-x"></i> Cancelar</button>
         </div>
@@ -17716,11 +17763,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     ['ppPre', 'ppCos'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfMargenCalc); });
     nxPfMargenCalc();
     window.nxPfProvEntrega();
-    if (p) {
-      if (_niveles.length) window.nxPfNivelesTabla(p.id);
-      else nxNivelesInit().then(() => { if (_niveles.length && document.getElementById('nxPosProd')) abrirProd(p); });
-      window.nxPfUltimoCosto(p.id);
-    }
+    window.nxPfNivelesTabla(prodId);
+    if (!_niveles.length) nxNivelesInit().then(() => { if (document.getElementById('nxPosProd')) abrirProd(p, true); });
+    if (p) window.nxPfUltimoCosto(p.id);
   }
   window.nxPfProvEntrega = function () {
     const box = document.getElementById('nxPfProvEntregaBox'); if (!box) return;
@@ -17748,7 +17793,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const modal = document.getElementById('nxPosProd'); if (!modal) return;
     modal.querySelectorAll('.nxPfProdPanel').forEach(el => el.classList.toggle('on', el.getAttribute('data-tab') === key));
     modal.querySelectorAll('.nxPfProdTabs button').forEach(b => b.classList.toggle('on', b.getAttribute('data-tabbtn') === key));
-    if (key === 'historial' && prodId) window.nxPfHistorialCargar(prodId);
+    if (key === 'inventario' && prodId) window.nxPfHistorialCargar(prodId);
   };
   window.nxPfHistorialCargar = async function (prodId) {
     const box = document.getElementById('nxPfHistBody'); if (!box || box.dataset.cargado === '1') return;
@@ -17763,14 +17808,35 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       return `<tr><td>${fechaDMY(m.fecha)}</td><td>${esc(t[0])}</td><td style="text-align:right;color:${c < 0 ? '#b91c1c' : '#15803d'}">${c > 0 ? '+' : ''}${fmtN(c)}</td><td style="text-align:right">${m.stock_nuevo != null ? fmtN(m.stock_nuevo) : ''}</td><td>${esc(m.referencia || m.motivo || '')}</td></tr>`;
     }).join('')}</tbody></table></div>`;
   };
+  // "Resumen de rentabilidad" (pestaña Precios y Niveles): Costo/Precio principal/Ganancia/Margen
+  // en vivo, mientras se escribe en Costo (pestaña Información) o Precio Lista (esta pestaña) — los
+  // 2 campos conservan sus ids de siempre, así que leerlos no depende de en qué pestaña esté parado.
   function nxPfMargenCalc() {
-    const box = document.getElementById('nxPfMargV'); if (!box) return;
+    const cCosto = document.getElementById('nxPfRentCosto'), cPrecio = document.getElementById('nxPfRentPrecio'), cGan = document.getElementById('nxPfRentGan'), cMarg = document.getElementById('nxPfRentMargen');
+    if (!cCosto) return;
     const precio = parseMoney(val('ppPre')), costo = parseMoney(val('ppCos'));
-    if (!precio) { box.textContent = '—'; box.style.color = ''; return; }
+    cCosto.textContent = fmt(costo);
+    cPrecio.textContent = fmt(precio);
+    cGan.textContent = fmt(precio - costo);
+    if (!precio) { cMarg.textContent = '—'; cMarg.style.color = ''; return; }
     const pct = ((precio - costo) / precio) * 100;
-    box.textContent = pct.toFixed(1).replace('.', ',') + '% · ' + fmt(precio - costo) + ' de utilidad';
-    box.style.color = pct < 0 ? '#dc2626' : (pct < 15 ? '#ea580c' : '#16a34a');
+    cMarg.textContent = pct.toFixed(1).replace('.', ',') + '%';
+    const color = pct < 0 ? '#dc2626' : (pct < 15 ? '#ea580c' : '#16a34a');
+    cMarg.style.color = color; cGan.style.color = pct < 0 ? '#dc2626' : '';
+    // Refresca también el margen por nivel de la tabla (usa el mismo costo)
+    const sel = document.getElementById('ppNivelSel');
+    if (sel) window.nxPfNivelesTabla(sel.getAttribute('data-prod') || '');
   }
+  // Anota en el borrador los campos de "Reglas de venta" del nivel actualmente seleccionado en
+  // ppNivelSel (Precio Especial/Contado/Crédito/Mínimo + cantidad mínima/crédito/descuento) —
+  // se dispara al escribir en cualquiera de esos campos, sin importar si ese nivel ya existe en
+  // Supabase o todavía es un nivel nuevo sin guardar.
+  window.nxPfNivelReglaInput = function (prodId) {
+    const sel = document.getElementById('ppNivelSel'); if (!sel || !sel.value) return;
+    window.nxPfNivelPrecioInput(prodId, sel.value);
+    window.nxPfNivelesTabla(prodId);
+    nxPfResumen();
+  };
   function nxPfResumen() {
     const nomEl = document.getElementById('nxPfResNom'); if (nomEl) nomEl.textContent = val('ppNom') || 'Nuevo artículo';
     const preEl = document.getElementById('nxPfResPre'); if (preEl) preEl.textContent = fmt(parseMoney(val('ppPre')));
@@ -17805,35 +17871,26 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       comision_pct: val('ppComPct') !== '' ? Number(val('ppComPct')) : null
     };
   }
-  async function nxPfGuardarNivelSiCorresponde(prodId) {
-    const sel = document.getElementById('ppNivelSel');
-    if (!sel || !sel.value) return;
-    const nivelId = sel.value;
-    const body = {
-      precio_especial: moneyVal('ppNivEsp') || null,
-      precio_contado: moneyVal('ppNivCont') || 0,
-      precio_credito: moneyVal('ppNivCred') || null,
-      precio_minimo: moneyVal('ppNivMin') || null,
-      cantidad_minima: Number(val('ppNivCantMin')) || 1,
-      credito_pct: val('ppNivCredPct') !== '' ? Number(val('ppNivCredPct')) : null,
-      credito_monto: moneyVal('ppNivCredMonto') || null,
-      precio_anterior: moneyVal('ppNivAnterior') || null,
-      descuento_pct: val('ppNivDescPct') !== '' ? Number(val('ppNivDescPct')) : null
-    };
-    try {
-      const existe = nivelPrecioDe(prodId, nivelId);
-      if (existe) await getAPI().patch('pos_producto_niveles', 'id=eq.' + existe.id, body);
-      else await getAPI().post('pos_producto_niveles', Object.assign({ producto_id: prodId, nivel_id: nivelId }, body));
-      _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || [];
-    } catch (e) { toast('err', 'El producto se guardó, pero el nivel de precio no se pudo guardar', String(e && e.message || e)); }
+  // Validaciones antes de guardar (regla del rediseño: nunca bloquear por margen bajo, solo advertir;
+  // sí bloquear nombre vacío, montos negativos y niveles nuevos con el nombre repetido).
+  function nxPfValidarAntesDeGuardar() {
+    const nombre = (val('ppNom') || '').trim();
+    if (!nombre) return 'Pon el nombre del producto';
+    const costo = parseMoney(val('ppCos'));
+    if (costo < 0) return 'El costo no puede ser negativo';
+    const precio = parseMoney(val('ppPre'));
+    if (precio < 0) return 'El precio no puede ser negativo';
+    const nombresNuevos = (_pfDraft.nivelesNuevos || []).map(n => n.nombre.trim().toLowerCase());
+    if (new Set(nombresNuevos).size !== nombresNuevos.length) return 'Hay dos niveles nuevos con el mismo nombre';
+    return null;
   }
   // Guardado común de Nuevo/Editar producto (Kardex Inteligente): el campo Stock del formulario
   // NUNCA pisa `pos_productos.stock` directo — se separa del PATCH normal y, si de verdad cambió,
   // pasa por `moverStock()` ('ajuste' al editar, 'apertura' al crear con stock inicial) para que
   // quede en el kardex igual que cualquier otro movimiento. Devuelve {prodId,nombre} o null.
+  // (Ya NO guarda niveles — eso lo hace nxPfGuardarTodo, con los niveles nuevos y el borrador.)
   async function nxPfGuardarProdComun(id) {
     const body = nxPfLeerProd();
-    if (!body.nombre) { toast('err', 'Pon el nombre del producto'); return null; }
     const stockNuevo = Number(body.stock || 0);
     delete body.stock;
     try {
@@ -17852,19 +17909,70 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         const delta = stockNuevo - Number(prod.stock || 0);
         if (delta !== 0) await moverStock(prod, id ? 'ajuste' : 'apertura', delta, { referencia: id ? 'Edición de producto' : 'Alta de producto', motivo: id ? 'Cambio de stock desde el formulario' : 'Stock inicial' });
       }
-      if (prodId) await nxPfGuardarNivelSiCorresponde(prodId);
       return { prodId: prodId, nombre: body.nombre };
-    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); return null; }
+    } catch (e) { toast('err', 'No se pudo guardar el artículo', String(e && e.message || e)); return null; }
+  }
+  // Muestra/oculta el estado "Guardando…" en los 2 botones de guardar (protección de doble clic:
+  // mientras _pfGuardando es true, ambos quedan disabled — un segundo clic no dispara nada).
+  function nxPfSetGuardando(on) {
+    const modal = document.getElementById('nxPosProd'); if (!modal) return;
+    const b1 = modal.querySelector('.actions .ab.g1'), b2 = modal.querySelector('.actions .ab.g2');
+    if (b1) { b1.disabled = on; b1.innerHTML = on ? '<i class="ti ti-loader-2 nxSpin"></i> Guardando…' : '<i class="ti ti-check"></i> Guardar'; }
+    if (b2) { b2.disabled = on; b2.innerHTML = on ? '<i class="ti ti-loader-2 nxSpin"></i> Guardando…' : '<i class="ti ti-plus"></i> Guardar y Nuevo'; }
+  }
+  // Guarda TODO de un tirón: el artículo, los niveles de precio nuevos que se crearon en el
+  // borrador (aún sin id real de Supabase) y los precios/reglas anotados por nivel — en ese orden,
+  // porque los precios por nivel necesitan el id real del artículo Y el id real de cada nivel nuevo.
+  // Si algo intermedio falla, el artículo NO se pierde (ya se guardó) — se avisa con detalle de qué
+  // no se pudo completar, sin cerrar el formulario, para que el usuario pueda reintentar o corregir.
+  async function nxPfGuardarTodo(id) {
+    if (_pfGuardando) return null;
+    const errorVal = nxPfValidarAntesDeGuardar();
+    if (errorVal) { toast('err', errorVal); return null; }
+    const precio = parseMoney(val('ppPre')), costo = parseMoney(val('ppCos'));
+    if (precio > 0 && costo > 0 && precio < costo) toast('warn', 'El precio de lista quedó por debajo del costo', 'Se guarda igual — revísalo si no era la intención');
+    _pfGuardando = true; nxPfSetGuardando(true);
+    try {
+      const r = await nxPfGuardarProdComun(id);
+      if (!r) return null;
+      const prodId = r.prodId;
+      // Niveles nuevos del borrador -> se crean ahora en Supabase; mapa tempId -> id real
+      const mapaIds = {};
+      for (const nv of (_pfDraft.nivelesNuevos || [])) {
+        try {
+          const creado = await getAPI().post('pos_niveles_precio', { nombre: nv.nombre, orden: nv.orden, descripcion: nv.descripcion, tipo: nv.tipo, color: nv.color, activo: nv.activo });
+          const fila = creado && creado[0];
+          if (fila) { mapaIds[nv.id] = fila.id; _niveles.push(fila); }
+        } catch (e) { toast('err', 'El artículo se guardó, pero el nivel "' + nv.nombre + '" no se pudo crear', String(e && e.message || e)); }
+      }
+      // Precios/reglas anotados por nivel (reales o recién creados) -> upsert en pos_producto_niveles
+      let erroresNivel = 0, guardadosNivel = 0;
+      for (const nivelIdBorrador of Object.keys(_pfDraft.precios || {})) {
+        const nivelId = mapaIds[nivelIdBorrador] || nivelIdBorrador;
+        if (String(nivelId).indexOf('tmp_') === 0) continue; // su nivel no se pudo crear arriba, ya se avisó
+        const cuerpo = _pfDraft.precios[nivelIdBorrador];
+        try {
+          const existe = nivelPrecioDe(prodId, nivelId);
+          if (existe) await getAPI().patch('pos_producto_niveles', 'id=eq.' + existe.id, cuerpo);
+          else await getAPI().post('pos_producto_niveles', Object.assign({ producto_id: prodId, nivel_id: nivelId }, cuerpo));
+          guardadosNivel++;
+        } catch (e) { erroresNivel++; }
+      }
+      if (erroresNivel) toast('err', 'El artículo se guardó, pero ' + erroresNivel + ' nivel(es) de precio no se pudieron guardar');
+      if (guardadosNivel || Object.keys(mapaIds).length) { try { _prodNiveles = await getAPI().get('pos_producto_niveles', 'select=*&limit=20000') || []; } catch (e) {} }
+      pfDraftReset();
+      return r;
+    } finally { _pfGuardando = false; nxPfSetGuardando(false); }
   }
   window.nxPosGuardarProd = async function (id) {
-    const r = await nxPfGuardarProdComun(id); if (!r) return;
-    toast('ok', id ? 'Producto actualizado' : 'Producto agregado', r.nombre);
+    const r = await nxPfGuardarTodo(id); if (!r) return;
+    toast('ok', id ? 'Artículo actualizado' : 'Artículo agregado', r.nombre);
     cerrarModal('nxPosProd');
     await cargarPOS();
     const view = document.getElementById('v-pos'); if (view) renderPOS(view);
   };
   window.nxPfGuardarYNuevo = async function (id) {
-    const r = await nxPfGuardarProdComun(id); if (!r) return;
+    const r = await nxPfGuardarTodo(id); if (!r) return;
     toast('ok', 'Guardado', r.nombre + ' — listo para el siguiente');
     await cargarPOS();
     const view = document.getElementById('v-pos'); if (view) renderPOS(view);
