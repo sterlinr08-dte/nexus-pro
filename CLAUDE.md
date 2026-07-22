@@ -1903,6 +1903,35 @@ precio" permita agregar/editar el precio directo en cada fila, y (3) que tambié
 - **Publicado directo (rama `claude/pos-niveles-precio-sin-principal` → PR → `main`, mismo patrón recién
   establecido arriba)** — el dueño no pidió esta vez mantenerlo en revisión aparte.
 
+### Seguimiento v49.01 — "Inventario: información, imagen, un botón para cargar la imagen" (22-jul-2026)
+Pedido del dueño sobre la pestaña **Información** del formulario de artículo: agregar un botón para
+CARGAR la imagen (no solo pegar una URL de texto, que es lo único que había desde v48.99 — ahí se dejó
+fuera a propósito por no tener Storage configurado, ver esa sección arriba).
+- **Mismo patrón ya probado en el sistema, no uno nuevo:** en vez de montar Supabase Storage (cambio de
+  mayor alcance, el propio CLAUDE.md ya lo tenía anotado como pendiente riesgoso — "mover vouchers/
+  banners a Storage... refactor grande/riesgoso"), se reusó la técnica que YA usa Rifas desde hace
+  varias versiones (`nxRifaImgFile`/`nxRifaLogoFile`): leer el archivo elegido, dibujarlo en un
+  `<canvas>` oculto redimensionado (máximo 640px de lado, mismo criterio de tamaño razonable que
+  `nxRifaImgFile`), exportarlo a JPEG comprimido (`toDataURL('image/jpeg', 0.78)`) y guardar ese
+  **dataURL directo en el mismo campo `#ppImg` de siempre** — `pos_productos.imagen` es texto, acepta
+  tanto una URL real como un dataURL, así que no hizo falta ninguna columna ni tabla nueva.
+- **`window.nxPfImgFile(input)`** (nueva, junto a `nxPfImgSync`): valida tamaño (tope 12MB, mismo que
+  `nxRifaImgFile`), lee con `FileReader`, redimensiona con canvas, guarda el resultado en `#ppImg` y
+  llama a `nxPfImgSync()` (ya existía) para refrescar la vista previa — cero cambios en cómo se lee/
+  guarda la imagen en el resto del formulario (`nxPfLeerProd` sigue leyendo `val('ppImg')` igual que
+  siempre, sin saber ni importarle si es una URL o un dataURL).
+- **HTML:** `<input type="file" id="ppImgFile" accept="image/*" style="display:none">` + un botón
+  visible **"Cargar imagen"** (`.btn2`, mismo estilo ya usado por "+ Crear nivel de precio") que abre el
+  selector de archivos. El campo de texto de URL se quedó (relabeled "...o pega una URL") como
+  alternativa — no se quitó nada, solo se sumó el botón. En móvil abre la cámara/galería del teléfono
+  de forma nativa (comportamiento estándar de `<input type="file" accept="image/*">`, sin código extra).
+- Verificado con Playwright, código real extraído del archivo (no una reconstrucción — `nxPfImgFile`/
+  `nxPfImgSync`/`abrirProd` tal cual, con un PNG de prueba generado en el propio navegador): seleccionar
+  un archivo dispara la compresión, `#ppImg` termina con un `data:image/jpeg;...` real, la vista previa
+  se actualiza sola, sin desbordes en 390px ni 1280px, 0 errores de JS — más las 24 pruebas anteriores
+  del formulario repasadas sin regresión. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+
 ### SEGUROS — Ficha del cliente, rediseño Enterprise (19-jul-2026, v48.53)
 El dueño pidió un rediseño visual completo del núcleo de Seguros (spec "NEXUS PRO SEGUROS 2026 –
 REDISEÑO VISUAL ENTERPRISE", solo capa visual, prohibido tocar lógica/Supabase/consultas). Por el
