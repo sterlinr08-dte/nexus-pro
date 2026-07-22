@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.90** (ver `index.html` y `version.json`).
+> Versión actual: **48.91** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3240,6 +3240,30 @@ agentes de investigación en paralelo, con evidencia archivo:línea, sin inventa
     solo aparece en esa pestaña (no en Factura), sin desbordes en 390px ni 1000px, 0 errores de JS. `node
     --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
     válido.
+  - **Seguimiento (v48.91) — la pieza "Agregar nota o condiciones", pedida explícitamente ("Solamente
+    agregar nota"):** de las 3 piezas deferidas arriba, el dueño solo pidió esta. Migración aditiva
+    `pos_prefacturas_notas` (`ALTER TABLE pos_prefacturas ADD COLUMN IF NOT EXISTS notas text`) —
+    `get_advisors(security)` sin hallazgos nuevos. Solo en **Prefactura** (no en Factura — es una
+    proforma, todavía no una venta): cuadro plegable `<details class="nx-inv-notedet">` debajo de la
+    tabla de artículos ("Agregar nota o condiciones" → "Nota / condiciones" una vez que tiene texto),
+    textarea a 16px (anti-zoom iOS, mismo criterio que el resto del formulario), `maxlength="500"`.
+    Variable de módulo `_facNota` (junto a `_factCli`/`_facNCF`/`_facCredito`), `window.nxFacNotaSet(v)`
+    la actualiza en cada tecla. `nxPrefGuardar` manda `notas:_facNota||null` en el `POST` a
+    `pos_prefacturas` y limpia `_facNota=''` tras guardar con éxito; `nxFacCancelar()` también la limpia
+    en su reset. Se muestra en 2 lugares que leen el mismo dato guardado, sin lógica repetida:
+    `nxPHVer` (detalle de una prefactura, bloque `<b>Nota:</b>` solo si `p.notas` existe) y
+    `nxPHImprimir` (proforma imprimible, línea "Nota / condiciones" justo antes del aviso de "documento
+    no fiscal") — en ambos, si no hay nota, no aparece ningún bloque vacío. CSS nuevo
+    `.nx-inv-notedet` en el bloque `.nx-invoice-pro` de siempre (borde/radio/tipografía consistente con
+    el resto de la tarjeta). **Deliberadamente NO tocado:** el botón "Duplicar" y el "+ Agregar
+    producto" — el dueño pidió solo la nota, esas 2 piezas siguen fuera de alcance sin reabrir esa
+    decisión. Verificado con Playwright (8 aserciones contra el código real extraído de
+    `nxFacNotaSet`/`nxFacCancelar`/`nxPrefGuardar`/`nxPHVer`/`nxPHImprimir`): escribir la nota actualiza
+    el estado, cancelar la limpia junto con el carrito, guardar la incluye en el `POST` y la limpia
+    después, guardar sin nota manda `notas:null`, el detalle y la proforma muestran la nota cuando
+    existe y la omiten por completo cuando no — más una verificación visual del widget (toggle
+    abre/cierra, escribir funciona) sin desbordes en 390px ni 1000px. `node --check parches.js` limpio;
+    los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
