@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.82** (ver `index.html` y `version.json`).
+> Versión actual: **48.88** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3089,6 +3089,53 @@ tener el plan aprobado.
   Fase 2 Cotización directa desde el carrito, Fase 3 Vender con las 3 opciones de siempre, Fase 4
   Favoritos/Recientes) — misma filosofía operativa de InfoPlus, interfaz moderna, cero cambios a la
   lógica comercial.
+
+### Limpieza de 4 intentos de ChatGPT sobre Vender/Prefactura que nunca se aplicaron (22-jul-2026, v48.88)
+El dueño puso a **ChatGPT** a trabajar la parte visual del POS (acordado en esta misma sesión — ver
+"Cómo le gusta trabajar el dueño" y el hand-off que se le mandó con capturas reales + reglas). ChatGPT
+publicó 4 rondas de cambios directo a `main` vía GitHub Actions (`.github/workflows/pos-vender-catalogo-25.yml`,
+`prefactura-visual-2-5.yml`, `prefactura-visual-48-85.yml`, `prefactura-mobile-48-86.yml`,
+`prefactura-visual-48-87.yml` — workflows con `permissions: contents: write`, disparados por `push` a ramas
+`ui/pos-vender-catalogo-2-5`/`ui/prefactura-2-5-sprint-1`/`fix/prefactura-visual-48-84` + `workflow_dispatch`
+manual — SIGUEN en el repo, no se tocaron, solo se limpió lo que ya habían generado). El dueño reportó:
+"he cargado varias veces, me sale que hay una actualización pendiente, pero la visualización sigue igual".
+- **Investigado y confirmado contra el código real (no una suposición):** `APP_VERSION`/`version.json` SÍ
+  estaban sincronizados en 48.87 (el aviso de actualización era honesto, no un bug de caché) y `parches.js`
+  sí había crecido 496 líneas — pero esas 496 líneas eran **4 IIFEs autocontenidas pegadas al FINAL del
+  archivo** (después del cierre real de la app) que en vez de editar `renderFactura()`/`gridHTML()`
+  directamente (las funciones reales, ya documentadas en este archivo), intentaban **adivinar el DOM en
+  tiempo de ejecución** con `document.querySelectorAll` + regex sobre el texto visible, envueltas en
+  `MutationObserver` sobre `document.body` + listener de clic global, reintentando en cada mutación/clic.
+- **Causa raíz de por qué nunca se activó ninguna, confirmado línea por línea:** el detector de Prefactura
+  buscaba un título en `h1,h2,h3,.pt,.ph,.page-title,[data-title]` que contuviera "prefactura" — pero el
+  título real es `<div class="nx-inv-title">PREFACTURA</div>` (`renderFactura()`), clase que NO está en esa
+  lista, así que el detector jamás lo encontró. El detector de Vender buscaba un botón con texto
+  "agregar"/"añadir"/"+" para identificar cada tarjeta de producto — pero `gridHTML()` no tiene ningún botón
+  así (la fila entera es el clic, `onclick="nxVenderSel(...)"`; el único botón real es la estrella de
+  favorito) — confirmado con `grep` que la palabra "agregar" no existe en esa función. Como ambos detectores
+  nunca encontraban su objetivo, las funciones se salían solas sin pintar nada
+  (`if (pairs.length < 2) return;` / `if(!titulo) return;`) — el CSS nuevo (con `!important` por todos
+  lados) quedaba cargado en el archivo pero nunca se aplicaba a ningún elemento real. El propio changelog de
+  v48.84 (ya en el repo antes de esta sesión) admitía el mismo síntoma en un intento anterior ("Antes
+  apuntaba a un selector que esa pantalla no utilizaba, por eso visualmente se veía igual") — y el "arreglo"
+  de esa vez repitió el mismo patrón de detección heurística, así que volvió a fallar igual en 48.85/86/87.
+- **Arreglo:** se sincronizó la rama local con `main` (`git merge --ff-only`, 21 commits que esta sesión no
+  tenía) y se **eliminaron las 4 IIFEs muertas completas** (líneas 25234-25722 del archivo antes del corte,
+  bloques `NEXUS POS 2.5 — VENDER CATALOGO`, `nxPrefacturaVisual2485`, `nxPrefacturaMobile2486`,
+  `nxPrefacturaVisualDirecta2487`) — no se tocó ni una línea de las funciones reales (`renderVender`,
+  `gridHTML`, `renderFactura`, `pintarCarrito`), así que Vender/Prefactura vuelven exactamente al diseño de
+  antes de estos 4 intentos (el de v48.82, con las pastillas de stock y la estrella de favorito ya
+  aplicadas). Verificado: `grep` de las clases muertas (`nx25-product-card`, `nx-prefactura-real`,
+  `nx-pf-2487-root`, `nx-pf-number-card`) da cero resultados en todo el archivo, `node --check parches.js`
+  limpio, los 3 `<script>` de `index.html` pasan `new Function()`, `version.json` válido.
+- **Deliberadamente NO tocado:** los workflows de GitHub Actions y los scripts Python en `.github/` que
+  ChatGPT usó para publicar estos 4 intentos — siguen armados (disparan con `push` a esas ramas o con
+  `workflow_dispatch` manual desde GitHub). No se pidió desactivarlos, solo limpiar lo que ya habían
+  generado. **Importante para la próxima ronda con ChatGPT:** el problema de fondo no era "mala suerte" —
+  es que el método de "adivinar el DOM con heurísticas genéricas en el navegador" es frágil de por sí para
+  este sistema. El método que SÍ funciona (usado en toda esta sesión): editar directo el HTML/CSS que ya
+  generan las funciones reales (`renderVender`/`gridHTML`/`pintarCarrito`/`renderFactura`), usando los
+  ids/clases reales documentados en este archivo — no un detector que adivina en tiempo de ejecución.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
