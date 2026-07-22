@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.95** (ver `index.html` y `version.json`).
+> Versión actual: **48.96** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3476,6 +3476,65 @@ sin hallazgos nuevos.
   puntito correcto junto al IMEI y el nombre del cliente cuando está vendido. Captura de pantalla del
   modal "Administrar IMEI" a 390px sin desbordes. `node --check parches.js` limpio; los 3 `<script>` de
   `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Factura — tercer mockup de ChatGPT aplicado, ajustes de formato (22-jul-2026, v48.96)
+El dueño mandó otro mockup ("PROMPT PARA CLOUD (claude)") con capturas de escritorio y móvil de Factura,
+pidiendo aplicar ese formato "con la mejor calidad". Mismo criterio de auditoría que los mockups
+anteriores (v48.90, v48.93): comparar cada pieza contra el código y el esquema reales antes de construir,
+no copiar a ciegas — la mayoría del mockup ya coincidía con lo que se había construido en sesiones
+anteriores (tarjeta de cliente completa, buscador compacto, resumen en vivo, contador de artículos,
+"Vista previa"), así que el trabajo real fue de reacomodo, no de piezas nuevas.
+- **(1) Título y etiqueta:** `renderFactura()` cambió el título de "FACTURACIÓN" a **"FACTURA"** (solo en
+  esa pestaña) + una etiqueta nueva junto al nombre, **"DOCUMENTO DE VENTA"** (azul, `.nx-inv-draft` con
+  color en línea) — Prefactura conserva exactamente su etiqueta de siempre ("BORRADOR · NO FISCAL"), sin
+  tocar esa rama.
+- **(2) Caja "Datos del documento":** "Tipo de comprobante" (que vivía como campo suelto de ancho completo,
+  desde v48.94) y "Fecha" (que vivía en la fila de arriba junto a Cliente) ahora comparten una caja con su
+  propio título — mismo patrón visual que `.nx-inv-sumtitle` del resumen — con los dos campos en un grid
+  de 2 columnas que colapsa a 1 columna en el celular (reusa la clase `.nx-inv-info` tal cual, que ya
+  tenía esa regla responsive — no hizo falta CSS nuevo). La fila de arriba (`.nx-inv-info` original) quedó
+  solo con el número de documento y el Cliente.
+- **(3) Almacén — bug real encontrado y corregido de paso:** el mockup traía un campo "Almacén". Al
+  investigar se confirmó que el sistema YA tenía todo lo necesario para esto (`_almacenSel`/
+  `nxPosSetAlmacen`, y hasta una función `almSelectorHTML()` ya escrita) desde el Multi-almacén (v26.6) —
+  pero **`almSelectorHTML()` no se llamaba desde ningún lado del archivo** (confirmado con grep: cero
+  usos), probablemente perdida en alguno de los rediseños de Vender/Factura de esta sesión. Un negocio con
+  más de un almacén activo no tenía forma de elegir dónde se descontaba el stock al facturar. Se agregó el
+  selector directo dentro de la caja "Datos del documento" (gateado a `_almacenes.length>1`, mismo criterio
+  que el resto del sistema para no mostrar un selector inútil con un solo almacén), llamando al
+  `window.nxPosSetAlmacen` YA EXISTENTE — cero lógica nueva, solo se le devolvió su entrada visual.
+- **(4) Columna "Código/Ref" separada:** en `pintarFactura()`, el código del producto (antes
+  `<div class="nx-inv-pcod">COD: xxx</div>` pegado en letra chica debajo del nombre, dentro de la celda
+  "Producto") pasó a su propia columna de la tabla — header nuevo `<th>Código/Ref</th>` + celda
+  `data-l="Código/Ref"` (para el colapso a tarjeta en el celular). `colspan` del estado vacío subió de 9 a
+  10 (una columna más). **Limpieza de dead code correspondiente:** la clase CSS `.nx-inv-pcod` se borró —
+  confirmado con grep que ya no la usaba nada más en el archivo (regla #1 del reglamento, "depurar").
+- **Piezas del mockup dejadas fuera a propósito, cada una con su razón real (mismo criterio de "no
+  reabrir decisiones ya tomadas sin que se pida explícito" de toda esta sesión):**
+  - **"Duplicar"** — no hay nada que duplicar en una factura que todavía no existe (mismo motivo por el
+    que se descartó en el mockup de Prefactura, v48.90).
+  - **Etiqueta "AUTORIZADO"** — un documento en borrador no tiene ningún estado de autorización real
+    todavía (eso solo pasa al confirmar el cobro) — mostrarlo antes sería un dato inventado, mismo
+    criterio ya aplicado en v48.93 con este mismo mockup-cliente.
+  - **Selector de "Vendedor" en la pantalla principal** — YA existe en la ventana de Cobrar
+    (`posVendId`); agregarlo TAMBIÉN aquí crearía dos lugares distintos para elegir lo mismo, con riesgo
+    real de que se contradigan entre sí. Se dejó fuera hasta que se pida resolver esa duplicación a
+    propósito.
+  - **Botón "+ Agregar producto"** — se había quitado en v48.41 por ser redundante con el buscador; no se
+    reabre esa decisión sin que el dueño lo pida de nuevo.
+  - **"Detalle del pago"/fichas de método de pago sueltas en la pantalla principal** (Moneda, Monto
+    recibido, Cambio, Forma de cobro) — este mismo patrón ya se había considerado y descartado a propósito
+    en v48.37 ("más riesgoso porque mueve lógica de cobro real al panel principal") — el mockup lo vuelve
+    a mostrar, pero traerlo de vuelta es un cambio de mayor alcance sobre dinero en vivo que se hace en su
+    propia ronda si el dueño lo pide de forma explícita, no inferido de una imagen.
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción — `renderFactura`/
+  `pintarFactura`/`facCliInfoHTML`/`totales`/`nxPfEnsureCSS` + el CSS real de `.nx-invoice-pro` extraído
+  tal cual de `inyectarCSS()`, con datos simulados): el título y la etiqueta cambian según Factura/
+  Prefactura, la caja "Datos del documento" muestra Tipo de comprobante + Fecha, el selector de Almacén
+  aparece solo con más de un almacén y respeta cuál está activo, la tabla trae la columna Código/Ref con
+  el valor correcto y separado del nombre, el estado vacío usa el `colspan` correcto — sin desbordes en
+  390px ni 1000px (`scrollWidth===clientWidth` exacto en ambos), 0 errores de JS. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
