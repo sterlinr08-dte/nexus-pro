@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.89** (ver `index.html` y `version.json`).
+> Versión actual: **48.90** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3208,6 +3208,38 @@ agentes de investigación en paralelo, con evidencia archivo:línea, sin inventa
 - **Pendiente:** Fase B (destino contable configurable por producto/categoría + snapshot de costo real por
   venta) y Fase C (robustez de Contabilidad) — quedan para cuando el dueño confirme seguir, cada una se
   construye y prueba por separado dado que tocan dinero/reportes financieros directamente.
+- **Primer mockup de ChatGPT recibido y auditado (v48.90):** el dueño mandó una captura armada con
+  ChatGPT usando la guía del handoff (repo/ids/funciones reales que se le compartió) — el mockup en sí
+  incluía explícitamente un recuadro "PROMPT PARA CLAUDE" con las reglas correctas ("mantener todos los
+  IDs y ONCLICK actuales", "no modificar la lógica existente", "no inventar funciones nuevas") y hasta
+  reconocía los botones "Cancelar prefactura"/"Guardar e imprimir" que se acababan de publicar en v48.89
+  — señal de que el flujo ChatGPT-mockup → Claude-implementa está funcionando como se diseñó.
+  - **Auditado contra el esquema real antes de construir:** de ~8 piezas del mockup, 3 eran 100% reales y
+    seguras de implementar de inmediato (RNC/cédula, teléfono, correo y `activo` SÍ existen en
+    `pos_clientes`, confirmado en `nxEntGuardar`), y 3 requerían decisión antes de tocar código —
+    **no se construyeron sin confirmar, mismo criterio de "no fingir funciones que no existen"** de todo
+    este archivo: (1) botón "Duplicar" — función nueva, no existe ningún `nxPrefDuplicar` hoy; (2) campo
+    "Agregar nota o condiciones" — `pos_prefacturas` no tiene columna `notas` (confirmado en el `POST` real
+    de `nxPrefGuardar`, solo manda `numero/cliente_id/cliente_nombre/items/total/created_by_name`),
+    agregarlo requiere migración; (3) botón "+ Agregar producto" junto al buscador — **este SÍ se descartó
+    activamente** (no solo "pendiente"): se había quitado a propósito en v48.41 por redundante con el
+    buscador, reponerlo sin que el dueño lo pida de nuevo habría revertido esa decisión en silencio.
+  - **Lo construido (100% real, cero datos inventados):** `facCliInfoHTML(c)` (compartida por Vender y
+    Factura/Prefactura, `parches.js` junto a `saldoCli`) se amplió con una tarjeta de cliente
+    (`.pf2clicard`): avatar con inicial, nombre, badge Activo/Inactivo (`c.activo!==false`), RNC o cédula
+    según `tipo_persona`, teléfono, correo, y botón **"Ver perfil"** que llama a `window.nxCliente360(c.id)`
+    — la función de la Fase 3 del Motor de Documentos, reusada tal cual, no una vista nueva. El balance/
+    crédito disponible/última compra que ya existía (Fase 1 de NEXUS PRO 2.5, v48.78) se quedó exactamente
+    igual, ahora dentro de la tarjeta. Badge **"BORRADOR · NO FISCAL"** junto al título, solo en modo
+    Prefactura (`pre===true`) — aclara al cajero que ese documento no es fiscal, sin inventar ningún dato
+    (es un texto fijo, no viene de la base). Contador **"N artículos · M unidades"** debajo de la tabla
+    (`pintarFactura()`), calculado de `_cart.length`/`t.items` (`totales()`, ya existía ese campo).
+  - **Verificado con datos de prueba realistas** (cliente jurídico completo: RNC, teléfono, correo, límite
+    de crédito, con balance y crédito disponible reales) cargados en un navegador: la tarjeta muestra todos
+    los campos correctos, "Ver perfil" llama a la función real con el id correcto, el badge de Prefactura
+    solo aparece en esa pestaña (no en Factura), sin desbordes en 390px ni 1000px, 0 errores de JS. `node
+    --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+    válido.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
