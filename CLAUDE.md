@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.93** (ver `index.html` y `version.json`).
+> Versión actual: **48.94** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3379,6 +3379,58 @@ comparar cada pieza del mockup contra el código/esquema real ANTES de construir
   y una línea con descuento e ITBIS) — sin desbordes en 375-414px ni 1000px, 0 errores de JS. `node
   --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
   válido.
+
+### POS · Factura/Prefactura — reacomodo y compactado, 6 pedidos rápidos del dueño (22-jul-2026, v48.94)
+El dueño dio una lista rápida de 6 ajustes de layout mirando la pantalla en vivo (texto suelto, sin
+numerar bien — se interpretó cada uno contra el código real y se ejecutó todo junto por ser cambios
+pequeños y muy relacionados entre sí, todos sobre `renderFactura()`/`pintarFactura()`).
+- **(1) Lupa en Cliente:** el botón `#facCliBtn` (antes solo nombre+flecha) ahora tiene un ícono de lupa
+  a la izquierda del nombre (dentro de un `<span>` envolvente, para no romper el `justify-content:
+  space-between` de 2 hijos que ya tenía `.pf2clibtn` — 3 hijos directos habría descuadrado el layout).
+- **(2) Al lado de esa lupa, el nombre/número de la Prefactura:** la lupa de "Ver prefacturas guardadas"
+  (`nxPrefLista()`) que se había puesto junto a "Tipo de comprobante" en v48.92 SE MOVIÓ al lado del
+  campo Cliente, con el número actual (`peekPref()`, ej. "PF-00002") visible junto a ella — mismo patrón
+  visual que ya usaba `numField` en modo Prefactura. Gateado a `!pre` (NO se duplica cuando ya se está en
+  Prefactura, porque ahí `numField` — el primer campo — ya muestra exactamente lo mismo).
+- **(3) "Tipo de comprobante" más abajo:** salió del grid 2x2 de `.nx-inv-info` (que ahora solo tiene 3
+  campos: número, Cliente, Fecha — el grid de 2 columnas deja la 2da columna de la fila 2 vacía, sin
+  problema) y pasó a ser su propio campo de ancho completo, debajo de la tarjeta del cliente
+  (`#facCliInfoWrap`) — genuinamente más abajo en la pantalla, no solo una columna distinta en la misma
+  fila. Sigue siendo el `<select id="facNCFSel">` compacto de v48.92, solo cambió su posición.
+- **(4) Quitados los botones de categoría:** la fila `.nx-inv-tabs` ("Todos"/categorías/"Servicio")
+  desapareció por completo — el buscador de artículos ya encuentra por nombre/código sin necesitar
+  filtro de categoría aparte. **Limpieza de dead code correspondiente:** `window.nxFacCat` (la función
+  que pintaba esas pastillas y filtraba `_facSug` por categoría) y la variable `_facCatSel` se borraron
+  — confirmado con grep que no los usaba nada más en el archivo — junto con las reglas CSS `.nx-inv-tabs`/
+  `.nx-inv-tab`/`.nx-inv-tab.on` (regla #1 del reglamento: depurar).
+- **(5)+(7) Buscador de artículos → lupa compacta:** el `<input id="facBuscar">` (antes siempre visible,
+  ocupando una fila completa) ahora arranca como un solo botón-lupa (`#facSearchBox`, mismo patrón visual
+  que ya usan "No. Factura"/"Tipo de comprobante"/Cliente). Al tocarlo, `window.nxFacSearchOpen()`
+  reemplaza el contenido del contenedor por el MISMO `<input id="facBuscar">`/`onclick`/`oninput` de
+  siempre (cero cambios en la lógica de búsqueda, `nxFacBuscar`/`nxFacBuscarEnter` intactos) y lo enfoca.
+  `window.nxFacSearchMaybeClose()` (en el `onblur` del input) espera 200ms — igual que el patrón ya usado
+  en otros buscadores de la sesión — y solo colapsa de vuelta a la lupa si el campo quedó vacío; ese
+  retraso es lo que deja que un clic en una sugerencia de `#facSug` termine de dispararse ANTES de que el
+  campo se destruya (si no, el clic nunca llegaría a `nxFacSugSel`). El flujo de escaneo rápido
+  (`nxFacAdd` ya hacía `inp.value='';inp.focus()` tras agregar un artículo) sigue intacto — el campo
+  nunca se colapsa a mitad de una sesión de escaneo porque nunca pierde el foco de verdad.
+- **(6) "Guardar Prefactura" solo en Prefactura:** se quitó el botón `Guardar Prefactura` del panel
+  "Opciones adicionales" de **Factura** (antes se mostraba ahí, oculto solo cuando ya se estaba en
+  Prefactura, desde v48.29) — decisión de simplificación: guardar-como-prefactura ahora es una acción
+  exclusiva de la propia pantalla de Prefactura (su botón grande "Guardar · $total", que ya existía) en
+  vez de un atajo disperso dentro de las opciones de Factura. `nxPrefGuardar` (la función) no se tocó —
+  sigue siendo la misma, solo se redujo desde dónde se puede llamar.
+- **Nada de esto tocó lógica de negocio:** ni cálculo de precios, ni inventario, ni NCF, ni el flujo de
+  cobro — todo cambio fue de posición/visibilidad de controles ya existentes o la forma en que se
+  muestra un control (compacto vs siempre visible).
+- Verificado con Playwright, código real extraído del archivo (no una reconstrucción), 12 aserciones:
+  la lupa de Cliente existe, la lupa+número de Prefactura aparece junto a Cliente en Factura y llama a
+  `nxPrefLista()`, en Prefactura NO se duplica (porque `numField` ya la muestra), "Tipo de comprobante"
+  quedó fuera del grid y aparece justo después de la tarjeta del cliente, no quedan botones de
+  categoría, el buscador arranca colapsado y se expande/filtra/vuelve a colapsar correctamente, y
+  "Guardar Prefactura" ya no aparece en el panel de Factura — sin desbordes en 375-1100px, 0 errores de
+  JS. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
