@@ -17471,39 +17471,70 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const margenHTML = margen == null ? '<span style="color:var(--pf-txt3)">—</span>' : `<span style="color:${margen < 0 ? '#dc2626' : (margen < 15 ? '#ea580c' : '#16a34a')};font-weight:700">${margen.toFixed(0)}%</span>`;
       return `<tr${cur ? ' style="background:var(--pf-blue-l)"' : ''}>
         <td><span class="nivbadge${cur ? ' cur' : ''}">${i + 1}</span> <b>${esc(n.nombre)}</b>${n.es_default ? ' <span style="color:var(--pf-txt3);font-size:9.5px">· por defecto</span>' : ''}${nuevo ? ' <span class="nivnuevobdg">NUEVO</span>' : ''}</td>
-        <td>${r.precio_contado ? fmt(r.precio_contado) : '<span style="color:var(--pf-txt3)">—</span>'}</td>
-        <td>${r.precio_credito ? fmt(r.precio_credito) : '<span style="color:var(--pf-txt3)">—</span>'}</td>
+        <td><input value="${r.precio_contado != null ? Math.round(r.precio_contado) : ''}" id="nxPfNivC_${n.id}" placeholder="0" data-nx-money inputmode="numeric" onchange="window.nxPfNivelPrecioRowInput('${prodId}','${n.id}')"></td>
+        <td><input value="${r.precio_credito != null ? Math.round(r.precio_credito) : ''}" id="nxPfNivR_${n.id}" placeholder="0" data-nx-money inputmode="numeric" onchange="window.nxPfNivelPrecioRowInput('${prodId}','${n.id}')"></td>
+        <td><input value="${r.precio_minimo != null ? Math.round(r.precio_minimo) : ''}" id="nxPfNivMinRow_${n.id}" placeholder="0" data-nx-money inputmode="numeric" onchange="window.nxPfNivelPrecioRowInput('${prodId}','${n.id}')"></td>
         <td>${margenHTML}</td>
         <td style="white-space:nowrap">
-          <button class="nxPf ab g3" style="height:30px;width:30px;padding:0" onclick="const s=document.getElementById('ppNivelSel');if(s){s.value='${n.id}';window.nxPfNivelCambio('${prodId}');}" title="Editar precios de este nivel" aria-label="Editar precios de este nivel"><i class="ti ti-pencil"></i></button>
+          <button class="nxPf ab g3" style="height:30px;width:30px;padding:0" onclick="const s=document.getElementById('ppNivelSel');if(s){s.value='${n.id}';window.nxPfNivelCambio('${prodId}');}" title="Editar reglas de este nivel" aria-label="Editar reglas de este nivel"><i class="ti ti-pencil"></i></button>
           ${nuevo ? `<button class="nxPf ab g4" style="height:30px;width:30px;padding:0" onclick="window.nxPfNivelEliminarNuevo('${n.id}','${prodId}')" title="Quitar este nivel nuevo" aria-label="Quitar este nivel nuevo"><i class="ti ti-trash"></i></button>` : ''}
         </td></tr>`;
-    }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--pf-txt3);padding:14px">${q ? 'Sin niveles que coincidan.' : 'Sin niveles todavía — crea el primero con "+ Crear nivel de precio".'}</td></tr>`;
+    }).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--pf-txt3);padding:14px">${q ? 'Sin niveles que coincidan.' : 'Sin niveles todavía — crea el primero con "+ Crear nivel de precio".'}</td></tr>`;
+    scanMoney(body);
   };
-  // Anota (en el borrador, NO en Supabase todavía) los precios/reglas del nivel indicado — única
-  // fuente real: los campos del panel "Reglas de Venta" cuando ese nivel es el seleccionado en
-  // ppNivelSel; si se llama para un nivel que NO es el seleccionado, conserva lo que ya tenía
-  // (evita pisar con datos de otro nivel que están en pantalla).
+  // Fusiona (en el borrador, NO en Supabase todavía) un cambio parcial sobre los datos de un nivel
+  // — nunca pisa el objeto completo, solo los campos que trae `patch`, para que la tabla de Niveles
+  // (Contado/Crédito/Mínimo, por fila) y la tarjeta "Reglas de venta" (Especial/Cantidad mínima/
+  // Crédito %/Crédito $/Precio anterior/% Descuento, del nivel seleccionado) puedan anotar cada una
+  // lo suyo sin borrar lo que anotó la otra.
+  function nxPfNivelPatch(prodId, nivelId, patch) {
+    const prev = pfPrecioNivelDe(prodId, nivelId);
+    _pfDraft.precios[nivelId] = Object.assign({}, prev, patch);
+    nxPfResumen();
+  }
+  // Contado/Crédito/Mínimo se editan DIRECTO en la fila de la tabla "Niveles de precio" (single
+  // source of truth, sin duplicar el campo en otro lugar) — al cambiar, si el nivel editado es el
+  // que está seleccionado en el dropdown, refresca también "Reglas de venta"/Resumen; si además es
+  // el nivel POR DEFECTO, sincroniza el precio principal (oculto) que usa el resto del sistema.
+  window.nxPfNivelPrecioRowInput = function (prodId, nivelId) {
+    const g = id => { const el = document.getElementById(id); return el ? parseMoney(el.value) : null; };
+    nxPfNivelPatch(prodId, nivelId, {
+      precio_contado: g('nxPfNivC_' + nivelId) || 0,
+      precio_credito: g('nxPfNivR_' + nivelId),
+      precio_minimo: g('nxPfNivMinRow_' + nivelId)
+    });
+    window.nxPfNivelesTabla(prodId);
+    nxPfSyncPrecioPrincipal(prodId);
+  };
+  // El "Precio principal" (pos_productos.precio) ya no se escribe a mano — se deriva SIEMPRE del
+  // Contado del nivel por defecto (o el primero si no hay uno marcado por defecto), para que el
+  // resto del sistema (Vender sin cliente/nivel elegido, Reportes, precioCli() de respaldo) siga
+  // teniendo un precio de lista real sin pedirle al usuario que lo escriba dos veces.
+  function nxPfSyncPrecioPrincipal(prodId) {
+    const def = pfNivelesTodos().find(n => n.es_default) || pfNivelesTodos()[0];
+    const el = document.getElementById('ppPre'); if (!el || !def) { nxPfMargenCalc(); return; }
+    const r = pfPrecioNivelDe(prodId, def.id);
+    if (r.precio_contado) el.value = Math.round(r.precio_contado);
+    nxPfMargenCalc();
+  }
+  // Anota (en el borrador) las reglas de venta del nivel indicado — Precio Especial/Cantidad
+  // mínima/Crédito %/Crédito $/Precio anterior/% Descuento — SOLO si ese nivel es el que está
+  // seleccionado ahora mismo en el dropdown (los campos en pantalla son de ese nivel). Contado/
+  // Crédito/Mínimo NO se tocan aquí — esos se editan en la tabla (nxPfNivelPrecioRowInput).
   window.nxPfNivelPrecioInput = function (prodId, nivelId) {
     const g = id => { const el = document.getElementById(id); return el ? parseMoney(el.value) : null; };
     const gN = (id, def) => { const el = document.getElementById(id); if (!el || el.value === '') return def; return Number(el.value); };
-    const prev = pfPrecioNivelDe(prodId, nivelId);
     const sel = document.getElementById('ppNivelSel');
     const esElSeleccionado = sel && String(sel.value) === String(nivelId);
     if (!esElSeleccionado) return; // nada que anotar: los campos en pantalla son de otro nivel
-    const body = {
-      precio_contado: g('ppNivCont') || 0,
-      precio_credito: g('ppNivCred'),
+    nxPfNivelPatch(prodId, nivelId, {
       precio_especial: g('ppNivEsp'),
-      precio_minimo: g('ppNivMin'),
       cantidad_minima: gN('ppNivCantMin', 1),
       credito_pct: gN('ppNivCredPct', null),
       credito_monto: g('ppNivCredMonto'),
       precio_anterior: g('ppNivAnterior'),
       descuento_pct: gN('ppNivDescPct', null)
-    };
-    _pfDraft.precios[nivelId] = body;
-    nxPfResumen();
+    });
   };
   // Abre el panel compacto "+ Crear nivel de precio" — el nivel NO se crea en Supabase aquí, se
   // guarda en el borrador y aparece marcado NUEVO en la tabla; se crea de verdad al Guardar el artículo.
@@ -17570,9 +17601,6 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const setM = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v != null && v !== '') ? Math.round(Number(v)) : ''; };
     const setN = (id, v, def) => { const el = document.getElementById(id); if (el) el.value = (v != null && v !== '') ? Number(v) : (def != null ? def : ''); };
     setM('ppNivEsp', r.precio_especial);
-    setM('ppNivCont', r.precio_contado);
-    setM('ppNivCred', r.precio_credito);
-    setM('ppNivMin', r.precio_minimo);
     setN('ppNivCantMin', r.cantidad_minima, 1);
     setN('ppNivCredPct', r.credito_pct, '');
     setM('ppNivCredMonto', r.credito_monto);
@@ -17676,6 +17704,20 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             </div>
 
             <div class="nxPfProdPanel" data-tab="precios">
+              <input type="hidden" id="ppPre" value="${e.precio ? Math.round(e.precio) : ''}">
+              <input type="hidden" id="ppPreMay" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}">
+
+              <div class="card" style="margin-bottom:12px">
+                <h4><span class="bdg blue"><i class="ti ti-layers-linked"></i></span> Niveles de precio</h4>
+                <div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" data-prod="${prodId}" onchange="window.nxPfNivelCambio('${prodId}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + prodId + "',{q:this.value})" })}</div>
+                <div style="overflow-x:auto"><table class="tbl">
+                  <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>🔒 Mínimo</th><th>Margen</th><th></th></tr></thead>
+                  <tbody id="nxPfNivBody"></tbody>
+                </table></div>
+                <button class="btn2" type="button" style="margin-top:10px" onclick="window.nxPfNivelModalAbrir('${prodId}')"><i class="ti ti-plus"></i> Crear nivel de precio</button>
+              </div>
+
               <div class="card" style="margin-bottom:12px">
                 <h4><span class="bdg blue"><i class="ti ti-chart-line"></i></span> Resumen de rentabilidad</h4>
                 <div class="rentbox">
@@ -17684,34 +17726,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
                   <div><span class="lb">Ganancia</span><b id="nxPfRentGan">${fmt((e.precio || 0) - (e.costo || 0))}</b></div>
                   <div><span class="lb">Margen</span><b id="nxPfRentMargen">—</b></div>
                 </div>
-              </div>
-
-              <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg green"><i class="ti ti-currency-dollar"></i></span> Precio principal</h4>
-                <div class="preciosFlat" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-                  <div class="fld"><label style="color:var(--pf-txt)">Precio Lista</label><div class="inw"><span class="cur">$</span><input id="ppPre" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio ? Math.round(e.precio) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                  <div class="fld"><label>Precio 2 (mayor, respaldo)</label><div class="inw"><span class="cur">$</span><input id="ppPreMay" class="no-upper" data-nx-money inputmode="numeric" value="${e.precio_mayor ? Math.round(e.precio_mayor) : ''}" placeholder="= precio lista" style="padding-left:24px"></div></div>
-                </div>
-              </div>
-
-              <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg blue"><i class="ti ti-layers-linked"></i></span> Niveles de precio</h4>
-                <div class="fld" style="margin-bottom:10px"><label>Nivel de precio a editar</label><div class="inw"><i class="ti ti-layers-linked"></i><select id="ppNivelSel" data-prod="${prodId}" onchange="window.nxPfNivelCambio('${prodId}')">${nxPfNivelSelOpts(nivelInicial ? nivelInicial.id : '')}</select><i class="ti ti-chevron-down chev"></i></div></div>
-                <div class="nivsearch">${posBuscador({ id: 'nxPfNivQ', placeholder: 'Buscar nivel...', oninput: "window.nxPfNivelesTabla('" + prodId + "',{q:this.value})" })}</div>
-                <div style="overflow-x:auto"><table class="tbl">
-                  <thead><tr><th>Nivel</th><th>Contado</th><th>Crédito</th><th>Margen</th><th></th></tr></thead>
-                  <tbody id="nxPfNivBody"></tbody>
-                </table></div>
-                <button class="btn2" type="button" style="margin-top:10px" onclick="window.nxPfNivelModalAbrir('${prodId}')"><i class="ti ti-plus"></i> Crear nivel de precio</button>
+                <div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> El precio principal se toma del nivel por defecto en la tabla de arriba — no se escribe aparte.</div>
               </div>
 
               <div class="card">
                 <h4><span class="bdg orange"><i class="ti ti-scale"></i></span> Reglas de venta <span style="font-weight:600;color:var(--pf-txt3);font-size:10.5px">— por el nivel seleccionado arriba</span></h4>
                 <div class="g2">
                   <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
-                  <div class="fld"><label style="color:var(--pf-blue-d)">Precio Contado ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCont" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_contado != null ? Math.round(nivRowInicial.precio_contado) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
-                  <div class="fld"><label style="color:var(--pf-purple)">Precio Crédito ($)</label><div class="inw"><span class="cur">$</span><input id="ppNivCred" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_credito != null ? Math.round(nivRowInicial.precio_credito) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
-                  <div class="reglas"><div class="ic"><i class="ti ti-shield-lock"></i></div><div><label>🔒 Precio Mínimo (nivel)</label><input id="ppNivMin" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_minimo != null ? Math.round(nivRowInicial.precio_minimo) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Cantidad Mínima</label><input id="ppNivCantMin" inputmode="numeric" value="${nivRowInicial.cantidad_minima != null ? Number(nivRowInicial.cantidad_minima) : 1}" placeholder="1" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Crédito (%)</label><input id="ppNivCredPct" inputmode="decimal" value="${nivRowInicial.credito_pct != null ? Number(nivRowInicial.credito_pct) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-currency-dollar"></i></div><div><label>Crédito ($)</label><input id="ppNivCredMonto" data-nx-money inputmode="numeric" value="${nivRowInicial.credito_monto != null ? Math.round(nivRowInicial.credito_monto) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
@@ -17818,11 +17839,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     document.body.appendChild(ov);
     setTimeout(() => { try { window.nxComboPaint(); } catch (e) {} }, 30);
     scanMoney(ov);
-    ['ppNom', 'ppPre', 'ppPreMay', 'ppNivEsp', 'ppNivCont', 'ppNivCred'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfResumen); });
-    ['ppPre', 'ppCos'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfMargenCalc); });
-    nxPfMargenCalc();
+    ['ppNom', 'ppNivEsp'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfResumen); });
+    ['ppCos'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', nxPfMargenCalc); });
     window.nxPfProvEntrega();
     window.nxPfNivelesTabla(prodId);
+    nxPfSyncPrecioPrincipal(prodId);
     if (!_niveles.length) nxNivelesInit().then(() => { if (document.getElementById('nxPosProd')) abrirProd(p, true); });
     if (p) window.nxPfUltimoCosto(p.id);
   }
@@ -17986,8 +18007,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const nomEl = document.getElementById('nxPfResNom'); if (nomEl) nomEl.textContent = val('ppNom') || 'Nuevo artículo';
     const preEl = document.getElementById('nxPfResPre'); if (preEl) preEl.textContent = fmt(parseMoney(val('ppPre')));
     const espEl = document.getElementById('nxPfResEsp'); if (espEl) espEl.textContent = fmt(parseMoney(val('ppNivEsp')));
-    const contEl = document.getElementById('nxPfResCont'); if (contEl) contEl.textContent = fmt(parseMoney(val('ppNivCont')));
-    const credEl = document.getElementById('nxPfResCred'); if (credEl) credEl.textContent = fmt(parseMoney(val('ppNivCred')));
+    const selEl = document.getElementById('ppNivelSel');
+    const prodId = selEl ? (selEl.getAttribute('data-prod') || '') : '';
+    const nivelId = selEl ? selEl.value : '';
+    const r = nivelId ? pfPrecioNivelDe(prodId, nivelId) : {};
+    const contEl = document.getElementById('nxPfResCont'); if (contEl) contEl.textContent = fmt(r.precio_contado || 0);
+    const credEl = document.getElementById('nxPfResCred'); if (credEl) credEl.textContent = fmt(r.precio_credito || 0);
   }
   function nxPfLeerProd() {
     const precio = parseMoney(val('ppPre'));
