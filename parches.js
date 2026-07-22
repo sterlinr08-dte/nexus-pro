@@ -17377,8 +17377,38 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .ab:disabled{opacity:.55;cursor:default}
 .nxPf .nxSpin{display:inline-block;animation:nxPfSpin .8s linear infinite}
 @keyframes nxPfSpin{to{transform:rotate(360deg)}}
+.nxPf .card h4{text-transform:uppercase;letter-spacing:.3px}
+.nxPf .headbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+.nxPf .headbtn:hover{background:var(--pf-bg)}
+.nxPf .headbtn.sq{width:36px;padding:0;justify-content:center}
+.nxPf .headwrap{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.nxPf .nxPfMenuPop{display:none;position:fixed;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:13px;box-shadow:var(--pf-shadow);padding:6px;width:190px;z-index:9999}
+.nxPf .nxPfMenuPop.open{display:block}
+.nxPf .nxPfMenuPop button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer;font-family:inherit}
+.nxPf .nxPfMenuPop button:hover{background:var(--pf-bg)}
+.nxPf .nxPfMenuPop button.danger{color:var(--pf-red)}
+.nxPf .infobasica{display:flex;gap:16px;flex-wrap:wrap}
+.nxPf .infobasica>.cols{flex:1 1 220px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.nxPf .imgpanel{flex:0 0 auto;width:100%;max-width:190px;display:flex;flex-direction:column;gap:8px}
+.nxPf .imgbox{position:relative;width:100%;aspect-ratio:1/1;border-radius:13px;border:1.5px dashed var(--pf-line);background:var(--pf-bg);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.nxPf .imgbox img{width:100%;height:100%;object-fit:cover}
+.nxPf .imgbox .ph{font-size:30px;color:var(--pf-txt3)}
+.nxPf .imgbox .imgx{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(15,23,42,.55);color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px}
+.nxPf .savewrap{display:flex;align-items:stretch;border-radius:12px;overflow:visible}
+.nxPf .savewrap .ab{border-radius:0}
+.nxPf .savewrap .ab:first-child{border-top-left-radius:12px;border-bottom-left-radius:12px}
+.nxPf .savechev{width:34px;padding:0;border-top-right-radius:12px;border-bottom-right-radius:12px;border-left:1px solid rgba(255,255,255,.25)}
+.nxPf .savemenu{display:none;position:fixed;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:13px;box-shadow:var(--pf-shadow);padding:6px;width:190px;z-index:9999}
+.nxPf .savemenu.open{display:block}
+.nxPf .savemenu button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer;font-family:inherit}
+.nxPf .savemenu button:hover{background:var(--pf-bg)}
+.nxPf .footbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;flex:1}
+.nxPf .foothint{font-size:10.5px;color:var(--pf-txt3);font-weight:700;display:flex;align-items:center;gap:5px;flex:1;justify-content:center;min-width:120px}
+.nxPf textarea.txa{width:100%;min-height:70px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-panel);padding:9px 11px;font:inherit;font-size:12.5px;color:var(--pf-txt);outline:0;resize:vertical;box-sizing:border-box}
+.nxPf textarea.txa:focus{border-color:var(--pf-blue);box-shadow:0 0 0 3px var(--pf-blue-l)}
 `;
     document.head.appendChild(st);
+    try { document.addEventListener('click', function () { document.querySelectorAll('.nxPfMenuPop.open,.nxPf .savemenu.open').forEach(function (m) { m.classList.remove('open'); }); }); } catch (e) {}
   }
 
   // Siembra los niveles de precio la primera vez que se usan en la organizacion (patron
@@ -17573,7 +17603,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div class="head" style="align-items:flex-start;flex-wrap:wrap;row-gap:10px">
           <button class="nxBack" type="button" onclick="document.getElementById('nxPosProd').remove()" title="Volver" aria-label="Volver" style="position:static;flex:0 0 auto;width:36px;height:36px;padding:0;border-radius:50%;justify-content:center"><i class="ti ti-arrow-left"></i></button>
           <div style="flex:1;min-width:180px">
-            <h3 style="margin:0">${p ? 'Editar artículo' : 'Nuevo artículo'}</h3>
+            <h3 style="margin:0;text-transform:uppercase;letter-spacing:.3px;font-size:16px">${p ? 'Editar artículo' : 'Nuevo artículo'}</h3>
             <div style="font-size:11px;color:var(--pf-txt3);margin-top:1px">${p ? esc(e.nombre || '') : 'Crea un artículo nuevo en el catálogo'}</div>
           </div>
           ${p ? `<div class="topinfo" style="margin:0;flex:0 1 auto">
@@ -17581,6 +17611,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             <div class="ti-item"><span>ESTADO</span><span class="estado-badge">${e.activo === false ? 'INACTIVO' : 'ACTIVO'}</span></div>
             <div class="ti-item"><span>ACTUALIZADO</span><b style="font-size:11px;font-weight:700;color:var(--pf-txt2)">${fechaDMY(new Date())}</b></div>
           </div>` : ''}
+          <div class="headwrap">
+            <button class="headbtn" type="button" onclick="window.nxPfVistaPrevia()"><i class="ti ti-eye"></i> Vista previa</button>
+            <button class="headbtn sq" type="button" onclick="event.stopPropagation();window.nxPfMenuToggle()" title="Más opciones" aria-label="Más opciones"><i class="ti ti-dots-vertical"></i></button>
+            <div class="nxPfMenuPop" id="nxPfHeadMenu">
+              <button type="button" onclick="window.nxPfImprimirEtiqueta()"><i class="ti ti-printer"></i> Imprimir etiqueta</button>
+              ${p ? `<button type="button" class="danger" onclick="document.getElementById('nxPosProd').remove();window.nxPosDelProd('${prodId}')"><i class="ti ti-trash"></i> Eliminar artículo</button>` : ''}
+            </div>
+          </div>
         </div>
         <div class="body">
           <div>
@@ -17593,34 +17631,47 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             </div>
 
             <div class="nxPfProdPanel on" data-tab="info">
-              <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg blue"><i class="ti ti-id-badge-2"></i></span> Identificación</h4>
-                <div class="g2">
-                  <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
-                  <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
-                  <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Mismo código con el que se creó"></div></div>
-                  <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
-                  <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
-                  <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-package"></i><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
+              <div class="g2" style="margin-bottom:12px">
+                <div class="card">
+                  <h4><span class="bdg green"><i class="ti ti-info-circle"></i></span> Información básica</h4>
+                  <div class="infobasica">
+                    <div class="cols">
+                      <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
+                      <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                      <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Mismo código con el que se creó"></div></div>
+                      <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
+                      <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
+                      <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-package"></i><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
+                    </div>
+                    <div class="imgpanel">
+                      <label style="font-size:10px;font-weight:700;color:var(--pf-txt3);text-transform:uppercase;letter-spacing:.3px">Imagen</label>
+                      <div class="imgbox" id="ppImgBox">${e.imagen ? `<img id="ppImgPrev" src="${esc(e.imagen)}" onerror="this.style.display='none'"><button type="button" class="imgx" title="Quitar imagen" aria-label="Quitar imagen" onclick="const i=document.getElementById('ppImg');i.value='';window.nxPfImgSync();"><i class="ti ti-x"></i></button>` : `<i class="ti ${e.tipo === 'servicio' ? 'ti-tool' : 'ti-box'} ph" id="ppImgPh"></i>`}</div>
+                      <div class="fld"><label>URL de la imagen</label><div class="inw"><i class="ti ti-link"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..." oninput="window.nxPfImgSync()"></div></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div class="card" style="margin-bottom:12px">
-                <h4><span class="bdg orange"><i class="ti ti-receipt-2"></i></span> Compra y fiscalidad</h4>
-                <div class="g2">
-                  <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                  ${puedeVerMin() ? `<div class="fld"><label>🔒 Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
-                  <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
-                  <div class="fld"><label>¿Lleva ITBIS (18%)?</label><div class="inw"><i class="ti ti-percentage"></i><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
+                <div class="card">
+                  <h4><span class="bdg purple"><i class="ti ti-receipt-2"></i></span> Compra y fiscalidad</h4>
+                  <div class="cols" style="display:flex;flex-direction:column;gap:12px">
+                    <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                    ${puedeVerMin() ? `<div class="fld"><label>🔒 Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
+                    <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
+                    <div class="fld"><label>¿Lleva ITBIS (18%)?</label><div class="inw"><i class="ti ti-percentage"></i><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
+                    ${!p ? `<div class="fld"><label>Stock inicial</label><div class="inw"><i class="ti ti-stack-2"></i><input id="ppStk" inputmode="numeric" value="0" placeholder="0"></div><div style="font-size:10px;color:var(--pf-txt3)">Cantidad inicial disponible en inventario.</div></div>` : ''}
+                  </div>
+                  ${!_proveedores.length ? `<div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> Aún no tienes proveedores creados — agrégalos en la pestaña Compras del POS.</div>` : ''}
+                  <div id="nxPfProvEntregaBox" style="margin-top:8px"></div>
+                  ${p ? `<div style="margin-top:10px"><label style="display:block;font-size:11px;font-weight:700;color:var(--pf-txt3);margin-bottom:6px">Último costo de compra</label><div id="nxPfUltCosto"><div class="soon"><i class="ti ti-loader-2"></i> Consultando…</div></div></div>` : ''}
                 </div>
-                ${!_proveedores.length ? `<div class="soon"><i class="ti ti-info-circle"></i> Aún no tienes proveedores creados — agrégalos en la pestaña Compras del POS.</div>` : ''}
-                <div id="nxPfProvEntregaBox" style="margin-top:8px"></div>
-                ${p ? `<div style="margin-top:10px"><label style="display:block;font-size:11px;font-weight:700;color:var(--pf-txt3);margin-bottom:6px">Último costo de compra</label><div id="nxPfUltCosto"><div class="soon"><i class="ti ti-loader-2"></i> Consultando…</div></div></div>` : ''}
               </div>
 
               <div class="card">
-                <h4><span class="bdg purple"><i class="ti ti-photo"></i></span> Multimedia</h4>
-                <div class="fld"><label>Imagen (URL opcional)</label><div class="inw"><i class="ti ti-photo"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..."></div></div>
+                <h4><span class="bdg orange"><i class="ti ti-file-description"></i></span> Información adicional</h4>
+                <div class="g2">
+                  <div class="fld"><label>Descripción (opcional)</label><textarea id="ppDesc" class="txa no-upper" placeholder="Detalles del producto para el catálogo o la ficha.">${esc(e.descripcion || '')}</textarea></div>
+                  <div class="fld"><label>Notas internas (opcional)</label><textarea id="ppNotas" class="txa no-upper" placeholder="Notas para el equipo, no se muestran al cliente.">${esc(e.notas || '')}</textarea></div>
+                </div>
               </div>
             </div>
 
@@ -17675,11 +17726,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
               <div class="card" style="margin-bottom:12px">
                 <h4><span class="bdg blue"><i class="ti ti-adjustments"></i></span> Inventario y stock</h4>
                 <div class="g2">
-                  <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div></div>
+                  ${p ? `<div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Stock</label><input id="ppStk" inputmode="numeric" value="${e.stock != null ? Number(e.stock) : '0'}" placeholder="0"></div></div>` : ''}
                   <div class="reglas"><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><label>Stock mínimo (alerta)</label><input id="ppMin" inputmode="numeric" value="${e.stock_min != null ? Number(e.stock_min) : '0'}" placeholder="0"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-shield-check"></i></div><div><label>Garantía (días)</label><input id="ppGar" inputmode="numeric" value="${e.garantia_dias != null ? Number(e.garantia_dias) : '0'}" placeholder="0"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-device-mobile"></i></div><div><label>¿Maneja serial / IMEI?</label><select id="ppSer"><option value="0"${!e.serial ? ' selected' : ''}>No</option><option value="1"${e.serial ? ' selected' : ''}>Sí</option></select></div></div>
                 </div>
+                ${!p ? `<div class="soon" style="margin-top:8px"><i class="ti ti-info-circle"></i> El stock inicial se define en la pestaña Información al crear el artículo.</div>` : ''}
               </div>
 
               <div class="card" style="margin-bottom:12px">
@@ -17749,11 +17801,18 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           </div>
 
         </div>
-        <div class="actions">
-          <button class="ab g1" type="button" onclick="window.nxPosGuardarProd('${prodId}')"><i class="ti ti-check"></i> Guardar</button>
-          <button class="ab g2" type="button" onclick="window.nxPfGuardarYNuevo('${prodId}')"><i class="ti ti-plus"></i> Guardar y Nuevo</button>
-          <button class="ab g3" type="button" onclick="window.nxPfImprimirEtiqueta()"><i class="ti ti-printer"></i> Imprimir Etiqueta</button>
-          <button class="ab g4" type="button" onclick="document.getElementById('nxPosProd').remove()"><i class="ti ti-x"></i> Cancelar</button>
+        <div class="actions" style="display:block">
+          <div class="footbar">
+            <button class="ab" type="button" style="background:var(--pf-panel);color:var(--pf-txt2);border:1.5px solid var(--pf-line);flex:0 0 auto" onclick="document.getElementById('nxPosProd').remove()"><i class="ti ti-x"></i> Cancelar</button>
+            <div class="foothint"><i class="ti ti-info-circle"></i> Los niveles nuevos se crean al Guardar</div>
+            <div class="savewrap" style="flex:0 0 auto">
+              <button class="ab g1" type="button" onclick="window.nxPosGuardarProd('${prodId}')"><i class="ti ti-device-floppy"></i> Guardar artículo</button>
+              <button class="ab g1 savechev" type="button" onclick="event.stopPropagation();window.nxPfSaveMenuToggle()" title="Más opciones de guardado" aria-label="Más opciones de guardado"><i class="ti ti-chevron-down"></i></button>
+              <div class="savemenu" id="nxPfSaveMenu">
+                <button type="button" onclick="window.nxPfGuardarYNuevo('${prodId}')"><i class="ti ti-plus"></i> Guardar y Nuevo</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>`;
     document.body.appendChild(ov);
@@ -17767,6 +17826,92 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (!_niveles.length) nxNivelesInit().then(() => { if (document.getElementById('nxPosProd')) abrirProd(p, true); });
     if (p) window.nxPfUltimoCosto(p.id);
   }
+  // Posiciona un popup fijo (position:fixed) pegado a su botón disparador, sin desbordar la
+  // pantalla — evita el bug de menús que se salen del viewport en móvil angosto (ya documentado
+  // varias veces en este archivo: un contenedor position:relative angosto no sirve de referencia
+  // fiable para un popup ancho). openUp=true lo abre hacia ARRIBA del botón (para el que vive en
+  // el pie de página), si no, hacia ABAJO (para el del encabezado).
+  function nxPfPopPosicionar(pop, btn, openUp) {
+    if (!pop || !btn) return;
+    const r = btn.getBoundingClientRect();
+    const w = pop.offsetWidth || 190;
+    const left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+    pop.style.left = left + 'px';
+    if (openUp) { pop.style.bottom = (window.innerHeight - r.top + 6) + 'px'; pop.style.top = 'auto'; }
+    else { pop.style.top = (r.bottom + 6) + 'px'; pop.style.bottom = 'auto'; }
+  }
+  // Menú "..." del encabezado (Imprimir etiqueta / Eliminar artículo) — mismo patrón nxPrMenu de
+  // Préstamos (toggle de clase, cierre global por click-afuera ya registrado en nxPfEnsureCSS).
+  window.nxPfMenuToggle = function () {
+    const pop = document.getElementById('nxPfHeadMenu'); if (!pop) return;
+    document.querySelectorAll('.nxPfMenuPop.open,.nxPf .savemenu.open').forEach(m => { if (m !== pop) m.classList.remove('open'); });
+    pop.classList.toggle('open');
+    if (pop.classList.contains('open')) nxPfPopPosicionar(pop, document.querySelector('.headwrap .headbtn.sq'), false);
+  };
+  // Menú del botón partido "Guardar artículo" (chevron → Guardar y Nuevo).
+  window.nxPfSaveMenuToggle = function () {
+    const pop = document.getElementById('nxPfSaveMenu'); if (!pop) return;
+    document.querySelectorAll('.nxPfMenuPop.open,.nxPf .savemenu.open').forEach(m => { if (m !== pop) m.classList.remove('open'); });
+    pop.classList.toggle('open');
+    if (pop.classList.contains('open')) nxPfPopPosicionar(pop, document.querySelector('.savechev'), true);
+  };
+  // Vista previa REAL — no llama a la red ni guarda nada: solo formatea los valores que ya están
+  // escritos en el formulario ahora mismo, con el mismo criterio de estado de stock que usa el
+  // catálogo real de Vender (serv/out/low), para que el dueño vea cómo se vería el artículo antes
+  // de guardar.
+  window.nxPfVistaPrevia = function () {
+    const nombre = val('ppNom') || 'Nuevo artículo';
+    const cat = (_cats.find(c => String(c.id) === String(val('ppCat'))) || {}).nombre || '';
+    const codigo = val('ppCod') || '';
+    const marca = val('ppMarca') || '';
+    const referencia = val('ppRef') || '';
+    const serv = val('ppTipo') === 'servicio';
+    const precio = parseMoney(val('ppPre'));
+    const costo = parseMoney(val('ppCos'));
+    const stkEl = document.getElementById('ppStk');
+    const stk = serv ? 0 : Number((stkEl ? stkEl.value : 0) || 0);
+    const minEl = document.getElementById('ppMin');
+    const min = serv ? 0 : Number((minEl ? minEl.value : 0) || 0);
+    const out = !serv && stk <= 0, low = !serv && !out && min > 0 && stk <= min;
+    const stkCls = serv ? 'srv' : out ? 'out' : low ? 'low' : 'ok';
+    const stkTxt = serv ? 'Servicio' : out ? 'Agotado' : (low ? 'Bajo: ' : '') + stk + (serv ? '' : ' und');
+    const img = val('ppImg') || '';
+    const margen = (precio > 0) ? (((precio - costo) / precio) * 100) : null;
+    cerrarModal('nxPfVistaPrevia');
+    const ov = document.createElement('div'); ov.id = 'nxPfVistaPrevia'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:380px">
+      <div class="head"><h3 style="margin:0"><i class="ti ti-eye"></i> Vista previa</h3><button class="nxBack" type="button" onclick="document.getElementById('nxPfVistaPrevia').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button></div>
+      <div style="padding:14px">
+        <div class="soon" style="margin-bottom:10px"><i class="ti ti-info-circle"></i> Así se ve con los datos que llevas escritos ahora mismo — todavía no se ha guardado.</div>
+        <div class="card">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div class="imgbox" style="width:64px;height:64px;flex:0 0 auto">${img ? `<img src="${esc(img)}">` : `<i class="ti ${serv ? 'ti-tool' : 'ti-box'}" style="font-size:24px;color:var(--pf-txt3)"></i>`}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:800;font-size:14px">${esc(nombre)}</div>
+              <div style="font-size:11px;color:var(--pf-txt3);margin-top:2px">${esc(referencia || marca)}${cat ? (referencia || marca ? ' · ' : '') + esc(cat) : ''}</div>
+              ${codigo ? `<div style="font-size:10px;color:var(--pf-txt3);margin-top:2px">Código: ${esc(codigo)}</div>` : ''}
+            </div>
+          </div>
+          <hr class="hr">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <span class="vstkb ${stkCls}"><i class="ti ti-circle-filled"></i>${esc(stkTxt)}</span>
+            <b style="font-size:18px;color:var(--pf-blue-d)">${fmt(precio)}</b>
+          </div>
+          ${margen != null ? `<div style="font-size:10.5px;color:var(--pf-txt3);margin-top:8px">Costo ${fmt(costo)} · Margen <b style="color:${margen < 0 ? '#dc2626' : (margen < 15 ? '#ea580c' : '#16a34a')}">${margen.toFixed(0)}%</b></div>` : ''}
+        </div>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  // Repinta el recuadro de vista previa de la imagen (Información básica) mientras se escribe/borra
+  // la URL — sigue siendo el mismo campo de texto de siempre (ppImg), solo se ve dentro de una caja.
+  window.nxPfImgSync = function () {
+    const box = document.getElementById('ppImgBox'); if (!box) return;
+    const url = (document.getElementById('ppImg') || {}).value || '';
+    const serv = val('ppTipo') === 'servicio';
+    box.innerHTML = url ? `<img id="ppImgPrev" src="${esc(url)}" onerror="this.style.display='none'"><button type="button" class="imgx" title="Quitar imagen" aria-label="Quitar imagen" onclick="const i=document.getElementById('ppImg');i.value='';window.nxPfImgSync();"><i class="ti ti-x"></i></button>` : `<i class="ti ${serv ? 'ti-tool' : 'ti-box'} ph" id="ppImgPh"></i>`;
+  };
   window.nxPfProvEntrega = function () {
     const box = document.getElementById('nxPfProvEntregaBox'); if (!box) return;
     const prov = _proveedores.find(pr => String(pr.id) === String(val('ppProv')));
@@ -17868,7 +18013,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       serial: val('ppSer') === '1',
       no_descuento: val('ppNoDesc') === '1',
       proveedor_id: val('ppProv') || null,
-      comision_pct: val('ppComPct') !== '' ? Number(val('ppComPct')) : null
+      comision_pct: val('ppComPct') !== '' ? Number(val('ppComPct')) : null,
+      descripcion: (val('ppDesc') || '').trim() || null,
+      notas: (val('ppNotas') || '').trim() || null
     };
   }
   // Validaciones antes de guardar (regla del rediseño: nunca bloquear por margen bajo, solo advertir;
@@ -17916,9 +18063,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // mientras _pfGuardando es true, ambos quedan disabled — un segundo clic no dispara nada).
   function nxPfSetGuardando(on) {
     const modal = document.getElementById('nxPosProd'); if (!modal) return;
-    const b1 = modal.querySelector('.actions .ab.g1'), b2 = modal.querySelector('.actions .ab.g2');
-    if (b1) { b1.disabled = on; b1.innerHTML = on ? '<i class="ti ti-loader-2 nxSpin"></i> Guardando…' : '<i class="ti ti-check"></i> Guardar'; }
-    if (b2) { b2.disabled = on; b2.innerHTML = on ? '<i class="ti ti-loader-2 nxSpin"></i> Guardando…' : '<i class="ti ti-plus"></i> Guardar y Nuevo'; }
+    const b1 = modal.querySelector('.footbar .ab.g1:not(.savechev)');
+    const chev = modal.querySelector('.footbar .savechev');
+    const menuBtn = modal.querySelector('#nxPfSaveMenu button');
+    if (b1) { b1.disabled = on; b1.innerHTML = on ? '<i class="ti ti-loader-2 nxSpin"></i> Guardando…' : '<i class="ti ti-device-floppy"></i> Guardar artículo'; }
+    if (chev) chev.disabled = on;
+    if (menuBtn) menuBtn.disabled = on;
   }
   // Guarda TODO de un tirón: el artículo, los niveles de precio nuevos que se crearon en el
   // borrador (aún sin id real de Supabase) y los precios/reglas anotados por nivel — en ese orden,
