@@ -1,7 +1,8 @@
 {
-  "version": "48.85",
+  "version": "48.86",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    "POS · Prefactura 2.5 móvil: corregido el desborde horizontal, el número de prefactura cortado, la distribución de pasos y el margen lateral visible en iPhone. Solo presentación.",
     "POS · Prefactura 2.5 Sprint 1: nueva cabecera, mejor jerarquía visual, pasos compactos y formulario optimizado para iPhone. Solo presentación; sin cambios en lógica, Supabase, impuestos, NCF ni inventario.",
     "CORREGIDO (POS · Prefactura/Preventa — alcance visual real): el rediseño ahora detecta la pantalla real de Prefactura/Preventa por su encabezado y aplica el nuevo estilo al contenedor activo. Antes apuntaba a un selector que esa pantalla no utilizaba, por eso visualmente se veía igual. Sin cambios de lógica, inventario, impuestos, NCF o Supabase.",
     "MEJORADO (POS · Prefactura/Preventa — rediseño visual 2.5): nueva jerarquía visual exclusiva para Prefactura en PC y móvil. No cambia lógica comercial, inventario, impuestos, NCF, Supabase ni el proceso de guardado.",
