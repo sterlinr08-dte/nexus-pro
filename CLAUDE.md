@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.94** (ver `index.html` y `version.json`).
+> Versión actual: **48.95** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3431,6 +3431,51 @@ pequeños y muy relacionados entre sí, todos sobre `renderFactura()`/`pintarFac
   "Guardar Prefactura" ya no aparece en el panel de Factura — sin desbordes en 375-1100px, 0 errores de
   JS. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
+
+### POS · Inventario — color por IMEI/serial (22-jul-2026, v48.95)
+El dueño pidió: "En inventario vamos a enlazar el color de los celulares junto a los IMEI, o sea cada
+IMEI tiene un color." Columna nueva **`pos_seriales.color`** (text, nullable, migración
+`pos_seriales_color`, aditiva) aplicada con las herramientas MCP de Supabase — `get_advisors(security)`
+sin hallazgos nuevos.
+- **Paleta fija, no texto libre:** `TEL_COLORES` (11 valores: Negro/Blanco/Azul/Rojo/Dorado/Plata/Verde/
+  Morado/Rosado/Gris/Otro, cada uno con su hex) — mismo criterio de siempre en este sistema (evitar que
+  cada quien escriba "negro"/"Negro"/"NEGRO" distinto, como ya se decidió con otros campos de vocabulario
+  controlado). Helpers nuevos junto a `nxCargarSerialesDet` (mismo IIFE del POS): `colorHex(v)`/
+  `colorLabel(v)` (buscan en la paleta), `colorDotHTML(v)` (un `<span>` circular de 9px con el hex real,
+  con borde para que "Blanco" no se pierda en fondo blanco — devuelve `''` si no hay color, nunca un
+  puntito roto) y `colorSelectHTML(id,val)` (el `<select>` de la paleta, con la opción actual
+  preseleccionada).
+- **Dónde se asigna el color:** "Administrar IMEI" (`nxSerialMgr`, se abre desde Inventario) ganó un
+  campo nuevo **"Color de este lote (opcional)"** debajo del textarea de alta masiva — si se elige un
+  color, `nxSerialAdd` lo manda en el `POST` de TODOS los IMEI de ese lote a la vez (agregar varios IMEI
+  del mismo color de un tirón, el caso más común al recibir mercancía). Cada fila de la lista de
+  "Disponibles" también ganó su propio `colorSelectHTML` + un botón de check — **`window.nxSerialColorSet
+  (id, pid)`** nuevo, hace un `PATCH` puntual a `pos_seriales` con el color de ESE serial y refresca la
+  lista — para corregir o completar el color de un IMEI que ya existía sin color, uno por uno.
+- **Dónde se MUESTRA el color** (3 lugares, todos leyendo el mismo dato con el mismo helper, cero lógica
+  repetida): (1) la ventanilla de elegir IMEI al vender/facturar (`ppkSerChipsHTML`, los chips del
+  detalle de producto) — el puntito aparece junto al IMEI resaltado; (2) la ventana de asignar IMEI a una
+  línea de Factura (`window.nxFacSerial`, el modal de checkboxes) — el puntito aparece junto a cada
+  checkbox; (3) Artículo 360° (`nxArticulo360`, sección IMEI) — el puntito aparece junto a cada fila de
+  serial, sea disponible o vendido. Los 3 sitios ya cargaban `color` de la consulta real (se agregó a la
+  columna del `select=` donde hacía falta) o ya usaban `select=*` (Artículo 360°, sin cambio de query).
+  IMEI sin color asignado se ven exactamente igual que antes de esta versión — `colorDotHTML` devuelve
+  cadena vacía, no un espacio vacío ni un ícono roto.
+- **Deliberadamente NO se agregó** un campo de color a nivel de PRODUCTO (`pos_productos`) — el color es
+  por UNIDAD física (cada IMEI es un teléfono físico distinto, puede haber varios colores del mismo
+  modelo en inventario), coherente con que `pos_seriales` ya es la tabla de unidades individuales, no el
+  catálogo de modelos.
+- **Verificado con Playwright + Node, código real extraído del archivo** (no una reconstrucción): 5
+  pruebas — `nxSerialMgr` muestra el selector de color por lote y el selector de color por fila
+  precargado con el valor real de cada serial (`negro`/`blanco`/sin color); `nxSerialAdd` manda el color
+  del lote en el `POST` de todos los IMEI nuevos; `nxSerialColorSet` manda el `PATCH` correcto para un
+  solo IMEI; `ppkSerChipsHTML` muestra el puntito de color correcto (y ninguno para el IMEI sin color);
+  `nxFacSerial` muestra el puntito junto al checkbox correcto — las 5 pasan. Más una verificación
+  dirigida (sin harness completo, ya que las 5 pruebas anteriores ya ejercitan los mismos helpers
+  `colorDotHTML`/`colorSelectHTML` que usa `nxArticulo360`) confirmando que su línea `imeiHTML` arma el
+  puntito correcto junto al IMEI y el nombre del cliente cuando está vendido. Captura de pantalla del
+  modal "Administrar IMEI" a 390px sin desbordes. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

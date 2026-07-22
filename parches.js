@@ -16120,10 +16120,19 @@
     toast('ok', 'Agregado', p ? p.nombre : '');
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
   };
+  // Color por IMEI/serial (pos_seriales.color) — paleta fija de colores reales de celulares, evita
+  // que cada quien escriba "negro"/"Negro"/"NEGRO" distinto. value=lo que se guarda, label=texto,
+  // hex=para el puntito de color en los chips/listas.
+  const TEL_COLORES = [['negro', 'Negro', '#1f2937'], ['blanco', 'Blanco', '#f8fafc'], ['azul', 'Azul', '#2563eb'], ['rojo', 'Rojo', '#dc2626'], ['dorado', 'Dorado', '#ca8a04'], ['plata', 'Plata', '#94a3b8'], ['verde', 'Verde', '#16a34a'], ['morado', 'Morado', '#7c3aed'], ['rosado', 'Rosado', '#ec4899'], ['gris', 'Gris', '#475569'], ['otro', 'Otro', '#cbd5e1']];
+  function colorHex(v) { const c = TEL_COLORES.find(x => x[0] === v); return c ? c[2] : null; }
+  function colorLabel(v) { const c = TEL_COLORES.find(x => x[0] === v); return c ? c[1] : ''; }
+  // Puntito de color — <span> chico con el hex real, con borde para que el Blanco no se pierda en fondo blanco.
+  function colorDotHTML(v) { const h = colorHex(v); return h ? `<span title="${esc(colorLabel(v))}" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${h};border:1px solid rgba(0,0,0,.15);flex:none"></span>` : ''; }
+  function colorSelectHTML(id, val) { return `<select id="${id}" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:4px 6px;font-size:11px;font-family:inherit;background:#fff;color:#334155"><option value="">Sin color</option>${TEL_COLORES.map(c => `<option value="${c[0]}"${val === c[0] ? ' selected' : ''}>${esc(c[1])}</option>`).join('')}</select>`; }
   async function nxCargarSerialesDet(pid) {
     const box = document.getElementById('ppkSer'); if (!box) return;
     let rows = [];
-    try { rows = await getAPI().get('pos_seriales', 'select=id,serial&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+    try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     _ppkSerRows = rows;
     // Chip compacto estilo Factura: 📱 IMEI · N — tocarlo abre la ventanilla para elegir
     box.innerHTML = rows.length
@@ -16143,7 +16152,7 @@
     const ql = (q || '').trim().toLowerCase();
     const filt = (_ppkSerRows || []).filter(r => !ql || String(r.serial || '').toLowerCase().includes(ql));
     if (!filt.length) return `<div style="font-size:10.5px;color:#475569;padding:6px 2px">Ningún IMEI coincide con “${esc(q)}”.</div>`;
-    return filt.map(r => `<span class="nxSerPick${sel.has(String(r.id)) ? ' on' : ''}" data-sid="${r.id}" data-ser="${esc(r.serial)}" onclick="event.stopPropagation();window.nxPpkSerTog(this)">${ppkSerHi(String(r.serial || ''), ql)}</span>`).join('');
+    return filt.map(r => `<span class="nxSerPick${sel.has(String(r.id)) ? ' on' : ''}" data-sid="${r.id}" data-ser="${esc(r.serial)}" onclick="event.stopPropagation();window.nxPpkSerTog(this)" style="display:inline-flex;align-items:center;gap:5px">${colorDotHTML(r.color)}${ppkSerHi(String(r.serial || ''), ql)}</span>`).join('');
   }
   window.nxPpkSerFiltrar = function (q) { const c = document.getElementById('ppkSerChips'); if (c) c.innerHTML = ppkSerChipsHTML(q); };
   window.nxPpkSerTog = function (el) {
@@ -16157,12 +16166,13 @@
     cerrarModal('nxSerMgr');
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=*&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
-    const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
+    const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span></span><span style="display:flex;align-items:center;gap:6px;flex:none">${colorSelectHTML('serCol_' + r.id, r.color || '')}<button class="btn bsm bghost" type="button" title="Guardar color" aria-label="Guardar color de ${esc(r.serial)}" onclick="window.nxSerialColorSet('${r.id}','${pid}')"><i class="ti ti-check"></i></button><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')" title="Eliminar" aria-label="Eliminar ${esc(r.serial)}"><i class="ti ti-trash" style="color:#dc2626"></i></button></span></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
     const ov = document.createElement('div'); ov.id = 'nxSerMgr'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
+    ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-device-mobile"></i> Seriales · ${esc(p.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxSerMgr').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div class="fr"><label>Agregar seriales / IMEI (uno por línea o separados por coma)</label><textarea id="serIn" class="no-upper" rows="3" placeholder="Ej:\n356789xxxxxxxxx\n356790xxxxxxxxx" style="width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px;font-size:13px;font-family:var(--mono,monospace);resize:vertical"></textarea></div>
+        <div class="fr"><label>Color de este lote (opcional — se aplica a todos los que agregues ahora)</label>${colorSelectHTML('serInColor', '')}</div>
         <button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxSerialAdd('${pid}')"><i class="ti ti-plus"></i> Agregar</button>
         <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:4px">Disponibles (${rows.length})</div>
         <div style="overflow-y:auto;flex:1;border:1px solid #e2e8f0;border-radius:10px">${lista}</div>
@@ -16173,12 +16183,18 @@
     const raw = (val('serIn') || '').trim(); if (!raw) { toast('err', 'Escribe al menos un serial'); return; }
     const seriales = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
     if (!seriales.length) return;
+    const color = val('serInColor') || null;
     try {
-      await getAPI().post('pos_seriales', seriales.map(s => ({ producto_id: pid, serial: s, estado: 'disponible' })));
+      await getAPI().post('pos_seriales', seriales.map(s => ({ producto_id: pid, serial: s, estado: 'disponible', color: color })));
       toast('ok', 'Seriales agregados', seriales.length + '');
       window.nxSerialMgr(pid);
       const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+  // Cambiar el color de UN serial ya guardado (no toca los demás campos, solo pos_seriales.color)
+  window.nxSerialColorSet = async function (id, pid) {
+    const color = val('serCol_' + id) || null;
+    try { await getAPI().patch('pos_seriales', 'id=eq.' + id, { color: color }); toast('ok', 'Color guardado'); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid); } catch (e) { toast('err', 'No se pudo guardar el color'); }
   };
   window.nxSerialDel = async function (id, pid) {
     try { await getAPI().del('pos_seriales', 'id=eq.' + id); toast('ok', 'Serial eliminado'); window.nxSerialMgr(pid); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid); } catch (e) { toast('err', 'No se pudo'); }
@@ -16213,9 +16229,9 @@
     const prod = _prods.find(x => String(x.id) === String(it.producto_id)); if (!prod) return;
     cerrarModal('nxFacSer');
     let rows = [];
-    try { rows = await getAPI().get('pos_seriales', 'select=id,serial&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
+    try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     const sel = new Set((it.seriales || []).map(s => String(s.id)));
-    const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
+    const chks = rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serid="${r.id}" data-serial="${esc(r.serial)}"${sel.has(String(r.id)) ? ' checked' : ''}> ${colorDotHTML(r.color)} <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : `<div style="color:#475569;font-size:12px;padding:14px;text-align:center">Sin seriales disponibles.<br>Cárgalos desde la lupa → toca el artículo → "Administrar".</div>`;
     const facSerBuscador = rows.length > 1 ? '<div style="margin-bottom:7px">' + posBuscador({ id: 'nxFacSerQ', inputmode: 'numeric', placeholder: 'Buscar IMEI…', oninput: 'window.nxFacSerFiltrar(this.value)' }) + '</div>' : '';
     const ov = document.createElement('div'); ov.id = 'nxFacSer'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
@@ -18949,7 +18965,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '<div style="font-size:10px;color:var(--pf-txt3);margin-top:6px">Aproximado por coincidencia del nombre del equipo — Reparaciones no liga cada recepción a un artículo específico del catálogo.</div>';
 
     // 10) IMEI — seriales reales del producto (exacto, pos_seriales.producto_id sí es una FK real)
-    const imeiHTML = seriales.length ? seriales.map(s => { const v = s.venta_id ? vmap[s.venta_id] : null; return fila(`<div style="flex:1;min-width:0;font-family:monospace">${esc(s.serial)}</div>${s.estado === 'vendido' ? badge('VENDIDO', '#475569', '#f1f5f9') : badge('DISPONIBLE', '#16a34a', '#f0fdf4')}${v ? `<span style="color:var(--pf-txt3);font-size:10px">${esc(v.cliente_nombre || '')}</span>` : ''}`); }).join('') : '<div class="emptyrow">Sin IMEI/serial registrados.</div>';
+    const imeiHTML = seriales.length ? seriales.map(s => { const v = s.venta_id ? vmap[s.venta_id] : null; return fila(`<div style="flex:1;min-width:0;font-family:monospace;display:flex;align-items:center;gap:6px">${colorDotHTML(s.color)}${esc(s.serial)}</div>${s.estado === 'vendido' ? badge('VENDIDO', '#475569', '#f1f5f9') : badge('DISPONIBLE', '#16a34a', '#f0fdf4')}${v ? `<span style="color:var(--pf-txt3);font-size:10px">${esc(v.cliente_nombre || '')}</span>` : ''}`); }).join('') : '<div class="emptyrow">Sin IMEI/serial registrados.</div>';
 
     // 11) Kardex — historial real de movimientos (Fase 5, mismo dato que la pestaña Historial del formulario)
     const MOV_NOMBRE = { compra: 'Compra', venta: 'Venta', ajuste: 'Ajuste', transferencia: 'Transferencia', garantia: 'Garantía', taller: 'Taller', produccion: 'Producción', devolucion: 'Devolución', anulacion: 'Anulación', apertura: 'Apertura' };
