@@ -1698,6 +1698,151 @@ deliberadamente diferido porque hacerlo "de verdad" tocaba el cálculo de dinero
 - **Pendiente real para una fase futura:** propina 10% (requiere tocar Vender/Factura), lotes/
   vencimiento (Inventario, no se pidió aún), impuestos adicionales más allá de ITBIS.
 
+### POS · Inventario — rediseño de "Nuevo/Editar artículo" (22-jul-2026, v48.98) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño pidió un rediseño funcional (no solo visual) del formulario de artículo con un encargo muy
+detallado: fusionar pestañas duplicadas (Costos dentro de Información, Niveles de precio dentro de
+Precios), y sobre todo **eliminar el bloqueo de "guarda el artículo primero para configurarle
+precios por nivel"** — se debe poder crear niveles de precio nuevos y asignarles precios ANTES de
+que el artículo exista, y guardar todo junto en una sola operación. Instrucción explícita: **"No
+publicar directamente en main"** — todo este trabajo vive en la rama `claude/pos-articulo-rediseno`,
+sin mezclar a `main`, a la espera de que el dueño lo revise y apruebe.
+- **Auditoría previa (obligatoria, pedida por el dueño):** se confirmó que `abrirProd(p)` (en
+  `parches.js`, dentro del mismo IIFE del POS que `nxPfNivelesTabla`/`nxNivelesInit`) es la única
+  función real que arma esta pantalla — no `abrirProductoModal` (línea ~1046), que es de AGUAPRO, un
+  módulo completamente distinto. Estructura anterior: 10 pestañas (Información, Precios, Costos,
+  Inventario, Impuestos, Compras, Ventas, Multiempresa, Integraciones, Historial). Tablas reales
+  verificadas por SQL directo: `pos_productos`, `pos_niveles_precio`, `pos_producto_niveles`,
+  `pos_proveedores`.
+- **De 10 pestañas a 4:** Información (identificación + costo/proveedor/ITBIS + imagen), Precios y
+  Niveles (resumen de rentabilidad + precio principal + niveles de precio + reglas de venta),
+  Inventario (stock + sucursales + kardex), Reglas Adicionales (descuento/comisión/combo/
+  promociones/integraciones — lo que sobraba y no encajaba en precio ni en stock).
+- **Migración aditiva:** `pos_niveles_precio` ganó `descripcion` (text), `tipo` (text, default
+  `'fijo'`) y `color` (text) — campos que pedía el modal "Crear nivel de precio" y que no existían.
+  `get_advisors(security)` sin hallazgos nuevos.
+- **CAMBIO 3, la pieza real (borrador en memoria, nada se manda a Supabase hasta Guardar):**
+  `_pfDraft = {nivelesNuevos:[], precios:{}}` (variable de módulo, junto a `_pfTmpSeq`/
+  `_pfGuardando`), reiniciada por `pfDraftReset()` cada vez que se ABRE el formulario desde fuera
+  (los 4 puntos de entrada reales: `nxPosNuevoProd`, `nxPosEditProd`, `nxPfGuardarYNuevo`, y el
+  primer llamado del usuario) — pero NO cuando `abrirProd` se re-invoca a sí misma tras que
+  `nxNivelesInit()` termine de cargar los niveles de la organización (se agregó un 2do parámetro
+  `_mantenerBorrador` para ese caso puntual, si no el borrador se perdía segundos después de abrir).
+  "Crear nivel de precio" (`nxPfNivelModalAbrir`/`nxPfNivelModalGuardar`) ya NO hace ningún `POST` —
+  guarda el nivel nuevo en `_pfDraft.nivelesNuevos` con un id temporal `tmp_N` y lo marca "NUEVO" en
+  la tabla al instante. Los precios/reglas de cualquier nivel (nuevo o existente) se anotan en
+  `_pfDraft.precios[nivelId]` sin tocar la red. **`nxPfGuardarTodo(id)`** (reemplaza a
+  `nxPfGuardarProdComun` como punto de entrada de `nxPosGuardarProd`/`nxPfGuardarYNuevo`) hace la
+  secuencia real al tocar "Guardar": (1) valida, (2) guarda el artículo (`nxPfGuardarProdComun`),
+  (3) crea en Supabase cada nivel nuevo del borrador (si uno falla, sigue con los demás y avisa por
+  toast cuál falló — el artículo YA quedó guardado, nunca se pierde), (4) resuelve los ids `tmp_N` a
+  los ids reales recién creados, (5) guarda/actualiza `pos_producto_niveles` por cada nivel con
+  precio anotado, (6) limpia el borrador. Protegido contra doble clic (`_pfGuardando`, deshabilita
+  los botones + muestra spinner mientras guarda).
+- **Bug real encontrado y corregido durante la construcción (campo duplicado, justo lo que el
+  encargo pedía evitar):** la tabla de niveles tenía columnas Contado/Crédito editables directo en
+  cada fila (`nxPfNivC_<id>`/`nxPfNivR_<id>`), Y la tarjeta "Reglas de venta" (para el nivel
+  seleccionado en el dropdown) tenía sus PROPIOS campos `#ppNivCont`/`#ppNivCred` para lo mismo — dos
+  lugares editables para el mismo dato, sin sincronizarse entre sí (uno pisaba al otro en silencio).
+  Arreglado de raíz: la tabla ahora solo MUESTRA el precio (con el margen calculado, en RD$) y un
+  botón ✏️ que selecciona ese nivel en el dropdown — toda la edición real pasa por "Reglas de venta",
+  que queda como única fuente de verdad.
+- **Bug de CSS real encontrado con Playwright a 390px (mismo patrón de especificidad ya documentado
+  varias veces en este archivo):** 3 tarjetas ("Reglas de venta" en Precios, "Inventario y stock",
+  "Reglas de venta del artículo") tenían `class="g2" style="grid-template-columns:repeat(2,...)"` —
+  el estilo en línea siempre le gana a la media query responsive de `.g2` (que colapsa a 1 columna
+  bajo 540px), así que esas 3 tarjetas seguían forzando 2 columnas en el celular y las etiquetas
+  largas ("Stock mínimo (alerta)", "Comisión de venta (%)") se veían cortadas sin wrap. Arreglado
+  quitando el estilo en línea en las 3 — con la clase `.g2` sola ya colapsan bien a 1 columna en
+  móvil y 2 en escritorio, igual que la tarjeta "Identificación" que nunca tuvo el problema.
+- **Verificado con el código real extraído** (no una reconstrucción — `abrirProd`, `pfDraftReset`,
+  `nxPfNivelesTabla`, `nxPfNivelPrecioInput`, `nxPfNivelModalAbrir/Guardar`, `nxPfGuardarTodo`,
+  `nxPosGuardarProd`/`nxPfGuardarYNuevo` extraídos tal cual del archivo con balance de llaves real) en
+  un navegador con un backend Supabase simulado y controlable (incluido un flag para simular que
+  falla justo la creación de un nivel): 18 pruebas — crear con precio, crear con costo, elegir un
+  nivel existente y ponerle precio, **crear un nivel nuevo y ponerle precio SIN guardar el artículo
+  antes** (la pieza central del pedido), varios niveles a la vez, una regla de venta (cantidad
+  mínima + % descuento), todo en una sola operación (nombre+costo+precio+nivel nuevo+regla+stock),
+  fallo simulado al crear un nivel (el artículo se guarda igual, toast de aviso, el nivel roto NO
+  queda creado), nombre vacío no crea nada, editar un artículo existente (precarga correcta, no
+  duplica), doble clic no duplica el artículo, nombre de nivel repetido no se permite, artículo tipo
+  servicio sin stock (sin movimiento de apertura), artículo tipo producto con stock inicial (con
+  movimiento de apertura) — las 18 pasan, 0 errores de JavaScript. Capturas de pantalla a 390px
+  (móvil) y 1280px (escritorio) en las 4 pestañas — sin desbordes horizontales en ninguna
+  (`scrollWidth === clientWidth` exacto), la fila de pestañas usa scroll horizontal propio sin
+  desbordar la página. `node --check parches.js` limpio, `version.json` válido, los 3 `<script>` de
+  `index.html` pasan `new Function()`.
+- **Deliberadamente NO construido** (no pedido explícitamente, se habría inventado sin confirmar):
+  modalidades de precio "por % de descuento"/"por margen" con cálculo automático del precio final —
+  el campo "Tipo" del nivel (fijo/descuento/margen) se guarda como dato, pero hoy el sistema entero
+  sigue calculando con precios fijos en RD$ (igual que antes); convertir eso en un motor real de
+  precio-por-fórmula habría sido un cambio de mucho mayor alcance no pedido en este encargo.
+- **Pendiente:** aprobación del dueño antes de fusionar `claude/pos-articulo-rediseno` a `main`.
+
+### Seguimiento v48.99 — mockup exacto que mandó el dueño ("quiero que se vea así mismo")
+El dueño mandó una imagen (escritorio + celular) del formulario que quería exactamente. Se comparó
+pieza por pieza contra lo ya construido en v48.98 y se aplicaron los cambios reales del mockup,
+manteniendo el criterio de "no fingir funciones que no existen" en las 2 piezas que el mockup
+insinuaba pero no existían de verdad:
+- **Encabezado:** título en mayúsculas; botón nuevo **"Vista previa"** (`window.nxPfVistaPrevia()`)
+  — modal de solo lectura que arma una tarjeta con los datos YA escritos en el formulario (nombre,
+  imagen, precio, badge de stock con el mismo criterio ok/bajo/agotado/servicio que usa el catálogo
+  real de Vender) — cero llamadas a la red, cero guardado, honesto sobre que "todavía no se ha
+  guardado". Menú **"..."** (`window.nxPfMenuToggle`) con "Imprimir etiqueta" (siempre, reusa
+  `nxPfImprimirEtiqueta` ya existente) y "Eliminar artículo" (solo si el artículo ya existe, reusa
+  `window.nxPosDelProd` ya existente) — ambas acciones YA EXISTÍAN en el sistema, solo se juntaron
+  en un solo menú en vez de inventar algo nuevo.
+- **Información básica + imagen en una sola tarjeta:** los campos (Nombre/Categoría/Código/
+  Referencia/Marca/Tipo) pasaron a una columna única con el panel de Imagen al lado (`.infobasica`),
+  fusionando lo que antes eran las tarjetas separadas "Identificación" y "Multimedia" — mismos ids,
+  mismo campo `#ppImg` (sigue siendo URL de texto). **Decisión honesta:** el mockup mostraba un botón
+  "Cambiar imagen" y un checkbox "Usar imagen desde URL" que insinuaban una subida de archivos real
+  — el sistema NO tiene almacenamiento/Storage para imágenes de producto (nunca lo tuvo, es solo un
+  campo de texto con la URL) — se construyó el recuadro de vista previa + el campo de URL real,
+  SIN el checkbox ni el botón de "cambiar imagen" falsos, para no fingir una función de subida que
+  no existe.
+- **Tarjeta nueva "Información adicional":** Descripción y Notas internas — 2 campos NUEVOS y reales
+  (columnas `pos_productos.descripcion`/`notas`, migración `pos_productos_descripcion_notas`,
+  additiva, `get_advisors` sin hallazgos nuevos), no decorativos — se guardan y se precargan al
+  editar (`nxPfLeerProd`).
+- **Stock inicial movido a Información (solo al crear):** el propio encargo original ya decía
+  "Stock inicial cuando corresponda" dentro de la pestaña Información — el mockup lo confirmó
+  visualmente. Mismo id `#ppStk`, mutuamente excluyente: vive en "Compra y fiscalidad" cuando
+  `!p` (creando) y en "Inventario y stock" cuando `p` existe (editando) — nunca los dos a la vez
+  (evita repetir el bug de campo duplicado que ya se había encontrado y arreglado en v48.98). La
+  pestaña Inventario avisa "El stock inicial se define en la pestaña Información" cuando no aplica.
+- **Pie de página simplificado a 2 acciones reales:** "Cancelar" pasó de botón rojo sólido a botón
+  discreto (blanco, borde gris) — ya no se ve como una acción de alarma. "Imprimir Etiqueta" se
+  movió al menú "..." del encabezado (ya no ocupa un botón del pie). "Guardar artículo" + "Guardar y
+  Nuevo" se unieron en un **botón partido** (`.savewrap`/`.savechev`): el botón grande guarda, la
+  flechita abre un menú angosto con "Guardar y Nuevo" — mismas funciones de siempre
+  (`nxPosGuardarProd`/`nxPfGuardarYNuevo`), solo cambió cómo se presentan. Texto central honesto
+  ("Los niveles nuevos se crean al Guardar", real) en vez del texto del mockup ("Los cambios se
+  guardan automáticamente", que habría sido falso — nada se guarda hasta tocar Guardar).
+- **BUG REAL encontrado y arreglado durante la construcción, antes de dar el trabajo por hecho:**
+  el menú "Guardar y Nuevo" se posicionaba con `position:absolute` dentro de `.savewrap` (el
+  contenedor del botón, angosto — solo del ancho del botón mismo) — en el celular, `right:0` medido
+  desde un contenedor tan angosto hacía que el menú (190px de ancho) se saliera por el borde
+  IZQUIERDO de la pantalla (medido con Playwright: `left:-22.6px`, confirmado visualmente con una
+  captura donde se leía "...ardar y Nuevo" con la "Gu" cortada). Mismo problema en el menú "..." del
+  encabezado, en potencia (contenedor `.headwrap` igual de angosto). **Arreglado de raíz, no con un
+  parche de breakpoint:** los 2 menús pasaron de `position:absolute` (relativo a un contenedor local
+  angosto) a `position:fixed` posicionado en JavaScript con la posición REAL del botón
+  (`getBoundingClientRect()`, función nueva compartida `nxPfPopPosicionar(pop, btn, openUp)`) — se
+  calcula `left` acotado entre 8px y `innerWidth-ancho-8px` para que NUNCA se salga de la pantalla,
+  sin importar cuán angosto sea el celular ni dónde esté el botón. Reverificado tras el arreglo:
+  `left:8px` (dentro del viewport) en vez de `-22.6px`.
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción —
+  `abrirProd`, `nxPfVistaPrevia`, `nxPfMenuToggle`, `nxPfSaveMenuToggle`, `nxPfPopPosicionar`,
+  `nxPfImgSync`, `nxPfLeerProd` extraídos tal cual con balance de llaves real): 22 pruebas en total
+  (las 18 del v48.98 siguen pasando sin regresión + 4 nuevas para las piezas de este seguimiento) —
+  las 22 pasan, 0 errores de JavaScript. Capturas de pantalla en 390px y 1280px de Información/
+  Precios/Inventario, del menú "..." abierto, del menú "Guardar y Nuevo" abierto (antes y después del
+  arreglo del desborde) y de "Vista previa" — sin ningún desborde horizontal en ningún caso. `node
+  --check parches.js` limpio, `version.json` válido, los 3 `<script>` de `index.html` pasan
+  `new Function()`.
+- **Sigue en la misma rama `claude/pos-articulo-rediseno`, sin publicar a `main`** — pendiente de
+  aprobación del dueño.
+
 ### SEGUROS — Ficha del cliente, rediseño Enterprise (19-jul-2026, v48.53)
 El dueño pidió un rediseño visual completo del núcleo de Seguros (spec "NEXUS PRO SEGUROS 2026 –
 REDISEÑO VISUAL ENTERPRISE", solo capa visual, prohibido tocar lógica/Supabase/consultas). Por el
