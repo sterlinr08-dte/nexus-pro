@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.96** (ver `index.html` y `version.json`).
+> Versión actual: **48.97** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3535,6 +3535,56 @@ anteriores (tarjeta de cliente completa, buscador compacto, resumen en vivo, con
   el valor correcto y separado del nombre, el estado vacío usa el `colspan` correcto — sin desbordes en
   390px ni 1000px (`scrollWidth===clientWidth` exacto en ambos), 0 errores de JS. `node --check
   parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Factura — la lupa de Cliente y la de Artículo abren una ventana de verdad (22-jul-2026, v48.97)
+El dueño: "Cuando se haga click en la lupa de cliente y en la de artículo abra la ventana." Investigado
+antes de tocar código: en esta misma pantalla, las lupas de "No. Factura" (`nxFacHist()`) y "Tipo de
+comprobante"/junto a Cliente (`nxPrefLista()`) YA abrían una ventana real (`.overlay`/`.modal`) — las
+únicas 2 que NO lo hacían eran justo las que el dueño señaló: Cliente (`nxFacCliToggle`, desplegaba un
+`<div class="pf2clidrop">` inline pegado debajo del botón) y Artículo (`nxFacSearchOpen`, convertía el
+botón en un `<input>` en el mismo lugar). Inconsistencia real de UX, no solo percepción — coincide
+exactamente con lo que reportó.
+- **Cliente:** `window.nxFacCliToggle()` reescrito — ya no toca ningún `#facCliDrop` (ese `<div>` se
+  quitó de las 2 pantallas que lo tenían, Vender y Factura/Prefactura, comparten la misma función desde
+  v48.36) — ahora arma una ventana real (`#nxFacCliM`, `.overlay`/`.modal`, mismo patrón que
+  `nxFacHist()`/`nxPrefLista()`/`nxProdPicker()`) con el buscador estándar (`posBuscador()`, reglamento
+  de buscadores) + la lista de clientes. `pintarFacCliDrop(q)` (mismo nombre, se mantuvo para no romper
+  su única llamada interna) ahora pinta dentro de `#facCliList` (el contenedor de la ventana) en vez de
+  `#facCliDrop`. `nxFacCliPick(id)` — cero cambios de lógica (sigue llamando a `nxFacSetCli` y
+  actualizando `#facCliTxt`), solo el cierre pasó de `classList.remove('open')` a `cerrarModal('nxFacCliM')`.
+  Se quitó el listener global de "clic afuera cierra el dropdown" (ya no aplica — la ventana usa el mismo
+  patrón de cerrar-al-tocar-el-fondo que ya tienen todas las demás en el sistema).
+- **Artículo:** el botón-lupa (`#facSearchBox`) ya NO se convierte en un `<input>` inline — su `onclick`
+  ahora llama directo a **`window.nxProdPicker('factura')`**, la ventana "Buscar artículo" que YA EXISTÍA
+  en el sistema (el mismo catálogo completo con precio/existencia que usa "+Agregar producto" en Vender)
+  — estaba construida y probada, solo hacía falta conectarla aquí. Cero función nueva. El atajo de
+  teclado **F2** ("Buscar producto", ya documentado en el pie de la pantalla) también se actualizó para
+  abrir esa misma ventana en vez de enfocar un campo que ya no existe.
+- **Limpieza de dead code correspondiente (regla #1 del reglamento, "depurar"):** al dejar de usarse,
+  se quitaron por completo `nxFacSearchOpen`, `nxFacSearchMaybeClose`, `nxFacBuscar`, `nxFacSugSel` y
+  `nxFacBuscarEnter` (el buscador inline + su lógica de sugerencias/Enter-para-agregar, confirmado con
+  grep que ningún otro lugar del archivo los llamaba), los 2 `<div class="pf2clidrop" id="facCliDrop">`
+  (Vender y Factura), y las reglas CSS ya huérfanas `.pf2clidrop`/`.pf2clidrop.open`/`.pf2clidrop input`
+  y `.nxFacSug`/`.nxFacSugIt`/`.nxFacSugNom`/`.nxFacSugSub`/`.nxFacSugPre`/`.nxFacSugEmpty` — verificado
+  con grep que ninguna clase quedó sin CSS ni ninguna función sin caller antes de publicar. `nxVenderSel`
+  (función distinta, para las filas del catálogo de Vender) no se tocó — solo compartía el bloque de
+  código con las funciones que sí se removieron.
+- **Decisión consciente, no un descuido:** al pasar de un campo de búsqueda con "Enter agrega directo si
+  hay 1 solo resultado o coincide el código exacto" (bueno para lectores de código de barras) a una
+  ventana de catálogo completo (clic en la fila → abre la ventanilla de precio/IMEI → botón "Agregar"),
+  se pierde el atajo de una sola tecla para el escaneo rápido — el pedido explícito del dueño era que la
+  lupa abriera una ventana, y se siguió al pie de la letra; si el flujo de escaneo rápido hace falta de
+  vuelta, es un pedido aparte (la ventana de catálogo sigue filtrando en vivo mientras se escribe/escanea,
+  solo que agregar requiere un toque más).
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción —
+  `nxFacCliToggle`/`pintarFacCliDrop`/`nxFacCliFiltrar`/`nxFacCliPick`/`nxProdPicker`/`pintarProdPick`/
+  `nxProdPickAdd`/el atajo F2 real, con datos simulados): tocar la lupa de Cliente abre `#nxFacCliM` con
+  el buscador y la lista; escribir filtra correctamente (sin mostrar clientes que no calzan); elegir un
+  cliente cierra la ventana y actualiza `_factCli`/el texto del botón; tocar la lupa de Artículo abre
+  `#nxProdPick` con el catálogo completo visible; F2 abre la misma ventana; elegir un artículo sin serial
+  desde la ventanilla lo agrega al carrito — sin desbordes en 375px ni 1000px (`scrollWidth===clientWidth`
+  exacto en ambos), 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a
