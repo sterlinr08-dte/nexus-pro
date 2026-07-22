@@ -49,7 +49,7 @@ Es una **PWA** (app web instalable) pensada principalmente para **móvil**
    "hay actualización"). `version.json` → `url` apunta a `nexusprord.com/index.html`.
 3. El usuario abre la app y toca **"Actualizar"**.
 
-> Versión actual: **48.91** (ver `index.html` y `version.json`).
+> Versión actual: **48.92** (ver `index.html` y `version.json`).
 
 ---
 
@@ -3264,6 +3264,68 @@ agentes de investigación en paralelo, con evidencia archivo:línea, sin inventa
     existe y la omiten por completo cuando no — más una verificación visual del widget (toggle
     abre/cierra, escribir funciona) sin desbordes en 390px ni 1000px. `node --check parches.js` limpio;
     los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Factura/Prefactura — 5 ajustes puntuales pedidos por el dueño (22-jul-2026, v48.92)
+El dueño mandó una lista corta de 6 puntos sobre la pantalla de Facturación. Investigado cada uno contra
+el código real antes de tocar nada (mismo criterio de siempre — no asumir).
+- **(1) "Compactar Tipo de comprobante":** era una fila de 5 botones-píldora (`ncfChips`/`.pf2chip`) que
+  se enrollaba en 2-3 líneas. Se cambió a un `<select id="facNCFSel">` de una sola línea — mismo patrón ya
+  usado para "Fecha" en el mismo grid (`.nx-inv-field select`, CSS ya existente, no hizo falta CSS nuevo
+  para el campo en sí). `window.nxFacNCFPick(v)` se simplificó (ya no hay chips que resaltar con
+  `classList.toggle`, el propio `<select>` refleja el valor elegido). **Limpieza de paso:** `.pf2chip`/
+  `.pf2chiprow` (CSS en `nxPfEnsureCSS()`) se borraron por completo — confirmado con grep que no los usaba
+  nada más en todo el archivo (regla #1 del reglamento, "depurar — quitar dead code").
+- **(2)+(3) Lupa 🔍 de "Prefacturas" junto a "Tipo de comprobante":** el dueño pidió el mismo patrón
+  "lupa+click abre ventana" que ya usa "No. Factura" (su lupa abre el Historial, `nxFacHist`) pero para
+  Prefacturas. Se agregó un `.nx-inv-iconbtn` (mismo componente, morado `#7c3aed` como el resto de acentos
+  de Prefactura) DENTRO del campo "Tipo de comprobante", a la izquierda del `<select>`, con
+  `onclick="window.nxPrefLista()"` (función ya existente, sin tocar). El botón "Prefacturas" que antes
+  vivía solo en el `.nx-inv-toolbar` de abajo (compartiendo fila con "Limpiar carrito") se QUITÓ de ahí —
+  quedaba redundante con la lupa nueva — y el toolbar pasó a una sola columna con solo "Limpiar carrito".
+- **(4) "Historial es la misma lupa que está al lado izquierdo de No. de Factura":** confirmado, no era un
+  pedido de cambio — el dueño estaba verificando que ya es así (`nx-inv-iconbtn` de `numField`,
+  `onclick="window.nxFacHist()"`), correcto desde v48.39. No se tocó.
+- **(5) — la pieza más grande: "al hacer clic en un historial de factura, que la jale a la misma ventana
+  de facturación con los mismos campos llenos, por si quiero corregir algo".** Investigado primero: hoy
+  tanto tocar una fila del Historial (`nxFacHistRows`) como escribir un número y Enter (`nxFacBuscarNum`)
+  solo abrían el TICKET de reimpresión (`window.nxPosTicket`) — un recibo chiquito de solo lectura, no la
+  cara de la pantalla de Facturación. **Decisión de arquitectura tomada con cuidado, no antojo:** el propio
+  código del sistema ya documenta la regla "Factura, una vez confirmada, no se edita (solo se anula)" — así
+  que NO se implementó "cargar la factura vieja en `_cart`/`_factCli` y dejarla lista para tocar Cobrar de
+  nuevo" (eso arriesgaría un cobro duplicado/NCF duplicado, exactamente el tipo de bug de dinero que este
+  archivo lleva toda la sesión evitando). En su lugar se construyó **`window.nxFacVerVenta(ventaId)`**: un
+  modal nuevo con la MISMA cara visual que la pantalla de Facturación (`.nxPf`/`.nx-inv-*`, mismos
+  recuadros Cliente/Tipo de comprobante/Fecha, mismo estilo de tabla) — pero de **solo lectura**: título con
+  el número de factura + badge "YA FACTURADA" (verde) o "ANULADA" (rojo), 4 campos (Cliente, Tipo de
+  comprobante con su NCF real, Fecha, Método de pago), tabla de artículos (cantidad/nombre/precio/importe,
+  con `data-l` para que colapse igual de bien a tarjetas en el celular que el resto de tablas `.nx-inv-*`),
+  total, y una fila de acciones REALES para corregir: **Imprimir** (reusa `nxPosTicketVenta`, ya existía),
+  **Ver cadena** (reusa `nxDocCadena`, Motor de Documentos Fases 1-2), y si la factura NO está anulada,
+  **Nota de crédito** (reusa `nxDevNueva`) y **Anular** (reusa `nxPosAnularVenta`) — los 4 son funciones
+  YA EXISTENTES, cero lógica de corrección nueva, solo se juntaron en un solo lugar de un toque. Se
+  reemplazó `window.nxPosTicket(...)` por `window.nxFacVerVenta(...)` en los 2 puntos de entrada
+  (`nxFacHistRows` — la fila del historial cierra su propio modal antes de abrir el nuevo — y
+  `nxFacBuscarNum`). El botón "Ver cadena" de la fila del historial (que ya existía, `event.stopPropagation`)
+  no se tocó. `nxPosTicket` (el original) se dejó intacto — lo sigue usando "Historial de ventas" (pantalla
+  aparte del sidebar, `renderVentas`, fuera de alcance de este pedido).
+- **(6) "Cliente por mayor solo factura el precio de ese nivel":** investigado `precioCli(p)` y los 3
+  caminos reales para agregar un artículo (`nxFacAdd`, `nxProdPickAdd`→`nxFacAdd`, sugerencias del
+  buscador) — los 3 ya pasan por `precioCli()`, que ya prioriza `nivel_id` específico del cliente (precio
+  configurado en `pos_producto_niveles`) sobre el legado `nivel_precio==='mayor'` sobre el precio de lista
+  — esto viene de la Fase 1 de NEXUS PRO X 2026 (v48.27) y el bug ya arreglado en v48.36. **No se encontró
+  ningún bug real** — se verificó con 3 escenarios (cliente normal, cliente "por mayor" legado, cliente con
+  un nivel de precio específico configurado) que cada uno cobra exactamente el precio que le corresponde.
+  No hizo falta ningún cambio de código para este punto — se deja documentado aquí como confirmación.
+- Verificado con Playwright, código real extraído del archivo (no una reconstrucción): el `<select>` de
+  comprobante cambia `_facNCF` correctamente, la lupa de Prefacturas dispara `nxPrefLista()`, el toolbar
+  quedó con un solo botón, tocar una fila del historial cierra el modal de Historial y abre
+  `nxFacVerVenta` con los datos correctos (cliente/comprobante+NCF/fecha/método/items/total), escribir un
+  número de factura existente hace lo mismo, una factura anulada muestra solo Imprimir+Ver cadena (sin
+  Nota de crédito ni Anular), tocar "Imprimir" llama a `nxPosTicketVenta` con el id correcto, y los 3
+  escenarios de `precioCli()` calculan el precio correcto — sin desbordes en 390px, 812px (el mismo ancho
+  de la captura real que mandó el dueño desde su iPhone en horizontal) ni 1100px, 0 errores de JS. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
 
 ### Animaciones del sistema — vocabulario CSS global reusable (v48.61)
 El dueño pidió "darle animación al sistema" (mostró una referencia de un producto que renderiza HTML a

@@ -15831,7 +15831,7 @@
     const cliActual = _clientes.find(c => String(c.id) === String(_factCli));
     const cliTxt = cliActual ? (cliActual.codigo ? cliActual.codigo + ' · ' : '') + cliActual.nombre + (cliActual.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
     programarCargaUltimaCompra(cliActual && cliActual.id);
-    const ncfChips = NCF_TIPOS.map(t => `<button type="button" class="pf2chip${_facNCF === t[0] ? ' on' : ''}" data-ncf="${t[0]}" onclick="window.nxFacNCFPick('${t[0]}')">${t[1]}</button>`).join('');
+    const ncfOptions = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${esc(t[1])}</option>`).join('');
     const pre = esPreTab();
     const catTabs = `<button type="button" class="nx-inv-tab${_facCatSel === '' ? ' on' : ''}" data-cat="" onclick="window.nxFacCat('')">Todos</button>` + _cats.map(c => `<button type="button" class="nx-inv-tab${String(_facCatSel) === String(c.id) ? ' on' : ''}" data-cat="${c.id}" onclick="window.nxFacCat('${c.id}')">${esc(c.nombre)}</button>`).join('');
     const numField = pre
@@ -15852,8 +15852,11 @@
               <div class="pf2clidrop" id="facCliDrop"></div>
             </div>
             <div class="nx-inv-field">
-              <label class="nx-inv-label">Tipo de comprobante</label>
-              <div class="pf2chiprow" id="facNCFChips">${ncfChips}</div>
+              <label class="nx-inv-label" for="facNCFSel">Tipo de comprobante</label>
+              <div style="display:flex;align-items:center;gap:6px">
+                <button type="button" class="nx-inv-iconbtn" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" aria-label="Ver prefacturas guardadas" style="color:#7c3aed;flex:none"><i class="ti ti-search"></i></button>
+                <select id="facNCFSel" onchange="window.nxFacNCFPick(this.value)" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:16px;font-weight:700;color:#0f172a;font-family:inherit">${ncfOptions}</select>
+              </div>
             </div>
             <div class="nx-inv-field"><label class="nx-inv-label" for="facFecha">Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-weight:700;color:#0f172a;font-family:inherit;font-size:16px"></div>
           </div>
@@ -15870,8 +15873,7 @@
             <summary><i class="ti ti-note"></i> ${_facNota ? 'Nota / condiciones' : 'Agregar nota o condiciones'}</summary>
             <textarea id="facNota" placeholder="Ej: precio válido por 15 días, incluye instalación…" maxlength="500" oninput="window.nxFacNotaSet(this.value)">${esc(_facNota)}</textarea>
           </details>` : ''}
-          <div class="nx-inv-toolbar">
-            <button type="button" class="nx-inv-toolbtn" onclick="window.nxPrefLista()"><i class="ti ti-file-description"></i> Prefacturas</button>
+          <div class="nx-inv-toolbar" style="grid-template-columns:1fr">
             <button type="button" class="nx-inv-toolbtn danger" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Limpiar carrito</button>
           </div>
         </div>
@@ -15922,10 +15924,7 @@
   };
   window.nxFacSetCredito = function (b) { _facCredito = !!b; const el = document.getElementById('facNumPrev'); if (el) el.textContent = proxNumeroFacturaFmt(_facCredito); };
   // Chips del comprobante fiscal (look premium) — llaman a nxFacSetNCF (sin cambios) y repintan el estado activo
-  window.nxFacNCFPick = function (v) {
-    window.nxFacSetNCF(v);
-    document.querySelectorAll('#facNCFChips .pf2chip').forEach(b => b.classList.toggle('on', b.getAttribute('data-ncf') === v));
-  };
+  window.nxFacNCFPick = function (v) { window.nxFacSetNCF(v); };
   // Selector de cliente con buscador (look premium) — llama a nxFacSetCli (sin cambios) al elegir
   window.nxFacCliToggle = function () {
     const drop = document.getElementById('facCliDrop'); if (!drop) return;
@@ -17356,9 +17355,6 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .pf2clirow:hover{background:var(--pf-bg)}
 .nxPf .pf2clirow b{font-size:12.5px;color:var(--pf-txt)}
 .nxPf .pf2clirow span{font-size:10.5px;color:var(--pf-txt3)}
-.nxPf .pf2chiprow{display:flex;gap:6px;flex-wrap:wrap}
-.nxPf .pf2chip{padding:7px 12px;border-radius:999px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
-.nxPf .pf2chip.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
 .nxPf .pf2cliinfo{display:flex;flex-wrap:wrap;gap:6px 14px;padding:9px 16px 3px;font-size:11.5px;color:var(--pf-txt2)}
 .nxPf .card .pf2cliinfo{padding-left:0;padding-right:0}
 .nxPf .pf2cliinfo-i{display:inline-flex;align-items:center;gap:5px;font-weight:600}
@@ -21980,12 +21976,54 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       return;
     }
     const hit = (_ventas || []).find(x => { const m = String(x.numero_factura || '').match(/(\d+)\s*$/); return (m && parseInt(m[1], 10) === n) || Number(x.numero) === n; });
-    if (hit) window.nxPosTicket(hit.id);
+    if (hit) window.nxFacVerVenta(hit.id);
     else toast('warn', 'No existe la factura No. ' + n, 'Toca la lupa para ver todas');
     if (inp) inp.value = prox;
   };
 
-
+  // Ver una factura ya generada, con la MISMA cara visual de la ventana de Facturación (mismos
+  // recuadros/tabla) — pero de SOLO LECTURA: una factura confirmada no se re-edita ni se vuelve a
+  // cobrar (regla ya establecida del sistema), solo se corrige con Anular o Nota de crédito. Se abre
+  // en un modal (no toca _cart/_factCli) para que jamás pueda pisar una venta en curso ni disparar
+  // un cobro duplicado por accidente.
+  window.nxFacVerVenta = async function (ventaId) {
+    let v = (_ventas || []).find(x => String(x.id) === String(ventaId));
+    if (!v) { try { const r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + ventaId); v = r && r[0]; } catch (e) {} }
+    if (!v) { toast('err', 'Factura no encontrada'); return; }
+    let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
+    const anulada = !!(v.anulada || v.estado === 'anulada');
+    const tipoLbl = (NCF_TIPOS.find(t => t[0] === (v.tipo_comprobante || 'sin')) || [null, 'Sin comprobante'])[1];
+    const filas = items.length ? items.map(it => `<tr><td data-l="Cant.">${Number(it.cantidad || 0)}</td><td data-l="Artículo">${esc(it.nombre || '')}</td><td class="r" data-l="Precio">${fmt(it.precio || 0)}</td><td class="r" data-l="Importe">${fmt(it.importe != null ? it.importe : Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('')
+      : '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px">Sin artículos</td></tr>';
+    cerrarModal('nxFacVerM');
+    const ov = document.createElement('div'); ov.id = 'nxFacVerM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="nx-inv-head" style="border-bottom:1px solid #f1f5f9">
+        <div class="nx-inv-title">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${anulada ? '<span class="nx-inv-draft" style="color:#b91c1c;background:#fef2f2;border-color:#fecaca">ANULADA</span>' : '<span class="nx-inv-draft" style="color:#15803d;background:#f0fdf4;border-color:#bbf7d0">YA FACTURADA</span>'}</div>
+        <button class="nxBack" type="button" onclick="document.getElementById('nxFacVerM').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:14px 16px">
+        <div class="nx-inv-info" style="padding:0 0 12px;grid-template-columns:1fr 1fr">
+          <div class="nx-inv-field"><div class="nx-inv-label">Cliente</div><div style="font-weight:700;font-size:14px">${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
+          <div class="nx-inv-field"><div class="nx-inv-label">Tipo de comprobante</div><div style="font-weight:700;font-size:14px">${esc(tipoLbl)}${v.ncf ? ' · ' + esc(v.ncf) : ''}</div></div>
+          <div class="nx-inv-field"><div class="nx-inv-label">Fecha</div><div style="font-weight:700;font-size:14px">${fechaDMY(v.fecha || v.created_at)}</div></div>
+          <div class="nx-inv-field"><div class="nx-inv-label">Método de pago</div><div style="font-weight:700;font-size:14px">${esc(v.metodo_pago || (Number(v.credito_monto || 0) > 0 ? 'Fiado' : 'Efectivo'))}</div></div>
+        </div>
+        <div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:12px">
+          <table class="nx-inv-table" style="min-width:0"><thead><tr><th>Cant.</th><th>Artículo</th><th style="text-align:right">Precio</th><th style="text-align:right">Importe</th></tr></thead><tbody>${filas}</tbody></table>
+        </div>
+        <div class="nx-inv-total" style="border-top:none;margin-top:12px;padding-top:0"><span style="font-size:13px;color:#64748b;font-weight:700">TOTAL</span><span>${fmt(v.total)}</span></div>
+      </div>
+      <div class="nx-inv-actions" style="padding:14px 16px;margin-top:0;border-top:1px solid #f1f5f9">
+        <button type="button" class="nx-inv-btn" onclick="window.nxPosTicketVenta('${v.id}')"><i class="ti ti-printer"></i> Imprimir</button>
+        <button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDocCadena('pos_ventas','${v.id}')"><i class="ti ti-git-branch"></i> Ver cadena</button>
+        ${anulada ? '' : `<button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDevNueva('${v.id}')"><i class="ti ti-receipt-refund"></i> Nota de crédito</button>
+        <button type="button" class="nx-inv-btn danger" onclick="document.getElementById('nxFacVerM').remove();window.nxPosAnularVenta('${v.id}')"><i class="ti ti-ban"></i> Anular</button>`}
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
 
   // MÓDULO PREFACTURA: reusa el formulario COMPLETO de Factura (mismos campos, IMEI, buscadores).
   // La diferencia: es preventa — no valida stock y en vez de Cobrar, GUARDA la prefactura.
@@ -22472,7 +22510,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const pags = Math.max(1, Math.ceil(lista.length / 10));
     if (_fhPage >= pags) _fhPage = pags - 1;
     const pagina = lista.slice(_fhPage * 10, _fhPage * 10 + 10);
-    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosTicket('${v.id}')">
+    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();window.nxFacVerVenta('${v.id}')">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${(v.anulada || v.estado === 'anulada') ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
         <b style="font-size:12.5px">${fmt(v.total)}</b>${!(v.anulada || v.estado === 'anulada') ? `<button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="event.stopPropagation();window.nxDocCadena('pos_ventas','${v.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch" style="font-size:13px"></i></button>` : ''}<span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
