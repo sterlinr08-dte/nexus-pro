@@ -17674,7 +17674,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
                     <div class="imgpanel">
                       <label style="font-size:10px;font-weight:700;color:var(--pf-txt3);text-transform:uppercase;letter-spacing:.3px">Imagen</label>
                       <div class="imgbox" id="ppImgBox">${e.imagen ? `<img id="ppImgPrev" src="${esc(e.imagen)}" onerror="this.style.display='none'"><button type="button" class="imgx" title="Quitar imagen" aria-label="Quitar imagen" onclick="const i=document.getElementById('ppImg');i.value='';window.nxPfImgSync();"><i class="ti ti-x"></i></button>` : `<i class="ti ${e.tipo === 'servicio' ? 'ti-tool' : 'ti-box'} ph" id="ppImgPh"></i>`}</div>
-                      <div class="fld"><label>URL de la imagen</label><div class="inw"><i class="ti ti-link"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..." oninput="window.nxPfImgSync()"></div></div>
+                      <input type="file" id="ppImgFile" accept="image/*" style="display:none" onchange="window.nxPfImgFile(this)">
+                      <button type="button" class="btn2" style="width:100%" onclick="document.getElementById('ppImgFile').click()"><i class="ti ti-upload"></i> Cargar imagen</button>
+                      <div class="fld"><label>...o pega una URL</label><div class="inw"><i class="ti ti-link"></i><input id="ppImg" class="no-upper" value="${esc(e.imagen || '')}" placeholder="https://..." oninput="window.nxPfImgSync()"></div></div>
                     </div>
                   </div>
                 </div>
@@ -17932,6 +17934,34 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const url = (document.getElementById('ppImg') || {}).value || '';
     const serv = val('ppTipo') === 'servicio';
     box.innerHTML = url ? `<img id="ppImgPrev" src="${esc(url)}" onerror="this.style.display='none'"><button type="button" class="imgx" title="Quitar imagen" aria-label="Quitar imagen" onclick="const i=document.getElementById('ppImg');i.value='';window.nxPfImgSync();"><i class="ti ti-x"></i></button>` : `<i class="ti ${serv ? 'ti-tool' : 'ti-box'} ph" id="ppImgPh"></i>`;
+  };
+  // Cargar imagen desde el dispositivo: se lee, se comprime a JPEG (misma técnica ya probada en
+  // Rifas — canvas + toDataURL) y se guarda como dataURL directo en el mismo campo #ppImg de
+  // siempre (pos_productos.imagen es texto, acepta tanto una URL como un dataURL).
+  window.nxPfImgFile = function (input) {
+    const f = input.files && input.files[0]; if (!f) return;
+    if (f.size > 12 * 1024 * 1024) { toast('err', 'Imagen muy grande', 'Máximo 12 MB'); input.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        let dataUrl;
+        try {
+          let max = 640, w = img.width, h = img.height;
+          if (w > max || h > max) { const s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+          const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          dataUrl = cv.toDataURL('image/jpeg', 0.78);
+        } catch (er) { dataUrl = ev.target.result; }
+        const i = document.getElementById('ppImg'); if (i) i.value = dataUrl;
+        window.nxPfImgSync();
+        input.value = '';
+        try { toast('ok', 'Imagen cargada', 'Se guarda al tocar Guardar'); } catch (er) {}
+      };
+      img.onerror = function () { toast('err', 'No se pudo leer la imagen'); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
   };
   window.nxPfProvEntrega = function () {
     const box = document.getElementById('nxPfProvEntregaBox'); if (!box) return;
