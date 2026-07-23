@@ -17324,9 +17324,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxCtaWrap .ctamov .mt{font-size:12.5px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nxCtaWrap .ctamov .md{font-size:10.5px;color:var(--pf-txt3)}
 .nxCtaWrap .ctamov .mv{font-size:12.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;font-variant-numeric:tabular-nums}
-.nxRepWrap .nxRepCard{background:var(--pf-panel);border-color:var(--pf-line);box-shadow:none}
-.nxRepWrap .nxRepTit{color:var(--pf-txt2)}
-.nxRepWrap .nxRepTit i{color:var(--pf-blue)}
+.nxRepWrap .nxRepCard,.nxInvWrap .nxRepCard{background:var(--pf-panel);border-color:var(--pf-line);box-shadow:none}
+.nxRepWrap .nxRepTit,.nxInvWrap .nxRepTit{color:var(--pf-txt2)}
+.nxRepWrap .nxRepTit i,.nxInvWrap .nxRepTit i{color:var(--pf-blue)}
+.nxInvWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2)}
+.nxInvWrap .tw table td{color:var(--pf-txt2)}
+.nxInvWrap .nxAlmCard{background:var(--pf-panel);border-color:var(--pf-line)}
+.nxInvWrap .nxAlmChip{background:var(--pf-blue-l);color:var(--pf-blue-d)}
 .nxRepWrap .nxRepMetTop{color:var(--pf-txt2)}.nxRepWrap .nxRepMetTop b{color:var(--pf-txt)}
 .nxRepWrap .nxRepMetBar{background:var(--pf-bg)}
 .nxRepWrap .nxRepBarL{color:var(--pf-txt3)}
@@ -20856,12 +20860,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   }
   function fmtN(n) { return Number(n || 0).toLocaleString('en-US'); }
   function renderInventario() {
+    nxPfEnsureCSS();
     const prods = invProductosStock();
     const valCosto = prods.reduce((s, p) => s + Number(p.stock || 0) * Number(p.costo || 0), 0);
     const valPrecio = prods.reduce((s, p) => s + Number(p.stock || 0) * Number(p.precio || 0), 0);
     const bajos = prods.filter(p => Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0);
     const sinStock = prods.filter(p => Number(p.stock || 0) <= 0);
-    const kpi = (l, v, c) => `<div class="nxCtaKpi"><div class="nxCtaKpiL">${l}</div><div class="nxCtaKpiV" style="color:${c}">${v}</div></div>`;
+    const kpi = (l, v, c) => kpiPf(l, v, c);
     const prodList = prods.map(p => `<option value="${esc(p.nombre)}${p.codigo ? ' [' + esc(p.codigo) + ']' : ''}">`).join('');
     let detalle = '';
     if (_invProdSel) {
@@ -20881,8 +20886,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     }
     const bajosHTML = bajos.length ? `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit"><i class="ti ti-alert-triangle" style="color:#ea580c"></i> Bajo stock (${bajos.length})</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Stock</th><th style="text-align:right">Mínimo</th><th></th></tr></thead><tbody>${bajos.map(p => `<tr><td>${esc(p.nombre)}</td><td style="text-align:right;font-weight:700;color:${Number(p.stock || 0) <= 0 ? '#dc2626' : '#ea580c'}">${fmtN(p.stock)}</td><td style="text-align:right;color:#475569">${fmtN(p.stock_min)}</td><td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxInvAjustarProd('${p.id}')"><i class="ti ti-adjustments"></i></button></td></tr>`).join('')}</tbody></table></div></div>` : '';
     const recientes = _invMovs.length ? `<div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-arrows-exchange"></i> Movimientos recientes</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${_invMovs.slice(0, 60).map(movFila).join('')}</tbody></table></div></div>` : '<div style="text-align:center;color:#475569;font-size:12px;padding:20px">Aún no hay movimientos. Se registran al vender, comprar, devolver o ajustar.</div>';
-    return `<div class="nxCtaKpis" style="margin-bottom:12px">
-        ${kpi('Productos', fmtN(prods.length), '#6d28d9')}
+    return `<div class="nxPf nxInvWrap"><div class="kpirow" style="margin-bottom:12px">
+        ${kpi('Productos', fmtN(prods.length), '#2563eb')}
         ${kpi('Valor a costo', fmt(valCosto), '#0891b2')}
         ${kpi('Valor a precio', fmt(valPrecio), '#16a34a')}
         ${kpi('Bajo stock', fmtN(bajos.length), bajos.length ? '#ea580c' : '#16a34a')}
@@ -20892,7 +20897,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <button class="btn bsm bc1" type="button" onclick="window.nxInvAjustarProd('')"><i class="ti ti-adjustments"></i> Ajustar inventario</button>
         <div class="nxFacAdd" style="flex:1;min-width:180px;margin:0"><i class="ti ti-search"></i><input list="invProds" placeholder="Ver kardex de un producto..." onchange="window.nxInvBuscar(this.value)"><datalist id="invProds">${prodList}</datalist></div>
       </div>
-      ${almSec}${detalle}${bajosHTML}${recientes}`;
+      ${almSec}${detalle}${bajosHTML}${recientes}</div>`;
   }
   window.nxInvBuscar = function (txt) {
     const t = String(txt || '').toLowerCase();
