@@ -17364,6 +17364,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .nxRepEstT{border-top:1px solid var(--pf-line);margin-top:4px;padding-top:7px}
 .nxPf .nxRepEstT span{font-weight:700;color:var(--pf-txt)}
 .nxPf .nxRepEstT b{font-size:15px}
+.nxPf .bdg2{padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:800;white-space:nowrap;flex:0 0 auto}
+.nxPf .nxRepChip{border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2)}
+.nxPf .nxRepChip.on{background:var(--rc,var(--pf-blue));border-color:var(--rc,var(--pf-blue));color:#fff}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
 .nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
 .nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
@@ -21892,9 +21895,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   };
   window.nxRepVista = function (v) { _repVista = v; const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
   // Resumen estimado en vivo del formulario de recepción (Presupuesto − Avance = Falta)
-  window.nxRepEstim = function () {
-    const box = document.getElementById('nxRepEstimBox'); if (!box) return;
-    const pre = moneyVal('repPre'), abo = moneyVal('repAbo'); const falta = Math.max(0, pre - abo);
+  window.nxRepEstim = function (preId, aboId, boxId) {
+    preId = preId || 'repPre'; aboId = aboId || 'repAbo'; boxId = boxId || 'nxRepEstimBox';
+    const box = document.getElementById(boxId); if (!box) return;
+    const pre = moneyVal(preId), abo = moneyVal(aboId); const falta = Math.max(0, pre - abo);
     box.innerHTML = `<div class="nxRepEstR"><span>Presupuesto</span><b>${fmt(pre)}</b></div>
       <div class="nxRepEstR"><span>Avance recibido</span><b style="color:var(--pf-green)">${fmt(abo)}</b></div>
       <div class="nxRepEstR nxRepEstT"><span>Falta por cobrar</span><b style="color:${falta > 0 ? 'var(--pf-orange)' : 'var(--pf-green)'}">${fmt(falta)}</b></div>`;
@@ -21966,37 +21970,58 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   window.nxRepVer = function (id) {
+    nxPfEnsureCSS();
     const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
     cerrarModal('nxRepM');
     const est = repEst(r.estado);
+    const idx = REP_ESTADOS.findIndex(e => e[0] === r.estado);
+    const flow = REP_ESTADOS.map((e, i) => `<div class="nxRepFlowStep${idx >= 0 && i <= idx ? ' on' : ''}"><span class="dot">${i + 1}</span><span class="lb">${e[1]}</span></div>`).join('');
     const chips = REP_ESTADOS.map(e => `<button type="button" class="nxRepChip${r.estado === e[0] ? ' on' : ''}" style="--rc:${e[2]}" onclick="window.nxRepEstado('${r.id}','${e[0]}')">${e[1]}</button>`).join('');
     const telW = String(r.cliente_telefono || '').replace(/\D/g, '');
     const msg = 'Hola ' + (r.cliente_nombre || '') + ', su equipo ' + (r.equipo || '') + ' (' + (r.numero || '') + ') está: ' + est[1].toUpperCase() + (r.estado === 'listo' ? '. ¡Ya puede pasar a recogerlo!' : '.') + (Number(r.presupuesto || 0) > 0 ? ' Presupuesto: ' + fmt(r.presupuesto) + (Number(r.abono || 0) > 0 ? ' (avance ' + fmt(r.abono) + ')' : '') : '');
-    const resto = Math.max(0, Number(r.presupuesto || 0) - Number(r.abono || 0));
+    const gi = garantiaInfo(r);
     const ov = document.createElement('div'); ov.id = 'nxRepM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-tool"></i> ${esc(r.numero || 'Reparación')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div style="overflow-y:auto;flex:1">
-        <div style="font-weight:800;font-size:15px">${esc(r.equipo)}</div>
-        <div style="font-size:11.5px;color:#475569;margin-bottom:2px">${esc(r.cliente_nombre || '')}${r.cliente_telefono ? ' · ' + esc(r.cliente_telefono) : ''}${r.imei ? ' · IMEI ' + esc(r.imei) : ''}</div>
-        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Recibido hace ${repDias(r)} día(s)${r.tecnico ? ' · Téc: ' + esc(r.tecnico) : ''}</div>
-        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:12px"><b style="color:#9a3412">Falla:</b> ${esc(r.falla || '')}${r.estado_fisico ? '<br><b style="color:#9a3412">Físico:</b> ' + esc(r.estado_fisico) : ''}${r.accesorios ? '<br><b style="color:#9a3412">Dejó:</b> ' + esc(r.accesorios) : ''}</div>
-        <div style="font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:4px">Estado (toca para mover)</div>
-        <div class="nxRepChips">${chips}</div>
-        <div class="fr" style="margin-top:8px"><label>Clave / patrón del equipo</label>${claveCapturaHTML('repEdit_' + r.id, r.clave || '')}</div>
-        <div class="fr" style="margin-top:8px"><label>Diagnóstico / trabajo hecho</label><textarea id="repDiag" rows="2" class="no-upper">${esc(r.diagnostico || '')}</textarea></div>
-        <div class="fr-row"><div class="fr"><label>Presupuesto RD$</label><input id="repPre2" data-nx-money inputmode="numeric" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div><div class="fr"><label>Avance RD$</label><input id="repAbo2" data-nx-money inputmode="numeric" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
-        ${r.estado !== 'entregado' ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 10px;font-size:12px;color:#166534">Al entregar se cobra el resto: <b>${fmt(resto)}</b>${_posCfg.garantia_rep_dias > 0 ? ` · se le dará ${_posCfg.garantia_rep_dias} día(s) de garantía` : ''}</div>` : `<div style="font-size:12px;color:#16a34a;font-weight:800">✓ Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>${garantiaInfo(r) ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${garantiaInfo(r).vigente ? '#16a34a' : '#dc2626'}"><i class="ti ti-shield-check"></i> Garantía ${garantiaInfo(r).vigente ? 'vigente hasta' : 'vencida el'} ${garantiaInfo(r).fecha}</div>` : ''}`}
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head">
+        <button class="nxBack" type="button" onclick="document.getElementById('nxRepM').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
+        <h3><i class="ti ti-tool"></i> ${esc(r.numero || 'Reparación')}</h3>
+        <span class="bdg2" style="background:${est[2]}22;color:${est[2]}">${est[1]}</span>
       </div>
-      <div class="fe" style="margin-top:10px;gap:6px;flex-wrap:wrap">
-        ${telW ? `<a class="btn bghost" style="color:#16a34a" href="https://wa.me/1${telW}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : ''}
-        <button class="btn bghost" type="button" onclick="window.nxRepImprimir('${r.id}')"><i class="ti ti-printer"></i> Orden</button>
-        <button class="btn bghost" type="button" onclick="window.nxRepDet('${r.id}')"><i class="ti ti-device-floppy"></i> Guardar</button>
-        ${r.estado !== 'entregado' ? `<button class="btn bc1" type="button" onclick="window.nxRepEntregar('${r.id}')"><i class="ti ti-check"></i> Entregar y cobrar</button>` : ''}
+      <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div class="nxRepFlow">${flow}</div>
+        <div class="card">
+          <h4><span class="bdg blue"><i class="ti ti-device-mobile"></i></span> ${esc(r.equipo)}</h4>
+          <div style="font-size:11.5px;color:var(--pf-txt2)">${esc(r.cliente_nombre || '')}${r.cliente_telefono ? ' · ' + esc(r.cliente_telefono) : ''}${r.imei ? ' · IMEI ' + esc(r.imei) : ''}</div>
+          <div style="font-size:11.5px;color:var(--pf-txt3);margin-top:2px">Recibido hace ${repDias(r)} día(s)${r.tecnico ? ' · Téc: ' + esc(r.tecnico) : ''}</div>
+          <div style="background:var(--pf-orange-l);border:1px solid var(--pf-orange);border-radius:10px;padding:8px 10px;margin-top:8px;font-size:12px;color:var(--pf-txt2)"><b style="color:var(--pf-orange)">Falla:</b> ${esc(r.falla || '')}${r.estado_fisico ? '<br><b style="color:var(--pf-orange)">Físico:</b> ' + esc(r.estado_fisico) : ''}${r.accesorios ? '<br><b style="color:var(--pf-orange)">Dejó:</b> ' + esc(r.accesorios) : ''}</div>
+        </div>
+        <div class="card">
+          <h4><span class="bdg purple"><i class="ti ti-progress"></i></span> Estado <span style="font-weight:600;color:var(--pf-txt3);font-size:11px">(toca para mover)</span></h4>
+          <div class="nxRepChips">${chips}</div>
+        </div>
+        <div class="card">
+          <h4><span class="bdg blue"><i class="ti ti-clipboard-text"></i></span> Diagnóstico</h4>
+          <div class="fld"><label>Diagnóstico / trabajo hecho</label><textarea id="repDiag" rows="2" class="no-upper" placeholder="Qué se encontró, qué se hizo...">${esc(r.diagnostico || '')}</textarea></div>
+          <div class="fld" style="margin-top:10px"><label>Clave / patrón del equipo</label>${claveCapturaHTML('repEdit_' + r.id, r.clave || '')}</div>
+        </div>
+        <div class="card">
+          <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Presupuesto</h4>
+          <div class="g2">
+            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">$</span><input id="repPre2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div></div>
+            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">$</span><input id="repAbo2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
+          </div>
+          ${r.estado !== 'entregado' ? `<div class="nxRepEstim" id="nxRepEstimBox2" style="margin-top:10px"></div>${_posCfg.garantia_rep_dias > 0 ? `<div style="margin-top:8px;font-size:11.5px;color:var(--pf-txt3)">Al entregar se le darán ${_posCfg.garantia_rep_dias} día(s) de garantía.</div>` : ''}` : `<div style="margin-top:10px;font-size:12px;color:var(--pf-green);font-weight:800">✓ Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>${gi ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${gi.vigente ? 'var(--pf-green)' : 'var(--pf-red)'}"><i class="ti ti-shield-check"></i> Garantía ${gi.vigente ? 'vigente hasta' : 'vencida el'} ${gi.fecha}</div>` : ''}`}
+        </div>
+      </div>
+      <div style="padding:12px 14px;border-top:1px solid var(--pf-line);display:flex;gap:6px;flex-wrap:wrap">
+        ${telW ? `<a class="ab sm g3" style="color:var(--pf-green);flex:1 1 auto" href="https://wa.me/1${telW}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : ''}
+        <button class="ab sm g3" style="flex:1 1 auto" type="button" onclick="window.nxRepImprimir('${r.id}')"><i class="ti ti-printer"></i> Orden</button>
+        <button class="ab sm g2" style="flex:1 1 auto" type="button" onclick="window.nxRepDet('${r.id}')"><i class="ti ti-device-floppy"></i> Guardar</button>
+        ${r.estado !== 'entregado' ? `<button class="ab sm g1" style="flex:1 1 auto" type="button" onclick="window.nxRepEntregar('${r.id}')"><i class="ti ti-check"></i> Entregar y cobrar</button>` : ''}
       </div>
     </div>`;
-    document.body.appendChild(ov); scanMoney(ov);
+    document.body.appendChild(ov); scanMoney(ov); window.nxRepEstim('repPre2', 'repAbo2', 'nxRepEstimBox2');
   };
   window.nxRepEstado = async function (id, est) {
     const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;

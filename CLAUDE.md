@@ -3598,6 +3598,40 @@ resumen en vivo que NO existía.
   a 390px y 1280px sin desbordes, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
   `index.html` pasan `new Function()`; `version.json` válido.
 
+### POS · Reparaciones — modal de diagnóstico (`nxRepVer`) rediseñado (23-jul-2026, v49.09)
+El dueño pidió darle "el mismo look" al modal de diagnóstico (la ventana que abre al tocar una
+reparación, donde se ve el equipo, se mueve el estado, se escribe diagnóstico/presupuesto y se
+entrega/cobra) — para cerrar la continuidad visual con el formulario de "Recibir equipo" (v49.08).
+Es también lo que cubre lo real de la **Diagnóstico Técnico V3** y **Recepción V3** de ChatGPT
+(ambas dejadas en `chatgpt/visual-draft`): las dos convergen en las mismas 2 piezas NUEVAS que
+**deliberadamente NO se construyeron** — "Piezas a reemplazar" y "Mano de obra" como líneas — porque
+hoy el taller solo tiene un número manual `costo_piezas`, no consume piezas del inventario, y eso
+sería un módulo nuevo con esquema nuevo (pendiente de que el dueño confirme si el taller descuenta
+piezas del inventario). Todo lo demás real de esas dos specs ya está hecho entre v49.07/08/09.
+- `nxRepVer` pasó del viejo modal `.nxPrForm` al look `.nxPf` — **mismo criterio quirúrgico: todos los
+  ids (`repDiag`/`repPre2`/`repAbo2`, la clave `repEdit_<id>`) y las funciones (`nxRepEstado`/`nxRepDet`/
+  `nxRepImprimir`/`nxRepEntregar`) intactos, cero cambios de lógica**. 4 tarjetas: Equipo (+cliente/
+  tel/IMEI/recibido/técnico + caja de falla/físico/dejó), Estado (los `nxRepChip` de siempre, ahora
+  theme-aware dentro de `.nxPf`), Diagnóstico (textarea + widget de clave/patrón), Presupuesto
+  (presupuesto/avance + resumen en vivo).
+- **Barra de pasos `.nxRepFlow`** que refleja el AVANCE real: marca "on" (azul) todos los pasos hasta
+  el estado actual inclusive (`REP_ESTADOS.findIndex(estado)`), no solo el primero como en Recepción —
+  aquí es más informativo mostrar progreso. Badge de estado en el header (`.bdg2`, pill nuevo con el
+  color real del estado).
+- **`nxRepEstim` generalizado** (retrocompatible): ahora acepta `(preId, aboId, boxId)` con los
+  defaults de Recepción (`repPre`/`repAbo`/`nxRepEstimBox`) — el modal de diagnóstico lo llama con
+  `('repPre2','repAbo2','nxRepEstimBox2')`. La llamada de Recepción (`nxRepEstim()`) sigue igual.
+- CSS nuevo scopeado a `.nxPf` en `nxPfEnsureCSS()`: `.bdg2` (pill de estado) + `.nxPf .nxRepChip`/
+  `.nxPf .nxRepChip.on` (los chips globales de estado, ahora con `var(--pf-*)` para verse bien en
+  claro y oscuro — antes eran blancos hardcodeados).
+- Verificado con Playwright, código real extraído (no reconstrucción — `nxRepVer`/`nxRepEstim`/`repEst`/
+  `repDias`/`garantiaInfo`/`claveCapturaHTML`/`nxClaveBodyHTML`/`claveParse` tal cual): el modal abre con
+  6 pasos (3 "on" para una reparación en 'reparando'), los 6 chips con el activo correcto, los ids
+  presentes, el resumen calcula Presupuesto 3,500 − Avance 1,000 = Falta 2,500 (y baja a 0 al igualar),
+  4 botones cuando no está entregado / 3 cuando sí (sin "Entregar") con la garantía mostrada; capturas
+  claro y oscuro a 390px y 1280px sin desbordes, 0 errores. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Verificación de la propuesta "Recepción de Equipos V2" de ChatGPT (23-jul-2026)
 El dueño pidió verificar una spec corta que ChatGPT dejó en `chatgpt/visual-draft`
 (`docs/visual-drafts/taller/RECEPCION_EQUIPOS_V2.md`, solo texto, sin mockup) para el formulario de
