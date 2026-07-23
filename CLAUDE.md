@@ -3566,6 +3566,38 @@ CSS scopeado theme-aware, **cero cambios en el flujo de estados ni en el cobro/e
   `<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Queda de la Tanda 2:**
   Recursos Humanos / Nómina.
 
+### POS · Reparaciones — formulario "Recibir equipo" rediseñado (23-jul-2026, v49.08)
+`window.nxRepNueva` (el formulario de recepción del taller) pasó del viejo modal `.nxPrForm` al look
+premium `.nxPf` — mismo criterio quirúrgico de siempre: **todos los ids de campo y `nxRepGuardar`
+(la lógica de guardado) intactos, cero cambios de negocio**, solo el "vestido" + una pieza nueva de
+resumen en vivo que NO existía.
+- **3 tarjetas** (`.card`, patrón `.fld`/`.inw`/`.g2`): Cliente (Nombre*/Teléfono con `inputmode="tel"`),
+  Equipo (Equipo*/IMEI marcado "(opcional)"/Falla*/Estado físico/Accesorios + el widget de clave/patrón
+  `claveCapturaHTML('repNueva','')` ya existente) y Presupuesto (Presupuesto/Avance/Técnico).
+- **Barra de pasos `.nxRepFlow`** arriba del formulario: los 6 estados reales de `REP_ESTADOS`
+  (Recibido → Diagnóstico → Reparando → Esperando pieza → Listo → Entregado, con el paso 1 "on") — NO
+  se inventaron pasos (el mockup V2/V3 de ChatGPT proponía 8 pasos con Presupuesto/Aprobación/Control
+  de calidad, que no existen en el esquema; se usan los 6 reales, ver la verificación de la V2 abajo).
+  Es informativa (muestra el ciclo por el que pasa una reparación), no interactiva en este formulario.
+- **Resumen en vivo `window.nxRepEstim`** (nuevo, junto a los demás helpers del IIFE de Reparaciones):
+  al escribir Presupuesto y Avance (ambos con `oninput="window.nxRepEstim()"`), recalcula
+  Presupuesto − Avance = **Falta por cobrar** (naranja si >0, verde si 0) en `#nxRepEstimBox` — 100% en
+  el navegador, no toca la base. Usa el `moneyVal` local del IIFE.
+- **Deliberadamente NO construido** (mismo criterio de "no fingir funciones que no existen"): los paneles
+  de "Piezas a reemplazar" (con inventario/costos) y "Mano de obra" del mockup de ChatGPT — el taller
+  HOY no consume piezas de `pos_productos` (decisión ya documentada en Fase 5 del Kardex Inteligente,
+  solo tiene un costo manual), así que construirlos sería un módulo nuevo, no un reskin; queda pendiente
+  de que el dueño confirme si el taller debe descontar piezas del inventario.
+- **CSS nuevo scopeado a `.nxPf`** en `nxPfEnsureCSS()`: `.nxRepFlow`/`.nxRepFlowStep`/`.dot`/`.lb`
+  (barra de pasos con scroll horizontal propio, conector entre pasos vía `::after`) y `.nxRepEstim`/
+  `.nxRepEstR`/`.nxRepEstT` (el cuadro de resumen) — theme-aware (se ve bien en claro y oscuro).
+- Verificado con Playwright, código real extraído del archivo (no reconstrucción — `nxRepNueva`/
+  `nxRepEstim`/`claveCapturaHTML`/`nxClaveBodyHTML` tal cual, con el CSS real de `nxPfEnsureCSS`): el
+  modal abre con las 6 pasos (paso 1 activo), los 10 campos presentes, el widget de clave presente, y el
+  resumen calcula Presupuesto 3,500 − Avance 1,000 = Falta 2,500 correcto; capturas en claro y oscuro
+  a 390px y 1280px sin desbordes, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Verificación de la propuesta "Recepción de Equipos V2" de ChatGPT (23-jul-2026)
 El dueño pidió verificar una spec corta que ChatGPT dejó en `chatgpt/visual-draft`
 (`docs/visual-drafts/taller/RECEPCION_EQUIPOS_V2.md`, solo texto, sin mockup) para el formulario de
