@@ -1963,6 +1963,45 @@ CLIENTE del POS en cobro/factura sigue siendo `<select>`") desde varias versione
   campo — las 8 pasan, 0 errores de JavaScript, sin desbordes en 390px. `node --check parches.js` limpio;
   los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### Financiamiento (Préstamos, Multiempresa) — método de interés PLANO vs SALDO INSOLUTO (23-jul-2026, v49.10)
+El dueño reportó lo que creía un bug: prestando 20,000 al 10% mensual en **8 cuotas quincenales**, él
+calculaba RD$3,500/cuota pero el sistema le daba **menos** (3,094). **No era un bug** — se auditó el motor
+real (`amortizar`/`calcPrestamo`/`tasaPorCuota`/`nxPrRecalc`) y estaba correcto: el sistema usaba
+**amortización de saldo insoluto** (interés solo sobre el saldo pendiente, baja cada cuota → cuota 3,094,
+interés total 4,756). El 3,500 del dueño es el **método plano / interés simple** (interés fijo sobre el
+monto completo: 20,000 × 5%/quincena × 8 = 8,000 → total 28,000 → 3,500/cuota). Son dos métodos legítimos;
+el plano es **más rentable** para el prestamista (8,000 vs 4,756 de ganancia en este caso) y es como se
+presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opción, por defecto el plano.
+- **Columna nueva `prestamos.metodo_interes`** (text, default `'saldo'`, migración `prestamos_metodo_interes`,
+  aditiva). Los préstamos ya creados quedan en `'saldo'` (el backfill del default) → **no cambian**. La
+  tabla estaba vacía al momento del cambio (el dueño solo estaba probando cálculos). `get_advisors` sin
+  hallazgos nuevos (solo agregué columna, sin tocar RLS).
+- **`amortizar(capital, tasaPct, n, base, frec, metodo)`** ganó un 6to parámetro. Rama nueva `'plano'`
+  (solo si hay interés): `interesTotal = round(capital × i × n)` con `i = tasaPorCuota%` (proporcional a la
+  frecuencia — quincenal = 5% cuando la mensual es 10%), cuotas todas iguales `round(total/n)`, la última
+  cuadra el redondeo. Si el método NO es 'plano' (incluye llamadas viejas SIN el parámetro), cae a la
+  amortización francesa de siempre — **retrocompatible, verificado**.
+- **Wiring** (todos pasan/leen el método, cero lógica de negocio nueva): `calcPrestamo` lee
+  `val('prMetodo')` (default 'plano'); `nxPrRecalc` (vista previa) pasa `c.metodo` y muestra una nota de
+  qué método es; `nxPrestamoGuardar` guarda `metodo_interes` (para cuotas; 'saldo' para libre/crédito);
+  `nxPrestamoVer` (detalle, recalcula la tabla en vivo) usa `p.metodo_interes||'saldo'` y lo muestra en el
+  encabezado de la tabla de amortización; el **contrato imprimible** (`nxPrestamoContrato`, cláusula de
+  pago) también usa el método real del préstamo. Selector nuevo `<select id="prMetodo">` en la caja de
+  cuotas del formulario (`abrirForm`), plano como primera opción (default para préstamos nuevos), y al
+  editar se preselecciona `p.metodo_interes`.
+- **Verificado con el código real extraído** (no reconstrucción): 18 aserciones en Node sobre `amortizar` —
+  plano da exactamente 3,500 (20,000/10%/8 quincenal, total 28,000, interés 8,000, suma de cuotas == total,
+  suma de capital == capital, saldo final 0), plano 4 mensual = 7,000, saldo insoluto sin cambio (3,094 /
+  6,309) tanto con método explícito como SIN parámetro (retrocompat), tasa 0 cae a capital/n, y un caso de
+  redondeo impar (7,000/3) cuadra al centavo. Más una prueba de DOM en Playwright con `calcPrestamo`/
+  `nxPrRecalc` reales: la vista previa muestra 3,500 en plano y 3,094 en saldo insoluto, con la nota
+  correcta. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Nota:** es el módulo Préstamos/Financiamiento de Multiempresa (`nxAbrirPrestamos`, tablas
+  `prestamos`/`prestamo_pagos`), NO el Cuotas del POS (`pos_financiamientos`) — ese sigue con su cálculo
+  propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
+  ahí con el mismo patrón.
+
 ### SEGUROS — Ficha del cliente, rediseño Enterprise (19-jul-2026, v48.53)
 El dueño pidió un rediseño visual completo del núcleo de Seguros (spec "NEXUS PRO SEGUROS 2026 –
 REDISEÑO VISUAL ENTERPRISE", solo capa visual, prohibido tocar lógica/Supabase/consultas). Por el
