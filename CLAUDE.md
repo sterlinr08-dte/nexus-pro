@@ -3547,6 +3547,48 @@ mismo patrón: wrapper aislado `.nxInvWrap`, KPIs premium, CSS scopeado, **cero 
   `<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Quedan de la Tanda 2:**
   Reparaciones (kanban), Recursos Humanos.
 
+### POS · Reparaciones (kanban) — rediseño visual (Tanda 2, 23-jul-2026, v49.07)
+`renderReparaciones()` (tablero kanban del Servicio Técnico) reskineado: wrapper aislado `.nxRepWrapK` +
+CSS scopeado theme-aware, **cero cambios en el flujo de estados ni en el cobro/entrega**.
+- Las columnas (`.nxRepCol`/`.nxRepColH`), tarjetas de equipo (`.nxRepCard`/`.nxRepNum`/`.nxRepEq`/
+  `.nxRepCli`/`.nxRepFalla`/`.nxRepPre`), píldoras En taller/Entregadas (`.nxInvPill`) y la lista de
+  entregadas (`.nxMdRow`/`.nxMdNom`/`.nxMdSub`, prestadas de Consultorio) pasaron de colores hardcodeados
+  (`#fff`/`#f8fafc`/`#0f172a`…) a `var(--pf-*)` vía CSS scopeado a `.nxRepWrapK` — antes en modo oscuro esas
+  tarjetas quedaban en blanco sobre fondo oscuro; ahora se ven bien en claro y oscuro. El color por estado
+  del encabezado de columna (`--rc`, gris/naranja/azul/magenta/verde) se conserva. `renderReparaciones`
+  solo cambió el wrapper; `repEst`/`repDias`/`garantiaInfo`/`nxRepNueva`/`nxRepVer`/`nxRepEstado` y todo el
+  flujo del taller intactos.
+- Verificado con Playwright, código real extraído (no reconstrucción — `renderReparaciones`/`repEst`/
+  `repDias`/`garantiaInfo`/`claveParse`/`claveDisplayHTML`/`posBuscador` tal cual): con 4 reparaciones (3
+  activas + 1 entregada con garantía vigente), el tablero arma las 5 columnas (excluye 'entregado'/
+  'cancelado') con sus 3 tarjetas, la píldora "En taller 3" activa, la vista Entregadas muestra la fila con
+  la garantía, sin desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Queda de la Tanda 2:**
+  Recursos Humanos / Nómina.
+
+### Verificación de la propuesta "Recepción de Equipos V2" de ChatGPT (23-jul-2026)
+El dueño pidió verificar una spec corta que ChatGPT dejó en `chatgpt/visual-draft`
+(`docs/visual-drafts/taller/RECEPCION_EQUIPOS_V2.md`, solo texto, sin mockup) para el formulario de
+recibir equipo del taller. Auditada contra el código real (`nxRepNueva`, `REP_ESTADOS`, esquema
+`pos_reparaciones`). Veredicto (para no fingir funciones): **la mayor parte NO es visual, es construir
+funciones nuevas.**
+- **Ya existe / no requiere cambio:** IMEI y Serie ya son opcionales en `nxRepNueva` (solo Cliente/Equipo/
+  Falla llevan `*`); el código interno automático ya existe (`nextSeq('reparacion')` → `REP-#####`).
+- **Estados inventados:** la "barra de progreso" que propone tiene 8 pasos (Recibido→Diagnóstico→
+  **Presupuesto**→**Aprobación**→Reparación→**Control de calidad**→Listo→Entregado) — pero los estados
+  REALES de `pos_reparaciones` son solo 6 (recibido/diagnostico/reparando/esperando_pieza/listo/entregado,
+  +cancelado). Presupuesto/Aprobación/Control de calidad NO existen. Una barra con los 6 estados reales sí
+  se podría, pero no con los 8 del mockup.
+- **Funciones nuevas, no visuales (requieren esquema + lógica):** "Panel de Piezas a reemplazar con
+  buscador, disponibilidad y costos" — el taller NO consume piezas del inventario hoy (decisión ya
+  documentada en Fase 5 del Kardex Inteligente: `pos_reparaciones` solo tiene un costo manual, sin ligar a
+  `pos_productos`); "Panel de Mano de obra" — no existe campo de mano de obra separado. Construir esos 2
+  paneles sería un módulo nuevo (tablas/columnas + lógica), no un reskin.
+- **Se puede hacer con datos reales:** el "Resumen estimado lateral" (deriva de Presupuesto/Avance que ya
+  existen). **Conclusión comunicada al dueño:** de la V2, casi todo lo aprovechable ya existe; lo nuevo
+  (piezas + mano de obra) es construcción de funciones que se agenda aparte si el dueño la quiere, no se
+  finge. NO se implementó nada de la V2 en esta ronda (solo el reskin del kanban, arriba).
+
 ### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
 El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
 vendiéndolo — quiere catálogo de cuentas bien organizado, costo/ganancia/destino contable por artículo, y
