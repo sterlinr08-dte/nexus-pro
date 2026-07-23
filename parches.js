@@ -17351,6 +17351,19 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxRepWrapK .nxMdRow{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
 .nxRepWrapK .nxMdNom{font-size:12.5px;font-weight:700;color:var(--pf-txt)}
 .nxRepWrapK .nxMdSub{font-size:10.5px;color:var(--pf-txt3)}
+.nxPf .nxRepFlow{display:flex;gap:0;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
+.nxPf .nxRepFlowStep{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px;flex:0 0 auto;position:relative}
+.nxPf .nxRepFlowStep .dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--pf-bg);border:1.5px solid var(--pf-line);color:var(--pf-txt3);font-size:10.5px;font-weight:800}
+.nxPf .nxRepFlowStep .lb{font-size:8.5px;font-weight:700;color:var(--pf-txt3);text-align:center;line-height:1.15;text-transform:uppercase}
+.nxPf .nxRepFlowStep.on .dot{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
+.nxPf .nxRepFlowStep.on .lb{color:var(--pf-blue)}
+.nxPf .nxRepFlowStep:not(:last-child)::after{content:'';position:absolute;top:11px;left:calc(50% + 14px);right:calc(-50% + 14px);height:1.5px;background:var(--pf-line)}
+.nxPf .nxRepEstim{background:var(--pf-bg);border:1px solid var(--pf-line);border-radius:11px;padding:10px 12px}
+.nxPf .nxRepEstR{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--pf-txt2);padding:3px 0}
+.nxPf .nxRepEstR b{font-size:12.5px;color:var(--pf-txt)}
+.nxPf .nxRepEstT{border-top:1px solid var(--pf-line);margin-top:4px;padding-top:7px}
+.nxPf .nxRepEstT span{font-weight:700;color:var(--pf-txt)}
+.nxPf .nxRepEstT b{font-size:15px}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
 .nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
 .nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
@@ -21878,25 +21891,60 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     document.querySelectorAll('.nxRepCard[data-busca]').forEach(c => { c.style.display = (!ql || (c.getAttribute('data-busca') || '').includes(ql)) ? '' : 'none'; });
   };
   window.nxRepVista = function (v) { _repVista = v; const el = document.getElementById('v-pos'); if (el) renderPOS(el); };
+  // Resumen estimado en vivo del formulario de recepción (Presupuesto − Avance = Falta)
+  window.nxRepEstim = function () {
+    const box = document.getElementById('nxRepEstimBox'); if (!box) return;
+    const pre = moneyVal('repPre'), abo = moneyVal('repAbo'); const falta = Math.max(0, pre - abo);
+    box.innerHTML = `<div class="nxRepEstR"><span>Presupuesto</span><b>${fmt(pre)}</b></div>
+      <div class="nxRepEstR"><span>Avance recibido</span><b style="color:var(--pf-green)">${fmt(abo)}</b></div>
+      <div class="nxRepEstR nxRepEstT"><span>Falta por cobrar</span><b style="color:${falta > 0 ? 'var(--pf-orange)' : 'var(--pf-green)'}">${fmt(falta)}</b></div>`;
+  };
   window.nxRepNueva = function () {
+    nxPfEnsureCSS();
     cerrarModal('nxRepM');
     const ov = document.createElement('div'); ov.id = 'nxRepM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-tool"></i> Recibir equipo</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div style="overflow-y:auto;flex:1">
-        <div class="fr-row"><div class="fr"><label>Cliente *</label><input id="repCli" class="no-upper" placeholder="Nombre"></div><div class="fr"><label>Teléfono</label><input id="repTel" inputmode="tel" placeholder="8095551234"></div></div>
-        <div class="fr-row"><div class="fr"><label>Equipo *</label><input id="repEq" class="no-upper" placeholder="iPhone 12, Samsung A54..."></div><div class="fr"><label>IMEI / Serie</label><input id="repImei" class="no-upper"></div></div>
-        <div class="fr"><label>Falla que reporta *</label><input id="repFalla" class="no-upper" placeholder="No enciende, pantalla rota..."></div>
-        <div class="fr"><label>Estado físico</label><input id="repFis" class="no-upper" placeholder="Rayado, tapa rota..."></div>
-        <div class="fr"><label>Clave / patrón del equipo</label>${claveCapturaHTML('repNueva', '')}</div>
-        <div class="fr"><label>Accesorios que deja</label><input id="repAcc" class="no-upper" placeholder="Cargador, forro..."></div>
-        <div class="fr-row"><div class="fr"><label>Presupuesto RD$</label><input id="repPre" data-nx-money inputmode="numeric" placeholder="0"></div><div class="fr"><label>Avance RD$</label><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0"></div></div>
-        <div class="fr"><label>Técnico</label><input id="repTec" class="no-upper" placeholder="Quién repara"></div>
+    const flow = REP_ESTADOS.map((e, i) => `<div class="nxRepFlowStep${i === 0 ? ' on' : ''}"><span class="dot">${i + 1}</span><span class="lb">${e[1]}</span></div>`).join('');
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head">
+        <button class="nxBack" type="button" onclick="document.getElementById('nxRepM').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
+        <h3><i class="ti ti-tool"></i> Recibir equipo</h3>
       </div>
-      <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bc1" type="button" onclick="window.nxRepGuardar()"><i class="ti ti-check"></i> Recibir e imprimir orden</button></div>
+      <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div class="nxRepFlow">${flow}</div>
+        <div class="card">
+          <h4><span class="bdg blue"><i class="ti ti-user"></i></span> Cliente</h4>
+          <div class="g2">
+            <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-user"></i><input id="repCli" class="no-upper" placeholder="Nombre del cliente"></div></div>
+            <div class="fld"><label>Teléfono</label><div class="inw"><i class="ti ti-phone"></i><input id="repTel" class="no-upper" inputmode="tel" placeholder="809-000-0000"></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h4><span class="bdg purple"><i class="ti ti-device-mobile"></i></span> Equipo</h4>
+          <div class="g2">
+            <div class="fld"><label>Equipo *</label><div class="inw"><i class="ti ti-device-mobile"></i><input id="repEq" class="no-upper" placeholder="iPhone 12, Samsung A54..."></div></div>
+            <div class="fld"><label>IMEI / Serie (opcional)</label><div class="inw"><i class="ti ti-scan-eye"></i><input id="repImei" class="no-upper" placeholder="Opcional"></div></div>
+          </div>
+          <div class="fld" style="margin-top:10px"><label>Falla que reporta *</label><div class="inw"><i class="ti ti-alert-triangle"></i><input id="repFalla" class="no-upper" placeholder="No enciende, pantalla rota..."></div></div>
+          <div class="g2" style="margin-top:10px">
+            <div class="fld"><label>Estado físico</label><div class="inw"><i class="ti ti-clipboard-text"></i><input id="repFis" class="no-upper" placeholder="Rayado, tapa rota..."></div></div>
+            <div class="fld"><label>Accesorios que deja</label><div class="inw"><i class="ti ti-plug"></i><input id="repAcc" class="no-upper" placeholder="Cargador, forro..."></div></div>
+          </div>
+          <div class="fld" style="margin-top:10px"><label>Clave / patrón del equipo</label>${claveCapturaHTML('repNueva', '')}</div>
+        </div>
+        <div class="card">
+          <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Presupuesto</h4>
+          <div class="g2">
+            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">$</span><input id="repPre" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
+            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">$</span><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
+          </div>
+          <div class="fld" style="margin-top:10px"><label>Técnico</label><div class="inw"><i class="ti ti-user-cog"></i><input id="repTec" class="no-upper" placeholder="Quién repara"></div></div>
+          <div class="nxRepEstim" id="nxRepEstimBox" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <div style="padding:12px 14px;border-top:1px solid var(--pf-line)"><button class="ab g1" style="width:100%" type="button" onclick="window.nxRepGuardar()"><i class="ti ti-check"></i> Recibir e imprimir orden</button></div>
     </div>`;
-    document.body.appendChild(ov); scanMoney(ov);
+    document.body.appendChild(ov); scanMoney(ov); window.nxRepEstim();
   };
   window.nxRepGuardar = async function () {
     const cli = val('repCli').trim(), eq = val('repEq').trim(), falla = val('repFalla').trim();
