@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14161f"/>
+      <stop offset="1" stop-color="#0a0b10"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      .t{font-family:'Plus Jakarta Sans',Arial,sans-serif;fill:#0f172a}
+      .muted{fill:#64748b}.white{fill:#fff}.blue{fill:#2563eb}.green{fill:#16a34a}.red{fill:#dc2626}.purple{fill:#6366f1}
+      .h1{font-size:28px;font-weight:700}.h2{font-size:18px;font-weight:700}.h3{font-size:14px;font-weight:700}.body{font-size:13px;font-weight:500}.small{font-size:11px;font-weight:500}.num{font-size:24px;font-weight:700}
+      .card{fill:#fff;stroke:#e2e8f0;stroke-width:1}.soft{fill:#f8fafc}.line{stroke:#e2e8f0;stroke-width:1}.nav{font-size:13px;font-weight:600;fill:#dbeafe}
+    </style>
+  </defs>
+
+  <rect width="1600" height="1000" fill="#f4f7fb"/>
+
+  <!-- DESKTOP FRAME -->
+  <g transform="translate(20 20)">
+    <rect x="0" y="0" width="1120" height="850" rx="22" fill="#fff" filter="url(#shadow)"/>
+    <rect x="0" y="0" width="170" height="850" rx="22" fill="url(#side)"/>
+    <rect x="150" y="0" width="20" height="850" fill="url(#side)"/>
+
+    <text x="24" y="38" class="t white h2">NEXUS PRO</text>
+    <text x="24" y="62" class="t blue h2">POS</text>
+
+    <g class="t nav">
+      <text x="28" y="112">⌂  Inicio</text>
+      <text x="28" y="154">🛒  Vender</text>
+      <text x="28" y="196">▣  Prefactura</text>
+      <text x="28" y="238">▤  Factura</text>
+      <text x="28" y="280">♙  Clientes</text>
+      <text x="28" y="322">◇  Productos</text>
+      <text x="28" y="364">▧  Inventario</text>
+    </g>
+    <rect x="14" y="388" width="142" height="42" rx="9" fill="#2563eb"/>
+    <text x="28" y="414" class="t white body">◉  Contabilidad</text>
+    <g class="t nav">
+      <text x="28" y="466">▥  Reportes</text>
+      <text x="28" y="508">▣  Caja</text>
+      <text x="28" y="550">⚙  Configuración</text>
+    </g>
+    <circle cx="35" cy="790" r="18" fill="#2563eb"/>
+    <text x="25" y="795" class="t white small">AD</text>
+    <text x="62" y="787" class="t white body">Administrador</text>
+    <text x="62" y="806" class="t muted small">Caja principal</text>
+
+    <!-- Header -->
+    <text x="200" y="44" class="t h1">Contabilidad</text>
+    <text x="200" y="66" class="t muted body">Resumen financiero y control contable</text>
+    <rect x="810" y="22" width="140" height="36" rx="9" class="card"/>
+    <text x="832" y="45" class="t body">NEXUS PRO SRL</text>
+    <rect x="960" y="22" width="140" height="36" rx="9" class="card"/>
+    <text x="976" y="45" class="t body">Julio 2026</text>
+
+    <!-- Tabs -->
+    <line x1="185" y1="90" x2="1100" y2="90" class="line"/>
+    <text x="205" y="116" class="t blue body">Resumen</text>
+    <text x="300" y="116" class="t muted body">Diario</text>
+    <text x="375" y="116" class="t muted body">Mayor</text>
+    <text x="445" y="116" class="t muted body">Plan de cuentas</text>
+    <text x="570" y="116" class="t muted body">Conciliación</text>
+    <text x="675" y="116" class="t muted body">Impuestos</text>
+    <text x="765" y="116" class="t muted body">Reportes</text>
+    <rect x="198" y="126" width="76" height="3" rx="2" fill="#2563eb"/>
+
+    <!-- KPI cards -->
+    <g transform="translate(190 145)">
+      <g>
+        <rect width="215" height="100" rx="14" class="card"/>
+        <circle cx="28" cy="28" r="16" fill="#dcfce7"/><text x="22" y="34" class="t green body">↗</text>
+        <text x="54" y="28" class="t muted small">Ingresos</text>
+        <text x="18" y="63" class="t num">RD$ 1,250,450</text>
+        <text x="18" y="84" class="t green small">+12.5% vs. período anterior</text>
+      </g>
+      <g transform="translate(225 0)">
+        <rect width="215" height="100" rx="14" class="card"/>
+        <circle cx="28" cy="28" r="16" fill="#fee2e2"/><text x="22" y="34" class="t red body">↘</text>
+        <text x="54" y="28" class="t muted small">Gastos</text>
+        <text x="18" y="63" class="t num">RD$ 850,230</text>
+        <text x="18" y="84" class="t red small">+8.3% vs. período anterior</text>
+      </g>
+      <g transform="translate(450 0)">
+        <rect width="215" height="100" rx="14" class="card"/>
+        <circle cx="28" cy="28" r="16" fill="#dbeafe"/><text x="22" y="34" class="t blue body">▥</text>
+        <text x="54" y="28" class="t muted small">Utilidad neta</text>
+        <text x="18" y="63" class="t num">RD$ 400,220</text>
+        <text x="18" y="84" class="t green small">+21.7% vs. período anterior</text>
+      </g>
+      <g transform="translate(675 0)">
+        <rect width="215" height="100" rx="14" class="card"/>
+        <circle cx="28" cy="28" r="16" fill="#ede9fe"/><text x="22" y="34" class="t purple body">▣</text>
+        <text x="54" y="28" class="t muted small">Saldo en cuentas</text>
+        <text x="18" y="63" class="t num">RD$ 2,350,780</text>
+        <text x="18" y="84" class="t muted small">Actualizado al 31/07/2026</text>
+      </g>
+    </g>
+
+    <!-- Cashflow chart -->
+    <g transform="translate(190 265)">
+      <rect width="555" height="270" rx="14" class="card"/>
+      <text x="18" y="30" class="t h3">Flujo de efectivo</text>
+      <text x="420" y="30" class="t muted small">Mensual ▾</text>
+      <line x1="50" y1="215" x2="520" y2="215" class="line"/>
+      <line x1="50" y1="170" x2="520" y2="170" class="line"/>
+      <line x1="50" y1="125" x2="520" y2="125" class="line"/>
+      <line x1="50" y1="80" x2="520" y2="80" class="line"/>
+      <polyline points="55,178 120,145 185,173 250,138 315,152 380,110 445,92 515,62" fill="none" stroke="#16a34a" stroke-width="3"/>
+      <polyline points="55,205 120,180 185,198 250,178 315,190 380,160 445,150 515,125" fill="none" stroke="#dc2626" stroke-width="3"/>
+      <polyline points="55,230 120,217 185,220 250,210 315,205 380,192 445,180 515,168" fill="none" stroke="#2563eb" stroke-width="3"/>
+      <g class="t muted small"><text x="50" y="244">Ene</text><text x="115" y="244">Feb</text><text x="180" y="244">Mar</text><text x="245" y="244">Abr</text><text x="310" y="244">May</text><text x="375" y="244">Jun</text><text x="440" y="244">Jul</text></g>
+      <circle cx="80" cy="28" r="4" fill="#16a34a"/><text x="90" y="32" class="t muted small">Ingresos</text>
+      <circle cx="155" cy="28" r="4" fill="#dc2626"/><text x="165" y="32" class="t muted small">Gastos</text>
+      <circle cx="220" cy="28" r="4" fill="#2563eb"/><text x="230" y="32" class="t muted small">Utilidad</text>
+    </g>
+
+    <!-- Expense distribution -->
+    <g transform="translate(760 265)">
+      <rect width="340" height="270" rx="14" class="card"/>
+      <text x="18" y="30" class="t h3">Distribución de gastos</text>
+      <circle cx="110" cy="140" r="72" fill="none" stroke="#e2e8f0" stroke-width="28"/>
+      <circle cx="110" cy="140" r="72" fill="none" stroke="#2563eb" stroke-width="28" stroke-dasharray="150 302" transform="rotate(-90 110 140)"/>
+      <circle cx="110" cy="140" r="72" fill="none" stroke="#16a34a" stroke-width="28" stroke-dasharray="90 362" stroke-dashoffset="-150" transform="rotate(-90 110 140)"/>
+      <circle cx="110" cy="140" r="72" fill="none" stroke="#dc2626" stroke-width="28" stroke-dasharray="62 390" stroke-dashoffset="-240" transform="rotate(-90 110 140)"/>
+      <text x="82" y="136" class="t muted small">Total</text><text x="70" y="157" class="t h3">RD$850,230</text>
+      <g class="t small">
+        <circle cx="210" cy="82" r="5" fill="#2563eb"/><text x="224" y="86">Costo de ventas 42%</text>
+        <circle cx="210" cy="116" r="5" fill="#16a34a"/><text x="224" y="120">Operativos 28%</text>
+        <circle cx="210" cy="150" r="5" fill="#dc2626"/><text x="224" y="154">Administrativos 17%</text>
+        <circle cx="210" cy="184" r="5" fill="#6366f1"/><text x="224" y="188">Financieros 8%</text>
+        <circle cx="210" cy="218" r="5" fill="#94a3b8"/><text x="224" y="222">Otros 5%</text>
+      </g>
+    </g>
+
+    <!-- Recent movements -->
+    <g transform="translate(190 550)">
+      <rect width="910" height="200" rx="14" class="card"/>
+      <text x="18" y="30" class="t h3">Últimos movimientos</text>
+      <g class="t muted small"><text x="18" y="58">Fecha</text><text x="110" y="58">Comprobante</text><text x="225" y="58">Descripción</text><text x="510" y="58">Cuenta</text><text x="690" y="58">Debe</text><text x="790" y="58">Haber</text></g>
+      <line x1="18" y1="70" x2="892" y2="70" class="line"/>
+      <g class="t small">
+        <text x="18" y="94">31/07/2026</text><text x="110" y="94" class="blue">AJ-000152</text><text x="225" y="94">Pago proveedor Distribuidora XYZ</text><text x="510" y="94">Cuentas por pagar</text><text x="690" y="94">RD$ 0.00</text><text x="790" y="94">RD$ 45,000</text>
+        <text x="18" y="124">31/07/2026</text><text x="110" y="124" class="blue">FC-000125</text><text x="225" y="124">Factura de venta</text><text x="510" y="124">Ventas</text><text x="690" y="124">RD$ 25,300</text><text x="790" y="124">RD$ 0.00</text>
+        <text x="18" y="154">30/07/2026</text><text x="110" y="154" class="blue">EG-000089</text><text x="225" y="154">Pago alquiler local</text><text x="510" y="154">Gastos de alquiler</text><text x="690" y="154">RD$ 18,000</text><text x="790" y="154">RD$ 0.00</text>
+      </g>
+      <text x="18" y="182" class="t blue small">Ver todos los movimientos →</text>
+    </g>
+  </g>
+
+  <!-- MOBILE FRAME -->
+  <g transform="translate(1180 30)">
+    <rect x="0" y="0" width="360" height="820" rx="48" fill="#101318" filter="url(#shadow)"/>
+    <rect x="12" y="12" width="336" height="796" rx="38" fill="#f4f7fb"/>
+    <rect x="118" y="22" width="124" height="28" rx="14" fill="#101318"/>
+    <rect x="12" y="62" width="336" height="82" fill="#2563eb"/>
+    <text x="32" y="95" class="t white h2">☰  Contabilidad</text>
+    <text x="312" y="95" class="t white h2">⌕</text>
+    <rect x="24" y="112" width="312" height="36" rx="9" fill="#fff"/>
+    <text x="40" y="135" class="t muted body">01/07/2026 – 31/07/2026</text>
+
+    <g transform="translate(24 160)">
+      <g><rect width="312" height="72" rx="13" class="card"/><circle cx="28" cy="28" r="15" fill="#dcfce7"/><text x="52" y="26" class="t muted small">Ingresos</text><text x="52" y="50" class="t h2">RD$ 1,250,450</text><text x="245" y="40" class="t green small">+12.5%</text></g>
+      <g transform="translate(0 82)"><rect width="312" height="72" rx="13" class="card"/><circle cx="28" cy="28" r="15" fill="#fee2e2"/><text x="52" y="26" class="t muted small">Gastos</text><text x="52" y="50" class="t h2">RD$ 850,230</text><text x="250" y="40" class="t red small">+8.3%</text></g>
+      <g transform="translate(0 164)"><rect width="312" height="72" rx="13" class="card"/><circle cx="28" cy="28" r="15" fill="#dbeafe"/><text x="52" y="26" class="t muted small">Utilidad neta</text><text x="52" y="50" class="t h2">RD$ 400,220</text><text x="245" y="40" class="t green small">+21.7%</text></g>
+      <g transform="translate(0 246)"><rect width="312" height="72" rx="13" class="card"/><circle cx="28" cy="28" r="15" fill="#ede9fe"/><text x="52" y="26" class="t muted small">Saldo en cuentas</text><text x="52" y="50" class="t h2">RD$ 2,350,780</text></g>
+    </g>
+
+    <g transform="translate(24 500)">
+      <rect width="312" height="180" rx="13" class="card"/>
+      <text x="14" y="28" class="t h3">Flujo de efectivo</text>
+      <line x1="24" y1="145" x2="288" y2="145" class="line"/>
+      <line x1="24" y1="105" x2="288" y2="105" class="line"/>
+      <line x1="24" y1="65" x2="288" y2="65" class="line"/>
+      <polyline points="28,128 65,105 102,120 139,98 176,105 213,78 250,70 286,48" fill="none" stroke="#16a34a" stroke-width="3"/>
+      <polyline points="28,145 65,130 102,138 139,125 176,132 213,115 250,105 286,92" fill="none" stroke="#dc2626" stroke-width="3"/>
+      <polyline points="28,160 65,152 102,154 139,148 176,145 213,136 250,130 286,122" fill="none" stroke="#2563eb" stroke-width="3"/>
+    </g>
+
+    <rect x="24" y="700" width="312" height="72" rx="13" class="card"/>
+    <text x="38" y="727" class="t h3">Últimos movimientos</text>
+    <text x="38" y="750" class="t muted small">AJ-000152 · Pago proveedor</text>
+    <text x="250" y="750" class="t red small">RD$45,000</text>
+
+    <rect x="12" y="758" width="336" height="50" rx="0" fill="#fff"/>
+    <line x1="12" y1="758" x2="348" y2="758" class="line"/>
+    <text x="34" y="789" class="t blue small">Resumen</text>
+    <text x="105" y="789" class="t muted small">Diario</text>
+    <circle cx="180" cy="782" r="24" fill="#2563eb"/><text x="173" y="789" class="t white h2">+</text>
+    <text x="228" y="789" class="t muted small">Cuentas</text>
+    <text x="292" y="789" class="t muted small">Reportes</text>
+  </g>
+
+  <!-- Footer note -->
+  <text x="40" y="920" class="t h2">Propuesta visual — Contabilidad NEXUS PRO</text>
+  <text x="40" y="946" class="t muted body">Referencia para Claude. No inventar funciones ni implementar mediante detectores del DOM. Usar funciones, datos e IDs reales.</text>
+  <text x="40" y="972" class="t muted small">Design system: .nxPf · #2563eb · Plus Jakarta Sans · escritorio + móvil</text>
+</svg>
