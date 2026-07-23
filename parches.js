@@ -12926,11 +12926,29 @@
   }
   // Amortización método de cuota fija (francés). tasa = % MENSUAL.
   // Trabaja en pesos enteros para que la suma de las cuotas cuadre EXACTO con el total.
-  function amortizar(capital, tasaPct, n, base, frec) {
+  function amortizar(capital, tasaPct, n, base, frec, metodo) {
     capital = Math.round(Number(capital || 0)); n = parseInt(n, 10) || 0;
     const i = tasaPorCuota(tasaPct, frec) / 100;
     const rows = []; let saldo = capital;
     if (n <= 0 || capital <= 0) return { cuota: 0, total: 0, interesTotal: 0, rows: [] };
+    // Método PLANO / interés simple: interés fijo por cuota sobre el capital ORIGINAL,
+    // cuotas todas iguales (estilo "a la dominicana"). Más rentable para el prestamista.
+    if (metodo === 'plano' && i > 0) {
+      const interesTotal = Math.round(capital * i * n);
+      const total = capital + interesTotal;
+      const cuotaBase = Math.round(total / n);
+      const intBase = Math.round(interesTotal / n);
+      let accCuota = 0, accCap = 0;
+      for (let k = 1; k <= n; k++) {
+        let cuotaK, capPart, interes;
+        if (k === n) { cuotaK = total - accCuota; capPart = capital - accCap; interes = cuotaK - capPart; } // la última cuadra el redondeo
+        else { cuotaK = cuotaBase; interes = intBase; capPart = cuotaBase - intBase; }
+        accCuota += cuotaK; accCap += capPart;
+        saldo = Math.max(0, capital - accCap);
+        rows.push({ n: k, fecha: fechaCuota(base, frec, k), cuota: cuotaK, interes: interes, capital: capPart, saldo: saldo });
+      }
+      return { cuota: cuotaBase, total: total, interesTotal: total - capital, rows: rows };
+    }
     const cuota = i > 0 ? Math.round(capital * i / (1 - Math.pow(1 + i, -n))) : Math.round(capital / n);
     for (let k = 1; k <= n; k++) {
       const interes = Math.round(saldo * i);
@@ -13211,9 +13229,10 @@
   // cuotas + tasa>0 -> amortización (tasa mensual). libre + tasa>0 -> interés fijo (capital × tasa%).
   function calcPrestamo() {
     const cap = parseMoney(val('prCap')), n = parseInt(val('prNumCuotas'), 10) || 0, tasa = parsePct(val('prTasa')), frec = val('prFrec') || 'mensual';
+    const metodo = val('prMetodo') || 'plano';
     if (_modoForm === 'cuotas' && tasa > 0 && cap > 0 && n > 0) {
-      const a = amortizar(cap, tasa, n, val('prFecha') || hoy(), frec);
-      return { computa: true, modo: 'cuotas', cap, tasa, n, frec, total: Math.round(a.total), interes: a.interesTotal, cuota: a.cuota };
+      const a = amortizar(cap, tasa, n, val('prFecha') || hoy(), frec, metodo);
+      return { computa: true, modo: 'cuotas', cap, tasa, n, frec, metodo, total: Math.round(a.total), interes: a.interesTotal, cuota: a.cuota };
     }
     if (_modoForm === 'libre' && tasa > 0 && cap > 0) {
       const total = Math.round(cap * (1 + tasa / 100));
@@ -13261,10 +13280,12 @@
     if (totRow) totRow.style.display = c.computa ? 'none' : '';
     if (c.computa && c.modo === 'cuotas') {
       const ic = tasaPorCuota(c.tasa, c.frec);
-      const nota = c.frec !== 'mensual' ? `${c.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${c.frec === 'semanal' ? 'semana' : 'quincena'}` : '';
+      const notaFrec = c.frec !== 'mensual' ? `${c.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${c.frec === 'semanal' ? 'semana' : 'quincena'}` : '';
+      const notaMet = c.metodo === 'plano' ? 'Método: interés simple (plano) — interés fijo sobre el monto' : 'Método: saldo insoluto — el interés baja cada cuota';
+      const nota = [notaFrec, notaMet].filter(Boolean).join(' · ');
       if (resumenWrap) resumenWrap.style.display = 'block';
       if (preview) preview.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${kpi('Cuota por pago', fmt(c.cuota), '#0f172a')}${kpi('Total a devolver', fmt(c.total), '#16a34a')}${kpi('Total interés', fmt(c.interes), '#ea580c')}</div>${nota ? `<div style="font-size:10.5px;color:#475569;margin-top:8px">${nota}</div>` : ''}`;
-      const a = amortizar(c.cap, c.tasa, c.n, fecha, c.frec);
+      const a = amortizar(c.cap, c.tasa, c.n, fecha, c.frec, c.metodo);
       prMostrarSchedule(a.rows, [
         { h: '#', get: r => '#' + r.n },
         { h: 'Fecha', get: r => r.fecha },
@@ -13322,6 +13343,7 @@
               <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.num_cuotas || ''}" placeholder="4"></div>
               <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.nxPrRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
             </div>
+            <div class="fr"><label>Método de interés</label><select id="prMetodo" onchange="window.nxPrRecalc()"><option value="plano">Interés simple (plano) — más ganancia</option><option value="saldo">Saldo insoluto — el interés baja cada cuota</option></select></div>
           </div>
           <div id="prCreditoBox" style="display:none">
             <div class="fr"><label>Plazo (meses) <span style="font-weight:400;color:#475569;font-size:10px">· fecha límite para devolver el capital</span></label><input id="prPlazo" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.plazo_meses || ''}" placeholder="6"></div>
@@ -13343,6 +13365,7 @@
             <div style="font-weight:800;margin-bottom:3px">ℹ️ Cómo funciona</div>
             <div>• La tasa de interés es <b>mensual</b>.</div>
             <div>• La cuota incluye capital + interés cuando hay tasa.</div>
+            <div>• <b>Interés simple (plano):</b> el interés se cobra sobre el monto completo en cada cuota (más ganancia). <b>Saldo insoluto:</b> solo sobre lo que falta (baja cada cuota).</div>
             <div>• En "Abonos libres" no hay cronograma fijo — se abona cuando el prestatario pueda.</div>
             <div>• Este préstamo no calcula mora automática; el vencimiento es solo referencia.</div>
           </div>
@@ -13352,6 +13375,7 @@
     document.body.appendChild(ov);
     pintarModo();
     if (p.frecuencia) { const s = document.getElementById('prFrec'); if (s) s.value = p.frecuencia; }
+    if (p.metodo_interes) { const sm = document.getElementById('prMetodo'); if (sm) sm.value = p.metodo_interes; }
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
   }
 
@@ -13385,6 +13409,7 @@
       modo: modo,
       num_cuotas: modo === 'cuotas' ? (parseInt(val('prNumCuotas'), 10) || null) : null,
       frecuencia: modo === 'cuotas' ? (val('prFrec') || 'mensual') : null,
+      metodo_interes: modo === 'cuotas' ? (val('prMetodo') || 'plano') : 'saldo',
       notas: (val('prNotas') || '').trim()
     };
     try {
@@ -13417,14 +13442,15 @@
           </table>
         </div>`;
     } else if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
-      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia);
+      const met = p.metodo_interes || 'saldo';
+      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia, met);
       let acum = 0;
       const rows = a.rows.map(r => {
         acum += r.cuota;
         const cub = pag >= acum - 0.5;
         return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
       }).join('');
-      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
+      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · ${met === 'plano' ? 'interés simple' : 'saldo insoluto'} · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
           <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:430px;background:#fff">
             <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">#</th><th style="padding:6px;text-align:left">Fecha</th><th style="padding:6px;text-align:right">Cuota</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:right">Capital</th><th style="padding:6px;text-align:right">Saldo</th><th style="padding:6px;text-align:center">Pag.</th></tr></thead>
@@ -13798,7 +13824,7 @@
       const total = Number(p.total_devolver || 0);
       const tieneInt = Number(p.tasa_interes || 0) > 0;
       let cuotaTxt = '';
-      if (tieneInt) { const a = amortizar(cap, p.tasa_interes, p.num_cuotas, p.fecha_prestamo, p.frecuencia); cuotaTxt = fmt(a.cuota); }
+      if (tieneInt) { const a = amortizar(cap, p.tasa_interes, p.num_cuotas, p.fecha_prestamo, p.frecuencia, p.metodo_interes || 'saldo'); cuotaTxt = fmt(a.cuota); }
       else { cuotaTxt = fmt(total / p.num_cuotas); }
       const ultima = fechaCuota(p.fecha_prestamo, p.frecuencia, p.num_cuotas);
       const primera = fechaCuota(p.fecha_prestamo, p.frecuencia, 1);
