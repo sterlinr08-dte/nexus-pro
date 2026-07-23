@@ -17305,6 +17305,25 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .hist tr td{font-size:11.5px}
 .nxPf .rolebadge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;background:var(--pf-blue-l);color:var(--pf-blue-d);font-size:9.5px;font-weight:800;margin:1px 3px 1px 0}
 .nxPf .emptyrow{text-align:center;color:var(--pf-txt3);padding:26px;font-size:12px}
+.nxCtaWrap .nxCtaAs,.nxCtaWrap .nxCtaRep{background:var(--pf-panel);border-color:var(--pf-line);color:var(--pf-txt2)}
+.nxCtaWrap .nxCtaAsHd,.nxCtaWrap .nxCtaRep td,.nxCtaWrap .nxCtaAsT td{color:var(--pf-txt2)}
+.nxCtaWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2)}
+.nxCtaWrap .ctagrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+@media(min-width:820px){.nxCtaWrap .ctagrid{grid-template-columns:1.5fr 1fr}}
+.nxCtaWrap .ctachart{display:block;width:100%;height:auto}
+.nxCtaWrap .clgnd{display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--pf-txt3);margin-top:6px}
+.nxCtaWrap .clgnd i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.nxCtaWrap .ctabarrow{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.nxCtaWrap .ctabarrow .nm{font-size:11.5px;color:var(--pf-txt2);flex:0 0 118px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxCtaWrap .ctabarrow .tr{flex:1;height:8px;background:var(--pf-bg);border-radius:5px;overflow:hidden}
+.nxCtaWrap .ctabarrow .tr>div{height:100%;background:var(--pf-red);border-radius:5px}
+.nxCtaWrap .ctabarrow .mo{font-size:11px;font-weight:800;color:var(--pf-txt);flex:0 0 auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+.nxCtaWrap .ctamov{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-top:1px solid var(--pf-line);cursor:pointer}
+.nxCtaWrap .ctamov:first-of-type{border-top:none}
+.nxCtaWrap .ctamov .mi{min-width:0}
+.nxCtaWrap .ctamov .mt{font-size:12.5px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxCtaWrap .ctamov .md{font-size:10.5px;color:var(--pf-txt3)}
+.nxCtaWrap .ctamov .mv{font-size:12.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;font-variant-numeric:tabular-nums}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
 .nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
 .nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
@@ -20044,6 +20063,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   function sumaPorTipo(saldos, tipo) { let s = 0; Object.values(saldos).forEach(o => { if (o.cuenta && o.cuenta.tipo === tipo) s += saldoNat(o); }); return s; }
 
   function renderContabilidad() {
+    nxPfEnsureCSS();
     if (!_cuentas.length) {
       return `<div style="text-align:center;padding:40px 16px;color:#475569">
         <div style="font-size:42px;margin-bottom:8px"><i class="ti ti-book-2" style="color:#7c3aed"></i></div>
@@ -20069,28 +20089,85 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     else if (_ctaTab === 'resultados') body = ctaResultados();
     else if (_ctaTab === 'general') body = ctaGeneral();
     else body = ctaResumen();
-    return tabs + rango + body;
+    return `<div class="nxPf nxCtaWrap">${tabs}${rango}${body}</div>`;
   }
 
+  // Efectivo real del período = Caja + Banco (cuentas activo por código 1101/1102 o por nombre)
+  function ctaEfectivo(s) {
+    let t = 0;
+    Object.values(s).forEach(o => {
+      const c = o.cuenta || {}; if (c.tipo !== 'activo') return;
+      if (String(c.codigo) === '1101' || String(c.codigo) === '1102' || /caja|banco/i.test(c.nombre || '')) t += saldoNat(o);
+    });
+    return t;
+  }
+  // Flujo mensual real (últimos n meses) — a partir de TODOS los asientos, no del filtro de rango
+  function ctaFlujoMeses(n) {
+    const tipoDe = {}; _cuentas.forEach(c => { tipoDe[c.codigo] = c.tipo; });
+    const hoy = new Date(); const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const buckets = [];
+    for (let i = n - 1; i >= 0; i--) { const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1); buckets.push({ key: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'), label: MES[d.getMonth()], ing: 0, gas: 0 }); }
+    const idx = {}; buckets.forEach((b, i) => { idx[b.key] = i; });
+    (_asientos || []).forEach(a => {
+      const k = String(a.fecha || '').slice(0, 7); if (!(k in idx)) return; const b = buckets[idx[k]];
+      asLineas(a).forEach(l => {
+        const cod = l.cuenta_codigo || ((ctaById(l.cuenta_id) || {}).codigo); const tp = tipoDe[cod]; if (!tp) return;
+        const de = Number(l.debito || 0), ha = Number(l.credito || 0);
+        if (tp === 'ingreso') b.ing += (ha - de); else if (tp === 'costo' || tp === 'gasto') b.gas += (de - ha);
+      });
+    });
+    buckets.forEach(b => { b.util = b.ing - b.gas; });
+    return buckets;
+  }
+  function ctaFlujoSVG(ms) {
+    const W = 320, H = 120, PL = 6, PR = 6, PT = 10, PB = 18;
+    const max = Math.max(1, ...ms.reduce((a, b) => a.concat([Math.abs(b.ing), Math.abs(b.gas), Math.abs(b.util)]), []));
+    const n = ms.length;
+    const x = i => PL + (n <= 1 ? (W - PL - PR) / 2 : i * (W - PL - PR) / (n - 1));
+    const mid = PT + (H - PT - PB) / 2; const y = v => mid - (v / max) * ((H - PT - PB) / 2);
+    const linea = (key, col) => `<polyline points="${ms.map((b, i) => x(i).toFixed(1) + ',' + y(b[key]).toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>` + ms.map((b, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(b[key]).toFixed(1)}" r="2.4" fill="${col}"/>`).join('');
+    const labels = ms.map((b, i) => `<text x="${x(i).toFixed(1)}" y="${H - 4}" font-size="8" text-anchor="middle" fill="#94a3b8">${esc(b.label)}</text>`).join('');
+    return `<svg class="ctachart" viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet"><line x1="${PL}" y1="${y(0).toFixed(1)}" x2="${W - PR}" y2="${y(0).toFixed(1)}" stroke="var(--pf-line)" stroke-width="1" stroke-dasharray="3 3"/>${linea('ing', '#16a34a')}${linea('gas', '#dc2626')}${linea('util', '#2563eb')}${labels}</svg>`;
+  }
+  function ctaGastosBars(s) {
+    const arr = Object.values(s).filter(o => (o.cuenta.tipo === 'costo' || o.cuenta.tipo === 'gasto') && saldoNat(o) > 0).map(o => ({ nombre: o.cuenta.nombre, v: saldoNat(o) })).sort((a, b) => b.v - a.v).slice(0, 6);
+    const tot = arr.reduce((a, b) => a + b.v, 0);
+    if (!tot) return '<div class="emptyrow">Sin gastos ni costos en el período.</div>';
+    return arr.map(g => `<div class="ctabarrow"><div class="nm">${esc(g.nombre)}</div><div class="tr"><div style="width:${Math.round(g.v / tot * 100)}%"></div></div><div class="mo">${fmt(g.v)}</div></div>`).join('');
+  }
+  function ctaUltMov() {
+    const list = (_asientos || []).slice(0, 6);
+    if (!list.length) return '<div class="emptyrow">Sin movimientos registrados.</div>';
+    return list.map(a => { const ls = asLineas(a); const td = ls.reduce((s, l) => s + Number(l.debito || 0), 0); const orig = (a.tipo && a.tipo !== 'manual') ? a.tipo : ''; return `<div class="ctamov" onclick="window.nxCtaTab('diario')"><div class="mi"><div class="mt">${esc(a.concepto || 'Asiento')}</div><div class="md">${a.numero ? esc(a.numero) + ' · ' : ''}${fechaDMY(a.fecha)}${orig ? ' · ' + esc(orig) : ''}</div></div><div class="mv">${fmt(td)}</div></div>`; }).join('');
+  }
   function ctaResumen() {
     const s = saldosCta();
     const ingresos = sumaPorTipo(s, 'ingreso'), costo = sumaPorTipo(s, 'costo'), gasto = sumaPorTipo(s, 'gasto');
     const utilidad = ingresos - costo - gasto;
-    const activos = sumaPorTipo(s, 'activo'), pasivos = sumaPorTipo(s, 'pasivo'), capital = sumaPorTipo(s, 'capital');
-    const card = (lbl, val, col) => `<div class="nxCtaKpi"><div class="nxCtaKpiL">${lbl}</div><div class="nxCtaKpiV" style="color:${col}">${fmt(val)}</div></div>`;
-    return `<div class="nxCtaKpis">
-        ${card('Ingresos del período', ingresos, '#16a34a')}
-        ${card('Costos + Gastos', costo + gasto, '#dc2626')}
-        ${card('Utilidad / Pérdida', utilidad, utilidad >= 0 ? '#16a34a' : '#dc2626')}
-        ${card('Activos', activos, '#6d28d9')}
-        ${card('Pasivos', pasivos, '#ea580c')}
-        ${card('Capital + resultado', capital + utilidad, '#7c3aed')}
+    const efectivo = ctaEfectivo(s);
+    return `<div class="kpirow">
+        ${kpiPf('Ingresos del período', fmt(ingresos), '#16a34a')}
+        ${kpiPf('Gastos y costos', fmt(costo + gasto), '#dc2626')}
+        ${kpiPf(utilidad >= 0 ? 'Utilidad neta' : 'Pérdida neta', fmt(utilidad), utilidad >= 0 ? '#16a34a' : '#dc2626')}
+        ${kpiPf('Efectivo (Caja + Banco)', fmt(efectivo), '#2563eb')}
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:2px">
         <button class="btn bsm bc1" type="button" onclick="window.nxCtaGasto()"><i class="ti ti-cash-banknote"></i> Registrar gasto</button>
         <button class="btn bsm bghost" type="button" onclick="window.nxCtaNuevoAsiento()"><i class="ti ti-plus"></i> Nuevo asiento</button>
-        <button class="btn bsm bghost" type="button" onclick="window.nxCtaTab('diario')"><i class="ti ti-book"></i> Ver libro diario</button>
         <button class="btn bsm bghost" type="button" onclick="window.nxCtaTab('resultados')"><i class="ti ti-chart-bar"></i> Estado de resultados</button>
+      </div>
+      <div class="ctagrid">
+        <div class="card"><h4><i class="ti ti-chart-line" style="color:var(--pf-blue)"></i> Flujo de efectivo <span style="font-weight:600;color:var(--pf-txt3);font-size:11px">· últimos 6 meses</span></h4>
+          ${ctaFlujoSVG(ctaFlujoMeses(6))}
+          <div class="clgnd"><span><i style="background:#16a34a"></i>Ingresos</span><span><i style="background:#dc2626"></i>Gastos</span><span><i style="background:#2563eb"></i>Utilidad</span></div>
+        </div>
+        <div class="card"><h4><i class="ti ti-chart-donut" style="color:var(--pf-red)"></i> Distribución de gastos</h4>
+          ${ctaGastosBars(s)}
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px"><h4><i class="ti ti-history" style="color:var(--pf-purple)"></i> Últimos movimientos</h4>
+        ${ctaUltMov()}
+        <div style="margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxCtaTab('diario')"><i class="ti ti-book"></i> Ver libro diario</button></div>
       </div>`;
   }
 
