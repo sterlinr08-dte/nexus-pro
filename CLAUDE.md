@@ -3393,14 +3393,58 @@ manual — SIGUEN en el repo, no se tocaron, solo se limpió lo que ya habían g
   aplicadas). Verificado: `grep` de las clases muertas (`nx25-product-card`, `nx-prefactura-real`,
   `nx-pf-2487-root`, `nx-pf-number-card`) da cero resultados en todo el archivo, `node --check parches.js`
   limpio, los 3 `<script>` de `index.html` pasan `new Function()`, `version.json` válido.
-- **Deliberadamente NO tocado:** los workflows de GitHub Actions y los scripts Python en `.github/` que
-  ChatGPT usó para publicar estos 4 intentos — siguen armados (disparan con `push` a esas ramas o con
-  `workflow_dispatch` manual desde GitHub). No se pidió desactivarlos, solo limpiar lo que ya habían
-  generado. **Importante para la próxima ronda con ChatGPT:** el problema de fondo no era "mala suerte" —
-  es que el método de "adivinar el DOM con heurísticas genéricas en el navegador" es frágil de por sí para
-  este sistema. El método que SÍ funciona (usado en toda esta sesión): editar directo el HTML/CSS que ya
-  generan las funciones reales (`renderVender`/`gridHTML`/`pintarCarrito`/`renderFactura`), usando los
-  ids/clases reales documentados en este archivo — no un detector que adivina en tiempo de ejecución.
+- **Nota histórica (ver seguimiento más abajo, 23-jul-2026):** en ese momento se dejaron sin tocar los
+  workflows de GitHub Actions y los scripts Python que ChatGPT usó para publicar estos 4 intentos —
+  quedaron armados. Un par de días después el dueño pidió cerrar ese hueco de raíz — ver
+  "ChatGPT — nuevo flujo de trabajo para la parte visual" más abajo, donde se quitan esos workflows y se
+  arma un espacio propio para que ChatGPT siga aportando diseño sin volver a tocar `main` directo.
+  **Importante para la próxima ronda con ChatGPT (esto sigue vigente):** el problema de fondo no era
+  "mala suerte" — es que el método de "adivinar el DOM con heurísticas genéricas en el navegador" es
+  frágil de por sí para este sistema. El método que SÍ funciona (usado en toda esta sesión): editar
+  directo el HTML/CSS que ya generan las funciones reales (`renderVender`/`gridHTML`/`pintarCarrito`/
+  `renderFactura`), usando los ids/clases reales documentados en este archivo — no un detector que
+  adivina en tiempo de ejecución.
+
+### ChatGPT — nuevo flujo de trabajo para la parte visual (23-jul-2026)
+El dueño confirmó que quiere seguir usando ChatGPT para la parte visual, pero sin el riesgo de que
+vuelva a tocar `main` directo con código que nunca se prueba de verdad (ver "Limpieza de 4 intentos de
+ChatGPT" arriba — esos 4 intentos SÍ llegaron a `main` solos, vía PR #75/#76, y nunca funcionaron).
+Acordado con el dueño: **ChatGPT diseña, Claude implementa.**
+- **Quitados los 5 workflows de GitHub Actions** (`pos-vender-catalogo-25.yml`,
+  `prefactura-mobile-48-86.yml`, `prefactura-visual-2-5.yml`, `prefactura-visual-48-85.yml`,
+  `prefactura-visual-48-87.yml`) y sus 5 scripts Python en `.github/scripts/` — ya eran código muerto de
+  todos modos (buscaban cadenas de versión viejas como `APP_VERSION='48.87'`, que ya no existen), pero
+  además cada uno tenía `permissions: contents: write` y podía volver a correr con `workflow_dispatch`
+  manual o con un push a su rama — se cerró esa puerta.
+- **Ramas viejas de esos 4 intentos, PENDIENTES de borrar a mano:** `feat/prefactura-visual-2-5`,
+  `fix/prefactura-visual-48-84`, `ui/pos-vender-catalogo-2-5`, `ui/prefactura-2-5-sprint-1` — esta sesión
+  intentó borrarlas (`git push origin --delete`) y también lo bloqueó el clasificador del entorno
+  (mismo tipo de bloqueo que ya afecta `git push`/`git checkout` contra `main`); tampoco hay una
+  herramienta MCP de GitHub para borrar ramas en este entorno. **El dueño las borra directo en GitHub**
+  (Code → Branches → ícono de basura junto a cada una) — no tienen ningún valor, su contenido ya está
+  superado en `main`.
+- **Espacio nuevo para ChatGPT: rama `chatgpt/visual-draft`** (creada desde `main`, sin ningún workflow
+  enganchado — un commit ahí no dispara nada solo). Es el lugar acordado para que ChatGPT publique sus
+  mockups/intentos de ahora en adelante. **Flujo:** (1) ChatGPT hace su trabajo y lo sube a esa rama
+  (o el dueño pega ahí lo que ChatGPT generó); (2) en la próxima sesión, Claude revisa esa rama, compara
+  contra el código y esquema reales (mismo criterio de auditoría ya usado con los mockups de v48.90/93/96
+  — qué es real, qué se descarta por fingir una función que no existe); (3) Claude **reimplementa** las
+  piezas válidas directo sobre las funciones reales del archivo (no copia/pega el código de ChatGPT tal
+  cual, salvo que ya esté bien escrito) y lo prueba con el método de siempre (extraer código real,
+  Playwright, capturas en 390px/1280px); (4) publica por el camino normal de esta sesión (rama propia →
+  PR → `mcp__github__merge_pull_request`, nunca push directo a `main`). **`chatgpt/visual-draft` nunca
+  se fusiona directo a `main`** — es solo la bandeja de entrada de bocetos.
+- **Preferencia confirmada, para que ChatGPT la siga:** mejor que mande **imágenes/mockups** (como ya
+  venía haciendo bien en las últimas rondas) en vez de código — es más fácil de auditar y evita que se
+  repita el patrón de "detector de DOM genérico" que fue la causa raíz de los 4 intentos fallidos. Si
+  manda código de todas formas, se trata como una referencia más a auditar, nunca como algo que se
+  aplica tal cual.
+- **Pendiente (recomendado al dueño, fuera del alcance de lo que se puede hacer desde este entorno):**
+  activar protección de rama en `main` (GitHub → Settings → Branches → Branch protection rules → exigir
+  Pull Request antes de fusionar, sin push directo) — cierra la puerta de raíz a que CUALQUIER automatismo
+  (ChatGPT u otro) vuelva a escribir en `main` sin pasar por revisión, sin depender de que alguien se
+  acuerde de no darle ese permiso. No hay herramienta en este entorno para configurarlo por API; es un
+  ajuste que el dueño hace una vez desde la web de GitHub.
 
 ### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
 El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
