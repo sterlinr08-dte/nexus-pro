@@ -17339,6 +17339,18 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxVenWrap .tw-hist thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;text-align:left;white-space:nowrap}
 .nxVenWrap .tw-hist tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
 .nxVenWrap .tw-hist tbody tr:hover td{background:var(--pf-bg)}
+.nxRepWrapK .nxRepCol{background:var(--pf-bg);border-color:var(--pf-line)}
+.nxRepWrapK .nxRepColH b{background:var(--pf-panel)}
+.nxRepWrapK .nxRepCard{background:var(--pf-panel);border-color:var(--pf-line);box-shadow:var(--pf-shadow)}
+.nxRepWrapK .nxRepEq{color:var(--pf-txt)}
+.nxRepWrapK .nxRepCli{color:var(--pf-txt2)}
+.nxRepWrapK .nxRepFalla{color:var(--pf-txt3)}
+.nxRepWrapK .nxRepNum{color:var(--pf-blue)}
+.nxRepWrapK .nxInvPill{background:var(--pf-panel);border-color:var(--pf-line);color:var(--pf-txt2)}
+.nxRepWrapK .nxInvPill.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
+.nxRepWrapK .nxMdRow{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.nxRepWrapK .nxMdNom{font-size:12.5px;font-weight:700;color:var(--pf-txt)}
+.nxRepWrapK .nxMdSub{font-size:10.5px;color:var(--pf-txt3)}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
 .nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
 .nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
@@ -21832,6 +21844,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     return { vigente: vigente, fecha: fFmt };
   }
   function renderReparaciones() {
+    nxPfEnsureCSS();
     const activas = _reps.filter(r => r.estado !== 'entregado' && r.estado !== 'cancelado');
     const vistaLista = _repVista === 'entregadas' ? _reps.filter(r => r.estado === 'entregado') : activas;
     const cols = REP_ESTADOS.filter(e => e[0] !== 'entregado').map(e => {
@@ -21850,7 +21863,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const entregadasHTML = _repVista === 'entregadas'
       ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => { const g = garantiaInfo(r); return `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}${g ? ` · <span style="color:${g.vigente ? '#16a34a' : '#dc2626'};font-weight:700">garantía ${g.vigente ? 'hasta ' + g.fecha : 'vencida'}</span>` : ''}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`; }).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
       : '';
-    return `<div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar por cliente, equipo, IMEI o número…', oninput: 'window.nxRepBuscar(this.value)' })}</div>
+    return `<div class="nxPf nxRepWrapK"><div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar por cliente, equipo, IMEI o número…', oninput: 'window.nxRepBuscar(this.value)' })}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <button class="btn bc1" type="button" onclick="window.nxRepNueva()"><i class="ti ti-plus"></i> Recibir equipo</button>
         <div class="nxInvPills" style="margin:0">
@@ -21858,7 +21871,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <button type="button" class="nxInvPill${_repVista === 'entregadas' ? ' on' : ''}" onclick="window.nxRepVista('entregadas')">Entregadas</button>
         </div>
       </div>
-      ${_repVista === 'entregadas' ? entregadasHTML : `<div class="nxRepKb">${cols}</div>`}`;
+      ${_repVista === 'entregadas' ? entregadasHTML : `<div class="nxRepKb">${cols}</div>`}</div>`;
   }
   window.nxRepBuscar = function (q) {
     const ql = String(q || '').trim().toLowerCase();
