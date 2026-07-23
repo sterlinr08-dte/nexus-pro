@@ -1932,6 +1932,37 @@ fuera a propósito por no tener Storage configurado, ver esa sección arriba).
   del formulario repasadas sin regresión. `node --check parches.js` limpio; los 3 `<script>` de
   `index.html` pasan `new Function()`; `version.json` válido.
 
+### Seguimiento v49.02 — bug real: selector de Cliente en "Cobrar" sigue siendo `<select>` (22-jul-2026)
+El dueño pidió cerrar uno de los pendientes conocidos del POS: el campo Cliente dentro de la ventana
+**"Cobrar"** (`nxPosCobrar`, se abre desde el botón Cobrar tanto en Vender como en Factura) seguía
+siendo un `<select id="posCliId">` normal con TODOS los clientes de la organización en una lista larga
+sin buscador — inconsistente con el resto del sistema, donde el campo Cliente de Factura ya tiene lupa
++ ventana con buscador desde v48.97. Ya estaba anotado como pendiente en el CLAUDE.md ("selector de
+CLIENTE del POS en cobro/factura sigue siendo `<select>`") desde varias versiones atrás.
+- **Mismo patrón ya probado, no uno nuevo:** se replicó el patrón de `nxFacCliToggle`/`pintarFacCliDrop`/
+  `nxFacCliPick` (Factura, v48.97) con nombres propios para este modal —
+  `window.nxPosCobroCliToggle()`/`pintarPosCobroCliList()`/`window.nxPosCobroCliFiltrar()`/
+  `window.nxPosCobroCliPick()` — mismo componente `posBuscador()` (reglamento de buscadores) y misma
+  lista `.pf2clirow` (namespace `.nxPf`, por eso el modal nuevo lleva la clase `nxPf` agregada y llama a
+  `nxPfEnsureCSS()` al abrir, por si el usuario llega a "Cobrar" antes de que cualquier otra pantalla del
+  POS haya inyectado ese CSS).
+- **`#posCliId` se quedó como el mismo campo de siempre** (id idéntico) — solo cambió de `<select>` a
+  `<input type="hidden">`, así que `nxPosCobroCalc()`/`nxPosConfirmar()` (que solo hacen `val('posCliId')`,
+  nunca miran si es un select o un input) no necesitaron ningún cambio. El botón visible
+  (`#posCliBtn`/`#posCliDisp`) muestra "Consumidor final" o el nombre/código del cliente elegido — mismo
+  texto que antes mostraba la opción seleccionada del `<select>`, incluyendo el sufijo "(por mayor)" para
+  clientes con `nivel_precio='mayor'`. Al abrir "Cobrar" con un cliente ya elegido en Factura (`_factCli`),
+  el botón sale precargado igual que antes salía preseleccionada la opción del `<select>`.
+- Verificado con Playwright, código real extraído del archivo (no una reconstrucción — `nxPosCobrar`,
+  `nxPosCobroCliToggle`, `pintarPosCobroCliList`, `nxPosCobroCliPick`, `nxPosCobroCalc`, `leerCobro`,
+  `totales` tal cual, con balance de llaves real): 8 pruebas — el botón arranca en "Consumidor final" sin
+  cliente previo y ya NO es un `<select>` (ahora `INPUT type=hidden`), el buscador abre y lista los
+  clientes reales, filtrar por texto muestra solo los que calzan, elegir un cliente actualiza el campo
+  oculto + el texto del botón + oculta el campo "Nombre para el ticket" + recalcula el cobro, reabrir con
+  `_factCli` ya puesto precarga el botón correctamente, y volver a elegir "Consumidor final" limpia el
+  campo — las 8 pasan, 0 errores de JavaScript, sin desbordes en 390px. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### SEGUROS — Ficha del cliente, rediseño Enterprise (19-jul-2026, v48.53)
 El dueño pidió un rediseño visual completo del núcleo de Seguros (spec "NEXUS PRO SEGUROS 2026 –
 REDISEÑO VISUAL ENTERPRISE", solo capa visual, prohibido tocar lógica/Supabase/consultas). Por el
