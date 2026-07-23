@@ -3509,6 +3509,27 @@ KPIs premium (`kpiPf`/`.kpirow`), CSS scopeado (dark-mode aware), **cero cálcul
 - **Pendiente de la Tanda 2:** Reparaciones, Kardex, Historial de ventas, Recursos Humanos — mismo criterio,
   uno a la vez, probado antes de publicar.
 
+### POS · Historial de ventas — rediseño visual (Tanda 2, 23-jul-2026, v49.05)
+`renderVentas()` (pestaña "Historial de ventas" del POS, lista de `pos_ventas`) era la pantalla que el
+propio código dejó marcada como "aún sin rediseñar" (comentario junto a `kpi()` vs `kpiPf()`). Mismo patrón:
+wrapper aislado `.nxVenWrap`, KPIs premium, CSS scopeado, **cero cálculos tocados**.
+- Los 3 KPIs (Facturas, Total filtrado, Hoy) pasaron de `kpi()` (helper plano) a `kpiPf()`/`.kpirow`. La
+  tabla pasó del `.tw` viejo a `.card`+`table.tw-hist` con encabezado premium (reusa `thSort`/`.nxThSort`
+  para el orden, mi regla scopeada gana en especificidad y le pone el fondo azul claro, la flecha de orden
+  conserva su acento). **De paso, theme-aware:** los colores de fila que estaban hardcodeados (`#1e293b`
+  para el número, `#475569` para la fecha) pasaron a `var(--pf-txt)`/`var(--pf-txt3)` + regla scopeada
+  `.nxVenWrap .tw-hist tbody td{color:var(--pf-txt2)}` — antes en modo oscuro esos textos oscuros quedaban
+  invisibles sobre panel oscuro; ahora se ven bien en claro y oscuro. Los badges CONTADO/CRÉDITO/ANULADA y
+  el total verde se dejaron con su color (legibles en ambos temas). `filasHistorial`/`kpisHistorial`/
+  `ventasFiltradas`/`pintarHistorial` (que repinta `#histBody`/`#histKpis` al buscar) no cambiaron su
+  lógica — el `id="histKpis"` se conservó, solo cambió su clase contenedora a `.kpirow`.
+- Verificado con Playwright, código real extraído (no reconstrucción — `renderVentas`/`kpisHistorial`/
+  `filasHistorial`/`ventasFiltradas`/`thSort`/`sortRows`/`histSortVal`/`kpiPf` tal cual): con 3 ventas
+  simuladas (una anulada) los 3 KPIs dan el número exacto (Facturas 3 · Total filtrado 48,380 EXCLUYENDO la
+  anulada · Hoy 2), la fila anulada sale atenuada con su badge, sin desbordes en 390px ni 1280px, 0 errores
+  de JS. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido. **Quedan de la Tanda 2:** Kardex, Reparaciones (kanban), Recursos Humanos.
+
 ### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
 El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
 vendiéndolo — quiere catálogo de cuentas bien organizado, costo/ganancia/destino contable por artículo, y

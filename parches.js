@@ -17332,6 +17332,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxRepWrap .nxRepBarL{color:var(--pf-txt3)}
 .nxRepWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2)}
 .nxRepWrap .tw table tbody td{color:var(--pf-txt2)}
+.nxVenWrap .tw-hist thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;text-align:left;white-space:nowrap}
+.nxVenWrap .tw-hist tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
+.nxVenWrap .tw-hist tbody tr:hover td{background:var(--pf-bg)}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
 .nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
 .nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
@@ -18518,7 +18521,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const lista = ventasFiltradas();
     const total = lista.filter(v => (v.estado || '') !== 'anulada').reduce((s, v) => s + Number(v.total || 0), 0);
     const hoyN = (_ventas || []).filter(v => (v.fecha || v.created_at || '').slice(0, 10) === hoy() && (v.estado || '') !== 'anulada').length;
-    return kpi('Facturas', lista.length, '#6d28d9') + kpi('Total filtrado', fmt(total), '#059669') + kpi('Hoy', hoyN, '#0f172a');
+    return kpiPf('Facturas', lista.length, '#2563eb') + kpiPf('Total filtrado', fmt(total), '#059669') + kpiPf('Hoy', hoyN, '');
   }
   function filasHistorial() {
     const lista = sortRows(ventasFiltradas(), v => histSortVal(v, _histSort.k), _histSort.d);
@@ -18527,8 +18530,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const anulada = (v.estado || '') === 'anulada';
       const esCred = !!v.a_credito;
       return `<tr style="cursor:pointer${anulada ? ';opacity:.5' : ''}" onclick="window.nxPosTicket('${v.id}')">
-        <td style="font-weight:700;color:#1e293b;white-space:nowrap">${esc(v.numero_factura || (v.numero || ''))}</td>
-        <td style="color:#475569;white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
+        <td style="font-weight:700;color:var(--pf-txt);white-space:nowrap">${esc(v.numero_factura || (v.numero || ''))}</td>
+        <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
         <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}</td>
         <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
@@ -18804,14 +18807,17 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   };
 
   function renderVentas() {
-    return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+    nxPfEnsureCSS();
+    return `<div class="nxPf nxVenWrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
         <div style="flex:1;min-width:200px">${posBuscador({ id: 'histQ', value: _histQ, placeholder: 'Buscar por No. de factura o cliente…', oninput: 'window.nxPosVentasBuscar(this.value)' })}</div>
-        <input type="date" id="histDesde" value="${_histDesde}" onchange="window.nxPosHistFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
-        <input type="date" id="histHasta" value="${_histHasta}" onchange="window.nxPosHistFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px">
+        <input type="date" id="histDesde" value="${_histDesde}" onchange="window.nxPosHistFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid var(--pf-line);border-radius:10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt);font-family:inherit">
+        <input type="date" id="histHasta" value="${_histHasta}" onchange="window.nxPosHistFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid var(--pf-line);border-radius:10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt);font-family:inherit">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosHistLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
       </div>
-      <div id="histKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">${kpisHistorial()}</div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr>${thSort('hist', _histSort, 'numero', 'No. Factura')}${thSort('hist', _histSort, 'fecha', 'Fecha')}${thSort('hist', _histSort, 'cliente', 'Cliente')}${thSort('hist', _histSort, 'tipo', 'Tipo')}${thSort('hist', _histSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>`;
+      <div id="histKpis" class="kpirow">${kpisHistorial()}</div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="tw-hist" style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>${thSort('hist', _histSort, 'numero', 'No. Factura')}${thSort('hist', _histSort, 'fecha', 'Fecha')}${thSort('hist', _histSort, 'cliente', 'Cliente')}${thSort('hist', _histSort, 'tipo', 'Tipo')}${thSort('hist', _histSort, 'total', 'Total', 'right')}<th></th></tr></thead><tbody id="histBody">${filasHistorial()}</tbody></table></div>
+    </div>`;
   }
   function kpi(lbl, v, col) { return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:9px 8px"><div style="font-size:9.5px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.3px">${esc(lbl)}</div><div style="font-size:14px;font-weight:800;color:${col || '#1e293b'};margin-top:2px">${v}</div></div>`; }
   // Version .nxPf del kpi() de arriba — SOLO para pestañas ya envueltas en <div class="nxPf">
