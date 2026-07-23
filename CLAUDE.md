@@ -3530,6 +3530,23 @@ wrapper aislado `.nxVenWrap`, KPIs premium, CSS scopeado, **cero cálculos tocad
   de JS. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido. **Quedan de la Tanda 2:** Kardex, Reparaciones (kanban), Recursos Humanos.
 
+### POS · Kardex/Inventario — rediseño visual (Tanda 2, 23-jul-2026, v49.06)
+`renderInventario()` (pestaña "Kardex" del POS — valoración, movimientos, multi-almacén) reskineado con el
+mismo patrón: wrapper aislado `.nxInvWrap`, KPIs premium, CSS scopeado, **cero cálculos tocados**.
+- Los 5 KPIs (Productos, Valor a costo, Valor a precio, Bajo stock, Sin stock) pasaron del `kpi()` local
+  (estilo `.nxCtaKpi`) a `kpiPf()`/`.kpirow`. Las secciones (`.nxRepCard`/`.nxRepTit`, tablas de kardex/
+  bajo stock/movimientos, chips y tarjetas de almacén) heredan el look premium vía CSS scopeado a
+  `.nxInvWrap` (reusa las reglas de `.nxRepCard` ya creadas para Reportes, ampliando el selector; + reglas
+  nuevas theme-aware para `.tw table`/`.nxAlmCard`/`.nxAlmChip`). `movFila`/`invProductosStock`/
+  `stockEnAlm`/`almTotalUnidades` y toda la lógica de valoración/kardex/ajuste/transferencia intactas.
+- Verificado con Playwright, código real extraído (no reconstrucción — `renderInventario`/`invProductosStock`/
+  `movFila`/`stockEnAlm`/`almTotalUnidades`/`kpiPf` tal cual): con 3 productos + 1 servicio y 2 movimientos,
+  los 5 KPIs dan el número exacto (Productos 3 excluyendo el servicio · Valor a costo 160,200 · Valor a
+  precio 235,590 · Bajo stock 2 · Sin stock 1), la sección de bajo stock y movimientos recientes aparecen
+  con sus badges, sin desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Quedan de la Tanda 2:**
+  Reparaciones (kanban), Recursos Humanos.
+
 ### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
 El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
 vendiéndolo — quiere catálogo de cuentas bien organizado, costo/ganancia/destino contable por artículo, y
