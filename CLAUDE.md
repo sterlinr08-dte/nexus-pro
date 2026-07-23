@@ -3446,6 +3446,50 @@ Acordado con el dueño: **ChatGPT diseña, Claude implementa.**
   acuerde de no darle ese permiso. No hay herramienta en este entorno para configurarlo por API; es un
   ajuste que el dueño hace una vez desde la web de GitHub.
 
+### POS · Contabilidad — Fase 1 del rediseño (propuesta de ChatGPT), reskin + Resumen real (23-jul-2026, v49.03)
+ChatGPT dejó en `chatgpt/visual-draft` una **propuesta visual del módulo de Contabilidad** (mockup SVG +
+documento `docs/visual-drafts/contabilidad/`), respetando el flujo nuevo acordado (rama sandbox, sin
+código directo a `main`, notas de "no inventar funciones"). Se auditó contra el código real antes de
+tocar nada y se le mostró al dueño un desglose de qué es rediseño vs. qué sería construir. El dueño
+eligió la **Fase 1 visual completa**. **Regla clave de esta pieza: NO se tocó ni un cálculo de dinero** —
+solo el "vestido" + un Resumen nuevo armado 100% con datos reales.
+- **Qué es real y ya existía (solo reskin):** el módulo `renderContabilidad()` (POS, `parches.js`) ya
+  tenía las 7 sub-pestañas (Resumen, Plan de cuentas, Libro Diario, Libro Mayor, Comprobación, Estado de
+  Resultados, Balance General) con toda la lógica de partida doble correcta (`saldosCta`/`sumaPorTipo`/
+  `saldoNat`/`asientosRango`/`asLineas`, tablas `pos_cuentas`/`pos_asientos`/`pos_asiento_lineas`). Esas
+  funciones de cálculo NO se tocaron.
+- **Qué se recortó/aplazó (confirmado con el dueño, no se fingió):** Bancos y conciliación (0 en el
+  código), Centro de costo (0), reportes 606/608/609 (solo existe 607 parcial — va con el tema fiscal/
+  e-CF crítico, aparte), CxC/CxP como pantalla contable con aging, y toda la "Fase 4" (proyecciones/
+  flujo futuro/rentabilidad por empresa-sucursal). La barra inferior del móvil del mockup se descartó —
+  el POS usa la barra lateral grafito, no una barra por módulo.
+- **Cambios reales, quirúrgicos (aditivo, aislado):** (1) `renderContabilidad()` envuelve su salida en
+  `<div class="nxPf nxCtaWrap">` + llama `nxPfEnsureCSS()` — el prefijo `.nxCtaWrap` aísla TODO el CSS
+  nuevo para que no toque ninguna otra pantalla. (2) `ctaResumen()` reconstruido como tablero premium:
+  4 KPIs (`kpiPf`/`.kpirow` ya existentes) — **Ingresos del período, Gastos y costos, Utilidad/Pérdida
+  neta, Efectivo (Caja+Banco)** — este último helper nuevo `ctaEfectivo(s)` suma solo las cuentas activo
+  de caja/banco (código 1101/1102 o nombre), no todos los activos. (3) **Flujo de efectivo** — gráfica
+  SVG de líneas (`ctaFlujoMeses(6)` + `ctaFlujoSVG`), últimos 6 meses de Ingresos/Gastos/Utilidad,
+  calculada de TODOS los `_asientos` (tendencia real, independiente del filtro de rango). (4)
+  **Distribución de gastos** — barras reales por cuenta de gasto/costo (`ctaGastosBars`), NO las 5
+  categorías inventadas del mockup (administrativos/financieros no existen en el plan). (5) **Últimos
+  movimientos** — `ctaUltMov()`, los 6 asientos más recientes. Las otras 6 pestañas solo heredan el look
+  (fuentes + encabezado de tabla + tarjetas con vars `.nxPf`, dark-mode aware) vía CSS scopeado a
+  `.nxCtaWrap` — su HTML/lógica no cambió.
+- **Verificado con Playwright, código real extraído del archivo** (no reconstrucción — `renderContabilidad`/
+  `ctaResumen`/`ctaEfectivo`/`ctaFlujoMeses`/`ctaFlujoSVG`/`ctaGastosBars`/`ctaUltMov`/`saldosCta`/
+  `saldoNat`/`sumaPorTipo` + las 6 funciones de pestaña, tal cual, con balance de llaves real): con datos
+  simulados (venta + 2 gastos del período + una venta del mes anterior para el flujo), los 4 KPIs dan el
+  número EXACTO (Ingresos 10,000 · Gastos 16,500 · Pérdida neta −6,500 · Efectivo 1,300 — verificado por
+  volcado directo de `.kpitile`), la gráfica tiene 18 puntos (6 meses × 3 líneas), 3 barras de gastos, 4
+  últimos movimientos, la balanza cuadra, el Estado de Resultados calcula bien, y las 7 pestañas se ven
+  sin desbordes en 390px y 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente (Fases 2-4 de la propuesta, cada una es construcción real, no visual):** Gastos con centro
+  de costo · CxC/CxP contables con aging · Bancos y conciliación · fiscal (606/608/retenciones, atado al
+  e-CF) · inteligencia financiera (proyecciones/rentabilidad por empresa-sucursal). Se agendan por
+  separado cuando el dueño lo pida.
+
 ### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
 El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
 vendiéndolo — quiere catálogo de cuentas bien organizado, costo/ganancia/destino contable por artículo, y
