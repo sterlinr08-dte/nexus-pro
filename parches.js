@@ -17324,6 +17324,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxCtaWrap .ctamov .mt{font-size:12.5px;font-weight:700;color:var(--pf-txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nxCtaWrap .ctamov .md{font-size:10.5px;color:var(--pf-txt3)}
 .nxCtaWrap .ctamov .mv{font-size:12.5px;font-weight:800;color:var(--pf-txt);white-space:nowrap;font-variant-numeric:tabular-nums}
+.nxRepWrap .nxRepCard{background:var(--pf-panel);border-color:var(--pf-line);box-shadow:none}
+.nxRepWrap .nxRepTit{color:var(--pf-txt2)}
+.nxRepWrap .nxRepTit i{color:var(--pf-blue)}
+.nxRepWrap .nxRepMetTop{color:var(--pf-txt2)}.nxRepWrap .nxRepMetTop b{color:var(--pf-txt)}
+.nxRepWrap .nxRepMetBar{background:var(--pf-bg)}
+.nxRepWrap .nxRepBarL{color:var(--pf-txt3)}
+.nxRepWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2)}
+.nxRepWrap .tw table tbody td{color:var(--pf-txt2)}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
 .nxPf .afinchk{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;border:1.5px solid var(--pf-line);background:var(--pf-bg);font-size:12px;font-weight:700;color:var(--pf-txt2);cursor:pointer}
 .nxPf .afinchk input{width:15px;height:15px;accent-color:var(--pf-blue)}
@@ -21237,6 +21245,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   function ventasRepRango() { return (_repVentas || []).filter(v => { const f = repFecha(v); return (!_repDesde || f >= _repDesde) && (!_repHasta || f <= _repHasta); }); }
 
   function renderReportes() {
+    nxPfEnsureCSS();
     const list = ventasRepRango();
     let totVta = 0, totItbis = 0, ganancia = 0, costoTot = 0;
     const porDia = {}, porProd = {}, metodos = { Efectivo: 0, Tarjeta: 0, Transferencia: 0, Otro: 0, 'Crédito': 0 };
@@ -21255,7 +21264,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         porProd[key].cant += cant; porProd[key].monto += imp;
       });
     });
-    const kpi = (l, v, c) => `<div class="nxCtaKpi"><div class="nxCtaKpiL">${l}</div><div class="nxCtaKpiV" style="color:${c}">${fmt(v)}</div></div>`;
+    const kpi = (l, v, c) => kpiPf(l, fmt(v), c);
     const dias = Object.keys(porDia).sort().slice(-14);
     const maxDia = Math.max(1, ...dias.map(d => porDia[d]));
     const barras = dias.length ? dias.map(d => { const h = Math.max(3, Math.round(porDia[d] / maxDia * 90)); const dd = d.slice(8) + '/' + d.slice(5, 7); return `<div class="nxRepBar"><div class="nxRepBarV" style="height:${h}px" title="${fmt(porDia[d])}"></div><div class="nxRepBarL">${dd}</div></div>`; }).join('') : '<div style="color:#475569;font-size:12px;padding:20px">Sin ventas en el período.</div>';
@@ -21263,22 +21272,22 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const topFilas = top.length ? top.map(([nom, o], i) => `<tr><td style="color:#475569;width:22px">${i + 1}</td><td style="font-weight:600">${esc(nom)}</td><td style="text-align:right">${o.cant}</td><td style="text-align:right;font-weight:700">${fmt(o.monto)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:18px;color:#475569;font-size:12px">Sin datos</td></tr>';
     const totMet = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
     const metFilas = Object.entries(metodos).filter(([k, v]) => v > 0).map(([k, v]) => `<div class="nxRepMet"><div class="nxRepMetTop"><span>${esc(k)}</span><b>${fmt(v)}</b></div><div class="nxRepMetBar"><div style="width:${Math.round(v / totMet * 100)}%"></div></div></div>`).join('') || '<div style="color:#475569;font-size:12px">Sin pagos registrados</div>';
-    return `<div class="nxCtaRango">
+    return `<div class="nxPf nxRepWrap"><div class="nxCtaRango">
         <div class="nxFacF"><label>Desde</label><input type="date" value="${_repDesde}" onchange="window.nxRepRango('d',this.value)"></div>
         <div class="nxFacF"><label>Hasta</label><input type="date" value="${_repHasta}" onchange="window.nxRepRango('h',this.value)"></div>
-        <div style="font-size:11px;color:#475569;align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
-        <div style="margin-left:auto;display:flex;gap:6px;align-self:end">
+        <div style="font-size:11px;color:var(--pf-txt3);align-self:end;padding-bottom:11px">${list.length} venta(s)</div>
+        <div style="margin-left:auto;display:flex;gap:6px;align-self:end;flex-wrap:wrap">
           ${_vendedores.length ? `<button class="btn bsm bghost" type="button" onclick="window.nxRepComisiones()"><i class="ti ti-user-dollar"></i> Comisiones</button>` : ''}
           <button class="btn bsm bghost" type="button" onclick="window.nxRepImei()"><i class="ti ti-device-mobile-message"></i> Historial de IMEI</button>
           <button class="btn bsm bghost" type="button" onclick="window.nxRep607()"><i class="ti ti-file-certificate"></i> Reporte 607 (NCF)</button>
         </div>
       </div>
-      <div class="nxCtaKpis">
-        ${kpi('Ventas (total)', totVta, '#6d28d9')}
+      <div class="kpirow">
+        ${kpi('Ventas (total)', totVta, '#2563eb')}
         ${kpi('Ganancia estimada', ganancia, ganancia >= 0 ? '#16a34a' : '#dc2626')}
         ${kpi('Costo de lo vendido', costoTot, '#ea580c')}
         ${kpi('ITBIS cobrado', totItbis, '#7c3aed')}
-        <div class="nxCtaKpi"><div class="nxCtaKpiL">No. de ventas</div><div class="nxCtaKpiV" style="color:#0f172a">${list.length}</div></div>
+        ${kpiPf('No. de ventas', String(list.length), '')}
         ${kpi('Ticket promedio', list.length ? Math.round(totVta / list.length) : 0, '#0891b2')}
       </div>
       <div class="nxRepGrid">
@@ -21287,7 +21296,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       </div>
       <div class="nxRepCard" style="margin-top:12px"><div class="nxRepTit"><i class="ti ti-trophy"></i> Productos más vendidos</div>
         <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th></th><th>Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">Monto</th></tr></thead><tbody>${topFilas}</tbody></table></div>
-      </div>`;
+      </div></div>`;
   }
   window.nxRepRango = function (k, val) { if (k === 'd') _repDesde = val; else _repHasta = val; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxRepComisiones = function () {

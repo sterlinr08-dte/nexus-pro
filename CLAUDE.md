@@ -3490,6 +3490,25 @@ solo el "vestido" + un Resumen nuevo armado 100% con datos reales.
   e-CF) · inteligencia financiera (proyecciones/rentabilidad por empresa-sucursal). Se agendan por
   separado cuando el dueño lo pida.
 
+### POS · Reportes — rediseño visual (Tanda 2, 23-jul-2026, v49.04)
+Continuación de la migración del POS al look premium `.nxPf` (el dueño eligió seguir con "lo visual", opción
+3). `renderReportes()` (POS, `parches.js`) es de SOLO LECTURA (analítica sobre `pos_ventas`/`pos_venta_items`,
+no muta nada) — reskin de bajo riesgo, mismo patrón que Contabilidad Fase 1: wrapper aislado `.nxRepWrap`,
+KPIs premium (`kpiPf`/`.kpirow`), CSS scopeado (dark-mode aware), **cero cálculos tocados**.
+- Los 6 KPIs (Ventas total, Ganancia estimada, Costo de lo vendido, ITBIS cobrado, No. de ventas, Ticket
+  promedio) pasaron de `.nxCtaKpi` a `kpiPf`/`.kpirow`. Las tarjetas de gráficas (Ventas por día, Por método
+  de pago, Productos más vendidos, clases `.nxRepCard`/`.nxRepBars`/`.nxRepMet*`/`.tw table`) solo heredan el
+  look vía CSS scopeado a `.nxRepWrap` — su HTML/lógica no cambió. `nxRepComisiones`/`nxRepImei`/`nxRep607`
+  (botones de acción) intactos.
+- Verificado con Playwright, código real extraído del archivo (no reconstrucción — `renderReportes`/
+  `ventasRepRango`/`repFecha`/`repItems`/`prodCosto`/`kpiPf` tal cual): con 3 ventas simuladas los 6 KPIs dan
+  el número EXACTO (Ventas 48,970 · Ganancia 8,900 · Costo 32,600 · ITBIS 7,470 · Ticket 16,323 — verificado
+  por volcado directo de `.kpitile`), 2 barras de días, 3 métodos de pago, tabla de top productos correcta,
+  sin desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente de la Tanda 2:** Reparaciones, Kardex, Historial de ventas, Recursos Humanos — mismo criterio,
+  uno a la vez, probado antes de publicar.
+
 ### AUDITORÍA CONTRA INFOPLUS — Contabilidad, costo/margen, botones estándar (22-jul-2026, v48.89)
 El dueño pidió mejorar Prefactura y, más ampliamente, auditar el sistema contra InfoPlus antes de seguir
 vendiéndolo — quiere catálogo de cuentas bien organizado, costo/ganancia/destino contable por artículo, y
