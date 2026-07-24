@@ -2049,6 +2049,41 @@ interno, recomendación automática, resumen lateral fijo, botón "Aprobar y cre
   95 → APROBAR), deudas altas → RECHAZAR, "Aprobar" hace el POST correcto a `prestamos` con `cliente_id` + la nota
   de evaluación + modo/método correctos — las 39 pasan, 0 errores de JS, sin desbordes en 390px ni 1280px. `node
   --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **REDISEÑO RICO (v49.16) — el dueño mandó un mockup detallado ("Quiero que quede así"):** la pantalla se rehízo
+  para calzar con el mockup, siempre sobre datos reales. Se reemplazó todo `prEvalMainHTML`/`evRecalc` + CSS.
+  - **Tarjeta de cliente ampliada:** avatar, "Cliente activo", cédula, teléfono, **Edad** (`evEdad` de
+    `fecha_nacimiento`), **Tiempo como cliente** (`evTiempoCliente` de `created_at`) + botón "Ver perfil"
+    (`evVerPerfil`→`abrirClienteForm`). Al elegir cliente, `evClientePuesto` precarga ingreso + ocupación +
+    estado civil + dirección + 2 referencias (de las columnas reales).
+  - **Barra de pestañas** (`ev-tab`/`window.evTab`): Información general / Análisis financiero / Simulador /
+    Recomendación — hacen scroll a su sección (en escritorio todo se ve; en móvil son saltos rápidos).
+  - **Análisis financiero de 5 indicadores** (`evAnRow`+`evRating`, barra + badge Excelente/Bueno/Aceptable/Bajo):
+    Capacidad de pago, Relación ingresos/gastos, Nivel de endeudamiento (invertido, menor es mejor), Liquidez
+    estimada, Estabilidad laboral. Todo calculado en vivo de ingreso/gastos/cuota/antigüedad.
+  - **Score interno = medidor circular /1000** (`conic-gradient`, `--pct`) + estrellas + badge de Riesgo
+    (Bajo/Medio/Alto). El score sigue siendo 0-100 por dentro (`evCalcularScore`, ahora incluye gastos en el
+    ratio + bonus por antigüedad), se muestra ×10.
+  - **Simulador con deslizadores** (`<input type=range>` para capital/tasa/#cuotas/plazo, valor en vivo) + tarjeta
+    "Cuota estimada" (cuota, interés total, total a devolver, fecha 1er/última pago) + **"Ver amortización
+    detallada"** (`evVerAmort`, modal con la tabla completa reusando `amortizar`/`creditoCalc`).
+  - **Resumen:** Monto solicitado, **Monto recomendado** (si el endeudamiento >35% del ingreso, sugiere un capital
+    más bajo que lo baje a ~35% — cálculo real de capacidad), Cuota estimada, Tipo, Ratio, Nivel de riesgo,
+    Resultado. Próximos pasos (checklist informativo). Asesor responsable (`nomAdmin`) + fecha.
+  - **Notas del asesor** (textarea 0/500) → al aprobar se guardan en `prestamos.notas` junto con la línea de score.
+  - **Campos nuevos que la tabla NO tiene** (gastos mensuales, antigüedad laboral, dependientes): entradas EN VIVO
+    usadas solo para el análisis del momento — **NO se guardan** en el cliente (no se finge una columna que no
+    existe). **Dejadas FUERA a propósito** (no se finge): subir Documentos (no hay Storage), "Guardar borrador" y
+    "Enviar a revisión" (no hay ese flujo/estado), foto del cliente (no hay columna), campana/perfil del header
+    (chrome de app que el módulo no tiene). Se documenta en el changelog.
+  - **2 bugs encontrados en pruebas (antes de publicar):** (1) `toLocaleDateString('es-DO')` puede tirar
+    RangeError en el Chromium headless (ICU mínimo) y abortaba `evInit` → la fecha se arma a mano (`d/m/Y`); (2)
+    `evInit` no reseteaba `_evCli`, así que al volver a la pantalla quedaba el cliente viejo con los campos vacíos
+    — ahora `evInit` lo pone en `null` (pantalla siempre arranca limpia).
+  - Verificado con **62 pruebas Playwright** sobre el código real (IIFE completo en navegador con backend
+    simulado): tarjeta con edad/tiempo, precarga de estado civil/dirección/referencias, los 5 indicadores, el
+    medidor /1000, la tabla de amortización (8 filas), los saltos de pestaña, y "Aprobar" con el POST correcto
+    (`cliente_id` + nota de score + nota del asesor). 0 errores de JS, sin desbordes en 390px ni 1280px. `node
+    --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
 ### Financiamiento (Préstamos, Multiempresa) — MÓDULO DE CLIENTES (spec ChatGPT "Crear Cliente V1", 24-jul-2026, v49.14)
 El dueño pidió aplicar la carga de "Crear Cliente V1" de ChatGPT. Primero se aplicó por error al formulario
