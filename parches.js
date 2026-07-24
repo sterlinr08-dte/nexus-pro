@@ -12852,6 +12852,7 @@
   let _prPage = 1, _prQuery = '';
   const PR_PAGE_SIZE = 12;
   let _prClientes = [], _prView = 'prestamos', _prCliQuery = '';
+  let _prRepPeriodo = 'todo'; // Reportes: 'mes' | 'anio' | 'todo' — solo alcanza las métricas de FLUJO (colocado/recuperado/cobros); el stock (balance/mora/cartera) siempre es al día de hoy.
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
   window.nxPrTipoPago = function (t) {
     _tipoPago = t;
@@ -13172,12 +13173,12 @@
           <button type="button" class="nxFP-navItem${_prView === 'clientes' ? ' on' : ''}" onclick="window.nxPrView('clientes')"><i class="ti ti-users-group"></i> Clientes</button>
           <button type="button" class="nxFP-navItem${_prView === 'evaluacion' ? ' on' : ''}" onclick="window.nxPrView('evaluacion')"><i class="ti ti-clipboard-check"></i> Evaluación</button>
           <div class="nxFP-sideDiv"></div>
-          <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoReporte()"><i class="ti ti-report-money"></i> Reportes</button>
+          <button type="button" class="nxFP-navItem${_prView === 'reportes' ? ' on' : ''}" onclick="window.nxPrView('reportes')"><i class="ti ti-report-money"></i> Reportes</button>
           <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
         </nav>
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
-      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : `
+      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : `
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
           <div><div class="nxFP-topTitle">Financiamiento</div><div class="nxFP-topSub">Administra y controla todos los préstamos</div></div>
@@ -13204,6 +13205,174 @@
     </div>`;
     if (_prView === 'evaluacion') { try { evInit(); } catch (e) {} }
   }
+  // ══════════════════════════════════════════════════════════════════
+  //  REPORTES DE FINANCIAMIENTO (dashboard, spec ChatGPT "Reportes V1")
+  //  100% datos reales de prestamos/prestamo_pagos. Sin agentes/sucursales
+  //  (no existen en este módulo de un solo dueño) — ver notas de omisión.
+  // ══════════════════════════════════════════════════════════════════
+  const PR_MES3 = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const PR_MET_COL = ['#4f46e5', '#22c55e', '#a855f7', '#f59e0b', '#0891b2', '#ec4899', '#64748b', '#14b8a6'];
+  function prRepRango(pz) { const t = hoy(); if (pz === 'mes') return [t.slice(0, 7) + '-01', t]; if (pz === 'anio') return [t.slice(0, 4) + '-01-01', t]; return [null, null]; }
+  function prRepPeriodoTxt(pz) { const t = hoy(); if (pz === 'mes') return 'Este mes'; if (pz === 'anio') return 'Año ' + t.slice(0, 4); return 'Todo el histórico'; }
+  // Antigüedad de cartera (aging) sobre préstamos ACTIVOS, por días de atraso reales.
+  function prRepAging() {
+    const b = [
+      { label: 'Al día', color: '#16a34a', n: 0, cap: 0 },
+      { label: '1 - 30 días', color: '#f59e0b', n: 0, cap: 0 },
+      { label: '31 - 60 días', color: '#f97316', n: 0, cap: 0 },
+      { label: '61 - 90 días', color: '#ef4444', n: 0, cap: 0 },
+      { label: 'Más de 90 días', color: '#b91c1c', n: 0, cap: 0 }
+    ];
+    _prestamos.forEach(p => {
+      if (estadoDe(p) === 'pagado') return;
+      const d = esVencido(p) ? prDiasVencido(p) : 0, cap = saldoDe(p);
+      const i = d === 0 ? 0 : d <= 30 ? 1 : d <= 60 ? 2 : d <= 90 ? 3 : 4;
+      b[i].n++; b[i].cap += cap;
+    });
+    return b;
+  }
+  // Colocaciones (capital prestado por mes de fecha_prestamo) vs Cobros (pagos por mes) — últimos 12 meses.
+  function prRepMeses() {
+    const arr = [], idx = {}, now = new Date(hoy() + 'T12:00:00');
+    for (let k = 11; k >= 0; k--) { const d = new Date(now.getFullYear(), now.getMonth() - k, 1); const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); idx[ym] = arr.length; arr.push({ ym: ym, label: PR_MES3[d.getMonth()], col: 0, cob: 0 }); }
+    _prestamos.forEach(p => { const ym = String(p.fecha_prestamo || '').slice(0, 7); if (idx[ym] != null) arr[idx[ym]].col += Number(p.capital || 0); });
+    Object.values(_pagosByPrestamo).forEach(a => a.forEach(pg => { const ym = String(pg.fecha || '').slice(0, 7); if (idx[ym] != null) arr[idx[ym]].cob += Number(pg.monto || 0); }));
+    return arr;
+  }
+  // Cobros agrupados por método de pago (real: prestamo_pagos.metodo) dentro del rango.
+  function prRepMetodos(desde, hasta) {
+    const m = {};
+    Object.values(_pagosByPrestamo).forEach(a => a.forEach(pg => { const f = String(pg.fecha || '').slice(0, 10); if (desde && f < desde) return; if (hasta && f > hasta) return; const k = (String(pg.metodo || '').trim()) || 'Sin especificar'; m[k] = (m[k] || 0) + Number(pg.monto || 0); }));
+    return Object.keys(m).map(k => ({ label: k, val: m[k] })).sort((a, b) => b.val - a.val);
+  }
+  function prRepColocadoMes(ym) { let s = 0; _prestamos.forEach(p => { if (String(p.fecha_prestamo || '').slice(0, 7) === ym) s += Number(p.capital || 0); }); return s; }
+  function prRepCobradoMes(ym) { let s = 0; Object.values(_pagosByPrestamo).forEach(a => a.forEach(pg => { if (String(pg.fecha || '').slice(0, 7) === ym) s += Number(pg.monto || 0); })); return s; }
+  // Donut SVG (técnica de stroke-dasharray, fiable en móvil e impresión).
+  function prDonutSVG(segs, centerTop, centerSub, size) {
+    size = size || 158; const r = 56, cx = size / 2, cy = size / 2, C = 2 * Math.PI * r;
+    const tot = segs.reduce((s, x) => s + (x.val || 0), 0) || 1;
+    let off = 0;
+    const circles = segs.filter(s => s.val > 0).map(s => { const dash = (s.val / tot) * C; const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="17" stroke-dasharray="${dash.toFixed(2)} ${(C - dash).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`; off += dash; return el; }).join('');
+    return `<svg viewBox="0 0 ${size} ${size}" class="nxFP-donut" role="img"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef0f5" stroke-width="17"/>${circles}<text x="${cx}" y="${cy - 3}" text-anchor="middle" class="nxFP-donutTop">${centerTop}</text><text x="${cx}" y="${cy + 15}" text-anchor="middle" class="nxFP-donutSub">${centerSub}</text></svg>`;
+  }
+  // Gráfica de barras agrupadas Colocaciones vs Cobros (12 meses).
+  function prBarsSVG(meses) {
+    const W = 580, H = 220, padB = 26, padL = 10, padT = 12;
+    const max = Math.max(1, ...meses.map(m => Math.max(m.col, m.cob)));
+    const n = meses.length, gw = (W - padL * 2) / n, bw = Math.min(10, gw / 3.2);
+    let bars = '', labels = '';
+    meses.forEach((m, i) => {
+      const x = padL + i * gw + gw / 2;
+      const hc = (m.col / max) * (H - padB - padT), hb = (m.cob / max) * (H - padB - padT);
+      bars += `<rect x="${(x - bw - 1).toFixed(1)}" y="${(H - padB - hc).toFixed(1)}" width="${bw}" height="${Math.max(0, hc).toFixed(1)}" rx="2" fill="#4f46e5"/>`;
+      bars += `<rect x="${(x + 1).toFixed(1)}" y="${(H - padB - hb).toFixed(1)}" width="${bw}" height="${Math.max(0, hb).toFixed(1)}" rx="2" fill="#22c55e"/>`;
+      labels += `<text x="${x.toFixed(1)}" y="${H - 9}" text-anchor="middle" class="nxFP-barLbl">${m.label}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" class="nxFP-bars" preserveAspectRatio="xMidYMid meet" role="img">${bars}${labels}</svg>`;
+  }
+  function prReportesMainHTML() {
+    const pz = _prRepPeriodo || 'todo', rango = prRepRango(pz), desde = rango[0], hasta = rango[1];
+    // FLUJO (alcanzado por el período)
+    let colocado = 0; _prestamos.forEach(p => { const f = String(p.fecha_prestamo || '').slice(0, 10); if (desde && f < desde) return; if (hasta && f > hasta) return; colocado += Number(p.capital || 0); });
+    let recuperado = 0; Object.values(_pagosByPrestamo).forEach(a => a.forEach(pg => { const f = String(pg.fecha || '').slice(0, 10); if (desde && f < desde) return; if (hasta && f > hasta) return; recuperado += Number(pg.monto || 0); }));
+    // STOCK (siempre al día de hoy)
+    const balance = _prestamos.reduce((s, p) => s + saldoDe(p), 0);
+    const intereses = _prestamos.reduce((s, p) => s + interesCobradoDe(p), 0);
+    const mora = _prestamos.reduce((s, p) => s + prMoraDe(p), 0);
+    const moraOn = Number((_prCfg || {}).mora_pct || 0) > 0;
+    const aging = prRepAging();
+    const activos = aging.reduce((s, b) => s + b.n, 0);
+    const balAg = aging.reduce((s, b) => s + b.cap, 0);
+    const enMora = aging.slice(1).reduce((s, b) => s + b.n, 0);
+    const balVenc = aging.slice(1).reduce((s, b) => s + b.cap, 0);
+    const indice = balAg > 0 ? (balVenc / balAg * 100) : 0;
+    const meses = prRepMeses();
+    const metodos = prRepMetodos(desde, hasta);
+    const totMet = metodos.reduce((s, m) => s + m.val, 0);
+    // Deltas reales mes vs mes anterior (momentum)
+    const ym = hoy().slice(0, 7), dA = new Date(ym + '-01T12:00:00'); dA.setMonth(dA.getMonth() - 1);
+    const ymA = dA.getFullYear() + '-' + String(dA.getMonth() + 1).padStart(2, '0');
+    const dCol = (function () { const b = prRepColocadoMes(ymA); return b > 0 ? Math.round((prRepColocadoMes(ym) - b) / b * 100) : null; })();
+    const dCob = (function () { const b = prRepCobradoMes(ymA); return b > 0 ? Math.round((prRepCobradoMes(ym) - b) / b * 100) : null; })();
+    const trend = d => d == null ? '<span class="nxFP-repMuted">Sin dato del mes anterior</span>' : `<span class="nxFP-t${d >= 0 ? 'up' : 'dn'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d)}%</span> vs mes ant.`;
+    // Alertas REALES
+    const a30 = _prestamos.filter(p => esVencido(p) && prDiasVencido(p) > 30).length;
+    const prox = _prestamos.filter(p => { if (estadoDe(p) === 'pagado' || esVencido(p)) return false; const f = prProximoPago(p); if (!f) return false; const dd = Math.floor((new Date(f + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 86400000); return dd >= 0 && dd <= 7; }).length;
+    const repKpi = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
+    const perBtn = (k, l) => `<button type="button" class="nxFP-perBtn${pz === k ? ' on' : ''}" onclick="window.nxPrRepPeriodo('${k}')">${l}</button>`;
+    // Donut estado de cartera (por cantidad)
+    const cartSegs = aging.map(b => ({ val: b.n, color: b.color }));
+    const cartLeg = aging.map(b => `<div class="nxFP-legRow"><span class="nxFP-dot" style="background:${b.color}"></span><span class="nxFP-legLbl">${b.label}</span><span class="nxFP-legN">${b.n}</span><span class="nxFP-legPct">${activos ? (b.n / activos * 100).toFixed(1) : '0.0'}%</span></div>`).join('');
+    // Donut métodos de pago
+    const metSegs = metodos.map((m, i) => ({ val: m.val, color: PR_MET_COL[i % PR_MET_COL.length] }));
+    const metLeg = metodos.length ? metodos.map((m, i) => `<div class="nxFP-legRow"><span class="nxFP-dot" style="background:${PR_MET_COL[i % PR_MET_COL.length]}"></span><span class="nxFP-legLbl">${esc(m.label)}</span><span class="nxFP-legN">${fmt(m.val)}</span><span class="nxFP-legPct">${totMet ? (m.val / totMet * 100).toFixed(1) : '0.0'}%</span></div>`).join('') : '<div class="nxFP-repEmpty">Sin cobros registrados en el período.</div>';
+    // Antigüedad tabla
+    const agRows = aging.map(b => `<tr><td data-l="Rango" class="nxFP-tdNom"><span class="nxFP-dot" style="background:${b.color}"></span> ${b.label}</td><td data-l="Préstamos">${b.n}</td><td data-l="Capital pendiente" class="nxFP-tMoney">${fmt(b.cap)}</td><td data-l="% del total">${balAg ? (b.cap / balAg * 100).toFixed(1) : '0.0'}%</td></tr>`).join('');
+    // Alertas (solo reales)
+    const alertas = [];
+    if (a30 > 0) alertas.push(`<div class="nxFP-alertRow err"><i class="ti ti-alert-triangle"></i><span>${a30} préstamo${a30 === 1 ? '' : 's'} con más de 30 días de atraso</span></div>`);
+    if (enMora > 0) alertas.push(`<div class="nxFP-alertRow warn"><i class="ti ti-clock-exclamation"></i><span>${enMora} préstamo${enMora === 1 ? '' : 's'} vencido${enMora === 1 ? '' : 's'} (${fmt(balVenc)} en cartera)</span></div>`);
+    if (prox > 0) alertas.push(`<div class="nxFP-alertRow info"><i class="ti ti-calendar-due"></i><span>${prox} préstamo${prox === 1 ? '' : 's'} con pago en los próximos 7 días</span></div>`);
+    if (!alertas.length) alertas.push('<div class="nxFP-alertRow ok"><i class="ti ti-circle-check"></i><span>Sin alertas — la cartera está al día.</span></div>');
+    const qa = (ico, col, lbl, on) => `<button type="button" class="nxFP-qbtn" onclick="${on}"><div class="nxFP-qico" style="color:${col}"><i class="ti ${ico}"></i></div><span>${lbl}</span></button>`;
+    return `
+      <div class="nxFP-topbar">
+        <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
+        <div><div class="nxFP-topTitle">Reportes de financiamiento</div><div class="nxFP-topSub">Centro de análisis y seguimiento de la cartera de préstamos</div></div>
+        <div class="nxFP-topActions"><button type="button" onclick="window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> <span>Exportar</span></button><button type="button" class="prim" onclick="window.nxPrestamoReporte()"><i class="ti ti-printer"></i> <span>Imprimir</span></button></div>
+      </div>
+      <div class="nxFP-repBar">
+        <div class="nxFP-repPer">${perBtn('mes', 'Este mes')}${perBtn('anio', 'Este año')}${perBtn('todo', 'Todo')}</div>
+        <div class="nxFP-repPerNote"><i class="ti ti-calendar"></i> Flujo: ${prRepPeriodoTxt(pz)} · Cartera y mora: al día de hoy</div>
+      </div>
+      <div class="nxFP-kpis nxFP-kpis6">
+        ${repKpi('ti-cash-banknote', '#eef2ff', '#4f46e5', 'CAPITAL COLOCADO', fmt(colocado), trend(dCol))}
+        ${repKpi('ti-cash', '#ecfdf5', '#059669', 'CAPITAL RECUPERADO', fmt(recuperado), trend(dCob))}
+        ${repKpi('ti-wallet', '#eff6ff', '#2563eb', 'BALANCE PENDIENTE', fmt(balance), activos + (activos === 1 ? ' préstamo activo' : ' préstamos activos'))}
+        ${repKpi('ti-percentage', '#f5f3ff', '#7c3aed', 'INTERESES COBRADOS', fmt(intereses), 'Acumulado')}
+        ${repKpi('ti-alert-triangle', '#fff7ed', '#ea580c', 'MORA PENDIENTE', fmt(mora), moraOn ? 'Recargo por atraso' : 'Recargo desactivado')}
+        ${repKpi('ti-gauge', '#fef2f2', '#dc2626', 'ÍNDICE DE MORA', indice.toFixed(1) + '%', enMora + (enMora === 1 ? ' préstamo en mora' : ' préstamos en mora'))}
+      </div>
+      <div class="nxFP-repGrid">
+        <div class="nxFP-repCard">
+          <div class="nxFP-repTit">Colocaciones vs Cobros <span>(últimos 12 meses)</span></div>
+          <div class="nxFP-repLegTop"><span class="nxFP-legRow"><span class="nxFP-dot" style="background:#4f46e5"></span>Colocaciones</span><span class="nxFP-legRow"><span class="nxFP-dot" style="background:#22c55e"></span>Cobros</span></div>
+          ${prBarsSVG(meses)}
+        </div>
+        <div class="nxFP-repCard">
+          <div class="nxFP-repTit">Estado de la cartera</div>
+          <div class="nxFP-repDonutWrap">${prDonutSVG(cartSegs, activos, 'Activos')}<div class="nxFP-legend">${cartLeg}</div></div>
+          <div class="nxFP-repDonutFoot"><div><div class="nxFP-repFootLbl">Índice de mora</div><div class="nxFP-repFootVal danger">${indice.toFixed(1)}%</div></div><div><div class="nxFP-repFootLbl">Préstamos en mora</div><div class="nxFP-repFootVal">${enMora}</div></div></div>
+        </div>
+      </div>
+      <div class="nxFP-repGrid">
+        <div class="nxFP-repCard">
+          <div class="nxFP-repTit">Antigüedad de cartera</div>
+          <div class="nxFP-tblWrap"><table class="nxFP-tbl"><thead><tr><th>Rango de días</th><th>Préstamos</th><th>Capital pendiente</th><th>% del total</th></tr></thead><tbody>${agRows}<tr class="nxFP-tTotal"><td class="nxFP-tdNom">Total</td><td>${activos}</td><td class="nxFP-tMoney">${fmt(balAg)}</td><td>100%</td></tr></tbody></table></div>
+        </div>
+        <div class="nxFP-repCard">
+          <div class="nxFP-repTit">Cobros por método de pago <span>(${prRepPeriodoTxt(pz)})</span></div>
+          <div class="nxFP-repDonutWrap">${prDonutSVG(metSegs, fmt(totMet).replace('RD$ ', ''), 'Total')}<div class="nxFP-legend">${metLeg}</div></div>
+        </div>
+      </div>
+      <div class="nxFP-repGrid">
+        <div class="nxFP-repCard">
+          <div class="nxFP-repTit">Alertas importantes</div>
+          <div class="nxFP-alerts">${alertas.join('')}</div>
+        </div>
+        <div class="nxFP-repCard">
+          <div class="nxFP-repTit">Acciones rápidas</div>
+          <div class="nxFP-quick nxFP-repQuick">
+            ${qa('ti-folder', '#4f46e5', 'Reporte de cartera', 'window.nxPrestamoReporte()')}
+            ${qa('ti-cash', '#059669', 'Cobranza', 'window.nxPrestamoCobranza()')}
+            ${qa('ti-file-spreadsheet', '#0891b2', 'Exportar Excel', 'window.nxPrestamoExportar()')}
+            ${qa('ti-checks', '#7c3aed', 'Préstamos cerrados', "window.nxPrestamoFiltroTipo('pagados')")}
+            ${qa('ti-settings', '#64748b', 'Configuración', 'window.nxPrestamoConfig()')}
+          </div>
+        </div>
+      </div>`;
+  }
+  window.nxPrRepPeriodo = function (v) { _prRepPeriodo = v || 'todo'; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
   window.nxPrView = function (v) { _prView = v; _prCliQuery = ''; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
   // ── Pantalla de CLIENTES de Financiamiento (tabla prestamo_clientes) ──
   function prCliMap() { const m = {}; _prClientes.forEach(c => { m[c.id] = c; }); return m; }
@@ -23315,6 +23484,34 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-dcard{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eef0f5;border-radius:16px;padding:13px 14px}' +
       '.nxFP-dico{width:34px;height:34px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}.nxFP-dico.green{background:#dcfce7;color:#16a34a}.nxFP-dico.red{background:#fee2e2;color:#dc2626}.nxFP-dico.blue{background:#e0e7ff;color:#4338ca}' +
       '.nxFP-dlbl{font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.3px}.nxFP-dval{font-size:14px;font-weight:800;color:#0f172a;line-height:1.3;font-variant-numeric:tabular-nums}.nxFP-dsub{font-size:10px;color:#94a3b8;font-weight:600}' +
+      /* ── REPORTES de Financiamiento ── */
+      '.nxFP-kpis6{grid-template-columns:repeat(6,1fr)}' +
+      '.nxFP-repBar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}' +
+      '.nxFP-repPer{display:inline-flex;gap:4px;background:#f4f3fb;border:1px solid #eef0f5;border-radius:12px;padding:4px}' +
+      '.nxFP-perBtn{border:0;background:transparent;color:#64748b;font-weight:700;font-size:12px;padding:7px 14px;border-radius:9px;cursor:pointer;font-family:inherit}' +
+      '.nxFP-perBtn.on{background:#fff;color:#4f46e5;box-shadow:0 1px 3px rgba(15,23,42,.08)}' +
+      '.nxFP-repPerNote{font-size:11px;color:#94a3b8;font-weight:600;display:inline-flex;align-items:center;gap:5px}' +
+      '.nxFP-repGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}' +
+      '.nxFP-repCard{background:#fff;border:1px solid #eef0f5;border-radius:18px;padding:16px 18px;min-width:0}' +
+      '.nxFP-repTit{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:12px}.nxFP-repTit span{font-weight:600;color:#94a3b8;font-size:11px}' +
+      '.nxFP-repLegTop{display:flex;gap:16px;margin-bottom:6px;font-size:11px;font-weight:700;color:#475569}' +
+      '.nxFP-bars{width:100%;height:auto;display:block}.nxFP-barLbl{font-size:9px;fill:#94a3b8;font-weight:700}' +
+      '.nxFP-donut{flex:none;width:150px;height:150px}.nxFP-donutTop{font-size:22px;font-weight:800;fill:#0f172a}.nxFP-donutSub{font-size:9px;font-weight:700;fill:#94a3b8;text-transform:uppercase;letter-spacing:.3px}' +
+      '.nxFP-repDonutWrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}' +
+      '.nxFP-legend{flex:1;min-width:150px;display:flex;flex-direction:column;gap:7px}' +
+      '.nxFP-legRow{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#475569;font-weight:600}' +
+      '.nxFP-dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}' +
+      '.nxFP-legLbl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxFP-legN{font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums}.nxFP-legPct{color:#94a3b8;font-size:10.5px;min-width:44px;text-align:right}' +
+      '.nxFP-repDonutFoot{display:flex;gap:24px;margin-top:12px;padding-top:12px;border-top:1px solid #f4f5f9}.nxFP-repFootLbl{font-size:10px;font-weight:700;color:#94a3b8}.nxFP-repFootVal{font-size:17px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums}.nxFP-repFootVal.danger{color:#dc2626}' +
+      '.nxFP-repEmpty{color:#94a3b8;font-size:12px;padding:12px 0}' +
+      '.nxFP-tbl .nxFP-tTotal td{font-weight:800;color:#0f172a;border-top:2px solid #eef0f5;background:#faf9ff}' +
+      '.nxFP-alerts{display:flex;flex-direction:column;gap:8px}' +
+      '.nxFP-alertRow{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;padding:10px 12px;border-radius:12px}.nxFP-alertRow i{font-size:16px;flex:none}' +
+      '.nxFP-alertRow.err{background:#fef2f2;color:#b91c1c}.nxFP-alertRow.warn{background:#fff7ed;color:#c2410c}.nxFP-alertRow.info{background:#eff6ff;color:#1d4ed8}.nxFP-alertRow.ok{background:#f0fdf4;color:#15803d}' +
+      '.nxFP-repQuick{grid-template-columns:repeat(3,1fr)}' +
+      '.nxFP-tup{color:#16a34a;font-weight:800}.nxFP-tdn{color:#dc2626;font-weight:800}.nxFP-repMuted{color:#94a3b8;font-weight:600}' +
+      '@media(max-width:1000px){.nxFP-kpis6{grid-template-columns:repeat(3,1fr)}.nxFP-repGrid{grid-template-columns:1fr}}' +
+      '@media(max-width:560px){.nxFP-kpis6{grid-template-columns:1fr 1fr}.nxFP-repQuick{grid-template-columns:1fr 1fr}.nxFP-repBar{flex-direction:column;align-items:flex-start}}' +
       '@media(max-width:900px){.nxFP-hero{flex-direction:column}.nxFP-heroR{grid-template-columns:repeat(2,1fr)}.nxFP-quick{grid-template-columns:repeat(3,1fr)}.nxFP-dash{grid-template-columns:repeat(2,1fr)}}' +
       '@media(max-width:640px){.nxFP-hero{padding:18px}.nxFP-heroNum{font-size:27px}.nxFP-heroR{grid-template-columns:1fr 1fr;gap:14px}.nxFP-quick{grid-template-columns:repeat(3,1fr);gap:8px}.nxFP-qbtn{padding:13px 4px}.nxFP-qbtn span{font-size:9px}.nxFP-cardGrid{grid-template-columns:1fr 1fr}.nxFP-card{padding:13px 12px}.nxFP-cardBody{padding-right:22px}.nxFP-dash{grid-template-columns:1fr 1fr}}';
     document.head.appendChild(st);
