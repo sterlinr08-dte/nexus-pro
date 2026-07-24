@@ -13806,25 +13806,25 @@
                 <button type="button" id="prModoCuotas" class="btn ev-modo" onclick="window.evModo('cuotas')">Cuotas fijas</button>
                 <button type="button" id="prModoCredito" class="btn ev-modo" onclick="window.evModo('credito')">Línea de crédito</button>
               </div>
-              <div class="ev-sl"><div class="ev-slhd"><label>Capital solicitado</label><b id="evCapV">RD$ 0</b></div>
-                <input id="prCap" type="range" min="5000" max="200000" step="1000" value="20000" oninput="window.evRecalc()">
-                <div class="ev-slmm"><span>RD$ 5,000</span><span>RD$ 200,000</span></div></div>
-              <div class="ev-sl"><div class="ev-slhd"><label>Tasa de interés mensual (%)</label><b id="evTasaV">0%</b></div>
-                <input id="prTasa" type="range" min="0" max="20" step="0.25" value="10" oninput="window.evRecalc()">
-                <div class="ev-slmm"><span>0%</span><span>20%</span></div></div>
+              <div class="ev-sl"><div class="ev-slhd"><label>Capital solicitado</label><div class="ev-slnum"><span>RD$</span><input id="prCap" data-nx-money inputmode="numeric" value="20,000" oninput="window.evSyncSl('prCapSl','prCap',true);window.evRecalc()"></div></div>
+                <input id="prCapSl" type="range" min="5000" max="200000" step="1000" value="20000" oninput="window.evSyncNum('prCap','prCapSl',true);window.evRecalc()">
+                <div class="ev-slmm"><span>RD$ 5,000</span><span>RD$ 200,000+</span></div></div>
+              <div class="ev-sl"><div class="ev-slhd"><label>Tasa de interés mensual (%)</label><div class="ev-slnum"><input id="prTasa" inputmode="decimal" value="10" oninput="window.evSyncSl('prTasaSl','prTasa',false);window.evRecalc()"><span>%</span></div></div>
+                <input id="prTasaSl" type="range" min="0" max="20" step="0.25" value="10" oninput="window.evSyncNum('prTasa','prTasaSl',false);window.evRecalc()">
+                <div class="ev-slmm"><span>0%</span><span>20%+</span></div></div>
               <div id="prCuotasBox">
-                <div class="ev-sl"><div class="ev-slhd"><label># de cuotas</label><b id="evCuoV">0</b></div>
-                  <input id="prNumCuotas" type="range" min="1" max="60" step="1" value="8" oninput="window.evRecalc()">
-                  <div class="ev-slmm"><span>1</span><span>60</span></div></div>
+                <div class="ev-sl"><div class="ev-slhd"><label># de cuotas</label><div class="ev-slnum"><input id="prNumCuotas" type="number" min="1" inputmode="numeric" value="8" oninput="window.evSyncSl('prNumCuotasSl','prNumCuotas',false);window.evRecalc()"></div></div>
+                  <input id="prNumCuotasSl" type="range" min="1" max="60" step="1" value="8" oninput="window.evSyncNum('prNumCuotas','prNumCuotasSl',false);window.evRecalc()">
+                  <div class="ev-slmm"><span>1</span><span>60+</span></div></div>
                 <div class="fr-row">
                   <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.evRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual" selected>Mensual</option></select></div>
                   <div class="fr"><label>Método</label><select id="prMetodo" onchange="window.evRecalc()"><option value="plano">Interés simple</option><option value="saldo">Saldo insoluto</option></select></div>
                 </div>
               </div>
               <div id="prCreditoBox" style="display:none">
-                <div class="ev-sl"><div class="ev-slhd"><label>Plazo (meses)</label><b id="evPlaV">0</b></div>
-                  <input id="prPlazo" type="range" min="1" max="60" step="1" value="6" oninput="window.evRecalc()">
-                  <div class="ev-slmm"><span>1</span><span>60</span></div></div>
+                <div class="ev-sl"><div class="ev-slhd"><label>Plazo (meses)</label><div class="ev-slnum"><input id="prPlazo" type="number" min="1" inputmode="numeric" value="6" oninput="window.evSyncSl('prPlazoSl','prPlazo',false);window.evRecalc()"></div></div>
+                  <input id="prPlazoSl" type="range" min="1" max="60" step="1" value="6" oninput="window.evSyncNum('prPlazo','prPlazoSl',false);window.evRecalc()">
+                  <div class="ev-slmm"><span>1</span><span>60+</span></div></div>
               </div>
               <div id="prTotRow" class="fr" style="display:none"><label>Total a devolver</label><input id="prTot" data-nx-money inputmode="numeric" oninput="window.evRecalc()" placeholder="0"></div>
               <textarea id="prNotas" style="display:none"></textarea>
@@ -13865,6 +13865,16 @@
     try { const ov = document.getElementById('v-prestamos'); if (window.nxMoney && window.nxMoney.scan && ov) window.nxMoney.scan(ov); } catch (e) {}
   }
   window.evModo = function (m) { _modoForm = m; try { pintarModo(); } catch (e) {} window.evRecalc(); };
+  // Simulador de "ambas formas": el número (fuente de verdad, sin tope) y el deslizador sincronizados.
+  window.evSyncSl = function (slId, numId, money) {
+    const s = document.getElementById(slId), n = document.getElementById(numId); if (!s || !n) return;
+    const v = money ? parseMoney(n.value) : (Number(String(n.value).replace(',', '.')) || 0);
+    s.value = Math.max(Number(s.min), Math.min(Number(s.max), v)); // el slider solo llega a su tope; el número puede pasarse
+  };
+  window.evSyncNum = function (numId, slId, money) {
+    const s = document.getElementById(slId), n = document.getElementById(numId); if (!s || !n) return;
+    n.value = money ? Number(s.value).toLocaleString('en-US') : s.value;
+  };
   window.evNuevoCliente = function () {
     abrirClienteForm(null, function (saved) { window.nxPrView('evaluacion'); setTimeout(function () { evClientePuesto(saved); }, 40); });
   };
@@ -13918,9 +13928,6 @@
     _evScore = score; const rec = evRecInfo(score); _evRec = rec.txt;
     const c = calcPrestamo();
     // valores del slider
-    const setT = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
-    setT('evCapV', fmt(parseMoney(val('prCap')))); setT('evTasaV', (parsePct(val('prTasa')) || 0) + '%');
-    setT('evCuoV', (parseInt(val('prNumCuotas'), 10) || 0) + ' cuotas'); setT('evPlaV', (parseInt(val('prPlazo'), 10) || 0) + ' meses');
     const pct = v => (Math.round(v * 1000) / 10).toFixed(0) + '%';
     // ── Análisis (5 indicadores) ──
     const an = document.getElementById('evAnalisis');
@@ -23041,7 +23048,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.ev-sechd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:12px}' +
       '.ev-opt{font-weight:400;color:#94a3b8;font-size:10px}.ev-hint{font-size:10.5px;color:#94a3b8;line-height:1.5;margin-top:8px}' +
       '.ev-modo{flex:1 1 84px;font-size:11px;padding:8px 6px}.ev-modo.bc1{color:#fff}' +
-      '.ev-sl{margin-bottom:14px}.ev-slhd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}.ev-slhd label{font-size:11px;font-weight:700;color:#475569}.ev-slhd b{font-size:13px;font-weight:800;color:#4f46e5}' +
+      '.ev-sl{margin-bottom:14px}.ev-slhd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.ev-slhd label{font-size:11px;font-weight:700;color:#475569}.ev-slhd b{font-size:13px;font-weight:800;color:#4f46e5}' +
+      '.ev-slnum{display:flex;align-items:center;gap:3px;border:1.5px solid #e2e8f0;border-radius:8px;padding:2px 8px;background:#fff;flex:0 0 auto}.ev-slnum:focus-within{border-color:#4f46e5}.ev-slnum span{font-size:11px;color:#94a3b8;font-weight:700}' +
+      '.ev-slnum input{border:0;outline:0;background:transparent;font-size:13px;font-weight:800;color:#4f46e5;text-align:right;width:82px;padding:2px 0;font-family:inherit}.ev-slnum input::-webkit-outer-spin-button,.ev-slnum input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}' +
       '.ev-sl input[type=range]{width:100%;accent-color:#4f46e5;height:6px}' +
       '.ev-slmm{display:flex;justify-content:space-between;font-size:9.5px;color:#94a3b8;margin-top:3px}' +
       '.ev-an{margin-bottom:12px}.ev-anhd{display:flex;align-items:center;gap:7px;margin-bottom:5px}.ev-anhd i{font-size:15px;color:#64748b;flex:0 0 auto}.ev-anlbl{font-size:12px;color:#475569;font-weight:600;flex:1;min-width:0}.ev-anval{font-size:13px;font-weight:800;color:#1e293b}' +
