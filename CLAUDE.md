@@ -2084,6 +2084,20 @@ interno, recomendación automática, resumen lateral fijo, botón "Aprobar y cre
     medidor /1000, la tabla de amortización (8 filas), los saltos de pestaña, y "Aprobar" con el POST correcto
     (`cliente_id` + nota de score + nota del asesor). 0 errores de JS, sin desbordes en 390px ni 1280px. `node
     --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  - **Seguimiento (v49.17) — simulador "de ambas formas" (pedido del dueño):** cada control del simulador
+    (Capital/Tasa/#cuotas/Plazo) pasó de ser SOLO un deslizador a tener **número editable + deslizador
+    sincronizados**. El **número es la fuente de verdad** (mismos ids `prCap`/`prTasa`/`prNumCuotas`/`prPlazo`
+    que lee `calcPrestamo`/`nxPrestamoGuardar`, sin tope); el deslizador es un `*Sl` aparte
+    (`prCapSl`/`prTasaSl`/...) que solo mueve el número. Helpers `window.evSyncSl` (número→thumb del slider,
+    acotado a su min/max) y `window.evSyncNum` (slider→número, con formato de miles para capital). **Clave:**
+    si se escribe un monto exacto (47,350) o mayor que el tope del slider (500,000), el cálculo usa ESE número
+    — el slider solo llega a su tope visual, no limita el valor real. `parseMoney` para capital, decimal para
+    la tasa. Se quitaron los `<b id="evCapV">`/etc (el número editable los reemplaza) y sus `setT(...)` en
+    `evRecalc` (código muerto). CSS nuevo `.ev-slnum` (cajita del número en el encabezado del slider).
+    Verificado con 12 pruebas Playwright del código real (slider→número, número→slider con clamp del thumb,
+    cálculo con el valor exacto aún por encima del tope del slider, tasa decimal) + las 62 anteriores sin
+    regresión. `node --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+    válido.
 
 ### Financiamiento (Préstamos, Multiempresa) — MÓDULO DE CLIENTES (spec ChatGPT "Crear Cliente V1", 24-jul-2026, v49.14)
 El dueño pidió aplicar la carga de "Crear Cliente V1" de ChatGPT. Primero se aplicó por error al formulario
