@@ -13170,13 +13170,14 @@
           ${nav('pagados', 'Pagados', 'ti-checks')}
           ${nav('credito', 'Líneas de crédito', 'ti-credit-card')}
           <button type="button" class="nxFP-navItem${_prView === 'clientes' ? ' on' : ''}" onclick="window.nxPrView('clientes')"><i class="ti ti-users-group"></i> Clientes</button>
+          <button type="button" class="nxFP-navItem${_prView === 'evaluacion' ? ' on' : ''}" onclick="window.nxPrView('evaluacion')"><i class="ti ti-clipboard-check"></i> Evaluación</button>
           <div class="nxFP-sideDiv"></div>
           <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoReporte()"><i class="ti ti-report-money"></i> Reportes</button>
           <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
         </nav>
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
-      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : `
+      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : `
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
           <div><div class="nxFP-topTitle">Financiamiento</div><div class="nxFP-topSub">Administra y controla todos los préstamos</div></div>
@@ -13201,6 +13202,7 @@
         </div>`}
       </div>
     </div>`;
+    if (_prView === 'evaluacion') { try { evInit(); } catch (e) {} }
   }
   window.nxPrView = function (v) { _prView = v; _prCliQuery = ''; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
   // ── Pantalla de CLIENTES de Financiamiento (tabla prestamo_clientes) ──
@@ -13618,7 +13620,8 @@
   window.nxPrClienteNuevoDesdeForm = function () {
     abrirClienteForm(null, function (saved) { abrirForm(null); setTimeout(function () { prFormPonerCliente(saved); }, 30); });
   };
-  window.nxPrElegirCliente = function () {
+  window.nxPrElegirCliente = function (target) {
+    _prCliPickTarget = target === 'eval' ? 'eval' : 'form';
     cerrarModal('nxPrCliPick');
     const ov = document.createElement('div'); ov.id = 'nxPrCliPick'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
@@ -13636,7 +13639,224 @@
     const box = document.getElementById('prCliPickList'); if (!box) return;
     box.innerHTML = lista.length ? lista.map(c => `<button type="button" class="prCliPickRow" onclick="window.nxPrCliPickSel('${c.id}')"><b>${esc(c.nombre || '')}</b><span>${esc([c.cedula, c.telefono].filter(Boolean).join(' · ') || 'sin datos')}</span></button>`).join('') : '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">Nada coincide.</div>';
   };
-  window.nxPrCliPickSel = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); cerrarModal('nxPrCliPick'); if (c) prFormPonerCliente(c); };
+  let _prCliPickTarget = 'form';
+  window.nxPrCliPickSel = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); cerrarModal('nxPrCliPick'); if (!c) return; if (_prCliPickTarget === 'eval') evClientePuesto(c); else prFormPonerCliente(c); };
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  EVALUACIÓN FINANCIERA (spec ChatGPT "Evaluación Financiera V1")
+  //  Cliente → Info económica → Simulador (motor real) → Análisis → Score →
+  //  Recomendación → "Aprobar y crear préstamo" (reusa nxPrestamoGuardar).
+  //  Sin tabla nueva: el score/ratio se calculan en vivo y, al aprobar, se
+  //  guardan como una línea de NOTA real en el préstamo (columna prestamos.notas).
+  // ══════════════════════════════════════════════════════════════════════
+  let _evCli = null, _evScore = null, _evRec = '', _evRatio = 0;
+  // Compromiso MENSUAL estimado del préstamo, para el ratio cuota/ingreso.
+  // cuotas: cuota × pagos-por-mes (semanal 4.33 / quincenal 2 / mensual 1).
+  // credito: interés del 1er mes. libre: 0 (sin cuota fija) — se avisa en pantalla.
+  function evCompromisoMensual() {
+    if (_modoForm === 'credito') {
+      const cap = parseMoney(val('prCap')), tasa = parsePct(val('prTasa'));
+      return (cap > 0 && tasa > 0) ? Math.round(cap * tasa / 100) : 0;
+    }
+    const c = calcPrestamo();
+    if (c.computa && c.modo === 'cuotas') {
+      const porMes = c.frec === 'semanal' ? 4.33 : c.frec === 'quincenal' ? 2 : 1;
+      return Math.round(c.cuota * porMes);
+    }
+    return 0; // libre: sin cuota fija
+  }
+  // Score determinístico 0-100 (fórmula transparente, ajustable a futuro como la mora).
+  function evCalcularScore(ingresoTotal, compromiso, deudas) {
+    if (!(ingresoTotal > 0) || !(compromiso > 0)) return null;
+    const ratioTot = (compromiso + deudas) / ingresoTotal; // endeudamiento total
+    let base;
+    if (ratioTot <= 0.30) base = 90;
+    else if (ratioTot <= 0.40) base = 72;
+    else if (ratioTot <= 0.50) base = 55;
+    else if (ratioTot <= 0.65) base = 38;
+    else base = 18;
+    if (_evCli) {
+      if (_evCli.tiene_fiador) base += 5;
+      if (_evCli.tipo_ingreso === 'Empleado') base += 5;       // ingreso más estable
+      else if (_evCli.tipo_ingreso === 'Pensión') base += 3;
+      if ((_evCli.ocupacion || '').trim() && (_evCli.lugar_trabajo || '').trim()) base += 2;
+    }
+    return Math.max(0, Math.min(100, Math.round(base)));
+  }
+  function evRecInfo(score) {
+    if (score == null) return { txt: 'Sin evaluar', col: '#64748b', bg: '#f1f5f9', ico: 'ti-minus' };
+    if (score >= 70) return { txt: 'APROBAR', col: '#059669', bg: '#ecfdf5', ico: 'ti-circle-check' };
+    if (score >= 50) return { txt: 'REVISAR', col: '#d97706', bg: '#fffbeb', ico: 'ti-alert-triangle' };
+    return { txt: 'RECHAZAR', col: '#dc2626', bg: '#fef2f2', ico: 'ti-circle-x' };
+  }
+  function evClienteBoxHTML() {
+    if (!_evCli) return `<div class="ev-cliempty"><i class="ti ti-user-search"></i> Elige un cliente para empezar la evaluación.</div>`;
+    const c = _evCli, det = [c.cedula && ('Cédula ' + c.cedula), c.telefono, c.ocupacion, c.lugar_trabajo].filter(Boolean).join(' · ');
+    return `<div class="ev-clirow"><div class="ev-avatar">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
+      <div style="min-width:0"><div class="ev-clinom">${esc(c.nombre || 'Sin nombre')}</div><div class="ev-clidet">${esc(det || 'sin datos')}</div></div></div>`;
+  }
+  function prEvalMainHTML() {
+    const ingIni = ''; // se llena al elegir cliente
+    const kEv = (id, lbl, ph, extra) => `<div class="fr"><label>${lbl}</label><input id="${id}" ${extra || ''} placeholder="${esc(ph || '')}"></div>`;
+    return `
+      <div class="nxFP-topbar">
+        <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
+        <div><div class="nxFP-topTitle">Evaluación Financiera</div><div class="nxFP-topSub">Evalúa la capacidad de pago antes de aprobar el préstamo</div></div>
+      </div>
+      <div class="ev-grid nxPrForm">
+        <div class="ev-main">
+          <div class="ev-card">
+            <div class="ev-sechd"><span class="ev-secn">1</span> Cliente</div>
+            <div id="evCliBox">${evClienteBoxHTML()}</div>
+            <input type="hidden" id="prCliId"><input type="hidden" id="prNom"><input type="hidden" id="prCed"><input type="hidden" id="prTel">
+            <div style="display:flex;gap:6px;margin-top:10px">
+              <button type="button" class="btn bsm" style="flex:1" onclick="window.nxPrElegirCliente('eval')"><i class="ti ti-users-group"></i> Elegir cliente</button>
+              <button type="button" class="btn bsm" style="flex:1" onclick="window.evNuevoCliente()"><i class="ti ti-user-plus"></i> Nuevo cliente</button>
+            </div>
+          </div>
+          <div class="ev-card">
+            <div class="ev-sechd"><span class="ev-secn">2</span> Información económica</div>
+            <div class="fr-row">
+              <div class="fr"><label>Ingreso mensual RD$</label><input id="evIngreso" data-nx-money inputmode="numeric" oninput="window.evRecalc()" value="${ingIni}" placeholder="0"></div>
+              <div class="fr"><label>Otros ingresos RD$ <span class="ev-opt">(opcional)</span></label><input id="evOtros" data-nx-money inputmode="numeric" oninput="window.evRecalc()" placeholder="0"></div>
+            </div>
+            <div class="fr"><label>Deudas / compromisos mensuales actuales RD$ <span class="ev-opt">(opcional)</span></label><input id="evDeudas" data-nx-money inputmode="numeric" oninput="window.evRecalc()" placeholder="0"></div>
+            <div class="ev-hint">Estos montos son solo para calcular la capacidad de pago — no se guardan en el cliente.</div>
+          </div>
+          <div class="ev-card">
+            <div class="ev-sechd"><span class="ev-secn">3</span> Simulador del préstamo</div>
+            <div class="fr-row">
+              <div class="fr"><label>Capital a prestar</label><input id="prCap" data-nx-money inputmode="numeric" oninput="window.evRecalc()" placeholder="0"></div>
+              <div class="fr"><label>Fecha</label><input id="prFecha" type="date" onchange="window.evRecalc()" value="${hoy()}"></div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px">
+              <button type="button" id="prModoLibre" class="btn" onclick="window.evModo('libre')" style="flex:1 1 84px;flex-direction:column;gap:3px;padding:9px 6px;min-height:48px"><i class="ti ti-wallet" style="font-size:15px"></i><span style="font-size:10px">Abonos libres</span></button>
+              <button type="button" id="prModoCuotas" class="btn" onclick="window.evModo('cuotas')" style="flex:1 1 84px;flex-direction:column;gap:3px;padding:9px 6px;min-height:48px"><i class="ti ti-calendar-dollar" style="font-size:15px"></i><span style="font-size:10px">Cuotas fijas</span></button>
+              <button type="button" id="prModoCredito" class="btn" onclick="window.evModo('credito')" style="flex:1 1 84px;flex-direction:column;gap:3px;padding:9px 6px;min-height:48px"><i class="ti ti-credit-card" style="font-size:15px"></i><span style="font-size:10px">Línea de crédito</span></button>
+            </div>
+            <div class="fr"><label>Tasa de interés (%) mensual</label><input id="prTasa" inputmode="decimal" oninput="window.evRecalc()" placeholder="0 = sin interés (ej: 10)"></div>
+            <div id="prCuotasBox" style="display:none">
+              <div class="fr-row">
+                <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.evRecalc()" placeholder="4"></div>
+                <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.evRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual" selected>Mensual</option></select></div>
+              </div>
+              <div class="fr"><label>Método de interés</label><select id="prMetodo" onchange="window.evRecalc()"><option value="plano">Interés simple (plano)</option><option value="saldo">Saldo insoluto</option></select></div>
+            </div>
+            <div id="prCreditoBox" style="display:none">
+              <div class="fr"><label>Plazo (meses)</label><input id="prPlazo" type="number" min="1" oninput="window.evRecalc()" placeholder="6"></div>
+            </div>
+            <div id="prTotRow" class="fr" style="display:none"><label>Total a devolver</label><input id="prTot" data-nx-money inputmode="numeric" oninput="window.evRecalc()" placeholder="0"></div>
+            <textarea id="prNotas" style="display:none"></textarea>
+          </div>
+          <div class="ev-card">
+            <div class="ev-sechd"><span class="ev-secn">4</span> Análisis financiero</div>
+            <div id="evAnalisis"></div>
+          </div>
+        </div>
+        <aside class="ev-aside">
+          <div class="ev-card ev-sticky">
+            <div class="ev-ashd">Resumen</div>
+            <div id="evResumen"></div>
+            <button type="button" class="btn bc1 ev-aprobar" id="evAprobarBtn" onclick="window.evAprobar()" disabled><i class="ti ti-circle-check"></i> Aprobar y crear préstamo</button>
+            <div class="ev-hint" style="text-align:center;margin-top:8px">El score y la recomendación se calculan de la información de arriba. La decisión final es tuya.</div>
+          </div>
+        </aside>
+      </div>`;
+  }
+  function evInit() {
+    _evCli = null; _evScore = null; _evRec = ''; _evRatio = 0;
+    _modoForm = 'cuotas';
+    const box = document.getElementById('evCliBox'); if (box) box.innerHTML = evClienteBoxHTML();
+    try { if (typeof pintarModo === 'function') pintarModo(); } catch (e) {}
+    // pintarModo llama a nxPrRecalc (inofensivo: sus contenedores no existen aquí) — recalculamos con evRecalc
+    window.evRecalc();
+    try { const ov = document.getElementById('v-prestamos'); if (window.nxMoney && window.nxMoney.scan && ov) window.nxMoney.scan(ov); } catch (e) {}
+  }
+  window.evModo = function (m) { _modoForm = m; try { pintarModo(); } catch (e) {} window.evRecalc(); };
+  window.evNuevoCliente = function () {
+    abrirClienteForm(null, function (saved) { window.nxPrView('evaluacion'); setTimeout(function () { evClientePuesto(saved); }, 40); });
+  };
+  function evClientePuesto(c) {
+    _evCli = c || null;
+    const setv = (id, v) => { const el = document.getElementById(id); if (el) el.value = v == null ? '' : v; };
+    setv('prCliId', c && c.id); setv('prNom', c && c.nombre); setv('prCed', c && c.cedula); setv('prTel', c && c.telefono);
+    const box = document.getElementById('evCliBox'); if (box) box.innerHTML = evClienteBoxHTML();
+    const ing = document.getElementById('evIngreso');
+    if (ing && c && c.ingreso_mensual != null && !parseMoney(ing.value)) { ing.value = Math.round(Number(c.ingreso_mensual) || 0).toLocaleString('en-US'); }
+    window.evRecalc();
+  }
+  window.evRecalc = function () {
+    // "Total a devolver" solo aplica al modo libre (pintarModo→nxPrRecalc lo puede mostrar; aquí mandamos nosotros)
+    const totRow = document.getElementById('prTotRow'); if (totRow) totRow.style.display = _modoForm === 'libre' ? '' : 'none';
+    const ingreso = parseMoney(val('evIngreso')), otros = parseMoney(val('evOtros')), deudas = parseMoney(val('evDeudas'));
+    const ingresoTotal = ingreso + otros;
+    const compromiso = evCompromisoMensual();
+    const capacidad = ingresoTotal - deudas;
+    const ratioCuota = ingresoTotal > 0 ? compromiso / ingresoTotal : 0;
+    const ratioTotal = ingresoTotal > 0 ? (compromiso + deudas) / ingresoTotal : 0;
+    _evRatio = ratioCuota;
+    const score = evCalcularScore(ingresoTotal, compromiso, deudas);
+    _evScore = score; const rec = evRecInfo(score); _evRec = rec.txt;
+    const c = calcPrestamo();
+    const cuotaTxt = _modoForm === 'credito' ? (compromiso > 0 ? fmt(compromiso) + '/mes (interés)' : '—')
+      : (c.computa && c.modo === 'cuotas') ? fmt(c.cuota) + ' / ' + (val('prFrec') || 'mensual')
+      : (c.computa && c.modo === 'libre') ? 'abonos libres' : '—';
+    // ── Análisis ──
+    const pct = v => (Math.round(v * 1000) / 10).toFixed(1) + '%';
+    const ratioCol = ratioTotal <= 0.30 ? '#059669' : ratioTotal <= 0.50 ? '#d97706' : '#dc2626';
+    const an = document.getElementById('evAnalisis');
+    if (an) {
+      if (!(ingresoTotal > 0)) {
+        an.innerHTML = `<div class="ev-hint">Ingresa el ingreso mensual del cliente para ver el análisis.</div>`;
+      } else {
+        const barW = Math.max(2, Math.min(100, Math.round(ratioTotal * 100)));
+        an.innerHTML = `
+          <div class="ev-anrow"><span>Ingreso total mensual</span><b>${fmt(ingresoTotal)}</b></div>
+          <div class="ev-anrow"><span>Compromiso del préstamo</span><b>${compromiso > 0 ? fmt(compromiso) + '/mes' : (_modoForm === 'libre' ? 'sin cuota fija' : '—')}</b></div>
+          <div class="ev-anrow"><span>Otras deudas mensuales</span><b>${fmt(deudas)}</b></div>
+          <div class="ev-anrow"><span>Capacidad de pago (ingreso − deudas)</span><b style="color:${capacidad > 0 ? '#059669' : '#dc2626'}">${fmt(capacidad)}</b></div>
+          <div class="ev-anrow ev-anrow-b"><span>Ratio de endeudamiento total</span><b style="color:${ratioCol}">${pct(ratioTotal)}</b></div>
+          <div class="ev-bar"><div class="ev-barf" style="width:${barW}%;background:${ratioCol}"></div></div>
+          <div class="ev-hint">Se recomienda que la cuota + deudas no pase del 30-40% del ingreso.${_modoForm === 'libre' ? ' En "abonos libres" no hay cuota fija, así que el ratio no incluye el préstamo.' : ''}</div>`;
+      }
+    }
+    // ── Resumen lateral ──
+    const rs = document.getElementById('evResumen');
+    if (rs) {
+      const gauge = score == null ? '—' : score;
+      rs.innerHTML = `
+        <div class="ev-clip">${_evCli ? esc(_evCli.nombre || '') : 'Sin cliente'}</div>
+        <div class="ev-scorewrap"><div class="ev-score" style="color:${rec.col}">${gauge}${score == null ? '' : '<span>/100</span>'}</div>
+          <div class="ev-rec" style="color:${rec.col};background:${rec.bg}"><i class="ti ${rec.ico}"></i> ${rec.txt}</div></div>
+        <div class="ev-rsrow"><span>Ingreso mensual</span><b>${fmt(ingresoTotal)}</b></div>
+        <div class="ev-rsrow"><span>Cuota / compromiso</span><b>${cuotaTxt}</b></div>
+        <div class="ev-rsrow"><span>Ratio cuota/ingreso</span><b style="color:${ratioCol}">${ingresoTotal > 0 ? pct(ratioCuota) : '—'}</b></div>`;
+    }
+    // ── Botón ──
+    const btn = document.getElementById('evAprobarBtn');
+    if (btn) {
+      const ok = !!_evCli && (c.computa || (_modoForm === 'libre' && parseMoney(val('prTot')) > 0) || (_modoForm === 'credito' && parseMoney(val('prCap')) > 0));
+      btn.disabled = !ok;
+    }
+  };
+  window.evAprobar = async function () {
+    if (!_evCli) { toast('err', 'Elige un cliente primero'); return; }
+    const c = calcPrestamo();
+    const okCalc = c.computa || (_modoForm === 'libre' && parseMoney(val('prTot')) > 0) || (_modoForm === 'credito' && parseMoney(val('prCap')) > 0);
+    if (!okCalc) { toast('err', 'Completa el simulador del préstamo (capital, tasa, cuotas)'); return; }
+    // Aviso si la recomendación no es aprobar (la decisión final es del dueño)
+    if (_evScore != null && _evScore < 70) {
+      const ok = confirm('La evaluación recomienda "' + _evRec + '" (score ' + _evScore + '/100).\n\n¿Crear el préstamo de todos modos?');
+      if (!ok) return;
+    }
+    // Guardar la evaluación como NOTA real del préstamo (sin tabla nueva)
+    const notaEval = _evScore != null
+      ? 'Evaluación: score ' + _evScore + '/100 · ' + _evRec + ' · ratio cuota/ingreso ' + (Math.round(_evRatio * 1000) / 10).toFixed(1) + '%'
+      : 'Evaluación financiera realizada';
+    const nt = document.getElementById('prNotas'); if (nt) nt.value = notaEval;
+    // Reusar 100% la creación real del préstamo (lee prCliId/prNom/prCap/prTasa/... del DOM)
+    await window.nxPrestamoGuardar('');
+  };
 
   window.nxPrestamoGuardar = async function (id) {
     const nom = (val('prNom') || '').trim();
@@ -22645,6 +22865,29 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-sideBack:hover{background:rgba(255,255,255,.1)}' +
       '.prCliPickRow{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid #e9e6f7;background:#fff;cursor:pointer;font-family:inherit;width:100%}' +
       '.prCliPickRow:hover{background:#f5f3ff;border-color:#c7b8f5}.prCliPickRow b{font-size:13px;color:#1e1b4b}.prCliPickRow span{font-size:11px;color:#7c748f}' +
+      // ── Evaluación Financiera ──
+      '.ev-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}' +
+      '.ev-main{display:flex;flex-direction:column;gap:14px;min-width:0}.ev-aside{min-width:0}' +
+      '.ev-card{background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 15px;box-shadow:0 1px 3px rgba(15,23,42,.05)}' +
+      '.ev-sticky{position:sticky;top:12px}' +
+      '.ev-sechd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:12px}' +
+      '.ev-secn{width:22px;height:22px;border-radius:7px;background:#eef2ff;color:#4f46e5;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:0 0 auto}' +
+      '.ev-cliempty{font-size:12.5px;color:#94a3b8;padding:8px 2px;display:flex;align-items:center;gap:7px}' +
+      '.ev-clirow{display:flex;align-items:center;gap:11px;min-width:0}' +
+      '.ev-avatar{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex:0 0 auto}' +
+      '.ev-clinom{font-size:14px;font-weight:800;color:#1e1b4b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.ev-clidet{font-size:11px;color:#7c748f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.ev-opt{font-weight:400;color:#94a3b8;font-size:10px}.ev-hint{font-size:10.5px;color:#94a3b8;line-height:1.5;margin-top:8px}' +
+      '.ev-anrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px;color:#475569}.ev-anrow b{color:#1e293b;font-weight:800}.ev-anrow-b{border-bottom:0}' +
+      '.ev-bar{height:8px;border-radius:5px;background:#f1f5f9;overflow:hidden;margin-top:4px}.ev-barf{height:100%;border-radius:5px;transition:width .2s}' +
+      '.ev-ashd{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#94a3b8;margin-bottom:10px}' +
+      '.ev-clip{font-size:14px;font-weight:800;color:#1e1b4b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}' +
+      '.ev-scorewrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0 14px;border-bottom:1px solid #f1f5f9;margin-bottom:10px}' +
+      '.ev-score{font-size:38px;font-weight:800;line-height:1}.ev-score span{font-size:15px;color:#cbd5e1;font-weight:700}' +
+      '.ev-rec{font-size:12px;font-weight:800;padding:5px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}' +
+      '.ev-rsrow{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#64748b;padding:5px 0}.ev-rsrow b{color:#1e293b;font-weight:800;text-align:right}' +
+      '.ev-aprobar{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px}.ev-aprobar:disabled{opacity:.45;cursor:not-allowed}' +
+      '@media(max-width:820px){.ev-grid{grid-template-columns:1fr}.ev-sticky{position:static}}' +
       '.nxFP-main{flex:1;min-width:0}' +
       '.nxFP-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}' +
       '.nxFP-burger{display:none;width:40px;height:40px;border-radius:11px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex:none}' +
