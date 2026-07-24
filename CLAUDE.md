@@ -1963,6 +1963,49 @@ CLIENTE del POS en cobro/factura sigue siendo `<select>`") desde varias versione
   campo — las 8 pasan, 0 errores de JavaScript, sin desbordes en 390px. `node --check parches.js` limpio;
   los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### POS · Crear cliente (Entidad) — pestañas + resumen en vivo + duplicados (spec ChatGPT "Crear Cliente V1", 23-jul-2026, v49.13)
+ChatGPT dejó `docs/visual-drafts/clientes/CREAR_CLIENTE_V1_APROBADO.md` — un spec grande y cuidadoso
+(pide auditar primero, no inventar campos/tablas, no publicar a main sin revisión) para un "formulario
+central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento/Cobranza/Seguros.
+**Auditoría real hecha (Fase 1 del spec):**
+- El formulario real de crear cliente del POS es **`abrirEntidad(c, defs)`** (guarda en `pos_clientes`
+  vía `nxEntGuardar`), ya en `.nxPf` desde v48.43. Es un form de **Entidad** (cliente/proveedor/
+  empleado/banco), no solo cliente. Lo invocan `nxEntNueva`/`nxPosNuevoCli` (Clientes/Entidades) y
+  como proveedor/vendedor. **NO** se invoca desde Factura/Cobro (esos usan `nxFacCliToggle`/
+  `nxPosCobroCliToggle`, buscadores).
+- **Columnas reales de `pos_clientes`** (verificado por SQL): nombre, cedula, telefono, direccion,
+  email, tipo_persona, contacto, representante, limite_credito, notas, activo, codigo, nivel_precio/
+  nivel_id, es_cliente/es_proveedor/es_empleado/es_banco, acepta_whatsapp. **La mayoría del spec NO
+  existe** (fecha nacimiento, sexo, provincia/municipio/sector, tel secundario, ingresos, lugar de
+  trabajo, referencias, nivel de riesgo, documentos, estado civil, ocupación, idioma, días de crédito,
+  descuento, condición de pago…).
+- **El "formulario central" cruza tablas distintas:** POS/Factura/Prefactura/Cobro comparten
+  `pos_clientes` (aquí SÍ se puede reusar), pero Taller (`pos_reparaciones`, texto libre sin
+  cliente_id), Financiamiento (`prestamos`, tabla propia sin `organizacion_id`) y Seguros (`clientes`)
+  son tablas SEPARADAS con RLS propio — unificarlas violaría el reglamento de aislamiento. Se le
+  explicó al dueño: "central" solo es seguro dentro de la familia POS.
+- **Aplicado (real, `abrirEntidad`/`nxEntGuardar`, cero campo inventado, todos los ids intactos):**
+  (1) el form pasó de pila de tarjetas a **2 pestañas** (`entTabs`/`nxEntTab`): **Información**
+  (afines + datos + WhatsApp) y **Comercial** (nivel de precio + límite de crédito; si la entidad no
+  es cliente muestra un aviso "aplica solo a clientes"). (2) **Tarjeta de resumen en vivo**
+  (`entResumen`/`nxEntResumen`, avatar de inicial + nombre + tipo + código + afines + nivel + crédito)
+  que se actualiza con `oninput`/`onchange` de los campos clave. (3) **Detección de duplicados** en
+  `nxEntGuardar` (solo al CREAR): normaliza teléfono y cédula (solo dígitos), busca en `_clientes`; si
+  hay match, `confirm()` — Aceptar crea de todos modos, Cancelar abre la entidad existente
+  (`abrirEntidad(dup)`). Respeta el spec ("no bloquear silenciosamente, permitir abrir el encontrado").
+- **Deliberadamente NO construido (fingiría o cruza tablas):** campos que no existen en la BD; la
+  pestaña Documentos (no hay Storage); "Guardar y usar cliente" enganchado a Factura/Cobro (toca
+  pantallas de dinero — su propia ronda); unificar Taller/Financiamiento/Seguros (tablas distintas,
+  proyecto aparte con migraciones). Se le comunicó al dueño como fases siguientes.
+- **Verificado con Playwright, código real extraído** (`abrirEntidad`/`nxEntAfinTog`/`nxEntTab`/
+  `nxEntResumen`/`nxEntTipoTog`/`nxEntGuardar`, con un backend simulado): modal `.nxPf` con 2
+  pestañas, los 13 ids de campo presentes, panel Info visible / Comercial oculto al abrir, cambio de
+  pestaña, la caja Cliente se oculta y sale el aviso al desmarcar "Cliente", el resumen se actualiza
+  al escribir, y el duplicado (mismo teléfono) muestra el aviso con el nombre existente, NO postea al
+  cancelar (abre el existente) y SÍ postea al confirmar. Sin desbordes en 420px ni 1280px, 0 errores.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
 ### Financiamiento (Préstamos, Multiempresa) — BARRA LATERAL (mockup de ChatGPT, 23-jul-2026, v49.12)
 El dueño pidió construir la barra lateral del mockup ("vamos a hacer la barra lateral"). Se armó de
 verdad, pero con ítems que cada uno hace algo REAL (filtros/acciones que ya existían), NO sub-módulos
