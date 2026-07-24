@@ -2006,6 +2006,50 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento (Préstamos, Multiempresa) — EVALUACIÓN FINANCIERA (spec ChatGPT "Evaluación Financiera V1", 24-jul-2026, v49.15)
+El dueño pidió aplicar el spec `docs/visual-drafts/financiamiento/EVALUACION_FINANCIERA_V1_APROBADA.md` (ChatGPT
+lo subió a `main` directo, commit `26acc80`). Flujo: Cliente → Evaluación → Aprobación → Préstamo → Cobranza.
+Componentes pedidos: info del cliente, info económica, análisis financiero, simulador en tiempo real, score
+interno, recomendación automática, resumen lateral fijo, botón "Aprobar y crear préstamo".
+- **Todo sobre datos REALES, cero tabla nueva** — se pudo porque las 3 piezas ya existían: el simulador
+  (`amortizar`/`calcPrestamo`/`nxPrRecalc`), la creación de préstamo (`nxPrestamoGuardar`), y los datos
+  económicos del cliente (`prestamo_clientes.ingreso_mensual`/`tipo_ingreso`/`ocupacion`/`tiene_fiador`, del
+  módulo de Clientes v49.14). La Evaluación los junta en una pantalla nueva.
+- **Nueva pantalla** (`_prView='evaluacion'`, ítem "Evaluación" en la barra lateral, se pinta en `.nxFP-main`,
+  `renderLista` llama `evInit()` tras montar). Layout 2 columnas (main + `aside` sticky) que colapsa en móvil:
+  (1) Cliente — reusa el picker (`nxPrElegirCliente('eval')`, ruteado por `_prCliPickTarget`) o `abrirClienteForm`;
+  al elegir, `evClientePuesto` precarga ingreso + muestra ocupación/lugar de trabajo. (2) Info económica —
+  ingreso (precargado, editable), otros ingresos, deudas actuales (los 2 últimos en vivo, NO se guardan en el
+  cliente). (3) Simulador — **mismos ids que el form de préstamo** (`prCap`/`prTasa`/`prNumCuotas`/`prFrec`/
+  `prMetodo`/`prPlazo`/`prTot`/`prFecha`/`prCliId`/`prNom`/`prCed`/`prTel`/`prNotas`) + modos (reusa
+  `nxPrModo`/`pintarModo`), así que "Aprobar y crear préstamo" reusa **100%** `nxPrestamoGuardar` (lee esos ids
+  del DOM). (4) Análisis — ingreso total, compromiso mensual del préstamo, capacidad de pago, ratio de
+  endeudamiento con barra. Resumen lateral: score + recomendación + cuota + ratio.
+- **Compromiso mensual** (`evCompromisoMensual`): cuotas → cuota × pagos-por-mes (semanal 4.33 / quincenal 2 /
+  mensual 1); crédito → interés del 1er mes; libre → 0 (sin cuota fija, se avisa).
+- **Score 0-100 determinístico** (`evCalcularScore`, fórmula transparente, ajustable a futuro como la mora — NO
+  IA, NO llamada externa): base según ratio (cuota+deudas)/ingreso (≤30%→90, ≤40%→72, ≤50%→55, ≤65%→38, resto
+  18) + bonus (fiador +5, tipo_ingreso Empleado +5 / Pensión +3, ocupación+trabajo +2), clamp 0-100.
+  Recomendación: ≥70 APROBAR (verde), 50-69 REVISAR (naranja), <50 RECHAZAR (rojo). Si la recomendación no es
+  aprobar, `evAprobar` pide confirmación — **la decisión final es del dueño**, nunca bloquea.
+- **Sin tabla nueva:** al aprobar, la evaluación se guarda como una **línea de NOTA real** en el préstamo
+  (`prestamos.notas`: "Evaluación: score X/100 · REC · ratio Y%"). Si algún día se quiere un historial de
+  evaluaciones persistido, sería una tabla aparte (pendiente, no pedido).
+- **Desviación deliberada del spec (documentada):** el spec decía "namespace .nxPf y color #2563eb" (azul, copiado
+  del boilerplate de specs del POS), pero este módulo es Financiamiento = **morado `#4f46e5`/`#6d28d9`** (regla
+  "cada app su color"). Se usó el morado del módulo para no romper su identidad visual; el score usa colores
+  semánticos (verde/naranja/rojo) universales. Plus Jakarta Sans ya es la fuente del módulo.
+- **Bug de UX encontrado y corregido en pruebas (antes de publicar):** `pintarModo`→`nxPrRecalc` mostraba
+  "Total a devolver" en modo cuotas (ese campo es solo de modo libre) — `evRecalc` ahora fuerza `#prTotRow`
+  visible solo en libre. Además `evInit` repinta la tarjeta del cliente al resetear (tras aprobar) para que no
+  quede el cliente anterior mientras el resumen ya dice "Sin cliente".
+- **Verificado con Playwright, código real extraído** (todo el IIFE de Financiamiento cargado en un navegador con
+  backend simulado, no reconstrucción): 39 pruebas — nav, pantalla, 4 secciones, picker rutea a eval, precarga de
+  ingreso, el ejemplo del dueño (20,000 al 10% / 8 quincenal, ingreso 30,000 → cuota 3,500 → ratio 23.3% → score
+  95 → APROBAR), deudas altas → RECHAZAR, "Aprobar" hace el POST correcto a `prestamos` con `cliente_id` + la nota
+  de evaluación + modo/método correctos — las 39 pasan, 0 errores de JS, sin desbordes en 390px ni 1280px. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Financiamiento (Préstamos, Multiempresa) — MÓDULO DE CLIENTES (spec ChatGPT "Crear Cliente V1", 24-jul-2026, v49.14)
 El dueño pidió aplicar la carga de "Crear Cliente V1" de ChatGPT. Primero se aplicó por error al formulario
 de Entidades del POS (`abrirEntidad`, v49.13) — el dueño aclaró **"Es de financiamiento que estamos"** y
