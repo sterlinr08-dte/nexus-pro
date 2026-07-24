@@ -1963,6 +1963,43 @@ CLIENTE del POS en cobro/factura sigue siendo `<select>`") desde varias versione
   campo — las 8 pasan, 0 errores de JavaScript, sin desbordes en 390px. `node --check parches.js` limpio;
   los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### Financiamiento (Préstamos, Multiempresa) — lista en TABLA + KPIs (mockup de ChatGPT, 23-jul-2026, v49.11)
+ChatGPT dejó un mockup (imagen, escritorio + móvil) de un rediseño completo del módulo Financiamiento
+(`nxAbrirPrestamos`) — un dashboard ERP con barra lateral. Auditado contra el código real y el dueño
+eligió **"las partes reales lo más semejante"**. Se aplicó SOLO lo real, sin fingir lo estructural.
+- **NO se construyó (fake/duplicado en este módulo, se le explicó al dueño):** la **barra lateral** con
+  Cobros/Clientes/Cuotas/Vencidos como pantallas aparte (no existen — son filtros de la misma lista);
+  el selector **"Taller Principal"** (este módulo NO es multi-sucursal, no tiene `organizacion_id`);
+  la **campanita** de notificaciones y la **cabecera de usuario**; **"Guardar borrador"** (no hay
+  concepto de borrador); el **ID "OT-000124"** como folio consecutivo real (`prestamos` no tiene columna
+  número — se deriva del id solo para pantalla, `prRef()` = `PR-`+6 hex del uuid, honesto).
+- **SÍ se aplicó (real, `renderLista` reescrito, cero cambios de lógica de negocio):** (1) los 5 KPI de
+  arriba pasaron del hero morado a **5 tarjetas** (`.nxFP-kpis`) como el mockup (Total por cobrar/
+  Prestado/Cobrado/Vencido/Clientes activos, mismos datos reales ya calculados). (2) La **lista pasó de
+  tarjetas (`cardHTML`) a TABLA** (`prTablaHTML`, `.nxFP-tbl`) con columnas Ref/Prestatario/Cédula/
+  Capital/Total a devolver/**Próximo pago**/Estado/**Días venc.**/Acciones. "Próximo pago" real
+  (`prProximoPago`: la primera cuota aún no cubierta; para crédito la fecha límite; para libre '—').
+  **Estado en 4 vistas derivadas** (`prEstadoTabla`): Al día / **Por vencer** (próximo pago ≤7 días) /
+  Vencido / Pagado — todas de fechas reales, NO inventan mora/gracia (el módulo sigue con 3 estados de
+  fondo, "Por vencer" es solo una vista del próximo pago cercano). Acciones por fila: ver
+  (`nxPrestamoVer`), editar (`nxPrestamoEditar`), estado de cuenta (`nxPrestamoEstadoCuenta`), WhatsApp
+  (si hay teléfono) — sin el menú "..." emergente (se recorta dentro de una tabla con scroll). (3)
+  **Paginación** real (`PR_PAGE_SIZE=12`, `_prPage`, `window.nxPrTablaPagina`). (4) El buscador
+  (`nxPrestamoFiltrar`) pasó de ocultar filas con `display:none` a **re-renderizar** el cuerpo
+  (`_prQuery`+`repintarPrLista`) — necesario para que la paginación y la búsqueda no choquen; el input
+  vive fuera de `#nxPrLista`, así que no pierde el foco. (5) KPI nuevo abajo **"Próximos a vencer"**
+  (activos con próximo pago en 7 días) — el dash pasó de 4 a 5 tarjetas.
+- **Responsive:** la tabla `.nxFP-tbl` colapsa a tarjetas en ≤760px (mismo patrón `data-l` que
+  `.sf-tbl` de Seguros) — una sola fuente, sin dos renders que se desincronicen.
+- **Verificado con Playwright, código real extraído** (`renderLista`/`prTablaHTML`/`prEstadoTabla`/
+  `prProximoPago`/`prListaFiltrada`/`prRef` + toda la cadena real `amortizar`/`creditoCalc`/`estadoDe`/
+  `esVencido`/`saldoDe`/`pagadoDe`, con 15 préstamos de prueba): 5 KPIs, 12 filas en página 1 / 3 en
+  página 2, paginación e info correctas, buscador filtra bien, 5 tarjetas abajo, sin desbordes en 390px
+  ni 1280px, 0 errores de JS. Más 6 aserciones en Node de `prEstadoTabla` (los 4 estados: Pagado/
+  Vencido/Por vencer/Al día) y `prRef` estable. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido. `cardHTML` (el render de tarjeta viejo)
+  quedó sin usar — se dejó por si se quiere revertir, no se borró en esta ronda.
+
 ### Financiamiento (Préstamos, Multiempresa) — método de interés PLANO vs SALDO INSOLUTO (23-jul-2026, v49.10)
 El dueño reportó lo que creía un bug: prestando 20,000 al 10% mensual en **8 cuotas quincenales**, él
 calculaba RD$3,500/cuota pero el sistema le daba **menos** (3,094). **No era un bug** — se auditó el motor

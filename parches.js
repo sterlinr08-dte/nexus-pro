@@ -12849,6 +12849,8 @@
   let _prCfg = {};
   let _modoForm = 'libre';
   let _prFiltro = 'todos';
+  let _prPage = 1, _prQuery = '';
+  const PR_PAGE_SIZE = 12;
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
   window.nxPrTipoPago = function (t) {
     _tipoPago = t;
@@ -13042,8 +13044,91 @@
     </div>`;
   }
 
+  // Código de referencia estable derivado del id (NO es un folio consecutivo real —
+  // la tabla prestamos no tiene columna número; es solo para mostrar en pantalla).
+  function prRef(p) { const s = String(p.id || '').replace(/-/g, ''); return 'PR-' + (s.slice(0, 6).toUpperCase() || '------'); }
+  // Fecha del PRÓXIMO pago pendiente (real): la primera cuota aún no cubierta.
+  function prProximoPago(p) {
+    if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
+      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes || 0), p.num_cuotas, p.fecha_prestamo, p.frecuencia, p.metodo_interes || 'saldo');
+      const pag = pagadoDe(p); let acum = 0;
+      for (const r of a.rows) { acum += r.cuota; if (pag < acum - 0.5) return r.fecha; }
+      return '';
+    }
+    if (p.modo === 'cuotas' && p.num_cuotas > 0) { // sin interés: cuotas iguales del total
+      const cuota = Number(p.total_devolver || 0) / p.num_cuotas, pag = pagadoDe(p); let acum = 0;
+      for (let i = 1; i <= p.num_cuotas; i++) { acum += cuota; if (pag < acum - 0.5) return fechaCuota(p.fecha_prestamo, p.frecuencia, i); }
+      return '';
+    }
+    if (p.modo === 'credito') { const c = creditoCalc(p); return c.fechaLimite || ''; }
+    return '';
+  }
+  // Estado para la TABLA: 4 vistas DERIVADAS de fechas reales (no inventa mora/gracia):
+  // Al día / Por vencer (próximo pago ≤7 días) / Vencido / Pagado.
+  function prEstadoTabla(p) {
+    const info = prEstadoInfo(p);
+    if (info.key === 'pagado') return { key: 'pagado', label: 'Pagado' };
+    if (info.key === 'vencido') return { key: 'vencido', label: 'Vencido' };
+    const f = prProximoPago(p);
+    if (f) { const d = Math.floor((new Date(f + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 86400000); if (d >= 0 && d <= 7) return { key: 'porvencer', label: 'Por vencer' }; }
+    return { key: 'activo', label: 'Al día' };
+  }
+  function prListaFiltrada() {
+    const f = _prFiltro, q = _prQuery.trim().toLowerCase();
+    return _prestamos.filter(p => {
+      if (f === 'activos' && estadoDe(p) === 'pagado') return false;
+      if (f === 'pagados' && estadoDe(p) !== 'pagado') return false;
+      if (f === 'vencidos' && !esVencido(p)) return false;
+      if ((f === 'credito' || f === 'cuotas' || f === 'libre') && (p.modo || 'libre') !== f) return false;
+      if (q) { const b = (p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''); if (!b.includes(q)) return false; }
+      return true;
+    });
+  }
+  function prTablaHTML() {
+    if (_prestamos.length === 0) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-file-off"></i></div><h3>Aún no hay préstamos</h3><p>Toca "Nuevo préstamo" para registrar el primero.</p><button type="button" class="nxFP-qbtn" style="max-width:220px;margin:14px auto 0" onclick="window.nxPrestamoNuevo()"><div class="nxFP-qico primary"><i class="ti ti-plus"></i></div><span>Nuevo préstamo</span></button></div>`;
+    const lista = prListaFiltrada();
+    if (lista.length === 0) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún préstamo coincide con este filtro.</p></div>`;
+    const pages = Math.max(1, Math.ceil(lista.length / PR_PAGE_SIZE));
+    if (_prPage > pages) _prPage = pages; if (_prPage < 1) _prPage = 1;
+    const start = (_prPage - 1) * PR_PAGE_SIZE;
+    const pageRows = lista.slice(start, start + PR_PAGE_SIZE);
+    const rows = pageRows.map(p => {
+      const et = prEstadoTabla(p), vDias = prDiasVencido(p), prox = prProximoPago(p);
+      return `<tr onclick="window.nxPrestamoVer('${p.id}')">
+        <td data-l="Ref" class="nxFP-tRef">${prRef(p)}</td>
+        <td data-l="Prestatario" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(p.nombre || 'Sin nombre')}</div>${p.telefono ? `<div class="nxFP-tSub">${esc(p.telefono)}</div>` : ''}</td>
+        <td data-l="Cédula">${esc(p.cedula || '—')}</td>
+        <td data-l="Capital" class="nxFP-tMoney">${fmt(p.capital)}</td>
+        <td data-l="Total a devolver" class="nxFP-tMoney">${fmt(p.total_devolver)}</td>
+        <td data-l="Próximo pago">${prox || '—'}</td>
+        <td data-l="Estado"><span class="nxFP-tBadge ${et.key}">${et.label}</span></td>
+        <td data-l="Días venc." class="nxFP-tDias ${vDias > 0 ? 'bad' : ''}">${vDias > 0 ? vDias : '0'}</td>
+        <td data-l="Acciones"><div class="nxFP-tAcc">
+          <button type="button" title="Ver detalle" aria-label="Ver ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrestamoVer('${p.id}')"><i class="ti ti-eye"></i></button>
+          <button type="button" title="Editar" aria-label="Editar ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrestamoEditar('${p.id}')"><i class="ti ti-pencil"></i></button>
+          <button type="button" title="Estado de cuenta" aria-label="Estado de cuenta" onclick="event.stopPropagation();window.nxPrestamoEstadoCuenta('${p.id}')"><i class="ti ti-printer"></i></button>
+          ${p.telefono ? `<button type="button" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation();window.nxPrestamoWA('${p.id}')"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+        </div></td>
+      </tr>`;
+    }).join('');
+    let pg = '';
+    if (pages > 1) {
+      const btn = (n, lbl, on, dis) => `<button type="button"${on ? ' class="on"' : ''}${dis ? ' disabled' : ''} onclick="window.nxPrTablaPagina(${n})">${lbl}</button>`;
+      pg = btn(_prPage - 1, '<i class="ti ti-chevron-left"></i>', false, _prPage <= 1);
+      for (let n = 1; n <= pages; n++) { if (pages > 7 && n > 2 && n < pages - 1 && Math.abs(n - _prPage) > 1) { if (n === 3 || n === pages - 2) pg += '<button type="button" disabled>…</button>'; continue; } pg += btn(n, String(n), n === _prPage, false); }
+      pg += btn(_prPage + 1, '<i class="ti ti-chevron-right"></i>', false, _prPage >= pages);
+    }
+    return `<div class="nxFP-tblWrap"><table class="nxFP-tbl"><thead><tr>
+        <th>Ref</th><th>Prestatario</th><th>Cédula</th><th>Capital</th><th>Total a devolver</th><th>Próximo pago</th><th>Estado</th><th>Días venc.</th><th>Acciones</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="nxFP-pager"><div class="nxFP-pgInfo">Mostrando ${start + 1}–${Math.min(start + PR_PAGE_SIZE, lista.length)} de ${lista.length} ${lista.length === 1 ? 'préstamo' : 'préstamos'}</div><div class="nxFP-pgBtns">${pg}</div></div>`;
+  }
+  function repintarPrLista() { const el = document.getElementById('nxPrLista'); if (el) el.innerHTML = prTablaHTML(); }
+  window.nxPrTablaPagina = function (n) { _prPage = n; repintarPrLista(); };
+
   function renderLista(view) {
     window.nxFPEnsureCSS();
+    _prPage = 1; _prQuery = '';
     const totalCap = _prestamos.reduce((s, p) => s + Number(p.capital || 0), 0);
     const totalPag = _prestamos.reduce((s, p) => s + pagadoDe(p), 0);
     const totalSaldo = _prestamos.reduce((s, p) => s + saldoDe(p), 0);
@@ -13060,19 +13145,16 @@
       if (ymPg === ym) cobradoMes += Number(pg.monto || 0); else if (ymPg === ymAnt) cobradoMesAnt += Number(pg.monto || 0);
     }));
     const tendencia = cobradoMesAnt > 0 ? Math.round((cobradoMes - cobradoMesAnt) / cobradoMesAnt * 100) : null;
-    // aplicar filtro (misma lógica de siempre, solo cambia cómo se pinta)
-    const f = _prFiltro;
-    const lista = _prestamos.filter(p => {
-      if (f === 'activos') return estadoDe(p) !== 'pagado';
-      if (f === 'pagados') return estadoDe(p) === 'pagado';
-      if (f === 'vencidos') return esVencido(p);
-      if (f === 'credito' || f === 'cuotas' || f === 'libre') return (p.modo || 'libre') === f;
-      return true;
-    });
+    const nActivos = _prestamos.filter(p => estadoDe(p) !== 'pagado').length;
+    const nVencidos = _prestamos.filter(esVencido).length;
+    const proxVencer = _prestamos.filter(p => {
+      if (estadoDe(p) === 'pagado' || esVencido(p)) return false;
+      const f = prProximoPago(p); if (!f) return false;
+      const d = Math.floor((new Date(f + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 86400000);
+      return d >= 0 && d <= 7;
+    }).length;
     const tab = (key, lbl, ico) => `<button type="button" class="nxFP-tab${_prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
-    const cards = _prestamos.length === 0
-      ? `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-file-off"></i></div><h3>Aún no hay préstamos</h3><p>Toca "Nuevo préstamo" para registrar el primero.</p><button type="button" class="nxFP-qbtn" style="max-width:220px;margin:14px auto 0" onclick="window.nxPrestamoNuevo()"><div class="nxFP-qico primary"><i class="ti ti-plus"></i></div><span>Nuevo préstamo</span></button></div>`
-      : (lista.length === 0 ? `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún préstamo coincide con este filtro.</p></div>` : lista.map(cardHTML).join(''));
+    const kpi = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
     const quickBtns = [
       ['nxPrestamoNuevo', 'ti-plus', 'primary', 'Nuevo préstamo'],
       ['nxPrestamoCobranza', 'ti-user-dollar', '', 'Cobranza'],
@@ -13082,44 +13164,34 @@
     ];
     view.innerHTML = `<div class="nxFP">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <div><div style="font-size:19px;font-weight:800;color:#0f172a">Financiamiento</div><div style="font-size:11px;color:#94a3b8">Multiempresa · solo el administrador</div></div>
+        <div><div style="font-size:19px;font-weight:800;color:#0f172a">Financiamiento</div><div style="font-size:11px;color:#94a3b8">Administra y controla todos los préstamos</div></div>
         <button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>
       </div>
-      <div class="nxFP-hero">
-        <div class="nxFP-heroL">
-          <div class="nxFP-heroLbl">RESUMEN GENERAL</div>
-          <div class="nxFP-heroSub">TOTAL POR COBRAR</div>
-          <div class="nxFP-heroNum">${fmt(totalSaldo)}</div>
-          <div class="nxFP-heroTrend">Cobrado este mes: ${fmt(cobradoMes)}${tendencia !== null ? ` <span class="${tendencia >= 0 ? 'up' : 'down'}">${tendencia >= 0 ? '▲' : '▼'} ${Math.abs(tendencia)}% vs mes anterior</span>` : ''}</div>
-        </div>
-        <div class="nxFP-heroR">
-          <div class="nxFP-heroStat"><div class="nxFP-heroIco"><i class="ti ti-cash-banknote"></i></div><div><div class="nxFP-heroStatLbl">Prestado</div><div class="nxFP-heroStatVal">${fmt(totalCap)}</div></div></div>
-          <div class="nxFP-heroStat"><div class="nxFP-heroIco"><i class="ti ti-hand-click"></i></div><div><div class="nxFP-heroStatLbl">Cobrado</div><div class="nxFP-heroStatVal">${fmt(totalPag)}</div></div></div>
-          <div class="nxFP-heroStat"><div class="nxFP-heroIco warn"><i class="ti ti-clock-exclamation"></i></div><div><div class="nxFP-heroStatLbl">Vencido</div><div class="nxFP-heroStatVal">${fmt(totalVencido)}</div></div></div>
-          <div class="nxFP-heroStat"><div class="nxFP-heroIco"><i class="ti ti-users"></i></div><div><div class="nxFP-heroStatLbl">Clientes activos</div><div class="nxFP-heroStatVal">${clientesActivos}</div></div></div>
-        </div>
+      <div class="nxFP-kpis">
+        ${kpi('ti-cash-banknote', '#eef2ff', '#4f46e5', 'TOTAL POR COBRAR', fmt(totalSaldo), 'Cobrado este mes: ' + fmt(cobradoMes))}
+        ${kpi('ti-wallet', '#ecfdf5', '#059669', 'PRESTADO', fmt(totalCap), nActivos + (nActivos === 1 ? ' préstamo activo' : ' préstamos activos'))}
+        ${kpi('ti-hand-click', '#ecfeff', '#0891b2', 'COBRADO', fmt(totalPag), 'Este mes: ' + fmt(cobradoMes))}
+        ${kpi('ti-clock-exclamation', '#fef2f2', '#dc2626', 'VENCIDO', fmt(totalVencido), nVencidos + (nVencidos === 1 ? ' préstamo vencido' : ' préstamos vencidos'))}
+        ${kpi('ti-users', '#fffbeb', '#d97706', 'CLIENTES ACTIVOS', clientesActivos, 'Con préstamos activos')}
       </div>
       <div class="nxFP-secTitle">ACCIONES RÁPIDAS</div>
       <div class="nxFP-quick">${quickBtns.map(b => `<button type="button" class="nxFP-qbtn" onclick="window.${b[0]}()"><div class="nxFP-qico ${b[2]}"><i class="ti ${b[1]}"></i></div><span>${b[3]}</span></button>`).join('')}</div>
       <div class="nxFP-tabs">${tab('todos', 'Todos', 'ti-layout-grid')}${tab('activos', 'Activos', 'ti-circle-check')}${tab('vencidos', 'Vencidos', 'ti-alert-triangle')}${tab('pagados', 'Pagados', 'ti-checks')}${tab('cuotas', 'Cuotas', 'ti-calendar-dollar')}${tab('libre', 'Libres', 'ti-wallet')}${tab('credito', 'Crédito', 'ti-credit-card')}</div>
       <div class="nxFP-searchRow">${prBuscador({ id: 'nxPrBuscar', placeholder: 'Buscar por nombre o cédula...', oninput: 'window.nxPrestamoFiltrar(this.value)' })}</div>
-      <div class="nxFP-listHead"><span>LISTA DE PRÉSTAMOS</span><span>Total: ${lista.length} ${lista.length === 1 ? 'préstamo' : 'préstamos'}</span></div>
-      <div id="nxPrLista">${cards}</div>
+      <div class="nxFP-listHead"><span>LISTA DE PRÉSTAMOS</span></div>
+      <div id="nxPrLista">${prTablaHTML()}</div>
       <div class="nxFP-dash">
         <div class="nxFP-dcard"><div class="nxFP-dico"><i class="ti ti-percentage"></i></div><div><div class="nxFP-dlbl">INTERÉS COBRADO</div><div class="nxFP-dval">${fmt(totalIntCob)}</div><div class="nxFP-dsub">Total histórico</div></div></div>
         <div class="nxFP-dcard"><div class="nxFP-dico green"><i class="ti ti-circle-check"></i></div><div><div class="nxFP-dlbl">COBRADO DEL MES</div><div class="nxFP-dval">${fmt(cobradoMes)}</div><div class="nxFP-dsub">${tendencia !== null ? (tendencia >= 0 ? '+' : '') + tendencia + '% vs mes ant.' : 'Sin datos del mes anterior'}</div></div></div>
-        <div class="nxFP-dcard"><div class="nxFP-dico red"><i class="ti ti-alert-triangle"></i></div><div><div class="nxFP-dlbl">VENCIDOS</div><div class="nxFP-dval">${_prestamos.filter(esVencido).length}</div><div class="nxFP-dsub">Préstamos</div></div></div>
+        <div class="nxFP-dcard"><div class="nxFP-dico red"><i class="ti ti-alert-triangle"></i></div><div><div class="nxFP-dlbl">VENCIDOS</div><div class="nxFP-dval">${nVencidos}</div><div class="nxFP-dsub">Préstamos vencidos</div></div></div>
+        <div class="nxFP-dcard"><div class="nxFP-dico amber"><i class="ti ti-clock-hour-4"></i></div><div><div class="nxFP-dlbl">PRÓXIMOS A VENCER</div><div class="nxFP-dval">${proxVencer}</div><div class="nxFP-dsub">En los próximos 7 días</div></div></div>
         <div class="nxFP-dcard"><div class="nxFP-dico blue"><i class="ti ti-list-check"></i></div><div><div class="nxFP-dlbl">TOTAL PRÉSTAMOS</div><div class="nxFP-dval">${_prestamos.length}</div><div class="nxFP-dsub">Histórico</div></div></div>
       </div>
     </div>`;
   }
 
   window.nxPrestamoFiltrar = function (q) {
-    const t = String(q || '').trim().toLowerCase();
-    document.querySelectorAll('#nxPrLista .nxPrCard').forEach(c => {
-      const b = c.getAttribute('data-busca') || '';
-      c.style.display = (!t || b.includes(t)) ? '' : 'none';
-    });
+    _prQuery = String(q || ''); _prPage = 1; repintarPrLista();
   };
 
   function ensureView() {
@@ -13569,7 +13641,7 @@
   };
 
   // ── Filtro por estado/tipo ──
-  window.nxPrestamoFiltroTipo = function (k) { _prFiltro = k; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
+  window.nxPrestamoFiltroTipo = function (k) { _prFiltro = k; _prPage = 1; _prQuery = ''; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
 
   // ── Menú "..." de la tarjeta premium ──
   window.nxPrMenu = function (ev, id) {
@@ -22288,7 +22360,35 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-menuPop{display:none;position:absolute;top:32px;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:13px;box-shadow:0 12px 28px rgba(15,23,42,.14);padding:6px;min-width:172px;z-index:5}.nxFP-menuPop.open{display:block}' +
       '.nxFP-menuPop button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;font-family:inherit}.nxFP-menuPop button:hover{background:#f8fafc}.nxFP-menuPop button i{color:#7c3aed;font-size:15px}' +
       '.nxFP-empty{text-align:center;padding:44px 20px;background:#fff;border:1px dashed #e2e8f0;border-radius:18px}.nxFP-emptyIco{width:52px;height:52px;border-radius:16px;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px}.nxFP-empty h3{font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px}.nxFP-empty p{font-size:12px;color:#64748b;max-width:280px;margin:0 auto}' +
-      '.nxFP-dash{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}' +
+      '.nxFP-dash{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:22px}' +
+      '.nxFP-dico.amber{background:#fef3c7;color:#b45309}' +
+      '.nxFP-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}' +
+      '.nxFP-kpi{background:#fff;border:1px solid #eef0f5;border-radius:16px;padding:14px 15px}' +
+      '.nxFP-kpiTop{display:flex;align-items:center;gap:8px;margin-bottom:9px}' +
+      '.nxFP-kpiIco{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}' +
+      '.nxFP-kpiLbl{font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.3px;text-transform:uppercase;line-height:1.2}' +
+      '.nxFP-kpiVal{font-size:21px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums;letter-spacing:-.4px;line-height:1.15}' +
+      '.nxFP-kpiSub{font-size:10.5px;color:#94a3b8;font-weight:600;margin-top:3px}' +
+      '.nxFP-tblWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #eef0f5;border-radius:16px;background:#fff}' +
+      '.nxFP-tbl{width:100%;border-collapse:collapse;font-size:12px}' +
+      '.nxFP-tbl thead th{text-align:left;font-size:9.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;border-bottom:1px solid #eef0f5;white-space:nowrap;background:#faf9ff}' +
+      '.nxFP-tbl tbody td{padding:11px 12px;border-bottom:1px solid #f4f5f9;color:#334155;vertical-align:middle}' +
+      '.nxFP-tbl tbody tr{cursor:pointer}.nxFP-tbl tbody tr:hover{background:#faf9ff}.nxFP-tbl tbody tr:last-child td{border-bottom:0}' +
+      '.nxFP-tRef{font-family:"Plus Jakarta Sans",monospace;font-size:10.5px;color:#6d28d9;font-weight:800;white-space:nowrap}' +
+      '.nxFP-tNom{font-weight:700;color:#0f172a}.nxFP-tSub{font-size:10px;color:#94a3b8}.nxFP-tMoney{font-variant-numeric:tabular-nums;white-space:nowrap}' +
+      '.nxFP-tBadge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;padding:3px 10px;border-radius:999px;white-space:nowrap}' +
+      '.nxFP-tBadge.activo{background:#dcfce7;color:#15803d}.nxFP-tBadge.porvencer{background:#fef9c3;color:#a16207}.nxFP-tBadge.vencido{background:#fee2e2;color:#dc2626}.nxFP-tBadge.pagado{background:#e0e7ff;color:#4338ca}' +
+      '.nxFP-tDias{font-weight:800;font-variant-numeric:tabular-nums;color:#94a3b8}.nxFP-tDias.bad{color:#dc2626}' +
+      '.nxFP-tAcc{display:flex;gap:4px;align-items:center}' +
+      '.nxFP-tAcc button{width:30px;height:30px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#64748b;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px}' +
+      '.nxFP-tAcc button:hover{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}' +
+      '.nxFP-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}' +
+      '.nxFP-pgInfo{font-size:11px;color:#94a3b8;font-weight:600}.nxFP-pgBtns{display:flex;gap:4px;flex-wrap:wrap}' +
+      '.nxFP-pgBtns button{min-width:32px;height:32px;padding:0 8px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#475569;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}' +
+      '.nxFP-pgBtns button.on{background:#6d28d9;border-color:#6d28d9;color:#fff}.nxFP-pgBtns button:disabled{opacity:.4;cursor:default}' +
+      '@media(max-width:900px){.nxFP-kpis{grid-template-columns:repeat(3,1fr)}}' +
+      '@media(max-width:760px){.nxFP-tbl thead{display:none}.nxFP-tbl,.nxFP-tbl tbody,.nxFP-tbl tr,.nxFP-tbl td{display:block;width:100%}.nxFP-tbl tbody tr{border:1px solid #eef0f5;border-radius:14px;margin:0 0 10px;padding:5px 2px;background:#fff}.nxFP-tbl tbody td{border:0;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:right}.nxFP-tbl tbody td::before{content:attr(data-l);font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;text-align:left;flex:none}.nxFP-tbl td.nxFP-tdNom{text-align:left}.nxFP-tbl td.nxFP-tdNom::before{display:none}.nxFP-tblWrap{border:0;background:transparent;overflow:visible}.nxFP-tAcc{justify-content:flex-end}}' +
+      '@media(max-width:560px){.nxFP-kpis{grid-template-columns:1fr 1fr}}' +
       '.nxFP-dcard{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eef0f5;border-radius:16px;padding:13px 14px}' +
       '.nxFP-dico{width:34px;height:34px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}.nxFP-dico.green{background:#dcfce7;color:#16a34a}.nxFP-dico.red{background:#fee2e2;color:#dc2626}.nxFP-dico.blue{background:#e0e7ff;color:#4338ca}' +
       '.nxFP-dlbl{font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.3px}.nxFP-dval{font-size:14px;font-weight:800;color:#0f172a;line-height:1.3;font-variant-numeric:tabular-nums}.nxFP-dsub{font-size:10px;color:#94a3b8;font-weight:600}' +
