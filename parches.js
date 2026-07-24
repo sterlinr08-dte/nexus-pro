@@ -12851,6 +12851,7 @@
   let _prFiltro = 'todos';
   let _prPage = 1, _prQuery = '';
   const PR_PAGE_SIZE = 12;
+  let _prClientes = [], _prView = 'prestamos', _prCliQuery = '';
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
   window.nxPrTipoPago = function (t) {
     _tipoPago = t;
@@ -12970,6 +12971,7 @@
     _pagosByPrestamo = {};
     pagos.forEach(p => { (_pagosByPrestamo[p.prestamo_id] = _pagosByPrestamo[p.prestamo_id] || []).push(p); });
     try { const cfg = await getAPI().get('prestamos_config', 'select=*&id=eq.1'); _prCfg = (cfg && cfg[0]) || {}; } catch (e) { _prCfg = {}; }
+    try { _prClientes = await getAPI().get('prestamo_clientes', 'select=*&order=nombre.asc') || []; } catch (e) { _prClientes = []; }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -13154,7 +13156,7 @@
       return d >= 0 && d <= 7;
     }).length;
     const kpi = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
-    const nav = (key, lbl, ico) => `<button type="button" class="nxFP-navItem${_prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
+    const nav = (key, lbl, ico) => `<button type="button" class="nxFP-navItem${_prView === 'prestamos' && _prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
     view.innerHTML = `<div class="nxFP nxFPShell" id="nxFPShell">
       <div class="nxFP-sideOverlay" onclick="window.nxFPToggleSide()"></div>
       <aside class="nxFP-side">
@@ -13167,13 +13169,14 @@
           ${nav('cuotas', 'Cuotas', 'ti-calendar-dollar')}
           ${nav('pagados', 'Pagados', 'ti-checks')}
           ${nav('credito', 'Líneas de crédito', 'ti-credit-card')}
+          <button type="button" class="nxFP-navItem${_prView === 'clientes' ? ' on' : ''}" onclick="window.nxPrView('clientes')"><i class="ti ti-users-group"></i> Clientes</button>
           <div class="nxFP-sideDiv"></div>
           <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoReporte()"><i class="ti ti-report-money"></i> Reportes</button>
           <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
         </nav>
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
-      <div class="nxFP-main">
+      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : `
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
           <div><div class="nxFP-topTitle">Financiamiento</div><div class="nxFP-topSub">Administra y controla todos los préstamos</div></div>
@@ -13195,10 +13198,150 @@
           <div class="nxFP-dcard"><div class="nxFP-dico red"><i class="ti ti-alert-triangle"></i></div><div><div class="nxFP-dlbl">VENCIDOS</div><div class="nxFP-dval">${nVencidos}</div><div class="nxFP-dsub">Préstamos vencidos</div></div></div>
           <div class="nxFP-dcard"><div class="nxFP-dico amber"><i class="ti ti-clock-hour-4"></i></div><div><div class="nxFP-dlbl">PRÓXIMOS A VENCER</div><div class="nxFP-dval">${proxVencer}</div><div class="nxFP-dsub">En los próximos 7 días</div></div></div>
           <div class="nxFP-dcard"><div class="nxFP-dico blue"><i class="ti ti-list-check"></i></div><div><div class="nxFP-dlbl">TOTAL PRÉSTAMOS</div><div class="nxFP-dval">${_prestamos.length}</div><div class="nxFP-dsub">Histórico</div></div></div>
-        </div>
+        </div>`}
       </div>
     </div>`;
   }
+  window.nxPrView = function (v) { _prView = v; _prCliQuery = ''; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
+  // ── Pantalla de CLIENTES de Financiamiento (tabla prestamo_clientes) ──
+  function prCliMap() { const m = {}; _prClientes.forEach(c => { m[c.id] = c; }); return m; }
+  function prCliStats(c) {
+    // cuántos préstamos y saldo por cliente (enlace por prestamos.cliente_id)
+    const suyos = _prestamos.filter(p => String(p.cliente_id || '') === String(c.id));
+    return { n: suyos.length, saldo: suyos.reduce((s, p) => s + saldoDe(p), 0), activos: suyos.filter(p => estadoDe(p) !== 'pagado').length };
+  }
+  function prClientesFiltrados() {
+    const q = _prCliQuery.trim().toLowerCase();
+    if (!q) return _prClientes;
+    return _prClientes.filter(c => ((c.nombre || '') + ' ' + (c.cedula || '') + ' ' + (c.telefono || '')).toLowerCase().indexOf(q) >= 0);
+  }
+  function prClientesTablaHTML() {
+    if (!_prClientes.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-user-off"></i></div><h3>Aún no hay clientes</h3><p>Toca "Nuevo cliente" para registrar el primero.</p><button type="button" class="nxFP-qbtn" style="max-width:220px;margin:14px auto 0" onclick="window.nxPrClienteNuevo()"><div class="nxFP-qico primary"><i class="ti ti-plus"></i></div><span>Nuevo cliente</span></button></div>`;
+    const lista = prClientesFiltrados();
+    if (!lista.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún cliente coincide con la búsqueda.</p></div>`;
+    const rows = lista.map(c => {
+      const st = prCliStats(c);
+      return `<tr onclick="window.nxPrClienteVer('${c.id}')">
+        <td data-l="Cliente" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(c.nombre || 'Sin nombre')}</div>${c.ocupacion ? `<div class="nxFP-tSub">${esc(c.ocupacion)}</div>` : ''}</td>
+        <td data-l="Cédula">${esc(c.cedula || '—')}</td>
+        <td data-l="Teléfono">${esc(c.telefono || '—')}</td>
+        <td data-l="Ciudad">${esc([c.sector, c.ciudad].filter(Boolean).join(', ') || '—')}</td>
+        <td data-l="Préstamos" class="nxFP-tMoney">${st.n}${st.activos ? ` <span style="color:var(--pf-green);font-weight:800">(${st.activos} act.)</span>` : ''}</td>
+        <td data-l="Saldo" class="nxFP-tMoney">${fmt(st.saldo)}</td>
+        <td data-l="Acciones"><div class="nxFP-tAcc">
+          <button type="button" title="Editar" aria-label="Editar" onclick="event.stopPropagation();window.nxPrClienteEditar('${c.id}')"><i class="ti ti-pencil"></i></button>
+          ${c.telefono ? `<button type="button" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation();window.nxPrClienteWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+          <button type="button" title="Nuevo préstamo" aria-label="Nuevo préstamo" onclick="event.stopPropagation();window.nxPrestamoNuevoDeCliente('${c.id}')"><i class="ti ti-cash-plus"></i></button>
+        </div></td>
+      </tr>`;
+    }).join('');
+    return `<div class="nxFP-tblWrap"><table class="nxFP-tbl"><thead><tr>
+        <th>Cliente</th><th>Cédula</th><th>Teléfono</th><th>Ubicación</th><th>Préstamos</th><th>Saldo</th><th>Acciones</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function prClientesMainHTML() {
+    const conPrestamo = new Set(_prestamos.map(p => String(p.cliente_id || '')).filter(Boolean)).size;
+    const enMora = _prClientes.filter(c => _prestamos.some(p => String(p.cliente_id || '') === String(c.id) && esVencido(p))).length;
+    const kpi2 = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
+    return `
+      <div class="nxFP-topbar">
+        <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
+        <div><div class="nxFP-topTitle">Clientes</div><div class="nxFP-topSub">Registro de prestatarios</div></div>
+        <div class="nxFP-topActions"><button type="button" class="prim" onclick="window.nxPrClienteNuevo()"><i class="ti ti-plus"></i> <span>Nuevo cliente</span></button></div>
+      </div>
+      <div class="nxFP-kpis">
+        ${kpi2('ti-users-group', '#eef2ff', '#4f46e5', 'TOTAL CLIENTES', _prClientes.length, 'Registrados')}
+        ${kpi2('ti-user-check', '#ecfdf5', '#059669', 'CON PRÉSTAMO', conPrestamo, 'Tienen al menos uno')}
+        ${kpi2('ti-alert-triangle', '#fef2f2', '#dc2626', 'EN MORA', enMora, 'Con préstamo vencido')}
+      </div>
+      <div class="nxFP-searchRow">${prBuscador({ id: 'nxPrCliBuscar', placeholder: 'Buscar cliente por nombre, cédula o teléfono...', oninput: 'window.nxPrClienteFiltrar(this.value)' })}</div>
+      <div class="nxFP-listHead"><span>LISTA DE CLIENTES</span></div>
+      <div id="nxPrCliLista">${prClientesTablaHTML()}</div>`;
+  }
+  window.nxPrClienteFiltrar = function (q) { _prCliQuery = String(q || ''); const el = document.getElementById('nxPrCliLista'); if (el) el.innerHTML = prClientesTablaHTML(); };
+  window.nxPrClienteNuevo = function () { abrirClienteForm(null, null); };
+  window.nxPrClienteEditar = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); if (c) abrirClienteForm(c, null); };
+  window.nxPrClienteVer = function (id) { window.nxPrClienteEditar(id); };
+  window.nxPrClienteWA = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); if (!c) return; const tel = String(c.telefono || '').replace(/\D/g, ''); if (!tel) { toast('err', 'Sin teléfono'); return; } window.open('https://wa.me/1' + tel, '_blank'); };
+  let _prPrefillCli = null;
+  window.nxPrestamoNuevoDeCliente = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); _prPrefillCli = c || null; _prView = 'prestamos'; abrirForm(null); };
+  function abrirClienteForm(cli, onSaved) {
+    cerrarModal('nxPrCliForm');
+    const c = cli || {};
+    _prCliOnSaved = typeof onSaved === 'function' ? onSaved : null;
+    const fr = (lbl, id, ph, val0, extra) => `<div class="fr"><label>${lbl}</label><input id="${id}" class="no-upper" ${extra || ''} value="${esc(val0 == null ? '' : val0)}" placeholder="${esc(ph || '')}"></div>`;
+    const ov = document.createElement('div'); ov.id = 'nxPrCliForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-user-plus"></i> ${cli ? 'Editar cliente' : 'Nuevo cliente'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrCliForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding-right:1px">
+        ${prSec(1, 'Datos personales')}
+        <div class="fr"><label>Nombre completo *</label><input id="prcNom" class="no-upper" value="${esc(c.nombre || '')}" placeholder="Nombre y apellido"></div>
+        <div class="fr-row">${fr('Cédula', 'prcCed', '000-0000000-0', c.cedula, 'inputmode="numeric"')}<div class="fr"><label>Fecha de nacimiento</label><input id="prcNac" type="date" value="${esc(c.fecha_nacimiento || '')}"></div></div>
+        <div class="fr-row"><div class="fr"><label>Estado civil</label><select id="prcCivil"><option value="">—</option>${['Soltero(a)', 'Casado(a)', 'Unión libre', 'Divorciado(a)', 'Viudo(a)'].map(o => `<option${c.estado_civil === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div>${fr('Nacionalidad', 'prcNacion', 'Dominicana', c.nacionalidad || 'Dominicana')}</div>
+        ${prSec(2, 'Contacto y dirección')}
+        <div class="fr-row">${fr('Teléfono *', 'prcTel', '809-000-0000', c.telefono, 'inputmode="tel"')}${fr('Teléfono alterno', 'prcTelAlt', 'Opcional', c.telefono_alterno, 'inputmode="tel"')}</div>
+        ${fr('Correo', 'prcEmail', 'Opcional', c.email, 'type="email"')}
+        ${fr('Dirección', 'prcDir', 'Calle, número', c.direccion)}
+        <div class="fr-row">${fr('Sector', 'prcSector', 'Opcional', c.sector)}${fr('Ciudad / Municipio', 'prcCiudad', 'Opcional', c.ciudad)}</div>
+        ${fr('Provincia', 'prcProv', 'Opcional', c.provincia)}
+        ${prSec(3, 'Información financiera')}
+        <div class="fr-row">${fr('Ocupación', 'prcOcup', 'A qué se dedica', c.ocupacion)}${fr('Lugar de trabajo', 'prcTrabajo', 'Empresa/negocio', c.lugar_trabajo)}</div>
+        <div class="fr-row"><div class="fr"><label>Tipo de ingreso</label><select id="prcTipoIng"><option value="">—</option>${['Empleado', 'Negocio propio', 'Independiente', 'Remesas', 'Pensión', 'Otro'].map(o => `<option${c.tipo_ingreso === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div><div class="fr"><label>Ingreso mensual RD$</label><input id="prcIngreso" data-nx-money inputmode="numeric" value="${c.ingreso_mensual ? Math.round(c.ingreso_mensual) : ''}" placeholder="0"></div></div>
+        ${prSec(4, 'Referencias')}
+        <div class="fr-row">${fr('Referencia 1 — nombre', 'prcR1N', 'Nombre', c.ref1_nombre)}${fr('Teléfono', 'prcR1T', '809-...', c.ref1_telefono, 'inputmode="tel"')}</div>
+        ${fr('Relación (ref. 1)', 'prcR1Rel', 'Familiar, amigo...', c.ref1_relacion)}
+        <div class="fr-row">${fr('Referencia 2 — nombre', 'prcR2N', 'Nombre', c.ref2_nombre)}${fr('Teléfono', 'prcR2T', '809-...', c.ref2_telefono, 'inputmode="tel"')}</div>
+        ${fr('Relación (ref. 2)', 'prcR2Rel', 'Familiar, amigo...', c.ref2_relacion)}
+        <div class="fr" style="margin-top:8px"><label style="display:flex;align-items:center;gap:9px;cursor:pointer"><input type="checkbox" id="prcFiador"${c.tiene_fiador ? ' checked' : ''} onchange="window.nxPrCliFiador()" style="width:17px;height:17px"> Tiene fiador / garante</label></div>
+        <div id="prcFiadorBox" style="display:${c.tiene_fiador ? 'block' : 'none'}">
+          <div class="fr-row">${fr('Fiador — nombre', 'prcFN', 'Nombre', c.fiador_nombre)}${fr('Cédula', 'prcFC', '000-...', c.fiador_cedula, 'inputmode="numeric"')}</div>
+          <div class="fr-row">${fr('Teléfono', 'prcFT', '809-...', c.fiador_telefono, 'inputmode="tel"')}${fr('Dirección', 'prcFD', 'Opcional', c.fiador_direccion)}</div>
+        </div>
+        ${prSec(5, 'Notas')}
+        <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
+      </div>
+      <div style="padding-top:10px"><button class="btn bc1" type="button" style="width:100%" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
+    </div>`;
+    document.body.appendChild(ov);
+    try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
+  }
+  window.nxPrCliFiador = function () { const b = document.getElementById('prcFiadorBox'); const c = document.getElementById('prcFiador'); if (b) b.style.display = (c && c.checked) ? 'block' : 'none'; };
+  let _prCliOnSaved = null;
+  window.nxPrClienteGuardar = async function (id) {
+    const nom = (val('prcNom') || '').trim();
+    if (!nom) { toast('err', 'Falta el nombre'); return; }
+    const tel = (val('prcTel') || '').trim();
+    // Duplicado (solo al crear): mismo teléfono o cédula normalizados
+    if (!id) {
+      const telN = tel.replace(/\D/g, ''), cedN = (val('prcCed') || '').replace(/\D/g, '');
+      const dup = (telN || cedN) ? _prClientes.find(x => { const t = (x.telefono || '').replace(/\D/g, ''), ce = (x.cedula || '').replace(/\D/g, ''); return (telN && t === telN) || (cedN && ce === cedN); }) : null;
+      if (dup) { const ok = confirm('Ya existe "' + (dup.nombre || '') + '" con el mismo ' + ((cedN && (dup.cedula || '').replace(/\D/g, '') === cedN) ? 'cédula' : 'teléfono') + '.\n\nAceptar = crear otro.\nCancelar = editar el existente.'); if (!ok) { abrirClienteForm(dup, _prCliOnSaved); return; } }
+    }
+    const body = {
+      nombre: nom, cedula: (val('prcCed') || '').trim() || null, fecha_nacimiento: val('prcNac') || null,
+      estado_civil: val('prcCivil') || null, nacionalidad: (val('prcNacion') || '').trim() || null,
+      telefono: tel || null, telefono_alterno: (val('prcTelAlt') || '').trim() || null, email: (val('prcEmail') || '').trim() || null,
+      direccion: (val('prcDir') || '').trim() || null, sector: (val('prcSector') || '').trim() || null, ciudad: (val('prcCiudad') || '').trim() || null, provincia: (val('prcProv') || '').trim() || null,
+      ocupacion: (val('prcOcup') || '').trim() || null, lugar_trabajo: (val('prcTrabajo') || '').trim() || null, tipo_ingreso: val('prcTipoIng') || null, ingreso_mensual: parseMoney(val('prcIngreso')),
+      ref1_nombre: (val('prcR1N') || '').trim() || null, ref1_telefono: (val('prcR1T') || '').trim() || null, ref1_relacion: (val('prcR1Rel') || '').trim() || null,
+      ref2_nombre: (val('prcR2N') || '').trim() || null, ref2_telefono: (val('prcR2T') || '').trim() || null, ref2_relacion: (val('prcR2Rel') || '').trim() || null,
+      tiene_fiador: !!(document.getElementById('prcFiador') || {}).checked,
+      fiador_nombre: (val('prcFN') || '').trim() || null, fiador_cedula: (val('prcFC') || '').trim() || null, fiador_telefono: (val('prcFT') || '').trim() || null, fiador_direccion: (val('prcFD') || '').trim() || null,
+      notas: (val('prcNotas') || '').trim() || null, updated_at: new Date().toISOString()
+    };
+    try {
+      let cliId = id, saved = null;
+      if (id) { await getAPI().patch('prestamo_clientes', 'id=eq.' + id, body); saved = Object.assign({ id: id }, body); }
+      else { body.created_by_name = nomAdmin(); const r = await getAPI().post('prestamo_clientes', body); cliId = r && r[0] && r[0].id; saved = (r && r[0]) || Object.assign({ id: cliId }, body); }
+      toast('ok', id ? 'Cliente actualizado' : 'Cliente creado', nom);
+      cerrarModal('nxPrCliForm');
+      await cargarPrestamos();
+      const cb = _prCliOnSaved; _prCliOnSaved = null;
+      if (cb) { cb(saved); return; }
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
 
   window.nxPrestamoFiltrar = function (q) {
     _prQuery = String(q || ''); _prPage = 1; repintarPrLista();
@@ -13404,6 +13547,11 @@
         <div class="mt"><span><i class="ti ti-cash"></i> ${pr ? 'Editar préstamo' : 'Nuevo préstamo'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding-right:1px">
           ${prSec(1, 'Datos del prestatario')}
+          <input type="hidden" id="prCliId" value="${esc(p.cliente_id || '')}">
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button type="button" class="btn bsm" style="flex:1" onclick="window.nxPrElegirCliente()"><i class="ti ti-users-group"></i> Elegir cliente</button>
+            <button type="button" class="btn bsm" style="flex:1" onclick="window.nxPrClienteNuevoDesdeForm()"><i class="ti ti-user-plus"></i> Nuevo cliente</button>
+          </div>
           <div class="fr"><label>Nombre del prestatario</label><input id="prNom" class="no-upper" value="${esc(p.nombre || '')}" placeholder="Nombre completo"></div>
           <div class="fr-row">
             <div class="fr"><label>Cédula</label><input id="prCed" class="no-upper" value="${esc(p.cedula || '')}" placeholder="000-0000000-0"></div>
@@ -13459,8 +13607,36 @@
     pintarModo();
     if (p.frecuencia) { const s = document.getElementById('prFrec'); if (s) s.value = p.frecuencia; }
     if (p.metodo_interes) { const sm = document.getElementById('prMetodo'); if (sm) sm.value = p.metodo_interes; }
+    if (!pr && _prPrefillCli) { prFormPonerCliente(_prPrefillCli); _prPrefillCli = null; }
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
   }
+  function prFormPonerCliente(c) {
+    if (!c) return;
+    const setv = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    setv('prCliId', c.id); setv('prNom', c.nombre); setv('prCed', c.cedula); setv('prTel', c.telefono);
+  }
+  window.nxPrClienteNuevoDesdeForm = function () {
+    abrirClienteForm(null, function (saved) { abrirForm(null); setTimeout(function () { prFormPonerCliente(saved); }, 30); });
+  };
+  window.nxPrElegirCliente = function () {
+    cerrarModal('nxPrCliPick');
+    const ov = document.createElement('div'); ov.id = 'nxPrCliPick'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const filas = _prClientes.length ? _prClientes.map(c => `<button type="button" class="prCliPickRow" onclick="window.nxPrCliPickSel('${c.id}')"><b>${esc(c.nombre || '')}</b><span>${esc([c.cedula, c.telefono].filter(Boolean).join(' · ') || 'sin datos')}</span></button>`).join('') : '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">No hay clientes. Toca "Nuevo cliente".</div>';
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px;max-height:80vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-users-group"></i> Elegir cliente</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrCliPick').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="margin-bottom:8px">${prBuscador({ id: 'nxPrCliPickQ', placeholder: 'Buscar por nombre, cédula o teléfono...', oninput: 'window.nxPrCliPickFiltrar(this.value)' })}</div>
+      <div id="prCliPickList" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px">${filas}</div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPrCliPickFiltrar = function (q) {
+    const t = String(q || '').trim().toLowerCase();
+    const lista = !t ? _prClientes : _prClientes.filter(c => ((c.nombre || '') + ' ' + (c.cedula || '') + ' ' + (c.telefono || '')).toLowerCase().indexOf(t) >= 0);
+    const box = document.getElementById('prCliPickList'); if (!box) return;
+    box.innerHTML = lista.length ? lista.map(c => `<button type="button" class="prCliPickRow" onclick="window.nxPrCliPickSel('${c.id}')"><b>${esc(c.nombre || '')}</b><span>${esc([c.cedula, c.telefono].filter(Boolean).join(' · ') || 'sin datos')}</span></button>`).join('') : '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">Nada coincide.</div>';
+  };
+  window.nxPrCliPickSel = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); cerrarModal('nxPrCliPick'); if (c) prFormPonerCliente(c); };
 
   window.nxPrestamoGuardar = async function (id) {
     const nom = (val('prNom') || '').trim();
@@ -13484,6 +13660,7 @@
       nombre: nom,
       cedula: (val('prCed') || '').trim(),
       telefono: (val('prTel') || '').trim(),
+      cliente_id: val('prCliId') || null,
       capital: capital,
       total_devolver: total,
       tasa_interes: tasaStore,
@@ -22466,6 +22643,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-sideDiv{height:1px;background:rgba(255,255,255,.16);margin:8px 6px}' +
       '.nxFP-sideBack{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;margin-top:8px;font-family:inherit}' +
       '.nxFP-sideBack:hover{background:rgba(255,255,255,.1)}' +
+      '.prCliPickRow{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid #e9e6f7;background:#fff;cursor:pointer;font-family:inherit;width:100%}' +
+      '.prCliPickRow:hover{background:#f5f3ff;border-color:#c7b8f5}.prCliPickRow b{font-size:13px;color:#1e1b4b}.prCliPickRow span{font-size:11px;color:#7c748f}' +
       '.nxFP-main{flex:1;min-width:0}' +
       '.nxFP-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}' +
       '.nxFP-burger{display:none;width:40px;height:40px;border-radius:11px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex:none}' +
