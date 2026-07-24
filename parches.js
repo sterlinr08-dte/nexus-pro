@@ -13231,6 +13231,7 @@
         <td data-l="Préstamos" class="nxFP-tMoney">${st.n}${st.activos ? ` <span style="color:var(--pf-green);font-weight:800">(${st.activos} act.)</span>` : ''}</td>
         <td data-l="Saldo" class="nxFP-tMoney">${fmt(st.saldo)}</td>
         <td data-l="Acciones"><div class="nxFP-tAcc">
+          <button type="button" title="Historial crediticio" aria-label="Historial crediticio" onclick="event.stopPropagation();window.nxPrHistCredito('${c.id}')"><i class="ti ti-history"></i></button>
           <button type="button" title="Editar" aria-label="Editar" onclick="event.stopPropagation();window.nxPrClienteEditar('${c.id}')"><i class="ti ti-pencil"></i></button>
           ${c.telefono ? `<button type="button" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation();window.nxPrClienteWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
           <button type="button" title="Nuevo préstamo" aria-label="Nuevo préstamo" onclick="event.stopPropagation();window.nxPrestamoNuevoDeCliente('${c.id}')"><i class="ti ti-cash-plus"></i></button>
@@ -13730,7 +13731,10 @@
           <div class="ev-clitop"><span class="ev-clinom">${esc(c.nombre || 'Sin nombre')}</span><span class="ev-clibadge">Cliente activo</span></div>
           <div class="ev-cddat">${dato('Cédula', c.cedula)}${dato('Teléfono', c.telefono)}${dato('Edad', edad != null ? edad + ' años' : null)}${dato('Tiempo como cliente', tc)}</div>
         </div>
-        <button type="button" class="btn bsm" style="flex:0 0 auto;align-self:flex-start" onclick="window.evVerPerfil()"><i class="ti ti-user"></i> Ver perfil</button>
+        <div style="display:flex;flex-direction:column;gap:5px;flex:0 0 auto;align-self:flex-start">
+          <button type="button" class="btn bsm" onclick="window.evVerPerfil()"><i class="ti ti-user"></i> Ver perfil</button>
+          <button type="button" class="btn bsm" onclick="window.nxPrHistCredito('${esc(c.id)}')"><i class="ti ti-history"></i> Historial crediticio</button>
+        </div>
       </div>`;
   }
   function prEvalMainHTML() {
@@ -14021,6 +14025,170 @@
     const nt = document.getElementById('prNotas'); if (nt) nt.value = notaEval + (notasAsesor ? '\n' + notasAsesor : '');
     await window.nxPrestamoGuardar('');
   };
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  HISTORIAL CREDITICIO (spec ChatGPT "Historial Crediticio V1")
+  //  Vista de solo lectura del comportamiento crediticio del cliente, sobre
+  //  DATOS REALES (prestamos + prestamo_pagos + prestamo_clientes). Sin tabla
+  //  nueva. Score de HISTORIAL (distinto al de Evaluación, que es sobre un
+  //  préstamo propuesto). Lo que este módulo NO tiene se OMITE (no se finge):
+  //  mora (el módulo no calcula mora), promesas de pago, pagos reversados,
+  //  documentos (sin Storage), gestiones de cobro, estados reestructurado/
+  //  proceso legal, foto del cliente.
+  // ══════════════════════════════════════════════════════════════════════
+  function prClienteLoans(cid) { return _prestamos.filter(p => String(p.cliente_id || '') === String(cid)); }
+  function prHistScore(loans) {
+    if (!loans.length) return { s: null, mil: 0, clas: 'Sin historial', riesgo: '—', estado: 'Sin evaluar', col: '#64748b' };
+    const total = loans.length, pagados = loans.filter(p => estadoDe(p) === 'pagado').length;
+    const vencidos = loans.filter(p => esVencido(p)).length;
+    const pag = loans.reduce((s, p) => s + pagadoDe(p), 0);
+    const debe = loans.reduce((s, p) => s + Number(p.total_devolver || 0), 0);
+    let base = 60;
+    base += (pagados / total) * 20;
+    if (debe > 0) base += Math.min(15, (pag / debe) * 15);
+    base -= Math.min(45, vencidos * 15);
+    if (vencidos === 0 && pagados >= 1) base += 5;
+    const s = Math.max(0, Math.min(100, Math.round(base)));
+    const clas = s >= 80 ? 'Excelente' : s >= 65 ? 'Muy bueno' : s >= 50 ? 'Bueno' : s >= 35 ? 'Regular' : 'Bajo';
+    const riesgo = s >= 65 ? 'Bajo' : s >= 45 ? 'Medio' : 'Alto';
+    const estado = s >= 65 ? 'Aprobable' : s >= 45 ? 'Revisión' : 'No recomendable';
+    const col = s >= 65 ? '#059669' : s >= 45 ? '#d97706' : '#dc2626';
+    return { s, mil: s * 10, clas, riesgo, estado, col };
+  }
+  // Puntos por cuota (comportamiento de pago) — ESTIMADO: aplica los pagos en
+  // orden a las cuotas (el ledger es libre, no matchea cuota por cuota).
+  function prCuotaDots(p) {
+    if (p.modo !== 'cuotas' || !(Number(p.num_cuotas) > 0)) return null;
+    let a; try { a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo'); } catch (e) { return null; }
+    const pagos = (_pagosByPrestamo[p.id] || []).slice().sort((x, y) => (x.fecha || '') < (y.fecha || '') ? -1 : 1);
+    const H = hoy(); let cum = 0;
+    return a.rows.map(r => {
+      cum += r.cuota;
+      let acc = 0, cov = null;
+      for (const pg of pagos) { acc += Number(pg.monto || 0); if (acc >= cum - 1) { cov = pg.fecha; break; } }
+      if (cov) { const dl = Math.floor((new Date(cov + 'T12:00:00') - new Date(r.fecha + 'T12:00:00')) / 86400000); return { c: dl <= 0 ? 'ok' : dl <= 5 ? 'y' : dl <= 15 ? 'o' : 'r', f: r.fecha }; }
+      if (r.fecha > H) return { c: 'g', f: r.fecha };
+      const dl = Math.floor((new Date(H + 'T12:00:00') - new Date(r.fecha + 'T12:00:00')) / 86400000);
+      return { c: dl <= 5 ? 'y' : dl <= 15 ? 'o' : 'r', f: r.fecha };
+    });
+  }
+  function prUltActividad(loans) {
+    let m = '';
+    loans.forEach(p => { if ((p.fecha_prestamo || '') > m) m = p.fecha_prestamo || ''; (_pagosByPrestamo[p.id] || []).forEach(pg => { if ((pg.fecha || '') > m) m = pg.fecha; }); });
+    return m || '—';
+  }
+  let _hcCid = null;
+  window.nxPrHistCredito = function (cid) {
+    const c = _prClientes.find(x => String(x.id) === String(cid)); if (!c) { toast('err', 'Cliente no encontrado'); return; }
+    _hcCid = cid;
+    cerrarModal('nxPrHc');
+    const ov = document.createElement('div'); ov.id = 'nxPrHc'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxFP" style="max-width:900px;width:96vw;max-height:94vh;display:flex;flex-direction:column;padding:0">
+      <div class="mt" style="padding:14px 16px 10px"><span><i class="ti ti-history"></i> Historial crediticio</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrHc').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div id="hcBody" style="overflow-y:auto;flex:1;padding:0 16px 16px;-webkit-overflow-scrolling:touch"></div>
+    </div>`;
+    document.body.appendChild(ov);
+    _hcTab = 'resumen';
+    hcRender();
+  };
+  let _hcTab = 'resumen';
+  window.nxPrHcTab = function (t) { _hcTab = t; hcRender(); };
+  function hcRender() {
+    const body = document.getElementById('hcBody'); if (!body) return;
+    const c = _prClientes.find(x => String(x.id) === String(_hcCid)); if (!c) return;
+    const loans = prClienteLoans(_hcCid);
+    const sc = prHistScore(loans);
+    const total = loans.length, activos = loans.filter(p => estadoDe(p) !== 'pagado').length, pagados = loans.filter(p => estadoDe(p) === 'pagado').length;
+    const vencidos = loans.filter(p => esVencido(p)).length;
+    const financiado = loans.reduce((s, p) => s + Number(p.capital || 0), 0);
+    const pagado = loans.reduce((s, p) => s + pagadoDe(p), 0);
+    const balance = loans.reduce((s, p) => s + saldoDe(p), 0);
+    const intereses = loans.reduce((s, p) => s + interesCobradoDe(p), 0);
+    const puntualidad = total ? Math.round(((total - vencidos) / total) * 100) : 0;
+    const tab = (k, lbl) => `<button type="button" class="hc-tab${_hcTab === k ? ' on' : ''}" onclick="window.nxPrHcTab('${k}')">${lbl}</button>`;
+    // ── Header ──
+    const edad = evEdad(c.fecha_nacimiento), tc = evTiempoCliente(c.created_at);
+    const hd = `<div class="hc-head">
+      <div class="ev-avatar">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div class="ev-clitop"><span class="ev-clinom">${esc(c.nombre || 'Sin nombre')}</span><span class="ev-clibadge">Cliente activo</span></div>
+        <div class="hc-hmeta">${[c.cedula && ('Cédula ' + c.cedula), c.telefono, c.email, tc && ('Cliente ' + tc), edad != null && (edad + ' años')].filter(Boolean).map(esc).join(' · ')}</div>
+        <div class="hc-hmeta">Última actividad: ${esc(prUltActividad(loans))}</div>
+      </div>
+      <div class="hc-scorebox">
+        <div class="ev-gauge" style="--pct:${sc.s == null ? 0 : sc.s};--gc:${sc.col}"><div class="ev-gaugein"><div class="ev-gnum">${sc.s == null ? '—' : sc.mil}</div><div class="ev-gsub">${sc.s == null ? '' : 'de 1000'}</div></div></div>
+        <div class="hc-scmeta"><div class="hc-scclas" style="color:${sc.col}">${sc.clas}</div><div class="hc-scbadge" style="color:${sc.col};background:${sc.col}18">Riesgo: ${sc.riesgo} · ${sc.estado}</div></div>
+      </div>
+    </div>`;
+    // ── Tabs ──
+    const tabs = `<div class="hc-tabs">${tab('resumen', 'Resumen')}${tab('prestamos', 'Préstamos')}${tab('pagos', 'Pagos')}</div>`;
+    let cuerpo = '';
+    if (_hcTab === 'resumen') {
+      const kp = (lbl, v, col) => `<div class="hc-kpi"><div class="hc-klbl">${lbl}</div><div class="hc-kval"${col ? ` style="color:${col}"` : ''}>${v}</div></div>`;
+      const cartera = `<div class="hc-sec">Resumen de cartera</div><div class="hc-kpis">
+        ${kp('Total préstamos', total)}${kp('Activos', activos, '#2563eb')}${kp('Pagados', pagados, '#059669')}${kp('Monto financiado', fmt(financiado))}
+        ${kp('Total pagado', fmt(pagado), '#059669')}${kp('Balance pendiente', fmt(balance), balance > 0 ? '#d97706' : '#059669')}${kp('Intereses pagados', fmt(intereses))}${kp('Puntualidad', puntualidad + '%', puntualidad >= 80 ? '#059669' : puntualidad >= 50 ? '#d97706' : '#dc2626')}</div>
+        <div class="hc-note">La mora no se calcula en este módulo de Financiamiento, por eso no aparece "mora acumulada". Los intereses pagados son un estimado proporcional a lo abonado.</div>`;
+      // recomendación
+      const caps = loans.map(p => Number(p.capital || 0)).filter(x => x > 0), maxCap = caps.length ? Math.max.apply(null, caps) : 0;
+      const montoRec = sc.s == null ? 0 : sc.s >= 65 ? Math.round(maxCap * 1.2 / 1000) * 1000 : sc.s >= 45 ? maxCap : Math.round(maxCap * 0.7 / 1000) * 1000;
+      const tasas = loans.map(p => Number(p.tasa_interes || 0)).filter(x => x > 0), tasaSug = tasas.length ? (Math.round((tasas.reduce((a, b) => a + b, 0) / tasas.length) * 100) / 100) + '%' : '—';
+      const plazos = loans.filter(p => Number(p.num_cuotas) > 0).map(p => p.num_cuotas), plazoSug = plazos.length ? Math.max.apply(null, plazos) + ' cuotas' : '—';
+      const rec = `<div class="hc-sec">Recomendación del sistema</div><div class="hc-rec" style="border-color:${sc.col}44">
+        <div class="hc-recbadge" style="color:${sc.col};background:${sc.col}14"><i class="ti ${sc.s >= 65 ? 'ti-circle-check' : sc.s >= 45 ? 'ti-alert-triangle' : 'ti-circle-x'}"></i> ${sc.s == null ? 'Sin historial suficiente' : sc.s >= 65 ? 'Cliente confiable' : sc.s >= 45 ? 'Riesgo medio' : 'Riesgo alto'}</div>
+        <div class="hc-recgrid">
+          <div><span>Monto recomendado</span><b>${montoRec > 0 ? fmt(montoRec) : '—'}</b></div>
+          <div><span>Tasa sugerida</span><b>${tasaSug}</b></div>
+          <div><span>Plazo máx. sugerido</span><b>${plazoSug}</b></div>
+          <div><span>Resultado</span><b style="color:${sc.col}">${sc.estado}</b></div>
+        </div>
+        <div class="hc-note">Sugerencias derivadas del historial real del cliente (montos y tasas que ya ha manejado). Son una guía — la decisión final es del asesor.</div></div>`;
+      // comportamiento de pago (cuotas)
+      const conCuotas = loans.filter(p => p.modo === 'cuotas' && Number(p.num_cuotas) > 0);
+      let comp = '';
+      if (conCuotas.length) {
+        comp = `<div class="hc-sec">Comportamiento de pago <span class="hc-est">(estimado)</span></div>`;
+        conCuotas.forEach(p => {
+          const dots = prCuotaDots(p); if (!dots) return;
+          comp += `<div class="hc-comprow"><div class="hc-compnm">${esc(prRef(p))} · ${esc(prTipoTxt(p))}</div><div class="hc-dots">${dots.map(d => `<span class="hc-dot hc-${d.c}" title="${esc(d.f)}"></span>`).join('')}</div></div>`;
+        });
+        comp += `<div class="hc-leg"><span class="hc-dot hc-ok"></span>Puntual <span class="hc-dot hc-y"></span>1-5d <span class="hc-dot hc-o"></span>6-15d <span class="hc-dot hc-r"></span>+15d <span class="hc-dot hc-g"></span>Pendiente</div>`;
+      }
+      // alertas (solo la real: vencidos)
+      let alertas = '';
+      if (vencidos > 0) alertas = `<div class="hc-alert"><i class="ti ti-alert-triangle"></i> ${vencidos} préstamo${vencidos === 1 ? '' : 's'} vencido${vencidos === 1 ? '' : 's'} — requiere${vencidos === 1 ? '' : 'n'} gestión de cobro.</div>`;
+      cuerpo = alertas + cartera + rec + comp;
+    } else if (_hcTab === 'prestamos') {
+      if (!loans.length) cuerpo = `<div class="hc-empty">Este cliente no tiene préstamos registrados.</div>`;
+      else {
+        const rows = loans.slice().sort((a, b) => (b.fecha_prestamo || '') < (a.fecha_prestamo || '') ? -1 : 1).map(p => {
+          const info = prEstadoInfo(p), dias = esVencido(p) ? prDiasVencido(p) : 0;
+          const cuota = (function () { try { if (p.modo === 'cuotas' && Number(p.num_cuotas) > 0) { const a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo'); return fmt(a.cuota); } } catch (e) {} return '—'; })();
+          const col = info.key === 'pagado' ? '#059669' : info.key === 'vencido' ? '#dc2626' : '#2563eb';
+          return `<tr onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')" style="cursor:pointer">
+            <td data-l="Ref">${esc(prRef(p))}</td><td data-l="Fecha">${esc(p.fecha_prestamo || '—')}</td>
+            <td data-l="Monto" style="text-align:right">${fmt(Number(p.capital || 0))}</td><td data-l="Tasa" style="text-align:right">${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes + '%' : '—'}</td>
+            <td data-l="Cuota" style="text-align:right">${cuota}</td><td data-l="Pagado" style="text-align:right;color:#059669">${fmt(pagadoDe(p))}</td>
+            <td data-l="Balance" style="text-align:right;color:${saldoDe(p) > 0 ? '#d97706' : '#059669'}">${fmt(saldoDe(p))}</td>
+            <td data-l="Estado"><span class="hc-est-b" style="color:${col};background:${col}14">${info.label}</span></td>
+            <td data-l="Días atraso" style="text-align:right">${dias > 0 ? '<b style="color:#dc2626">' + dias + '</b>' : '—'}</td></tr>`;
+        }).join('');
+        cuerpo = `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th>Ref</th><th>Fecha</th><th style="text-align:right">Monto</th><th style="text-align:right">Tasa</th><th style="text-align:right">Cuota</th><th style="text-align:right">Pagado</th><th style="text-align:right">Balance</th><th>Estado</th><th style="text-align:right">Días</th></tr></thead><tbody>${rows}</tbody></table></div><div class="hc-note">Estados reales del módulo: Activo / Pagado / Vencido. (Reestructurado, cancelado y proceso legal no existen en este módulo — no se muestran para no inventar un estado.)</div>`;
+      }
+    } else if (_hcTab === 'pagos') {
+      const pagos = [];
+      loans.forEach(p => (_pagosByPrestamo[p.id] || []).forEach(pg => pagos.push({ pg, p })));
+      pagos.sort((a, b) => (b.pg.fecha || '') < (a.pg.fecha || '') ? -1 : 1);
+      if (!pagos.length) cuerpo = `<div class="hc-empty">Este cliente no tiene pagos registrados.</div>`;
+      else {
+        const rows = pagos.map(x => `<tr><td data-l="Fecha">${esc(x.pg.fecha || '—')}</td><td data-l="Préstamo">${esc(prRef(x.p))}</td><td data-l="Monto" style="text-align:right;color:#059669;font-weight:800">${fmt(Number(x.pg.monto || 0))}</td><td data-l="Método">${esc(x.pg.metodo || x.pg.tipo || '—')}</td><td data-l="Registró">${esc(x.pg.created_by_name || '—')}</td></tr>`).join('');
+        const totPag = pagos.reduce((s, x) => s + Number(x.pg.monto || 0), 0);
+        cuerpo = `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th>Fecha</th><th>Préstamo</th><th style="text-align:right">Monto</th><th>Método</th><th>Registró</th></tr></thead><tbody>${rows}</tbody></table></div><div class="hc-note">${pagos.length} pago(s) · Total ${fmt(totPag)}</div>`;
+      }
+    }
+    body.innerHTML = hd + tabs + `<div class="hc-tabc">${cuerpo}</div>`;
+  }
 
   window.nxPrestamoGuardar = async function (id) {
     const nom = (val('prNom') || '').trim();
@@ -23071,6 +23239,24 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.ev-aprobar{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px}.ev-aprobar:disabled{opacity:.45;cursor:not-allowed}' +
       '.ev-cancel{width:100%;margin-top:8px;background:transparent;border:0;color:#dc2626;font-size:12px;font-weight:700;padding:8px;cursor:pointer;font-family:inherit}' +
       '@media(max-width:1100px){.ev-grid{grid-template-columns:1fr}.ev-sticky{position:static}.ev-cols{grid-template-columns:1fr}}' +
+      // ── Historial crediticio ──
+      '.hc-head{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 16px;margin:4px 0 12px;box-shadow:0 1px 3px rgba(15,23,42,.05);flex-wrap:wrap}' +
+      '.hc-hmeta{font-size:11.5px;color:#7c748f;margin-top:3px;line-height:1.5}' +
+      '.hc-scorebox{display:flex;align-items:center;gap:10px;margin-left:auto}.hc-scmeta{min-width:0}.hc-scclas{font-size:14px;font-weight:800}.hc-scbadge{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px;display:inline-block;margin-top:4px}' +
+      '.hc-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid #e9e6f7;margin-bottom:12px}' +
+      '.hc-tab{background:transparent;border:0;border-bottom:2px solid transparent;color:#64748b;font-size:12.5px;font-weight:700;padding:9px 14px;cursor:pointer;font-family:inherit;white-space:nowrap}.hc-tab.on{color:#4f46e5;border-bottom-color:#4f46e5}' +
+      '.hc-sec{font-size:12.5px;font-weight:800;color:#1e1b4b;margin:14px 0 8px}.hc-est{font-weight:600;color:#94a3b8;font-size:10px}' +
+      '.hc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.hc-kpi{background:#fff;border:1px solid #e9e6f7;border-radius:11px;padding:10px 11px}.hc-klbl{font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.2px}.hc-kval{font-size:16px;font-weight:800;color:#1e1b4b;margin-top:3px}' +
+      '.hc-note{font-size:10px;color:#94a3b8;line-height:1.5;margin-top:8px}' +
+      '.hc-rec{border:1.5px solid #e9e6f7;border-radius:12px;padding:12px}.hc-recbadge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:4px 11px;border-radius:20px;margin-bottom:10px}' +
+      '.hc-recgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.hc-recgrid>div{display:flex;flex-direction:column;gap:2px}.hc-recgrid span{font-size:10.5px;color:#94a3b8;font-weight:700}.hc-recgrid b{font-size:14px;font-weight:800;color:#1e1b4b}' +
+      '.hc-comprow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f5f3ff;flex-wrap:wrap}.hc-compnm{font-size:11px;color:#475569;font-weight:600;min-width:120px;flex:1}' +
+      '.hc-dots{display:flex;gap:3px;flex-wrap:wrap}.hc-dot{width:12px;height:12px;border-radius:3px;display:inline-block;flex:0 0 auto}.hc-ok{background:#22c55e}.hc-y{background:#eab308}.hc-o{background:#f97316}.hc-r{background:#ef4444}.hc-g{background:#cbd5e1}' +
+      '.hc-leg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;color:#64748b;margin-top:8px}.hc-leg .hc-dot{margin-left:6px}' +
+      '.hc-alert{display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:11px;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:4px}' +
+      '.hc-tblwrap{overflow-x:auto;border:1px solid #e9e6f7;border-radius:12px}.hc-tbl{width:100%;border-collapse:collapse;font-size:11.5px}.hc-tbl thead th{background:#f8fafc;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:.2px;padding:8px 9px;text-align:left;white-space:nowrap}.hc-tbl tbody td{padding:8px 9px;border-top:1px solid #f1f5f9;color:#1e293b}.hc-tbl tbody tr:hover{background:#faf9ff}' +
+      '.hc-est-b{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap}.hc-empty{text-align:center;color:#94a3b8;font-size:12.5px;padding:26px}' +
+      '@media(max-width:640px){.hc-kpis,.hc-recgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.hc-scorebox{margin-left:0;margin-top:8px}.hc-tbl thead{display:none}.hc-tbl tbody td{display:flex;justify-content:space-between;border:0;padding:4px 10px}.hc-tbl tbody td:before{content:attr(data-l);color:#94a3b8;font-weight:700;font-size:10px}.hc-tbl tbody tr{display:block;border:1px solid #eef;border-radius:10px;margin:6px;padding:4px 0}}' +
       '.nxFP-main{flex:1;min-width:0}' +
       '.nxFP-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}' +
       '.nxFP-burger{display:none;width:40px;height:40px;border-radius:11px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex:none}' +

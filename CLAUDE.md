@@ -2006,6 +2006,40 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento (Préstamos, Multiempresa) — HISTORIAL CREDITICIO (spec ChatGPT "Historial Crediticio V1", 24-jul-2026, v49.18)
+El dueño pidió aplicar `docs/visual-drafts/financiamiento/HISTORIAL_CREDITICIO_V1_APROBADO.md` (ChatGPT lo subió a
+`main`, commit `c72bd56`). Vista de solo lectura del comportamiento crediticio de un cliente antes de aprobarle
+préstamos. **Todo sobre datos REALES, cero tabla nueva** — el módulo ya tenía casi todos los helpers necesarios
+(`estadoDe`/`esVencido`/`saldoDe`/`pagadoDe`/`interesCobradoDe`/`prDiasVencido`/`prEstadoInfo`/`prRef`/`amortizar`/
+`_pagosByPrestamo`).
+- **`window.nxPrHistCredito(cid)`** — modal (`.nxFP`, morado del módulo) con header + score circular + 3 pestañas
+  (Resumen/Préstamos/Pagos). Entradas: botón de historial (`ti-history`) en la fila de la lista de Clientes de
+  Financiamiento (`prClientesTablaHTML`) y botón "Historial crediticio" en la tarjeta del cliente de la Evaluación
+  (`evClienteBoxHTML`).
+- **Score de HISTORIAL** (`prHistScore`, distinto al de la Evaluación que es sobre un préstamo propuesto): base 60,
+  +20×(pagados/total), +hasta 15 por (pagado/total debe), −15 por cada vencido (tope −45), +5 si 0 vencidos y ≥1
+  pagado. Clamp 0-100, se muestra ×10 (/1000) con clasificación (Excelente/Muy bueno/Bueno/Regular/Bajo) + riesgo +
+  resultado (Aprobable/Revisión/No recomendable). Fórmula transparente y ajustable.
+- **Resumen:** 8 KPIs de cartera (total/activos/pagados préstamos, monto financiado, total pagado, balance pendiente,
+  intereses pagados [`interesCobradoDe`], puntualidad %) + recomendación (monto/tasa/plazo **derivados del historial
+  real** del cliente — máx capital manejado, tasa promedio, plazo máx) + **comportamiento de pago** por cuota
+  (`prCuotaDots`, puntos verde/amarillo/naranja/rojo/gris) + alerta real de préstamos vencidos.
+- **Préstamos:** tabla real (Ref/Fecha/Monto/Tasa/Cuota/Pagado/Balance/Estado/Días atraso), clic abre `nxPrestamoVer`.
+  Días de atraso solo en vencidos (`esVencido(p)?prDiasVencido(p):0` — un préstamo PAGADO muestra "—", no días).
+- **Pagos:** todos los `prestamo_pagos` del cliente (fecha/préstamo/monto/método/registró) + total.
+- **Omitido A PROPÓSITO (no se finge, se documenta):** MORA (el módulo no calcula mora — se avisa en una nota),
+  documentos (sin Storage), gestiones de cobro, promesas de pago, pagos reversados, estados reestructurado/proceso
+  legal (solo Activo/Pagado/Vencido), foto del cliente (avatar de inicial). El comportamiento de pago por cuota es
+  un **estimado** (los pagos del ledger libre se aplican en orden a las cuotas — se etiqueta "(estimado)").
+- **Desviación del spec (documentada):** el spec pedía `#2563eb`/`.nxPf`; se usó el **morado del módulo** (`.nxFP`,
+  regla "cada app su color"), con verde/amarillo/naranja/rojo semánticos para los puntos y el score.
+- **Bug corregido en pruebas:** un préstamo PAGADO mostraba días de atraso (prDiasVencido cuenta desde la última
+  cuota sin mirar si ya está saldado) → se gateó a `esVencido(p)`.
+- Verificado con **38 pruebas Playwright** sobre el código real (modal, header con score /1000, 8 KPIs, recomendación,
+  comportamiento con puntos, tabla de 3 préstamos con estados PAGADO/VENCIDO/ACTIVO, tabla de pagos, alerta de
+  vencido, saltos de pestaña). 0 errores de JS, sin desbordes en 390px ni 1280px. `node --check` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Financiamiento (Préstamos, Multiempresa) — EVALUACIÓN FINANCIERA (spec ChatGPT "Evaluación Financiera V1", 24-jul-2026, v49.15)
 El dueño pidió aplicar el spec `docs/visual-drafts/financiamiento/EVALUACION_FINANCIERA_V1_APROBADA.md` (ChatGPT
 lo subió a `main` directo, commit `26acc80`). Flujo: Cliente → Evaluación → Aprobación → Préstamo → Cobranza.
