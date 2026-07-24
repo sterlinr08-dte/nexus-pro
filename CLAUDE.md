@@ -2006,6 +2006,54 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento (Préstamos, Multiempresa) — MÓDULO DE CLIENTES (spec ChatGPT "Crear Cliente V1", 24-jul-2026, v49.14)
+El dueño pidió aplicar la carga de "Crear Cliente V1" de ChatGPT. Primero se aplicó por error al formulario
+de Entidades del POS (`abrirEntidad`, v49.13) — el dueño aclaró **"Es de financiamiento que estamos"** y
+confirmó **"Si"** construir un módulo de Clientes REAL dentro de Financiamiento (`nxAbrirPrestamos`,
+IIFE propio de `parches.js`, tablas `prestamos`/`prestamo_pagos`/`prestamos_config`, RLS solo-dueño
+`mi_rol()='admin'` sin `organizacion_id`). Antes NO había pantalla de clientes: el prestatario se tecleaba
+inline en cada préstamo (solo nombre/cédula/teléfono guardados en la propia fila de `prestamos`).
+- **Hallazgo clave — la tabla YA EXISTÍA:** al ir a crear `prestamo_clientes` la migración falló (la política
+  `prestamo_clientes_admin` ya estaba) — **un chat paralelo ya la había creado** con un esquema MUCHO más
+  rico que el que se iba a proponer. Se pivoteó a construir SOLO el frontend contra esa tabla real, adoptando
+  sus columnas reales (32 columnas: datos personales, contacto, financiera, 2 referencias, fiador, notas,
+  auditoría) — cero migración nueva, cero columnas inventadas. `prestamos.cliente_id` (uuid) también ya
+  existía para enlazar. Confirmado por SQL directo antes de escribir el form.
+- **Construido (frontend, todo en el IIFE de Financiamiento):**
+  - **`_prClientes`** cargado en `cargarPrestamos` (`select=*&order=nombre.asc`, best-effort try/catch → `[]`).
+    `_prView` ('prestamos'|'clientes') + `_prCliQuery` controlan qué muestra `renderLista` (mismo shell, el
+    `.nxFP-main` cambia según `_prView`). Ítem **"Clientes"** nuevo en la barra lateral (`nxPrView('clientes')`,
+    ícono `ti-users-group`) — se resalta solo cuando `_prView==='clientes'` (los filtros de préstamos solo se
+    resaltan si `_prView==='prestamos'`, para no marcar dos a la vez).
+  - **Lista de clientes** (`prClientesMainHTML`): 3 KPIs (total / con préstamo / en mora, calculados contra
+    `_prestamos` por `cliente_id`), buscador (`prBuscador`, reglamento), y **tabla** (`prClientesTablaHTML`,
+    `.nxFP-tbl` que colapsa a tarjetas en móvil) con Cliente/Cédula/Teléfono/Ubicación/**Préstamos** (cuántos +
+    activos, vía `prCliStats` que suma `saldoDe` por `cliente_id`)/**Saldo**/Acciones (editar/WhatsApp/nuevo
+    préstamo). Fila clicable abre editar.
+  - **Formulario completo** (`abrirClienteForm`, patrón `.nxPrForm`/`prSec`): 5 secciones — Datos personales
+    (nombre*, cédula, fecha nac., estado civil, nacionalidad), Contacto y dirección (teléfono*, alterno, correo,
+    dirección, sector, ciudad, provincia), Información financiera (ocupación, lugar de trabajo, tipo de ingreso,
+    ingreso mensual con `data-nx-money`), Referencias (2, con relación), fiador/garante opcional (checkbox
+    `nxPrCliFiador` muestra/oculta el bloque) y Notas. `nxPrClienteGuardar` mapea las 32 columnas reales +
+    `updated_at`, con **detección de duplicado** al crear (mismo teléfono o cédula normalizados → avisa quién es
+    y ofrece abrir el existente). Todos los ids `prc*`.
+  - **Enlace con el préstamo:** `abrirForm` (nuevo/editar préstamo) ganó un `<input type="hidden" id="prCliId">`
+    + botones **"Elegir cliente"** (`nxPrElegirCliente` → modal picker con buscador, filas `.prCliPickRow`) y
+    **"Nuevo cliente"** (`nxPrClienteNuevoDesdeForm` → abre el form de cliente con callback "Guardar y usar
+    cliente" que vuelve al préstamo ya lleno). `prFormPonerCliente(c)` llena prCliId/prNom/prCed/prTel.
+    `nxPrestamoGuardar` ahora guarda `cliente_id: val('prCliId') || null` en `prestamos`. Botón "Nuevo préstamo"
+    de la fila de cliente (`nxPrestamoNuevoDeCliente`) precarga el cliente vía `_prPrefillCli`.
+  - Filtros de la lista de clientes (`nxPrClienteFiltrar`) y del picker (`nxPrCliPickFiltrar`) usan el mismo
+    `.toLowerCase().indexOf()` sin normalizar acentos — **consistente con el filtro de préstamos ya existente**
+    (`prListaFiltrada`), no una regresión; se dejó igual a propósito.
+- **Verificado con Playwright, código real extraído** (todo el IIFE de Financiamiento 12825-14270 cargado en
+  un navegador con backend simulado, no reconstrucción): 34 pruebas — lista con KPIs y tabla, buscador filtra,
+  form abre con las 5 secciones, fiador toggle, guardar hace el POST correcto a `prestamo_clientes` con
+  `created_by_name`, duplicado por teléfono NO crea (dismiss), picker abre/filtra/elige y precarga el préstamo,
+  `nxPrestamoGuardar` incluye `cliente_id` en el POST, "nuevo préstamo desde cliente" precarga bien — las 34
+  pasan, 0 errores de JS, sin desbordes en 390px ni 1280px. `node --check parches.js` limpio; los 3 `<script>`
+  de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Financiamiento (Préstamos, Multiempresa) — BARRA LATERAL (mockup de ChatGPT, 23-jul-2026, v49.12)
 El dueño pidió construir la barra lateral del mockup ("vamos a hacer la barra lateral"). Se armó de
 verdad, pero con ítems que cada uno hace algo REAL (filtros/acciones que ya existían), NO sub-módulos
