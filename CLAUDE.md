@@ -2060,6 +2060,27 @@ préstamos. **Todo sobre datos REALES, cero tabla nueva** — el módulo ya ten�
   `node --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido;
   `get_advisors` sin hallazgos nuevos por la columna de mora.
 
+### Financiamiento — bug real: la barra lateral se veía descolorida/gris en el celular (24-jul-2026, v49.21)
+El dueño mandó una captura de iPhone mostrando el menú lateral morado de Financiamiento (`.nxFP-side`,
+drawer móvil `@media(max-width:900px)`) renderizado **aguado/gris claro translúcido** (medido en la
+propia captura con Pillow: fondo del panel ~`rgb(200,203,209)`, no el morado `#4f46e5→#6d28d9`), con el
+texto casi invisible. **Diagnóstico:** el CSS base de `.nxFP-side` es un gradiente morado sólido sin
+`!important` ni variables; en un harness aislado (Playwright, CSS real de `nxFPEnsureCSS` + markup real)
+renderiza morado correcto, así que NO es un bug del CSS base — es que en el dispositivo real algo (un
+tema activo, o alguna regla global) lo repinta a un panel frosted-white translúcido. **Mismo síntoma y
+misma solución que el sidebar del POS (`.nxTSide`), ya documentado: un "BLINDAJE".** `.nxFP-side` no
+tenía ninguno. Se agregó en `nxFPEnsureCSS()` un bloque de blindaje de **alta especificidad**
+(`html body .nxFPShell .nxFP-side ...`, especificidad 0,2,3 — gana a cualquier `body.tema-* .nxFP-side`
+que es 0,2,1) con `!important` que fuerza: fondo gradiente morado, `backdrop-filter:none`, `opacity:1`,
+texto blanco, y el look de los ítems de nav / botón "Nuevo préstamo" / "Volver" / logo / divisor.
+**Verificado** cargando el CSS real en un navegador CON una regla hostil que simula el aguado
+(`body.tema-glass .nxFP-side{background:rgba(255,255,255,.5)!important;backdrop-filter:blur(20px)!important;
+color:#1e293b!important}`): el blindaje gana — `getComputedStyle` confirma el gradiente morado, backdrop
+`none`, texto blanco, pastilla activa blanca; captura visual del drawer abierto muestra el morado firme.
+`node --check parches.js` limpio; `version.json` válido. Cambio 100% CSS, cero lógica tocada. **Nota
+para el futuro:** cualquier cambio de color a `.nxFP-side` tiene que tocar TAMBIÉN este blindaje (igual
+que el sidebar del POS tiene su base + su blindaje), si no el blindaje pisa el color nuevo.
+
 ### Financiamiento — bug real: la tabla de préstamos se desbordaba en el celular (24-jul-2026, v49.20)
 El dueño mandó una captura de iPhone mostrando la lista de préstamos de Financiamiento (`.nxFP-tbl`,
 `prTablaHTML`/`renderLista`, v49.11) con las columnas saliéndose por la derecha en vez de colapsar a
