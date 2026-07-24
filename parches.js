@@ -17474,6 +17474,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .nxRepEstT span{font-weight:700;color:var(--pf-txt)}
 .nxPf .nxRepEstT b{font-size:15px}
 .nxPf .bdg2{padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:800;white-space:nowrap;flex:0 0 auto}
+.nxPf .entTabs{display:flex;gap:4px;padding:10px 14px 0;background:var(--pf-panel);border-bottom:1px solid var(--pf-line)}
+.nxPf .entTab{flex:1;border:0;background:transparent;color:var(--pf-txt2);font-size:12px;font-weight:700;padding:9px 8px;cursor:pointer;border-bottom:2.5px solid transparent;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.nxPf .entTab.on{color:var(--pf-blue);border-bottom-color:var(--pf-blue)}
+.nxPf .entResumen{background:var(--pf-bg);border:1px solid var(--pf-line);border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;gap:6px}
+.nxPf .entResHd{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.nxPf .entResAv{width:34px;height:34px;border-radius:10px;background:var(--pf-blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none}
+.nxPf .entResNom{font-size:13px;font-weight:800;color:var(--pf-txt)}.nxPf .entResSub{font-size:10.5px;color:var(--pf-txt3)}
+.nxPf .entResR{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--pf-txt2)}.nxPf .entResR b{color:var(--pf-txt);font-weight:700;text-align:right}
 .nxPf .nxRepChip{border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2)}
 .nxPf .nxRepChip.on{background:var(--rc,var(--pf-blue));border-color:var(--rc,var(--pf-blue));color:#fff}
 .nxPf .afinrow{display:flex;gap:8px;flex-wrap:wrap}
@@ -19014,7 +19022,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <button class="nxBack" type="button" onclick="document.getElementById('nxEntForm').remove()" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
           <h3><i class="ti ti-address-book"></i> ${c ? 'Editar entidad' : 'Nueva entidad'}</h3>
         </div>
+        <div class="entTabs">
+          <button type="button" class="entTab on" data-t="info" onclick="window.nxEntTab('info')"><i class="ti ti-user"></i> Información</button>
+          <button type="button" class="entTab" data-t="comercial" onclick="window.nxEntTab('comercial')"><i class="ti ti-businessplan"></i> Comercial</button>
+        </div>
         <div style="overflow-y:auto;flex:1;padding:14px;display:flex;flex-direction:column;gap:12px">
+          <div class="entResumen" id="entResumen"></div>
+          <div class="entPanel" data-t="info" style="display:flex;flex-direction:column;gap:12px">
           <div class="card">
             <h4><span class="bdg blue"><i class="ti ti-tags"></i></span> ¿Qué es esta entidad?</h4>
             <div class="afinrow">${rolChk}</div>
@@ -19025,7 +19039,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
               <div class="fld"><label>Tipo</label><div class="inw"><select id="entTipoP" onchange="window.nxEntTipoTog()"><option value="fisica"${e.tipo_persona !== 'juridica' ? ' selected' : ''}>Persona física</option><option value="juridica"${e.tipo_persona === 'juridica' ? ' selected' : ''}>Persona jurídica (empresa)</option></select><i class="ti ti-chevron-down chev"></i></div></div>
               <div class="fld"><label>Código</label><div class="inw"><input id="entCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Automático"></div></div>
             </div>
-            <div class="fld" style="margin-bottom:10px"><label id="entNomLbl">${e.tipo_persona === 'juridica' ? 'Razón social *' : 'Nombre *'}</label><div class="inw"><input id="entNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre o razón social"></div></div>
+            <div class="fld" style="margin-bottom:10px"><label id="entNomLbl">${e.tipo_persona === 'juridica' ? 'Razón social *' : 'Nombre *'}</label><div class="inw"><input id="entNom" class="no-upper" oninput="window.nxEntResumen()" value="${esc(e.nombre || '')}" placeholder="Nombre o razón social"></div></div>
             <div class="g2" style="margin-bottom:10px">
               <div class="fld"><label id="entIdLbl">${e.tipo_persona === 'juridica' ? 'RNC' : 'Cédula / RNC'}</label><div class="inw"><input id="entCed" class="no-upper" value="${esc(e.cedula || '')}" placeholder="000-0000000-0"></div></div>
               <div class="fld"><label>Teléfono</label><div class="inw"><input id="entTel" class="no-upper" inputmode="tel" value="${esc(e.telefono || '')}" placeholder="809-000-0000"></div></div>
@@ -19039,17 +19053,21 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
               <div class="fld"><label>Representante</label><div class="inw"><input id="entRep" class="no-upper" value="${esc(e.representante || '')}" placeholder="Si es jurídico"></div></div>
             </div>
           </div>
+          </div>
+          <div class="entPanel" data-t="comercial" style="display:none;flex-direction:column;gap:12px">
+          <div class="card" id="entComercialNA" style="display:none"><div style="font-size:12px;color:var(--pf-txt3);text-align:center;padding:8px">La configuración comercial (nivel de precio y crédito) aplica solo a clientes. Marca <b>“Cliente”</b> en la pestaña Información.</div></div>
           <div class="card" id="entClienteBox">
             <h4><span class="bdg purple"><i class="ti ti-user-dollar"></i></span> Cliente</h4>
             <div class="g2">
-              <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${String(e.nivel_id) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
-              <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">$</span><input id="entLim" data-nx-money inputmode="numeric" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
+              <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel" onchange="window.nxEntResumen()">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${String(e.nivel_id) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
+              <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">$</span><input id="entLim" data-nx-money inputmode="numeric" oninput="window.nxEntResumen()" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
             </div>
           </div>
           <div class="card" id="entWaBox">
             <h4><span class="bdg orange"><i class="ti ti-brand-whatsapp"></i></span> WhatsApp</h4>
             <label style="display:flex;align-items:center;gap:9px;font-weight:700;font-size:12px;cursor:pointer"><input type="checkbox" id="entAceptaWa"${e.acepta_whatsapp ? ' checked' : ''} style="width:17px;height:17px;accent-color:var(--pf-blue)"> Acepta recibir avisos por WhatsApp</label>
             <div style="font-size:10.5px;color:var(--pf-txt3);margin-top:6px">El cliente autorizó recordatorios de pago/cita por WhatsApp a este número. Sin esto marcado, el sistema no le manda mensajes automáticos.</div>
+          </div>
           </div>
         </div>
         <div class="actions" style="margin-top:0">
@@ -19066,11 +19084,33 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const esCli = document.getElementById('ent_es_cliente') && document.getElementById('ent_es_cliente').checked;
     const box = document.getElementById('entClienteBox'); if (box) box.style.display = esCli ? '' : 'none';
     const wabox = document.getElementById('entWaBox'); if (wabox) wabox.style.display = esCli ? '' : 'none';
+    const na = document.getElementById('entComercialNA'); if (na) na.style.display = esCli ? 'none' : '';
+    window.nxEntResumen();
+  };
+  window.nxEntTab = function (t) {
+    document.querySelectorAll('#nxEntForm .entTab').forEach(b => b.classList.toggle('on', b.getAttribute('data-t') === t));
+    document.querySelectorAll('#nxEntForm .entPanel').forEach(p => { p.style.display = p.getAttribute('data-t') === t ? 'flex' : 'none'; });
+  };
+  window.nxEntResumen = function () {
+    const box = document.getElementById('entResumen'); if (!box) return;
+    const nom = (val('entNom') || '').trim();
+    const tipo = val('entTipoP') === 'juridica' ? 'Empresa' : 'Persona física';
+    const cod = (val('entCod') || '').trim();
+    const afines = ENT_ROLES.filter(r => (document.getElementById('ent_' + r[0]) || {}).checked).map(r => r[1]);
+    const esCli = afines.indexOf('Cliente') >= 0;
+    const nivSel = document.getElementById('entNivel'); const nivTxt = (nivSel && nivSel.options[nivSel.selectedIndex]) ? nivSel.options[nivSel.selectedIndex].text : '';
+    const lim = parseMoney(val('entLim'));
+    const chip = (l, v) => `<div class="entResR"><span>${l}</span><b>${v}</b></div>`;
+    box.innerHTML = `<div class="entResHd"><div class="entResAv">${(nom || '?').trim().charAt(0).toUpperCase()}</div><div><div class="entResNom">${esc(nom || 'Nueva entidad')}</div><div class="entResSub">${tipo}${cod ? ' · ' + esc(cod) : ' · código automático'}</div></div></div>
+      ${afines.length ? chip('Afín', afines.map(esc).join(', ')) : chip('Afín', '<span style="color:var(--pf-red)">Elige uno</span>')}
+      ${esCli ? chip('Nivel de precio', esc(nivTxt || '—')) : ''}
+      ${esCli ? chip('Crédito', lim > 0 ? fmt(lim) : 'Sin límite') : ''}`;
   };
   window.nxEntTipoTog = function () {
     const jur = (val('entTipoP') === 'juridica');
     const nl = document.getElementById('entNomLbl'); if (nl) nl.textContent = jur ? 'Razón social *' : 'Nombre *';
     const il = document.getElementById('entIdLbl'); if (il) il.textContent = jur ? 'RNC' : 'Cédula / RNC';
+    window.nxEntResumen();
   };
   window.nxEntGuardar = async function (id) {
     const roles = { es_cliente: !!(document.getElementById('ent_es_cliente') || {}).checked, es_proveedor: !!(document.getElementById('ent_es_proveedor') || {}).checked, es_empleado: !!(document.getElementById('ent_es_empleado') || {}).checked, es_banco: !!(document.getElementById('ent_es_banco') || {}).checked };
@@ -19091,6 +19131,19 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     }, roles);
     if (aceptaWaAhora && !aceptaWaAntes) body.acepta_whatsapp_fecha = new Date().toISOString();
     if (!body.nombre) { toast('err', 'Falta el nombre / razón social'); return; }
+    // Detección de duplicados (solo al CREAR): normaliza teléfono y cédula, busca coincidencia.
+    if (!id) {
+      const telN = (body.telefono || '').replace(/\D/g, ''), cedN = (body.cedula || '').replace(/\D/g, '');
+      const dup = (telN || cedN) ? _clientes.find(x => {
+        const t = (x.telefono || '').replace(/\D/g, ''), ced = (x.cedula || '').replace(/\D/g, '');
+        return (telN && t && t === telN) || (cedN && ced && ced === cedN);
+      }) : null;
+      if (dup) {
+        const porQue = (cedN && (dup.cedula || '').replace(/\D/g, '') === cedN) ? 'la misma cédula/RNC' : 'el mismo teléfono';
+        const ok = confirm('Ya existe "' + (dup.nombre || '') + '" (' + (dup.codigo || 's/código') + ') con ' + porQue + '.\n\nAceptar = crear otra de todos modos.\nCancelar = abrir la que ya existe.');
+        if (!ok) { cerrarModal('nxEntForm'); abrirEntidad(dup, null); return; }
+      }
+    }
     if (!body.codigo) body.codigo = entCodigoAuto(body);
     try {
       let entId = id;
