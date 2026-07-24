@@ -14482,7 +14482,7 @@
     }
     const pagosHTML = pagos.length === 0
       ? '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos aún</div>'
-      : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#6d28d9;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#475569">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#475569;font-size:10px">${esc(x.nota)}</div>` : ''}</div><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`; }).join('');
+      : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#6d28d9;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#475569">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#475569;font-size:10px">${esc(x.nota)}</div>` : ''}</div><div style="display:flex;gap:4px;flex:none"><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoComprobante('${x.id}','${id}')" title="Comprobante de pago"><i class="ti ti-receipt" style="color:#6d28d9"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>`; }).join('');
     const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -14566,6 +14566,126 @@
       window.nxPrestamoVer(prestamoId);
       const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
     } catch (e) { toast('err', 'Error al eliminar el pago'); }
+  };
+
+  // ── COMPROBANTE DE PAGO (recibo imprimible / PDF / WhatsApp / correo) ──
+  // Genera el recibo de UN pago del préstamo. 100% datos reales de prestamo_pagos/
+  // prestamos/prestamo_clientes. Omite a propósito lo que el módulo NO guarda
+  // (sucursal, caja, desglose capital/interés/mora por pago, voucher, QR de
+  // verificación, contador de reimpresiones) — ver notas en CLAUDE.md.
+  window.nxPrestamoComprobante = function (pagoId, prestamoId) {
+    const p = _prestamos.find(x => String(x.id) === String(prestamoId)); if (!p) return;
+    const x = (_pagosByPrestamo[prestamoId] || []).find(pg => String(pg.id) === String(pagoId)); if (!x) { toast('err', 'No se encontró el pago'); return; }
+    const cli = (p.cliente_id && _prClientes.find(c => String(c.id) === String(p.cliente_id))) || null;
+    const nombre = p.nombre || (cli && cli.nombre) || 'Cliente';
+    const cedula = p.cedula || (cli && cli.cedula) || '';
+    const tel = p.telefono || (cli && cli.telefono) || '';
+    const direccion = (cli && cli.direccion) || '';
+    const email = (cli && cli.email) || '';
+    const monto = Number(x.monto || 0);
+    const balAct = saldoDe(p);              // saldo al día de hoy
+    const balAnt = balAct + monto;          // saldo antes de este pago (= actual + este pago)
+    const rec = 'REC-' + (String(x.id || '').replace(/-/g, '').slice(0, 6).toUpperCase() || '------');
+    const fechaHora = (function () { try { const d = new Date(x.created_at || (x.fecha + 'T12:00:00')); if (isNaN(d)) return (x.fecha || ''); const dd = String(d.getDate()).padStart(2, '0'), mm = String(d.getMonth() + 1).padStart(2, '0'), yy = d.getFullYear(); let h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0'), ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return dd + '/' + mm + '/' + yy + ' ' + h + ':' + m + ' ' + ap; } catch (e) { return (x.fecha || ''); } })();
+    const letras = (function () { const w = numLetras(Math.floor(monto)); const s = w.charAt(0) + w.slice(1).toLowerCase(); const c = Math.round((monto - Math.floor(monto)) * 100); return s + ' pesos dominicanos' + (c ? ' con ' + c + '/100' : ''); })();
+    const aplicado = p.modo === 'credito' ? (x.tipo === 'capital' ? 'Abono a capital' : x.tipo === 'interes' ? 'Pago de interés' : 'Abono') : 'Abono al préstamo';
+    const info = prEstadoInfo(p);
+    const prox = prProximoPago(p);
+    const av = prIniciales(nombre);
+    const metodo = String(x.metodo || 'Efectivo');
+    const METS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Pago móvil', 'Cheque'];
+    const metActivo = METS.find(m => m.toLowerCase() === metodo.toLowerCase());
+    const metTiles = METS.map(m => { const on = m === metActivo; return `<div class="met${on ? ' on' : ''}">${m}${on ? ' ✓' : ''}</div>`; }).join('') + (!metActivo ? `<div class="met on">${esc(metodo)} ✓</div>` : '');
+    const empNom = empresaNom();
+    const estCol = info.key === 'pagado' ? '#16a34a' : info.key === 'vencido' ? '#dc2626' : '#4f46e5';
+    const waMsg = `*COMPROBANTE DE PAGO* — ${empNom}\n${rec}\n\nCliente: ${nombre}\nMonto recibido: ${fmt(monto)}\n(${letras})\nMétodo: ${metodo}\nFecha: ${fechaHora}\nContrato: ${prRef(p)}\nBalance actual: ${fmt(balAct)}\n\nGracias por su pago.`;
+    const waNum = waNumero(tel);
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comprobante ${rec} — ${esc(nombre)}</title>
+      <style>
+        *{box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;margin:0;background:#f1f5f9}
+        .wrap{max-width:720px;margin:0 auto;padding:16px}
+        .doc{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(15,23,42,.08)}
+        .hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid #eef0f5;flex-wrap:wrap}
+        .brand{display:flex;align-items:center;gap:10px}.blogo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+        .bnom{font-weight:800;font-size:16px;color:#0f172a;line-height:1}.bsub{font-size:10px;font-weight:700;color:#6d28d9;letter-spacing:.5px}
+        .htitle{text-align:center;flex:1;min-width:180px}.htitle h1{font-size:19px;margin:0;color:#0f172a;letter-spacing:.5px}.htitle span{font-size:11px;color:#94a3b8}
+        .recbox{text-align:right}.rec{font-size:17px;font-weight:800;color:#4f46e5;font-variant-numeric:tabular-nums}.badge{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px;margin-top:3px}.recsub{font-size:9px;color:#94a3b8;margin-top:3px}
+        .meta{display:flex;gap:14px;flex-wrap:wrap;padding:12px 22px;background:#faf9ff;border-bottom:1px solid #eef0f5;font-size:11.5px}
+        .meta div b{display:block;font-size:9px;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+        .body{padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .card{border:1px solid #eef0f5;border-radius:14px;padding:14px 16px;min-width:0}
+        .ct{font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px}
+        .cli{display:flex;align-items:center;gap:12px}.av{width:52px;height:52px;border-radius:14px;color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex:none}
+        .cnom{font-weight:800;font-size:15px;color:#0f172a}.cced{color:#4f46e5;font-weight:700;font-size:12px}.crow{font-size:12px;color:#475569;margin-top:2px}
+        .kv{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0}.kv b{font-variant-numeric:tabular-nums}
+        .montobox{border:1px solid #d1fae5;background:#f0fdf4;border-radius:14px;padding:14px;text-align:center;margin-bottom:10px}
+        .montolbl{font-size:10px;font-weight:800;color:#059669;letter-spacing:.3px}.montoval{font-size:30px;font-weight:800;color:#059669;line-height:1.1;font-variant-numeric:tabular-nums}.montoletras{font-size:11px;color:#475569;margin-top:2px}
+        .mets{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.met{border:1px solid #e2e8f0;border-radius:9px;padding:7px 11px;font-size:11px;font-weight:700;color:#94a3b8;background:#fff}.met.on{border-color:#4f46e5;background:#eef2ff;color:#4f46e5}
+        .full{grid-column:1/-1}
+        .obs{background:#f8fafc;border:1px solid #eef0f5;border-radius:12px;padding:11px 13px;font-size:12px;color:#475569}
+        .firmas{display:flex;gap:24px;flex-wrap:wrap;margin-top:8px}.firma{flex:1;min-width:150px;text-align:center;padding-top:26px;border-top:1px solid #cbd5e1;font-size:11px;color:#475569}.firma b{display:block;color:#0f172a;font-size:12px}
+        .regnote{font-size:10.5px;color:#94a3b8;padding:10px 22px;border-top:1px solid #eef0f5;background:#faf9ff}
+        .acts{position:sticky;top:0;z-index:9;display:flex;gap:8px;flex-wrap:wrap;background:#4f46e5;padding:11px 16px}
+        .acts button{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+        .b-close{background:rgba(255,255,255,.16);color:#fff}.b-print{background:#fff;color:#4f46e5}.b-wa{background:#22c55e;color:#fff}.b-mail{background:#0ea5e9;color:#fff}
+        @media print{.acts{display:none}body{background:#fff}.doc{box-shadow:none}.wrap{padding:0;max-width:100%}}
+        @media(max-width:640px){.body{grid-template-columns:1fr}}
+      </style></head><body>
+      <div class="acts">
+        <button class="b-close" onclick="window.close()">✕ Cerrar</button>
+        <button class="b-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+        ${waNum ? `<button class="b-wa" id="cpWA">WhatsApp</button>` : ''}
+        <button class="b-mail" id="cpMail">Correo</button>
+      </div>
+      <div class="wrap"><div class="doc">
+        <div class="hd">
+          <div class="brand"><div class="blogo">N</div><div><div class="bnom">${esc(empNom)}</div><div class="bsub">FINANCIAMIENTO</div></div></div>
+          <div class="htitle"><h1>COMPROBANTE DE PAGO</h1><span>Recibo de pago de préstamo</span></div>
+          <div class="recbox"><div class="rec">${rec}</div><div class="badge">✓ REGISTRADO</div><div class="recsub">Comprobante de pago</div></div>
+        </div>
+        <div class="meta">
+          <div><b>Fecha y hora</b>${esc(fechaHora)}</div>
+          <div><b>Recibido por</b>${esc(x.created_by_name || '—')}</div>
+        </div>
+        <div class="body">
+          <div class="card">
+            <div class="ct">Cliente</div>
+            <div class="cli"><div class="av" style="background:${av.color}">${av.ini}</div><div><div class="cnom">${esc(nombre)}</div>${cedula ? `<div class="cced">Cédula: ${esc(cedula)}</div>` : ''}${tel ? `<div class="crow">📞 ${esc(tel)}</div>` : ''}${direccion ? `<div class="crow">📍 ${esc(direccion)}</div>` : ''}</div></div>
+          </div>
+          <div class="card">
+            <div class="ct">Información del préstamo</div>
+            <div class="kv"><span>Contrato #</span><b>${esc(prRef(p))}</b></div>
+            <div class="kv"><span>Fecha del préstamo</span><b>${esc(p.fecha_prestamo || '—')}</b></div>
+            <div class="kv"><span>Monto aprobado</span><b>${fmt(p.capital)}</b></div>
+            <div class="kv"><span>Balance anterior</span><b>${fmt(balAnt)}</b></div>
+            <div class="kv"><span>Balance actual</span><b style="color:#059669">${fmt(balAct)}</b></div>
+            ${prox ? `<div class="kv"><span>Próxima cuota</span><b>${esc(prox)}</b></div>` : ''}
+            <div class="kv"><span>Estado</span><b style="color:${estCol}">${info.label}</b></div>
+          </div>
+          <div class="card full">
+            <div class="ct">Detalle del pago</div>
+            <div class="montobox"><div class="montolbl">MONTO RECIBIDO</div><div class="montoval">${fmt(monto)}</div><div class="montoletras">${letras}</div></div>
+            <div class="kv"><span>Aplicado a</span><b>${aplicado}</b></div>
+            <div class="ct" style="margin-top:10px">Método de pago</div>
+            <div class="mets">${metTiles}</div>
+          </div>
+          ${x.nota ? `<div class="card full"><div class="ct">Observaciones</div><div class="obs">${esc(x.nota)}</div></div>` : ''}
+          <div class="card full">
+            <div class="firmas"><div class="firma"><b>${esc(x.created_by_name || '')}</b>Recibido por</div><div class="firma"><b>${esc(nombre)}</b>Firma del cliente</div></div>
+          </div>
+        </div>
+        <div class="regnote">Pago registrado el ${esc(fechaHora)} en el sistema. El No. ${rec} identifica este recibo dentro del sistema (no es un comprobante fiscal).</div>
+      </div></div>
+      <script>
+        (function(){
+          var MSG=${JSON.stringify(waMsg)}, TEL=${JSON.stringify(waNum)}, MAIL=${JSON.stringify(email)}, SUBJ=${JSON.stringify('Comprobante de pago ' + rec)};
+          var wa=document.getElementById('cpWA'); if(wa) wa.addEventListener('click',function(){ window.open('https://wa.me/'+TEL+'?text='+encodeURIComponent(MSG),'_blank'); });
+          var ml=document.getElementById('cpMail'); if(ml) ml.addEventListener('click',function(){ window.location.href='mailto:'+MAIL+'?subject='+encodeURIComponent(SUBJ)+'&body='+encodeURIComponent(MSG); });
+        })();
+      </script>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('err', 'Permite las ventanas emergentes para ver el comprobante'); return; } w.document.write(html); w.document.close(); }
+    catch (e) { toast('err', 'No se pudo abrir el comprobante', String(e && e.message || e)); }
   };
 
   window.nxPrestamoBorrar = async function (id) {
