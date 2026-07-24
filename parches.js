@@ -23226,6 +23226,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-sideDiv{height:1px;background:rgba(255,255,255,.16);margin:8px 6px}' +
       '.nxFP-sideBack{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;margin-top:8px;font-family:inherit}' +
       '.nxFP-sideBack:hover{background:rgba(255,255,255,.1)}' +
+      /* BLINDAJE de la barra lateral: fuerza el morado y el texto blanco por encima de cualquier tema (glass/premium/oscuro) o regla global que la aguaba en el celular. Mismo patrón que el sidebar del POS (.nxTSide). Especificidad alta (html body .nxFPShell .nxFP-side) para ganar a cualquier body.tema-* .nxFP-side. */
+      'html body .nxFPShell .nxFP-side{background:linear-gradient(180deg,#4f46e5,#6d28d9)!important;color:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border:0!important;opacity:1!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideBrand b{color:#fff!important}html body .nxFPShell .nxFP-side .nxFP-sideBrand span{color:#fff!important;opacity:.82}' +
+      'html body .nxFPShell .nxFP-side .nxFP-navItem{color:rgba(255,255,255,.86)!important;background:transparent!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-navItem.on{background:rgba(255,255,255,.2)!important;color:#fff!important}html body .nxFPShell .nxFP-side .nxFP-navItem:hover{background:rgba(255,255,255,.1)!important;color:#fff!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideNew{background:#fff!important;color:#4f46e5!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideBack{color:#fff!important;background:transparent!important;border:1px solid rgba(255,255,255,.28)!important}' +
+      'html body .nxFPShell .nxFP-side .nxFP-sideLogo{background:rgba(255,255,255,.16)!important;color:#fff!important}html body .nxFPShell .nxFP-side .nxFP-sideDiv{background:rgba(255,255,255,.16)!important}' +
       '.prCliPickRow{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid #e9e6f7;background:#fff;cursor:pointer;font-family:inherit;width:100%}' +
       '.prCliPickRow:hover{background:#f5f3ff;border-color:#c7b8f5}.prCliPickRow b{font-size:13px;color:#1e1b4b}.prCliPickRow span{font-size:11px;color:#7c748f}' +
       // ── Evaluación Financiera (mockup rico) ──
