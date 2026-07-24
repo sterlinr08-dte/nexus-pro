@@ -1963,6 +1963,38 @@ CLIENTE del POS en cobro/factura sigue siendo `<select>`") desde varias versione
   campo — las 8 pasan, 0 errores de JavaScript, sin desbordes en 390px. `node --check parches.js` limpio;
   los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### Financiamiento (Préstamos, Multiempresa) — BARRA LATERAL (mockup de ChatGPT, 23-jul-2026, v49.12)
+El dueño pidió construir la barra lateral del mockup ("vamos a hacer la barra lateral"). Se armó de
+verdad, pero con ítems que cada uno hace algo REAL (filtros/acciones que ya existían), NO sub-módulos
+falsos con su propia base. `renderLista` se reestructuró a **dos columnas** (`.nxFPShell`): `aside
+.nxFP-side` (barra lateral morada) + `.nxFP-main` (contenido).
+- **Barra lateral (real):** marca "NEXUS PRO Financiamiento", botón "Nuevo préstamo", nav que setea el
+  filtro vía `nxPrestamoFiltroTipo` (Dashboard=todos / Activos / **Cobranza**=vencidos / Cuotas /
+  Pagados / Líneas de crédito=credito), la opción activa se resalta (`_prFiltro`), + Reportes
+  (`nxPrestamoReporte`) y Configuración (`nxPrestamoConfig`) abajo, + "Volver a Multiempresa". Los
+  **filtros que estaban en las pestañas horizontales (`.nxFP-tabs`) se movieron a esta barra** — se
+  quitó la fila de pestañas y la de "ACCIONES RÁPIDAS" (Nuevo/Excel quedaron como botones en la topbar
+  del contenido; Cobranza/Reporte/Config quedaron en la barra).
+- **Del mockup NO se construyó (fake/duplicado, se le explicó al dueño y va en el changelog):**
+  "Clientes" (no existe pantalla de clientes en este módulo) y el selector "Taller Principal" (NO es
+  multi-sucursal, sin `organizacion_id`) — se omitieron; "Cobros" y "Vencidos" se **unieron en
+  "Cobranza"** (son el mismo filtro, no dos datos distintos). La campanita/usuario tampoco (decorativos).
+- **Móvil:** la barra es un **cajón deslizable** (`@media(max-width:900px)`: `position:fixed` +
+  `transform:translateX(-100%)`, `.side-open` la muestra) con overlay que la cierra al tocar fuera;
+  botón ☰ (`.nxFP-burger`) en la topbar. `window.nxFPToggleSide()` (junto a `nxPrestamoFiltrar`)
+  alterna la clase `.side-open` en `#nxFPShell`. Como tocar un filtro re-renderiza toda la vista
+  (`nxPrestamoFiltroTipo`→`renderLista`), el cajón se cierra solo al navegar (el DOM nuevo no trae
+  `.side-open`).
+- **Verificado con Playwright, código real extraído** (`renderLista`/`nxFPToggleSide`/`prTablaHTML`/toda
+  la cadena real, 15 préstamos de prueba): escritorio → barra visible, 8 ítems de nav, "Dashboard"
+  activo, burger oculto, 12 filas, sin desbordes; tocar "Cobranza" cambia el activo. Móvil → burger
+  visible, barra fuera de pantalla por defecto, abrir con `nxFPToggleSide` la muestra + overlay,
+  cerrar la esconde de vuelta, sin desbordes, 0 errores en ambos. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido. (Quedaron sin usar el
+  helper `tab`/`quickBtns` de la fila de pestañas y las clases CSS `.nxFP-tabs`/`.nxFP-tab`/
+  `.nxFP-secTitle` — se dejaron sin borrar en esta ronda; `.nxFP-quick`/`.nxFP-qbtn`/`.nxFP-qico` SÍ se
+  siguen usando en el estado vacío de la tabla.)
+
 ### Financiamiento (Préstamos, Multiempresa) — lista en TABLA + KPIs (mockup de ChatGPT, 23-jul-2026, v49.11)
 ChatGPT dejó un mockup (imagen, escritorio + móvil) de un rediseño completo del módulo Financiamiento
 (`nxAbrirPrestamos`) — un dashboard ERP con barra lateral. Auditado contra el código real y el dueño

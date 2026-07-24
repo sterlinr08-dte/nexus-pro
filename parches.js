@@ -13153,39 +13153,49 @@
       const d = Math.floor((new Date(f + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 86400000);
       return d >= 0 && d <= 7;
     }).length;
-    const tab = (key, lbl, ico) => `<button type="button" class="nxFP-tab${_prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
     const kpi = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
-    const quickBtns = [
-      ['nxPrestamoNuevo', 'ti-plus', 'primary', 'Nuevo préstamo'],
-      ['nxPrestamoCobranza', 'ti-user-dollar', '', 'Cobranza'],
-      ['nxPrestamoExportar', 'ti-file-spreadsheet', 'green', 'Excel'],
-      ['nxPrestamoReporte', 'ti-report-money', 'blue', 'Reporte'],
-      ['nxPrestamoConfig', 'ti-settings', 'gray', 'Configuración']
-    ];
-    view.innerHTML = `<div class="nxFP">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <div><div style="font-size:19px;font-weight:800;color:#0f172a">Financiamiento</div><div style="font-size:11px;color:#94a3b8">Administra y controla todos los préstamos</div></div>
-        <button class="btn bsm" type="button" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver</button>
-      </div>
-      <div class="nxFP-kpis">
-        ${kpi('ti-cash-banknote', '#eef2ff', '#4f46e5', 'TOTAL POR COBRAR', fmt(totalSaldo), 'Cobrado este mes: ' + fmt(cobradoMes))}
-        ${kpi('ti-wallet', '#ecfdf5', '#059669', 'PRESTADO', fmt(totalCap), nActivos + (nActivos === 1 ? ' préstamo activo' : ' préstamos activos'))}
-        ${kpi('ti-hand-click', '#ecfeff', '#0891b2', 'COBRADO', fmt(totalPag), 'Este mes: ' + fmt(cobradoMes))}
-        ${kpi('ti-clock-exclamation', '#fef2f2', '#dc2626', 'VENCIDO', fmt(totalVencido), nVencidos + (nVencidos === 1 ? ' préstamo vencido' : ' préstamos vencidos'))}
-        ${kpi('ti-users', '#fffbeb', '#d97706', 'CLIENTES ACTIVOS', clientesActivos, 'Con préstamos activos')}
-      </div>
-      <div class="nxFP-secTitle">ACCIONES RÁPIDAS</div>
-      <div class="nxFP-quick">${quickBtns.map(b => `<button type="button" class="nxFP-qbtn" onclick="window.${b[0]}()"><div class="nxFP-qico ${b[2]}"><i class="ti ${b[1]}"></i></div><span>${b[3]}</span></button>`).join('')}</div>
-      <div class="nxFP-tabs">${tab('todos', 'Todos', 'ti-layout-grid')}${tab('activos', 'Activos', 'ti-circle-check')}${tab('vencidos', 'Vencidos', 'ti-alert-triangle')}${tab('pagados', 'Pagados', 'ti-checks')}${tab('cuotas', 'Cuotas', 'ti-calendar-dollar')}${tab('libre', 'Libres', 'ti-wallet')}${tab('credito', 'Crédito', 'ti-credit-card')}</div>
-      <div class="nxFP-searchRow">${prBuscador({ id: 'nxPrBuscar', placeholder: 'Buscar por nombre o cédula...', oninput: 'window.nxPrestamoFiltrar(this.value)' })}</div>
-      <div class="nxFP-listHead"><span>LISTA DE PRÉSTAMOS</span></div>
-      <div id="nxPrLista">${prTablaHTML()}</div>
-      <div class="nxFP-dash">
-        <div class="nxFP-dcard"><div class="nxFP-dico"><i class="ti ti-percentage"></i></div><div><div class="nxFP-dlbl">INTERÉS COBRADO</div><div class="nxFP-dval">${fmt(totalIntCob)}</div><div class="nxFP-dsub">Total histórico</div></div></div>
-        <div class="nxFP-dcard"><div class="nxFP-dico green"><i class="ti ti-circle-check"></i></div><div><div class="nxFP-dlbl">COBRADO DEL MES</div><div class="nxFP-dval">${fmt(cobradoMes)}</div><div class="nxFP-dsub">${tendencia !== null ? (tendencia >= 0 ? '+' : '') + tendencia + '% vs mes ant.' : 'Sin datos del mes anterior'}</div></div></div>
-        <div class="nxFP-dcard"><div class="nxFP-dico red"><i class="ti ti-alert-triangle"></i></div><div><div class="nxFP-dlbl">VENCIDOS</div><div class="nxFP-dval">${nVencidos}</div><div class="nxFP-dsub">Préstamos vencidos</div></div></div>
-        <div class="nxFP-dcard"><div class="nxFP-dico amber"><i class="ti ti-clock-hour-4"></i></div><div><div class="nxFP-dlbl">PRÓXIMOS A VENCER</div><div class="nxFP-dval">${proxVencer}</div><div class="nxFP-dsub">En los próximos 7 días</div></div></div>
-        <div class="nxFP-dcard"><div class="nxFP-dico blue"><i class="ti ti-list-check"></i></div><div><div class="nxFP-dlbl">TOTAL PRÉSTAMOS</div><div class="nxFP-dval">${_prestamos.length}</div><div class="nxFP-dsub">Histórico</div></div></div>
+    const nav = (key, lbl, ico) => `<button type="button" class="nxFP-navItem${_prFiltro === key ? ' on' : ''}" onclick="window.nxPrestamoFiltroTipo('${key}')"><i class="ti ${ico}"></i> ${lbl}</button>`;
+    view.innerHTML = `<div class="nxFP nxFPShell" id="nxFPShell">
+      <div class="nxFP-sideOverlay" onclick="window.nxFPToggleSide()"></div>
+      <aside class="nxFP-side">
+        <div class="nxFP-sideBrand"><div class="nxFP-sideLogo"><i class="ti ti-cash"></i></div><div><b>NEXUS PRO</b><span>Financiamiento</span></div></div>
+        <button type="button" class="nxFP-sideNew" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> Nuevo préstamo</button>
+        <nav class="nxFP-sideNav">
+          ${nav('todos', 'Dashboard', 'ti-layout-dashboard')}
+          ${nav('activos', 'Activos', 'ti-circle-check')}
+          ${nav('vencidos', 'Cobranza', 'ti-user-dollar')}
+          ${nav('cuotas', 'Cuotas', 'ti-calendar-dollar')}
+          ${nav('pagados', 'Pagados', 'ti-checks')}
+          ${nav('credito', 'Líneas de crédito', 'ti-credit-card')}
+          <div class="nxFP-sideDiv"></div>
+          <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoReporte()"><i class="ti ti-report-money"></i> Reportes</button>
+          <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
+        </nav>
+        <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
+      </aside>
+      <div class="nxFP-main">
+        <div class="nxFP-topbar">
+          <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
+          <div><div class="nxFP-topTitle">Financiamiento</div><div class="nxFP-topSub">Administra y controla todos los préstamos</div></div>
+          <div class="nxFP-topActions"><button type="button" onclick="window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> <span>Excel</span></button><button type="button" class="prim" onclick="window.nxPrestamoNuevo()"><i class="ti ti-plus"></i> <span>Nuevo</span></button></div>
+        </div>
+        <div class="nxFP-kpis">
+          ${kpi('ti-cash-banknote', '#eef2ff', '#4f46e5', 'TOTAL POR COBRAR', fmt(totalSaldo), 'Cobrado este mes: ' + fmt(cobradoMes))}
+          ${kpi('ti-wallet', '#ecfdf5', '#059669', 'PRESTADO', fmt(totalCap), nActivos + (nActivos === 1 ? ' préstamo activo' : ' préstamos activos'))}
+          ${kpi('ti-hand-click', '#ecfeff', '#0891b2', 'COBRADO', fmt(totalPag), 'Este mes: ' + fmt(cobradoMes))}
+          ${kpi('ti-clock-exclamation', '#fef2f2', '#dc2626', 'VENCIDO', fmt(totalVencido), nVencidos + (nVencidos === 1 ? ' préstamo vencido' : ' préstamos vencidos'))}
+          ${kpi('ti-users', '#fffbeb', '#d97706', 'CLIENTES ACTIVOS', clientesActivos, 'Con préstamos activos')}
+        </div>
+        <div class="nxFP-searchRow">${prBuscador({ id: 'nxPrBuscar', placeholder: 'Buscar por nombre o cédula...', oninput: 'window.nxPrestamoFiltrar(this.value)' })}</div>
+        <div class="nxFP-listHead"><span>LISTA DE PRÉSTAMOS</span></div>
+        <div id="nxPrLista">${prTablaHTML()}</div>
+        <div class="nxFP-dash">
+          <div class="nxFP-dcard"><div class="nxFP-dico"><i class="ti ti-percentage"></i></div><div><div class="nxFP-dlbl">INTERÉS COBRADO</div><div class="nxFP-dval">${fmt(totalIntCob)}</div><div class="nxFP-dsub">Total histórico</div></div></div>
+          <div class="nxFP-dcard"><div class="nxFP-dico green"><i class="ti ti-circle-check"></i></div><div><div class="nxFP-dlbl">COBRADO DEL MES</div><div class="nxFP-dval">${fmt(cobradoMes)}</div><div class="nxFP-dsub">${tendencia !== null ? (tendencia >= 0 ? '+' : '') + tendencia + '% vs mes ant.' : 'Sin datos del mes anterior'}</div></div></div>
+          <div class="nxFP-dcard"><div class="nxFP-dico red"><i class="ti ti-alert-triangle"></i></div><div><div class="nxFP-dlbl">VENCIDOS</div><div class="nxFP-dval">${nVencidos}</div><div class="nxFP-dsub">Préstamos vencidos</div></div></div>
+          <div class="nxFP-dcard"><div class="nxFP-dico amber"><i class="ti ti-clock-hour-4"></i></div><div><div class="nxFP-dlbl">PRÓXIMOS A VENCER</div><div class="nxFP-dval">${proxVencer}</div><div class="nxFP-dsub">En los próximos 7 días</div></div></div>
+          <div class="nxFP-dcard"><div class="nxFP-dico blue"><i class="ti ti-list-check"></i></div><div><div class="nxFP-dlbl">TOTAL PRÉSTAMOS</div><div class="nxFP-dval">${_prestamos.length}</div><div class="nxFP-dsub">Histórico</div></div></div>
+        </div>
       </div>
     </div>`;
   }
@@ -13193,6 +13203,7 @@
   window.nxPrestamoFiltrar = function (q) {
     _prQuery = String(q || ''); _prPage = 1; repintarPrLista();
   };
+  window.nxFPToggleSide = function () { const s = document.getElementById('nxFPShell'); if (s) s.classList.toggle('side-open'); };
 
   function ensureView() {
     let v = document.getElementById('v-prestamos');
@@ -22389,6 +22400,28 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '@media(max-width:900px){.nxFP-kpis{grid-template-columns:repeat(3,1fr)}}' +
       '@media(max-width:760px){.nxFP-tbl thead{display:none}.nxFP-tbl,.nxFP-tbl tbody,.nxFP-tbl tr,.nxFP-tbl td{display:block;width:100%}.nxFP-tbl tbody tr{border:1px solid #eef0f5;border-radius:14px;margin:0 0 10px;padding:5px 2px;background:#fff}.nxFP-tbl tbody td{border:0;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:right}.nxFP-tbl tbody td::before{content:attr(data-l);font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;text-align:left;flex:none}.nxFP-tbl td.nxFP-tdNom{text-align:left}.nxFP-tbl td.nxFP-tdNom::before{display:none}.nxFP-tblWrap{border:0;background:transparent;overflow:visible}.nxFP-tAcc{justify-content:flex-end}}' +
       '@media(max-width:560px){.nxFP-kpis{grid-template-columns:1fr 1fr}}' +
+      '.nxFPShell{display:flex;gap:16px;align-items:flex-start;position:relative}' +
+      '.nxFP-side{width:232px;flex:none;background:linear-gradient(180deg,#4f46e5,#6d28d9);border-radius:18px;padding:15px 12px;display:flex;flex-direction:column;gap:5px;color:#fff;position:sticky;top:12px;box-shadow:0 14px 34px rgba(76,29,149,.26)}' +
+      '.nxFP-sideBrand{display:flex;align-items:center;gap:10px;padding:4px 8px 12px}' +
+      '.nxFP-sideLogo{width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}' +
+      '.nxFP-sideBrand b{display:block;font-size:13px;font-weight:800;line-height:1.1}.nxFP-sideBrand span{font-size:10px;opacity:.82;font-weight:600}' +
+      '.nxFP-sideNew{display:flex;align-items:center;justify-content:center;gap:6px;background:#fff;color:#4f46e5;border:0;border-radius:11px;padding:11px;font-weight:800;font-size:12.5px;cursor:pointer;margin-bottom:8px;font-family:inherit}' +
+      '.nxFP-sideNav{display:flex;flex-direction:column;gap:3px;flex:1}' +
+      '.nxFP-navItem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:0;background:transparent;color:rgba(255,255,255,.82);font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;font-family:inherit;width:100%}' +
+      '.nxFP-navItem i{font-size:16px;width:18px;text-align:center;flex:none}' +
+      '.nxFP-navItem:hover{background:rgba(255,255,255,.1);color:#fff}.nxFP-navItem.on{background:rgba(255,255,255,.2);color:#fff}' +
+      '.nxFP-sideDiv{height:1px;background:rgba(255,255,255,.16);margin:8px 6px}' +
+      '.nxFP-sideBack{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;margin-top:8px;font-family:inherit}' +
+      '.nxFP-sideBack:hover{background:rgba(255,255,255,.1)}' +
+      '.nxFP-main{flex:1;min-width:0}' +
+      '.nxFP-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}' +
+      '.nxFP-burger{display:none;width:40px;height:40px;border-radius:11px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex:none}' +
+      '.nxFP-topTitle{font-size:19px;font-weight:800;color:#0f172a;line-height:1.1}.nxFP-topSub{font-size:11px;color:#94a3b8}' +
+      '.nxFP-topActions{margin-left:auto;display:flex;gap:8px}' +
+      '.nxFP-topActions button{border:1px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 13px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;white-space:nowrap}' +
+      '.nxFP-topActions button.prim{background:#4f46e5;border-color:#4f46e5;color:#fff}' +
+      '.nxFP-sideOverlay{display:none}' +
+      '@media(max-width:900px){.nxFP-side{position:fixed;top:0;left:0;bottom:0;width:250px;border-radius:0;z-index:2600;transform:translateX(-100%);transition:transform .22s ease;overflow-y:auto}.nxFPShell.side-open .nxFP-side{transform:translateX(0)}.nxFP-sideOverlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:2500}.nxFPShell.side-open .nxFP-sideOverlay{display:block}.nxFP-burger{display:inline-flex}.nxFP-topActions button span{display:none}.nxFP-topActions button{padding:9px 11px}}' +
       '.nxFP-dcard{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eef0f5;border-radius:16px;padding:13px 14px}' +
       '.nxFP-dico{width:34px;height:34px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}.nxFP-dico.green{background:#dcfce7;color:#16a34a}.nxFP-dico.red{background:#fee2e2;color:#dc2626}.nxFP-dico.blue{background:#e0e7ff;color:#4338ca}' +
       '.nxFP-dlbl{font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.3px}.nxFP-dval{font-size:14px;font-weight:800;color:#0f172a;line-height:1.3;font-variant-numeric:tabular-nums}.nxFP-dsub{font-size:10px;color:#94a3b8;font-weight:600}' +
