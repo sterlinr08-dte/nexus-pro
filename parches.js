@@ -14027,16 +14027,27 @@
   };
 
   // ══════════════════════════════════════════════════════════════════════
-  //  HISTORIAL CREDITICIO (spec ChatGPT "Historial Crediticio V1")
+  //  HISTORIAL CREDITICIO (spec + mockup ChatGPT "Historial Crediticio V1")
   //  Vista de solo lectura del comportamiento crediticio del cliente, sobre
-  //  DATOS REALES (prestamos + prestamo_pagos + prestamo_clientes). Sin tabla
-  //  nueva. Score de HISTORIAL (distinto al de Evaluación, que es sobre un
-  //  préstamo propuesto). Lo que este módulo NO tiene se OMITE (no se finge):
-  //  mora (el módulo no calcula mora), promesas de pago, pagos reversados,
-  //  documentos (sin Storage), gestiones de cobro, estados reestructurado/
-  //  proceso legal, foto del cliente.
+  //  DATOS REALES (prestamos + prestamo_pagos + prestamo_clientes). Layout de
+  //  2 columnas como el mockup: KPIs, comportamiento mensual, tabla de
+  //  préstamos + panel (Recomendación / Indicadores / Alertas).
+  //  Mora AHORA es real y configurable (prestamos_config.mora_pct/dias_gracia,
+  //  apagada por defecto = 0, igual que Cuotas del POS). Lo que el módulo NO
+  //  tiene se muestra con estado vacío honesto (Documentos: sin Storage;
+  //  Gestiones de cobro: sin tabla) o en 0 real (Promesas incumplidas).
   // ══════════════════════════════════════════════════════════════════════
+  const PR_MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  function prMesLabel(ym) { const p = String(ym || '').split('-'); return p.length === 2 ? (PR_MESES[(parseInt(p[1], 10) || 1) - 1] + ' ' + p[0]) : ym; }
   function prClienteLoans(cid) { return _prestamos.filter(p => String(p.cliente_id || '') === String(cid)); }
+  // Mora (recargo ÚNICO) del préstamo, EN VIVO — solo si está configurada y vencido más allá de la gracia.
+  function prMoraDe(p) {
+    const pct = Number((_prCfg || {}).mora_pct || 0); if (!(pct > 0)) return 0;
+    if (!esVencido(p)) return 0;
+    const gracia = Number((_prCfg || {}).mora_dias_gracia || 0);
+    if (prDiasVencido(p) <= gracia) return 0;
+    return Math.round(saldoDe(p) * pct / 100);
+  }
   function prHistScore(loans) {
     if (!loans.length) return { s: null, mil: 0, clas: 'Sin historial', riesgo: '—', estado: 'Sin evaluar', col: '#64748b' };
     const total = loans.length, pagados = loans.filter(p => estadoDe(p) === 'pagado').length;
@@ -14055,8 +14066,7 @@
     const col = s >= 65 ? '#059669' : s >= 45 ? '#d97706' : '#dc2626';
     return { s, mil: s * 10, clas, riesgo, estado, col };
   }
-  // Puntos por cuota (comportamiento de pago) — ESTIMADO: aplica los pagos en
-  // orden a las cuotas (el ledger es libre, no matchea cuota por cuota).
+  // Puntos por cuota (ESTIMADO: aplica los pagos en orden a las cuotas).
   function prCuotaDots(p) {
     if (p.modo !== 'cuotas' || !(Number(p.num_cuotas) > 0)) return null;
     let a; try { a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo'); } catch (e) { return null; }
@@ -14072,27 +14082,34 @@
       return { c: dl <= 5 ? 'y' : dl <= 15 ? 'o' : 'r', f: r.fecha };
     });
   }
+  // Línea de tiempo MENSUAL: peor estado de las cuotas que caen en cada mes (últimos 12 con actividad).
+  function prTimelineMeses(loans) {
+    const byM = {}, rank = { ok: 0, g: 1, y: 2, o: 3, r: 4 };
+    loans.forEach(p => { const d = prCuotaDots(p); if (!d) return; d.forEach(x => { const m = (x.f || '').slice(0, 7); if (!m) return; if (!byM[m] || rank[x.c] > rank[byM[m]]) byM[m] = x.c; }); });
+    return Object.keys(byM).sort().slice(-12).map(m => ({ m: m, c: byM[m] }));
+  }
   function prUltActividad(loans) {
     let m = '';
     loans.forEach(p => { if ((p.fecha_prestamo || '') > m) m = p.fecha_prestamo || ''; (_pagosByPrestamo[p.id] || []).forEach(pg => { if ((pg.fecha || '') > m) m = pg.fecha; }); });
     return m || '—';
   }
-  let _hcCid = null;
+  function prCuotaFmt(p) { try { if (p.modo === 'cuotas' && Number(p.num_cuotas) > 0) { const a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo'); return fmt(a.cuota); } } catch (e) {} return '—'; }
+  function prPlazoTxt(p) { return p.modo === 'cuotas' && Number(p.num_cuotas) > 0 ? (p.num_cuotas + ' ' + (p.frecuencia === 'semanal' ? 'sem' : p.frecuencia === 'quincenal' ? 'quinc' : 'meses')) : p.modo === 'credito' ? ((p.plazo_meses || '—') + ' meses') : '—'; }
+  let _hcCid = null, _hcTab = 'resumen';
   window.nxPrHistCredito = function (cid) {
     const c = _prClientes.find(x => String(x.id) === String(cid)); if (!c) { toast('err', 'Cliente no encontrado'); return; }
-    _hcCid = cid;
+    _hcCid = cid; _hcTab = 'resumen';
     cerrarModal('nxPrHc');
     const ov = document.createElement('div'); ov.id = 'nxPrHc'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxFP" style="max-width:900px;width:96vw;max-height:94vh;display:flex;flex-direction:column;padding:0">
-      <div class="mt" style="padding:14px 16px 10px"><span><i class="ti ti-history"></i> Historial crediticio</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrHc').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div id="hcBody" style="overflow-y:auto;flex:1;padding:0 16px 16px;-webkit-overflow-scrolling:touch"></div>
+    ov.innerHTML = `<div class="modal nxFP hcModal" style="max-width:1120px;width:97vw;max-height:95vh;display:flex;flex-direction:column;padding:0">
+      <div class="hc-top"><div style="min-width:0"><div class="hc-title">Historial crediticio</div><div class="hc-sub">Consulta el comportamiento crediticio y financiero del cliente</div></div>
+        <button class="nxBack" type="button" onclick="document.getElementById('nxPrHc').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div id="hcBody" style="overflow-y:auto;flex:1;padding:16px"></div>
     </div>`;
     document.body.appendChild(ov);
-    _hcTab = 'resumen';
     hcRender();
   };
-  let _hcTab = 'resumen';
   window.nxPrHcTab = function (t) { _hcTab = t; hcRender(); };
   function hcRender() {
     const body = document.getElementById('hcBody'); if (!body) return;
@@ -14100,94 +14117,108 @@
     const loans = prClienteLoans(_hcCid);
     const sc = prHistScore(loans);
     const total = loans.length, activos = loans.filter(p => estadoDe(p) !== 'pagado').length, pagados = loans.filter(p => estadoDe(p) === 'pagado').length;
-    const vencidos = loans.filter(p => esVencido(p)).length;
+    const vencidos = loans.filter(p => esVencido(p));
     const financiado = loans.reduce((s, p) => s + Number(p.capital || 0), 0);
     const pagado = loans.reduce((s, p) => s + pagadoDe(p), 0);
     const balance = loans.reduce((s, p) => s + saldoDe(p), 0);
     const intereses = loans.reduce((s, p) => s + interesCobradoDe(p), 0);
-    const puntualidad = total ? Math.round(((total - vencidos) / total) * 100) : 0;
-    const tab = (k, lbl) => `<button type="button" class="hc-tab${_hcTab === k ? ' on' : ''}" onclick="window.nxPrHcTab('${k}')">${lbl}</button>`;
-    // ── Header ──
-    const edad = evEdad(c.fecha_nacimiento), tc = evTiempoCliente(c.created_at);
-    const hd = `<div class="hc-head">
-      <div class="ev-avatar">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
-      <div style="flex:1;min-width:0">
-        <div class="ev-clitop"><span class="ev-clinom">${esc(c.nombre || 'Sin nombre')}</span><span class="ev-clibadge">Cliente activo</span></div>
-        <div class="hc-hmeta">${[c.cedula && ('Cédula ' + c.cedula), c.telefono, c.email, tc && ('Cliente ' + tc), edad != null && (edad + ' años')].filter(Boolean).map(esc).join(' · ')}</div>
-        <div class="hc-hmeta">Última actividad: ${esc(prUltActividad(loans))}</div>
-      </div>
-      <div class="hc-scorebox">
-        <div class="ev-gauge" style="--pct:${sc.s == null ? 0 : sc.s};--gc:${sc.col}"><div class="ev-gaugein"><div class="ev-gnum">${sc.s == null ? '—' : sc.mil}</div><div class="ev-gsub">${sc.s == null ? '' : 'de 1000'}</div></div></div>
-        <div class="hc-scmeta"><div class="hc-scclas" style="color:${sc.col}">${sc.clas}</div><div class="hc-scbadge" style="color:${sc.col};background:${sc.col}18">Riesgo: ${sc.riesgo} · ${sc.estado}</div></div>
-      </div>
-    </div>`;
+    const moraAcum = loans.reduce((s, p) => s + prMoraDe(p), 0);
+    const promAtraso = vencidos.length ? Math.round(vencidos.reduce((s, p) => s + prDiasVencido(p), 0) / vencidos.length) : 0;
+    const puntualidad = total ? Math.round(((total - vencidos.length) / total) * 100) : 100;
+    // ── Header cliente ──
+    const dato = (ico, lbl, v) => `<div class="hc-cd"><div class="hc-cdl"><i class="ti ${ico}"></i> ${lbl}</div><div class="hc-cdv">${esc(v || '—')}</div></div>`;
+    const clihead = `<div class="hc-cli">
+      <div class="hc-clav">${esc((c.nombre || '?').trim().charAt(0).toUpperCase())}</div>
+      <div style="flex:1;min-width:0"><div class="hc-clnm">${esc(c.nombre || 'Sin nombre')}</div><span class="hc-clbadge">Cliente activo</span>
+        <div class="hc-cgrid">${dato('ti-id', 'Cédula', c.cedula)}${dato('ti-phone', 'Teléfono', c.telefono)}${dato('ti-mail', 'Correo', c.email)}${dato('ti-calendar', 'Cliente desde', c.created_at ? String(c.created_at).slice(0, 10) : '—')}${dato('ti-clock', 'Última actividad', prUltActividad(loans))}</div>
+      </div></div>`;
+    // ── 10 KPI tiles ──
+    const kt = (ico, col, lbl, v) => `<div class="hc-k"><div class="hc-kic" style="color:${col};background:${col}14"><i class="ti ${ico}"></i></div><div style="min-width:0"><div class="hc-kl">${lbl}</div><div class="hc-kv">${v}</div></div></div>`;
+    const kpis = `<div class="hc-kpis">
+      ${kt('ti-chart-bar', '#2563eb', 'Total préstamos', total)}${kt('ti-file-dollar', '#0891b2', 'Préstamos activos', activos)}${kt('ti-circle-check', '#059669', 'Préstamos pagados', pagados)}${kt('ti-cash-banknote', '#6d28d9', 'Monto financiado', fmt(financiado))}${kt('ti-wallet', '#059669', 'Total pagado', fmt(pagado))}
+      ${kt('ti-clock-dollar', '#d97706', 'Balance pendiente', fmt(balance))}${kt('ti-percentage', '#0891b2', 'Intereses pagados', fmt(intereses))}${kt('ti-alert-triangle', '#dc2626', 'Mora acumulada', fmt(moraAcum))}${kt('ti-calendar-stats', '#d97706', 'Promedio atraso', promAtraso + (promAtraso === 1 ? ' día' : ' días'))}${kt('ti-thumb-up', puntualidad >= 80 ? '#059669' : '#d97706', 'Puntualidad de pago', puntualidad + '%')}</div>`;
     // ── Tabs ──
-    const tabs = `<div class="hc-tabs">${tab('resumen', 'Resumen')}${tab('prestamos', 'Préstamos')}${tab('pagos', 'Pagos')}</div>`;
-    let cuerpo = '';
+    const tabDef = [['resumen', 'ti-layout-dashboard', 'Resumen'], ['prestamos', 'ti-file-dollar', 'Préstamos'], ['pagos', 'ti-cash', 'Pagos'], ['evaluaciones', 'ti-clipboard-check', 'Evaluaciones'], ['gestiones', 'ti-phone-call', 'Gestiones de cobro'], ['documentos', 'ti-files', 'Documentos']];
+    const tabs = `<div class="hc-tabs">${tabDef.map(t => `<button type="button" class="hc-tab${_hcTab === t[0] ? ' on' : ''}" onclick="window.nxPrHcTab('${t[0]}')"><i class="ti ${t[1]}"></i> ${t[2]}</button>`).join('')}</div>`;
+    // ── Tabla de préstamos (helper) ──
+    const loanRows = (lista) => lista.map(p => {
+      const info = prEstadoInfo(p), dias = esVencido(p) ? prDiasVencido(p) : 0;
+      const col = info.key === 'pagado' ? '#059669' : info.key === 'vencido' ? '#dc2626' : '#2563eb';
+      return `<tr>
+        <td data-l="# Préstamo"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')">${esc(prRef(p))}</a></td>
+        <td data-l="Fecha">${esc(p.fecha_prestamo || '—')}</td><td data-l="Monto" style="text-align:right">${fmt(Number(p.capital || 0))}</td>
+        <td data-l="Tasa" style="text-align:right">${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes + '%' : '—'}</td><td data-l="Plazo">${esc(prPlazoTxt(p))}</td>
+        <td data-l="Cuota" style="text-align:right">${prCuotaFmt(p)}</td><td data-l="Total pagado" style="text-align:right;color:#059669">${fmt(pagadoDe(p))}</td>
+        <td data-l="Balance" style="text-align:right;color:${saldoDe(p) > 0 ? '#d97706' : '#059669'}">${fmt(saldoDe(p))}</td>
+        <td data-l="Estado"><span class="hc-est-b" style="color:${col};background:${col}14">${info.label}</span></td>
+        <td data-l="Días atraso" style="text-align:center">${dias > 0 ? '<span class="hc-diasb">' + dias + '</span>' : '0'}</td>
+        <td data-l="Acciones" style="text-align:center"><button type="button" class="hc-eye" title="Ver" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')"><i class="ti ti-eye"></i></button></td></tr>`;
+    }).join('');
+    const loanTable = (lista) => `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th># Préstamo</th><th>Fecha</th><th style="text-align:right">Monto</th><th style="text-align:right">Tasa</th><th>Plazo</th><th style="text-align:right">Cuota</th><th style="text-align:right">Total pagado</th><th style="text-align:right">Balance</th><th>Estado</th><th style="text-align:center">Días</th><th></th></tr></thead><tbody>${lista.length ? loanRows(lista) : '<tr><td colspan="11" class="hc-empty">Sin préstamos.</td></tr>'}</tbody></table></div>`;
+    // ── Contenido por pestaña ──
+    let mainTab = '';
     if (_hcTab === 'resumen') {
-      const kp = (lbl, v, col) => `<div class="hc-kpi"><div class="hc-klbl">${lbl}</div><div class="hc-kval"${col ? ` style="color:${col}"` : ''}>${v}</div></div>`;
-      const cartera = `<div class="hc-sec">Resumen de cartera</div><div class="hc-kpis">
-        ${kp('Total préstamos', total)}${kp('Activos', activos, '#2563eb')}${kp('Pagados', pagados, '#059669')}${kp('Monto financiado', fmt(financiado))}
-        ${kp('Total pagado', fmt(pagado), '#059669')}${kp('Balance pendiente', fmt(balance), balance > 0 ? '#d97706' : '#059669')}${kp('Intereses pagados', fmt(intereses))}${kp('Puntualidad', puntualidad + '%', puntualidad >= 80 ? '#059669' : puntualidad >= 50 ? '#d97706' : '#dc2626')}</div>
-        <div class="hc-note">La mora no se calcula en este módulo de Financiamiento, por eso no aparece "mora acumulada". Los intereses pagados son un estimado proporcional a lo abonado.</div>`;
-      // recomendación
-      const caps = loans.map(p => Number(p.capital || 0)).filter(x => x > 0), maxCap = caps.length ? Math.max.apply(null, caps) : 0;
-      const montoRec = sc.s == null ? 0 : sc.s >= 65 ? Math.round(maxCap * 1.2 / 1000) * 1000 : sc.s >= 45 ? maxCap : Math.round(maxCap * 0.7 / 1000) * 1000;
-      const tasas = loans.map(p => Number(p.tasa_interes || 0)).filter(x => x > 0), tasaSug = tasas.length ? (Math.round((tasas.reduce((a, b) => a + b, 0) / tasas.length) * 100) / 100) + '%' : '—';
-      const plazos = loans.filter(p => Number(p.num_cuotas) > 0).map(p => p.num_cuotas), plazoSug = plazos.length ? Math.max.apply(null, plazos) + ' cuotas' : '—';
-      const rec = `<div class="hc-sec">Recomendación del sistema</div><div class="hc-rec" style="border-color:${sc.col}44">
-        <div class="hc-recbadge" style="color:${sc.col};background:${sc.col}14"><i class="ti ${sc.s >= 65 ? 'ti-circle-check' : sc.s >= 45 ? 'ti-alert-triangle' : 'ti-circle-x'}"></i> ${sc.s == null ? 'Sin historial suficiente' : sc.s >= 65 ? 'Cliente confiable' : sc.s >= 45 ? 'Riesgo medio' : 'Riesgo alto'}</div>
-        <div class="hc-recgrid">
-          <div><span>Monto recomendado</span><b>${montoRec > 0 ? fmt(montoRec) : '—'}</b></div>
-          <div><span>Tasa sugerida</span><b>${tasaSug}</b></div>
-          <div><span>Plazo máx. sugerido</span><b>${plazoSug}</b></div>
-          <div><span>Resultado</span><b style="color:${sc.col}">${sc.estado}</b></div>
-        </div>
-        <div class="hc-note">Sugerencias derivadas del historial real del cliente (montos y tasas que ya ha manejado). Son una guía — la decisión final es del asesor.</div></div>`;
-      // comportamiento de pago (cuotas)
-      const conCuotas = loans.filter(p => p.modo === 'cuotas' && Number(p.num_cuotas) > 0);
+      const tl = prTimelineMeses(loans);
       let comp = '';
-      if (conCuotas.length) {
-        comp = `<div class="hc-sec">Comportamiento de pago <span class="hc-est">(estimado)</span></div>`;
-        conCuotas.forEach(p => {
-          const dots = prCuotaDots(p); if (!dots) return;
-          comp += `<div class="hc-comprow"><div class="hc-compnm">${esc(prRef(p))} · ${esc(prTipoTxt(p))}</div><div class="hc-dots">${dots.map(d => `<span class="hc-dot hc-${d.c}" title="${esc(d.f)}"></span>`).join('')}</div></div>`;
-        });
-        comp += `<div class="hc-leg"><span class="hc-dot hc-ok"></span>Puntual <span class="hc-dot hc-y"></span>1-5d <span class="hc-dot hc-o"></span>6-15d <span class="hc-dot hc-r"></span>+15d <span class="hc-dot hc-g"></span>Pendiente</div>`;
+      if (tl.length) {
+        comp = `<div class="hc-card"><div class="hc-ct">Comportamiento de pago <span class="hc-est">(estimado)</span></div>
+          <div class="hc-tlwrap"><div class="hc-tl">${tl.map(x => `<div class="hc-tli"><div class="hc-tlm">${esc(prMesLabel(x.m))}</div><span class="hc-dot hc-${x.c}"></span></div>`).join('')}</div></div>
+          <div class="hc-leg"><span class="hc-dot hc-ok"></span>Pagó puntual <span class="hc-dot hc-y"></span>1-5 días <span class="hc-dot hc-o"></span>6-15 días <span class="hc-dot hc-r"></span>Más de 15 <span class="hc-dot hc-g"></span>Sin pago</div></div>`;
       }
-      // alertas (solo la real: vencidos)
-      let alertas = '';
-      if (vencidos > 0) alertas = `<div class="hc-alert"><i class="ti ti-alert-triangle"></i> ${vencidos} préstamo${vencidos === 1 ? '' : 's'} vencido${vencidos === 1 ? '' : 's'} — requiere${vencidos === 1 ? '' : 'n'} gestión de cobro.</div>`;
-      cuerpo = alertas + cartera + rec + comp;
+      const ult = loans.slice().sort((a, b) => (b.fecha_prestamo || '') < (a.fecha_prestamo || '') ? -1 : 1);
+      const first = ult.slice(0, 6);
+      const tabla = `<div class="hc-card"><div class="hc-ct">Últimos préstamos</div>${loanTable(first)}${ult.length > 6 ? `<div class="hc-verall" onclick="window.nxPrHcTab('prestamos')">Ver todos los préstamos (${ult.length}) <i class="ti ti-chevron-down"></i></div>` : ''}</div>`;
+      mainTab = comp + tabla;
     } else if (_hcTab === 'prestamos') {
-      if (!loans.length) cuerpo = `<div class="hc-empty">Este cliente no tiene préstamos registrados.</div>`;
-      else {
-        const rows = loans.slice().sort((a, b) => (b.fecha_prestamo || '') < (a.fecha_prestamo || '') ? -1 : 1).map(p => {
-          const info = prEstadoInfo(p), dias = esVencido(p) ? prDiasVencido(p) : 0;
-          const cuota = (function () { try { if (p.modo === 'cuotas' && Number(p.num_cuotas) > 0) { const a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo'); return fmt(a.cuota); } } catch (e) {} return '—'; })();
-          const col = info.key === 'pagado' ? '#059669' : info.key === 'vencido' ? '#dc2626' : '#2563eb';
-          return `<tr onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')" style="cursor:pointer">
-            <td data-l="Ref">${esc(prRef(p))}</td><td data-l="Fecha">${esc(p.fecha_prestamo || '—')}</td>
-            <td data-l="Monto" style="text-align:right">${fmt(Number(p.capital || 0))}</td><td data-l="Tasa" style="text-align:right">${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes + '%' : '—'}</td>
-            <td data-l="Cuota" style="text-align:right">${cuota}</td><td data-l="Pagado" style="text-align:right;color:#059669">${fmt(pagadoDe(p))}</td>
-            <td data-l="Balance" style="text-align:right;color:${saldoDe(p) > 0 ? '#d97706' : '#059669'}">${fmt(saldoDe(p))}</td>
-            <td data-l="Estado"><span class="hc-est-b" style="color:${col};background:${col}14">${info.label}</span></td>
-            <td data-l="Días atraso" style="text-align:right">${dias > 0 ? '<b style="color:#dc2626">' + dias + '</b>' : '—'}</td></tr>`;
-        }).join('');
-        cuerpo = `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th>Ref</th><th>Fecha</th><th style="text-align:right">Monto</th><th style="text-align:right">Tasa</th><th style="text-align:right">Cuota</th><th style="text-align:right">Pagado</th><th style="text-align:right">Balance</th><th>Estado</th><th style="text-align:right">Días</th></tr></thead><tbody>${rows}</tbody></table></div><div class="hc-note">Estados reales del módulo: Activo / Pagado / Vencido. (Reestructurado, cancelado y proceso legal no existen en este módulo — no se muestran para no inventar un estado.)</div>`;
-      }
+      const ult = loans.slice().sort((a, b) => (b.fecha_prestamo || '') < (a.fecha_prestamo || '') ? -1 : 1);
+      mainTab = `<div class="hc-card"><div class="hc-ct">Todos los préstamos (${ult.length})</div>${loanTable(ult)}<div class="hc-note">Estados reales del módulo: Activo / Pagado / Vencido.</div></div>`;
     } else if (_hcTab === 'pagos') {
-      const pagos = [];
-      loans.forEach(p => (_pagosByPrestamo[p.id] || []).forEach(pg => pagos.push({ pg, p })));
+      const pagos = []; loans.forEach(p => (_pagosByPrestamo[p.id] || []).forEach(pg => pagos.push({ pg, p })));
       pagos.sort((a, b) => (b.pg.fecha || '') < (a.pg.fecha || '') ? -1 : 1);
-      if (!pagos.length) cuerpo = `<div class="hc-empty">Este cliente no tiene pagos registrados.</div>`;
-      else {
-        const rows = pagos.map(x => `<tr><td data-l="Fecha">${esc(x.pg.fecha || '—')}</td><td data-l="Préstamo">${esc(prRef(x.p))}</td><td data-l="Monto" style="text-align:right;color:#059669;font-weight:800">${fmt(Number(x.pg.monto || 0))}</td><td data-l="Método">${esc(x.pg.metodo || x.pg.tipo || '—')}</td><td data-l="Registró">${esc(x.pg.created_by_name || '—')}</td></tr>`).join('');
-        const totPag = pagos.reduce((s, x) => s + Number(x.pg.monto || 0), 0);
-        cuerpo = `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th>Fecha</th><th>Préstamo</th><th style="text-align:right">Monto</th><th>Método</th><th>Registró</th></tr></thead><tbody>${rows}</tbody></table></div><div class="hc-note">${pagos.length} pago(s) · Total ${fmt(totPag)}</div>`;
-      }
+      const rows = pagos.map(x => `<tr><td data-l="Fecha">${esc(x.pg.fecha || '—')}</td><td data-l="Préstamo"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${x.p.id}')">${esc(prRef(x.p))}</a></td><td data-l="Monto" style="text-align:right;color:#059669;font-weight:800">${fmt(Number(x.pg.monto || 0))}</td><td data-l="Método">${esc(x.pg.metodo || x.pg.tipo || '—')}</td><td data-l="Registró">${esc(x.pg.created_by_name || '—')}</td></tr>`).join('');
+      const totPag = pagos.reduce((s, x) => s + Number(x.pg.monto || 0), 0);
+      mainTab = `<div class="hc-card"><div class="hc-ct">Pagos (${pagos.length})</div>${pagos.length ? `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th>Fecha</th><th>Préstamo</th><th style="text-align:right">Monto</th><th>Método</th><th>Registró</th></tr></thead><tbody>${rows}</tbody></table></div><div class="hc-note">Total pagado: ${fmt(totPag)}</div>` : '<div class="hc-empty">Sin pagos registrados.</div>'}</div>`;
+    } else if (_hcTab === 'evaluaciones') {
+      const evals = loans.filter(p => /Evaluaci[oó]n:\s*score/i.test(p.notas || '')).map(p => ({ p, linea: (String(p.notas || '').split('\n').find(l => /Evaluaci[oó]n:\s*score/i.test(l)) || '').trim() }));
+      mainTab = `<div class="hc-card"><div class="hc-ct">Evaluaciones</div>${evals.length ? evals.map(e => `<div class="hc-evrow"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${e.p.id}')">${esc(prRef(e.p))}</a> · ${esc(e.p.fecha_prestamo || '')} — <span style="color:#4f46e5">${esc(e.linea)}</span></div>`).join('') : '<div class="hc-empty">Aún no hay evaluaciones guardadas. Las evaluaciones que hagas desde la pantalla "Evaluación" quedan como nota en el préstamo y aparecen aquí.</div>'}</div>`;
+    } else if (_hcTab === 'gestiones') {
+      mainTab = `<div class="hc-card"><div class="hc-ct">Gestiones de cobro</div><div class="hc-empty">Este módulo aún no registra gestiones de cobro (llamadas, promesas de pago, visitas). Es una función que se puede agregar si la necesitas.</div></div>`;
+    } else if (_hcTab === 'documentos') {
+      mainTab = `<div class="hc-card"><div class="hc-ct">Documentos</div><div class="hc-empty">Este módulo aún no guarda documentos del cliente (no hay almacenamiento de archivos configurado). Es una función que se puede agregar si la necesitas.</div></div>`;
     }
-    body.innerHTML = hd + tabs + `<div class="hc-tabc">${cuerpo}</div>`;
+    // ── Panel derecho: Recomendación ──
+    const caps = loans.map(p => Number(p.capital || 0)).filter(x => x > 0), maxCap = caps.length ? Math.max.apply(null, caps) : 0;
+    const montoRec = sc.s == null ? 0 : sc.s >= 65 ? Math.round(maxCap * 1.2 / 1000) * 1000 : sc.s >= 45 ? maxCap : Math.round(maxCap * 0.7 / 1000) * 1000;
+    const tasas = loans.map(p => Number(p.tasa_interes || 0)).filter(x => x > 0), tasaSug = tasas.length ? (Math.round((tasas.reduce((a, b) => a + b, 0) / tasas.length) * 100) / 100) + '%' : '—';
+    const plazos = loans.filter(p => Number(p.num_cuotas) > 0).map(p => p.num_cuotas), plazoSug = plazos.length ? Math.max.apply(null, plazos) + ' meses' : '—';
+    const recTitulo = sc.s == null ? 'Sin historial suficiente' : sc.s >= 65 ? 'Cliente confiable' : sc.s >= 45 ? 'Riesgo medio' : 'Riesgo alto';
+    const recSub = sc.s == null ? 'Aún no tiene préstamos para evaluar.' : sc.s >= 65 ? ('Historial mayormente positivo. Ha completado ' + pagados + ' préstamo' + (pagados === 1 ? '' : 's') + '.') : sc.s >= 45 ? 'Historial mixto — conviene revisar antes de aprobar.' : 'Historial con atrasos — evaluar con cuidado.';
+    const rec = `<div class="hc-pcard"><div class="hc-pt">Recomendación del sistema</div>
+      <div class="hc-rechd"><div class="hc-recico" style="background:${sc.col}14;color:${sc.col}"><i class="ti ${sc.s >= 65 ? 'ti-shield-check' : sc.s >= 45 ? 'ti-alert-triangle' : 'ti-shield-x'}"></i></div><div><div class="hc-rectit" style="color:${sc.col}">${recTitulo}</div></div></div>
+      <div class="hc-recsub">${recSub}</div>
+      <div class="hc-prow"><span>Recomendación de monto</span><b style="color:#059669">${montoRec > 0 ? fmt(montoRec) : '—'}</b></div>
+      <div class="hc-prow"><span>Tasa sugerida</span><b>${tasaSug}</b></div>
+      <div class="hc-prow"><span>Plazo máximo sugerido</span><b>${plazoSug}</b></div>
+      <div class="hc-prow" style="border:0"><span>Nivel de riesgo: <b style="color:${sc.col}">${sc.riesgo}</b></span><span class="hc-est-b" style="color:${sc.col};background:${sc.col}14">${sc.estado}</span></div></div>`;
+    // ── Panel: Indicadores del cliente ──
+    const ind = (ico, lbl, v, col) => `<div class="hc-prow"><span><i class="ti ${ico}" style="color:#94a3b8"></i> ${lbl}</span><b${col ? ` style="color:${col}"` : ''}>${v}</b></div>`;
+    const indicadores = `<div class="hc-pcard"><div class="hc-pt">Indicadores del cliente</div>
+      ${ind('ti-thumb-up', 'Puntualidad de pago', puntualidad + '%', puntualidad >= 80 ? '#059669' : '#d97706')}
+      ${ind('ti-calendar-stats', 'Días promedio de atraso', promAtraso + (promAtraso === 1 ? ' día' : ' días'))}
+      ${ind('ti-circle-check', 'Préstamos completados', pagados)}
+      ${ind('ti-alert-triangle', 'Préstamos en mora', vencidos.length, vencidos.length ? '#dc2626' : '')}
+      ${ind('ti-notes-off', 'Promesas incumplidas', 0)}
+      ${ind('ti-shield', 'Nivel de riesgo', sc.riesgo, sc.col)}
+      <div class="hc-scorerow"><span><i class="ti ti-gauge" style="color:#94a3b8"></i> Score interno</span>
+        <div class="hc-scmini"><div class="ev-gauge hc-gsm" style="--pct:${sc.s == null ? 0 : sc.s};--gc:${sc.col}"><div class="ev-gaugein"><div class="ev-gnum">${sc.s == null ? '—' : sc.mil}</div><div class="ev-gsub">/1000</div></div></div><div class="hc-scclas" style="color:${sc.col}">${sc.clas}</div></div></div></div>`;
+    // ── Panel: Alertas importantes (solo reales) ──
+    const alertas = [];
+    if (vencidos.length) alertas.push({ ico: 'ti-alert-triangle', col: '#dc2626', t: vencidos.length + ' préstamo' + (vencidos.length === 1 ? '' : 's') + ' con atraso activo' });
+    if (moraAcum > 0) alertas.push({ ico: 'ti-cash-off', col: '#d97706', t: 'Mora acumulada: ' + fmt(moraAcum) });
+    if (balance > 0 && !vencidos.length) alertas.push({ ico: 'ti-clock-dollar', col: '#0891b2', t: 'Balance pendiente por cobrar: ' + fmt(balance) });
+    const alertPanel = `<div class="hc-pcard"><div class="hc-pt">Alertas importantes</div>${alertas.length ? alertas.map(a => `<div class="hc-alrow"><i class="ti ${a.ico}" style="color:${a.col}"></i> ${esc(a.t)}</div>`).join('') : '<div class="hc-empty" style="padding:14px">Sin alertas por ahora. Todo al día.</div>'}<div class="hc-note">Solo se muestran alertas con datos reales del módulo. (Evaluación pendiente, documento vencido o garantía pendiente no existen aún aquí — no se inventan.)</div></div>`;
+
+    body.innerHTML = clihead + kpis + `<div class="hc-2col"><div class="hc-main">${tabs}${mainTab}</div><aside class="hc-side">${rec}${indicadores}${alertPanel}</aside></div>`;
   }
 
   window.nxPrestamoGuardar = async function (id) {
@@ -23239,24 +23270,31 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.ev-aprobar{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px}.ev-aprobar:disabled{opacity:.45;cursor:not-allowed}' +
       '.ev-cancel{width:100%;margin-top:8px;background:transparent;border:0;color:#dc2626;font-size:12px;font-weight:700;padding:8px;cursor:pointer;font-family:inherit}' +
       '@media(max-width:1100px){.ev-grid{grid-template-columns:1fr}.ev-sticky{position:static}.ev-cols{grid-template-columns:1fr}}' +
-      // ── Historial crediticio ──
-      '.hc-head{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 16px;margin:4px 0 12px;box-shadow:0 1px 3px rgba(15,23,42,.05);flex-wrap:wrap}' +
-      '.hc-hmeta{font-size:11.5px;color:#7c748f;margin-top:3px;line-height:1.5}' +
-      '.hc-scorebox{display:flex;align-items:center;gap:10px;margin-left:auto}.hc-scmeta{min-width:0}.hc-scclas{font-size:14px;font-weight:800}.hc-scbadge{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px;display:inline-block;margin-top:4px}' +
-      '.hc-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid #e9e6f7;margin-bottom:12px}' +
-      '.hc-tab{background:transparent;border:0;border-bottom:2px solid transparent;color:#64748b;font-size:12.5px;font-weight:700;padding:9px 14px;cursor:pointer;font-family:inherit;white-space:nowrap}.hc-tab.on{color:#4f46e5;border-bottom-color:#4f46e5}' +
-      '.hc-sec{font-size:12.5px;font-weight:800;color:#1e1b4b;margin:14px 0 8px}.hc-est{font-weight:600;color:#94a3b8;font-size:10px}' +
-      '.hc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.hc-kpi{background:#fff;border:1px solid #e9e6f7;border-radius:11px;padding:10px 11px}.hc-klbl{font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.2px}.hc-kval{font-size:16px;font-weight:800;color:#1e1b4b;margin-top:3px}' +
-      '.hc-note{font-size:10px;color:#94a3b8;line-height:1.5;margin-top:8px}' +
-      '.hc-rec{border:1.5px solid #e9e6f7;border-radius:12px;padding:12px}.hc-recbadge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:4px 11px;border-radius:20px;margin-bottom:10px}' +
-      '.hc-recgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.hc-recgrid>div{display:flex;flex-direction:column;gap:2px}.hc-recgrid span{font-size:10.5px;color:#94a3b8;font-weight:700}.hc-recgrid b{font-size:14px;font-weight:800;color:#1e1b4b}' +
-      '.hc-comprow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f5f3ff;flex-wrap:wrap}.hc-compnm{font-size:11px;color:#475569;font-weight:600;min-width:120px;flex:1}' +
-      '.hc-dots{display:flex;gap:3px;flex-wrap:wrap}.hc-dot{width:12px;height:12px;border-radius:3px;display:inline-block;flex:0 0 auto}.hc-ok{background:#22c55e}.hc-y{background:#eab308}.hc-o{background:#f97316}.hc-r{background:#ef4444}.hc-g{background:#cbd5e1}' +
-      '.hc-leg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;color:#64748b;margin-top:8px}.hc-leg .hc-dot{margin-left:6px}' +
-      '.hc-alert{display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:11px;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:4px}' +
-      '.hc-tblwrap{overflow-x:auto;border:1px solid #e9e6f7;border-radius:12px}.hc-tbl{width:100%;border-collapse:collapse;font-size:11.5px}.hc-tbl thead th{background:#f8fafc;color:#475569;font-size:10px;text-transform:uppercase;letter-spacing:.2px;padding:8px 9px;text-align:left;white-space:nowrap}.hc-tbl tbody td{padding:8px 9px;border-top:1px solid #f1f5f9;color:#1e293b}.hc-tbl tbody tr:hover{background:#faf9ff}' +
-      '.hc-est-b{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap}.hc-empty{text-align:center;color:#94a3b8;font-size:12.5px;padding:26px}' +
-      '@media(max-width:640px){.hc-kpis,.hc-recgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.hc-scorebox{margin-left:0;margin-top:8px}.hc-tbl thead{display:none}.hc-tbl tbody td{display:flex;justify-content:space-between;border:0;padding:4px 10px}.hc-tbl tbody td:before{content:attr(data-l);color:#94a3b8;font-weight:700;font-size:10px}.hc-tbl tbody tr{display:block;border:1px solid #eef;border-radius:10px;margin:6px;padding:4px 0}}' +
+      // ── Historial crediticio (mockup rico, 2 columnas) ──
+      '.hcModal .hc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px 12px;border-bottom:1px solid #eef}.hc-title{font-size:20px;font-weight:800;color:#0f172a}.hc-sub{font-size:12px;color:#94a3b8;margin-top:2px}' +
+      '.hc-cli{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,23,42,.05);flex-wrap:wrap}' +
+      '.hc-clav{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex:0 0 auto}' +
+      '.hc-clnm{font-size:18px;font-weight:800;color:#1e1b4b;display:inline-block;margin-right:8px}.hc-clbadge{font-size:10.5px;font-weight:700;color:#059669;background:#ecfdf5;border-radius:20px;padding:3px 10px}' +
+      '.hc-cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px}.hc-cdl{font-size:10px;color:#94a3b8;font-weight:700;display:flex;align-items:center;gap:4px}.hc-cdl i{font-size:13px}.hc-cdv{font-size:12.5px;color:#1e293b;font-weight:700;margin-top:1px;word-break:break-word}' +
+      '.hc-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}' +
+      '.hc-k{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e9e6f7;border-radius:12px;padding:10px 11px;min-width:0}.hc-kic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}.hc-kl{font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hc-kv{font-size:15px;font-weight:800;color:#1e1b4b}' +
+      '.hc-2col{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}.hc-main{min-width:0}.hc-side{min-width:0;display:flex;flex-direction:column;gap:12px}' +
+      '.hc-tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid #e9e6f7;margin-bottom:12px}.hc-tab{display:inline-flex;align-items:center;gap:5px;background:transparent;border:0;border-bottom:2px solid transparent;color:#64748b;font-size:12px;font-weight:700;padding:9px 11px;cursor:pointer;font-family:inherit;white-space:nowrap}.hc-tab.on{color:#4f46e5;border-bottom-color:#4f46e5}.hc-tab i{font-size:14px}' +
+      '.hc-card{background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 15px;box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:12px}.hc-ct{font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:12px}.hc-est{font-weight:600;color:#94a3b8;font-size:10px}' +
+      '.hc-tlwrap{overflow-x:auto;padding:6px 0 2px}.hc-tl{display:flex;min-width:max-content;position:relative}.hc-tl:before{content:\"\";position:absolute;left:6%;right:6%;top:32px;height:2px;background:#e5e7eb}.hc-tli{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1 0 66px;position:relative}.hc-tlm{font-size:9.5px;color:#64748b;font-weight:600;white-space:nowrap}' +
+      '.hc-tli .hc-dot{width:15px;height:15px;border-radius:50%;box-shadow:0 0 0 3px #fff}' +
+      '.hc-dot{width:12px;height:12px;border-radius:50%;display:inline-block;flex:0 0 auto}.hc-ok{background:#22c55e}.hc-y{background:#eab308}.hc-o{background:#f97316}.hc-r{background:#ef4444}.hc-g{background:#94a3b8}' +
+      '.hc-leg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;color:#64748b;margin-top:10px}.hc-leg .hc-dot{width:10px;height:10px;margin-left:6px}' +
+      '.hc-tblwrap{overflow-x:auto}.hc-tbl{width:100%;border-collapse:collapse;font-size:11.5px}.hc-tbl thead th{color:#94a3b8;font-size:9.5px;text-transform:uppercase;letter-spacing:.2px;padding:7px 8px;text-align:left;white-space:nowrap;border-bottom:1px solid #eef}.hc-tbl tbody td{padding:9px 8px;border-bottom:1px solid #f5f5f9;color:#1e293b}.hc-ref{color:#2563eb;font-weight:800;cursor:pointer}.hc-est-b{font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:20px;white-space:nowrap}.hc-diasb{background:#fef2f2;color:#dc2626;font-weight:800;border-radius:20px;padding:1px 8px;font-size:10.5px}' +
+      '.hc-eye{width:26px;height:26px;border-radius:7px;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer}.hc-verall{text-align:center;color:#2563eb;font-size:12px;font-weight:700;padding:10px;cursor:pointer}.hc-evrow{font-size:12px;color:#475569;padding:7px 0;border-bottom:1px solid #f5f3ff}' +
+      '.hc-empty{text-align:center;color:#94a3b8;font-size:12px;padding:22px;line-height:1.5}.hc-note{font-size:10px;color:#94a3b8;line-height:1.5;margin-top:8px}' +
+      '.hc-pcard{background:#fff;border:1px solid #e9e6f7;border-radius:14px;padding:14px 15px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.hc-pt{font-size:13px;font-weight:800;color:#1e1b4b;margin-bottom:10px}' +
+      '.hc-rechd{display:flex;align-items:center;gap:10px;margin-bottom:6px}.hc-recico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto}.hc-rectit{font-size:15px;font-weight:800}.hc-recsub{font-size:11.5px;color:#64748b;line-height:1.5;margin-bottom:10px}' +
+      '.hc-prow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:#64748b;padding:8px 0;border-bottom:1px solid #f5f3ff}.hc-prow b{color:#1e293b;font-weight:800;text-align:right}.hc-prow i{font-size:14px}' +
+      '.hc-scorerow{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:#64748b;padding-top:10px}.hc-scmini{display:flex;flex-direction:column;align-items:center;gap:2px}.hc-gsm{width:56px;height:56px}.hc-gsm .ev-gaugein{width:42px;height:42px}.hc-gsm .ev-gnum{font-size:14px}.hc-gsm .ev-gsub{font-size:7px}.hc-scclas{font-size:10px;font-weight:800}' +
+      '.hc-alrow{display:flex;align-items:center;gap:9px;font-size:12px;color:#334155;padding:8px 0;border-bottom:1px solid #f5f3ff}.hc-alrow i{font-size:16px;flex:0 0 auto}' +
+      '@media(max-width:960px){.hc-2col{grid-template-columns:1fr}.hc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}' +
+      '@media(max-width:560px){.hc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.hc-tbl thead{display:none}.hc-tbl tbody td{display:flex;justify-content:space-between;border:0;padding:4px 10px}.hc-tbl tbody td:before{content:attr(data-l);color:#94a3b8;font-weight:700;font-size:10px}.hc-tbl tbody tr{display:block;border:1px solid #eef;border-radius:10px;margin:6px 0;padding:4px 0}}' +
       '.nxFP-main{flex:1;min-width:0}' +
       '.nxFP-topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}' +
       '.nxFP-burger{display:none;width:40px;height:40px;border-radius:11px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex:none}' +

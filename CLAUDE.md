@@ -2039,6 +2039,26 @@ préstamos. **Todo sobre datos REALES, cero tabla nueva** — el módulo ya ten�
   comportamiento con puntos, tabla de 3 préstamos con estados PAGADO/VENCIDO/ACTIVO, tabla de pagos, alerta de
   vencido, saltos de pestaña). 0 errores de JS, sin desbordes en 390px ni 1280px. `node --check` limpio; los 3
   `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **REDISEÑO COMPLETO (v49.19) — el dueño mandó un mockup detallado ("que se vea exactamente así"):** se reescribió
+  todo `nxPrHistCredito`/`hcRender` + CSS al layout del mockup (2 columnas). **Mora ahora es REAL** — migración
+  `prestamos_config_mora` (`mora_pct`/`mora_dias_gracia`, default 0 = apagada, patrón Cuotas del POS); helper
+  `prMoraDe(p)` (recargo único en vivo sobre el saldo si vencido más allá de la gracia, solo si `mora_pct>0`);
+  `_prCfg` ya se cargaba en `cargarPrestamos`. Con la mora apagada, "Mora acumulada" = RD$0 real (no un número
+  inventado). Layout: tarjeta de cliente (avatar, cédula/tel/correo/cliente-desde/última-actividad) + **10 KPI
+  tiles con ícono** (total/activos/pagados préstamos, financiado, pagado, balance, intereses, mora acumulada,
+  promedio atraso [avg `prDiasVencido` de vencidos], puntualidad) + **6 pestañas** (Resumen/Préstamos/Pagos/
+  Evaluaciones/Gestiones/Documentos) + panel derecho de 3 tarjetas (Recomendación / Indicadores del cliente con
+  score circular /1000 / Alertas). **Comportamiento de pago = línea de tiempo MENSUAL** (`prTimelineMeses`,
+  agrega el peor estado de las cuotas de cada mes, `prCuotaDots` estimado) con puntos redondos sobre una línea +
+  leyenda — como el mockup (antes eran cuadritos por préstamo). **Omitido a propósito, con estado vacío honesto en
+  su pestaña (no se finge):** Documentos (sin Storage), Gestiones de cobro (sin tabla de llamadas/promesas);
+  "Promesas incumplidas" = 0 (no se registran); Alertas solo las reales (atraso/mora/balance) — NO evaluación/
+  documento/garantía pendientes del mockup (no existen). Evaluaciones lee las notas "Evaluación: score" que deja la
+  pantalla de Evaluación en el préstamo. Foto del cliente = avatar de inicial (sin columna de foto). Verificado con
+  **50 pruebas Playwright** del código real (10 KPIs, timeline mensual, 3 paneles, 6 pestañas, tabla, alertas
+  reales, estados vacíos honestos de Documentos/Gestiones). 0 errores de JS, sin desbordes en 390px ni 1280px.
+  `node --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido;
+  `get_advisors` sin hallazgos nuevos por la columna de mora.
 
 ### Financiamiento (Préstamos, Multiempresa) — EVALUACIÓN FINANCIERA (spec ChatGPT "Evaluación Financiera V1", 24-jul-2026, v49.15)
 El dueño pidió aplicar el spec `docs/visual-drafts/financiamiento/EVALUACION_FINANCIERA_V1_APROBADA.md` (ChatGPT
