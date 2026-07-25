@@ -2059,6 +2059,33 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — el expediente firmado y el préstamo, conectados en los 2 sentidos (25-jul-2026, v49.47)
+El dueño preguntó: *"¿Y después que esté aprobado dónde veo esos expedientes?"*
+- **Lo que YA existía (se verificó en el código antes de tocar nada, no se dio por hecho):** la
+  pestaña **Solicitudes** lista TODAS, incluidas las `aprobada` (badge verde + KPI "APROBADAS"), y
+  `nxPrSolicitudVer` sigue mostrando los 4 documentos + el video después de aprobar — el bloque de
+  documentos solo se oculta cuando el estado es `pendiente` (el cliente todavía no abrió el link).
+  O sea, el expediente NO se pierde al aprobar; lo que faltaba era el camino para llegar.
+- **El hueco real:** desde el **préstamo** no había forma de llegar a su expediente. La única pista
+  era la nota de texto que deja `nxPrSolicitudAprobar` (`[Firmado por link — … en la solicitud
+  09705b0c]`) — el número está, pero había que ir a buscarlo a mano en la lista.
+- **Construido (chico, sin esquema nuevo, sin consultas nuevas):** `window.nxPrestamoExpediente(id)`
+  busca en `_prSolicitudes` (ya cargado por `cargarPrestamos`) la solicitud con
+  `prestamo_id === id` y abre `nxPrSolicitudVer`. El botón **"Expediente firmado"** se agregó a
+  `nxPrActs` de `nxPrestamoVer` **solo si esa solicitud existe** — un préstamo tecleado a mano no
+  muestra un botón que no lleva a ningún lado. Camino de vuelta: en el detalle de una solicitud
+  `aprobada` con `prestamo_id`, aviso verde ("ya es un préstamo real, estos documentos quedan
+  guardados como respaldo") + botón **"Ver el préstamo"**.
+- Verificado con Playwright y el código real extraído (`nxPrestamoExpediente` + `nxPrSolicitudVer`
+  tal cual): 12 comprobaciones — el botón abre el expediente del cliente correcto, se siguen viendo
+  las 4 imágenes y se pide el video del bucket privado, NO salen Aprobar/Rechazar en una ya
+  aprobada, "Ver el préstamo" salta al id correcto y cierra el expediente, y un préstamo sin link
+  avisa con un toast en vez de abrir un modal vacío. Sin desborde en 390px, 0 errores de JS.
+  Las 53 pruebas del lado admin repasadas sin regresión.
+  - **Nota de método:** al agregar líneas en `parches.js` se corrió el rango del extractor del
+    harness y una suite falló por eso (no por el código). Recordatorio: **los extractores por número
+    de línea hay que recalcularlos con `grep` después de cada edición**, no reusar el rango viejo.
+
 ### `swalConfirm` decía "ELIMINAR" en rojo al APROBAR un préstamo — arreglado de raíz (25-jul-2026, v49.46)
 El dueño mandó una captura: el aviso preguntaba *"¿Aprobar y crear el préstamo?"* y el botón de
 confirmar decía **ELIMINAR**, en rojo. Da miedo tocarlo, y con razón.

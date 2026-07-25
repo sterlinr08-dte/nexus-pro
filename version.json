@@ -1,7 +1,12 @@
 {
-  "version": "49.46",
+  "version": "49.47",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.47",
+      "t": "NUEVO — Llegar al expediente firmado desde el pr\u00e9stamo, y al pr\u00e9stamo desde el expediente",
+      "d": "Preguntaste d\u00f3nde ves los expedientes despu\u00e9s de aprobar. Ya estaban guardados (Financiamiento \u2192 Solicitudes, con su sello verde APROBADA, y al tocarlas se ven la c\u00e9dula, la foto, el video y la firma) \u2014 pero para llegar ah\u00ed desde un pr\u00e9stamo hab\u00eda que buscarlo a mano.\n\nAhora est\u00e1n conectados en los dos sentidos:\n\n\u2022 Abres un pr\u00e9stamo que naci\u00f3 de un link \u2192 bot\u00f3n nuevo 'Expediente firmado' que abre la c\u00e9dula, la foto, el video y la firma de ese cliente. Solo sale en los pr\u00e9stamos que de verdad vinieron de un link.\n\n\u2022 Abres el expediente de una solicitud ya aprobada \u2192 bot\u00f3n 'Ver el pr\u00e9stamo' para saltar al pr\u00e9stamo, y un aviso que aclara que esos documentos se quedan guardados como respaldo."
+    },
     {
       "v": "49.46",
       "t": "ARREGLADO — El aviso de 'Aprobar y crear el pr\u00e9stamo' ten\u00eda un bot\u00f3n rojo que dec\u00eda ELIMINAR",

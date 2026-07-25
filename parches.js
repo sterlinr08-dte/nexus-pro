@@ -14678,6 +14678,7 @@
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoAmortizacion('${id}')"><i class="ti ti-printer"></i> Imprimir</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
+            ${_prSolicitudes.some(s => String(s.prestamo_id) === String(id)) ? `<button class="nxPrAcc" type="button" onclick="window.nxPrestamoExpediente('${id}')"><i class="ti ti-file-check"></i> Expediente firmado</button>` : ''}
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
             <button class="nxPrAcc del" type="button" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Borrar</button>
           </div>
@@ -15178,6 +15179,16 @@
     toast('ok', 'Link copiado');
   };
 
+  // Puente entre el préstamo ya aprobado y su expediente firmado (cédula, foto, video, firma).
+  // Sin esto, la única pista era la nota de texto del préstamo ("...en la solicitud 09705b0c")
+  // y había que ir a buscarla a mano en la lista de Solicitudes.
+  window.nxPrestamoExpediente = function (id) {
+    const s = _prSolicitudes.find(x => String(x.prestamo_id) === String(id));
+    if (!s) { toast('err', 'Este préstamo no se creó desde un link de firma'); return; }
+    cerrarModal('nxPrModal');
+    window.nxPrSolicitudVer(s.id);
+  };
+
   // ── Solicitudes de firma (revisión admin) — cédula+firma que el cliente ya envió por el
   // link público. `estado`: pendiente (link sin usar) → enviada (esperando revisión) →
   // aprobada (ya es un préstamo real, prestamo_id apunta a él) | rechazada.
@@ -15232,6 +15243,11 @@
         ${s.firma ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">FIRMA</div><img src="${s.firma}" style="width:100%;max-height:140px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}`;
     const acciones = s.estado === 'enviada'
       ? `<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPrSolicitudRechazar('${s.id}')"><i class="ti ti-x"></i> Rechazar</button><button class="btn bsm bc1" type="button" style="flex:1" onclick="window.nxPrSolicitudAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y crear préstamo</button></div>`
+      : s.estado === 'aprobada' && s.prestamo_id
+      // Ya es un préstamo real: el expediente se queda aquí como respaldo permanente, y desde
+      // aquí se salta al préstamo (el camino de vuelta lo da el botón "Expediente firmado").
+      ? `<div style="font-size:11.5px;color:#166534;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px;margin-top:8px">✓ Aprobada — ya es un préstamo real. Estos documentos quedan guardados aquí como respaldo.</div>
+         <button class="btn bsm bc1" type="button" style="width:100%;margin-top:8px" onclick="document.getElementById('nxPrSolModal').remove();window.nxPrestamoVer('${s.prestamo_id}')"><i class="ti ti-cash"></i> Ver el préstamo</button>`
       : (s.estado === 'rechazada' && s.motivo_rechazo ? `<div style="font-size:11.5px;color:#dc2626;background:#fef2f2;border-radius:8px;padding:8px;margin-top:8px"><b>Motivo:</b> ${esc(s.motivo_rechazo)}</div>` : '');
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:88vh;overflow-y:auto">
       <div class="mt"><span><i class="ti ti-file-check"></i> Solicitud de ${esc(s.nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrSolModal').remove()"><i class="ti ti-x"></i></button></div>
