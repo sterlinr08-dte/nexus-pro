@@ -13439,6 +13439,7 @@
   window.nxPrestamoNuevoDeCliente = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); _prPrefillCli = c || null; _prView = 'prestamos'; abrirForm(null); };
   function abrirClienteForm(cli, onSaved) {
     cerrarModal('nxPrCliForm');
+    try { window.nxFPEnsureCSS(); } catch (e) {}
     const c = cli || {};
     _prCliOnSaved = typeof onSaved === 'function' ? onSaved : null;
     const fr = (lbl, id, ph, val0, extra) => `<div class="fr"><label>${lbl}</label><input id="${id}" class="no-upper" ${extra || ''} value="${esc(val0 == null ? '' : val0)}" placeholder="${esc(ph || '')}"></div>`;
@@ -13447,19 +13448,26 @@
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
       <div class="mt"><span><i class="ti ti-user-plus"></i> ${cli ? 'Editar cliente' : 'Nuevo cliente'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrCliForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;padding-right:1px">
+        <div class="prCard">
         ${prSec(1, 'Datos personales')}
         <div class="fr"><label>Nombre completo *</label><input id="prcNom" class="no-upper" value="${esc(c.nombre || '')}" placeholder="Nombre y apellido"></div>
         <div class="fr-row">${fr('Cédula', 'prcCed', '000-0000000-0', c.cedula, 'inputmode="numeric"')}<div class="fr"><label>Fecha de nacimiento</label><input id="prcNac" type="date" value="${esc(c.fecha_nacimiento || '')}"></div></div>
         <div class="fr-row"><div class="fr"><label>Estado civil</label><select id="prcCivil"><option value="">—</option>${['Soltero(a)', 'Casado(a)', 'Unión libre', 'Divorciado(a)', 'Viudo(a)'].map(o => `<option${c.estado_civil === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div>${fr('Nacionalidad', 'prcNacion', 'Dominicana', c.nacionalidad || 'Dominicana')}</div>
+        </div>
+        <div class="prCard">
         ${prSec(2, 'Contacto y dirección')}
         <div class="fr-row">${fr('Teléfono *', 'prcTel', '809-000-0000', c.telefono, 'inputmode="tel"')}${fr('Teléfono alterno', 'prcTelAlt', 'Opcional', c.telefono_alterno, 'inputmode="tel"')}</div>
         ${fr('Correo', 'prcEmail', 'Opcional', c.email, 'type="email"')}
         ${fr('Dirección', 'prcDir', 'Calle, número', c.direccion)}
         <div class="fr-row">${fr('Sector', 'prcSector', 'Opcional', c.sector)}${fr('Ciudad / Municipio', 'prcCiudad', 'Opcional', c.ciudad)}</div>
         ${fr('Provincia', 'prcProv', 'Opcional', c.provincia)}
+        </div>
+        <div class="prCard">
         ${prSec(3, 'Información financiera')}
         <div class="fr-row">${fr('Ocupación', 'prcOcup', 'A qué se dedica', c.ocupacion)}${fr('Lugar de trabajo', 'prcTrabajo', 'Empresa/negocio', c.lugar_trabajo)}</div>
         <div class="fr-row"><div class="fr"><label>Tipo de ingreso</label><select id="prcTipoIng"><option value="">—</option>${['Empleado', 'Negocio propio', 'Independiente', 'Remesas', 'Pensión', 'Otro'].map(o => `<option${c.tipo_ingreso === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div><div class="fr"><label>Ingreso mensual RD$</label><input id="prcIngreso" data-nx-money inputmode="numeric" value="${c.ingreso_mensual ? Math.round(c.ingreso_mensual) : ''}" placeholder="0"></div></div>
+        </div>
+        <div class="prCard">
         ${prSec(4, 'Referencias')}
         <div class="fr-row">${fr('Referencia 1 — nombre', 'prcR1N', 'Nombre', c.ref1_nombre)}${fr('Teléfono', 'prcR1T', '809-...', c.ref1_telefono, 'inputmode="tel"')}</div>
         ${fr('Relación (ref. 1)', 'prcR1Rel', 'Familiar, amigo...', c.ref1_relacion)}
@@ -13470,8 +13478,11 @@
           <div class="fr-row">${fr('Fiador — nombre', 'prcFN', 'Nombre', c.fiador_nombre)}${fr('Cédula', 'prcFC', '000-...', c.fiador_cedula, 'inputmode="numeric"')}</div>
           <div class="fr-row">${fr('Teléfono', 'prcFT', '809-...', c.fiador_telefono, 'inputmode="tel"')}${fr('Dirección', 'prcFD', 'Opcional', c.fiador_direccion)}</div>
         </div>
+        </div>
+        <div class="prCard">
         ${prSec(5, 'Notas')}
         <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
+        </div>
       </div>
       <div style="padding-top:10px"><button class="btn bc1" type="button" style="width:100%" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
     </div>`;
@@ -15121,7 +15132,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm .fr{margin-bottom:10px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;color:#1e293b;font-family:inherit}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#8b5cf6}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#475569;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
+    st.textContent = '.nxPrForm{font-family:"Plus Jakarta Sans",var(--ff),sans-serif}.nxPrForm .mt{font-weight:800}.nxPrForm .prCard{background:#fff;border:1px solid #ece9f7;border-radius:14px;padding:13px 14px;margin-bottom:11px;box-shadow:0 1px 3px rgba(76,29,149,.05)}.nxPrForm .prCard>div:first-child{margin-top:0 !important}.nxPrForm .prCard>.fr:last-child,.nxPrForm .prCard>.fr-row:last-child,.nxPrForm .prCard>div:last-child{margin-bottom:0}.nxPrForm .fr{margin-bottom:11px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:5px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;box-sizing:border-box;outline:none;background:#f8fafc;color:#1e293b;font-family:inherit;transition:border-color .15s,background .15s,box-shadow .15s}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#6d28d9;background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.12)}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#475569;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
     document.head.appendChild(st);
   }
 

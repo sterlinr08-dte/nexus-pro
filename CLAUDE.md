@@ -2424,6 +2424,39 @@ presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opci�
   propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
   ahí con el mismo patrón.
 
+### Financiamiento — formulario de cliente al look premium del módulo (25-jul-2026, v49.28)
+El dueño notó que el formulario de "Nuevo cliente" de Financiamiento se veía "muy diferente" al resto del
+módulo. Investigado: **hay un solo formulario de cliente** (`abrirClienteForm`, `parches.js` IIFE de
+Financiamiento) — todos los accesos (sidebar Clientes → `nxPrClienteNuevo`, botón del préstamo →
+`nxPrClienteNuevoDesdeForm`, Evaluación → `evNuevoCliente`) abren la MISMA función, así que la diferencia
+que veía el dueño no era entre dos formularios sino entre el formulario (estilo viejo `.nxPrForm`) y el
+CHROME del módulo (ya premium `.nxFP` morado + Plus Jakarta Sans desde v49.11+). La causa concreta: los
+modales de Financiamiento usan la clase compartida `.nxPrForm` (CSS en la línea ~15135 del IIFE), que traía
+la fuente del sistema, foco violeta plano `#8b5cf6` e inputs sin acabado — nada que ver con el morado
+premium del módulo.
+- **Arreglo, cero cambios de campos/lógica** (`nxPrClienteGuardar` y todos los ids intactos): (1) se subió
+  el CSS compartido `.nxPrForm` al look premium — `font-family:"Plus Jakarta Sans"` (la fuente del módulo,
+  cargada por `nxFPEnsureCSS`), foco morado `#6d28d9` con aro `box-shadow`, inputs con fondo `#f8fafc` +
+  radios/bordes premium. Como `.nxPrForm` lo comparten TODOS los modales de Financiamiento (préstamo,
+  config, contrato, picker...), este único cambio los calza a todos de una vez, sin tocar el HTML de cada
+  uno. (2) el formulario de cliente (`abrirClienteForm`) además envuelve sus 5 secciones (Datos personales /
+  Contacto / Financiera / Referencias / Notas) en tarjetas premium `.prCard` (blanco, borde morado tenue,
+  sombra suave) — mismo lenguaje visual que las tarjetas del módulo. (3) `abrirClienteForm` llama a
+  `window.nxFPEnsureCSS()` al abrir para garantizar la fuente. Se respetó "cada app su color" — se usó el
+  MORADO de Financiamiento (`#6d28d9`/`#4f46e5`), NO el azul del formulario de cliente del POS
+  (`abrirEntidad`, `.nxPf`), que es un módulo/tabla distinto (`pos_clientes` vs `prestamo_clientes`).
+- **Nota de alcance:** solo se envolvieron en `.prCard` las secciones del formulario de CLIENTE (el que el
+  dueño nombró). Los demás modales de Financiamiento heredan la fuente + inputs + foco premium por el CSS
+  compartido, pero no el card-wrap (no hacía falta para calzar, y evita tocar su HTML). Si el dueño quiere
+  el card-wrap en el formulario de préstamo también, es un paso aparte.
+- **Verificado con Playwright, código real extraído** (`abrirClienteForm`/`prSec` + el CSS real de
+  `.nxPrForm` tal cual del archivo): 5 tarjetas premium, inputs con fondo `#f8fafc`, campos precargados al
+  editar, caja de fiador visible con el checkbox marcado, sin desbordes en 390px ni 1000px. La fuente Plus
+  Jakarta y el aro de foco morado se confirmaron en la captura del render real (el entorno bloquea el CDN de
+  Google Fonts, así que el `getComputedStyle` del test headless no reflejó la fuente/`:focus` — limitación
+  del entorno ya documentada, no del código; en `nexusprord.com` sí cargan). `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Financiamiento — bug real: al EDITAR un préstamo el resumen mostraba matemática equivocada (25-jul-2026, v49.27)
 El dueño mandó una captura de "EDITAR PRÉSTAMO" (quincenal, 10% mensual, 8 cuotas, método plano) donde el
 selector de Frecuencia mostraba **QUINCENAL** pero el resumen decía "10% mensual = 2.33% **por semana**",
