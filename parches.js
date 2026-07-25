@@ -15585,6 +15585,25 @@
       cfg.empresa_telefono ? 'teléfono ' + esc(cfg.empresa_telefono) : ''
     ].filter(Boolean).join(', ');
     const firmaTestigo = (nom, ced) => nom ? `<div class="firma" style="max-width:48%">${esc(nom)}<br><span style="color:#777;font-size:11px">Testigo${ced ? '<br>Céd. ' + esc(ced) : ''}</span></div>` : '';
+    // ── Expediente firmado por link: la firma va DENTRO del contrato y la cédula en un anexo.
+    // Las imágenes se toman de la solicitud (dataURL ya en memoria) y no de Storage, para que
+    // el documento quede autocontenido: se imprime o se guarda en PDF sin depender de la red.
+    const solF = _prSolicitudes.find(x => String(x.prestamo_id) === String(id));
+    const firmaDeudor = (solF && solF.firma && /^data:/.test(solF.firma)) ? solF.firma : '';
+    const fFirma = (solF && solF.revisado_at) ? String(solF.revisado_at).slice(0, 10) : (p.fecha_prestamo || '');
+    // Cláusula de firma electrónica: SOLO si de verdad firmó por link. Describe lo que el sistema
+    // tiene de verdad (firma manuscrita capturada + cédula + foto + video), sin atribuirle una
+    // certificación de entidad autorizada, que este sistema no emite.
+    const clausulaFirma = firmaDeudor ? `<p><b>SEXTA — Firma electrónica y expediente digital:</b> Las partes reconocen que EL DEUDOR aceptó y firmó el presente contrato por medios electrónicos, a través de un enlace personal enviado por EL ACREEDOR, en fecha <b>${esc(fFirma)}</b>. Consta en el expediente digital de este préstamo: su firma manuscrita capturada en pantalla, las imágenes de ambas caras de su cédula de identidad y electoral${solF.selfie ? ', una fotografía de su rostro sosteniendo dicha cédula' : ''}${solF.video_path ? ' y una grabación de video en la que declara de viva voz su compromiso de pago en los términos aquí establecidos' : ''}. Las partes otorgan a dicha aceptación electrónica el mismo valor y fuerza obligatoria que a una firma manuscrita, conforme a la Ley No. 126-02 sobre Comercio Electrónico, Documentos y Firmas Digitales.</p>` : '';
+    const anexoHTML = firmaDeudor ? `
+        <div class="anexo">
+          <h2>ANEXO — EXPEDIENTE DE IDENTIDAD</h2>
+          <div class="anexoSub">Documentos recibidos de <b>${esc(p.nombre || '')}</b> al firmar electrónicamente el ${esc(fFirma)}.</div>
+          ${solF.cedula_frente ? `<div class="anexoIt"><div class="anexoLbl">CÉDULA DE IDENTIDAD — FRENTE</div><img src="${solF.cedula_frente}"></div>` : ''}
+          ${solF.cedula_dorso ? `<div class="anexoIt"><div class="anexoLbl">CÉDULA DE IDENTIDAD — DORSO</div><img src="${solF.cedula_dorso}"></div>` : ''}
+          ${solF.selfie ? `<div class="anexoIt"><div class="anexoLbl">FOTOGRAFÍA DEL DEUDOR CON SU CÉDULA</div><img src="${solF.selfie}"></div>` : ''}
+          ${solF.video_path ? `<div class="anexoIt"><div class="anexoLbl">VIDEO DE COMPROMISO</div><div class="anexoNota">Grabación archivada en el expediente digital de este préstamo. No puede reproducirse en papel: se consulta desde el sistema, en los Documentos del préstamo.${solF.video_guion ? '<br><br><b>Texto declarado por EL DEUDOR:</b> «' + esc(solF.video_guion) + '»' : ''}</div></div>` : ''}
+        </div>` : '';
     const testigosHTML = (cfg.testigo1_nombre || cfg.testigo2_nombre)
       ? `<div style="font-size:12px;text-align:center;color:#475569;margin:36px 0 0;font-weight:700">TESTIGOS</div>
          <div class="firmas" style="margin-top:40px;justify-content:space-around">${firmaTestigo(cfg.testigo1_nombre, cfg.testigo1_cedula)}${firmaTestigo(cfg.testigo2_nombre, cfg.testigo2_cedula)}</div>`
@@ -15611,7 +15630,7 @@
         <p><b>TERCERA — Saldo:</b> EL DEUDOR podrá abonar las cantidades que estime convenientes en cualquier momento hasta cubrir el monto total adeudado.</p>`;
     }
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contrato de préstamo - ${esc(p.nombre || '')}</title>
-      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#1a1a1a;max-width:640px;margin:0 auto;padding:26px 22px;line-height:1.55;font-size:13.5px}h1{font-size:19px;text-align:center;margin:0 0 2px;letter-spacing:1px}.sub{text-align:center;color:#555;font-size:12px;margin-bottom:18px}p{margin:9px 0;text-align:justify}.parte{background:#f6f7f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:12.5px}.firmas{display:flex;justify-content:space-between;gap:24px;margin-top:54px}.firma{flex:1;text-align:center;border-top:1.5px solid #1a1a1a;padding-top:6px;font-size:12px}.foot{color:#999;font-size:10.5px;text-align:center;margin-top:26px}@media print{.noprint{display:none}body{padding:0}}</style></head>
+      <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#1a1a1a;max-width:640px;margin:0 auto;padding:26px 22px;line-height:1.55;font-size:13.5px}h1{font-size:19px;text-align:center;margin:0 0 2px;letter-spacing:1px}.sub{text-align:center;color:#555;font-size:12px;margin-bottom:18px}p{margin:9px 0;text-align:justify}.parte{background:#f6f7f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:12.5px}.firmas{display:flex;justify-content:space-between;gap:24px;margin-top:54px}.firma{flex:1;text-align:center;border-top:1.5px solid #1a1a1a;padding-top:6px;font-size:12px;position:relative}.firmaImg{position:absolute;left:50%;transform:translateX(-50%);bottom:100%;max-height:58px;max-width:92%;margin-bottom:2px}.anexo{page-break-before:always;margin-top:40px;border-top:2px solid #1a1a1a;padding-top:18px}.anexo h2{font-size:15px;text-align:center;letter-spacing:.6px;margin:0 0 4px}.anexoSub{text-align:center;color:#555;font-size:11.5px;margin-bottom:16px}.anexoIt{margin-bottom:16px;page-break-inside:avoid}.anexoLbl{font-size:10.5px;font-weight:700;color:#555;letter-spacing:.4px;margin-bottom:5px}.anexoIt img{display:block;margin:0 auto;max-width:100%;max-height:420px;width:auto;border:1px solid #ccc;border-radius:6px}.anexoNota{font-size:11.5px;color:#444;background:#f6f7f9;border:1px solid #e2e8f0;border-radius:6px;padding:10px;text-align:justify}.foot{color:#999;font-size:10.5px;text-align:center;margin-top:26px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
         <div class="noprint" style="position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;background:#1e3a6e;margin:-26px -22px 18px;padding:11px 16px"><button onclick="window.close()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">&#10005; Cerrar</button><span style="color:#fff;font-size:11.5px;opacity:.85;font-family:Segoe UI,system-ui,-apple-system,sans-serif"></span></div>
         <h1>CONTRATO DE PRÉSTAMO</h1>
@@ -15623,16 +15642,18 @@
         ${clausulaPago}
         <p><b>CUARTA — Mora:</b> La falta de pago en las fechas convenidas facultará a EL ACREEDOR a exigir el saldo total adeudado y a iniciar las acciones legales correspondientes, corriendo por cuenta de EL DEUDOR los gastos y costas que ello genere.</p>
         <p><b>QUINTA — Compromiso de pago (pagaré):</b> EL DEUDOR reconoce deber y se obliga a pagar a EL ACREEDOR la suma antes indicada en las condiciones aquí establecidas, sirviendo el presente documento como pagaré y reconocimiento de deuda.</p>
+        ${clausulaFirma}
         <p>Hecho y firmado de buena fe, en dos (2) originales de un mismo tenor y efecto, uno para cada parte${testigosHTML ? ', ante los testigos que firman al pie' : ''}.</p>
         <div class="firmas">
           <div class="firma">EL ACREEDOR<br><span style="color:#777;font-size:11px">${esc(acreedor)}</span></div>
-          <div class="firma">EL DEUDOR<br><span style="color:#777;font-size:11px">${esc(p.nombre || '')}${p.cedula ? '<br>Céd. ' + esc(p.cedula) : ''}</span></div>
+          <div class="firma">${firmaDeudor ? `<img class="firmaImg" src="${firmaDeudor}" alt="Firma de EL DEUDOR">` : ''}EL DEUDOR<br><span style="color:#777;font-size:11px">${esc(p.nombre || '')}${p.cedula ? '<br>Céd. ' + esc(p.cedula) : ''}${firmaDeudor ? '<br>Firmado electrónicamente' : ''}</span></div>
         </div>
         ${testigosHTML}
         ${cfg.abogado_nombre ? `<div style="margin-top:40px;border-top:1px dashed #bbb;padding-top:16px">
           <p style="font-size:12px"><b>LEGALIZACIÓN DE FIRMAS.</b> Yo, <b>${esc(cfg.abogado_nombre)}</b>, Abogado(a) Notario(a)${cfg.abogado_matricula ? ', con Matrícula del Colegio de Abogados de la República Dominicana (CARD) No. <b>' + esc(cfg.abogado_matricula) + '</b>' : ''}${cfg.abogado_cedula ? ', portador(a) de la cédula de identidad y electoral No. <b>' + esc(cfg.abogado_cedula) + '</b>' : ''}${cfg.abogado_telefono ? ', Tel. ' + esc(cfg.abogado_telefono) : ''}, CERTIFICO Y DOY FE de que las firmas que anteceden fueron puestas libre y voluntariamente en mi presencia por las partes contratantes, quienes me declararon que esas son las firmas que acostumbran usar en todos los actos de su vida pública y privada. En la República Dominicana, a los ${fechaLarga(p.fecha_prestamo)}.</p>
           <div class="firmas" style="margin-top:46px"><div class="firma" style="max-width:60%">${esc(cfg.abogado_nombre)}<br><span style="color:#777;font-size:11px">Abogado(a) Notario(a)${cfg.abogado_matricula ? '<br>CARD No. ' + esc(cfg.abogado_matricula) : ''}</span></div></div>
         </div>` : ''}
+        ${anexoHTML}
         <button class="noprint" onclick="window.print()" style="width:100%;padding:13px;margin-top:30px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">🖨️ Imprimir / Guardar PDF</button>
         <div class="foot">${esc(empNom)} · Documento generado el ${hoy()}</div>
       </body></html>`;
