@@ -13777,8 +13777,13 @@
       </div>`;
     document.body.appendChild(ov);
     pintarModo();
-    if (p.frecuencia) { const s = document.getElementById('prFrec'); if (s) s.value = p.frecuencia; }
-    if (p.metodo_interes) { const sm = document.getElementById('prMetodo'); if (sm) sm.value = p.metodo_interes; }
+    let _reCalc = false;
+    if (p.frecuencia) { const s = document.getElementById('prFrec'); if (s) { s.value = p.frecuencia; _reCalc = true; } }
+    if (p.metodo_interes) { const sm = document.getElementById('prMetodo'); if (sm) { sm.value = p.metodo_interes; _reCalc = true; } }
+    // Recalcular DESPUÉS de restaurar frecuencia/método: pintarModo() ya corrió nxPrRecalc con los
+    // valores por defecto (semanal/plano), así que sin esto el resumen quedaba con la matemática
+    // equivocada al EDITAR un préstamo quincenal/mensual o de método saldo insoluto.
+    if (_reCalc) { try { window.nxPrRecalc(); } catch (e) {} }
     if (!pr && _prPrefillCli) { prFormPonerCliente(_prPrefillCli); _prPrefillCli = null; }
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
   }
