@@ -2424,6 +2424,43 @@ presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opci�
   propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
   ahí con el mismo patrón.
 
+### Financiamiento — calcular el préstamo por el MONTO de la cuota + "Interés plano" (25-jul-2026, v49.29)
+El dueño pidió (nota de voz) dos cosas sobre el formulario de préstamo (`abrirForm`, modo Cuotas fijas):
+(1) quitar "— más ganancia" del método y dejarlo "Interés plano"; (2) poder poner **la cuota que el
+cliente quiere pagar** (por semana/quincena/mes) y que el sistema calcule cuántas cuotas y el total, en vez
+de solo poner el número de cuotas.
+- **(1) Texto:** la opción del método pasó de "Interés simple (plano) — más ganancia" a **"Interés
+  plano"** (loan form + Evaluación + nota del resumen + encabezado de la tabla de amortización de
+  `nxPrestamoVer` + el texto de ayuda). Solo texto de UI — el cálculo no cambió.
+- **(2) Calcular por MONTO de la cuota (nuevo):** segmentado nuevo "Calcular por" en la caja de Cuotas fijas
+  con 2 botones: **Número de cuotas** (default, comportamiento de siempre) y **Monto de la cuota**. En el
+  modo nuevo, el campo "# de cuotas" se cambia por "Cuota que pagará"; al escribir la cuota,
+  `sincronizarCuotasPorMonto()` calcula el # de cuotas con `cuotasParaMonto(capital,tasa,frec,metodo,cuota)`
+  y lo escribe en el MISMO campo `prNumCuotas` de siempre — así todo lo de abajo (`calcPrestamo`,
+  `nxPrestamoGuardar`, `amortizar`, el resumen) funciona sin tocar nada: **`prNumCuotas` sigue siendo la
+  única fuente de verdad, el modo nuevo solo es una forma de llenarlo**. Variable `_prCuotaMode`
+  ('num'|'monto', se resetea a 'num' al abrir el form). `window.nxPrCuotaMode(mode)` alterna los campos.
+  El enganche está en `nxPrRecalc` (llama `sincronizarCuotasPorMonto()` antes de `calcPrestamo()`), así que
+  cambiar capital/tasa/frecuencia/método/cuota recalcula el # de cuotas en vivo. Aviso morado "Serán N
+  cuotas quincenales (la última puede variar un poco)"; si la cuota es muy baja (no cubre ni el interés, o
+  daría >360 cuotas) avisa en rojo y no calcula.
+- **Matemática de `cuotasParaMonto` (por método):** plano → `n = ceil(capital/(cuota − capital×i))`; saldo
+  insoluto (francés) → `n = ceil(−ln(1 − capital×i/cuota)/ln(1+i))`; sin interés → `ceil(capital/cuota)`;
+  con `i = tasaPorCuota(tasa,frec)` (quincenal = 5% cuando la mensual es 10%). Se redondea hacia ARRIBA, así
+  que la cuota real que sale de `amortizar(n)` es ≤ la deseada (round-trip: para el caso exacto del dueño
+  —20,000/10%/quincenal/plano/3,500— da 8 cuotas y `amortizar(8)` devuelve cuota 3,500 EXACTA). Tope de 360
+  cuotas para no generar cronogramas absurdos.
+- **Cero cambios de esquema/lógica de guardado** — `nxPrestamoGuardar` sigue leyendo `prNumCuotas`; lo que
+  se guarda es siempre # de cuotas + los términos resultantes. El modo 'monto' es puramente de entrada.
+- **Verificado con Node (cálculo) + Playwright (flujo del DOM), código real extraído** (`tasaPorCuota`/
+  `amortizar`/`cuotasParaMonto`/`sincronizarCuotasPorMonto`/`nxPrCuotaMode`/`calcPrestamo`/`nxPrRecalc` tal
+  cual del archivo): 8 aserciones numéricas (caso del dueño → 8 cuotas + round-trip exacto, cuota baja →
+  más cuotas con cuota resultante ≤ deseada, cuota que no cubre el interés → null, sin interés → división
+  simple, saldo insoluto, capital/cuota 0 → null) + 7 del DOM (toggle muestra/oculta campos, escribir cuota
+  calcula 8 y muestra el aviso, el resumen da 3,500/28,000/8,000, cuota 900 → aviso "muy baja", volver a
+  "# de cuotas" restaura). `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
 ### Financiamiento — formulario de cliente al look premium del módulo (25-jul-2026, v49.28)
 El dueño notó que el formulario de "Nuevo cliente" de Financiamiento se veía "muy diferente" al resto del
 módulo. Investigado: **hay un solo formulario de cliente** (`abrirClienteForm`, `parches.js` IIFE de
