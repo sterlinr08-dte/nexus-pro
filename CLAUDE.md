@@ -2059,6 +2059,88 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### SUPABASE STORAGE — SÍ EXISTE (el CLAUDE.md decía que no) + hueco de seguridad real cerrado (25-jul-2026, v49.40)
+**Hallazgo importante que corrige varias notas viejas de este mismo archivo.** Al buscar dónde
+guardar el video de compromiso se descubrió que **Supabase Storage SÍ está configurado y EN USO**
+desde jun-2026 — contradice las notas de v49.19/v49.23/v48.53 que decían "sin Storage" y por eso
+descartaron funciones (Documentos del Historial Crediticio, del Comprobante, etc.). **Cualquier
+trabajo futuro que las cite debe verificar primero, no darlas por buenas.**
+- **3 buckets reales:** `comprobantes` (público, tope 5 MB, solo imágenes — 45 archivos, 8 MB:
+  bauches de entregas + documentos de préstamos y vehículos), `documentos` (privado, sin tope ni
+  restricción de tipo — 0 archivos, el flujo de `documentos_clientes` de `index.html` nunca se usó),
+  `respaldos` (privado — 4 archivos, 17 MB, respaldos completos de la base que escribe la función
+  `respaldo-diario`).
+- **HUECO DE SEGURIDAD REAL, ya cerrado (migración `storage_policies_solo_autenticados`):** las 4
+  políticas de `storage.objects` eran para el rol **`public`** (que incluye `anon`) **sin ninguna
+  condición** — y la anon key es pública, va en el código fuente de `index.html`. O sea: cualquiera
+  en internet podía **descargar y BORRAR** los 3 buckets, incluidos los **respaldos completos de la
+  base de datos** (todos los clientes, facturas, cobros). Ahora: `SELECT/INSERT/UPDATE/DELETE` solo
+  para `authenticated` y solo en `comprobantes`/`documentos`; **`respaldos` quedó fuera de toda
+  política** (solo lo tocan las funciones Edge con service-role, que no pasa por RLS).
+- **La otra mitad del arreglo, que iba OBLIGATORIAMENTE junta:** las 8 llamadas a Storage del
+  frontend armaban sus headers a mano con **`api.key` (la anon key) como Bearer** en vez del JWT del
+  usuario — o sea, subían como `anon`. Restringir las políticas sin esto habría **roto en producción**
+  los bauches y los documentos de préstamos/vehículos. Los 8 sitios (3 en `index.html`: `subirDoc`
+  ×2 + `subirDocExtra`; 5 en `parches.js`: bauches, docs de préstamo subir/borrar, docs de vehículo
+  subir/borrar) pasaron a `'Bearer ' + (api.token || api.key)` — el MISMO patrón que ya usaba
+  `API.hdr()` desde siempre y otros 2 sitios de `parches.js`. Verificado con grep que no queda
+  ninguno con la anon key sola.
+- **Por qué la lectura pública de `comprobantes` NO se rompió:** ese bucket tiene `public=true` y
+  se sirve por `/storage/v1/object/public/...`, endpoint que **no evalúa RLS** — las URLs públicas
+  ya guardadas en la base (45 comprobantes) siguen funcionando igual. Las políticas solo alcanzan al
+  endpoint autenticado.
+- **Pendiente / no tocado a propósito:** `documentos_clientes` (índex.html) construye URLs
+  `/object/public/documentos/...` para un bucket que es **privado** — esas URLs nunca habrían
+  funcionado. Es un bug preexistente, pero la tabla tiene **0 filas** (el flujo jamás se usó), así
+  que no se tocó en esta ronda para no ampliar el alcance.
+
+### Financiamiento — Fase 2 del link de firma: video de compromiso + foto con la cédula (25-jul-2026, v49.40)
+Continuación de la Fase 1 (v49.39). El dueño eligió por `AskUserQuestion` sumar **video de
+compromiso** y **selfie con la cédula en mano** (descartó comprobante de ingresos y de dirección).
+- **Columnas nuevas en `prestamo_solicitudes`** (migración `prestamo_solicitudes_selfie_y_video`,
+  aditiva): `selfie` (dataURL, igual que `cedula_frente`/`cedula_dorso` — es una foto, pesa poco),
+  `video_path` (la RUTA en Storage, **no** el video: un video de 30s pesa varios MB y en base64
+  crecería ~33% más — no cabe en una columna de texto como las fotos) y `video_guion` (deja
+  constancia del texto exacto que se le pidió leer).
+- **Cómo sube el video un cliente SIN sesión** (el punto delicado: tras cerrar el hueco de
+  seguridad, `anon` ya no puede escribir en Storage — y así debe ser). Patrón de **URL firmada**:
+  el navegador pide `POST {id, accion:'firmar-video', ext}` a la función Edge; la función valida
+  que la solicitud siga `pendiente`, **decide ella la ruta** (`prestamo-solicitudes/{id}/compromiso.{ext}`,
+  el cliente nunca la elige) y devuelve una URL de subida firmada; el teléfono hace `PUT` directo
+  a esa URL. Así el archivo pesado **no pasa por la función** (evita su límite de payload) y nadie
+  puede escribir fuera de su carpeta. Al publicar, la función **solo acepta el `video_path` si
+  empieza por el prefijo de ESA solicitud** — no se puede apuntar a un archivo ajeno.
+- **Bucket `documentos` (privado), no `comprobantes`:** el video es un documento legal con la cara
+  y la voz del cliente — no puede quedar en un bucket público. Además `comprobantes` tiene tope de
+  5 MB y solo acepta imágenes, así que técnicamente tampoco servía.
+- **El guion NO es texto libre** (criterio ya acordado en la Fase 1): `guionTexto()` lo arma con los
+  términos REALES de esa solicitud — nombre, monto, número y frecuencia de cuotas, monto de cuota y
+  total. Para línea de crédito cambia solo (habla de tasa mensual y plazo del capital, no de cuotas).
+  Así lo que el cliente dice en el video coincide exactamente con lo que firma.
+- **Lado admin (`nxPrSolicitudVer`):** se muestran la selfie y el video. Como el bucket es privado,
+  `nxPrSolVideoCargar(path)` pide una **URL firmada de lectura** (`POST /storage/v1/object/sign/...`,
+  1 hora) con el JWT del admin y monta el `<video>`; si falla, avisa en vez de dejar un reproductor
+  roto. Se muestra también el `video_guion` guardado, para comparar con lo que se oye.
+- **La nota que queda en el préstamo al aprobar lista SOLO lo que de verdad llegó** (`['cédula',
+  'firma']` + foto/video si existen) — una solicitud creada antes de esta versión no dice que tiene
+  video. Mismo criterio de "no dar por hecho" del resto del sistema.
+- **El video es obligatorio para publicar** (junto con las 2 fotos de cédula, la selfie y la firma):
+  es la garantía que el dueño quería. Si la subida falla, se avisa con un mensaje claro y el botón
+  Publicar sigue deshabilitado — no se puede enviar una solicitud a medias.
+- **Verificado:** **44 pruebas Playwright** contra el archivo REAL `firma-prestamo.html` (no un
+  extracto) — incluyendo que el guion trae los datos reales en los 2 modos (cuotas y crédito), que
+  se pide el permiso de subida, que el video sube por `PUT` a la URL firmada con su tipo real, que
+  se manda la RUTA y no el video entero, y que **si la subida falla no se puede publicar** — y **40
+  pruebas** contra el código real extraído de `parches.js` del lado admin (las 26 anteriores sin
+  regresión + 14 nuevas: se ven las 4 imágenes, se pide la URL firmada con la ruta correcta y **con
+  el JWT del admin, no con la anon key**, si la firma falla se avisa, una solicitud vieja sin
+  selfie/video no muestra secciones vacías, y la nota lista solo lo recibido). `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html` pasan
+  `new Function()`; `version.json` válido. Sin desbordes en 390-420px, 0 errores de JS.
+  **Nota honesta:** este entorno no tiene salida a internet, así que la subida real por HTTPS a
+  Storage no se pudo ejercitar desde aquí — se verificó toda la lógica con el backend simulado y a
+  nivel SQL. Falta la confirmación del dueño grabando un video real desde su teléfono.
+
 ### Financiamiento — link público para que el cliente firme (cédula + firma) antes de crear el préstamo (25-jul-2026, v49.39)
 El dueño pidió algo nuevo: al armar un préstamo, poder mandarle al cliente un **link por WhatsApp**
 (sin login) donde suba la foto de su cédula (frente/dorso) y firme con el dedo, ANTES de que el

@@ -11180,7 +11180,7 @@
     const path = `abonos/${cid}/${Date.now()}.${ext}`;
     const fd = new FormData();
     fd.append('', file, 'bauche.' + ext);
-    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key };
+    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) };
     let resp = await fetch(`${api.url}/storage/v1/object/${BUCKET}/${path}`, { method: 'POST', headers, body: fd });
     if (!resp.ok && resp.status === 400) {
       resp = await fetch(`${api.url}/storage/v1/object/${BUCKET}/${path}`, { method: 'PUT', headers, body: fd });
@@ -15125,6 +15125,8 @@
           ${s.cedula_frente ? `<div><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">CÉDULA FRENTE</div><img src="${s.cedula_frente}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
           ${s.cedula_dorso ? `<div><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">CÉDULA DORSO</div><img src="${s.cedula_dorso}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
         </div>
+        ${s.selfie ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">FOTO CON LA CÉDULA</div><img src="${s.selfie}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
+        ${s.video_path ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">VIDEO DE COMPROMISO</div><div id="nxPrSolVid" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;color:#94a3b8;font-size:11.5px">Cargando video…</div>${s.video_guion ? `<div style="font-size:11px;color:#475569;background:#f8fafc;border-radius:8px;padding:8px;margin-top:6px"><b>Lo que se le pidió decir:</b> ${esc(s.video_guion)}</div>` : ''}</div>` : ''}
         ${s.firma ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">FIRMA</div><img src="${s.firma}" style="width:100%;max-height:140px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}`;
     const acciones = s.estado === 'enviada'
       ? `<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPrSolicitudRechazar('${s.id}')"><i class="ti ti-x"></i> Rechazar</button><button class="btn bsm bc1" type="button" style="flex:1" onclick="window.nxPrSolicitudAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y crear préstamo</button></div>`
@@ -15137,6 +15139,28 @@
       ${acciones}
     </div>`;
     document.body.appendChild(ov);
+    // El video vive en un bucket PRIVADO (es un documento legal, no se sirve público) — hay
+    // que pedir una URL firmada temporal para poder reproducirlo. Se hace después de pintar
+    // el modal para no retrasar lo demás; si falla, se avisa en su lugar en vez de dejar un
+    // reproductor roto.
+    if (s.video_path) window.nxPrSolVideoCargar(s.video_path);
+  };
+  window.nxPrSolVideoCargar = async function (path) {
+    const cont = document.getElementById('nxPrSolVid'); if (!cont) return;
+    try {
+      const api = getAPI();
+      const r = await fetch(`${api.url}/storage/v1/object/sign/documentos/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresIn: 3600 })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      const url = `${api.url}/storage/v1${d.signedURL || d.signedUrl}`;
+      cont.outerHTML = `<video controls playsinline preload="metadata" src="${esc(url)}" style="width:100%;max-height:260px;background:#000;border-radius:8px;border:1px solid #e2e8f0"></video>`;
+    } catch (e) {
+      cont.innerHTML = 'No se pudo cargar el video. Recarga la página e intenta de nuevo.';
+    }
   };
   window.nxPrSolicitudAprobar = async function (id) {
     const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
@@ -15149,7 +15173,9 @@
         plazo_meses: s.plazo_meses || null, fecha_prestamo: s.fecha_prestamo || hoy(), modo: s.modo,
         num_cuotas: s.modo === 'cuotas' ? s.num_cuotas : null, frecuencia: s.modo === 'cuotas' ? s.frecuencia : null,
         metodo_interes: s.modo === 'cuotas' ? (s.metodo_interes || 'plano') : 'saldo',
-        notas: ((s.notas || '') + ' [Firmado por link — cédula y firma en la solicitud ' + String(s.id).slice(0, 8) + ']').trim(),
+        // La nota lista SOLO lo que de verdad llegó en esta solicitud (no se da por hecho
+        // que haya video o foto: el flujo pudo cambiar entre una solicitud vieja y una nueva).
+        notas: ((s.notas || '') + ' [Firmado por link — ' + ['cédula', 'firma'].concat(s.selfie ? ['foto con cédula'] : []).concat(s.video_path ? ['video de compromiso'] : []).join(', ') + ' en la solicitud ' + String(s.id).slice(0, 8) + ']').trim(),
         created_by_name: nomAdmin()
       };
       const r = await getAPI().post('prestamos', datos);
@@ -15510,7 +15536,7 @@
     const path = `prestamos/${id}/${Date.now()}.${ext}`;
     const fd = new FormData();
     fd.append('', file, 'doc.' + ext);
-    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key };
+    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) };
     let resp = await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${path}`, { method: 'POST', headers, body: fd });
     if (!resp.ok && resp.status === 400) {
       resp = await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${path}`, { method: 'PUT', headers, body: fd });
@@ -15556,7 +15582,7 @@
       // Intentar borrar el archivo del storage (sin bloquear si falla)
       try {
         const api = getAPI();
-        if (doc.path && api) await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${doc.path}`, { method: 'DELETE', headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key } });
+        if (doc.path && api) await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${doc.path}`, { method: 'DELETE', headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) } });
       } catch (e) {}
       toast('ok', 'Documento eliminado');
       window.nxPrestamoDocs(id);
@@ -16088,7 +16114,7 @@
     if (!ext) ext = (file.type && file.type.includes('png')) ? 'png' : (file.type && file.type.includes('pdf')) ? 'pdf' : 'jpg';
     const path = `vehiculos/${id}/${Date.now()}.${ext}`;
     const fd = new FormData(); fd.append('', file, 'doc.' + ext);
-    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key };
+    const headers = { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) };
     let resp = await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${path}`, { method: 'POST', headers, body: fd });
     if (!resp.ok && resp.status === 400) resp = await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${path}`, { method: 'PUT', headers, body: fd });
     if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + (await resp.text()).slice(0, 120));
@@ -16119,7 +16145,7 @@
     arr.splice(idx, 1);
     try {
       await getAPI().patch('vehiculos', 'id=eq.' + id, { documentos: arr }); v.documentos = arr;
-      try { const api = getAPI(); if (doc.path && api) await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${doc.path}`, { method: 'DELETE', headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + api.key } }); } catch (e) {}
+      try { const api = getAPI(); if (doc.path && api) await fetch(`${api.url}/storage/v1/object/${DOCS_BUCKET}/${doc.path}`, { method: 'DELETE', headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) } }); } catch (e) {}
       toast('ok', 'Documento eliminado'); window.nxVehDocs(id);
     } catch (e) { toast('err', 'No se pudo eliminar', String(e && e.message || e)); }
   };

@@ -1,7 +1,12 @@
 {
-  "version": "49.39",
+  "version": "49.40",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.40",
+      "t": "NUEVO — Video de compromiso y foto con la cédula en el link de firma · Y SE CERRÓ UN HUECO DE SEGURIDAD IMPORTANTE",
+      "d": "DOS COSAS EN ESTA ACTUALIZACIÓN.\n\n1) EL LINK DE FIRMA AHORA PIDE VIDEO Y FOTO.\nAdemás de la cédula y la firma, el cliente ahora completa dos pasos más desde su teléfono:\n\n• FOTO CON LA CÉDULA: se toma una foto sosteniendo su cédula al lado de la cara. Es la prueba de que quien firma es de verdad esa persona.\n\n• VIDEO DE COMPROMISO: se le muestra en pantalla un texto ARMADO CON LOS DATOS REALES DE SU PRÉSTAMO (su nombre, el monto, cuántas cuotas, de cuánto, y el total) y graba un video corto leyéndolo en voz alta. Se abre la cámara de su propio teléfono. Si el préstamo es una línea de crédito en vez de cuotas, el texto cambia solo para decir lo que corresponde.\n\nNo puede publicar hasta tener las 2 fotos de la cédula, la foto con la cédula, el video y la firma. Al revisar la solicitud en 'Solicitudes' vas a ver todo junto: las 4 imágenes y el video para reproducirlo, más el texto exacto que se le pidió decir para que compares.\n\n2) SE CERRÓ UN HUECO DE SEGURIDAD EN TUS ARCHIVOS GUARDADOS.\nRevisando dónde guardar los videos se encontró que los archivos del sistema (comprobantes de pago, documentos de préstamos y vehículos, y los RESPALDOS COMPLETOS DE TU BASE DE DATOS) tenían el permiso abierto al público: cualquier persona en internet podía descargarlos y hasta borrarlos, sin necesidad de entrar al sistema.\n\nYa quedó cerrado. Ahora solo se puede entrar a esos archivos con la sesión iniciada, y los respaldos de la base de datos quedaron reservados únicamente para los procesos internos del sistema. Los comprobantes que ya se ven en las pantallas de siempre no cambian: se siguen viendo igual.\n\nEl video se guarda en la parte privada (no queda con un enlace público que cualquiera pueda abrir) — para verlo, el sistema genera un permiso temporal cada vez que lo abres."
+    },
     {
       "v": "49.39",
       "t": "NUEVO — Financiamiento: un link para que el cliente suba su cédula y firme desde el celular, antes de crear el préstamo",
