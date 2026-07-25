@@ -1,7 +1,12 @@
 {
-  "version": "49.44",
+  "version": "49.45",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.45",
+      "t": "ARREGLADO — El tel\u00e9fono del cliente ya no se queda con la p\u00e1gina vieja del link de firma",
+      "d": "Mandaste dos capturas del error del video. Al revisar los registros del servidor con la hora exacta, tus dos intentos (2:54 y 3:06 de la tarde) fueron ANTES de que el arreglo estuviera publicado (3:08). O sea que esas capturas son del problema anterior, no de uno nuevo.\n\nPero eso destap\u00f3 algo real: la p\u00e1gina del link se le guarda al cliente en el tel\u00e9fono, as\u00ed que un arreglo publicado despu\u00e9s NO le llega \u2014 se queda con la copia vieja y sigue fallando aunque ya est\u00e9 corregido.\n\nCorregido de dos formas:\n\n\u2022 La p\u00e1gina ahora le pide al tel\u00e9fono que siempre traiga la versi\u00f3n fresca.\n\n\u2022 Cada link que generes lleva la versi\u00f3n del sistema, as\u00ed que despu\u00e9s de cada actualizaci\u00f3n el enlace es distinto y nunca abre una copia guardada.\n\nPara probar ahora: genera un link NUEVO desde el sistema (no reutilices el de antes) y \u00e1brelo."
+    },
     {
       "v": "49.44",
       "t": "ARREGLADO — El video de compromiso no se guardaba (decía 'no se pudo, intenta de nuevo')",

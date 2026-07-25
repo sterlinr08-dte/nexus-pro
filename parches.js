@@ -15150,7 +15150,11 @@
   };
   window.nxPrLinkFirmaMostrar = function (id, nombre, telefono, mensaje) {
     cerrarModal('nxPrLinkFirma');
-    const link = location.origin + '/firma-prestamo.html?id=' + id;
+    // El `v=` no lo usa la página (solo lee `id`): está para que cada versión publicada
+    // genere una dirección distinta y el teléfono del cliente nunca abra una copia vieja
+    // guardada en caché — un arreglo publicado después no le llegaba (pasó de verdad).
+    const ver = (typeof APP_VERSION !== 'undefined') ? APP_VERSION : '';
+    const link = location.origin + '/firma-prestamo.html?id=' + id + (ver ? '&v=' + ver : '');
     const ov = document.createElement('div'); ov.id = 'nxPrLinkFirma'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     const num = telefono ? waNumero(telefono) : '';
