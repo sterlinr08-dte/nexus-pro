@@ -353,6 +353,55 @@ tbody tr:hover td{background:#f8fafc}
   .qa-g .qa:nth-child(5){animation-delay:.14s}.qa-g .qa:nth-child(6){animation-delay:.17s}
 }
 .ti-b{flex:1}.ti-t{font-weight:700;color:#1e293b}.ti-m{font-size:10px;color:#475569;margin-top:1px;font-family:var(--mono)}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SISTEMA ÚNICO DE BOTONES (NPGS §12: "todo el ERP comparte exactamente …
+   botones …"). Antes había 5 familias de clases con formas distintas: radios de
+   7/8/9/11/12/14 px, pesos 500/600/700/800/900, y hover/foco/deshabilitado
+   inconsistentes o ausentes. Aquí se unifica la FORMA y los ESTADOS de todas.
+   El COLOR de acento NO se toca — cada app conserva el suyo (enmienda "un color
+   por app" del NPGS §12).
+   Va en index.html con `html body` + !important a propósito: parches.js inyecta
+   su CSS DESPUÉS, así que sin este blindaje ganaría el suyo (mismo patrón ya
+   usado con el sidebar del POS y de Financiamiento).
+   ════════════════════════════════════════════════════════════════════════════ */
+html body .btn,
+html body .nxSf .sf-btn,
+html body .nxPf .ab,html body .nxPf .btn2,html body .nxPf .headbtn,html body .nxPf .cartsavebtn,
+html body .nx-inv-btn,html body .nx-inv-cobrar,html body .nx-inv-opt,html body .nx-inv-toolbtn,html body .nx-inv-iconbtn,
+html body .nxFP-perBtn,html body .nxFP-menuBtn,html body .nxFP-pgBtns button{
+  border-radius:10px!important;
+  font-weight:700!important;
+  font-family:var(--ff)!important;
+  cursor:pointer;
+  transition:background-color .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease,filter .15s ease!important;
+}
+/* Piso de legibilidad: ninguna etiqueta de botón por debajo de 12px. */
+html body .btn,html body .btn.bsm,html body .nx-inv-opt,html body .nxFP-perBtn{font-size:12px!important}
+/* Un solo lenguaje de estados. Sin `transform` a propósito: en iPhone, dentro de
+   ventanas con desenfoque, hace que el botón se "infle" al tocarlo (bug ya
+   documentado). Se usa brillo, que no mueve nada de sitio. */
+html body .btn:hover:not(:disabled),
+html body .nxSf .sf-btn:hover:not(:disabled),
+html body .nxPf .ab:hover:not(:disabled),html body .nxPf .btn2:hover:not(:disabled),html body .nxPf .headbtn:hover:not(:disabled),html body .nxPf .cartsavebtn:hover:not(:disabled),
+html body .nx-inv-btn:hover:not(:disabled),html body .nx-inv-cobrar:hover:not(:disabled),html body .nx-inv-opt:hover:not(:disabled),html body .nx-inv-toolbtn:hover:not(:disabled),
+html body .nxFP-perBtn:hover:not(:disabled),html body .nxFP-pgBtns button:hover:not(:disabled){filter:brightness(.96)}
+html body .btn:active:not(:disabled),
+html body .nxSf .sf-btn:active:not(:disabled),
+html body .nxPf .ab:active:not(:disabled),html body .nxPf .btn2:active:not(:disabled),html body .nxPf .headbtn:active:not(:disabled),html body .nxPf .cartsavebtn:active:not(:disabled),
+html body .nx-inv-btn:active:not(:disabled),html body .nx-inv-cobrar:active:not(:disabled),html body .nx-inv-opt:active:not(:disabled),html body .nx-inv-toolbtn:active:not(:disabled),
+html body .nxFP-perBtn:active:not(:disabled),html body .nxFP-pgBtns button:active:not(:disabled){filter:brightness(.92)}
+html body .btn:disabled,
+html body .nxSf .sf-btn:disabled,
+html body .nxPf .ab:disabled,html body .nxPf .btn2:disabled,html body .nxPf .headbtn:disabled,html body .nxPf .cartsavebtn:disabled,
+html body .nx-inv-btn:disabled,html body .nx-inv-cobrar:disabled,html body .nx-inv-opt:disabled,html body .nx-inv-toolbtn:disabled,html body .nx-inv-iconbtn:disabled,
+html body .nxFP-perBtn:disabled,html body .nxFP-menuBtn:disabled,html body .nxFP-pgBtns button:disabled{opacity:.5!important;cursor:not-allowed!important;filter:none!important}
+/* Aro de foco para teclado, con el acento de la app donde vive el botón. */
+html body .btn:focus-visible,html body .nx-inv-btn:focus-visible,html body .nx-inv-cobrar:focus-visible,html body .nx-inv-opt:focus-visible,html body .nx-inv-toolbtn:focus-visible,html body .nx-inv-iconbtn:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+html body .nxSf .sf-btn:focus-visible{outline:2px solid var(--sf-primary);outline-offset:2px}
+html body .nxPf .ab:focus-visible,html body .nxPf .btn2:focus-visible,html body .nxPf .headbtn:focus-visible,html body .nxPf .cartsavebtn:focus-visible{outline:2px solid var(--pf-blue);outline-offset:2px}
+html body .nxFP-perBtn:focus-visible,html body .nxFP-menuBtn:focus-visible,html body .nxFP-pgBtns button:focus-visible{outline:2px solid #6d28d9;outline-offset:2px}
+
 /* PDF print area */
 @media print{body{background:#fff;color:#000}.no-print{display:none!important}#pdfArea{display:block!important}}
 #pdfArea{display:none}
@@ -3710,7 +3759,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.51';
+const APP_VERSION='49.52';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
