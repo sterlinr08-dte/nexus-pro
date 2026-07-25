@@ -1,7 +1,12 @@
 {
-  "version": "49.43",
+  "version": "49.44",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.44",
+      "t": "ARREGLADO — El video de compromiso no se guardaba (decía 'no se pudo, intenta de nuevo')",
+      "d": "Reportaste que al terminar el video sal\u00eda 'no se pudo guardar, intente de nuevo'. Se revisaron los registros del servidor y qued\u00f3 claro d\u00f3nde fallaba: NO era la subida del video \u2014 fallaba un paso ANTES, cuando el sistema le pide permiso al servidor para guardar el archivo.\n\nEra un error m\u00edo de una l\u00ednea: esa petici\u00f3n se mandaba vac\u00eda, y el servidor de archivos la rechaza. Corregido y comprobado contra el servidor real (antes: error 400 \u2014 ahora: permiso concedido correctamente).\n\nAdem\u00e1s:\n\n\u2022 Si el cliente graba otra vez, ahora se reemplaza el video anterior en vez de fallar.\n\n\u2022 Si alguna vez vuelve a fallar, el aviso ya no dice solo 'intenta de nuevo': muestra el motivo real debajo, para saber qu\u00e9 pas\u00f3 de una vez."
+    },
     {
       "v": "49.43",
       "t": "ARREGLADO — Ahora el cliente SÍ puede leer el texto mientras graba el video",
