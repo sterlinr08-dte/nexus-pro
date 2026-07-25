@@ -3710,7 +3710,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.45';
+const APP_VERSION='49.46';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6981,7 +6981,7 @@ async function guardarEmp(){
   btn.disabled=false;
 }
 async function eliminarEmp(id){if(ST.clientes.find(c=>c.empresa_id===id)){toast('warn','No se puede eliminar','Hay clientes asociados');return;}
-  const ok=await swalConfirm('🏢','¿Eliminar empresa?','Esta acción no se puede deshacer');if(!ok)return;try{await API.del('empresas',`id=eq.${id}`);ST.empresas=ST.empresas.filter(e=>e.id!==id);rEmpGrd();}catch(e){toast('err','Error',e.message);}}
+  const ok=await swalConfirm('🏢','¿Eliminar empresa?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;try{await API.del('empresas',`id=eq.${id}`);ST.empresas=ST.empresas.filter(e=>e.id!==id);rEmpGrd();}catch(e){toast('err','Error',e.message);}}
 
 // ── AGENTES ──────────────────────────────────────────────────────────────────
 function rAgentes(){
@@ -7025,7 +7025,7 @@ async function guardarAgente(){
   btn.disabled=false;
 }
 async function eliminarAgt(id){if(ST.clientes.find(c=>c.agente_id===id)){toast('warn','No se puede eliminar','Hay clientes asignados');return;}
-  const ok=await swalConfirm('👤','¿Eliminar agente?','Esta acción no se puede deshacer');if(!ok)return;try{await API.del('agentes',`id=eq.${id}`);ST.agentes=ST.agentes.filter(a=>a.id!==id);rAgentes();}catch(e){toast('err','Error',e.message);}}
+  const ok=await swalConfirm('👤','¿Eliminar agente?','Esta acción no se puede deshacer',SWAL_BORRAR);if(!ok)return;try{await API.del('agentes',`id=eq.${id}`);ST.agentes=ST.agentes.filter(a=>a.id!==id);rAgentes();}catch(e){toast('err','Error',e.message);}}
 
 // ── CLIENTES (guardar/editar) ─────────────────────────────────────────────────
 function abrirNuevoCli(){
@@ -8923,13 +8923,21 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 // ── Alerta elegante de confirmación ─────────────────────────────────────────
-function swalConfirm(icon,title,msg){
+// Confirmación con 2 botones. El botón de confirmar se CONFIGURA (opts.ok / opts.color):
+// esta función nació solo para borrar y traía "Eliminar" en rojo a fuego, así que al reusarla
+// para otras acciones salían avisos absurdos (p.ej. "¿Aprobar y crear el préstamo?" con un
+// botón rojo que decía ELIMINAR). El default es neutro a propósito — para borrar hay que
+// pedir el rojo explícitamente, no que llegue por descuido.
+function swalConfirm(icon,title,msg,opts){
+  opts=opts||{};
+  const okTxt=opts.ok||'Confirmar', okCol=opts.color||'#2563eb';
   return new Promise(resolve=>{
     const overlay=document.createElement('div');overlay.className='swal-overlay';
-    overlay.innerHTML=`<div class="swal-box"><div class="swal-icon">${icon}</div><div class="swal-ttl">${title}</div><div class="swal-msg">${msg}</div><div class="swal-btns"><button onclick="this.closest('.swal-overlay').remove();window._swalResolve(false)" style="flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:13px;cursor:pointer;font-weight:500">Cancelar</button><button onclick="this.closest('.swal-overlay').remove();window._swalResolve(true)" style="flex:1;padding:10px;border:none;border-radius:10px;background:#ef4444;color:#fff;font-size:13px;cursor:pointer;font-weight:700">Eliminar</button></div></div>`;
+    overlay.innerHTML=`<div class="swal-box"><div class="swal-icon">${icon}</div><div class="swal-ttl">${title}</div><div class="swal-msg">${msg}</div><div class="swal-btns"><button onclick="this.closest('.swal-overlay').remove();window._swalResolve(false)" style="flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;font-size:13px;cursor:pointer;font-weight:500">Cancelar</button><button onclick="this.closest('.swal-overlay').remove();window._swalResolve(true)" style="flex:1;padding:10px;border:none;border-radius:10px;background:${okCol};color:#fff;font-size:13px;cursor:pointer;font-weight:700">${escHtml(okTxt)}</button></div></div>`;
     window._swalResolve=resolve;document.body.appendChild(overlay);
   });
 }
+const SWAL_BORRAR={ok:'Eliminar',color:'#ef4444'};
 
 // ── Tab switcher Facturas/Cobros ─────────────────────────────────────────────
 function switchTab(tab){
