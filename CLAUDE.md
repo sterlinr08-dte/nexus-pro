@@ -4073,6 +4073,24 @@ proveedores/compras simulados): wrapper correcto, 3 KPIs premium, 0 KPIs viejos,
 CxP 17,300 exacto, sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js`
 limpio; `version.json` válido. **Pendiente Tanda 3:** Caja (arqueo), Ajustes.
 
+### POS · Caja (arqueo) — rediseño visual (Tanda 3, pieza 2, 25-jul-2026, v49.26)
+`renderCaja()` (pestaña Caja / arqueo del POS) reskineado al look premium `.nxPf` — mismo patrón que
+Compras/RRHH/Historial/Kardex: ambos estados (caja abierta / caja cerrada) envueltos en
+`.nxPf .nxCajaWrap` + `nxPfEnsureCSS()`. Los 5 indicadores de caja abierta (efectivo, tarjeta,
+transferencia, crédito, abonos en efectivo) pasaron de las cajitas planas a `kpiPf()`/`.kpirow`. El
+recuadro "Efectivo esperado en caja" ganó clase propia `.cajaEsp` (fondo verde tenue `--pf-green-l`,
+theme-aware), la tarjeta contenedora `.cajaCard` (panel/borde/sombra `.nxPf`) y la tabla de cierres
+recientes hereda el encabezado azul via CSS scopeado (se extendió el bloque `.nxRhWrap,.nxCompWrap` para
+cubrir también `.nxCajaWrap`). Colores inline de movimientos/descuadre pasaron a `var(--pf-*)` para verse
+bien en claro/oscuro. **Cero cambios de lógica** — apertura/cierre (`nxPosAbrirCaja`/`nxPosCerrarCaja`),
+movimientos de efectivo (`nxPosMovimiento`/`nxPosAddMov`/`nxPosDelMov`), arqueo y sus asientos contables
+intactos; solo el "vestido". Verificado con 20 pruebas Playwright del código real (`renderCaja`/`kpiPf`
+extraídos + CSS real de `nxPfEnsureCSS`, con caja abierta simulada + cierres): ambos estados con wrapper
+correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro verde, 2 filas de cierres,
+sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
+`<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Pendiente Tanda 3 (último):**
+Ajustes.
+
 ### POS · Recursos Humanos / Nómina — rediseño visual (Tanda 2, cierre, 25-jul-2026, v49.24)
 `renderRRHH()` (pestañas Empleados y Nóminas del POS) reskineado al look premium `.nxPf` — mismo patrón
 que Historial/Kardex/Reportes (v49.05-06): salida envuelta en `.nxPf .nxRhWrap` + `nxPfEnsureCSS()`,
