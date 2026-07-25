@@ -12852,7 +12852,7 @@
   let _prFiltro = 'todos';
   let _prPage = 1, _prQuery = '';
   const PR_PAGE_SIZE = 12;
-  let _prClientes = [], _prView = 'prestamos', _prCliQuery = '';
+  let _prClientes = [], _prView = 'prestamos', _prCliQuery = '', _prSolicitudes = [];
   let _prRepPeriodo = 'todo'; // Reportes: 'mes' | 'anio' | 'todo' — solo alcanza las métricas de FLUJO (colocado/recuperado/cobros); el stock (balance/mora/cartera) siempre es al día de hoy.
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
   window.nxPrTipoPago = function (t) {
@@ -12974,6 +12974,7 @@
     pagos.forEach(p => { (_pagosByPrestamo[p.prestamo_id] = _pagosByPrestamo[p.prestamo_id] || []).push(p); });
     try { const cfg = await getAPI().get('prestamos_config', 'select=*&id=eq.1'); _prCfg = (cfg && cfg[0]) || {}; } catch (e) { _prCfg = {}; }
     try { _prClientes = await getAPI().get('prestamo_clientes', 'select=*&order=nombre.asc') || []; } catch (e) { _prClientes = []; }
+    try { _prSolicitudes = await getAPI().get('prestamo_solicitudes', 'select=*&order=created_at.desc') || []; } catch (e) { _prSolicitudes = []; }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -13172,13 +13173,14 @@
           ${nav('credito', 'Líneas de crédito', 'ti-credit-card')}
           <button type="button" class="nxFP-navItem${_prView === 'clientes' ? ' on' : ''}" onclick="window.nxPrView('clientes')"><i class="ti ti-users-group"></i> Clientes</button>
           <button type="button" class="nxFP-navItem${_prView === 'evaluacion' ? ' on' : ''}" onclick="window.nxPrView('evaluacion')"><i class="ti ti-clipboard-check"></i> Evaluación</button>
+          <button type="button" class="nxFP-navItem${_prView === 'solicitudes' ? ' on' : ''}" onclick="window.nxPrView('solicitudes')"><i class="ti ti-file-check"></i> Solicitudes${_prSolicitudes.filter(s => s.estado === 'enviada').length ? ` (${_prSolicitudes.filter(s => s.estado === 'enviada').length})` : ''}</button>
           <div class="nxFP-sideDiv"></div>
           <button type="button" class="nxFP-navItem${_prView === 'reportes' ? ' on' : ''}" onclick="window.nxPrView('reportes')"><i class="ti ti-report-money"></i> Reportes</button>
           <button type="button" class="nxFP-navItem" onclick="window.nxPrestamoConfig()"><i class="ti ti-settings"></i> Configuración</button>
         </nav>
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
-      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : `
+      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : `
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
           <div><div class="nxFP-topTitle">Financiamiento</div><div class="nxFP-topSub">Administra y controla todos los préstamos</div></div>
@@ -13850,7 +13852,7 @@
             <div id="prPreview"></div>
           </div>
           <div id="prScheduleWrap" style="display:none;margin-top:14px">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.3px;text-transform:uppercase;min-width:0">Vista previa de cuotas</span><button class="btn bsm bghost" type="button" style="flex:none;margin-left:auto" onclick="window.nxPrPropuesta()" title="Compartir esta propuesta con el cliente" aria-label="Compartir propuesta con el cliente"><i class="ti ti-share" style="color:#6d28d9"></i> Compartir</button></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap"><span style="font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.3px;text-transform:uppercase;min-width:0">Vista previa de cuotas</span><div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm bghost" type="button" onclick="window.nxPrPropuesta()" title="Compartir esta propuesta con el cliente" aria-label="Compartir propuesta con el cliente"><i class="ti ti-share" style="color:#6d28d9"></i> Compartir</button><button class="btn bsm bc1" type="button" onclick="window.nxPrGenerarLinkFirma()" title="Generar un link para que el cliente suba su cédula y firme" aria-label="Generar link de firma"><i class="ti ti-signature"></i> Link de firma</button></div></div>
             <div id="prSchedule"></div>
           </div>
           ${prSec(5, 'Notas (opcional)')}
@@ -14958,6 +14960,169 @@
       return;
     }
     window.nxPrestamoAmortizacion(draft);
+  };
+
+  // ── Link de firma (link público, sin login) — el cliente sube cédula+firma y esto crea
+  // la solicitud (tabla `prestamo_solicitudes`, RLS solo-admin — el link público NUNCA escribe
+  // aquí directo, siempre a través de la función Edge `prestamo-solicitud` con service role).
+  // Mismo criterio que `nxPrPropuesta`: lee el simulador tal cual está en pantalla, sin tocar
+  // `nxPrestamoGuardar`. El préstamo real NO se crea aquí — nace cuando el admin aprueba la
+  // solicitud ya con la cédula/firma adjuntas (ver nxPrSolicitudAprobar).
+  window.nxPrGenerarLinkFirma = async function () {
+    const cap = parseMoney(val('prCap')), tasa = parsePct(val('prTasa'));
+    const fecha = val('prFecha') || hoy();
+    const nombre = (val('prNom') || (_evCli && _evCli.nombre) || '').trim();
+    if (!nombre) { toast('err', 'Falta el nombre del cliente'); return; }
+    const datos = {
+      cliente_id: val('prCliId') || null, nombre,
+      cedula: (val('prCed') || '').trim(), telefono: (val('prTel') || '').trim(),
+      fecha_prestamo: fecha, notas: (val('prNotas') || '').trim(), created_by_name: nomAdmin()
+    };
+    if (_modoForm === 'credito') {
+      const plazo = parseInt(val('prPlazo'), 10) || 0;
+      if (!(cap > 0 && tasa > 0)) { toast('err', 'Completa el simulador primero', 'Faltan el capital o la tasa.'); return; }
+      Object.assign(datos, { modo: 'credito', capital: cap, tasa_interes: tasa, plazo_meses: plazo || null, total_devolver: cap, cuota_calculada: null });
+    } else if (_modoForm === 'cuotas') {
+      const n = parseInt(val('prNumCuotas'), 10) || 0;
+      if (!(cap > 0 && n > 0)) { toast('err', 'Completa el simulador primero', 'Faltan el capital o el número de cuotas.'); return; }
+      const frec = val('prFrec') || 'mensual', met = val('prMetodo') || 'plano';
+      const a = tasa > 0 ? amortizar(cap, tasa, n, fecha, frec, met) : null;
+      Object.assign(datos, { modo: 'cuotas', capital: cap, tasa_interes: tasa, num_cuotas: n, frecuencia: frec, metodo_interes: met, total_devolver: a ? a.total : cap, cuota_calculada: a ? a.cuota : Math.round(cap / n) });
+    } else {
+      toast('err', 'Los abonos libres no tienen cuotas fijas', 'Cambia a "Cuotas fijas" o "Línea de crédito" para generar un link de firma.');
+      return;
+    }
+    try {
+      const r = await getAPI().post('prestamo_solicitudes', datos);
+      const id = r && r[0] && r[0].id;
+      if (!id) { toast('err', 'No se pudo generar el link'); return; }
+      try { window.logAudit && window.logAudit('PRESTAMO_SOLICITUD_CREADA', nombre + ' · ' + fmt(datos.capital), 'Financiamiento'); } catch (e) {}
+      _prSolicitudes.unshift(Object.assign({ id, estado: 'pendiente', created_at: new Date().toISOString() }, datos));
+      window.nxPrLinkFirmaMostrar(id, nombre, datos.telefono);
+    } catch (e) { toast('err', 'Error al generar el link', String(e && e.message || e)); }
+  };
+  window.nxPrLinkFirmaMostrar = function (id, nombre, telefono) {
+    cerrarModal('nxPrLinkFirma');
+    const link = location.origin + '/firma-prestamo.html?id=' + id;
+    const ov = document.createElement('div'); ov.id = 'nxPrLinkFirma'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const num = telefono ? waNumero(telefono) : '';
+    const msg = `Hola ${(nombre || '').split(' ')[0]}, para completar tu préstamo entra a este link, sube tu cédula y firma:\n${link}`;
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-link"></i> Link de firma generado</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrLinkFirma').remove()"><i class="ti ti-x"></i></button></div>
+      <div style="font-size:12px;color:#475569;margin-bottom:8px">Comparte este enlace con <b>${esc(nombre || '')}</b> para que suba su cédula y firme desde su teléfono. Cuando lo publique, aparece en <b>"Solicitudes"</b> para que lo apruebes.</div>
+      <input id="prLkInp" readonly value="${esc(link)}" onclick="this.select()" style="width:100%;height:42px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#334155">
+      <div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+        <button class="btn bsm bghost" type="button" onclick="window.nxPrLinkCopiar()"><i class="ti ti-copy"></i> Copiar</button>
+        <a class="btn bsm bghost" href="${esc(link)}" target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Abrir</a>
+        ${num ? `<a class="btn bsm bc1" href="https://wa.me/${num}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>` : ''}
+      </div></div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPrLinkCopiar = function () {
+    const i = document.getElementById('prLkInp'); if (!i) return;
+    try { i.select(); document.execCommand('copy'); } catch (e) {}
+    try { if (navigator.clipboard) navigator.clipboard.writeText(i.value); } catch (e) {}
+    toast('ok', 'Link copiado');
+  };
+
+  // ── Solicitudes de firma (revisión admin) — cédula+firma que el cliente ya envió por el
+  // link público. `estado`: pendiente (link sin usar) → enviada (esperando revisión) →
+  // aprobada (ya es un préstamo real, prestamo_id apunta a él) | rechazada.
+  function prSolTablaHTML() {
+    if (!_prSolicitudes.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-file-off"></i></div><h3>Aún no hay solicitudes</h3><p>Genera un link de firma desde "Nuevo préstamo" para empezar.</p></div>`;
+    const badge = s => s === 'pendiente' ? '<span style="font-size:9px;font-weight:800;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:20px;white-space:nowrap">SIN ENVIAR</span>'
+      : s === 'enviada' ? '<span style="font-size:9px;font-weight:800;color:#d97706;background:#fef3c7;padding:2px 8px;border-radius:20px;white-space:nowrap">POR REVISAR</span>'
+      : s === 'aprobada' ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:20px;white-space:nowrap">APROBADA</span>'
+      : '<span style="font-size:9px;font-weight:800;color:#dc2626;background:#fee2e2;padding:2px 8px;border-radius:20px;white-space:nowrap">RECHAZADA</span>';
+    const rows = _prSolicitudes.map(s => `<tr onclick="window.nxPrSolicitudVer('${s.id}')">
+      <td data-l="Cliente" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(s.nombre || '')}</div>${s.cedula ? `<div class="nxFP-tSub">${esc(s.cedula)}</div>` : ''}</td>
+      <td data-l="Monto" class="nxFP-tMoney">${fmt(s.capital)}</td>
+      <td data-l="Estado">${badge(s.estado)}</td>
+      <td data-l="Fecha">${esc(String(s.created_at || '').slice(0, 10))}</td>
+    </tr>`).join('');
+    return `<div class="nxFP-tblWrap"><table class="nxFP-tbl"><thead><tr><th>Cliente</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function prSolicitudesMainHTML() {
+    const porRevisar = _prSolicitudes.filter(s => s.estado === 'enviada').length;
+    const sinEnviar = _prSolicitudes.filter(s => s.estado === 'pendiente').length;
+    const aprobadas = _prSolicitudes.filter(s => s.estado === 'aprobada').length;
+    const kpi2 = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
+    return `
+      <div class="nxFP-topbar">
+        <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
+        <div><div class="nxFP-topTitle">Solicitudes de firma</div><div class="nxFP-topSub">Cédula y firma que el cliente envió por el link, para validar</div></div>
+      </div>
+      <div class="nxFP-kpis">
+        ${kpi2('ti-clock-hour-4', '#fef3c7', '#d97706', 'POR REVISAR', porRevisar, 'El cliente ya envió sus datos')}
+        ${kpi2('ti-send', '#f1f5f9', '#64748b', 'SIN ENVIAR', sinEnviar, 'El link aún no lo usan')}
+        ${kpi2('ti-circle-check', '#dcfce7', '#16a34a', 'APROBADAS', aprobadas, 'Ya son préstamos reales')}
+      </div>
+      <div class="nxFP-listHead"><span>SOLICITUDES</span></div>
+      <div id="nxPrSolLista">${prSolTablaHTML()}</div>`;
+  }
+  window.nxPrSolicitudVer = function (id) {
+    const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
+    cerrarModal('nxPrSolModal');
+    const ov = document.createElement('div'); ov.id = 'nxPrSolModal'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const terminos = s.modo === 'credito'
+      ? `Línea de crédito · Capital ${fmt(s.capital)} · Tasa ${s.tasa_interes || 0}% mensual${s.plazo_meses ? ` · Plazo ${s.plazo_meses} meses` : ''}`
+      : `${s.num_cuotas || '—'} cuotas ${s.frecuencia || ''} · Capital ${fmt(s.capital)} · Total a devolver ${fmt(s.total_devolver)}${s.cuota_calculada ? ` · Cuota ${fmt(s.cuota_calculada)}` : ''}`;
+    const docs = s.estado === 'pendiente'
+      ? `<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px"><i class="ti ti-hourglass" style="font-size:26px;display:block;margin-bottom:6px"></i>El cliente todavía no ha abierto el link.</div>`
+      : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          ${s.cedula_frente ? `<div><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">CÉDULA FRENTE</div><img src="${s.cedula_frente}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
+          ${s.cedula_dorso ? `<div><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">CÉDULA DORSO</div><img src="${s.cedula_dorso}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
+        </div>
+        ${s.firma ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">FIRMA</div><img src="${s.firma}" style="width:100%;max-height:140px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}`;
+    const acciones = s.estado === 'enviada'
+      ? `<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPrSolicitudRechazar('${s.id}')"><i class="ti ti-x"></i> Rechazar</button><button class="btn bsm bc1" type="button" style="flex:1" onclick="window.nxPrSolicitudAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y crear préstamo</button></div>`
+      : (s.estado === 'rechazada' && s.motivo_rechazo ? `<div style="font-size:11.5px;color:#dc2626;background:#fef2f2;border-radius:8px;padding:8px;margin-top:8px"><b>Motivo:</b> ${esc(s.motivo_rechazo)}</div>` : '');
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:88vh;overflow-y:auto">
+      <div class="mt"><span><i class="ti ti-file-check"></i> Solicitud de ${esc(s.nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrSolModal').remove()"><i class="ti ti-x"></i></button></div>
+      <div style="font-size:12px;color:#475569;margin-bottom:10px">${esc(s.telefono || 'Sin teléfono')}${s.cedula ? ' · ' + esc(s.cedula) : ''}</div>
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px;font-size:12px;color:#4c1d95;margin-bottom:12px"><b>Términos:</b> ${esc(terminos)}</div>
+      ${docs}
+      ${acciones}
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPrSolicitudAprobar = async function (id) {
+    const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
+    try {
+      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('✅', '¿Aprobar y crear el préstamo?', 'Se creará el préstamo real con los términos de esta solicitud.') : window.confirm('¿Aprobar y crear el préstamo real?');
+      if (!ok) return;
+      const datos = {
+        nombre: s.nombre, cedula: s.cedula || '', telefono: s.telefono || '', cliente_id: s.cliente_id || null,
+        capital: s.capital, total_devolver: s.total_devolver || s.capital, tasa_interes: s.tasa_interes || 0,
+        plazo_meses: s.plazo_meses || null, fecha_prestamo: s.fecha_prestamo || hoy(), modo: s.modo,
+        num_cuotas: s.modo === 'cuotas' ? s.num_cuotas : null, frecuencia: s.modo === 'cuotas' ? s.frecuencia : null,
+        metodo_interes: s.modo === 'cuotas' ? (s.metodo_interes || 'plano') : 'saldo',
+        notas: ((s.notas || '') + ' [Firmado por link — cédula y firma en la solicitud ' + String(s.id).slice(0, 8) + ']').trim(),
+        created_by_name: nomAdmin()
+      };
+      const r = await getAPI().post('prestamos', datos);
+      const prestamoId = r && r[0] && r[0].id;
+      await getAPI().patch('prestamo_solicitudes', 'id=eq.' + id, { estado: 'aprobada', prestamo_id: prestamoId || null, revisado_at: new Date().toISOString(), revisado_por: nomAdmin() });
+      try { window.logAudit && window.logAudit('PRESTAMO_SOLICITUD_APROBADA', s.nombre + ' · ' + fmt(s.capital), 'Financiamiento'); } catch (e) {}
+      cerrarModal('nxPrSolModal');
+      toast('ok', 'Préstamo creado', s.nombre);
+      await cargarPrestamos();
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'Error al aprobar', String(e && e.message || e)); }
+  };
+  window.nxPrSolicitudRechazar = async function (id) {
+    const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
+    const motivo = window.prompt('¿Por qué se rechaza? (puedes explicárselo al cliente después)', '');
+    if (motivo === null) return;
+    try {
+      await getAPI().patch('prestamo_solicitudes', 'id=eq.' + id, { estado: 'rechazada', motivo_rechazo: motivo || null, revisado_at: new Date().toISOString(), revisado_por: nomAdmin() });
+      try { window.logAudit && window.logAudit('PRESTAMO_SOLICITUD_RECHAZADA', s.nombre, 'Financiamiento'); } catch (e) {}
+      cerrarModal('nxPrSolModal');
+      toast('ok', 'Solicitud rechazada');
+      await cargarPrestamos();
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
 
   window.nxPrestamoBorrar = async function (id) {
