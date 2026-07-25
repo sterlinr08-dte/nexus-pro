@@ -2191,6 +2191,45 @@ abría `nxPrestamoReporte` (cartera vencida imprimible); ahora navega a un dashb
   personalizado (hoy son 3 presets), "Flujo de caja proyectado" (derivable de las tablas de amortización
   futuras), y — solo si algún día el módulo suma agentes/sucursales de verdad — esas pestañas.
 
+### Financiamiento — lista de préstamos en el celular: 2 bugs reales (25-jul-2026, v49.35)
+El dueño mandó una captura de iPhone de la lista de préstamos. Se usó el método de causa raíz
+(`gstack-investigate`, primer uso del enrutamiento automático de skills): **reproducido con el CSS
+real de `nxFPEnsureCSS` + el markup verbatim de `prTablaHTML` en un navegador a 390px**, antes de
+tocar nada. Dos hallazgos, y **una hipótesis mía que resultó FALSA** — se documenta igual:
+- **Hipótesis descartada:** "hay desborde horizontal y por eso el texto sale cortado a la
+  izquierda". **Falso** — medido `scrollWidth - clientWidth = 0`, cero elementos más anchos que el
+  viewport. El arreglo de v49.20 (`min-width:0` en `.nxFP-tbl`) sigue funcionando.
+- **BUG 1 (la franja morada) — CAUSA RAÍZ:** `.nxFP-side` conserva su
+  `box-shadow:0 14px 34px rgba(76,29,149,.26)` cuando en móvil pasa a cajón fijo **cerrado**
+  (`translateX(-100%)`, x de -250 a 0). El desenfoque de 34px **se derrama dentro del viewport** y,
+  con `z-index:2600`, se pinta ENCIMA del contenido — de ahí la franja morada tapando el borde
+  izquierdo y el texto que parecía "cortado". No era scroll ni recorte: era una sombra encima.
+  Arreglado: `box-shadow:none` en `@media(max-width:900px)`, restaurada solo con `.side-open`.
+  - **Trampa real encontrada al arreglarlo (y por qué este bloque va AL FINAL del CSS):** la regla
+    base `.nxFP-side{...box-shadow...}` está declarada **más abajo** en la cadena de concatenación
+    (posición ~13316) que la media query donde la puse primero (~13073). Misma especificidad → gana
+    la última, así que el arreglo no hacía nada. Se detectó porque el harness seguía reportando
+    `boxShadow` con valor. **Al agregar reglas a `nxFPEnsureCSS`, verificar la POSICIÓN en la
+    cadena, no solo la especificidad** — el CSS base del shell se declara después de las media
+    queries de la tabla.
+- **BUG 2 (tarjeta gigante) — NPGS §7/§13/§14:** en `@media(max-width:760px)` cada `<td>` se
+  pintaba como una línea `ETIQUETA .......... valor` (`td::before{content:attr(data-l)}`) → **9
+  renglones y 263px de alto por préstamo**. Se rediseñó la fila como **rejilla de 2 columnas**
+  (`display:grid`), sin etiquetas repetidas y con la jerarquía que pide NPGS §14: nombre + estado
+  arriba, REF + cédula debajo, **total a devolver en grande** + próximo pago, y las acciones al
+  pie. **263px → 120px** (más del doble de préstamos por pantalla). Se agregaron clases a las
+  celdas en `prTablaHTML` (`nxFP-tCed`/`nxFP-tCap`/`nxFP-tTot`/`nxFP-tProx`/`nxFP-tEst`/
+  `nxFP-tAccC`, y `cero` en Días venc. cuando es 0) — **solo HTML, cero lógica**.
+  - Ocultos en móvil a propósito: **Capital** (secundario, está completo en el detalle) y
+    **Días venc. cuando es 0** (no aporta). En escritorio se siguen viendo.
+  - **Defecto propio corregido antes de publicar:** la primera versión dejaba a "Días venc." en un
+    renglón propio (`grid-row:4`) y las acciones en el 5 — al ocultarse "Días", el grid **reservaba
+    igual el renglón vacío** y quedaba un hueco visible. Se vio en la captura, no en las
+    aserciones. Ahora comparten el renglón 4.
+- **Verificado que el ESCRITORIO no cambió:** `tr` sigue en `table-row`, encabezados visibles, las
+  9 celdas presentes (Capital y Días venc. incluidos), sidebar `sticky` con su sombra, sin
+  desborde. `node --check` limpio; `version.json` válido.
+
 ### Financiamiento — bug real: la barra lateral se veía descolorida/gris en el celular (24-jul-2026, v49.21)
 El dueño mandó una captura de iPhone mostrando el menú lateral morado de Financiamiento (`.nxFP-side`,
 drawer móvil `@media(max-width:900px)`) renderizado **aguado/gris claro translúcido** (medido en la

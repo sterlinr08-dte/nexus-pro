@@ -1,7 +1,12 @@
 {
-  "version": "49.34",
+  "version": "49.35",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.35",
+      "t": "ARREGLADO — Financiamiento en el celular: se quitó la franja morada encima del texto y la lista de préstamos ahora entra completa en pantalla",
+      "d": "Dos cosas de la pantalla de préstamos en el celular.\n\n1) LA FRANJA MORADA: el menú lateral, aunque esté cerrado, dejaba su sombra morada derramada sobre el borde izquierdo, tapando el texto (se veía 'LISTA DE PRÉSTAMOS' cortado). Ahora la sombra solo aparece cuando el menú está abierto de verdad.\n\n2) LA LISTA GIGANTE: cada préstamo ocupaba casi toda la pantalla, con la etiqueta repetida en cada línea (REF, CÉDULA, CAPITAL, TOTAL A DEVOLVER, PRÓXIMO PAGO, ESTADO, DÍAS VENC., ACCIONES — nueve renglones por préstamo). Ahora cada préstamo es una tarjeta compacta que muestra primero lo que importa: el nombre y su estado arriba, el total a devolver en grande, la fecha del próximo pago al lado, y los botones abajo. Pasó de 263 a 120 píxeles de alto: ahora ves más del doble de préstamos sin desplazarte.\n\nSe quitaron dos datos que no aportaban en el celular: 'Días venc.' cuando es 0, y el Capital (sigue viéndose completo al tocar el préstamo, y en la computadora la tabla no cambió en nada).\n\nNo cambió ningún monto, ningún cálculo ni ningún botón."
+    },
     {
       "v": "49.34",
       "t": "MEJORA — Todo el sistema se ve más parejo: botones del mismo tamaño y Cuotas en el azul del Punto de Venta",

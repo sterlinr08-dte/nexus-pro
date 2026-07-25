@@ -13101,13 +13101,13 @@
       return `<tr onclick="window.nxPrestamoVer('${p.id}')">
         <td data-l="Ref" class="nxFP-tRef">${prRef(p)}</td>
         <td data-l="Prestatario" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(p.nombre || 'Sin nombre')}</div>${p.telefono ? `<div class="nxFP-tSub">${esc(p.telefono)}</div>` : ''}</td>
-        <td data-l="Cédula">${esc(p.cedula || '—')}</td>
-        <td data-l="Capital" class="nxFP-tMoney">${fmt(p.capital)}</td>
-        <td data-l="Total a devolver" class="nxFP-tMoney">${fmt(p.total_devolver)}</td>
-        <td data-l="Próximo pago">${prox || '—'}</td>
-        <td data-l="Estado"><span class="nxFP-tBadge ${et.key}">${et.label}</span></td>
-        <td data-l="Días venc." class="nxFP-tDias ${vDias > 0 ? 'bad' : ''}">${vDias > 0 ? vDias : '0'}</td>
-        <td data-l="Acciones"><div class="nxFP-tAcc">
+        <td data-l="Cédula" class="nxFP-tCed">${esc(p.cedula || '—')}</td>
+        <td data-l="Capital" class="nxFP-tMoney nxFP-tCap">${fmt(p.capital)}</td>
+        <td data-l="Total a devolver" class="nxFP-tMoney nxFP-tTot">${fmt(p.total_devolver)}</td>
+        <td data-l="Próximo pago" class="nxFP-tProx">${prox || '—'}</td>
+        <td data-l="Estado" class="nxFP-tEst"><span class="nxFP-tBadge ${et.key}">${et.label}</span></td>
+        <td data-l="Días venc." class="nxFP-tDias ${vDias > 0 ? 'bad' : 'cero'}">${vDias > 0 ? vDias : '0'}</td>
+        <td data-l="Acciones" class="nxFP-tAccC"><div class="nxFP-tAcc">
           <button type="button" title="Ver detalle" aria-label="Ver ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrestamoVer('${p.id}')"><i class="ti ti-eye"></i></button>
           <button type="button" title="Editar" aria-label="Editar ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrestamoEditar('${p.id}')"><i class="ti ti-pencil"></i></button>
           <button type="button" title="Estado de cuenta" aria-label="Estado de cuenta" onclick="event.stopPropagation();window.nxPrestamoEstadoCuenta('${p.id}')"><i class="ti ti-printer"></i></button>
@@ -23796,7 +23796,36 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-pgBtns button{min-width:34px;height:34px;padding:0 8px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#475569;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}' +
       '.nxFP-pgBtns button.on{background:#6d28d9;border-color:#6d28d9;color:#fff}.nxFP-pgBtns button:disabled{opacity:.4;cursor:default}' +
       '@media(max-width:900px){.nxFP-kpis{grid-template-columns:repeat(3,1fr)}}' +
-      '@media(max-width:760px){.nxFP-tbl thead{display:none}.nxFP-tbl,.nxFP-tbl tbody,.nxFP-tbl tr,.nxFP-tbl td{display:block;width:100%;min-width:0}.nxFP-tblWrap{min-width:0}.nxFP-tbl tbody tr{border:1px solid #eef0f5;border-radius:14px;margin:0 0 10px;padding:5px 2px;background:#fff}.nxFP-tbl tbody td{border:0;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:right}.nxFP-tbl tbody td::before{content:attr(data-l);font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;text-align:left;flex:none}.nxFP-tbl td.nxFP-tdNom{text-align:left}.nxFP-tbl td.nxFP-tdNom::before{display:none}.nxFP-tblWrap{border:0;background:transparent;overflow:visible}.nxFP-tAcc{justify-content:flex-end}}' +
+      // ── Móvil: la fila de tabla se vuelve una TARJETA compacta ────────────────
+      // Antes cada celda era una línea "ETIQUETA .......... valor" (9 líneas por
+      // préstamo, 263px de alto). NPGS §7/§13/§14: compacta, sin desperdiciar
+      // espacio, y primero lo que importa (Estado · Nombre · Monto · Acciones).
+      // Ahora la fila es una rejilla de 2 columnas y 4 renglones:
+      //   [ Nombre + teléfono            ] [ Estado ]
+      //   [ REF                          ] [ Cédula ]
+      //   [ Total a devolver (grande)    ] [ Próximo pago ]
+      //   [                                  Acciones ]
+      '@media(max-width:760px){.nxFP-tbl thead{display:none}' +
+      '.nxFP-tbl,.nxFP-tbl tbody,.nxFP-tbl td{display:block;width:100%;min-width:0}' +
+      '.nxFP-tblWrap{min-width:0;border:0;background:transparent;overflow:visible}' +
+      '.nxFP-tbl tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;align-items:center;' +
+      'border:1px solid #eef0f5;border-radius:14px;margin:0 0 10px;padding:12px 14px;background:#fff;width:100%;min-width:0}' +
+      '.nxFP-tbl tbody td{border:0;padding:0;min-width:0}' +
+      '.nxFP-tbl tbody td::before{display:none}' +          // fuera las etiquetas repetidas
+      '.nxFP-tbl td.nxFP-tCap{display:none}' +              // Capital: secundario, vive en el detalle
+      '.nxFP-tbl td.nxFP-tDias.cero{display:none}' +        // "0 días" no aporta nada
+      '.nxFP-tbl td.nxFP-tdNom{grid-column:1;grid-row:1;text-align:left;overflow:hidden}' +
+      '.nxFP-tbl td.nxFP-tdNom .nxFP-tNom{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.nxFP-tbl td.nxFP-tEst{grid-column:2;grid-row:1;justify-self:end}' +
+      '.nxFP-tbl td.nxFP-tRef{grid-column:1;grid-row:2;text-align:left;font-size:10.5px}' +
+      '.nxFP-tbl td.nxFP-tCed{grid-column:2;grid-row:2;justify-self:end;font-size:10.5px;color:#94a3b8}' +
+      '.nxFP-tbl td.nxFP-tTot{grid-column:1;grid-row:3;text-align:left;font-size:17px;font-weight:800;margin-top:6px}' +
+      '.nxFP-tbl td.nxFP-tProx{grid-column:2;grid-row:3;justify-self:end;font-size:11px;color:#64748b;margin-top:6px}' +
+      // Días venc. y Acciones COMPARTEN el renglón 4: si "Días" va oculto (cuando es
+      // 0), el grid no deja un renglón vacío reservado — que era el hueco que se veía.
+      '.nxFP-tbl td.nxFP-tDias{grid-column:1;grid-row:4;justify-self:start;align-self:center;font-size:11px;margin-top:6px}' +
+      '.nxFP-tbl td.nxFP-tAccC{grid-column:2;grid-row:4;justify-self:end;margin-top:6px}' +
+      '.nxFP-tAcc{justify-content:flex-end}}' +
       '@media(max-width:560px){.nxFP-kpis{grid-template-columns:1fr 1fr}}' +
       '.nxFPShell{display:flex;gap:16px;align-items:flex-start;position:relative}' +
       '.nxFP-side{width:232px;flex:none;background:linear-gradient(180deg,#4f46e5,#6d28d9);border-radius:18px;padding:15px 12px;display:flex;flex-direction:column;gap:5px;color:#fff;position:sticky;top:12px;box-shadow:0 14px 34px rgba(76,29,149,.26)}' +
@@ -23945,7 +23974,16 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       // Los fondos claros también son lila (#f5f3ff/#ede9fe) y el índigo #4338ca de
       // los iconos "blue": se remapean al tinte azul del POS (--pf-blue-l #eff6ff).
       '.nxFP.nxFP-pos .nxFP-ref,.nxFP.nxFP-pos .nxFP-emptyIco,.nxFP.nxFP-pos .nxFP-dico{background:#eff6ff}' +
-      '.nxFP.nxFP-pos .nxFP-qico.blue,.nxFP.nxFP-pos .nxFP-dico.blue{color:#1d4ed8}';
+      '.nxFP.nxFP-pos .nxFP-qico.blue,.nxFP.nxFP-pos .nxFP-dico.blue{color:#1d4ed8}' +
+      // ── Va AL FINAL a propósito ───────────────────────────────────────────────
+      // El cajón lateral cerrado (translateX(-100%)) conservaba su sombra morada de
+      // 34px de desenfoque: con z-index 2600 se derramaba ENCIMA del contenido y se
+      // veía como una franja morada tapando el borde izquierdo en el celular.
+      // OJO: la regla base `.nxFP-side{...box-shadow...}` se declara MÁS ABAJO en
+      // esta misma cadena, así que una media query puesta antes NO gana (misma
+      // especificidad, gana la última). Por eso este bloque cierra el CSS.
+      '@media(max-width:900px){.nxFP-side{box-shadow:none}' +
+      '.nxFPShell.side-open .nxFP-side{box-shadow:0 14px 34px rgba(76,29,149,.26)}}';
     document.head.appendChild(st);
   };
   window.nxFinFiltro = function (key) {
