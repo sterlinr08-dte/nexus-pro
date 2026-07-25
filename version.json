@@ -1,7 +1,12 @@
 {
-  "version": "49.47",
+  "version": "49.48",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.48",
+      "t": "NUEVO — El expediente firmado se guarda solo en los DOCUMENTOS del pr\u00e9stamo",
+      "d": "Ahora, al aprobar una solicitud, la c\u00e9dula (frente y dorso), la foto con la c\u00e9dula, la firma y el video pasan solos a la carpeta DOCS de ese pr\u00e9stamo.\n\n\u2022 Los VES ah\u00ed junto a todo lo dem\u00e1s, cada uno con su nombre (C\u00e9dula frente, Foto con la c\u00e9dula, Firma del cliente, Video de compromiso) y marcados en morado como 'Firmado por link', para distinguirlos de los que sub\u00edas a mano.\n\n\u2022 Los puedes ACTUALIZAR: subir m\u00e1s archivos o quitar los que no quieras, igual que siempre.\n\n\u2022 El video sigue guardado en el archivero privado (no se copia dos veces, para no gastar espacio) y se abre desde ah\u00ed con un permiso temporal.\n\nSi tienes un pr\u00e9stamo que aprobaste antes de esta versi\u00f3n, al abrir sus Documentos sale un bot\u00f3n 'Traer expediente firmado' que lo baja todo de una. Tocarlo dos veces no duplica nada."
+    },
     {
       "v": "49.47",
       "t": "NUEVO — Llegar al expediente firmado desde el pr\u00e9stamo, y al pr\u00e9stamo desde el expediente",

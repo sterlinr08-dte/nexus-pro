@@ -2059,6 +2059,43 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — el expediente firmado se guarda en los DOCUMENTOS del préstamo (25-jul-2026, v49.48)
+El dueño mandó una captura del detalle del préstamo (con los botones Contrato/Estado/Docs) y pidió
+*"que todo eso se guarde en ese documento y se visualice y se pueda actualizar"*.
+- **Se preguntó antes de construir** (`AskUserQuestion`): "ese documento" podía ser **DOCS** (la
+  carpeta de archivos del préstamo) o el **CONTRATO** imprimible — dos trabajos muy distintos. El
+  dueño eligió **DOCS**. (Un contrato no se "actualiza", se vuelve a imprimir; DOCS sí.)
+- **`copiarExpedienteADocs(prestamoId, s)`** (junto a `subirDocPrestamo`, mismo IIFE): las 4
+  imágenes viven como **dataURL** en `prestamo_solicitudes` → se convierten a Blob
+  (`dataUrlABlob`, con `atob`+`Uint8Array`, no `fetch('data:')`) y se suben a Storage con el
+  **mismo `subirDocPrestamo` de siempre** (bucket `comprobantes`, ruta `prestamos/{id}/…`), así se
+  ven y se manejan igual que cualquier documento subido a mano. **El VIDEO no se copia**: ya está
+  en el bucket privado `documentos` y pesa varios MB — duplicarlo sería tirar espacio; se guarda
+  una referencia `{privado:true, bucket, path}` y se firma una URL temporal al abrirlo
+  (`nxPrDocVerPrivado`). Un solo `PATCH` al final con todo el arreglo, no uno por archivo.
+- **Enganchado en `nxPrSolicitudAprobar`**, DESPUÉS de `cargarPrestamos()` (necesita el préstamo en
+  memoria) y en su propio `try` — si falla, el préstamo ya está creado y el aviso manda al botón de
+  respaldo. **No bloquea la aprobación.**
+- **Retroactivo a pedido:** `window.nxPrestamoTraerExpediente(id)` + aviso morado con botón
+  **"Traer expediente firmado"** dentro de `nxPrestamoDocs`, visible solo si el préstamo tiene
+  solicitud ligada y ningún documento con `origen:'firma'`. Cubre los aprobados antes de esta
+  versión y el caso de que una pieza fallara. **Idempotente** (`yaEsta(campo)`): tocarlo dos veces
+  no duplica.
+- **`DOC_TIPOS` ganó 3 tipos con bandera `soloLectura`** (`selfie`/`firma`/`video`): dan etiqueta e
+  ícono en la lista pero **no** pintan tile de subida (la subida a mano sigue aceptando solo
+  imagen/PDF, no se tocó su validación). Los del expediente salen marcados "Firmado por link" en
+  morado para distinguirlos de los subidos a mano.
+- Verificado con Playwright y el código real extraído **por contenido, no por número de línea**
+  (`nxPrSolicitudAprobar` + todo el bloque de Docs): **22 comprobaciones** — aprobar crea el
+  préstamo y sube las 4 imágenes con el **JWT del admin** (no la anon key) a la carpeta del
+  préstamo, quedan 5 documentos, el video queda como referencia sin URL pública, la carpeta los
+  muestra con su nombre real y la marca, abrir el video pide URL firmada y abrir una imagen usa la
+  pública, borrar uno actualiza la lista, el botón de respaldo trae los 5 y tocarlo otra vez no
+  duplica. Sin desborde en 390px, 0 errores de JS.
+  - **Nota de método (repetida a propósito):** este harness localiza el código con `grep` sobre el
+    contenido en vez de un rango de líneas fijo — la lección de la v49.47, donde una suite falló
+    solo porque el rango se había corrido.
+
 ### Financiamiento — el expediente firmado y el préstamo, conectados en los 2 sentidos (25-jul-2026, v49.47)
 El dueño preguntó: *"¿Y después que esté aprobado dónde veo esos expedientes?"*
 - **Lo que YA existía (se verificó en el código antes de tocar nada, no se dio por hecho):** la
