@@ -2234,6 +2234,63 @@ ventana, sin excepción.
   los 34 buscadores en línea cambió de comportamiento — siguen siendo barra fija en producción.
   Esta fase solo construyó la capacidad que usarán al migrarse (fases 2 y 3, pendientes).
 
+### NPGS §5 (buscadores) — Fase 2, primera pieza: unificar "elegir cliente" en Facturar/Cobrar del
+### POS + Recientes/Favoritos (25-jul-2026, v49.37)
+Continuación del plan de 3 fases (arriba). Al auditar los ~9 sitios "elegir un registro" se
+encontró que la mayoría (Facturar/Cobrar del POS, elegir cliente en Financiamiento, elegir
+artículo en Vender/Factura) **YA cumplían el requisito literal de NPGS §5** — ya son ventana con
+lupa, construidos en versiones anteriores (v48.97/v49.02) — solo les faltaba Recientes/Favoritos.
+Migrarlos a `ModalBusquedaBase` (el motor genérico de index.html) habría sido replatformar sin
+necesidad y, peor, **habría violado el propio reglamento del sistema** ("REGLAMENTO TÉCNICO —
+`ModalBusquedaBase`", más arriba): compartir el motor NO significa un buscador único — cada tabla
+(`pos_clientes` del POS, `prestamo_clientes` de Financiamiento) tiene su propio buscador, nunca
+uno "universal" que arriesgue traer la tabla equivocada.
+- **Lo que SÍ se encontró real y se corrigió: duplicación genuina dentro del MISMO módulo.**
+  `nxFacCliToggle` (elegir cliente al Facturar) y `nxPosCobroCliToggle` (elegir cliente al Cobrar)
+  eran ~95% el mismo código copiado dos veces — ambas leen `_clientes` del mismo cierre del IIFE
+  del POS (confirmado que no hay límite de IIFE entre ellas). Eso sí era una violación real de
+  NPGS §6 ("no duplicar funciones"), previa a esta sesión.
+  - **`nxPosClienteAbrir(modalId, onPick)` (nueva, parches.js, junto a `nxFacCliToggle`):** motor
+    compartido SOLO entre estas 2 pantallas del POS (mismo módulo, misma tabla `pos_clientes` —
+    no cruza a Financiamiento). Arma la ventana (`.modal.nxPf`, lupa+buscador+lista), agrega
+    Recientes/Favoritos con el MISMO mecanismo de `localStorage` de la Fase 1 (reusa
+    `mbbLSGet`/`mbbLSSet`/`MBB_REC_MAX`/`MBB_FAV_MAX` de `index.html`, formato-agnóstico) pero con
+    su propio snapshot `{__id,__t,__sub}` — más simple que el de `ModalBusquedaBase`, pensado para
+    reproducir EXACTO el texto que ya se mostraba ("código · por mayor"), sin arriesgar una
+    regresión visual en una pantalla de dinero. **La clave de `localStorage` es el `modalId`**
+    (`nxFacCliM` para Facturar, `nxPosCobroCliM` para Cobrar) — Favoritos/Recientes de Facturar y
+    de Cobrar quedan DELIBERADAMENTE separados (son dos flujos distintos, no tiene sentido que
+    marcar un favorito al cobrar lo muestre también al facturar sin que el usuario lo haya
+    marcado ahí).
+  - `nxFacCliToggle`/`nxPosCobroCliToggle` quedaron como envoltorios de una línea, cada uno con su
+    propio `onPick` (Facturar actualiza `_factCli`+`#facCliTxt` vía `nxFacSetCli`; Cobrar llena el
+    `<input type="hidden" id="posCliId">`+`#posCliDisp` y llama a `nxPosCobroCalc()`) — mismo
+    comportamiento externo de siempre, cero cambios en `nxFacSetCli`/`nxPosCobroCalc`/
+    `nxPosConfirmar` (que solo leen `val('posCliId')`, nunca supieron ni les importó cómo se
+    llenó). El precio "por mayor" (`precioCli()`) no se tocó — se verificó que sigue funcionando
+    igual con los 3 escenarios de siempre.
+  - CSS nuevo en `nxPfEnsureCSS()`: `.pf2cliFav` (botón de estrella circular, ámbar cuando está
+    marcado — mismo color `#f59e0b`/`var(--pf-orange-l)` que ya usa `.vfav` del catálogo de Vender,
+    consistente con el resto del sistema), `.pf2cliSec` (etiqueta de sección), `.pf2clirow.sel`
+    (resaltado de teclado). Se le agregó `position:relative;padding-right:34px` a `.pf2clirow` (la
+    fila) para dejarle espacio a la estrella sin tapar el nombre/código.
+  - Verificado con **24 pruebas Playwright** contra el código real extraído de ambas funciones (no
+    reconstruido): abrir cada ventana, marcar/desmarcar favorito sin elegir el registro, reabrir y
+    ver Favoritos→Recientes→Resultados en ese orden, elegir desde cada sección (el registro vivo,
+    no la foto guardada), escribir oculta las 2 secciones y filtra, "— Consumidor final —" limpia
+    el campo, navegación de teclado mixta (flechas cruzando las 3 secciones + Enter elige la fila
+    correcta — la misma clase de bug ya encontrada y corregida en la Fase 1), y que Facturar/Cobrar
+    tienen sus favoritos en `localStorage` bajo claves DISTINTAS (no se mezclan). Sin desborde en
+    390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+    `index.html` (1,423 / 433,200 / 681 caracteres) pasan `new Function()`; `version.json` válido.
+- **Pendiente dentro de la Fase 2** (ya son ventana, les falta Recientes/Favoritos — cada uno su
+  propio buscador, NO se unifican entre sí por el reglamento de arriba): `nxPrElegirCliente`
+  (Financiamiento, elegir cliente al crear un préstamo — tabla `prestamo_clientes`, otro módulo) y
+  `nxProdPicker`/`ppkQ` (POS, elegir artículo en Vender/Factura — más complejo, muestra stock/IMEI/
+  precio por nivel además del nombre). Después de esos dos cierra la Fase 2 completa; sigue la
+  Fase 3 (los ~24 buscadores "filtrar lo que ya veo" — Clientes/Facturas/Cobros/Vender — el trabajo
+  de mayor riesgo, al final a propósito).
+
 ### Financiamiento — lista de préstamos en el celular: 2 bugs reales (25-jul-2026, v49.35)
 El dueño mandó una captura de iPhone de la lista de préstamos. Se usó el método de causa raíz
 (`gstack-investigate`, primer uso del enrutamiento automático de skills): **reproducido con el CSS

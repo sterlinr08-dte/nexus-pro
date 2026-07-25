@@ -1,7 +1,12 @@
 {
-  "version": "49.36",
+  "version": "49.37",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.37",
+      "t": "MEJORA — El buscador de cliente en Factura y en Cobrar ya recuerda tus últimos clientes y deja marcar favoritos",
+      "d": "Sigue el trabajo que empezó en AguaPro (v49.36): las ventanas para elegir cliente al facturar y al cobrar ahora tienen las mismas dos listas antes de escribir nada — RECIENTES (los últimos que elegiste) y FAVORITOS (marcados con la estrellita ⭐ junto al nombre, tocarla no elige al cliente). En cuanto escribís algo, esas listas se apartan y solo ves los resultados que coinciden. 'Consumidor final' sigue siendo la primera opción de siempre.\n\nDe paso se unieron por dentro las dos ventanas (Factura y Cobrar eran casi el mismo código repetido dos veces) en una sola pieza compartida — más fácil de mantener parejo de aquí en adelante. Nada cambió en cómo se calcula el precio por mayor ni en el resto del cobro.\n\nSigue el mismo trabajo por partes: quedan pendientes el buscador de cliente de Financiamiento y el buscador de artículos del POS."
+    },
     {
       "v": "49.36",
       "t": "NUEVO — El buscador para elegir cliente (AguaPro) ahora recuerda tus últimos clientes y te deja marcar favoritos",
