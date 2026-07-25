@@ -86,6 +86,29 @@ Histograma real de alturas declaradas en `parches.js`:
 - `.nx-inv-btn` / `.nx-inv-cobrar` / `.nx-inv-iconbtn` — Factura del POS
 - `.nxFP-*` — Financiamiento
 
+### Forma y estados — unificados en la v49.52 ✅
+
+Las 5 familias siguen existiendo como clases (cada una con su color), pero **la forma y los
+estados ya son uno solo**, forzados desde un bloque único en `index.html` (`html body …` +
+`!important`, patrón "blindaje" — necesario porque `parches.js` inyecta su CSS DESPUÉS):
+
+| Propiedad | Antes (medido) | Ahora |
+|---|---|---|
+| `border-radius` | 0 · 7 · 8 · 9 · 11 · 12 · 14 px (**7 valores**) | **10 px** |
+| `font-weight` | 400 · 500 · 600 · 700 · 800 · 900 (**6 valores**) | **700** |
+| Tamaño de letra mínimo | 10 px (`.bsm`) | **12 px** (piso) |
+| `:hover` | ausente en casi todas | `filter:brightness(.96)` |
+| `:active` | ausente | `filter:brightness(.92)` — **nunca `transform`** (bug del iPhone) |
+| `:disabled` | opacidad .4 / .45 / .5 / .55, o nada | **opacidad .5 + `cursor:not-allowed`** |
+| `:focus-visible` | solo en 2 de 5 familias | en las 5, **con el acento de su app** |
+| `transition` | `all .15s` o nada | propiedades explícitas, .15s |
+
+**El color NO se toca** — cada app conserva el suyo (enmienda "un color por app").
+
+Excluidos a propósito (no son botones de acción): chips/pastillas de filtro, pestañas, filas del
+menú lateral, steppers +/−, `.nxFP-qbtn` (mosaico de acceso), y los botones circulares por diseño
+(`.mbbFavBtn`, `.mbbHead button`).
+
 ---
 
 ## 3. Buscadores — lo que existe
@@ -296,7 +319,11 @@ en producción. Esta fase solo construyó la capacidad que usarán cuando se mig
   lista y llamarse igual en todos los módulos"* — no como *"los doce, siempre, aunque estén
   vacíos"*. Requiere el sí del dueño.
 
-### C4 — Alturas de botón ✅ **RESUELTO en la v49.34**
+### C4 — Botones ✅ **RESUELTO — alturas en la v49.34, forma y estados en la v49.52**
+
+La segunda mitad (una sola forma y un solo lenguaje de estados para las 5 familias) está en
+§2 → *"Forma y estados — unificados en la v49.52"*. Abajo queda el detalle de las alturas.
+
 
 **NPGS §3:** Principal 44 px · Normal 40 px · Pequeño 34 px. Aplicado a los botones de acción:
 

@@ -5085,6 +5085,51 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### SISTEMA ÚNICO DE BOTONES en todo el ERP (NPGS §12, 25-jul-2026, v49.52)
+El dueño pidió "aplicar las skills de diseño" a los **botones**. Se cargaron `ui-ux-pro-max` y
+`frontend-design`, pero el estándar que manda ya estaba escrito: **NPGS §12** ("todo el ERP debe
+compartir exactamente: tipografía · iconos · **botones** · sombras · bordes…"). `DESIGN_SYSTEM.md`
+tenía documentado que las **alturas** ya se habían normalizado (C4, v49.34) pero que seguían
+existiendo **5 familias de clases de botón** con formas distintas.
+- **Auditoría con medición real, no a ojo** (Playwright cargando el CSS REAL de los 2 archivos en
+  el MISMO orden que producción — `index.html` primero, lo que inyecta `parches.js` después):
+  16 botones representativos de las 5 familias daban **7 radios distintos** (0/7/8/9/11/12/14 px)
+  y **6 pesos de letra** (400/500/600/700/800/900), con `:hover`/`:active`/`:focus-visible`
+  ausentes en la mayoría y `:disabled` con 4 opacidades diferentes (.4/.45/.5/.55) o ninguna.
+- **Arreglo — un solo bloque de CSS en `index.html`**, no 5 ediciones dispersas: normaliza SOLO la
+  forma y los estados de las 5 familias (`radius:10px`, `font-weight:700`, piso de letra 12px,
+  `transition` explícita, `hover`/`active` por brillo, `disabled` opacidad .5 + `not-allowed`,
+  `focus-visible` con el acento de SU app). **El color no se toca** — cada app conserva el suyo
+  (enmienda "un color por app" del NPGS §12).
+  - **Por qué `html body …` + `!important`:** `parches.js` inyecta su CSS DESPUÉS de `index.html`,
+    así que sin ese blindaje ganaría el suyo. Mismo patrón ya usado y documentado con el sidebar
+    del POS y el de Financiamiento. Además `.btn.bsm.bghost` (0,3,0) le gana a `html body .btn`
+    (0,1,2) por especificidad — el `!important` cubre ese caso sin tener que enumerar todos los
+    compuestos posibles.
+  - **`:active` con `filter:brightness()`, NUNCA `transform`** — el propio CLAUDE.md ya advierte
+    que `transform:scale` en `:active` dentro de ventanas con `backdrop-filter` hace que el botón
+    se "infle" en iPhone. El brillo no mueve nada de sitio.
+  - **Excluidos a propósito** (no son botones de acción): chips/pastillas de filtro, pestañas,
+    filas del menú lateral (26px, decretadas así en v47.6), steppers +/− de las tablas,
+    `.nxFP-qbtn` (mosaico de acceso, es una tarjeta) y los botones circulares por diseño
+    (`.mbbFavBtn`, `.mbbHead button`).
+- **Lo único que podía cambiar el ancho se midió aparte:** subir la letra de `.btn` (11px) y
+  `.bsm` (10px) al piso de 12px. Se probaron 4 filas reales del peor caso (acciones de WhatsApp
+  masivo, filtros de Auditoría, barra de un modal, íconos de fila de tabla) a 390px — **ninguna
+  cambió de alto ni se desbordó** (las filas ya usan `flex-wrap` y tenían holgura). Honesto: son
+  4 casos representativos, no los 137 sitios que usan `.btn`.
+- Verificado con **24 comprobaciones Playwright** midiendo el CSS real: los 16 botones quedan con
+  **un solo radio (10px) y un solo peso (700)**, ninguna etiqueta bajo 12px, los 4 deshabilitados
+  con la misma opacidad y `cursor:not-allowed`, todos con transición, el aro de foco visible en
+  las 5 familias y **con el color de su app** (POS azul ≠ Financiamiento morado), los 4 colores de
+  marca intactos (verde Guardar, azul Cobrar, azul Seguros, morado núcleo) y las alturas NPGS §3
+  sin romperse (44/40/34). Capturas antes/después revisadas. Llaves del CSS balanceadas (734/734),
+  `node --check parches.js` limpio, los 3 `<script>` de `index.html` pasan `new Function()`.
+- **Pendiente si el dueño quiere seguir:** unificar también el **tamaño de letra por rol**
+  (hoy va de 12 a 15px según la clase; NPGS no lo especifica) y los **iconos** dentro de los
+  botones (tamaños 15/17/18px según la familia). Se dejó fuera de esta ronda a propósito: son las
+  dos cosas que sí mueven el ancho del botón y merecen su propia medición.
+
 ### POS · Ajustes — rediseño visual (Tanda 3, pieza 3, CIERRA LA FASE 4, 25-jul-2026, v49.51)
 `renderAjustes()` (la última pantalla del POS que quedaba con el diseño viejo) reskineada al look
 premium `.nxPf` — mismo patrón que Caja/Compras/RRHH: salida envuelta en `.nxPf .nxAjWrap` +

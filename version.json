@@ -1,7 +1,12 @@
 {
-  "version": "49.51",
+  "version": "49.52",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.52",
+      "t": "Todos los botones del sistema con la misma forma",
+      "d": "Hasta ahora el sistema ten\u00eda 5 tipos de bot\u00f3n distintos, heredados de cuando cada m\u00f3dulo se fue construyendo por su lado. Medidos uno por uno: 7 formas de esquina diferentes y 6 grosores de letra diferentes.\n\nAhora TODOS los botones del ERP \u2014 Seguros, Punto de Venta, Factura, Financiamiento \u2014 comparten:\n\n\u2022 La misma esquina redondeada.\n\n\u2022 El mismo grosor de letra, y ninguna etiqueta por debajo de 12 px (antes hab\u00eda botones con letra de 10 px, casi ilegible).\n\n\u2022 El mismo comportamiento al pasarle el dedo o el mouse por encima, y al presionarlo.\n\n\u2022 Los botones apagados se ven igual en todos lados y el cursor avisa que no se pueden tocar.\n\n\u2022 Se ve el recuadro de selecci\u00f3n al moverse con el teclado (antes solo en 2 de los 5 tipos).\n\n\u2022 Se mantienen las alturas de 44 / 40 / 34 px seg\u00fan la importancia del bot\u00f3n.\n\nEL COLOR NO CAMBI\u00d3: cada app conserva el suyo \u2014 el verde de Guardar, el azul de Cobrar, el morado de Financiamiento. Solo se emparej\u00f3 la forma, para que el sistema se sienta uno solo y no una suma de partes."
+    },
     {
       "v": "49.51",
       "t": "Ajustes del POS con el mismo dise\u00f1o del resto del sistema",
