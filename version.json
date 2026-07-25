@@ -1,7 +1,12 @@
 {
-  "version": "49.50",
+  "version": "49.51",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.51",
+      "t": "Ajustes del POS con el mismo dise\u00f1o del resto del sistema",
+      "d": "La pantalla de Ajustes del Punto de Venta era la \u00faltima que quedaba con el dise\u00f1o viejo. Ahora se ve igual que Compras, Caja, Inventario y las dem\u00e1s: cada cosa en su propia tarjeta, con su t\u00edtulo y su color.\n\nLas 8 secciones (Numeraci\u00f3n de facturas, Recargo por mora, Garant\u00eda de reparaci\u00f3n, Secuencias de documentos, Roles y accesos, Comprobantes Fiscales NCF, Vendedores y comisiones, y Zona de peligro) quedaron separadas y ordenadas, en vez de una sola lista larga con rayitas.\n\nEn el celular se ven bien sin apretarse, y en modo oscuro ya no quedan recuadros blancos.\n\nNada cambi\u00f3 por dentro: los mismos campos, los mismos botones y las mismas funciones de siempre \u2014 solo cambi\u00f3 c\u00f3mo se ve."
+    },
     {
       "v": "49.50",
       "t": "NUEVO — Devolverle una solicitud al cliente para que corrija (sin tener que rechazarla)",
