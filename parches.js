@@ -18509,10 +18509,12 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxRepWrapK .nxMdRow{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
 .nxRepWrapK .nxMdNom{font-size:12.5px;font-weight:700;color:var(--pf-txt)}
 .nxRepWrapK .nxMdSub{font-size:10.5px;color:var(--pf-txt3)}
-.nxRhWrap .tw table thead th,.nxCompWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;white-space:nowrap}
-.nxRhWrap .tw table tbody td,.nxCompWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
-.nxRhWrap .tw table tbody tr:hover td,.nxCompWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
+.nxRhWrap .tw table thead th,.nxCompWrap .tw table thead th,.nxCajaWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;white-space:nowrap}
+.nxRhWrap .tw table tbody td,.nxCompWrap .tw table tbody td,.nxCajaWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
+.nxRhWrap .tw table tbody tr:hover td,.nxCompWrap .tw table tbody tr:hover td,.nxCajaWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
 .nxRhWrap .tw table tbody td>div>div{color:var(--pf-txt3)}
+.nxCajaWrap .cajaCard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;padding:14px 16px;box-shadow:var(--pf-shadow)}
+.nxCajaWrap .cajaEsp{background:var(--pf-green-l);border:1px solid var(--pf-green);border-radius:12px;padding:10px 14px;color:var(--pf-green)}
 .nxPf .nxRepFlow{display:flex;gap:0;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
 .nxPf .nxRepFlowStep{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px;flex:0 0 auto;position:relative}
 .nxPf .nxRepFlowStep .dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--pf-bg);border:1.5px solid var(--pf-line);color:var(--pf-txt3);font-size:10.5px;font-weight:800}
@@ -21103,28 +21105,29 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 
   // ── TAB: CAJA (apertura / arqueo / cierre) ──
   function renderCaja() {
-    const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? '#dc2626' : Number(c.descuadre) > 0 ? '#ea580c' : '#16a34a'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:#475569;font-size:11px;padding:14px">Sin cierres aún</td></tr>';
-    const histo = `<div style="font-size:11px;font-weight:800;color:#475569;margin:14px 0 4px">CIERRES RECIENTES</div><div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Fecha cierre</th><th style="text-align:right">Esperado</th><th style="text-align:right">Descuadre</th></tr></thead><tbody>${cierresHTML}</tbody></table></div>`;
+    try { window.nxPfEnsureCSS(); } catch (e) {}
+    const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? 'var(--pf-red)' : Number(c.descuadre) > 0 ? 'var(--pf-orange)' : 'var(--pf-green)'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--pf-txt3);font-size:11px;padding:14px">Sin cierres aún</td></tr>';
+    const histo = `<div style="font-size:11px;font-weight:800;color:var(--pf-txt2);margin:14px 0 4px">CIERRES RECIENTES</div><div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Fecha cierre</th><th style="text-align:right">Esperado</th><th style="text-align:right">Descuadre</th></tr></thead><tbody>${cierresHTML}</tbody></table></div>`;
     if (!_caja) {
-      return `<div class="nc" style="border:1px solid #e2e8f0;max-width:420px">
-          <div style="text-align:center;padding:6px 0 12px"><i class="ti ti-lock" style="font-size:34px;color:#475569"></i><div style="font-weight:800;color:#1e293b;margin-top:6px">Caja cerrada</div><div style="font-size:11px;color:#475569">Abre la caja para empezar el turno.</div></div>
-          <div class="fr nxPrForm" style="display:block"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Monto inicial (fondo)</label><input id="cajaIni" data-nx-money inputmode="numeric" placeholder="0" style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none"></div>
+      return `<div class="nxPf nxCajaWrap"><div class="cajaCard" style="max-width:420px">
+          <div style="text-align:center;padding:6px 0 12px"><i class="ti ti-lock" style="font-size:34px;color:var(--pf-txt3)"></i><div style="font-weight:800;color:var(--pf-txt);margin-top:6px">Caja cerrada</div><div style="font-size:11px;color:var(--pf-txt2)">Abre la caja para empezar el turno.</div></div>
+          <div class="fr nxPrForm" style="display:block"><label style="font-size:11px;font-weight:700;color:var(--pf-txt2);display:block;margin-bottom:4px">Monto inicial (fondo)</label><input id="cajaIni" data-nx-money inputmode="numeric" placeholder="0" style="width:100%;padding:10px;border:1.5px solid var(--pf-line);border-radius:10px;font-size:14px;box-sizing:border-box;outline:none"></div>
           <button class="btn bc1" type="button" style="width:100%;margin-top:10px" onclick="window.nxPosAbrirCaja()"><i class="ti ti-lock-open"></i> Abrir caja</button>
-        </div>${histo}`;
+        </div>${histo}</div>`;
     }
     const tt = _cajaTot || { efe: 0, tar: 0, tra: 0, cre: 0, abEfe: 0, ent: 0, sal: 0, esperado: Number(_caja.monto_inicial || 0), movs: [], nventas: 0 };
-    const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? '#059669' : '#dc2626'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:#475569">${esc(m.concepto || m.tipo)}</span></div><button class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin movimientos</div>';
-    return `<div class="nc" style="border:1px solid #e2e8f0">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:#16a34a;font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:#475569">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px;margin-bottom:10px">
-          ${kpi('Efectivo', fmt(tt.efe), '#059669')}${kpi('Tarjeta', fmt(tt.tar), '#6d28d9')}${kpi('Transfer.', fmt(tt.tra), '#7c3aed')}${kpi('Crédito', fmt(tt.cre), '#dc2626')}${kpi('Abonos efec.', fmt(tt.abEfe), '#059669')}
+    const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--pf-line);font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? 'var(--pf-green)' : 'var(--pf-red)'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:var(--pf-txt2)">${esc(m.concepto || m.tipo)}</span></div><button class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-trash" style="color:var(--pf-red)"></i></button></div>`).join('') : '<div style="color:var(--pf-txt3);font-size:11px;padding:10px">Sin movimientos</div>';
+    return `<div class="nxPf nxCajaWrap"><div class="cajaCard">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:var(--pf-green);font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:var(--pf-txt2)">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
+        <div class="kpirow" style="margin-bottom:10px">
+          ${kpiPf('Efectivo', fmt(tt.efe), 'var(--pf-green)')}${kpiPf('Tarjeta', fmt(tt.tar), 'var(--pf-purple)')}${kpiPf('Transfer.', fmt(tt.tra), 'var(--pf-purple)')}${kpiPf('Crédito', fmt(tt.cre), 'var(--pf-red)')}${kpiPf('Abonos efec.', fmt(tt.abEfe), 'var(--pf-green)')}
         </div>
-        <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:10px;padding:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;color:#065f46;font-size:12px">Efectivo esperado en caja</span><b style="font-size:17px;color:#065f46">${fmt(tt.esperado)}</b></div>
-        <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 4px">MOVIMIENTOS DE EFECTIVO</div>
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:6px">${movsHTML}</div>
+        <div class="cajaEsp" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:12px">Efectivo esperado en caja</span><b style="font-size:17px">${fmt(tt.esperado)}</b></div>
+        <div style="font-size:11px;font-weight:800;color:var(--pf-txt2);margin:4px 0 4px">MOVIMIENTOS DE EFECTIVO</div>
+        <div style="background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;overflow:hidden;margin-bottom:6px">${movsHTML}</div>
         <div style="display:flex;gap:6px;margin-bottom:12px"><button class="btn bsm bghost" type="button" onclick="window.nxPosMovimiento('entrada')"><i class="ti ti-plus"></i> Entrada</button><button class="btn bsm bghost" type="button" onclick="window.nxPosMovimiento('salida')"><i class="ti ti-minus"></i> Salida / Gasto</button></div>
         <button class="btn bc1" type="button" style="width:100%" onclick="window.nxPosCerrarCaja()"><i class="ti ti-lock"></i> Cerrar caja / Arqueo</button>
-      </div>${histo}`;
+      </div>${histo}</div>`;
   }
   window.nxPosAbrirCaja = async function () {
     const ini = parseMoney(val('cajaIni'));
