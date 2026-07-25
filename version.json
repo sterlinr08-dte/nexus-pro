@@ -1,7 +1,12 @@
 {
-  "version": "49.40",
+  "version": "49.41",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.41",
+      "t": "NUEVO — Ahora revisas y corriges el texto ANTES de mandarle el link al cliente",
+      "d": "Antes, al tocar 'Link de firma' el enlace se creaba de una vez y el texto del video salía automático, sin que pudieras verlo.\n\nAhora se abre primero una pantalla de REVISIÓN que te muestra todo lo que el cliente va a ver en su teléfono:\n\n• LOS TÉRMINOS que verá (monto, cuotas, total) — para cambiarlos cierras y ajustas el simulador.\n\n• EL TEXTO QUE LEERÁ EN EL VIDEO — viene escrito con los datos reales del préstamo, pero lo puedes corregir como quieras antes de enviarlo.\n\n• EL MENSAJE DE WHATSAPP — también editable. El link se le pega solo al final.\n\nNada se crea hasta que tocas 'Crear el link'. Si cancelas, no queda nada guardado.\n\nLo que corrijas es lo que el cliente ve: el texto que tú apruebes es el que le sale en pantalla para leer, y ya no se reemplaza por el automático."
+    },
     {
       "v": "49.40",
       "t": "NUEVO — Video de compromiso y foto con la cédula en el link de firma · Y SE CERRÓ UN HUECO DE SEGURIDAD IMPORTANTE",

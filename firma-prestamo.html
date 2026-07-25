@@ -113,7 +113,10 @@ label.fl:first-child{margin-top:0}
 
   // El guion NO es texto libre: se arma con los términos REALES de este préstamo, para que
   // lo que el cliente dice en el video coincida exactamente con lo que va a firmar.
+  // Si el negocio ya lo revisó y corrigió al generar el link (viene en `video_guion`), manda
+  // ESE — el de aquí abajo es solo el respaldo para solicitudes que no traigan ninguno.
   function guionTexto(){
+    if (S.video_guion && String(S.video_guion).trim()) return String(S.video_guion).trim();
     var nom=String(S.nombre||"").trim();
     if(S.modo==="credito"){
       return "Yo, "+nom+", declaro que recibí una línea de crédito de "+fmt(S.capital)
