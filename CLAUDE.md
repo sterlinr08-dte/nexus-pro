@@ -2191,6 +2191,49 @@ abría `nxPrestamoReporte` (cartera vencida imprimible); ahora navega a un dashb
   personalizado (hoy son 3 presets), "Flujo de caja proyectado" (derivable de las tablas de amortización
   futuras), y — solo si algún día el módulo suma agentes/sucursales de verdad — esas pestañas.
 
+### NPGS §5 (buscadores) — Fase 1: Recientes + Favoritos en `ModalBusquedaBase` (25-jul-2026, v49.36)
+El dueño pidió atacar el conflicto C2 de `DESIGN_SYSTEM.md` (el más grande de los que quedaban).
+Se investigó primero con un agente de exploración: el conteo real, línea por línea, dio **34
+buscadores en línea** y **1 solo en ventana** — no los 47/7 que decía la primera versión del
+documento (esa cifra contaba coincidencias de texto, no llamadas reales; corregido). De los 34,
+~9 de verdad "eligen un registro" (estructuralmente iguales al único caso real que ya usa
+`ModalBusquedaBase`, elegir cliente en AguaPro) y ~24 solo "filtran la lista que ya se está
+viendo" (Clientes, Facturas, Cobros, Vender — las pantallas de más uso diario). Se le planteó la
+tensión real (NPGS §5 exige ventana siempre; convertir un filtro-en-vivo a ventana le agrega un
+clic extra a lo más usado del sistema) y el dueño eligió **cumplimiento literal**: los 34 pasan a
+ventana, sin excepción.
+- **Plan en 3 fases** (mismo criterio de siempre — nunca 34 sitios de un golpe): (1) Recientes +
+  Favoritos en el motor compartido — **HECHA esta versión**. (2) Migrar los ~9 "elegir registro"
+  (mismo riesgo bajo que AguaPro). (3) Migrar los ~24 "filtrar lo que ya veo" — el trabajo de
+  mayor riesgo, al final a propósito.
+- **Fase 1 — `ModalBusquedaBase` (`index.html`), aditivo puro, cero pantallas tocadas:**
+  Recientes/Favoritos se guardan en `localStorage` por `o.id` del buscador (preferencia del
+  navegador, no dato del negocio — no necesitó tabla ni columna nueva). Se guarda una **foto
+  chica** del registro (`mbbSnapshot`: id + título + subcampos ya visibles), nunca el objeto
+  completo — así sigue viéndose bien aunque el dato cambie después. Al elegir desde Recientes/
+  Favoritos en modo `datos` se busca el registro **vivo** en el array por su id (`mbbElegirGuardado`)
+  — si ya no existe, cae honesto a la foto guardada en vez de fallar. El único consumidor real de
+  hoy (`nxAguaAbrirBuscadorCliente`, AguaPro) heredó las 2 secciones nuevas **sin cambiar una sola
+  línea de su propia llamada** — es el mismo motor.
+  - **Bug real encontrado y corregido ANTES de publicar (no llegó a producción):** la navegación
+    por teclado (`mbbFlecha`/`mbbEnter`) asumía que la lista visible era solo resultados
+    (`st.filas`) — con Favoritos/Recientes antepuestos, el índice de las flechas apuntaba a la
+    fila equivocada y Enter podía elegir un registro distinto al resaltado visualmente. Se
+    corrigió con `st.navOrder` (el orden REAL de las filas en pantalla, calculado en el mismo
+    orden en que `mbbCargar` arma el HTML: favoritos→recientes→resultados) en vez de indexar
+    directo sobre `st.filas`.
+  - Verificado con **19 pruebas Playwright** contra el motor real extraído del archivo, servido
+    por un HTTP local (no `about:blank` — `localStorage` necesita un origen real para funcionar en
+    el navegador de prueba). Reproduce el caso real de AguaPro: marcar/quitar favorito sin elegir
+    el registro, reabrir y ver las 2 secciones nuevas con la estrella marcada, elegir desde
+    Recientes con el registro vivo completo (no la foto), escribir texto oculta ambas secciones
+    (solo importa filtrar), y la prueba específica del bug de navegación (bajar con flechas hasta
+    la última fila visible → Enter elige exactamente esa, cruzando las 3 secciones). Sin desborde
+    en 420px, 0 errores de JS.
+- **Aún NO hecho, para que quede claro y no se confunda con "buscadores resueltos":** ninguno de
+  los 34 buscadores en línea cambió de comportamiento — siguen siendo barra fija en producción.
+  Esta fase solo construyó la capacidad que usarán al migrarse (fases 2 y 3, pendientes).
+
 ### Financiamiento — lista de préstamos en el celular: 2 bugs reales (25-jul-2026, v49.35)
 El dueño mandó una captura de iPhone de la lista de préstamos. Se usó el método de causa raíz
 (`gstack-investigate`, primer uso del enrutamiento automático de skills): **reproducido con el CSS
