@@ -18,7 +18,21 @@
 >   se aparta el sistema de NPGS, con el plan de convergencia. Es el puente entre los dos.
 >
 > Si algo de este archivo contradice a NPGS en materia de diseño: **detenerse, explicárselo al
-> dueño y proponer la solución que cumpla el estándar** — nunca resolverlo por cuenta propia.
+> dueño y proponer la solución** — nunca resolverlo por cuenta propia.
+>
+> ### ⚖️ Enmienda del dueño (25-jul-2026): **"No es quien manda por encima, sino lo que más conviene"**
+>
+> NPGS **no es una autoridad ciega**. En cada decisión de diseño se pesan las tres cosas —
+> lo que dice NPGS, lo que dicen las buenas prácticas del oficio, y **lo que de verdad le
+> conviene al negocio y a quien usa el sistema todos los días** — y gana lo que más conviene,
+> no lo que esté escrito más arriba. Cuando cumplir NPGS al pie de la letra empeoraría el
+> sistema: se para, se le explica al dueño con el caso concreto y el costo REAL medido, y se
+> propone lo que sí conviene; la decisión final es suya, pero llega con la recomendación puesta.
+> Toda desviación se escribe con su razón en `DESIGN_SYSTEM.md` — una excepción sin razón sigue
+> siendo desorden; lo que cambia es que una excepción **bien razonada ya es legítima**.
+> **No se relaja:** la consistencia visual entre pantallas, no fingir funciones que no existen,
+> no duplicar, y verificar de verdad antes de publicar. Texto completo en `NPGS.md`
+> (PRIORIDAD MÁXIMA). **Reabre** la decisión de buscadores (`DESIGN_SYSTEM.md` §6, C2).
 
 Contexto del proyecto para cualquier sesión de Claude Code. Léelo al inicio para
 no perder el hilo entre chats (la conversación se llena, pero **el contexto vive
