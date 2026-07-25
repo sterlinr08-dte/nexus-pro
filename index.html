@@ -2757,11 +2757,19 @@ function ModalBusquedaBase(o){
       +'.mbbFoot{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-top:1px solid #e2e8f0;font-size:11.5px;color:#64748b;flex:0 0 auto;gap:8px}'
       +'.mbbFoot button{border:1px solid #e2e8f0;background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11.5px;touch-action:manipulation}'
       +'.mbbFoot button:disabled{opacity:.4;cursor:default}'
-      +'.mbbLoad .mbbList{opacity:.5}';
+      +'.mbbLoad .mbbList{opacity:.5}'
+      // NPGS §5: toda ventana de búsqueda lleva Recientes y Favoritos. Van ANTES de
+      // "Resultados" y solo cuando no hay texto escrito (al escribir, importa filtrar).
+      +'.mbbSecLbl{font-size:10px;font-weight:800;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;padding:8px 8px 4px}'
+      +'.mbbRow{position:relative;padding-right:34px}'
+      +'.mbbFavBtn{position:absolute;top:6px;right:4px;width:26px;height:26px;border:0;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#cbd5e1;cursor:pointer;touch-action:manipulation}'
+      +'.mbbFavBtn:hover{background:#f1f5f9;color:#94a3b8}'
+      +'.mbbFavBtn.on{color:#f59e0b}'
+      +'.mbbFavBtn.on:hover{background:#fffbeb}';
     document.head.appendChild(st);
   }
   cerrarModalBusqueda(id);
-  window.__mbbReg[id]={cfg:o,q:'',page:0,tam:o.tamPagina||20,filas:{},total:0,timer:null,token:0,sel:-1};
+  window.__mbbReg[id]={cfg:o,q:'',page:0,tam:o.tamPagina||20,filas:{},total:0,timer:null,token:0,sel:-1,favShown:{},recShown:{},navOrder:[]};
   const ov=document.createElement('div');ov.id='mbbOv_'+id;ov.className='mbbOv';
   ov.addEventListener('click',function(ev){if(ev.target===ov)cerrarModalBusqueda(id);});
   ov.innerHTML='<div class="mbbBox">'
@@ -2794,18 +2802,27 @@ function mbbBuscar(id,v){
   clearTimeout(st.timer);
   st.timer=setTimeout(function(){mbbCargar(id);},300);
 }
+// navOrder: orden REAL de las filas en pantalla (Favoritos + Recientes + Resultados,
+// mismo orden en que mbbCargar arma el HTML) — necesario desde que Favoritos/Recientes
+// se anteponen a los resultados: st.filas SOLO tiene resultados, así que navegar con
+// flechas y elegir con Enter tiene que mirar navOrder, no filas, o seleccionaría la
+// fila equivocada en cuanto hubiera algún favorito/reciente mostrado.
+function mbbElegirNav(id,item){
+  if(!item)return;
+  if(item.kind==='res')mbbElegir(id,item.i);else mbbElegirGuardado(id,item.kind,item.i);
+}
 function mbbEnter(id){
   const st=window.__mbbReg[id];if(!st)return;
-  if(st.sel>=0&&st.filas[st.sel]){mbbElegir(id,st.sel);return;}
-  const n=Object.keys(st.filas).length;
-  if(n===1){mbbElegir(id,0);return;}
+  const nav=st.navOrder||[];
+  if(st.sel>=0&&nav[st.sel]){mbbElegirNav(id,nav[st.sel]);return;}
+  if(nav.length===1){mbbElegirNav(id,nav[0]);return;}
   clearTimeout(st.timer);mbbCargar(id);
 }
 function mbbFlecha(id,ev){
   if(ev.key!=='ArrowDown'&&ev.key!=='ArrowUp')return;
   ev.preventDefault();
   const st=window.__mbbReg[id];if(!st)return;
-  const n=Object.keys(st.filas).length;if(!n)return;
+  const n=(st.navOrder||[]).length;if(!n)return;
   st.sel=ev.key==='ArrowDown'?Math.min(n-1,st.sel+1):Math.max(0,st.sel-1);
   const list=document.getElementById('mbbList_'+id);if(!list)return;
   const rows=list.querySelectorAll('.mbbRow');
@@ -2814,6 +2831,56 @@ function mbbFlecha(id,ev){
 }
 function mbbNorm(s){return String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function mbbPag(id,d){const st=window.__mbbReg[id];if(!st)return;st.page=Math.max(0,st.page+d);st.sel=-1;mbbCargar(id);}
+
+// \u2500\u2500 Recientes y Favoritos (NPGS \u00a75) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Guardados en localStorage por cada buscador (o.id), no en la base \u2014 son
+// preferencias del navegador de quien usa el sistema, no datos del negocio.
+// Se guarda una "foto" chica del registro (id + t\u00edtulo + subcampos ya
+// visibles en la fila), NUNCA el registro completo: as\u00ed Recientes/Favoritos
+// siguen mostr\u00e1ndose bien aunque el dato original cambie o se borre despu\u00e9s.
+const MBB_REC_MAX=6,MBB_FAV_MAX=30;
+function mbbLSKey(kind,id){return 'nxMbb'+kind+'_'+id;}
+function mbbLSGet(kind,id){try{const v=JSON.parse(localStorage.getItem(mbbLSKey(kind,id))||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
+function mbbLSSet(kind,id,arr){try{localStorage.setItem(mbbLSKey(kind,id),JSON.stringify(arr));}catch(e){}}
+function mbbSnapshot(cfg,row){
+  const idKey=cfg.idKey||'id';
+  const cols=cfg.columnas||[];
+  const tit=cols[0]?row[cols[0].k]:(row.nombre!=null?row.nombre:row.id);
+  const subs=cols.slice(1).map(function(c){return row[c.k]?{t:c.t,v:String(row[c.k])}:null;}).filter(Boolean);
+  return {__id:row[idKey],__t:(tit==null?'':String(tit)),__s:subs};
+}
+function mbbEsFav(id,snap){return mbbLSGet('Fav',id).some(function(f){return f.__id===snap.__id;});}
+function mbbToggleFav(id,kind,i){
+  const st=window.__mbbReg[id];if(!st)return;
+  const cfg=st.cfg;
+  let snap=null;
+  if(kind==='res'){const row=st.filas[i];if(row)snap=mbbSnapshot(cfg,row);}
+  else if(kind==='fav'){snap=st.favShown[i];}
+  else if(kind==='rec'){snap=st.recShown[i];}
+  if(!snap)return;
+  let favs=mbbLSGet('Fav',id);
+  const ya=favs.some(function(f){return f.__id===snap.__id;});
+  if(ya)favs=favs.filter(function(f){return f.__id!==snap.__id;});
+  else{favs.unshift(snap);if(favs.length>MBB_FAV_MAX)favs=favs.slice(0,MBB_FAV_MAX);}
+  mbbLSSet('Fav',id,favs);
+  mbbCargar(id); // recalcular es simple y correcto; alternar favorito no es una acci\u00f3n de alta frecuencia
+}
+function mbbRegistrarReciente(id,cfg,row){
+  const snap=mbbSnapshot(cfg,row);
+  let rec=mbbLSGet('Rec',id).filter(function(r){return r.__id!==snap.__id;});
+  rec.unshift(snap);
+  if(rec.length>MBB_REC_MAX)rec=rec.slice(0,MBB_REC_MAX);
+  mbbLSSet('Rec',id,rec);
+}
+function mbbRowHTML(id,snap,kind,i,isFav){
+  const subHtml=(snap.__s||[]).map(function(s){return '<span>'+escHtml(s.t+': '+s.v)+'</span>';}).join('');
+  const onclick=kind==='res'?"mbbElegir('"+id+"',"+i+")":"mbbElegirGuardado('"+id+"','"+kind+"',"+i+")";
+  return '<div class="mbbRow" data-k="'+kind+'" data-i="'+i+'">'
+    +'<button type="button" class="mbbFavBtn'+(isFav?' on':'')+'" aria-label="'+(isFav?'Quitar de favoritos':'Marcar como favorito')+'" onclick="event.stopPropagation();mbbToggleFav(\''+id+"','"+kind+"',"+i+')"><i class="ti ti-star'+(isFav?'-filled':'')+'"></i></button>'
+    +'<div onclick="'+onclick+'">'
+    +'<div class="mbbT">'+escHtml(snap.__t)+'</div>'
+    +(subHtml?'<div class="mbbS">'+subHtml+'</div>':'')+'</div></div>';
+}
 async function mbbCargar(id){
   const st=window.__mbbReg[id];if(!st)return;
   const cfg=st.cfg;
@@ -2844,14 +2911,33 @@ async function mbbCargar(id){
   }
   st.filas={};filas.forEach(function(row,i){st.filas[i]=row;});
   st.total=total;
-  const cols=cfg.columnas||[];
-  if(list)list.innerHTML=filas.length?filas.map(function(row,i){
-    const tit=cols[0]?row[cols[0].k]:(row.nombre!=null?row.nombre:row.id);
-    const subHtml=cols.slice(1).map(function(c){return row[c.k]?'<span>'+escHtml(c.t+': '+row[c.k])+'</span>':'';}).join('');
-    return '<div class="mbbRow" onclick="mbbElegir(\''+id+'\','+i+')">'
-      +'<div class="mbbT">'+escHtml(tit==null?'':String(tit))+'</div>'
-      +(subHtml?'<div class="mbbS">'+subHtml+'</div>':'')+'</div>';
-  }).join(''):'<div class="mbbEmpty">'+escHtml(cfg.vacio||'Sin resultados')+'</div>';
+  const idKey=cfg.idKey||'id';
+  const favs=mbbLSGet('Fav',id);
+  const favIds=favs.map(function(f){return f.__id;});
+  // Favoritos y Recientes SOLO en la primera página sin texto escrito — al escribir
+  // o pasar de página, lo que importa es filtrar/paginar, no repetir estas secciones.
+  // navOrder se arma en el MISMO orden en que se concatena el HTML (fav→rec→res),
+  // para que la navegación por teclado (mbbFlecha/mbbEnter) apunte a la fila correcta.
+  let secciones='';
+  const navOrder=[];
+  if(!st.q&&st.page===0){
+    if(favs.length){
+      st.favShown=favs;
+      secciones+='<div class="mbbSecLbl">⭐ Favoritos</div>'+favs.map(function(s,i){navOrder.push({kind:'fav',i:i});return mbbRowHTML(id,s,'fav',i,true);}).join('');
+    }else st.favShown=[];
+    const recs=mbbLSGet('Rec',id).filter(function(r){return favIds.indexOf(r.__id)<0;});
+    if(recs.length){
+      st.recShown=recs;
+      secciones+='<div class="mbbSecLbl">🕒 Recientes</div>'+recs.map(function(s,i){navOrder.push({kind:'rec',i:i});return mbbRowHTML(id,s,'rec',i,false);}).join('');
+    }else st.recShown=[];
+    if(secciones)secciones+='<div class="mbbSecLbl">Resultados</div>';
+  }else{st.favShown=[];st.recShown=[];}
+  const resultsHtml=filas.length?filas.map(function(row,i){
+    navOrder.push({kind:'res',i:i});
+    return mbbRowHTML(id,mbbSnapshot(cfg,row),'res',i,favIds.indexOf(row[idKey])>=0);
+  }).join(''):(secciones?'':'<div class="mbbEmpty">'+escHtml(cfg.vacio||'Sin resultados')+'</div>');
+  st.navOrder=navOrder;
+  if(list)list.innerHTML=secciones+resultsHtml;
   const foot=document.getElementById('mbbFoot_'+id);
   if(foot){
     const desde=total?st.page*st.tam+1:0,hasta=Math.min(total,st.page*st.tam+st.tam);
@@ -2864,11 +2950,36 @@ function mbbElegir(id,i){
   const st=window.__mbbReg[id];if(!st)return;
   const row=st.filas[i];if(!row)return;
   const cb=st.cfg.onElegir;
+  mbbRegistrarReciente(id,st.cfg,row);
   cerrarModalBusqueda(id);
   const fn=typeof cb==='function'?cb:(typeof cb==='string'?window[cb]:null);
   if(typeof fn==='function')fn(row);
 }
-window.ModalBusquedaBase=ModalBusquedaBase;window.cerrarModalBusqueda=cerrarModalBusqueda;
+// Elegir desde una fila de Favoritos/Recientes (no vive en st.filas, que solo
+// tiene la página actual de resultados). Modo 'datos': se busca el registro VIVO
+// en cfg.datos por idKey — la "foto" guardada puede estar vieja o el registro
+// pudo cambiar; si ya no existe (se borró), se cae honestamente a la foto guardada
+// en vez de fallar. Modo 'buscar' (servidor): hoy ningún módulo lo usa, así que la
+// limitación de pasar la foto tal cual (sin poder re-consultar el registro
+// completo sin una llamada nueva) se documenta aquí en vez de resolverse a ciegas.
+function mbbElegirGuardado(id,kind,i){
+  const st=window.__mbbReg[id];if(!st)return;
+  const snap=kind==='fav'?st.favShown[i]:st.recShown[i];
+  if(!snap)return;
+  const cfg=st.cfg;
+  let row=snap;
+  if(Array.isArray(cfg.datos)){
+    const idKey=cfg.idKey||'id';
+    const vivo=cfg.datos.find(function(r){return r[idKey]===snap.__id;});
+    if(vivo)row=vivo;
+  }
+  if(kind==='rec')mbbRegistrarReciente(id,cfg,row);
+  cerrarModalBusqueda(id);
+  const cb=cfg.onElegir;
+  const fn=typeof cb==='function'?cb:(typeof cb==='string'?window[cb]:null);
+  if(typeof fn==='function')fn(row);
+}
+window.ModalBusquedaBase=ModalBusquedaBase;window.cerrarModalBusqueda=cerrarModalBusqueda;window.mbbElegirGuardado=mbbElegirGuardado;window.mbbToggleFav=mbbToggleFav;
 window.mbbBuscar=mbbBuscar;window.mbbEnter=mbbEnter;window.mbbPag=mbbPag;window.mbbElegir=mbbElegir;
 
 // Recalcula los saldos contables desde los asientos REALES guardados.
@@ -3599,7 +3710,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.35';
+const APP_VERSION='49.36';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

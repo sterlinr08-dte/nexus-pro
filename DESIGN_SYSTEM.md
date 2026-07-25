@@ -90,18 +90,26 @@ Histograma real de alturas declaradas en `parches.js`:
 
 ## 3. Buscadores — lo que existe
 
-Dos patrones, decretados en `CLAUDE.md` como reglamentos separados:
+**Corrección (25-jul-2026):** el conteo de abajo reemplaza al de la primera versión de este
+archivo (decía 47 y 7) — aquella cifra contaba coincidencias de texto sin distinguir llamada real
+de definición/comentario. Recontado línea por línea con un agente de exploración:
 
-| Patrón | Qué hace | Usos medidos |
+| Patrón | Qué hace | Usos reales verificados |
 |---|---|---|
-| `nxBuscaHTML()` y sus 8 wrappers locales | Filtra **en línea** una lista ya visible | **47** |
-| `ModalBusquedaBase` | Abre **ventana** para elegir de un catálogo grande | **7** |
+| `nxBuscaHTML()` y sus 7 wrappers locales | Filtra **en línea** una lista ya visible | **34** (33 en memoria + 1 que además dispara una consulta a Supabase por tecla sin necesitarlo — Historial de pagos de Seguros, `pgBuscar`) |
+| `ModalBusquedaBase` | Abre **ventana** para elegir de un catálogo grande | **1** (AguaPro → Nuevo pedido → elegir cliente). El motor soporta paginación real del servidor (`cfg.buscar`) pero NINGÚN módulo la usa hoy — solo el modo `datos` (filtra en memoria). |
 
-Más `nxBuscadorUniversal()` (Ctrl+K en el POS) y `abrirGlobalSearch()` (Ctrl+K en Seguros) — dos
-búsquedas globales de pantalla completa.
+Más `nxBuscadorUniversal()` (Ctrl+K en el POS) y `abrirGlobalSearch()`/`gsOverlay` (Ctrl+K en
+Seguros) — dos búsquedas globales de pantalla completa, más cercanas en espíritu a NPGS §5
+(ventana flotante) que a los otros dos patrones, pero sin Recientes/Favoritos documentados.
 
-> ⚠️ **NPGS §5 prohíbe el patrón en línea** ("nunca buscar desde una barra fija"). Son 47 sitios.
-> Ver "Conflictos".
+**Ninguno de los dos motores (`nxBuscaHTML` ni `ModalBusquedaBase`) tiene Recientes ni Favoritos
+hoy** — los dos tendrían que construirse desde cero para cumplir NPGS §5 al pie de la letra.
+
+> ⚠️ **NPGS §5 prohíbe el patrón en línea** ("nunca buscar desde una barra fija"). Son 34 sitios,
+> no 47. Ver "Conflictos" — el tamaño real del trabajo es distinto, pero el problema de fondo
+> (¿aplica igual a un buscador que ELIGE un registro que a uno que solo FILTRA la lista que ya
+> estás viendo?) sigue siendo el mismo y sigue sin resolver.
 
 ---
 
@@ -178,16 +186,77 @@ Verificado con 19 comprobaciones Playwright sobre el CSS real extraído del arch
 dos variantes lado a lado: Cuotas en azul sin ningún rastro de morado, y **Financiamiento intacto
 en morado** (la comprobación que de verdad importaba). Sin desborde en 390 px, 0 errores de JS.
 
-### C2 — Buscadores: 47 sitios contra el estándar 🟠
+### C2 — Buscadores: 34 sitios contra el estándar 🟠 **EN CURSO — auditoría hecha, plan pendiente de decisión**
 
 - **NPGS §5:** solo 🔍, siempre ventana flotante, nunca barra fija, con Recientes y Favoritos.
-- **Hoy:** 47 buscadores en línea (patrón `nxBuscaHTML`, migración terminada con 174 pruebas
-  Playwright) + 7 en ventana. Ninguno tiene Recientes ni Favoritos.
-- **Propuesta:** convergencia por fases, no de golpe. Fase 1: agregar Recientes y Favoritos al
-  motor `ModalBusquedaBase` que ya existe. Fase 2: migrar los buscadores que de verdad eligen un
-  registro de un catálogo (los de "elegir cliente/artículo"). Fase 3: decidir si los que solo
-  filtran una tabla ya visible (Clientes, Pólizas, Cobros) también pasan a ventana — ahí el
-  estándar cuesta un clic extra en la acción más frecuente del día. Requiere el sí del dueño.
+- **Recontado el 25-jul-2026** (la cifra de 47/7 de la primera versión de este archivo era de
+  coincidencias de texto, no de llamadas reales — corregido en §3 arriba): **34 en línea** + **1
+  en ventana** + 2 buscadores globales (Ctrl+K) que ya se parecen más al espíritu del §5.
+
+#### El problema real no es el número — es que NPGS §5 describe UN patrón y hay DOS necesidades distintas
+
+Clasificando los 34 sitios reales por lo que hacen de verdad:
+
+| Tipo | Qué es | Cuántos | Ejemplos |
+|---|---|---|---|
+| **Elegir un registro** para meterlo en otro formulario | Exactamente lo que `ModalBusquedaBase` ya resuelve — abrir ventana, buscar, tocar una fila, listo | ~9 | Elegir cliente (Facturar/Cobrar/Financiamiento), elegir artículo, elegir cliente de AguaPro |
+| **Filtrar la lista que ya estoy viendo** | La pantalla YA muestra una tabla; escribir solo la acota — no hay "elegir y usar en otro lado" | ~24 | Clientes, Pólizas, Facturas, Cobros (**las 4 pantallas de más uso diario de todo Seguros**), Vender, Inventario, Reparaciones, Cuotas del POS |
+| Caso especial (ya roto, aparte de NPGS) | Historial de pagos: dispara una consulta a Supabase en cada tecla sin necesitarlo | 1 | `pgBuscar` — bug de rendimiento real, no relacionado con el diseño |
+
+**Para el primer grupo, NPGS §5 aplica sin fricción** — es literalmente lo que ya hace
+`ModalBusquedaBase`, solo le falta Recientes/Favoritos.
+
+**Para el segundo grupo (24 de 34, el 70%) hay una tensión real, no solo de gusto:** convertir un
+filtro-en-vivo de una tabla ya visible en pantalla a "tocar lupa → se abre una ventana APARTE con
+su propia lista de resultados → elegir una fila → ¿hace qué, si ya la estoy viendo en la tabla de
+atrás?" no tiene el mismo sentido que "elegir un cliente para una factura". Y son, en su mayoría,
+**las pantallas que se tocan más veces al día** (Clientes, Facturas, Cobros del núcleo de Seguros;
+Vender del POS).
+
+- **Decisión del dueño (25-jul-2026): cumplimiento literal.** Los 34 sitios pasan a lupa + ventana
+  flotante con Recientes/Favoritos, sin excepción para el grupo de "filtrar lo que ya veo" — se le
+  planteó la tensión explícitamente (con el costo real: un clic extra en las 4 pantallas de más uso
+  diario) y eligió la lectura literal de NPGS §5 de todos modos.
+
+- **Plan en 3 fases, EN CURSO:**
+  1. ✅ **HECHA en v49.36** — Recientes + Favoritos construidos en `ModalBusquedaBase` (el motor
+     compartido). Bajo riesgo: no tocó ninguna pantalla existente, solo agregó capacidad. El único
+     consumidor real de hoy (AguaPro → elegir cliente) la heredó automáticamente sin cambiar una
+     línea de su propia llamada.
+  2. **Siguiente paso propuesto:** migrar los ~9 sitios de "elegir un registro" (Facturar/Cobrar/
+     Financiamiento → elegir cliente; elegir artículo) al motor ya reforzado — son estructuralmente
+     iguales al caso de AguaPro que ya funciona, así que es el riesgo más bajo de los que quedan.
+  3. Migrar los ~24 sitios de "filtrar la lista que ya veo" (Clientes, Facturas, Cobros, Vender...)
+     — el trabajo de mayor riesgo, deja para el final a propósito.
+
+#### Detalle de la Fase 1 (v49.36)
+
+`ModalBusquedaBase` guarda Recientes/Favoritos en `localStorage` del navegador (por
+`o.id` del buscador) — es preferencia de quien usa el sistema, no un dato del negocio, así que no
+necesita tabla ni columna nueva. Se guarda una **"foto" chica** del registro (id + título +
+subcampos ya visibles en la fila), nunca el registro completo — así Recientes/Favoritos se siguen
+viendo bien aunque el dato original cambie después. Al elegir una fila desde esas secciones (en modo
+`datos`, el único que usa algún módulo hoy), se busca el registro **vivo** en el array en memoria por
+su id — si ya no existe (se borró), cae honestamente a la foto guardada en vez de fallar.
+
+**Bug real encontrado y corregido antes de publicar (no llegó a producción):** la navegación por
+teclado (flechas + Enter) del modal asumía que la lista visible era solo "resultados" — con
+Favoritos/Recientes antepuestos, el índice de las flechas apuntaba a la fila equivocada y Enter
+podía elegir un registro distinto al resaltado. Se corrigió con `navOrder` (el orden real de las
+filas en pantalla, en el mismo orden en que se arma el HTML) en vez de indexar directo sobre
+`st.filas` (que solo tiene resultados). Verificado con una prueba específica: bajar con flechas
+hasta la última fila visible y confirmar que Enter elige exactamente esa fila, no otra.
+
+Verificado con **19 pruebas Playwright** contra el motor real extraído del archivo, montado en un
+servidor HTTP local (no `about:blank` — `localStorage` necesita un origen real), reproduciendo el
+caso real de AguaPro: marcar/quitar favorito, reabrir y ver las 2 secciones nuevas, elegir desde
+Recientes con el registro vivo completo, escribir texto oculta ambas secciones, navegación mixta por
+teclado. Sin desborde en 420px, 0 errores de JS. `node --check` no aplica aquí (index.html) — los 3
+`<script>` pasan `new Function()`; `version.json` válido.
+
+**Aún NO hecho** (para que quede claro qué falta, no se puede confundir con "buscadores resueltos"):
+ninguno de los 34 buscadores en línea cambió de comportamiento todavía — siguen siendo barra fija
+en producción. Esta fase solo construyó la capacidad que usarán cuando se migren.
 
 ### C3 — Configuración de 12 secciones por módulo 🟡
 

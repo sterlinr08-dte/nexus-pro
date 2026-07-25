@@ -1,7 +1,12 @@
 {
-  "version": "49.35",
+  "version": "49.36",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.36",
+      "t": "NUEVO — El buscador para elegir cliente (AguaPro) ahora recuerda tus últimos clientes y te deja marcar favoritos",
+      "d": "Cuando elegís un cliente para un pedido nuevo, la ventana de búsqueda ahora tiene dos listas antes de escribir nada: RECIENTES (los últimos que elegiste) y FAVORITOS (los que marques con la estrellita ⭐ junto a cada nombre). Tocar la estrella no elige el cliente, solo lo marca. En cuanto escribís algo, esas dos listas se apartan y solo ves los resultados que coinciden.\n\nEsta es la base de un trabajo más grande: unificar todos los buscadores del sistema para que se comporten igual (solo la lupa 🔍, ventana flotante, con Recientes y Favoritos) — se está haciendo por partes, empezando por la pieza compartida que todos van a usar."
+    },
     {
       "v": "49.35",
       "t": "ARREGLADO — Financiamiento en el celular: se quitó la franja morada encima del texto y la lista de préstamos ahora entra completa en pantalla",
