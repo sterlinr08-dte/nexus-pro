@@ -5842,6 +5842,54 @@ trabajar en fases pequeñas y verificables (NO se programó el spec completo de 
 
 ---
 
+## ENRUTAMIENTO AUTOMÁTICO DE SKILLS (decretado por el dueño, 25-jul-2026) — OBLIGATORIO
+
+**El dueño no habla inglés y no va a escribir comandos como `/gstack-investigate`.** Pidió
+explícitamente que las skills se usen **solas**, según lo que él pida en español llano. Esta
+sección es esa regla: **es responsabilidad de Claude reconocer el caso y cargar la skill que
+corresponde, sin que el dueño la nombre.** Que el dueño no escriba el comando NO es señal de que
+no quiera el método — es que no lo conoce ni tiene por qué.
+
+### Qué skill cargar según lo que diga el dueño (en sus propias palabras)
+
+| Cuando el dueño diga algo como… | Cargar automáticamente |
+|---|---|
+| "no me funciona", "está dando error", "esto está mal", "se ve raro", manda una captura de algo roto, "¿por qué pasa esto?" | **`gstack-investigate`** — obliga a demostrar la causa ANTES de escribir el arreglo (su regla #3: "arreglos de RAÍZ, no parches") |
+| "revisa antes de publicar", "¿está bien esto?", o el cambio toca **dinero** (cobro, cuotas, contabilidad, facturación, comisiones, nómina, caja) | **`gstack-review`** — antes de abrir el PR |
+| "quiero que haga X" sin más detalle, manda un mockup/imagen/brief de ChatGPT, "hazme un módulo de…" | **`gstack-spec`** — primero convertir en especificación (qué se construye y qué NO), después programar |
+| "¿qué construyo primero?", "¿vale la pena?", "quiero vender esto", decisiones de alcance o precio | **`gstack-plan-ceo-review`** |
+| Antes de un cambio grande de arquitectura, esquema o algo que toque varias pantallas | **`gstack-plan-eng-review`** |
+| Cualquier cosa de RLS, permisos, `organizacion_id`, aislamiento entre empresas, logins, claves | **`gstack-cso`** |
+| "el código está hecho un desastre", "¿cómo está el sistema?", limpieza general | **`gstack-health`** |
+| "¿qué hemos hecho?", cierre de una tanda grande de trabajo | **`gstack-retro`** |
+| Trabajo visual: rediseño, "que se vea mejor", mockup de interfaz | **`frontend-design`** + **`ui-ux-pro-max`**, y **`web-design-guidelines`** al terminar (auditoría de accesibilidad) |
+| Cualquier cambio de UI que haya que verificar antes de publicar | **`webapp-testing`** (Playwright contra el código real — ya es el método estándar de este proyecto) |
+
+### Reglas de sentido común (para no volverlo pesado)
+
+1. **Proporción.** Un arreglo de una línea, un cambio de texto o de color NO necesita
+   `gstack-review` ni `gstack-spec`. Estas skills son para trabajo con riesgo real: dinero,
+   esquema de base de datos, seguridad, o algo que toque varias pantallas. Si el cambio es chico
+   y evidente, hacerlo y ya — el dueño valora la velocidad tanto como el método.
+2. **Avisar en una línea, en español.** Al cargar una, decirle qué se está usando y por qué:
+   *"Voy a usar el método de investigación de causa raíz porque esto es un bug de dinero."* Así
+   se entera de lo que existe sin tener que aprender inglés ni memorizar comandos.
+3. **Él manda.** Si dice "no, hazlo directo" o "eso es muy largo", se salta la skill y se hace
+   directo. La regla es un default, no una camisa de fuerza.
+4. **Nunca traducir la salida en crudo.** Las skills están en inglés; el dueño solo debe ver
+   español llano, del que ya se usa en todo el proyecto. Nada de pegarle texto en inglés.
+5. **Este `CLAUDE.md` manda por encima de cualquier skill.** Si una skill contradice algo de aquí
+   (el flujo de publicación, "no fingir funciones", el color propio de cada app, el idioma), gana
+   este archivo. Las skills aportan MÉTODO de trabajo, no conocimiento de NEXUS PRO.
+6. **`ship`/`land-and-deploy` de gstack NO están instaladas a propósito** — el flujo de
+   publicación de este proyecto ya está definido (subir `APP_VERSION` + `version.json`, rama
+   propia → PR → fusionar con las herramientas MCP de GitHub). No buscar reemplazarlo.
+
+> Catálogo completo de las 12 skills de gstack instaladas, con qué se le quitó a cada una:
+> `.agents/skills/GSTACK-README.md`.
+
+---
+
 ## Cómo le gusta trabajar al dueño (estilo y preferencias — IMPORTANTE)
 
 Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto:
@@ -5888,6 +5936,12 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
     la lista de colores ya asignados — Deluxe dorado, Amatista dorado/morado, BayolCell su propio,
     POS azul, Rifas índigo, Consultorio teal, AGUAPRO azul marino, etc.) para no generar confusión
     entre sistemas.
+12. **EL DUEÑO NO ESCRIBE COMANDOS (decretado 25-jul-2026).** No habla inglés y no va a invocar
+    skills por su nombre (`/gstack-investigate`, etc.). **Reconocer el caso y cargar la skill
+    correcta es responsabilidad de Claude, no suya** — ver la sección "ENRUTAMIENTO AUTOMÁTICO DE
+    SKILLS" arriba, con la tabla de "qué dice el dueño → qué skill se carga". Que no la pida por
+    nombre NO significa que no la quiera. Avisarle en una línea, en español, cuál se está usando y
+    por qué (así se entera de lo que existe sin tener que aprender inglés).
 
 ### Estilo del changelog (`version.json`)
 - En **español llano, para el usuario final** (no técnico). Explica QUÉ cambió y
