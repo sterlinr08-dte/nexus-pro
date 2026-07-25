@@ -1587,6 +1587,39 @@ Cero cambios visuales ni de lógica de negocio — solo accesibilidad. Verificad
 (`renderEntidades`/`abrirEntidad`) extraído y cargado en un navegador: la fila responde a Tab+Enter,
 el aro de foco se ve (`outline:solid rgb(37,99,235)`), los campos tienen el tipo/inputmode correcto.
 
+#### gstack — subconjunto curado de skills de metodología (25-jul-2026)
+El dueño mandó una foto del README de [gstack](https://github.com/garrytan/gstack) (Garry Tan / Y
+Combinator, v1.60.1.0) y pidió instalarlo. Se instaló **un subconjunto curado en el repo**, NO el
+paquete completo — **12 skills de ~464 KB** en `.agents/skills/gstack-*` (+ enlaces en
+`.claude/skills/`, mismo patrón que `frontend-design`/`webapp-testing`), contra los 70 MB y 53
+skills del original. **El detalle completo de qué entró, qué se le quitó a cada archivo y qué
+quedó fuera con su razón está en `.agents/skills/GSTACK-README.md`** — no se repite aquí.
+- **Las 12:** `/gstack-investigate` (causa raíz) · `/gstack-review` (revisar un diff antes de
+  publicar) · `/gstack-spec` (idea vaga → especificación) · `/gstack-plan-ceo-review` ·
+  `/gstack-plan-eng-review` · `/gstack-cso` (seguridad) · `/gstack-retro` · `/gstack-health` ·
+  `/gstack-careful` · `/gstack-freeze`/`/gstack-unfreeze` · `/gstack-guard`.
+- **Se le quitó a cada `SKILL.md` la maquinaria del instalador** (~770 líneas por archivo, 15
+  secciones: preámbulo, telemetría, prompts de primera vez, enrutamiento...). **Importante y no
+  obvio:** dos de esas secciones **reescribían el `CLAUDE.md` de este proyecto** (le agregaban
+  reglas de enrutamiento de gstack y hacían `commit` solas) y otra proponía `git rm -r
+  .claude/skills/`. Por eso NO se corrió el instalador oficial (`./setup`) contra este repo —
+  además de que el clasificador del entorno lo bloqueó, dejarlo tocar la memoria del proyecto
+  habría sido un error. Los `hooks:` de careful/freeze/guard se portaron de rutas absolutas
+  (`$HOME/.claude/skills/gstack/...`) a `${CLAUDE_SKILL_DIR}/../gstack-<x>/bin/...` con salida
+  limpia si el archivo falta.
+- **Lo grande que quedó fuera:** las 17 skills que dependen del navegador propio de gstack
+  (incluida `/qa`, la primera que el dueño intentó usar) — ese binario necesita `bun install`, que
+  el entorno bloquea, y **ya no hace falta**: el proyecto usa Playwright + Chromium + la skill
+  `webapp-testing` para exactamente eso. También fuera: las 6 de iOS, las de gbrain/codex, y
+  `ship`/`land-and-deploy` (contradicen el flujo de publicación ya establecido: subir
+  `APP_VERSION` + `version.json`, rama propia → PR → fusionar con las herramientas MCP de GitHub).
+- **No hay actualización automática a propósito** (`/gstack-upgrade` no se instaló, para que nada
+  reescriba estos archivos solo). Para traer una versión nueva hay que repetir la curación —
+  receta en el README.
+- **De paso** se arregló `.agents/skills/ui-ux-pro-max/scripts/design_system.py` (línea ~437):
+  un f-string con contrabarra que solo compila en Python 3.12+, y este entorno tiene 3.11 — el
+  script no corría. Se factorizó el separador a una variable.
+
 ### NEXUS PRO 2.5 — rediseño del formulario de Artículos/Servicios, FASE 1 (19-jul-2026, v48.51)
 El dueño pidió un rediseño grande y completo del formulario de artículo (`abrirProd`, pestaña
 Inventario del POS): 10 pestañas (Información General, Precios, Costos, Inventario, Impuestos,
