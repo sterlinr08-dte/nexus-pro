@@ -1,7 +1,12 @@
 {
-  "version": "49.41",
+  "version": "49.42",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.42",
+      "t": "ARREGLADO — Ahora SÍ se ve lo que corriges antes de mandar el link, y se quitó 'Total a devolver'",
+      "d": "Reportaste que las correcciones que hacías antes de generar el link no se reflejaban cuando lo enviabas. Se revisó y el texto SÍ se guardaba bien — el problema era mío: solo se podía corregir el TEXTO DEL VIDEO, pero el recuadro morado de arriba (la declaración de compromiso, lo primero que el cliente lee en pantalla) seguía saliendo automático, sin forma de tocarlo. Por eso parecía que tu corrección se perdía.\n\nAhora la pantalla de revisión tiene TRES textos editables en vez de dos:\n\n• LA DECLARACIÓN que verá en pantalla (el recuadro morado, arriba del todo) — NUEVO, ahora se corrige.\n• EL TEXTO QUE LEERÁ EN EL VIDEO.\n• EL MENSAJE DE WHATSAPP.\n\nLo que escribas en cualquiera de los tres es exactamente lo que el cliente ve. Nada se reemplaza por el automático.\n\nTambién se quitó la fila 'Total a devolver' que salía debajo de 'Cuota' en la pantalla del cliente (y se quitó esa cifra del texto del video y de la declaración, para que todo diga lo mismo)."
+    },
     {
       "v": "49.41",
       "t": "NUEVO — Ahora revisas y corriges el texto ANTES de mandarle el link al cliente",

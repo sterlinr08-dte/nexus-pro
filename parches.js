@@ -15034,7 +15034,20 @@
     const frecTxt = { semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[d.frecuencia] || '';
     return 'Yo, ' + nom + ', declaro que recibí un préstamo de ' + fmt(d.capital)
       + ', y me comprometo a pagarlo en ' + (d.num_cuotas || '—') + ' cuotas ' + frecTxt
-      + ' de ' + fmt(d.cuota_calculada) + ' cada una, para un total de ' + fmt(d.total_devolver) + '.';
+      + ' de ' + fmt(d.cuota_calculada) + ' cada una.';
+  }
+  // Declaración de compromiso: el recuadro que el cliente ve ARRIBA, en la tarjeta del préstamo.
+  // Misma pareja que `prGuionTexto`: se calcula aquí para poder corregirla antes de enviar el
+  // link, y lo aprobado se guarda en `declaracion`. Duplica la lógica de `terminosTexto()` de
+  // firma-prestamo.html a propósito (son archivos independientes) — si cambia, tocar los dos.
+  function prDeclaracionTexto(d) {
+    const nom = String(d.nombre || '').trim();
+    const detalle = d.modo === 'credito'
+      ? ('Línea de crédito de ' + fmt(d.capital) + ' con ' + (d.tasa_interes || 0) + '% de interés mensual'
+        + (d.plazo_meses ? ', a devolver el capital en un plazo de ' + d.plazo_meses + ' meses' : '') + '.')
+      : ((d.num_cuotas || '—') + ' cuotas ' + (d.frecuencia || '') + ' de ' + fmt(d.cuota_calculada)
+        + ' cada una, sobre un capital de ' + fmt(d.capital) + '.');
+    return 'Yo, ' + nom + ', declaro que acordé este préstamo con el negocio y me comprometo a pagarlo según lo descrito arriba: ' + detalle;
   }
   let _prLinkDraft = null; // términos ya calculados, a la espera de que el dueño confirme
 
@@ -15088,6 +15101,11 @@
           <div style="font-size:10.5px;color:#94a3b8;margin-top:6px">Para cambiarlos, cierra esto y ajusta el simulador.</div>
         </div>
         <div class="prCard">
+          <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Declaración que verá en pantalla</div>
+          <textarea id="prLkDecl" rows="4" style="width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;font-family:inherit;box-sizing:border-box;outline:none;background:#f8fafc;resize:vertical">${esc(prDeclaracionTexto(d))}</textarea>
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Es el recuadro morado que sale debajo de los términos, arriba del todo.</div>
+        </div>
+        <div class="prCard">
           <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Texto que leerá en el video</div>
           <textarea id="prLkGuion" rows="5" style="width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;font-family:inherit;box-sizing:border-box;outline:none;background:#f8fafc;resize:vertical">${esc(prGuionTexto(d))}</textarea>
           <div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Se le muestra en pantalla para que lo lea en voz alta mientras graba.</div>
@@ -15109,11 +15127,13 @@
   window.nxPrLinkCrear = async function () {
     const d = _prLinkDraft; if (!d) return;
     const guion = (val('prLkGuion') || '').trim();
+    const decl = (val('prLkDecl') || '').trim();
     const msg = (val('prLkMsg') || '').trim();
     if (!guion) { toast('err', 'El texto del video no puede quedar vacío'); return; }
+    if (!decl) { toast('err', 'La declaración no puede quedar vacía'); return; }
     const btn = document.querySelector('#nxPrLinkRev .bc1');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Creando…'; }
-    const datos = Object.assign({}, d, { video_guion: guion });
+    const datos = Object.assign({}, d, { video_guion: guion, declaracion: decl });
     try {
       const r = await getAPI().post('prestamo_solicitudes', datos);
       const id = r && r[0] && r[0].id;
