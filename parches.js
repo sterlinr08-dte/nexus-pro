@@ -14518,9 +14518,11 @@
     const esCredito = p.modo === 'credito';
     const cc = esCredito ? creditoCalc(p) : null;
     let scheduleHTML = '';
+    // Título del cronograma + botón para compartir/imprimir la tabla (igual en los 3 modos)
+    const schedTit = txt => `<div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px"><span style="font-size:11px;font-weight:800;color:#475569;min-width:0">${txt}</span><button class="btn bsm bghost" type="button" style="flex:none;margin-left:auto" onclick="window.nxPrestamoAmortizacion('${id}')" title="Compartir / imprimir la tabla" aria-label="Compartir tabla de amortización"><i class="ti ti-share" style="color:#6d28d9"></i></button></div>`;
     if (esCredito) {
       const rows = cc.meses.map(m => `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${m.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${m.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(m.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c;font-weight:700">${fmt(m.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${m.encurso ? '<span style="color:#475569;font-size:9px">en curso</span>' : '<span style="color:#16a34a;font-weight:800">✓</span>'}</td></tr>`).join('');
-      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">INTERÉS POR MES · ${p.tasa_interes}% sobre el saldo de capital</div>
+      scheduleHTML = `${schedTit(`INTERÉS POR MES · ${p.tasa_interes}% sobre el saldo de capital`)}
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
           <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:340px;background:#fff">
             <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">Mes</th><th style="padding:6px;text-align:left">Desde</th><th style="padding:6px;text-align:right">Capital base</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:center">Estado</th></tr></thead>
@@ -14536,7 +14538,7 @@
         const cub = pag >= acum - 0.5;
         return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
       }).join('');
-      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · ${met === 'plano' ? 'interés plano' : 'saldo insoluto'} · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
+      scheduleHTML = `${schedTit(`TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · ${met === 'plano' ? 'interés plano' : 'saldo insoluto'} · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}`)}
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
           <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:430px;background:#fff">
             <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">#</th><th style="padding:6px;text-align:left">Fecha</th><th style="padding:6px;text-align:right">Cuota</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:right">Capital</th><th style="padding:6px;text-align:right">Saldo</th><th style="padding:6px;text-align:center">Pag.</th></tr></thead>
@@ -14552,7 +14554,7 @@
         const cubierta = pag >= acum - 0.5;
         rows.push(`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">#${i + 1}</td><td style="padding:6px 10px;font-size:11px;color:#475569;border-bottom:1px solid #f1f5f9">${due}</td><td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:700;border-bottom:1px solid #f1f5f9">${fmt(cuota)}</td><td style="padding:6px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${cubierta ? '<span style="color:#16a34a;font-weight:800;font-size:10px">PAGADA</span>' : '<span style="color:#dc2626;font-weight:800;font-size:10px">PENDIENTE</span>'}</td></tr>`);
       }
-      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">CALENDARIO DE CUOTAS (${fmt(cuota)} c/u)</div><table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${rows.join('')}</table>`;
+      scheduleHTML = `${schedTit(`CALENDARIO DE CUOTAS (${fmt(cuota)} c/u)`)}<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${rows.join('')}</table>`;
     }
     const pagosHTML = pagos.length === 0
       ? '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos aún</div>'
@@ -14760,6 +14762,137 @@
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('err', 'Permite las ventanas emergentes para ver el comprobante'); return; } w.document.write(html); w.document.close(); }
     catch (e) { toast('err', 'No se pudo abrir el comprobante', String(e && e.message || e)); }
+  };
+
+  // ── Tabla de amortización imprimible / compartible (WhatsApp · Correo) ──
+  // Recalcula el MISMO cronograma que muestra nxPrestamoVer (amortizar/creditoCalc), no guarda nada.
+  window.nxPrestamoAmortizacion = function (id) {
+    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+    const dmy = f => { const s = String(f || '').slice(0, 10); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.split('-').reverse().join('/') : s; };
+    const pag = pagadoDe(p);
+    const cli = (p.cliente_id && _prClientes.find(c => String(c.id) === String(p.cliente_id))) || null;
+    const nombre = p.nombre || (cli && cli.nombre) || 'Cliente';
+    const cedula = p.cedula || (cli && cli.cedula) || '';
+    const tel = p.telefono || (cli && cli.telefono) || '';
+    const email = (cli && cli.email) || '';
+    const frecTxt = p.frecuencia === 'semanal' ? 'Semanal' : p.frecuencia === 'quincenal' ? 'Quincenal' : 'Mensual';
+    let titulo = '', cols = [], filas = [], resumen = [], waLineas = [];
+    if (p.modo === 'credito') {
+      const cc = creditoCalc(p);
+      titulo = 'INTERÉS POR MES';
+      cols = [['Mes', 'l'], ['Desde', 'l'], ['Capital base', 'r'], ['Interés', 'r'], ['Estado', 'c']];
+      filas = cc.meses.map(m => [['#' + m.n, 'l'], [dmy(m.fecha), 'l'], [fmt(m.saldo), 'r'], [fmt(m.interes), 'r m-int'], [m.encurso ? 'En curso' : 'Cerrado', 'c']]);
+      waLineas = cc.meses.map(m => 'Mes ' + m.n + ' · ' + dmy(m.fecha) + ' · interés ' + fmt(m.interes));
+      resumen = [['Tipo', 'Línea de crédito'], ['Tasa', p.tasa_interes + '% mensual sobre el saldo'], ['Capital', fmt(p.capital)], ['Capital pendiente', fmt(cc.capPend)], ['Interés pendiente', fmt(cc.interesPend)], ['Debe ahora', fmt(cc.totalDebe)]];
+    } else if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
+      const met = p.metodo_interes || 'saldo';
+      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia, met);
+      titulo = 'TABLA DE AMORTIZACIÓN';
+      cols = [['#', 'l'], ['Fecha', 'l'], ['Cuota', 'r'], ['Interés', 'r'], ['Capital', 'r'], ['Saldo', 'r'], ['Estado', 'c']];
+      let acum = 0;
+      filas = a.rows.map(r => {
+        acum += r.cuota; const cub = pag >= acum - 0.5;
+        return [['#' + r.n, 'l'], [dmy(r.fecha), 'l'], [fmt(r.cuota), 'r b'], [fmt(r.interes), 'r m-int'], [fmt(r.capital), 'r m-cap'], [fmt(r.saldo), 'r'], [cub ? 'Pagada' : 'Pendiente', 'c ' + (cub ? 'ok' : 'pend')]];
+      });
+      waLineas = a.rows.map(r => 'Cuota ' + r.n + ' · ' + dmy(r.fecha) + ' · ' + fmt(r.cuota));
+      resumen = [['Capital prestado', fmt(p.capital)], ['Tasa', p.tasa_interes + '% mensual'], ['Método', met === 'plano' ? 'Interés plano' : 'Saldo insoluto'], ['Cuotas', p.num_cuotas + ' · ' + frecTxt], ['Cuota', fmt(a.cuota)], ['Interés total', fmt(a.interesTotal)], ['Total a devolver', fmt(a.total)]];
+    } else if (p.modo === 'cuotas' && p.num_cuotas > 0) {
+      const cuota = Number(p.total_devolver || 0) / p.num_cuotas;
+      titulo = 'CALENDARIO DE CUOTAS';
+      cols = [['#', 'l'], ['Fecha', 'l'], ['Cuota', 'r'], ['Estado', 'c']];
+      let acum = 0;
+      for (let i = 0; i < p.num_cuotas; i++) {
+        const f = fechaCuota(p.fecha_prestamo, p.frecuencia, i + 1);
+        acum += cuota; const cub = pag >= acum - 0.5;
+        filas.push([['#' + (i + 1), 'l'], [dmy(f), 'l'], [fmt(cuota), 'r b'], [cub ? 'Pagada' : 'Pendiente', 'c ' + (cub ? 'ok' : 'pend')]]);
+        waLineas.push('Cuota ' + (i + 1) + ' · ' + dmy(f) + ' · ' + fmt(cuota));
+      }
+      resumen = [['Capital prestado', fmt(p.capital)], ['Cuotas', p.num_cuotas + ' · ' + frecTxt], ['Cuota', fmt(cuota)], ['Total a devolver', fmt(p.total_devolver)], ['Interés', 'Sin interés']];
+    } else {
+      toast('err', 'Este préstamo no tiene cronograma', 'Los abonos libres no tienen cuotas fijas que compartir.');
+      return;
+    }
+    const info = prEstadoInfo(p), av = prIniciales(nombre), empNom = empresaNom(), ref = prRef(p);
+    const estCol = info.key === 'pagado' ? '#16a34a' : info.key === 'vencido' ? '#dc2626' : '#4f46e5';
+    const hoyTxt = dmy(hoy());
+    // WhatsApp: resumen + cronograma. Se acota para no armar un enlace absurdamente largo.
+    const TOPE = 40;
+    const lineasWA = waLineas.slice(0, TOPE).join('\n') + (waLineas.length > TOPE ? '\n… y ' + (waLineas.length - TOPE) + ' más (ver documento completo)' : '');
+    const waMsg = '*' + titulo + '* — ' + empNom + '\nContrato: ' + ref + '\n\nCliente: ' + nombre + '\n' + resumen.map(r => r[0] + ': ' + r[1]).join('\n') + '\n\n*Cronograma*\n' + lineasWA;
+    const waNum = waNumero(tel);
+    const thead = '<tr>' + cols.map(c => '<th class="' + c[1] + '">' + esc(c[0]) + '</th>').join('') + '</tr>';
+    const tbody = filas.map(f => '<tr>' + f.map(c => '<td class="' + c[1] + '">' + esc(c[0]) + '</td>').join('') + '</tr>').join('');
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(titulo)} ${esc(ref)} — ${esc(nombre)}</title>
+      <style>
+        *{box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;margin:0;background:#f1f5f9}
+        .wrap{max-width:820px;margin:0 auto;padding:16px}
+        .doc{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(15,23,42,.08)}
+        .hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid #eef0f5;flex-wrap:wrap}
+        .brand{display:flex;align-items:center;gap:10px}.blogo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#4f46e5,#6d28d9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+        .bnom{font-weight:800;font-size:16px;color:#0f172a;line-height:1}.bsub{font-size:10px;font-weight:700;color:#6d28d9;letter-spacing:.5px}
+        .htitle{text-align:center;flex:1;min-width:180px}.htitle h1{font-size:18px;margin:0;color:#0f172a;letter-spacing:.5px}.htitle span{font-size:11px;color:#94a3b8}
+        .recbox{text-align:right}.rec{font-size:16px;font-weight:800;color:#4f46e5;font-variant-numeric:tabular-nums}.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px;margin-top:3px;background:#eef2ff;color:${estCol}}.recsub{font-size:9px;color:#94a3b8;margin-top:3px}
+        .body{padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .card{border:1px solid #eef0f5;border-radius:14px;padding:14px 16px;min-width:0}
+        .ct{font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px}
+        .cli{display:flex;align-items:center;gap:12px}.av{width:52px;height:52px;border-radius:14px;color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex:none}
+        .cnom{font-weight:800;font-size:15px;color:#0f172a}.cced{color:#4f46e5;font-weight:700;font-size:12px}.crow{font-size:12px;color:#475569;margin-top:2px}
+        .kv{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:4px 0}.kv b{font-variant-numeric:tabular-nums}
+        .full{grid-column:1/-1}
+        .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #eef0f5;border-radius:12px}
+        table{width:100%;border-collapse:collapse;font-size:12px;min-width:460px;background:#fff}
+        thead th{background:#faf9ff;color:#94a3b8;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;border-bottom:1px solid #eef0f5;white-space:nowrap}
+        tbody td{padding:8px 10px;border-bottom:1px solid #f4f5f9;font-variant-numeric:tabular-nums;white-space:nowrap}
+        tbody tr:last-child td{border-bottom:0}
+        .l{text-align:left}.r{text-align:right}.c{text-align:center}
+        .b{font-weight:700;color:#0f172a}.m-int{color:#ea580c}.m-cap{color:#6d28d9}
+        .ok{color:#16a34a;font-weight:800}.pend{color:#94a3b8;font-weight:700}
+        .regnote{font-size:10.5px;color:#94a3b8;padding:10px 22px;border-top:1px solid #eef0f5;background:#faf9ff}
+        .acts{position:sticky;top:0;z-index:9;display:flex;gap:8px;flex-wrap:wrap;background:#4f46e5;padding:11px 16px}
+        .acts button{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+        .b-close{background:rgba(255,255,255,.16);color:#fff}.b-print{background:#fff;color:#4f46e5}.b-wa{background:#22c55e;color:#fff}.b-mail{background:#0ea5e9;color:#fff}
+        @media print{.acts{display:none}body{background:#fff}.doc{box-shadow:none}.wrap{padding:0;max-width:100%}.tblwrap{border:0}table{min-width:0}}
+        @media(max-width:640px){.body{grid-template-columns:1fr}}
+      </style></head><body>
+      <div class="acts">
+        <button class="b-close" onclick="window.close()">✕ Cerrar</button>
+        <button class="b-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+        ${waNum ? '<button class="b-wa" id="amWA">WhatsApp</button>' : ''}
+        <button class="b-mail" id="amMail">Correo</button>
+      </div>
+      <div class="wrap"><div class="doc">
+        <div class="hd">
+          <div class="brand"><div class="blogo">N</div><div><div class="bnom">${esc(empNom)}</div><div class="bsub">FINANCIAMIENTO</div></div></div>
+          <div class="htitle"><h1>${esc(titulo)}</h1><span>Plan de pagos del préstamo</span></div>
+          <div class="recbox"><div class="rec">${esc(ref)}</div><div class="badge">${esc(info.label)}</div><div class="recsub">Emitido ${esc(hoyTxt)}</div></div>
+        </div>
+        <div class="body">
+          <div class="card">
+            <div class="ct">Cliente</div>
+            <div class="cli"><div class="av" style="background:${av.color}">${av.ini}</div><div><div class="cnom">${esc(nombre)}</div>${cedula ? '<div class="cced">Cédula: ' + esc(cedula) + '</div>' : ''}${tel ? '<div class="crow">📞 ' + esc(tel) + '</div>' : ''}</div></div>
+          </div>
+          <div class="card">
+            <div class="ct">Condiciones del préstamo</div>
+            ${resumen.map(r => '<div class="kv"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('')}
+            <div class="kv"><span>Fecha del préstamo</span><b>${esc(dmy(p.fecha_prestamo))}</b></div>
+          </div>
+          <div class="card full">
+            <div class="ct">Cronograma (${filas.length} ${filas.length === 1 ? 'línea' : 'líneas'})</div>
+            <div class="tblwrap"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
+          </div>
+        </div>
+        <div class="regnote">Documento informativo generado el ${esc(hoyTxt)}. El estado de cada cuota se calcula con lo pagado hasta hoy (${fmt(pag)}); si se registra un pago nuevo, vuelve a generarlo para verlo al día.</div>
+      </div></div>
+      <script>
+        (function(){
+          var MSG=${JSON.stringify(waMsg)}, TEL=${JSON.stringify(waNum)}, MAIL=${JSON.stringify(email)}, SUBJ=${JSON.stringify(titulo + ' ' + ref + ' — ' + nombre)};
+          var wa=document.getElementById('amWA'); if(wa) wa.addEventListener('click',function(){ window.open('https://wa.me/'+TEL+'?text='+encodeURIComponent(MSG),'_blank'); });
+          var ml=document.getElementById('amMail'); if(ml) ml.addEventListener('click',function(){ window.location.href='mailto:'+MAIL+'?subject='+encodeURIComponent(SUBJ)+'&body='+encodeURIComponent(MSG); });
+        })();
+      </script>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('err', 'Permite las ventanas emergentes para ver la tabla'); return; } w.document.write(html); w.document.close(); }
+    catch (e) { toast('err', 'No se pudo abrir la tabla', String(e && e.message || e)); }
   };
 
   window.nxPrestamoBorrar = async function (id) {

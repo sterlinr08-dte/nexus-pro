@@ -2424,6 +2424,41 @@ presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opci�
   propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
   ahí con el mismo patrón.
 
+### Financiamiento — botón para COMPARTIR la tabla de amortización (25-jul-2026, v49.31)
+El dueño pidió "botón para compartir tabla de amortización". La tabla ya existía dentro del detalle del
+préstamo (`nxPrestamoVer`, variable `scheduleHTML`) pero solo se podía mirar en pantalla — no había forma de
+imprimirla ni mandársela al cliente (Contrato y Estado de cuenta sí tenían su documento; el cronograma no).
+- **`window.nxPrestamoAmortizacion(id)`** (nueva, junto a `nxPrestamoComprobante`): documento
+  `window.open`+`document.write` con el MISMO patrón del comprobante de pago (v49.23) — encabezado con marca
+  + título + `prRef` + badge de estado, tarjeta de cliente (avatar `prIniciales`, cédula, teléfono), tarjeta
+  de condiciones, y el cronograma completo en tabla. Acciones: **Cerrar · Imprimir/PDF · WhatsApp · Correo**
+  (los handlers van dentro de un `<script>` del documento con `addEventListener`, NO en `onclick` — evita a
+  propósito el bug de comillas de `JSON.stringify` dentro de un atributo, ya documentado en v49.23).
+- **Recalcula, no guarda:** usa las mismas `amortizar()`/`creditoCalc()`/`fechaCuota()` que pinta el modal, y
+  el estado Pagada/Pendiente de cada cuota con el mismo criterio acumulado (`acum += cuota; pag >= acum-0.5`).
+  Cero tablas/columnas nuevas, cero escrituras.
+- **Los 3 modos reales, sin fingir ninguno:** `cuotas` con interés → tabla de amortización (#/Fecha/Cuota/
+  Interés/Capital/Saldo/Estado); `cuotas` sin interés → calendario de cuotas (#/Fecha/Cuota/Estado);
+  `credito` → interés por mes (Mes/Desde/Capital base/Interés/Estado). **`libre` (abonos libres) NO genera
+  documento** — no tiene cuotas fijas que compartir, así que avisa con un toast en vez de abrir una hoja
+  vacía (mismo criterio de "no fingir" del resto del sistema).
+- **Entrada:** botón de compartir (`ti-share`, morado, con `aria-label`) al lado del título del cronograma
+  dentro de `nxPrestamoVer`. Se factorizó un helper `schedTit(txt)` para que los 3 modos usen el mismo título
+  + botón sin duplicar HTML.
+- **WhatsApp:** el mensaje lleva resumen (condiciones) + el cronograma línea por línea, **acotado a 40 líneas**
+  con "… y N más (ver documento completo)" — evita armar un enlace `wa.me` absurdamente largo en préstamos de
+  muchas cuotas.
+- **Verificado con Playwright + código real extraído** (`nxPrestamoAmortizacion`/`amortizar`/`creditoCalc`/
+  `fechaCuota`/`pagadoDe`/`prEstadoInfo`/`prRef`/`prIniciales`/`waNumero`/`empresaNom` tal cual del archivo),
+  **24 comprobaciones**: el documento se genera y, cargado como página REAL en el navegador, tiene las 8 filas
+  correctas, las columnas correctas, 2 pagadas / 6 pendientes con RD$7,000 abonado, fechas en DD/MM/AAAA
+  (confirmado que la 1ra cuota quincenal cae 15 días después del préstamo, no el mismo día), los montos exactos
+  del caso real (cuota 3,500 · interés total 8,000 · total 28,000 · saldo final 0), los 4 botones de acción, y
+  que un préstamo de abonos libres NO genera documento sino aviso. Más 6 del botón del modal (existe, llama a
+  la función con el id correcto, `aria-label` presente, no desborda). Sin desbordes en 390px ni 820px, 0
+  errores de consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
 ### Financiamiento — repase de diseño con skills (ui-ux-pro-max + frontend-design), pieza 1: hero del dashboard (25-jul-2026, v49.30)
 El dueño mandó un catálogo de skills de diseño (frontend-design, web-artifacts, canvas-design, algorithmic-art,
 ui-ux-pro-max, slack-gif) y pidió "aplicar estos skills para mejorar los diseños de las apps". **Aclaración
