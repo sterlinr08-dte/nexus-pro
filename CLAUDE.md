@@ -1,5 +1,25 @@
 # CLAUDE.md — NEXUS PRO
 
+> # ⛔ LEE PRIMERO: `NPGS.md`
+>
+> **`NPGS.md` (NEXUS PRO GLOBAL STANDARDS) es la MÁXIMA AUTORIDAD del proyecto**, decretada por
+> el dueño el 25-jul-2026. Antes de analizar, diseñar o escribir una línea de código hay que
+> leerlo y cumplirlo. Fija el estándar de diseño, UX y calidad: botones, buscadores, ventanas,
+> tablas, colores, consistencia, rendimiento, auditoría y el checklist obligatorio de cierre.
+>
+> **Cómo conviven los dos archivos:**
+> - **`NPGS.md` manda en el CÓMO** — cómo se diseña y se construye. Donde fije un estándar,
+>   NPGS gana sobre cualquier criterio propio.
+> - **`CLAUDE.md` (este archivo) guarda el QUÉ** — qué es NEXUS PRO: el negocio, el esquema real
+>   de la base, los bugs ya resueltos, las decisiones que el dueño ya tomó, el flujo de
+>   publicación. Eso son HECHOS del sistema, no opiniones de diseño: no se inventan de nuevo ni
+>   se sustituyen.
+> - **`DESIGN_SYSTEM.md`** — inventario medido de los componentes que existen HOY y en qué
+>   se aparta el sistema de NPGS, con el plan de convergencia. Es el puente entre los dos.
+>
+> Si algo de este archivo contradice a NPGS en materia de diseño: **detenerse, explicárselo al
+> dueño y proponer la solución que cumpla el estándar** — nunca resolverlo por cuenta propia.
+
 Contexto del proyecto para cualquier sesión de Claude Code. Léelo al inicio para
 no perder el hilo entre chats (la conversación se llena, pero **el contexto vive
 aquí, en el repo**).
