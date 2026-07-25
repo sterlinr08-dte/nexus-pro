@@ -13826,7 +13826,7 @@
             <div id="prPreview"></div>
           </div>
           <div id="prScheduleWrap" style="display:none;margin-top:14px">
-            <div style="font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.3px;text-transform:uppercase;margin-bottom:6px">Vista previa de cuotas</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.3px;text-transform:uppercase;min-width:0">Vista previa de cuotas</span><button class="btn bsm bghost" type="button" style="flex:none;margin-left:auto" onclick="window.nxPrPropuesta()" title="Compartir esta propuesta con el cliente" aria-label="Compartir propuesta con el cliente"><i class="ti ti-share" style="color:#6d28d9"></i> Compartir</button></div>
             <div id="prSchedule"></div>
           </div>
           ${prSec(5, 'Notas (opcional)')}
@@ -14155,7 +14155,7 @@
     const ov = document.createElement('div'); ov.id = 'evAmort'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:520px;max-height:85vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-table"></i> Amortización detallada</span><button class="nxBack" type="button" onclick="document.getElementById('evAmort').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="mt"><span><i class="ti ti-table"></i> Amortización detallada</span><span style="display:flex;gap:6px;align-items:center;flex:none"><button class="btn bsm bghost" type="button" onclick="window.nxPrPropuesta()" title="Compartir esta propuesta" aria-label="Compartir propuesta con el cliente"><i class="ti ti-share" style="color:#6d28d9"></i> Compartir</button><button class="nxBack" type="button" onclick="document.getElementById('evAmort').remove()"><i class="ti ti-arrow-left"></i> Volver</button></span></div>
       <div style="overflow:auto;flex:1"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead><tr style="background:#f8fafc;color:#475569;position:sticky;top:0">${cols}</tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
     document.body.appendChild(ov);
@@ -14766,10 +14766,14 @@
 
   // ── Tabla de amortización imprimible / compartible (WhatsApp · Correo) ──
   // Recalcula el MISMO cronograma que muestra nxPrestamoVer (amortizar/creditoCalc), no guarda nada.
-  window.nxPrestamoAmortizacion = function (id) {
-    const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
+  window.nxPrestamoAmortizacion = function (idOPrestamo) {
+    // Acepta el id de un préstamo GUARDADO, o un objeto "borrador" del simulador (propuesta,
+    // marcado con _propuesta:true). En modo propuesta nada se ha pagado y NO hay contrato todavía.
+    const p = (idOPrestamo && typeof idOPrestamo === 'object') ? idOPrestamo : _prestamos.find(x => String(x.id) === String(idOPrestamo));
+    if (!p) return;
+    const esProp = !!p._propuesta;
     const dmy = f => { const s = String(f || '').slice(0, 10); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.split('-').reverse().join('/') : s; };
-    const pag = pagadoDe(p);
+    const pag = esProp ? 0 : pagadoDe(p);
     const cli = (p.cliente_id && _prClientes.find(c => String(c.id) === String(p.cliente_id))) || null;
     const nombre = p.nombre || (cli && cli.nombre) || 'Cliente';
     const cedula = p.cedula || (cli && cli.cedula) || '';
@@ -14812,17 +14816,22 @@
       toast('err', 'Este préstamo no tiene cronograma', 'Los abonos libres no tienen cuotas fijas que compartir.');
       return;
     }
-    const info = prEstadoInfo(p), av = prIniciales(nombre), empNom = empresaNom(), ref = prRef(p);
+    // En una propuesta nadie ha pagado nada: la columna Estado (siempre la última) no aporta y se quita.
+    if (esProp) { cols.pop(); filas.forEach(f => f.pop()); }
+    const av = prIniciales(nombre), empNom = empresaNom();
+    const info = esProp ? { key: 'propuesta', label: 'PROPUESTA' } : prEstadoInfo(p);
+    const ref = esProp ? '' : prRef(p);
     const estCol = info.key === 'pagado' ? '#16a34a' : info.key === 'vencido' ? '#dc2626' : '#4f46e5';
     const hoyTxt = dmy(hoy());
+    const docTit = esProp ? 'PROPUESTA DE FINANCIAMIENTO' : titulo;
     // WhatsApp: resumen + cronograma. Se acota para no armar un enlace absurdamente largo.
     const TOPE = 40;
     const lineasWA = waLineas.slice(0, TOPE).join('\n') + (waLineas.length > TOPE ? '\n… y ' + (waLineas.length - TOPE) + ' más (ver documento completo)' : '');
-    const waMsg = '*' + titulo + '* — ' + empNom + '\nContrato: ' + ref + '\n\nCliente: ' + nombre + '\n' + resumen.map(r => r[0] + ': ' + r[1]).join('\n') + '\n\n*Cronograma*\n' + lineasWA;
+    const waMsg = '*' + docTit + '* — ' + empNom + (esProp ? '' : '\nContrato: ' + ref) + '\n\nCliente: ' + nombre + '\n' + resumen.map(r => r[0] + ': ' + r[1]).join('\n') + '\n\n*Cronograma*\n' + lineasWA + (esProp ? '\n\n_Propuesta sujeta a aprobación. No es un préstamo aprobado._' : '');
     const waNum = waNumero(tel);
     const thead = '<tr>' + cols.map(c => '<th class="' + c[1] + '">' + esc(c[0]) + '</th>').join('') + '</tr>';
     const tbody = filas.map(f => '<tr>' + f.map(c => '<td class="' + c[1] + '">' + esc(c[0]) + '</td>').join('') + '</tr>').join('');
-    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(titulo)} ${esc(ref)} — ${esc(nombre)}</title>
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(docTit)} ${esc(ref)} — ${esc(nombre)}</title>
       <style>
         *{box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;margin:0;background:#f1f5f9}
         .wrap{max-width:820px;margin:0 auto;padding:16px}
@@ -14863,8 +14872,8 @@
       <div class="wrap"><div class="doc">
         <div class="hd">
           <div class="brand"><div class="blogo">N</div><div><div class="bnom">${esc(empNom)}</div><div class="bsub">FINANCIAMIENTO</div></div></div>
-          <div class="htitle"><h1>${esc(titulo)}</h1><span>Plan de pagos del préstamo</span></div>
-          <div class="recbox"><div class="rec">${esc(ref)}</div><div class="badge">${esc(info.label)}</div><div class="recsub">Emitido ${esc(hoyTxt)}</div></div>
+          <div class="htitle"><h1>${esc(docTit)}</h1><span>${esProp ? 'Simulación de las condiciones conversadas' : 'Plan de pagos del préstamo'}</span></div>
+          <div class="recbox">${esProp ? '' : `<div class="rec">${esc(ref)}</div>`}<div class="badge">${esc(info.label)}</div><div class="recsub">${esProp ? 'Emitida' : 'Emitido'} ${esc(hoyTxt)}</div></div>
         </div>
         <div class="body">
           <div class="card">
@@ -14881,11 +14890,13 @@
             <div class="tblwrap"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>
           </div>
         </div>
-        <div class="regnote">Documento informativo generado el ${esc(hoyTxt)}. El estado de cada cuota se calcula con lo pagado hasta hoy (${fmt(pag)}); si se registra un pago nuevo, vuelve a generarlo para verlo al día.</div>
+        <div class="regnote">${esProp
+        ? 'Propuesta generada el ' + esc(hoyTxt) + '. Es una <b>simulación</b> de las condiciones conversadas: <b>no es un préstamo aprobado</b> ni un compromiso de desembolso, y las condiciones pueden variar hasta la aprobación. Este documento no tiene número de contrato porque el préstamo todavía no existe en el sistema.'
+        : 'Documento informativo generado el ' + esc(hoyTxt) + '. El estado de cada cuota se calcula con lo pagado hasta hoy (' + fmt(pag) + '); si se registra un pago nuevo, vuelve a generarlo para verlo al día.'}</div>
       </div></div>
       <script>
         (function(){
-          var MSG=${JSON.stringify(waMsg)}, TEL=${JSON.stringify(waNum)}, MAIL=${JSON.stringify(email)}, SUBJ=${JSON.stringify(titulo + ' ' + ref + ' — ' + nombre)};
+          var MSG=${JSON.stringify(waMsg)}, TEL=${JSON.stringify(waNum)}, MAIL=${JSON.stringify(email)}, SUBJ=${JSON.stringify(docTit + (ref ? ' ' + ref : '') + ' — ' + nombre)};
           var wa=document.getElementById('amWA'); if(wa) wa.addEventListener('click',function(){ window.open('https://wa.me/'+TEL+'?text='+encodeURIComponent(MSG),'_blank'); });
           var ml=document.getElementById('amMail'); if(ml) ml.addEventListener('click',function(){ window.location.href='mailto:'+MAIL+'?subject='+encodeURIComponent(SUBJ)+'&body='+encodeURIComponent(MSG); });
         })();
@@ -14893,6 +14904,36 @@
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('err', 'Permite las ventanas emergentes para ver la tabla'); return; } w.document.write(html); w.document.close(); }
     catch (e) { toast('err', 'No se pudo abrir la tabla', String(e && e.message || e)); }
+  };
+
+  // ── PROPUESTA: compartir el cronograma de un préstamo que TODAVÍA NO EXISTE ──
+  // Sirve mientras se negocia con un cliente (nuevo o ya registrado). Lee el simulador del DOM
+  // — Evaluación y el formulario de Nuevo préstamo usan los MISMOS ids, así que una sola función
+  // cubre las dos pantallas. No guarda nada: arma un préstamo "borrador" y lo manda a imprimir.
+  window.nxPrPropuesta = function () {
+    const cap = parseMoney(val('prCap')), tasa = parsePct(val('prTasa'));
+    const fecha = val('prFecha') || hoy();
+    const nombre = (val('prNom') || (_evCli && _evCli.nombre) || '').trim();
+    const base = {
+      _propuesta: true, id: '__propuesta__', fecha_prestamo: fecha,
+      nombre: nombre, cedula: (val('prCed') || '').trim(), telefono: (val('prTel') || '').trim()
+    };
+    let draft = null;
+    if (_modoForm === 'credito') {
+      const plazo = parseInt(val('prPlazo'), 10) || 0;
+      if (!(cap > 0 && tasa > 0)) { toast('err', 'Completa el simulador primero', 'Faltan el capital o la tasa.'); return; }
+      draft = Object.assign({}, base, { modo: 'credito', capital: cap, tasa_interes: tasa, plazo_meses: plazo });
+    } else if (_modoForm === 'cuotas') {
+      const n = parseInt(val('prNumCuotas'), 10) || 0;
+      if (!(cap > 0 && n > 0)) { toast('err', 'Completa el simulador primero', 'Faltan el capital o el número de cuotas.'); return; }
+      const frec = val('prFrec') || 'mensual', met = val('prMetodo') || 'plano';
+      const a = tasa > 0 ? amortizar(cap, tasa, n, fecha, frec, met) : null;
+      draft = Object.assign({}, base, { modo: 'cuotas', capital: cap, tasa_interes: tasa, num_cuotas: n, frecuencia: frec, metodo_interes: met, total_devolver: a ? a.total : cap });
+    } else {
+      toast('err', 'Los abonos libres no tienen cuotas fijas', 'Cambia a "Cuotas fijas" o "Línea de crédito" para armar una propuesta.');
+      return;
+    }
+    window.nxPrestamoAmortizacion(draft);
   };
 
   window.nxPrestamoBorrar = async function (id) {

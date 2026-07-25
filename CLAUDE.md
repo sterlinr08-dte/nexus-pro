@@ -2424,6 +2424,45 @@ presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opci�
   propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
   ahí con el mismo patrón.
 
+### Financiamiento — compartir la PROPUESTA de un préstamo que aún no existe (25-jul-2026, v49.32)
+El dueño planteó el caso real: "estoy llegando a un acuerdo con un cliente nuevo pero quiero compartir la
+tabla en el módulo de consulta". **Hallazgo de la auditoría:** el botón de v49.31 NO servía para eso —
+`nxPrestamoAmortizacion(id)` busca el préstamo en `_prestamos`, y en una negociación no hay préstamo
+guardado. Además "módulo de consulta" no existe con ese nombre: lo que encaja es **Evaluación**
+(`_prView='evaluacion'`), cuyo modal "Ver amortización detallada" (`evVerAmort`) mostraba la tabla **solo en
+pantalla**, sin imprimir/compartir. El otro lugar donde se negocia es el formulario de **Nuevo préstamo**,
+cuya vista previa solo enseña 3 filas. El dueño eligió (AskUserQuestion) ponerlo **en los dos**.
+- **Refactor mínimo y retrocompatible:** `nxPrestamoAmortizacion` ahora acepta **un id (préstamo guardado,
+  comportamiento idéntico al de antes) o un objeto "borrador"** marcado `_propuesta:true`. En modo propuesta:
+  `pag=0` (nadie ha pagado), se **quita la columna Estado** (siempre la última de las 3 ramas, con
+  `cols.pop()`+`filas.forEach(f=>f.pop())` — nada de duplicar el render), no se llama `prEstadoInfo`/`prRef`
+  (darían un estado y un "PR-__PROP" falsos) y cambian título/badge/nota/asunto.
+- **Decisión importante (criterio "no fingir"):** una simulación NO puede verse igual que un préstamo real —
+  si saliera con "PR-XXXXXX" y badge ACTIVO, el cliente podría creer que ya tiene un préstamo aprobado. El
+  documento sale como **"PROPUESTA DE FINANCIAMIENTO"**, badge `PROPUESTA`, **sin número de contrato**, y con
+  nota al pie: *"Es una simulación de las condiciones conversadas: no es un préstamo aprobado ni un
+  compromiso de desembolso... no tiene número de contrato porque el préstamo todavía no existe en el
+  sistema."* El mensaje de WhatsApp cierra con el mismo aviso.
+- **`window.nxPrPropuesta()`** (nueva): arma el borrador leyendo el simulador **del DOM**. Clave: Evaluación
+  y el formulario de Nuevo préstamo **comparten los mismos ids** (`prCap`/`prTasa`/`prNumCuotas`/`prFrec`/
+  `prMetodo`/`prPlazo`/`prFecha`/`prNom`/`prCed`/`prTel` — ver v49.15), así que **una sola función cubre las
+  dos pantallas**, sin duplicar nada. Cliente: `prNom` (en el form es un campo que se teclea → sirve para un
+  cliente que todavía NO está registrado) o `_evCli` como respaldo. Modos: `cuotas` (con o sin interés —
+  sin interés usa `total_devolver=capital`, no depende de `calcPrestamo` que devuelve `computa:false` ahí) y
+  `credito`. **`libre` avisa y no genera** (no tiene cuotas fijas). Simulador incompleto → toast, sin abrir
+  documento vacío.
+- **Botones:** en el modal `evVerAmort` (junto a "Volver") y en el formulario de Nuevo préstamo (junto a
+  "Vista previa de cuotas"), ambos con `aria-label`.
+- **Verificado con Playwright, código real extraído** (`nxPrestamoAmortizacion`/`nxPrPropuesta`/`amortizar`/
+  `creditoCalc`/`mesesCompletos`/`fechaCuota`/`prEstadoInfo`/`prRef`/`prIniciales` tal cual), **22
+  comprobaciones**: (a) **retrocompatibilidad** — el préstamo guardado sale idéntico (título TABLA DE
+  AMORTIZACIÓN, número de contrato, badge ACTIVO, columna Estado con Pagada/Pendiente, nota de siempre, y NO
+  dice propuesta); (b) **propuesta** — título/badge PROPUESTA, nombre del cliente nuevo tecleado, SIN `PR-`,
+  aviso legal presente, sin cuotas "Pagada", 8 filas correctas, columnas sin Estado, montos exactos
+  (28,000 / cuota 3,500), botón WhatsApp; (c) **límites** — simulador vacío avisa, abonos libres avisan,
+  línea de crédito sí genera. Sin desbordes, 0 errores de consola. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Financiamiento — botón para COMPARTIR la tabla de amortización (25-jul-2026, v49.31)
 El dueño pidió "botón para compartir tabla de amortización". La tabla ya existía dentro del detalle del
 préstamo (`nxPrestamoVer`, variable `scheduleHTML`) pero solo se podía mirar en pantalla — no había forma de
