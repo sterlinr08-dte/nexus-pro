@@ -57,6 +57,13 @@ label.fl:first-child{margin-top:0}
 .okwrap .ic{width:64px;height:64px;border-radius:50%;background:#dcfce7;color:#16a34a;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
 .okwrap h2{font-size:17px;margin:0 0 8px}
 .okwrap p{font-size:13px;color:#64748b;line-height:1.6}
+.guion{background:#0f172a;color:#f8fafc;border-radius:12px;padding:14px;font-size:14.5px;line-height:1.65;margin:10px 0}
+.guion .gl{display:block;font-size:10px;font-weight:800;color:#a5b4fc;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.guion b{color:#fff}
+.vidprev{margin-top:8px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;background:#000}
+.vidprev video{width:100%;display:block;max-height:220px}
+.subiendo{display:flex;align-items:center;gap:8px;font-size:12px;color:#4c1d95;background:#f5f3ff;border-radius:10px;padding:10px;margin-top:8px}
+.subiendo .spin{width:16px;height:16px;border-width:2px;margin:0}
 </style>
 </head>
 <body>
@@ -68,9 +75,10 @@ label.fl:first-child{margin-top:0}
   var app=document.getElementById("app");
   var id=new URLSearchParams(location.search).get("id")||"";
   var S=null;
-  var doc={frente:"",dorso:""};
+  var doc={frente:"",dorso:"",selfie:""};
   var sigCanvas=null, sigCtx=null, sigDrawing=false, sigTiene=false, sigLastXY=null;
   var enviando=false;
+  var vid={path:"",subiendo:false,nombre:""};
 
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c];});}
   function fmt(n){return "RD$ "+Math.round(Number(n||0)).toLocaleString("en-US");}
@@ -103,6 +111,22 @@ label.fl:first-child{margin-top:0}
     return (S.num_cuotas||"—")+" cuotas "+frecTxt+" de "+fmt(S.cuota_calculada)+" cada una, para un total a devolver de "+fmt(S.total_devolver)+" sobre un capital de "+fmt(S.capital)+".";
   }
 
+  // El guion NO es texto libre: se arma con los términos REALES de este préstamo, para que
+  // lo que el cliente dice en el video coincida exactamente con lo que va a firmar.
+  function guionTexto(){
+    var nom=String(S.nombre||"").trim();
+    if(S.modo==="credito"){
+      return "Yo, "+nom+", declaro que recibí una línea de crédito de "+fmt(S.capital)
+        +" con "+(S.tasa_interes||0)+" por ciento de interés mensual"
+        +(S.plazo_meses?", y me comprometo a devolver el capital en un plazo de "+S.plazo_meses+" meses":"")
+        +", y a pagar los intereses cada mes.";
+    }
+    var frecTxt={semanal:"semanales",quincenal:"quincenales",mensual:"mensuales"}[S.frecuencia]||"";
+    return "Yo, "+nom+", declaro que recibí un préstamo de "+fmt(S.capital)
+      +", y me comprometo a pagarlo en "+(S.num_cuotas||"—")+" cuotas "+frecTxt
+      +" de "+fmt(S.cuota_calculada)+" cada una, para un total de "+fmt(S.total_devolver)+".";
+  }
+
   function render(){
     var nom=esc(S.nombre||"");
     app.innerHTML =
@@ -130,13 +154,28 @@ label.fl:first-child{margin-top:0}
       +'<div id="pDorso"></div>'
       +'</div>'
 
-      +'<div class="card"><div class="sec"><div class="nb">3</div><h3>Tu firma</h3></div>'
+      +'<div class="card"><div class="sec"><div class="nb">3</div><h3>Foto tuya con la cédula</h3></div>'
+      +'<div style="font-size:12.5px;color:#64748b;line-height:1.5;margin-bottom:10px">Tómate una foto sosteniendo tu cédula al lado de tu cara. Que se vea tu rostro y la cédula con claridad.</div>'
+      +'<input type="file" id="fSelfie" accept="image/*" capture="user" style="display:none" onchange="window.__docFile(this,\'selfie\')">'
+      +'<div class="docbtn" id="bSelfie" onclick="document.getElementById(\'fSelfie\').click()"><i class="ti ti-user-scan"></i><div><b>Tomar la foto</b><span>Tu cara junto a la cédula</span></div></div>'
+      +'<div id="pSelfie"></div>'
+      +'</div>'
+
+      +'<div class="card"><div class="sec"><div class="nb">4</div><h3>Video de compromiso</h3></div>'
+      +'<div style="font-size:12.5px;color:#64748b;line-height:1.5">Graba un video corto leyendo en voz alta lo siguiente:</div>'
+      +'<div class="guion"><span class="gl">Lee esto en el video</span>'+esc(guionTexto())+'</div>'
+      +'<input type="file" id="fVideo" accept="video/*" capture="user" style="display:none" onchange="window.__videoFile(this)">'
+      +'<div class="docbtn" id="bVideo" onclick="document.getElementById(\'fVideo\').click()"><i class="ti ti-video"></i><div><b>Grabar el video</b><span>Se abre la cámara de tu teléfono</span></div></div>'
+      +'<div id="pVideo"></div>'
+      +'</div>'
+
+      +'<div class="card"><div class="sec"><div class="nb">5</div><h3>Tu firma</h3></div>'
       +'<div class="sigwrap"><canvas id="sigCv"></canvas></div>'
       +'<div class="sigbar"><span>Firma con el dedo dentro del recuadro</span><button type="button" onclick="window.__sigLimpiar()">Borrar</button></div>'
       +'</div>'
 
       +'<div class="card">'
-      +'<label class="chk"><input type="checkbox" id="chkAcepto" onchange="window.__revisar()"> Acepto los términos de este préstamo tal como se describen arriba y confirmo que la cédula y la firma son mías.</label>'
+      +'<label class="chk"><input type="checkbox" id="chkAcepto" onchange="window.__revisar()"> Acepto los términos de este préstamo tal como se describen arriba y confirmo que la cédula, la foto, el video y la firma son míos.</label>'
       +'<button type="button" class="pubbtn" id="btnPublicar" disabled onclick="window.__publicar()"><i class="ti ti-send"></i> Publicar</button>'
       +'</div>'
       +'</div>';
@@ -187,9 +226,11 @@ label.fl:first-child{margin-top:0}
           dataUrl=cv.toDataURL("image/jpeg",0.75);
         }catch(er){ dataUrl=ev.target.result; }
         doc[cual]=dataUrl;
-        var btn=document.getElementById(cual==="frente"?"bFrente":"bDorso");
-        if(btn){ btn.classList.add("ok"); btn.innerHTML='<i class="ti ti-circle-check"></i><div><b>Foto lista</b><span>Toca para cambiarla</span></div>'; btn.onclick=function(){document.getElementById(cual==="frente"?"fFrente":"fDorso").click();}; }
-        var prev=document.getElementById(cual==="frente"?"pFrente":"pDorso");
+        // Convención de ids: frente→bFrente/pFrente/fFrente, dorso→b/p/fDorso, selfie→b/p/fSelfie
+        var cap=cual.charAt(0).toUpperCase()+cual.slice(1);
+        var btn=document.getElementById("b"+cap);
+        if(btn){ btn.classList.add("ok"); btn.innerHTML='<i class="ti ti-circle-check"></i><div><b>Foto lista</b><span>Toca para cambiarla</span></div>'; btn.onclick=function(){document.getElementById("f"+cap).click();}; }
+        var prev=document.getElementById("p"+cap);
         if(prev) prev.innerHTML='<div class="docprev"><img src="'+dataUrl+'"></div>';
         window.__revisar();
       };
@@ -199,10 +240,46 @@ label.fl:first-child{margin-top:0}
     reader.readAsDataURL(f);
   };
 
+  // El video NO viaja como dataURL (pesa demasiado): se pide al servidor una URL firmada
+  // de un solo uso y el teléfono sube el archivo directo a Storage. La ruta la decide el
+  // servidor — aquí solo se guarda la que devuelve.
+  window.__videoFile=function(input){
+    var f=input.files&&input.files[0]; if(!f)return;
+    if(f.size>80*1024*1024){ alert("El video es muy largo (máximo 80 MB). Graba uno más corto."); input.value=""; return; }
+    if(vid.subiendo)return;
+    vid.subiendo=true; vid.path=""; vid.nombre=f.name||"video";
+    var prev=document.getElementById("pVideo");
+    if(prev) prev.innerHTML='<div class="subiendo"><div class="spin"></div>Subiendo tu video…</div>';
+    window.__revisar();
+    var ext=(f.name&&f.name.indexOf(".")>=0)?f.name.split(".").pop():"";
+    if(!ext) ext=(f.type&&f.type.indexOf("quicktime")>=0)?"mov":"mp4";
+
+    fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:id,accion:"firmar-video",ext:ext})})
+      .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
+      .then(function(res){
+        if(!res.ok||!res.d.signedUrl) throw new Error(res.d&&res.d.error||"No se pudo preparar la subida");
+        return fetch(res.d.signedUrl,{method:"PUT",headers:{"Content-Type":f.type||"video/mp4"},body:f})
+          .then(function(up){ if(!up.ok) throw new Error("No se pudo subir el video"); return res.d.path; });
+      })
+      .then(function(path){
+        vid.path=path; vid.subiendo=false;
+        var btn=document.getElementById("bVideo");
+        if(btn){ btn.classList.add("ok"); btn.innerHTML='<i class="ti ti-circle-check"></i><div><b>Video listo</b><span>Toca para grabar otro</span></div>'; btn.onclick=function(){document.getElementById("fVideo").click();}; }
+        if(prev){ try{ prev.innerHTML='<div class="vidprev"><video controls playsinline src="'+URL.createObjectURL(f)+'"></video></div>'; }catch(e){ prev.innerHTML=""; } }
+        window.__revisar();
+      })
+      .catch(function(e){
+        vid.subiendo=false; vid.path="";
+        if(prev) prev.innerHTML='<div style="font-size:12px;color:#dc2626;padding:8px 0">No se pudo subir el video. Toca arriba para intentarlo de nuevo.</div>';
+        window.__revisar();
+      });
+    try{ input.value=""; }catch(e){}
+  };
+
   window.__revisar=function(){
     var btn=document.getElementById("btnPublicar"); if(!btn)return;
     var chk=document.getElementById("chkAcepto");
-    var listo=!!doc.frente && !!doc.dorso && sigTiene && chk && chk.checked;
+    var listo=!!doc.frente && !!doc.dorso && !!doc.selfie && !!vid.path && !vid.subiendo && sigTiene && chk && chk.checked;
     btn.disabled=!listo;
   };
 
@@ -212,7 +289,8 @@ label.fl:first-child{margin-top:0}
     if(btn){ btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2"></i> Enviando…'; }
     var firma=sigCanvas.toDataURL("image/png");
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      id:id, cedula_frente:doc.frente, cedula_dorso:doc.dorso, firma:firma
+      id:id, cedula_frente:doc.frente, cedula_dorso:doc.dorso, firma:firma,
+      selfie:doc.selfie, video_path:vid.path, video_guion:guionTexto()
     })}).then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});}).then(function(res){
       enviando=false;
       if(!res.ok || res.d.error){

@@ -3710,7 +3710,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.39';
+const APP_VERSION='49.40';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -8205,7 +8205,7 @@ async function subirDoc(tipo, input){
 
     const resp = await fetch(`${API.url}/storage/v1/object/documentos/${path}`, {
       method: 'POST',
-      headers: {'apikey': API.key, 'Authorization': `Bearer ${API.key}`},
+      headers: {'apikey': API.key, 'Authorization': `Bearer ${API.token||API.key}`},
       body: formData
     });
 
@@ -8213,7 +8213,7 @@ async function subirDoc(tipo, input){
     if(resp.status === 400){
       await fetch(`${API.url}/storage/v1/object/documentos/${path}`, {
         method: 'PUT',
-        headers: {'apikey': API.key, 'Authorization': `Bearer ${API.key}`},
+        headers: {'apikey': API.key, 'Authorization': `Bearer ${API.token||API.key}`},
         body: formData
       });
     }
@@ -8261,7 +8261,7 @@ async function subirDocExtra(input){
       formData.append('', file);
       await fetch(`${API.url}/storage/v1/object/documentos/${path}`, {
         method: 'POST',
-        headers: {'apikey': API.key, 'Authorization': `Bearer ${API.key}`},
+        headers: {'apikey': API.key, 'Authorization': `Bearer ${API.token||API.key}`},
         body: formData
       });
       const url = `${API.url}/storage/v1/object/public/documentos/${path}`;
