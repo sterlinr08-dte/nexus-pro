@@ -13410,6 +13410,7 @@
           <button type="button" title="Editar" aria-label="Editar" onclick="event.stopPropagation();window.nxPrClienteEditar('${c.id}')"><i class="ti ti-pencil"></i></button>
           ${c.telefono ? `<button type="button" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation();window.nxPrClienteWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
           <button type="button" title="Nuevo préstamo" aria-label="Nuevo préstamo" onclick="event.stopPropagation();window.nxPrestamoNuevoDeCliente('${c.id}')"><i class="ti ti-cash-plus"></i></button>
+          <button type="button" title="${st.n ? 'No se puede eliminar: tiene préstamos' : 'Eliminar cliente'}" aria-label="Eliminar cliente" onclick="event.stopPropagation();window.nxPrClienteBorrar('${c.id}')"><i class="ti ti-trash" style="color:${st.n ? '#cbd5e1' : '#dc2626'}"></i></button>
         </div></td>
       </tr>`;
     }).join('');
@@ -13439,6 +13440,29 @@
   window.nxPrClienteFiltrar = function (q) { _prCliQuery = String(q || ''); const el = document.getElementById('nxPrCliLista'); if (el) el.innerHTML = prClientesTablaHTML(); };
   window.nxPrClienteNuevo = function () { abrirClienteForm(null, null); };
   window.nxPrClienteEditar = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); if (c) abrirClienteForm(c, null); };
+  // Eliminar cliente. La base NO permite borrar un cliente con préstamos (prestamos.cliente_id es
+  // NO ACTION → Postgres rechazaría el DELETE con un error técnico). Se comprueba ANTES y se avisa
+  // claro: borrar un cliente con historial destruiría el registro de sus préstamos.
+  window.nxPrClienteBorrar = async function (id) {
+    const c = _prClientes.find(x => String(x.id) === String(id)); if (!c) return;
+    const st = prCliStats(c);
+    if (st.n > 0) {
+      toast('err', 'No se puede eliminar', esc(c.nombre || 'Este cliente') + ' tiene ' + st.n + (st.n === 1 ? ' préstamo registrado' : ' préstamos registrados') + (st.activos ? ' (' + st.activos + ' sin saldar)' : '') + '. Borra primero sus préstamos, o déjalo como está para conservar el historial.');
+      return;
+    }
+    try {
+      const ok = (typeof window.swalConfirm === 'function')
+        ? await window.swalConfirm('🗑️', '¿Eliminar este cliente?', esc(c.nombre || '') + ' — no tiene préstamos registrados. No se puede deshacer.')
+        : window.confirm('¿Eliminar a ' + (c.nombre || 'este cliente') + '? No se puede deshacer.');
+      if (!ok) return;
+      await getAPI().del('prestamo_clientes', 'id=eq.' + id);
+      cerrarModal('nxPrCliForm');
+      try { window.logAudit && window.logAudit('PRESTAMO_CLIENTE_ELIMINADO', (c.nombre || '') + (c.cedula ? ' · ' + c.cedula : ''), 'Financiamiento'); } catch (e) {}
+      toast('ok', 'Cliente eliminado', c.nombre || '');
+      await cargarPrestamos();
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+    } catch (e) { toast('err', 'Error al eliminar', String(e && e.message || e)); }
+  };
   window.nxPrClienteVer = function (id) { window.nxPrClienteEditar(id); };
   window.nxPrClienteWA = function (id) { const c = _prClientes.find(x => String(x.id) === String(id)); if (!c) return; const tel = String(c.telefono || '').replace(/\D/g, ''); if (!tel) { toast('err', 'Sin teléfono'); return; } window.open('https://wa.me/1' + tel, '_blank'); };
   let _prPrefillCli = null;
@@ -13490,7 +13514,7 @@
         <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
         </div>
       </div>
-      <div style="padding-top:10px"><button class="btn bc1" type="button" style="width:100%" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
+      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-trash"></i></button>` : ''}<button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
     </div>`;
     document.body.appendChild(ov);
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}

@@ -2424,6 +2424,35 @@ presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opci�
   propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
   ahí con el mismo patrón.
 
+### Financiamiento — ELIMINAR clientes (préstamos ya se podía) (25-jul-2026, v49.33)
+El dueño pidió "que se pueda eliminar los clientes y también un préstamo". **Auditoría primero:**
+`nxPrestamoBorrar(id)` **ya existía** (botón "Borrar" en el detalle del préstamo) — no hacía falta nada
+ahí. Lo que NO existía era borrar un cliente de `prestamo_clientes`.
+- **Hallazgo de esquema (SQL directo, decidió el diseño):** `prestamo_pagos.prestamo_id` → `prestamos` es
+  **CASCADE** (por eso borrar un préstamo ya arrastra sus pagos, y el confirm de siempre lo dice bien);
+  pero `prestamos.cliente_id` → `prestamo_clientes` es **NO ACTION**: si se intentara borrar un cliente con
+  préstamos, Postgres **rechaza** el DELETE con un error técnico feo (`violates foreign key constraint`).
+- **`window.nxPrClienteBorrar(id)`** (nueva, junto a `nxPrClienteEditar`): comprueba **antes** con
+  `prCliStats(c)` (helper que YA existía, cuenta préstamos/activos/saldo desde `_prestamos` en memoria —
+  cero consultas nuevas). Si el cliente tiene ≥1 préstamo **no borra** y avisa con el conteo real
+  ("tiene 2 préstamos registrados (2 sin saldar). Borra primero sus préstamos, o déjalo como está para
+  conservar el historial"). Si no tiene ninguno: `swalConfirm` → `DELETE prestamo_clientes?id=eq.<id>` →
+  `logAudit('PRESTAMO_CLIENTE_ELIMINADO', nombre · cédula, 'Financiamiento')` → recarga y repinta.
+- **Decisión deliberada:** el bloqueo aplica **también a préstamos ya PAGADOS**, no solo activos —
+  borrar un cliente con historial destruiría el registro de esos préstamos (el historial crediticio del
+  módulo depende de `cliente_id`). Mismo criterio de proteger el dato real que el resto del sistema.
+- **Entradas:** botón de basura en cada fila de la lista de Clientes (`prClientesTablaHTML`, en gris
+  apagado + `title` explicativo cuando el cliente tiene préstamos, rojo cuando sí se puede) y dentro del
+  formulario al EDITAR (`abrirClienteForm`, solo si `cli` existe — al crear no hay nada que borrar).
+- **Verificado con Playwright, código real extraído** (`prCliStats`/`prClientesTablaHTML`/
+  `nxPrClienteBorrar` + `saldoDe`/`estadoDe`/`creditoCalc` tal cual): **15 comprobaciones** — botón en las
+  3 filas con el color/title correcto según tenga o no préstamos; cliente con 2 préstamos → **cero DELETE**
+  a la base + aviso con el conteo correcto (plural/singular y "sin saldar"); cliente con préstamo ya
+  pagado → tampoco se borra; cliente sin préstamos → DELETE correcto (`prestamo_clientes?id=eq.c1`) +
+  toast + registro de auditoría con nombre y cédula; cancelar el confirm → no borra nada. 0 errores de
+  consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
 ### Financiamiento — compartir la PROPUESTA de un préstamo que aún no existe (25-jul-2026, v49.32)
 El dueño planteó el caso real: "estoy llegando a un acuerdo con un cliente nuevo pero quiero compartir la
 tabla en el módulo de consulta". **Hallazgo de la auditoría:** el botón de v49.31 NO servía para eso —
