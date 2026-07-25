@@ -15303,6 +15303,16 @@
       cerrarModal('nxPrSolModal');
       toast('ok', 'Préstamo creado', s.nombre);
       await cargarPrestamos();
+      // El expediente (cédula, foto, firma, video) pasa a los Documentos del préstamo, para
+      // verlo y manejarlo junto al resto. Va DESPUÉS de recargar (necesita el préstamo en
+      // memoria) y no bloquea: si algo falla, el préstamo ya está creado y queda el botón
+      // "Traer expediente firmado" en Documentos.
+      try {
+        if (prestamoId) {
+          const n = await copiarExpedienteADocs(prestamoId, s);
+          if (n) toast('ok', 'Expediente guardado en Documentos', n + ' archivo(s)');
+        }
+      } catch (e) { toast('err', 'El préstamo se creó, pero el expediente no se copió', 'Ábrelo en Documentos y toca "Traer expediente firmado".'); }
       const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
     } catch (e) { toast('err', 'Error al aprobar', String(e && e.message || e)); }
   };
@@ -15637,11 +15647,16 @@
   //  DOCUMENTOS DEL PRÉSTAMO (cédula, contrato firmado, garantías…)
   // ════════════════════════════════════════════════════════════════
   const DOCS_BUCKET = 'comprobantes'; // bucket público (mismo que los bauches)
+  // `soloLectura`: tipos que NO se suben a mano (llegan del expediente firmado) — se usan
+  // para la etiqueta y el ícono de la lista, pero no pintan un tile de subida.
   const DOC_TIPOS = [
     { k: 'cedula', lbl: 'Cédula', ic: 'ti-id' },
     { k: 'contrato', lbl: 'Contrato firmado', ic: 'ti-file-certificate' },
     { k: 'garantia', lbl: 'Garantía', ic: 'ti-shield-check' },
-    { k: 'otro', lbl: 'Otro', ic: 'ti-paperclip' }
+    { k: 'otro', lbl: 'Otro', ic: 'ti-paperclip' },
+    { k: 'selfie', lbl: 'Foto con la cédula', ic: 'ti-user-scan', soloLectura: true },
+    { k: 'firma', lbl: 'Firma digital', ic: 'ti-signature', soloLectura: true },
+    { k: 'video', lbl: 'Video de compromiso', ic: 'ti-video', soloLectura: true }
   ];
   let _docSubiendo = false;
 
@@ -15662,6 +15677,78 @@
     if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + (await resp.text()).slice(0, 120));
     return { path: path, url: `${api.url}/storage/v1/object/public/${DOCS_BUCKET}/${path}` };
   }
+
+  // ── Expediente firmado → carpeta DOCS del préstamo ───────────────────────────
+  // Las 4 imágenes viven como dataURL en `prestamo_solicitudes`; se suben a Storage igual
+  // que cualquier documento subido a mano, para que se vean y se manejen igual que el resto.
+  // El VIDEO no se copia: ya está en el bucket privado `documentos` y pesa varios MB —
+  // duplicarlo sería tirar espacio. Se guarda una referencia y se firma al abrirlo.
+  function dataUrlABlob(du) {
+    const partes = String(du || '').split(',');
+    const mime = (String(partes[0]).match(/data:([^;]+)/) || [])[1] || 'image/jpeg';
+    const bin = atob(partes[1] || '');
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new Blob([u8], { type: mime });
+  }
+  const EXPEDIENTE_PIEZAS = [
+    { campo: 'cedula_frente', tipo: 'cedula', nombre: 'Cédula (frente)' },
+    { campo: 'cedula_dorso', tipo: 'cedula', nombre: 'Cédula (dorso)' },
+    { campo: 'selfie', tipo: 'selfie', nombre: 'Foto con la cédula' },
+    { campo: 'firma', tipo: 'firma', nombre: 'Firma del cliente' }
+  ];
+  async function copiarExpedienteADocs(prestamoId, s) {
+    const p = _prestamos.find(x => String(x.id) === String(prestamoId));
+    const arr = (p && Array.isArray(p.documentos)) ? p.documentos.slice() : [];
+    const yaEsta = c => arr.some(d => d.origen === 'firma' && d.campo === c);
+    let nuevos = 0;
+    for (const pieza of EXPEDIENTE_PIEZAS) {
+      const du = s[pieza.campo];
+      if (!du || !/^data:/.test(String(du)) || yaEsta(pieza.campo)) continue;
+      try {
+        const blob = dataUrlABlob(du);
+        const ext = /png/.test(blob.type) ? 'png' : 'jpg';
+        const r = await subirDocPrestamo(prestamoId, new File([blob], pieza.nombre + '.' + ext, { type: blob.type }));
+        arr.push({ nombre: pieza.nombre, tipo: pieza.tipo, url: r.url, path: r.path, mime: blob.type, fecha: hoy(), origen: 'firma', campo: pieza.campo, solicitud_id: s.id });
+        nuevos++;
+      } catch (e) { /* si una pieza falla, se siguen guardando las demás */ }
+    }
+    // El video: referencia al bucket privado, no una copia.
+    if (s.video_path && !yaEsta('video_path')) {
+      arr.push({ nombre: 'Video de compromiso', tipo: 'video', privado: true, bucket: 'documentos', path: s.video_path, mime: 'video/mp4', fecha: hoy(), origen: 'firma', campo: 'video_path', solicitud_id: s.id });
+      nuevos++;
+    }
+    if (!nuevos) return 0;
+    await getAPI().patch('prestamos', 'id=eq.' + prestamoId, { documentos: arr });
+    if (p) p.documentos = arr;
+    return nuevos;
+  }
+  // Para préstamos aprobados ANTES de que existiera esta copia automática (o si una pieza
+  // falló al aprobar): trae el expediente a Docs a pedido, sin repetir lo que ya está.
+  window.nxPrestamoTraerExpediente = async function (id) {
+    const s = _prSolicitudes.find(x => String(x.prestamo_id) === String(id));
+    if (!s) { toast('err', 'Este préstamo no se creó desde un link de firma'); return; }
+    toast('ok', 'Trayendo el expediente…');
+    try {
+      const n = await copiarExpedienteADocs(id, s);
+      toast('ok', n ? 'Expediente guardado en Documentos' : 'El expediente ya estaba guardado', n ? n + ' archivo(s)' : '');
+      window.nxPrestamoDocs(id);
+    } catch (e) { toast('err', 'No se pudo traer el expediente', String(e && e.message || e).slice(0, 90)); }
+  };
+  // Los archivos del bucket privado no tienen URL pública: se firma una temporal al abrirlos.
+  window.nxPrDocVerPrivado = async function (bucket, path) {
+    try {
+      const api = getAPI();
+      const r = await fetch(`${api.url}/storage/v1/object/sign/${bucket}/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresIn: 3600 })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      window.open(`${api.url}/storage/v1${d.signedURL || d.signedUrl}`, '_blank');
+    } catch (e) { toast('err', 'No se pudo abrir el archivo', String(e && e.message || e).slice(0, 90)); }
+  };
 
   window.nxPrestamoSubirDoc = async function (id, input, tipo) {
     if (!input || !input.files || !input.files[0]) return;
@@ -15711,30 +15798,46 @@
     const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
     cerrarModal('nxPrDocs');
     const docs = Array.isArray(p.documentos) ? p.documentos : [];
-    const tiles = DOC_TIPOS.map(t => `
+    const tiles = DOC_TIPOS.filter(t => !t.soloLectura).map(t => `
       <label style="flex:1 1 70px;min-width:70px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:12px;padding:11px 6px;text-align:center">
         <input type="file" accept="image/*,.pdf" style="display:none" onchange="window.nxPrestamoSubirDoc('${id}',this,'${t.k}')">
         <i class="ti ${t.ic}" style="font-size:20px;color:#6d28d9"></i>
         <span style="font-size:10px;font-weight:700;color:#475569;line-height:1.1">${t.lbl}</span>
       </label>`).join('');
     const lista = docs.length ? docs.map((d, i) => {
-      const tlbl = (DOC_TIPOS.find(t => t.k === d.tipo) || {}).lbl || 'Documento';
+      const t = DOC_TIPOS.find(t => t.k === d.tipo) || {};
+      const tlbl = t.lbl || 'Documento';
+      const ico = d.privado ? (t.ic || 'ti-video') : /pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : (t.soloLectura && t.ic) ? t.ic : 'ti-photo';
+      // Los privados (video) no tienen URL pública: se firma una temporal al abrirlos.
+      const abrir = d.privado
+        ? `window.nxPrDocVerPrivado('${esc(d.bucket || 'documentos')}','${esc(d.path || '')}')`
+        : `window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')`;
       return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9">
-          <i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#475569"></i>
+          <i class="ti ${ico}" style="font-size:18px;color:${d.origen === 'firma' ? '#6d28d9' : '#475569'}"></i>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.nombre || tlbl)}</div>
-            <div style="font-size:10px;color:#475569">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div>
+            <div style="font-size:10px;color:#475569">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}${d.origen === 'firma' ? ' · <b style="color:#6d28d9">Firmado por link</b>' : ''}</div>
           </div>
-          <button class="btn bsm bghost" type="button" onclick="window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')" title="Ver"><i class="ti ti-eye" style="color:#6d28d9"></i></button>
+          <button class="btn bsm bghost" type="button" onclick="${abrir}" title="Ver"><i class="ti ti-eye" style="color:#6d28d9"></i></button>
           <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarDoc('${id}',${i})" title="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button>
         </div>`;
     }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
+    // Si el préstamo nació de un link de firma pero su expediente todavía no está aquí
+    // (aprobado antes de esta versión, o una pieza falló), se puede traer a pedido.
+    const solFirma = _prSolicitudes.find(x => String(x.prestamo_id) === String(id));
+    const faltaExpediente = solFirma && !docs.some(d => d.origen === 'firma');
+    const avisoExp = faltaExpediente
+      ? `<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px;margin-bottom:10px">
+          <div style="font-size:11.5px;color:#4c1d95;margin-bottom:7px">Este préstamo se firmó por link. Trae aquí la cédula, la foto, la firma y el video.</div>
+          <button class="btn bsm bc1" type="button" style="width:100%" onclick="window.nxPrestamoTraerExpediente('${id}')"><i class="ti ti-download"></i> Traer expediente firmado</button>
+        </div>` : '';
     const ov = document.createElement('div'); ov.id = 'nxPrDocs'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc((p.nombre || '').split(' ')[0] || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrDocs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+          ${avisoExp}
           <div style="font-size:11px;color:#475569;margin-bottom:8px">Sube cédula, contrato firmado, garantías u otros archivos (imágenes o PDF).</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tiles}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:4px 0 4px">ARCHIVOS (${docs.length})</div>
