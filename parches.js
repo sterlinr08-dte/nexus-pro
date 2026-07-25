@@ -17364,34 +17364,127 @@
   // Chips del comprobante fiscal (look premium) — llaman a nxFacSetNCF (sin cambios) y repintan el estado activo
   window.nxFacNCFPick = function (v) { window.nxFacSetNCF(v); };
   // Selector de cliente — abre una VENTANA de búsqueda (mismo patrón que nxFacHist()/nxPrefLista()/
-  // nxProdPicker: overlay+modal real), en vez del dropdown inline de antes. Llama a nxFacSetCli
-  // (sin cambios) al elegir.
-  window.nxFacCliToggle = function () {
-    cerrarModal('nxFacCliM');
-    const ov = document.createElement('div'); ov.id = 'nxFacCliM'; ov.className = 'overlay open';
+  // nxProdPicker: overlay+modal real). Motor COMPARTIDO nxPosClienteAbrir() (con Recientes/
+  // Favoritos vía localStorage, mismo mecanismo que ModalBusquedaBase en index.html — NPGS §5) —
+  // reusado también por "Cobrar" (nxPosCobroCliToggle, más abajo) para no duplicar la misma
+  // ventana dos veces (antes eran 2 copias casi idénticas — NPGS §6, "no duplicar funciones").
+  function nxPosCliSubtxt(c) { return (c.codigo || '') + (c.nivel_precio === 'mayor' ? ' · por mayor' : ''); }
+  function nxPosCliSnap(c) { return { __id: c.id, __t: c.nombre, __sub: nxPosCliSubtxt(c) }; }
+  window.__nxPosCliReg = window.__nxPosCliReg || {};
+  function nxPosCliFilaHTML(modalId, snap, kind, i, isFav) {
+    const onclick = kind === 'res' ? `window.nxPosCliElegir('${modalId}',${i})` : `window.nxPosCliElegirGuardado('${modalId}','${kind}',${i})`;
+    return `<div class="pf2clirow" data-k="${kind}" data-i="${i}">
+      <button type="button" class="pf2cliFav${isFav ? ' on' : ''}" aria-label="${isFav ? 'Quitar de favoritos' : 'Marcar como favorito'}" onclick="event.stopPropagation();window.nxPosCliToggleFav('${modalId}','${kind}',${i})"><i class="ti ti-star${isFav ? '-filled' : ''}"></i></button>
+      <div onclick="${onclick}"><b>${esc(snap.__t)}</b><span>${esc(snap.__sub)}</span></div>
+    </div>`;
+  }
+  function nxPosClientePintar(modalId, q) {
+    const drop = document.getElementById(modalId + 'List'); if (!drop) return;
+    const reg = window.__nxPosCliReg[modalId] || (window.__nxPosCliReg[modalId] = {});
+    reg.sel = -1;
+    const ql = String(q || '').toLowerCase();
+    const filas = _clientes.filter(c => c.es_cliente !== false && (!ql || (c.nombre || '').toLowerCase().includes(ql) || (c.codigo || '').toLowerCase().includes(ql) || (c.cedula || '').includes(ql))).slice(0, 60);
+    const favs = mbbLSGet('Fav', modalId);
+    const favIds = favs.map(f => f.__id);
+    let secciones = ''; const navOrder = []; const sinTexto = !ql;
+    if (sinTexto) {
+      reg.favShown = favs;
+      if (favs.length) secciones += `<div class="pf2cliSec">⭐ Favoritos</div>` + favs.map((s, i) => { navOrder.push({ kind: 'fav', i }); return nxPosCliFilaHTML(modalId, s, 'fav', i, true); }).join('');
+      const recs = mbbLSGet('Rec', modalId).filter(r => favIds.indexOf(r.__id) < 0);
+      reg.recShown = recs;
+      if (recs.length) secciones += `<div class="pf2cliSec">🕒 Recientes</div>` + recs.map((s, i) => { navOrder.push({ kind: 'rec', i }); return nxPosCliFilaHTML(modalId, s, 'rec', i, false); }).join('');
+      if (secciones) secciones += `<div class="pf2cliSec">Resultados</div>`;
+    } else { reg.favShown = []; reg.recShown = []; }
+    const resultsHtml = filas.map((c, i) => { navOrder.push({ kind: 'res', i }); return nxPosCliFilaHTML(modalId, nxPosCliSnap(c), 'res', i, favIds.indexOf(c.id) >= 0); }).join('') || (secciones ? '' : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
+    reg.filas = filas; reg.navOrder = navOrder;
+    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')"><b>— Consumidor final —</b></div>` + secciones + resultsHtml;
+  }
+  function nxPosCliRegistrarReciente(modalId, c) {
+    const snap = nxPosCliSnap(c);
+    let rec = mbbLSGet('Rec', modalId).filter(r => r.__id !== snap.__id);
+    rec.unshift(snap); if (rec.length > MBB_REC_MAX) rec = rec.slice(0, MBB_REC_MAX);
+    mbbLSSet('Rec', modalId, rec);
+  }
+  window.nxPosCliToggleFav = function (modalId, kind, i) {
+    const reg = window.__nxPosCliReg[modalId]; if (!reg) return;
+    let snap = null;
+    if (kind === 'res') { const c = reg.filas[i]; if (c) snap = nxPosCliSnap(c); }
+    else if (kind === 'fav') snap = reg.favShown[i]; else if (kind === 'rec') snap = reg.recShown[i];
+    if (!snap) return;
+    let favs = mbbLSGet('Fav', modalId);
+    const ya = favs.some(f => f.__id === snap.__id);
+    if (ya) favs = favs.filter(f => f.__id !== snap.__id);
+    else { favs.unshift(snap); if (favs.length > MBB_FAV_MAX) favs = favs.slice(0, MBB_FAV_MAX); }
+    mbbLSSet('Fav', modalId, favs);
+    const inp = document.getElementById(modalId + 'Q');
+    nxPosClientePintar(modalId, inp ? inp.value : '');
+  };
+  window.nxPosCliElegir = function (modalId, i) {
+    const reg = window.__nxPosCliReg[modalId]; if (!reg) return;
+    if (i === '' || i == null) { nxPosCliTerminar(modalId, null); return; }
+    const c = reg.filas[i]; if (!c) return;
+    nxPosCliRegistrarReciente(modalId, c);
+    nxPosCliTerminar(modalId, c);
+  };
+  window.nxPosCliElegirGuardado = function (modalId, kind, i) {
+    const reg = window.__nxPosCliReg[modalId]; if (!reg) return;
+    const snap = kind === 'fav' ? reg.favShown[i] : reg.recShown[i]; if (!snap) return;
+    const vivo = _clientes.find(c => String(c.id) === String(snap.__id));
+    if (kind === 'rec' && vivo) nxPosCliRegistrarReciente(modalId, vivo);
+    nxPosCliTerminar(modalId, vivo || { id: snap.__id, nombre: snap.__t });
+  };
+  function nxPosCliTerminar(modalId, c) {
+    const reg = window.__nxPosCliReg[modalId];
+    cerrarModal(modalId);
+    if (reg && typeof reg.onPick === 'function') reg.onPick(c);
+    delete window.__nxPosCliReg[modalId];
+  }
+  window.nxPosCliEnter = function (modalId) {
+    const reg = window.__nxPosCliReg[modalId]; if (!reg) return;
+    const nav = reg.navOrder || [];
+    if (reg.sel >= 0 && nav[reg.sel]) { nxPosCliElegirNav(modalId, nav[reg.sel]); return; }
+    if (nav.length === 1) nxPosCliElegirNav(modalId, nav[0]);
+  };
+  function nxPosCliElegirNav(modalId, item) {
+    if (item.kind === 'res') window.nxPosCliElegir(modalId, item.i);
+    else window.nxPosCliElegirGuardado(modalId, item.kind, item.i);
+  }
+  window.nxPosCliFlecha = function (modalId, ev) {
+    if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
+    ev.preventDefault();
+    const reg = window.__nxPosCliReg[modalId]; if (!reg) return;
+    const n = (reg.navOrder || []).length; if (!n) return;
+    reg.sel = ev.key === 'ArrowDown' ? Math.min(n - 1, reg.sel + 1) : Math.max(0, reg.sel - 1);
+    const list = document.getElementById(modalId + 'List'); if (!list) return;
+    const rows = list.querySelectorAll('.pf2clirow[data-k]');
+    rows.forEach((r, i) => r.classList.toggle('sel', i === reg.sel));
+    if (rows[reg.sel]) rows[reg.sel].scrollIntoView({ block: 'nearest' });
+  };
+  function nxPosClienteAbrir(modalId, onPick) {
+    nxPfEnsureCSS();
+    cerrarModal(modalId);
+    window.__nxPosCliReg[modalId] = { onPick, filas: [], favShown: [], recShown: [], navOrder: [], sel: -1 };
+    const ov = document.createElement('div'); ov.id = modalId; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:85vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-user"></i> Elegir cliente</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacCliM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        ${posBuscador({ id: 'facCliQ', placeholder: 'Buscar cliente por nombre, código o cédula…', oninput: 'window.nxFacCliFiltrar(this.value)' })}
-        <div id="facCliList" style="overflow-y:auto;flex:1;margin-top:10px"></div>
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:420px;max-height:85vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-user"></i> Elegir cliente</span><button class="nxBack" type="button" onclick="document.getElementById('${modalId}').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+        ${posBuscador({ id: modalId + 'Q', placeholder: 'Buscar cliente por nombre, código o cédula…', oninput: `window.nxPosClienteFiltrar('${modalId}',this.value)`, onenter: `window.nxPosCliEnter('${modalId}')` })}
+        <div id="${modalId}List" style="overflow-y:auto;flex:1;margin-top:10px"></div>
       </div>`;
     document.body.appendChild(ov);
-    pintarFacCliDrop('');
-    setTimeout(() => { const i = document.getElementById('facCliQ'); if (i) i.focus(); }, 60);
-  };
-  function pintarFacCliDrop(q) {
-    const drop = document.getElementById('facCliList'); if (!drop) return;
-    const ql = String(q || '').toLowerCase();
-    const lista = _clientes.filter(c => c.es_cliente !== false && (!ql || (c.nombre || '').toLowerCase().includes(ql) || (c.codigo || '').toLowerCase().includes(ql) || (c.cedula || '').includes(ql)));
-    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxFacCliPick('')"><b>— Consumidor final —</b></div>` +
-      (lista.length ? lista.slice(0, 60).map(c => `<div class="pf2clirow" onclick="window.nxFacCliPick('${c.id}')"><b>${esc(c.nombre)}</b><span>${esc(c.codigo || '')}${c.nivel_precio === 'mayor' ? ' · por mayor' : ''}</span></div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
+    nxPosClientePintar(modalId, '');
+    const inp = document.getElementById(modalId + 'Q');
+    if (inp) inp.addEventListener('keydown', ev => window.nxPosCliFlecha(modalId, ev));
+    setTimeout(() => { if (inp) inp.focus(); }, 60);
   }
-  window.nxFacCliFiltrar = function (q) { pintarFacCliDrop(q); };
-  window.nxFacCliPick = function (id) {
-    window.nxFacSetCli(id);
-    const txt = document.getElementById('facCliTxt');
-    if (txt) { const c = _clientes.find(x => String(x.id) === String(id)); txt.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final'; }
-    cerrarModal('nxFacCliM');
+  window.nxPosClienteFiltrar = function (modalId, q) { nxPosClientePintar(modalId, q); };
+
+  window.nxFacCliToggle = function () {
+    nxPosClienteAbrir('nxFacCliM', function (c) {
+      window.nxFacSetCli(c ? c.id : '');
+      const txt = document.getElementById('facCliTxt');
+      if (txt) txt.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+    });
   };
   // Al elegir una sugerencia, abre la misma ventanilla (precios + IMEI) con ese artículo expandido
   window.nxVenderSel = function (id) {
@@ -18263,37 +18356,17 @@
     window.nxPosCobroCalc();
   };
   // Selector de cliente dentro de "Cobrar" — antes un <select> con TODOS los clientes en una
-  // lista larga sin buscar; ahora ventana con buscador (mismo patrón de nxFacCliToggle/
-  // nxFacCliPick de Factura). #posCliId se queda como el mismo campo de siempre (hidden en vez
-  // de select) para no tocar nxPosCobroCalc/nxPosConfirmar, que solo leen val('posCliId').
+  // lista larga sin buscar; ahora ventana con buscador + Recientes/Favoritos, mismo motor
+  // COMPARTIDO nxPosClienteAbrir() que usa Factura (ver nxFacCliToggle más arriba). #posCliId se
+  // queda como el mismo campo de siempre (hidden en vez de select) para no tocar
+  // nxPosCobroCalc/nxPosConfirmar, que solo leen val('posCliId').
   window.nxPosCobroCliToggle = function () {
-    nxPfEnsureCSS();
-    cerrarModal('nxPosCobroCliM');
-    const ov = document.createElement('div'); ov.id = 'nxPosCobroCliM'; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPf" style="max-width:420px;max-height:85vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-user"></i> Elegir cliente</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCobroCliM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        ${posBuscador({ id: 'posCobroCliQ', placeholder: 'Buscar cliente por nombre, código o cédula…', oninput: 'window.nxPosCobroCliFiltrar(this.value)' })}
-        <div id="posCobroCliList" style="overflow-y:auto;flex:1;margin-top:10px"></div>
-      </div>`;
-    document.body.appendChild(ov);
-    pintarPosCobroCliList('');
-    setTimeout(() => { const i = document.getElementById('posCobroCliQ'); if (i) i.focus(); }, 60);
-  };
-  function pintarPosCobroCliList(q) {
-    const drop = document.getElementById('posCobroCliList'); if (!drop) return;
-    const ql = String(q || '').toLowerCase();
-    const lista = _clientes.filter(c => c.es_cliente !== false && (!ql || (c.nombre || '').toLowerCase().includes(ql) || (c.codigo || '').toLowerCase().includes(ql) || (c.cedula || '').includes(ql)));
-    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCobroCliPick('')"><b>— Consumidor final —</b></div>` +
-      (lista.length ? lista.slice(0, 60).map(c => `<div class="pf2clirow" onclick="window.nxPosCobroCliPick('${c.id}')"><b>${esc(c.nombre)}</b><span>${esc(c.codigo || '')}${c.nivel_precio === 'mayor' ? ' · por mayor' : ''}</span></div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
-  }
-  window.nxPosCobroCliFiltrar = function (q) { pintarPosCobroCliList(q); };
-  window.nxPosCobroCliPick = function (id) {
-    const h = document.getElementById('posCliId'); if (h) h.value = id || '';
-    const disp = document.getElementById('posCliDisp');
-    if (disp) { const c = _clientes.find(x => String(x.id) === String(id)); disp.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final'; }
-    cerrarModal('nxPosCobroCliM');
-    window.nxPosCobroCalc();
+    nxPosClienteAbrir('nxPosCobroCliM', function (c) {
+      const h = document.getElementById('posCliId'); if (h) h.value = c ? c.id : '';
+      const disp = document.getElementById('posCliDisp');
+      if (disp) disp.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+      window.nxPosCobroCalc();
+    });
   };
   window.nxPosPagoExacto = function () {
     const c = leerCobro(); const el = document.getElementById('payEfe');
@@ -18876,6 +18949,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .pf2cliinfo-i{display:inline-flex;align-items:center;gap:5px;font-weight:600}
 .nxPf .pf2cliinfo-i i{font-size:13px;color:var(--pf-txt3)}
 .nxPf .pf2cliinfo-i.warn{color:var(--pf-red);font-weight:700}
+.nxPf .pf2clirow{position:relative;padding-right:34px}
+.nxPf .pf2clirow.sel{background:var(--pf-bg)}
+.nxPf .pf2cliFav{position:absolute;top:6px;right:4px;width:26px;height:26px;border:0;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#cbd5e1;cursor:pointer;padding:0}
+.nxPf .pf2cliFav:hover{background:var(--pf-bg);color:var(--pf-txt3)}
+.nxPf .pf2cliFav.on{color:#f59e0b}
+.nxPf .pf2cliFav.on:hover{background:var(--pf-orange-l)}
+.nxPf .pf2cliFav:focus-visible{outline:2px solid var(--pf-blue);outline-offset:1px;border-radius:6px}
+.nxPf .pf2cliSec{font-size:10px;font-weight:800;color:var(--pf-txt3);letter-spacing:.5px;text-transform:uppercase;padding:8px 12px 4px}
 .nxPf .pf2cliinfo-i.warn i{color:var(--pf-red)}
 .nxPf .pf2cliinfo-i .ld{opacity:.5}
 .nxPf .cartcard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;box-shadow:var(--pf-shadow);padding:14px}

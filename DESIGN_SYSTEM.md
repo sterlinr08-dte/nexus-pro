@@ -223,9 +223,15 @@ Vender del POS).
      compartido). Bajo riesgo: no tocó ninguna pantalla existente, solo agregó capacidad. El único
      consumidor real de hoy (AguaPro → elegir cliente) la heredó automáticamente sin cambiar una
      línea de su propia llamada.
-  2. **Siguiente paso propuesto:** migrar los ~9 sitios de "elegir un registro" (Facturar/Cobrar/
-     Financiamiento → elegir cliente; elegir artículo) al motor ya reforzado — son estructuralmente
-     iguales al caso de AguaPro que ya funciona, así que es el riesgo más bajo de los que quedan.
+  2. 🟡 **EN CURSO** — migrar los ~9 sitios de "elegir un registro" a Recientes/Favoritos. Al
+     auditarlos se encontró que casi todos YA son ventana (construidos en v48.97/v49.02) — no hacía
+     falta migrarlos a `ModalBusquedaBase` (eso habría violado el propio reglamento de "no un
+     buscador universal entre tablas distintas"), solo agregarles la capacidad. **Primera pieza
+     hecha en v49.37:** "elegir cliente" en Facturar/Cobrar del POS (que además eran 2 copias
+     casi idénticas del mismo código — esa sí era una duplicación real de NPGS §6, corregida de
+     paso). Detalle abajo. Quedan dentro de esta fase: elegir cliente en Financiamiento
+     (`nxPrElegirCliente`, otra tabla — `prestamo_clientes` — su propio buscador aparte) y elegir
+     artículo en Vender/Factura (`nxProdPicker`).
   3. Migrar los ~24 sitios de "filtrar la lista que ya veo" (Clientes, Facturas, Cobros, Vender...)
      — el trabajo de mayor riesgo, deja para el final a propósito.
 
@@ -246,6 +252,27 @@ podía elegir un registro distinto al resaltado. Se corrigió con `navOrder` (el
 filas en pantalla, en el mismo orden en que se arma el HTML) en vez de indexar directo sobre
 `st.filas` (que solo tiene resultados). Verificado con una prueba específica: bajar con flechas
 hasta la última fila visible y confirmar que Enter elige exactamente esa fila, no otra.
+
+#### Detalle de la Fase 2, primera pieza (v49.37)
+
+`nxFacCliToggle` (Facturar) y `nxPosCobroCliToggle` (Cobrar) eran dos copias casi idénticas del
+mismo modal "elegir cliente" — ambas leen `_clientes` del mismo cierre del IIFE del POS. Se
+unificaron en **`nxPosClienteAbrir(modalId, onPick)`**, un motor compartido SOLO entre estas 2
+pantallas (mismo módulo, misma tabla `pos_clientes`) — no un buscador universal cruzando módulos,
+respetando el reglamento. Reusa el almacenamiento de la Fase 1 (`mbbLSGet`/`mbbLSSet` de
+`index.html`, formato-agnóstico) pero con un snapshot propio y más simple
+(`{__id,__t,__sub}`) para reproducir exacto el texto que ya se mostraba ("código · por mayor"),
+sin arriesgar una regresión visual en una pantalla de dinero. La clave de `localStorage` es el
+`modalId` — Favoritos/Recientes de Facturar y de Cobrar quedan separados a propósito (son dos
+flujos distintos).
+
+`nxFacCliToggle`/`nxPosCobroCliToggle` quedaron como envoltorios de una línea con su propio
+`onPick`, sin tocar `nxFacSetCli`/`nxPosCobroCalc`/`nxPosConfirmar` ni el cálculo de precio "por
+mayor". Verificado con 24 pruebas Playwright contra el código real extraído (abrir, marcar/quitar
+favorito sin elegir, reabrir con las 2 secciones en orden, elegir desde cada sección con el
+registro vivo, filtrar con texto, "Consumidor final", navegación de teclado mixta cruzando
+secciones — la misma clase de bug de la Fase 1 — y que Facturar/Cobrar no comparten favoritos).
+Sin desborde en 390/1280px, 0 errores de JS.
 
 Verificado con **19 pruebas Playwright** contra el motor real extraído del archivo, montado en un
 servidor HTTP local (no `about:blank` — `localStorage` necesita un origen real), reproduciendo el
