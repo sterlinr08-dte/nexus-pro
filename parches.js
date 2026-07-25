@@ -12848,6 +12848,7 @@
   let _pagosByPrestamo = {};
   let _prCfg = {};
   let _modoForm = 'libre';
+  let _prCuotaMode = 'num'; // 'num' = pongo # de cuotas · 'monto' = pongo la cuota y calcula cuántas
   let _prFiltro = 'todos';
   let _prPage = 1, _prQuery = '';
   const PR_PAGE_SIZE = 12;
@@ -13620,6 +13621,48 @@
   window.nxPrestamoNuevo = function () { abrirForm(null); };
   window.nxPrestamoEditar = function (id) { const p = _prestamos.find(x => String(x.id) === String(id)); if (p) abrirForm(p); };
   window.nxPrModo = function (m) { _modoForm = m; pintarModo(); };
+  window.nxPrCuotaMode = function (mode) {
+    _prCuotaMode = (mode === 'monto') ? 'monto' : 'num';
+    const sn = document.getElementById('prSegNum'), sm = document.getElementById('prSegMonto');
+    if (sn) sn.className = _prCuotaMode === 'num' ? 'on' : '';
+    if (sm) sm.className = _prCuotaMode === 'monto' ? 'on' : '';
+    const fn = document.getElementById('prNumCuotasField'), fm = document.getElementById('prCuotaMontoField');
+    if (fn) fn.style.display = _prCuotaMode === 'num' ? '' : 'none';
+    if (fm) fm.style.display = _prCuotaMode === 'monto' ? '' : 'none';
+    const hint = document.getElementById('prCuotaHint'); if (hint && _prCuotaMode === 'num') hint.style.display = 'none';
+    window.nxPrRecalc();
+  };
+  // Cuántas cuotas hacen falta para una cuota-objetivo dada (según método/frecuencia). null = imposible/muy baja.
+  function cuotasParaMonto(capital, tasaPct, frec, metodo, cuotaObj) {
+    capital = Math.round(Number(capital || 0)); cuotaObj = Math.round(Number(cuotaObj || 0));
+    if (capital <= 0 || cuotaObj <= 0) return null;
+    const i = tasaPorCuota(tasaPct, frec) / 100;
+    if (i <= 0) return Math.min(360, Math.max(1, Math.ceil(capital / cuotaObj)));
+    const intPorCuota = capital * i;
+    if (cuotaObj <= intPorCuota) return null; // no cubre ni el interés → nunca termina
+    let n;
+    if (metodo === 'plano') n = Math.ceil(capital / (cuotaObj - intPorCuota));
+    else n = Math.ceil(-Math.log(1 - intPorCuota / cuotaObj) / Math.log(1 + i)); // saldo insoluto (francés)
+    if (!isFinite(n) || n < 1) return null;
+    if (n > 360) return null; // cuota tan baja que tardaría una eternidad
+    return n;
+  }
+  // En modo 'monto': lee la cuota que quiere pagar el cliente y escribe el # de cuotas calculado en prNumCuotas.
+  function sincronizarCuotasPorMonto() {
+    if (_prCuotaMode !== 'monto' || _modoForm !== 'cuotas') return;
+    const hint = document.getElementById('prCuotaHint'), nEl = document.getElementById('prNumCuotas');
+    const cap = parseMoney(val('prCap')), tasa = parsePct(val('prTasa')), frec = val('prFrec') || 'mensual', metodo = val('prMetodo') || 'plano';
+    const cuotaObj = parseMoney(val('prCuotaObjetivo'));
+    if (!cuotaObj || !cap) { if (nEl) nEl.value = ''; if (hint) hint.style.display = 'none'; return; }
+    const n = cuotasParaMonto(cap, tasa, frec, metodo, cuotaObj);
+    if (!n) {
+      if (nEl) nEl.value = '';
+      if (hint) { hint.style.display = 'block'; hint.style.color = '#dc2626'; hint.textContent = 'Esa cuota es muy baja para este préstamo (no alcanza a cubrir el interés o tardaría demasiado).'; }
+      return;
+    }
+    if (nEl) nEl.value = n;
+    if (hint) { hint.style.display = 'block'; hint.style.color = '#6d28d9'; const fr = frec === 'semanal' ? 'semanales' : frec === 'quincenal' ? 'quincenales' : 'mensuales'; hint.textContent = 'Serán ' + n + ' cuota' + (n === 1 ? '' : 's') + ' ' + fr + ' (la última puede variar un poco).'; }
+  }
 
   function pintarModo() {
     const bl = document.getElementById('prModoLibre'), bc = document.getElementById('prModoCuotas'), bcr = document.getElementById('prModoCredito');
@@ -13685,12 +13728,13 @@
       } else { if (resumenWrap) resumenWrap.style.display = 'none'; if (scheduleWrap) scheduleWrap.style.display = 'none'; }
       return;
     }
+    sincronizarCuotasPorMonto();
     const c = calcPrestamo();
     if (totRow) totRow.style.display = c.computa ? 'none' : '';
     if (c.computa && c.modo === 'cuotas') {
       const ic = tasaPorCuota(c.tasa, c.frec);
       const notaFrec = c.frec !== 'mensual' ? `${c.tasa}% mensual = ${(Math.round(ic * 100) / 100)}% por ${c.frec === 'semanal' ? 'semana' : 'quincena'}` : '';
-      const notaMet = c.metodo === 'plano' ? 'Método: interés simple (plano) — interés fijo sobre el monto' : 'Método: saldo insoluto — el interés baja cada cuota';
+      const notaMet = c.metodo === 'plano' ? 'Método: interés plano — interés fijo sobre el monto' : 'Método: saldo insoluto — el interés baja cada cuota';
       const nota = [notaFrec, notaMet].filter(Boolean).join(' · ');
       if (resumenWrap) resumenWrap.style.display = 'block';
       if (preview) preview.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${kpi('Cuota por pago', fmt(c.cuota), '#0f172a')}${kpi('Total a devolver', fmt(c.total), '#16a34a')}${kpi('Total interés', fmt(c.interes), '#ea580c')}</div>${nota ? `<div style="font-size:10.5px;color:#475569;margin-top:8px">${nota}</div>` : ''}`;
@@ -13722,6 +13766,7 @@
   function abrirForm(pr) {
     cerrarModal('nxPrModal');
     _modoForm = (pr && pr.modo) || 'libre';
+    _prCuotaMode = 'num'; // siempre arranca por # de cuotas; el usuario cambia a "monto de cuota" si quiere
     const p = pr || {};
     const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -13753,11 +13798,19 @@
           </div>
           <div class="fr"><label>Tasa de interés (%) <span id="prTasaHint" style="font-weight:400;color:#475569;font-size:10px"></span></label><input id="prTasa" inputmode="decimal" oninput="window.nxPrRecalc()" value="${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes : ''}" placeholder="0 = sin interés (ej: 10)"></div>
           <div id="prCuotasBox" style="display:none">
+            <div class="fr"><label>Calcular por</label>
+              <div class="prSeg" id="prCuotaSeg">
+                <button type="button" id="prSegNum" class="on" onclick="window.nxPrCuotaMode('num')">Número de cuotas</button>
+                <button type="button" id="prSegMonto" onclick="window.nxPrCuotaMode('monto')">Monto de la cuota</button>
+              </div>
+            </div>
             <div class="fr-row">
-              <div class="fr"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.num_cuotas || ''}" placeholder="4"></div>
+              <div class="fr" id="prNumCuotasField"><label># de cuotas</label><input id="prNumCuotas" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.num_cuotas || ''}" placeholder="4"></div>
+              <div class="fr" id="prCuotaMontoField" style="display:none"><label>Cuota que pagará</label><input id="prCuotaObjetivo" data-nx-money inputmode="numeric" oninput="window.nxPrRecalc()" placeholder="0"></div>
               <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.nxPrRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div>
             </div>
-            <div class="fr"><label>Método de interés</label><select id="prMetodo" onchange="window.nxPrRecalc()"><option value="plano">Interés simple (plano) — más ganancia</option><option value="saldo">Saldo insoluto — el interés baja cada cuota</option></select></div>
+            <div id="prCuotaHint" style="display:none;font-size:11px;color:#6d28d9;font-weight:700;margin:-4px 0 10px"></div>
+            <div class="fr"><label>Método de interés</label><select id="prMetodo" onchange="window.nxPrRecalc()"><option value="plano">Interés plano</option><option value="saldo">Saldo insoluto — el interés baja cada cuota</option></select></div>
           </div>
           <div id="prCreditoBox" style="display:none">
             <div class="fr"><label>Plazo (meses) <span style="font-weight:400;color:#475569;font-size:10px">· fecha límite para devolver el capital</span></label><input id="prPlazo" type="number" min="1" oninput="window.nxPrRecalc()" value="${p.plazo_meses || ''}" placeholder="6"></div>
@@ -13779,7 +13832,7 @@
             <div style="font-weight:800;margin-bottom:3px">ℹ️ Cómo funciona</div>
             <div>• La tasa de interés es <b>mensual</b>.</div>
             <div>• La cuota incluye capital + interés cuando hay tasa.</div>
-            <div>• <b>Interés simple (plano):</b> el interés se cobra sobre el monto completo en cada cuota (más ganancia). <b>Saldo insoluto:</b> solo sobre lo que falta (baja cada cuota).</div>
+            <div>• <b>Interés plano:</b> el interés se cobra sobre el monto completo en cada cuota. <b>Saldo insoluto:</b> solo sobre lo que falta (baja cada cuota).</div>
             <div>• En "Abonos libres" no hay cronograma fijo — se abona cuando el prestatario pueda.</div>
             <div>• Este préstamo no calcula mora automática; el vencimiento es solo referencia.</div>
           </div>
@@ -14007,7 +14060,7 @@
                   <div class="ev-slmm"><span>1</span><span>60+</span></div></div>
                 <div class="fr-row">
                   <div class="fr"><label>Frecuencia</label><select id="prFrec" onchange="window.evRecalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual" selected>Mensual</option></select></div>
-                  <div class="fr"><label>Método</label><select id="prMetodo" onchange="window.evRecalc()"><option value="plano">Interés simple</option><option value="saldo">Saldo insoluto</option></select></div>
+                  <div class="fr"><label>Método</label><select id="prMetodo" onchange="window.evRecalc()"><option value="plano">Interés plano</option><option value="saldo">Saldo insoluto</option></select></div>
                 </div>
               </div>
               <div id="prCreditoBox" style="display:none">
@@ -14478,7 +14531,7 @@
         const cub = pag >= acum - 0.5;
         return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
       }).join('');
-      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · ${met === 'plano' ? 'interés simple' : 'saldo insoluto'} · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
+      scheduleHTML = `<div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · ${met === 'plano' ? 'interés plano' : 'saldo insoluto'} · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}</div>
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
           <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:430px;background:#fff">
             <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">#</th><th style="padding:6px;text-align:left">Fecha</th><th style="padding:6px;text-align:right">Cuota</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:right">Capital</th><th style="padding:6px;text-align:right">Saldo</th><th style="padding:6px;text-align:center">Pag.</th></tr></thead>
@@ -15132,7 +15185,7 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm{font-family:"Plus Jakarta Sans",var(--ff),sans-serif}.nxPrForm .mt{font-weight:800}.nxPrForm .prCard{background:#fff;border:1px solid #ece9f7;border-radius:14px;padding:13px 14px;margin-bottom:11px;box-shadow:0 1px 3px rgba(76,29,149,.05)}.nxPrForm .prCard>div:first-child{margin-top:0 !important}.nxPrForm .prCard>.fr:last-child,.nxPrForm .prCard>.fr-row:last-child,.nxPrForm .prCard>div:last-child{margin-bottom:0}.nxPrForm .fr{margin-bottom:11px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:5px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;box-sizing:border-box;outline:none;background:#f8fafc;color:#1e293b;font-family:inherit;transition:border-color .15s,background .15s,box-shadow .15s}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#6d28d9;background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.12)}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#475569;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
+    st.textContent = '.nxPrForm{font-family:"Plus Jakarta Sans",var(--ff),sans-serif}.nxPrForm .mt{font-weight:800}.nxPrForm .prCard{background:#fff;border:1px solid #ece9f7;border-radius:14px;padding:13px 14px;margin-bottom:11px;box-shadow:0 1px 3px rgba(76,29,149,.05)}.nxPrForm .prCard>div:first-child{margin-top:0 !important}.nxPrForm .prCard>.fr:last-child,.nxPrForm .prCard>.fr-row:last-child,.nxPrForm .prCard>div:last-child{margin-bottom:0}.nxPrForm .fr{margin-bottom:11px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:5px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;box-sizing:border-box;outline:none;background:#f8fafc;color:#1e293b;font-family:inherit;transition:border-color .15s,background .15s,box-shadow .15s}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#6d28d9;background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.12)}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrForm .prSeg{display:flex;gap:6px}.nxPrForm .prSeg>button{flex:1;padding:9px 6px;border:1.5px solid #e6e8ef;border-radius:11px;background:#f8fafc;color:#475569;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}.nxPrForm .prSeg>button.on{background:#6d28d9;border-color:#6d28d9;color:#fff}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#475569;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
     document.head.appendChild(st);
   }
 
