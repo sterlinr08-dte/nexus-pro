@@ -2059,6 +2059,76 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — link público para que el cliente firme (cédula + firma) antes de crear el préstamo (25-jul-2026, v49.39)
+El dueño pidió algo nuevo: al armar un préstamo, poder mandarle al cliente un **link por WhatsApp**
+(sin login) donde suba la foto de su cédula (frente/dorso) y firme con el dedo, ANTES de que el
+préstamo se cree de verdad — el dueño lo revisa y aprueba después. Se le preguntó y confirmó por
+`AskUserQuestion`: (1) el link se genera **ANTES** de que el préstamo exista — el cliente firma primero
+y eso crea la solicitud, no al revés; (2) el video de compromiso hablado (parte del pedido original) se
+**difirió a una fase futura** (necesitaría Supabase Storage para archivos de video, más pesado que una
+foto — se construyó primero la Fase 1 sin video: cédula + firma).
+- **Bloqueo real durante la construcción:** el conector MCP de Supabase de esta sesión se desconectó a
+  mitad de camino y no volvió a responder por el resto de esa sesión — sin él no se podía crear la tabla
+  ni desplegar la función Edge. Se codificó y probó TODO el lado del frontend contra un backend simulado
+  (Playwright), pero **no se publicó a `main`** — se dejó en una rama aparte
+  (`claude/financiamiento-link-firma`) hasta poder cerrar la pieza de Supabase, exactamente para no dejar
+  un botón "Generar link" que fallara en producción. En la sesión siguiente el conector volvió a
+  funcionar y se completó: tabla + función Edge + verificación de punta a punta, y AHORA sí se publicó.
+- **Tabla nueva `prestamo_solicitudes`** (aditiva, mismo patrón que `prestamos`/`prestamo_clientes`: RLS
+  `mi_rol()='admin'`, sin `organizacion_id` — módulo de un solo dueño). Guarda los términos del préstamo
+  propuesto (nombre, cédula, teléfono, modo/capital/tasa/cuotas/etc., igual que `prestamos`) + `estado`
+  (`pendiente`→`enviada`→`aprobada`|`rechazada`, con CHECK constraint) + `cedula_frente`/`cedula_dorso`/
+  `firma` (dataURL, mismo patrón de compresión ya usado en Rifas — canvas, máx 1000px, JPEG 0.75) +
+  `prestamo_id`/`motivo_rechazo`/`revisado_at`/`revisado_por` para cuando el dueño decide.
+- **Función Edge nueva `prestamo-solicitud`** (`verify_jwt:false` — el link es público, sin sesión,
+  mismo patrón que `rifa`/`boleto`/`vendedor`): GET `?id=` devuelve solo los campos que la página pública
+  necesita mostrar (términos del préstamo, nunca cédula/teléfono/notas); POST `{id,cedula_frente,
+  cedula_dorso,firma}` valida que las 3 imágenes sean dataURLs reales, **exige que el estado sea
+  `pendiente`** antes de aceptar (blindaje server-side: si alguien reintenta publicar el mismo link ya
+  usado, o lo intenta con `curl` saltándose la UI, se rechaza igual) y hace el `PATCH` con
+  `estado:'enviada'`. Usa la service-role key (bypassa RLS, igual que las demás funciones públicas del
+  sistema) — el navegador del cliente nunca toca `prestamo_solicitudes` directo.
+- **`window.nxPrGenerarLinkFirma()`** (`parches.js`, IIFE de Financiamiento): botón "Link de firma"
+  junto a "Compartir" en la vista previa de cuotas de `abrirForm` (nuevo préstamo) — lee el simulador
+  TAL CUAL está en pantalla (mismo patrón que `nxPrPropuesta`, sin tocar `nxPrestamoGuardar`), valida que
+  el simulador esté completo (capital+tasa para crédito, capital+n cuotas para cuotas fijas; **abonos
+  libres no genera link** — no tiene cuotas fijas que mostrarle al cliente, avisa en vez de fingir),
+  postea a `prestamo_solicitudes`, y muestra el link + botón de WhatsApp (`nxPrLinkFirmaMostrar`).
+- **Pestaña "Solicitudes"** nueva en la barra lateral (con contador de "por revisar" en vivo,
+  `_prSolicitudes.filter(s=>s.estado==='enviada').length`): 3 KPIs (por revisar/sin enviar/aprobadas),
+  tabla con badge de estado, y `nxPrSolicitudVer` (modal de detalle) — si el cliente no ha abierto el
+  link, avisa honesto ("todavía no ha abierto el link") en vez de mostrar campos vacíos; si ya envió,
+  muestra las 3 imágenes + los términos + botones **Aprobar y crear préstamo** (hace el `POST` real a
+  `prestamos` con esos términos + una nota `[Firmado por link — cédula y firma en la solicitud ...]` +
+  el `PATCH` que marca la solicitud `aprobada` con el `prestamo_id`) y **Rechazar** (pide motivo,
+  `PATCH` a `rechazada`).
+- **Página pública `firma-prestamo.html`** (nueva, raíz del repo, mismo patrón que `rifa.html`/
+  `boleto.html`/`vendedor.html` — HTML+JS vanilla standalone, sin build): 3 tarjetas (Tu préstamo —
+  términos + declaración de compromiso con el nombre real del cliente; Tu cédula — 2 fotos con
+  compresión client-side; Tu firma — canvas táctil) + checkbox de aceptación + botón "Publicar"
+  (deshabilitado hasta que las 2 fotos + la firma + el checkbox estén completos). Maneja 4 estados
+  honestos: cargando, formulario, "ya enviaste tus datos" (si vuelve a abrir el mismo link después de
+  publicar), y enlace inválido/no encontrado.
+- **Verificado de punta a punta:** el backend se probó con SQL directo simulando exactamente las mismas
+  consultas que hace la función Edge (INSERT como lo haría el admin → SELECT con las mismas columnas que
+  expone el GET público → UPDATE con la misma guardia de estado que usa el POST → confirmado que un
+  segundo intento de envío ya no encuentra ninguna fila `pendiente`, 0 resultados), sin dejar datos de
+  prueba en la base real. `get_advisors(security)` sin hallazgos nuevos. El frontend se verificó con
+  **21 pruebas Playwright** contra el archivo REAL `firma-prestamo.html` (no un extracto) — cédula+firma
+  +checkbox+validaciones+casos de link ya usado/inválido — y **26 pruebas** contra el código real
+  extraído de `parches.js` del lado admin (generar link, pantalla de Solicitudes, aprobar crea el
+  préstamo real, rechazar) — las 47 en verde, 0 errores de JS, sin desbordes en 390-420px. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  **Nota honesta sobre el alcance de la prueba:** este entorno de sesión no tiene salida a internet (ni
+  siquiera `curl` funciona), así que la función Edge desplegada no se pudo invocar por HTTPS real desde
+  aquí — se verificó su lógica exacta a nivel SQL (mismas consultas, mismos filtros) y por el mismo
+  patrón ya probado en producción con `rifa`/`boleto`/`vendedor`; falta la confirmación visual del dueño
+  probando el link real en su teléfono.
+- **Pendiente (Fase 2, si el dueño la pide):** el video de compromiso hablado — necesitaría Supabase
+  Storage (subir un archivo de video en vez de un dataURL de texto, cambio de mayor alcance) y un guion
+  armado con los términos reales del préstamo (ya se había acordado el enfoque: no texto libre, sino un
+  guion derivado de los datos reales, mismo criterio de "no fingir" del resto del sistema).
+
 ### Financiamiento — detalle del préstamo rediseñado con un mockup del dueño (25-jul-2026, v49.38)
 El dueño mandó una imagen ("Detalle de préstamo") de un mockup de un ERP de préstamos completo — topbar
 con buscador/notificaciones/perfil "Casa Matriz", barra lateral con Desembolsos/Moras/Refinanciaciones/
