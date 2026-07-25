@@ -4059,6 +4059,20 @@ resumen en vivo que NO existía.
   a 390px y 1280px sin desbordes, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
   `index.html` pasan `new Function()`; `version.json` válido.
 
+### POS · Compras — rediseño visual (Tanda 3, pieza 1, 25-jul-2026, v49.25)
+`renderCompras()` (pestaña Compras del POS — lista de compras + CxP) reskineado al look premium `.nxPf`
+— mismo patrón que RRHH/Historial/Kardex: salida envuelta en `.nxPf .nxCompWrap` + `nxPfEnsureCSS()`,
+los 3 KPIs (`kpi()` viejo → `kpiPf()`/`.kpirow`: Proveedores/Por pagar CxP/Compras), tabla con CSS
+scopeado `.nxCompWrap` (encabezado azul, filas theme-aware — se extendió el bloque `.nxRhWrap` para
+cubrir también `.nxCompWrap`). Los colores inline de la fila (fecha, "Crédito") pasaron a `var(--pf-*)`
+para verse bien en claro/oscuro. **Cero cambios de lógica** — registro de compras (`nxPosGuardarCompra`),
+CxP (`saldoProv`), inventario y contabilidad intactos; solo el "vestido" de la vista de lista (los
+modales de Nueva compra / detalle / Proveedores no se tocaron en esta pieza). Verificado con 14 pruebas
+Playwright del código real (`renderCompras`/`kpiPf` extraídos + CSS real de `nxPfEnsureCSS`, con
+proveedores/compras simulados): wrapper correcto, 3 KPIs premium, 0 KPIs viejos, tabla con 3 compras,
+CxP 17,300 exacto, sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js`
+limpio; `version.json` válido. **Pendiente Tanda 3:** Caja (arqueo), Ajustes.
+
 ### POS · Recursos Humanos / Nómina — rediseño visual (Tanda 2, cierre, 25-jul-2026, v49.24)
 `renderRRHH()` (pestañas Empleados y Nóminas del POS) reskineado al look premium `.nxPf` — mismo patrón
 que Historial/Kardex/Reportes (v49.05-06): salida envuelta en `.nxPf .nxRhWrap` + `nxPfEnsureCSS()`,
