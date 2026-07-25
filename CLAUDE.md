@@ -2424,6 +2424,31 @@ presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opci�
   propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
   ahí con el mismo patrón.
 
+### Financiamiento — bug real: al EDITAR un préstamo el resumen mostraba matemática equivocada (25-jul-2026, v49.27)
+El dueño mandó una captura de "EDITAR PRÉSTAMO" (quincenal, 10% mensual, 8 cuotas, método plano) donde el
+selector de Frecuencia mostraba **QUINCENAL** pero el resumen decía "10% mensual = 2.33% **por semana**",
+cuota RD$ 2,967 / total 23,733 / interés 3,733 — la matemática **SEMANAL**, no la quincenal (que da cuota
+3,500 / total 28,000 / interés 8,000). **Causa raíz en `abrirForm(pr)` (`parches.js`, IIFE de
+Financiamiento):** el orden de operaciones estaba mal — `pintarModo()` (que al final llama a
+`window.nxPrRecalc()`) corría PRIMERO, calculando el resumen con los valores por DEFECTO de los `<select>`
+(el 1er option de Frecuencia es `semanal`, y método `plano`); recién DESPUÉS se restauraban los valores
+reales del préstamo (`s.value = p.frecuencia` / `sm.value = p.metodo_interes`), pero **sin volver a
+recalcular**. Así el `<select>` mostraba "Quincenal" (valor bien puesto) mientras el preview quedaba
+pegado con los números de "semanal". No corrompía datos — `nxPrestamoGuardar` lee `val('prFrec')` al
+guardar, que ya trae el valor correcto; era solo el preview que engañaba (y podía hacer creer que las
+condiciones del préstamo eran otras). Afectaba a CUALQUIER préstamo cuya frecuencia no fuera la 1ra opción
+(`semanal`) o cuyo método no fuera el default (`plano`) — al abrirlos a editar, mostraban el cálculo de
+semanal/plano hasta tocar algo. **Arreglo:** tras restaurar los dos `<select>` se agregó un
+`window.nxPrRecalc()` (guardado con try/catch, solo si de verdad se restauró algún valor) — así el resumen
+sale correcto desde que se abre el préstamo. Cambio de una sola llamada, cero lógica de cálculo tocada
+(`tasaPorCuota`/`amortizar`/`calcPrestamo` intactos — ya estaban bien: quincenal = 5% = 10%×15/30). No es
+retroactivo a datos (nunca hubo datos malos, solo display). **Verificado con Playwright + código real
+extraído** (`tasaPorCuota`/`amortizar`/`calcPrestamo`/`pintarModo`/`nxPrRecalc` tal cual del archivo,
+simulando el flujo de edición): SIN el fix reproduce exacto la captura (2,967 / 23,733 / 3,733, nota "por
+semana"); CON el fix da la matemática quincenal correcta (3,500 / 28,000 / 8,000, nota "10% mensual = 5%
+por quincena"), 0 errores de consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+pasan `new Function()`; `version.json` válido.
+
 ### SEGUROS — Ficha del cliente, rediseño Enterprise (19-jul-2026, v48.53)
 El dueño pidió un rediseño visual completo del núcleo de Seguros (spec "NEXUS PRO SEGUROS 2026 –
 REDISEÑO VISUAL ENTERPRISE", solo capa visual, prohibido tocar lógica/Supabase/consultas). Por el
