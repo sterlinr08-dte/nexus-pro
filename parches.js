@@ -18703,14 +18703,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .nivbadge{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;background:var(--pf-txt3)}
 .nxPf .nivbadge.cur{background:var(--pf-blue)}
 .nxPf .nivsearch{margin-bottom:10px}
-.nxPf .btn2{width:100%;height:36px;padding:0 12px;border-radius:10px;border:0;background:var(--pf-blue);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer}
+.nxPf .btn2{width:100%;height:34px;padding:0 12px;border-radius:10px;border:0;background:var(--pf-blue);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer}
 .nxPf .colr{display:flex;flex-direction:column;gap:12px}
 .nxPf .kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
 .nxPf .kpitile{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:10px 12px}
 .nxPf .kpitile .l{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--pf-txt3)}
 .nxPf .kpitile .v{font-size:15px;font-weight:800;color:var(--pf-txt);margin-top:2px}
 .nxPf .toolbar2{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
-.nxPf .ab.sm{height:38px;padding:0 16px;width:auto;flex:0 0 auto}
+.nxPf .ab.sm{height:40px;padding:0 16px;width:auto;flex:0 0 auto}
 .nxPf .chiprow{display:flex;gap:6px;flex-wrap:wrap}
 .nxPf .chip{height:32px;padding:0 13px;border-radius:9px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
 .nxPf .chip.on{background:var(--pf-blue);border-color:var(--pf-blue);color:#fff}
@@ -18832,7 +18832,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .hr{border:0;border-top:1px dashed var(--pf-line);margin:8px 0}
 .nxPf .actions{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px;background:var(--pf-panel);border-top:1px solid var(--pf-line)}
 @media (min-width:600px){.nxPf .actions{grid-template-columns:repeat(4,1fr)}}
-.nxPf .ab{height:42px;border-radius:12px;border:0;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.nxPf .ab{height:44px;border-radius:12px;border:0;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
 .nxPf .ab.g1{background:var(--pf-green);color:#fff}
 .nxPf .ab.g2{background:var(--pf-blue);color:#fff}
 .nxPf .ab.g3{background:var(--pf-bg);color:var(--pf-txt2);border:1.5px solid var(--pf-line)}
@@ -18903,7 +18903,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .cartpaytot b{font-size:17px;color:var(--pf-blue-d)}
 .nxPf .cartcobrar{width:100%;margin-top:10px;height:46px;font-size:13px}
 .nxPf .cartsave{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.nxPf .cartsavebtn{height:38px;border-radius:11px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;min-width:0}
+.nxPf .cartsavebtn{height:40px;border-radius:11px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;min-width:0}
 .nxPf .cartsavebtn:disabled{opacity:.45;cursor:default}
 .nxPf .cartsavebtn i{font-size:13px;flex:none}
 .nxPf .cartsavebtn span,.nxPf .cartsavebtn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -18917,7 +18917,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .nxSpin{display:inline-block;animation:nxPfSpin .8s linear infinite}
 @keyframes nxPfSpin{to{transform:rotate(360deg)}}
 .nxPf .card h4{text-transform:uppercase;letter-spacing:.3px}
-.nxPf .headbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+.nxPf .headbtn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:10px;border:1.5px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
 .nxPf .headbtn:hover{background:var(--pf-bg)}
 .nxPf .headbtn.sq{width:36px;padding:0;justify-content:center}
 .nxPf .headwrap{display:flex;gap:8px;align-items:center;flex:0 0 auto}
@@ -23752,7 +23752,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-cardGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}' +
       '.nxFP-gLbl{font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}.nxFP-gVal{font-size:13px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums}.nxFP-gVal.accent{color:#7c3aed}.nxFP-gVal.danger{color:#dc2626}' +
       '.nxFP-cardMenuWrap{position:absolute;top:14px;right:12px}' +
-      '.nxFP-menuBtn{width:28px;height:28px;border-radius:9px;border:none;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .15s}.nxFP-menuBtn:hover{background:#f1f5f9;color:#475569}' +
+      '.nxFP-menuBtn{width:34px;height:34px;border-radius:9px;border:none;background:transparent;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .15s}.nxFP-menuBtn:hover{background:#f1f5f9;color:#475569}' +
       '.nxFP-menuPop{display:none;position:absolute;top:32px;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:13px;box-shadow:0 12px 28px rgba(15,23,42,.14);padding:6px;min-width:172px;z-index:5}.nxFP-menuPop.open{display:block}' +
       '.nxFP-menuPop button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;padding:9px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#334155;cursor:pointer;font-family:inherit}.nxFP-menuPop button:hover{background:#f8fafc}.nxFP-menuPop button i{color:#7c3aed;font-size:15px}' +
       '.nxFP-empty{text-align:center;padding:44px 20px;background:#fff;border:1px dashed #e2e8f0;border-radius:18px}.nxFP-emptyIco{width:52px;height:52px;border-radius:16px;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px}.nxFP-empty h3{font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px}.nxFP-empty p{font-size:12px;color:#64748b;max-width:280px;margin:0 auto}' +
@@ -23793,7 +23793,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '.nxFP-tAcc button:hover{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}' +
       '.nxFP-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}' +
       '.nxFP-pgInfo{font-size:11px;color:#94a3b8;font-weight:600}.nxFP-pgBtns{display:flex;gap:4px;flex-wrap:wrap}' +
-      '.nxFP-pgBtns button{min-width:32px;height:32px;padding:0 8px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#475569;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}' +
+      '.nxFP-pgBtns button{min-width:34px;height:34px;padding:0 8px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#475569;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}' +
       '.nxFP-pgBtns button.on{background:#6d28d9;border-color:#6d28d9;color:#fff}.nxFP-pgBtns button:disabled{opacity:.4;cursor:default}' +
       '@media(max-width:900px){.nxFP-kpis{grid-template-columns:repeat(3,1fr)}}' +
       '@media(max-width:760px){.nxFP-tbl thead{display:none}.nxFP-tbl,.nxFP-tbl tbody,.nxFP-tbl tr,.nxFP-tbl td{display:block;width:100%;min-width:0}.nxFP-tblWrap{min-width:0}.nxFP-tbl tbody tr{border:1px solid #eef0f5;border-radius:14px;margin:0 0 10px;padding:5px 2px;background:#fff}.nxFP-tbl tbody td{border:0;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:right}.nxFP-tbl tbody td::before{content:attr(data-l);font-size:9px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;text-align:left;flex:none}.nxFP-tbl td.nxFP-tdNom{text-align:left}.nxFP-tbl td.nxFP-tdNom::before{display:none}.nxFP-tblWrap{border:0;background:transparent;overflow:visible}.nxFP-tAcc{justify-content:flex-end}}' +
@@ -23929,7 +23929,23 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       '@media(max-width:1000px){.nxFP-kpis6{grid-template-columns:repeat(3,1fr)}.nxFP-repGrid{grid-template-columns:1fr}}' +
       '@media(max-width:560px){.nxFP-kpis6{grid-template-columns:1fr 1fr}.nxFP-repQuick{grid-template-columns:1fr 1fr}.nxFP-repBar{flex-direction:column;align-items:flex-start}}' +
       '@media(max-width:900px){.nxFP-hero{flex-direction:column}.nxFP-heroR{grid-template-columns:repeat(2,1fr)}.nxFP-quick{grid-template-columns:repeat(3,1fr)}.nxFP-dash{grid-template-columns:repeat(2,1fr)}}' +
-      '@media(max-width:640px){.nxFP-hero{padding:18px}.nxFP-heroNum{font-size:27px}.nxFP-heroR{grid-template-columns:1fr 1fr;gap:14px}.nxFP-quick{grid-template-columns:repeat(3,1fr);gap:8px}.nxFP-qbtn{padding:13px 4px}.nxFP-qbtn span{font-size:9px}.nxFP-cardGrid{grid-template-columns:1fr 1fr}.nxFP-card{padding:13px 12px}.nxFP-cardBody{padding-right:22px}.nxFP-dash{grid-template-columns:1fr 1fr}}';
+      '@media(max-width:640px){.nxFP-hero{padding:18px}.nxFP-heroNum{font-size:27px}.nxFP-heroR{grid-template-columns:1fr 1fr;gap:14px}.nxFP-quick{grid-template-columns:repeat(3,1fr);gap:8px}.nxFP-qbtn{padding:13px 4px}.nxFP-qbtn span{font-size:9px}.nxFP-cardGrid{grid-template-columns:1fr 1fr}.nxFP-card{padding:13px 12px}.nxFP-cardBody{padding-right:22px}.nxFP-dash{grid-template-columns:1fr 1fr}}' +
+      // ── NPGS §12 (enmienda "un color por app", 25-jul-2026) ────────────────────
+      // Este motor de estilos lo comparten DOS apps: Financiamiento (Multiempresa,
+      // MORADO — su color propio, arriba) y la pestaña Cuotas del POS (AZUL, porque
+      // vive dentro del POS). El modificador .nxFP-pos remapea SOLO el acento; no se
+      // toca el CSS base para no despintar Financiamiento. Doble clase = mayor
+      // especificidad, así que gana sin necesidad de !important.
+      '.nxFP.nxFP-pos .nxFP-hero{background:linear-gradient(120deg,#1e3a6e,#2563eb 55%,#1d4ed8)}' +
+      '.nxFP.nxFP-pos .nxFP-qico.primary{background:linear-gradient(135deg,#2563eb,#1d4ed8)}' +
+      '.nxFP.nxFP-pos .nxFP-tab.on{background:linear-gradient(135deg,#2563eb,#1d4ed8);border-color:#1d4ed8}' +
+      '.nxFP.nxFP-pos .nxFP-ref,.nxFP.nxFP-pos .nxFP-gVal.accent,.nxFP.nxFP-pos .nxFP-emptyIco{color:#2563eb}' +
+      '.nxFP.nxFP-pos .nxFP-menuPop button i{color:#2563eb}' +
+      '.nxFP.nxFP-pos .nxFP-dico{color:#1d4ed8}' +
+      // Los fondos claros también son lila (#f5f3ff/#ede9fe) y el índigo #4338ca de
+      // los iconos "blue": se remapean al tinte azul del POS (--pf-blue-l #eff6ff).
+      '.nxFP.nxFP-pos .nxFP-ref,.nxFP.nxFP-pos .nxFP-emptyIco,.nxFP.nxFP-pos .nxFP-dico{background:#eff6ff}' +
+      '.nxFP.nxFP-pos .nxFP-qico.blue,.nxFP.nxFP-pos .nxFP-dico.blue{color:#1d4ed8}';
     document.head.appendChild(st);
   };
   window.nxFinFiltro = function (key) {
@@ -23984,7 +24000,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       ['nxFinCarteraVencida', 'ti-report-money', 'blue', 'Reporte'],
       ['nxFinConfig', 'ti-settings', 'gray', 'Configuración']
     ];
-    return `<div class="nxFP">
+    // NPGS §12 (enmienda 25-jul-2026, "un color por app"): Cuotas vive DENTRO del POS,
+    // que es AZUL. El motor de estilos .nxFP se comparte con Financiamiento (morado, su
+    // propia app) — por eso NO se toca el CSS base: se le pone el modificador .nxFP-pos,
+    // que remapea el acento a azul solo aquí. Ver DESIGN_SYSTEM.md §6 (C1).
+    return `<div class="nxFP nxFP-pos">
       <div class="nxFP-hero">
         <div class="nxFP-heroL">
           <div class="nxFP-heroLbl">RESUMEN GENERAL</div>
