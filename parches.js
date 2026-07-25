@@ -14541,10 +14541,16 @@
     const pag = pagadoDe(p), saldo = saldoDe(p), est = estadoDe(p);
     const esCredito = p.modo === 'credito';
     const cc = esCredito ? creditoCalc(p) : null;
+    // Capital pagado / próxima cuota / mora — derivados de datos reales (nunca inventados). Cada
+    // modo tiene su propia forma real de calcularlo: crédito ya lo separa (creditoCalc), cuotas con
+    // interés lo saca de la tabla de amortización real, y cuotas/libre sin interés no tienen forma
+    // de separar capital de interés (no hay campo para eso) así que ahí "capital pagado" = pagado.
+    let capPagado = pag, proximaFecha = '', proximaMonto = 0, moraActual = 0, interesTotalMostrado = 0;
     let scheduleHTML = '';
     // Título del cronograma + botón para compartir/imprimir la tabla (igual en los 3 modos)
     const schedTit = txt => `<div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px"><span style="font-size:11px;font-weight:800;color:#475569;min-width:0">${txt}</span><button class="btn bsm bghost" type="button" style="flex:none;margin-left:auto" onclick="window.nxPrestamoAmortizacion('${id}')" title="Compartir / imprimir la tabla" aria-label="Compartir tabla de amortización"><i class="ti ti-share" style="color:#6d28d9"></i></button></div>`;
     if (esCredito) {
+      capPagado = cc.pagCap; interesTotalMostrado = cc.interesAcum;
       const rows = cc.meses.map(m => `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${m.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${m.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(m.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c;font-weight:700">${fmt(m.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${m.encurso ? '<span style="color:#475569;font-size:9px">en curso</span>' : '<span style="color:#16a34a;font-weight:800">✓</span>'}</td></tr>`).join('');
       scheduleHTML = `${schedTit(`INTERÉS POR MES · ${p.tasa_interes}% sobre el saldo de capital`)}
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
@@ -14556,74 +14562,119 @@
     } else if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
       const met = p.metodo_interes || 'saldo';
       const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia, met);
-      let acum = 0;
+      interesTotalMostrado = a.interesTotal;
+      const moraDelPrestamo = prMoraDe(p); let moraAsignada = false;
+      let acum = 0, capAcum = 0;
       const rows = a.rows.map(r => {
         acum += r.cuota;
         const cub = pag >= acum - 0.5;
-        return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
+        if (cub) capAcum += r.capital;
+        else if (!moraAsignada) { proximaFecha = r.fecha; proximaMonto = r.cuota; moraActual = moraDelPrestamo; moraAsignada = true; }
+        const moraFila = (!cub && moraAsignada && r.fecha === proximaFecha) ? moraDelPrestamo : 0;
+        return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right${moraFila > 0 ? ';color:#dc2626;font-weight:700' : ''}">${moraFila > 0 ? fmt(moraFila) : '—'}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
       }).join('');
+      capPagado = capAcum;
       scheduleHTML = `${schedTit(`TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · ${met === 'plano' ? 'interés plano' : 'saldo insoluto'} · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}`)}
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
-          <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:430px;background:#fff">
-            <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">#</th><th style="padding:6px;text-align:left">Fecha</th><th style="padding:6px;text-align:right">Cuota</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:right">Capital</th><th style="padding:6px;text-align:right">Saldo</th><th style="padding:6px;text-align:center">Pag.</th></tr></thead>
+          <table style="width:100%;border-collapse:collapse;font-size:10.5px;min-width:480px;background:#fff">
+            <thead><tr style="background:#f8fafc;color:#475569;font-size:9.5px"><th style="padding:6px;text-align:left">#</th><th style="padding:6px;text-align:left">Fecha</th><th style="padding:6px;text-align:right">Cuota</th><th style="padding:6px;text-align:right">Interés</th><th style="padding:6px;text-align:right">Capital</th><th style="padding:6px;text-align:right">Mora</th><th style="padding:6px;text-align:right">Saldo</th><th style="padding:6px;text-align:center">Pag.</th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
         </div>`;
     } else if (p.modo === 'cuotas' && p.num_cuotas > 0) {
       const cuota = Number(p.total_devolver || 0) / p.num_cuotas;
-      let acum = 0; const rows = [];
+      let acum = 0; let asignada = false; const rows = [];
       for (let i = 0; i < p.num_cuotas; i++) {
         const due = fechaCuota(p.fecha_prestamo, p.frecuencia, i + 1);
         acum += cuota;
         const cubierta = pag >= acum - 0.5;
+        if (!cubierta && !asignada) { proximaFecha = due; proximaMonto = cuota; asignada = true; }
         rows.push(`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">#${i + 1}</td><td style="padding:6px 10px;font-size:11px;color:#475569;border-bottom:1px solid #f1f5f9">${due}</td><td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:700;border-bottom:1px solid #f1f5f9">${fmt(cuota)}</td><td style="padding:6px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${cubierta ? '<span style="color:#16a34a;font-weight:800;font-size:10px">PAGADA</span>' : '<span style="color:#dc2626;font-weight:800;font-size:10px">PENDIENTE</span>'}</td></tr>`);
       }
+      moraActual = prMoraDe(p);
       scheduleHTML = `${schedTit(`CALENDARIO DE CUOTAS (${fmt(cuota)} c/u)`)}<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${rows.join('')}</table>`;
+    } else if (p.modo === 'libre' && Number(p.tasa_interes || 0) > 0) {
+      interesTotalMostrado = Number(p.total_devolver || 0) - Number(p.capital || 0);
     }
+    const pctCapital = Number(p.capital || 0) > 0 ? Math.max(0, Math.min(100, Math.round((capPagado / Number(p.capital || 0)) * 100))) : 0;
+    const kpiCard = (ico, lbl, val, sub, col) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${col}1a;color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div>${sub ? `<div class="nxFP-kpiSub">${sub}</div>` : ''}</div>`;
+    const kpisHTML = [
+      kpiCard('ti-cash-banknote', 'MONTO PRESTADO', fmt(p.capital), esc(p.fecha_prestamo || ''), '#4f46e5'),
+      kpiCard('ti-hourglass', 'BALANCE PENDIENTE', fmt(esCredito ? cc.totalDebe : saldo), est === 'pagado' ? 'Saldado' : (esCredito ? 'Capital + interés' : (saldo > 0 ? 'Pendiente por cobrar' : 'Saldado')), (esCredito ? cc.totalDebe : saldo) > 0 ? '#dc2626' : '#16a34a'),
+      kpiCard('ti-circle-check', esCredito ? 'PAGADO A CAPITAL' : 'CAPITAL PAGADO', fmt(capPagado), `${pctCapital}% del capital`, '#16a34a'),
+      proximaFecha ? kpiCard('ti-calendar-due', 'PRÓXIMA CUOTA', proximaFecha, fmt(proximaMonto) + (moraActual > 0 ? ' + ' + fmt(moraActual) + ' mora' : ''), '#d97706')
+        : (esCredito && cc.fechaLimite ? kpiCard('ti-calendar-due', 'FECHA LÍMITE CAPITAL', cc.fechaLimite, cc.diasRestan != null ? (cc.diasRestan < 0 ? Math.abs(cc.diasRestan) + ' días de atraso' : 'Faltan ' + cc.diasRestan + ' días') : '', cc.diasRestan != null && cc.diasRestan < 0 ? '#dc2626' : '#0891b2')
+          : kpiCard('ti-wallet', 'MODALIDAD', p.modo === 'libre' ? 'Abonos libres' : 'Línea de crédito', 'Sin fecha fija de cuota', '#64748b')),
+      kpiCard('ti-report-money', 'TOTAL DEL PRÉSTAMO', fmt(esCredito ? cc.cap : (p.total_devolver || p.capital)), interesTotalMostrado > 0 ? 'Interés: ' + fmt(interesTotalMostrado) : 'Sin interés', '#0f172a')
+    ].join('');
     const pagosHTML = pagos.length === 0
       ? '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos aún</div>'
       : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#6d28d9;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#475569">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#475569;font-size:10px">${esc(x.nota)}</div>` : ''}</div><div style="display:flex;gap:4px;flex:none"><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoComprobante('${x.id}','${id}')" title="Comprobante de pago"><i class="ti ti-receipt" style="color:#6d28d9"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>`; }).join('');
+    // Línea de tiempo — SOLO eventos reales (creado + cada pago). No se inventan pasos de
+    // "aprobado/contrato firmado/desembolso": este módulo crea el préstamo directo, sin ese flujo.
+    const tlEventos = [{ f: p.created_at || p.fecha_prestamo, tit: 'Préstamo creado', sub: fmt(p.capital) + ' · ' + (p.nombre || '') }]
+      .concat(pagos.map(x => ({ f: x.fecha, tit: 'Pago registrado', sub: fmt(x.monto) + (x.metodo ? ' · ' + x.metodo : '') })));
+    if (est === 'pagado' && pagos.length) tlEventos.push({ f: pagos[pagos.length - 1].fecha, tit: 'Préstamo saldado', sub: 'Balance en RD$0' });
+    const tlHTML = tlEventos.map(ev => `<div class="nxPrTlItem"><div class="nxPrTlDot"><i class="ti ti-check" style="font-size:11px"></i></div><div class="nxPrTlTxt"><b>${esc(ev.tit)}</b><span>${esc(String(ev.f || '').slice(0, 10))} · ${esc(ev.sub)}</span></div></div>`).join('');
+    const cliCard = `<div class="prCard">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="width:44px;height:44px;border-radius:12px;background:${prIniciales(p.nombre).color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex:0 0 auto">${esc(prIniciales(p.nombre).ini)}</div>
+        <div style="min-width:0"><div style="font-size:14px;font-weight:800;color:#1e1b4b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || '')}</div><div style="font-size:10.5px;font-weight:800;color:${est === 'pagado' ? '#16a34a' : (est === 'vencido' ? '#dc2626' : '#16a34a')}">${est === 'pagado' ? '● Saldado' : (esVencido(p) ? '● En mora' : '● Al día')}</div></div>
+      </div>
+      <div style="font-size:11.5px;color:#475569;display:flex;flex-direction:column;gap:4px">
+        ${p.telefono ? `<div><i class="ti ti-phone" style="color:#94a3b8;width:16px;display:inline-block"></i> ${esc(p.telefono)}</div>` : ''}
+        ${p.cedula ? `<div><i class="ti ti-id" style="color:#94a3b8;width:16px;display:inline-block"></i> ${esc(p.cedula)}</div>` : ''}
+      </div>
+    </div>`;
+    const detCard = `<div class="prCard">
+      <div style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">Detalles del préstamo</div>
+      <div style="font-size:12px;color:#334155;display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Monto otorgado</span><b>${fmt(p.capital)}</b></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Interés</span><b>${p.tasa_interes ? p.tasa_interes + '%/mes' : 'Sin interés'}</b></div>
+        ${p.modo === 'cuotas' ? `<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Plazo</span><b>${p.num_cuotas} cuotas</b></div><div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Cuota ${esc(p.frecuencia || '')}</span><b>${fmt(proximaMonto || (Number(p.total_devolver || 0) / (p.num_cuotas || 1)))}</b></div>` : ''}
+        ${esCredito && p.plazo_meses ? `<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Plazo del capital</span><b>${p.plazo_meses} meses</b></div>` : ''}
+        <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Fecha de inicio</span><b>${esc(p.fecha_prestamo || '')}</b></div>
+      </div>
+    </div>`;
+    const progCard = `<div class="prCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span style="font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px">Progreso del préstamo</span><b style="color:#6d28d9;font-size:13px">${pctCapital}%</b></div>
+      <div class="nxPrBar"><div style="width:${pctCapital}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-top:4px"><span>Capital pagado: <b style="color:#16a34a">${fmt(capPagado)}</b></span><span>Faltante: <b style="color:#dc2626">${fmt(Math.max(0, Number(p.capital || 0) - capPagado))}</b></span></div>
+    </div>`;
     const ov = document.createElement('div'); ov.id = 'nxPrModal'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
-      <div class="modal nxPrForm" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column">
+      <div class="modal nxPrForm nxPrDetWide" style="max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-user"></i> ${esc(p.nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrModal').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
-          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(p.cedula || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
-            ${esCredito
-        ? `${kpi('Capital pend.', fmt(cc.capPend), '#6d28d9')}${kpi('Interés pend.', fmt(cc.interesPend), '#ea580c')}${kpi('Debe ahora', fmt(cc.totalDebe), cc.totalDebe > 0 ? '#dc2626' : '#16a34a')}`
-        : `${kpi('Prestó', fmt(p.capital), '#6d28d9')}${kpi('A devolver', fmt(p.total_devolver), '#0f172a')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}`}
-          </div>
-          ${esCredito
-        ? `<div style="font-size:11px;color:#475569">Línea de crédito · ${p.tasa_interes}%/mes · desde ${esc(p.fecha_prestamo || '')}</div>
-             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;font-size:11px">
-               <div style="background:#eff6ff;border-radius:8px;padding:7px 9px;color:#1e40af">Prestó: <b>${fmt(cc.cap)}</b><br>Pagado a capital: <b>${fmt(cc.pagCap)}</b></div>
-               <div style="background:#fff7ed;border-radius:8px;padding:7px 9px;color:#9a3412">Interés acumulado: <b>${fmt(cc.interesAcum)}</b><br>Interés pagado: <b>${fmt(cc.pagInt)}</b></div>
-             </div>
-             ${cc.fechaLimite ? `<div style="font-size:11px;margin-top:6px;padding:7px 9px;border-radius:8px;${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? 'background:#fef2f2;color:#dc2626;font-weight:700' : 'background:#f8fafc;color:#475569'}">${cc.diasRestan != null && cc.diasRestan < 0 && est !== 'pagado' ? '⚠️ Capital VENCIDO el ' + cc.fechaLimite + ' (' + Math.abs(cc.diasRestan) + ' días de atraso)' : '📅 Fecha límite del capital: ' + cc.fechaLimite + (cc.diasRestan != null ? ' · faltan ' + cc.diasRestan + ' días' : '')}</div>` : ''}`
-        : `<div style="display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px"><span style="color:#059669;font-weight:700">Pagado: ${fmt(pag)}</span><span style="color:#475569">${p.modo === 'cuotas' ? ((p.num_cuotas || 0) + ' cuotas ' + (p.frecuencia || '') + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '%/mes' : '')) : ('Abonos libres' + (Number(p.tasa_interes || 0) > 0 ? ' · ' + p.tasa_interes + '% interés' : ''))} · ${esc(p.fecha_prestamo || '')}</span></div>
-             ${(p.modo === 'libre' && Number(p.tasa_interes || 0) > 0) ? `<div style="font-size:11px;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:7px 9px;margin-top:6px">Interés (una vez): <b>${fmt(Number(p.total_devolver || 0) - Number(p.capital || 0))}</b> · ${p.tasa_interes}% sobre el capital</div>` : ''}`}
-          ${p.notas ? `<div style="font-size:11px;color:#475569;margin-top:6px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(p.notas)}</div>` : ''}
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">${prRef(p)} · Otorgado ${esc(p.fecha_prestamo || '')}</div>
+          <div class="nxFP-kpis" style="margin-bottom:12px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">${kpisHTML}</div>
+          ${cliCard}
+          ${detCard}
+          ${progCard}
+          ${p.notas ? `<div style="font-size:11px;color:#475569;margin-bottom:10px;background:#f8fafc;border-radius:8px;padding:7px 9px">📝 ${esc(p.notas)}</div>` : ''}
           ${scheduleHTML}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 4px">PAGOS (${pagos.length})</div>
-          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:12px">${pagosHTML}</div>
+          <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 8px">LÍNEA DE TIEMPO</div>
+          <div class="nxPrTl">${tlHTML}</div>
         </div>
         <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
           ${est !== 'pagado' ? `${esCredito ? `<div style="display:flex;gap:6px;margin-bottom:6px"><button id="prTipoCap" class="btn bc1" type="button" onclick="window.nxPrTipoPago('capital')" style="flex:1">A capital</button><button id="prTipoInt" class="btn" type="button" onclick="window.nxPrTipoPago('interes')" style="flex:1">A interés</button></div>` : ''}
           <div style="display:flex;gap:6px;margin-bottom:6px">
-            <input id="prPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none">
+            <input id="prPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto a pagar" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none">
             <input id="prPagoFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
           </div>
           <div style="display:flex;gap:6px;margin-bottom:6px">
             <select id="prPagoMetodo" style="flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Cheque">Cheque</option><option value="Otro">Otro</option></select>
-            <input id="prPagoNota" class="no-upper" placeholder="Nota (opcional)" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
+            <input id="prPagoNota" class="no-upper" placeholder="Referencia / nota (opcional)" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
           </div>
           <button class="btn bc1 nxPrPagar" type="button" onclick="window.nxPrestamoPagar('${id}')"><i class="ti ti-plus"></i> Registrar pago</button>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:8px">✓ Préstamo saldado</div>'}
           <div class="nxPrActs">
             ${waNumero(p.telefono) ? `<button class="nxPrAcc wa" type="button" onclick="window.nxPrestamoWA('${id}')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoContrato('${id}')"><i class="ti ti-file-certificate"></i> Contrato</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEstadoCuenta('${id}')"><i class="ti ti-file-text"></i> Estado</button>
+            <button class="nxPrAcc" type="button" onclick="window.nxPrestamoAmortizacion('${id}')"><i class="ti ti-printer"></i> Imprimir</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
             <button class="nxPrAcc del" type="button" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Borrar</button>
@@ -15388,7 +15439,9 @@
   function inyectarCSS() {
     if (document.getElementById('nxPrestamosCSS')) return;
     const st = document.createElement('style'); st.id = 'nxPrestamosCSS';
-    st.textContent = '.nxPrForm{font-family:"Plus Jakarta Sans",var(--ff),sans-serif}.nxPrForm .mt{font-weight:800}.nxPrForm .prCard{background:#fff;border:1px solid #ece9f7;border-radius:14px;padding:13px 14px;margin-bottom:11px;box-shadow:0 1px 3px rgba(76,29,149,.05)}.nxPrForm .prCard>div:first-child{margin-top:0 !important}.nxPrForm .prCard>.fr:last-child,.nxPrForm .prCard>.fr-row:last-child,.nxPrForm .prCard>div:last-child{margin-bottom:0}.nxPrForm .fr{margin-bottom:11px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:5px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;box-sizing:border-box;outline:none;background:#f8fafc;color:#1e293b;font-family:inherit;transition:border-color .15s,background .15s,box-shadow .15s}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#6d28d9;background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.12)}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrForm .prSeg{display:flex;gap:6px}.nxPrForm .prSeg>button{flex:1;padding:9px 6px;border:1.5px solid #e6e8ef;border-radius:11px;background:#f8fafc;color:#475569;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}.nxPrForm .prSeg>button.on{background:#6d28d9;border-color:#6d28d9;color:#fff}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#475569;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}';
+    st.textContent = '.nxPrForm{font-family:"Plus Jakarta Sans",var(--ff),sans-serif}.nxPrForm .mt{font-weight:800}.nxPrForm .prCard{background:#fff;border:1px solid #ece9f7;border-radius:14px;padding:13px 14px;margin-bottom:11px;box-shadow:0 1px 3px rgba(76,29,149,.05)}.nxPrForm .prCard>div:first-child{margin-top:0 !important}.nxPrForm .prCard>.fr:last-child,.nxPrForm .prCard>.fr-row:last-child,.nxPrForm .prCard>div:last-child{margin-bottom:0}.nxPrForm .fr{margin-bottom:11px;min-width:0}.nxPrForm .fr>label{font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:5px}.nxPrForm .fr input,.nxPrForm .fr select,.nxPrForm .fr textarea{width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;box-sizing:border-box;outline:none;background:#f8fafc;color:#1e293b;font-family:inherit;transition:border-color .15s,background .15s,box-shadow .15s}.nxPrForm .fr input:focus,.nxPrForm .fr select:focus,.nxPrForm .fr textarea:focus{border-color:#6d28d9;background:#fff;box-shadow:0 0 0 3px rgba(109,40,217,.12)}.nxPrForm .fr-row{display:flex;gap:8px;flex-wrap:wrap}.nxPrForm .fr-row>.fr{flex:1 1 132px}.nxPrForm .prSeg{display:flex;gap:6px}.nxPrForm .prSeg>button{flex:1;padding:9px 6px;border:1.5px solid #e6e8ef;border-radius:11px;background:#f8fafc;color:#475569;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}.nxPrForm .prSeg>button.on{background:#6d28d9;border-color:#6d28d9;color:#fff}.nxPrActs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px}.nxPrActs>.nxPrAcc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-width:0;height:54px;padding:6px 3px;margin:0;font-family:inherit;font-size:10.5px;line-height:1.1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;color:#475569;cursor:pointer;transition:opacity .15s}.nxPrActs>.nxPrAcc i{font-size:17px;flex:0 0 auto;margin:0;color:#475569}.nxPrActs>.nxPrAcc:active{opacity:.6}.nxPrActs>.nxPrAcc.wa{border-color:#bbf7d0;background:#f0fdf4;color:#16a34a}.nxPrActs>.nxPrAcc.wa i{color:#16a34a}.nxPrActs>.nxPrAcc.del{color:#dc2626}.nxPrActs>.nxPrAcc.del i{color:#dc2626}.nxPrPagar.nxPrPagar{display:flex;width:fit-content;min-width:0;min-height:0;height:auto;margin:0 auto 8px;padding:6px 18px;font-size:11.5px;line-height:1;align-items:center;gap:5px}.nxPrPagar.nxPrPagar i{font-size:14px}.nxMeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}.nxMeCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .15s,opacity .15s}.nxMeCard:hover{box-shadow:0 6px 18px rgba(0,0,0,.1)}.nxMeCard:active{opacity:.85}.nxMeIco{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:25px;flex:0 0 auto}.nxMeTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.nxMeNom{font-size:14.5px;font-weight:800;color:#1e293b}.nxMeDesc{font-size:11px;color:#475569;line-height:1.25}.nxMeArr{color:#cbd5e1;font-size:18px;flex:0 0 auto}.nxBack{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:9px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex:0 0 auto}.nxBack i{font-size:15px}.nxBack:active{opacity:.65}.mt:has(.nxBack){gap:8px}' +
+      '.nxPrDetWide{max-width:640px}.nxPrBar{height:9px;background:#ede9fe;border-radius:20px;overflow:hidden;margin:6px 0 2px}.nxPrBar>div{height:100%;background:linear-gradient(90deg,#6d28d9,#8b5cf6);border-radius:20px}' +
+      '.nxPrTl{display:flex;flex-direction:column;gap:0}.nxPrTlItem{display:flex;gap:10px;padding:0 0 14px;position:relative}.nxPrTlItem:last-child{padding-bottom:0}.nxPrTlDot{width:22px;height:22px;border-radius:50%;background:#6d28d9;color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;z-index:1}.nxPrTlItem:not(:last-child)::before{content:"";position:absolute;left:10px;top:22px;bottom:0;width:2px;background:#ede9fe}.nxPrTlTxt b{display:block;font-size:12px;color:#1e1b4b}.nxPrTlTxt span{font-size:10.5px;color:#94a3b8}';
     document.head.appendChild(st);
   }
 

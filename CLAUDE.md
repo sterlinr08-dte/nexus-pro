@@ -2059,6 +2059,79 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — detalle del préstamo rediseñado con un mockup del dueño (25-jul-2026, v49.38)
+El dueño mandó una imagen ("Detalle de préstamo") de un mockup de un ERP de préstamos completo — topbar
+con buscador/notificaciones/perfil "Casa Matriz", barra lateral con Desembolsos/Moras/Refinanciaciones/
+Fiadores/Usuarios/Sucursales, un widget "NEXUS AI" de riesgo, y una pantalla de detalle con 5 KPIs, form
+de "Registrar pago", panel de cliente, panel de detalles, barra de progreso, accesos rápidos, tabla de
+cuotas con columna Mora, y línea de tiempo de actividad — y pidió: **"Tal como se ve en la imagen, para
+sistema de financiamiento multiempresa"**.
+- **Auditado contra el código y el esquema reales ANTES de tocar nada** (mismo criterio de todo el
+  módulo): la mayor parte del "shell" del mockup (topbar con buscador/notificaciones, sucursal "Casa
+  Matriz", NEXUS AI de riesgo, Desembolsos/Moras/Refinanciaciones/Fiadores/Usuarios/Sucursales como
+  PANTALLAS aparte) **no tiene ningún dato real detrás** — este módulo es de un solo dueño (sin
+  `organizacion_id`, sin usuarios/sucursales, sin flujo de aprobación/desembolso: el préstamo se crea
+  directo). Construir eso habría significado fingir un ERP que no existe, o rediseñar el modelo de datos
+  completo sin que el dueño lo haya pedido explícitamente para eso. Se hizo la pieza que SÍ es 100% real
+  y no depende de Supabase (que en el momento de auditar el mockup estaba con la conexión caída):
+  **rediseñar `nxPrestamoVer` (el modal de detalle del préstamo)** con más información, en el mismo
+  espíritu del mockup, pero solo con datos verdaderos.
+- **`window.nxPrestamoVer(id)` reescrito por completo** (`parches.js`, mismo IIFE de Financiamiento):
+  - **5 tarjetas de resumen** (`kpiCard`, reusa `.nxFP-kpi` ya existente en el módulo): Monto prestado,
+    Balance pendiente, Capital pagado (en crédito: "Pagado a capital", del propio `creditoCalc`), Próxima
+    cuota (fecha + monto, **con la mora sumada si aplica** — `+ RD$X mora`) o, si no hay cuota próxima,
+    Fecha límite de capital (crédito) / Modalidad (abonos libres), y Total del préstamo con el interés.
+    `capPagado`/`proximaFecha`/`proximaMonto`/`moraActual` se derivan de datos reales — cada modo (crédito/
+    cuotas con interés/cuotas sin interés/libre) tiene su propia forma real de calcularlo, nunca un valor
+    inventado.
+  - **Columna nueva "Mora" en la tabla de amortización** (solo en cuotas con interés): usa `prMoraDe(p)`
+    (ya existente, recargo único a nivel de PRÉSTAMO, no por cuota — real desde v49.19) y la muestra
+    únicamente en la fila de la próxima cuota vencida — nunca en todas las filas, porque la mora del
+    sistema no es per-cuota.
+  - **Barra de progreso** (`.nxPrBar`, degradado morado) mostrando el % de capital ya pagado + "Capital
+    pagado" / "Faltante" en números reales.
+  - **Línea de tiempo real** (`tlEventos`/`.nxPrTl`): "Préstamo creado" + un evento "Pago registrado" por
+    cada pago real (ordenados), + "Préstamo saldado" si ya se pagó todo. **Deliberadamente NO se
+    inventaron** los pasos "Aprobado"/"Contrato firmado"/"Desembolso" del mockup — este módulo no tiene
+    ese flujo, crea el préstamo directo.
+  - **Modal más ancho** (`.nxPrDetWide{max-width:640px}`, antes 460px) para que quepan las 5 tarjetas +
+    tarjeta de cliente (avatar+nombre+badge Al día/En mora/Saldado+teléfono+cédula) + tarjeta de detalles
+    + tarjeta de progreso, todas con la clase `.prCard` ya existente. Botón nuevo **"Imprimir"** en la
+    barra de acciones (reusa `nxPrestamoAmortizacion(id)`, ya existía — solo le faltaba un acceso directo
+    desde el detalle).
+  - **Desviación deliberada del mockup:** color morado de Financiamiento (no el azul del mockup — regla
+    "cada app su color", ya decretada) y campo de nota renombrado a "Referencia / nota (opcional)" (mismo
+    input de siempre, sin columna nueva).
+- **BUG REAL encontrado y corregido durante la verificación (antes de publicar):** el resumen de 5
+  tarjetas usaba `.nxFP-kpis{grid-template-columns:repeat(5,1fr)}` (la clase compartida que ya usan
+  Contabilidad/Reportes/RRHH en pantallas de ancho completo) — dentro de este modal, fijo a 640px de
+  ancho, el `1fr` de esa regla se comporta como `minmax(auto,1fr)`: como el valor de "RD$ 20,000" no se
+  puede partir en dos líneas, el navegador ensancha las columnas más allá del contenedor, dejando la 5ta
+  tarjeta ("Total del préstamo") oculta por scroll horizontal invisible dentro del panel — mismo patrón
+  de bug ya documentado varias veces en este archivo (grid con `min-width:auto`), pero esta vez en un
+  contenedor de ANCHO FIJO en vez de dependiente del viewport, así que las media queries por viewport que
+  ya tiene `.nxFP-kpis` (900px/560px) no alcanzaban a corregirlo. Arreglado con un estilo en línea
+  específico de este modal: `grid-template-columns:repeat(auto-fit,minmax(140px,1fr))` — responde al
+  ancho REAL del contenedor (no al viewport), así que en 640px cae solo a 3+2 y en 390px a 2+2+1, sin
+  desbordes en ningún caso. La clase compartida `.nxFP-kpi`/`.nxFP-kpis` no se tocó (sigue sirviendo bien
+  a las pantallas de ancho completo que ya la usan).
+- **Verificado con Playwright, código real extraído del archivo** (no una reconstrucción — `nxPrestamoVer`
+  + los helpers reales `creditoCalc`/`pagadoDe`/`saldoDe`/`estadoDe`/`esVencido`/`amortizar`/`prMoraDe`/
+  `prIniciales`/`prRef` extraídos tal cual, con balance de llaves real): **47 pruebas** en 4 escenarios —
+  cuotas con interés plano y pagos parciales (los 5 KPIs correctos, la mora solo en la fila correcta
+  cuando está activada y el préstamo ya venció el plazo completo — se confirmó que la mora del sistema es
+  a nivel de PRÉSTAMO, no por cuota individual atrasada), cuotas sin interés, línea de crédito (con los
+  botones "A capital"/"A interés"), y abonos libres ya saldado (sin botón de pago, con "Préstamo
+  saldado" en la línea de tiempo) — más las comprobaciones de que NO aparece ningún campo inventado
+  (Asesor/Sucursal/Producto) ni eventos de flujo falso (Aprobado/Contrato firmado/Desembolso). Sin
+  desbordes en 390px ni 1280px, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente si el dueño quiere seguir con el mockup completo:** el resto (topbar/buscador global,
+  Desembolsos/Moras/Refinanciaciones/Fiadores/Usuarios/Sucursales como pantallas reales, NEXUS AI de
+  riesgo) requeriría decisiones de arquitectura nuevas (¿de verdad hace falta multi-sucursal/multi-usuario
+  aquí? ¿un asistente de riesgo con qué datos/modelo?) que no se tomaron solas — se le preguntarían al
+  dueño antes de construir, mismo criterio que el resto de esta sesión.
+
 ### Financiamiento (Préstamos, Multiempresa) — HISTORIAL CREDITICIO (spec ChatGPT "Historial Crediticio V1", 24-jul-2026, v49.18)
 El dueño pidió aplicar `docs/visual-drafts/financiamiento/HISTORIAL_CREDITICIO_V1_APROBADO.md` (ChatGPT lo subió a
 `main`, commit `c72bd56`). Vista de solo lectura del comportamiento crediticio de un cliente antes de aprobarle
