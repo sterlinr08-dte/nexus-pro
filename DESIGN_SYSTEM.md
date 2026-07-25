@@ -241,6 +241,24 @@ Vender del POS).
   planteó la tensión explícitamente (con el costo real: un clic extra en las 4 pantallas de más uso
   diario) y eligió la lectura literal de NPGS §5 de todos modos.
 
+- 🔄 **REABIERTA por la enmienda "no es quien manda, es lo que más conviene"** (25-jul-2026, ver
+  `NPGS.md`, PRIORIDAD MÁXIMA). Aquella decisión se tomó **precisamente** bajo el criterio que el
+  dueño acaba de corregir: se eligió la lectura literal de NPGS aun sabiendo que empeoraba las
+  pantallas de más uso. Con el criterio nuevo, la recomendación cambia:
+
+  | Grupo | Recomendación bajo el criterio nuevo |
+  |---|---|
+  | **~9 "elegir un registro"** | **Sigue igual: ventana.** Aquí NPGS §5 y lo que conviene coinciden — es un catálogo grande del que hay que sacar UNA fila. Fase 2 continúa tal cual. |
+  | **~24 "filtrar lo que ya veo"** | **Quedarse con la barra en línea**, pero unificada: mismo componente, mismo alto, misma lupa, mismo aspecto en todo el ERP (eso ya se cumple — los 34 usan `nxBuscaHTML`). Motivo real: la tabla YA está en pantalla; meter una ventana encima obliga a un clic extra, tapa lo que el usuario está mirando, y al elegir una fila la deja en el mismo sitio donde ya estaba. Son Clientes, Facturas, Cobros y Vender: lo que más se toca al día. |
+
+  **Lo que sí conviene traer del §5 a esos 24**, sin volverlos ventana: Recientes y Favoritos
+  (hoy no los tienen) y el mismo comportamiento de teclado. Se gana lo útil de la regla sin pagar
+  el clic extra.
+
+  > **Pendiente de que el dueño confirme** si acepta esta recomendación o prefiere mantener el
+  > cumplimiento literal. Mientras tanto, la Fase 3 **no se empieza** — es la de mayor riesgo y
+  > sería la más cara de deshacer.
+
 - **Plan en 3 fases, EN CURSO:**
   1. ✅ **HECHA en v49.36** — Recientes + Favoritos construidos en `ModalBusquedaBase` (el motor
      compartido). Bajo riesgo: no tocó ninguna pantalla existente, solo agregó capacidad. El único

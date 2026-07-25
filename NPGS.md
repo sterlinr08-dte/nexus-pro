@@ -27,6 +27,31 @@ experiencia de usuario y mantenga una calidad comparable con software de clase m
 > `CLAUDE.md` documente un hecho del sistema (una tabla, un bug ya resuelto, una decisión que el
 > dueño ya tomó), ese hecho no se inventa de nuevo.
 
+### Enmienda oficial del dueño — **NO ES QUIEN MANDA, ES LO QUE MÁS CONVIENE** (25-jul-2026)
+
+> *"No es quien manda por encima, sino lo que más conviene."* — el dueño
+
+Este documento **no es una autoridad ciega**. Se escribió para levantar la calidad del sistema, no
+para ganarle discusiones al sentido común. La regla real, con el mismo rango que el resto del
+documento:
+
+- **NPGS es el punto de partida, no el punto final.** Ante cualquier decisión de diseño se pesan
+  las tres cosas: (1) lo que dice NPGS, (2) lo que dicen las buenas prácticas del oficio (las
+  skills de diseño), y (3) **lo que de verdad le conviene al negocio y a quien usa el sistema
+  todos los días**. Gana lo que más conviene, no lo que esté escrito más arriba.
+- **Cuando cumplir NPGS al pie de la letra empeora el sistema, NO se cumple a ciegas.** Se para,
+  se le explica al dueño con el caso concreto y el costo real medido, y se propone lo que sí
+  conviene. Esa explicación no es opcional: la decisión final es del dueño, pero llega con la
+  recomendación puesta encima de la mesa, no con un "lo hice porque lo manda el estándar".
+- **Toda desviación queda escrita**, con su razón, en `DESIGN_SYSTEM.md`. Una excepción sin razón
+  documentada es simple desorden y sigue prohibida — lo que cambia es que ahora una excepción
+  **bien razonada es legítima**, no una falta.
+- **Lo que NO se relaja:** la consistencia visual entre pantallas (§12), no fingir funciones que
+  no existen, no duplicar (§6), y verificar de verdad antes de publicar. Eso siempre conviene.
+
+Esta enmienda reabre cualquier decisión que se haya tomado antes solo por "lo manda NPGS" —
+la primera en la lista es el §5 de buscadores (ver `DESIGN_SYSTEM.md` §6, C2).
+
 ---
 
 ## 1. FILOSOFÍA DEL SISTEMA
