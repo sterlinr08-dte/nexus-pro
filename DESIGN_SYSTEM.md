@@ -134,19 +134,35 @@ NPGS ordena en su regla de prioridad: *"Si alguna implementación contradice est
 detenerte, explicarlo y proponer una solución"*. Estos son los cuatro que existen de verdad.
 **Ninguno se resolvió por cuenta propia — esperan decisión del dueño.**
 
-### C1 — Un solo color vs. un color por app 🔴 el más grande
+### C1 — Un color por app ✅ **RESUELTO — decisión del dueño, 25-jul-2026**
 
-- **NPGS §12** exige que todo el ERP comparta *exactamente* tipografía, iconos, botones y colores;
-  "el usuario nunca debe sentir que cambió de sistema".
-- **Regla vigente del dueño** (13-jul-2026, ampliada 18-jul-2026, en `CLAUDE.md`): *"CADA PROYECTO
-  CON SU DISEÑO INDEPENDIENTE... nunca copiar/heredar el look de otro proyecto"*, con 8 colores ya
-  asignados y dos excepciones de tipografía negociadas caso por caso.
-- **Las dos son del dueño y se contradicen de frente.**
-- **Propuesta:** son dos cosas distintas que conviene separar. **Dentro de una misma app** manda
-  §12 — un solo lenguaje visual, sin excepciones (eso hoy NO se cumple: el POS mezcla `.nxPf` azul
-  con `.nxFP` morado en Cuotas). **Entre apps del hub** se conserva el acento propio, porque son
-  negocios distintos vendidos por separado y el color es lo que le dice al usuario en cuál está.
-  Requiere el sí del dueño.
+- **Era:** NPGS §12 exigía que TODO el ERP compartiera exactamente los mismos colores; la regla
+  vigente del dueño (13 y 18-jul-2026) decía lo contrario — *"cada proyecto con su diseño
+  independiente"*, con 8 acentos ya repartidos. Dos reglas suyas, contradictorias.
+- **Decisión: UN COLOR POR APP.** Enmienda oficial escrita en `NPGS.md` §12.
+  - **Entre apps** → cada una conserva su acento (POS azul, Financiamiento morado, Rifas índigo,
+    Consultorio teal…). Son negocios distintos; el color ubica al usuario.
+  - **Dentro de una app** → un solo acento, **sin excepciones**. Todo lo demás (tipografía,
+    iconos, botones, sombras, tablas, espaciados) sigue siendo idéntico en TODO el ERP.
+  - Las excepciones de color/tipografía negociadas antes de esa fecha quedan **derogadas**.
+
+#### Desviación real que deja abierta esta decisión (1 sola, medida)
+
+| Pantalla | Vive en | Acento que usa | Debería usar |
+|---|---|---|---|
+| **Cuotas** (`renderCuotas`, `parches.js:23978`) | Punto de Venta (**azul** `#2563eb`) | `.nxFP` **morado** + Plus Jakarta Sans | `.nxPf` **azul** |
+
+Es la única pantalla del sistema que rompe la regla nueva. Nació así en la v48.16 como excepción
+deliberada que el dueño aprobó tras 4 preguntas — pero la enmienda del 25-jul la deroga.
+
+Se verificó que los otros 3 sitios que cargan el CSS morado (`renderLista` y `abrirClienteForm`
+en `parches.js:13134`/`13472`) **sí son correctos**: pertenecen al módulo Financiamiento, cuya app
+ES morada.
+
+**Pendiente:** normalizar Cuotas a azul. Es un cambio de CSS acotado (el HTML, los ids y toda la
+lógica de cobro de cuota se quedan igual), pero toca una pantalla de dinero en producción, así
+que va con verificación Playwright y capturas antes/después. **Esperando el visto bueno del dueño
+por ser una reversión de algo que él mismo aprobó antes.**
 
 ### C2 — Buscadores: 47 sitios contra el estándar 🟠
 

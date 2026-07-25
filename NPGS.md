@@ -164,6 +164,24 @@ animaciones · tablas · buscadores · formularios · espaciados.
 
 **El usuario nunca debe sentir que cambió de sistema.**
 
+### Enmienda oficial del dueño — **UN COLOR POR APP** (25-jul-2026)
+
+Consultado el conflicto entre este §12 y la regla ya vigente de *"cada proyecto con su diseño
+independiente"*, **el dueño decidió: un color por app.** Queda así, y esta enmienda tiene el mismo
+rango que el resto del documento:
+
+- **ENTRE apps** (Punto de Venta, Financiamiento, Rifas, Consultorio, AGUAPRO, Clientes SaaS,
+  Panel del Dueño, NEXUS AI CONTENT): **cada una conserva su propio color de acento**. Son
+  negocios distintos que se venden por separado; el color es lo que le dice al usuario en cuál
+  está parado. La lista de colores asignados está en `DESIGN_SYSTEM.md` §1 — antes de darle color
+  a una app nueva hay que revisarla para no repetir uno.
+- **DENTRO de una app**: **un solo color de acento, sin excepciones.** Todo lo demás del §12
+  (tipografía, iconos, botones, sombras, bordes, animaciones, tablas, buscadores, formularios,
+  espaciados) es **idéntico en TODO el ERP** — eso no cambia y no admite excepción por app.
+- Las excepciones de color/tipografía negociadas antes de esta fecha **quedan derogadas**: si una
+  pantalla usa un acento distinto al de la app donde vive, se normaliza. Estado y desviaciones
+  pendientes en `DESIGN_SYSTEM.md` §6.
+
 ---
 
 ## 13. ESPACIOS
