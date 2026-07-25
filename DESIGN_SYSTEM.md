@@ -96,7 +96,7 @@ estados ya son uno solo**, forzados desde un bloque único en `index.html` (`htm
 |---|---|---|
 | `border-radius` | 0 · 7 · 8 · 9 · 11 · 12 · 14 px (**7 valores**) | **10 px** |
 | `font-weight` | 400 · 500 · 600 · 700 · 800 · 900 (**6 valores**) | **700** |
-| Tamaño de letra mínimo | 10 px (`.bsm`) | **12 px** (piso) |
+| Tamaño de letra mínimo | 10 px (`.bsm`) | **12 px** (piso) — costo medido abajo |
 | `:hover` | ausente en casi todas | `filter:brightness(.96)` |
 | `:active` | ausente | `filter:brightness(.92)` — **nunca `transform`** (bug del iPhone) |
 | `:disabled` | opacidad .4 / .45 / .5 / .55, o nada | **opacidad .5 + `cursor:not-allowed`** |
@@ -104,6 +104,13 @@ estados ya son uno solo**, forzados desde un bloque único en `index.html` (`htm
 | `transition` | `all .15s` o nada | propiedades explícitas, .15s |
 
 **El color NO se toca** — cada app conserva el suyo (enmienda "un color por app").
+
+**Costo real del piso de 12 px, medido en 5 anchos (320/360/390/430/480):** en 320, 360 y **390 px
+(el iPhone del dueño) no cuesta nada** — ninguna fila crece ni se desborda, porque a esos anchos
+las filas ya envolvían igual. A **430 px** una fila de 3 botones pasa a 2 líneas (+38 px) y a
+**480 px** también la de 5 filtros. Se probó un piso de 11 px: evita el caso de 480 pero no el de
+430, y apenas mejora la legibilidad. **Se eligió 12 px** — el beneficio cae justo donde el dueño
+usa el sistema, y el costo es una fila más alta en dos anchos, sin nada cortado ni desbordado.
 
 Excluidos a propósito (no son botones de acción): chips/pastillas de filtro, pestañas, filas del
 menú lateral, steppers +/−, `.nxFP-qbtn` (mosaico de acceso), y los botones circulares por diseño
