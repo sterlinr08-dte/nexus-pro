@@ -1,7 +1,12 @@
 {
-  "version": "49.42",
+  "version": "49.43",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.43",
+      "t": "ARREGLADO — Ahora el cliente SÍ puede leer el texto mientras graba el video",
+      "d": "Reportaste que al grabar el video no se podía leer lo que el cliente tiene que decir. Cierto: el bot\u00f3n abr\u00eda la c\u00e1mara normal del tel\u00e9fono, que tapa la pantalla completa \u2014 el texto quedaba detr\u00e1s, sin forma de verlo.\n\nAhora el video se graba DENTRO de la misma p\u00e1gina, con el texto encima del video (como un teleprompter de televisi\u00f3n). El cliente ve su cara arriba, el texto abajo, y lo lee mientras graba.\n\nTambi\u00e9n:\n\n\u2022 Se ve el reloj de cu\u00e1nto lleva grabando.\n\u2022 Se corta solo a los 3 minutos (para que no suba un video enorme).\n\u2022 Si el tel\u00e9fono no permite grabar as\u00ed, o el cliente no da permiso de c\u00e1mara, sale un bot\u00f3n 'Usar la c\u00e1mara del tel\u00e9fono' que funciona como antes \u2014 nunca se queda sin poder grabar."
+    },
     {
       "v": "49.42",
       "t": "ARREGLADO — Ahora SÍ se ve lo que corriges antes de mandar el link, y se quitó 'Total a devolver'",

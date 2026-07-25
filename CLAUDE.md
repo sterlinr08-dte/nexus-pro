@@ -2059,6 +2059,48 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — el cliente no podía LEER el guion mientras grababa el video (25-jul-2026, v49.43)
+El dueño: *"Al grabar el video, no se puede leer el texto de lo que el cliente va a decir en la
+grabación del video."*
+- **Causa raíz (obvia una vez vista, y es del diseño original de v49.40):** el botón "Grabar el
+  video" era un `<input type="file" accept="video/*" capture="user">` — eso abre la **app de cámara
+  nativa del teléfono, a pantalla completa**. El guion (`.guion`) se queda en la página, DETRÁS de
+  la cámara: el cliente lo lee antes, toca grabar, y ya no lo ve. Con un guion de 2-3 líneas con
+  montos exactos, es imposible repetirlo de memoria — la función servía a medias.
+- **Arreglo — grabar DENTRO de la misma página, con el guion encima (teleprónter):**
+  `window.__grabarVideo()` abre una capa a pantalla completa (`.rec`) con `getUserMedia`
+  (`facingMode:'user'` + audio) en un `<video autoplay muted playsinline>` de fondo, el **guion fijo
+  en la mitad de abajo** (`.recTxt`, 17px, fondo oscuro semitransparente, con scroll propio si es
+  largo), botón de grabar/detener estilo cámara (`.recBtn`, rojo → cuadro blanco) y reloj en vivo.
+  Graba con **`MediaRecorder`**, tope automático de **3 minutos**, y al detener manda el `Blob`
+  directo al mismo camino de subida de siempre.
+- **Refactor mínimo:** la subida se extrajo de `__videoFile(input)` a **`subirVideo(f, ext, mime)`**
+  (acepta un `File` o un `Blob` indistintamente) — la URL firmada, el `PUT` a Storage y el manejo de
+  error no cambiaron ni una línea de lógica. `__videoFile` quedó solo como el camino de respaldo.
+- **Respaldo real, no decorativo (nunca se queda sin poder grabar):** `puedeGrabar()` comprueba
+  `mediaDevices.getUserMedia` + `MediaRecorder` + que haya un `mimeType` soportado
+  (`mimeGrabacion()` prueba `video/mp4` primero — el único que acepta iOS Safari — y cae a `webm`).
+  Si algo falta, el botón abre la cámara nativa igual que antes. Si el cliente NIEGA el permiso de
+  cámara, la capa muestra un aviso claro + el botón **"Usar la cámara del teléfono"** (que también
+  está siempre visible abajo, por si prefiere ese camino). El subtítulo del botón cambia según el
+  caso — no promete el teleprónter en un teléfono que no lo soporta.
+- **La extensión y el tipo salen de la grabación REAL** (`extDeMime(mr.mimeType)`), no de un valor
+  fijo — la función Edge ya saneaba `ext`, así que no hizo falta tocarla. Cero cambios de esquema,
+  cero cambios en el Edge Function, cero cambios del lado admin.
+- **Verificado con Playwright contra el archivo REAL** `firma-prestamo.html` servido por HTTP local,
+  en un Chromium con cámara y micrófono falsos (`--use-fake-device-for-media-stream`): **20 pruebas
+  nuevas** — se abre la grabadora en vez de la cámara nativa, el guion está visible y DENTRO de la
+  pantalla (medido con `getBoundingClientRect`, no a ojo) tanto antes como **mientras graba**, la
+  cámara conecta y habilita el botón, grabar cambia el botón y arranca el reloj, al detener se sube
+  un video con **bytes reales** (102 KB en la prueba) por `PUT` con su tipo real, el botón queda en
+  "Video listo" con vista previa, y cerrar sin grabar no sube nada ni deja la cámara encendida — más
+  las **54 anteriores sin regresión** (el camino de la cámara nativa sigue igual). Capturas a 390px.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html`
+  pasan `new Function()`; `version.json` válido.
+- **Nota honesta:** el entorno no tiene salida a internet, así que se probó con cámara simulada y
+  backend simulado — falta que el dueño lo confirme grabando desde su iPhone real (Safari soporta
+  `MediaRecorder` desde iOS 14.3; en versiones anteriores cae solo al camino de siempre).
+
 ### Financiamiento — la declaración TAMBIÉN se corrige, y fuera "Total a devolver" (25-jul-2026, v49.42)
 El dueño mandó una captura de la página del cliente en su iPhone: *"Las correcciones que hago antes de
 generar el link no se reflejan cuando lo envío y debajo de cuota vamos a quitar donde dice total a
