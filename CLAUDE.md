@@ -4059,6 +4059,22 @@ resumen en vivo que NO existía.
   a 390px y 1280px sin desbordes, 0 errores de JS. `node --check parches.js` limpio; los 3 `<script>` de
   `index.html` pasan `new Function()`; `version.json` válido.
 
+### POS · Recursos Humanos / Nómina — rediseño visual (Tanda 2, cierre, 25-jul-2026, v49.24)
+`renderRRHH()` (pestañas Empleados y Nóminas del POS) reskineado al look premium `.nxPf` — mismo patrón
+que Historial/Kardex/Reportes (v49.05-06): salida envuelta en `.nxPf .nxRhWrap` + `nxPfEnsureCSS()`,
+KPIs `.nxCtaKpis`/`.nxCtaKpi` → `kpiPf()`/`.kpirow` (Empleados activos/Nómina mensual en `rhEmpleados`;
+Total bruto/Deducciones/Neto en `rhNominaDetalle`), y CSS scopeado a `.nxRhWrap` para las tablas
+(encabezado azul `--pf-blue-l`, filas theme-aware). **Cero cambios de cálculo** — nómina, deducciones de
+ley (SFS 3.04%/AFP 2.87%/ISR), recibos y contabilidad (`postAsientoNomina`) intactos; solo el "vestido".
+Verificado con 21 pruebas Playwright del código real (funciones `renderRRHH`/`rhEmpleados`/`rhNominas`/
+`rhNominaDetalle`/`kpiPf` extraídas + CSS real de `nxPfEnsureCSS`, con empleados/nóminas simulados): 2
+KPIs en Empleados, 3 en el detalle de nómina, 0 `.nxCtaKpi` viejos, tabla con 3 empleados / 2 líneas de
+nómina, neto 64,800 correcto, variables de tema oscuro aplican en `.nxPf`, sin desbordes en 390px ni
+1000px, 0 errores de consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+`new Function()`; `version.json` válido. **Con esta pieza cierra la Tanda 2** de la Fase 4 (Reparaciones,
+Kardex, Historial de ventas, Reportes, Recursos Humanos — todos en `.nxPf`). **Pendiente Tanda 3**
+(riesgo alto, dinero): Compras, Caja (arqueo), Ajustes (Contabilidad ya está en `.nxPf` desde v49.03).
+
 ### POS · Reparaciones — modal de diagnóstico (`nxRepVer`) rediseñado (23-jul-2026, v49.09)
 El dueño pidió darle "el mismo look" al modal de diagnóstico (la ventana que abre al tocar una
 reparación, donde se ve el equipo, se mueve el estado, se escribe diagnóstico/presupuesto y se

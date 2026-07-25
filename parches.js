@@ -18509,6 +18509,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxRepWrapK .nxMdRow{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
 .nxRepWrapK .nxMdNom{font-size:12.5px;font-weight:700;color:var(--pf-txt)}
 .nxRepWrapK .nxMdSub{font-size:10.5px;color:var(--pf-txt3)}
+.nxRhWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;white-space:nowrap}
+.nxRhWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
+.nxRhWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
+.nxRhWrap .tw table tbody td>div>div{color:var(--pf-txt3)}
 .nxPf .nxRepFlow{display:flex;gap:0;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
 .nxPf .nxRepFlowStep{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px;flex:0 0 auto;position:relative}
 .nxPf .nxRepFlowStep .dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--pf-bg);border:1.5px solid var(--pf-line);color:var(--pf-txt3);font-size:10.5px;font-weight:800}
@@ -22680,9 +22684,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   function empById(id) { return _empleados.find(x => String(x.id) === String(id)); }
 
   function renderRRHH() {
+    try { window.nxPfEnsureCSS(); } catch (e) {}
     const sub = (k, lbl, ic) => `<button type="button" class="nxFacSubTab${_rhTab === k ? ' on' : ''}" onclick="window.nxRhTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>`;
     const tabs = `<div class="nxFacSubTabs">${sub('empleados', 'Empleados', 'ti-id-badge-2')}${sub('nominas', 'Nóminas', 'ti-receipt-2')}</div>`;
-    return tabs + (_rhTab === 'nominas' ? rhNominas() : rhEmpleados());
+    return `<div class="nxPf nxRhWrap">` + tabs + (_rhTab === 'nominas' ? rhNominas() : rhEmpleados()) + `</div>`;
   }
 
   function rhEmpleados() {
@@ -22694,9 +22699,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <td style="text-align:center;font-size:10.5px;color:#475569">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin empleados. Toca "Nuevo empleado".</td></tr>';
-    return `<div class="nxCtaKpis" style="margin-bottom:12px">
-        <div class="nxCtaKpi"><div class="nxCtaKpiL">Empleados activos</div><div class="nxCtaKpiV" style="color:#6d28d9">${activos.length}</div></div>
-        <div class="nxCtaKpi"><div class="nxCtaKpiL">Nómina mensual (bruto)</div><div class="nxCtaKpiV" style="color:#7c3aed">${fmt(nomMensual)}</div></div>
+    return `<div class="kpirow" style="margin-bottom:12px">
+        ${kpiPf('Empleados activos', activos.length, 'var(--pf-purple)')}
+        ${kpiPf('Nómina mensual (bruto)', fmt(nomMensual), 'var(--pf-blue)')}
       </div>
       <div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxRhNuevoEmp()"><i class="ti ti-plus"></i> Nuevo empleado</button></div>
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Empleado</th><th style="text-align:right">Salario</th><th style="text-align:center">Pago</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
@@ -22733,10 +22738,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <span style="font-size:11px;color:#475569">${fechaDMY(n.fecha)}</span>
         ${n.estado !== 'anulada' ? `<button class="btn bsm bc3" style="margin-left:auto" type="button" onclick="window.nxRhAnularNomina('${n.id}')"><i class="ti ti-ban"></i> Anular</button>` : '<span style="margin-left:auto;font-size:11px;font-weight:800;color:#dc2626">ANULADA</span>'}
       </div>
-      <div class="nxCtaKpis" style="margin-bottom:12px">
-        <div class="nxCtaKpi"><div class="nxCtaKpiL">Total bruto</div><div class="nxCtaKpiV" style="color:#6d28d9">${fmt(n.total_bruto)}</div></div>
-        <div class="nxCtaKpi"><div class="nxCtaKpiL">Deducciones</div><div class="nxCtaKpiV" style="color:#dc2626">${fmt(n.total_deducciones)}</div></div>
-        <div class="nxCtaKpi"><div class="nxCtaKpiL">Neto a pagar</div><div class="nxCtaKpiV" style="color:#16a34a">${fmt(n.total_neto)}</div></div>
+      <div class="kpirow" style="margin-bottom:12px">
+        ${kpiPf('Total bruto', fmt(n.total_bruto), 'var(--pf-purple)')}
+        ${kpiPf('Deducciones', fmt(n.total_deducciones), 'var(--pf-red)')}
+        ${kpiPf('Neto a pagar', fmt(n.total_neto), 'var(--pf-green)')}
       </div>
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Empleado</th><th style="text-align:right">Bruto</th><th style="text-align:right">Bonos</th><th style="text-align:right">Deducc.</th><th style="text-align:right">Neto</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
