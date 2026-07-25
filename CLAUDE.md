@@ -5956,6 +5956,13 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
     la lista de colores ya asignados — Deluxe dorado, Amatista dorado/morado, BayolCell su propio,
     POS azul, Rifas índigo, Consultorio teal, AGUAPRO azul marino, etc.) para no generar confusión
     entre sistemas.
+    - **CONFIRMADO Y ACOTADO por el dueño el 25-jul-2026 ("un color por app")** al resolver el
+      choque entre esta regla y el §12 de `NPGS.md`: la independencia visual entre apps **se
+      mantiene** (cada una su acento), pero **DENTRO de una app va un solo acento, sin
+      excepciones**, y todo lo demás (tipografía, iconos, botones, sombras, tablas, espaciados) es
+      idéntico en TODO el ERP. Las excepciones de color/tipografía negociadas antes de esa fecha
+      **quedan derogadas** — incluida la de Cuotas del POS (morado + Plus Jakarta Sans, v48.16),
+      que es la única desviación real que queda por normalizar (ver `DESIGN_SYSTEM.md` §6, C1).
 12. **EL DUEÑO NO ESCRIBE COMANDOS (decretado 25-jul-2026).** No habla inglés y no va a invocar
     skills por su nombre (`/gstack-investigate`, etc.). **Reconocer el caso y cargar la skill
     correcta es responsabilidad de Claude, no suya** — ver la sección "ENRUTAMIENTO AUTOMÁTICO DE
