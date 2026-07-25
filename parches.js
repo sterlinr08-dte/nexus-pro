@@ -18509,9 +18509,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxRepWrapK .nxMdRow{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
 .nxRepWrapK .nxMdNom{font-size:12.5px;font-weight:700;color:var(--pf-txt)}
 .nxRepWrapK .nxMdSub{font-size:10.5px;color:var(--pf-txt3)}
-.nxRhWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;white-space:nowrap}
-.nxRhWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
-.nxRhWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
+.nxRhWrap .tw table thead th,.nxCompWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;white-space:nowrap}
+.nxRhWrap .tw table tbody td,.nxCompWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
+.nxRhWrap .tw table tbody tr:hover td,.nxCompWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
 .nxRhWrap .tw table tbody td>div>div{color:var(--pf-txt3)}
 .nxPf .nxRepFlow{display:flex;gap:0;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
 .nxPf .nxRepFlowStep{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px;flex:0 0 auto;position:relative}
@@ -20786,18 +20786,21 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 
   // ── TAB: COMPRAS / PROVEEDORES ──
   function renderCompras() {
+    try { window.nxPfEnsureCSS(); } catch (e) {}
     const totalCxP = _proveedores.reduce((s, p) => s + saldoProv(p), 0);
-    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer"><td style="font-size:10px">#${c.numero || ''}<div style="color:#475569">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:#dc2626">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin compras registradas</td></tr>';
-    return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
-        ${kpi('Proveedores', _proveedores.length, '#6d28d9')}
-        ${kpi('Por pagar (CxP)', fmt(totalCxP), totalCxP > 0 ? '#dc2626' : '#16a34a')}
-        ${kpi('Compras', _compras.length, '#0f172a')}
+    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer"><td style="font-size:10px">#${c.numero || ''}<div style="color:var(--pf-txt3)">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:var(--pf-red)">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--pf-txt3);font-size:12px">Sin compras registradas</td></tr>';
+    return `<div class="nxPf nxCompWrap">
+      <div class="kpirow" style="margin-bottom:10px">
+        ${kpiPf('Proveedores', _proveedores.length, 'var(--pf-purple)')}
+        ${kpiPf('Por pagar (CxP)', fmt(totalCxP), totalCxP > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
+        ${kpiPf('Compras', _compras.length, 'var(--pf-txt)')}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosProveedores()"><i class="ti ti-building-warehouse"></i> Proveedores</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevaCompra()"><i class="ti ti-plus"></i> Nueva compra</button>
       </div>
-      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Proveedor</th><th>Tipo</th><th style="text-align:right">Total</th></tr></thead><tbody>${comprasHTML}</tbody></table></div>`;
+      <div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>No.</th><th>Proveedor</th><th>Tipo</th><th style="text-align:right">Total</th></tr></thead><tbody>${comprasHTML}</tbody></table></div>
+    </div>`;
   }
 
   // Nueva compra
