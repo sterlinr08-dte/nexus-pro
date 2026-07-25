@@ -18303,40 +18303,38 @@
   window.nxFacFacturar = function () { if (!_cart.length) return; window.nxPosCobrar(); };
 
   // ── TAB: AJUSTES (prefijos del número de factura) ──
+  // Encabezado de cada tarjeta de Ajustes (mismo patrón .card/h4 del resto del POS).
+  function ajCard(ico, color, titulo, desc) {
+    return `<div class="card"><h4><i class="ti ${ico}" style="color:var(--pf-${color})"></i> ${titulo}</h4>${desc ? `<div class="ajd">${desc}</div>` : ''}`;
+  }
   function renderAjustes() {
-    return `<div style="max-width:580px">
-        <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-receipt"></i> Numeración de facturas</div>
-        <div style="font-size:12px;color:#475569;margin-bottom:16px;line-height:1.5">Define el prefijo del número de factura según el tipo de venta. El consecutivo es automático por empresa.<br>Ejemplo: contado <b style="color:#6d28d9">${esc(_posCfg.prefijo_contado)}000001</b> · crédito <b style="color:#6d28d9">${esc(_posCfg.prefijo_credito)}000001</b>.</div>
-        <div class="fr-row">
-          <div class="fr"><label>Prefijo CONTADO</label><input id="cfgPrefCo" value="${esc(_posCfg.prefijo_contado)}" maxlength="6" placeholder="CO" style="text-transform:uppercase"></div>
-          <div class="fr"><label>Prefijo CRÉDITO</label><input id="cfgPrefCr" value="${esc(_posCfg.prefijo_credito)}" maxlength="6" placeholder="CR" style="text-transform:uppercase"></div>
+    if (typeof window.nxPfEnsureCSS === 'function') window.nxPfEnsureCSS();
+    return `<div class="nxPf nxAjWrap">
+        ${ajCard('ti-receipt', 'blue', 'Numeración de facturas', `Define el prefijo del número de factura según el tipo de venta. El consecutivo es automático por empresa.<br>Ejemplo: contado <b style="color:var(--pf-blue)">${esc(_posCfg.prefijo_contado)}000001</b> · crédito <b style="color:var(--pf-blue)">${esc(_posCfg.prefijo_credito)}000001</b>.`)}
+          <div class="g2">
+            <div class="fld"><label>Prefijo CONTADO</label><div class="inw"><i class="ti ti-cash"></i><input id="cfgPrefCo" value="${esc(_posCfg.prefijo_contado)}" maxlength="6" placeholder="CO" style="text-transform:uppercase"></div></div>
+            <div class="fld"><label>Prefijo CRÉDITO</label><div class="inw"><i class="ti ti-credit-card"></i><input id="cfgPrefCr" value="${esc(_posCfg.prefijo_credito)}" maxlength="6" placeholder="CR" style="text-transform:uppercase"></div></div>
+          </div>
+          <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
         </div>
-        <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
-        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
-        <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-percentage"></i> Recargo por mora (Cuotas)</div>
-        <div style="font-size:12px;color:#475569;margin-bottom:16px;line-height:1.5">Recargo que se le suma UNA vez a una cuota vencida (no se acumula por día). Déjalo en 0% para no cobrar mora.${_posCfg.mora_pct > 0 ? `<br>Hoy: <b style="color:#dc2626">${_posCfg.mora_pct}%</b> sobre la cuota, después de <b>${_posCfg.mora_dias_gracia}</b> día(s) de gracia.` : '<br><b style="color:#94a3b8">Mora desactivada</b> — no se le cobra recargo a nadie.'}</div>
-        <div class="fr-row">
-          <div class="fr"><label>% de mora</label><input id="cfgMoraPct" inputmode="decimal" value="${_posCfg.mora_pct}" placeholder="0"></div>
-          <div class="fr"><label>Días de gracia</label><input id="cfgMoraDias" inputmode="numeric" value="${_posCfg.mora_dias_gracia}" placeholder="0"></div>
+        ${ajCard('ti-percentage', 'orange', 'Recargo por mora (Cuotas)', `Recargo que se le suma UNA vez a una cuota vencida (no se acumula por día). Déjalo en 0% para no cobrar mora.${_posCfg.mora_pct > 0 ? `<br>Hoy: <b style="color:var(--pf-red)">${_posCfg.mora_pct}%</b> sobre la cuota, después de <b>${_posCfg.mora_dias_gracia}</b> día(s) de gracia.` : '<br><b style="color:var(--pf-txt3)">Mora desactivada</b> — no se le cobra recargo a nadie.'}`)}
+          <div class="g2">
+            <div class="fld"><label>% de mora</label><div class="inw"><i class="ti ti-percentage"></i><input id="cfgMoraPct" inputmode="decimal" value="${_posCfg.mora_pct}" placeholder="0"></div></div>
+            <div class="fld"><label>Días de gracia</label><div class="inw"><i class="ti ti-calendar-clock"></i><input id="cfgMoraDias" inputmode="numeric" value="${_posCfg.mora_dias_gracia}" placeholder="0"></div></div>
+          </div>
+          <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
         </div>
-        <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
-        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
-        <div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-shield-check"></i> Garantía de reparación</div>
-        <div style="font-size:12px;color:#475569;margin-bottom:16px;line-height:1.5">Días de garantía que se le da al cliente sobre el trabajo de reparación (no sobre el equipo en sí). Se calcula sola desde la fecha de entrega. Déjalo en 0 para no ofrecer garantía.${_posCfg.garantia_rep_dias > 0 ? `<br>Hoy: <b style="color:#16a34a">${_posCfg.garantia_rep_dias} día(s)</b> desde que se entrega el equipo.` : '<br><b style="color:#94a3b8">Garantía desactivada</b> — no se le promete garantía a nadie.'}</div>
-        <div class="fr"><label>Días de garantía</label><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div>
-        <button class="btn bc1" type="button" style="margin-top:8px" onclick="window.nxPosGuardarGarantiaRep()"><i class="ti ti-device-floppy"></i> Guardar garantía</button>
-        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
+        ${ajCard('ti-shield-check', 'green', 'Garantía de reparación', `Días de garantía que se le da al cliente sobre el trabajo de reparación (no sobre el equipo en sí). Se calcula sola desde la fecha de entrega. Déjalo en 0 para no ofrecer garantía.${_posCfg.garantia_rep_dias > 0 ? `<br>Hoy: <b style="color:var(--pf-green)">${_posCfg.garantia_rep_dias} día(s)</b> desde que se entrega el equipo.` : '<br><b style="color:var(--pf-txt3)">Garantía desactivada</b> — no se le promete garantía a nadie.'}`)}
+          <div class="fld"><label>Días de garantía</label><div class="inw"><i class="ti ti-calendar-check"></i><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div></div>
+          <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarGarantiaRep()"><i class="ti ti-device-floppy"></i> Guardar garantía</button>
+        </div>
         ${ajustesSecuencias()}
-        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesRoles()}
-        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesNCF()}
-        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
         ${ajustesVendedores()}
-        <div style="border-top:1px solid #eef2f7;margin:22px 0 16px"></div>
-        <div style="font-size:14px;font-weight:800;color:#dc2626;margin-bottom:4px"><i class="ti ti-trash"></i> Zona de peligro</div>
-        <div style="font-size:12px;color:#475569;margin-bottom:10px;line-height:1.5">Borra las VENTAS, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de PRUEBA de esta empresa. Los productos, clientes, proveedores y ajustes NO se tocan. Úsalo antes de empezar a trabajar de verdad.</div>
-        <button class="btn bsm bc3" type="button" onclick="window.nxLimpiarPruebas()"><i class="ti ti-trash"></i> Borrar datos de prueba</button>
+        ${ajCard('ti-alert-triangle', 'red', 'Zona de peligro', 'Borra las VENTAS, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de PRUEBA de esta empresa. Los productos, clientes, proveedores y ajustes NO se tocan. Úsalo antes de empezar a trabajar de verdad.')}
+          <button class="ab g4 sm" type="button" onclick="window.nxLimpiarPruebas()"><i class="ti ti-trash"></i> Borrar datos de prueba</button>
+        </div>
       </div>`;
   }
   // ── Limpieza de datos de PRUEBA (solo transaccional; catálogos intactos) ──
@@ -18359,22 +18357,20 @@
   function secEjemplo(s) { return (s.prefijo || '') + String(s.proximo || 1).padStart(Number(s.longitud || 5), '0'); }
   function ajustesSecuencias() {
     if (!_secuencias.length) {
-      return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-list-numbers"></i> Secuencias de documentos</div>
-        <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Numeración automática y centralizada de tus documentos (cotizaciones, notas de crédito, transferencias, nóminas, recibos, pagos, asientos, oportunidades). Crea las secuencias base y cada documento tomará su número de aquí.</div>
-        <button class="btn bsm bc1" type="button" onclick="window.nxSecInit()"><i class="ti ti-sparkles"></i> Crear secuencias base</button>`;
+      return ajCard('ti-list-numbers', 'purple', 'Secuencias de documentos', 'Numeración automática y centralizada de tus documentos (cotizaciones, notas de crédito, transferencias, nóminas, recibos, pagos, asientos, oportunidades). Crea las secuencias base y cada documento tomará su número de aquí.') +
+        `<button class="ab g2 sm" type="button" onclick="window.nxSecInit()"><i class="ti ti-sparkles"></i> Crear secuencias base</button></div>`;
     }
     const filas = _secuencias.map(s => `<tr>
         <td><b>${esc(s.nombre || s.tipo)}</b></td>
-        <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px;color:#6d28d9">${esc(secEjemplo(s))}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" title="Historial" onclick="window.nxSecHistorial('${s.id}')"><i class="ti ti-history"></i></button> <button class="btn bsm bc1" onclick="window.nxSecEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
+        <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px;color:var(--pf-purple)">${esc(secEjemplo(s))}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" title="Historial" aria-label="Historial" onclick="window.nxSecHistorial('${s.id}')"><i class="ti ti-history"></i></button> <button class="btn bsm bc1" title="Editar" aria-label="Editar" onclick="window.nxSecEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
-    return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-list-numbers"></i> Secuencias de documentos</div>
-      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">El prefijo y el próximo número de cada documento. Cada uno toma su número de aquí (lógica sincronizada).</div>
-      <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Documento</th><th style="text-align:center">Próximo</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
-        <button class="btn bsm bghost" type="button" onclick="window.nxSecNueva()"><i class="ti ti-plus"></i> Nueva secuencia</button>
-        <button class="btn bsm bc1" type="button" onclick="window.nxSecHistTodos()"><i class="ti ti-search"></i> Ver todos los historiales</button>
-      </div>`;
+    return ajCard('ti-list-numbers', 'purple', 'Secuencias de documentos', 'El prefijo y el próximo número de cada documento. Cada uno toma su número de aquí (lógica sincronizada).') +
+      `<div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Documento</th><th style="text-align:center">Próximo</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <div class="ajbtns">
+        <button class="ab g3 sm" type="button" onclick="window.nxSecNueva()"><i class="ti ti-plus"></i> Nueva secuencia</button>
+        <button class="ab g2 sm" type="button" onclick="window.nxSecHistTodos()"><i class="ti ti-search"></i> Ver todos los historiales</button>
+      </div></div>`;
   }
   window.nxSecHistTodos = async function () {
     cerrarModal('nxSecHistAll');
@@ -18521,19 +18517,20 @@
   }
   function ajustesRoles() {
     const lista = rolesLista();
-    const verComo = `<div style="margin-top:10px"><label style="font-size:11px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Probar: ver el sistema como…</label><select onchange="window.nxRolPreview(this.value)" style="height:36px;border:1.5px solid #e2e8f0;border-radius:9px;padding:0 10px;font-size:12.5px;font-weight:700;color:#334155;background:#fff;font-family:inherit"><option value="">— Yo (Dueño, todo) —</option>${lista.map(r => `<option value="${r.rol}"${_rolPreview === r.rol ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select></div>`;
+    const verComo = `<div class="fld" style="margin-top:12px"><label>Probar: ver el sistema como…</label><div class="inw"><i class="ti ti-eye"></i><select onchange="window.nxRolPreview(this.value)"><option value="">— Yo (Dueño, todo) —</option>${lista.map(r => `<option value="${r.rol}"${_rolPreview === r.rol ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>`;
     const filas = lista.map(r => `<tr>
         <td><b>${esc(r.label)}</b>${r.preset ? '' : ' <span class="nxEntRol">propio</span>'}</td>
-        <td style="text-align:center;color:#475569;font-size:11px">${r.modulos.length} módulo(s)</td>
-        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxAccesoEdit('${r.rol}')"><i class="ti ti-edit"></i></button></td>
+        <td style="text-align:center;font-size:11px">${r.modulos.length} módulo(s)</td>
+        <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar rol" onclick="window.nxAccesoEdit('${r.rol}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
-    return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-shield-lock"></i> Roles y accesos</div>
-      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Qué módulos ve cada rol. <b>El Dueño siempre ve todo.</b> Puedes crear los roles que quieras. (El ingreso de cada empleado con su clave se activa en el paso supervisado.)</div>
-      ${!_acceso.length ? `<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxAccesoInit()"><i class="ti ti-sparkles"></i> Crear roles base</button> ` : ''}
+    return ajCard('ti-shield-lock', 'blue', 'Roles y accesos', 'Qué módulos ve cada rol. <b>El Dueño siempre ve todo.</b> Puedes crear los roles que quieras. (El ingreso de cada empleado con su clave se activa en el paso supervisado.)') +
+      `${!_acceso.length ? `<button class="ab g2 sm" type="button" style="margin-bottom:10px" onclick="window.nxAccesoInit()"><i class="ti ti-sparkles"></i> Crear roles base</button>` : ''}
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Rol</th><th style="text-align:center">Acceso</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <button class="btn bsm bghost" type="button" style="margin-top:10px" onclick="window.nxRolNuevo()"><i class="ti ti-plus"></i> Nuevo rol</button>
-      <button class="btn bsm bc1" type="button" style="margin-top:10px" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Crear usuario de staff</button>
-      ${verComo}`;
+      <div class="ajbtns">
+        <button class="ab g3 sm" type="button" onclick="window.nxRolNuevo()"><i class="ti ti-plus"></i> Nuevo rol</button>
+        <button class="ab g2 sm" type="button" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Crear usuario de staff</button>
+      </div>
+      ${verComo}</div>`;
   }
   window.nxAccesoInit = async function () {
     try {
@@ -18607,14 +18604,13 @@
   function ajustesVendedores() {
     const filas = _vendedores.length ? _vendedores.map(v => `<tr>
         <td style="font-weight:700">${esc(v.nombre)}</td>
-        <td style="text-align:center;color:#475569">${esc(v.telefono || '')}</td>
-        <td style="text-align:right;font-weight:700;color:#6d28d9">${Number(v.comision_pct || 0)}%</td>
-        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxVendEdit('${v.id}')"><i class="ti ti-edit"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#475569;font-size:12px">Sin vendedores. Agrega uno para asignar ventas y calcular comisiones.</td></tr>';
-    return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-user-dollar"></i> Vendedores y comisiones</div>
-      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Registra a tus vendedores con su % de comisión. Al cobrar podrás elegir el vendedor; en Reportes ves la comisión de cada uno.</div>
-      <div class="tw" style="font-size:12px;margin-bottom:10px"><table style="width:100%"><thead><tr><th>Nombre</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <button class="btn bsm bc1" type="button" onclick="window.nxVendNuevo()"><i class="ti ti-plus"></i> Agregar vendedor</button>`;
+        <td style="text-align:center">${esc(v.telefono || '')}</td>
+        <td style="text-align:right;font-weight:700;color:var(--pf-green)">${Number(v.comision_pct || 0)}%</td>
+        <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar vendedor" onclick="window.nxVendEdit('${v.id}')"><i class="ti ti-edit"></i></button></td>
+      </tr>`).join('') : '<tr><td colspan="4" class="emptyrow">Sin vendedores. Agrega uno para asignar ventas y calcular comisiones.</td></tr>';
+    return ajCard('ti-user-dollar', 'green', 'Vendedores y comisiones', 'Registra a tus vendedores con su % de comisión. Al cobrar podrás elegir el vendedor; en Reportes ves la comisión de cada uno.') +
+      `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Nombre</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <button class="ab g2 sm" type="button" onclick="window.nxVendNuevo()"><i class="ti ti-plus"></i> Agregar vendedor</button></div>`;
   }
   window.nxVendNuevo = function () { abrirVend(null); };
   window.nxVendEdit = function (id) { const v = _vendedores.find(x => String(x.id) === String(id)); if (!v) return; if (v._entidad) { const ent = _clientes.find(c => String(c.id) === String(id)); if (ent) { abrirEntidad(ent, null); return; } } abrirVend(v); };
@@ -18661,16 +18657,15 @@
       const restante = Math.max(0, Number(s.hasta || 0) - Number(s.actual || 0) + 1);
       const bajo = restante <= 10;
       return `<tr${s.activo === false ? ' style="opacity:.5"' : ''}>
-        <td><b>${esc(s.tipo)}</b> <span style="font-size:10px;color:#475569">${esc(s.descripcion || NCF_DESC[s.tipo] || '')}</span></td>
+        <td><b>${esc(s.tipo)}</b> <span style="font-size:10px;color:var(--pf-txt3)">${esc(s.descripcion || NCF_DESC[s.tipo] || '')}</span></td>
         <td style="text-align:center;font-family:var(--mono,monospace);font-size:11px">${esc(s.prefijo)}${String(s.actual).padStart(8, '0')}</td>
-        <td style="text-align:right;color:${bajo ? '#dc2626' : '#475569'};font-weight:${bajo ? '800' : '400'}">${restante}${bajo ? ' ⚠' : ''}</td>
-        <td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxNcfEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
+        <td style="text-align:right;color:${bajo ? 'var(--pf-red)' : 'var(--pf-txt2)'};font-weight:${bajo ? '800' : '400'}">${restante}${bajo ? ' ⚠' : ''}</td>
+        <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar secuencia NCF" onclick="window.nxNcfEdit('${s.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:16px;color:#475569;font-size:12px">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
-    return `<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:4px"><i class="ti ti-file-certificate"></i> Comprobantes Fiscales (NCF)</div>
-      <div style="font-size:12px;color:#475569;margin-bottom:12px;line-height:1.5">Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.</div>
-      <div class="tw" style="font-size:12px;margin-bottom:10px"><table style="width:100%"><thead><tr><th>Tipo</th><th style="text-align:center">Próximo NCF</th><th style="text-align:right">Restan</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
-      <button class="btn bsm bc1" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button>`;
+    }).join('') : '<tr><td colspan="4" class="emptyrow">Sin secuencias NCF. Agrega una para emitir comprobantes fiscales.</td></tr>';
+    return ajCard('ti-file-certificate', 'purple', 'Comprobantes Fiscales (NCF)', 'Carga tus secuencias autorizadas por la DGII. Al facturar con un tipo de comprobante, el NCF se asigna y avanza solo. Te avisa cuando quedan pocos.') +
+      `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Tipo</th><th style="text-align:center">Próximo NCF</th><th style="text-align:right">Restan</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <button class="ab g2 sm" type="button" onclick="window.nxNcfNuevo()"><i class="ti ti-plus"></i> Agregar secuencia NCF</button></div>`;
   }
   window.nxNcfNuevo = function () { abrirNcf(null); };
   window.nxNcfEdit = function (id) { const s = _ncfSecs.find(x => String(x.id) === String(id)); if (s) abrirNcf(s); };
@@ -19400,6 +19395,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxRhWrap .tw table tbody td,.nxCompWrap .tw table tbody td,.nxCajaWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
 .nxRhWrap .tw table tbody tr:hover td,.nxCompWrap .tw table tbody tr:hover td,.nxCajaWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
 .nxRhWrap .tw table tbody td>div>div{color:var(--pf-txt3)}
+.nxAjWrap{max-height:none;gap:14px;max-width:660px}
+.nxAjWrap .ajd{font-size:11.5px;color:var(--pf-txt2);line-height:1.55;margin:-4px 0 12px}
+.nxAjWrap .ajbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.nxAjWrap .ajbtns .ab{flex:1 1 auto}
+.nxAjWrap .tw{min-width:0;overflow-x:auto}
+.nxAjWrap .tw table thead th{background:var(--pf-blue-l);color:var(--pf-txt2);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;white-space:nowrap}
+.nxAjWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
+.nxAjWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
+.nxAjWrap .tw table tbody td b{color:var(--pf-txt)}
 .nxCajaWrap .cajaCard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;padding:14px 16px;box-shadow:var(--pf-shadow)}
 .nxCajaWrap .cajaEsp{background:var(--pf-green-l);border:1px solid var(--pf-green);border-radius:12px;padding:10px 14px;color:var(--pf-green)}
 .nxPf .nxRepFlow{display:flex;gap:0;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}

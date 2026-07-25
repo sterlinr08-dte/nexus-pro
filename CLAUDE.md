@@ -5083,8 +5083,36 @@ intactos; solo el "vestido". Verificado con 20 pruebas Playwright del código re
 extraídos + CSS real de `nxPfEnsureCSS`, con caja abierta simulada + cierres): ambos estados con wrapper
 correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro verde, 2 filas de cierres,
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
-`<script>` de `index.html` pasan `new Function()`; `version.json` válido. **Pendiente Tanda 3 (último):**
-Ajustes.
+`<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Ajustes — rediseño visual (Tanda 3, pieza 3, CIERRA LA FASE 4, 25-jul-2026, v49.51)
+`renderAjustes()` (la última pantalla del POS que quedaba con el diseño viejo) reskineada al look
+premium `.nxPf` — mismo patrón que Caja/Compras/RRHH: salida envuelta en `.nxPf .nxAjWrap` +
+`nxPfEnsureCSS()`. Las 8 secciones (Numeración de facturas · Recargo por mora · Garantía de
+reparación · Secuencias de documentos · Roles y accesos · NCF · Vendedores y comisiones · Zona de
+peligro) pasaron de una sola columna con separadores `border-top` a **8 tarjetas `.card` con su
+`h4` + icono de color** (helper nuevo `ajCard(ico,color,titulo,desc)`, patrón `.card/h4` ya usado
+en Contabilidad/Financiamiento). Los campos `.fr`/`.fr-row` viejos pasaron a `.g2`/`.fld`/`.inw`
+(los del formulario de artículo) y los botones a `.ab g2/g3/g4 sm`. CSS nuevo scopeado a
+`.nxAjWrap` (encabezados de tabla azules, filas theme-aware, `max-width:660px`, `ajd`/`ajbtns`) —
+en modo oscuro ya no quedan recuadros ni campos blancos (antes tenían `#fff`/`#1e293b`/`#475569`
+hardcodeados). **Cero cambios de lógica:** los 5 ids de campo (`cfgPrefCo`/`cfgPrefCr`/`cfgMoraPct`/
+`cfgMoraDias`/`cfgGarantiaRepDias`) y los 16 `onclick`/`onchange` (`nxPosGuardarCfg`/`nxPosGuardarMora`/
+`nxPosGuardarGarantiaRep`/`nxSecNueva`/`nxSecHistTodos`/`nxSecEdit`/`nxSecHistorial`/`nxRolNuevo`/
+`nxStaffNuevo`/`nxAccesoEdit`/`nxRolPreview`/`nxNcfNuevo`/`nxNcfEdit`/`nxVendNuevo`/`nxVendEdit`/
+`nxLimpiarPruebas`) quedaron idénticos; solo se agregaron `aria-label` a los botones de solo-ícono
+de las tablas. Verificado con 39 pruebas Playwright del código real (`renderAjustes`/`ajCard`/
+`ajustesSecuencias`/`ajustesRoles`/`ajustesNCF`/`ajustesVendedores`/`rolesLista` extraídos por
+contenido + CSS real de `nxPfEnsureCSS`, con datos simulados): 8 tarjetas con los títulos
+correctos, los 5 campos con su valor real, los 16 handlers enganchados, secuencias/NCF/vendedores/
+roles mostrando sus datos reales, sin desbordes en 390px ni 1280px, 0 errores de consola, y en
+modo oscuro tarjetas/campos/encabezados oscuros (medido con `getComputedStyle`, no a ojo).
+`node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+`version.json` válido. **Con esta pieza cierra la Tanda 3 y la Fase 4 completa** — los ~17 módulos
+internos del POS están todos en `.nxPf`.
+- **Nota del harness (repetida a propósito):** el bloque extraído YA declara `const NCF_DESC` — no
+  hay que volver a declararlo en los stubs o el `<script>` entero muere con
+  "Identifier already declared" y la página queda en blanco (pasó al construir esta prueba).
 
 ### POS · Recursos Humanos / Nómina — rediseño visual (Tanda 2, cierre, 25-jul-2026, v49.24)
 `renderRRHH()` (pestañas Empleados y Nóminas del POS) reskineado al look premium `.nxPf` — mismo patrón
