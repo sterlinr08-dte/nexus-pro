@@ -2059,6 +2059,37 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### `swalConfirm` decía "ELIMINAR" en rojo al APROBAR un préstamo — arreglado de raíz (25-jul-2026, v49.46)
+El dueño mandó una captura: el aviso preguntaba *"¿Aprobar y crear el préstamo?"* y el botón de
+confirmar decía **ELIMINAR**, en rojo. Da miedo tocarlo, y con razón.
+- **Causa raíz:** `swalConfirm(icon,title,msg)` (`index.html`, ~línea 8926) nació SOLO para borrar y
+  traía el botón `Eliminar` + `background:#ef4444` **escrito a fuego en el HTML**. Después se reusó
+  para otras acciones (aprobar solicitud) y el botón se quedó igual. No era un descuido de esa
+  pantalla — era una trampa del helper compartido: **cualquier uso futuro que no fuera borrar iba a
+  repetir el mismo error**.
+- **Arreglo — se cambió el DEFAULT, no solo el caso reportado:** la función ganó un 4to parámetro
+  `opts` (`{ok, color}`). Clave: el default pasó a ser **neutro** (`'Confirmar'`, azul `#2563eb`), no
+  "Eliminar" rojo — así, si algún día alguien agrega un aviso nuevo y olvida el texto, sale algo
+  inofensivo en vez de un botón de borrado. Para borrar hay que **pedirlo explícitamente**.
+- **Los 6 usos del sistema, revisados uno por uno** (son solo 6, se auditaron todos, no solo el
+  reportado): 5 son de borrado y pasan `{ok:'Eliminar',color:'#ef4444'}` — quedan idénticos a como se
+  veían (constante `SWAL_BORRAR` en `index.html` para los 2 del núcleo; literal en los 3 de
+  `parches.js`, siguiendo el patrón de IIFE autocontenido del archivo). El 6to, aprobar la solicitud
+  de préstamo (`nxPrSolicitudAprobar`), pasa `{ok:'Aprobar',color:'#16a34a'}` — **verde**, coherente
+  con su ✅ y con lo que de verdad hace.
+- El texto del botón se pasa por `escHtml()` (antes era literal fijo; ahora es configurable).
+- Verificado con Playwright cargando el **código real de `swalConfirm` extraído de `index.html`** (no
+  reconstruido): 10 comprobaciones — aprobar muestra "Aprobar" verde (`rgb(22,163,74)`) y NO dice
+  "Eliminar", borrar sigue en "Eliminar" rojo (`rgb(239,68,68)`), sin opciones sale "Confirmar" azul,
+  y confirmar/cancelar devuelven `true`/`false` correctamente. `node --check parches.js` limpio; los
+  3 `<script>` de `index.html` y el de `firma-prestamo.html` pasan `new Function()`.
+- **Confirmado de paso, con datos reales:** la solicitud de firma por link **funcionó de punta a
+  punta**. En `prestamo_solicitudes` hay una fila en estado `enviada` con cédula frente/dorso, selfie
+  y firma, y en Storage está el video (`documentos/prestamo-solicitudes/<id>/compromiso.mp4`, 3.83 MB,
+  `video/mp4; codecs=avc1…` = grabado desde iPhone) subido a las **15:23 RD, después del arreglo de la
+  v49.44**. O sea: la grabadora en página, la subida firmada y el flujo completo quedaron verificados
+  en producción, no solo en pruebas.
+
 ### Financiamiento — el teléfono del cliente se quedaba con la página VIEJA del link (25-jul-2026, v49.45)
 El dueño mandó 2 capturas del mismo error del video ("No se pudo subir el video…"). **Detalle que
 delató lo que pasaba:** el aviso salía SIN el motivo real debajo — justo la línea que se había

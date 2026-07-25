@@ -13454,7 +13454,7 @@
     }
     try {
       const ok = (typeof window.swalConfirm === 'function')
-        ? await window.swalConfirm('🗑️', '¿Eliminar este cliente?', esc(c.nombre || '') + ' — no tiene préstamos registrados. No se puede deshacer.')
+        ? await window.swalConfirm('🗑️', '¿Eliminar este cliente?', esc(c.nombre || '') + ' — no tiene préstamos registrados. No se puede deshacer.', { ok: 'Eliminar', color: '#ef4444' })
         : window.confirm('¿Eliminar a ' + (c.nombre || 'este cliente') + '? No se puede deshacer.');
       if (!ok) return;
       await getAPI().del('prestamo_clientes', 'id=eq.' + id);
@@ -14712,7 +14712,7 @@
 
   window.nxPrestamoBorrarPago = async function (pagoId, prestamoId) {
     try {
-      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('💸', '¿Eliminar este pago?', 'Se restará del total pagado') : window.confirm('¿Eliminar este pago?');
+      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('💸', '¿Eliminar este pago?', 'Se restará del total pagado', { ok: 'Eliminar', color: '#ef4444' }) : window.confirm('¿Eliminar este pago?');
       if (!ok) return;
       await getAPI().del('prestamo_pagos', 'id=eq.' + pagoId);
       await cargarPrestamos();
@@ -15267,7 +15267,7 @@
   window.nxPrSolicitudAprobar = async function (id) {
     const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
     try {
-      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('✅', '¿Aprobar y crear el préstamo?', 'Se creará el préstamo real con los términos de esta solicitud.') : window.confirm('¿Aprobar y crear el préstamo real?');
+      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('✅', '¿Aprobar y crear el préstamo?', 'Se creará el préstamo real con los términos de esta solicitud.', { ok: 'Aprobar', color: '#16a34a' }) : window.confirm('¿Aprobar y crear el préstamo real?');
       if (!ok) return;
       const datos = {
         nombre: s.nombre, cedula: s.cedula || '', telefono: s.telefono || '', cliente_id: s.cliente_id || null,
@@ -15306,7 +15306,7 @@
 
   window.nxPrestamoBorrar = async function (id) {
     try {
-      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('🗑️', '¿Eliminar este préstamo?', 'Se borran también todos sus pagos. No se puede deshacer.') : window.confirm('¿Eliminar este préstamo y todos sus pagos?');
+      const ok = (typeof window.swalConfirm === 'function') ? await window.swalConfirm('🗑️', '¿Eliminar este préstamo?', 'Se borran también todos sus pagos. No se puede deshacer.', { ok: 'Eliminar', color: '#ef4444' }) : window.confirm('¿Eliminar este préstamo y todos sus pagos?');
       if (!ok) return;
       await getAPI().del('prestamos', 'id=eq.' + id);
       cerrarModal('nxPrModal');

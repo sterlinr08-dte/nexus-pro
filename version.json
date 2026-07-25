@@ -1,7 +1,12 @@
 {
-  "version": "49.45",
+  "version": "49.46",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.46",
+      "t": "ARREGLADO — El aviso de 'Aprobar y crear el pr\u00e9stamo' ten\u00eda un bot\u00f3n rojo que dec\u00eda ELIMINAR",
+      "d": "Mandaste la captura: el aviso preguntaba '\u00bfAprobar y crear el pr\u00e9stamo?' pero el bot\u00f3n de confirmar dec\u00eda ELIMINAR, en rojo. Da miedo tocarlo, y con raz\u00f3n.\n\nCausa: la ventanita de confirmar se hizo hace tiempo SOLO para borrar cosas, con el bot\u00f3n 'Eliminar' en rojo escrito a fuego. Despu\u00e9s se reutiliz\u00f3 para otras acciones y el bot\u00f3n se qued\u00f3 igual.\n\nArreglado de ra\u00edz, no solo en esa pantalla: ahora cada aviso dice lo que de verdad va a pasar.\n\n\u2022 Aprobar un pr\u00e9stamo \u2192 bot\u00f3n VERDE que dice 'Aprobar'.\n\u2022 Borrar algo \u2192 bot\u00f3n ROJO que dice 'Eliminar' (los 5 avisos de borrar del sistema siguen igual).\n\u2022 Y de aqu\u00ed en adelante, si alguien olvida ponerle texto a un aviso nuevo, sale 'Confirmar' en azul \u2014 nunca m\u00e1s un 'Eliminar' rojo por descuido."
+    },
     {
       "v": "49.45",
       "t": "ARREGLADO — El tel\u00e9fono del cliente ya no se queda con la p\u00e1gina vieja del link de firma",
