@@ -1,7 +1,12 @@
 {
-  "version": "49.49",
+  "version": "49.50",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.50",
+      "t": "NUEVO — Devolverle una solicitud al cliente para que corrija (sin tener que rechazarla)",
+      "d": "Si el cliente envi\u00f3 algo mal \u2014 la foto borrosa, el video sin sonido, la c\u00e9dula de otra persona \u2014 ya no tienes que rechazarlo ni crear un link nuevo.\n\nEn Solicitudes, tanto en una que est\u00e1 POR REVISAR como en una que ya rechazaste, sale el bot\u00f3n \u2018Pedir correcci\u00f3n\u2019:\n\n\u2022 Escribes qu\u00e9 debe corregir (ej.: \u2018La foto del dorso sali\u00f3 borrosa, t\u00f3mala de nuevo con buena luz\u2019).\n\n\u2022 El MISMO enlace vuelve a servir \u2014 no hay que mandarle uno nuevo.\n\n\u2022 Al abrirlo, el cliente ve arriba del todo un aviso amarillo con lo que le pediste, y vuelve a subir todo.\n\n\u2022 Te sale el bot\u00f3n de WhatsApp con el mensaje ya escrito, explic\u00e1ndole qu\u00e9 corregir, con el enlace al final.\n\nEn la lista, esas solicitudes se marcan POR CORREGIR (en amarillo) para no confundirlas con las que el cliente nunca ha abierto. Lo que mand\u00f3 antes se queda guardado hasta que env\u00ede lo nuevo, as\u00ed que no pierdes nada si no vuelve."
+    },
     {
       "v": "49.49",
       "t": "NUEVO — El CONTRATO sale con la firma del cliente y su c\u00e9dula anexada",

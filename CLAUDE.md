@@ -2059,6 +2059,39 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — devolver una solicitud al cliente para que la corrija (25-jul-2026, v49.50)
+El dueño pidió que una solicitud se pueda **reenviar para corregir** si algo quedó mal, en vez de
+solo rechazarla.
+- **Idea clave (por qué funciona sin tocar el link):** la función Edge solo acepta envíos de
+  solicitudes en estado `pendiente`. Así que devolver una al cliente es simplemente **volverla a
+  `pendiente`** — el MISMO enlace revive, sin generar uno nuevo ni perder el hilo de la solicitud.
+- **Migración `prestamo_solicitudes_correccion`** (aditiva): `correccion_motivo` (text),
+  `correccion_at` (timestamptz). `get_advisors` sin hallazgos nuevos.
+- **`nxPrSolicitudPedirCorreccion(id)`** abre un modal con textarea (no un `prompt()`: el texto lo
+  lee el cliente y va a WhatsApp, conviene poder redactarlo); **`nxPrSolicitudReenviar(id)`** hace
+  el `PATCH` (`estado:'pendiente'`, `correccion_motivo`, `correccion_at`, limpia `motivo_rechazo`),
+  `logAudit('PRESTAMO_SOLICITUD_CORRECCION')`, y abre `nxPrLinkFirmaMostrar` con un mensaje de
+  WhatsApp que ya explica qué corregir y lleva el enlace pegado al final.
+- **Lo anterior NO se borra** — se sobrescribe cuando el cliente reenvía. Si nunca vuelve, la
+  evidencia previa (cédula, firma, video) sigue ahí. Decisión deliberada: borrar habría dejado la
+  solicitud vacía sin ganar nada, porque el formulario del cliente exige subir todo de nuevo igual.
+- **Badge nuevo "POR CORREGIR" (ámbar)**: una `pendiente` CON `correccion_motivo` no es lo mismo
+  que una que nunca se ha abierto — antes las dos habrían dicho "SIN ENVIAR". El detalle de la
+  solicitud muestra qué se le pidió y dice "Esperando a que el cliente lo envíe corregido".
+- **Botón disponible en 2 estados:** `enviada` (junto a Aprobar/Rechazar) y `rechazada` (darle otra
+  oportunidad sin crear un link nuevo). En `aprobada` NO aparece — ya es un préstamo real.
+- **Lado cliente (`firma-prestamo.html`):** aviso ámbar `.corrig` **arriba del todo** (medido con
+  `getBoundingClientRect` que va antes de la primera tarjeta) con el texto exacto. La función Edge
+  (**v6**) devuelve `correccion_motivo` en el GET y **lo limpia al reenviar** (`correccion_motivo:
+  null` en el patch de publicación) — el pedido queda atendido solo.
+- Verificado con Playwright, **las dos mitades a la vez**: el panel con el código real extraído por
+  contenido, y la página del cliente **real** servida por HTTP local. **23 comprobaciones** — badge
+  correcto vs "SIN ENVIAR", el botón aparece en enviada y en rechazada, sin motivo no reenvía,
+  el `PATCH` vuelve a `pendiente` con el motivo y limpia el rechazo, queda en auditoría, el WhatsApp
+  explica y lleva el link, el cliente ve el aviso arriba del todo y el formulario sigue completo, y
+  sin corrección pendiente no sale ningún aviso. Sin desborde en 390px, 0 errores de JS. Las suites
+  de la página (55) y del panel (53) repasadas sin regresión.
+
 ### Financiamiento — el CONTRATO imprimible sale con la firma y la cédula anexada (25-jul-2026, v49.49)
 Segunda mitad de lo que se había ofrecido al cerrar la v49.48 (el dueño: *"Hazlo"*). El contrato
 (`nxPrestamoContrato`) llevaba una raya en blanco para que el cliente firmara a mano, aunque ya

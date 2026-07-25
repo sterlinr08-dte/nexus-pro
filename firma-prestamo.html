@@ -36,6 +36,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-s
 .termrow:last-child{border-bottom:0}
 .termrow span:first-child{color:#64748b}
 .termrow b{color:#1e1b4b}
+.corrig{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:13px 14px;margin-bottom:14px}
+.corrig b{display:block;color:#92400e;font-size:13px;margin-bottom:5px}
+.corrig span{display:block;color:#78350f;font-size:13px;line-height:1.55}
 .declar{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:12px;font-size:12.5px;color:#4c1d95;line-height:1.55;margin-top:10px}
 label.fl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 6px}
 label.fl:first-child{margin-top:0}
@@ -165,6 +168,9 @@ label.fl:first-child{margin-top:0}
     app.innerHTML =
       '<div class="nav"><div class="lg"><i class="ti ti-signature"></i></div><div class="ttl"><b>Firma de préstamo</b><span>NEXUS PRO Financiamiento</span></div></div>'
       +'<div class="body">'
+      // Si el negocio le pidió corregir algo, va ARRIBA del todo: es lo primero que
+      // tiene que leer al reabrir el mismo enlace.
+      +(S.correccion_motivo ? '<div class="corrig"><b>⚠️ Hay algo que corregir</b><span>'+esc(S.correccion_motivo)+'</span></div>' : '')
       +'<div class="card"><div class="sec"><div class="nb">1</div><h3>Tu préstamo</h3></div>'
       +'<div class="termrow"><span>Cliente</span><b>'+nom+'</b></div>'
       +'<div class="termrow"><span>Monto prestado</span><b>'+fmt(S.capital)+'</b></div>'
