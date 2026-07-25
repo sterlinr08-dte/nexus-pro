@@ -281,8 +281,13 @@ label.fl:first-child{margin-top:0}
       .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
       .then(function(res){
         if(!res.ok||!res.d.signedUrl) throw new Error(res.d&&res.d.error||"No se pudo preparar la subida");
-        return fetch(res.d.signedUrl,{method:"PUT",headers:{"Content-Type":mime||f.type||"video/mp4"},body:f})
-          .then(function(up){ if(!up.ok) throw new Error("No se pudo subir el video"); return res.d.path; });
+        // x-upsert: si el cliente vuelve a grabar, se sobreescribe el video anterior en vez
+        // de fallar porque el archivo ya existe (la ruta es fija por solicitud).
+        return fetch(res.d.signedUrl,{method:"PUT",headers:{"Content-Type":mime||f.type||"video/mp4","x-upsert":"true"},body:f})
+          .then(function(up){
+            if(up.ok) return res.d.path;
+            return up.text().catch(function(){return "";}).then(function(t){ throw new Error("La subida falló ("+up.status+"). "+String(t).slice(0,160)); });
+          });
       })
       .then(function(path){
         vid.path=path; vid.subiendo=false;
@@ -293,7 +298,11 @@ label.fl:first-child{margin-top:0}
       })
       .catch(function(e){
         vid.subiendo=false; vid.path="";
-        if(prev) prev.innerHTML='<div style="font-size:12px;color:#dc2626;padding:8px 0">No se pudo subir el video. Toca arriba para intentarlo de nuevo.</div>';
+        // Se muestra el motivo REAL, no un mensaje fijo: un "no se pudo, intenta de nuevo"
+        // sin detalle fue justo lo que dejó este fallo a ciegas la primera vez.
+        var det=(e&&e.message)?String(e.message):"";
+        if(prev) prev.innerHTML='<div style="font-size:12px;color:#dc2626;padding:8px 0">No se pudo subir el video. Toca arriba para intentarlo de nuevo.'
+          +(det?'<br><span style="font-size:10.5px;color:#94a3b8">'+esc(det)+'</span>':'')+'</div>';
         window.__revisar();
       });
   }

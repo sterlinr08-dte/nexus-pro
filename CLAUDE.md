@@ -2059,6 +2059,39 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — el video no se guardaba: bug real de UNA LÍNEA en la función Edge (25-jul-2026, v49.44)
+El dueño: *"Cuando termino el video dice que no se pudo guardar, que intente de nuevo."*
+- **Cómo se encontró (no a ojo — con evidencia del servidor):** `get_logs(service:'storage')` mostró la
+  línea exacta: `POST | 400 | /object/upload/sign/documentos/prestamo-solicitudes/<id>/compromiso.mp4`.
+  O sea, **no fallaba la subida del video** — fallaba el paso ANTERIOR, cuando la función Edge le pide
+  a Storage la URL firmada. Se descartó "el archivo ya existe" con SQL directo (`storage.objects` del
+  bucket `documentos` estaba **vacío**, 0 filas).
+- **Causa raíz — mía, de una línea:** la petición a `/object/upload/sign/...` mandaba
+  `Content-Type: application/json` **sin body**. El servidor de Storage (Fastify) rechaza con **400**
+  una petición que declara JSON y viene con el cuerpo vacío. Nunca salió en las pruebas porque en el
+  harness de Playwright esa llamada a Storage estaba simulada — **la simulación no reproduce el
+  contrato real del servidor.** Lección: cuando el fallo puede vivir en la frontera con un servicio
+  externo, la simulación no basta como verificación.
+- **Arreglo (función Edge v5):** `body: JSON.stringify({ upsert: true })` — resuelve el 400 y de paso
+  permite **regrabar** (antes, un segundo intento habría fallado por archivo duplicado). En el
+  navegador, el `PUT` a la URL firmada ganó `x-upsert: true` por el mismo motivo. Confirmado con la
+  documentación (`search_docs`) que `upsert` es una opción válida de `createSignedUploadUrl`.
+- **VERIFICADO DE VERDAD contra el servidor real, no simulado:** este entorno no tiene salida a
+  internet (ni `curl`), pero **`pg_net` sí corre dentro de Supabase** — se creó una solicitud de
+  prueba, se llamó a la función desplegada con `net.http_post` y se leyó la respuesta en
+  `net._http_response`: **200 con `signedUrl` real** (antes: 400). Datos de prueba borrados después.
+  Este es el camino a usar de aquí en adelante para probar funciones Edge desde esta sesión.
+- **De paso, para que un fallo futuro no vuelva a dejar a ciegas:** la función Edge ahora devuelve el
+  **detalle real de Storage** (código + texto) en vez de un "No se pudo preparar la subida" genérico, y
+  la página del cliente **muestra ese motivo** debajo del aviso en vez de solo "intenta de nuevo". Un
+  mensaje fijo fue justo lo que hizo falta diagnosticar esto desde los logs en vez de desde la pantalla.
+- **No verificable desde aquí (queda al dueño):** el `PUT` binario a la URL firmada — `pg_net` solo
+  admite `Content-Type: application/json`, así que la subida en sí no se pudo ejercitar. Es el mismo
+  código de siempre + `x-upsert`; el paso que de verdad estaba roto sí está confirmado arreglado.
+- 75 pruebas Playwright en verde (20 de la grabadora + 55 de la página, 1 nueva: el aviso de error
+  muestra el motivo real). `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de
+  `firma-prestamo.html` pasan `new Function()`; `version.json` válido.
+
 ### Financiamiento — el cliente no podía LEER el guion mientras grababa el video (25-jul-2026, v49.43)
 El dueño: *"Al grabar el video, no se puede leer el texto de lo que el cliente va a decir en la
 grabación del video."*
