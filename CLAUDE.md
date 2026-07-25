@@ -2059,6 +2059,33 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — el teléfono del cliente se quedaba con la página VIEJA del link (25-jul-2026, v49.45)
+El dueño mandó 2 capturas del mismo error del video ("No se pudo subir el video…"). **Detalle que
+delató lo que pasaba:** el aviso salía SIN el motivo real debajo — justo la línea que se había
+agregado en la v49.44. O sea, su teléfono estaba corriendo la página ANTERIOR.
+- **Confirmado con los logs, por hora exacta** (no por suposición): `14:54:36` intento 1 → 400 ·
+  `15:06:27` intento 2 → 400 · `15:08:35` v5 desplegada (el arreglo) · `15:09:26` prueba real → 200.
+  El reloj de su captura marca **3:06**, que calza al segundo con el intento de las `15:06:27` —
+  **2 minutos ANTES del arreglo**. Sus capturas eran del problema anterior, no de uno nuevo.
+- **Pero destapó un problema real y propio de este flujo:** `firma-prestamo.html` es una página
+  estática que el cliente abre UNA vez desde un link de WhatsApp, y **su URL nunca cambia** — así que
+  el teléfono (o Cloudflare) puede servir una copia guardada y **un arreglo publicado después nunca
+  le llega**. A diferencia de la app (`index.html`), esta página no tiene botón "Actualizar" ni
+  `APP_VERSION` que rompa la caché. El cliente se queda con el fallo pegado, sin manera de saberlo.
+- **Arreglo, en dos capas:** (1) `<meta http-equiv="Cache-Control" no-cache, no-store,
+  must-revalidate">` + `Pragma`/`Expires` en la página; (2) **el link que genera el panel ahora lleva
+  `&v=<APP_VERSION>`** (`nxPrLinkFirmaMostrar`) — cada versión publicada produce una dirección
+  distinta, así que después de cada actualización es imposible que abra una copia vieja. La página
+  ignora ese parámetro (solo lee `id`), así que los links ya enviados siguen funcionando igual.
+- **Lección para cualquier página pública futura** (`rifa.html`, `boleto.html`, `vendedor.html`, esta):
+  no tienen mecanismo de actualización propio. Si se publica un arreglo, hay que asumir que el
+  usuario puede seguir viendo la versión vieja — el `&v=` en el link generado es el patrón a repetir.
+- 128 pruebas en verde (20 grabadora + 55 página pública + 53 lado admin, incluida la URL del link).
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html`
+  pasan `new Function()`; `version.json` válido.
+- **Pendiente:** que el dueño genere un link **NUEVO** (no reutilice el de antes) y confirme la
+  grabación real desde su iPhone — sigue sin haber ningún intento posterior al arreglo en los logs.
+
 ### Financiamiento — el video no se guardaba: bug real de UNA LÍNEA en la función Edge (25-jul-2026, v49.44)
 El dueño: *"Cuando termino el video dice que no se pudo guardar, que intente de nuevo."*
 - **Cómo se encontró (no a ojo — con evidencia del servidor):** `get_logs(service:'storage')` mostró la
