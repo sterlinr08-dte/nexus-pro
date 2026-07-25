@@ -15019,7 +15019,26 @@
   // Mismo criterio que `nxPrPropuesta`: lee el simulador tal cual está en pantalla, sin tocar
   // `nxPrestamoGuardar`. El préstamo real NO se crea aquí — nace cuando el admin aprueba la
   // solicitud ya con la cédula/firma adjuntas (ver nxPrSolicitudAprobar).
-  window.nxPrGenerarLinkFirma = async function () {
+  // Guion que el cliente va a leer en el video. MISMA lógica que `guionTexto()` de
+  // firma-prestamo.html — se calcula aquí también para poder mostrárselo al dueño y dejarlo
+  // corregir ANTES de mandar el link. Lo que quede aquí se guarda en `video_guion` y es lo
+  // que la página pública muestra (ella solo lo genera sola si la solicitud no trae ninguno).
+  function prGuionTexto(d) {
+    const nom = String(d.nombre || '').trim();
+    if (d.modo === 'credito') {
+      return 'Yo, ' + nom + ', declaro que recibí una línea de crédito de ' + fmt(d.capital)
+        + ' con ' + (d.tasa_interes || 0) + ' por ciento de interés mensual'
+        + (d.plazo_meses ? ', y me comprometo a devolver el capital en un plazo de ' + d.plazo_meses + ' meses' : '')
+        + ', y a pagar los intereses cada mes.';
+    }
+    const frecTxt = { semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[d.frecuencia] || '';
+    return 'Yo, ' + nom + ', declaro que recibí un préstamo de ' + fmt(d.capital)
+      + ', y me comprometo a pagarlo en ' + (d.num_cuotas || '—') + ' cuotas ' + frecTxt
+      + ' de ' + fmt(d.cuota_calculada) + ' cada una, para un total de ' + fmt(d.total_devolver) + '.';
+  }
+  let _prLinkDraft = null; // términos ya calculados, a la espera de que el dueño confirme
+
+  window.nxPrGenerarLinkFirma = function () {
     const cap = parseMoney(val('prCap')), tasa = parsePct(val('prTasa'));
     const fecha = val('prFecha') || hoy();
     const nombre = (val('prNom') || (_evCli && _evCli.nombre) || '').trim();
@@ -15043,22 +15062,81 @@
       toast('err', 'Los abonos libres no tienen cuotas fijas', 'Cambia a "Cuotas fijas" o "Línea de crédito" para generar un link de firma.');
       return;
     }
+    _prLinkDraft = datos;
+    window.nxPrLinkRevisar();
+  };
+
+  // Pantalla de revisión: el dueño ve TODO lo que el cliente va a recibir y puede corregir el
+  // guion del video y el mensaje de WhatsApp antes de que nada se cree. Nada se guarda hasta
+  // que toca "Crear el link".
+  window.nxPrLinkRevisar = function () {
+    const d = _prLinkDraft; if (!d) return;
+    cerrarModal('nxPrLinkRev');
+    const terminos = d.modo === 'credito'
+      ? `Línea de crédito · Capital ${fmt(d.capital)} · Tasa ${d.tasa_interes || 0}% mensual${d.plazo_meses ? ` · Plazo ${d.plazo_meses} meses` : ''}`
+      : `${d.num_cuotas || '—'} cuotas ${d.frecuencia || ''} · Capital ${fmt(d.capital)} · Cuota ${fmt(d.cuota_calculada)} · Total a devolver ${fmt(d.total_devolver)}`;
+    const msgWA = `Hola ${(d.nombre || '').split(' ')[0]}, para completar tu préstamo entra a este link, sube tu cédula y firma:`;
+    const ov = document.createElement('div'); ov.id = 'nxPrLinkRev'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column">
+      <div class="mt"><span><i class="ti ti-eye-check"></i> Revisa antes de enviar</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrLinkRev').remove()"><i class="ti ti-x"></i></button></div>
+      <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+        <div style="font-size:12px;color:#475569;margin-bottom:10px">Esto es lo que <b>${esc(d.nombre || '')}</b> va a ver en su teléfono. Corrige lo que quieras — todavía no se ha creado nada.</div>
+        <div class="prCard">
+          <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Términos que verá</div>
+          <div style="font-size:12.5px;color:#4c1d95;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:9px;padding:9px">${esc(terminos)}</div>
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:6px">Para cambiarlos, cierra esto y ajusta el simulador.</div>
+        </div>
+        <div class="prCard">
+          <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Texto que leerá en el video</div>
+          <textarea id="prLkGuion" rows="5" style="width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;font-family:inherit;box-sizing:border-box;outline:none;background:#f8fafc;resize:vertical">${esc(prGuionTexto(d))}</textarea>
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Se le muestra en pantalla para que lo lea en voz alta mientras graba.</div>
+        </div>
+        <div class="prCard">
+          <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Mensaje de WhatsApp</div>
+          <textarea id="prLkMsg" rows="2" style="width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;font-family:inherit;box-sizing:border-box;outline:none;background:#f8fafc;resize:vertical">${esc(msgWA)}</textarea>
+          <div style="font-size:10.5px;color:#94a3b8;margin-top:4px">El link se agrega solo al final del mensaje.</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px;display:flex;gap:8px">
+        <button class="btn bsm bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrLinkRev').remove()">Cancelar</button>
+        <button class="btn bsm bc1" type="button" style="flex:1" onclick="window.nxPrLinkCrear()"><i class="ti ti-link"></i> Crear el link</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+
+  window.nxPrLinkCrear = async function () {
+    const d = _prLinkDraft; if (!d) return;
+    const guion = (val('prLkGuion') || '').trim();
+    const msg = (val('prLkMsg') || '').trim();
+    if (!guion) { toast('err', 'El texto del video no puede quedar vacío'); return; }
+    const btn = document.querySelector('#nxPrLinkRev .bc1');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Creando…'; }
+    const datos = Object.assign({}, d, { video_guion: guion });
     try {
       const r = await getAPI().post('prestamo_solicitudes', datos);
       const id = r && r[0] && r[0].id;
-      if (!id) { toast('err', 'No se pudo generar el link'); return; }
-      try { window.logAudit && window.logAudit('PRESTAMO_SOLICITUD_CREADA', nombre + ' · ' + fmt(datos.capital), 'Financiamiento'); } catch (e) {}
+      if (!id) { toast('err', 'No se pudo generar el link'); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-link"></i> Crear el link'; } return; }
+      try { window.logAudit && window.logAudit('PRESTAMO_SOLICITUD_CREADA', d.nombre + ' · ' + fmt(d.capital), 'Financiamiento'); } catch (e) {}
       _prSolicitudes.unshift(Object.assign({ id, estado: 'pendiente', created_at: new Date().toISOString() }, datos));
-      window.nxPrLinkFirmaMostrar(id, nombre, datos.telefono);
-    } catch (e) { toast('err', 'Error al generar el link', String(e && e.message || e)); }
+      cerrarModal('nxPrLinkRev');
+      _prLinkDraft = null;
+      window.nxPrLinkFirmaMostrar(id, d.nombre, d.telefono, msg);
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-link"></i> Crear el link'; }
+      toast('err', 'Error al generar el link', String(e && e.message || e));
+    }
   };
-  window.nxPrLinkFirmaMostrar = function (id, nombre, telefono) {
+  window.nxPrLinkFirmaMostrar = function (id, nombre, telefono, mensaje) {
     cerrarModal('nxPrLinkFirma');
     const link = location.origin + '/firma-prestamo.html?id=' + id;
     const ov = document.createElement('div'); ov.id = 'nxPrLinkFirma'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     const num = telefono ? waNumero(telefono) : '';
-    const msg = `Hola ${(nombre || '').split(' ')[0]}, para completar tu préstamo entra a este link, sube tu cédula y firma:\n${link}`;
+    // El mensaje lo escribió (o corrigió) el dueño en la pantalla de revisión; si por lo que sea
+    // no llegó, se cae al texto de siempre. El link siempre se pega al final.
+    const msg = (mensaje || `Hola ${(nombre || '').split(' ')[0]}, para completar tu préstamo entra a este link, sube tu cédula y firma:`) + '\n' + link;
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-link"></i> Link de firma generado</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrLinkFirma').remove()"><i class="ti ti-x"></i></button></div>
       <div style="font-size:12px;color:#475569;margin-bottom:8px">Comparte este enlace con <b>${esc(nombre || '')}</b> para que suba su cédula y firme desde su teléfono. Cuando lo publique, aparece en <b>"Solicitudes"</b> para que lo apruebes.</div>
       <input id="prLkInp" readonly value="${esc(link)}" onclick="this.select()" style="width:100%;height:42px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#334155">

@@ -2059,6 +2059,39 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — pantalla de revisión antes de mandar el link de firma (25-jul-2026, v49.41)
+El dueño pidió **ver y poder corregir el texto antes de enviarle el link al cliente**. Antes,
+`nxPrGenerarLinkFirma()` creaba la solicitud de una y el guion se generaba solo en la página
+pública, sin que él lo viera nunca.
+- **El botón ya no crea nada: abre una pantalla de revisión.** `nxPrGenerarLinkFirma()` ahora solo
+  calcula los términos y los deja en `_prLinkDraft` (variable de módulo), y llama a
+  `nxPrLinkRevisar()`. La creación real pasó a **`nxPrLinkCrear()`**, que corre al tocar "Crear el
+  link". Si cancela, no se guarda nada (nunca se llegó a postear).
+- **Qué se puede corregir:** el **guion del video** (`#prLkGuion`) y el **mensaje de WhatsApp**
+  (`#prLkMsg`), ambos prellenados con lo que se generaba automáticamente. Los **términos** se
+  muestran de solo lectura con una nota de que se cambian en el simulador — no se editan aquí a
+  propósito: son los números reales del préstamo, y dejarlos editar abriría la puerta a que el
+  texto no coincida con lo que se guarda en `prestamos`.
+- **`prGuionTexto(d)` (parches.js)** duplica a propósito la lógica de `guionTexto()` de
+  `firma-prestamo.html` — son dos archivos independientes sin nada compartido (la página pública es
+  standalone, sin acceso a `parches.js`). Si un día cambia el texto base hay que tocar **los dos**.
+- **El guion aprobado gana, en las 3 capas** (para que lo que el dueño corrigió no se pise nunca):
+  (1) `nxPrLinkCrear` lo guarda en `video_guion` al crear; (2) la página pública usa `S.video_guion`
+  si viene y solo genera el suyo como respaldo (links viejos, creados antes de esta versión); (3) la
+  función Edge **ya no sobrescribe** `video_guion` al publicar — solo lo escribe si la solicitud no
+  traía ninguno. Sin ese tercer candado, el navegador del cliente habría pisado el texto aprobado.
+- **`nxPrLinkFirmaMostrar` ganó un 4to parámetro `mensaje`** (el de WhatsApp ya corregido), con
+  respaldo al texto de siempre si no llega. El link se pega al final del mensaje, no se edita.
+- **Verificado:** **50 pruebas** del lado admin (las 40 anteriores sin regresión + 10 nuevas: el
+  botón no crea nada, la revisión muestra términos/guion/mensaje prellenados y editables, cancelar
+  no crea, confirmar guarda el **texto corregido** y no el automático, y el WhatsApp usa el mensaje
+  corregido con el link pegado) y **48 en la página pública** (las 44 anteriores + 4 nuevas: con
+  `video_guion` se muestra el corregido y NO el automático, y al publicar se devuelve ese mismo).
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html`
+  pasan `new Function()`; `version.json` válido. Sin migración de esquema (`video_guion` ya existía
+  de v49.40 — solo cambió QUIÉN y CUÁNDO la llena: antes el cliente al publicar, ahora el dueño al
+  crear el link).
+
 ### SUPABASE STORAGE — SÍ EXISTE (el CLAUDE.md decía que no) + hueco de seguridad real cerrado (25-jul-2026, v49.40)
 **Hallazgo importante que corrige varias notas viejas de este mismo archivo.** Al buscar dónde
 guardar el video de compromiso se descubrió que **Supabase Storage SÍ está configurado y EN USO**
