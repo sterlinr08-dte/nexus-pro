@@ -2059,6 +2059,43 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — la declaración TAMBIÉN se corrige, y fuera "Total a devolver" (25-jul-2026, v49.42)
+El dueño mandó una captura de la página del cliente en su iPhone: *"Las correcciones que hago antes de
+generar el link no se reflejan cuando lo envío y debajo de cuota vamos a quitar donde dice total a
+devolver"*.
+- **Se verificó primero, antes de tocar nada** (SQL directo sobre `prestamo_solicitudes`): su
+  corrección **SÍ se había guardado bien** — el valor en `video_guion` de su solicitud era
+  exactamente el texto que él escribió ("…20 cuotas quincenales de RD$ 2,000 QUE SERÁ DESCONTADO
+  DESDE LA NÓMINA"). O sea, el guardado de v49.41 funcionaba.
+- **Causa raíz — un hueco de diseño MÍO, no un bug de guardado:** la pantalla de revisión (v49.41)
+  solo dejaba corregir el **guion del video**. Pero lo que se ve en la captura del dueño, y lo
+  primero que el cliente lee, es el **recuadro morado de arriba** (la declaración de compromiso,
+  tarjeta 1 "Tu préstamo") — ese se armaba solo con `terminosTexto()` y **no había forma de
+  tocarlo**. Él corrigió el guion, miró la pantalla, vio el recuadro morado con el texto automático
+  de siempre, y concluyó (con razón, desde su lado) que su corrección no se aplicaba.
+- **Arreglo — mismo patrón de 3 capas que ya tenía el guion, ahora también para la declaración:**
+  columna nueva `prestamo_solicitudes.declaracion` (migración `prestamo_solicitudes_declaracion`,
+  aditiva); `prDeclaracionTexto(d)` en `parches.js` (pareja de `prGuionTexto`, duplica a propósito
+  `terminosTexto()` de `firma-prestamo.html` — dos archivos independientes, si cambia hay que tocar
+  los dos); tarjeta nueva **"Declaración que verá en pantalla"** (`#prLkDecl`) en `nxPrLinkRevisar`,
+  prellenada y editable; `nxPrLinkCrear` la valida (no puede quedar vacía) y la guarda. En la página
+  pública, `declaracionTexto()` usa `S.declaracion` si viene y solo genera la suya como respaldo
+  (links viejos). La función Edge (**v4**) `traerPendiente()` ahora devuelve la fila y **solo
+  escribe `declaracion`/`video_guion` si la solicitud no traía ninguno** — el navegador del cliente
+  nunca pisa lo que el dueño aprobó.
+- **Fuera "Total a devolver"** (lo pedido): se quitó la fila `termrow` de la tarjeta 1 de
+  `firma-prestamo.html`, y **también** la cifra del total del guion (`prGuionTexto`/`guionTexto`) y
+  de la declaración — si no, el número que él quitó de la pantalla seguía saliendo en el texto que
+  el cliente lee en voz alta y en el recuadro morado. Ahora los tres dicen lo mismo.
+- **Verificado:** **54 pruebas** contra el archivo REAL `firma-prestamo.html` servido por HTTP local
+  (las 48 anteriores sin regresión + 6 nuevas: ya no aparece la fila "Total a devolver", la
+  declaración se arma con los datos reales y sin el total, con `declaracion` se muestra la corregida
+  y NO la automática, y al publicar se devuelve esa misma) y **53** contra el código real extraído
+  de `parches.js` del lado admin (las 50 anteriores + 3 nuevas: la declaración es un textarea
+  prellenado con los datos reales y lo corregido es lo que se guarda). `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` y el de `firma-prestamo.html` pasan `new Function()`;
+  `version.json` válido.
+
 ### Financiamiento — pantalla de revisión antes de mandar el link de firma (25-jul-2026, v49.41)
 El dueño pidió **ver y poder corregir el texto antes de enviarle el link al cliente**. Antes,
 `nxPrGenerarLinkFirma()` creaba la solicitud de una y el guion se generaba solo en la página

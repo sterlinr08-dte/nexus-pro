@@ -108,7 +108,14 @@ label.fl:first-child{margin-top:0}
       return "Línea de crédito de "+fmt(S.capital)+" con "+ (S.tasa_interes||0) +"% de interés mensual"+(S.plazo_meses?", a devolver el capital en un plazo de "+S.plazo_meses+" meses":"")+".";
     }
     var frecTxt={semanal:"semanal",quincenal:"quincenal",mensual:"mensual"}[S.frecuencia]||S.frecuencia||"";
-    return (S.num_cuotas||"—")+" cuotas "+frecTxt+" de "+fmt(S.cuota_calculada)+" cada una, para un total a devolver de "+fmt(S.total_devolver)+" sobre un capital de "+fmt(S.capital)+".";
+    return (S.num_cuotas||"—")+" cuotas "+frecTxt+" de "+fmt(S.cuota_calculada)+" cada una, sobre un capital de "+fmt(S.capital)+".";
+  }
+
+  // La declaración que el negocio revisó y aprobó al generar el link manda. La de abajo es
+  // solo el respaldo para links viejos, creados antes de que se pudiera corregir.
+  function declaracionTexto(){
+    if (S.declaracion && String(S.declaracion).trim()) return String(S.declaracion).trim();
+    return "Yo, "+String(S.nombre||"").trim()+", declaro que acordé este préstamo con el negocio y me comprometo a pagarlo según lo descrito arriba: "+terminosTexto();
   }
 
   // El guion NO es texto libre: se arma con los términos REALES de este préstamo, para que
@@ -141,9 +148,8 @@ label.fl:first-child{margin-top:0}
       +(S.modo==="credito"?('<div class="termrow"><span>Tasa mensual</span><b>'+(S.tasa_interes||0)+'%</b></div>'):(
         '<div class="termrow"><span>Cuotas</span><b>'+(S.num_cuotas||"—")+' '+esc(S.frecuencia||"")+'</b></div>'
         +'<div class="termrow"><span>Cuota</span><b>'+fmt(S.cuota_calculada)+'</b></div>'
-        +'<div class="termrow"><span>Total a devolver</span><b>'+fmt(S.total_devolver)+'</b></div>'
       ))
-      +'<div class="declar">Yo, <b>'+nom+'</b>, declaro que acordé este préstamo con el negocio y me comprometo a pagarlo según lo descrito arriba: '+esc(terminosTexto())+'</div>'
+      +'<div class="declar">'+esc(declaracionTexto())+'</div>'
       +'</div>'
 
       +'<div class="card"><div class="sec"><div class="nb">2</div><h3>Tu cédula</h3></div>'
@@ -293,7 +299,7 @@ label.fl:first-child{margin-top:0}
     var firma=sigCanvas.toDataURL("image/png");
     fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       id:id, cedula_frente:doc.frente, cedula_dorso:doc.dorso, firma:firma,
-      selfie:doc.selfie, video_path:vid.path, video_guion:guionTexto()
+      selfie:doc.selfie, video_path:vid.path, video_guion:guionTexto(), declaracion:declaracionTexto()
     })}).then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});}).then(function(res){
       enviando=false;
       if(!res.ok || res.d.error){
