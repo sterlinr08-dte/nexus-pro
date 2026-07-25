@@ -1,7 +1,12 @@
 {
-  "version": "49.38",
+  "version": "49.39",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.39",
+      "t": "NUEVO — Financiamiento: un link para que el cliente suba su cédula y firme desde el celular, antes de crear el préstamo",
+      "d": "Ahora, al armar un préstamo nuevo (cuotas fijas o línea de crédito), aparece el botón 'Link de firma' junto a la vista previa de cuotas. Al tocarlo se genera un enlace único que puedes mandar por WhatsApp al cliente.\n\nEl cliente abre el link desde su teléfono (sin necesidad de ninguna clave ni cuenta) y ve: los términos exactos del préstamo (monto, cuotas, tasa), una declaración de compromiso con su nombre, y 3 pasos — tomar/subir foto de la cédula (frente y dorso) y firmar con el dedo en la pantalla. Al tocar 'Publicar', todo queda guardado y esperando tu revisión.\n\nNueva pestaña 'Solicitudes' en la barra lateral de Financiamiento (con contador de cuántas están 'por revisar'): ahí ves cada solicitud — si el cliente todavía no ha abierto el link, si ya envió sus datos (con las 3 fotos para revisar), o si ya fue aprobada/rechazada. Botón 'Aprobar y crear préstamo' crea el préstamo real con esos mismos términos (dejando constancia de que fue firmado por este medio); 'Rechazar' te deja anotar el motivo.\n\nEl link es de un solo uso — una vez que el cliente envía sus datos, ese mismo enlace ya no vuelve a aceptar un segundo envío."
+    },
     {
       "v": "49.38",
       "t": "MEJORA — La ventana de detalle de un préstamo (Financiamiento) se rediseñó con más información real, siguiendo un mockup que mandaste",
