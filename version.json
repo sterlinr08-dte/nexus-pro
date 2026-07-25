@@ -1,7 +1,12 @@
 {
-  "version": "49.48",
+  "version": "49.49",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.49",
+      "t": "NUEVO — El CONTRATO sale con la firma del cliente y su c\u00e9dula anexada",
+      "d": "Cuando el pr\u00e9stamo se firm\u00f3 por link, el contrato que imprimes ya no lleva una raya en blanco para que el cliente firme: sale con su FIRMA puesta encima de la l\u00ednea, y debajo dice 'Firmado electr\u00f3nicamente'.\n\nAdem\u00e1s trae:\n\n\u2022 Una cl\u00e1usula SEXTA que deja constancia de que firm\u00f3 por medios electr\u00f3nicos, en qu\u00e9 fecha, y de todo lo que qued\u00f3 en el expediente (c\u00e9dula, foto y video), amparada en la Ley 126-02 de Comercio Electr\u00f3nico y Firmas Digitales.\n\n\u2022 Un ANEXO en p\u00e1gina aparte con las dos caras de la c\u00e9dula y la foto del cliente sosteni\u00e9ndola, listo para imprimir.\n\n\u2022 Del video se deja constancia por escrito (con el texto exacto que declar\u00f3), porque un video no se puede imprimir en papel \u2014 se ve desde el sistema.\n\nSi el pr\u00e9stamo lo escribiste t\u00fa a mano, el contrato sale igual que siempre, con su raya para firmar."
+    },
     {
       "v": "49.48",
       "t": "NUEVO — El expediente firmado se guarda solo en los DOCUMENTOS del pr\u00e9stamo",

@@ -2059,6 +2059,47 @@ central de cliente" reutilizable en POS/Factura/Prefactura/Taller/Financiamiento
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### Financiamiento — el CONTRATO imprimible sale con la firma y la cédula anexada (25-jul-2026, v49.49)
+Segunda mitad de lo que se había ofrecido al cerrar la v49.48 (el dueño: *"Hazlo"*). El contrato
+(`nxPrestamoContrato`) llevaba una raya en blanco para que el cliente firmara a mano, aunque ya
+hubiera firmado por link.
+- **De dónde salen las imágenes:** de `_prSolicitudes` (los **dataURL** ya en memoria), NO de las
+  URLs de Storage que quedaron en `p.documentos`. A propósito: el contrato se abre en una ventana
+  `window.open`+`document.write` que se imprime o se guarda en PDF — con dataURL el documento queda
+  **autocontenido** y no depende de la red ni de que esa ventana tenga sesión. Además la solicitud
+  es el registro original: si el dueño borra una imagen de Docs, el contrato sigue siendo fiel.
+- **3 piezas, todas gateadas a que exista firma real** (`firmaDeudor`): (1) la firma manuscrita
+  **encima de la línea** de EL DEUDOR (`.firmaImg`, `position:absolute;bottom:100%` dentro de
+  `.firma`, que pasó a `position:relative` — no descoloca la celda de EL ACREEDOR ni las de los
+  testigos) + "Firmado electrónicamente" bajo el nombre; (2) **cláusula SEXTA** de firma
+  electrónica con la fecha real (`revisado_at`) que enumera SOLO lo que de verdad llegó
+  (`solF.selfie` / `solF.video_path` condicionan el texto); (3) **ANEXO** en página nueva
+  (`page-break-before:always`) con las 2 caras de la cédula y la foto.
+- **Redacción cuidada, sin prometer de más:** se cita la **Ley 126-02** (Comercio Electrónico,
+  Documentos y Firmas Digitales, RD — real) y se describe lo que el sistema SÍ tiene (firma
+  manuscrita capturada + cédula + foto + video). **NO** se dice "firma digital certificada": este
+  sistema no emite certificados de una entidad de certificación autorizada, y afirmarlo sería
+  falso en un documento legal.
+- **El video no se finge en papel:** su bloque del anexo explica que la grabación está archivada y
+  se consulta desde el sistema, e incluye **el texto exacto que el cliente declaró** (`video_guion`)
+  — eso sí es imprimible y es lo que da valor probatorio en el papel.
+- **Sin expediente, el contrato queda EXACTAMENTE como antes** (raya en blanco, sin cláusula SEXTA,
+  sin anexo) — verificado explícitamente, no asumido.
+- **Cuidado con `nxVehiculoContrato`:** varias cadenas del contrato (`firmaTestigo`, el CSS de
+  `.firmas`, el botón de imprimir) **existen 2 veces en el archivo** — la segunda es la de
+  Vehículos. Los 4 reemplazos se hicieron sobre la PRIMERA ocurrencia con un script que imprime la
+  línea tocada, y se confirmó que las 4 cayeron dentro de `nxPrestamoContrato`. Al tocar estos
+  documentos, verificar SIEMPRE cuál de los dos se está editando.
+- Verificado con Playwright generando el **documento real** (se intercepta `window.open` para
+  capturar lo que escribe `document.write`, y luego se carga ese HTML como página para medirlo):
+  **19 comprobaciones** — la firma va dentro y queda **encima** de la línea (medido con
+  `getBoundingClientRect`: 959.4 vs 960.4, no encimada), cláusula SEXTA con la Ley 126-02, anexo
+  con 4 bloques, el texto declarado del video, salto de página, sin desborde a 760px, y los 5 casos
+  del contrato SIN expediente. 0 errores de JS. Las suites de Docs (22), expediente (12) y admin
+  (53) repasadas sin regresión.
+  - **De paso:** las imágenes del anexo pasaron de `width:100%` a `max-height:420px;width:auto` —
+    con `width:100%` una foto vertical se estiraba hasta ocupar una página entera al imprimir.
+
 ### Financiamiento — el expediente firmado se guarda en los DOCUMENTOS del préstamo (25-jul-2026, v49.48)
 El dueño mandó una captura del detalle del préstamo (con los botones Contrato/Estado/Docs) y pidió
 *"que todo eso se guarde en ese documento y se visualice y se pueda actualizar"*.
