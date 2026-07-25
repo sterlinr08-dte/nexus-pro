@@ -2424,6 +2424,45 @@ presta informalmente en RD. El dueño lo confirmó y pidió agregarlo como opci�
   propio (financia el saldo de una venta, sin este método plano). Si el dueño lo pide, se puede replicar
   ahí con el mismo patrón.
 
+### Financiamiento — repase de diseño con skills (ui-ux-pro-max + frontend-design), pieza 1: hero del dashboard (25-jul-2026, v49.30)
+El dueño mandó un catálogo de skills de diseño (frontend-design, web-artifacts, canvas-design, algorithmic-art,
+ui-ux-pro-max, slack-gif) y pidió "aplicar estos skills para mejorar los diseños de las apps". **Aclaración
+honesta dada al dueño:** de las 6, solo `ui-ux-pro-max` y `frontend-design` aplican de verdad — son
+*inteligencia de diseño* (guía) que sirve a cualquier stack; las de React/Tailwind/shadcn/p5.js/GIF no
+encajan con NEXUS PRO (un solo HTML sin framework/build/npm). Ya se usa `web-design-guidelines` para auditar.
+El dueño eligió empezar por **Financiamiento**.
+- **Bug de la skill corregido:** `ui-ux-pro-max/scripts/design_system.py` línea 437 tenía un f-string con
+  backslash (solo válido en Python 3.12+; el entorno tiene 3.11) — se factorizó a una variable para que el
+  tool corra. El tool dio recomendaciones genéricas que NO aplican (sugirió "App Store landing", Liquid Glass,
+  ámbar, Fira Code — nada que ver con un dashboard de préstamos ni con la identidad morada ya establecida); lo
+  útil es su checklist de UX, que ya se sigue. Se mantuvo el morado por la regla "cada app su color".
+- **Proceso (muestras aprobadas antes de tocar producción, como siempre):** se hizo primero un antes/después
+  sutil (pulido de profundidad en las tarjetas KPI); el dueño pidió "algo más marcado". Se armaron **3
+  direcciones** en un standalone (A Hero morado · B Panel oscuro tipo instrumento · C Bento con métrica
+  destacada), renderizadas en 390px y 1080px y mostradas al dueño → **eligió A (Hero morado)**.
+- **HECHO — Hero del dashboard (`renderLista`, vista principal):** la tira de 5 tarjetas KPI planas
+  (`.nxFP-kpis` + helper local `kpi()`) se reemplazó por un **banner de marca** morado (`.nxFP-hA`): degradado
+  `#4f46e5→#7c3aed→#6d28d9`, textura de puntos sutil (`radial-gradient` en `::before`), glow (`::after`), el
+  "Total por cobrar" gigante (42px, blanco, tabular-nums) con el delta "+X% vs mes ant." en verde menta, y a la
+  derecha un 2x2 de mini-stats (Prestado/Cobrado/Vencido/Clientes) con íconos Tabler reales en tiles
+  translúcidos (Vencido en tinte rojo `.warn`). **Solo cambió la parte de arriba** — el topbar, buscador, la
+  tabla de préstamos (`prTablaHTML`) y las tarjetas de abajo (`.nxFP-dash`) quedaron intactas. Cero cambios de
+  datos/lógica: usa las MISMAS variables ya calculadas en `renderLista` (`totalSaldo`/`cobradoMes`/`tendencia`/
+  `totalCap`/`totalPag`/`totalVencido`/`clientesActivos`). El helper local `kpi()` quedó sin uso y se borró
+  (dead code). **`.nxFP-kpis`/`.nxFP-kpi` NO se tocaron** — los siguen usando las vistas Clientes y Reportes del
+  mismo módulo (8 usos), así que su CSS se mantiene.
+- **Verificado con Playwright, CSS real extraído del archivo** (las reglas `.nxFP-hA*` tal cual de
+  `nxFPEnsureCSS`): el hero renderiza igual que la muestra A aprobada (número gigante, delta verde, 2x2 de
+  stats, tile de vencido en rojo), sin desbordes en 390px ni 1080px, 0 errores de consola (los íconos salen
+  como placeholder en el harness porque el entorno bloquea el webfont Tabler — en `nexusprord.com` sí cargan).
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Pendiente (repase de diseño de Financiamiento, si el dueño quiere seguir):** mismo nivel de craft a la
+  tabla de préstamos, las tarjetas de abajo (`.nxFP-dash`), y los formularios — pieza por pieza, cada una
+  mostrada/aprobada antes de publicar. **Nota:** el `.agents/skills/.../design_system.py` quedó parchado
+  (fix del f-string) — es un archivo de skill, no de la app; si molesta en el diff se puede revertir, pero es
+  un fix legítimo y sin efecto en producción.
+
 ### Financiamiento — calcular el préstamo por el MONTO de la cuota + "Interés plano" (25-jul-2026, v49.29)
 El dueño pidió (nota de voz) dos cosas sobre el formulario de préstamo (`abrirForm`, modo Cuotas fijas):
 (1) quitar "— más ganancia" del método y dejarlo "Interés plano"; (2) poder poner **la cuota que el
