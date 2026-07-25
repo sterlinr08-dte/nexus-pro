@@ -15194,14 +15194,15 @@
   // aprobada (ya es un préstamo real, prestamo_id apunta a él) | rechazada.
   function prSolTablaHTML() {
     if (!_prSolicitudes.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-file-off"></i></div><h3>Aún no hay solicitudes</h3><p>Genera un link de firma desde "Nuevo préstamo" para empezar.</p></div>`;
-    const badge = s => s === 'pendiente' ? '<span style="font-size:9px;font-weight:800;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:20px;white-space:nowrap">SIN ENVIAR</span>'
+    const badge = (s, corr) => (s === 'pendiente' && corr) ? '<span style="font-size:9px;font-weight:800;color:#b45309;background:#fef3c7;padding:2px 8px;border-radius:20px;white-space:nowrap">POR CORREGIR</span>'
+      : s === 'pendiente' ? '<span style="font-size:9px;font-weight:800;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:20px;white-space:nowrap">SIN ENVIAR</span>'
       : s === 'enviada' ? '<span style="font-size:9px;font-weight:800;color:#d97706;background:#fef3c7;padding:2px 8px;border-radius:20px;white-space:nowrap">POR REVISAR</span>'
       : s === 'aprobada' ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:20px;white-space:nowrap">APROBADA</span>'
       : '<span style="font-size:9px;font-weight:800;color:#dc2626;background:#fee2e2;padding:2px 8px;border-radius:20px;white-space:nowrap">RECHAZADA</span>';
     const rows = _prSolicitudes.map(s => `<tr onclick="window.nxPrSolicitudVer('${s.id}')">
       <td data-l="Cliente" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(s.nombre || '')}</div>${s.cedula ? `<div class="nxFP-tSub">${esc(s.cedula)}</div>` : ''}</td>
       <td data-l="Monto" class="nxFP-tMoney">${fmt(s.capital)}</td>
-      <td data-l="Estado">${badge(s.estado)}</td>
+      <td data-l="Estado">${badge(s.estado, s.correccion_motivo)}</td>
       <td data-l="Fecha">${esc(String(s.created_at || '').slice(0, 10))}</td>
     </tr>`).join('');
     return `<div class="nxFP-tblWrap"><table class="nxFP-tbl"><thead><tr><th>Cliente</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -15232,8 +15233,9 @@
     const terminos = s.modo === 'credito'
       ? `Línea de crédito · Capital ${fmt(s.capital)} · Tasa ${s.tasa_interes || 0}% mensual${s.plazo_meses ? ` · Plazo ${s.plazo_meses} meses` : ''}`
       : `${s.num_cuotas || '—'} cuotas ${s.frecuencia || ''} · Capital ${fmt(s.capital)} · Total a devolver ${fmt(s.total_devolver)}${s.cuota_calculada ? ` · Cuota ${fmt(s.cuota_calculada)}` : ''}`;
+    const avisoCorr = s.correccion_motivo ? `<div style="font-size:11.5px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px;margin-bottom:10px"><b>Se le pidió corregir:</b> ${esc(s.correccion_motivo)}</div>` : '';
     const docs = s.estado === 'pendiente'
-      ? `<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px"><i class="ti ti-hourglass" style="font-size:26px;display:block;margin-bottom:6px"></i>El cliente todavía no ha abierto el link.</div>`
+      ? `${avisoCorr}<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px"><i class="ti ti-hourglass" style="font-size:26px;display:block;margin-bottom:6px"></i>${s.correccion_motivo ? 'Esperando a que el cliente lo envíe corregido.' : 'El cliente todavía no ha abierto el link.'}</div>`
       : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
           ${s.cedula_frente ? `<div><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">CÉDULA FRENTE</div><img src="${s.cedula_frente}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
           ${s.cedula_dorso ? `<div><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">CÉDULA DORSO</div><img src="${s.cedula_dorso}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
@@ -15241,8 +15243,12 @@
         ${s.selfie ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">FOTO CON LA CÉDULA</div><img src="${s.selfie}" style="width:100%;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}
         ${s.video_path ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">VIDEO DE COMPROMISO</div><div id="nxPrSolVid" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;color:#94a3b8;font-size:11.5px">Cargando video…</div>${s.video_guion ? `<div style="font-size:11px;color:#475569;background:#f8fafc;border-radius:8px;padding:8px;margin-top:6px"><b>Lo que se le pidió decir:</b> ${esc(s.video_guion)}</div>` : ''}</div>` : ''}
         ${s.firma ? `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:#94a3b8;margin-bottom:4px">FIRMA</div><img src="${s.firma}" style="width:100%;max-height:140px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #e2e8f0"></div>` : ''}`;
+    const btnCorregir = `<button class="btn bsm bghost" type="button" style="color:#b45309" onclick="window.nxPrSolicitudPedirCorreccion('${s.id}')"><i class="ti ti-rotate-clockwise"></i> Pedir corrección</button>`;
     const acciones = s.estado === 'enviada'
-      ? `<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPrSolicitudRechazar('${s.id}')"><i class="ti ti-x"></i> Rechazar</button><button class="btn bsm bc1" type="button" style="flex:1" onclick="window.nxPrSolicitudAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y crear préstamo</button></div>`
+      ? `<div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap"><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPrSolicitudRechazar('${s.id}')"><i class="ti ti-x"></i> Rechazar</button>${btnCorregir}<button class="btn bsm bc1" type="button" style="flex:1;min-width:150px" onclick="window.nxPrSolicitudAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y crear préstamo</button></div>`
+      : s.estado === 'rechazada'
+      ? `${s.motivo_rechazo ? `<div style="font-size:11.5px;color:#dc2626;background:#fef2f2;border-radius:8px;padding:8px;margin-top:8px"><b>Motivo:</b> ${esc(s.motivo_rechazo)}</div>` : ''}
+         <div style="margin-top:8px">${btnCorregir}</div>`
       : s.estado === 'aprobada' && s.prestamo_id
       // Ya es un préstamo real: el expediente se queda aquí como respaldo permanente, y desde
       // aquí se salta al préstamo (el camino de vuelta lo da el botón "Expediente firmado").
@@ -15316,6 +15322,56 @@
       const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
     } catch (e) { toast('err', 'Error al aprobar', String(e && e.message || e)); }
   };
+  // ── Pedir corrección: devuelve la solicitud al cliente para que la vuelva a llenar ──────
+  // La foto salió borrosa, el video sin sonido, mandó la cédula de otra persona… En vez de
+  // rechazarla del todo (que la cierra) o crear un link nuevo (que pierde el hilo), se
+  // devuelve a estado `pendiente`: el MISMO link vuelve a servir, porque la función Edge solo
+  // acepta envíos de solicitudes pendientes. Lo anterior NO se borra — se sobrescribe cuando
+  // el cliente reenvía, así que si nunca vuelve, la evidencia previa sigue ahí.
+  window.nxPrSolicitudPedirCorreccion = function (id) {
+    const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
+    cerrarModal('nxPrCorr');
+    const ov = document.createElement('div'); ov.id = 'nxPrCorr'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px">
+      <div class="mt"><span><i class="ti ti-rotate-clockwise"></i> Pedir corrección</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrCorr').remove()"><i class="ti ti-x"></i></button></div>
+      <div style="font-size:12px;color:#475569;margin-bottom:10px"><b>${esc(s.nombre || '')}</b> va a recibir el mismo enlace otra vez y podrá volver a subir todo. Lo que mandó antes se queda guardado hasta que envíe lo nuevo.</div>
+      <div class="prCard">
+        <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">¿Qué debe corregir?</div>
+        <textarea id="prCorrMotivo" rows="3" placeholder="Ej.: La foto del dorso de la cédula salió borrosa, tómala de nuevo con buena luz." style="width:100%;padding:11px 12px;border:1.5px solid #e6e8ef;border-radius:11px;font-size:14px;font-family:inherit;box-sizing:border-box;outline:none;background:#f8fafc;resize:vertical">${esc(s.correccion_motivo || '')}</textarea>
+        <div style="font-size:10.5px;color:#94a3b8;margin-top:4px">Se lo verá en pantalla al abrir el enlace, y va también en el mensaje de WhatsApp.</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn bsm bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCorr').remove()">Cancelar</button>
+        <button class="btn bsm bc1" type="button" style="flex:1" onclick="window.nxPrSolicitudReenviar('${id}')"><i class="ti ti-send"></i> Reenviar al cliente</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxPrSolicitudReenviar = async function (id) {
+    const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
+    const motivo = (val('prCorrMotivo') || '').trim();
+    if (!motivo) { toast('err', 'Escribe qué debe corregir', 'Es lo que el cliente va a leer.'); return; }
+    const btn = document.querySelector('#nxPrCorr .bc1');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando…'; }
+    try {
+      await getAPI().patch('prestamo_solicitudes', 'id=eq.' + id, {
+        estado: 'pendiente', correccion_motivo: motivo, correccion_at: new Date().toISOString(),
+        motivo_rechazo: null, revisado_at: new Date().toISOString(), revisado_por: nomAdmin()
+      });
+      Object.assign(s, { estado: 'pendiente', correccion_motivo: motivo, motivo_rechazo: null });
+      try { window.logAudit && window.logAudit('PRESTAMO_SOLICITUD_CORRECCION', s.nombre + ' · ' + motivo.slice(0, 80), 'Financiamiento'); } catch (e) {}
+      cerrarModal('nxPrCorr'); cerrarModal('nxPrSolModal');
+      await cargarPrestamos();
+      const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
+      const msg = `Hola ${(s.nombre || '').split(' ')[0]}, necesitamos que corrijas algo para completar tu préstamo:\n\n${motivo}\n\nEntra otra vez al mismo enlace y vuelve a enviarlo:`;
+      window.nxPrLinkFirmaMostrar(id, s.nombre, s.telefono, msg);
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Reenviar al cliente'; }
+      toast('err', 'No se pudo reenviar', String(e && e.message || e));
+    }
+  };
+
   window.nxPrSolicitudRechazar = async function (id) {
     const s = _prSolicitudes.find(x => String(x.id) === String(id)); if (!s) return;
     const motivo = window.prompt('¿Por qué se rechaza? (puedes explicárselo al cliente después)', '');
