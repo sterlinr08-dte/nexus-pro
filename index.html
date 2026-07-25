@@ -237,7 +237,7 @@ body.org-consultorio .sb-nav,body.org-consultorio .mobile-bottom-nav-clean,body.
 .g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:12px}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--tx2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:500;font-family:var(--ff);letter-spacing:.1px}
+.btn{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--tx2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:500;font-family:var(--ff);letter-spacing:.1px}
 .btn:hover{background:#eff6ff;border-color:#6d28d9;color:#1d4ed8}
 .btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
 .bc1{background:#6d28d9;border-color:#6d28d9;color:#fff;font-weight:600}.bc2{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3);color:#7c3aed}
@@ -492,7 +492,7 @@ tbody tr{transition:background .12s ease}
 ::-webkit-scrollbar-thumb:hover{background:#475569}
 /* ════ ICONOS DE ACCIÓN MÁS VISIBLES (Punto 5) ════ */
 .btn.bsm.bghost{
-  min-width:32px;height:32px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;
+  min-width:34px;height:34px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;
   border:1.5px solid #e2e8f0;background:#fff;border-radius:8px;transition:all .15s;white-space:nowrap;
 }
 .btn.bsm.bghost i{font-size:15px;color:#475569}
@@ -3599,7 +3599,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.33';
+const APP_VERSION='49.34';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

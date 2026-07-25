@@ -6,7 +6,9 @@
 del código (no de memoria ni a ojo), y qué falta para cumplir el estándar. Es el puente entre los
 dos.
 
-Medido el 25-jul-2026 sobre `index.html` + `parches.js` en la v49.33.
+Medido el 25-jul-2026 sobre `index.html` + `parches.js`. Estado: **v49.34** (C1 y C4 ya
+aplicados; la tabla de alturas del §2 refleja el histograma de ANTES de normalizar, se conserva
+como referencia del punto de partida).
 
 ---
 
@@ -159,10 +161,22 @@ Se verificó que los otros 3 sitios que cargan el CSS morado (`renderLista` y `a
 en `parches.js:13134`/`13472`) **sí son correctos**: pertenecen al módulo Financiamiento, cuya app
 ES morada.
 
-**Pendiente:** normalizar Cuotas a azul. Es un cambio de CSS acotado (el HTML, los ids y toda la
-lógica de cobro de cuota se quedan igual), pero toca una pantalla de dinero en producción, así
-que va con verificación Playwright y capturas antes/después. **Esperando el visto bueno del dueño
-por ser una reversión de algo que él mismo aprobó antes.**
+**✅ NORMALIZADO en la v49.34** (el dueño dio el visto bueno). Cómo se hizo, porque el patrón
+sirve para casos futuros: el motor de estilos `nxFPEnsureCSS()` lo comparten DOS apps, así que
+**no se tocó el CSS base** (habría despintado Financiamiento). En su lugar, `renderCuotas()` pinta
+`<div class="nxFP nxFP-pos">` y se agregó un bloque de anulación `.nxFP.nxFP-pos {...}` que remapea
+solo el acento a azul. Doble clase = más especificidad, así que gana **sin necesidad de
+`!important`**.
+
+**Detalle que casi se escapa:** la primera pasada solo buscó los tres morados fuertes
+(`#4f46e5`/`#6d28d9`/`#7c3aed`) y dejó los **fondos claros lila** (`#f5f3ff` en la pastilla REF,
+`#ede9fe` en el ícono de tarjeta) y el índigo `#4338ca` de los íconos "blue". No lo detectaron las
+aserciones — se vio en la captura de pantalla. Lección: al remapear una paleta hay que buscar
+también los **tintes claros**, no solo el color de acento.
+
+Verificado con 19 comprobaciones Playwright sobre el CSS real extraído del archivo, montando las
+dos variantes lado a lado: Cuotas en azul sin ningún rastro de morado, y **Financiamiento intacto
+en morado** (la comprobación que de verdad importaba). Sin desborde en 390 px, 0 errores de JS.
 
 ### C2 — Buscadores: 47 sitios contra el estándar 🟠
 
@@ -186,15 +200,40 @@ por ser una reversión de algo que él mismo aprobó antes.**
   lista y llamarse igual en todos los módulos"* — no como *"los doce, siempre, aunque estén
   vacíos"*. Requiere el sí del dueño.
 
-### C4 — Alturas de botón 🟡
+### C4 — Alturas de botón ✅ **RESUELTO en la v49.34**
 
-- **NPGS §3:** 40 / 44 / 34 px.
-- **Hoy:** el grueso está en 30, 32, 36 y 38 px; no existe ningún 44 px. Además hay dos alturas
-  decretadas antes por el propio dueño que quedarían fuera: las filas del menú lateral a 26 px
-  (v47.6, *"reducir la altura 20-30%"*) y el buscador a 42 px exactos (reglamento de buscadores).
-- **Propuesta:** normalizar a la escala de NPGS con dos excepciones escritas y justificadas (menú
-  lateral y buscador), o cambiar esas dos si el dueño prefiere el estándar puro. Es un barrido de
-  CSS grande pero de bajo riesgo — cero lógica. Requiere el sí del dueño.
+**NPGS §3:** Principal 44 px · Normal 40 px · Pequeño 34 px. Aplicado a los botones de acción:
+
+| Clase | Antes | Ahora | Rol |
+|---|---|---|---|
+| `.nxPf .ab` (Guardar, Cobrar) | 42 | **44** | Principal |
+| `.nxPf .ab.sm` | 38 | **40** | Normal |
+| `.nxPf .cartsavebtn` (Prefactura/Cotización) | 38 | **40** | Normal |
+| `.nxPf .btn2` (+ Crear nivel) | 36 | **34** | Pequeño |
+| `.nxPf .headbtn` | 36 | **34** | Pequeño |
+| `.nxFP-menuBtn` (menú ⋮) | 28 | **34** | Pequeño — área tocable mucho mejor en móvil |
+| `.nxFP-pgBtns button` (paginación) | 32 | **34** | Pequeño |
+| `.btn.bsm.bghost` | 32 | **34** | Pequeño |
+| `.btn` (núcleo de Seguros) | sin altura (~30) | **`min-height:34`** | Pequeño |
+| `.nxSf .sf-btn` | 34 | 34 | ya cumplía |
+
+`.btn` del núcleo se resolvió con **`min-height`**, no `height`: es la clase de botón más usada de
+todo Seguros y solo tenía relleno. `min-height` **solo hace crecer lo que estaba corto, nunca
+encoge nada** — riesgo mínimo frente a fijar una altura dura en cientos de sitios.
+
+#### Excepciones escritas (NO son botones de acción — se dejaron a propósito)
+
+| Elemento | Alto | Por qué |
+|---|---|---|
+| Filas del menú lateral | 26 px | Decretado por el dueño en v47.6 (*"reducir la altura 20-30%"*). Son filas de navegación, no botones. |
+| Buscador `.nxBusca` | 42 px | Fijado por el reglamento de buscadores. Es un campo de texto, no un botón. |
+| Chips de filtro (`.chip`, `.nxInvPill`) | 32 px | Pastillas de filtro, no acciones. |
+| Steppers de cantidad (+/−) | 24–30 px | Viven dentro de una línea de tabla; agrandarlos rompería la fila. |
+| Pestañas internas | 36 px | Navegación, no acción. |
+
+Verificado con 11 comprobaciones Playwright midiendo la altura **renderizada real** (no la
+declarada) del CSS extraído de los dos archivos, más que la barra de acciones completa no desborda
+en 390 px y que las excepciones no cambiaron.
 
 ---
 
