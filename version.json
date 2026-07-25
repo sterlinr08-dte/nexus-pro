@@ -1,7 +1,12 @@
 {
-  "version": "49.37",
+  "version": "49.38",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.38",
+      "t": "MEJORA — La ventana de detalle de un préstamo (Financiamiento) se rediseñó con más información real, siguiendo un mockup que mandaste",
+      "d": "Mandaste una imagen de referencia de cómo querías ver el detalle de un préstamo (con más tarjetas de resumen, línea de tiempo, barra de progreso). Antes de tocar nada se comparó esa imagen contra lo que el sistema puede mostrar de verdad — varias cosas del mockup no existen en NEXUS PRO (asesor asignado, sucursal, tipo de producto, pasos falsos como 'aprobado'/'contrato firmado'/'desembolso' — este módulo crea el préstamo directo, sin ese trámite) y NO se inventaron, para no fingir datos que no son reales.\n\nLo que SÍ se hizo, todo con datos reales de tu base:\n\n• La ventana ahora es más ancha y muestra 5 tarjetas de resumen: Monto prestado, Balance pendiente, Capital pagado (o 'Pagado a capital' en línea de crédito), Próxima cuota (con la mora si aplica), y Total del préstamo con el interés.\n\n• Barra de progreso visual mostrando qué % del capital ya se pagó.\n\n• La tabla de cuotas ahora tiene una columna de MORA — solo aparece un monto si tienes la mora activada en Configuración y la cuota ya pasó el período de gracia; si no, muestra '—'.\n\n• Línea de tiempo real: cuándo se creó el préstamo y cada pago que se registró, en orden — nada inventado, si no hay pagos solo se ve la creación.\n\n• Se agregó un botón 'Imprimir' directo desde el detalle (ya existía la función, solo faltaba el acceso rápido).\n\nNo cambió ningún cálculo de interés, cuotas ni mora — solo se organizó mejor la información que ya existía, siguiendo el estilo morado de Financiamiento (no el azul del mockup, para no romper la identidad propia de cada app del sistema)."
+    },
     {
       "v": "49.37",
       "t": "MEJORA — El buscador de cliente en Factura y en Cobrar ya recuerda tus últimos clientes y deja marcar favoritos",
