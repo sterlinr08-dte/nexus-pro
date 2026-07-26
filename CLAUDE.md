@@ -5478,6 +5478,40 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### BUG DE FONDO: `.nxPf` recortaba a 92vh TODA pantalla completa del POS (26-jul-2026, v49.70)
+El dueño: *"No puedo hacer scroll"*, con captura de Factura en su iPhone. Se le preguntó qué pasaba
+exactamente (3 opciones) y respondió **"Llego hasta ahí y se acaba — debajo no hay nada"**. Esa
+respuesta descartó "recortado pero presente" y apuntó al contenedor.
+- **CAUSA RAÍZ (anterior a esta sesión, la destapó el rediseño):**
+  `.nxPf{…;display:flex;flex-direction:column;max-height:92vh}`. `.nxPf` nació como envoltorio de
+  **MODAL** (formulario de artículo) — de ahí el `max-height:92vh`. Pero desde la Fase 4 se empezó a
+  usar como **raíz de pantallas completas**: hoy hay **13** (`nxDoc`, `nxCajaWrap`, `nxInvWrap`,
+  `nxCompWrap`, `nxRhWrap`, `nxRepWrap`, `nxRepWrapK`, `nxVenWrap`, `nxCtaWrap`, `nxAjWrap`,
+  `nxPosGridWrap`…). En todas, ese tope recortaba en silencio: el hijo (`.nxDocCard`, con
+  `overflow:hidden`) se comprimía al alto disponible y **todo lo que sobraba desaparecía** — y como
+  el contenedor "medía" menos, el área de scroll tampoco crecía → no había nada que bajar.
+  **Prueba de que ya había mordido antes:** `.nxAjWrap` llevaba un `max-height:none` puesto a mano,
+  justo para anular este mismo tope en Ajustes.
+- **Arreglo de raíz:** `max-height:92vh` sale de `.nxPf` y pasa a **`.modal.nxPf`**, que es donde de
+  verdad hace falta (17 modales usan `class="modal nxPf"`; 5 de ellos NO traían el tope inline, así
+  que quitarlo de la clase base sin esta regla sí los habría roto — se verificó). `display:flex;
+  flex-direction:column` **se queda** en `.nxPf`: varias pantallas dependen de su `gap` (Ajustes usa
+  `gap:14px`), quitarlo habría pegado sus tarjetas. Se borró el `max-height:none` de `.nxAjWrap`,
+  ya innecesario.
+- **Por qué ninguna de las 151 pruebas lo vio, y la lección:** cada harness cargaba el CSS de SU
+  pantalla (`fac.mjs` solo `nxPosCSS`, `picker.mjs` solo el trozo del picker). **Nunca se había
+  cargado el stack COMPLETO junto** (`index.html` + `nxPfCSS` + `nxPosCSS` + tienda) dentro del
+  armazón real de la app (`#app{height:100dvh}` → `.abody` → `.main` → `.content{overflow-y:auto}`).
+  El bug vivía exactamente en el cruce entre hojas. **Al probar una pantalla del POS, montarla en el
+  armazón real con TODO el CSS, no solo con el de su módulo** — y medir `scrollHeight` del
+  contenedor, no solo que los elementos existan.
+- Verificado con Playwright montando la pantalla real en el armazón real: `.nxDocCard` pasó de
+  **h=699 recortada a h=1232 completa**, y el scroll de `.content` de **771 a 1304** sobre 736 de
+  alto visible (antes no había nada que bajar). Más 6 comprobaciones de no-regresión: un
+  `.modal.nxPf` SIN tope inline sigue acotado a 92vh, uno CON tope también, una pantalla completa ya
+  no se recorta (2400px enteros), y Ajustes conserva su `gap:14px` y su dirección de columna. Las 4
+  suites anteriores repasadas sin regresión (49 cobro + 65 factura + 37 documento + 7 picker = 158).
+
 ### BUG MÍO: el CSS de las 2 pantallas nuevas del POS se inyectaba desde el módulo equivocado (26-jul-2026, v49.69)
 El dueño: *"la ventana de factura tiene un bug y lo que acordamos en cobrar aún no me sale"*, con una
 captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las dos reales.
