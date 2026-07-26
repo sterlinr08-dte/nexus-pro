@@ -1,7 +1,12 @@
 {
-  "version": "49.56",
+  "version": "49.57",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.57",
+      "t": "NUEVO \u2014 Los buscadores pasan a ventana: empezamos por Clientes",
+      "d": "El reglamento del sistema pide que todos los buscadores se vean igual: solo la lupa, y al tocarla se abre una ventana con Buscar, Recientes, Favoritos y Resultados.\n\nClientes es el primero. Ahora ves solo la lupa; al tocarla se abre la ventana, escribes, y te va diciendo cu\u00e1ntos resultados hay antes de cerrarla. Lo que buscas queda guardado en Recientes, y puedes marcar con la estrella lo que busques seguido \u2014 la pr\u00f3xima vez lo tocas y ya.\n\nAl cerrar, la lista queda filtrada y arriba se ve una pastilla con lo que buscaste, con una \u2715 para quitarla.\n\nEs una sola ventana compartida, no una por pantalla: as\u00ed las dem\u00e1s se van sumando sin volver a construir nada. Empezamos por una para que la pruebes antes de cambiar el resto."
+    },
     {
       "v": "49.56",
       "t": "NUEVO \u2014 El reporte diario ya no lo puede pedir cualquiera desde internet",

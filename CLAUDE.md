@@ -5372,6 +5372,51 @@ escriben ahí.
   arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
   Edge con service-role. Se deja documentado, no se improvisa.
 
+### NPGS §5 — Fase 3 arrancada: la ventana de filtro compartida + Clientes (26-jul-2026, v49.57)
+El dueño zanjó el conflicto C2 con **"aplicar los reglamentos"** — cumplimiento literal del §5, que
+ya había elegido en la v49.36 y reafirmó ahora después de que la enmienda lo reabriera. Se procede
+con su decisión: los ~24 buscadores "filtrar lo que ya veo" pasan a ventana.
+- **Inventario real medido** (no el del documento, que estaba desactualizado): **25 buscadores
+  renderizados por función** (`posBuscador` 14, `agBuscador` 6, `prBuscador` 3, `rfBuscador` 2,
+  `vhBuscador`/`mdBuscador`/`pendBuscador` 1 c/u, `nxBuscaHTML` directo 3) **+ 5 escritos a mano
+  como HTML estático** en `index.html` (`cliQ`, `polQ`, `cobQ`, `factQ`, `pgBuscar`) — estos
+  últimos no aparecen buscando llamadas a función, hay que buscar el `id=` en el markup.
+- **UN SOLO motor nuevo, `nxBuscaFiltroHTML` / `nxBuscaFiltroAbrir`** (`index.html`, junto a
+  `nxBuscaHTML` y `ModalBusquedaBase`) — no 24 ventanas (NPGS §6). Renderiza **solo la lupa** + una
+  pastilla con el término activo y su ✕; al tocarla abre una ventana con **Buscar · Recientes ·
+  Favoritos · Filtros · Resultados**, tal cual el §5.
+  - **Diferencia con `ModalBusquedaBase`:** aquel ELIGE un registro de un catálogo y lo devuelve a
+    un formulario; este solo FILTRA lo que ya está en pantalla. Reusa `nxBuscaHTML` por dentro como
+    caja de búsqueda y `mbbLSGet`/`mbbLSSet`/`MBB_REC_MAX`/`MBB_FAV_MAX` para Recientes/Favoritos.
+  - **`onterm` es una FUNCIÓN, no un string** (a diferencia de `onElegir` de `ModalBusquedaBase`):
+    casi todos los handlers de `parches.js` viven dentro de un IIFE y NO están en `window`, así que
+    un string no los alcanzaría. La config se guarda en un registro `window.__nbfReg[id]`, y el
+    HTML del botón solo lleva `nxBuscaFiltroAbrir('id')`.
+  - **"Resultados" honesto:** el componente no sabe pintar filas de 24 módulos distintos, así que
+    cuenta las filas reales del contenedor que le pasa el llamador (`cont:`) y muestra "N
+    resultados" en vivo mientras escribes. Al aceptar cierra y la lista de atrás queda filtrada.
+- **Primera pantalla migrada: Clientes de Seguros (`cliQ`).** Patrón de migración de **riesgo
+  mínimo**, el que se repetirá en las demás: el `<input id="cliQ">` **sigue existiendo, oculto**
+  (`type="hidden"`), así que `rCli()`/`rCliBuscar()` leen el término exactamente igual que antes —
+  **cero cambios en la lógica de filtrado**. Lo único nuevo es `pintarLupaCli()`, llamada desde
+  `rCli()`, que pinta la lupa y le pasa un `onterm` que escribe en ese input y vuelve a llamar
+  `rCliBuscar()`.
+- **Verificado con Playwright, código real extraído del archivo** (`nxBuscaEnsureCSS`,
+  `nxBuscaHTML`, los helpers de localStorage y todo el bloque `nxBuscaFiltro*` tal cual), servido
+  por HTTP local (localStorage necesita un origen real): **17 comprobaciones** — solo se ve la
+  lupa y no queda ninguna barra fija, la ventana trae campo/Recientes/Resultados, escribir filtra
+  la lista de atrás y el contador dice "2 resultados", aceptar cierra dejando la pastilla y la
+  lista filtrada, reabrir muestra lo buscado en Recientes, la estrella lo guarda en Favoritos,
+  elegir un guardado filtra y cierra, y la ✕ de la pastilla lo quita todo. Sin desborde en 390px,
+  0 errores de JS.
+  - **2 fallos iniciales eran de la prueba, no del código:** el CSS pone los títulos de sección en
+    MAYÚSCULAS (`text-transform:uppercase`) y yo comparaba contra "Recientes"/"Favoritos" en
+    minúscula — `innerText` devuelve el texto RENDERIZADO. Corregida la comparación, 17/17.
+- **Pendiente:** los otros ~24 buscadores. Se migran en tandas con este mismo patrón (input oculto
+  + `nxBuscaFiltroHTML`), cada tanda probada antes de publicar. Se publicó **una sola pantalla
+  primero** a propósito, para que el dueño pruebe la sensación real en su iPhone antes de que
+  cambien Facturas, Cobros y Vender — las que usa todos los días.
+
 ### Los 3 respaldos: cerrados, y el respaldo diario ya no dejaba fuera medio sistema (26-jul-2026)
 Continuación directa de lo de abajo. Al aplicar el mismo arreglo a `respaldo-diario`,
 `respaldo-correo-mensual` y `verificar-respaldo` aparecieron **dos cosas más graves que el hueco
