@@ -1,7 +1,12 @@
 {
-  "version": "49.64",
+  "version": "49.65",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.65",
+      "t": "Ahora eliges a qui\u00e9n le escribes: al cliente o a su agente",
+      "d": "En la lista de Clientes hay un bot\u00f3n verde de WhatsApp. Al tocarlo te pregunta **\u00bfa qui\u00e9n le escribo?** y eliges:\n\n\u2022 **Al cliente** \u2014 el recordatorio de pago de siempre\n\u2022 **A su agente** \u2014 le avisa que ESE cliente suyo est\u00e1 atrasado, con el monto y el WhatsApp del cliente, para que le d\u00e9 seguimiento\n\nSi a alguno le falta el n\u00famero, en vez de fallar te lleva directo a pon\u00e9rselo.\n\nNUEVO \u2014 En la pesta\u00f1a **Avisos** se agreg\u00f3 arriba \"Seguimiento por agente\": un bot\u00f3n por agente que le manda **UN solo mensaje con toda su lista** de clientes atrasados, ordenada de mayor a menor deuda. Con 60 clientes atrasados, mandar uno por uno no es opci\u00f3n \u2014 esto es un toque.\n\n**IMPORTANTE:** para que esto funcione hay que ponerle el tel\u00e9fono a los agentes en Ajustes \u2192 Agentes. Ahora mismo ninguno de los dos lo tiene guardado."
+    },
     {
       "v": "49.64",
       "t": "Clientes se puede usar de verdad desde el celular",
