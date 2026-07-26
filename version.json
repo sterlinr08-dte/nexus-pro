@@ -1,7 +1,12 @@
 {
-  "version": "49.73",
+  "version": "49.74",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.74",
+      "t": "NUEVO: el círculo de \"Facturar a\" ahora es la lupa para buscar el cliente, y la ventana de clientes tiene líneas",
+      "d": "Dos cosas en la pantalla de Factura. (1) El círculo oscuro que estaba al lado de \"Facturar a\" (el que mostraba una letra o un guión) ahora tiene el icono de lupa y se puede tocar: abre la ventana para buscar y elegir el cliente. Antes era solo un adorno que no hacía nada. (2) La ventana de \"Elegir cliente\" ahora tiene una línea fina entre cada cliente, para que no se peguen unos con otros y se distingan bien de un vistazo — se veían corridos, sobre todo cuando varios clientes tienen nombres parecidos. La última línea de la lista no lleva raya suelta al final."
+    },
     {
       "v": "49.73",
       "t": "NUEVO: el botón de imprimir de Cobrar saca el TICKET, no el documento grande",
