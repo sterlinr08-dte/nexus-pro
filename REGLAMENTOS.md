@@ -27,6 +27,11 @@
 | 6 | **Contabilidad (partida doble, asientos automáticos)** | ✅ decretado y auditado — v49.91 |
 | 7 | **Clientes y entidades** | ✅ decretado y auditado — v49.92 |
 | 8 | **Taller (reparaciones, garantías)** | ✅ decretado y auditado — v49.93 |
+| 9 | **Seguros (clientes, facturación, cobro, NCF)** | ✅ decretado y auditado — v49.95 |
+
+> Los §1-8 son del **POS/Multiempresa**. El §9 es el **núcleo de Seguros** (`index.html`), el negocio
+> original — correduría de seguros de salud. Es el único módulo con DATOS REALES en producción (109
+> clientes, 300 facturas, 174 cobros), así que su auditoría no es forward-looking: es dinero en vivo.
 
 **Reglamentos anteriores, todavía en `CLAUDE.md`** (son de DISEÑO, no de negocio; se migran aquí
 cuando le toque su tanda a cada módulo): Botones y menú lateral · Buscadores (`nxBuscaHTML`) ·
@@ -343,3 +348,71 @@ bloquea a nadie — se deja correcto antes de que se use, igual que los reglamen
 costo de las piezas es un número manual, no descuenta stock) · no hay un flujo de "reclamo de
 garantía" que reabra la orden — la garantía es informativa (se sabe si un equipo entregado sigue
 cubierto), sin botón de reapertura.
+
+---
+
+## 9 · REGLAMENTO DE SEGUROS
+*(decretado por el dueño el 26-jul-2026 · auditado y aplicado en v49.95)*
+
+El núcleo del negocio: clientes de seguro de salud, su facturación mensual, el cobro y el
+comprobante fiscal. **Es el único módulo con datos reales en producción — se audita como dinero en
+vivo, no como regla forward-looking.**
+
+**Modelo de deuda**
+
+1. **`deuda_total` = suma de las primas facturadas** (`prima_base + prima_deps`) de las facturas NO
+   anuladas del cliente. `reconciliarDeudasClientes` solo la SUBE al facturado (additivo), nunca la
+   baja sola.
+2. **`pagado` = suma de los pagos aplicados a facturas.** `pend(c) = deuda_total − pagado` (solo
+   facturas).
+3. **La "deuda antes del sistema" (`deuda_anterior`) es una bolsa SEPARADA** — no se mezcla con las
+   facturas. `pendTot(c) = pend(c) + deuda_anterior`. Cada cobro se dirige explícitamente a facturas
+   (por defecto) o a la deuda anterior; nunca se cruzan.
+4. **El estado de cada factura (Pendiente/Parcial/Pagado) es una CACHÉ, no la verdad.** La verdad se
+   calcula repartiendo el `pagado` del cliente de la factura MÁS VIEJA a la más nueva
+   (`_saldoFacturasCliente`). **Toda operación que mueva ese reparto — registrar un pago, corregir el
+   precio de una factura, anular una factura — DEBE resincronizar el estado de TODAS las facturas del
+   cliente (`resyncEstadoFacturas`), no solo la que se tocó.** Las listas de "pendientes/atrasadas"
+   recalculan el saldo real, no confían en la etiqueta.
+
+**Facturación**
+
+5. **Se factura solo a clientes activos y con `permitir_facturacion` ≠ false** (familiar/cortesía no
+   factura).
+6. **Anti-duplicado por período:** nunca dos facturas no anuladas del mismo cliente en el mismo
+   período. El chequeo consulta la BASE, no solo la memoria (la auto-facturación del servidor puede
+   haber generado ya el período).
+7. **Cada factura congela el precio del momento.** Corregir una factura ya generada es el único
+   camino para cambiar su monto; una factura **pagada no se corrige** (se anula), una **anulada no se
+   cobra ni se corrige**.
+8. **El corte 20-al-20 manda en las vistas:** antes del día 20 el mes vigente es el anterior
+   (`mesCorte`) — junio no es "atrasada" el 5 de julio, todavía es el mes en curso de cobro.
+
+**Comprobante fiscal (NCF)**
+
+9. **El NCF se aparta de forma atómica en la base** (`siguiente_ncf`, `UPDATE...RETURNING`) — nunca
+   se repite. Formato **DGII estándar de 11 caracteres SIN guion** (`B0200000005`). La generación
+   manual y la auto-facturación del servidor comparten el MISMO contador (`secuencias_ncf`). Candado
+   de último nivel: índice único parcial `facturas(ncf)`.
+
+**Cobro**
+
+10. **Un cobro exige agente que cobró, referencia, y banco** (si es transferencia/depósito). Registra
+    el abono, el asiento contable (Caja/Banco vs Cuentas por cobrar) y **resincroniza el estado de las
+    facturas**. Un pago mayor que lo pendiente pide confirmación (pago adelantado). El e-CF de la DGII
+    (§4) aplica igual a Seguros — hoy emite NCF de papel, falta la facturación electrónica.
+
+**Estado de la auditoría (v49.95):** la base estaba sana en lo grande (0 NCF duplicados, `deuda_total`
+cuadra con las primas en los 109 clientes). Se encontraron **2 huecos reales**: (a) `nxEditarPrecioFactura`
+y `anularFactura` no resincronizaban el estado de las demás facturas del cliente — dejaban etiquetas
+viejas; se midieron **11 facturas reales** mostrando más deuda de la real (Parcial/Pendiente que ya
+estaban Pagadas), corregidas por SQL (solo la etiqueta, cero montos) + resync agregado a las 2
+funciones. (b) el NCF manual salía con guion (`B02-00000005`) mientras la auto-facturación usa el
+formato DGII sin guion — unificado, más el índice único de red de seguridad. Verificado con 10
+comprobaciones end-to-end sobre el código real (el pago se re-reparte a las facturas correctas tras
+corregir un precio o anular).
+
+**Pendientes de este reglamento (NO construidos):** e-CF de la DGII (ver §4, obligatorio 15-nov-2026)
+· los NCF históricos con guion (103, todos viejos) se dejan como están — no se reescriben documentos
+fiscales ya emitidos · las comisiones de agente y las transferencias entre agentes tienen su propia
+lógica, no auditada en esta tanda.

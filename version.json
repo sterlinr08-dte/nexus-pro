@@ -1,7 +1,12 @@
 {
-  "version": "49.94",
+  "version": "49.95",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.95",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO DE SEGUROS: el estado de las facturas ya nunca muestra deuda que el cliente ya pagó. · ARREGLADO (importante): cuando corregías el precio de una factura o anulabas una factura, las OTRAS facturas del mismo cliente se quedaban con la etiqueta vieja (seguían diciendo 'Pendiente' o 'Parcial' aunque el pago del cliente ya las cubriera). Se encontraron 11 facturas reales así y se corrigieron (solo la etiqueta — no se tocó ni un peso de deuda ni de pagos). De ahora en adelante, corregir un precio o anular una factura recalcula solo el estado de TODAS las facturas de ese cliente. · Los comprobantes fiscales (NCF) generados a mano ahora salen con el mismo formato de 11 dígitos de la DGII (B0200000005) que ya usa la facturación automática — antes salían con un guion (B02-00000005). Los números nunca se repiten (candado en la base). · Nada de esto cambia lo que un cliente debe: solo arregla cómo se MUESTRA."
+    },
     {
       "v": "49.94",
       "fecha": "2026-07-26",
