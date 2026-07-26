@@ -22052,8 +22052,19 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   };
   window.nxPosDelCli = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
-    if (saldoCli(c) > 0 && !confirm('Este cliente tiene saldo pendiente. ¿Eliminarlo de todos modos?')) return;
-    if (saldoCli(c) <= 0 && !confirm('¿Eliminar el cliente "' + c.nombre + '"?')) return;
+    const debe = saldoCli(c);
+    // REGLAMENTO DE CLIENTES: no se elimina (desactiva) un cliente que todavía debe dinero sin
+    // reconocer la deuda — si desaparece de la lista activa se pierde de vista a un deudor. Al
+    // cajero se le bloquea; admin/gerente pueden hacerlo con confirmación + auditoría. Mismo patrón
+    // de permiso que el límite de crédito. El borrado es SUAVE (activo:false): el historial se
+    // conserva, no se destruye.
+    if (debe > 0) {
+      if (!puedeVerMin()) { toast('err', 'Ese cliente debe ' + fmt(debe), 'Cóbrale primero o pide autorización para eliminarlo.'); return; }
+      if (!confirm('"' + (c.nombre || '') + '" todavía debe ' + fmt(debe) + '.\n\n¿Eliminarlo de todos modos? (su historial se conserva)')) return;
+      try { (window.logAudit || function () {})('POS_CLIENTE_ELIMINADO_CON_DEUDA', (c.nombre || '') + ' · debía ' + fmt(debe), 'POS'); } catch (e) {}
+    } else {
+      if (!confirm('¿Eliminar el cliente "' + c.nombre + '"?')) return;
+    }
     try {
       await getAPI().patch('pos_clientes', 'id=eq.' + id, { activo: false });
       toast('ok', 'Cliente eliminado'); cerrarModal('nxPosCli');
@@ -22382,7 +22393,14 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxPosDelProv = async function (id) {
     const pp = _proveedores.find(x => String(x.id) === String(id));
     if (pp && pp._entidad) { toast('err', 'Es una Entidad', 'Quítale el rol "Proveedor" desde el módulo Entidades'); return; }
-    if (!confirm('¿Eliminar este proveedor?')) return;
+    // REGLAMENTO DE CLIENTES: no se elimina un proveedor al que todavía le debes (cuenta por pagar)
+    // sin reconocerlo — mismo criterio que un cliente que debe. Cajero bloqueado, admin autoriza.
+    const debeP = pp ? saldoProv(pp) : 0;
+    if (debeP > 0) {
+      if (!puedeVerMin()) { toast('err', 'Le debes ' + fmt(debeP) + ' a este proveedor', 'Paga la cuenta primero o pide autorización.'); return; }
+      if (!confirm('Todavía le debes ' + fmt(debeP) + ' a este proveedor.\n\n¿Eliminarlo de todos modos?')) return;
+      try { (window.logAudit || function () {})('POS_PROVEEDOR_ELIMINADO_CON_CXP', (pp.nombre || '') + ' · se le debía ' + fmt(debeP), 'POS'); } catch (e) {}
+    } else if (!confirm('¿Eliminar este proveedor?')) return;
     try { await getAPI().patch('pos_proveedores', 'id=eq.' + id, { activo: false }); toast('ok', 'Proveedor eliminado'); cerrarModal('nxPosProv'); _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; mergeProvEntidades(); const v = document.getElementById('v-pos'); if (v) renderPOS(v); if (document.getElementById('nxPosProvs')) window.nxPosProveedores(); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 

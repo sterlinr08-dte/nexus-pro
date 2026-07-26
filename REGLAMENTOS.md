@@ -25,7 +25,7 @@
 | 4 | Fiscal y documentos (NCF, e-CF, notas de crédito) | pendiente (omitido a pedido del dueño) |
 | 5 | **Inventario (existencia, kardex, almacenes)** | ✅ decretado y auditado — v49.90 |
 | 6 | **Contabilidad (partida doble, asientos automáticos)** | ✅ decretado y auditado — v49.91 |
-| 7 | Clientes y entidades | pendiente |
+| 7 | **Clientes y entidades** | ✅ decretado y auditado — v49.92 |
 | 8 | Taller (reparaciones, garantías) | pendiente |
 
 **Reglamentos anteriores, todavía en `CLAUDE.md`** (son de DISEÑO, no de negocio; se migran aquí
@@ -223,3 +223,40 @@ serio, igual que los reglamentos anteriores.
 "cierran" a fin de mes/año) · el costo de la venta (COGS) usa el costo de HOY del producto, no el
 costo real del día en que se vendió (`pos_venta_items` no guarda el costo del momento) · no hay
 conciliación bancaria ni centro de costo.
+
+---
+
+## 7 · REGLAMENTO DE CLIENTES Y ENTIDADES
+*(decretado por el dueño el 26-jul-2026 · auditado y aplicado en v49.92)*
+
+Aplica al maestro de terceros del POS (`pos_clientes` — una misma ficha puede ser cliente, proveedor,
+empleado o banco) y a los proveedores.
+
+**Parte A — crear y editar**
+
+1. **Toda entidad tiene al menos un rol** (cliente / proveedor / empleado / banco). Sin rol no se
+   guarda.
+2. **No se crean duplicados a ciegas.** Al crear, si ya existe otra ficha con el mismo teléfono o la
+   misma cédula/RNC (normalizados), se avisa y se ofrece **abrir la que ya existe** en vez de duplicar.
+   Al editar no aplica (es la misma ficha).
+3. **Los roles quedan conectados donde corresponde.** Un empleado se sincroniza con Recursos Humanos;
+   quitarle el rol "empleado" desactiva su ficha de RRHH. Un proveedor que es Entidad no se edita/
+   borra desde Compras — se maneja desde Entidades, para no romper la ficha compartida.
+
+**Parte B — eliminar**
+
+4. **El borrado es SIEMPRE suave** (`activo:false`): la ficha desaparece de la lista activa pero su
+   historial (ventas, cobros, compras) se conserva y es recuperable. Nunca se destruye el dato.
+5. **No se elimina un cliente que todavía te debe** sin reconocer la deuda — si desaparece de la lista,
+   se pierde de vista a un deudor. Al **cajero** se le bloquea (le dice cuánto debe); **admin/gerente**
+   pueden hacerlo confirmando, y queda en Auditoría. Mismo criterio para un **proveedor al que todavía
+   le debes** (cuenta por pagar).
+
+**Nota:** al día de hoy la base tiene **0 clientes con fiado y 0 proveedores con cuenta por pagar**,
+así que la regla 5 todavía no le bloquea a nadie — se deja correcta antes de que se use, igual que los
+reglamentos anteriores.
+
+**Pendientes de este reglamento (NO construidos):** los apartados (`pos_apartados`) no tienen
+`cliente_id` — se ligan por nombre/teléfono, así que un apartado activo NO cuenta como "deuda" al
+borrar un cliente (no se finge un enlace que la base no tiene) · no hay fusión de dos fichas duplicadas
+en una sola (hoy solo se avisa al crear).

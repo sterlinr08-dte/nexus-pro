@@ -8573,3 +8573,34 @@ línea por línea, medir la base, y solo entonces redactar (texto completo en **
 - **Pendiente:** no hay cierre de período (los libros nunca se "cierran") · el COGS usa el costo de
   HOY del producto, no el costo real del día de la venta (`pos_venta_items` no lo guarda) · sin
   conciliación bancaria ni centro de costo.
+
+### REGLAMENTO DE CLIENTES Y ENTIDADES — decretado y auditado (26-jul-2026, v49.92)
+Sexta tanda del "un reglamento por módulo". Cubre el maestro de terceros del POS (`pos_clientes`, una
+ficha puede ser cliente/proveedor/empleado/banco) y los proveedores. Texto completo en
+**`REGLAMENTOS.md` §7**.
+- **Medición previa (SQL):** 0 clientes con fiado, 0 proveedores con cuenta por pagar — la regla del
+  borrado es forward-looking.
+- **Lo que ya estaba bien (confirmado, no tocado):** `nxEntGuardar` exige al menos un rol · detecta
+  duplicados al CREAR (teléfono/cédula normalizados, ofrece abrir el existente) · sincroniza empleado ↔
+  RRHH (quitar el rol desactiva la ficha) · un proveedor-Entidad no se borra desde Compras (redirige a
+  Entidades) · el borrado es SUAVE (`activo:false`, historial recuperable).
+- **HUECO 1, cerrado — se podía eliminar un cliente que debe con solo un aviso saltable.** `nxPosDelCli`
+  solo mostraba `confirm('tiene saldo pendiente...')` — cualquiera podía saltarlo, y si el cliente
+  desaparecía de la lista activa se perdía de vista al deudor. Inconsistente con Financiamiento
+  (`nxPrClienteBorrar`, v49.33, que SÍ bloquea). Ahora: si `saldoCli(c) > 0`, al **cajero** se le
+  bloquea (con el monto), **admin/gerente** confirman y queda `logAudit('POS_CLIENTE_ELIMINADO_CON_DEUDA')`.
+  Mismo patrón de permiso que el límite de crédito (`puedeVerMin()`).
+- **HUECO 2, cerrado — se podía eliminar un proveedor al que le debes.** `nxPosDelProv` no miraba la
+  cuenta por pagar. Ahora usa `saldoProv(pp)`: si le debes, cajero bloqueado / admin confirma +
+  `logAudit('POS_PROVEEDOR_ELIMINADO_CON_CXP')`.
+- **Decisión honesta:** los apartados no tienen `cliente_id` (solo nombre/teléfono), así que NO se
+  cuentan como deuda al borrar un cliente — no se finge un enlace que la base no tiene.
+- Verificado con **21 comprobaciones** contra el código REAL extraído por contenido (`nxEntGuardar`,
+  `nxPosDelCli`, `nxPosDelProv`, `saldoCli`, `saldoProv`, `puedeVerMin`) con Supabase simulado y un DOM
+  controlable: sin rol no guarda, crear con duplicado ofrece abrir el existente / Aceptar crea otra,
+  editar no revisa duplicados, borrar cliente/proveedor con deuda bloqueado al cajero y autorizado al
+  admin con auditoría, sin deuda se borra normal, y el proveedor-Entidad sigue protegido. Más el humo
+  de la app real: **0 errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Pendiente:** no hay fusión de dos fichas duplicadas en una sola (solo se avisa al crear) · los
+  apartados no se ligan por id a su cliente.
