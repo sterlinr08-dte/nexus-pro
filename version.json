@@ -1,7 +1,12 @@
 {
-  "version": "49.82",
+  "version": "49.83",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.83",
+      "fecha": "2026-07-26",
+      "texto": "MEJORADO: los últimos botones que solo tenían un ícono ya se anuncian por su nombre para quien usa el sistema con lector de pantalla — la campana de alertas, la de notificaciones, la lupa de búsqueda global, el botón de descargar un documento del cliente, el de página siguiente en Rifas, el enlace de WhatsApp de recordatorio, y la ✕ para quitar un IMEI al registrar una compra (esta última ahora también se puede usar con el teclado, con Enter o Espacio). No cambia nada de lo que se ve."
+    },
     {
       "v": "49.82",
       "fecha": "2026-07-26",
