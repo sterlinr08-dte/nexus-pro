@@ -5099,6 +5099,61 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### RETROSPECTIVA — cierre de "aplicar todas las skills" (Ronda 5, `gstack-retro`, 26-jul-2026)
+
+Las 21 skills instaladas quedaron aplicadas o clasificadas. **5 rondas de auditoría hechas**
+(seguridad · animaciones · accesibilidad · salud del código · esta retrospectiva); las 9 restantes
+no son auditorías sino **método de trabajo** (`webapp-testing`, `gstack-investigate`,
+`gstack-spec`, `gstack-plan-*`, `gstack-review`, `careful`/`freeze`/`unfreeze`/`guard`) y ya se
+usan cuando el caso lo pide — ver "ENRUTAMIENTO AUTOMÁTICO DE SKILLS".
+
+#### Lo que las 4 auditorías encontraron, en una tabla
+
+| Ronda | Hallazgo principal | Estado |
+|---|---|---|
+| 1 Seguridad | `organizaciones` aceptaba **escritura de cualquiera en internet** (podían desviar el dominio de una empresa) | cerrado |
+| 1 Seguridad | Las secuencias de NCF/recibos se podían **quemar sin cuenta** | cerrado |
+| 1 Seguridad | 16 tablas de dinero abiertas a usuarios de **otras empresas** | cerrado |
+| 1 Seguridad | Clave de Gmail en texto plano en una función pública | rotada por el dueño + sacada del código |
+| 2 Animaciones | **47 de 56** animaciones ignoraban "reducir movimiento" | cerrado con 1 regla |
+| 3 Accesibilidad | 18 encabezados ordenables sin teclado · 22 imágenes sin descripción | cerrado |
+| 3 Accesibilidad | 213 botones de ícono sin nombre → 144 siguen | parcial (69 automáticos) |
+| 4 Salud | 26 funciones muertas | cerrado |
+| 4 Salud | Duplicación, comentarios, arquitectura | **ya estaba sano** — no se tocó |
+
+#### Los 5 patrones que se repiten en TODA la sesión (esto es lo que hay que recordar)
+
+1. **Verificar el arreglo, no darlo por bueno.** Pasó 3 veces que el primer intento no hizo nada y
+   solo se descubrió al medir DESPUÉS: el `revoke` de las secuencias (el permiso venía de PUBLIC,
+   no de `anon`), el blindaje del sidebar de Financiamiento (la regla base se declaraba más abajo
+   en la cadena y ganaba), y el `!important` de la flecha de los `<select>`. **Un cambio aplicado
+   no es un cambio que funciona.**
+2. **La simulación no sustituye a la frontera real.** El bug del video (400 de Storage) no salió en
+   ninguna prueba porque en el harness esa llamada estaba simulada. Cuando el fallo puede vivir en
+   el borde con un servicio externo, hay que tocar el servicio: en esta base, `pg_net` es el camino.
+3. **Medir con el código real, extraído por contenido.** Los extractores por número de línea se
+   corren con cada edición y hacen fallar suites que estaban bien (pasó en la v49.47). Buscar con
+   `grep` sobre el contenido, siempre.
+4. **Los errores propios se corrigen y se escriben.** En esta sesión: la medición de comentarios que
+   dio 32% (era 7%), y las 2 entradas de changelog que salieron sin el prefijo `NUEVO`. Se
+   arreglaron y quedaron documentadas, no borradas.
+5. **Lo que ya está bien, no se toca.** Cero animaciones mueven layout, la duplicación es mínima, el
+   archivo único de 28k líneas es una decisión del dueño. Auditar sirve tanto para confirmar lo sano
+   como para encontrar lo roto.
+
+#### Lo que queda abierto, por orden de urgencia real
+
+1. **Poner el Secret `GMAIL_PASS`** — el reporte diario no sale hasta entonces (paso del dueño).
+2. **`auditoria` abierta entre empresas** (2.372 filas con nombres de clientes). Necesita
+   `organizacion_id` + relleno + trigger + política: hay una decisión de datos de por medio.
+3. **144 botones de ícono sin nombre** + **112 filas clicables sin teclado** — trabajo de redacción
+   caso por caso, mejor módulo por módulo.
+4. **Borrar las 4 tablas de permisos muertas** (101 filas, cero uso).
+5. **Activar la protección de contraseñas filtradas** en Supabase Auth (un clic del dueño).
+6. **`verify_jwt:true` en `enviar-reporte-email`** — hay que arreglar el cron en la misma operación.
+7. **La decisión de buscadores (C2)** sigue esperando: ¿los 24 de "filtrar lo que ya veo" se quedan
+   como barra en línea (recomendado bajo el criterio nuevo) o van a ventana?
+
 ### AUDITORÍA DE SEGURIDAD — Ronda 1 de "aplicar todas las skills" (26-jul-2026)
 El dueño pidió aplicar las 21 skills instaladas. Se agruparon en 5 rondas de auditoría; esta es la
 primera (`gstack-cso`), la de mayor riesgo real. **3 agujeros reales cerrados en vivo, 5 hallazgos
