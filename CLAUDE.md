@@ -5478,6 +5478,66 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### POS · Factura/Prefactura como DOCUMENTO — la muestra B aprobada (26-jul-2026, v49.67)
+Segunda mitad del rediseño que el dueño aprobó ("me gusta la B... se ve incompleta" → se completó y
+dijo *"Aplícalo"*). `renderFactura()`/`pintarFactura()` pasaron de un formulario de 2 columnas con
+panel lateral a **un documento**: encabezado con la empresa, dos columnas Facturar a / Condición de
+pago, tabla de artículos y pie con Otras acciones + totales.
+- **Las 2 preguntas que quedaron sin responder, resueltas y por qué:**
+  1. **El encabezado SÍ lleva empresa + RNC** — `empInfo()` (nombre/RNC/teléfono/dirección de `CFG`)
+     ya existía y es lo que el ticket impreso ya usa, así que no es dato inventado. Helper nuevo
+     `facEmpresa()`: si `CFG` no trae nombre (organización de tienda, que no lee la config de
+     Seguros) cae al **nombre real de la organización** en vez de dejar el genérico "NEXUS PRO".
+  2. **El botón Cobrar NO quedó fijo abajo en el celular.** Se descartó midiendo el riesgo: la app
+     ya tiene su propia barra flotante inferior (`.mobile-bottom-nav-clean`, `position:fixed`) y dos
+     barras fijas apiladas en un iPhone se tapan entre sí. En su lugar, en el celular el bloque de
+     **TOTAL + Cobrar va ANTES de "Otras acciones"** (`order` en la rejilla del pie) — se llega a
+     cobrar sin bajar hasta el final, con cero riesgo de choque.
+- **Todos los ids y `onclick` intactos** (`facNumPrev`, `facNCFSel`, `facFecha`, `facAlmSel`,
+  `facCliBtn`, `facCliTxt`, `facCliInfoWrap`, `facSearchBox`, `facTabla`, `facNota`, `facResumen`) —
+  ninguna función de negocio se tocó: precios, ITBIS, descuentos, IMEI, NCF, almacén y el flujo de
+  cobro son los mismos.
+- **`facPartesHTML(c)` (nueva)** pinta el bloque "Facturar a" + "Condición de pago" con los datos
+  reales que ya usaba `facCliInfoHTML` (`saldoCli`, `limite_credito`, última compra perezosa).
+  **`pintarFacCliInfo()` elige el renderizador según la pantalla montada:** `#facCliInfoWrap` lleva
+  `data-doc="1"` en Factura/Prefactura → bloque de documento; en Vender no lo lleva → tarjeta
+  compacta de siempre. Así Vender no se tocó.
+- **La casilla "A crédito" pasó a un segmentado Contado / A crédito** (`nxFacSetCredito`, misma
+  función).
+- **BUG REAL arreglado de paso:** `nxFacSetCredito` escribía el número nuevo en `el.textContent`,
+  pero `#facNumPrev` es un `<input>` — en un input eso no se ve. O sea, **al marcar "A crédito" el
+  número nunca cambiaba a la serie de crédito**. Ahora va en `.value` (y usa
+  `proxNumeroFacturaCorto`, el mismo formato con el que se pinta al abrir). Verificado con una
+  prueba dedicada: `00001248` → `CR-00000091` → vuelve al tocar Contado.
+- **Segundo detalle real, encontrado al construir:** el callback de `nxFacCliToggle` pisaba
+  `#facCliTxt` con texto plano DESPUÉS de que `pintarFacCliInfo()` ya había repintado el bloque
+  bien formateado — en el documento eso dañaba el nombre (le pegaba el código delante y borraba el
+  chip "por mayor"). Ahora ese ajuste manual solo corre cuando NO es la vista de documento (o sea,
+  solo para el botón compacto de Vender).
+- **Tabla de 10 columnas → 7** (# · Descripción · Precio · Cant. · Desc. · Importe · ✕): el código,
+  el chip de IMEI y la garantía bajaron a una línea de etiquetas debajo del nombre. En el celular
+  cada artículo colapsa a una tarjeta con `data-l` (mismo patrón que `.sf-tbl` de Seguros).
+- **Quitado por redundante:** la fila "Pendiente por cobrar" del resumen (mostraba literalmente el
+  mismo `t.total` de arriba) y el **indicador de pasos** Cliente→Productos→Pago→Confirmar — el
+  documento ya muestra el cliente y los artículos, así que `facStepsHTML()` quedó sin llamadores y
+  se borró (regla #1, depurar).
+- **CSS nuevo con namespace propio `.nxDoc`** (dentro de `.nxPf`), en el mismo bloque
+  `st.textContent +=` del POS. **Ojo:** el selector `td[data-l="Descripción"]` va con comillas
+  DOBLES — con simples rompe la cadena de JavaScript que envuelve el CSS (pasó al escribirlo, `node
+  --check` lo atrapó).
+- Verificado con Playwright y el código real extraído por contenido (`facEmpresa`, `facPartesHTML`,
+  `renderFactura`, `pintarFactura`, `pintarFacCliInfo`, `facCliInfoHTML`, `nxFacSetCredito`,
+  `nxFacCliToggle`, `nxFacQtyStep`, `lineBase`/`lineDescMonto`/`lineImporte`/`saldoCli` + el CSS
+  real): **65 comprobaciones** — encabezado con empresa/RNC/número/comprobante/fecha, cliente con
+  código y cédula, balance 12,500 y crédito disponible 37,500 calculados de verdad, el segmentado
+  cambia el estado Y el número de factura, la lupa abre el historial, el buscador abre la ventana de
+  artículos, 7 columnas, chips de código/IMEI/garantía, el + recalcula el importe, Subtotal 39,966 /
+  Descuento 240 / ITBIS 7,194 / TOTAL 47,160 exactos, Cobrar / Vista previa / Cancelar enganchados,
+  el caso sin cliente no inventa balance, Prefactura sin comprobante ni crédito y con su nota, y el
+  carrito vacío deja Cobrar deshabilitado. Sin desborde en 360/390/430/768/1180/1440px, 0 errores de
+  consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
 ### POS · Cobrar: ventana con PESTAÑAS por forma de pago (26-jul-2026, v49.66)
 El dueño pidió rediseñar la Factura del POS; al mostrarle 3 direcciones eligió la **B**, y después
 pidió que además **la forma de pago fuera una ventana con pestañas**. Se le enseñaron 3 muestras de

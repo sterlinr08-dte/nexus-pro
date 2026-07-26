@@ -1,7 +1,12 @@
 {
-  "version": "49.66",
+  "version": "49.67",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.67",
+      "t": "NUEVO: la pantalla de Factura del Punto de Venta, rediseñada como un documento de verdad",
+      "d": "Facturar y Prefacturar ahora se ven como una factura real, no como un formulario. Arriba: el nombre de tu negocio con su RNC, dirección y teléfono, y a la derecha el título FACTURA con su número, el tipo de comprobante y la fecha. Debajo, en dos columnas: FACTURAR A (el cliente con su código, cédula, teléfono y dirección, más su balance y crédito disponible) y CONDICIÓN DE PAGO, que pasó de una casillita chiquita a dos botones grandes: Contado / A crédito. Los artículos van en una tabla limpia — el código, el IMEI y la garantía quedaron como etiquetas debajo del nombre, así que se lee de un vistazo y en el celular cada artículo es una tarjeta ordenada. Abajo a la izquierda las Otras acciones (Guardar cotización, Prefacturas, Historial, Limpiar carrito) y a la derecha el Subtotal, Descuento, ITBIS y el TOTAL bien grande con el botón Cobrar. En el celular el TOTAL y Cobrar van ANTES de las otras acciones, para no tener que bajar tanto. ARREGLADO de paso: al marcar \"A crédito\" el número de factura no cambiaba a la serie de crédito (se escribía en el lugar equivocado del campo) — ahora sí cambia al instante. Se quitaron dos cosas que sobraban: la fila \"Pendiente por cobrar\" (repetía el mismo TOTAL de arriba) y el indicador de pasos Cliente→Productos→Pago→Confirmar (el documento ya muestra el cliente y los artículos)."
+    },
     {
       "v": "49.66",
       "t": "NUEVO: la ventana de Cobrar del Punto de Venta, rediseñada con pestañas por forma de pago",
