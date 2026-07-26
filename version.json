@@ -1,7 +1,12 @@
 {
-  "version": "49.76",
+  "version": "49.77",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.77",
+      "t": "Quitado el boton de imprimir de la ventana de Cobrar (imprimia un numero de factura que podia cambiar de dueno)",
+      "d": "El boton de impresora que se habia puesto en la ventana de Cobrar se quito, y por una razon de peso: el numero de factura que salia en ese papel TODAVIA no estaba apartado por el sistema — se aparta al confirmar la venta. Si cobrabas y cancelabas, o si otra persona cobraba primero desde otro telefono, ese numero le tocaba a OTRA factura y quedaba un papel en la calle con un numero que no le correspondia. Ademas salia sin comprobante fiscal (NCF), porque el NCF tambien se asigna al confirmar. Que hacer en su lugar: si el cliente quiere ver o llevarse cuanto va a pagar ANTES de pagar, usa la PREFACTURA — es un documento hecho para eso, se guarda con su propio numero, no gasta ningun NCF y despues se convierte en factura de un toque. Y al confirmar la venta el ticket sigue saliendo solo, como siempre."
+    },
     {
       "v": "49.76",
       "t": "Quitado el enlace \"Elegir cliente\" que quedo repetido con la lupa",
