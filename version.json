@@ -1,7 +1,12 @@
 {
-  "version": "49.79",
+  "version": "49.80",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.80",
+      "t": "NUEVO: tus preferencias ahora se guardan en la BASE, no en el navegador (y te siguen entre celular y computadora)",
+      "d": "Primera parte de sacar todo del almacenamiento del navegador, como pediste. El \"donde me quede\" (la pantalla y la pestana donde estabas trabajando) ya no se guarda en el telefono: se guarda en la base de datos, ligado a tu usuario. Ventaja extra que no tenias antes: si dejas el POS abierto en Factura en el celular y despues entras desde la computadora, tambien abre ahi. Cada usuario tiene lo suyo: lo tuyo es tuyo y lo de Robinson es de el, nadie ve ni cambia lo del otro. No escribe a la base en cada toque — junta los cambios y guarda una sola vez, para no cargar la conexion. Si vienes de la version anterior, tu ultimo lugar se rescata del telefono automaticamente la primera vez y se pasa a la base. Faltan otras cosas por sacar del navegador (el tema, los favoritos y unos datos guardados de mas); van en las proximas versiones."
+    },
     {
       "v": "49.79",
       "t": "NUEVO: la actualizacion de la app es cerca de un 30% mas rapida",
