@@ -5099,6 +5099,32 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### Cuadrar el inventario: era todo dato de prueba (26-jul-2026, v49.87)
+Tras el reglamento, el dueño pidió cuadrar los artículos descuadrados. **Al investigar resultó que no
+había nada que cuadrar: era un banco de pruebas.**
+- **ERROR PROPIO, corregido ante el dueño:** le había dicho que tenía "CELULAR IPHONE 11 NORMAL
+  duplicado en el catálogo". **Falso** — son dos artículos de **empresas distintas** (uno de
+  `nexus-pro`, otro de `bayolsale`); mi consulta anterior no filtraba por `organizacion_id` y los
+  mezcló. Su catálogo tiene 7 artículos, sin duplicados. **Al medir sobre tablas `pos_*` SIEMPRE
+  filtrar por organización — si no, se comparan negocios distintos.**
+- **La señal que lo destapó:** los 7 IMEI eran `00000001`, `000000002`, `1234567890000`,
+  `9876543210`… — **ninguno tenía los 15 dígitos de un IMEI real**. Sumado a una factura en RD$ 0 y
+  a que `nexus-pro` es la empresa de SEGUROS (no una tienda), quedó claro que todo el POS de esa
+  organización era su sandbox. Se le preguntó antes de borrar; confirmó "son pruebas, limpia todo".
+- **Borrado (SQL, solo `nexus-pro`):** 12 ventas (RD$ 59,000), 7 seriales, 1 devolución, 1 compra,
+  10 asientos, 19 movimientos de inventario, 6 prefacturas, 6 documentos, 1 reparación. **Artículos,
+  clientes, niveles de precio y ajustes NO se tocaron**; existencias a 0. **Verificado después que
+  `bayolsale` quedó intacta** (su venta, sus 2 IMEI y sus 2 artículos) — no se asumió.
+- **HUECO REAL en el botón "Borrar datos de prueba"** (`nxLimpiarPruebas`, Ajustes): borraba 23
+  tablas pero **NO `pos_seriales`** — o sea los IMEI **sobrevivían a la limpieza**, que es
+  justamente lo que hay que borrar en una tienda de celulares. Tampoco borraba `pos_prefacturas`,
+  `pos_fin_pagos` ni las 2 del motor de documentos. Y dejaba la existencia en el número viejo, sin
+  ningún kardex que lo respaldara. Arreglado: 28 tablas, **hijos antes que padres** (si no, la llave
+  foránea rechaza el borrado), existencias a 0, y el texto del aviso dice lo que de verdad borra.
+- Verificado con 10 comprobaciones sobre la función real extraída por contenido (borra las 5 que
+  faltaban, conserva las 23 de antes, el orden respeta las llaves foráneas, y solo toca los
+  artículos que tenían existencia).
+
 ### REGLAMENTO DE VENTA (decretado por el dueño, 26-jul-2026) — OBLIGATORIO
 Aplica a TODO artículo del POS. La parte B es el caso especial de los que llevan IMEI/serial.
 

@@ -1,7 +1,12 @@
 {
-  "version": "49.86",
+  "version": "49.87",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.87",
+      "fecha": "2026-07-26",
+      "texto": "ARREGLADO: el botón \"Borrar datos de prueba\" de Ajustes dejaba basura atrás — NO borraba los IMEI (sobrevivían a la limpieza), ni las prefacturas, ni los documentos, ni los pagos de cuotas. Ahora sí borra las 28 tablas completas y deja las existencias en 0, porque sin movimientos de inventario el número que quedaba no lo respaldaba ningún kardex. · LIMPIEZA: se borró el POS de pruebas de la empresa de Seguros (12 facturas de prueba, 7 IMEI que no eran reales, la devolución, la compra, los asientos, las prefacturas y la reparación). Los artículos, clientes, niveles de precio y ajustes NO se tocaron, y las existencias quedaron en 0 para meter el inventario real. Bayolsale y las demás empresas no se tocaron."
+    },
     {
       "v": "49.86",
       "fecha": "2026-07-26",

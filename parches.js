@@ -18302,16 +18302,27 @@
   // ── Limpieza de datos de PRUEBA (solo transaccional; catálogos intactos) ──
   window.nxLimpiarPruebas = function () {
     if (!esAdmin()) { toast('err', 'Solo el administrador'); return; }
-    const resp = window.prompt('⚠️ Esto BORRA ventas, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de ESTA empresa.\n\nProductos, clientes y ajustes NO se tocan.\n\nEscribe BORRAR para confirmar:');
+    const resp = window.prompt('⚠️ Esto BORRA ventas, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja, asientos, prefacturas, documentos y los IMEI de ESTA empresa, y deja las existencias en 0.\n\nProductos, clientes y ajustes NO se tocan.\n\nEscribe BORRAR para confirmar:');
     if (String(resp || '').trim().toUpperCase() !== 'BORRAR') { toast('warn', 'Cancelado'); return; }
     (async () => {
       const org = (curSesPOS() || {}).organizacion_id;
       if (!org) { toast('err', 'Sin organización en la sesión'); return; }
-      const tablas = ['pos_venta_items', 'pos_devolucion_items', 'pos_asiento_lineas', 'pos_fin_cuotas', 'pos_apartado_pagos', 'pos_cotizacion_items', 'pos_transferencia_items', 'pos_compra_items', 'pos_compra_pagos', 'pos_abonos', 'pos_devoluciones', 'pos_ventas', 'pos_financiamientos', 'pos_apartados', 'pos_reparaciones', 'pos_caja_movimientos', 'pos_cajas', 'pos_inv_movimientos', 'pos_asientos', 'pos_cotizaciones', 'pos_transferencias', 'pos_compras', 'pos_crm'];
+      // OJO: el orden importa — los HIJOS antes que los padres, si no la llave foránea
+      // rechaza el borrado. Se agregaron 5 tablas que faltaban y dejaban basura atrás:
+      // pos_seriales (los IMEI SOBREVIVÍAN a la limpieza), pos_prefacturas, pos_fin_pagos y
+      // los 2 del motor de documentos.
+      const tablas = ['pos_documento_eventos', 'pos_documentos', 'pos_venta_items', 'pos_devolucion_items', 'pos_asiento_lineas', 'pos_fin_pagos', 'pos_fin_cuotas', 'pos_apartado_pagos', 'pos_cotizacion_items', 'pos_transferencia_items', 'pos_compra_items', 'pos_compra_pagos', 'pos_abonos', 'pos_devoluciones', 'pos_seriales', 'pos_prefacturas', 'pos_ventas', 'pos_financiamientos', 'pos_apartados', 'pos_reparaciones', 'pos_caja_movimientos', 'pos_cajas', 'pos_inv_movimientos', 'pos_asientos', 'pos_cotizaciones', 'pos_transferencias', 'pos_compras', 'pos_crm'];
       toast('info', 'Limpiando…', 'Borrando datos de prueba');
       let ok = 0, fal = 0;
       for (const t of tablas) { try { await getAPI().del(t, 'organizacion_id=eq.' + org); ok++; } catch (e) { fal++; } }
-      try { window.logAudit && window.logAudit('LIMPIEZA_DATOS_PRUEBA', ok + ' tabla(s) limpiadas' + (fal ? ' · ' + fal + ' con error' : ''), 'Ajustes'); } catch (e) {}
+      // Sin movimientos de inventario, dejar la existencia en el número viejo es mentira: no
+      // hay ni un kardex que lo respalde. Arranca en 0 y se mete el inventario real.
+      let stk = 0;
+      for (const p of (_prods || [])) {
+        if (Number(p.stock || 0) === 0) continue;
+        try { await getAPI().patch('pos_productos', 'id=eq.' + p.id, { stock: 0 }); p.stock = 0; stk++; } catch (e) { }
+      }
+      try { window.logAudit && window.logAudit('LIMPIEZA_DATOS_PRUEBA', ok + ' tabla(s) limpiadas · ' + stk + ' artículo(s) con la existencia en 0' + (fal ? ' · ' + fal + ' con error' : ''), 'Ajustes'); } catch (e) {}
       toast('ok', 'Datos de prueba borrados', 'La empresa quedó limpia para trabajar de verdad');
       const el = document.getElementById('v-pos'); if (el) { try { await cargarPOS(); renderPOS(el); } catch (e) {} }
     })();
