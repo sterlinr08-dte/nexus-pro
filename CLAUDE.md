@@ -5372,6 +5372,36 @@ escriben ahí.
   arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
   Edge con service-role. Se deja documentado, no se improvisa.
 
+### BUG MÍO en producción: salía código escrito en el Inicio (26-jul-2026, v49.58)
+El dueño mandó una captura de su iPhone: en el Dashboard aparecían pedazos de JavaScript como
+texto (`VITCHTAB('COB'),200)`, `{VAR ETELEMENTBYID('FFA…`) encima de los accesos **Clientes** y
+**Facturas Pendientes**, y esos dos botones no respondían.
+- **Causa raíz, mía, de la v49.55:** al agregar el teclado a los 108 elementos clicables usé
+  `<(div|tr|td|li|span|a)\b[^>]*\bonclick\s*=[^>]*>` — y **`[^>]*` se detiene en el PRIMER `>`**.
+  Los `onclick` que llevan una **función flecha `=>`** tienen un `>` por dentro, así que la
+  coincidencia terminaba a mitad del atributo y mis atributos nuevos se insertaban ahí, partiendo
+  el `onclick` en dos: la primera mitad quedaba como atributo roto y el resto salía a la pantalla
+  como texto suelto.
+- **Por qué no lo atrapó la verificación:** `node --check` valida SINTAXIS de JavaScript, y el
+  archivo seguía siendo JavaScript válido — el daño era en el HTML dentro de una cadena. Las
+  pruebas Playwright de esa versión midieron el menú lateral (`.ni`) y un botón de ícono, que no
+  tienen flechas. **Lección: una transformación mecánica sobre HTML no se valida con un chequeo de
+  sintaxis de JS; hay que renderizar los elementos tocados.**
+- **Detección:** un verificador que, por cada inserción, retrocede hasta el `<` que abre la
+  etiqueta y comprueba que **las comillas estén balanceadas** antes de la inserción. Dio 4 rotas en
+  `index.html` y 0 en `parches.js`.
+- **Reparación:** por cada una, quitar la inserción de donde quedó y volver a ponerla antes del
+  `>` que de VERDAD cierra la etiqueta, encontrado con una máquina de estados que respeta comillas
+  (no con otra expresión regular). Las 4: los 2 accesos rápidos del Dashboard, el KPI "En proceso"
+  y la zona de soltar documentos.
+- **Comprobación final, más estricta:** las 108 inserciones revisadas una por una — cada una debe
+  quedar justo antes del cierre real de su etiqueta. Salieron 107 bien y **1 falso positivo** del
+  propio verificador (`notif-item`, donde las comillas viven dentro de una cadena de JavaScript en
+  un template literal, no del HTML) — revisado a mano y correcto.
+- **Verificado en navegador con el marcado REAL** del bloque `.qa-g` extraído del archivo: los 6
+  accesos rápidos se ven con su etiqueta correcta, **cero código filtrado como texto**, y un clic
+  real dispara `nav()`. 0 errores de JS.
+
 ### NPGS §5 — Fase 3 arrancada: la ventana de filtro compartida + Clientes (26-jul-2026, v49.57)
 El dueño zanjó el conflicto C2 con **"aplicar los reglamentos"** — cumplimiento literal del §5, que
 ya había elegido en la v49.36 y reafirmó ahora después de que la enmienda lo reabriera. Se procede

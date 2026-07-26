@@ -1,7 +1,12 @@
 {
-  "version": "49.57",
+  "version": "49.58",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.58",
+      "t": "ARREGLADO (importante) \u2014 Sal\u00eda c\u00f3digo escrito en el Inicio",
+      "d": "En el Inicio aparec\u00edan pedazos de c\u00f3digo como texto, encima de los botones Clientes y Facturas Pendientes, y esos dos botones dejaron de responder.\n\nFue culpa m\u00eda: en la versi\u00f3n 49.55, al hacer que todo el sistema se pudiera usar con el teclado, agregu\u00e9 los atributos nuevos con una b\u00fasqueda que se detiene en el primer signo \">\". Los cuatro botones cuya instrucci\u00f3n lleva una flecha (=>) tienen ese signo por dentro, as\u00ed que se partieron por la mitad y el resto sali\u00f3 a la pantalla como texto.\n\nArreglados los cuatro: los dos accesos del Inicio, el recuadro \"En proceso\" y la zona para soltar documentos. Revis\u00e9 las 108 etiquetas que toqu\u00e9 en esa versi\u00f3n una por una \u2014 esas cuatro eran las \u00fanicas rotas."
+    },
     {
       "v": "49.57",
       "t": "NUEVO \u2014 Los buscadores pasan a ventana: empezamos por Clientes",
