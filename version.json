@@ -1,7 +1,12 @@
 {
-  "version": "49.67",
+  "version": "49.68",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.68",
+      "t": "NUEVO: la FACTURA imprimible de página completa (ya no solo la tirilla del ticket)",
+      "d": "Hasta ahora, lo único que se podía imprimir de una venta era el ticket térmico angosto — sirve para el mostrador, pero se ve pobre cuando el cliente es una empresa y pide Crédito Fiscal. Ahora hay una FACTURA de página completa, con la misma cara de la pantalla de Facturación: tu negocio con RNC, dirección y teléfono; el número, el NCF, la fecha y la condición (Contado o Crédito); el cliente con su código, cédula/RNC, teléfono y dirección; cada artículo con su código, IMEI y garantía; la forma en que pagó; el TOTAL grande; y si quedó algo fiado, una línea roja de \"Pendiente por pagar\". Trae líneas de firma (Entregado por / Recibido conforme) y botones de Imprimir/PDF y WhatsApp. Se llega por tres lados: el botón \"Vista previa\" de Factura (antes de cobrar — sale marcada VISTA PREVIA · SIN GUARDAR, para que nadie la confunda con una cobrada), el botón \"Factura\" en el detalle de una venta ya hecha, y un botón \"Factura completa\" dentro del ticket. El ticket de siempre no cambió: sigue ahí para la venta rápida."
+    },
     {
       "v": "49.67",
       "t": "NUEVO: la pantalla de Factura del Punto de Venta, rediseñada como un documento de verdad",

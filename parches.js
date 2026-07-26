@@ -19029,7 +19029,7 @@
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket No. ${v.numero || ''}</title>
       <style>body{font-family:Cascadia Code,Consolas,Courier New,monospace;color:#111;max-width:300px;margin:0 auto;padding:12px;font-size:12.5px}h1{font-size:15px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}td{padding:2px 0}.line{border-top:1px dashed #999;margin:6px 0}.tot{font-weight:800}.big{font-size:15px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-12px -12px 10px;padding:9px 12px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">✕ Cerrar</button>${(v.id && !v.anulada) ? `<button onclick="if(window.opener&&window.opener.nxDevNueva){window.opener.nxDevNueva('${v.id}');window.opener.focus();window.close();}else{alert('Abre este ticket desde el sistema (no en una pestaña aparte) para poder hacer una devolución.');}" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">↩︎ Devolver</button>` : ''}</div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#1e3a6e;margin:-12px -12px 10px;padding:9px 12px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">✕ Cerrar</button>${v.id ? `<button onclick="if(window.opener&&window.opener.nxFacDocVenta){window.opener.nxFacDocVenta('${v.id}');window.opener.focus();}else{alert('Abre este ticket desde el sistema para ver la factura completa.');}" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">📄 Factura completa</button>` : ''}${(v.id && !v.anulada) ? `<button onclick="if(window.opener&&window.opener.nxDevNueva){window.opener.nxDevNueva('${v.id}');window.opener.focus();window.close();}else{alert('Abre este ticket desde el sistema (no en una pestaña aparte) para poder hacer una devolución.');}" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">↩︎ Devolver</button>` : ''}</div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}${e.tel ? ' · ' + esc(e.tel) : ''}</div>
         <div class="c muted">${esc(e.dir || '')}</div>
@@ -19060,6 +19060,207 @@
     let items = [];
     try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
     ticketHTML(Object.assign({}, v, { _items: items }));
+  };
+
+  // ── FACTURA IMPRIMIBLE de página completa (v49.68) ──────────────────────────
+  // El ticket térmico de arriba sigue siendo el recibo rápido del mostrador. Esto es el OTRO
+  // documento: la factura formal que se le manda al cliente (sobre todo con Crédito Fiscal B01,
+  // donde una tirilla de 300px se ve pobre). Misma cara que la pantalla de Facturación.
+  // Recibe un objeto ya normalizado — lo arman facDocDesdeCarrito() y nxFacDocVenta().
+  function docFacturaHTML(d) {
+    const e = facEmpresa();
+    const filas = (d.items || []).map((it, i) => `<tr>
+      <td class="n">${String(i + 1).padStart(2, '0')}</td>
+      <td><div class="nm">${esc(it.nombre || '')}</div>${[it.codigo ? '<span class="cod">' + esc(it.codigo) + '</span>' : '', it.serial ? '<span class="ser">IMEI ' + esc(it.serial) + '</span>' : '', it.garantia ? '<span class="gar">Garantía: ' + esc(it.garantia) + '</span>' : ''].filter(Boolean).join('') ? `<div class="sub">${[it.codigo ? '<span class="cod">' + esc(it.codigo) + '</span>' : '', it.serial ? '<span class="ser">IMEI ' + esc(it.serial) + '</span>' : '', it.garantia ? '<span class="gar">Garantía: ' + esc(it.garantia) + '</span>' : ''].filter(Boolean).join('')}</div>` : ''}</td>
+      <td class="r">${Number(it.cantidad || 0)}</td>
+      <td class="r">${fmt(it.precio || 0)}</td>
+      <td class="r">${Number(it.descMonto || 0) > 0 ? '− ' + fmt(it.descMonto) : '—'}</td>
+      <td class="r b">${fmt(it.importe || 0)}</td>
+    </tr>`).join('');
+    const c = d.cliente || {};
+    const cliDet = [c.codigo ? esc(c.codigo) : '', c.cedula ? ((c.tipoPersona === 'juridica' ? 'RNC ' : 'Céd. ') + esc(c.cedula)) : '', c.telefono ? esc(c.telefono) : ''].filter(Boolean).join(' · ');
+    const pagos = (d.pagos || []).filter(x => Number(x.monto || 0) > 0);
+    const waTxt = `*${d.tipo} ${d.numero || ''}* — ${e.nom}\n${d.fecha}\n` +
+      (c.nombre ? `Cliente: ${c.nombre}\n` : '') + (d.ncf ? `NCF: ${d.ncf}\n` : '') + '\n' +
+      (d.items || []).map(it => `${it.cantidad}x ${it.nombre} — ${fmt(it.importe)}`).join('\n') +
+      `\n\nTOTAL: ${fmt(d.total)}` + (Number(d.credito || 0) > 0 ? `\nPendiente: ${fmt(d.credito)}` : '');
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(d.tipo)} ${esc(d.numero || '')}</title>
+      <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;background:#eef2f7;color:#0f172a;padding:14px}
+      .bar{position:sticky;top:0;display:flex;gap:8px;flex-wrap:wrap;background:#0f172a;margin:-14px -14px 14px;padding:10px 14px;z-index:9}
+      .bar button{background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit}
+      .bar button:hover{background:rgba(255,255,255,.28)}
+      .bar .pr{background:#2563eb}
+      .bar .wa{background:#16a34a}
+      .doc{max-width:800px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 8px 26px rgba(15,23,42,.1);padding:30px 32px}
+      .dh{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start}
+      .emp{font-size:19px;font-weight:900;letter-spacing:-.3px}
+      .empsub{font-size:11.5px;color:#94a3b8;margin-top:4px;line-height:1.6}
+      .dhr{text-align:right;min-width:0}
+      .dtit{font-size:24px;font-weight:300;letter-spacing:5px;color:#94a3b8;text-transform:uppercase;line-height:1}
+      .dnum{font-size:22px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums}
+      .dmeta{font-size:11.5px;color:#64748b;margin-top:5px;line-height:1.7}
+      .dmeta b{color:#0f172a}
+      .badge{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;border-radius:999px;padding:3px 10px;margin-top:6px}
+      .badge.prev{background:#eff6ff;color:#1d4ed8}
+      .badge.anul{background:#fef2f2;color:#b91c1c}
+      .badge.ok{background:#f0fdf4;color:#15803d}
+      .rule{height:2px;background:#0f172a;margin:18px 0}
+      .partes{display:grid;grid-template-columns:1.2fr 1fr;gap:22px;margin-bottom:16px}
+      .plab{font-size:9.5px;font-weight:800;letter-spacing:1px;color:#94a3b8;text-transform:uppercase;margin-bottom:6px}
+      .pnom{font-size:15px;font-weight:800}
+      .pdet{font-size:11.5px;color:#64748b;line-height:1.7;margin-top:2px}
+      table{width:100%;border-collapse:collapse}
+      th{font-size:9.5px;font-weight:800;letter-spacing:.7px;color:#94a3b8;text-transform:uppercase;text-align:left;padding:9px 8px;border-bottom:1.5px solid #0f172a}
+      th.r,td.r{text-align:right}
+      td{padding:11px 8px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:top}
+      td.n{color:#cbd5e1;font-weight:800}
+      td.b{font-weight:800;white-space:nowrap}
+      .nm{font-weight:700}
+      .sub{font-size:10.5px;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+      .cod{color:#2563eb;font-weight:700}
+      .ser{color:#6d28d9;font-family:Cascadia Code,Consolas,monospace}
+      .gar{color:#15803d;font-weight:700}
+      .pie{display:grid;grid-template-columns:1fr 300px;gap:24px;margin-top:18px;align-items:start}
+      .tr{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#64748b;padding:5px 0}
+      .tr b{color:#0f172a;font-weight:700;font-variant-numeric:tabular-nums}
+      .tr.big{border-top:2px solid #0f172a;margin-top:8px;padding-top:12px;align-items:baseline}
+      .tr.big span{font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#0f172a}
+      .tr.big b{font-size:26px;font-weight:900;letter-spacing:-.9px}
+      .tr.deb{border-top:1px dashed #fca5a5;margin-top:8px;padding-top:9px}
+      .tr.deb b{color:#dc2626}
+      .pagos{font-size:12px;color:#64748b;line-height:1.9}
+      .pagos b{color:#0f172a}
+      .nota{margin-top:12px;border:1px dashed #e2e8f0;border-radius:10px;padding:10px 12px;font-size:11.5px;color:#475569;line-height:1.6}
+      .firma{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:34px}
+      .fl{border-top:1px solid #94a3b8;padding-top:6px;font-size:10.5px;color:#94a3b8;text-align:center}
+      .legal{margin-top:22px;font-size:10.5px;color:#94a3b8;line-height:1.6;text-align:center}
+      @media print{body{background:#fff;padding:0}.bar{display:none}.doc{box-shadow:none;border-radius:0;max-width:none;padding:0}}
+      @media(max-width:700px){.doc{padding:18px 14px}.partes,.pie{grid-template-columns:1fr}.dhr{text-align:left}table{font-size:11.5px}th,td{padding:7px 4px;width:auto!important}th:first-child,td.n{display:none}.ser{font-size:10px}.sub{gap:6px}.dtit{font-size:20px}.dnum{font-size:19px}}
+      </style></head><body>
+      <div class="bar">
+        <button type="button" id="bX">✕ Cerrar</button>
+        <button type="button" class="pr" id="bP">🖨️ Imprimir / PDF</button>
+        <button type="button" class="wa" id="bW">WhatsApp</button>
+      </div>
+      <div class="doc">
+        <div class="dh">
+          <div>
+            <div class="emp">${esc(e.nom)}</div>
+            <div class="empsub">${[e.rnc ? 'RNC ' + esc(e.rnc) : '', e.dir ? esc(e.dir) : '', e.tel ? esc(e.tel) : ''].filter(Boolean).join('<br>') || '&nbsp;'}</div>
+          </div>
+          <div class="dhr">
+            <div class="dtit">${esc(d.tipo)}</div>
+            <div class="dnum">Nº ${esc(d.numero || '—')}</div>
+            <div class="dmeta">${d.tipoLbl ? esc(d.tipoLbl) + '<br>' : ''}${d.ncf ? 'NCF <b>' + esc(d.ncf) + '</b><br>' : ''}Fecha: <b>${esc(d.fecha)}</b>${d.condicion ? '<br>Condición: <b>' + esc(d.condicion) + '</b>' : ''}</div>
+            ${d.estado ? `<div class="badge ${d.estadoCls || 'prev'}">${esc(d.estado)}</div>` : ''}
+          </div>
+        </div>
+        <div class="rule"></div>
+        <div class="partes">
+          <div>
+            <div class="plab">Facturar a</div>
+            <div class="pnom">${esc(c.nombre || 'Consumidor final')}</div>
+            ${cliDet ? `<div class="pdet">${cliDet}</div>` : ''}
+            ${c.direccion ? `<div class="pdet">${esc(c.direccion)}</div>` : ''}
+          </div>
+          <div>
+            <div class="plab">Emitido por</div>
+            <div class="pdet">${esc(d.vendedor || e.nom)}${d.almacen ? '<br>' + esc(d.almacen) : ''}</div>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th style="width:32px">#</th><th>Descripción</th><th class="r" style="width:56px">Cant.</th><th class="r" style="width:96px">Precio</th><th class="r" style="width:90px">Desc.</th><th class="r" style="width:104px">Importe</th></tr></thead>
+          <tbody>${filas || '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px">Sin artículos</td></tr>'}</tbody>
+        </table>
+        <div class="pie">
+          <div>
+            ${pagos.length ? `<div class="plab">Forma de pago</div><div class="pagos">${pagos.map(x => `${esc(x.metodo)}: <b>${fmt(x.monto)}</b>`).join('<br>')}${Number(d.devuelta || 0) > 0 ? '<br>Devuelta: <b>' + fmt(d.devuelta) + '</b>' : ''}</div>` : ''}
+            ${d.nota ? `<div class="nota"><b>Nota:</b> ${esc(d.nota)}</div>` : ''}
+            <div class="firma">
+              <div class="fl">Entregado por</div>
+              <div class="fl">Recibido conforme</div>
+            </div>
+          </div>
+          <div>
+            <div class="tr"><span>Subtotal</span><b>${fmt(d.subtotal)}</b></div>
+            ${Number(d.descuento || 0) > 0 ? `<div class="tr"><span>Descuento</span><b style="color:#dc2626">− ${fmt(d.descuento)}</b></div>` : ''}
+            <div class="tr"><span>ITBIS (18%)</span><b>${fmt(d.itbis)}</b></div>
+            <div class="tr big"><span>Total</span><b>${fmt(d.total)}</b></div>
+            ${Number(d.credito || 0) > 0 ? `<div class="tr deb"><span>Pendiente por pagar</span><b>${fmt(d.credito)}</b></div>` : ''}
+          </div>
+        </div>
+        <div class="legal">${d.legal ? esc(d.legal) : 'Gracias por su compra.'}</div>
+      </div>
+      <script>
+        document.getElementById('bX').addEventListener('click',function(){window.close()});
+        document.getElementById('bP').addEventListener('click',function(){window.print()});
+        var WA=${JSON.stringify(waTxt)};
+        document.getElementById('bW').addEventListener('click',function(){window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(WA),'_blank')});
+      <\/script>
+      </body></html>`;
+    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el documento'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+  }
+  // Arma el documento con lo que hay AHORA en pantalla (no guarda nada)
+  function facDocDesdeCarrito() {
+    const c = clienteSel(); const t = totales(); const pre = esPreTab();
+    return {
+      tipo: pre ? 'PREFACTURA' : 'FACTURA',
+      estado: pre ? 'BORRADOR · NO FISCAL' : 'VISTA PREVIA · SIN GUARDAR',
+      estadoCls: 'prev',
+      numero: pre ? peekPref() : proxNumeroFacturaCorto(_facCredito),
+      ncf: '', tipoLbl: pre ? '' : (NCF_TIPOS.find(x => x[0] === _facNCF) || [null, 'Sin comprobante'])[1],
+      fecha: fechaDMY(_facFecha || hoy()),
+      condicion: pre ? '' : (_facCredito ? 'Crédito' : 'Contado'),
+      cliente: c ? { nombre: c.nombre, codigo: c.codigo, cedula: c.cedula, tipoPersona: c.tipo_persona, telefono: c.telefono, direccion: c.direccion } : {},
+      almacen: (_almacenes.length > 1 && _almacenSel) ? almNombre(_almacenSel) : '',
+      items: _cart.map(it => {
+        const p = _prods.find(x => String(x.id) === String(it.producto_id));
+        const gd = p ? Number(p.garantia_dias || 0) : 0; const gm = Math.round(gd / 30);
+        return {
+          cantidad: it.cantidad, nombre: it.nombre, codigo: prodCodigo(it.producto_id),
+          serial: (it.seriales || []).map(x => x.serial).join(', '),
+          garantia: gd > 0 ? (gd >= 30 ? gm + (gm === 1 ? ' mes' : ' meses') : gd + ' días') : '',
+          precio: it.precio, descMonto: lineDescMonto(it), importe: lineImporte(it)
+        };
+      }),
+      subtotal: t.subtotal, descuento: t.descuento, itbis: t.itbis, total: t.total,
+      pagos: [], credito: 0, nota: pre ? _facNota : '',
+      legal: pre ? 'Documento no fiscal. Es una proforma: no cobra ni descuenta inventario.' : 'Vista previa — todavía no se ha cobrado ni guardado nada.'
+    };
+  }
+  // Arma el documento de una venta YA guardada
+  window.nxFacDocVenta = async function (ventaId) {
+    let v = (_ventas || []).find(x => String(x.id) === String(ventaId));
+    if (!v) { try { const r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + ventaId); v = r && r[0]; } catch (e) {} }
+    if (!v) { toast('err', 'Factura no encontrada'); return; }
+    let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
+    const anulada = !!(v.anulada || v.estado === 'anulada');
+    const cli = v.cliente_id ? (_clientes || []).find(x => String(x.id) === String(v.cliente_id)) : null;
+    const pagos = Array.isArray(v.pagos) && v.pagos.length ? v.pagos : (v.metodo_pago ? [{ metodo: v.metodo_pago, monto: Number(v.total || 0) - Number(v.credito_monto || 0) }] : []);
+    docFacturaHTML({
+      tipo: 'FACTURA',
+      estado: anulada ? 'ANULADA' : 'PAGADA',
+      estadoCls: anulada ? 'anul' : 'ok',
+      numero: v.numero_factura || v.numero || '',
+      ncf: v.ncf || '',
+      tipoLbl: (NCF_TIPOS.find(t => t[0] === (v.tipo_comprobante || 'sin')) || [null, 'Sin comprobante'])[1],
+      fecha: fechaDMY(v.fecha || v.created_at),
+      condicion: Number(v.credito_monto || 0) > 0 ? 'Crédito' : 'Contado',
+      cliente: cli ? { nombre: cli.nombre, codigo: cli.codigo, cedula: cli.cedula, tipoPersona: cli.tipo_persona, telefono: cli.telefono, direccion: cli.direccion } : { nombre: v.cliente_nombre || '' },
+      vendedor: v.vendedor_nombre || '',
+      almacen: v.almacen_id ? almNombre(v.almacen_id) : '',
+      items: items.map(it => ({
+        cantidad: it.cantidad, nombre: it.nombre, codigo: prodCodigo(it.producto_id), serial: it.serial || '',
+        garantia: it.garantia_hasta ? ('hasta ' + fechaDMY(String(it.garantia_hasta).slice(0, 10))) : '',
+        precio: it.precio, descMonto: Number(it.descuento || 0),
+        importe: it.importe != null ? it.importe : Number(it.precio || 0) * Number(it.cantidad || 0)
+      })),
+      subtotal: v.subtotal, descuento: v.descuento, itbis: v.itbis, total: v.total,
+      pagos: pagos, devuelta: v.devuelta, credito: v.credito_monto,
+      legal: anulada ? 'DOCUMENTO ANULADO — no tiene validez.' : 'Gracias por su compra.'
+    });
   };
 
   // ── TAB: PRODUCTOS ──
@@ -24771,7 +24972,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div class="nx-inv-total" style="border-top:none;margin-top:12px;padding-top:0"><span style="font-size:13px;color:#64748b;font-weight:700">TOTAL</span><span>${fmt(v.total)}</span></div>
       </div>
       <div class="nx-inv-actions" style="padding:14px 16px;margin-top:0;border-top:1px solid #f1f5f9">
-        <button type="button" class="nx-inv-btn" onclick="window.nxPosTicketVenta('${v.id}')"><i class="ti ti-printer"></i> Imprimir</button>
+        <button type="button" class="nx-inv-btn" onclick="window.nxFacDocVenta('${v.id}')"><i class="ti ti-file-invoice"></i> Factura</button>
+        <button type="button" class="nx-inv-btn" onclick="window.nxPosTicketVenta('${v.id}')"><i class="ti ti-receipt"></i> Ticket</button>
         <button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDocCadena('pos_ventas','${v.id}')"><i class="ti ti-git-branch"></i> Ver cadena</button>
         ${anulada ? '' : `<button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDevNueva('${v.id}')"><i class="ti ti-receipt-refund"></i> Nota de crédito</button>
         <button type="button" class="nx-inv-btn danger" onclick="document.getElementById('nxFacVerM').remove();window.nxPosAnularVenta('${v.id}')"><i class="ti ti-ban"></i> Anular</button>`}
@@ -24784,38 +24986,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // pos_prefacturas): arma el mismo cuadro visual que nxFacVerVenta pero con los datos que hay AHORA
   // en pantalla (_cart/cliente/comprobante/fecha), para revisar antes de tocar Cobrar/Guardar.
   window.nxFacVistaPrevia = function () {
-    if (!_cart.length) { toast('warn', 'El carrito está vacío', 'Agrega artículos para ver la vista previa'); return; }
-    const cli = clienteSel();
-    const t = totales();
-    const pre = esPreTab();
-    const tipoLbl = (NCF_TIPOS.find(x => x[0] === _facNCF) || [null, 'Sin comprobante'])[1];
-    const filas = _cart.map(it => `<tr><td data-l="Cant.">${Number(it.cantidad || 0)}</td><td data-l="Artículo">${esc(it.nombre || '')}</td><td class="r" data-l="Precio">${fmt(it.precio || 0)}</td><td class="r" data-l="Importe">${fmt(lineImporte(it))}</td></tr>`).join('');
-    cerrarModal('nxFacPrevM');
-    const ov = document.createElement('div'); ov.id = 'nxFacPrevM'; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPf" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
-      <div class="nx-inv-head" style="border-bottom:1px solid #f1f5f9">
-        <div class="nx-inv-title">${pre ? 'PREFACTURA' : 'FACTURA'}<span class="nx-inv-draft" style="color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe">VISTA PREVIA</span></div>
-        <button class="nxBack" type="button" onclick="document.getElementById('nxFacPrevM').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button>
-      </div>
-      <div style="overflow-y:auto;flex:1;padding:14px 16px">
-        <div class="nx-inv-info" style="padding:0 0 12px;grid-template-columns:1fr 1fr">
-          <div class="nx-inv-field"><div class="nx-inv-label">Cliente</div><div style="font-weight:700;font-size:14px">${esc(cli ? cli.nombre : 'Consumidor final')}</div></div>
-          <div class="nx-inv-field"><div class="nx-inv-label">Tipo de comprobante</div><div style="font-weight:700;font-size:14px">${esc(tipoLbl)}</div></div>
-          <div class="nx-inv-field"><div class="nx-inv-label">Fecha</div><div style="font-weight:700;font-size:14px">${fechaDMY(_facFecha || hoy())}</div></div>
-          <div class="nx-inv-field"><div class="nx-inv-label">Condición</div><div style="font-weight:700;font-size:14px">${_facCredito ? 'Crédito' : 'Contado'}</div></div>
-        </div>
-        <div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:12px">
-          <table class="nx-inv-table" style="min-width:0"><thead><tr><th>Cant.</th><th>Artículo</th><th style="text-align:right">Precio</th><th style="text-align:right">Importe</th></tr></thead><tbody>${filas}</tbody></table>
-        </div>
-        <div class="nx-inv-sumrow" style="margin-top:12px"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
-        ${t.descuento > 0 ? `<div class="nx-inv-sumrow"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
-        <div class="nx-inv-sumrow"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
-        <div class="nx-inv-total" style="border-top:1px solid #e5e7eb;margin-top:8px;padding-top:10px"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
-      </div>
-      <div style="padding:12px 16px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;text-align:center">Vista previa — nada se ha guardado todavía.</div>
-    </div>`;
-    document.body.appendChild(ov);
+    if (!_cart.length) { toast('warn', 'El cuadro está vacío', 'Agrega artículos para ver la vista previa'); return; }
+    docFacturaHTML(facDocDesdeCarrito());
   };
 
   // MÓDULO PREFACTURA: reusa el formulario COMPLETO de Factura (mismos campos, IMEI, buscadores).

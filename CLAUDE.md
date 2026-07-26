@@ -5478,6 +5478,47 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### POS · FACTURA imprimible de página completa (26-jul-2026, v49.68)
+El dueño dijo *"continúa con factura"*. Se auditó qué faltaba de verdad y el hueco real era este:
+la PANTALLA ya se ve como documento (v49.67), pero **lo único que se podía imprimir de una venta
+seguía siendo el ticket térmico de 300px** (`ticketHTML`, monospace) — correcto para el mostrador,
+pobre cuando el cliente es una empresa que pide Crédito Fiscal B01.
+- **`docFacturaHTML(d)` (nueva):** documento de página completa (`window.open`+`document.write`,
+  mismo patrón que `nxPrestamoComprobante`/`nxRepImprimir`) con la misma cara de la pantalla:
+  encabezado empresa+RNC+dirección+teléfono / FACTURA + Nº + NCF + fecha + condición, "Facturar a"
+  con código y cédula, tabla con código/IMEI/garantía por línea, forma de pago, TOTAL grande, línea
+  roja "Pendiente por pagar" si quedó fiado, firmas (Entregado por / Recibido conforme) y aviso
+  legal. Botones **Cerrar · Imprimir/PDF · WhatsApp** — los handlers van en un `<script>` del propio
+  documento con `addEventListener`, NO en `onclick` con `JSON.stringify` (el bug de comillas ya
+  documentado en v49.23). `@media print` quita la barra y el fondo.
+- **Recibe un objeto ya normalizado**, así que hay una sola plantilla y dos armadores:
+  `facDocDesdeCarrito()` (lo que hay AHORA en pantalla — no guarda nada) y
+  **`window.nxFacDocVenta(ventaId)`** (una venta ya guardada: trae `pos_venta_items` igual que
+  `nxPosTicket`, cruza el cliente con `_clientes` para su cédula/RNC, y usa `v.pagos` si existe).
+- **3 entradas:** el botón **"Vista previa"** de Factura (`nxFacVistaPrevia` dejó de abrir un modal
+  `.nx-inv-*` y ahora abre este documento), el botón **"Factura"** nuevo en el detalle de una venta
+  (`nxFacVerVenta` — el de al lado se relabeló "Ticket" para que se distingan), y **"📄 Factura
+  completa"** dentro del propio ticket (vía `window.opener.nxFacDocVenta`, mismo patrón que el botón
+  Devolver que ya vivía ahí).
+- **Honesto sobre el estado, no finge:** antes de cobrar sale con badge **"VISTA PREVIA · SIN
+  GUARDAR"** y sin bloque de forma de pago (todavía no se cobró); en Prefactura, **"BORRADOR · NO
+  FISCAL"** sin NCF ni condición y con la nota impresa; una venta guardada sale **PAGADA** (verde) o
+  **ANULADA** (roja, con "DOCUMENTO ANULADO — no tiene validez"). El ticket térmico **no se tocó**.
+- **Desborde real encontrado midiendo y corregido antes de publicar:** a 390px la tabla de 6
+  columnas se salía 13px. Arreglado en la media query del documento: se oculta la columna `#`
+  (no aporta en pantalla angosta), se sueltan los anchos fijos y baja la tipografía. Medido después:
+  `scrollWidth === clientWidth` exacto en 390px y en 900px.
+- Verificado con Playwright y el código real extraído por contenido (`docFacturaHTML`,
+  `facDocDesdeCarrito`, `nxFacDocVenta`, `nxFacVistaPrevia`, `facEmpresa`, `lineBase`/
+  `lineDescMonto`/`lineImporte`), interceptando `window.open` para capturar el HTML generado y
+  cargándolo después como página real: **37 comprobaciones** — vista previa con empresa/RNC/número/
+  comprobante/cliente/IMEI/garantía/descuento de línea y totales exactos (39,966 / 240 / 7,194 /
+  47,160), venta guardada con su NCF real, badge PAGADA, vendedor, forma de pago y pendiente 7,160,
+  garantía con fecha real, el texto de WhatsApp lleva el total, prefactura con su nota y su aviso de
+  proforma, y el carrito vacío avisa sin abrir nada. Sin desborde en 390/900px, 0 errores de
+  consola. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
 ### POS · Factura/Prefactura como DOCUMENTO — la muestra B aprobada (26-jul-2026, v49.67)
 Segunda mitad del rediseño que el dueño aprobó ("me gusta la B... se ve incompleta" → se completó y
 dijo *"Aplícalo"*). `renderFactura()`/`pintarFactura()` pasaron de un formulario de 2 columnas con
