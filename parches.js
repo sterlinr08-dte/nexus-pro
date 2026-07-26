@@ -9093,7 +9093,9 @@
       const url = (api.url || '') + '/functions/v1/enviar-reporte-email';
       const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (api.key || '') },
+        // El token de la SESIÓN, no la clave anónima: la función comprueba que quien pide el
+        // reporte de prueba sea de verdad un admin (la anon key es pública, va en index.html).
+        headers: { 'Content-Type': 'application/json', 'apikey': (api.key || ''), 'Authorization': 'Bearer ' + (api.token || api.key || '') },
         body: JSON.stringify({ forzar: true })
       });
       if (resp.ok) {
