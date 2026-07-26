@@ -24,7 +24,7 @@
 | 3 | **Crédito y cobranza** | ✅ decretado y auditado — v49.89 |
 | 4 | Fiscal y documentos (NCF, e-CF, notas de crédito) | pendiente (omitido a pedido del dueño) |
 | 5 | **Inventario (existencia, kardex, almacenes)** | ✅ decretado y auditado — v49.90 |
-| 6 | Contabilidad (partida doble, asientos automáticos) | pendiente |
+| 6 | **Contabilidad (partida doble, asientos automáticos)** | ✅ decretado y auditado — v49.91 |
 | 7 | Clientes y entidades | pendiente |
 | 8 | Taller (reparaciones, garantías) | pendiente |
 
@@ -192,3 +192,34 @@ Inteligente), cero fugas nuevas.
 todavía es aproximado — el cuadre ajusta el total, no reparte los IMEI entre almacenes · el total de
 un artículo normal (sin IMEI) sigue siendo la fuente autoritativa y no se fuerza el invariante
 "total = suma de almacenes" en cada operación (la Fase 5 lo dejó así a propósito).
+
+---
+
+## 6 · REGLAMENTO DE CONTABILIDAD
+*(decretado por el dueño el 26-jul-2026 · auditado y aplicado en v49.91)*
+
+Aplica a todo asiento contable — los automáticos (venta, compra, cobro, devolución, nómina,
+servicio) y el manual.
+
+1. **Ningún asiento se guarda si Debe ≠ Haber.** La partida doble tiene que cuadrar SIEMPRE. Antes
+   solo el asiento manual lo validaba; los automáticos posteaban sus líneas sin verificar, así que un
+   error de cálculo o de redondeo descuadraba los libros en silencio. Ahora **todo** pasa por un solo
+   motor (`guardarAsientoBalanceado`) que lo exige; si no cuadra, no se registra y queda en Auditoría
+   (`ASIENTO_DESCUADRADO`) para revisarlo.
+2. **Ningún asiento queda colgando.** Si la cabecera se creó pero las líneas fallan, la cabecera
+   huérfana se borra sola — antes quedaba un asiento sin líneas ensuciando los libros.
+3. **Cada asiento nace de un origen y se puede reversar.** Venta/compra/cobro/devolución/nómina
+   guardan su `tipo` y `origen_id`; anular o eliminar el documento borra su asiento
+   (`delAsientoOrigen`), no lo deja pegado.
+4. **Un asiento sin plan de cuentas no se inventa.** Si la organización no tiene su plan de cuentas
+   creado, el asiento automático simplemente no se registra (no revienta, no descuadra) — el negocio
+   sigue vendiendo; la contabilidad arranca cuando se crea el plan.
+
+**Nota:** al día de hoy la base tiene **0 asientos** (todo limpio), así que la red de seguridad
+todavía no ha tenido que atrapar nada — se deja el motor a prueba de balas antes de que se use en
+serio, igual que los reglamentos anteriores.
+
+**Pendientes de este reglamento (NO construidos):** no hay cierre de período (los libros nunca se
+"cierran" a fin de mes/año) · el costo de la venta (COGS) usa el costo de HOY del producto, no el
+costo real del día en que se vendió (`pos_venta_items` no guarda el costo del momento) · no hay
+conciliación bancaria ni centro de costo.

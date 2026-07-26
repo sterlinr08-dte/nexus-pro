@@ -22908,12 +22908,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (!cg || !cp) { toast('err', 'Faltan cuentas (Caja/Banco)'); return; }
     const conc = (val('gsD') || '').trim() || ('Gasto: ' + (cg.nombre || ''));
     try {
-      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: val('gsF') || isoHoy(), concepto: conc, tipo: 'gasto' });
-      const aid = (as && as[0] && as[0].id); if (!aid) throw new Error('No se creó el asiento');
-      await getAPI().post('pos_asiento_lineas', [
-        { asiento_id: aid, cuenta_id: cg.id, cuenta_codigo: cg.codigo, cuenta_nombre: cg.nombre, debito: Math.round(monto), credito: 0 },
-        { asiento_id: aid, cuenta_id: cp.id, cuenta_codigo: cp.codigo, cuenta_nombre: cp.nombre, debito: 0, credito: Math.round(monto) }
+      const aid = await guardarAsientoBalanceado({ numero: await nextSeq('asiento'), fecha: val('gsF') || isoHoy(), concepto: conc, tipo: 'gasto' }, [
+        { cuenta_id: cg.id, cuenta_codigo: cg.codigo, cuenta_nombre: cg.nombre, debito: Math.round(monto), credito: 0 },
+        { cuenta_id: cp.id, cuenta_codigo: cp.codigo, cuenta_nombre: cp.nombre, debito: 0, credito: Math.round(monto) }
       ]);
+      if (!aid) throw new Error('No se pudo registrar el gasto');
       // Si el gasto es en efectivo y hay caja abierta, también baja el efectivo de la caja (arqueo)
       try { if (pagCod === '1101' && _caja && _caja.id) await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'salida', concepto: conc, monto: Math.round(monto), created_by_name: nomAdmin() }); } catch (e) {}
       cerrarModal('nxGastoForm'); toast('ok', 'Gasto registrado', fmt(monto));
@@ -23027,10 +23026,9 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const td = lineas.reduce((s, l) => s + Number(l.debito || 0), 0), th = lineas.reduce((s, l) => s + Number(l.credito || 0), 0);
     if (Math.round(td) !== Math.round(th)) { toast('err', 'No cuadra', 'El Debe debe ser igual al Haber'); return; }
     try {
-      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: _asEdit.fecha || isoHoy(), concepto: (_asEdit.concepto || '').trim() || 'Asiento manual', tipo: 'manual' });
-      const aid = (as && as[0] && as[0].id); if (!aid) throw new Error('No se creó el asiento');
-      const rows = lineas.map(l => { const c = ctaById(l.cuenta_id) || {}; return { asiento_id: aid, cuenta_id: l.cuenta_id, cuenta_codigo: c.codigo || '', cuenta_nombre: c.nombre || '', debito: Math.round(Number(l.debito || 0)), credito: Math.round(Number(l.credito || 0)) }; });
-      await getAPI().post('pos_asiento_lineas', rows);
+      const rows = lineas.map(l => { const c = ctaById(l.cuenta_id) || {}; return { cuenta_id: l.cuenta_id, cuenta_codigo: c.codigo || '', cuenta_nombre: c.nombre || '', debito: Math.round(Number(l.debito || 0)), credito: Math.round(Number(l.credito || 0)) }; });
+      const aid = await guardarAsientoBalanceado({ numero: await nextSeq('asiento'), fecha: _asEdit.fecha || isoHoy(), concepto: (_asEdit.concepto || '').trim() || 'Asiento manual', tipo: 'manual' }, rows);
+      if (!aid) throw new Error('No se creó el asiento');
       cerrarModal('nxAsForm'); _asEdit = null; toast('ok', 'Asiento registrado');
       await cargarContabilidad(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
@@ -23058,10 +23056,8 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         for (const it of vitems) { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && p.tipo !== 'servicio') costo += Number(p.costo || 0) * Number(it.cantidad || 0); }
       } catch (e) {}
       const lineas = [ln('1101', 'Caja', caja, 0), ncCta === '2105' ? ln('2105', 'Notas de crédito por aplicar', ncMonto, 0) : null, ln('1103', 'Cuentas por cobrar (clientes)', Number(c.credito || 0), 0), ln('4101', 'Ventas', 0, Number(c.subtotal || 0)), ln('2102', 'ITBIS por pagar', 0, Number(c.itbis || 0)), ln('5101', 'Costo de mercancía vendida', costo, 0), ln('1104', 'Inventario de mercancías', 0, costo)].filter(Boolean);
-      if (lineas.length < 2) return;
-      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id });
-      const aid = (as && as[0] && as[0].id); if (!aid) return;
-      await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
+      // Pasa por el motor único: valida Debe=Haber y limpia la cabecera si las líneas fallan.
+      await guardarAsientoBalanceado({ numero: await nextSeq('asiento'), fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id }, lineas);
     } catch (e) {}
   }
   // Cuentas en memoria (carga perezosa) para los asientos automáticos
@@ -23071,13 +23067,34 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const byc = {}; cu.forEach(x => byc[x.codigo] = x); return byc;
   }
   function lnCta(byc, cod, nomDef, d, h) { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre || nomDef, debito: Math.round(d), credito: Math.round(h) }; }
-  async function postAsientoConcepto(fecha, concepto, tipo, origenId, lineas, referencia) {
-    lineas = lineas.filter(Boolean); if (lineas.length < 2) return;
+  // REGLAMENTO DE CONTABILIDAD: motor ÚNICO por el que pasa TODO asiento (automático o manual).
+  // (1) Ningún asiento se guarda si Debe ≠ Haber — antes solo el asiento manual lo validaba; los
+  //     automáticos posteaban sus líneas a ciegas, así que un error de redondeo/cálculo dejaba la
+  //     contabilidad descuadrada en silencio. Si no cuadra: NO se registra + queda en Auditoría.
+  // (2) Ningún asiento queda colgando: si la cabecera se creó pero las líneas fallan, se borra la
+  //     cabecera huérfana (antes el catch se lo tragaba y dejaba un asiento sin líneas).
+  // Devuelve el id del asiento creado, o null si no se guardó. Las líneas van SIN asiento_id (se
+  // les pone aquí, ganando siempre sobre cualquier asiento_id que ya trajeran).
+  async function guardarAsientoBalanceado(cab, lineas) {
+    lineas = (lineas || []).filter(Boolean); if (lineas.length < 2) return null;
+    const td = lineas.reduce((s, l) => s + Number(l.debito || 0), 0), th = lineas.reduce((s, l) => s + Number(l.credito || 0), 0);
+    if (Math.round(td) !== Math.round(th)) {
+      try { (window.logAudit || function () {})('ASIENTO_DESCUADRADO', (cab && cab.concepto || 'Asiento') + ' · Debe ' + Math.round(td) + ' ≠ Haber ' + Math.round(th) + ' — no se registró', 'Contabilidad'); } catch (e) {}
+      return null;
+    }
+    let aid = null;
     try {
-      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(fecha || '').slice(0, 10)) || isoHoy(), concepto: concepto, referencia: referencia || null, tipo: tipo, origen_id: origenId || null });
-      const aid = (as && as[0] && as[0].id); if (!aid) return;
-      await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
-    } catch (e) {}
+      const as = await getAPI().post('pos_asientos', cab);
+      aid = as && as[0] && as[0].id; if (!aid) return null;
+      await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({}, l, { asiento_id: aid })));
+      return aid;
+    } catch (e) {
+      if (aid) { try { await getAPI().del('pos_asientos', 'id=eq.' + aid); } catch (e2) {} } // borra la cabecera colgada
+      return null;
+    }
+  }
+  async function postAsientoConcepto(fecha, concepto, tipo, origenId, lineas, referencia) {
+    await guardarAsientoBalanceado({ numero: await nextSeq('asiento'), fecha: (String(fecha || '').slice(0, 10)) || isoHoy(), concepto: concepto, referencia: referencia || null, tipo: tipo, origen_id: origenId || null }, lineas);
   }
   // Compra: Debe Inventario (+ITBIS adelantado) / Haber Caja o CxP
   async function postAsientoCompra(compra, subtotal, itbis, aCredito) {
@@ -24208,10 +24225,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const byc = {}; cu.forEach(x => byc[x.codigo] = x);
       const ln = (cod, d, h) => { const x = byc[cod]; if (!x || (Math.round(d) === 0 && Math.round(h) === 0)) return null; return { cuenta_id: x.id, cuenta_codigo: cod, cuenta_nombre: x.nombre, debito: Math.round(d), credito: Math.round(h) }; };
       const lineas = [ln('6101', bruto, 0), ln('2104', 0, ded), ln('2103', 0, neto)].filter(Boolean);
-      if (lineas.length < 2) return;
-      const as = await getAPI().post('pos_asientos', { numero: await nextSeq('asiento'), fecha: (String(nomina.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Nómina ' + (nomina.periodo || ''), referencia: nomina.periodo || '', tipo: 'nomina', origen_id: nomina.id });
-      const aid = (as && as[0] && as[0].id); if (!aid) return;
-      await getAPI().post('pos_asiento_lineas', lineas.map(l => Object.assign({ asiento_id: aid }, l)));
+      await guardarAsientoBalanceado({ numero: await nextSeq('asiento'), fecha: (String(nomina.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Nómina ' + (nomina.periodo || ''), referencia: nomina.periodo || '', tipo: 'nomina', origen_id: nomina.id }, lineas);
     } catch (e) {}
   }
 

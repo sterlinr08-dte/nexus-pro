@@ -1,7 +1,12 @@
 {
-  "version": "49.90",
+  "version": "49.91",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.91",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO DE CONTABILIDAD: la partida doble ahora se cuida sola en TODOS los asientos, no solo en el manual. · ARREGLADO (importante): los asientos automáticos (venta, compra, cobro, devolución, nómina, gasto) se guardaban SIN verificar que el Debe fuera igual al Haber — un error de cálculo o de redondeo podía descuadrar la contabilidad en silencio. Ahora TODO asiento pasa por un solo motor que exige Debe = Haber; si no cuadra, NO se registra y queda anotado en Auditoría para revisarlo. · ARREGLADO: si al guardar un asiento fallaba la parte de las líneas después de crear la cabecera, quedaba un asiento vacío colgando en los libros. Ahora esa cabecera huérfana se borra sola. · Nada de esto cambia los asientos que ya estaban bien — solo agrega la red de seguridad."
+    },
     {
       "v": "49.90",
       "fecha": "2026-07-26",
