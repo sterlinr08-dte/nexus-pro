@@ -5583,6 +5583,45 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### POS · el botón de imprimir de Cobrar saca el TICKET, no el documento (26-jul-2026, v49.73)
+El dueño: *"Que salga el ticket térmico en vez del documento grande"*. El botón de impresora que se
+había puesto en la ventana de Cobrar (v49.72) abría `docFacturaHTML` (la factura de página completa);
+ahora abre **`ticketHTML`** — la tirilla de 300px monospace del mostrador, la misma que sale al
+confirmar la venta. Tiene sentido: quien está cobrando quiere el recibo del mostrador, no un
+documento de oficina (ese sigue en "Vista previa" de Factura y en el Historial, sin cambios).
+- **El problema de fondo:** `ticketHTML(v)` está escrita para una venta **YA guardada**. Se le arma
+  una venta-fantasma desde `_cart` + `leerCobro()` y, clave, **se deja `v.id` AUSENTE** — los dos
+  botones del ticket (`📄 Factura completa` y `↩︎ Devolver`) ya estaban gateados a `v.id`, así que
+  no aparecen solos, sin tocar una línea de esa lógica. Ofrecer "Devolver" sobre una venta que
+  todavía no existe habría sido un botón muerto.
+- **La garantía usa la MISMA fórmula que `nxPosConfirmar`** al guardar las líneas de verdad
+  (`new Date(Date.now() + gd*86400000).toISOString().slice(0,10)`), no la variante local de RD que
+  usa Reparaciones — a propósito: lo que importa aquí es que la fecha del preview coincida con la
+  que después queda en `pos_venta_items`, no con el calendario de RD.
+- **Marca `v._preview` nueva en `ticketHTML`** (2 líneas, retrocompatible — una venta guardada sale
+  idéntica a antes): recuadro punteado **"VISTA PREVIA — NO COBRADA"**, y el pie cambia de
+  "¡Gracias por su compra!" a "Todavía no se ha cobrado ni guardado nada. El comprobante fiscal
+  (NCF) se asigna al confirmar la venta." Un "gracias por su compra" sobre algo que no se ha
+  cobrado sería justo el tipo de mentira que este sistema evita.
+- **Sin NCF a propósito:** el comprobante se consume en `asignarNCF` al confirmar; imprimir un NCF
+  antes sería quemarlo (o peor, mostrar uno que le va a tocar a otra factura).
+- **Desglose real de cómo se está pagando:** una línea por método con monto > 0 (Efectivo/Tarjeta/
+  Transferencia/Cheque/Nota de crédito) + una fila **"A crédito (fiado)"** si queda pendiente — se
+  arma explícitamente para no caer en el respaldo `[{metodo:v.metodo_pago}]` de `ticketHTML`, que
+  con una venta-fantasma imprimiría `undefined`.
+- Verificado con Playwright y el código real extraído por contenido (`nxPosCobrar`, `nxPagoImprimir`,
+  `ticketHTML`, `leerCobro` tal cual, interceptando `window.open` para capturar el HTML y luego
+  cargándolo como página real): **70 comprobaciones** de la ventana de cobro (las 58 anteriores sin
+  regresión + 12 nuevas) — es el ticket de 300px monospace y NO la factura de página completa, lleva
+  el número que le tocará, la marca de vista previa, sin NCF, sin los 2 botones de venta guardada, el
+  cliente elegido EN COBRAR, la garantía del producto, el descuento del cobro (TOTAL 42,750 sobre
+  47,500 con 10%), los métodos desglosados sin ningún `undefined`, la parte a crédito, y con el
+  carrito vacío avisa sin abrir nada — más **7 de no-regresión** confirmando que una venta YA
+  guardada sale exactamente igual que antes (dice "¡Gracias por su compra!", muestra su NCF real,
+  conserva "Factura completa" y "Devolver"). Sin desborde en 390px, 0 errores de consola. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
 ### POS · FACTURA imprimible de página completa (26-jul-2026, v49.68)
 El dueño dijo *"continúa con factura"*. Se auditó qué faltaba de verdad y el hueco real era este:
 la PANTALLA ya se ve como documento (v49.67), pero **lo único que se podía imprimir de una venta

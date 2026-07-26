@@ -18801,22 +18801,42 @@
     big.value = Math.round(Math.max(0, n)).toLocaleString('en-US');
     window.nxPagoBigIn();
   };
-  // Imprimir desde la ventana de Cobrar: abre el MISMO documento de página completa de la
-  // Factura (docFacturaHTML), pero con lo que hay en el cobro AHORA — el cliente elegido aquí
-  // (#posCliId, que puede ser otro que el de la Factura) y el descuento aplicado en esta ventana.
-  // No guarda nada: sale marcado "VISTA PREVIA · SIN GUARDAR", igual que la vista previa normal.
+  // Imprimir desde la ventana de Cobrar: saca el TICKET TÉRMICO (la tirilla de 300px de siempre,
+  // ticketHTML) con lo que hay en el cobro AHORA — el cliente elegido aquí (#posCliId, que puede
+  // ser otro que el de la Factura), el descuento de esta ventana y los montos por método tal
+  // como están tecleados. NO guarda nada: sale con la marca "VISTA PREVIA — NO COBRADA" y SIN
+  // NCF (el comprobante fiscal se consume al confirmar, no antes). Como no hay `id`, el ticket
+  // tampoco muestra sus botones de "Factura completa"/"Devolver" (los dos van gateados a v.id).
   window.nxPagoImprimir = function () {
     if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
     const c = leerCobro();
-    const d = facDocDesdeCarrito();
     const cliId = val('posCliId');
     const cli = cliId ? _clientes.find(x => String(x.id) === String(cliId)) : null;
-    d.cliente = cli ? { nombre: cli.nombre, codigo: cli.codigo, cedula: cli.cedula, tipoPersona: cli.tipo_persona, telefono: cli.telefono, direccion: cli.direccion } : {};
-    d.subtotal = c.subtotal; d.itbis = c.itbis; d.total = c.total;
-    d.descuento = Number(d.descuento || 0) + Number(c.descMonto || 0);
-    d.condicion = c.credito > 0 ? 'Crédito' : 'Contado';
-    d.credito = c.credito;
-    docFacturaHTML(d);
+    // Misma fórmula de garantía que usa nxPosConfirmar al guardar las líneas de verdad, para que
+    // la fecha del preview coincida con la que después queda en pos_venta_items.
+    const items = _cart.map(it => {
+      const p = _prods.find(x => String(x.id) === String(it.producto_id));
+      const gd = p ? Number(p.garantia_dias || 0) : 0;
+      return {
+        cantidad: it.cantidad, nombre: it.nombre,
+        serial: (it.seriales && it.seriales.length) ? it.seriales.map(s => s.serial).join(', ') : null,
+        garantia_hasta: gd > 0 ? new Date(Date.now() + gd * 86400000).toISOString().slice(0, 10) : null,
+        importe: Math.round(lineImporte(it))
+      };
+    });
+    const pagos = [['Efectivo', c.efe], ['Tarjeta', c.tar], ['Transferencia', c.tra], ['Cheque', c.che], ['Nota de crédito', c.nc]]
+      .filter(x => Number(x[1] || 0) > 0).map(x => ({ metodo: x[0], monto: x[1] }));
+    if (c.credito > 0) pagos.push({ metodo: 'A crédito (fiado)', monto: c.credito });
+    ticketHTML({
+      _preview: true,
+      numero_factura: proxNumeroFacturaCorto(_facCredito),
+      fecha: _facFecha || hoy(),
+      cliente_id: cliId || null,
+      cliente_nombre: cli ? cli.nombre : (val('posCli') || ''),
+      _items: items,
+      subtotal: c.subtotal, descuento: c.descMonto, itbis: c.itbis, total: c.total,
+      pagos: pagos, devuelta: c.devuelta
+    });
   };
   window.nxPagoOpts = function () { const b = document.getElementById('pgOpts'); if (b) b.style.display = (b.style.display === 'block') ? 'none' : 'block'; };
   // Selector de cliente dentro de "Cobrar" — antes un <select> con TODOS los clientes en una
@@ -19051,6 +19071,7 @@
         <div class="c muted">${esc(e.dir || '')}</div>
         <div class="line"></div>
         <div class="c"><b>${v.numero_factura ? ('FACTURA ' + v.numero_factura) : ('TICKET DE VENTA No. ' + (v.numero || ''))}</b></div>
+        ${v._preview ? `<div class="c" style="font-weight:800;border:1px dashed #999;border-radius:6px;padding:3px 6px;margin:5px 0;font-size:11px">VISTA PREVIA — NO COBRADA</div>` : ''}
         ${v.ncf ? `<div class="c muted">NCF: <b>${esc(v.ncf)}</b></div>` : ''}
         <div class="muted">${fechaDMY(v.fecha)}${v.cliente_nombre ? '<br>Cliente: ' + esc(v.cliente_nombre) : ''}${_cliRnc ? '<br>' + _cliRnc : ''}</div>
         <div class="line"></div>
@@ -19065,7 +19086,7 @@
         <div class="line"></div>
         <table>${(Array.isArray(v.pagos) && v.pagos.length ? v.pagos : [{ metodo: v.metodo_pago, monto: v.total }]).map(p => `<tr><td>${esc(p.metodo)}</td><td style="text-align:right">${fmt(p.monto)}</td></tr>`).join('')}${Number(v.devuelta || 0) > 0 ? `<tr><td>Devuelta</td><td style="text-align:right">${fmt(v.devuelta)}</td></tr>` : ''}</table>
         <div class="line"></div>
-        <div class="c muted">¡Gracias por su compra!</div>
+        <div class="c muted">${v._preview ? 'Todavía no se ha cobrado ni guardado nada. El comprobante fiscal (NCF) se asigna al confirmar la venta.' : '¡Gracias por su compra!'}</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif">🖨️ Imprimir</button>
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el ticket'); return; } w.document.write(html); w.document.close(); } catch (er) {}

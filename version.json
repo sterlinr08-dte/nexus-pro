@@ -1,7 +1,12 @@
 {
-  "version": "49.72",
+  "version": "49.73",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.73",
+      "t": "NUEVO: el botón de imprimir de Cobrar saca el TICKET, no el documento grande",
+      "d": "El botón de impresora de la ventana de Cobrar ahora saca el ticket de siempre (la tirilla angosta del mostrador, la misma que sale al confirmar la venta) en vez de la factura de página completa. Sale con lo que hay en el cobro en ese momento: el cliente que elegiste ahí, el descuento que aplicaste, y el desglose de cómo se está pagando (Efectivo, Transferencia, y la parte que quede a crédito). Como todavía no se ha cobrado, el ticket lleva una marca clara \"VISTA PREVIA — NO COBRADA\", sale SIN comprobante fiscal (el NCF se asigna al confirmar, no antes) y no muestra los botones de Devolver ni de Factura completa, porque esa venta todavía no existe. La factura de página completa sigue estando donde ya estaba: en \"Vista previa\" de la pantalla de Factura y en el Historial."
+    },
     {
       "v": "49.72",
       "t": "NUEVO: botón de IMPRIMIR en la ventana de Cobrar",
