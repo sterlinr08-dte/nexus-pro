@@ -17772,7 +17772,10 @@
     const reg = window.__nxPosCliReg[modalId] || (window.__nxPosCliReg[modalId] = {});
     reg.sel = -1;
     const ql = String(q || '').toLowerCase();
-    const filas = _clientes.filter(c => c.es_cliente !== false && (!ql || (c.nombre || '').toLowerCase().includes(ql) || (c.codigo || '').toLowerCase().includes(ql) || (c.cedula || '').includes(ql))).slice(0, 60);
+    // El teléfono se compara SOLO por dígitos: en el mostrador el cliente dicta "809 555 1234"
+    // y en su ficha puede estar guardado "(809)555-1234" — sin normalizar nunca empatarían.
+    const qd = ql.replace(/\D/g, '');
+    const filas = _clientes.filter(c => c.es_cliente !== false && (!ql || (c.nombre || '').toLowerCase().includes(ql) || (c.codigo || '').toLowerCase().includes(ql) || (c.cedula || '').includes(ql) || (qd.length >= 3 && String(c.telefono || '').replace(/\D/g, '').includes(qd)))).slice(0, 60);
     const favs = mbbLSGet('Fav', modalId);
     const favIds = favs.map(f => f.__id);
     let secciones = ''; const navOrder = []; const sinTexto = !ql;
@@ -17857,7 +17860,7 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPf" style="max-width:420px;max-height:85vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-user"></i> Elegir cliente</span><button class="nxBack" type="button" onclick="document.getElementById('${modalId}').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        ${posBuscador({ id: modalId + 'Q', placeholder: 'Buscar cliente por nombre, código o cédula…', oninput: `window.nxPosClienteFiltrar('${modalId}',this.value)`, onenter: `window.nxPosCliEnter('${modalId}')` })}
+        ${posBuscador({ id: modalId + 'Q', placeholder: 'Buscar por nombre, teléfono, código o cédula…', oninput: `window.nxPosClienteFiltrar('${modalId}',this.value)`, onenter: `window.nxPosCliEnter('${modalId}')` })}
         <div id="${modalId}List" style="overflow-y:auto;flex:1;margin-top:10px"></div>
       </div>`;
     document.body.appendChild(ov);

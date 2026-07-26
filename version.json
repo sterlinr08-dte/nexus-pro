@@ -1,7 +1,12 @@
 {
-  "version": "49.74",
+  "version": "49.75",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.75",
+      "t": "NUEVO: buscar el cliente por su TELEFONO",
+      "d": "La ventana de elegir cliente (tanto al facturar como al cobrar) solo buscaba por nombre, codigo o cedula. Ahora tambien busca por telefono, que es lo primero que el cliente dice en el mostrador. Compara solo los numeros, asi que da igual como este guardado en su ficha: puedes escribir \"809 555 1234\", \"809-555-1234\" o \"8095551234\" y lo encuentra igual, y tambien sirve con solo los ultimos 4 digitos. Con 1 o 2 numeros no busca por telefono a proposito, para no traerte medio catalogo de una vez."
+    },
     {
       "v": "49.74",
       "t": "NUEVO: el círculo de \"Facturar a\" ahora es la lupa para buscar el cliente, y la ventana de clientes tiene líneas",

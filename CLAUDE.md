@@ -5583,6 +5583,26 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### POS · buscar el cliente por TELÉFONO (26-jul-2026, v49.75)
+Primera sugerencia propia bajo la regla nueva #12 ("siempre aportar ideas"), verificada antes de
+proponerla: `nxPosClientePintar` filtraba por **nombre, código y cédula** — el `telefono` estaba en
+`pos_clientes` y en la ficha, pero **no se podía buscar por él**. En una tienda de celulares el cliente
+dice su número antes que su cédula, así que era el camino más usado del mostrador y el único que
+faltaba.
+- **Comparación por dígitos, no por texto:** `qd = ql.replace(/\D/g,'')` contra
+  `String(c.telefono).replace(/\D/g,'')`. Sin eso, dictar "809 555 1234" nunca empataría con
+  "(809)555-1234" guardado en la ficha — y ese desajuste de formato es la norma, no la excepción.
+- **Piso de 3 dígitos** (`qd.length >= 3`): con 1-2 números casi cualquier teléfono empata y traería
+  medio catálogo, que es peor que no buscar. Nombre/código/cédula siguen sin piso.
+- El **placeholder** se actualizó a "Buscar por nombre, teléfono, código o cédula…" — una función que
+  no se anuncia no existe para quien la usa.
+- Aplica a las **dos** ventanas del motor compartido `nxPosClienteAbrir` (Facturar y Cobrar).
+- Verificado con Playwright y el código real extraído por contenido (`nxPosClientePintar` +
+  `nxPosCliSnap`/`nxPosCliSubtxt`/`nxPosCliFilaHTML` tal cual): **12 comprobaciones** — nombre/código/
+  cédula siguen igual (sin regresión), teléfono con espacios, seguido, con guiones y por los últimos 4
+  dígitos, 2 dígitos NO disparan la búsqueda, un proveedor (`es_cliente:false`) no aparece ni buscando
+  su teléfono, un cliente sin teléfono no rompe nada, y sin texto siguen saliendo todos. 0 errores.
+
 ### POS · Factura: el círculo de "Facturar a" es la lupa, y la lista de clientes con líneas (26-jul-2026, v49.74)
 Dos pedidos con capturas del iPhone: *"donde el punto negro vamos a poner ese mismo punto pero con el
 icono de lupa y clickear ahí para buscar los clientes"* y *"que la ventana flotante de buscar cliente
@@ -7793,7 +7813,24 @@ Auditoría del historial (52 commits, ~115 entradas de changelog). Respetar esto
       idéntico en TODO el ERP. Las excepciones de color/tipografía negociadas antes de esa fecha
       **quedan derogadas** — incluida la de Cuotas del POS (morado + Plus Jakarta Sans, v48.16),
       que es la única desviación real que queda por normalizar (ver `DESIGN_SYSTEM.md` §6, C1).
-12. **EL DUEÑO NO ESCRIBE COMANDOS (decretado 25-jul-2026).** No habla inglés y no va a invocar
+12. **SIEMPRE APORTAR IDEAS Y SUGERENCIAS (decretado 26-jul-2026).** Textual del dueño: *"Siempre
+    buenas ideas y sugerencias que vayan a hacer genial para cualquier proyecto o acción del
+    proyecto."* No basta con ejecutar lo pedido: **en cada entrega hay que proponer**. Reglas de cómo
+    hacerlo bien (si no, se vuelve ruido):
+    - **Verificar antes de sugerir.** Nunca proponer algo que ya existe o que el sistema no puede
+      hacer — revisar el código/esquema real primero. Una sugerencia falsa cuesta más que ninguna
+      (ej. antes de sugerir "buscar cliente por teléfono" se leyó `nxPosClientePintar` y se confirmó
+      que de verdad no filtraba por ese campo).
+    - **Priorizar por lo que le CONVIENE al negocio**, no por lo que es entretenido de programar:
+      primero lo que le va a doler si no se hace (fechas legales, cosas que están bloqueando algo que
+      ya funciona), después el dinero, después la comodidad diaria del mostrador, y al final lo
+      cosmético.
+    - **Decir el costo y el riesgo real**, y cuál recomiendo — no un menú de opciones sin postura.
+    - **Si es chico, seguro y de valor claro: hacerlo ya** en la misma entrega en vez de solo
+      proponerlo. Lo grande o lo que toca dinero/esquema se propone y se espera su OK.
+    - **Recordarle sus pendientes propios** (los que solo él puede hacer: secretos, ajustes del panel
+      de Supabase, dominios, trámites) — se le olvidan y quedan bloqueando funciones ya construidas.
+13. **EL DUEÑO NO ESCRIBE COMANDOS (decretado 25-jul-2026).** No habla inglés y no va a invocar
     skills por su nombre (`/gstack-investigate`, etc.). **Reconocer el caso y cargar la skill
     correcta es responsabilidad de Claude, no suya** — ver la sección "ENRUTAMIENTO AUTOMÁTICO DE
     SKILLS" arriba, con la tabla de "qué dice el dueño → qué skill se carga". Que no la pida por
