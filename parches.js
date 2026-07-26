@@ -1687,6 +1687,7 @@
     inyectarCSS();
     var view = ensureView();
     if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('agua'); } catch (e) {}
     document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(function (n) { n.classList.remove('on'); });
@@ -13437,6 +13438,7 @@
     try { if (window.sesion && window.sesion.org && window.sesion.org.tipo === 'rifa') { if (window.nxAbrirRifas) window.nxAbrirRifas(); return; } } catch (e) {}
     const view = ensureHubView();
     if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('multiempresa'); } catch (e) {}
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
@@ -13450,6 +13452,7 @@
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     const view = ensureView();
     if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('financiamiento'); } catch (e) {}
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
@@ -15912,6 +15915,7 @@
   window.nxAbrirVehiculos = async function () {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     const view = ensureView(); if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('vehiculos'); } catch (e) {}
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
@@ -17013,6 +17017,7 @@
   window.nxAbrirPOS = async function () {
     if (!rolReal()) { toast('err', 'Acceso restringido', 'Inicia sesión'); return; }
     const view = ensureView(); if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('pos'); } catch (e) {}
     document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
@@ -17036,6 +17041,8 @@
 
     if (!puedeVer(t)) { toast('err', 'Sin acceso', 'Tu rol no tiene permiso para ' + t); return; }
     _posTab = t;
+    // Recordar la pestaña para volver a ella si se actualiza la app (ver "DÓNDE ME QUEDÉ")
+    try { window.nxGuardarLugar && window.nxGuardarLugar('pos', t); } catch (e) {}
     try { document.body.classList.remove('nxTDrawer'); } catch (e) {}
     const view = document.getElementById('v-pos'); if (!view) return;
     if (t === 'inicio') { cargarDashKPI().then(() => { const v2 = document.getElementById('v-pos'); if (v2 && _posTab === 'inicio') renderPOS(v2); }).catch(() => {}); }
@@ -25920,6 +25927,7 @@ try {
   window.nxAbrirRifas = async function () {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     var view = ensureView(); if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('rifas'); } catch (e) {}
     document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(function (n) { n.classList.remove('on'); });
@@ -27174,6 +27182,7 @@ try {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     inyectarCSS();
     var view = ensureView(); if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('consultorio'); } catch (e) {}
     document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
     view.classList.add('on');
     document.querySelectorAll('.ni').forEach(function (n) { n.classList.remove('on'); });
@@ -27577,6 +27586,7 @@ try {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     inyectarCSS();
     var view = ensureView(); if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('saas'); } catch (e) {}
     document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
     view.classList.add('on');
     var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'CLIENTES SaaS';
@@ -27789,6 +27799,7 @@ try {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
     inyectarCSS();
     var view = ensureView(); if (!view) return;
+    try { window.nxGuardarLugar && window.nxGuardarLugar('aicontent'); } catch (e) {}
     document.querySelectorAll('.view').forEach(function (x) { x.classList.remove('on'); });
     view.classList.add('on');
     var pt = document.getElementById('pttl'); if (pt) pt.textContent = 'NEXUS AI CONTENT';

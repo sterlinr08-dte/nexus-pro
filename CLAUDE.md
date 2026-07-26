@@ -5583,6 +5583,59 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### DÓNDE ME QUEDÉ — al actualizar la app se vuelve a la MISMA pantalla (26-jul-2026, v49.78)
+Pedido del dueño: *"Algo muy importante para todo el sistema NEXUS PRO: que al momento de yo
+actualizar quiero que mantenga en el mismo lugar donde estoy trabajando."*
+- **Investigado antes de tocar nada** (es el mecanismo de actualización de TODO el sistema; romperlo
+  dejaría la app sin poder actualizarse). Dos hallazgos que cambiaron el diseño:
+  1. **La restauración YA existía, a medias.** `nav()` guardaba `localStorage['nx_last_view']`
+     ("Guardar pantalla actual para F5") e `iniciarApp()` la leía y hacía `nav(lastView)`.
+  2. **Pero solo cubre el núcleo de Seguros.** Los módulos de `parches.js` **NO pasan por `nav()`** —
+     `nxAbrirPOS`/`nxAbrirPrestamos`/etc. pintan la `.view` por su cuenta y **no guardaban nada**. Así
+     que trabajando en el POS, `nx_last_view` seguía teniendo la última vista de Seguros y al
+     actualizar (`document.open()+document.write(html)`, que reinicia la app entera) caías en el
+     Dashboard. Esa era la causa raíz, no un bug del updater.
+- **Clasificación real hecha con grep, no a ojo:** de las **25** funciones `window.nxAbrir*` del
+  archivo, solo **9** son pantalla completa (usan `ensureView()`/`ensureHubView()` + `.view.on`): POS,
+  Rifas, Consultorio, Multiempresa, Financiamiento (`nxAbrirPrestamos`), Vehículos, AGUAPRO, Clientes
+  SaaS y NEXUS AI CONTENT. Las otras 16 son modales/formularios (`nxAbrirSmart`, `nxAbrirCierre`,
+  `nxAbrirFormEgreso`...) — restaurar un modal suelto al arrancar sería raro, así que quedan fuera a
+  propósito.
+- **UN solo registro para los dos mundos:** `localStorage['nx_last_place']` = `{k,s}` — `k='seguros'`
+  con `s=vista`, o `k='pos'` con `s=pestaña`. `nav()` lo escribe también (así **volver a Seguros pisa
+  el módulo anterior** y no quedan dos registros peleando); `nx_last_view` se sigue escribiendo solo
+  por compatibilidad.
+- **Lista BLANCA obligatoria (`NX_MODULOS_LUGAR`), no `window[nombre]()` a ciegas:** el valor viene de
+  `localStorage`, así que ejecutar cualquier nombre que aparezca ahí sería una puerta abierta (y
+  además rompería con un nombre viejo/renombrado). Solo esas 9 claves se ejecutan; cualquier otra cosa
+  devuelve `false` y la app arranca normal. Probado con `k='logout'`: no se ejecuta.
+- **Retrocompatibilidad, que es el caso de la PRIMERA actualización:** si no existe `nx_last_place`
+  (el usuario viene de una versión anterior), `nxRestaurarLugar()` cae al viejo `nx_last_view`, o sea
+  el comportamiento de siempre. Por eso la primera actualización (49.77→49.78) todavía puede devolver
+  al Dashboard si estabas en un módulo — de ahí en adelante ya funciona. Se le dijo explícitamente al
+  dueño y va en el changelog.
+- **Si el módulo aún no cargó** (`parches.js` se registra después; ya hay precedente documentado con
+  el retry de `aplicarOrgSidebar`): se pinta el Dashboard para **no dejar la pantalla en blanco** y se
+  reintenta cada 300ms hasta ~6s; cuando la función aparece, abre el módulo solo. Si el módulo YA está
+  cargado (caso normal) se abre directo, **sin pasar por el Dashboard** — se conserva el "sin
+  parpadeo" que el comentario original de `iniciarApp` cuidaba a propósito.
+- **La pestaña del POS** se guarda en `nxPosTab` y se restaura 700ms después de abrir el módulo
+  (`nxAbrirPOS` es `async`).
+- **Lo que NO se guarda, a propósito:** el carrito de una venta a medias (`_cart` vive en memoria; ese
+  es su diseño y persistirlo sería otro proyecto, con el riesgo de cobrar un carrito viejo). Se vuelve
+  a la pantalla de Factura en blanco, y se dice claro en el changelog.
+- Verificado con Playwright, código real extraído de `index.html` (el bloque completo "DÓNDE ME QUEDÉ"
+  + el trozo de `nav()` que guarda) servido por HTTP local (`localStorage` necesita un origen real):
+  **16 comprobaciones** — Seguros guarda y restaura, POS restaura módulo **y** pestaña sin pasar por el
+  Dashboard, volver a Seguros pisa el registro del POS, un `localStorage` con solo `nx_last_view`
+  (versión vieja) sigue funcionando, módulo desconocido / registro corrupto / vacío no revientan, la
+  lista blanca no ejecuta un nombre arbitrario, y el caso "módulo aún no cargado" pinta el Dashboard y
+  luego abre el módulo cuando aparece. **Más una prueba de humo de la app REAL** (`index.html` +
+  `parches.js` completos en un navegador): carga con **0 errores de JS**, las 2 funciones nuevas
+  existen, la lista blanca trae los 9 módulos y `parches.js` se registró bien — importaba porque
+  `NX_MODULOS_LUGAR` es `const` (no se hoistea) y había que confirmar que ninguna llamada a
+  `iniciarApp()` corre antes de su inicialización (las 2 están dentro de funciones, no en el parseo).
+
 ### POS · REVERTIDO el botón de imprimir de Cobrar — el dueño detectó el fallo de lógica (26-jul-2026, v49.77)
 El dueño mandó una captura del pie de la ventana de Cobrar y preguntó: *"De manera lógica no se puede
 imprimir una factura sin guardar, ¿verdad?"*. **Tenía razón** — y al verificar el código el problema

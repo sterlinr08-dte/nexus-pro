@@ -1,7 +1,12 @@
 {
-  "version": "49.77",
+  "version": "49.78",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.78",
+      "t": "NUEVO: al actualizar la app te quedas EN LA MISMA PANTALLA donde estabas trabajando",
+      "d": "Antes, si estabas trabajando en el Punto de Venta (o en Financiamiento, Rifas, AGUAPRO, Consultorio, Multiempresa, Vehiculos, Clientes SaaS o NEXUS AI) y actualizabas la app, volvias al Dashboard de Seguros y tenias que navegar otra vez hasta donde estabas. Eso ya no pasa: la app recuerda la pantalla exacta y te devuelve ahi. En el Punto de Venta recuerda incluso la PESTANA (Vender, Factura, Inventario, Kardex, Caja...). Tambien aplica cuando refrescas la pagina o cierras y vuelves a abrir la app. Las pantallas de Seguros ya se recordaban desde antes; lo que faltaba eran los modulos. OJO: esta primera actualizacion (de la 49.77 a la 49.78) todavia puede devolverte al Dashboard, porque el sistema aun no tenia donde anotar el lugar — de aqui en adelante ya funciona. El carrito de una venta a medias no se guarda (eso vive en la memoria del navegador): si estabas facturando, vuelves a la pantalla de Factura pero en blanco."
+    },
     {
       "v": "49.77",
       "t": "Quitado el boton de imprimir de la ventana de Cobrar (imprimia un numero de factura que podia cambiar de dueno)",

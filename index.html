@@ -4069,7 +4069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.77';
+const APP_VERSION='49.78';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5389,16 +5389,13 @@ async function cargarTodo(){
     try{const sl=localStorage.getItem('nx_err_log');if(sl){const p=JSON.parse(sl);p.forEach(e=>{if(!ERR_LOG.find(x=>x.id===e.id))ERR_LOG.push(e);});ERR_LOG.sort((a,b)=>b.id-a.id);}}catch(le){}
     // Restaurar la pantalla exacta donde estaba el usuario (sin parpadeo).
     // Se hace de inmediato, sin timeout, para no mostrar el dashboard primero.
-    const lastView=localStorage.getItem('nx_last_view');
+    // nxRestaurarLugar cubre tanto las vistas de Seguros como los módulos de parches.js
+    // (POS con su pestaña, Financiamiento, Rifas, AGUAPRO...) — ver "DÓNDE ME QUEDÉ".
     window.__nxHtmlRestauroVista = true; // avisar al parche que ya restauramos
     const esModuloDirecto = !!(sesion && sesion.org && (sesion.org.tipo==='tienda'||sesion.org.tipo==='rifa'||sesion.org.tipo==='consultorio'));
     if(esModuloDirecto){
       // Modo tienda/rifa: no abrir vistas de seguros; aplicarOrgSidebar abrirá el módulo directo.
-    } else if(lastView){
-      nav(lastView,null);
-      // Si es solicitudes, renderizar de inmediato
-      if(lastView==='solicitudes'){setTimeout(()=>{if(window.nxRenderSolicitudes)window.nxRenderSolicitudes();},300);}
-    }else{
+    } else if(!nxRestaurarLugar()){
       nav('dashboard',null);
     }
   }catch(e){
@@ -5489,6 +5486,59 @@ async function chequearVersionApp(){
   }catch(e){/* silencioso: si no hay red o version.json, no molestar */}
 }
 
+// ── DÓNDE ME QUEDÉ ───────────────────────────────────────────────────────────
+// nav() ya guardaba la vista del núcleo de Seguros ('nx_last_view') e iniciarApp la
+// restauraba. Pero los módulos de parches.js (POS, Financiamiento, Rifas, AGUAPRO...) NO
+// pasan por nav(), así que al actualizar la app desde el POS se volvía a la última vista
+// de Seguros. Esto lo cubre con UN solo registro para los dos mundos.
+// Lista BLANCA a propósito: solo se restauran pantallas completas conocidas. Nunca se
+// ejecuta un nombre de función que venga del almacenamiento sin estar en esta lista.
+const NX_MODULOS_LUGAR={pos:'nxAbrirPOS',rifas:'nxAbrirRifas',consultorio:'nxAbrirConsultorio',
+  multiempresa:'nxAbrirMultiempresa',financiamiento:'nxAbrirPrestamos',vehiculos:'nxAbrirVehiculos',
+  agua:'nxAbrirAguaPro',saas:'nxAbrirSaas',aicontent:'nxAbrirAIContent'};
+function nxGuardarLugar(clave,sub){
+  try{localStorage.setItem('nx_last_place',JSON.stringify({k:clave,s:sub||null}));}catch(e){}
+}
+window.nxGuardarLugar=nxGuardarLugar;
+// Devuelve true si se encargó de pintar algo (para que iniciarApp no pise con el dashboard).
+function nxRestaurarLugar(){
+  let p=null;
+  try{p=JSON.parse(localStorage.getItem('nx_last_place')||'null');}catch(e){}
+  // Sin registro nuevo: caer al de siempre (nx_last_view), que solo cubre Seguros.
+  if(!p||!p.k){
+    const lv=localStorage.getItem('nx_last_view');
+    if(lv){nav(lv,null);if(lv==='solicitudes'){setTimeout(()=>{if(window.nxRenderSolicitudes)window.nxRenderSolicitudes();},300);}return true;}
+    return false;
+  }
+  if(p.k==='seguros'){
+    if(!p.s)return false;
+    nav(p.s,null);
+    if(p.s==='solicitudes'){setTimeout(()=>{if(window.nxRenderSolicitudes)window.nxRenderSolicitudes();},300);}
+    return true;
+  }
+  const fn=NX_MODULOS_LUGAR[p.k];
+  if(!fn)return false; // módulo desconocido (registro viejo o renombrado): arranque normal
+  const abrir=()=>{
+    try{
+      window[fn]();
+      // La pestaña interna del POS (Vender/Factura/Inventario...) se restaura después de
+      // que el módulo terminó de montarse; nxAbrirPOS es async, de ahí el pequeño retraso.
+      if(p.k==='pos'&&p.s&&typeof window.nxPosTab==='function'){setTimeout(()=>{try{window.nxPosTab(p.s);}catch(e){}},700);}
+    }catch(e){}
+  };
+  if(typeof window[fn]==='function'){abrir();return true;}
+  // parches.js todavía no ha terminado de registrar el módulo: pintar el dashboard para no
+  // dejar la pantalla en blanco y reintentar (mismo patrón de retry que aplicarOrgSidebar).
+  nav('dashboard',null);
+  let intentos=0;
+  const t=setInterval(()=>{
+    intentos++;
+    if(typeof window[fn]==='function'){clearInterval(t);abrir();}
+    else if(intentos>=20)clearInterval(t); // ~6s y se queda en el dashboard
+  },300);
+  return true;
+}
+
 function nav(view,el){
   // ── Modo TIENDA: bloquear vistas de seguros; siempre al Punto de Venta ──
   try{
@@ -5525,8 +5575,11 @@ function nav(view,el){
   const gsr=document.getElementById('gsResults');if(gsr)gsr.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escribe al menos 2 caracteres...</div>';
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
-  // Guardar pantalla actual para F5
+  // Guardar pantalla actual para F5 / para la actualización de la app.
+  // nx_last_view se mantiene por compatibilidad; nx_last_place es el registro que manda
+  // (cubre también los módulos de parches.js) y al navegar a Seguros pisa el módulo anterior.
   localStorage.setItem('nx_last_view', view);
+  nxGuardarLugar('seguros', view);
   // Log de navegación
   logError('info', 'Navegación: '+(TITLES[view]||view), '', view);
 }
