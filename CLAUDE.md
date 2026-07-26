@@ -5583,6 +5583,42 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### La actualización de la app, ~30% más rápida (26-jul-2026, v49.79)
+Pedido del dueño: *"Que la actualización sea rápido"*.
+- **Medido primero, no supuesto:** `index.html` = **171 KB** comprimido · `parches.js` = **500 KB**.
+  El grueso es el parche, y **bajaban en SERIE**: `chequearVersionApp` hacía `await fetch(index.html)`
+  → `document.write(html)` → recién ahí el navegador parseaba el HTML, llegaba al cargador del final
+  (`s.src='parches.js?v='+V`) y empezaba la descarga grande.
+- **El arreglo: disparar la del parche EN PARALELO** (`nxPrecargarParche(data.version)`, sin `await`,
+  con `.catch()`), usando **exactamente la misma URL** que pedirá el HTML nuevo — `parches.js?v=` +
+  la versión nueva. Cuando el `document.write` lo pide, el navegador lo sirve de su caché HTTP. Que
+  la URL calce es TODO el truco: si difiere en un carácter se descarga dos veces y se gastan 500 KB
+  de datos móviles al pedo, por eso hay una prueba dedicada a que el formato coincida con el del
+  cargador real.
+- **Números reales** (harness con los archivos REALES servidos por HTTP local, comprimidos, con
+  ancho de banda y latencia simulados): 3G lento (150 KB/s, 300ms) **5.205 → 3.760 ms (−28%)** ·
+  4G (600 KB/s, 120ms) **1.547 → 1.056 ms (−32%)** · wifi (2 MB/s, 60ms) **568 → 407 ms (−28%)**.
+- **Segunda espera quitada:** `if(window.caches){const ks=await caches.keys();await Promise.all(...)}`
+  bloqueaba ANTES de empezar a descargar. `sw.js` dice explícitamente que **nunca** intercepta
+  `index.html` ni `parches.js` (solo cachea manifest + 3 iconos), así que esa espera no aportaba nada
+  a la actualización — solo retrasaba el inicio. Se dejó la limpieza pero **sin `await`**, en
+  paralelo, para no perder el efecto ni pagar el tiempo.
+- **`nxPantallaActualizando()`:** el `toast('info','Actualizando app...')` desaparecía a los segundos
+  y dejaba al usuario mirando su pantalla vieja sin saber si se había pegado. Ahora una capa azul a
+  pantalla completa con spinner y "no cierres la app", que se queda hasta que el documento se
+  reemplaza. Idempotente (llamarla dos veces no apila capas).
+- **Aplicado en los DOS caminos de actualización**, no solo el automático: `chequearVersionApp()` (el
+  aviso al abrir la app) y `aplicarActualizacion()` (el botón de Ajustes). A este último se le pasó
+  la versión como 2º parámetro en vez de adivinarla de un elemento del DOM.
+- Verificado: **9 comprobaciones** contra la app real servida por HTTP (las 2 funciones existen, la
+  precarga pide la URL con la versión nueva, ese formato calza con el del cargador del HTML, sin
+  versión no pide nada, la pantalla se muestra con su texto y no se duplica, 0 errores de JS) + las 3
+  mediciones de velocidad + la prueba de humo de la app completa. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  - **Detalle de método (2ª vez que muerde):** una aserción falló por comparar `innerText` contra
+    texto en minúsculas — la app fuerza MAYÚSCULAS por CSS global, e `innerText` devuelve el texto
+    **renderizado**. El texto estaba bien (se confirmó con la captura); la prueba estaba mal.
+
 ### DÓNDE ME QUEDÉ — al actualizar la app se vuelve a la MISMA pantalla (26-jul-2026, v49.78)
 Pedido del dueño: *"Algo muy importante para todo el sistema NEXUS PRO: que al momento de yo
 actualizar quiero que mantenga en el mismo lugar donde estoy trabajando."*

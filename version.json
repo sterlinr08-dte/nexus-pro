@@ -1,7 +1,12 @@
 {
-  "version": "49.78",
+  "version": "49.79",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.79",
+      "t": "NUEVO: la actualizacion de la app es cerca de un 30% mas rapida",
+      "d": "Al actualizar, la app tiene que bajar dos archivos: la pantalla (index.html, unos 170 KB) y el archivo de modulos (parches.js, unos 500 KB — el pesado). Antes bajaban UNO DETRAS DEL OTRO: primero la pantalla, y solo cuando terminaba empezaba el pesado. Ahora los dos bajan AL MISMO TIEMPO. Medido: en internet lento (3G) la actualizacion paso de 5.2 a 3.8 segundos, y en 4G de 1.5 a 1.1 — cerca de un 30% menos en todos los casos. Ademas, mientras actualiza ya no queda un aviso que desaparece a los segundos dejandote sin saber si se pego: ahora sale una pantalla azul con el mensaje \"Actualizando NEXUS PRO — no cierres la app\" que se queda hasta que termina. Y se quito una espera innecesaria: la app se detenia a limpiar unos iconos guardados antes de empezar a descargar, cuando eso no tiene nada que ver con la actualizacion."
+    },
     {
       "v": "49.78",
       "t": "NUEVO: al actualizar la app te quedas EN LA MISMA PANTALLA donde estabas trabajando",
