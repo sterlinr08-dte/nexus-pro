@@ -5372,6 +5372,46 @@ escriben ahí.
   arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
   Edge con service-role. Se deja documentado, no se improvisa.
 
+### El reporte diario ya no lo puede disparar cualquiera desde internet (26-jul-2026, v49.56)
+Punto #6 de la lista. `enviar-reporte-email` es `verify_jwt:false` (tiene que serlo, la llama un cron)
+y **no comprobaba nada**: un `POST` desde cualquier parte del mundo disparaba el reporte del dueño.
+- **Hallazgo que cambió el plan (por eso NO se hizo lo obvio):** la lista decía "poner
+  `verify_jwt:true`". **Eso no habría protegido nada** — la clave anónima es PÚBLICA (va escrita en
+  `index.html`, tiene que estar ahí para el login) y el gateway de Supabase la acepta como un JWT
+  válido. Comprobado de verdad, no supuesto: con la clave anónima la función responde **401**.
+  La comprobación real tiene que estar DENTRO de la función.
+- **`quienLlama(req, supabase)`** (nueva, arriba de `Deno.serve`): acepta solo dos. (1) El **cron**,
+  que manda un **secreto compartido** en el header `x-cron-token`; (2) un **usuario logueado con rol
+  admin** (`auth.getUser(token)` → `profiles.rol==='admin'`). Cualquier otra cosa: 401 con el motivo
+  concreto. También acepta la service_role por si hace falta una llamada manual.
+- **Tabla nueva `cron_secretos`** (migración `cron_secretos_para_funciones`): RLS **activado y CERO
+  políticas a propósito** — ni `anon` ni `authenticated` la ven; solo la service_role, o sea solo la
+  función Edge por dentro. El secreto se generó con `gen_random_bytes(32)` dentro de la propia base:
+  **nunca pasó por el navegador ni por este chat**.
+- **Por qué un secreto compartido y no la service_role key:** se descubrió que los 3 jobs de respaldo
+  (`respaldo-diario`/`respaldo-correo-mensual`/`verificar-respaldo`) llevaban años mandando un
+  `Authorization: Bearer` que **es la clave ANÓNIMA**, no la de servicio (decodificada su carga:
+  `"role":"anon"`). La base no puede firmar un token de servicio (`app.settings.jwt_secret` no es
+  visible desde SQL, `pgjwt` no está instalado), así que la única salida sin pedirle nada al dueño
+  era un secreto que ambos lados sí pueden leer. **El primer intento falló justo por esto** — el cron
+  salió 401 en la prueba, y ahí se destapó que la clave guardada no era la que se creía.
+- **Frontend (`nxProbarReporte`, `parches.js`):** el botón "Enviar reporte de prueba" mandaba
+  `api.key` (la anónima); ahora manda `api.token || api.key` — el token de la SESIÓN — más `apikey`
+  aparte. Mismo patrón que `API.hdr()` usa en todo el resto del sistema.
+- **Verificado con llamadas HTTPS reales** (`pg_net`, la única salida de red de este entorno) contra
+  la función ya desplegada: sin credencial → **401**; con la clave anónima pública → **401**; con un
+  token de cron inventado → **401**; **como el cron real → pasa la puerta** (llega al aviso de
+  `GMAIL_PASS`, que es el pendiente del dueño, no una regresión).
+- **NO verificable desde aquí (queda al dueño, y se sabe cómo se ve):** la ruta del admin necesita un
+  JWT de sesión real, que este entorno no puede emitir. Está construida sobre dos cosas ya
+  confirmadas por SQL (`profiles.rol` de sterlin08 es `admin`). **Prueba para el dueño:** al tocar
+  "Enviar reporte de prueba", si sale *"Falta el secreto GMAIL_PASS"* la puerta lo dejó pasar (bien);
+  si saliera *"No autorizado"*, no.
+- **Pendiente del mismo tipo, NO hecho (se documenta, no se improvisa):** `respaldo-diario`,
+  `respaldo-correo-mensual` y `verificar-respaldo` siguen abiertas igual — cualquiera puede
+  dispararlas (llenar el bucket de respaldos, mandar correos). El arreglo es idéntico: un
+  `x-cron-token` propio en `cron_secretos` + la misma puerta. Son 3 redespliegues completos.
+
 ### Borradas 5 tablas muertas que estaban abiertas a cualquier usuario (26-jul-2026)
 Punto #4 de la lista de pendientes. Eran andamiaje de cosas que nunca se conectaron, y las 5 tenían
 RLS `USING(true)` **para cualquier usuario logueado de cualquier empresa** — o sea, Francis o el

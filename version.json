@@ -1,7 +1,12 @@
 {
-  "version": "49.55",
+  "version": "49.56",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.56",
+      "t": "NUEVO \u2014 El reporte diario ya no lo puede pedir cualquiera desde internet",
+      "d": "La direcci\u00f3n que dispara tu reporte por correo estaba abierta: cualquier persona en internet pod\u00eda mandarle un mensaje y hacer que se enviara, cuantas veces quisiera.\n\nAhora solo lo pueden pedir dos: el propio sistema a su hora, y t\u00fa \u2014 con tu sesi\u00f3n iniciada y siendo administrador. El bot\u00f3n \"Enviar reporte de prueba\" de Ajustes sigue funcionando igual; lo \u00fanico que cambi\u00f3 es que ahora manda tu sesi\u00f3n en vez de la clave p\u00fablica del sistema.\n\nSe comprob\u00f3 llamando de verdad a la direcci\u00f3n desde fuera: sin credencial responde \"no autorizado\", con la clave p\u00fablica tambi\u00e9n, y con un permiso inventado tambi\u00e9n. Solo pasa el sistema."
+    },
     {
       "v": "49.55",
       "t": "NUEVO \u2014 El sistema completo ahora se puede usar sin mouse (y sin ver la pantalla)",
