@@ -1,7 +1,12 @@
 {
-  "version": "49.69",
+  "version": "49.70",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.70",
+      "t": "ARREGLADO (importante): en el celular las pantallas del POS se cortaban por abajo y no se podía bajar",
+      "d": "En Factura, al llegar a la altura de la pantalla el contenido se acababa: no aparecían el TOTAL, el botón Cobrar ni \"Otras acciones\", y no había forma de seguir bajando. La causa venía de atrás y afectaba a varias pantallas, no solo a Factura: el envoltorio de estilo que usa el Punto de Venta nació para VENTANAS emergentes y traía un tope de altura del 92% de la pantalla. Cuando ese mismo envoltorio se empezó a usar para pantallas completas (Factura, Caja, Inventario, Compras, Reparaciones, Recursos Humanos, Contabilidad, Vender…), ese tope las recortaba en silencio y todo lo que pasara de ahí quedaba invisible. Ahora el tope se aplica SOLO a las ventanas emergentes, que es donde hacía falta; las pantallas completas crecen lo que necesiten y se bajan normal. Ajustes tenía un parche puesto justo para tapar este mismo problema — ya no hace falta y se quitó."
+    },
     {
       "v": "49.69",
       "t": "ARREGLADO (importante): la ventana de Cobrar con pestañas y la Factura nueva no se estaban viendo · y en \"Elegir cliente\" el nombre salía pegado al código",
