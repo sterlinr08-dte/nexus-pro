@@ -1,7 +1,12 @@
 {
-  "version": "49.59",
+  "version": "49.60",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.60",
+      "t": "NUEVO \u2014 La referencia del cliente ahora se ve en Facturas, Avisos, Reportes y Documentos",
+      "d": "La referencia (el apodo con que t\u00fa identificas al cliente) solo aparec\u00eda en Clientes, en el Historial de pagos y en la ficha. Ahora tambi\u00e9n sale, en morado junto al nombre, en:\n\n\u2022 Facturas\n\u2022 Centro de Avisos\n\u2022 Reporte por agente\n\u2022 Documentos del cliente\n\nSi el cliente no tiene referencia guardada, no aparece nada \u2014 no queda un par\u00e9ntesis vac\u00edo.\n\nEn la Factura y el Certificado impresos NO se puso a prop\u00f3sito: esos son documentos formales que van a la ARS y al cliente, y ah\u00ed corresponde el nombre completo, no el apodo."
+    },
     {
       "v": "49.59",
       "t": "NUEVO \u2014 Facturas: el doble de facturas por pantalla y el bot\u00f3n de anular fuera del camino",
