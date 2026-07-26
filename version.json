@@ -1,7 +1,12 @@
 {
-  "version": "49.53",
+  "version": "49.54",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.54",
+      "t": "NUEVO \u2014 Limpieza: fuera 26 funciones que ya no se usaban",
+      "d": "Revisi\u00f3n de salud del c\u00f3digo. Se midi\u00f3 todo el sistema y se encontraron 26 funciones que no se llamaban desde ning\u00fan lado \u2014 restos de cosas que se reemplazaron con el tiempo y quedaron ah\u00ed ocupando espacio.\n\nSe quitaron en cadena: al borrar las primeras, quedaron otras que solo esas usaban, y as\u00ed hasta que no qued\u00f3 ninguna.\n\nNo se toc\u00f3 nada que funcione. El selector de almac\u00e9n de la Factura, por ejemplo, sigue igual \u2014 lo que se borr\u00f3 fue un ayudante viejo que hab\u00eda quedado hu\u00e9rfano cuando esa pantalla se rehizo.\n\nDe paso qued\u00f3 medido el estado del sistema: 87% c\u00f3digo, 7% comentarios, y solo 15 bloques repetidos en 28.000 l\u00edneas \u2014 muy poca duplicaci\u00f3n para un sistema de este tama\u00f1o."
+    },
     {
       "v": "49.53",
       "t": "NUEVO \u2014 El sistema respeta \"reducir movimiento\" y se puede usar con teclado y lector de pantalla",

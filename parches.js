@@ -402,65 +402,6 @@
   // ═══════════════════════════════════════════════════════════
   // 3b. (Legacy · ya no se usa) Barra inferior de 5 botones
   // ═══════════════════════════════════════════════════════════
-  function crearBarraInferior() {
-    if (!isMobile()) return;
-    if (document.querySelector('.mobile-bottom-nav-clean')) return;
-
-    // Quitar las viejas de ChatGPT si existen
-    document.querySelectorAll('.mobile-bottom-nav-nexu, .mobile-bottom-nav-v3, .mobile-bottom-nav-v31').forEach(el => el.remove());
-    document.querySelectorAll('.mobile-more-sheet-nexu, .mobile-more-sheet-v3, .mobile-more-sheet-v31').forEach(el => el.remove());
-
-    const nav = document.createElement('nav');
-    nav.className = 'mobile-bottom-nav-clean';
-    nav.innerHTML = `
-      <button type="button" data-go="dashboard" class="active">
-        <span class="ico">🏠</span>
-        <span>Inicio</span>
-      </button>
-      <button type="button" data-go="clientes">
-        <span class="ico">👥</span>
-        <span>Clientes</span>
-      </button>
-      <button type="button" data-go="facturas">
-        <span class="ico">📄</span>
-        <span>Facturas</span>
-      </button>
-      <button type="button" data-go="proceso">
-        <span class="ico">📋</span>
-        <span>Proceso</span>
-      </button>
-      <button type="button" data-go="mas">
-        <span class="ico">⋯</span>
-        <span>Más</span>
-      </button>
-    `;
-    document.body.appendChild(nav);
-
-    nav.addEventListener('click', function(ev) {
-      const btn = ev.target.closest('button[data-go]');
-      if (!btn) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-
-      const target = btn.dataset.go;
-      
-      // Estado activo
-      nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      if (target === 'mas') {
-        const sheet = document.querySelector('.mobile-more-sheet-clean');
-        if (sheet) sheet.classList.toggle('open');
-        return;
-      }
-
-      // Cerrar el sheet si estaba abierto
-      const sheet = document.querySelector('.mobile-more-sheet-clean');
-      if (sheet) sheet.classList.remove('open');
-
-      navegar(target);
-    });
-  }
 
   // ═══════════════════════════════════════════════════════════
   // 4. MENÚ "MÁS" (personalizable por el usuario)
@@ -1809,14 +1750,6 @@
   const q = (s, r = document) => r.querySelector(s);
   const qa = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-  function normalize(txt) {
-    return String(txt || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
 
   function esc(s) {
     return String(s ?? "")
@@ -1893,8 +1826,6 @@
     }
     return [];
   }
-  function getClientes() { return Array.isArray(st().clientes) ? st().clientes : []; }
-  function getFacturas() { return Array.isArray(st().facturas) ? st().facturas : []; }
 
   async function getAbonos() {
     // SIEMPRE cargar desde API porque ST.abonos no existe en NEXUS PRO
@@ -1924,118 +1855,26 @@
     return [];
   }
 
-  function getClienteById(id) { return getClientes().find(c => String(c.id) === String(id)); }
   function getAgenteById(id) { return getAgentes().find(a => String(a.id) === String(id)); }
   function getAgenteNombreById(id) {
     const a = getAgenteById(id);
     return a?.nom || a?.nombre || a?.name || (id ? "Agente no encontrado" : "Sin agente");
   }
   function getAgenteNombre(agente) { return agente?.nom || agente?.nombre || agente?.name || "Sin nombre"; }
-  function getAgenteRol(agente) { return agente?.cargo || agente?.rol || agente?.tipo || "Agente / corredor"; }
-  function getAgenteLicencia(agente) { return agente?.licencia || agente?.lic || agente?.codigo || "Sin licencia"; }
-  function getInitial(name) { return String(name || "A").trim().charAt(0).toUpperCase() || "A"; }
 
-  function getAbonoAgenteId(abono) {
-    return abono.agente_cobro || abono.agente_id || abono.agente ||
-      getClienteById(abono.cliente_id)?.agente_id || "";
-  }
 
-  function tipoMetodo(metodo) {
-    const m = normalize(metodo);
-    if (m.includes("efectivo")) return "efectivo";
-    if (m.includes("transferencia") || m.includes("deposito") || m.includes("depósito")) return "banco";
-    if (m.includes("cheque")) return "cheque";
-    return "otros";
-  }
 
   function bancoNombre(abono) {
     const raw = abono.banco || abono.banco_nombre || abono.banco_otro || abono.bank || "";
     return String(raw || "Sin banco").trim() || "Sin banco";
   }
 
-  function getFacturaClienteId(f) { return f.cliente_id || f.clienteId || f.id_cliente || ""; }
 
-  function getFacturaPendiente(f) {
-    const total = Number(f.total || 0);
-    const pagado = Number(f.pagado || f.cobrado || 0);
-    const estado = normalize(f.estado);
-    if (estado.includes("pagado")) return 0;
-    if (typeof f.pendiente !== "undefined") return Number(f.pendiente || 0);
-    if (typeof f.balance !== "undefined") return Number(f.balance || 0);
-    return Math.max(0, total - pagado);
-  }
 
-  function getClientePendiente(cliente) {
-    const direct = cliente.pendiente ?? cliente.deuda_pendiente ?? cliente.balance ?? cliente.deuda_total ?? 0;
-    return Number(direct || 0);
-  }
 
-  function calcularPendienteAgente(agenteId) {
-    const clientesAgente = getClientes().filter(c => String(c.agente_id || "") === String(agenteId));
-    const ids = new Set(clientesAgente.map(c => String(c.id)));
-    const factPend = getFacturas().filter(f => ids.has(String(getFacturaClienteId(f))))
-      .reduce((sum, f) => sum + getFacturaPendiente(f), 0);
-    if (factPend > 0) return factPend;
-    return clientesAgente.reduce((sum, c) => sum + getClientePendiente(c), 0);
-  }
 
-  function getMetaAgente(agente) {
-    const direct = agente?.meta_mensual ?? agente?.meta ?? agente?.meta_cobros ?? agente?.objetivo ?? 0;
-    const num = Number(direct || 0);
-    return num > 0 ? num : 0;
-  }
 
-  function emptyStat(agente) {
-    return { agente, total: 0, efectivo: 0, banco: 0, cheque: 0, otros: 0, bancos: {}, cobros: 0, clientes: 0, pendiente: 0, meta: 0, recibido: 0, entregado: 0, enMano: 0 };
-  }
 
-  function buildStats(abonos, transferencias) {
-    const agentes = getAgentes();
-    const clientes = getClientes();
-    const stats = {};
-
-    agentes.forEach(a => {
-      const id = String(a.id);
-      stats[id] = emptyStat(a);
-      stats[id].clientes = clientes.filter(c => String(c.agente_id || "") === id).length;
-      stats[id].pendiente = calcularPendienteAgente(id);
-      stats[id].meta = getMetaAgente(a);
-    });
-
-    abonos.forEach(abono => {
-      const agenteId = String(getAbonoAgenteId(abono) || "SIN_AGENTE");
-      const monto = Number(abono.monto || 0);
-      if (!monto) return;
-      if (!stats[agenteId]) {
-        stats[agenteId] = emptyStat({ id: agenteId, nom: agenteId === "SIN_AGENTE" ? "Sin agente asignado" : getAgenteNombreById(agenteId) });
-      }
-      const tipo = tipoMetodo(abono.metodo);
-      stats[agenteId].total += monto;
-      stats[agenteId][tipo] += monto;
-      stats[agenteId].cobros += 1;
-      if (tipo === "banco") {
-        const banco = bancoNombre(abono);
-        stats[agenteId].bancos[banco] = Number(stats[agenteId].bancos[banco] || 0) + monto;
-      }
-    });
-
-    transferencias.forEach(t => {
-      const monto = Number(t.monto || 0);
-      if (!monto) return;
-      const desde = String(t.desde_agente || t.agente_origen || t.desde || "");
-      const hacia = String(t.hacia_agente || t.agente_destino || t.hacia || "");
-      if (desde && !stats[desde]) stats[desde] = emptyStat({ id: desde, nom: getAgenteNombreById(desde) });
-      if (hacia && !stats[hacia]) stats[hacia] = emptyStat({ id: hacia, nom: getAgenteNombreById(hacia) });
-      if (desde) stats[desde].entregado += monto;
-      if (hacia) stats[hacia].recibido += monto;
-    });
-
-    Object.values(stats).forEach(s => {
-      s.enMano = Number(s.total || 0) + Number(s.recibido || 0) - Number(s.entregado || 0);
-    });
-
-    return Object.values(stats).sort((a, b) => b.total - a.total);
-  }
 
   function efectividad(stat) {
     const base = Number(stat.meta || 0) || Number(stat.total + stat.pendiente || 0);
@@ -2043,26 +1882,7 @@
     return Math.min(100, Math.round((Number(stat.total || 0) / base) * 100));
   }
 
-  function generalFromStats(stats) {
-    return stats.reduce((acc, s) => {
-      acc.total += Number(s.total || 0);
-      acc.efectivo += Number(s.efectivo || 0);
-      acc.banco += Number(s.banco || 0);
-      acc.cheque += Number(s.cheque || 0);
-      acc.otros += Number(s.otros || 0);
-      acc.pendiente += Number(s.pendiente || 0);
-      acc.clientes += Number(s.clientes || 0);
-      acc.enMano += Number(s.enMano || 0);
-      Object.entries(s.bancos || {}).forEach(([b, v]) => { acc.bancos[b] = Number(acc.bancos[b] || 0) + Number(v || 0); });
-      return acc;
-    }, { total: 0, efectivo: 0, banco: 0, cheque: 0, otros: 0, pendiente: 0, clientes: 0, enMano: 0, bancos: {} });
-  }
 
-  function colorByPct(pct) {
-    if (pct < 40) return "#dc2626";
-    if (pct < 70) return "#d97706";
-    return "#059669";
-  }
   function createTransferModal() {
     if (q("#nxModalTransferAgenteV2")) return;
     injectTA2CSS();
@@ -5654,14 +5474,6 @@
     } catch(e) { return null; }
   }
   // Filtra solicitudes según el rol (admin ve todo, agente ve solo suyas)
-  function filtrarPorRol(items, campoAgente) {
-    if (esAdmin()) return items;
-    const miId = getMiAgenteId();
-    if (!miId) return [];
-    // campoAgente puede ser string (un campo) o array (varios)
-    const campos = Array.isArray(campoAgente) ? campoAgente : [campoAgente];
-    return items.filter(it => campos.some(c => String(it[c]) === String(miId)));
-  }
   function esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
       ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -13383,7 +13195,6 @@
   window.nxPrRepPeriodo = function (v) { _prRepPeriodo = v || 'todo'; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
   window.nxPrView = function (v) { _prView = v; _prCliQuery = ''; const view = document.getElementById('v-prestamos'); if (view) renderLista(view); };
   // ── Pantalla de CLIENTES de Financiamiento (tabla prestamo_clientes) ──
-  function prCliMap() { const m = {}; _prClientes.forEach(c => { m[c.id] = c; }); return m; }
   function prCliStats(c) {
     // cuántos préstamos y saldo por cliente (enlace por prestamos.cliente_id)
     const suyos = _prestamos.filter(p => String(p.cliente_id || '') === String(c.id));
@@ -16589,7 +16400,6 @@
   function mesMonto(o) { const k = selKey(o); return (_recMesMonto[k] != null) ? Number(_recMesMonto[k]) : _recAmt; }
   function anioDe(f) { const y = f ? Number(String(f).slice(0, 4)) : 0; return (y && y > 1900) ? y : new Date().getFullYear(); }
   function recNumStr() { if (_recNum == null) return null; const a = _recAnio || new Date().getFullYear(); return a + '-' + String(_recNum).padStart(4, '0'); }
-  function fmtRecNum(n) { return recNumStr() || ('No. ' + String(n).padStart(4, '0')); }
 
   // Asigna un número consecutivo POR AÑO (contador en la base) al recibo del pago y lo guarda
   async function asignarNumeroRecibo() {
@@ -17587,10 +17397,6 @@
     </div>`;
     document.body.appendChild(ov);
   };
-  function almSelectorHTML() {
-    if (_almacenes.length < 2) return '';
-    return `<div class="nxAlmSel"><i class="ti ti-building-warehouse"></i><span>Almacén activo:</span><select onchange="window.nxPosSetAlmacen(this.value)">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>`;
-  }
   window.nxPosSetAlmacen = function (id) { _almacenSel = id; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   function renderVender() {
     nxPfEnsureCSS();
@@ -17771,8 +17577,6 @@
 
   // ── TAB: FACTURA (estilo Infoplus: cabecera + cuadro de artículos) ──
   function prodCodigo(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? (p.codigo || '') : ''; }
-  function prodStock(pid) { const p = _prods.find(x => String(x.id) === String(pid)); return p ? Number(p.stock || 0) : 0; }
-  function proxNumeroFactura() { let mx = 0; (_ventas || []).forEach(v => { const n = parseInt(v.numero, 10); if (n > mx) mx = n; }); return mx + 1; }
   function prefijoFac(esCredito) { return esCredito ? (_posCfg.prefijo_credito || 'CR') : (_posCfg.prefijo_contado || 'CO'); }
   function proxNumeroFacturaFmt(esCredito) {
     // Consecutivo REAL desde pos_secuencias (la memoria vacía hacía que siempre mostrara ...0001)
@@ -25421,7 +25225,6 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   };
 
   // ══════════════ APARTADOS (layaway: separar con abonos) ══════════════
-  function apaPagosDe(id) { return _apaPagos.filter(p => String(p.apartado_id) === String(id)); }
   function renderApartados() {
     nxPfEnsureCSS();
     const hoyK = hoyISOPos();
