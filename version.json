@@ -1,7 +1,12 @@
 {
-  "version": "49.54",
+  "version": "49.55",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.55",
+      "t": "NUEVO \u2014 El sistema completo ahora se puede usar sin mouse (y sin ver la pantalla)",
+      "d": "Los botones que son solo un dibujito (la equis de cerrar, el basurero, el l\u00e1piz, el m\u00e1s) no dec\u00edan nada: alguien que use el sistema con un lector de pantalla escuchaba \"bot\u00f3n\" y nada m\u00e1s. Los 328 del sistema ya tienen su nombre en espa\u00f1ol: \"Eliminar este art\u00edculo\", \"Editar este empleado\", \"Cerrar ventana\".\n\nAdem\u00e1s, 108 cosas que se tocan pero no son botones \u2014 los men\u00fas del lateral, los accesos r\u00e1pidos del Inicio, las filas de las tablas, las tarjetas de pr\u00e9stamo \u2014 ahora se alcanzan con la tecla Tab y se activan con Enter o la barra espaciadora, igual que un bot\u00f3n normal. Y al llegar con Tab se ve un aro azul para saber d\u00f3nde est\u00e1s parado.\n\nLas capas de fondo que solo sirven para cerrar una ventana al tocar afuera se dejaron como estaban a prop\u00f3sito: si tambi\u00e9n recibieran el foco, habr\u00eda que pasar por ellas con Tab sin que sirvan de nada.\n\nNo cambi\u00f3 ning\u00fan color, ninguna posici\u00f3n ni ninguna funci\u00f3n \u2014 todo se ve exactamente igual."
+    },
     {
       "v": "49.54",
       "t": "NUEVO \u2014 Limpieza: fuera 26 funciones que ya no se usaban",

@@ -5316,8 +5316,8 @@ Auditoría medida sobre TODO el sistema (no una pantalla suelta). Estado de part
 |---|---|---|
 | Encabezados de tabla ordenables sin teclado | 18 | **0** |
 | Imágenes sin texto alternativo | 22 | **0** |
-| Botones de solo ícono sin nombre para lector de pantalla | 213 | **144** |
-| Filas/divs clicables sin teclado ni rol | 112 | 112 (sin tocar) |
+| Botones de solo ícono sin nombre para lector de pantalla | 213 | **144** → **0** en la v49.55 |
+| Filas/divs clicables sin teclado ni rol | 112 | 112 → **0** en la v49.55 |
 | Selectores sin etiqueta | 14 | 14 (sin tocar) |
 
 - **Encabezados ordenables (18):** era un hueco que este mismo archivo ya tenía anotado como
@@ -5339,6 +5339,79 @@ Auditoría medida sobre TODO el sistema (no una pantalla suelta). Estado de part
 - Cambio 100% aditivo: solo se agregaron atributos (`aria-label`, `alt`, `tabindex`, `role`,
   `onkeydown`) y una regla CSS. Ningún id, función, color ni posición se tocó. `node --check
   parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### `auditoria` cerrada por empresa — se acabó el cruce entre negocios (26-jul-2026)
+Era el punto #2 de la lista de pendientes que dejó la auditoría de seguridad (Ronda 1). La política
+era `all_auditoria` = `USING(true)` para **cualquier usuario logueado**: Francis (tienda), el doctor
+y BayolCell podían **leer y borrar** los 2,373 registros de auditoría del seguro, con nombres de
+clientes en el detalle. No se había cerrado en la Ronda 1 porque `auditoria` **no tenía**
+`organizacion_id` y acotarla a `nexus-pro` habría roto al POS, Rifas y Consultorio, que también
+escriben ahí.
+- **Migración `auditoria_organizacion_id_y_rls_por_org`** (aditiva): columna `organizacion_id` (uuid,
+  FK a `organizaciones`) + índice; el trigger que ya llenaba IP/dispositivo ahora también llena la
+  organización con `mi_organizacion()` cuando viene vacía; la política pasó a
+  `mi_rol() is not null AND organizacion_id = mi_organizacion()`.
+- **Backfill de las 2,373 filas históricas.** `user_id` estaba vacío en las 2,373 (nunca se llenó),
+  así que la única pista real era el nombre de usuario grabado. Se midió antes de decidir: los 8
+  nombres distintos se repartieron por el módulo donde operaron — `Administrador` (1528, opera todo
+  el sistema), `ROBINSON` (771), `sterlin08`, `prueba` y `Sistema` → **nexus-pro**;
+  `BayolCell Rifas` (29, solo eventos de login) → **bayolcell-rifa**; `Francis (Bayolsale)` (9, solo
+  login) → **bayolsale**; `Consultorio Geriátrico` (3, solo login) → **geriatra**. Resultado:
+  2332 + 29 + 9 + 3 = 2373, **cero filas sin organización**.
+- **Verificado simulando cada sesión real** (`set local role authenticated` + el `sub` real de cada
+  usuario), no asumido: Francis pasó de ver 2,373 a ver **9**; sterlin08 ve **2,332**; `anon` ve
+  **0**. Y las escrituras siguen funcionando: se probó un INSERT como Francis y como **Robinson
+  (rol `agente`, no admin)** dentro de una transacción con `rollback` — el trigger les puso la
+  organización correcta y la política los dejó pasar. `get_advisors` ya no marca `auditoria`.
+- **Cero cambios de código** — `logAudit()` nunca manda `organizacion_id`, lo pone el trigger; la
+  pantalla de Auditoría no cambió porque RLS filtra sola.
+- **Hueco pre-existente encontrado de paso, NO causado por este cambio y NO arreglado:** los
+  `LOGIN_FALLIDO` / `LOGIN_BLOQUEADO` se registran **sin sesión** (el usuario todavía no entró), así
+  que salen con la anon key y la política ya era `to authenticated` — vienen fallando en silencio
+  desde antes (el último que llegó a guardarse es del 14-jun-2026). Abrirle un hueco a `anon` para
+  arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
+  Edge con service-role. Se deja documentado, no se improvisa.
+
+### Accesibilidad — el sistema completo se puede usar sin mouse (26-jul-2026, v49.55)
+Cierra el punto #3 de la lista: los 144 botones de solo ícono sin nombre y los 112 elementos
+clicables sin teclado que la Ronda 3 había dejado explícitamente sin tocar ("hay que redactar cada
+etiqueta a mano" / "hay que decidir caso por caso").
+- **Botones de solo ícono: 328 → 0 sin nombre.** Los 144 que faltaban no tenían ningún `title` de
+  donde derivar la etiqueta, así que se **escribieron a mano en español**, agrupando por (ícono +
+  función que llama): se midieron **82 pares distintos** cubriendo los 150 botones, y cada uno se
+  redactó por lo que de verdad hace — "Eliminar este artículo", "Editar este empleado", "Registrar un
+  pago al proveedor", "Limpiar el patrón", "Borrar el último dígito", "Página anterior". Los 6
+  botones de editar de NEXUS AI CONTENT (que llamaban todos a `nxAiEditar(n)`) se desambiguaron
+  mirando dentro de qué tarjeta vive cada uno: Empresa / Nicho / Objetivos / Público / Marca /
+  Pilares.
+- **108 elementos clicables que no son `<button>`** (menú lateral `.ni`, accesos rápidos del
+  Dashboard `.qa`, filas de tabla, tarjetas de préstamo/vehículo, chips de IMEI, tiles de
+  configuración, números de cuenta que se copian al tocarlos) ahora llevan `tabindex="0"` +
+  `onkeydown` que dispara la misma acción con Enter o Espacio. **`role="button"` sí para div/span/a,
+  NO para `<tr>`/`<td>`** — ponerle rol de botón a una fila la saca del árbol de la tabla para el
+  lector de pantalla, que es peor que el problema que resuelve.
+- **Detalle técnico que importa para el futuro:** el `onkeydown` usa `event.keyCode==13||
+  event.keyCode==32` en vez de `event.key==='Enter'` **a propósito** — la mayoría de estas etiquetas
+  viven dentro de cadenas de JavaScript delimitadas por comilla simple en `parches.js`, y una comilla
+  simple dentro del atributo habría cortado la cadena. `keyCode` no necesita ninguna comilla. El
+  handler llama `this.click()` en vez de repetir el `onclick`, así que no hay lógica duplicada ni
+  problemas de comillas anidadas.
+- **11 elementos se dejaron SIN teclado a propósito** (y así debe quedarse): las capas de fondo que
+  cierran una ventana al tocar afuera (`.overlay`, `.gs-overlay`, `.cs-overlay`, `#mobOverlay`,
+  `.nxFP-sideOverlay`, `.nxTBackdrop`), los `<td>`/`<div>` cuyo único trabajo es
+  `event.stopPropagation()`, y el tile de producto de AGUAPRO cuyo `onclick` queda **vacío** cuando
+  no hay existencia. Darles foco crearía paradas de Tab que no hacen nada.
+- **Aro de foco nuevo** para todo esto (`[tabindex="0"][role="button"]:focus-visible` +
+  `tr/td[tabindex="0"]`, azul 2px con `outline-offset:-2px` para que no se salga de la fila).
+- Verificado con Playwright cargando el **CSS y el marcado reales extraídos del archivo**: Tab llega
+  al primer ítem del menú lateral con `role=button`, el aro se mide como `solid 2px rgb(37,99,235)`
+  (no a ojo), **Enter** dispara `nav('dashboard')`, **Espacio** dispara `nav('facturas')` sin
+  desplazar la página, y un botón de ícono recibe el foco con su nombre accesible — 0 errores de JS.
+- Cambio 100% aditivo: solo atributos nuevos y una regla CSS. Ningún id, función, color, posición ni
+  texto visible cambió. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Sigue pendiente de la Ronda 3:** los **14 selectores sin etiqueta** (hay que mirar el contexto de
+  cada uno, no se puede mecanizar).
 
 ### SISTEMA ÚNICO DE BOTONES en todo el ERP (NPGS §12, 25-jul-2026, v49.52)
 El dueño pidió "aplicar las skills de diseño" a los **botones**. Se cargaron `ui-ux-pro-max` y

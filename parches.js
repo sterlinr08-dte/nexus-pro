@@ -922,7 +922,7 @@
     var lista = _ag.clientes.filter(function (c) { return !q || agNorm([c.nombre, c.telefono, c.sector, c.ruta].join(' ')).indexOf(q) >= 0; });
     return '<div class="nxAguaPanel">' + pageTitle('Clientes', '') + table(['Código', 'Cliente', 'Teléfono', 'Sector', 'Ruta', 'Límite crédito', 'Deuda', 'Estado', ''], lista.map(function (c) {
       var d = deudaCliente(c.id);
-      return '<tr><td>C' + String(_ag.clientes.indexOf(c) + 1).padStart(4, '0') + '</td><td>' + esc(c.nombre) + '</td><td>' + esc(c.telefono || '—') + '</td><td>' + esc(c.sector || '—') + '</td><td>' + esc(c.ruta || '—') + '</td><td>' + fmt(c.limite_credito || 0) + '</td><td>' + fmt(d) + '</td><td><span class="nxAguaTag ' + (d > 0 ? 'warn' : 'ok') + '">' + (d > 0 ? 'CON DEUDA' : 'AL DÍA') + '</span></td><td><div class="nxAguaAct"><button onclick="window.nxAguaEstadoCuenta(\'' + c.id + '\')" title="Estado de cuenta" aria-label="Estado de cuenta"><i class="ti ti-printer"></i></button>' + (c.telefono ? '<button onclick="window.nxAguaEstadoCuentaWA(\'' + c.id + '\')" title="WhatsApp" aria-label="WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>' : '') + '<button onclick="window.nxAguaEditarCliente(\'' + c.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
+      return '<tr><td>C' + String(_ag.clientes.indexOf(c) + 1).padStart(4, '0') + '</td><td>' + esc(c.nombre) + '</td><td>' + esc(c.telefono || '—') + '</td><td>' + esc(c.sector || '—') + '</td><td>' + esc(c.ruta || '—') + '</td><td>' + fmt(c.limite_credito || 0) + '</td><td>' + fmt(d) + '</td><td><span class="nxAguaTag ' + (d > 0 ? 'warn' : 'ok') + '">' + (d > 0 ? 'CON DEUDA' : 'AL DÍA') + '</span></td><td><div class="nxAguaAct"><button onclick="window.nxAguaEstadoCuenta(\'' + c.id + '\')" title="Estado de cuenta" aria-label="Estado de cuenta"><i class="ti ti-printer"></i></button>' + (c.telefono ? '<button onclick="window.nxAguaEstadoCuentaWA(\'' + c.id + '\')" title="WhatsApp" aria-label="WhatsApp"><i class="ti ti-brand-whatsapp"></i></button>' : '') + '<button aria-label="Editar este cliente" onclick="window.nxAguaEditarCliente(\'' + c.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
     })) + '</div>';
   }
   function clientesView() {
@@ -940,7 +940,7 @@
     cerrarModal('nxAgCliForm');
     var ov = document.createElement('div'); ov.id = 'nxAgCliForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:440px"><div class="mt"><span><i class="ti ti-user"></i> ' + (c ? 'Editar cliente' : 'Nuevo cliente') + '</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCliForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:440px"><div class="mt"><span><i class="ti ti-user"></i> ' + (c ? 'Editar cliente' : 'Nuevo cliente') + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCliForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Nombre *</label><input id="agCNom" class="no-upper" value="' + esc(c ? c.nombre : '') + '" placeholder="Nombre del cliente / negocio"></div>' +
       '<div class="fr-row"><div class="fr"><label>Teléfono</label><input id="agCTel" inputmode="tel" value="' + esc(c ? c.telefono : '') + '" placeholder="809-000-0000"></div><div class="fr"><label>Sector</label><input id="agCSec" class="no-upper" value="' + esc(c ? c.sector : '') + '" placeholder="Sector / ciudad"></div></div>' +
       '<div class="fr-row"><div class="fr"><label>Ruta</label><input id="agCRuta" class="no-upper" value="' + esc(c ? c.ruta : '') + '" placeholder="Ej: Ruta Norte" list="agRutasDL"></div><div class="fr"><label>Límite de crédito RD$</label><input id="agCLim" data-nx-money inputmode="numeric" value="' + (c ? Math.round(c.limite_credito || 0) : '') + '"></div></div>' +
@@ -968,7 +968,7 @@
     var movs = _ag.movimientos.filter(function (m) { return !q || agNorm([m.producto_nom, m.descripcion].join(' ')).indexOf(q) >= 0; }).slice(0, 15);
     return '<div class="nxAguaPanel">' + pageTitle('Inventario / Productos', '') + table(['Código', 'Producto', 'Categoría', 'Precio', 'Costo', 'Stock', 'Unidad', 'Estado', ''], lista.map(function (p) {
       var bajo = Number(p.stock || 0) < 20;
-      return '<tr><td>P' + String(_ag.productos.indexOf(p) + 1).padStart(4, '0') + '</td><td>' + esc(p.nombre) + '</td><td>' + esc(p.categoria || '—') + '</td><td>' + fmt(p.precio) + '</td><td>' + fmt(p.costo) + '</td><td>' + Number(p.stock || 0) + '</td><td>' + esc(p.unidad || 'Unidad') + '</td><td><span class="nxAguaTag ' + (bajo ? 'warn' : 'ok') + '">' + (bajo ? 'BAJO' : 'ACTIVO') + '</span></td><td><div class="nxAguaAct"><button onclick="window.nxAguaAjusteStock(\'' + p.id + '\')"><i class="ti ti-arrows-exchange"></i></button><button onclick="window.nxAguaEditarProducto(\'' + p.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
+      return '<tr><td>P' + String(_ag.productos.indexOf(p) + 1).padStart(4, '0') + '</td><td>' + esc(p.nombre) + '</td><td>' + esc(p.categoria || '—') + '</td><td>' + fmt(p.precio) + '</td><td>' + fmt(p.costo) + '</td><td>' + Number(p.stock || 0) + '</td><td>' + esc(p.unidad || 'Unidad') + '</td><td><span class="nxAguaTag ' + (bajo ? 'warn' : 'ok') + '">' + (bajo ? 'BAJO' : 'ACTIVO') + '</span></td><td><div class="nxAguaAct"><button aria-label="Ajustar la existencia" onclick="window.nxAguaAjusteStock(\'' + p.id + '\')"><i class="ti ti-arrows-exchange"></i></button><button aria-label="Editar este producto" onclick="window.nxAguaEditarProducto(\'' + p.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
     })) + '</div>' +
       '<div class="nxAguaPanel" style="margin-top:10px">' + pageTitle('Últimos movimientos', '') + table(['Fecha', 'Tipo', 'Producto', 'Entrada', 'Salida', 'Stock resultante', 'Descripción'], movs.map(function (m) {
         return '<tr><td>' + new Date(m.fecha || Date.now()).toLocaleString('es-DO') + '</td><td><span class="nxAguaTag ' + (m.tipo === 'Salida' ? 'bad' : 'ok') + '">' + esc(m.tipo) + '</span></td><td>' + esc(m.producto_nom || '—') + '</td><td>' + (Number(m.entrada) ? Number(m.entrada) : '—') + '</td><td>' + (Number(m.salida) ? Number(m.salida) : '—') + '</td><td>' + Number(m.stock_resultante || 0) + '</td><td>' + esc(m.descripcion || '') + '</td></tr>';
@@ -988,7 +988,7 @@
     cerrarModal('nxAgProdForm');
     var ov = document.createElement('div'); ov.id = 'nxAgProdForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:440px"><div class="mt"><span><i class="ti ti-droplet"></i> ' + (p ? 'Editar producto' : 'Nuevo producto') + '</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgProdForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:440px"><div class="mt"><span><i class="ti ti-droplet"></i> ' + (p ? 'Editar producto' : 'Nuevo producto') + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgProdForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Nombre *</label><input id="agPNom" class="no-upper" value="' + esc(p ? p.nombre : '') + '" placeholder="Ej: Botellón 5 galones"></div>' +
       '<div class="fr-row"><div class="fr"><label>Categoría</label><input id="agPCat" class="no-upper" value="' + esc(p ? p.categoria : 'Agua') + '" placeholder="Agua / Hielo / Accesorios"></div><div class="fr"><label>Unidad</label><input id="agPUni" class="no-upper" value="' + esc(p ? p.unidad : 'Unidad') + '"></div></div>' +
       '<div class="fr-row"><div class="fr"><label>Precio de venta RD$</label><input id="agPPre" data-nx-money inputmode="numeric" value="' + (p ? Math.round(p.precio || 0) : '') + '"></div><div class="fr"><label>Costo RD$</label><input id="agPCos" data-nx-money inputmode="numeric" value="' + (p ? Math.round(p.costo || 0) : '') + '"></div></div>' +
@@ -1019,7 +1019,7 @@
     var p = id ? productoById(id) : null;
     var ov = document.createElement('div'); ov.id = 'nxAgAjForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-arrows-exchange"></i> Movimiento de inventario</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgAjForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-arrows-exchange"></i> Movimiento de inventario</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgAjForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Producto *</label><select id="agAjProd">' + _ag.productos.map(function (x) { return '<option value="' + x.id + '"' + (p && x.id === p.id ? ' selected' : '') + '>' + esc(x.nombre) + ' (stock ' + Number(x.stock || 0) + ')</option>'; }).join('') + '</select></div>' +
       '<div class="fr-row"><div class="fr"><label>Tipo</label><select id="agAjTipo"><option value="Entrada">Entrada (+)</option><option value="Salida">Salida (−)</option></select></div><div class="fr"><label>Cantidad *</label><input id="agAjCant" inputmode="numeric" value="1"></div></div>' +
       '<div class="fr"><label>Motivo</label><input id="agAjDesc" class="no-upper" placeholder="Ej: ajuste de conteo, producto dañado..."></div>' +
@@ -1150,7 +1150,7 @@
     cerrarModal('nxAgPedForm');
     var ov = document.createElement('div'); ov.id = 'nxAgPedForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:520px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-clipboard-list"></i> Nuevo pedido</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgPedForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:520px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-clipboard-list"></i> Nuevo pedido</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgPedForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div style="overflow-y:auto;flex:1">' +
       '<div class="fr"><label>Cliente *</label><button type="button" class="btn bghost bsm" style="width:100%;justify-content:flex-start" id="agPedCliBtn" onclick="window.nxAguaAbrirBuscadorCliente()"><i class="ti ti-search"></i> <span id="agPedCliDisp">— Buscar cliente —</span></button><input type="hidden" id="agPedCli"></div>' +
       '<div class="fr"><label>Ruta</label><input id="agPedRuta" class="no-upper" placeholder="Ej: Ruta Norte" list="agRutasDL2"></div>' +
@@ -1223,7 +1223,7 @@
     cerrarModal('nxAgCobForm');
     var ov = document.createElement('div'); ov.id = 'nxAgCobForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-cash"></i> Cobrar pedido</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCobForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-cash"></i> Cobrar pedido</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCobForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:12px;color:#475569;margin-bottom:8px">' + esc(p.cliente_nom) + ' · Pendiente: <b>' + fmt(pend) + '</b></div>' +
       '<div class="fr"><label>Monto a cobrar RD$</label><input id="agCobMonto" data-nx-money inputmode="numeric" value="' + Math.round(pend) + '"></div>' +
       '<div class="fr"><label>Método</label><select id="agCobMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Cheque</option></select></div>' +
@@ -1298,7 +1298,7 @@
     var ov = document.createElement('div'); ov.id = 'nxAgBotForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     var nextCod = 'BOT-' + String(_ag.botellones.length + 1).padStart(4, '0');
-    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-bottle"></i> Nuevo botellón</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgBotForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-bottle"></i> Nuevo botellón</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgBotForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Código</label><input id="agBotCod" value="' + esc(nextCod) + '"></div>' +
       '<div class="fr"><label>Ubicación</label><input id="agBotUbi" class="no-upper" placeholder="Ej: Almacén principal" value="Almacén principal"></div>' +
       '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="cerrarModalAgua(\'nxAgBotForm\')">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxAguaBotellonGuardar()"><i class="ti ti-check"></i> Crear</button></div></div>';
@@ -1341,7 +1341,7 @@
     cerrarModal('nxAgProForm');
     var ov = document.createElement('div'); ov.id = 'nxAgProForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-building-factory"></i> Nuevo registro de producción</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgProForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-building-factory"></i> Nuevo registro de producción</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgProForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr-row"><div class="fr"><label>Actividad</label><select id="agProAct"><option>Lavado</option><option>Llenado</option><option>Sellado</option><option>Otro</option></select></div><div class="fr"><label>Cantidad *</label><input id="agProCant" inputmode="numeric" value="1"></div></div>' +
       '<div class="fr"><label>Producto que entra al inventario (opcional)</label><select id="agProProd"><option value="">— No aplica —</option>' + _ag.productos.map(function (p) { return '<option value="' + p.id + '">' + esc(p.nombre) + '</option>'; }).join('') + '</select></div>' +
       '<div class="fr"><label>Responsable</label><input id="agProResp" class="no-upper" placeholder="Nombre del encargado"></div>' +
@@ -1387,7 +1387,7 @@
     cerrarModal('nxAgGasForm');
     var ov = document.createElement('div'); ov.id = 'nxAgGasForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-receipt-tax"></i> Nuevo gasto</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgGasForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-receipt-tax"></i> Nuevo gasto</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgGasForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Descripción *</label><input id="agGasDesc" class="no-upper" placeholder="Ej: Combustible ruta norte"></div>' +
       '<div class="fr"><label>Monto RD$</label><input id="agGasMonto" data-nx-money inputmode="numeric" value="0"></div>' +
       '<div class="fr"><label>Método</label><select id="agGasMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>' +
@@ -1421,7 +1421,7 @@
     var comps = _ag.compras.filter(function (c) { return !q || agNorm([c.proveedor_nom, c.concepto, c.estado].join(' ')).indexOf(q) >= 0; });
     return '<div class="nxAguaPanel">' + pageTitle('Proveedores', '') + table(['Nombre', 'Teléfono', 'RNC', 'Contacto', 'Debemos', ''], provs.map(function (p) {
       var d = deudaProveedor(p.id);
-      return '<tr><td>' + esc(p.nombre) + '</td><td>' + esc(p.telefono || '—') + '</td><td>' + esc(p.rnc || '—') + '</td><td>' + esc(p.contacto || '—') + '</td><td style="' + (d > 0 ? 'color:#b91c1c;font-weight:800' : '') + '">' + fmt(d) + '</td><td><div class="nxAguaAct"><button onclick="window.nxAguaEditarProveedor(\'' + p.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
+      return '<tr><td>' + esc(p.nombre) + '</td><td>' + esc(p.telefono || '—') + '</td><td>' + esc(p.rnc || '—') + '</td><td>' + esc(p.contacto || '—') + '</td><td style="' + (d > 0 ? 'color:#b91c1c;font-weight:800' : '') + '">' + fmt(d) + '</td><td><div class="nxAguaAct"><button aria-label="Editar este proveedor" onclick="window.nxAguaEditarProveedor(\'' + p.id + '\')"><i class="ti ti-edit"></i></button></div></td></tr>';
     })) + '</div>' +
       '<div class="nxAguaPanel" style="margin-top:10px">' + pageTitle('Compras', '') + table(['Fecha', 'Proveedor', 'Concepto', 'Total', 'Pagado', 'Pendiente', 'Estado', 'Acciones'], comps.map(function (c) {
         var pend = compraPendiente(c);
@@ -1442,7 +1442,7 @@
     cerrarModal('nxAgProvForm');
     var ov = document.createElement('div'); ov.id = 'nxAgProvForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-truck"></i> ' + (p ? 'Editar proveedor' : 'Nuevo proveedor') + '</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgProvForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-truck"></i> ' + (p ? 'Editar proveedor' : 'Nuevo proveedor') + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgProvForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Nombre *</label><input id="agProvNom" class="no-upper" value="' + esc(p ? p.nombre : '') + '" placeholder="Ej: Distribuidora de Combustible XYZ"></div>' +
       '<div class="fr-row"><div class="fr"><label>Teléfono</label><input id="agProvTel" inputmode="tel" value="' + esc(p ? p.telefono : '') + '"></div><div class="fr"><label>RNC</label><input id="agProvRnc" value="' + esc(p ? p.rnc : '') + '"></div></div>' +
       '<div class="fr"><label>Contacto</label><input id="agProvCon" class="no-upper" value="' + esc(p ? p.contacto : '') + '" placeholder="Persona de contacto"></div>' +
@@ -1465,7 +1465,7 @@
     cerrarModal('nxAgCompForm');
     var ov = document.createElement('div'); ov.id = 'nxAgCompForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-shopping-cart"></i> Nueva compra</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCompForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-shopping-cart"></i> Nueva compra</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCompForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Proveedor *</label><select id="agCompProv"><option value="">— Selecciona —</option>' + _ag.proveedores.map(function (p) { return '<option value="' + p.id + '">' + esc(p.nombre) + '</option>'; }).join('') + '</select></div>' +
       '<div class="fr"><label>Concepto</label><input id="agCompConc" class="no-upper" placeholder="Ej: Combustible, envases, insumos..."></div>' +
       '<div class="fr"><label>Monto RD$</label><input id="agCompMonto" data-nx-money inputmode="numeric" value="0"></div>' +
@@ -1498,7 +1498,7 @@
     cerrarModal('nxAgPagCompForm');
     var ov = document.createElement('div'); ov.id = 'nxAgPagCompForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-cash"></i> Pagar a proveedor</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgPagCompForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-cash"></i> Pagar a proveedor</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgPagCompForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:12px;color:#475569;margin-bottom:8px">' + esc(c.proveedor_nom) + ' · ' + esc(c.concepto || '') + ' · Pendiente: <b>' + fmt(pend) + '</b></div>' +
       '<div class="fr"><label>Monto a pagar RD$</label><input id="agPagCompMonto" data-nx-money inputmode="numeric" value="' + Math.round(pend) + '"></div>' +
       '<div class="fr"><label>Método</label><select id="agPagCompMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>' +
@@ -1550,7 +1550,7 @@
   function configView() {
     var tiles = [['ti-building', 'Empresa', 'window.nxAguaConfigEmpresa()'], ['ti-building-store', 'Sucursales', 'window.nxAguaProximamente()'], ['ti-users', 'Usuarios', 'window.nxAguaProximamente()'], ['ti-receipt-2', 'Impuestos', 'window.nxAguaProximamente()'], ['ti-currency-dollar', 'Monedas', 'window.nxAguaProximamente()'], ['ti-printer', 'Impresoras', 'window.nxAguaProximamente()'], ['ti-file-text', 'Plantillas', 'window.nxAguaProximamente()'], ['ti-list-numbers', 'Numeración', 'window.nxAguaProximamente()'], ['ti-brand-whatsapp', 'WhatsApp', 'window.nxAguaProximamente()'], ['ti-mail', 'Correo', 'window.nxAguaProximamente()'], ['ti-database', 'Respaldos', 'window.nxAguaProximamente()'], ['ti-shield-lock', 'Seguridad', 'window.nxAguaProximamente()']];
     return '<div class="nxAguaPanel"><h3>Configuración</h3><div class="nxAguaCfgGrid">' + tiles.map(function (t) {
-      return '<div class="nxAguaCfgTile" onclick="' + t[2] + '"><i class="ti ' + t[0] + '"></i><div>' + t[1] + '</div></div>';
+      return '<div class="nxAguaCfgTile" onclick="' + t[2] + '" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ' + t[0] + '"></i><div>' + t[1] + '</div></div>';
     }).join('') + '</div><div style="margin-top:10px;font-size:10.5px;color:#94a3b8">El resto de estos ajustes está en el mapa de trabajo — por ahora Empresa, Clientes, Productos, Pedidos, Facturación, Botellones, Producción y Caja ya funcionan con datos reales.</div></div>';
   }
   window.nxAguaProximamente = function () { toastSafe('info', 'Próximamente', 'Esta sección todavía no está construida'); };
@@ -1559,7 +1559,7 @@
     cerrarModal('nxAgCfgForm');
     var ov = document.createElement('div'); ov.id = 'nxAgCfgForm'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-building"></i> Datos de la empresa</span><button class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCfgForm\')"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px"><div class="mt"><span><i class="ti ti-building"></i> Datos de la empresa</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="cerrarModalAgua(\'nxAgCfgForm\')"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:11px;color:#94a3b8;margin-bottom:8px">Estos datos salen en el ticket de venta, el recibo de cobro y el estado de cuenta.</div>' +
       '<div class="fr"><label>Nombre de la empresa</label><input id="agCfgNom" class="no-upper" value="' + esc(c.nombre || '') + '" placeholder="Distribuidora de Agua"></div>' +
       '<div class="fr-row"><div class="fr"><label>RNC</label><input id="agCfgRnc" value="' + esc(c.rnc || '') + '"></div><div class="fr"><label>Teléfono</label><input id="agCfgTel" inputmode="tel" value="' + esc(c.telefono || '') + '"></div></div>' +
@@ -1677,7 +1677,7 @@
   }
   function render(view) {
     var titles = { dashboard: 'Dashboard', clientes: 'Clientes', productos: 'Inventario', pos: 'Facturación', pedidos: 'Pedidos', rutas: 'Rutas de entrega', botellones: 'Botellones', produccion: 'Producción', caja: 'Cobros / Caja', cxc: 'Cuentas por cobrar', compras: 'Compras', reportes: 'Reportes', config: 'Configuración' };
-    view.innerHTML = '<div class="nxAguaShell"><aside class="nxAguaSide' + (_sideOpen ? ' open' : '') + '"><div class="nxAguaBrand"><span><i class="ti ti-droplet-filled"></i></span><div>AGUAPRO<small>DISTRIBUIDORA</small></div></div>' + tabsHtml() + '<div class="nxAguaWaterArt">Sistema de facturación, rutas, inventario y botellones para distribuidoras de agua.</div></aside><div class="nxAguaTopbar"><div class="nxAguaTopLeft"><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaToggleSide()"><i class="ti ti-menu-2"></i></button><h2>' + esc(titles[tab] || 'Dashboard') + '</h2></div><div class="nxAguaUser"><i class="ti ti-bell"></i><span>Administrador</span><span class="nxAguaAvatar">A</span><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaSalir()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button></div></div><main class="nxAguaMain"><div class="nxAguaContent">' + body() + '</div></main></div>';
+    view.innerHTML = '<div class="nxAguaShell"><aside class="nxAguaSide' + (_sideOpen ? ' open' : '') + '"><div class="nxAguaBrand"><span><i class="ti ti-droplet-filled"></i></span><div>AGUAPRO<small>DISTRIBUIDORA</small></div></div>' + tabsHtml() + '<div class="nxAguaWaterArt">Sistema de facturación, rutas, inventario y botellones para distribuidoras de agua.</div></aside><div class="nxAguaTopbar"><div class="nxAguaTopLeft"><button aria-label="Abrir el menú" class="nxAguaMenuBtn" type="button" onclick="window.nxAguaToggleSide()"><i class="ti ti-menu-2"></i></button><h2>' + esc(titles[tab] || 'Dashboard') + '</h2></div><div class="nxAguaUser"><i class="ti ti-bell"></i><span>Administrador</span><span class="nxAguaAvatar">A</span><button class="nxAguaMenuBtn" type="button" onclick="window.nxAguaSalir()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button></div></div><main class="nxAguaMain"><div class="nxAguaContent">' + body() + '</div></main></div>';
   }
   function rerender() { var v = document.getElementById('v-aguapro'); if (v) render(v); }
   window.cerrarModalAgua = function (id) { cerrarModal(id); };
@@ -1897,7 +1897,7 @@
             <div class="nxTA2-head-title">Transferir dinero</div>
             <div class="nxTA2-head-sub">De un agente a otro · el receptor confirma</div>
           </div>
-          <button class="nxTA2-close" type="button" onclick="window.nxCerrarTransferenciaAgenteV2()"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="nxTA2-close" type="button" onclick="window.nxCerrarTransferenciaAgenteV2()"><i class="ti ti-x"></i></button>
         </div>
         <div class="nxTA2-body">
           <div class="nxTA2-route">
@@ -3360,7 +3360,7 @@
       <div class="modal" style="max-width:460px">
         <div class="mt">
           <span>// RECIBIR ENTREGA DEL AGENTE</span>
-          <button class="btn bghost bsm" type="button" onclick="window.nxCerrarEntregaAdmin()"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="window.nxCerrarEntregaAdmin()"><i class="ti ti-x"></i></button>
         </div>
         <div class="gf2">
           <div class="fr"><label>Agente que entrega *</label><select id="nxEA_Agente"></select></div>
@@ -7103,7 +7103,7 @@
         <div class="modal" style="max-width:520px">
           <div class="mt">
             <span>// URL DE CONSULTAR COBERTURA</span>
-            <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalConfigCobertura').classList.remove('open')"><i class="ti ti-x"></i></button>
+            <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalConfigCobertura').classList.remove('open')"><i class="ti ti-x"></i></button>
           </div>
           <div style="padding:8px 0">
             <label style="display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px">URL de la plataforma</label>
@@ -7324,7 +7324,7 @@
         <div class="modal" style="max-width:480px">
           <div class="mt">
             <span><i class="ti ti-bell"></i> NOTIFICACIONES</span>
-            <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalNotif').classList.remove('open')"><i class="ti ti-x"></i></button>
+            <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalNotif').classList.remove('open')"><i class="ti ti-x"></i></button>
           </div>
           <div style="padding:8px 0">
             <div id="nxNotifEstado" style="padding:12px;border-radius:10px;margin-bottom:14px;font-weight:700;text-align:center"></div>
@@ -8357,7 +8357,7 @@
           const b = getBanco(c.banco);
           return `
             <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:0;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden">
-              <div onclick="window.nxCopiarSoloCuenta('${esc(c.id)}')" style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;transition:background .12s ease,transform .08s ease" onmousedown="this.style.transform='scale(0.98)';this.style.background='#f1f5f9'" onmouseup="this.style.transform='';this.style.background=''" ontouchstart="this.style.transform='scale(0.98)';this.style.background='#f1f5f9'" ontouchend="this.style.transform='';this.style.background=''">
+              <div onclick="window.nxCopiarSoloCuenta('${esc(c.id)}')" style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;transition:background .12s ease,transform .08s ease" onmousedown="this.style.transform='scale(0.98)';this.style.background='#f1f5f9'" onmouseup="this.style.transform='';this.style.background=''" ontouchstart="this.style.transform='scale(0.98)';this.style.background='#f1f5f9'" ontouchend="this.style.transform='';this.style.background=''" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
                 ${renderLogoBanco(c.banco, 48)}
                 <div style="flex:1;min-width:0">
                   <div style="font-weight:800;color:#0f172a;font-size:13px">${esc(b.nom)}</div>
@@ -8384,7 +8384,7 @@
         <div class="mt" style="display:flex;align-items:center;gap:8px">
           <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalCuentas').classList.remove('open')" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
           <span style="flex:1;text-align:center"><i class="ti ti-building-bank"></i> MIS CUENTAS BANCARIAS</span>
-          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalCuentas').classList.remove('open')"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalCuentas').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         <div style="overflow-y:auto;flex:1;padding:8px 4px;-webkit-overflow-scrolling:touch">
           ${lista}
@@ -8414,7 +8414,7 @@
       <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
         <div class="mt">
           <span><i class="ti ti-edit"></i> ${id ? 'EDITAR' : 'NUEVA'} CUENTA</span>
-          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxFormCuenta').classList.remove('open')"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="document.getElementById('nxFormCuenta').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         <div style="padding:8px 0">
           <div class="fr"><label>Banco</label>
@@ -8845,7 +8845,7 @@
               <div style="font-size:10px;color:#475569;margin-bottom:8px">Recibe: ${secs.length} sección(es)</div>
               <div style="display:flex;gap:6px">
                 <button class="btn bsm bc1" style="flex:1" onclick="window.nxEditarDest('${esc(d.id)}')"><i class="ti ti-pencil"></i> Editar</button>
-                <button class="btn bsm bghost" style="color:#dc2626" onclick="window.nxEliminarDest('${esc(d.id)}')"><i class="ti ti-trash"></i></button>
+                <button aria-label="Eliminar este destinatario" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxEliminarDest('${esc(d.id)}')"><i class="ti ti-trash"></i></button>
               </div>
             </div>`;
         }).join('');
@@ -8853,9 +8853,9 @@
     modal.innerHTML = `
       <div class="modal" style="max-width:560px;max-height:82vh;display:flex;flex-direction:column;margin-bottom:80px">
         <div class="mt" style="display:flex;align-items:center;gap:8px">
-          <button class="btn bghost bsm" onclick="document.getElementById('nxModalDest').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
+          <button aria-label="Volver" class="btn bghost bsm" onclick="document.getElementById('nxModalDest').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
           <span style="flex:1;text-align:center"><i class="ti ti-mail-cog"></i> REPORTES POR EMPLEADO</span>
-          <button class="btn bghost bsm" onclick="document.getElementById('nxModalDest').classList.remove('open')"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="document.getElementById('nxModalDest').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         <div style="overflow-y:auto;flex:1;padding:8px 4px">${lista}</div>
         <div style="padding-top:12px;border-top:1px solid #e2e8f0">
@@ -8886,9 +8886,9 @@
     fm.innerHTML = `
       <div class="modal" style="max-width:480px;max-height:88vh;display:flex;flex-direction:column;margin-bottom:80px">
         <div class="mt" style="display:flex;align-items:center;gap:8px">
-          <button class="btn bghost bsm" onclick="document.getElementById('nxFormDestModal').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
+          <button aria-label="Volver" class="btn bghost bsm" onclick="document.getElementById('nxFormDestModal').classList.remove('open')"><i class="ti ti-arrow-left"></i></button>
           <span style="flex:1;text-align:center">${id?'EDITAR':'NUEVO'} EMPLEADO</span>
-          <button class="btn bghost bsm" onclick="document.getElementById('nxFormDestModal').classList.remove('open')"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" onclick="document.getElementById('nxFormDestModal').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         <div style="overflow-y:auto;flex:1;padding:8px 2px">
           <div class="fr"><label>Nombre del empleado</label><input type="text" id="nxDestNom" value="${esc(d.nombre)}" placeholder="Ej: María"></div>
@@ -9051,7 +9051,7 @@
           <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;margin-bottom:5px">
             <i class="ti ti-clock" style="color:#6d28d9"></i>
             <span style="flex:1;font-weight:700;font-size:13px">${esc(h)}</span>
-            <button class="btn bsm bghost" style="color:#dc2626;padding:2px 8px" onclick="window.nxQuitarHora(${i})"><i class="ti ti-x"></i></button>
+            <button aria-label="Quitar esta hora" class="btn bsm bghost" style="color:#dc2626;padding:2px 8px" onclick="window.nxQuitarHora(${i})"><i class="ti ti-x"></i></button>
           </div>`).join('');
   }
 
@@ -9401,7 +9401,7 @@
       ? '<div style="text-align:center;color:#475569;padding:30px;font-size:13px">No hay conversaciones guardadas todavía</div>'
       : hist.map((c, i) => {
           const fecha = new Date(c.fecha).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-          return `<div onclick="window.nxSmartCargarVieja(${i})" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer">
+          return `<div onclick="window.nxSmartCargarVieja(${i})" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
             <div style="font-size:12px;font-weight:700;color:#1e293b">${c.titulo}</div>
             <div style="font-size:10px;color:#475569;margin-top:3px">📅 ${fecha} · ${c.mensajes.length} mensajes</div>
           </div>`;
@@ -9502,14 +9502,14 @@
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartHistorial()" title="Conversaciones guardadas" aria-label="Conversaciones guardadas"><i class="ti ti-history"></i></button>
           <button class="btn bghost bsm" style="color:#fff" onclick="window.nxSmartLimpiar()" title="Nueva conversación" aria-label="Nueva conversación"><i class="ti ti-refresh"></i></button>
           <button style="background:rgba(255,255,255,.18);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0;margin-left:4px;display:inline-flex;align-items:center;justify-content:center" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
-          <button style="background:rgba(255,255,255,.25);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;flex-shrink:0;margin-left:4px" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Cerrar">✕</button>
+          <button aria-label="Cerrar ventana" style="background:rgba(255,255,255,.25);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:700;flex-shrink:0;margin-left:4px" onclick="document.getElementById('nxSmartModal').classList.remove('open')" title="Cerrar">✕</button>
         </div>
         <div id="nxSmartMensajes" style="flex:1;overflow-y:auto;padding:14px;background:#f8fafc;-webkit-overflow-scrolling:touch">
           ${mensajes}
         </div>
         <div style="padding:10px 12px;border-top:1px solid #e2e8f0;background:#fff;display:flex;gap:6px;flex-shrink:0;padding-bottom:max(10px,env(safe-area-inset-bottom))">
           <input type="text" id="nxSmartInput" placeholder="Escribe tu pregunta..." style="flex:1;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:24px;font-size:15px;outline:none" onkeydown="if(event.key==='Enter'){window.nxSmartEnviar()}">
-          <button class="btn bxl bc1" style="border-radius:50%;width:44px;height:44px;padding:0;flex-shrink:0" onclick="window.nxSmartEnviar()"><i class="ti ti-send"></i></button>
+          <button aria-label="Enviar" class="btn bxl bc1" style="border-radius:50%;width:44px;height:44px;padding:0;flex-shrink:0" onclick="window.nxSmartEnviar()"><i class="ti ti-send"></i></button>
         </div>
       </div>`;
     
@@ -9788,7 +9788,7 @@
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
             <button onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
-            <button onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" title="Cerrar">✕</button>
+            <button aria-label="Cerrar ventana" onclick="${cerrar}" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" title="Cerrar">✕</button>
           </div>
         </div>
         <div class="nxCi-body">
@@ -10337,7 +10337,7 @@
         <div class="mt" style="display:flex;align-items:center;gap:8px">
           <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalContab').classList.remove('open')" title="Volver" aria-label="Volver"><i class="ti ti-arrow-left"></i></button>
           <span style="flex:1;text-align:center"><i class="ti ti-calculator"></i> CONTABILIDAD</span>
-          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalContab').classList.remove('open')"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="document.getElementById('nxModalContab').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
 
         <!-- FILTRO DE MES -->
@@ -10404,7 +10404,7 @@
       <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
         <div class="mt">
           <span><i class="ti ti-cash-banknote"></i> ${id ? 'EDITAR' : 'NUEVO'} EGRESO</span>
-          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxFormEgreso').classList.remove('open')"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="document.getElementById('nxFormEgreso').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         <div style="padding:8px 0">
           <div class="fr"><label>Tipo de egreso</label>
@@ -10714,7 +10714,7 @@
             <div class="nxPendCard" data-nom="${nomData}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
               <div style="display:flex;align-items:center;gap:10px">
                 <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#eef2f7,#e2e8f0);color:#475569;display:grid;place-items:center;font-weight:900;flex-shrink:0">${esc((cli.nom || '?').trim().charAt(0).toUpperCase())}</div>
-                <div style="flex:1;min-width:0;cursor:pointer" ${cid ? `onclick="window.nxVerClientePend('${cid}')"` : ''} title="Ver resumen del cliente">
+                <div style="flex:1;min-width:0;cursor:pointer" ${cid ? `onclick="window.nxVerClientePend('${cid}')"` : ''} title="Ver resumen del cliente" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
                   <div style="font-weight:800;color:#0f172a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cli.nom || 'Cliente')}</div>
                   <div style="font-size:11px;color:#475569">Agente: ${esc(x.agente)} · ${x.periodos.length} factura(s)</div>
                   ${cid ? '<div style="font-size:9px;color:#7c3aed;font-weight:700;margin-top:1px"><i class="ti ti-user-search"></i> Toca para ver resumen</div>' : ''}
@@ -10967,7 +10967,7 @@
       <div class="modal" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt" style="display:flex;align-items:center;gap:8px">
           <span style="flex:1;text-align:center"><i class="ti ti-photo"></i> BAUCHE / COMPROBANTE</span>
-          <button class="btn bghost bsm" type="button" onclick="document.getElementById('nxVisorBauche').classList.remove('open')"><i class="ti ti-x"></i></button>
+          <button aria-label="Cerrar ventana" class="btn bghost bsm" type="button" onclick="document.getElementById('nxVisorBauche').classList.remove('open')"><i class="ti ti-x"></i></button>
         </div>
         <div style="flex:1;overflow:auto;text-align:center;padding:6px">
           ${esPdf
@@ -11056,7 +11056,7 @@
     if (estado === 'subiendo') {
       prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" alt="Foto del artículo"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#475569">Subiendo bauche...</div></div><div class="spin"></div></div>`;
     } else if (estado === 'listo') {
-      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer" onclick="window.nxVerComprobante('${src}')" alt="Foto del artículo"><div style="flex:1"><div style="font-size:11px;font-weight:800;color:#059669"><i class="ti ti-check"></i> Bauche listo</div><div style="font-size:9px;color:#475569">Toca la imagen para verla</div></div><button type="button" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxQuitarBauche()"><i class="ti ti-trash"></i></button></div>`;
+      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer" onclick="window.nxVerComprobante('${src}')" alt="Foto del artículo"><div style="flex:1"><div style="font-size:11px;font-weight:800;color:#059669"><i class="ti ti-check"></i> Bauche listo</div><div style="font-size:9px;color:#475569">Toca la imagen para verla</div></div><button aria-label="Quitar el comprobante" type="button" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxQuitarBauche()"><i class="ti ti-trash"></i></button></div>`;
     } else if (estado === 'error') {
       prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><div style="flex:1;font-size:11px;font-weight:700;color:#dc2626"><i class="ti ti-alert-triangle"></i> No se pudo subir</div><button type="button" class="btn bsm bghost" onclick="window.nxQuitarBauche()">Reintentar</button></div>`;
     }
@@ -11587,7 +11587,7 @@
     const items = data.map((r, i) => {
       const fecha = r.created_at ? new Date(r.created_at).toLocaleString('es-DO') : '';
       const res = r.resumen || {};
-      return '<div onclick="window.nxTssVerSnapshot(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:6px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:12.5px;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div><div style="font-size:10px;color:#475569">' + esc(fecha) + '</div></div><div style="font-size:11px;color:#475569;margin-top:3px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + '</div><div style="font-size:10px;color:#475569;margin-top:2px">✅ ' + (res.coinciden || 0) + ' coinciden · ⚠️ ' + ((res.faltanTSS || []).length) + ' faltan · 💰 ' + ((res.conDeuda || []).length) + ' con deuda</div></div>';
+      return '<div onclick="window.nxTssVerSnapshot(' + i + ')" style="cursor:pointer;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-bottom:6px;background:#fff" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:12.5px;color:#1e293b">' + esc(etiquetaPeriodo(r.periodo || '')) + '</div><div style="font-size:10px;color:#475569">' + esc(fecha) + '</div></div><div style="font-size:11px;color:#475569;margin-top:3px">🏢 ' + esc(r.empresa_nom || '—') + ' · 👤 ' + esc(r.usuario || '') + '</div><div style="font-size:10px;color:#475569;margin-top:2px">✅ ' + (res.coinciden || 0) + ' coinciden · ⚠️ ' + ((res.faltanTSS || []).length) + ' faltan · 💰 ' + ((res.conDeuda || []).length) + ' con deuda</div></div>';
     }).join('');
     setArea('nxTssResultado', '<div style="margin:12px 0"><div style="font-size:12px;font-weight:800;color:#1e293b;margin-bottom:8px">📜 HISTORIAL DE CUADRES (' + data.length + ')</div>' + items + '</div>');
   };
@@ -11792,7 +11792,7 @@
             <div style="font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((c && c.nom) || 'Cédula no registrada')}</div>
             <div style="font-size:11px;opacity:.85;font-family:var(--mono,monospace)">${esc(fmtCed(k))}</div>
           </div>
-          <button onclick="document.getElementById('nxTssFichaOv').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0">✕</button>
+          <button aria-label="Cerrar ventana" onclick="document.getElementById('nxTssFichaOv').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;flex-shrink:0">✕</button>
         </div>
         ${cuerpo}
       </div>`;
@@ -12003,7 +12003,7 @@
 
       ${conDeuda.length ? `<div style="background:#fff;border:1px solid #fed7aa;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <div style="background:#fff7ed;padding:9px 12px;font-size:11px;font-weight:800;color:#9a3412;display:flex;justify-content:space-between;gap:8px"><span>💰 EN EL PDF CON DEUDA PENDIENTE (${conDeuda.length})</span><span>Total: ${fmtRD(totalDeuda)}</span></div>
-        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div onclick="window.nxTssFicha('${esc(c.ced)}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#475569;font-family:var(--mono,monospace)">${esc(fmtCed(c.ced))}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
+        <div style="max-height:230px;overflow-y:auto">${conDeuda.map(c => `<div onclick="window.nxTssFicha('${esc(c.ced)}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:12px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="min-width:0"><div style="font-weight:600;color:#0f172a">${esc(c.nom)}</div><div style="font-size:10px;color:#475569;font-family:var(--mono,monospace)">${esc(fmtCed(c.ced))}</div></div><div style="font-weight:800;color:#b91c1c;font-size:12px;flex-shrink:0">${fmtRD(c.deuda)}</div></div>`).join('')}</div>
       </div>` : ''}
 
       ${inhabEnTSS.length ? `<div style="background:#fff;border:2px solid #fecdd3;border-radius:12px;margin-bottom:10px;overflow:hidden">
@@ -12837,7 +12837,7 @@
     const saldo = saldoDe(p), pag = pagadoDe(p);
     const vFecha = prVencFecha(p), vDias = prDiasVencido(p);
     const metaBits = [p.cedula, p.telefono].filter(Boolean).map(esc);
-    return `<div class="nxFP-card nxPrCard" data-busca="${esc((p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''))}" onclick="window.nxPrestamoVer('${p.id}')" style="cursor:pointer">
+    return `<div class="nxFP-card nxPrCard" data-busca="${esc((p.nombre || '').toLowerCase() + ' ' + (p.cedula || ''))}" onclick="window.nxPrestamoVer('${p.id}')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
       <div class="nxFP-avatar" style="background:${av.color}">${av.ini}</div>
       <div class="nxFP-cardBody">
         <div class="nxFP-cardTop"><div class="nxFP-cardNom">${esc(p.nombre || 'Sin nombre')}</div><span class="nxFP-badge ${info.key}">${info.label}</span></div>
@@ -12911,7 +12911,7 @@
     const pageRows = lista.slice(start, start + PR_PAGE_SIZE);
     const rows = pageRows.map(p => {
       const et = prEstadoTabla(p), vDias = prDiasVencido(p), prox = prProximoPago(p);
-      return `<tr onclick="window.nxPrestamoVer('${p.id}')">
+      return `<tr onclick="window.nxPrestamoVer('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
         <td data-l="Ref" class="nxFP-tRef">${prRef(p)}</td>
         <td data-l="Prestatario" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(p.nombre || 'Sin nombre')}</div>${p.telefono ? `<div class="nxFP-tSub">${esc(p.telefono)}</div>` : ''}</td>
         <td data-l="Cédula" class="nxFP-tCed">${esc(p.cedula || '—')}</td>
@@ -13211,7 +13211,7 @@
     if (!lista.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún cliente coincide con la búsqueda.</p></div>`;
     const rows = lista.map(c => {
       const st = prCliStats(c);
-      return `<tr onclick="window.nxPrClienteVer('${c.id}')">
+      return `<tr onclick="window.nxPrClienteVer('${c.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
         <td data-l="Cliente" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(c.nombre || 'Sin nombre')}</div>${c.ocupacion ? `<div class="nxFP-tSub">${esc(c.ocupacion)}</div>` : ''}</td>
         <td data-l="Cédula">${esc(c.cedula || '—')}</td>
         <td data-l="Teléfono">${esc(c.telefono || '—')}</td>
@@ -14225,7 +14225,7 @@
       const info = prEstadoInfo(p), dias = esVencido(p) ? prDiasVencido(p) : 0;
       const col = info.key === 'pagado' ? '#059669' : info.key === 'vencido' ? '#dc2626' : '#2563eb';
       return `<tr>
-        <td data-l="# Préstamo"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')">${esc(prRef(p))}</a></td>
+        <td data-l="# Préstamo"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">${esc(prRef(p))}</a></td>
         <td data-l="Fecha">${esc(p.fecha_prestamo || '—')}</td><td data-l="Monto" style="text-align:right">${fmt(Number(p.capital || 0))}</td>
         <td data-l="Tasa" style="text-align:right">${Number(p.tasa_interes || 0) > 0 ? p.tasa_interes + '%' : '—'}</td><td data-l="Plazo">${esc(prPlazoTxt(p))}</td>
         <td data-l="Cuota" style="text-align:right">${prCuotaFmt(p)}</td><td data-l="Total pagado" style="text-align:right;color:#059669">${fmt(pagadoDe(p))}</td>
@@ -14247,7 +14247,7 @@
       }
       const ult = loans.slice().sort((a, b) => (b.fecha_prestamo || '') < (a.fecha_prestamo || '') ? -1 : 1);
       const first = ult.slice(0, 6);
-      const tabla = `<div class="hc-card"><div class="hc-ct">Últimos préstamos</div>${loanTable(first)}${ult.length > 6 ? `<div class="hc-verall" onclick="window.nxPrHcTab('prestamos')">Ver todos los préstamos (${ult.length}) <i class="ti ti-chevron-down"></i></div>` : ''}</div>`;
+      const tabla = `<div class="hc-card"><div class="hc-ct">Últimos préstamos</div>${loanTable(first)}${ult.length > 6 ? `<div class="hc-verall" onclick="window.nxPrHcTab('prestamos')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">Ver todos los préstamos (${ult.length}) <i class="ti ti-chevron-down"></i></div>` : ''}</div>`;
       mainTab = comp + tabla;
     } else if (_hcTab === 'prestamos') {
       const ult = loans.slice().sort((a, b) => (b.fecha_prestamo || '') < (a.fecha_prestamo || '') ? -1 : 1);
@@ -14255,12 +14255,12 @@
     } else if (_hcTab === 'pagos') {
       const pagos = []; loans.forEach(p => (_pagosByPrestamo[p.id] || []).forEach(pg => pagos.push({ pg, p })));
       pagos.sort((a, b) => (b.pg.fecha || '') < (a.pg.fecha || '') ? -1 : 1);
-      const rows = pagos.map(x => `<tr><td data-l="Fecha">${esc(x.pg.fecha || '—')}</td><td data-l="Préstamo"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${x.p.id}')">${esc(prRef(x.p))}</a></td><td data-l="Monto" style="text-align:right;color:#059669;font-weight:800">${fmt(Number(x.pg.monto || 0))}</td><td data-l="Método">${esc(x.pg.metodo || x.pg.tipo || '—')}</td><td data-l="Registró">${esc(x.pg.created_by_name || '—')}</td></tr>`).join('');
+      const rows = pagos.map(x => `<tr><td data-l="Fecha">${esc(x.pg.fecha || '—')}</td><td data-l="Préstamo"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${x.p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">${esc(prRef(x.p))}</a></td><td data-l="Monto" style="text-align:right;color:#059669;font-weight:800">${fmt(Number(x.pg.monto || 0))}</td><td data-l="Método">${esc(x.pg.metodo || x.pg.tipo || '—')}</td><td data-l="Registró">${esc(x.pg.created_by_name || '—')}</td></tr>`).join('');
       const totPag = pagos.reduce((s, x) => s + Number(x.pg.monto || 0), 0);
       mainTab = `<div class="hc-card"><div class="hc-ct">Pagos (${pagos.length})</div>${pagos.length ? `<div class="hc-tblwrap"><table class="hc-tbl"><thead><tr><th>Fecha</th><th>Préstamo</th><th style="text-align:right">Monto</th><th>Método</th><th>Registró</th></tr></thead><tbody>${rows}</tbody></table></div><div class="hc-note">Total pagado: ${fmt(totPag)}</div>` : '<div class="hc-empty">Sin pagos registrados.</div>'}</div>`;
     } else if (_hcTab === 'evaluaciones') {
       const evals = loans.filter(p => /Evaluaci[oó]n:\s*score/i.test(p.notas || '')).map(p => ({ p, linea: (String(p.notas || '').split('\n').find(l => /Evaluaci[oó]n:\s*score/i.test(l)) || '').trim() }));
-      mainTab = `<div class="hc-card"><div class="hc-ct">Evaluaciones</div>${evals.length ? evals.map(e => `<div class="hc-evrow"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${e.p.id}')">${esc(prRef(e.p))}</a> · ${esc(e.p.fecha_prestamo || '')} — <span style="color:#4f46e5">${esc(e.linea)}</span></div>`).join('') : '<div class="hc-empty">Aún no hay evaluaciones guardadas. Las evaluaciones que hagas desde la pantalla "Evaluación" quedan como nota en el préstamo y aparecen aquí.</div>'}</div>`;
+      mainTab = `<div class="hc-card"><div class="hc-ct">Evaluaciones</div>${evals.length ? evals.map(e => `<div class="hc-evrow"><a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${e.p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">${esc(prRef(e.p))}</a> · ${esc(e.p.fecha_prestamo || '')} — <span style="color:#4f46e5">${esc(e.linea)}</span></div>`).join('') : '<div class="hc-empty">Aún no hay evaluaciones guardadas. Las evaluaciones que hagas desde la pantalla "Evaluación" quedan como nota en el préstamo y aparecen aquí.</div>'}</div>`;
     } else if (_hcTab === 'gestiones') {
       mainTab = `<div class="hc-card"><div class="hc-ct">Gestiones de cobro</div><div class="hc-empty">Este módulo aún no registra gestiones de cobro (llamadas, promesas de pago, visitas). Es una función que se puede agregar si la necesitas.</div></div>`;
     } else if (_hcTab === 'documentos') {
@@ -14904,7 +14904,7 @@
     const ov = document.createElement('div'); ov.id = 'nxPrLinkRev'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-eye-check"></i> Revisa antes de enviar</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrLinkRev').remove()"><i class="ti ti-x"></i></button></div>
+      <div class="mt"><span><i class="ti ti-eye-check"></i> Revisa antes de enviar</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById('nxPrLinkRev').remove()"><i class="ti ti-x"></i></button></div>
       <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
         <div style="font-size:12px;color:#475569;margin-bottom:10px">Esto es lo que <b>${esc(d.nombre || '')}</b> va a ver en su teléfono. Corrige lo que quieras — todavía no se ha creado nada.</div>
         <div class="prCard">
@@ -14973,7 +14973,7 @@
     // El mensaje lo escribió (o corrigió) el dueño en la pantalla de revisión; si por lo que sea
     // no llegó, se cae al texto de siempre. El link siempre se pega al final.
     const msg = (mensaje || `Hola ${(nombre || '').split(' ')[0]}, para completar tu préstamo entra a este link, sube tu cédula y firma:`) + '\n' + link;
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-link"></i> Link de firma generado</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrLinkFirma').remove()"><i class="ti ti-x"></i></button></div>
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-link"></i> Link de firma generado</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById('nxPrLinkFirma').remove()"><i class="ti ti-x"></i></button></div>
       <div style="font-size:12px;color:#475569;margin-bottom:8px">Comparte este enlace con <b>${esc(nombre || '')}</b> para que suba su cédula y firme desde su teléfono. Cuando lo publique, aparece en <b>"Solicitudes"</b> para que lo apruebes.</div>
       <input id="prLkInp" readonly value="${esc(link)}" onclick="this.select()" style="width:100%;height:42px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#334155">
       <div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap">
@@ -15010,7 +15010,7 @@
       : s === 'enviada' ? '<span style="font-size:9px;font-weight:800;color:#d97706;background:#fef3c7;padding:2px 8px;border-radius:20px;white-space:nowrap">POR REVISAR</span>'
       : s === 'aprobada' ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:20px;white-space:nowrap">APROBADA</span>'
       : '<span style="font-size:9px;font-weight:800;color:#dc2626;background:#fee2e2;padding:2px 8px;border-radius:20px;white-space:nowrap">RECHAZADA</span>';
-    const rows = _prSolicitudes.map(s => `<tr onclick="window.nxPrSolicitudVer('${s.id}')">
+    const rows = _prSolicitudes.map(s => `<tr onclick="window.nxPrSolicitudVer('${s.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
       <td data-l="Cliente" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(s.nombre || '')}</div>${s.cedula ? `<div class="nxFP-tSub">${esc(s.cedula)}</div>` : ''}</td>
       <td data-l="Monto" class="nxFP-tMoney">${fmt(s.capital)}</td>
       <td data-l="Estado">${badge(s.estado, s.correccion_motivo)}</td>
@@ -15067,7 +15067,7 @@
          <button class="btn bsm bc1" type="button" style="width:100%;margin-top:8px" onclick="document.getElementById('nxPrSolModal').remove();window.nxPrestamoVer('${s.prestamo_id}')"><i class="ti ti-cash"></i> Ver el préstamo</button>`
       : (s.estado === 'rechazada' && s.motivo_rechazo ? `<div style="font-size:11.5px;color:#dc2626;background:#fef2f2;border-radius:8px;padding:8px;margin-top:8px"><b>Motivo:</b> ${esc(s.motivo_rechazo)}</div>` : '');
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:88vh;overflow-y:auto">
-      <div class="mt"><span><i class="ti ti-file-check"></i> Solicitud de ${esc(s.nombre || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrSolModal').remove()"><i class="ti ti-x"></i></button></div>
+      <div class="mt"><span><i class="ti ti-file-check"></i> Solicitud de ${esc(s.nombre || '')}</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById('nxPrSolModal').remove()"><i class="ti ti-x"></i></button></div>
       <div style="font-size:12px;color:#475569;margin-bottom:10px">${esc(s.telefono || 'Sin teléfono')}${s.cedula ? ' · ' + esc(s.cedula) : ''}</div>
       <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px;font-size:12px;color:#4c1d95;margin-bottom:12px"><b>Términos:</b> ${esc(terminos)}</div>
       ${docs}
@@ -15145,7 +15145,7 @@
     const ov = document.createElement('div'); ov.id = 'nxPrCorr'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px">
-      <div class="mt"><span><i class="ti ti-rotate-clockwise"></i> Pedir corrección</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrCorr').remove()"><i class="ti ti-x"></i></button></div>
+      <div class="mt"><span><i class="ti ti-rotate-clockwise"></i> Pedir corrección</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById('nxPrCorr').remove()"><i class="ti ti-x"></i></button></div>
       <div style="font-size:12px;color:#475569;margin-bottom:10px"><b>${esc(s.nombre || '')}</b> va a recibir el mismo enlace otra vez y podrá volver a subir todo. Lo que mandó antes se queda guardado hasta que envíe lo nuevo.</div>
       <div class="prCard">
         <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">¿Qué debe corregir?</div>
@@ -15853,7 +15853,7 @@
       ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:20px">VENDIDO</span>'
       : '<span style="font-size:9px;font-weight:800;color:#6d28d9;background:#eff6ff;padding:2px 8px;border-radius:20px">INVENTARIO</span>';
     const sub = [v.color, v.placa ? 'Placa ' + v.placa : '', v.chasis ? 'Chasis ' + (v.chasis || '').slice(-6) : ''].filter(Boolean).join(' · ');
-    return `<div class="nxVhCard" data-busca="${esc((tituloVeh(v) + ' ' + (v.placa || '') + ' ' + (v.chasis || '') + ' ' + (v.comprador_nombre || '')).toLowerCase())}" onclick="window.nxVehVer('${v.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+    return `<div class="nxVhCard" data-busca="${esc((tituloVeh(v) + ' ' + (v.placa || '') + ' ' + (v.chasis || '') + ' ' + (v.comprador_nombre || '')).toLowerCase())}" onclick="window.nxVehVer('${v.id}')" style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.04)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
         <div style="min-width:0"><div style="font-size:14px;font-weight:800;color:#1e293b">${esc(tituloVeh(v))}</div><div style="font-size:11px;color:#475569">${esc(sub || 'Sin datos')}</div></div>
         ${badge}
@@ -16018,7 +16018,7 @@
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${gastosHTML}</div>
           ${!vendido ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:10px">
             <div style="display:flex;gap:6px;margin-bottom:6px"><input id="vhGConcepto" class="no-upper" placeholder="Concepto (pintura, interior...)" style="flex:2;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;outline:none"><input id="vhGCosto" data-nx-money inputmode="numeric" placeholder="Costo" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;outline:none"></div>
-            <div style="display:flex;gap:6px"><input id="vhGFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><input id="vhGNota" class="no-upper" placeholder="Nota (opcional)" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><button class="btn bc1 bsm" type="button" onclick="window.nxVehAddGasto('${id}')"><i class="ti ti-plus"></i></button></div>
+            <div style="display:flex;gap:6px"><input id="vhGFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><input id="vhGNota" class="no-upper" placeholder="Nota (opcional)" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><button aria-label="Agregar un gasto" class="btn bc1 bsm" type="button" onclick="window.nxVehAddGasto('${id}')"><i class="ti ti-plus"></i></button></div>
           </div>` : ''}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 4px">PRECIO DE VENTA</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px">
@@ -17166,7 +17166,7 @@
           </div>
         </aside>
         <div class="nxTMain">
-          <div class="nxTTop"><button class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><button class="nxTSearchBtnM" type="button" onclick="window.nxBuscadorUniversal()" aria-label="Buscar en todo el sistema"><i class="ti ti-search"></i></button><div class="nxTTopBiz">${esc(biz)}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
+          <div class="nxTTop"><button aria-label="Abrir el menú" class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><button class="nxTSearchBtnM" type="button" onclick="window.nxBuscadorUniversal()" aria-label="Buscar en todo el sistema"><i class="ti ti-search"></i></button><div class="nxTTopBiz">${esc(biz)}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
           ${previewBar}
           ${body}
         </div>
@@ -17454,7 +17454,7 @@
       const stkCls = serv ? 'srv' : out ? 'out' : low ? 'low' : 'ok';
       const stkTxt = serv ? 'Servicio' : out ? 'Agotado' : (low ? 'Bajo: ' : '') + stk + (serv ? '' : ' und');
       const enCart = _cart.find(x => String(x.producto_id) === String(p.id));
-      const imeiChip = p.serial ? `<span class="vimeib" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
+      const imeiChip = p.serial ? `<span class="vimeib" onclick="event.stopPropagation();window.nxVenderImei('${p.id}')" title="Elegir IMEI" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-device-mobile"></i> IMEI ${enCart ? (enCart.seriales || []).length + '/' + enCart.cantidad : '· ' + stk}</span>` : '';
       const cat = catNombre(p.categoria_id);
       const favLbl = p.favorito ? 'Quitar de favoritos' : 'Agregar a favoritos';
       // El botón de favorito es un <button> real — la fila NO puede serlo (los <button> no aceptan
@@ -17721,7 +17721,7 @@
     const onclick = kind === 'res' ? `window.nxPosCliElegir('${modalId}',${i})` : `window.nxPosCliElegirGuardado('${modalId}','${kind}',${i})`;
     return `<div class="pf2clirow" data-k="${kind}" data-i="${i}">
       <button type="button" class="pf2cliFav${isFav ? ' on' : ''}" aria-label="${isFav ? 'Quitar de favoritos' : 'Marcar como favorito'}" onclick="event.stopPropagation();window.nxPosCliToggleFav('${modalId}','${kind}',${i})"><i class="ti ti-star${isFav ? '-filled' : ''}"></i></button>
-      <div onclick="${onclick}"><b>${esc(snap.__t)}</b><span>${esc(snap.__sub)}</span></div>
+      <div onclick="${onclick}" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>${esc(snap.__t)}</b><span>${esc(snap.__sub)}</span></div>
     </div>`;
   }
   function nxPosClientePintar(modalId, q) {
@@ -17743,7 +17743,7 @@
     } else { reg.favShown = []; reg.recShown = []; }
     const resultsHtml = filas.map((c, i) => { navOrder.push({ kind: 'res', i }); return nxPosCliFilaHTML(modalId, nxPosCliSnap(c), 'res', i, favIds.indexOf(c.id) >= 0); }).join('') || (secciones ? '' : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
     reg.filas = filas; reg.navOrder = navOrder;
-    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')"><b>— Consumidor final —</b></div>` + secciones + resultsHtml;
+    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>— Consumidor final —</b></div>` + secciones + resultsHtml;
   }
   function nxPosCliRegistrarReciente(modalId, c) {
     const snap = nxPosCliSnap(c);
@@ -17889,7 +17889,7 @@
         ? `<div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#2563eb;font-size:14px">${fmt(aplica)}</b>`
         : '<span class="nxPosStkB" style="background:#fffbeb;color:#d97706">SIN PRECIO</span>';
       return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
-        <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')">
+        <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
           <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px">${p.codigo ? '<span>' + esc(p.codigo) + '</span>' : ''}${stkChip}</div></div>
           <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div>${aplicaHTML}</div><span class="nxPpkChev" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#64748b;line-height:1">&rsaquo;</span></div>
         </div>
@@ -17968,7 +17968,7 @@
     _ppkSerRows = rows;
     // Chip compacto estilo Factura: 📱 IMEI · N — tocarlo abre la ventanilla para elegir
     box.innerHTML = rows.length
-      ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxPpkImei('${pid}')" title="Elegir IMEI"><i class="ti ti-device-mobile"></i> IMEI · ${rows.length}</span>`
+      ? `<span class="nxPosImeiB" onclick="event.stopPropagation();window.nxPpkImei('${pid}')" title="Elegir IMEI" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-device-mobile"></i> IMEI · ${rows.length}</span>`
       : '<span class="nxPosImeiB" style="color:#dc2626;cursor:default"><i class="ti ti-device-mobile" style="color:#dc2626"></i> Sin IMEI — no se puede vender</span>';
   }
   // Resalta en el serial la parte que coincide con lo buscado (sin alterar el data-ser real).
@@ -17984,7 +17984,7 @@
     const ql = (q || '').trim().toLowerCase();
     const filt = (_ppkSerRows || []).filter(r => !ql || String(r.serial || '').toLowerCase().includes(ql));
     if (!filt.length) return `<div style="font-size:10.5px;color:#475569;padding:6px 2px">Ningún IMEI coincide con “${esc(q)}”.</div>`;
-    return filt.map(r => `<span class="nxSerPick${sel.has(String(r.id)) ? ' on' : ''}" data-sid="${r.id}" data-ser="${esc(r.serial)}" onclick="event.stopPropagation();window.nxPpkSerTog(this)" style="display:inline-flex;align-items:center;gap:5px">${colorDotHTML(r.color)}${ppkSerHi(String(r.serial || ''), ql)}</span>`).join('');
+    return filt.map(r => `<span class="nxSerPick${sel.has(String(r.id)) ? ' on' : ''}" data-sid="${r.id}" data-ser="${esc(r.serial)}" onclick="event.stopPropagation();window.nxPpkSerTog(this)" style="display:inline-flex;align-items:center;gap:5px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">${colorDotHTML(r.color)}${ppkSerHi(String(r.serial || ''), ql)}</span>`).join('');
   }
   window.nxPpkSerFiltrar = function (q) { const c = document.getElementById('ppkSerChips'); if (c) c.innerHTML = ppkSerChipsHTML(q); };
   window.nxPpkSerTog = function (el) {
@@ -18361,7 +18361,7 @@
         <div style="font-size:11.5px;color:#475569;margin:2px 0 8px">Marca los módulos que este rol puede ver y usar.</div>
         <div style="overflow-y:auto;flex:1"><div class="nxEntAfines" style="grid-template-columns:1fr 1fr">${chks}</div></div>
         <div class="fe" style="margin-top:10px;gap:8px">
-          ${(!isNew && !preset) ? `<button class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxRolDel('${rol}')"><i class="ti ti-trash"></i></button>` : ''}
+          ${(!isNew && !preset) ? `<button aria-label="Eliminar este rol" class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxRolDel('${rol}')"><i class="ti ti-trash"></i></button>` : ''}
           <button class="btn bghost" type="button" onclick="document.getElementById('nxAccForm').remove()">Cancelar</button>
           <button class="btn bc1" type="button" onclick="window.nxAccesoGuardar('${rol}')"><i class="ti ti-device-floppy"></i> Guardar</button>
         </div>
@@ -18432,7 +18432,7 @@
         </div>
         <div class="fr"><label>Activo</label><select id="vdA"><option value="1"${d.activo !== false ? ' selected' : ''}>Sí</option><option value="0"${d.activo === false ? ' selected' : ''}>No</option></select></div>
         <div class="fe" style="margin-top:8px;gap:8px">
-          ${v ? `<button class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxVendDel('${v.id}')"><i class="ti ti-trash"></i></button>` : ''}
+          ${v ? `<button aria-label="Eliminar este vendedor" class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxVendDel('${v.id}')"><i class="ti ti-trash"></i></button>` : ''}
           <button class="btn bghost" type="button" onclick="document.getElementById('nxVendForm').remove()">Cancelar</button>
           <button class="btn bc1" type="button" onclick="window.nxVendGuardar('${v ? v.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
         </div>
@@ -18493,7 +18493,7 @@
         </div>
         <div class="fr"><label>Activa</label><select id="ncAct"><option value="1"${d.activo !== false ? ' selected' : ''}>Sí</option><option value="0"${d.activo === false ? ' selected' : ''}>No</option></select></div>
         <div class="fe" style="margin-top:8px;gap:8px">
-          ${s ? `<button class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxNcfDel('${s.id}')"><i class="ti ti-trash"></i></button>` : ''}
+          ${s ? `<button aria-label="Eliminar esta secuencia de NCF" class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxNcfDel('${s.id}')"><i class="ti ti-trash"></i></button>` : ''}
           <button class="btn bghost" type="button" onclick="document.getElementById('nxNcfForm').remove()">Cancelar</button>
           <button class="btn bc1" type="button" onclick="window.nxNcfGuardar('${s ? s.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
         </div>
@@ -18994,7 +18994,7 @@
         <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
         <td style="text-align:right;white-space:nowrap">${stkCell}</td>
         <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
-        <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
+        <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.'}</td></tr>`;
     return `<div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar producto por nombre, código o marca…', oninput: 'window.nxProdTablaBuscar(this.value)' })}</div>
@@ -19025,7 +19025,7 @@
     _comboSelId = '';
     if (!ql) { box.style.display = 'none'; box.innerHTML = ''; return; }
     const hits = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '')).toLowerCase().includes(ql)).slice(0, 8);
-    box.innerHTML = hits.length ? hits.map(p => `<div style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid #f1f5f9" onclick="window.nxComboPick('${p.id}')"><b>${esc(p.nombre)}</b>${p.codigo ? ' <span style="color:#94a3b8;font-size:10px">' + esc(p.codigo) + '</span>' : ''}</div>`).join('') : '<div style="padding:10px;font-size:11px;color:#94a3b8">Sin resultados</div>';
+    box.innerHTML = hits.length ? hits.map(p => `<div style="padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid #f1f5f9" onclick="window.nxComboPick('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>${esc(p.nombre)}</b>${p.codigo ? ' <span style="color:#94a3b8;font-size:10px">' + esc(p.codigo) + '</span>' : ''}</div>`).join('') : '<div style="padding:10px;font-size:11px;color:#94a3b8">Sin resultados</div>';
     box.style.display = '';
   };
   window.nxComboPick = function (pid) {
@@ -19756,7 +19756,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
                   <div id="ppComboList" style="display:flex;gap:5px;flex-wrap:wrap;margin:6px 0"></div>
                   <div style="display:flex;gap:6px;position:relative"><input id="ppComboQ" class="no-upper" placeholder="Buscar artículo del combo…" autocomplete="off" oninput="window.nxComboFiltrar(this.value)" style="flex:1;min-width:0;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;padding:0 10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt)">
                   <input id="ppComboCant" inputmode="numeric" value="1" style="width:56px;height:38px;border:1.5px solid var(--pf-line);border-radius:9px;text-align:center;font-weight:700;background:var(--pf-panel);color:var(--pf-txt)">
-                  <button class="nxPf ab g1" style="width:38px;padding:0" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
+                  <button aria-label="Agregar un artículo al combo" class="nxPf ab g1" style="width:38px;padding:0" type="button" onclick="window.nxComboAdd()"><i class="ti ti-plus"></i></button></div>
                   <div id="ppComboSug" style="display:none;background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;box-shadow:var(--pf-shadow);max-height:170px;overflow-y:auto;margin-top:4px"></div>
                 </div>
               </div>
@@ -20390,13 +20390,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // ── Categorías ──
   window.nxPosCategorias = function () {
     cerrarModal('nxPosCats');
-    const lista = _cats.length ? _cats.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f5f9"><span style="flex:1;font-size:12px;font-weight:700;color:#1e293b">${esc(c.nombre)}</span><button class="btn bsm bghost" onclick="window.nxPosDelCat('${c.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin categorías</div>';
+    const lista = _cats.length ? _cats.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f5f9"><span style="flex:1;font-size:12px;font-weight:700;color:#1e293b">${esc(c.nombre)}</span><button aria-label="Eliminar esta categoría" class="btn bsm bghost" onclick="window.nxPosDelCat('${c.id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin categorías</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCats'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px;max-height:84vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-tags"></i> Categorías</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCats').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="display:flex;gap:6px;margin-bottom:10px"><input id="posCatNom" class="no-upper" placeholder="Nueva categoría" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;outline:none"><button class="btn bc1 bsm" type="button" onclick="window.nxPosAddCat()"><i class="ti ti-plus"></i></button></div>
+          <div style="display:flex;gap:6px;margin-bottom:10px"><input id="posCatNom" class="no-upper" placeholder="Nueva categoría" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;outline:none"><button aria-label="Agregar una categoría" class="btn bc1 bsm" type="button" onclick="window.nxPosAddCat()"><i class="ti ti-plus"></i></button></div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div>
         </div>
       </div>`;
@@ -20436,7 +20436,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     return lista.map(v => {
       const anulada = (v.estado || '') === 'anulada';
       const esCred = !!v.a_credito;
-      return `<tr style="cursor:pointer${anulada ? ';opacity:.5' : ''}" onclick="window.nxPosTicket('${v.id}')">
+      return `<tr style="cursor:pointer${anulada ? ';opacity:.5' : ''}" onclick="window.nxPosTicket('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
         <td style="font-weight:700;color:var(--pf-txt);white-space:nowrap">${esc(v.numero_factura || (v.numero || ''))}</td>
         <td style="color:var(--pf-txt3);white-space:nowrap">${fechaDMY(v.fecha || v.created_at)}</td>
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
@@ -20987,7 +20987,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR ABONO</div>
             <div style="display:flex;gap:6px;margin-bottom:6px"><input id="posAbMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;outline:none"><input id="posAbFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"></div>
-            <div style="display:flex;gap:6px"><select id="posAbMet" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><input id="posAbNota" class="no-upper" placeholder="Nota" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><button class="btn bc1 bsm" type="button" onclick="window.nxPosAbonar('${id}')"><i class="ti ti-plus"></i></button></div>
+            <div style="display:flex;gap:6px"><select id="posAbMet" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><input id="posAbNota" class="no-upper" placeholder="Nota" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><button aria-label="Registrar un abono" class="btn bc1 bsm" type="button" onclick="window.nxPosAbonar('${id}')"><i class="ti ti-plus"></i></button></div>
           </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px">✓ Sin deuda</div>'}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">VENTAS FIADAS (${ventas.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${ventasHTML}</div>
@@ -21493,7 +21493,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   function renderCompras() {
     try { window.nxPfEnsureCSS(); } catch (e) {}
     const totalCxP = _proveedores.reduce((s, p) => s + saldoProv(p), 0);
-    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer"><td style="font-size:10px">#${c.numero || ''}<div style="color:var(--pf-txt3)">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:var(--pf-red)">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--pf-txt3);font-size:12px">Sin compras registradas</td></tr>';
+    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><td style="font-size:10px">#${c.numero || ''}<div style="color:var(--pf-txt3)">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:var(--pf-red)">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--pf-txt3);font-size:12px">Sin compras registradas</td></tr>';
     return `<div class="nxPf nxCompWrap">
       <div class="kpirow" style="margin-bottom:10px">
         ${kpiPf('Proveedores', _proveedores.length, 'var(--pf-purple)')}
@@ -21532,7 +21532,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             <div class="fr" style="margin-bottom:6px"><select id="compArt" onchange="window.nxCompraArtCambio()"><option value="">— Elige un artículo —</option>${prodOpts}</select></div>
             <div id="compImeiArea" style="display:none;margin-bottom:6px">
               <div style="font-size:9px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px">IMEI / Serial — agrega uno por uno con +</div>
-              <div style="display:flex;gap:6px"><input id="compImeiIn" class="no-upper" inputmode="numeric" placeholder="Escribe un IMEI y toca +" style="flex:1;min-width:0;padding:9px;border:1.5px solid #ddd6fe;border-radius:9px;font-size:13px;font-family:var(--mono,monospace)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxCompraImeiAdd();}"><button class="btn bc1 bsm" type="button" onclick="window.nxCompraImeiAdd()"><i class="ti ti-plus"></i></button></div>
+              <div style="display:flex;gap:6px"><input id="compImeiIn" class="no-upper" inputmode="numeric" placeholder="Escribe un IMEI y toca +" style="flex:1;min-width:0;padding:9px;border:1.5px solid #ddd6fe;border-radius:9px;font-size:13px;font-family:var(--mono,monospace)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxCompraImeiAdd();}"><button aria-label="Agregar un IMEI" class="btn bc1 bsm" type="button" onclick="window.nxCompraImeiAdd()"><i class="ti ti-plus"></i></button></div>
               <div id="compImeiChips" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px"></div>
             </div>
             <div style="display:flex;gap:6px"><input id="compCant" inputmode="numeric" value="1" placeholder="Cant." style="width:62px;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;text-align:center"><input id="compCosto" data-nx-money inputmode="numeric" placeholder="Costo unit." style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px"><button class="btn bc1 bsm" type="button" onclick="window.nxPosCompraAddItem()"><i class="ti ti-plus"></i> Agregar</button></div>
@@ -21608,7 +21608,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxCompraImei = function (i, v) { if (_compraItems[i]) _compraItems[i].imeis = v; };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
-    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b> <i class="ti ti-edit" style="font-size:11px;color:#6d28d9"></i><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
+    cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b> <i class="ti ti-edit" style="font-size:11px;color:#6d28d9"></i><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-x" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
   }
@@ -21703,7 +21703,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // Proveedores
   window.nxPosProveedores = function () {
     cerrarModal('nxPosProvs');
-    const lista = _proveedores.length ? _proveedores.map(p => { const s = saldoProv(p); return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosProvVer('${p.id}')"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b">${esc(p.nombre)}</div><div style="font-size:10px;color:#475569">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div></div>${s > 0 ? `<b style="color:#dc2626;font-size:12px">${fmt(s)}</b>` : ''}<i class="ti ti-chevron-right" style="color:#cbd5e1"></i></div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin proveedores</div>';
+    const lista = _proveedores.length ? _proveedores.map(p => { const s = saldoProv(p); return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="window.nxPosProvVer('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b">${esc(p.nombre)}</div><div style="font-size:10px;color:#475569">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div></div>${s > 0 ? `<b style="color:#dc2626;font-size:12px">${fmt(s)}</b>` : ''}<i class="ti ti-chevron-right" style="color:#cbd5e1"></i></div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin proveedores</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosProvs'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:430px;max-height:86vh;display:flex;flex-direction:column">
@@ -21760,7 +21760,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const totC = compras.reduce((s, c) => s + Number(c.total || 0), 0); const totP = pagos.reduce((s, a) => s + Number(a.monto || 0), 0); const saldo = Math.max(0, totC - totP);
     _cxpByProv[id] = totC; _pagosProvByProv[id] = totP;
     const comprasHTML = compras.length ? compras.map(c => `<div style="display:flex;justify-content:space-between;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span>#${c.numero || ''} <span style="color:#475569">${(c.fecha || '').slice(0, 10)}</span></span><b style="color:#dc2626">${fmt(c.total)}</b></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin compras a crédito</div>';
-    const pagosHTML = pagos.length ? pagos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span></span><button class="btn bsm bghost" onclick="window.nxPosDelPagoProv('${a.id}','${id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos</div>';
+    const pagosHTML = pagos.length ? pagos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><span><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span></span><button aria-label="Eliminar este pago al proveedor" class="btn bsm bghost" onclick="window.nxPosDelPagoProv('${a.id}','${id}')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosProv'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
@@ -21768,7 +21768,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <div style="overflow-y:auto;flex:1">
           <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(p.rnc || '')}${p.telefono ? ' · ' + esc(p.telefono) : ''}</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">${kpi('Comprado (créd.)', fmt(totC), '#0f172a')}${kpi('Pagado', fmt(totP), '#059669')}${kpi('Saldo (CxP)', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}</div>
-          ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px"><div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR PAGO AL PROVEEDOR</div><div style="display:flex;gap:6px"><input id="provPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px"><select id="provPagoMet" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select><button class="btn bc1 bsm" type="button" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-plus"></i></button></div></div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px">✓ Sin deuda</div>'}
+          ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px"><div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR PAGO AL PROVEEDOR</div><div style="display:flex;gap:6px"><input id="provPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px"><select id="provPagoMet" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select><button aria-label="Registrar un pago al proveedor" class="btn bc1 bsm" type="button" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-plus"></i></button></div></div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px">✓ Sin deuda</div>'}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">COMPRAS A CRÉDITO (${compras.length})</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${comprasHTML}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">PAGOS (${pagos.length})</div>
@@ -21809,7 +21809,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   // ── TAB: CAJA (apertura / arqueo / cierre) ──
   function renderCaja() {
     try { window.nxPfEnsureCSS(); } catch (e) {}
-    const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? 'var(--pf-red)' : Number(c.descuadre) > 0 ? 'var(--pf-orange)' : 'var(--pf-green)'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--pf-txt3);font-size:11px;padding:14px">Sin cierres aún</td></tr>';
+    const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? 'var(--pf-red)' : Number(c.descuadre) > 0 ? 'var(--pf-orange)' : 'var(--pf-green)'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--pf-txt3);font-size:11px;padding:14px">Sin cierres aún</td></tr>';
     const histo = `<div style="font-size:11px;font-weight:800;color:var(--pf-txt2);margin:14px 0 4px">CIERRES RECIENTES</div><div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Fecha cierre</th><th style="text-align:right">Esperado</th><th style="text-align:right">Descuadre</th></tr></thead><tbody>${cierresHTML}</tbody></table></div>`;
     if (!_caja) {
       return `<div class="nxPf nxCajaWrap"><div class="cajaCard" style="max-width:420px">
@@ -21819,7 +21819,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         </div>${histo}</div>`;
     }
     const tt = _cajaTot || { efe: 0, tar: 0, tra: 0, cre: 0, abEfe: 0, ent: 0, sal: 0, esperado: Number(_caja.monto_inicial || 0), movs: [], nventas: 0 };
-    const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--pf-line);font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? 'var(--pf-green)' : 'var(--pf-red)'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:var(--pf-txt2)">${esc(m.concepto || m.tipo)}</span></div><button class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-trash" style="color:var(--pf-red)"></i></button></div>`).join('') : '<div style="color:var(--pf-txt3);font-size:11px;padding:10px">Sin movimientos</div>';
+    const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--pf-line);font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? 'var(--pf-green)' : 'var(--pf-red)'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:var(--pf-txt2)">${esc(m.concepto || m.tipo)}</span></div><button aria-label="Eliminar este movimiento de caja" class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-trash" style="color:var(--pf-red)"></i></button></div>`).join('') : '<div style="color:var(--pf-txt3);font-size:11px;padding:10px">Sin movimientos</div>';
     return `<div class="nxPf nxCajaWrap"><div class="cajaCard">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:var(--pf-green);font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:var(--pf-txt2)">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
         <div class="kpirow" style="margin-bottom:10px">
@@ -22108,7 +22108,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   function ctaUltMov() {
     const list = (_asientos || []).slice(0, 6);
     if (!list.length) return '<div class="emptyrow">Sin movimientos registrados.</div>';
-    return list.map(a => { const ls = asLineas(a); const td = ls.reduce((s, l) => s + Number(l.debito || 0), 0); const orig = (a.tipo && a.tipo !== 'manual') ? a.tipo : ''; return `<div class="ctamov" onclick="window.nxCtaTab('diario')"><div class="mi"><div class="mt">${esc(a.concepto || 'Asiento')}</div><div class="md">${a.numero ? esc(a.numero) + ' · ' : ''}${fechaDMY(a.fecha)}${orig ? ' · ' + esc(orig) : ''}</div></div><div class="mv">${fmt(td)}</div></div>`; }).join('');
+    return list.map(a => { const ls = asLineas(a); const td = ls.reduce((s, l) => s + Number(l.debito || 0), 0); const orig = (a.tipo && a.tipo !== 'manual') ? a.tipo : ''; return `<div class="ctamov" onclick="window.nxCtaTab('diario')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="mi"><div class="mt">${esc(a.concepto || 'Asiento')}</div><div class="md">${a.numero ? esc(a.numero) + ' · ' : ''}${fechaDMY(a.fecha)}${orig ? ' · ' + esc(orig) : ''}</div></div><div class="mv">${fmt(td)}</div></div>`; }).join('');
   }
   function ctaResumen() {
     const s = saldosCta();
@@ -22147,7 +22147,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <td style="font-weight:600">${esc(c.nombre)}</td>
         <td><span class="nxCtaTipo nxCtaTipo-${c.tipo}">${TIPO_LBL[c.tipo] || c.tipo}</span></td>
         <td style="text-align:center;font-size:11px;color:#475569">${c.naturaleza === 'deudora' ? 'Deudora' : 'Acreedora'}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bc1" onclick="window.nxCtaEditCuenta('${c.id}')"><i class="ti ti-edit"></i></button></td>
+        <td style="text-align:right;white-space:nowrap"><button aria-label="Editar esta cuenta contable" class="btn bsm bc1" onclick="window.nxCtaEditCuenta('${c.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
     return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <button class="btn bsm bc1" type="button" onclick="window.nxCtaNuevaCuenta()"><i class="ti ti-plus"></i> Nueva cuenta</button>
@@ -22426,7 +22426,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <select data-asc="${i}" onchange="window.nxAsTotals()">${asientoCtaOpts(l.cuenta_id)}</select>
         <input data-asd="${i}" inputmode="numeric" placeholder="Debe" value="${l.debito || ''}" oninput="window.nxAsTotals()">
         <input data-ash="${i}" inputmode="numeric" placeholder="Haber" value="${l.credito || ''}" oninput="window.nxAsTotals()">
-        <button class="nxPosX" type="button" onclick="window.nxAsDelLinea(${i})"><i class="ti ti-x"></i></button>
+        <button aria-label="Quitar esta línea" class="nxPosX" type="button" onclick="window.nxAsDelLinea(${i})"><i class="ti ti-x"></i></button>
       </div>`).join('');
     pintarAsTot();
   }
@@ -22661,7 +22661,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <td class="nxFacCant"><input inputmode="numeric" value="${l.cantidad}" onchange="window.nxCotLinea(${i},'cantidad',this.value)"></td>
         <td class="nxFacPre"><input inputmode="numeric" value="${Math.round(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)"></td>
         <td class="nxFacImp">${fmt(lineImporte(l))}</td>
-        <td class="nxFacDel"><button onclick="window.nxCotDel(${i})"><i class="ti ti-x"></i></button></td>
+        <td class="nxFacDel"><button aria-label="Quitar este producto" onclick="window.nxCotDel(${i})"><i class="ti ti-x"></i></button></td>
       </tr>`).join('');
     wrap.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl" style="min-width:0"><thead><tr><th>Descripción</th><th style="text-align:right">Cant.</th><th style="text-align:right">Precio</th><th style="text-align:right">Importe</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
     const tt = cotTotales(_cotEdit.lineas); const t = document.getElementById('cotTot');
@@ -22825,7 +22825,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const p = _prods.find(x => String(x.id) === String(_invProdSel));
       const filas = _invProdMovs.length ? _invProdMovs.map(movFila).join('') : '<tr><td colspan="6" style="text-align:center;padding:18px;color:#475569;font-size:12px">Sin movimientos registrados (el kardex empieza desde ahora).</td></tr>';
       const porAlm = _almacenes.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${_almacenes.map(a => `<span class="nxAlmChip">${esc(a.nombre)}: <b>${fmtN(stockEnAlm(_invProdSel, a.id))}</b></span>`).join('')}</div>` : '';
-      detalle = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-history"></i> Kardex — ${esc(p ? p.nombre : '')} (stock total: ${fmtN(p ? p.stock : 0)})</span><span style="display:flex;gap:6px"><button class="btn bsm bghost" onclick="window.nxInvKardexImprimir('${_invProdSel}')"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" onclick="window.nxInvCerrarProd()"><i class="ti ti-x"></i></button></span></div>
+      detalle = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-history"></i> Kardex — ${esc(p ? p.nombre : '')} (stock total: ${fmtN(p ? p.stock : 0)})</span><span style="display:flex;gap:6px"><button class="btn bsm bghost" onclick="window.nxInvKardexImprimir('${_invProdSel}')"><i class="ti ti-printer"></i> Imprimir</button><button aria-label="Cerrar" class="btn bsm bghost" onclick="window.nxInvCerrarProd()"><i class="ti ti-x"></i></button></span></div>
         ${porAlm}
         <div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${filas}</tbody></table></div></div>`;
     }
@@ -22836,7 +22836,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const cards = _almacenes.map(a => `<div class="nxAlmCard"><div style="min-width:0"><b>${esc(a.nombre)}</b>${a.es_principal ? ' <span class="nxEntRol">Principal</span>' : ''}<div style="font-size:10px;color:#475569">${esc(a.direccion || '')}</div></div><div style="text-align:right;white-space:nowrap"><div style="font-weight:800;color:#0d9488">${fmtN(almTotalUnidades(a.id))}</div><div style="font-size:9px;color:#94a3b8">unidades</div></div></div>`).join('');
       almSec = `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit" style="justify-content:space-between"><span><i class="ti ti-building-warehouse"></i> Almacenes</span><span style="display:flex;gap:6px">${_almacenes.length > 1 ? '<button class="btn bsm bc1" onclick="window.nxAlmTransferir()"><i class="ti ti-transfer"></i> Transferencia</button>' : ''}<button class="btn bsm bghost" onclick="window.nxAlmNuevo()"><i class="ti ti-plus"></i> Almacén</button></span></div><div class="nxAlmGrid">${cards}</div></div>`;
     }
-    const bajosHTML = bajos.length ? `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit"><i class="ti ti-alert-triangle" style="color:#ea580c"></i> Bajo stock (${bajos.length})</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Stock</th><th style="text-align:right">Mínimo</th><th></th></tr></thead><tbody>${bajos.map(p => `<tr><td>${esc(p.nombre)}</td><td style="text-align:right;font-weight:700;color:${Number(p.stock || 0) <= 0 ? '#dc2626' : '#ea580c'}">${fmtN(p.stock)}</td><td style="text-align:right;color:#475569">${fmtN(p.stock_min)}</td><td style="text-align:right"><button class="btn bsm bc1" onclick="window.nxInvAjustarProd('${p.id}')"><i class="ti ti-adjustments"></i></button></td></tr>`).join('')}</tbody></table></div></div>` : '';
+    const bajosHTML = bajos.length ? `<div class="nxRepCard" style="margin-bottom:12px"><div class="nxRepTit"><i class="ti ti-alert-triangle" style="color:#ea580c"></i> Bajo stock (${bajos.length})</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Producto</th><th style="text-align:right">Stock</th><th style="text-align:right">Mínimo</th><th></th></tr></thead><tbody>${bajos.map(p => `<tr><td>${esc(p.nombre)}</td><td style="text-align:right;font-weight:700;color:${Number(p.stock || 0) <= 0 ? '#dc2626' : '#ea580c'}">${fmtN(p.stock)}</td><td style="text-align:right;color:#475569">${fmtN(p.stock_min)}</td><td style="text-align:right"><button aria-label="Ajustar el inventario de este artículo" class="btn bsm bc1" onclick="window.nxInvAjustarProd('${p.id}')"><i class="ti ti-adjustments"></i></button></td></tr>`).join('')}</tbody></table></div></div>` : '';
     const recientes = _invMovs.length ? `<div class="nxRepCard"><div class="nxRepTit"><i class="ti ti-arrows-exchange"></i> Movimientos recientes</div><div class="tw" style="font-size:11.5px"><table style="width:100%"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock</th><th>Ref.</th></tr></thead><tbody>${_invMovs.slice(0, 60).map(movFila).join('')}</tbody></table></div></div>` : '<div style="text-align:center;color:#475569;font-size:12px;padding:20px">Aún no hay movimientos. Se registran al vender, comprar, devolver o ajustar.</div>';
     return `<div class="nxPf nxInvWrap"><div class="kpirow" style="margin-bottom:12px">
         ${kpi('Productos', fmtN(prods.length), '#2563eb')}
@@ -23008,7 +23008,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <td class="nxFacDesc">${esc(l.nombre)}</td>
         <td class="nxFacExi"><span${falta ? ' class="nxFacExi0"' : ''}>${fmtN(disp)}</span></td>
         <td class="nxFacCant"><input inputmode="numeric" value="${l.cant}" onchange="window.nxTransCant(${i},this.value)" style="${falta ? 'border-color:#dc2626' : ''}"></td>
-        <td class="nxFacDel"><button onclick="window.nxTransDel(${i})"><i class="ti ti-x"></i></button></td>
+        <td class="nxFacDel"><button aria-label="Quitar esta línea" onclick="window.nxTransDel(${i})"><i class="ti ti-x"></i></button></td>
       </tr>`; }).join('');
     wrap.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl" style="min-width:0"><thead><tr><th>Artículo</th><th style="text-align:center">Disp. origen</th><th style="text-align:right">Cantidad</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
@@ -23406,7 +23406,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <td><div style="font-weight:700;font-size:12.5px">${esc(e.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div></td>
         <td style="text-align:right;font-weight:700">${fmt(e.salario)}</td>
         <td style="text-align:center;font-size:10.5px;color:#475569">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>
+        <td style="text-align:right;white-space:nowrap"><button aria-label="Editar este empleado" class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin empleados. Toca "Nuevo empleado".</td></tr>';
     return `<div class="kpirow" style="margin-bottom:12px">
         ${kpiPf('Empleados activos', activos.length, 'var(--pf-purple)')}
@@ -23420,7 +23420,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (_nominaSel) return rhNominaDetalle(_nominaSel);
     const filas = _nominas.length ? _nominas.map(n => {
       const est = n.estado === 'pagada' ? '<span style="font-size:9px;font-weight:800;color:#16a34a;background:#f0fdf4;padding:2px 7px;border-radius:6px">PAGADA</span>' : n.estado === 'anulada' ? '<span style="font-size:9px;font-weight:800;color:#dc2626;background:#fef2f2;padding:2px 7px;border-radius:6px">ANULADA</span>' : '<span style="font-size:9px;font-weight:800;color:#ea580c;background:#fff7ed;padding:2px 7px;border-radius:6px">BORRADOR</span>';
-      return `<tr style="cursor:pointer" onclick="window.nxRhVerNomina('${n.id}')">
+      return `<tr style="cursor:pointer" onclick="window.nxRhVerNomina('${n.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
         <td><div style="font-weight:700;font-size:12.5px">${esc(n.periodo || n.descripcion || 'Nómina')}</div><div style="font-size:10px;color:#475569">${fechaDMY(n.fecha)} · ${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal' })[n.tipo] || n.tipo || '')}</div></td>
         <td style="text-align:center">${est}</td>
         <td style="text-align:right;font-weight:700">${fmt(n.total_neto)}</td>
@@ -23439,7 +23439,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
         <td style="text-align:right">${Number(l.bonos) ? fmt(l.bonos) : '—'}</td>
         <td style="text-align:right;color:#dc2626">${fmt(Number(l.sfs) + Number(l.afp) + Number(l.isr) + Number(l.otras_deducciones))}</td>
         <td style="text-align:right;font-weight:800">${fmt(l.neto)}</td>
-        <td style="text-align:right"><button class="btn bsm bghost" onclick="window.nxRhRecibo('${n.id}','${l.empleado_id || ''}')"><i class="ti ti-printer"></i></button></td>
+        <td style="text-align:right"><button aria-label="Imprimir el recibo de pago" class="btn bsm bghost" onclick="window.nxRhRecibo('${n.id}','${l.empleado_id || ''}')"><i class="ti ti-printer"></i></button></td>
       </tr>`).join('');
     return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
         <button class="btn bsm bghost" type="button" onclick="window.nxRhVolver()"><i class="ti ti-arrow-left"></i> Volver</button>
@@ -23497,7 +23497,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <div class="fr"><label>Activo</label><select id="emA"><option value="1"${d.activo !== false ? ' selected' : ''}>Sí (activo)</option><option value="0"${d.activo === false ? ' selected' : ''}>No (inactivo)</option></select></div>
         </div>
         <div class="fe" style="margin-top:8px;gap:8px">
-          ${e ? `<button class="btn bc3 bsm" type="button" onclick="window.nxRhDelEmp('${e.id}')" style="margin-right:auto"><i class="ti ti-trash"></i></button>` : ''}
+          ${e ? `<button aria-label="Eliminar este empleado" class="btn bc3 bsm" type="button" onclick="window.nxRhDelEmp('${e.id}')" style="margin-right:auto"><i class="ti ti-trash"></i></button>` : ''}
           <button class="btn bghost" type="button" onclick="document.getElementById('nxEmpForm').remove()">Cancelar</button>
           <button class="btn bc1" type="button" onclick="window.nxRhGuardarEmp('${e ? e.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
         </div>
@@ -23698,7 +23698,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (st.tipo === 'pin') {
       const disp = st.pin ? st.pin.split('').map(() => '●').join(' ') : 'Sin PIN';
       const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button type="button" class="nxClaveKey" onclick="window.nxClavePin('${key}',${n})">${n}</button>`).join('');
-      return `<div class="nxClavePinDisp">${disp}</div><div class="nxClaveKeypad">${nums}<button type="button" class="nxClaveKey" onclick="window.nxClavePinDel('${key}')"><i class="ti ti-backspace"></i></button><button type="button" class="nxClaveKey" onclick="window.nxClavePin('${key}',0)">0</button><button type="button" class="nxClaveKey" onclick="window.nxClaveLimpiar('${key}')"><i class="ti ti-x"></i></button></div>`;
+      return `<div class="nxClavePinDisp">${disp}</div><div class="nxClaveKeypad">${nums}<button aria-label="Borrar el último dígito" type="button" class="nxClaveKey" onclick="window.nxClavePinDel('${key}')"><i class="ti ti-backspace"></i></button><button type="button" class="nxClaveKey" onclick="window.nxClavePin('${key}',0)">0</button><button aria-label="Limpiar el patrón" type="button" class="nxClaveKey" onclick="window.nxClaveLimpiar('${key}')"><i class="ti ti-x"></i></button></div>`;
     }
     if (st.tipo === 'otro') {
       return `<input type="text" class="no-upper" value="${esc(st.otro)}" placeholder="Ej: contraseña, sin clave, solo huella..." oninput="window.nxClaveOtroInput('${key}', this.value)" style="width:100%">`;
@@ -23802,7 +23802,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       return `<div class="nxRepCol"><div class="nxRepColH" style="--rc:${e[2]}"><span>${e[1]}</span><b>${activas.filter(r => r.estado === e[0]).length}</b></div>${cards || '<div class="nxRepEmpty">—</div>'}</div>`;
     }).join('');
     const entregadasHTML = _repVista === 'entregadas'
-      ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => { const g = garantiaInfo(r); return `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}${g ? ` · <span style="color:${g.vigente ? '#16a34a' : '#dc2626'};font-weight:700">garantía ${g.vigente ? 'hasta ' + g.fecha : 'vencida'}</span>` : ''}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`; }).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
+      ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => { const g = garantiaInfo(r); return `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}${g ? ` · <span style="color:${g.vigente ? '#16a34a' : '#dc2626'};font-weight:700">garantía ${g.vigente ? 'hasta ' + g.fecha : 'vencida'}</span>` : ''}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`; }).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
       : '';
     return `<div class="nxPf nxRepWrapK"><div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar por cliente, equipo, IMEI o número…', oninput: 'window.nxRepBuscar(this.value)' })}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
@@ -25210,7 +25210,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const pags = Math.max(1, Math.ceil(lista.length / 10));
     if (_fhPage >= pags) _fhPage = pags - 1;
     const pagina = lista.slice(_fhPage * 10, _fhPage * 10 + 10);
-    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();window.nxFacVerVenta('${v.id}')">
+    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();window.nxFacVerVenta('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${(v.anulada || v.estado === 'anulada') ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
         <b style="font-size:12.5px">${fmt(v.total)}</b>${!(v.anulada || v.estado === 'anulada') ? `<button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="event.stopPropagation();window.nxDocCadena('pos_ventas','${v.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch" style="font-size:13px"></i></button>` : ''}<span style="color:#cbd5e1;font-weight:800">&rsaquo;</span></div>`).join('')
@@ -25676,8 +25676,8 @@ try {
         '<div class="nxRfMeta"><span><i class="ti ti-ticket"></i> ' + o.n + '/' + total + '</span><span><i class="ti ti-cash"></i> ' + fmt(o.monto) + '</span><span><i class="ti ti-calendar"></i> ' + (r.fecha_sorteo ? fechaDMY(r.fecha_sorteo) : 'sin fecha') + '</span><span><i class="ti ti-coin"></i> ' + fmt(r.precio_boleto) + '</span></div>' +
         (r.mostrar_progreso === false ? '<div class="nxRfHid"><i class="ti ti-eye-off"></i> Barra de vendidos oculta</div>' : '<div class="nxRfBar"><div style="width:' + pct + '%"></div></div>') +
         '<div class="nxRfAct"><button class="btn bsm bc1" type="button" onclick="window.nxRifaAbrir(\'' + r.id + '\')"><i class="ti ti-layout-grid"></i> Gestionar</button>' +
-        '<button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button>' +
-        '<button class="btn bsm bghost" type="button" onclick="window.nxRifaEliminar(\'' + r.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
+        '<button aria-label="Editar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button>' +
+        '<button aria-label="Eliminar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEliminar(\'' + r.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
         '</div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:13px;padding:34px">Aún no hay rifas.<br>Toca <b>"Nueva rifa"</b> para crear la primera.</div>';
 
@@ -25960,7 +25960,7 @@ try {
       return '<button type="button" class="rfN ' + cls + '" onclick="window.nxRifaNum(\'' + s + '\')">' + s + '</button>';
     }).join('');
     var board = '<div class="rfBoard">' + (slice.length ? cells : '<div style="grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px">Sin números con ese filtro</div>') + '</div>';
-    var pager = pages > 1 ? '<div class="rfPager"><button class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(-1)"' + (_tabPage <= 0 ? ' disabled' : '') + '><i class="ti ti-chevron-left"></i></button><span>Página ' + (_tabPage + 1) + ' / ' + pages + '</span><button class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(1)"' + (_tabPage >= pages - 1 ? ' disabled' : '') + '><i class="ti ti-chevron-right"></i></button></div>' : '';
+    var pager = pages > 1 ? '<div class="rfPager"><button aria-label="Página anterior" class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(-1)"' + (_tabPage <= 0 ? ' disabled' : '') + '><i class="ti ti-chevron-left"></i></button><span>Página ' + (_tabPage + 1) + ' / ' + pages + '</span><button class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(1)"' + (_tabPage >= pages - 1 ? ' disabled' : '') + '><i class="ti ti-chevron-right"></i></button></div>' : '';
     return board + pager;
   }
 
@@ -25972,8 +25972,8 @@ try {
     if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
     view.innerHTML = '<div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
-      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()" title="Empleados / vendedores de esta rifa" aria-label="Empleados / vendedores de esta rifa"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes" aria-label="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra" aria-label="Link público de compra"><i class="ti ti-link"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
-      '<div class="rfKpis"><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'\',\'Vendidos\')"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'por_confirmar\',\'Por confirmar\')"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()" title="Empleados / vendedores de esta rifa" aria-label="Empleados / vendedores de esta rifa"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes" aria-label="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra" aria-label="Link público de compra"><i class="ti ti-link"></i></button><button aria-label="Editar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
+      '<div class="rfKpis"><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'\',\'Vendidos\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'por_confirmar\',\'Por confirmar\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       '<div class="rfCtl">' + rfBuscador({ id: 'rfTabQ', inputmode: 'numeric', value: _tabQ || '', placeholder: 'Buscar número…', oninput: 'window.nxRifaBuscar(this.value)' }) + '<button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
       '<div class="rfLegend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#fde68a"></i>Por confirmar</span><span><i class="d" style="background:#c7d2fe"></i>Confirmado</span><span><i class="d" style="background:#cbd5e1"></i>Apartado</span></div>' +
@@ -26083,7 +26083,7 @@ try {
     var waHref = boletoWaHref(b, rg);
     var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:13px;color:#334155;line-height:1.7;padding:2px 2px 8px">' +
       '<div style="font-size:15px;font-weight:800;color:#0f172a">' + esc(b.comprador_nombre || '—') + '</div>' +
       (b.comprador_telefono ? '<div><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> ' + esc(b.comprador_telefono) + '</div>' : '') +
@@ -26112,7 +26112,7 @@ try {
     cerrarModal('nxRbGest'); cerrarModal('nxCambNum');
     var ov = document.createElement('div'); ov.id = 'nxCambNum'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:360px"><div class="mt"><span><i class="ti ti-arrows-exchange"></i> Cambiar número</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxCambNum\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:360px"><div class="mt"><span><i class="ti ti-arrows-exchange"></i> Cambiar número</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxCambNum\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:12.5px;color:#475569;padding:2px 2px 4px">Si el cliente no quiere ese número, asígnale otro <b>disponible</b>. Conserva el comprador y el pago; solo cambia el número.</div>' +
       '<div style="font-size:12.5px;color:#475569;padding:2px 2px 10px">Boleto actual: <b style="font-family:var(--mono);color:#4338ca">' + esc(String(b.numero)) + '</b> · ' + esc(b.comprador_nombre || '—') + '</div>' +
       '<div class="fr"><label>Nuevo número (0 a ' + (total ? total - 1 : 0) + ')</label><input id="cnNum" inputmode="numeric" maxlength="' + dig + '" placeholder="' + ('0').repeat(dig) + '" value="" style="font-family:var(--mono);letter-spacing:2px"></div>' +
@@ -26220,7 +26220,7 @@ try {
     var link = location.origin + '/rifa.html?id=' + r.id;
     var ov = document.createElement('div'); ov.id = 'nxLink'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-link"></i> Link público de compra</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxLink\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-link"></i> Link público de compra</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxLink\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:12px;color:#475569;margin-bottom:8px">Comparte este enlace para que tus clientes compren su boleto solos (eligen número y suben su pago):</div>' +
       '<input id="lkInp" readonly value="' + esc(link) + '" onclick="this.select()" style="width:100%;height:42px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;background:#f8fafc;color:#334155">' +
       '<div class="fe" style="margin-top:10px;gap:8px;flex-wrap:wrap"><button class="btn bsm bghost" type="button" onclick="window.nxLinkCopiar()"><i class="ti ti-copy"></i> Copiar</button><a class="btn bsm bghost" href="' + esc(link) + '" target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Abrir</a><button class="btn bsm bc1" type="button" onclick="window.nxLinkShare()"><i class="ti ti-brand-whatsapp"></i> Compartir</button></div></div>';
@@ -26233,7 +26233,7 @@ try {
     cerrarModal('nxVou');
     var ov = document.createElement('div'); ov.id = 'nxVou'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-receipt"></i> Comprobante · ' + esc(String(b.numero)) + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxVou\').remove()"><i class="ti ti-x"></i></button></div><div style="overflow:auto;flex:1"><img src="' + esc(b.voucher) + '" style="width:100%;border-radius:10px;display:block" alt="Comprobante de pago"></div></div>';
+    ov.innerHTML = '<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-receipt"></i> Comprobante · ' + esc(String(b.numero)) + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxVou\').remove()"><i class="ti ti-x"></i></button></div><div style="overflow:auto;flex:1"><img src="' + esc(b.voucher) + '" style="width:100%;border-radius:10px;display:block" alt="Comprobante de pago"></div></div>';
     document.body.appendChild(ov);
   };
 
@@ -26246,7 +26246,7 @@ try {
     var prev = r.numero_ganador || '';
     var ov = document.createElement('div'); ov.id = 'nxSorteo'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-trophy"></i> Sorteo · ' + esc(r.nombre || '') + '</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxSorteo\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-trophy"></i> Sorteo · ' + esc(r.nombre || '') + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxSorteo\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div class="fr"><label>Número ganador (el que salió en la lotería)</label><input id="rsNum" inputmode="numeric" maxlength="' + dig + '" value="' + esc(prev) + '" placeholder="' + new Array(dig + 1).join('0') + '" style="font-family:var(--mono);font-size:22px;text-align:center;letter-spacing:5px;font-weight:800"></div>' +
       '<button class="btn bc1" type="button" style="width:100%" onclick="window.nxRifaBuscarGanador()"><i class="ti ti-search"></i> Buscar ganador</button>' +
       '<div id="rsResult" style="margin-top:12px"></div>' +
@@ -26304,11 +26304,11 @@ try {
     cerrarModal('nxCtas');
     var lista = _cuentas.length ? _cuentas.map(function (c) {
       var clase = c.clase === 'ahorro' ? 'Ahorro' : (c.clase === 'corriente' ? 'Corriente' : '');
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '(sin banco)') + (clase ? ' · ' + clase : '') + '</b><span>' + esc(c.numero_cuenta || '') + (c.titular ? ' · ' + esc(c.titular) : '') + (c.rnc_cedula ? ' · ' + esc(c.rnc_cedula) : '') + '</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxCuentaForm(\'' + c.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxCuentaEliminar(\'' + c.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '(sin banco)') + (clase ? ' · ' + clase : '') + '</b><span>' + esc(c.numero_cuenta || '') + (c.titular ? ' · ' + esc(c.titular) : '') + (c.rnc_cedula ? ' · ' + esc(c.rnc_cedula) : '') + '</span></div></div><div style="display:flex;gap:4px"><button aria-label="Editar esta cuenta de cobro" class="btn bsm bghost" type="button" onclick="window.nxCuentaForm(\'' + c.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta cuenta de cobro" class="btn bsm bghost" type="button" onclick="window.nxCuentaEliminar(\'' + c.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin cuentas. Agrega tus cuentas de banco, tarjeta o pago móvil para cobrar.</div>';
     var ov = document.createElement('div'); ov.id = 'nxCtas'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-building-bank"></i> Cuentas de cobro</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxCtas\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-building-bank"></i> Cuentas de cobro</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxCtas\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxCuentaForm(\'\')"><i class="ti ti-plus"></i> Nueva cuenta</button>' +
       '<div style="overflow-y:auto;flex:1">' + lista + '</div></div>';
     document.body.appendChild(ov);
@@ -26359,11 +26359,11 @@ try {
     var mios = _paquetes.filter(function (p) { return String(p.rifa_id) === String(r.id); });
     var lista = mios.length ? mios.map(function (p) {
       var normal = pb * Number(p.cantidad || 0), ah = normal - Number(p.precio || 0);
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-package" style="color:#7c3aed"></i><div style="min-width:0"><b>' + Number(p.cantidad || 0) + ' boletos · ' + fmt(p.precio) + '</b><span>' + (p.etiqueta ? esc(p.etiqueta) + ' · ' : '') + (ah > 0 ? 'ahorra ' + fmt(ah) : 'sin descuento') + '</span></div></div><div style="display:flex;gap:4px"><button class="btn bsm bghost" type="button" onclick="window.nxPaqForm(\'' + p.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPaqEliminar(\'' + p.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-package" style="color:#7c3aed"></i><div style="min-width:0"><b>' + Number(p.cantidad || 0) + ' boletos · ' + fmt(p.precio) + '</b><span>' + (p.etiqueta ? esc(p.etiqueta) + ' · ' : '') + (ah > 0 ? 'ahorra ' + fmt(ah) : 'sin descuento') + '</span></div></div><div style="display:flex;gap:4px"><button aria-label="Editar este combo" class="btn bsm bghost" type="button" onclick="window.nxPaqForm(\'' + p.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este combo" class="btn bsm bghost" type="button" onclick="window.nxPaqEliminar(\'' + p.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin paquetes. Crea combos como "5 boletos por RD$400" para vender más.</div>';
     var ov = document.createElement('div'); ov.id = 'nxPaqs'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-package"></i> Combos / paquetes</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxPaqs\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-package"></i> Combos / paquetes</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxPaqs\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:11.5px;color:#64748b;margin-bottom:8px">Boleto suelto: <b>' + fmt(pb) + '</b>. Los paquetes aparecen en la página pública de esta rifa.</div>' +
       '<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxPaqForm(\'\')"><i class="ti ti-plus"></i> Nuevo paquete</button>' +
       '<div style="overflow-y:auto;flex:1">' + lista + '</div></div>';
@@ -26419,7 +26419,7 @@ try {
     if (!rows) rows = '<div style="text-align:center;color:#475569;font-size:12px;padding:16px">Aún no hay cobros confirmados.</div>';
     var ov = document.createElement('div'); ov.id = 'nxPorCta'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:400px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-building-bank"></i> Recaudado por cuenta</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxPorCta\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:400px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-building-bank"></i> Recaudado por cuenta</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxPorCta\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:11.5px;color:#475569;margin-bottom:8px">' + esc(r.nombre || '') + ' · solo pagos confirmados</div>' +
       '<div style="overflow-y:auto;flex:1">' + rows + '</div>' +
       '<div style="border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:800;font-size:13px"><span>Total confirmado</span><span style="color:#16a34a">' + fmt(totalGen) + '</span></div></div>';
@@ -26437,11 +26437,11 @@ try {
     var vs = vendsRifa();
     var lista = vs.length ? vs.map(function (v) {
       var cod = (v.codigo || '').toUpperCase();
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span>' + (cod ? '<span style="display:block;margin-top:3px"><i class="ti ti-key" style="font-size:12px"></i> Código: <b style="font-family:var(--mono);letter-spacing:1px;color:#4f46e5">' + esc(cod) + '</b></span>' : '') + '</div></div><div style="display:flex;gap:4px">' + (cod ? '<button class="btn bsm bghost" type="button" title="Compartir acceso" onclick="window.nxVendLink(\'' + v.id + '\')" aria-label="Compartir acceso"><i class="ti ti-share" style="color:#16a34a"></i></button>' : '') + '<button class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span>' + (cod ? '<span style="display:block;margin-top:3px"><i class="ti ti-key" style="font-size:12px"></i> Código: <b style="font-family:var(--mono);letter-spacing:1px;color:#4f46e5">' + esc(cod) + '</b></span>' : '') + '</div></div><div style="display:flex;gap:4px">' + (cod ? '<button class="btn bsm bghost" type="button" title="Compartir acceso" onclick="window.nxVendLink(\'' + v.id + '\')" aria-label="Compartir acceso"><i class="ti ti-share" style="color:#16a34a"></i></button>' : '') + '<button aria-label="Editar este vendedor" class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este vendedor" class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin vendedores. Agrega a tu equipo para asignar ventas y calcular comisiones.</div>';
     var ov = document.createElement('div'); ov.id = 'nxVends'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-users"></i> Vendedores</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxVends\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-users"></i> Vendedores</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxVends\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:12px;color:#475569;font-weight:700;margin:-2px 0 9px;display:flex;align-items:center;gap:5px"><i class="ti ti-ticket" style="color:#4f46e5"></i> ' + esc((r && r.nombre) || 'Rifa') + '</div>' +
       '<button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxVendForm(\'\')"><i class="ti ti-plus"></i> Nuevo vendedor</button>' +
       '<div style="overflow-y:auto;flex:1">' + lista + '</div></div>';
@@ -26507,7 +26507,7 @@ try {
     if (!rows) rows = '<div style="text-align:center;color:#475569;font-size:12px;padding:16px">Aún no hay ventas confirmadas con vendedor.</div>';
     var ov = document.createElement('div'); ov.id = 'nxLiq'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-users"></i> Liquidación de vendedores</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxLiq\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-users"></i> Liquidación de vendedores</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxLiq\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:11.5px;color:#475569;margin-bottom:8px">' + esc(r.nombre || '') + ' · solo pagos confirmados</div>' +
       '<div style="overflow-y:auto;flex:1">' + rows + '</div></div>';
     document.body.appendChild(ov);
@@ -26535,7 +26535,7 @@ try {
     if (!rows) rows = '<div style="text-align:center;color:#475569;font-size:12px;padding:16px">Aún no hay compras registradas.</div>';
     var ov = document.createElement('div'); ov.id = 'nxMayor'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-crown"></i> Mayor comprador</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxMayor\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-crown"></i> Mayor comprador</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxMayor\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="font-size:11.5px;color:#475569;margin-bottom:8px">' + esc(r.nombre || '') + ' · quién más boletos ha comprado</div>' +
       '<div style="overflow-y:auto;flex:1">' + rows + '</div></div>';
     document.body.appendChild(ov);
@@ -26547,7 +26547,7 @@ try {
     function item(fn, ic, lbl, col) { return '<button class="repItem" type="button" onclick="document.getElementById(\'nxReps\').remove();window.' + fn + '()"><span class="repIco" style="background:' + col + '22;color:' + col + '"><i class="ti ' + ic + '"></i></span><span>' + lbl + '</span><i class="ti ti-chevron-right" style="margin-left:auto;color:#cbd5e1"></i></button>'; }
     var ov = document.createElement('div'); ov.id = 'nxReps'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-chart-bar"></i> Reportes</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxReps\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-chart-bar"></i> Reportes</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxReps\').remove()"><i class="ti ti-x"></i></button></div>' +
       item('nxRifaTickets', 'ti-list-details', 'Lista de tickets', '#4f46e5') +
       item('nxRifaStats', 'ti-chart-histogram', 'Estadísticas', '#0891b2') +
       item('nxRifaPorCuenta', 'ti-building-bank', 'Recaudado por cuenta', '#16a34a') +
@@ -26577,7 +26577,7 @@ try {
     if (!list.length) return '<tr><td colspan="7" style="text-align:center;color:#475569;padding:18px;font-size:12px">Sin tickets con ese filtro.</td></tr>';
     return list.map(function (b) {
       var e = tkEstInfo(b);
-      return '<tr onclick="window.nxTkOpen(\'' + b.id + '\')" style="cursor:pointer"><td class="tkNumC">' + esc(String(b.numero)) + '</td>' +
+      return '<tr onclick="window.nxTkOpen(\'' + b.id + '\')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><td class="tkNumC">' + esc(String(b.numero)) + '</td>' +
         '<td><b>' + esc(b.comprador_nombre || '—') + '</b><div class="tkSub">' + esc(b.comprador_telefono || '') + (b.vendedor_nombre ? ' · ' + esc(b.vendedor_nombre) : '') + '</div></td>' +
         '<td class="tkNw">' + esc(fechaTk(b.created_at)) + '</td>' +
         '<td>' + esc(pagoTk(b)) + '</td>' +
@@ -26596,7 +26596,7 @@ try {
     cerrarModal('nxTks');
     var ov = document.createElement('div'); ov.id = 'nxTks'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-list-details"></i> ' + esc(ttl) + ' (' + n + ')</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxTks\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-list-details"></i> ' + esc(ttl) + ' (' + n + ')</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxTks\').remove()"><i class="ti ti-x"></i></button></div>' +
       (_tkEst === 'por_confirmar' && n ? '<div style="font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:7px 10px;margin-bottom:9px">Toca un boleto para ver el voucher y <b>Confirmar</b> el pago.</div>' : '') +
       '<div style="margin-bottom:9px">' + rfBuscador({ id: 'tkQ', placeholder: 'Buscar número, comprador o teléfono…', oninput: 'window.nxTkBuscar(this.value)' }) + '</div>' +
       '<div class="tw" style="overflow:auto;flex:1"><table class="tkTbl"><thead><tr><th>No.</th><th>Participante</th><th>Fecha</th><th>Pago</th><th>Monto</th><th>Estado</th><th>Modo</th></tr></thead><tbody id="tkBody">' + tkRowsHTML('') + '</tbody></table></div></div>';
@@ -26635,7 +26635,7 @@ try {
     function stRow(lbl, n, col) { var p = tickets ? Math.round(n / tickets * 100) : 0; return '<div class="stStat"><div class="stStatTop"><span>' + lbl + '</span><b>' + n + ' (' + p + '%)</b></div><div class="stStatBar"><div style="width:' + p + '%;background:' + col + '"></div></div></div>'; }
     var ov = document.createElement('div'); ov.id = 'nxStats'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-chart-histogram"></i> Estadísticas</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxStats\').remove()"><i class="ti ti-x"></i></button></div>' +
+    ov.innerHTML = '<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-chart-histogram"></i> Estadísticas</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxStats\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="overflow-y:auto;flex:1">' +
       '<div class="rfKpis" style="margin-bottom:14px"><div class="rfKpi"><span>Compradores</span><b>' + nComp + '</b></div><div class="rfKpi"><span>Tickets</span><b>' + tickets + '</b></div><div class="rfKpi"><span>Recaudado</span><b style="color:#16a34a">' + fmt(recaudado) + '</b></div></div>' +
       '<div class="stT">Ventas por día (últimos 14)</div><div class="stChart">' + bars + '</div>' +
@@ -26689,7 +26689,7 @@ try {
     var ov = document.createElement('div'); ov.id = 'nxBolView'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = '<div class="modal" style="max-width:340px;max-height:94vh;display:flex;flex-direction:column">' +
-      '<div class="mt"><span><i class="ti ti-ticket"></i> Boleto</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxBolView\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div class="mt"><span><i class="ti ti-ticket"></i> Boleto</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxBolView\').remove()"><i class="ti ti-x"></i></button></div>' +
       '<div style="overflow-y:auto;flex:1;padding:4px 2px 8px">' + bolCardHTML(_bolActual) + '</div>' +
       '<div class="fe" style="gap:7px;flex-wrap:wrap;margin-top:8px"><button class="btn bsm bghost" type="button" onclick="window.nxRifaBoletoImprimir()"><i class="ti ti-printer"></i> Imprimir</button><button class="btn bsm bghost" type="button" onclick="window.nxBolDescargar()"><i class="ti ti-download"></i> Guardar</button><a class="btn bsm bc1" href="' + waHref + '" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar</a></div>' +
       '</div>';
@@ -26825,7 +26825,7 @@ try {
     var prev = document.getElementById('nxSuper'); if (prev) prev.remove();
     var ov = document.createElement('div'); ov.id = 'nxSuper'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:470px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-crown"></i> Panel del Dueño</span><button class="nxBack" type="button" onclick="document.getElementById(\'nxSuper\').remove()"><i class="ti ti-x"></i></button></div><div id="superBody" style="overflow-y:auto;flex:1"><div style="text-align:center;color:#94a3b8;padding:26px;font-size:13px">Cargando todas las empresas…</div></div></div>';
+    ov.innerHTML = '<div class="modal" style="max-width:470px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-crown"></i> Panel del Dueño</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxSuper\').remove()"><i class="ti ti-x"></i></button></div><div id="superBody" style="overflow-y:auto;flex:1"><div style="text-align:center;color:#94a3b8;padding:26px;font-size:13px">Cargando todas las empresas…</div></div></div>';
     document.body.appendChild(ov);
     var orgs = []; try { orgs = await getAPI().post('rpc/superadmin_orgs', {}) || []; } catch (e) { orgs = []; }
     var body = document.getElementById('superBody'); if (!body) return;
@@ -26992,9 +26992,9 @@ try {
   function bodyAgenda() {
     var del = _citas.filter(function (c) { return String(c.fecha).slice(0, 10) === _mdFecha; }).sort(function (a, b) { return String(a.hora || '').localeCompare(String(b.hora || '')); });
     var nav = '<div class="nxMdCard" style="display:flex;align-items:center;gap:8px">' +
-      '<button class="btn bsm bghost" type="button" onclick="window.nxMdFechaMueve(-1)"><i class="ti ti-chevron-left"></i></button>' +
+      '<button aria-label="Día anterior" class="btn bsm bghost" type="button" onclick="window.nxMdFechaMueve(-1)"><i class="ti ti-chevron-left"></i></button>' +
       '<input type="date" value="' + _mdFecha + '" onchange="window.nxMdFechaSet(this.value)" style="flex:1;border:1px solid #cbd5e1;border-radius:10px;padding:8px;font-size:13px;text-align:center">' +
-      '<button class="btn bsm bghost" type="button" onclick="window.nxMdFechaMueve(1)"><i class="ti ti-chevron-right"></i></button>' +
+      '<button aria-label="Día siguiente" class="btn bsm bghost" type="button" onclick="window.nxMdFechaMueve(1)"><i class="ti ti-chevron-right"></i></button>' +
       '<button class="btn bsm bc1" type="button" onclick="window.nxMdCitaNueva()"><i class="ti ti-plus"></i> Cita</button></div>';
     var lista = del.length ? del.map(filaCita).join('') : '<div class="nxMdEmpty"><i class="ti ti-calendar-off"></i>Sin citas el ' + fechaDMY(_mdFecha) + '</div>';
     return nav + lista;
@@ -27038,7 +27038,7 @@ try {
       var ini = (p.nombre || 'P').trim().split(/\s+/).slice(0, 2).map(function (w) { return w[0] || ''; }).join('').toUpperCase();
       var ed = edad(p.fecha_nacimiento);
       var chips = (p.condiciones || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 3).map(function (x) { return '<span class="nxMdChip" style="background:#fff7ed;color:#9a3412">' + esc(x) + '</span>'; }).join('');
-      return '<div class="nxMdRow" style="cursor:pointer" onclick="window.nxMdPacFicha(\'' + p.id + '\')"><div class="nxMdAva">' + esc(ini) + '</div>' +
+      return '<div class="nxMdRow" style="cursor:pointer" onclick="window.nxMdPacFicha(\'' + p.id + '\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="nxMdAva">' + esc(ini) + '</div>' +
         '<div style="flex:1;min-width:0"><div class="nxMdNom">' + esc(p.nombre) + (ed !== '' ? ' <span style="color:#64748b;font-weight:600;font-size:11px">· ' + ed + ' años</span>' : '') + '</div>' +
         '<div class="nxMdSub">' + esc(p.telefono || 'sin teléfono') + (p.ars ? ' · ' + esc(p.ars) : '') + '</div><div>' + chips + '</div></div>' +
         '<i class="ti ti-chevron-right" style="color:#94a3b8"></i></div>';
@@ -27046,7 +27046,7 @@ try {
   }
   function bodyPacientes() {
     return '<div style="display:flex;gap:8px;margin-bottom:10px">' + mdBuscador({ placeholder: 'Buscar por nombre, cédula o teléfono...', value: _mdQ, oninput: 'window.nxMdBuscar(this.value)' }) +
-      '<button class="btn bc1" type="button" style="border-radius:999px;flex:none" onclick="window.nxMdPacNuevo()"><i class="ti ti-user-plus"></i></button></div>' +
+      '<button aria-label="Nuevo paciente" class="btn bc1" type="button" style="border-radius:999px;flex:none" onclick="window.nxMdPacNuevo()"><i class="ti ti-user-plus"></i></button></div>' +
       '<div id="mdPacLista">' + pacsHTML() + '</div>';
   }
   function formPac(p) {
@@ -27091,7 +27091,7 @@ try {
     var ed = edad(p.fecha_nacimiento);
     var hist = _cons.filter(function (c) { return String(c.paciente_id) === String(id); }).slice(0, 12);
     var histH = hist.length ? hist.map(function (c) {
-      return '<div class="nxMdRow" style="cursor:pointer" onclick="window.nxMdConVer(\'' + c.id + '\')"><div style="flex:1"><div class="nxMdNom" style="font-size:12px">' + esc(c.diagnostico || c.motivo || 'Consulta') + '</div><div class="nxMdSub">' + fechaDMY(c.fecha) + (Number(c.precio) ? ' · ' + fmt(c.precio) : '') + '</div></div>' + (c.receta ? '<i class="ti ti-prescription" style="color:#0d9488"></i>' : '') + '</div>';
+      return '<div class="nxMdRow" style="cursor:pointer" onclick="window.nxMdConVer(\'' + c.id + '\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="flex:1"><div class="nxMdNom" style="font-size:12px">' + esc(c.diagnostico || c.motivo || 'Consulta') + '</div><div class="nxMdSub">' + fechaDMY(c.fecha) + (Number(c.precio) ? ' · ' + fmt(c.precio) : '') + '</div></div>' + (c.receta ? '<i class="ti ti-prescription" style="color:#0d9488"></i>' : '') + '</div>';
     }).join('') : '<div class="nxMdEmpty" style="padding:14px"><i class="ti ti-clipboard-off"></i>Sin consultas todavía</div>';
     var info = function (l, v) { return v ? '<div style="margin-bottom:6px"><span style="font-size:9.5px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.4px">' + l + '</span><div style="font-size:12.5px;color:#0f172a">' + esc(v) + '</div></div>' : ''; };
     modal('nxMdMFicha',
@@ -27110,7 +27110,7 @@ try {
   function bodyConsultas() {
     var lst = _cons.slice(0, 60);
     var h = lst.length ? lst.map(function (c) {
-      return '<div class="nxMdRow" style="cursor:pointer" onclick="window.nxMdConVer(\'' + c.id + '\')"><div style="flex:1;min-width:0"><div class="nxMdNom">' + esc(nomPac(c)) + '</div>' +
+      return '<div class="nxMdRow" style="cursor:pointer" onclick="window.nxMdConVer(\'' + c.id + '\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="flex:1;min-width:0"><div class="nxMdNom">' + esc(nomPac(c)) + '</div>' +
         '<div class="nxMdSub">' + esc(c.diagnostico || c.motivo || 'Consulta') + ' · ' + fechaDMY(c.fecha) + '</div></div>' +
         (Number(c.precio) ? '<span class="nxMdChip" style="background:' + (c.pagado ? '#f0fdf4;color:#16a34a' : '#fffbeb;color:#d97706') + '">' + fmt(c.precio) + (c.pagado ? ' ✓' : '') + '</span>' : '') +
         (c.receta ? '<i class="ti ti-prescription" style="color:#0d9488"></i>' : '') + '</div>';
@@ -27340,9 +27340,9 @@ try {
         (ult ? '<span>Último pago: <b>' + String(ult.fecha).slice(0, 10) + '</b> (' + fmt(ult.monto) + ')</span>' : '<span style="color:#94a3b8">Sin pagos registrados</span>') + '</div>' +
         '<div class="nxSaBtns">' +
         '<button class="btn bsm bc1" type="button" onclick="window.nxSaasPago(\'' + s.id + '\')"><i class="ti ti-cash"></i> Registrar pago</button>' +
-        '<button class="btn bsm bghost" type="button" onclick="window.nxSaasHist(\'' + s.id + '\')"><i class="ti ti-history"></i></button>' +
+        '<button aria-label="Ver el historial de pagos" class="btn bsm bghost" type="button" onclick="window.nxSaasHist(\'' + s.id + '\')"><i class="ti ti-history"></i></button>' +
         (telW ? '<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1' + telW + '?text=' + encodeURIComponent(msg) + '" target="_blank"><i class="ti ti-brand-whatsapp"></i></a>' : '') +
-        '<button class="btn bsm bghost" type="button" onclick="window.nxSaasForm(\'' + s.id + '\')"><i class="ti ti-edit"></i></button>' +
+        '<button aria-label="Editar este cliente" class="btn bsm bghost" type="button" onclick="window.nxSaasForm(\'' + s.id + '\')"><i class="ti ti-edit"></i></button>' +
         '</div></div>';
     }).join('');
     view.innerHTML = '<div style="max-width:760px;margin:0 auto">' +
@@ -27581,10 +27581,10 @@ try {
     var sel = _wizNicheId;
     var cards = _niches.map(function (n) {
       var on = (typeof sel !== 'undefined' && sel === n.id) ? ' on' : '';
-      return '<div class="nxAiNCard' + on + '" onclick="window.nxAiElegirNicho(\'' + n.id + '\')"><b>' + esc(n.nombre) + '</b><span>' + esc(String(n.descripcion || '').slice(0, 70)) + '</span></div>';
+      return '<div class="nxAiNCard' + on + '" onclick="window.nxAiElegirNicho(\'' + n.id + '\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>' + esc(n.nombre) + '</b><span>' + esc(String(n.descripcion || '').slice(0, 70)) + '</span></div>';
     }).join('');
     var customOn = (typeof sel !== 'undefined' && sel === null) ? ' on' : '';
-    cards += '<div class="nxAiNCard' + customOn + '" onclick="window.nxAiElegirNicho(null)"><b><i class="ti ti-edit"></i> Nicho personalizado</b><span>Describe tu negocio a tu manera</span></div>';
+    cards += '<div class="nxAiNCard' + customOn + '" onclick="window.nxAiElegirNicho(null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b><i class="ti ti-edit"></i> Nicho personalizado</b><span>Describe tu negocio a tu manera</span></div>';
     var form = (typeof sel !== 'undefined') ? nicheFormHTML() : '';
     return '<div style="font-weight:800;font-size:13px;margin-bottom:4px;color:#0f172a">¿A qué se dedica tu negocio?</div>' +
       '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Elige la plantilla más parecida — luego puedes ajustar todo.</div>' +
@@ -27613,7 +27613,7 @@ try {
     var sel = _wizObjetivos || (_settings && _settings.objetivos) || [];
     var chips = OBJ_LIST.map(function (o) {
       var on = sel.indexOf(o) >= 0;
-      return '<div class="nxAiObj' + (on ? ' on' : '') + '" onclick="window.nxAiToggleObj(\'' + o + '\')"><i class="ti ti-' + (on ? 'square-rounded-check' : 'square-rounded') + '"></i> ' + esc(o) + '</div>';
+      return '<div class="nxAiObj' + (on ? ' on' : '') + '" onclick="window.nxAiToggleObj(\'' + o + '\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-' + (on ? 'square-rounded-check' : 'square-rounded') + '"></i> ' + esc(o) + '</div>';
     }).join('');
     return '<div style="font-weight:800;font-size:13px;margin-bottom:4px;color:#0f172a">¿Qué quieres lograr con tu contenido?</div>' +
       '<div style="font-size:11px;color:#64748b;margin-bottom:10px">Elige todos los que apliquen.</div>' +
@@ -27674,7 +27674,7 @@ try {
         '<input type="color" value="' + esc(p.color || '#c026d3') + '" oninput="window.nxAiPilarSet(' + i + ',\'color\',this.value)" style="width:34px;height:32px;border:1px solid #cbd5e1;border-radius:7px;padding:1px">' +
         '<input placeholder="Nombre del pilar" value="' + esc(p.nombre || '') + '" oninput="window.nxAiPilarSet(' + i + ',\'nombre\',this.value)" style="flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:7px 9px;font-size:12.5px">' +
         '<input type="number" min="0" max="100" placeholder="%" value="' + (p.porcentaje || '') + '" oninput="window.nxAiPilarSet(' + i + ',\'porcentaje\',this.value)" style="width:56px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 6px;font-size:12.5px;text-align:center">' +
-        '<button class="btn bsm bghost" type="button" onclick="window.nxAiPilarDel(' + i + ')"><i class="ti ti-trash"></i></button></div>' +
+        '<button aria-label="Eliminar este pilar" class="btn bsm bghost" type="button" onclick="window.nxAiPilarDel(' + i + ')"><i class="ti ti-trash"></i></button></div>' +
         '<input placeholder="Formatos (ej. Reel, Carrusel, Historia)" value="' + esc(csv(p.formatos)) + '" oninput="window.nxAiPilarSet(' + i + ',\'formatos\',this.value)" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:11.5px;margin-bottom:5px;box-sizing:border-box">' +
         '<input placeholder="Plataformas (ej. Instagram, TikTok)" value="' + esc(csv(p.plataformas)) + '" oninput="window.nxAiPilarSet(' + i + ',\'plataformas\',this.value)" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:11.5px;box-sizing:border-box"></div>';
     }).join('');
@@ -27720,7 +27720,7 @@ try {
   function chromeHTML(bodyHtml) {
     var dots = STEP_LBL.map(function (l, i) {
       var n = i + 1, cls = n === _pasoActual ? ' on' : (n < _pasoActual ? ' done' : '');
-      return '<div class="nxAiStep' + cls + '" onclick="window.nxAiIr(' + n + ')">' + n + '. ' + l + '</div>';
+      return '<div class="nxAiStep' + cls + '" onclick="window.nxAiIr(' + n + ')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">' + n + '. ' + l + '</div>';
     }).join('');
     return '<div class="nxAiWrap"><div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-sparkles" style="color:#c026d3"></i> NEXUS AI CONTENT</div><div class="ct-s">Configura tu marca para generar contenido con IA</div></div>' +
       '<button class="btn bsm" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
@@ -27834,23 +27834,23 @@ try {
     view.innerHTML = '<div class="nxAiWrap"><div class="nc"><div class="ch"><div><div class="ct"><i class="ti ti-sparkles" style="color:#c026d3"></i> NEXUS AI CONTENT</div><div class="ct-s">' + esc(s.nombre_comercial || '') + '</div></div>' +
       '<button class="btn bsm" type="button" onclick="window.nav&&window.nav(\'dashboard\',null)"><i class="ti ti-arrow-left"></i> Volver</button></div>' +
       '<div class="nxAiDashG" style="margin-bottom:10px">' +
-      '<div class="nxAiDCard" style="cursor:pointer;border-color:#f0abfc;background:linear-gradient(135deg,#fdf4ff,#fff)" onclick="window.nxAiAbrirGenerador()"><h4 style="color:#c026d3"><i class="ti ti-wand"></i> Generador de contenido IA</h4><div style="font-size:11.5px;color:#334155">Escribe un tema y genera hook, texto, caption, hashtags y CTA con tu marca aplicada</div></div>' +
-      '<div class="nxAiDCard" style="cursor:pointer" onclick="window.nxAiAbrirBiblioteca()"><h4 style="color:#a21caf"><i class="ti ti-bookmark"></i> Biblioteca de contenido</h4><div style="font-size:11.5px;color:#334155">' + (_items.length ? (_items.length + ' pieza' + (_items.length === 1 ? '' : 's') + ' guardada' + (_items.length === 1 ? '' : 's')) : 'Todavía no has guardado nada') + '</div></div>' +
+      '<div class="nxAiDCard" style="cursor:pointer;border-color:#f0abfc;background:linear-gradient(135deg,#fdf4ff,#fff)" onclick="window.nxAiAbrirGenerador()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><h4 style="color:#c026d3"><i class="ti ti-wand"></i> Generador de contenido IA</h4><div style="font-size:11.5px;color:#334155">Escribe un tema y genera hook, texto, caption, hashtags y CTA con tu marca aplicada</div></div>' +
+      '<div class="nxAiDCard" style="cursor:pointer" onclick="window.nxAiAbrirBiblioteca()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><h4 style="color:#a21caf"><i class="ti ti-bookmark"></i> Biblioteca de contenido</h4><div style="font-size:11.5px;color:#334155">' + (_items.length ? (_items.length + ' pieza' + (_items.length === 1 ? '' : 's') + ' guardada' + (_items.length === 1 ? '' : 's')) : 'Todavía no has guardado nada') + '</div></div>' +
       '</div>' +
       '<div class="nxAiDashG">' +
-      '<div class="nxAiDCard"><h4>Empresa <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(1)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div class="nxAiDCard"><h4>Empresa <button aria-label="Editar los datos de la empresa" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(1)"><i class="ti ti-edit"></i></button></h4>' +
       '<div style="font-size:12px;color:#334155">' + esc(s.descripcion_corta || 'Sin descripción') + '<br><span style="color:#94a3b8">' + esc(s.ciudad || '') + (s.ciudad && s.pais ? ', ' : '') + esc(s.pais || '') + '</span></div></div>' +
-      '<div class="nxAiDCard"><h4>Nicho <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(2)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div class="nxAiDCard"><h4>Nicho <button aria-label="Editar el nicho" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(2)"><i class="ti ti-edit"></i></button></h4>' +
       '<div style="font-size:12px;color:#334155;font-weight:700">' + esc(f.nombre || '-') + '</div>' +
       '<div style="margin-top:4px">' + (f.palabras_clave || []).slice(0, 5).map(function (k) { return '<span class="nxAiChip">' + esc(k) + '</span>'; }).join('') + '</div></div>' +
-      '<div class="nxAiDCard"><h4>Objetivos <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(3)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div class="nxAiDCard"><h4>Objetivos <button aria-label="Editar los objetivos" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(3)"><i class="ti ti-edit"></i></button></h4>' +
       '<div>' + (objs.length ? objs.map(function (o) { return '<span class="nxAiChip">' + esc(o) + '</span>'; }).join('') : '<span style="color:#94a3b8;font-size:12px">Ninguno</span>') + '</div></div>' +
-      '<div class="nxAiDCard"><h4>Público <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(4)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div class="nxAiDCard"><h4>Público <button aria-label="Editar el público" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(4)"><i class="ti ti-edit"></i></button></h4>' +
       '<div style="font-size:12px;color:#334155">' + esc(a.tipo_cliente || '-') + (a.edad_min ? (' · ' + a.edad_min + '-' + (a.edad_max || '') + ' años') : '') + '<br><span style="color:#94a3b8">' + esc(a.ubicacion || '') + '</span></div></div>' +
-      '<div class="nxAiDCard"><h4>Marca <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(5)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div class="nxAiDCard"><h4>Marca <button aria-label="Editar la marca" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(5)"><i class="ti ti-edit"></i></button></h4>' +
       '<div style="display:flex;gap:5px;margin-bottom:5px">' + (b.colores || []).map(function (c) { return '<span style="width:18px;height:18px;border-radius:5px;background:' + esc(c) + ';border:1px solid #e2e8f0;display:inline-block"></span>'; }).join('') + '</div>' +
       '<div style="font-size:12px;color:#334155">' + esc(b.tono || '-') + ' · ' + esc(b.estilo_visual || '-') + '</div></div>' +
-      '<div class="nxAiDCard"><h4>Pilares de contenido <button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(6)"><i class="ti ti-edit"></i></button></h4>' +
+      '<div class="nxAiDCard"><h4>Pilares de contenido <button aria-label="Editar los pilares de contenido" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEditar(6)"><i class="ti ti-edit"></i></button></h4>' +
       '<div>' + ((_pillars || []).length ? _pillars.map(function (p) { return '<span class="nxAiChip">' + esc(p.nombre) + (p.porcentaje ? (' ' + p.porcentaje + '%') : '') + '</span>'; }).join('') : '<span style="color:#94a3b8;font-size:12px">Ninguno</span>') + '</div></div>' +
       '</div>' +
       '<div style="margin-top:16px;font-weight:800;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.3px">Próximamente</div>' +
@@ -27949,8 +27949,8 @@ try {
     var cards = (_items || []).map(function (it) {
       var prev = String(it.caption || it.texto || '').slice(0, 90);
       return '<div class="nxAiDCard"><h4>' + esc(it.tema || 'Sin tema') +
-        '<button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEliminarItem(\'' + it.id + '\')"><i class="ti ti-trash"></i></button>' +
-        '<button class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiFavItem(\'' + it.id + '\')"><i class="ti ti-star' + (it.favorito ? '-filled' : '') + '" style="color:' + (it.favorito ? '#d97706' : '#94a3b8') + '"></i></button>' +
+        '<button aria-label="Eliminar este contenido" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEliminarItem(\'' + it.id + '\')"><i class="ti ti-trash"></i></button>' +
+        '<button aria-label="Marcar como favorito" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiFavItem(\'' + it.id + '\')"><i class="ti ti-star' + (it.favorito ? '-filled' : '') + '" style="color:' + (it.favorito ? '#d97706' : '#94a3b8') + '"></i></button>' +
         '</h4><div style="margin-bottom:6px"><span class="nxAiChip">' + esc(it.plataforma || '') + '</span><span class="nxAiChip">' + esc(it.formato || '') + '</span></div>' +
         '<div style="font-size:11.5px;color:#64748b;margin-bottom:8px">' + esc(prev) + (prev.length >= 90 ? '…' : '') + '</div>' +
         '<button class="btn bsm" type="button" onclick="window.nxAiVerItem(\'' + it.id + '\')" style="width:100%"><i class="ti ti-eye"></i> Ver completo</button></div>';
