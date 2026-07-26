@@ -1,7 +1,12 @@
 {
-  "version": "49.71",
+  "version": "49.72",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.72",
+      "t": "NUEVO: botón de IMPRIMIR en la ventana de Cobrar",
+      "d": "Faltaba poder imprimir desde la ventana de Cobrar. Ahora hay un botón de impresora en el pie, entre \"Opciones\" y \"Confirmar venta\": abre la FACTURA de página completa (la misma que ya se usa en Vista previa e Historial) con lo que hay en el cobro EN ESE MOMENTO — el cliente que elegiste ahí (que puede ser otro que el de la Factura) y el descuento que aplicaste en esa ventana. Desde ahí imprimes o guardas en PDF, y también lo puedes mandar por WhatsApp. Como todavía no se ha cobrado, el documento sale marcado \"VISTA PREVIA · SIN GUARDAR\" para que nadie lo confunda con una factura ya pagada. Al confirmar la venta, el ticket sigue abriéndose solo como siempre."
+    },
     {
       "v": "49.71",
       "t": "ARREGLADO: los atajos de efectivo de la ventana de Cobrar no calzaban con los billetes dominicanos",

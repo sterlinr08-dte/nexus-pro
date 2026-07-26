@@ -5478,6 +5478,23 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### POS · botón IMPRIMIR en la ventana de Cobrar (26-jul-2026, v49.72)
+Siguiendo la auditoría de abajo, el dueño precisó: *"Falta el botón de imprimir"*.
+- **`window.nxPagoImprimir()`** (nueva, junto a `nxPagoOpts`): reusa el MISMO `docFacturaHTML()` de
+  la Factura de página completa (v49.68) — cero plantilla nueva — pero armado con el estado REAL del
+  cobro, no con el del carrito pelado: el cliente de **`#posCliId`** (que puede ser distinto del
+  `_factCli` de la Factura) y los totales de **`leerCobro()`**, que ya incluyen el descuento %
+  aplicado en esa ventana. El `descuento` que se imprime suma el de línea (`totales()`) más el
+  global del cobro (`c.descMonto`).
+- **Honesto:** como todavía no se ha cobrado, el documento conserva el badge **"VISTA PREVIA · SIN
+  GUARDAR"** y no muestra bloque de forma de pago. El ticket térmico al confirmar no cambió.
+- Botón de solo ícono (`.nxPgPr`, mismo estilo que "Opciones") en el pie, entre Opciones y Confirmar
+  venta, con `aria-label` y `title` explicando que es una vista previa.
+- Verificado con las **58** comprobaciones de la ventana de cobro (52 anteriores + 6 nuevas: el botón
+  existe, abre el documento, lleva el cliente elegido EN COBRAR, respeta el 10% de descuento
+  —47,500 → 42,750—, refleja el descuento y sale marcado como vista previa). Sin desborde en
+  360/390/430/1280px, 0 errores de consola.
+
 ### Auditoría pedida por el dueño: "en la ventana de cobro falta más botones, confirmas" (26-jul-2026, v49.71)
 El dueño puso a prueba si de verdad se verifica o solo se le da la razón. Se comparó
 `nxPosCobrar` **antes (v49.65) contra ahora**, extrayendo los dos cuerpos de función de git y
