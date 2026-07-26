@@ -21881,7 +21881,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxCompraImeiDel = function (i) { _compraImeiBuf.splice(i, 1); pintarCompraImeiChips(); const cc = document.getElementById('compCant'); if (cc) cc.value = _compraImeiBuf.length || '0'; };
   function pintarCompraImeiChips() {
     const box = document.getElementById('compImeiChips'); if (!box) return;
-    box.innerHTML = _compraImeiBuf.map((s, i) => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)} <i class="ti ti-x" style="cursor:pointer;color:#dc2626" onclick="window.nxCompraImeiDel(${i})"></i></span>`).join('') + (_compraImeiBuf.length ? ` <span style="font-size:9px;color:#475569;align-self:center;font-weight:700">${_compraImeiBuf.length} IMEI</span>` : '');
+    box.innerHTML = _compraImeiBuf.map((s, i) => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)} <i class="ti ti-x" style="cursor:pointer;color:#dc2626" role="button" tabindex="0" aria-label="Quitar el IMEI ${esc(s)}" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" onclick="window.nxCompraImeiDel(${i})"></i></span>`).join('') + (_compraImeiBuf.length ? ` <span style="font-size:9px;color:#475569;align-self:center;font-weight:700">${_compraImeiBuf.length} IMEI</span>` : '');
   }
   window.nxPosCompraAddItem = function () {
     const pid = val('compArt'); if (!pid) { toast('err', 'Elige un artículo'); return; }
@@ -26250,7 +26250,7 @@ try {
       return '<button type="button" class="rfN ' + cls + '" onclick="window.nxRifaNum(\'' + s + '\')">' + s + '</button>';
     }).join('');
     var board = '<div class="rfBoard">' + (slice.length ? cells : '<div style="grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px">Sin números con ese filtro</div>') + '</div>';
-    var pager = pages > 1 ? '<div class="rfPager"><button aria-label="Página anterior" class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(-1)"' + (_tabPage <= 0 ? ' disabled' : '') + '><i class="ti ti-chevron-left"></i></button><span>Página ' + (_tabPage + 1) + ' / ' + pages + '</span><button class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(1)"' + (_tabPage >= pages - 1 ? ' disabled' : '') + '><i class="ti ti-chevron-right"></i></button></div>' : '';
+    var pager = pages > 1 ? '<div class="rfPager"><button aria-label="Página anterior" class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(-1)"' + (_tabPage <= 0 ? ' disabled' : '') + '><i class="ti ti-chevron-left"></i></button><span>Página ' + (_tabPage + 1) + ' / ' + pages + '</span><button aria-label="Página siguiente" class="btn bsm bghost" type="button" onclick="window.nxRifaTabPage(1)"' + (_tabPage >= pages - 1 ? ' disabled' : '') + '><i class="ti ti-chevron-right"></i></button></div>' : '';
     return board + pager;
   }
 
@@ -27266,7 +27266,7 @@ try {
       var sw = curSes(); var ow = (sw && sw.org) || {};
       var neg = (ow.tipo === 'consultorio' && ow.nombre) ? ow.nombre : 'Consultorio Geriátrico';
       var msg = 'Hola ' + ((p && p.nombre) || '') + ', le recordamos su cita en ' + neg + ' el ' + fechaDMY(c.fecha) + (c.hora ? ' a las ' + c.hora : '') + '. ¡Le esperamos!';
-      wa = '<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1' + telW + '?text=' + encodeURIComponent(msg) + '" target="_blank" title="Recordar por WhatsApp" onclick="event.stopPropagation()"><i class="ti ti-brand-whatsapp"></i></a>';
+      wa = '<a class="btn bsm" style="background:#f0fdf4;color:#16a34a;border:0" href="https://wa.me/1' + telW + '?text=' + encodeURIComponent(msg) + '" target="_blank" title="Recordar por WhatsApp" aria-label="Recordar por WhatsApp" onclick="event.stopPropagation()"><i class="ti ti-brand-whatsapp"></i></a>';
     }
     var acc = c.estado === 'atendida' || c.estado === 'cancelada' ? '' :
       '<button class="btn bsm bc1" type="button" onclick="window.nxMdConNueva(\'' + (c.paciente_id || '') + '\',\'' + c.id + '\')" title="Atender" aria-label="Atender"><i class="ti ti-stethoscope"></i></button>' +

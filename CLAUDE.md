@@ -5099,6 +5099,36 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### Los últimos 7 botones de solo ícono sin nombre (26-jul-2026, v49.83)
+El dueño pidió cerrar "los 144 botones de ícono". **Al medir resultó que ya estaban hechos**: la
+v49.55 cerró los 144 (y las 112 filas clicables). La línea de pendientes de la retrospectiva quedó
+desactualizada porque se escribió ANTES de esa versión — corregida ahora en su lista.
+- **Método:** un escáner propio que localiza `<button>`/`<a>`/`<i onclick>`/`<span onclick>`
+  **respetando comillas** al buscar el `>` de cierre. Esto importa: un regex `[^>]*` se corta en el
+  primer `>`, y varios `onclick` llevan una función flecha `=>` — **es exactamente el bug que rompió
+  el Dashboard en la v49.58**. No repetir ese atajo.
+- **De 14 candidatos, 7 eran falsos positivos** (el escáner descarta `${...}` al medir el texto
+  visible, y esos botones sí tienen rótulo dinámico real: "Inhabilitar cliente", "Guardar y usar
+  cliente", el nombre del cliente en Facturar/Cobrar, etc.). **No se tocaron** — ponerles un
+  `aria-label` habría duplicado el nombre accesible.
+- **Los 7 reales:** campana de alertas · campana de notificaciones (su badge es un número, no un
+  nombre) · lupa de búsqueda global (solo llevaba el chip ⌘K) · enlace de descarga de un documento
+  del cliente · "Página siguiente" de Rifas (el de "anterior" ya lo tenía) · enlace de WhatsApp de
+  recordatorio · la **✕ para quitar un IMEI** al registrar una compra — esta era un `<i>` clicable,
+  así que además de nombre se le dio teclado (`role`/`tabindex`/`onkeydown` con `keyCode`, sin
+  comillas, por vivir dentro de una plantilla de JS).
+- **Error propio, detectado al instante:** en el botón de búsqueda global metí un `>` de más en el
+  reemplazo y partí la etiqueta (`aria-label="…"> style="…">`). Se vio al imprimir la línea
+  resultante y se corrigió antes de seguir. **Por eso la verificación mide que `style` siga siendo
+  un ATRIBUTO** (`getAttribute('style')` contiene `display:flex`) y que el chip ⌘K siga dentro del
+  botón — no solo que el `aria-label` exista.
+- Verificado con Playwright cargando el **`index.html` real** servido por HTTP: 7 comprobaciones —
+  los 3 botones del encabezado con su nombre correcto, la etiqueta sin partir, el chip y el
+  contador de notificaciones dentro de su botón, y ningún código filtrado como texto visible. Una
+  aserción inicial falló por estar mal escrita (buscaba `" style=` en el HTML del padre, que los
+  botones vecinos tienen legítimamente) — se reescribió para medir texto visible, no marcado.
+- `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`.
+
 ### El botón flotante tapaba TODAS las ventanas del sistema (26-jul-2026, v49.82)
 El dueño mandó la ventana "Buscar artículo" en su iPhone y pidió mejorarla. Se midió con el código
 real (`nxProdPicker`/`pintarProdPick`/`ppkDetailHTML` + el CSS real, a 390×664 y con 40 artículos)
@@ -5186,8 +5216,9 @@ usan cuando el caso lo pide — ver "ENRUTAMIENTO AUTOMÁTICO DE SKILLS".
 1. **Poner el Secret `GMAIL_PASS`** — el reporte diario no sale hasta entonces (paso del dueño).
 2. **`auditoria` abierta entre empresas** (2.372 filas con nombres de clientes). Necesita
    `organizacion_id` + relleno + trigger + política: hay una decisión de datos de por medio.
-3. **144 botones de ícono sin nombre** + **112 filas clicables sin teclado** — trabajo de redacción
-   caso por caso, mejor módulo por módulo.
+3. ~~**144 botones de ícono sin nombre** + **112 filas clicables sin teclado**~~ — **HECHO** en la
+   v49.55 (los 144 + las 112 filas) y cerrado del todo en la **v49.83** (7 rezagados). Esta línea
+   quedó desactualizada al escribir la retrospectiva antes que la v49.55; se corrige aquí.
 4. **Borrar las 4 tablas de permisos muertas** (101 filas, cero uso).
 5. **Activar la protección de contraseñas filtradas** en Supabase Auth (un clic del dueño).
 6. **`verify_jwt:true` en `enviar-reporte-email`** — hay que arreglar el cron en la misma operación.
