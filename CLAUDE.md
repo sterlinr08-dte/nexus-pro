@@ -5583,6 +5583,68 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### FUERA DE localStorage — Fase 1: las preferencias viven en la BASE (26-jul-2026, v49.80)
+Decisión del dueño: *"Recuerda que nada en localStorage"* → *"Completo"*. Es un proyecto de varias
+fases; esta es la primera y deja construida la infraestructura.
+- **Inventario medido primero (27 claves reales):** `nx_url`(13) `nx_auto`(10) `nx_key`(9)
+  `nx_roles_perms`/`nx_ars_list`(6) `nx_email_cfg`(5) `nx_sesion_persist`/`nx_user_persist`/
+  `nx_metas`(4) `nx_auth_session`/`nx_auth_mode`/`nx_tema`/`nx_notif_leidas`/`nx_cuentas_migradas_v2`/
+  `nx_changelog_auto`/`nx_auto_historial`/`nx_last_view`(3) `nx_dark`/`nx_tenants`/
+  `nx_parches_registrados`/`nx_notas_`/`nx_last_place`/`nx_favs`/`nx_fab_pos`/`nx_email_hist`/
+  `nx_draft_`(2) `nx_err_log`(1). **"Completo" no es alcanzable al 100%** y se le dijo: la sesión y
+  el token de Auth NO pueden ir a la base, porque son justo lo que da acceso a la base.
+- **2 decisiones confirmadas con el dueño (AskUserQuestion), no asumidas:** (1) **la sesión se
+  queda** en localStorage — la alternativa era teclear la clave en cada apertura; (2) las
+  preferencias **se guardan en la base**, no se eliminan.
+- **Tabla nueva `usuario_preferencias`** (migración `usuario_preferencias_por_usuario`):
+  `usuario_id` (PK, FK a `usuarios_sistema`), `datos` jsonb, `updated_at`. Helper nuevo
+  **`mi_usuario_id()`** (`security definer`, mismo patrón que `mi_organizacion()`). RLS
+  `usuario_id = mi_usuario_id()` — **cada quien la suya, sin excepción de admin a propósito**: son
+  preferencias personales.
+  - **Por qué tabla propia y NO una columna de `usuarios_sistema`** (que ya tiene `tema_preferido`):
+    esa tabla es **solo-admin** (`mi_rol()='admin'`), así que guardar ahí dejaría a Robinson (rol
+    `agente`) sin poder salvar nada — y con un PATCH fallando en cada navegación. Se descubrió
+    leyendo `pg_policies` ANTES de escribir el frontend.
+  - Verificado con SQL simulando las sesiones reales (`set_config('request.jwt.claims')`, todo con
+    `rollback`): Robinson **sí** guarda las suyas, escribir la fila de otro queda **bloqueado**, y el
+    admin solo ve la propia. `get_advisors` sin hallazgos nuevos más allá de `mi_usuario_id()` en la
+    misma categoría ya aceptada de `mi_rol()`/`mi_organizacion()`.
+  - **Falso fallo instructivo:** el primer intento de prueba dio "violates row-level security". No
+    era el diseño — era **la prueba**: la subconsulta que buscaba a Robinson corría ya como
+    `authenticated`, y RLS se la bloqueaba, dejando el `sub` del claim en NULL. Con el uuid literal
+    pasó. **Al simular una sesión con RLS, resolver los ids ANTES de cambiar de rol.**
+- **Motor en `index.html`:** `_prefs` (caché en memoria) + `nxPrefsCargar()` (un GET al arrancar) +
+  `nxPref(clave,def)` + `nxPrefSet(clave,valor)`. El guardado va con **retraso de 900ms** a
+  propósito: navegar dispara `nxPrefSet` en cada pantalla y sin eso sería un escrito por toque
+  (medido: 4 navegaciones seguidas = **1** solo UPSERT). El guardado es un **UPSERT atómico**
+  (`on_conflict=usuario_id` + `Prefer: resolution=merge-duplicates`), no un "intenta PATCH y si no
+  POST" — mismo criterio que se aplicó a `prestamos_config` tras el bug del guardado silencioso de
+  la v48.19.
+- **Migrado en esta fase:** el "dónde me quedé" (`nx_last_place` + `nx_last_view`, v49.78) pasa a
+  `prefs.lugar`. **Con rescate por única vez:** si el usuario viene de la versión anterior, se lee su
+  lugar del navegador, se pasa a la base y **se borra del navegador** — de ahí en adelante no se
+  toca más. Cubre los dos formatos viejos (`nx_last_place` y el más antiguo `nx_last_view`).
+- **`await nxPrefsCargar()` va ANTES de restaurar** en `iniciarApp` — si no, se decidiría la pantalla
+  con las preferencias todavía vacías.
+- Verificado con Playwright y el código real extraído, contra un Supabase simulado: **18
+  comprobaciones** — navegar no escribe en localStorage y localStorage queda en **CERO** en todo el
+  flujo, el cambio se ve en memoria al instante pero se guarda una sola vez tras el retraso, al
+  arrancar lee de la base y restaura, el POS restaura módulo + pestaña, el rescate de las 2 versiones
+  viejas funciona **y limpia el navegador**, cada usuario escribe en SU fila, y sin sesión no escribe
+  ni revienta. Más la prueba de humo de la app real (0 errores de JS).
+- **PENDIENTE (fases siguientes):** (2) mover el resto de preferencias — `nx_tema`, `nx_dark`,
+  `nx_favs`, `nx_fab_pos`, `nx_notif_leidas`, `nx_notas_*`, `nx_draft_*`. **Ojo con el tema:** se
+  aplica en `DOMContentLoaded`, ANTES del login; al vivir en la base no se podrá leer hasta después
+  de entrar, así que la pantalla de login quedará siempre con el tema base. (3) Borrar las cachés de
+  datos que **ya viven en la base** (`nx_roles_perms`, `nx_ars_list`, `nx_auto`, `nx_email_cfg`,
+  `nx_metas`, `nx_changelog_auto`, `nx_auto_historial`, `nx_email_hist`, `nx_tenants`) — leer siempre
+  del origen. (4) **`nx_url`/`nx_key` son redundantes**: `const url = fixedUrl || storedUrl` con
+  `SUPABASE_URL_FIXED` **siempre** con valor ⇒ `storedUrl` nunca se usa y el `setItem` guarda el
+  mismo valor que ya está en el código. 22 usos que se pueden quitar sin cambiar comportamiento —
+  pero tocan la conexión a Supabase, así que van en su propia tanda y con cuidado.
+- **SE QUEDAN por decisión del dueño:** `nx_auth_session`, `nx_sesion_persist`, `nx_user_persist`,
+  `nx_auth_mode` (la sesión y el modo de login).
+
 ### La actualización de la app, ~30% más rápida (26-jul-2026, v49.79)
 Pedido del dueño: *"Que la actualización sea rápido"*.
 - **Medido primero, no supuesto:** `index.html` = **171 KB** comprimido · `parches.js` = **500 KB**.

@@ -4069,7 +4069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.79';
+const APP_VERSION='49.80';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5421,6 +5421,8 @@ async function cargarTodo(){
     // Se hace de inmediato, sin timeout, para no mostrar el dashboard primero.
     // nxRestaurarLugar cubre tanto las vistas de Seguros como los módulos de parches.js
     // (POS con su pestaña, Financiamiento, Rifas, AGUAPRO...) — ver "DÓNDE ME QUEDÉ".
+    // Las preferencias viven en la base: hay que traerlas ANTES de decidir qué pantalla abrir.
+    try{await nxPrefsCargar();}catch(e){}
     window.__nxHtmlRestauroVista = true; // avisar al parche que ya restauramos
     const esModuloDirecto = !!(sesion && sesion.org && (sesion.org.tipo==='tienda'||sesion.org.tipo==='rifa'||sesion.org.tipo==='consultorio'));
     if(esModuloDirecto){
@@ -5525,6 +5527,51 @@ async function chequearVersionApp(){
   }catch(e){/* silencioso: si no hay red o version.json, no molestar */}
 }
 
+// ── PREFERENCIAS DEL USUARIO — en la BASE, no en el navegador ────────────────
+// Decisión del dueño (26-jul-2026): "nada en localStorage". Las preferencias personales
+// (dónde me quedé, tema, favoritos...) viven ahora en la tabla `usuario_preferencias`,
+// una fila por usuario con RLS "cada quien la suya" (ver mi_usuario_id()).
+// Ventaja real además de la limpieza: te siguen entre el celular y la computadora.
+// NOTA: es tabla PROPIA y no una columna de usuarios_sistema porque esa tabla es
+// solo-admin — guardar ahí dejaría a los agentes sin poder salvar sus preferencias.
+let _prefs={};              // caché en memoria de la sesión
+let _prefsListas=false;     // ya se leyeron de la base al menos una vez
+let _prefsTimer=null;
+async function nxPrefsCargar(){
+  try{
+    if(!sesion||!sesion.id)return;
+    const r=await API.get('usuario_preferencias','select=datos&usuario_id=eq.'+sesion.id);
+    _prefs=(r&&r[0]&&r[0].datos)||{};
+  }catch(e){_prefs={};}
+  _prefsListas=true;
+}
+function nxPref(clave,porDefecto){
+  return (_prefs&&Object.prototype.hasOwnProperty.call(_prefs,clave))?_prefs[clave]:porDefecto;
+}
+// Guardado con retraso a propósito: navegar dispara esto en cada pantalla, y sin el
+// retraso sería un escrito a la base por cada toque. Se junta todo en uno.
+function nxPrefSet(clave,valor){
+  try{
+    if(valor===null||valor===undefined)delete _prefs[clave]; else _prefs[clave]=valor;
+    if(!sesion||!sesion.id)return;
+    clearTimeout(_prefsTimer);
+    _prefsTimer=setTimeout(nxPrefsGuardar,900);
+  }catch(e){}
+}
+async function nxPrefsGuardar(){
+  try{
+    if(!sesion||!sesion.id)return;
+    // UPSERT atómico (un solo paso, sin "intenta PATCH y si no POST" — mismo criterio
+    // que se aplicó en prestamos_config tras el bug del guardado silencioso de v48.19).
+    await fetch(API.url+'/rest/v1/usuario_preferencias?on_conflict=usuario_id',{
+      method:'POST',
+      headers:API.hdr({Prefer:'resolution=merge-duplicates,return=minimal'}),
+      body:JSON.stringify({usuario_id:sesion.id,datos:_prefs,updated_at:new Date().toISOString()})
+    });
+  }catch(e){/* si falla, la preferencia se queda en memoria y se reintenta al próximo cambio */}
+}
+window.nxPref=nxPref;window.nxPrefSet=nxPrefSet;window.nxPrefsCargar=nxPrefsCargar;
+
 // ── DÓNDE ME QUEDÉ ───────────────────────────────────────────────────────────
 // nav() ya guardaba la vista del núcleo de Seguros ('nx_last_view') e iniciarApp la
 // restauraba. Pero los módulos de parches.js (POS, Financiamiento, Rifas, AGUAPRO...) NO
@@ -5536,19 +5583,23 @@ const NX_MODULOS_LUGAR={pos:'nxAbrirPOS',rifas:'nxAbrirRifas',consultorio:'nxAbr
   multiempresa:'nxAbrirMultiempresa',financiamiento:'nxAbrirPrestamos',vehiculos:'nxAbrirVehiculos',
   agua:'nxAbrirAguaPro',saas:'nxAbrirSaas',aicontent:'nxAbrirAIContent'};
 function nxGuardarLugar(clave,sub){
-  try{localStorage.setItem('nx_last_place',JSON.stringify({k:clave,s:sub||null}));}catch(e){}
+  try{nxPrefSet('lugar',{k:clave,s:sub||null});}catch(e){}
 }
 window.nxGuardarLugar=nxGuardarLugar;
 // Devuelve true si se encargó de pintar algo (para que iniciarApp no pise con el dashboard).
 function nxRestaurarLugar(){
-  let p=null;
-  try{p=JSON.parse(localStorage.getItem('nx_last_place')||'null');}catch(e){}
-  // Sin registro nuevo: caer al de siempre (nx_last_view), que solo cubre Seguros.
+  let p=nxPref('lugar',null);
+  // Rescate por ÚNICA vez de quien viene de una versión anterior (ahí el lugar vivía en el
+  // navegador). Se migra a la base y se borra del navegador — de ahí en adelante no se usa más.
   if(!p||!p.k){
-    const lv=localStorage.getItem('nx_last_view');
-    if(lv){nav(lv,null);if(lv==='solicitudes'){setTimeout(()=>{if(window.nxRenderSolicitudes)window.nxRenderSolicitudes();},300);}return true;}
-    return false;
+    try{
+      const viejo=JSON.parse(localStorage.getItem('nx_last_place')||'null')||
+        (localStorage.getItem('nx_last_view')?{k:'seguros',s:localStorage.getItem('nx_last_view')}:null);
+      localStorage.removeItem('nx_last_place');localStorage.removeItem('nx_last_view');
+      if(viejo&&viejo.k){p=viejo;nxPrefSet('lugar',viejo);}
+    }catch(e){}
   }
+  if(!p||!p.k)return false;
   if(p.k==='seguros'){
     if(!p.s)return false;
     nav(p.s,null);
@@ -5614,10 +5665,8 @@ function nav(view,el){
   const gsr=document.getElementById('gsResults');if(gsr)gsr.innerHTML='<div style="padding:30px;text-align:center;color:#475569;font-size:11px">Escribe al menos 2 caracteres...</div>';
   // Cerrar sidebar en móvil al navegar
   if(window.innerWidth<=768)closeMobSB();
-  // Guardar pantalla actual para F5 / para la actualización de la app.
-  // nx_last_view se mantiene por compatibilidad; nx_last_place es el registro que manda
-  // (cubre también los módulos de parches.js) y al navegar a Seguros pisa el módulo anterior.
-  localStorage.setItem('nx_last_view', view);
+  // Guardar la pantalla actual (para F5 y para la actualización de la app). Va a la BASE,
+  // no al navegador — ver "PREFERENCIAS DEL USUARIO". Navegar a Seguros pisa el módulo anterior.
   nxGuardarLugar('seguros', view);
   // Log de navegación
   logError('info', 'Navegación: '+(TITLES[view]||view), '', view);
