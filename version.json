@@ -1,7 +1,12 @@
 {
-  "version": "49.85",
+  "version": "49.86",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.86",
+      "fecha": "2026-07-26",
+      "texto": "ARREGLADO (grave): devolver un teléfono NO liberaba su IMEI — el equipo volvía al inventario pero su IMEI quedaba marcado 'vendido' para siempre y ese teléfono no se podía volver a vender NUNCA. Había 1 enterrado, ya liberado. Ahora la devolución te pregunta CUÁL equipo volvió (tocas su IMEI) y lo libera de verdad; la cantidad la manda esa elección, igual que al vender. · NUEVO: candado para que un IMEI no se pueda repetir. · NUEVO: se engancharon 4 cosas que configurabas y no hacían nada al vender — el Precio Crédito del nivel (ahora una factura a crédito cobra ese precio), el 🔒 Mínimo del nivel (antes solo se respetaba el mínimo general del artículo), la Cantidad Mínima del nivel, y '¿Permite descuento?' (ahora un artículo marcado que no permite descuento lo rechaza). · NUEVO: ya no se puede cobrar un artículo en RD$ 0. · ARREGLADO: en Factura se podía teclear una cantidad mayor a lo que hay en existencia y solo te enterabas al cobrar; ahora se corta al momento. Las prefacturas siguen exentas."
+    },
     {
       "v": "49.85",
       "fecha": "2026-07-26",

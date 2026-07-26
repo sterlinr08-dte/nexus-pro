@@ -5099,6 +5099,84 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### REGLAMENTO DE VENTA (decretado por el dueño, 26-jul-2026) — OBLIGATORIO
+Aplica a TODO artículo del POS. La parte B es el caso especial de los que llevan IMEI/serial.
+
+**Parte A — todos los artículos**
+1. La cantidad es **entera y positiva**; poner 0 borra la línea. No hay decimales (no se vende por peso).
+2. **No se cobra un artículo en RD$ 0.** Si no tiene precio, no se vende.
+3. La **existencia estricta aplica igual en TODAS las pantallas**: no se puede ni teclear más de lo
+   que hay. (Prefactura queda exenta — es una proforma. Los servicios no tienen existencia.)
+4. Un artículo marcado **"no permite descuento" RECHAZA el descuento**, no lo acepta en silencio.
+5. El **piso de precio lo manda el nivel del cliente**; si ese nivel no tiene piso propio, el global
+   del artículo. Solo admin y gerente pueden bajar de ahí.
+6. Si el nivel del cliente exige una **cantidad mínima**, se respeta al cobrar.
+7. Si la factura es **a crédito** se cobra el **precio de crédito** del nivel; si ese nivel no lo
+   tiene configurado, el de contado.
+
+**Parte B — artículos con IMEI**
+8. Un IMEI es **un teléfono físico = una unidad**. **Nunca se repite** (candado en la base:
+   índice único `pos_seriales(organizacion_id, serial)`).
+9. La **cantidad de la línea es siempre el número de IMEI elegidos** — al vender y al devolver.
+   No se teclea.
+10. No se cobra sin elegir los IMEI. **No existe "vender sin IMEI".**
+11. Vender amarra el IMEI a su factura. **Anular lo libera. Devolver también lo libera** — y hay que
+    decir **CUÁL** equipo volvió, no solo cuántos.
+
+**Pendientes de este reglamento (NO construidos, ver tandas más abajo):** la existencia de un
+artículo con IMEI todavía es un número aparte y no la cuenta de IMEI disponibles (regla implícita de
+la parte B que falta cerrar) · el IMEI no sabe en qué almacén está.
+
+### REGLAMENTO DE VENTA — auditoría y tanda 1 (26-jul-2026, v49.86)
+El dueño pidió el reglamento de IMEI y cantidad, y luego "investigar si hay más reglamentos en
+artículos sin IMEI". Se auditó el sistema completo contra ambos.
+
+**CUATRO campos fantasma** — se configuran, se guardan y **no se consultaban al vender**. No era
+coincidencia: los cuatro son *reglas de venta* que se guardaron sin engancharse al cobro.
+`precio_credito` por nivel · `precio_minimo` por nivel (el candado leía el **global del producto**) ·
+`cantidad_minima` por nivel · `no_descuento` del artículo. **Los cuatro enganchados en esta tanda.**
+- **Impacto medido antes de tocar nada:** `no_descuento` 0 de 9 artículos · `precio_credito` distinto
+  0 de 16 niveles · `cantidad_minima`>1 0 de 16 → **cero efecto hoy**, la regla queda lista para
+  cuando la use. Solo `precio_minimo` por nivel tiene datos (7 de 16), y el único que cambia es
+  PANTALLA: sus 3 niveles tienen piso = el propio precio, o sea queda sin margen de rebaja — que es
+  justo lo que él configuró.
+
+**BUG GRAVE — devolver NO liberaba el IMEI.** `nxDevGuardar` devolvía el stock pero no tocaba
+`pos_seriales`: el equipo volvía al inventario y su IMEI **quedaba "vendido" para siempre**. Ese
+teléfono no se podía volver a vender nunca. **Había 1 IMEI real enterrado** (`00000000888`, IDPRO)
+— liberado por SQL.
+- **No bastaba con liberar N seriales:** el cliente devuelve **un equipo concreto**. Liberar "los
+  primeros N" habría dejado libre un teléfono que sigue en manos del cliente y enterrado el que
+  volvió. Por eso la devolución ahora **pregunta cuál IMEI volvió** (`devSerialesDe`/`nxDevSerTog`,
+  chips `.nxSerPick` — el mismo control que ya se usa al vender) y la **cantidad la manda esa
+  elección**, igual que al vender. Solo ofrece los IMEI de ESA venta que sigan `vendido`.
+  Los artículos sin IMEI conservan su casilla de cantidad de siempre.
+
+**Otros huecos cerrados:**
+- **La existencia estricta se aplicaba a medias:** en Vender los botones +/− ya la respetaban, pero
+  en Factura se podía **teclear 999 con 3 en existencia** y solo enterarse al cobrar, con el carrito
+  armado. `nxFacCant` ahora acota al stock real (descontando lo que ya está en otras líneas del
+  mismo artículo) y avisa. Prefactura exenta.
+- **Se podía cobrar un artículo en RD$ 0** (los que salen "SIN PRECIO"). Ahora se bloquea al cobrar.
+- **`nxFacSerSin` ("vender sin IMEI") seguía vivo** aunque el CLAUDE.md decía que se había
+  eliminado: ningún botón lo llamaba, pero la función estaba ahí, contradiciendo la política.
+  Borrado junto con la bandera `_sinSerial` que ya no lee nadie.
+- **`nxFacSetCredito` no repreciaba el carrito.** Con la regla 7 el precio ahora depende de si la
+  factura es a crédito, así que cambiar de Contado a A crédito **tenía** que re-preciar — si no, lo
+  que ya estaba en el carrito se quedaba con el precio de contado y la regla quedaba a medias.
+
+**Helpers nuevos** (junto a `precioCli`): `filaNivel(p)` (la fila de nivel que le toca al cliente,
+una sola vez y reusada), `minimoDe(p)`, `cantMinimaDe(p)`.
+
+- Verificado con **36 comprobaciones** — 17 de las reglas nuevas y 8 de la devolución con IMEI,
+  ambas con el código real extraído por contenido; más las 11 de niveles sin regresión. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido; `get_advisors` sin hallazgos nuevos por el índice único.
+- **Nota de método:** dos harness viejos fallaron al re-correrlos porque `precioCli` ganó una
+  dependencia (`filaNivel`) que su lista de anclas no extraía. El código estaba bien; los harness
+  estaban desactualizados. **Al agregar un helper del que dependa una función ya probada, hay que
+  sumarlo a los extractores de los harness que la usan.**
+
 ### NIVELES DE PRECIO — la regla del dueño, y por qué el sistema no la cumplía (26-jul-2026, v49.85)
 El dueño decretó la regla: **el precio se elige según el nivel del cliente; un cliente normal va al
 nivel por defecto; al facturar, el sistema le pone solo el precio de su nivel.** Pidió ayuda para

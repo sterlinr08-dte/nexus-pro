@@ -17003,14 +17003,35 @@
     const d = ns.find(n => n.es_default);
     return String((d || ns[0]).id);
   }
+  // La fila de nivel que le toca a un producto según el cliente elegido (o null).
+  function filaNivel(p) {
+    const c = clienteSel(); if (!c || !c.nivel_id) return null;
+    return _prodNiveles.find(x => String(x.producto_id) === String(p.id) && String(x.nivel_id) === String(c.nivel_id)) || null;
+  }
   function precioCli(p) {
     const c = clienteSel();
-    if (c && c.nivel_id) {
-      const r = _prodNiveles.find(x => String(x.producto_id) === String(p.id) && String(x.nivel_id) === String(c.nivel_id));
-      if (r && Number(r.precio_contado || 0) > 0) return Number(r.precio_contado);
+    const r = filaNivel(p);
+    if (r) {
+      // REGLAMENTO parte A: si la factura es A CRÉDITO se cobra el precio de crédito del
+      // nivel. Antes ese campo se configuraba, se guardaba y NUNCA se usaba: una factura a
+      // crédito cobraba el precio de contado.
+      if (_facCredito && Number(r.precio_credito || 0) > 0) return Number(r.precio_credito);
+      if (Number(r.precio_contado || 0) > 0) return Number(r.precio_contado);
     }
     if (c && c.nivel_precio === 'mayor' && Number(p.precio_mayor || 0) > 0) return Number(p.precio_mayor);
     return Number(p.precio || 0);
+  }
+  // El piso de negociación: manda el del NIVEL del cliente si lo tiene; si no, el global del
+  // artículo. Antes el mínimo por nivel se configuraba en la tabla de niveles y no se respetaba.
+  function minimoDe(p) {
+    const r = filaNivel(p);
+    const mn = r ? Number(r.precio_minimo || 0) : 0;
+    return mn > 0 ? mn : Number(p.precio_minimo || 0);
+  }
+  // Cantidad mínima que exige el nivel del cliente para ese artículo (1 si no se configuró).
+  function cantMinimaDe(p) {
+    const r = filaNivel(p);
+    return Math.max(1, Number((r && r.cantidad_minima) || 1));
   }
 
   function totales() {
@@ -17772,6 +17793,11 @@
   window.nxFacSetCredito = function (b) {
     _facCredito = !!b;
     const el = document.getElementById('facNumPrev'); if (el) el.value = proxNumeroFacturaCorto(_facCredito);
+    // Ahora el precio depende de si la factura es a crédito (precio_credito del nivel), así que
+    // cambiar de Contado a A crédito tiene que RE-PRECIAR el carrito. Sin esto la regla quedaba
+    // a medias: lo que ya estaba en el carrito se quedaba con el precio de contado.
+    _cart.forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) it.precio = precioCli(p); });
+    try { pintarFactura(); } catch (e) {}
     try { pintarFacCliInfo(); } catch (e) {}
   };
   // Chips del comprobante fiscal (look premium) — llaman a nxFacSetNCF (sin cambios) y repintan el estado activo
@@ -18196,21 +18222,44 @@
     // SIN tope: marcas los IMEI que quieras y la CANTIDAD de la línea se ajusta sola
     const chk = Array.prototype.slice.call(document.querySelectorAll('#nxFacSer [data-serid]')).filter(c => c.checked);
     it.seriales = chk.map(c => ({ id: c.getAttribute('data-serid'), serial: c.getAttribute('data-serial') }));
-    if (it.seriales.length) { it._sinSerial = false; const _old = it.cantidad; it.cantidad = it.seriales.length; ajustarCombos(it.producto_id, it.cantidad - _old); }
+    if (it.seriales.length) { const _old = it.cantidad; it.cantidad = it.seriales.length; ajustarCombos(it.producto_id, it.cantidad - _old); }
     cerrarModal('nxFacSer');
     if (_posTab === 'vender') { const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML(); pintarCarrito(); } else { pintarFactura(); }
   };
-  window.nxFacSerSin = function (i) { const it = _cart[i]; if (!it) return; it._sinSerial = true; it.seriales = []; cerrarModal('nxFacSer'); toast('ok', 'Se venderá sin IMEI', 'No había seriales cargados'); pintarFactura(); };
-  window.nxFacCant = function (i, v) { const it = _cart[i]; if (!it) return; const n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0)); if (n === 0) { _cart.splice(i, 1); } else it.cantidad = n; pintarFactura(); };
+  window.nxFacCant = function (i, v) {
+    const it = _cart[i]; if (!it) return;
+    let n = Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g, '')) || 0));
+    if (n === 0) { _cart.splice(i, 1); pintarFactura(); return; }
+    // REGLAMENTO parte A: la existencia estricta aplica IGUAL en todas las pantallas. En
+    // Vender los botones +/− ya no dejaban pasar del stock, pero aquí se podía teclear 999
+    // con 3 en existencia y solo enterarse al cobrar, con el carrito ya armado.
+    const p = _prods.find(x => String(x.id) === String(it.producto_id));
+    if (p && p.tipo !== 'servicio' && !esPreTab()) {
+      const otras = _cart.reduce((t, x, j) => t + (j !== i && String(x.producto_id) === String(it.producto_id) ? Number(x.cantidad || 0) : 0), 0);
+      const tope = stockDisponible(p) - otras;
+      if (n > tope) { n = Math.max(0, tope); toast('err', 'Sin stock disponible', p.nombre + ' — quedan ' + Number(p.stock || 0)); }
+      if (n === 0) { _cart.splice(i, 1); pintarFactura(); return; }
+    }
+    it.cantidad = n; pintarFactura();
+  };
   window.nxFacPrecio = function (i, v) {
     const it = _cart[i]; if (!it) return;
     let nuevo = Math.max(0, parseMoney(v));
     const p = _prods.find(x => String(x.id) === String(it.producto_id));
-    const min = p ? Number(p.precio_minimo || 0) : 0;
+    const min = p ? minimoDe(p) : 0;
     if (min > 0 && nuevo < min && !puedeVerMin()) { nuevo = min; toast('warn', 'Precio ajustado al mínimo permitido', 'Ese artículo tiene un piso de negociación'); }
     it.precio = nuevo; pintarFactura();
   };
-  window.nxFacDesc = function (i, v) { const it = _cart[i]; if (!it) return; it.desc = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0); pintarFactura(); };
+  window.nxFacDesc = function (i, v) {
+    const it = _cart[i]; if (!it) return;
+    // REGLAMENTO parte A: un artículo marcado "no permite descuento" lo RECHAZA. Antes
+    // ese campo se configuraba, se guardaba y nadie lo consultaba al vender: el cajero le
+    // ponía descuento igual.
+    const p = _prods.find(x => String(x.id) === String(it.producto_id));
+    const n = Math.max(0, Number(String(v).replace(/[^0-9.]/g, '')) || 0);
+    if (p && p.no_descuento && n > 0) { it.desc = 0; toast('err', 'Este artículo no permite descuento', p.nombre); pintarFactura(); return; }
+    it.desc = n; pintarFactura();
+  };
   window.nxFacDescTipo = function (i) { const it = _cart[i]; if (!it) return; it.descT = (it.descT === 'mon') ? 'pct' : 'mon'; pintarFactura(); };
   window.nxFacRepaint = function () { const v = document.getElementById('v-pos'); if (v && (_posTab === 'factura' || _posTab === 'prefactura')) pintarFactura(); };
   window.nxFacFacturar = function () { if (!_cart.length) return; window.nxPosCobrar(); };
@@ -18900,6 +18949,20 @@
         toast('err', 'Falta elegir el IMEI', p.nombre + ' (' + (it.seriales || []).length + ' de ' + it.cantidad + ')');
         window.nxFacSerial(i);
         return;
+      }
+      // REGLAMENTO parte A: no se cobra un artículo en RD$ 0. Si no tiene precio, no se vende
+      // (antes se podía meter al carrito un artículo "SIN PRECIO" y cobrarlo en cero).
+      if (p && Number(it.precio || 0) <= 0) {
+        toast('err', 'Ese artículo no tiene precio', p.nombre + ' — ponle precio antes de cobrar');
+        return;
+      }
+      // REGLAMENTO parte A: si el nivel del cliente exige una cantidad mínima, se respeta.
+      if (p) {
+        const cmin = cantMinimaDe(p);
+        if (Number(it.cantidad || 0) < cmin) {
+          toast('err', 'Cantidad mínima ' + cmin, p.nombre + ' — el nivel de ese cliente pide al menos ' + cmin);
+          return;
+        }
       }
     }
     // POLÍTICA ESTRICTA: sin stock no se factura (revalida contra el inventario actual).
@@ -20914,7 +20977,29 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
     if (!items.length) { toast('err', 'La venta no tiene artículos'); return; }
     _devEdit = { venta: v, motivo: '', metodo: 'Efectivo', lineas: items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: Number(it.precio || 0), itbis: it.itbis !== false, maxCant: Number(it.cantidad || 0), cant: Number(it.cantidad || 0) })) };
+    // REGLAMENTO parte B: al devolver un artículo con IMEI hay que decir CUÁL equipo
+    // volvió, no solo cuántos. Antes la devolución no tocaba los seriales: el equipo
+    // regresaba al stock pero su IMEI quedaba "vendido" PARA SIEMPRE — ese teléfono no
+    // se podía volver a vender nunca. Se cargan los IMEI de ESTA venta para elegirlos.
+    _devEdit.seriales = [];
+    try {
+      _devEdit.seriales = await getAPI().get('pos_seriales', 'select=id,serial,producto_id,estado&venta_id=eq.' + ventaId + '&order=serial.asc') || [];
+    } catch (e) { }
     abrirDevolucion();
+  };
+  // Los IMEI de esta venta que pertenecen a esa línea y todavía están marcados vendidos.
+  function devSerialesDe(pid) {
+    return (_devEdit.seriales || []).filter(s => String(s.producto_id) === String(pid) && s.estado === 'vendido');
+  }
+  // Marcar/desmarcar un IMEI a devolver. La CANTIDAD de la línea se ajusta sola al número
+  // de IMEI elegidos — misma regla que al vender: cantidad = IMEI elegidos, no se teclea.
+  window.nxDevSerTog = function (i, sid) {
+    const l = _devEdit.lineas[i]; if (!l) return;
+    l.serIds = l.serIds || [];
+    const k = l.serIds.indexOf(String(sid));
+    if (k >= 0) l.serIds.splice(k, 1); else l.serIds.push(String(sid));
+    l.cant = l.serIds.length;
+    pintarDevLineas();
   };
   function devTotales() {
     let total = 0, itbis = 0;
@@ -20944,10 +21029,23 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxDevCant = function (i, val) { const l = _devEdit.lineas[i]; if (!l) return; let n = parseFloat(val); if (isNaN(n) || n < 0) n = 0; if (n > l.maxCant) n = l.maxCant; l.cant = n; pintarDevTot(); };
   function pintarDevLineas() {
     const wrap = document.getElementById('devLineas'); if (!wrap) return;
-    wrap.innerHTML = _devEdit.lineas.map((l, i) => `<div class="nxNomRow" style="grid-template-columns:1fr 110px">
+    wrap.innerHTML = _devEdit.lineas.map((l, i) => {
+      const sers = devSerialesDe(l.producto_id);
+      // Artículo con IMEI: se ELIGE cuál equipo volvió; la cantidad la manda esa elección.
+      if (sers.length) {
+        l.serIds = l.serIds || [];
+        return `<div class="nxNomRow" style="grid-template-columns:1fr">
+        <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.nombre)}</div><div style="font-size:10px;color:#475569">Precio ${fmt(l.precio)} · vendido ${l.maxCant}</div></div>
+        <div style="font-size:9.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin:4px 0 3px">¿Cuál equipo volvió?</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">${sers.map(s => `<button type="button" class="nxSerPick${l.serIds.indexOf(String(s.id)) >= 0 ? ' on' : ''}" onclick="window.nxDevSerTog(${i},'${s.id}')" aria-label="Devolver el IMEI ${esc(s.serial)}">${esc(s.serial)}</button>`).join('')}</div>
+        <div style="font-size:10px;color:${l.cant ? '#16a34a' : '#94a3b8'};font-weight:700;margin-top:4px">${l.cant ? 'Devolviendo ' + l.cant + ' equipo(s)' : 'Toca el IMEI que te devolvieron'}</div>
+      </div>`;
+      }
+      return `<div class="nxNomRow" style="grid-template-columns:1fr 110px">
         <div class="nxNomEmp"><div style="font-weight:700;font-size:12px">${esc(l.nombre)}</div><div style="font-size:10px;color:#475569">Precio ${fmt(l.precio)} · vendido ${l.maxCant}</div></div>
         <label class="nxNomF"><span>Devolver</span><input data-devc="${i}" inputmode="numeric" value="${l.cant}" onchange="window.nxDevCant(${i},this.value)"></label>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     pintarDevTot();
   }
   function pintarDevTot() { const el = document.getElementById('devTot'); if (!el) return; const t = devTotales(); el.innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span>Subtotal: <b>${fmt(t.subtotal)}</b></span><span>ITBIS: <b>${fmt(t.itbis)}</b></span><span style="color:#dc2626">A devolver: <b>${fmt(t.total)}</b></span></div>`; }
@@ -20967,6 +21065,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const r = await getAPI().post('pos_devoluciones', body);
       const dev = (r && r[0]) || null; if (!dev) throw new Error('No se pudo registrar');
       _notasCred.unshift(dev); // aparece de una en el Historial de notas de crédito
+      // El IMEI del equipo devuelto vuelve a quedar DISPONIBLE. Sin esto el teléfono
+      // regresaba al stock pero su serial seguía "vendido" y no se podía vender nunca más.
+      try {
+        const devIds = lineas.reduce((a, l) => a.concat(l.serIds || []), []);
+        for (const sid of devIds) {
+          await getAPI().patch('pos_seriales', 'id=eq.' + sid, { estado: 'disponible', venta_id: null });
+        }
+        if (devIds.length) logAudit('POS_IMEI_LIBERADO', devIds.length + ' IMEI liberado(s) por devolución', 'POS');
+      } catch (e) { }
       const items = lineas.map(l => ({ devolucion_id: dev.id, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant, precio: Math.round(l.precio), itbis: !!l.itbis, importe: Math.round(l.precio * l.cant) }));
       await getAPI().post('pos_devolucion_items', items);
       // devolver stock
