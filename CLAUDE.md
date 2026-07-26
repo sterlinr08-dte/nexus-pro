@@ -8677,3 +8677,47 @@ reglamentos de negocio. Texto completo en **`REGLAMENTOS.md` §4**.
   dueño:** arrancar YA con (A) el certificado y elegir (B) el PSFE — son las piezas de plazo largo que no
   dependen del código; la integración (C/D) se construye después, con el certificado en mano, en su propia
   ronda supervisada.
+
+### REGLAMENTO DE SEGUROS (núcleo, `index.html`) — decretado y auditado (26-jul-2026, v49.95)
+Reglamento #9, pedido por el dueño ("Ahora reglamento para los seguros"). Es el negocio ORIGINAL
+—correduría de seguros de salud— y el **único módulo con datos reales en producción**: 109 clientes,
+300 facturas, 174 cobros. Por eso se auditó con más cuidado que ninguno: es dinero en vivo, no
+forward-looking. Texto completo en **`REGLAMENTOS.md` §9**.
+- **Medición previa (SQL directo):** la base estaba SANA en lo grande — 0 NCF duplicados, `deuda_total`
+  cuadra con la suma de primas en los 109 clientes (ni inflada ni por debajo). El modelo de deuda
+  (`deuda_total`=primas facturadas · `pagado` · `deuda_anterior` bolsa separada · `pendTot=pend+deudaAnt`)
+  se confirmó intacto.
+- **HUECO 1, cerrado — el estado de factura se quedaba mostrando deuda ya pagada.** El estado
+  Pendiente/Parcial/Pagado de cada factura es una CACHÉ; la verdad se calcula repartiendo el `pagado`
+  del cliente de la factura más vieja a la más nueva (`_saldoFacturasCliente`). `regAbono` ya
+  resincronizaba (v48.5), pero **`nxEditarPrecioFactura` (corregir precio) y `anularFactura` NO** —
+  cambiar/quitar una factura mueve el reparto oldest-first, dejando a las HERMANAS con una etiqueta
+  vieja. Medido: **11 facturas reales** mostrando más deuda de la real (6 "Parcial" que ya estaban
+  Pagadas, 3 "Pendiente"→Pagada, 2 "Pendiente"→Parcial — todas en la dirección de perseguir a alguien
+  que ya pagó). Arreglado: `await resyncEstadoFacturas(f.cliente_id)` agregado a las 2 funciones + las
+  11 filas corregidas por SQL (**solo la etiqueta — cero montos de deuda/pago tocados**, la verdad
+  financiera ya estaba bien, solo el label estaba viejo). Reverificado: 0 stale restantes.
+- **HUECO 2, cerrado — NCF manual con formato distinto al de la DGII.** El `siguiente_ncf` manual
+  producía `B02-00000005` (con guion), pero la auto-facturación del servidor (`crear_factura_auto_tx`)
+  y el estándar DGII usan `B0200000005` (11 caracteres, sin guion). Comparten el MISMO contador
+  (`secuencias_ncf`), así que los NÚMEROS nunca chocan — solo el string difería. Migración
+  `seguros_ncf_formato_dgii_y_unico`: `siguiente_ncf` pasó al formato sin guion (unifica con la
+  auto-facturación) + índice único parcial `facturas(ncf)` como red de seguridad (mismo patrón que el
+  POS §4). Los 103 NCF históricos con guion (todos viejos, números 1-126) se DEJAN como están — no se
+  reescriben documentos fiscales ya emitidos. `get_advisors` sin hallazgos nuevos (las advertencias de
+  SECURITY DEFINER son las mismas ya aceptadas de siempre).
+- **Confirmado sano, no tocado:** `regAbono` ya resincroniza y exige agente/referencia/banco · el
+  NCF ya era atómico (`UPDATE...RETURNING`) · anti-duplicado de facturación consulta la BASE no solo
+  memoria · el corte 20-al-20 (`mesCorte`) · una factura pagada no se corrige ni se anula · una
+  anulada no se cobra ni se corrige · `nxRegAbonoDeudaAnterior` no resincroniza a propósito (solo toca
+  la bolsa de deuda anterior, no el reparto de facturas).
+- **Verificado con 10 comprobaciones end-to-end** sobre el código real extraído por contenido
+  (`_saldoFacturasCliente`/`resyncEstadoFacturas`/`nxEditarPrecioFactura`/`anularFactura`) con un
+  Supabase simulado que aplica los patches a memoria: corregir el precio de una factura vieja pasa a la
+  SIGUIENTE de Pendiente a Parcial (solo ocurre si el resync corrió sobre todo el cliente), anular una
+  factura re-reparte su crédito a las demás, y los guardas de siempre (pagada no se anula/corrige)
+  sin regresión + el reparto oldest-first exacto. `node --check` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** e-CF de la DGII (ver §4, obligatorio 15-nov-2026, aplica igual a Seguros) · las
+  comisiones de agente y las transferencias entre agentes tienen su propia lógica, no auditadas en
+  esta tanda (serían su propio reglamento si el dueño lo pide).

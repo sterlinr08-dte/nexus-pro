@@ -4071,7 +4071,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.94';
+const APP_VERSION='49.95';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6595,6 +6595,10 @@ async function nxEditarPrecioFactura(fid){
     await API.patch('facturas',`id=eq.${f.id}`,{prima_base:baseN,prima_deps:depsN,total:totalN});
     f.prima_base=baseN;f.prima_deps=depsN;f.total=totalN;
     if(cli){const deudaN=Math.max(0,Number(cli.deuda_total||0)+diff);await API.patch('clientes',`id=eq.${cli.id}`,{deuda_total:deudaN});cli.deuda_total=deudaN;}
+    // Reglamento seguros §9: el estado de factura es una CACHÉ. Cambiarle el precio a una
+    // factura mueve el reparto oldest-first del pago del cliente, así que hay que resincronizar
+    // el estado de TODAS sus facturas (no solo esta) — si no, otra factura queda con un label viejo.
+    try{await resyncEstadoFacturas(f.cliente_id);}catch(e){}
     logAudit('FACTURA_PRECIO_CORREGIDO',`${f.cliente_nom} · ${MESES[(f.mes||1)-1]||''} ${f.anio||''}: ${fmt(primaAct)} → ${fmt(nuevo)} · deuda ${diff>=0?'+':'-'}${fmt(Math.abs(diff))}`,'Facturas',f.cliente_id);
     toast('ok','Precio corregido',`${fmt(nuevo)} — listo para cobrar`);
     try{rFact();rCob();}catch(e){}
@@ -6665,6 +6669,10 @@ async function anularFactura(facturaId){
         try{recalcularSaldosContables();}catch(_){}
       }
     }catch(eRev){console.warn('No se pudo revertir contablemente la anulación:',eRev);}
+    // Reglamento seguros §9: anular saca esta factura del reparto oldest-first del pago del
+    // cliente, así que el crédito que la cubría se re-reparte a las demás. Resincronizar el
+    // estado de TODAS sus facturas para que ninguna quede mostrando deuda que ya no existe.
+    try{await resyncEstadoFacturas(f.cliente_id);}catch(e){}
     logAudit('FACTURA_ANULADA',`Factura ${f.ncf||f.periodo||''} de ${f.cliente_nom} · ${fmt(f.total)} · Motivo: ${motivo.trim()}`,'Facturas',f.cliente_id);
     rFact();
     if(typeof rDash==='function')rDash();
