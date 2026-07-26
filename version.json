@@ -1,7 +1,12 @@
 {
-  "version": "49.52",
+  "version": "49.53",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.53",
+      "t": "NUEVO \u2014 El sistema respeta \"reducir movimiento\" y se puede usar con teclado y lector de pantalla",
+      "d": "Dos revisiones completas al sistema:\n\nMOVIMIENTO: si en tu tel\u00e9fono tienes activado \u2018reducir movimiento\u2019 (el ajuste de accesibilidad que usa la gente que se marea con las animaciones), el sistema ahora lo respeta de verdad. Antes 47 de las 56 animaciones se mov\u00edan igual. Nada desaparece: lo que aparec\u00eda con animaci\u00f3n sigue apareciendo, solo que al instante.\n\nDe paso, el aviso emergente y las tarjetas de indicadores bajaron a 300 mil\u00e9simas de segundo, que es el est\u00e1ndar del sistema.\n\nTECLADO Y LECTORES DE PANTALLA:\n\n\u2022 Los 18 encabezados de tabla que sirven para ordenar (Cliente, Monto, Fecha\u2026) ahora se pueden usar con el teclado: llegas con Tab y ordenas con Enter. Antes solo respond\u00edan al clic.\n\n\u2022 69 botones que son solo un \u00edcono (imprimir, WhatsApp, editar, estado de cuenta\u2026) ahora dicen su nombre. Antes un lector de pantalla solo dec\u00eda \u2018bot\u00f3n\u2019.\n\n\u2022 Las 22 im\u00e1genes del sistema (fotos de art\u00edculos, c\u00e9dulas, firmas, comprobantes) ahora tienen su descripci\u00f3n.\n\nNada cambi\u00f3 de sitio ni de color \u2014 todo se ve igual."
+    },
     {
       "v": "49.52",
       "t": "NUEVO \u2014 Todos los botones del sistema con la misma forma",

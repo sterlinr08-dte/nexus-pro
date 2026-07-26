@@ -334,7 +334,7 @@ tbody tr:hover td{background:#f8fafc}
 .pol-vigente{color:var(--c1)}.pol-vencida{color:var(--c3)}.pol-gracia{color:var(--c4)}.pol-sin{color:var(--tx3)}
 /* Toasts */
 #toastS{position:fixed;bottom:14px;right:14px;display:flex;flex-direction:column;gap:5px;z-index:100001;max-width:270px;pointer-events:none}
-.toast{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:11px;display:flex;align-items:center;gap:8px;animation:tIn .35s cubic-bezier(.34,1.56,.64,1);border-left:4px solid var(--c1);box-shadow:0 8px 24px rgba(0,0,0,.12);pointer-events:all}
+.toast{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:11px;display:flex;align-items:center;gap:8px;animation:tIn .3s cubic-bezier(.34,1.56,.64,1);border-left:4px solid var(--c1);box-shadow:0 8px 24px rgba(0,0,0,.12);pointer-events:all}
 .toast.err{border-left-color:#dc2626}.toast.warn{border-left-color:#d97706}.toast.ok{border-left-color:#059669}
 @keyframes tIn{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
 /* ── ANIMACIONES DEL SISTEMA (movimiento sutil, respeta accesibilidad) ── */
@@ -342,7 +342,7 @@ tbody tr:hover td{background:#f8fafc}
   @keyframes nxPopIn{0%{opacity:0;transform:scale(.94) translateY(6px)}100%{opacity:1;transform:none}}
   @keyframes nxFadeUp{0%{opacity:0;transform:translateY(9px)}100%{opacity:1;transform:none}}
   .overlay.open .modal{animation:nxPopIn .26s cubic-bezier(.34,1.56,.64,1) both}
-  .nxSf .sf-kpis .sf-kpi,.nxPf .kpirow .kpitile{animation:nxFadeUp .34s ease both}
+  .nxSf .sf-kpis .sf-kpi,.nxPf .kpirow .kpitile{animation:nxFadeUp .3s ease both}
   .nxSf .sf-kpis .sf-kpi:nth-child(1),.nxPf .kpirow .kpitile:nth-child(1){animation-delay:.02s}
   .nxSf .sf-kpis .sf-kpi:nth-child(2),.nxPf .kpirow .kpitile:nth-child(2){animation-delay:.07s}
   .nxSf .sf-kpis .sf-kpi:nth-child(3),.nxPf .kpirow .kpitile:nth-child(3){animation-delay:.12s}
@@ -899,6 +899,29 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 /* Contadores dentro de las pestañas */
 .nxft-tab .nxft-cnt{padding:1px 7px;border-radius:10px;font-size:9px;margin-left:1px;background:rgba(148,163,184,.22);color:inherit}
 .nxft-tab.is-active .nxft-cnt{background:rgba(255,255,255,.25);color:#fff}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   REDUCIR MOVIMIENTO — una sola regla para TODO el sistema.
+   Medido: de las 56 animaciones del sistema, solo 9 estaban dentro de un guardia
+   `prefers-reduced-motion`; las otras 47 seguían moviéndose aunque el usuario
+   pidiera en su teléfono "reducir movimiento" (un ajuste de accesibilidad que
+   usan personas con mareo, migraña o vértigo). Con `!important` esta regla gana
+   sobre cualquier animación, incluidas las que inyecta parches.js después.
+   No apaga nada visualmente: lo que aparece con animación sigue apareciendo,
+   solo que al instante. Los giradores de carga se quedan quietos, que es
+   exactamente lo que pide ese ajuste.
+   Va al final del bloque a propósito, para que se lea como lo último que manda.
+   ════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    animation-delay:0s!important;
+    transition-duration:.01ms!important;
+    transition-delay:0s!important;
+    scroll-behavior:auto!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1148,18 +1171,18 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <button class="tn-tog" onclick="toggleSB()"><i class="ti ti-menu-2"></i></button>
         <span class="pttl" id="pttl">// DASHBOARD</span>
         <div class="tn-r">
-          <button class="tn-b" id="btnRefrescar" onclick="refrescarDatos(this)" title="Actualizar datos"><i class="ti ti-refresh"></i></button>
+          <button class="tn-b" id="btnRefrescar" onclick="refrescarDatos(this)" title="Actualizar datos" aria-label="Actualizar datos"><i class="ti ti-refresh"></i></button>
           <button class="tn-b" id="btnAlertas" onclick="nav('polizas',null)" title="Alertas" style="display:none"><i class="ti ti-bell" style="color:var(--c3)"></i><div class="ndot"></div></button>
           <div class="err-badge" id="errBadge" onclick="abrirLog()" title="Ver errores">
             <div class="err-badge-dot"></div>
             <span id="errBadgeCount">0</span> ERROR
           </div>
-          <button class="tn-b" onclick="abrirLog()" title="Log de errores"><i class="ti ti-bug"></i></button>
+          <button class="tn-b" onclick="abrirLog()" title="Log de errores" aria-label="Log de errores"><i class="ti ti-bug"></i></button>
           <button class="tn-b notif-bell" onclick="toggleNotif()" title="Notificaciones" style="position:relative">
             <i class="ti ti-bell"></i>
             <span class="notif-badge" id="notifBadge" style="display:none">0</span>
           </button>
-          <button class="tn-b" onclick="toggleDarkMode()" title="Modo oscuro" id="btnDarkMode">
+          <button class="tn-b" onclick="toggleDarkMode()" title="Modo oscuro" id="btnDarkMode" aria-label="Modo oscuro">
             <i class="ti ti-moon" id="iconDarkMode"></i>
           </button>
           <button class="tn-b" onclick="abrirGlobalSearch()" title="Búsqueda global (Ctrl+K)" style="display:flex;align-items:center;gap:5px">
@@ -1167,9 +1190,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <kbd style="font-size:8px;background:#f1f5f9;padding:1px 5px;border-radius:4px;border:1px solid #e2e8f0">⌘K</kbd>
           </button>
           <button id="btnInstalar" onclick="instalarApp()" title="Instalar como app" style="display:none;background:linear-gradient(135deg,#1e3a6e,#8b5cf6);border:none;color:#fff;font-weight:700;font-size:10px;padding:0 10px;border-radius:8px;height:34px;gap:5px;align-items:center;cursor:pointer"><i class="ti ti-download"></i> <span>Instalar</span></button>
-          <button class="tn-b" onclick="instalarApp()" title="Instalar como app en iOS/Android"><i class="ti ti-device-mobile-down"></i></button>
-          <button class="tn-b" onclick="abrirBackup()" title="Backup de seguridad" style="border-color:#10b981;color:#059669;background:#f0fdf4"><i class="ti ti-database-export"></i></button>
-          <button class="tn-b" onclick="desconectar()" title="Config"><i class="ti ti-settings"></i></button>
+          <button class="tn-b" onclick="instalarApp()" title="Instalar como app en iOS/Android" aria-label="Instalar como app en iOS/Android"><i class="ti ti-device-mobile-down"></i></button>
+          <button class="tn-b" onclick="abrirBackup()" title="Backup de seguridad" style="border-color:#10b981;color:#059669;background:#f0fdf4" aria-label="Backup de seguridad"><i class="ti ti-database-export"></i></button>
+          <button class="tn-b" onclick="desconectar()" title="Config" aria-label="Config"><i class="ti ti-settings"></i></button>
         </div>
       </header>
       <div class="content" id="cnt">
@@ -1237,7 +1260,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <button id="btnLimpiarCli" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="height:30px;padding:0 10px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx2);font-size:10px;cursor:pointer;display:none;align-items:center;gap:4px"><i class="ti ti-eraser"></i> Limpiar</button>
             </div>
             <div class="tw"><table>
-              <thead><tr><th style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
+              <thead><tr><th style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('nom')}">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('agente')}">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('plan')}">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('empresa')}">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('vigencia')}">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('prima')}">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('pendiente')}">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('estado')}">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
               <tbody id="tbCli"><tr><td colspan="9"><div class="loading"><div class="spin"></div>Cargando...</div></td></tr></tbody>
             </table></div>
           </div>
@@ -1379,7 +1402,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="nc">
             <div class="ch"><span class="ct">Agentes / Corredores</span><button class="btn bxl bsm" onclick="openM('mAgente')"><i class="ti ti-plus"></i> Nuevo agente</button></div>
             <div class="tw"><table>
-              <thead><tr><th style="width:28%;cursor:pointer;user-select:none" onclick="sortAgt('nombre')">NOMBRE <span id="sfa_nombre" style="color:#6d28d9"></span></th><th style="width:20%;cursor:pointer;user-select:none" onclick="sortAgt('cargo')">CARGO <span id="sfa_cargo" style="color:#6d28d9"></span></th><th style="width:16%;cursor:pointer;user-select:none" onclick="sortAgt('licencia')">LICENCIA <span id="sfa_licencia" style="color:#6d28d9"></span></th><th style="width:12%;cursor:pointer;user-select:none" onclick="sortAgt('vence')">VENCE <span id="sfa_vence" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortAgt('estado')">ESTADO LIC. <span id="sfa_estado" style="color:#6d28d9"></span></th><th style="width:14%">ACCIONES</th></tr></thead>
+              <thead><tr><th style="width:28%;cursor:pointer;user-select:none" onclick="sortAgt('nombre')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortAgt('nombre')}">NOMBRE <span id="sfa_nombre" style="color:#6d28d9"></span></th><th style="width:20%;cursor:pointer;user-select:none" onclick="sortAgt('cargo')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortAgt('cargo')}">CARGO <span id="sfa_cargo" style="color:#6d28d9"></span></th><th style="width:16%;cursor:pointer;user-select:none" onclick="sortAgt('licencia')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortAgt('licencia')}">LICENCIA <span id="sfa_licencia" style="color:#6d28d9"></span></th><th style="width:12%;cursor:pointer;user-select:none" onclick="sortAgt('vence')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortAgt('vence')}">VENCE <span id="sfa_vence" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortAgt('estado')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortAgt('estado')}">ESTADO LIC. <span id="sfa_estado" style="color:#6d28d9"></span></th><th style="width:14%">ACCIONES</th></tr></thead>
               <tbody id="tbAgt"><tr><td colspan="6"><div class="loading"><div class="spin"></div></div></td></tr></tbody>
             </table></div>
           </div>
@@ -2164,7 +2187,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 <!-- Modal Preview de imagen -->
 <div class="overlay" id="mImgPreview" style="background:rgba(0,0,0,.9)" onclick="closeM('mImgPreview')">
   <div style="max-width:90vw;max-height:90vh;position:relative">
-    <img id="previewImgSrc" style="max-width:100%;max-height:85vh;border-radius:8px;object-fit:contain"/>
+    <img id="previewImgSrc" style="max-width:100%;max-height:85vh;border-radius:8px;object-fit:contain" alt="Vista previa del documento"/>
     <div style="text-align:center;margin-top:8px;font-size:12px;color:#fff" id="previewImgLbl"></div>
   </div>
 </div>
@@ -3626,8 +3649,8 @@ function renderUsuariosCfg(){
       <option value="false" ${!u.activo?'selected':''}>Inactivo</option>
     </select></td>
     <td style="white-space:nowrap;display:flex;gap:4px">
-      <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
-      <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña"><i class="ti ti-key"></i></button>
+      <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario" aria-label="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
+      <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña" aria-label="Cambiar contraseña"><i class="ti ti-key"></i></button>
       <button class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-trash"></i></button>
     </td>
   </tr>`).join('');
@@ -3759,7 +3782,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.52';
+const APP_VERSION='49.53';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5680,7 +5703,7 @@ function rCli(){
   tb.innerHTML=list.map(c=>{
     const emp=gEmp(c.empresa_id),pd=pend(c),ep=getEstPol(c);
     const hoy2=new Date(),fin=c.fecha_fin?new Date(c.fecha_fin):null;
-    const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar"><i class="ti ti-user-check"></i></button>`;
+    const inhabBtn=c.activo?`<button class="btn bsm bdis" onclick="abrirInhab('${c.id}')" title="Inhabilitar" aria-label="Inhabilitar"><i class="ti ti-user-off"></i></button>`:`<button class="btn bsm bc1" onclick="reactivar('${c.id}')" title="Reactivar" aria-label="Reactivar"><i class="ti ti-user-check"></i></button>`;
     // Info de proceso (visible cuando el cliente está EN_PROCESO)
     let procInfo='';
     if(c.estado_cliente==='EN_PROCESO'){
@@ -5722,10 +5745,10 @@ function rCli(){
       <td style="font-family:var(--mono);font-size:9px;font-weight:${pd>0?700:400};color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td>
       <td>${estB(c)}</td>
       <td style="white-space:nowrap;display:flex;gap:3px;align-items:center">
-        <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar"><i class="ti ti-edit"></i></button>
-        <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro"><i class="ti ti-wallet"></i></button>
+        <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar" aria-label="Editar"><i class="ti ti-edit"></i></button>
+        <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro" aria-label="Registrar cobro"><i class="ti ti-wallet"></i></button>
         <div style="position:relative;display:inline-block">
-          <button class="btn bsm bghost" onclick="toggleAccMenu(event,'${c.id}')" title="Más acciones"><i class="ti ti-dots-vertical"></i></button>
+          <button class="btn bsm bghost" onclick="toggleAccMenu(event,'${c.id}')" title="Más acciones" aria-label="Más acciones"><i class="ti ti-dots-vertical"></i></button>
           <div id="accMenu_${c.id}" class="acc-menu" style="display:none">
             <div class="acc-menu-hd">GESTIÓN</div>
             <button class="acc-i-purple" onclick="abrirHistorialCobros('${c.id}');cerrarAccMenus()"><i class="ti ti-receipt"></i> Cobros guardados</button>
@@ -5788,7 +5811,7 @@ function rPolizas(){
       <td>${ultimaFac?`<span class="ncf-badge">${ultimaFac.ncf||'Sin NCF'}</span>`:'<span style="color:var(--tx3);font-size:9px">—</span>'}</td>
       <td style="white-space:nowrap;display:flex;gap:2px">
         <button class="btn bsm bc1" onclick="verCertificadoPDF('${c.id}')" title="Certificado de seguro"><i class="ti ti-file-certificate"></i> Cert.</button>
-        <button class="btn bsm bwa" onclick="enviarWAPoliza('${c.id}')" title="WhatsApp vencimiento"><i class="ti ti-brand-whatsapp"></i></button>
+        <button class="btn bsm bwa" onclick="enviarWAPoliza('${c.id}')" title="WhatsApp vencimiento" aria-label="WhatsApp vencimiento"><i class="ti ti-brand-whatsapp"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -6676,7 +6699,7 @@ function aplicarFiltrosPagos(){
   const puedeEdit=tienePermiso('payments_edit');
   const puedeDel=tienePermiso('payments_delete');
   const fHora=s=>{if(!s)return'—';try{return new Date(s).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(e){return'—';}};
-  tb.innerHTML=`<table class="sf-tbl"><thead><tr><th style="cursor:pointer" onclick="sortPag('fecha')">Fecha ${_ordArrow('pag','fecha')}</th><th>Hora</th><th class="col-cli" style="cursor:pointer" onclick="sortPag('cliente')">Cliente ${_ordArrow('pag','cliente')}</th><th style="cursor:pointer" onclick="sortPag('metodo')">Método ${_ordArrow('pag','metodo')}</th><th>Banco</th><th class="r" style="cursor:pointer" onclick="sortPag('monto')">Monto ${_ordArrow('pag','monto')}</th><th>Usuario</th><th class="r">Acciones</th></tr></thead><tbody>`+list.map(p=>`<tr>
+  tb.innerHTML=`<table class="sf-tbl"><thead><tr><th style="cursor:pointer" onclick="sortPag('fecha')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('fecha')}">Fecha ${_ordArrow('pag','fecha')}</th><th>Hora</th><th class="col-cli" style="cursor:pointer" onclick="sortPag('cliente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('cliente')}">Cliente ${_ordArrow('pag','cliente')}</th><th style="cursor:pointer" onclick="sortPag('metodo')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('metodo')}">Método ${_ordArrow('pag','metodo')}</th><th>Banco</th><th class="r" style="cursor:pointer" onclick="sortPag('monto')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortPag('monto')}">Monto ${_ordArrow('pag','monto')}</th><th>Usuario</th><th class="r">Acciones</th></tr></thead><tbody>`+list.map(p=>`<tr>
     <td data-lb="Fecha">${(p.fecha||'').slice(0,10)}</td>
     <td data-lb="Hora" class="sf-tbl-hide-mb">${fHora(p.fecha)}</td>
     <td data-lb="Cliente" class="cli-cell" ${p.cliente_id?`onclick="verCliente('${p.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(p.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${p.cliente_id}')}" style="cursor:pointer"`:''}><b>${p.cliente_nom}${p.referencia_cli?` <span style="color:#7c3aed;font-weight:600">(${p.referencia_cli})</span>`:''}</b><span>${reciboNoStr(p)?`🧾 ${reciboNoStr(p)}`:''}${(Array.isArray(p.meses_cubiertos)&&p.meses_cubiertos.length)?` · 📅 ${p.meses_cubiertos.map(mm=>(MESES[(mm.mes||1)-1]||'').slice(0,3)+' '+(mm.anio||'')).join(', ')}`:''}</span></td>
@@ -6768,9 +6791,9 @@ async function abrirHistorialCobros(clienteId){
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
       <td style="white-space:nowrap">
-        <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago"><i class="ti ti-receipt"></i></button>
-        ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')" title="Editar"><i class="ti ti-edit"></i></button>`:''}
-        ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
+        <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago" aria-label="Recibo de pago"><i class="ti ti-receipt"></i></button>
+        ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')" title="Editar" aria-label="Editar"><i class="ti ti-edit"></i></button>`:''}
+        ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-trash"></i></button>`:''}
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -6878,7 +6901,7 @@ async function verHistorialAbonos(clienteId){
       <td style="font-size:10px">${a.metodo||'—'}</td>
       <td style="font-size:10px">${a.referencia||'—'}</td>
       <td style="white-space:nowrap;display:flex;gap:4px">
-        <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago"><i class="ti ti-receipt"></i></button>
+        <button class="btn bsm" style="background:#1e3a6e;color:#fff" onclick="window.nxReciboDeAbono&&window.nxReciboDeAbono('${a.id}','${clienteId}')" title="Recibo de pago" aria-label="Recibo de pago"><i class="ti ti-receipt"></i></button>
         ${puedeEdit?`<button class="btn bsm bc1" onclick="editarAbono('${a.id}','${clienteId}')"><i class="ti ti-edit"></i></button>`:''}
         ${puedeDel?`<button class="btn bsm bc3" onclick="eliminarAbono('${a.id}','${clienteId}')"><i class="ti ti-trash"></i></button>`:''}
       </td>
@@ -7530,7 +7553,7 @@ async function guardarAsientoFn(){
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
 }
-function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f" style="display:flex;justify-content:space-between;align-items:center"><span>${a.fecha} · ${a.referencia||''}</span><button class="btn bsm bghost" onclick="editarAsiento('${a.id}')" title="Editar asiento" style="padding:4px 8px"><i class="ti ti-edit"></i></button></div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
+function rAsientos(){const el=document.getElementById('asientosC');if(!ST.asientos.length){el.innerHTML='<div class="empty">Sin asientos</div>';return;}el.innerHTML=ST.asientos.slice(0,30).map(a=>`<div class="ai"><div class="ai-f" style="display:flex;justify-content:space-between;align-items:center"><span>${a.fecha} · ${a.referencia||''}</span><button class="btn bsm bghost" onclick="editarAsiento('${a.id}')" title="Editar asiento" style="padding:4px 8px" aria-label="Editar asiento"><i class="ti ti-edit"></i></button></div><div class="ai-d">${a.descripcion}</div><div class="ai-ln"><div class="ai-h">CUENTA</div><div class="ai-h" style="text-align:right">DÉBITO</div><div class="ai-h" style="text-align:right">CRÉDITO</div><div>${a.cuenta_dr_nom||'—'}</div><div style="text-align:right;color:var(--c1)">${fmt(a.monto_dr)}</div><div></div><div style="padding-left:10px;color:var(--tx2)">${a.cuenta_cr_nom||'—'}</div><div></div><div style="text-align:right;color:var(--c3)">${fmt(a.monto_cr)}</div></div></div>`).join('');}
 function rBalance(){const act=CUENTAS.filter(c=>c.tipo==='Activo'),pas=CUENTAS.filter(c=>c.tipo==='Pasivo'||c.tipo==='Patrimonio');const tA=act.reduce((s,c)=>s+c.saldo,0),tP=pas.reduce((s,c)=>s+c.saldo,0);const ing=CUENTAS.filter(c=>c.tipo==='Ingreso').reduce((s,c)=>s+c.saldo,0);const gast=CUENTAS.filter(c=>c.tipo==='Gasto').reduce((s,c)=>s+c.saldo,0);const util=ing-gast;document.getElementById('balA').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c1);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">ACTIVOS</div>${act.map(c=>`<div class="conr"><span>${c.nom}</span><span class="cdr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr" style="border-top:1px solid rgba(0,229,199,.15);margin-top:5px"><span>TOTAL ACTIVOS</span><span class="cdr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tA)}</span></div>`;document.getElementById('balP').innerHTML=`<div style="font-size:8px;font-weight:700;color:var(--c3);font-family:var(--mono);letter-spacing:.8px;margin-bottom:7px">PASIVOS Y PATRIMONIO</div>${pas.map(c=>`<div class="conr"><span>${c.nom}</span><span class="ccr" style="font-family:var(--mono)">${fmt(c.saldo)}</span></div>`).join('')}<div class="conr"><span>Utilidad del período</span><span style="font-family:var(--mono);color:var(--c4)">${fmt(util)}</span></div><div class="conr" style="border-top:1px solid rgba(244,63,94,.15);margin-top:5px"><span>TOTAL PAS + PAT</span><span class="ccr" style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(tP+util)}</span></div>`;}
 // Devuelve el rango de fechas [desde, hasta] del período contable: MES CALENDARIO.
 // El período "Mayo 2026" va del 1 al 31 de mayo 2026.
@@ -8109,8 +8132,8 @@ function rUsuarios(){const tb=document.getElementById('tbUsu');if(!ST.usuarios.l
     </select>
   </td>
   <td style="white-space:nowrap;display:flex;gap:4px">
-    <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
-    <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña"><i class="ti ti-key"></i></button>
+    <button class="btn bsm bc1" onclick="abrirCambiarLogin('${u.id}','${u.login}')" title="Cambiar usuario" aria-label="Cambiar usuario"><i class="ti ti-user-edit"></i></button>
+    <button class="btn bsm bc2" onclick="abrirCambiarPwd('${u.id}','${u.login}')" title="Cambiar contraseña" aria-label="Cambiar contraseña"><i class="ti ti-key"></i></button>
     <button class="btn bsm bc3" onclick="eliminarUsu('${u.id}')"><i class="ti ti-trash"></i></button>
   </td>
 </tr>`).join('');}
@@ -8385,7 +8408,7 @@ async function exportarDocsPDF(){
         const r = await fetch(d.url_publica);
         const blob = await r.blob();
         const b64 = await new Promise(res=>{const fr=new FileReader();fr.onload=e=>res(e.target.result);fr.readAsDataURL(blob);});
-        return `<div style="page-break-inside:avoid;margin-bottom:20px"><h3 style="color:#1e3a6e;border-bottom:1px solid #e2e8f0;padding-bottom:6px">${tipoLbl}</h3><img src="${b64}" style="max-width:100%;border-radius:6px;border:1px solid #e2e8f0"/></div>`;
+        return `<div style="page-break-inside:avoid;margin-bottom:20px"><h3 style="color:#1e3a6e;border-bottom:1px solid #e2e8f0;padding-bottom:6px">${tipoLbl}</h3><img src="${b64}" style="max-width:100%;border-radius:6px;border:1px solid #e2e8f0" alt="Comprobante"/></div>`;
       }catch{ return `<div><h3>${tipoLbl}</h3><p>No se pudo cargar la imagen</p></div>`; }
     }
     return `<div style="page-break-inside:avoid;margin-bottom:16px"><h3 style="color:#1e3a6e">${tipoLbl}</h3><p><a href="${d.url_publica}">${d.nombre_archivo}</a></p></div>`;

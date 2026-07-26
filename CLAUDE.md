@@ -5174,6 +5174,64 @@ salud (`senior-architect`+`gstack-health`) · 5 retrospectiva (`gstack-retro`). 
 (`webapp-testing`, `gstack-investigate`, `gstack-spec`, `gstack-plan-*`, `careful`/`freeze`/
 `guard`) no son auditorías: son método de trabajo y ya se usan cuando toca.
 
+### AUDITORÍA — Rondas 2 (animaciones) y 3 (accesibilidad) (26-jul-2026, v49.53)
+
+#### Ronda 2 — Animaciones (`review-animations` + `apple-design` + `emil-design-eng`)
+Inventario medido, no de memoria: **40 keyframes y 56 declaraciones de animación** en los 2 archivos.
+- **Lo que YA estaba bien (no se tocó):** **cero** animaciones mueven propiedades de layout
+  (`width`/`height`/`top`/`left`/`margin`/`padding`) — todas usan `transform`/`opacity`/`filter`,
+  que es lo correcto para que no haya recálculo de página en cada cuadro. Ese resultado se midió
+  con un analizador de los keyframes reales, no se asumió.
+- **HALLAZGO REAL, arreglado:** de las 56 declaraciones, **solo 9 estaban dentro de un guardia
+  `prefers-reduced-motion`** — las otras **47 seguían moviéndose** aunque el usuario active
+  "reducir movimiento" en su teléfono (ajuste de accesibilidad de quien se marea, tiene migraña o
+  vértigo). Arreglado con **una sola regla global** al final del `<style>` de `index.html`
+  (`*,*::before,*::after` con `!important`, que gana también sobre el CSS que inyecta
+  `parches.js` después). No apaga nada: lo que aparecía con animación sigue apareciendo, al
+  instante; los giradores de carga se quedan quietos, que es justo lo que pide ese ajuste.
+- **2 duraciones ajustadas** (las que el propio `DESIGN_SYSTEM.md` ya tenía marcadas fuera del
+  §22 de NPGS): el aviso emergente `tIn` 350→**300 ms** y las tarjetas KPI `nxFadeUp` 340→**300 ms**.
+- **Deliberadamente NO tocado:** las animaciones decorativas siempre encendidas (el brillo de los
+  iconos del Dashboard `nxOrbGlint`, el latido del globo de notificaciones, el flotar del logo de
+  bienvenida). Son las que al dueño le gustan (regla #4 de "cómo le gusta trabajar": la estética
+  es prioridad real) y ahora **sí respetan "reducir movimiento"**, que era el problema de fondo.
+- Verificado con **17 comprobaciones Playwright** cargando el CSS real de los 2 archivos y
+  comparando el mismo elemento en modo normal vs `reducedMotion:'reduce'`: 7 familias de animación
+  (ventana emergente, KPI de Seguros, acceso rápido, aviso, esqueleto de carga, globo de
+  notificación, KPI del POS) siguen animando en modo normal y se detienen con el ajuste activo, y
+  las infinitas dejan de repetirse.
+
+#### Ronda 3 — Accesibilidad (`web-design-guidelines` + `ui-ux-pro-max`)
+Auditoría medida sobre TODO el sistema (no una pantalla suelta). Estado de partida y resultado:
+
+| Hallazgo | Antes | Ahora |
+|---|---|---|
+| Encabezados de tabla ordenables sin teclado | 18 | **0** |
+| Imágenes sin texto alternativo | 22 | **0** |
+| Botones de solo ícono sin nombre para lector de pantalla | 213 | **144** |
+| Filas/divs clicables sin teclado ni rol | 112 | 112 (sin tocar) |
+| Selectores sin etiqueta | 14 | 14 (sin tocar) |
+
+- **Encabezados ordenables (18):** era un hueco que este mismo archivo ya tenía anotado como
+  pendiente desde la v48.55 ("quedó fuera de esa pasada… se deja para una pasada aparte"). Ahora
+  cada `<th onclick>` lleva `tabindex="0" role="button"` + `onkeydown` que dispara la MISMA función
+  del clic con Enter o Espacio.
+- **Botones de ícono (69 de 213):** se resolvieron los que **ya traían un `title`** — se les derivó
+  el `aria-label` de ahí, transformación mecánica y sin riesgo (el texto ya estaba escrito y
+  revisado). Los **144 restantes no tienen ningún texto de dónde sacarlo**: habría que redactar
+  cada etiqueta a mano, mirando qué hace cada botón. **No se inventaron a ciegas** — es trabajo
+  de varias pasadas cortas, mejor hecho módulo por módulo.
+- **Imágenes (22):** texto alternativo real según lo que muestra cada una (foto del artículo,
+  cédula lado frontal/dorso, foto del cliente con su cédula, firma, comprobante, logo, banner).
+- **NO tocado, con su razón:** las **112 filas/divs clicables** sin teclado — aquí no vale una
+  transformación mecánica: hay que decidir caso por caso si la fila entera debe ser el objetivo
+  o si basta con un botón dentro, y varias ya tienen un botón real al lado que hace lo mismo
+  (convertirlas todas duplicaría el recorrido con Tab, que es peor que dejarlas). Los **14
+  selectores sin etiqueta** necesitan mirar el contexto de cada uno.
+- Cambio 100% aditivo: solo se agregaron atributos (`aria-label`, `alt`, `tabindex`, `role`,
+  `onkeydown`) y una regla CSS. Ningún id, función, color ni posición se tocó. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### SISTEMA ÚNICO DE BOTONES en todo el ERP (NPGS §12, 25-jul-2026, v49.52)
 El dueño pidió "aplicar las skills de diseño" a los **botones**. Se cargaron `ui-ux-pro-max` y
 `frontend-design`, pero el estándar que manda ya estaba escrito: **NPGS §12** ("todo el ERP debe
