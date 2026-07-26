@@ -5099,6 +5099,81 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### AUDITORÍA DE SEGURIDAD — Ronda 1 de "aplicar todas las skills" (26-jul-2026)
+El dueño pidió aplicar las 21 skills instaladas. Se agruparon en 5 rondas de auditoría; esta es la
+primera (`gstack-cso`), la de mayor riesgo real. **3 agujeros reales cerrados en vivo, 5 hallazgos
+documentados sin tocar** (necesitan decisión del dueño o son de mayor alcance).
+
+#### CERRADO — 1. `organizaciones` aceptaba ESCRITURA de cualquiera en internet (CRÍTICO)
+La política `all_org` era `FOR ALL TO public USING(true) WITH CHECK(true)`. El rol `public`
+incluye `anon`, y **la clave anónima está a la vista en el código de `index.html`** (tiene que
+estarlo: el login la usa para saber a qué empresa entrar antes de que haya sesión). O sea:
+cualquiera con esa clave podía **cambiar el `dominio` de una empresa** (desviar sus logins a otro
+sitio — phishing real), **apagarla** (`activo=false`), o **borrar la tabla completa**.
+- Arreglo (migración `seguridad_organizaciones_y_secuencias`): la **lectura sigue pública** (el
+  login la necesita), pero INSERT/UPDATE/DELETE quedan en `mi_rol()='admin'`.
+- Verificado: como `anon` la lectura sigue devolviendo las 7 organizaciones (el login no se rompe).
+
+#### CERRADO — 2. Las secuencias fiscales se podían quemar desde fuera (ALTO)
+`siguiente_ncf(text)` (consume un comprobante **autorizado por la DGII**), `next_recibo()`,
+`next_recibo_anio(int)` y `rifa_expirar_apartados()` eran ejecutables por `anon`. Cualquiera con
+la clave pública podía llamarlas en bucle y **quemar los NCF autorizados** — un recurso limitado
+que da el gobierno.
+- **Detalle que casi se me escapa:** el primer intento (`revoke ... from anon`) **no hizo nada** —
+  el permiso no venía de `anon` sino del rol **PUBLIC** (Postgres le da EXECUTE a PUBLIC por
+  defecto al crear una función). Se detectó porque la verificación posterior seguía dando `true`.
+  Arreglado de verdad en la migración `seguridad_secuencias_revocar_de_public`:
+  `revoke ... from public` + `grant ... to authenticated, service_role`.
+  **Lección: revocar de `anon` no sirve si el permiso está en PUBLIC — hay que verificar con
+  `has_function_privilege` después, no dar el revoke por bueno.**
+- Verificado con `has_function_privilege`: `anon`=false en las 4, `authenticated`=true en las 3 de
+  la app, `service_role`=true en la del cron. Confirmado antes con grep que **ninguna página
+  pública** (`rifa.html`/`boleto.html`/`vendedor.html`/`firma-prestamo.html`) las llama.
+
+#### CERRADO — 3. Dieciséis tablas de Seguros abiertas a usuarios de OTRAS empresas (ALTO)
+Es la misma clase de agujero que ya se había cerrado para las 10 tablas del núcleo — pero estas
+quedaron fuera de aquella pasada y seguían con `USING(true)` para cualquier `authenticated`. O sea
+Francis (tienda), el doctor (consultorio) o BayolCell, con solo estar logueados, podían leer y
+escribir: `mis_cuentas_bancarias` (las cuentas del dueño), `entregas_admin` y
+`transferencias_agentes` (dinero de agentes), `egresos`, `pagos`, `cuadre_tss_historial`,
+`reporte_destinatarios`, `documentos_clientes`, `email_settings`, `system_settings`,
+`automation_settings`, `smart_historial`, `bancos`, `ars_catalog`, `auto_jobs_log`,
+`auto_notificaciones_log`.
+- Arreglo (migración `rls_tablas_seguros_restantes_por_org`): se les puso **exactamente la misma
+  política ya probada en `clientes`/`facturas`/`abonos`** — deja pasar a cualquier rol de
+  `nexus-pro` (admin y agente, así Robinson no pierde nada) y bloquea al resto.
+- **Riesgo verificado antes de aplicar:** la función `enviar-reporte-email` lee
+  `reporte_destinatarios`/`auto_notificaciones_log` — se comprobó en su código que usa
+  `SUPABASE_SERVICE_ROLE_KEY`, que **salta RLS**, así que el reporte diario no se ve afectado.
+
+#### NO tocado — lo que queda, por orden de urgencia
+1. **La clave de aplicación de Gmail está en TEXTO PLANO** dentro de la función
+   `enviar-reporte-email` (`const GMAIL_PASS = '...'`, no un Secret), y esa función es **pública**
+   (`verify_jwt:false`). **Recomendación: cambiar esa clave en la cuenta de Google y guardarla como
+   Secret.** Cerrar la función con `verify_jwt:true` **no se puede hacer solo**: el cron
+   `reporte-email-minuto` (que corre cada minuto) **no manda ninguna credencial**, así que habría
+   que arreglar el cron en la misma operación o el reporte diario deja de salir. No se hizo a
+   ciegas. (La clave NO se copia a este archivo a propósito.)
+2. **`auditoria` sigue abierta** a cualquier usuario logueado de cualquier empresa (2,372 filas,
+   con nombres de clientes en el detalle). No se cerró porque **el POS, Rifas y Consultorio también
+   escriben ahí** — acotarla a `nexus-pro` los rompería. El arreglo correcto es darle
+   `organizacion_id` (que hoy **no tiene**) + rellenar las 2,372 filas + ajustar el trigger y la
+   política. Es trabajo con una decisión de datos de por medio (¿de qué empresa es cada fila
+   vieja?), no se hace en silencio.
+3. **Tablas de permisos muertas** (`roles`, `permissions`, `role_permissions`, `user_permissions`
+   — 101 filas): el propio CLAUDE.md ya las tenía marcadas como código muerto (cero referencias en
+   el frontend) y siguen abiertas. Conviene **borrarlas**, no cerrarlas.
+4. **Protección de contraseñas filtradas desactivada** en Supabase Auth (comprueba contra
+   HaveIBeenPwned). Es un interruptor en el panel — no hay herramienta para activarlo desde aquí.
+5. **`nexus-smart` con la clave de Anthropic en texto plano** y `verify_jwt:false` — ya estaba
+   documentado en este archivo desde antes, sigue igual.
+
+**Rondas siguientes (pendientes):** 2 animaciones (`review-animations`+`apple-design`+
+`emil-design-eng`) · 3 accesibilidad (`web-design-guidelines`+`ui-ux-pro-max`) · 4 arquitectura y
+salud (`senior-architect`+`gstack-health`) · 5 retrospectiva (`gstack-retro`). Las demás skills
+(`webapp-testing`, `gstack-investigate`, `gstack-spec`, `gstack-plan-*`, `careful`/`freeze`/
+`guard`) no son auditorías: son método de trabajo y ya se usan cuando toca.
+
 ### SISTEMA ÚNICO DE BOTONES en todo el ERP (NPGS §12, 25-jul-2026, v49.52)
 El dueño pidió "aplicar las skills de diseño" a los **botones**. Se cargaron `ui-ux-pro-max` y
 `frontend-design`, pero el estándar que manda ya estaba escrito: **NPGS §12** ("todo el ERP debe
