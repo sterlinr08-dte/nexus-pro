@@ -1,7 +1,12 @@
 {
-  "version": "49.87",
+  "version": "49.88",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.88",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO DE COBRO Y CAJA: se decretó la ley de la ventana de Cobrar y se auditó el código real contra ella. 4 huecos encontrados y cerrados. · ARREGLADO (importante): se podía cobrar EN EFECTIVO con la caja cerrada — ese dinero no aparecía en ningún arqueo (había RD$ 14,500 así). Ahora, si vas a recibir efectivo y la caja está cerrada, el sistema te manda a abrirla primero; antes de bloquearte vuelve a preguntarle a la base, por si la abriste en otro equipo. Tarjeta, transferencia, cheque y crédito sí se pueden registrar con la caja cerrada (no pasan por la gaveta). Lo mismo aplica al recibir un abono de fiado en efectivo. · ARREGLADO (importante): el precio mínimo se revisaba dos veces con dos reglas distintas — al teclearlo usaba el mínimo del NIVEL del cliente, pero al confirmar el cobro usaba el mínimo global del artículo. Con 7 artículos que tienen mínimo por nivel y solo 2 con mínimo global, se colaban ventas por debajo del piso. Ahora manda el del nivel en los dos momentos. · NUEVO: el LÍMITE DE CRÉDITO del cliente por fin sirve para algo. Estaba guardado en su ficha y se mostraba en pantalla, pero nadie lo revisaba al fiar. Ahora, lo que ya debe más lo que se le va a fiar no puede pasar de su límite: al cajero se le bloquea diciéndole por cuánto se pasa, y a ti (admin) te pregunta si quieres fiarle de todos modos — si dices que sí queda registrado en Auditoría. Límite en 0 = sin límite, como siempre. · ARREGLADO (importante): al cambiar el cliente en la ventana de Cobrar, los precios del carrito se quedaban con el nivel del cliente ANTERIOR — o sea, se le podía cobrar a un cliente con los precios de otro. Ahora los precios se recalculan a su nivel y te avisa el total de antes y el de después. · ARREGLADO: cambiar de cliente le quitaba el RD$ 0 a los artículos incluidos en un COMBO y empezaba a cobrarlos. Ahora los acompañantes del combo se quedan en cero, como debe ser."
+    },
     {
       "v": "49.87",
       "fecha": "2026-07-26",
