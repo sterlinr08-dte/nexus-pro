@@ -17607,7 +17607,7 @@
     const det = c
       ? [c.codigo ? esc(c.codigo) : '', c.cedula ? (c.tipo_persona === 'juridica' ? 'RNC ' : 'Céd. ') + esc(c.cedula) : ''].filter(Boolean).join(' · ')
         + ((c.telefono || c.direccion) ? '<br>' + [c.telefono ? esc(c.telefono) : '', c.direccion ? esc(c.direccion) : ''].filter(Boolean).join(' · ') : '')
-      : 'Sin cliente asignado — la venta se registra a consumidor final.';
+      : 'Sin cliente asignado — la venta se registra a consumidor final.<br>Toca la 🔍 para elegir un cliente.';
     const saldo = c ? saldoCli(c) : 0;
     const lim = c ? Number(c.limite_credito || 0) : 0;
     const credDisp = lim > 0 ? Math.max(0, lim - saldo) : null;
@@ -17624,10 +17624,9 @@
           <div style="min-width:0;flex:1">
             <div class="pnom" id="facCliTxt">${c ? esc(c.nombre) : 'Consumidor final'}${c && c.nivel_precio === 'mayor' ? ' <span class="chipMay">por mayor</span>' : ''}</div>
             <div class="pdet">${det}</div>
-            <div class="plinks">
-              <button type="button" class="plink" id="facCliBtn" onclick="window.nxFacCliToggle()"><i class="ti ti-search"></i> ${c ? 'Cambiar cliente' : 'Elegir cliente'}</button>
-              ${c ? `<button type="button" class="plink" onclick="window.nxCliente360('${c.id}')"><i class="ti ti-id-badge-2"></i> Ver perfil</button>` : ''}
-            </div>
+            ${c ? `<div class="plinks">
+              <button type="button" class="plink" onclick="window.nxCliente360('${c.id}')"><i class="ti ti-id-badge-2"></i> Ver perfil</button>
+            </div>` : ''}
           </div>
         </div>
       </div>

@@ -1,7 +1,12 @@
 {
-  "version": "49.75",
+  "version": "49.76",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.76",
+      "t": "Quitado el enlace \"Elegir cliente\" que quedo repetido con la lupa",
+      "d": "Con la lupa nueva del circulo, el enlace de texto \"Elegir cliente\" (o \"Cambiar cliente\") de mas abajo hacia exactamente lo mismo: dos botones pegados para una sola cosa. Se quito. Para que nadie se quede sin saber que hacer, cuando no hay cliente el texto ahora dice \"Toca la lupa para elegir un cliente\". El boton \"Ver perfil\" (que abre la ficha completa del cliente) se queda igual donde estaba."
+    },
     {
       "v": "49.75",
       "t": "NUEVO: buscar el cliente por su TELEFONO",

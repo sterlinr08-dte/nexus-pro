@@ -5583,6 +5583,26 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### POS · quitado el enlace "Elegir cliente", duplicado con la lupa (26-jul-2026, v49.76)
+Se le había propuesto al dueño al cerrar la v49.74 y respondió *"Quita elegir cliente"*. Con la lupa
+del círculo (v49.74) haciendo lo mismo, el enlace de texto de abajo era un segundo botón para una sola
+cosa — el mismo criterio de redundancia con el que ya se quitaron el "+ Agregar producto" (v48.41),
+los botones de escanear (v48.40) y el bloque de pago repetido (v48.37).
+- **Auditado antes de borrar:** `#facCliBtn` está definido en **dos** funciones distintas — `renderVender`
+  (línea ~17426, el botón compacto que muestra el nombre en Vender) y `facPartesHTML` (el enlace del
+  documento). Solo se quitó el segundo. Confirmado con grep que **nadie lee ese id** por
+  `getElementById`/`querySelector`, así que no hubo que ajustar ninguna otra función.
+- **El texto ahora guía:** sin cliente decía solo "Sin cliente asignado — la venta se registra a
+  consumidor final."; al quitar el enlace, la lupa quedaba como único camino y un icono sin etiqueta no
+  se descubre solo — se le agregó "Toca la 🔍 para elegir un cliente." (mismo criterio del placeholder
+  de la v49.75: una función que no se anuncia no existe para quien la usa).
+- **`.plinks` solo se pinta si hay cliente** — si no, quedaba un `<div>` vacío con su `margin-top`
+  dejando un hueco. "Ver perfil" (`nxCliente360`) no se tocó.
+- Verificado con las **76** comprobaciones de Factura (74 anteriores + 2 nuevas: el id ya no existe y el
+  texto "Elegir cliente" desapareció del bloque; el texto guía a la lupa; no queda fila de enlaces
+  vacía). El clic del harness pasó de `#facCliBtn` al círculo `.pav`. Capturas con y sin cliente
+  revisadas, sin desborde en 360-1440px, 0 errores.
+
 ### POS · buscar el cliente por TELÉFONO (26-jul-2026, v49.75)
 Primera sugerencia propia bajo la regla nueva #12 ("siempre aportar ideas"), verificada antes de
 proponerla: `nxPosClientePintar` filtraba por **nombre, código y cédula** — el `telefono` estaba en
