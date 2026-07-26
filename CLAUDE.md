@@ -5174,6 +5174,49 @@ salud (`senior-architect`+`gstack-health`) · 5 retrospectiva (`gstack-retro`). 
 (`webapp-testing`, `gstack-investigate`, `gstack-spec`, `gstack-plan-*`, `careful`/`freeze`/
 `guard`) no son auditorías: son método de trabajo y ya se usan cuando toca.
 
+### AUDITORÍA — Ronda 4: salud del código (`senior-architect` + `gstack-health`) (26-jul-2026, v49.54)
+
+**Radiografía medida** (no de memoria):
+
+| | Valor |
+|---|---|
+| `index.html` | 9.283 líneas · 625 KB (**157 KB comprimido**) |
+| `parches.js` | 28.193 líneas · 2.121 KB (**489 KB comprimido**) |
+| Composición de `parches.js` | 87% código · 7% comentarios · 5% líneas en blanco |
+| Funciones | 354 en `index.html` + 1.073 en `parches.js` (651 expuestas en `window`) |
+| Bloques de 8+ líneas repetidos | **15** en 28.000 líneas (`parches.js`) · **2** en `index.html` |
+
+**Veredicto: el código está sano.** Poca duplicación, proporción normal de comentarios, y solo un
+1,5% de funciones muertas. El archivo único de 28k líneas NO es un hallazgo — es la arquitectura
+que el dueño eligió a propósito (sin build, sin npm, se edita y se sube); "arreglarla" sería
+deshacer una decisión suya, no una mejora.
+
+**Error propio, corregido a mitad de la medición:** el primer cálculo de comentarios dio **32%**
+porque la expresión regular se comía trozos de código entre el `/*` de un string y el siguiente
+`*/`. Recontado por líneas: **7%**. Se documenta porque la cifra mala llegó a imprimirse.
+
+#### Lo único que se arregló: 26 funciones muertas
+Se verificó una por una contra **todo el repo** (incluidas las páginas públicas y `worker.js`) que
+no se mencionaran en ningún lado — ni siquiera dentro de un string o un `onclick`. Se quitaron con
+un cortador por llaves que salta strings y comentarios (no por número de línea).
+- **Se hizo en cascada, y eso importa:** al quitar las 14 primeras quedaron 12 más que solo esas
+  llamaban (3 pasadas hasta que no quedó ninguna). Contarlas de una sola pasada habría dejado la
+  mitad.
+- **Hallazgo de paso, con valor:** `almSelectorHTML` estaba muerta aunque el CLAUDE.md dice que el
+  selector de almacén se conectó en la v48.96. Se verificó: **la función SÍ está en la Factura**
+  (`almField`, escrita directo en `renderFactura`) — lo que quedó huérfano fue el ayudante viejo.
+  El documento no mentía; el helper simplemente se quedó atrás. **Lección: antes de borrar algo que
+  la documentación dice que se usa, comprobar si la función se reimplementó en otro sitio.**
+- **Quedan 2 sin quitar** (`getAbonos`, `getTransferencias`): están declaradas con una forma que el
+  cortador no reconoce. Son 2 de 26 — se dejan anotadas en vez de forzar el corte a mano.
+- Verificado tras la limpieza: `node --check parches.js` limpio, los 3 `<script>` de `index.html`
+  pasan `new Function()`, y las 3 suites Playwright de esta sesión (Ajustes 39, botones 24,
+  movimiento 17 = **80 comprobaciones**) siguen en verde.
+
+**Peso real que viaja al celular: 646 KB comprimidos** (157 + 489). No es un problema urgente —
+Cloudflare comprime y el navegador cachea entre versiones — pero es el número a vigilar si el
+sistema sigue creciendo.
+
 ### AUDITORÍA — Rondas 2 (animaciones) y 3 (accesibilidad) (26-jul-2026, v49.53)
 
 #### Ronda 2 — Animaciones (`review-animations` + `apple-design` + `emil-design-eng`)
