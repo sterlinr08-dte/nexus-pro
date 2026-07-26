@@ -1,7 +1,12 @@
 {
-  "version": "49.61",
+  "version": "49.62",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.62",
+      "t": "El Dashboard ahora abre con una tarjeta grande: lo que falta por cobrar",
+      "d": "En la versi\u00f3n anterior sub\u00ed los n\u00fameros arriba, pero quedaron seis cajas blancas tapando tus iconos. Se cambi\u00f3 por una sola tarjeta azul con el n\u00famero grande:\n\n\u2022 POR COBRAR en grande, con cu\u00e1ntos clientes tienen saldo\n\u2022 Debajo, en la misma tarjeta: Atrasadas \u00b7 Cobrado del mes \u00b7 Clientes activos\n\nOcupa la mitad de espacio que antes, as\u00ed que tus iconos vuelven a quedar casi arriba.\n\nTodo se toca: el n\u00famero grande te lleva a Cobros, Atrasadas abre Facturas ya filtrada, Cobrado abre el Historial de pagos y Activos abre Clientes.\n\nPrima mensual y En proceso quedan debajo de los iconos, como contexto."
+    },
     {
       "v": "49.61",
       "t": "NUEVO \u2014 El Dashboard ahora arranca con los n\u00fameros, no con los iconos",

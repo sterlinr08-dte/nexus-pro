@@ -5414,9 +5414,26 @@ Comparativa). Cuatro cosas, todas aplicadas:
    estáticos, pero estos se crean con `btn.className='qa'` + `btn.onclick=...` y quedaron fuera. Se
    les agregó `tabindex`/`role`/`onkeydown` (con `keyCode`, sin comillas, por vivir dentro de cadenas
    de JS) en los 8 sitios de una pasada. Ya la mitad del Dashboard no se comporta distinto a la otra.
+- **CORRECCIÓN (v49.62) — al dueño NO le gustó, y con razón.** Los 6 KPI eran 340px de cajas
+  blancas encima de sus **iconos 3D de cristal**, que son la cara del sistema (regla #4 de "cómo le
+  gusta trabajar": la estética es prioridad real). Los números quedaron correctos pero feos, y
+  taparon lo bonito. Se le armó una **muestra standalone con 3 direcciones** (scratchpad, nunca
+  publicada — mismo patrón que `muestra-pos.html`/`design-system.html`), renderizada a 390px con el
+  CSS REAL de los orbes extraído de `parches.js`, con la altura de cada una medida:
+  **A franja** 83px · **B número grande** 164px · **C ticker** 48px (vs. los 340px publicados).
+  **Eligió la B.** Resultado: `.dhero` — tarjeta con el degradado navy→azul→cian del Login, trama
+  de puntos enmascarada, **"POR COBRAR" en 34px**, y debajo una fila de 3 (Atrasadas / Cobrado del
+  mes / Activos), cada uno con su sub-línea. **4 zonas clicables** (el bloque grande + los 3 mini),
+  todas con teclado y `aria-label` propio; el aro de foco es **blanco con `!important`** porque el
+  azul global (`html body [tabindex][role=button]:focus-visible`, especificidad 0,3,2) le gana a
+  cualquier `.dhero-top:focus-visible` y no se vería sobre el degradado. **Prima mensual** y
+  **En proceso** bajaron a un `#kpiG` de 2 tarjetas DEBAJO de los iconos (cartera = contexto).
+  Medido: hero 174px, cero desborde en 390px y 1280px.
+  **Lección:** subir un dato correcto no basta si desplaza lo que le da identidad a la pantalla —
+  en este sistema, mostrar la muestra ANTES de publicar un cambio de la pantalla de inicio.
 - Verificado con Playwright y el código real extraído por contenido (`rDash`, `rChartCobros`,
   `mesCorte` + el CSS y el markup reales del `#v-dashboard`): el orden de los hijos es
-  `alertasBanner → kpiG → qa-g`, los KPI quedan por encima de los iconos en 390px y 1280px, los 6
+  `alertasBanner → dashHero → qa-g → kpiG`, los KPI quedan por encima de los iconos en 390px y 1280px, los 6
   valores dan el número EXACTO con datos simulados (por cobrar 14,000 con 2 clientes; atrasadas 4
   excluyendo la del mes de corte, la pagada y la anulada; cobrado del mes 4,500 excluyendo un abono
   de enero), un clic real en ATRASADAS navega a Facturas y dispara `rFact`, **Enter** en POR COBRAR

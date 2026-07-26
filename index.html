@@ -230,6 +230,21 @@ body.org-consultorio .sb-nav,body.org-consultorio .mobile-bottom-nav-clean,body.
 .kv{font-size:19px;font-weight:700;line-height:1;margin-bottom:4px;font-family:var(--ff)}
 .v1{color:#1d4ed8}.v2{color:#6d28d9}.v3{color:#059669}.v4{color:#dc2626}.v5{color:#d97706}
 .ks{font-size:10px;color:var(--tx3)}.ki{position:absolute;right:14px;top:14px;font-size:22px;opacity:.06}
+/* Tarjeta principal del Dashboard — el número que manda el día */
+.dhero{border-radius:18px;padding:18px 18px 14px;margin-bottom:12px;color:#fff;position:relative;overflow:hidden;background:linear-gradient(135deg,#1e3a6e 0%,#2563eb 62%,#0891b2 100%);box-shadow:0 14px 30px rgba(30,58,110,.28)}
+.dhero::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1px);background-size:14px 14px;opacity:.5;-webkit-mask-image:linear-gradient(to bottom right,#000,transparent 70%);mask-image:linear-gradient(to bottom right,#000,transparent 70%);pointer-events:none}
+.dhero-top{position:relative;cursor:pointer;border-radius:12px}
+.dhero-l{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.78}
+.dhero-big{font-size:34px;font-weight:800;letter-spacing:-1.2px;line-height:1;margin:6px 0 3px;font-variant-numeric:tabular-nums;overflow-wrap:break-word}
+.dhero-sub{font-size:11px;opacity:.8}
+.dhero-row{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2)}
+.dhero-m{cursor:pointer;border-radius:10px;padding:2px 4px;margin:-2px -4px;min-width:0}
+.dhero-k{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;opacity:.72;display:flex;align-items:center;gap:3px}
+.dhero-n{font-size:15px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;overflow-wrap:break-word}
+.dhero-n.al{color:#fcd34d}
+.dhero-s{font-size:9px;opacity:.62;margin-top:2px}
+.dhero-top:focus-visible,.dhero-m:focus-visible{outline:2px solid #fff!important;outline-offset:2px}
+@media(max-width:360px){.dhero-big{font-size:29px}.dhero-n{font-size:14px}}
 
 /* ── GRIDS ── */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
@@ -1228,7 +1243,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <!-- DASHBOARD -->
         <div class="view on" id="v-dashboard">
           <div id="alertasBanner"></div>
-          <div class="kg" id="kpiG"><div class="loading"><div class="spin"></div>Cargando...</div></div>
+          <div id="dashHero"></div>
           <div class="qa-g">
             <div class="qa" onclick="nav('facturas',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-invoice qa-ico c-azul"></i></span><div class="qa-l">Facturas</div></div>
             <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-users qa-ico c-verde"></i></span><div class="qa-l">CLIENTES</div></div>
@@ -1237,6 +1252,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="qa" onclick="nav('dgii',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-receipt-tax qa-ico c-rojo"></i></span><div class="qa-l">Reporte DGII</div></div>
             <div class="qa" onclick="exportarCSV()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-spreadsheet qa-ico c-esmeralda"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
+          <div class="kg" id="kpiG"></div>
           <div class="nc"><div class="ch"><div><div class="ct">Resumen de cobros</div><div class="ct-s">últimos 6 meses</div></div></div><div id="chartCobros" style="padding:8px 4px 4px"></div></div>
           <div class="nc"><div class="ch"><div><div class="ct">Clientes en proceso</div><div class="ct-s">onboarding y seguimientos</div></div><button class="btn bsm bc1" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)">Ver</button></div><div id="wProceso"></div></div>
           <div class="g2">
@@ -4016,7 +4032,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.61';
+const APP_VERSION='49.62';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5620,12 +5636,27 @@ function rDash(){
   const _mc=mesCorte(),_mcKey=`${_mc.anio}-${String(_mc.mes).padStart(2,'0')}`;
   const atrasadas=(ST.facturas||[]).filter(f=>f.periodo<_mcKey&&f.estado!=='Pagado'&&f.estado!=='Anulada').length;
   const _kb='tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button" style="cursor:pointer"';
+  const _kbh='tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"';
+  const _mesTxt=MESES[new Date().getMonth()].toLowerCase();
+  // Tarjeta principal: lo que decide el día. El resto de la cartera va abajo, tras los accesos.
+  document.getElementById('dashHero').innerHTML=`
+    <div class="dhero">
+      <div class="dhero-top" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" ${_kbh} aria-label="Por cobrar — ir a Cobros">
+        <div class="dhero-l">Por cobrar</div>
+        <div class="dhero-big">${fmt(pd)}</div>
+        <div class="dhero-sub">${conSaldo} cliente${conSaldo===1?'':'s'} con saldo</div>
+      </div>
+      <div class="dhero-row">
+        <div class="dhero-m" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" ${_kbh} aria-label="Facturas atrasadas — ver la lista">
+          <div class="dhero-k"><i class="ti ti-file-alert"></i>Atrasadas</div><div class="dhero-n al">${atrasadas}</div><div class="dhero-s">meses anteriores</div></div>
+        <div class="dhero-m" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" ${_kbh} aria-label="Cobrado este mes — ver el historial de pagos">
+          <div class="dhero-k"><i class="ti ti-check"></i>Cobrado</div><div class="dhero-n" id="kpiCobMes">…</div><div class="dhero-s">${_mesTxt}</div></div>
+        <div class="dhero-m" onclick="nav('clientes',null)" ${_kbh} aria-label="Clientes activos — ir a Clientes">
+          <div class="dhero-k"><i class="ti ti-users"></i>Activos</div><div class="dhero-n">${act.length}</div><div class="dhero-s">${inh} inhabilitado${inh===1?'':'s'}</div></div>
+      </div>
+    </div>`;
   document.getElementById('kpiG').innerHTML=`
-    <div class="kpi k4" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" ${_kb}><i class="ti ti-cash ki"></i><div class="kl">POR COBRAR</div><div class="kv v4" style="font-size:15px">${fmt(pd)}</div><div class="ks">${conSaldo} cliente${conSaldo===1?'':'s'} con saldo</div></div>
-    <div class="kpi k5" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" ${_kb}><i class="ti ti-file-alert ki"></i><div class="kl">FACTURAS ATRASADAS</div><div class="kv v5">${atrasadas}</div><div class="ks">de meses anteriores</div></div>
-    <div class="kpi k3" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" ${_kb}><i class="ti ti-check ki"></i><div class="kl">COBRADO ESTE MES</div><div class="kv v3" style="font-size:15px" id="kpiCobMes">…</div><div class="ks">${MESES[new Date().getMonth()]}</div></div>
     <div class="kpi k2"><i class="ti ti-trending-up ki"></i><div class="kl">PRIMA MENSUAL</div><div class="kv v2" style="font-size:15px">${fmt(prima)}</div><div class="ks">cartera activa · ${ef}% efectividad</div></div>
-    <div class="kpi k1" onclick="nav('clientes',null)" ${_kb}><i class="ti ti-users ki"></i><div class="kl">CLIENTES ACTIVOS</div><div class="kv v1">${act.length}</div><div class="ks">${inh} inhabilitados</div></div>
     <div class="kpi k5" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)" ${_kb}><i class="ti ti-clipboard-list ki"></i><div class="kl">EN PROCESO</div><div class="kv v5">${ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length}</div><div class="ks">clientes en onboarding</div></div>`;
   // KPI de utilidad — SOLO VISIBLE PARA ADMIN
   if((CFG.cost1||CFG.cost2||CFG.cost3) && sesion?.rol==='admin'){
