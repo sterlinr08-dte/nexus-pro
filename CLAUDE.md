@@ -5099,6 +5099,54 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### NIVELES DE PRECIO — la regla del dueño, y por qué el sistema no la cumplía (26-jul-2026, v49.85)
+El dueño decretó la regla: **el precio se elige según el nivel del cliente; un cliente normal va al
+nivel por defecto; al facturar, el sistema le pone solo el precio de su nivel.** Pidió ayuda para
+mejorarla "a nivel general del POS". Se auditó el sistema completo contra esa regla.
+
+**HALLAZGO PRINCIPAL — los niveles estaban desconectados:** los 3 clientes de `nexus-pro` tenían
+`nivel_id` **null**. Detalle/Mayorista/EXTREMO existían con precios cargados en 7 artículos y **no
+se le aplicaban a nadie**: 2 clientes funcionaban por el camino viejo (`nivel_precio='mayor'` →
+`precio_mayor`) y el tercero pagaba el precio de lista. La función existía y los datos existían;
+faltaba el enlace.
+
+**Tres campos que se configuran, se guardan y NO hacen nada al vender** (verificado por grep de uso
+real, no de escritura):
+- **`precio_credito` por nivel** — `precioCli()` solo lee `precio_contado`. Una factura a crédito
+  cobra el precio de contado aunque hayas configurado otro.
+- **`precio_minimo` por nivel** — el candado que impide bajar el precio (`nxFacPrecio`) lee
+  `p.precio_minimo`, el **global del producto**. El mínimo por nivel es decorativo.
+- **`cantidad_minima` por nivel** — solo se lee/escribe en el formulario. Nadie la valida: un nivel
+  Mayorista con mínimo 10 no impide venderle 1 unidad a precio de mayorista.
+
+**Plan de 4 tandas acordado** (por riesgo): **1** asignar niveles + formulario respeta el default +
+aviso de desfase · **2** consumidor final usa el nivel por defecto + cadena de respaldo explícita +
+retirar el sistema viejo (**toca lo que se cobra**) · **3** precio de crédito real + mínimo por
+nivel + cantidad mínima · **4** grabar el `nivel_id` en `pos_venta_items` + reporte por nivel.
+
+**TANDA 1 — HECHA:**
+- **Migración de datos (SQL, no código):** `nivel_id` asignado a los 3 clientes — `nivel_precio='mayor'`
+  → el nivel cuyo nombre contiene "mayor"; el resto → el marcado `es_default`. La consulta resuelve
+  los niveles por `es_default`/nombre, no por ids escritos a mano.
+- **`nivelPorDefectoId()`** (nuevo, junto a `precioCli`): el nivel `es_default`, con respaldo al
+  primero por orden. El selector de nivel del formulario de cliente lo usa para preseleccionar y
+  marca cuál es "(por defecto)". **Antes agarraba el primero de la lista** — coincidía de casualidad,
+  y si se cambia el orden se rompe en silencio.
+- **`desfaseNivel(p)`** (nuevo, junto a `renderProductos`): si el precio del nivel por defecto no
+  coincide con `p.precio`, la fila de Inventario muestra un aviso naranja con el precio que de
+  verdad se va a cobrar. Ese desfase antes no se veía por ningún lado.
+- **CAMBIO REAL DE PRECIO, confirmado con el dueño por `AskUserQuestion` ANTES de aplicarlo:** se
+  midieron los 7 artículos con niveles; **solo PANTALLA IPHONE 11 estaba descuadrada** (lista 2,000
+  vs nivel Detalle 2,500; sin `precio_mayor` vs Mayorista 1,200). Al asignar niveles pasa a cobrar
+  2,500 al normal y 1,200 al de por mayor. El dueño eligió **"vale lo del nivel"**. Los otros 6
+  calzan exacto — ahí no cambió nada.
+  - **Corrección propia:** yo había dicho que la tanda 1 "no cambia ni un peso". Al medirlo sí
+    cambiaba, en un artículo. Se le dijo con los números antes de tocar la base, no después.
+- Verificado con **30 comprobaciones** (11 de la lógica con el código real extraído por contenido +
+  15 del buscador de artículos sin regresión + 4 del selector del formulario), usando los precios
+  REALES de su base. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
 ### "Buscar artículo" solo mostraba 2 precios aunque la org tenga más niveles (26-jul-2026, v49.84)
 El dueño mandó el detalle de un artículo en su iPhone: solo salían **CLIENTE FINAL** y **POR MAYOR**,
 sus dos precios de siempre. Pidió ver **los tres niveles**.

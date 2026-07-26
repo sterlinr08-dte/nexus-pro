@@ -16993,6 +16993,16 @@
   function lineImporte(it) { return lineBase(it) - lineDescMonto(it); }
   // Precio según el nivel del cliente seleccionado (final vs por mayor)
   function clienteSel() { return _clientes.find(x => String(x.id) === String(_factCli)); }
+  // El nivel de precio que le toca a un cliente nuevo: el marcado "por defecto" en
+  // Ajustes, no el primero de la lista. Antes el formulario preseleccionaba el primero
+  // por orden — coincidía de casualidad, y si un día se cambia el orden se rompe en
+  // silencio (nadie se entera de que el cliente quedó en otro nivel).
+  function nivelPorDefectoId() {
+    const ns = _niveles || [];
+    if (!ns.length) return '';
+    const d = ns.find(n => n.es_default);
+    return String((d || ns[0]).id);
+  }
   function precioCli(p) {
     const c = clienteSel();
     if (c && c.nivel_id) {
@@ -19311,6 +19321,18 @@
   };
 
   // ── TAB: PRODUCTOS ──
+  // Si el precio del nivel POR DEFECTO no coincide con el precio de lista del artículo,
+  // devuelve el del nivel (para avisarlo). Hasta ahora ese desfase no se veía por ningún
+  // lado: se descubría cuando alguien notaba que se cobró distinto a lo configurado.
+  function desfaseNivel(p) {
+    try {
+      const nid = nivelPorDefectoId(); if (!nid) return 0;
+      const r = _prodNiveles.find(x => String(x.producto_id) === String(p.id) && String(x.nivel_id) === String(nid));
+      const v = r ? Number(r.precio_contado || 0) : 0;
+      if (v <= 0) return 0;
+      return Math.abs(v - Number(p.precio || 0)) > 0.5 ? v : 0;
+    } catch (e) { return 0; }
+  }
   function renderProductos() {
     const esBajo = p => p.tipo !== 'servicio' && Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0;
     const esSin = p => p.tipo !== 'servicio' && Number(p.stock || 0) <= 0;
@@ -19332,7 +19354,7 @@
         : `<span class="nxInvStk ok">● ${Number(p.stock || 0)} en stock</span>`;
       return `<tr data-busca="${esc(((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.marca || '') + ' ' + (p.referencia || '')).toLowerCase())}">
         <td><div style="font-weight:700;font-size:12px">${esc(p.nombre || '')}${serv ? ' <span style="font-size:8px;color:#0d9488;background:#f0fdfa;padding:1px 5px;border-radius:6px">SERVICIO</span>' : ''}</div><div style="font-size:10px;color:#475569">${esc(p.codigo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}${p.marca ? ' · ' + esc(p.marca) : ''}</div></td>
-        <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
+        <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel.">⚠ Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
         <td style="text-align:right;white-space:nowrap">${stkCell}</td>
         <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
         <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
@@ -21159,7 +21181,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <div class="card" id="entClienteBox">
             <h4><span class="bdg purple"><i class="ti ti-user-dollar"></i></span> Cliente</h4>
             <div class="g2">
-              <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel" onchange="window.nxEntResumen()">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${String(e.nivel_id) === String(n.id) ? ' selected' : ''}>${esc(n.nombre)}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
+              <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel" onchange="window.nxEntResumen()">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${(e.nivel_id ? String(e.nivel_id) === String(n.id) : String(n.id) === String(nivelPorDefectoId())) ? ' selected' : ''}>${esc(n.nombre)}${n.es_default ? ' (por defecto)' : ''}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
               <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">$</span><input id="entLim" data-nx-money inputmode="numeric" oninput="window.nxEntResumen()" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
             </div>
           </div>
