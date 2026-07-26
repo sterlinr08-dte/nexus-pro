@@ -5478,6 +5478,56 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### POS · Cobrar: ventana con PESTAÑAS por forma de pago (26-jul-2026, v49.66)
+El dueño pidió rediseñar la Factura del POS; al mostrarle 3 direcciones eligió la **B**, y después
+pidió que además **la forma de pago fuera una ventana con pestañas**. Se le enseñaron 3 muestras de
+la ventana de cobro y eligió **la No. 3, completa con sus pestañas**. Se construyó esa primero (es la
+más contenida y de efecto inmediato); la Factura B completa queda en cola.
+- **Arquitectura que hace esto seguro (es una pantalla de DINERO):** los 5 campos reales
+  (`payEfe`/`payTar`/`payTra`/`payChe`/`payNc`) **siguen SIEMPRE en el DOM**, dentro del panel
+  "Mixto" (oculto cuando no toca). Las pestañas de un solo método usan un campo grande **espejo**
+  (`#payBig`) que escribe en el campo real del método activo. Así `leerCobro()`, `nxPosCobroCalc()`
+  y `nxPosConfirmar()` **no se tocaron** — leen exactamente lo mismo que siempre. Todos los ids
+  quedaron idénticos (`posCliId`, `posCliDisp`, `posCliNomBox`, `posCli`, `posVendId`, `posDesc`,
+  `posTotalLbl`, `cobroPagado`, `cobroResto`, `cobroRestoLbl`, `cobroDev`, `cobroFiadoNote`,
+  `finBox`/`finChk`/`finCfg`/`finN`/`finFrec`/`finPrev`).
+- **Lo que se ve:** encabezado azul degradado (el mismo del Login/POS) con **TOTAL A COBRAR** en 33px
+  + el cliente; fila de 6 pestañas (Efectivo · Tarjeta · Transfer. · Cheque · N. Créd. · **Mixto**);
+  en Efectivo un campo grande "Monto recibido" con botones rápidos **Exacto / +500 / +1,000 / +2,000
+  / +5,000** (los `+N` SUMAN a lo tecleado, que es como cuenta billetes un cajero) y la **DEVUELTA**
+  en un recuadro verde de 23px; en los otros métodos el mismo campo grande con **Todo el total /
+  Mitad**; en Mixto las 5 casillas de siempre. Abajo siempre Pagado / Falta, el aviso de fiado y la
+  caja de CUOTAS. Pie con **Opciones** (despliega Nombre para el ticket + Vendedor + Descuento %) y
+  **Confirmar venta** en verde.
+- **Funciones nuevas, todas de presentación:** `nxPagoTab(k)` (cambia de pestaña, limpia los 5
+  métodos y prellena el elegido con el total), `nxPagoBigIn()` (el espejo), `nxPagoQuick(v)`
+  (`'T'`=total, `'M'`=mitad, número=suma) y `nxPagoOpts()`. En `nxPosCobroCalc` solo se agregaron
+  escrituras guardadas (`cobroDevBig`, la fila `pgDevRow`) y `posTotalLbl` ahora acepta `<div>` o
+  `<input>` indistintamente.
+- **Dead code eliminado (regla #1):** `nxPosPagoExacto` y `nxPosPayQuick` (las fichas viejas de pago)
+  y su CSS `.nxPayTiles`/`.nxPayTile` — verificado con grep que no los usaba nada más en el archivo.
+- **2 defectos propios encontrados MIDIENDO, corregidos antes de publicar:** (1) con las 6 pestañas
+  a `flex:1 0 auto` **más su ícono**, la fila medía más que el modal y "Mixto" quedaba **cortada** —
+  y como la barra tiene scroll horizontal con la barra oculta, el usuario no tendría cómo saber que
+  hay más. Se quitó el ícono de las pestañas (el rótulo en español ya es claro) y pasaron a
+  `flex:1 1 auto`; medido después: caben exactas en 360/390/430/1280px (`scrollWidth === clientWidth`).
+  (2) El grid de Mixto colapsaba a 1 columna desde 400px, alargando muchísimo la ventana en un iPhone;
+  se bajó ese corte a 340px.
+- Verificado con Playwright y el código real extraído por contenido (`nxPosCobrar`, `nxPagoTab`,
+  `nxPagoBigIn`, `nxPagoQuick`, `nxPagoOpts`, `nxPosCobroCliToggle`, `nxPosCobroCalc`, `leerCobro`,
+  más el CSS real): **49 comprobaciones** — abre con el total correcto, Efectivo prellena y el campo
+  REAL recibe el espejo, `+2,000` suma y la devuelta da 2,000 exactos, `leerCobro()` devuelve
+  `efe:49500 / devuelta:2000`, cambiar a Tarjeta limpia efectivo y prellena tarjeta, "Mitad" da
+  23,750 y la etiqueta pasa a "Falta / Crédito" con el aviso de elegir cliente, Mixto lee los 5
+  campos reales (20,000 + 27,500 = 47,500), el botón de cliente abre la ventana compartida y al
+  elegirlo aparece la caja de CUOTAS con su vista previa, Opciones despliega Vendedor/Descuento y el
+  10% recalcula el total del encabezado a 42,750, Confirmar llama a `nxPosConfirmar`. Sin desborde en
+  390/430/1280px, 0 errores de consola. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** la **Factura B completa** que el dueño ya aprobó (rediseño de `renderFactura`/
+  `pintarFactura`), con 2 preguntas suyas sin responder todavía: si el encabezado lleva el nombre de
+  la empresa + RNC, y si el botón Cobrar debe quedar fijo abajo en el celular.
+
 ### WhatsApp: elegir destinatario (cliente o agente) + ronda de cobro por agente (26-jul-2026, v49.65)
 El dueño pidió un WhatsApp al AGENTE para que le dé seguimiento a su cliente atrasado; al proponerle
 dos botones separados respondió *"que yo pueda elegir al cliente o al agente"* — un solo botón con
