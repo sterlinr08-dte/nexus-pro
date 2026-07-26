@@ -1,7 +1,12 @@
 {
-  "version": "49.93",
+  "version": "49.94",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.94",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO FISCAL (NCF / comprobantes): dos ventas al mismo tiempo ya no pueden recibir el MISMO número de comprobante. · ARREGLADO (importante): el número de comprobante fiscal (NCF) se apartaba leyéndolo y luego sumándole 1 — si dos cajeros (o dos pestañas) cobraban en el mismo instante, los dos leían el mismo número y salía repetido, algo que la DGII no permite. Ahora el número se aparta de forma segura en la base misma (nunca se repite), con un candado extra que impide de raíz que dos facturas guarden el mismo NCF. Si te quedan 10 o menos de una secuencia, el aviso sigue funcionando igual. · Junto a esto se dejó anotado (para el dueño) qué falta exactamente para la facturación electrónica e-CF que la DGII exige a partir del 15 de noviembre de 2026."
+    },
     {
       "v": "49.93",
       "fecha": "2026-07-26",

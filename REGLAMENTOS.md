@@ -22,7 +22,7 @@
 | 1 | **Venta** (todos los artículos + IMEI) | ✅ decretado y auditado — v49.86 |
 | 2 | **Cobro y caja** | ✅ decretado y auditado — v49.88 |
 | 3 | **Crédito y cobranza** | ✅ decretado y auditado — v49.89 |
-| 4 | Fiscal y documentos (NCF, e-CF, notas de crédito) | pendiente (omitido a pedido del dueño) |
+| 4 | **Fiscal y documentos (NCF, e-CF, notas de crédito)** | ✅ decretado y auditado — v49.94 |
 | 5 | **Inventario (existencia, kardex, almacenes)** | ✅ decretado y auditado — v49.90 |
 | 6 | **Contabilidad (partida doble, asientos automáticos)** | ✅ decretado y auditado — v49.91 |
 | 7 | **Clientes y entidades** | ✅ decretado y auditado — v49.92 |
@@ -154,6 +154,59 @@ mora apagada** — así que estas reglas todavía no muerden a nadie. Se decreta
 deuda como incobrable · no hay bloqueo automático por acumulación (hoy es aviso + autorización, no un
 corte duro) · un fiado puro (sin plan de cuotas) no tiene fecha de vencimiento, así que su "mora" no
 existe como tal — solo las cuotas la tienen.
+
+---
+
+## 4 · REGLAMENTO FISCAL Y DOCUMENTOS
+*(decretado por el dueño el 26-jul-2026 · auditado y aplicado en v49.94)*
+
+Aplica a los comprobantes fiscales (NCF), la facturación electrónica (e-CF) y las notas de crédito.
+
+1. **Un NCF nunca se repite.** El comprobante fiscal (NCF) que se le pone a una factura es único —
+   dos ventas simultáneas (dos cajeros, dos pestañas) no pueden recibir el mismo número. El número se
+   aparta de forma **atómica** en la base misma (RPC `pos_siguiente_ncf`: `UPDATE...RETURNING`
+   serializa por bloqueo de fila), no leyéndolo y sumándole 1 en el navegador. Candado de último
+   nivel: índice único `pos_ventas(organizacion_id, ncf)` — la base rechaza guardar dos facturas con
+   el mismo NCF, pase lo que pase.
+2. **Sin secuencia disponible, no se factura con NCF.** Si el tipo de comprobante no tiene una
+   secuencia activa, vigente y con números por delante (`actual ≤ hasta`, no vencida), la factura sale
+   **sin** NCF — nunca con un número inventado ni fuera de rango.
+3. **Cada tipo de comprobante consume SU propia secuencia.** Consumo→B02, Crédito Fiscal→B01,
+   Gubernamental→B15, Régimen Especial→B14; anulación/devolución→B04 (nota de crédito fiscal). El
+   selector de la factura usa nombres (`consumo`/`credito_fiscal`/…) que se mapean al código B0x.
+4. **Anular una factura con NCF emite su nota de crédito fiscal (B04)** automáticamente, como exige la
+   DGII — reusando el mismo apartado atómico. Si no hay secuencia B04, se avisa (no se anula en
+   silencio dejando el NCF huérfano).
+5. **Aviso de agotamiento.** Cuando restan ≤10 números de una secuencia, el sistema avisa. La caché en
+   memoria (`_ncfSecs`) se mantiene al día después de cada consumo para que ese aviso sea fiel.
+
+**Estado de la auditoría (v49.94):** el hueco real era la **carrera de lectura+escritura** en
+`asignarNCF` — leía `actual`, calculaba el NCF y luego pateaba `actual+1`; dos ventas concurrentes leían
+el mismo `actual` y emitían el MISMO NCF. Cerrado de raíz: RPC atómica + índice único. Se midió la base
+antes de tocar: 0 ventas con NCF, 0 duplicados (nunca había pasado en producción porque bayolsale casi no
+factura con NCF, pero el hueco estaba vivo). El `asignarNCF` del navegador llama la RPC y solo cae a la
+lógica vieja de respaldo si la RPC no está desplegada (base vieja) — verificado con 15 comprobaciones.
+
+**e-CF (facturación electrónica DGII) — lo que FALTA, para el trámite del dueño.** La e-CF es
+**OBLIGATORIA desde el 15-nov-2026** para micro/pequeños contribuyentes; sin ella el POS será invendible
+a un negocio formal. Hoy el sistema emite NCF "de papel" (B0x), NO e-CF. Para llegar a e-CF hace falta,
+en orden:
+- **(A) Certificado digital tributario** del negocio (lo emite una entidad autorizada por la DGII —
+  trámite y costo del dueño, ~2-4 semanas).
+- **(B) Un PSFE** (Proveedor de Servicios de Facturación Electrónica, ej. **Alanube**, el mismo que usa
+  Alegra) o conexión directa al ambiente de la DGII. Se contrata por API; NEXUS ya tiene la
+  infraestructura (Edge Functions) para integrarlo sin plataforma intermedia.
+- **(C) Los e-CF nuevos** (e-31 factura de crédito fiscal, e-32 consumo, e-34 nota de crédito, etc.)
+  reemplazan/conviven con los B0x; el XML firmado se envía a la DGII y esta devuelve un **track-id** de
+  aceptación. Falta: mapear cada tipo B0x→e-CF, generar y firmar el XML, mandarlo al PSFE, guardar el
+  track-id en `pos_ventas`, y el **RNC del comprador** (hoy no se captura — es requisito del e-31).
+- **(D) 606/607/608** (reportes DGII): solo existe 607 parcial. Faltan 606 (compras) y 608 (anulados).
+- **Recomendación:** el dueño arranca YA con (A) el certificado y elige PSFE (B) — son las piezas que no
+  dependen del código y tienen plazo largo. La integración (C/D) se construye después, con el certificado
+  en mano, en su propia ronda supervisada (toca dinero y un servicio externo real).
+
+**Pendientes de este reglamento (NO construidos):** todo el e-CF (A-D arriba) · captura del RNC del
+comprador · nota de débito · multi-moneda · plantillas/logo por documento.
 
 ---
 
