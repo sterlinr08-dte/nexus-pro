@@ -5372,6 +5372,39 @@ escriben ahí.
   arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
   Edge con service-role. Se deja documentado, no se improvisa.
 
+### Los 3 respaldos: cerrados, y el respaldo diario ya no dejaba fuera medio sistema (26-jul-2026)
+Continuación directa de lo de abajo. Al aplicar el mismo arreglo a `respaldo-diario`,
+`respaldo-correo-mensual` y `verificar-respaldo` aparecieron **dos cosas más graves que el hueco
+que se venía a cerrar**:
+- **La clave de Gmail seguía escrita en texto plano en 2 funciones.** La Ronda 1 la sacó de
+  `enviar-reporte-email` pero **`verificar-respaldo` y `respaldo-correo-mensual` la tenían igual**,
+  y las dos son públicas. El dueño ya rotó esa clave, así que ese valor concreto quedó neutralizado
+  — pero las 2 funciones estaban rotas desde entonces (no podían enviar). Ahora las 3 leen el
+  Secret `GMAIL_PASS`, igual que la primera. **Lección: cuando se saca un secreto del código, hay
+  que buscarlo en TODAS las funciones, no solo en la que se está mirando.**
+- **`respaldo-diario` dejaba fuera 59 tablas con datos.** Su lista de tablas estaba **escrita a
+  mano** hacía un año: cubría el núcleo de Seguros y **nada** del POS, Rifas, Consultorio, AGUAPRO,
+  Financiamiento, Clientes SaaS ni NEXUS AI CONTENT — ni siquiera `organizaciones`/`profiles`, sin
+  las cuales no se podrían restaurar los logins. Un respaldo que no respalda el negocio es peor que
+  no tenerlo: da confianza falsa. Ahora la lista **se descubre sola** con
+  `tablas_para_respaldo()` (SQL `SECURITY DEFINER`, `EXECUTE` solo para `service_role`), así que un
+  módulo nuevo entra al respaldo sin que nadie se acuerde. **`cron_secretos` se excluye a
+  propósito** — meterla pondría los secretos compartidos dentro de un archivo del bucket.
+  Queda `TABLAS_MINIMAS` como red de seguridad si la consulta fallara.
+- **El peligro real de dejar `respaldo-diario` abierta** (por eso no era solo "spam"): rota y
+  conserva **solo 4 copias**. Cualquiera podía llamarla 4 veces seguidas y **borrar todo el
+  historial de respaldos reales**, dejando 4 copias idénticas del mismo instante.
+- **Las 3 llevan ahora el mismo `x-cron-token`** (secretos propios en `cron_secretos`), y los jobs
+  5, 6 y 7 se actualizaron para mandarlo. De paso se descubrió que esos 3 jobs llevaban años
+  mandando un `Authorization: Bearer` que **era la clave anónima** — no protegía nada.
+- **Verificado con llamadas HTTPS reales:** las 3 sin token → **401**; `verificar-respaldo` con
+  token → **200** con datos correctos (último respaldo, 4 copias); `respaldo-diario` con token →
+  generó un respaldo de **10.46 MB frente a los 4.43 MB del día anterior** — la prueba medida de
+  que ahora sí entra todo (la lista de respaldo mínima es MÁS corta que la vieja, así que un fallo
+  del descubrimiento habría dado menos de 4 MB, no más de 10).
+- **Efecto de la prueba, dicho claro:** esa llamada creó un respaldo real y la rotación sacó el más
+  viejo (22-jul). Se cambió una copia vieja parcial por una nueva completa.
+
 ### El reporte diario ya no lo puede disparar cualquiera desde internet (26-jul-2026, v49.56)
 Punto #6 de la lista. `enviar-reporte-email` es `verify_jwt:false` (tiene que serlo, la llama un cron)
 y **no comprobaba nada**: un `POST` desde cualquier parte del mundo disparaba el reporte del dueño.
