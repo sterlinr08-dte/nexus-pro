@@ -5372,6 +5372,27 @@ escriben ahí.
   arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
   Edge con service-role. Se deja documentado, no se improvisa.
 
+### Borradas 5 tablas muertas que estaban abiertas a cualquier usuario (26-jul-2026)
+Punto #4 de la lista de pendientes. Eran andamiaje de cosas que nunca se conectaron, y las 5 tenían
+RLS `USING(true)` **para cualquier usuario logueado de cualquier empresa** — o sea, Francis o el
+doctor podían borrarlas enteras.
+- **`roles` (5), `permissions` (37), `role_permissions` (59), `user_permissions` (0)** — un sistema
+  de permisos que jamás se enganchó al frontend. **Verificado antes de borrar, no asumido:** cero
+  referencias en `index.html`/`parches.js`, cero claves foráneas apuntándoles, y `permissions.name`
+  estaba **NULL en las 37 filas** (ni siquiera era configuración real). El sistema de permisos que
+  SÍ funciona es `configuracion.roles_perms` (jsonb) → `localStorage nx_roles_perms` →
+  `tienePermiso()`, confirmado leyendo la función. Los 5 roles guardados (ADMINISTRADOR/SUPERVISOR/
+  AGENTE/CAJERO/COBROS) quedaron registrados en el chat antes de borrar, por si alguna vez se
+  quisieran de referencia.
+- **`changelog`** — una tabla con **una sola columna (`id`)**, **cero filas** y cero referencias. El
+  historial de versiones que ve el dueño vive en `version.json`, no aquí.
+- **Resultado medido:** ya no queda **ninguna** tabla con `USING(true)` de escritura en toda la base.
+  Las 2 que siguen con `USING(true)` son de **solo lectura** y a propósito: `organizaciones`
+  (el login necesita leerla antes de que haya sesión — sus escrituras ya son solo-admin desde la
+  Ronda 1) y `ai_content_niches` (catálogo global de plantillas; escribir sigue siendo solo-admin).
+- Migraciones `borrar_tablas_permisos_muertas` y `borrar_tabla_changelog_vacia`. Cero cambios de
+  código.
+
 ### Accesibilidad — el sistema completo se puede usar sin mouse (26-jul-2026, v49.55)
 Cierra el punto #3 de la lista: los 144 botones de solo ícono sin nombre y los 112 elementos
 clicables sin teclado que la Ronda 3 había dejado explícitamente sin tocar ("hay que redactar cada
