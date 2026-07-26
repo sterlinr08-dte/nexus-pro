@@ -5551,7 +5551,7 @@
     if (!qaGrid) return false;
     
     const btn = document.createElement('div');
-    btn.className = 'qa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}};
     btn.id = 'qaSolicit';
     btn.setAttribute('onclick', "window.nxAbrirSolicitudes && window.nxAbrirSolicitudes()");
     btn.style.position = 'relative';
@@ -7153,7 +7153,7 @@
     if (!qaGrid) return false;
 
     const btn = document.createElement('div');
-    btn.className = 'qa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}};
     btn.id = 'qaConsultarCobertura';
     btn.setAttribute('onclick', "window.nxAbrirConsultarCobertura && window.nxAbrirConsultarCobertura()");
     btn.innerHTML = `
@@ -8518,7 +8518,7 @@
     if (!qaGrid) return false;
 
     const btn = document.createElement('div');
-    btn.className = 'qa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}};
     btn.id = 'qaMisCuentas';
     btn.setAttribute('onclick', 'window.nxAbrirMisCuentas && window.nxAbrirMisCuentas()');
     btn.innerHTML = `
@@ -9604,7 +9604,7 @@
     if (!ref) return false;
 
     const btn = document.createElement('div');
-    btn.className = 'qa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}};
     btn.id = 'qaNexusSmart';
     btn.style.cssText = 'cursor:pointer;position:relative';
     btn.setAttribute('data-go', 'smart');
@@ -9871,7 +9871,7 @@
     if (!ref) return false;
 
     const btn = document.createElement('div');
-    btn.className = 'qa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}};
     btn.id = 'qaCierreMes';
     btn.style.cssText = 'cursor:pointer;position:relative';
     btn.onclick = () => window.nxAbrirCierre();
@@ -10534,7 +10534,7 @@
     if (!qaGrid) return false;
 
     const btn = document.createElement('div');
-    btn.className = 'qa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}};
     btn.id = 'qaContab';
     btn.setAttribute('onclick', 'window.nxAbrirContabilidad && window.nxAbrirContabilidad()');
     btn.innerHTML = `
@@ -12126,7 +12126,7 @@
     const qa = vDash.querySelector('.qa');
     if (!qa || !qa.parentElement) return false;
     const btn = document.createElement('div');
-    btn.className = 'qa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}};
     btn.id = 'qaCuadreTSS';
     btn.setAttribute('onclick', 'window.nxAbrirCuadreTSS && window.nxAbrirCuadreTSS()');
     btn.innerHTML = `<span class="qa-i"><i class="ti ti-file-search qa-ico c-rosa"></i></span><div class="qa-l">Tabla Comparativa</div>`;
@@ -15755,7 +15755,7 @@
     const qa = vDash.querySelector('.qa');
     if (!qa || !qa.parentElement) return false;
     const btn = document.createElement('div');
-    btn.className = 'qa'; btn.id = 'qaMultiempresa';
+    btn.className = 'qa'; btn.setAttribute('tabindex','0'); btn.setAttribute('role','button'); btn.onkeydown=function(e){if(e.keyCode===13||e.keyCode===32){e.preventDefault();this.click();}}; btn.id = 'qaMultiempresa';
     btn.setAttribute('onclick', 'window.nxAbrirMultiempresa && window.nxAbrirMultiempresa()');
     btn.innerHTML = '<span class="qa-i"><i class="ti ti-building-skyscraper qa-ico c-esmeralda"></i></span><div class="qa-l">Multiempresa</div>';
     qa.parentElement.appendChild(btn);

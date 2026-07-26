@@ -5387,6 +5387,43 @@ pagos (morado `#7c3aed`, entre paréntesis, junto al nombre) — no un estilo nu
   color medido es `rgb(124,58,237)` (el mismo de Historial de pagos, no uno parecido), un cliente
   sin referencia no muestra `()`, la tarjeta sigue compacta (124px) y sin desborde en 390px.
 
+### Dashboard — los números arriba de los iconos, y que sirvan (26-jul-2026, v49.61)
+El dueño mandó la pantalla de Inicio y preguntó cómo mejorarla. Auditado contra el código real: son
+**14 iconos**, 6 escritos en `index.html` y **8 que `parches.js` inyecta solo** (NEXUS Smart, Cierre
+de Mes, Multiempresa, Contabilidad, Solicitudes, Consultar Cobertura, Mis Cuentas, Tabla
+Comparativa). Cuatro cosas, todas aplicadas:
+1. **Los números estaban DEBAJO de los 14 iconos.** En el celular `parches.js` fuerza la rejilla a 3
+   columnas con `!important` → 5 filas ≈ 550px antes del primer número; por eso en su captura los KPI
+   salían cortados abajo. Contra NPGS §15 ("todo módulo importante debe iniciar mostrando
+   indicadores"). El `<div class="kg" id="kpiG">` se movió ARRIBA del `.qa-g`. Medido con el markup
+   real: KPI en y=30 vs iconos en y=289 (390px).
+2. **Los KPI no eran los que decide el día.** Antes: Clientes activos · Prima mensual · Cobrado
+   (histórico) · Pendiente · En proceso. Ahora, en orden de acción: **POR COBRAR** (`pendTot`, con
+   cuántos clientes tienen saldo) · **FACTURAS ATRASADAS** (mismo cálculo que el filtro `atrasadas`
+   de `rFact`, respetando el corte 20-al-20 vía `mesCorte()`) · **COBRADO ESTE MES** ·
+   **PRIMA MENSUAL** (absorbió el % de efectividad que traía el KPI "Cobrado") · **CLIENTES
+   ACTIVOS** · **EN PROCESO**. La utilidad bruta de admin no se tocó, sigue al final.
+   - **"Cobrado este mes" sin consulta nueva:** `rChartCobros()` ya trae TODOS los abonos para la
+     gráfica de 6 meses, y el último mes de esa serie **ES** el mes en curso — así que llena
+     `#kpiCobMes` desde ahí. El KPI sale con "…" hasta que la gráfica resuelve (es async), honesto en
+     vez de mostrar un 0 falso.
+3. **Solo 1 de 5 KPI era tocable.** Ahora 5 de 6: POR COBRAR → Cobros, ATRASADAS → Facturas ya
+   filtrada, COBRADO ESTE MES → Historial de pagos, CLIENTES ACTIVOS → Clientes, EN PROCESO (ya lo
+   era). PRIMA MENSUAL se dejó sin clic a propósito — es contexto, no lleva a ninguna lista concreta.
+4. **Los 8 iconos inyectados no respondían al teclado.** En la v49.55 se les puso teclado a los 6
+   estáticos, pero estos se crean con `btn.className='qa'` + `btn.onclick=...` y quedaron fuera. Se
+   les agregó `tabindex`/`role`/`onkeydown` (con `keyCode`, sin comillas, por vivir dentro de cadenas
+   de JS) en los 8 sitios de una pasada. Ya la mitad del Dashboard no se comporta distinto a la otra.
+- Verificado con Playwright y el código real extraído por contenido (`rDash`, `rChartCobros`,
+  `mesCorte` + el CSS y el markup reales del `#v-dashboard`): el orden de los hijos es
+  `alertasBanner → kpiG → qa-g`, los KPI quedan por encima de los iconos en 390px y 1280px, los 6
+  valores dan el número EXACTO con datos simulados (por cobrar 14,000 con 2 clientes; atrasadas 4
+  excluyendo la del mes de corte, la pagada y la anulada; cobrado del mes 4,500 excluyendo un abono
+  de enero), un clic real en ATRASADAS navega a Facturas y dispara `rFact`, **Enter** en POR COBRAR
+  navega a Cobros, sin desborde horizontal en ninguno de los 2 anchos y 0 errores de consola.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+
 ### Facturas — 4 mejoras salidas de una captura del dueño (26-jul-2026, v49.59)
 El dueño mandó la pantalla de Facturas en su iPhone y preguntó "cómo podemos mejorar". Se auditó
 contra el código real (no solo la captura) y salieron 4 cosas, ordenadas por lo que de verdad le

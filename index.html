@@ -1228,6 +1228,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <!-- DASHBOARD -->
         <div class="view on" id="v-dashboard">
           <div id="alertasBanner"></div>
+          <div class="kg" id="kpiG"><div class="loading"><div class="spin"></div>Cargando...</div></div>
           <div class="qa-g">
             <div class="qa" onclick="nav('facturas',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-invoice qa-ico c-azul"></i></span><div class="qa-l">Facturas</div></div>
             <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-users qa-ico c-verde"></i></span><div class="qa-l">CLIENTES</div></div>
@@ -1236,7 +1237,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             <div class="qa" onclick="nav('dgii',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-receipt-tax qa-ico c-rojo"></i></span><div class="qa-l">Reporte DGII</div></div>
             <div class="qa" onclick="exportarCSV()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-spreadsheet qa-ico c-esmeralda"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
-          <div class="kg" id="kpiG"><div class="loading"><div class="spin"></div>Cargando...</div></div>
           <div class="nc"><div class="ch"><div><div class="ct">Resumen de cobros</div><div class="ct-s">últimos 6 meses</div></div></div><div id="chartCobros" style="padding:8px 4px 4px"></div></div>
           <div class="nc"><div class="ch"><div><div class="ct">Clientes en proceso</div><div class="ct-s">onboarding y seguimientos</div></div><button class="btn bsm bc1" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)">Ver</button></div><div id="wProceso"></div></div>
           <div class="g2">
@@ -4016,7 +4016,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.60';
+const APP_VERSION='49.61';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5615,12 +5615,18 @@ function rDash(){
   const cob=act.reduce((s,c)=>s+(c.pagado||0),0);
   const pd=act.reduce((s,c)=>s+pendTot(c),0);
   const ef=(cob+pd)>0?Math.round(cob/(cob+pd)*100):0;
+  const conSaldo=act.filter(c=>pendTot(c)>0).length;
+  // Facturas atrasadas = de meses ANTERIORES al de corte (20-al-20) y sin pagar
+  const _mc=mesCorte(),_mcKey=`${_mc.anio}-${String(_mc.mes).padStart(2,'0')}`;
+  const atrasadas=(ST.facturas||[]).filter(f=>f.periodo<_mcKey&&f.estado!=='Pagado'&&f.estado!=='Anulada').length;
+  const _kb='tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button" style="cursor:pointer"';
   document.getElementById('kpiG').innerHTML=`
-    <div class="kpi k1"><i class="ti ti-users ki"></i><div class="kl">CLIENTES ACTIVOS</div><div class="kv v1">${act.length}</div><div class="ks">${inh} inhabilitados</div></div>
-    <div class="kpi k2"><i class="ti ti-trending-up ki"></i><div class="kl">PRIMA MENSUAL</div><div class="kv v2" style="font-size:13px">${fmt(prima)}</div><div class="ks">cartera activa</div></div>
-    <div class="kpi k3"><i class="ti ti-check ki"></i><div class="kl">COBRADO</div><div class="kv v3" style="font-size:13px">${fmt(cob)}</div><div class="ks">${ef}% efectividad</div></div>
-    <div class="kpi k4"><i class="ti ti-clock ki"></i><div class="kl">PENDIENTE</div><div class="kv v4" style="font-size:13px">${fmt(pd)}</div><div class="ks">por cobrar</div></div>
-    <div class="kpi k5" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-clipboard-list ki"></i><div class="kl">EN PROCESO</div><div class="kv v5">${ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length}</div><div class="ks">clientes en onboarding</div></div>`;
+    <div class="kpi k4" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" ${_kb}><i class="ti ti-cash ki"></i><div class="kl">POR COBRAR</div><div class="kv v4" style="font-size:15px">${fmt(pd)}</div><div class="ks">${conSaldo} cliente${conSaldo===1?'':'s'} con saldo</div></div>
+    <div class="kpi k5" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" ${_kb}><i class="ti ti-file-alert ki"></i><div class="kl">FACTURAS ATRASADAS</div><div class="kv v5">${atrasadas}</div><div class="ks">de meses anteriores</div></div>
+    <div class="kpi k3" onclick="nav('clientes',null);setTimeout(()=>switchTab('pagos'),200)" ${_kb}><i class="ti ti-check ki"></i><div class="kl">COBRADO ESTE MES</div><div class="kv v3" style="font-size:15px" id="kpiCobMes">…</div><div class="ks">${MESES[new Date().getMonth()]}</div></div>
+    <div class="kpi k2"><i class="ti ti-trending-up ki"></i><div class="kl">PRIMA MENSUAL</div><div class="kv v2" style="font-size:15px">${fmt(prima)}</div><div class="ks">cartera activa · ${ef}% efectividad</div></div>
+    <div class="kpi k1" onclick="nav('clientes',null)" ${_kb}><i class="ti ti-users ki"></i><div class="kl">CLIENTES ACTIVOS</div><div class="kv v1">${act.length}</div><div class="ks">${inh} inhabilitados</div></div>
+    <div class="kpi k5" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)" ${_kb}><i class="ti ti-clipboard-list ki"></i><div class="kl">EN PROCESO</div><div class="kv v5">${ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length}</div><div class="ks">clientes en onboarding</div></div>`;
   // KPI de utilidad — SOLO VISIBLE PARA ADMIN
   if((CFG.cost1||CFG.cost2||CFG.cost3) && sesion?.rol==='admin'){
     const costoTotal=act.reduce((s,c)=>{const cost=c.plan==='Básico'?CFG.cost1:c.plan==='Superior'?CFG.cost2:CFG.cost3;return s+cost+((c.deps||[]).length*(cost*0.6));},0);
@@ -5712,6 +5718,10 @@ async function rChartCobros(){
     const m=meses.find(x=>x.mes===mesIdx&&x.anio===anio);
     if(m)m.total+=(Number(a.monto)||0);
   });
+  // El último mes de la serie ES el mes en curso → alimenta el KPI "Cobrado este mes"
+  // (se llena aquí para no hacer una segunda consulta de abonos solo para el KPI).
+  const _kcm=document.getElementById('kpiCobMes');
+  if(_kcm)_kcm.textContent=fmt(meses[meses.length-1].total);
   const vals=meses.map(m=>m.total);
   const max=Math.max(...vals,1);
   // Dimensiones del SVG
