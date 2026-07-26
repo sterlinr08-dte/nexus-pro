@@ -1204,9 +1204,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div id="alertasBanner"></div>
           <div class="qa-g">
             <div class="qa" onclick="nav('facturas',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-invoice qa-ico c-azul"></i></span><div class="qa-l">Facturas</div></div>
-            <div class="qa" onclick="nav('clientes',null);setTimeout(()= tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">switchTab('cob'),200)"><span class="qa-i"><i class="ti ti-users qa-ico c-verde"></i></span><div class="qa-l">CLIENTES</div></div>
+            <div class="qa" onclick="nav('clientes',null);setTimeout(()=>switchTab('cob'),200)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-users qa-ico c-verde"></i></span><div class="qa-l">CLIENTES</div></div>
             <div class="qa" onclick="if(typeof window.nxAbrirDetallesCobro==='function')window.nxAbrirDetallesCobro()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-chart-pie qa-ico c-teal"></i></span><div class="qa-l">Detalles de Cobro</div></div>
-            <div class="qa" onclick="nav('facturas',null);setTimeout(()= tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)"><span class="qa-i"><i class="ti ti-file-alert qa-ico c-ambar"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
+            <div class="qa" onclick="nav('facturas',null);setTimeout(()=>{var s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}},200)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-alert qa-ico c-ambar"></i></span><div class="qa-l">FACTURAS PENDIENTES</div></div>
             <div class="qa" onclick="nav('dgii',null)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-receipt-tax qa-ico c-rojo"></i></span><div class="qa-l">Reporte DGII</div></div>
             <div class="qa" onclick="exportarCSV()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="qa-i"><i class="ti ti-file-spreadsheet qa-ico c-esmeralda"></i></span><div class="qa-l">Exportar Excel</div></div>
           </div>
@@ -2172,7 +2172,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div class="doc-grid" id="docsGrid"></div>
 
     <!-- Zona de subida extra -->
-    <div class="doc-drop-zone" id="docsDropZone" onclick="document.getElementById('docsInputExtra').click()" ondragover="e= tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">e.preventDefault()" ondrop="dropDoc(event)">
+    <div class="doc-drop-zone" id="docsDropZone" onclick="document.getElementById('docsInputExtra').click()" ondragover="e=>e.preventDefault()" ondrop="dropDoc(event)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
       <i class="ti ti-cloud-upload" style="font-size:16px;color:#475569;display:block;margin-bottom:5px"></i>
       <div style="font-size:11px;font-weight:600;color:#475569">Otros documentos</div>
       <div style="font-size:10px;color:#475569;margin-top:2px">Arrastra o toca para subir</div>
@@ -3988,7 +3988,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.57';
+const APP_VERSION='49.58';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5592,7 +5592,7 @@ function rDash(){
     <div class="kpi k2"><i class="ti ti-trending-up ki"></i><div class="kl">PRIMA MENSUAL</div><div class="kv v2" style="font-size:13px">${fmt(prima)}</div><div class="ks">cartera activa</div></div>
     <div class="kpi k3"><i class="ti ti-check ki"></i><div class="kl">COBRADO</div><div class="kv v3" style="font-size:13px">${fmt(cob)}</div><div class="ks">${ef}% efectividad</div></div>
     <div class="kpi k4"><i class="ti ti-clock ki"></i><div class="kl">PENDIENTE</div><div class="kv v4" style="font-size:13px">${fmt(pd)}</div><div class="ks">por cobrar</div></div>
-    <div class="kpi k5" onclick="nav('clientes',null);setTimeout(()= tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">switchCliTab('proceso'),200)" style="cursor:pointer"><i class="ti ti-clipboard-list ki"></i><div class="kl">EN PROCESO</div><div class="kv v5">${ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length}</div><div class="ks">clientes en onboarding</div></div>`;
+    <div class="kpi k5" onclick="nav('clientes',null);setTimeout(()=>switchCliTab('proceso'),200)" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-clipboard-list ki"></i><div class="kl">EN PROCESO</div><div class="kv v5">${ST.clientes.filter(c=>c.estado_cliente==='EN_PROCESO').length}</div><div class="ks">clientes en onboarding</div></div>`;
   // KPI de utilidad — SOLO VISIBLE PARA ADMIN
   if((CFG.cost1||CFG.cost2||CFG.cost3) && sesion?.rol==='admin'){
     const costoTotal=act.reduce((s,c)=>{const cost=c.plan==='Básico'?CFG.cost1:c.plan==='Superior'?CFG.cost2:CFG.cost3;return s+cost+((c.deps||[]).length*(cost*0.6));},0);
