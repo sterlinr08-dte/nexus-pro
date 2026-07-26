@@ -5099,6 +5099,46 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### El botón flotante tapaba TODAS las ventanas del sistema (26-jul-2026, v49.82)
+El dueño mandó la ventana "Buscar artículo" en su iPhone y pidió mejorarla. Se midió con el código
+real (`nxProdPicker`/`pintarProdPick`/`ppkDetailHTML` + el CSS real, a 390×664 y con 40 artículos)
+antes de tocar nada. Tres hallazgos, dos de ellos ajenos a esa pantalla:
+- **El FAB (`.nx-fab`) está en `z-index:9000` y `.overlay` en `100`** — o sea el botón morado flota
+  encima de **cualquier** ventana del sistema, no solo esta. Medido: **2 filas tapadas** con lista
+  larga. Y no es solo estético: un toque en lo que se ve como un precio o un botón "Elegir" abre el
+  menú del FAB. Peor combinación de la que ya advierte este archivo: el FAB usa `transform:scale`
+  en `:active` **sobre** un `.overlay` que tiene `backdrop-filter` — justo el par que infla botones
+  en iPhone. Arreglado con una sola regla junto al CSS del FAB (dentro de su `@media(max-width:768px)`):
+  `body:has(.overlay.open) .nx-fab,.nx-menu{display:none!important}`. **Si el navegador no soporta
+  `:has()` la regla entera se ignora** y queda el comportamiento de antes — degradación limpia, sin
+  JS. Verificado en los 3 estados: visible sin ventana, escondido con la ventana y con el detalle
+  abierto, y vuelve al cerrar.
+- **El placeholder del buscador se cortaba** (`"BUSCAR POR NOMBRE O CÓDIGO... (VACÍO = TO"` en su
+  captura). No era el teléfono: medido con el `font` computado, **432px de texto en un campo de
+  286px**. La causa de fondo es que `input::placeholder` entra en el bloque de MAYÚSCULAS GLOBALES
+  de `index.html`, así que cualquier placeholder largo crece ~15% sobre lo que se escribió. Quedó
+  `'Buscar artículo…'` (166px). **Al escribir un placeholder nuevo en este sistema, contar con las
+  mayúsculas.**
+- **`aplica`** — etiqueta de 8.5px que salía en TODAS las filas, incluso sin cliente elegido, donde
+  el precio es el de lista y la palabra no significa nada. Se quitó. En su lugar, **solo cuando al
+  cliente le toca un precio distinto** se muestra el de lista **tachado** encima del que se va a
+  cobrar. Se prefirió eso a una etiqueta tipo "POR MAYOR" porque `precioCli()` puede venir de un
+  **nivel de precio** con nombre propio (Distribuidor, VIP…), y esa etiqueta habría mentido.
+- **Un cambio propio revertido por no aportar:** subí el nombre del artículo de 12.5 a 13.5px. Al
+  medir, los nombres cortados eran **38 de 80 con los tres tamaños** — el tamaño no era la causa.
+  Revertido. Lo que sí sirvió fue dejar que el nombre use **2 líneas**
+  (`-webkit-line-clamp:2`) en vez de cortarse: **38 cortados → 0**, y solo crecen las filas que lo
+  necesitan (49→64px).
+- Verificado con **18 comprobaciones** Playwright y el código real extraído por contenido, más
+  capturas en 390px y 1280px. Sin desborde horizontal en ningún caso, 0 errores de JS.
+  **Límite honesto del entorno:** el sandbox no tiene Segoe UI ni la fuente de iOS, así que el texto
+  mide más ancho que en su teléfono — el conteo absoluto de nombres cortados no es representativo,
+  pero la comparación entre tamaños (misma cifra en los tres) y el antes/después del `clamp` sí lo
+  son, porque se midieron en el mismo entorno.
+- **Pendiente que se le dijo al dueño, sin construir:** un artículo con precio 0 sale como "SIN
+  PRECIO" pero se puede elegir igual y el botón dice "Elegir — RD$ 0". Eso permite meter al carrito
+  un artículo que se cobraría en cero. No se tocó porque toca el flujo de cobro y no fue lo pedido.
+
 ### RETROSPECTIVA — cierre de "aplicar todas las skills" (Ronda 5, `gstack-retro`, 26-jul-2026)
 
 Las 21 skills instaladas quedaron aplicadas o clasificadas. **5 rondas de auditoría hechas**
