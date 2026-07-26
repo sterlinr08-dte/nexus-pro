@@ -1,7 +1,12 @@
 {
-  "version": "49.91",
+  "version": "49.92",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.92",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO DE CLIENTES Y ENTIDADES: no se pierde de vista a quien te debe. · ARREGLADO: al eliminar un cliente que todavía te debe dinero, antes solo salía una advertencia que se podía saltar — si desaparecía de la lista, se perdía de vista al deudor. Ahora al cajero se le bloquea (le dice cuánto debe) y solo un administrador puede eliminarlo, confirmando y dejándolo en Auditoría. El historial nunca se destruye (queda desactivado, recuperable). · NUEVO: lo mismo al eliminar un proveedor al que todavía le debes (cuenta por pagar) — no se borra en silencio. · Lo que ya funcionaba se confirmó: no se crean clientes duplicados (avisa y ofrece abrir el que ya existe), toda entidad necesita al menos un rol, y un empleado se mantiene sincronizado con Recursos Humanos."
+    },
     {
       "v": "49.91",
       "fecha": "2026-07-26",
