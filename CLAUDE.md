@@ -8538,3 +8538,38 @@ Texto completo en **`REGLAMENTOS.md` §5**.
 - **Pendiente:** el reparto de un artículo con IMEI POR almacén es aproximado (el cuadre ajusta el
   total, no reparte los IMEI entre almacenes) · el invariante "total = suma de almacenes" no se fuerza
   en cada operación para artículos normales (decisión de la Fase 5, el total es autoritativo).
+
+### REGLAMENTO DE CONTABILIDAD — decretado y auditado (26-jul-2026, v49.91)
+Quinta tanda del "un reglamento por módulo". Cubre la partida doble y los asientos automáticos.
+Método de siempre: auditar el motor de asientos (`postAsientoConcepto`, `postAsientoVenta`,
+`postAsientoNomina`, `nxCtaGuardarGasto`, `nxAsGuardar` + los que pasan por `postAsientoConcepto`)
+línea por línea, medir la base, y solo entonces redactar (texto completo en **`REGLAMENTOS.md` §6**).
+- **Medición previa (SQL):** 0 asientos, 0 sin líneas, 0 descuadrados, 0 líneas huérfanas — la base
+  está limpia. La regla es forward-looking, se deja el motor a prueba de balas antes de que se use.
+- **Lo que ya estaba bien (confirmado, no tocado):** el asiento MANUAL (`nxAsGuardar`) ya validaba
+  Debe=Haber · cada asiento nace con `tipo`+`origen_id` y se reversa con `delAsientoOrigen` al anular/
+  eliminar el documento · un asiento sin plan de cuentas no se inventa (los posters salen temprano si
+  no hay `pos_cuentas`) · la mora se reconoce aparte (4103) y la nota de crédito no entra a Caja (2105).
+- **HUECO CENTRAL, cerrado — los asientos AUTOMÁTICOS posteaban sin verificar Debe=Haber.**
+  `postAsientoConcepto`/`postAsientoVenta`/`postAsientoNomina` (y el gasto) creaban la cabecera y
+  posteaban las líneas a ciegas — un error de cálculo o de redondeo dejaba la contabilidad
+  descuadrada en silencio (solo el manual estaba protegido). **Arreglo de raíz:** motor ÚNICO nuevo
+  `guardarAsientoBalanceado(cab, lineas)` por el que pasan TODOS (los 4 automáticos + el gasto + el
+  manual, refactorizados): (1) valida Debe=Haber ANTES de postear nada — si no cuadra, no se registra
+  y queda `logAudit('ASIENTO_DESCUADRADO', ...)`; (2) estampa el `asiento_id` en las líneas
+  (`Object.assign({}, l, {asiento_id})`, ganando siempre); (3) si las líneas fallan tras crear la
+  cabecera, **borra la cabecera colgada** (antes el `catch` se lo tragaba y dejaba un asiento sin
+  líneas). `postAsientoConcepto` quedó como un envoltorio de una línea sobre el motor. El asiento de
+  venta (dinero sensible) es best-effort igual que antes — nunca bloquea la venta, solo ahora se
+  niega a escribir un asiento descuadrado en vez de corromper los libros.
+- Verificado con **19 comprobaciones** contra el código REAL extraído por contenido
+  (`guardarAsientoBalanceado`, los 6 `postAsiento*`, `ctasMap`, `lnCta`, `nxCtaGuardarGasto`,
+  `nxAsGuardar`): el motor guarda lo cuadrado, rechaza lo descuadrado con su registro de auditoría,
+  exige ≥2 líneas, cuadra por redondeo, borra la cabecera cuando las líneas fallan; y los 6 asientos
+  automáticos (venta contado/crédito, compra, abono con mora, nómina, devolución, servicio) cuadran
+  por construcción con los montos exactos, y sin plan de cuentas no postean ni revientan. Más el humo
+  de la app real: **0 errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Pendiente:** no hay cierre de período (los libros nunca se "cierran") · el COGS usa el costo de
+  HOY del producto, no el costo real del día de la venta (`pos_venta_items` no lo guarda) · sin
+  conciliación bancaria ni centro de costo.
