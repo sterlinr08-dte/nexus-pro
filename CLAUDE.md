@@ -8604,3 +8604,35 @@ ficha puede ser cliente/proveedor/empleado/banco) y los proveedores. Texto compl
   `new Function()`; `version.json` válido.
 - **Pendiente:** no hay fusión de dos fichas duplicadas en una sola (solo se avisa al crear) · los
   apartados no se ligan por id a su cliente.
+
+### REGLAMENTO DEL TALLER (Reparaciones) — decretado y auditado (26-jul-2026, v49.93)
+Séptima y última tanda del "un reglamento por módulo" (el §4 Fiscal quedó saltado a pedido del dueño).
+Cubre recibir/mover/entregar/cobrar una reparación y su garantía. Texto completo en
+**`REGLAMENTOS.md` §8**.
+- **Medición previa (SQL):** 0 reparaciones — el candado de caja es forward-looking.
+- **Lo que ya estaba bien (confirmado, no tocado):** `nxRepGuardar` exige cliente/equipo/falla y asigna
+  número consecutivo · el estado avanza por sus pasos y "Entregado" pasa obligatoriamente por la
+  ventana de cobro (`nxRepEstado`→`nxRepEntregar`) · la garantía se fija al entregar (v48.64,
+  `garantia_rep_dias`) y `garantiaInfo` la calcula vigente/vencida en vivo · el cobro de la entrega NO
+  se topa al presupuesto (el diagnóstico final manda — decisión correcta, no un hueco).
+- **HUECO ÚNICO, cerrado — el dinero del taller se salía del arqueo con la caja cerrada.**
+  `nxRepGuardar` (avance al recibir, siempre efectivo) insertaba el `pos_caja_movimientos` solo
+  `if (abono > 0 && _caja)`, y `nxRepEntregarGo` (cobro al entregar) solo `if (monto > 0 && _caja &&
+  efectivo)` — así que con la caja cerrada el efectivo simplemente no se registraba en ningún arqueo.
+  Es el mismo hueco 1 del §2, que se cerró en ventas/cuotas/apartados pero no en el taller. Los dos
+  ahora re-consultan `pos_cajas` y bloquean el efectivo con la caja cerrada (transferencia/tarjeta
+  pasan; recibir sin avance no exige caja).
+- Verificado con **20 comprobaciones** contra el código REAL extraído por contenido (`nxRepGuardar`,
+  `nxRepEntregarGo`, `garantiaInfo`, `hoyISOPos`) con Supabase simulado: avance en efectivo con caja
+  cerrada no recibe / con caja abierta (incl. abierta en otro equipo) sí, sin avance recibe igual,
+  cliente obligatorio; cobro en efectivo con caja cerrada no entrega / transferencia sí / caja abierta
+  entrega con `cobrado_monto` = avance + cobro; la garantía se estampa al entregar solo si está
+  configurada y `garantiaInfo` da vigente/vencida/null correctos. Más el humo de la app real: **0
+  errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** el taller no consume piezas del inventario (costo manual, no descuenta stock) · no hay
+  flujo de "reclamo de garantía" que reabra la orden (la garantía es informativa).
+- **Con esta pieza cierran los 7 reglamentos de negocio de la tanda** (Venta · Cobro y caja · Crédito y
+  cobranza · Inventario · Contabilidad · Clientes y entidades · Taller). Queda pendiente solo el §4
+  Fiscal y documentos (NCF/e-CF/notas de crédito), saltado a pedido del dueño — es donde vive la
+  auditoría del e-CF de la DGII (obligatorio 15-nov-2026).

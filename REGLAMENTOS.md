@@ -26,7 +26,7 @@
 | 5 | **Inventario (existencia, kardex, almacenes)** | ✅ decretado y auditado — v49.90 |
 | 6 | **Contabilidad (partida doble, asientos automáticos)** | ✅ decretado y auditado — v49.91 |
 | 7 | **Clientes y entidades** | ✅ decretado y auditado — v49.92 |
-| 8 | Taller (reparaciones, garantías) | pendiente |
+| 8 | **Taller (reparaciones, garantías)** | ✅ decretado y auditado — v49.93 |
 
 **Reglamentos anteriores, todavía en `CLAUDE.md`** (son de DISEÑO, no de negocio; se migran aquí
 cuando le toque su tanda a cada módulo): Botones y menú lateral · Buscadores (`nxBuscaHTML`) ·
@@ -260,3 +260,33 @@ reglamentos anteriores.
 `cliente_id` — se ligan por nombre/teléfono, así que un apartado activo NO cuenta como "deuda" al
 borrar un cliente (no se finge un enlace que la base no tiene) · no hay fusión de dos fichas duplicadas
 en una sola (hoy solo se avisa al crear).
+
+---
+
+## 8 · REGLAMENTO DEL TALLER (Reparaciones)
+*(decretado por el dueño el 26-jul-2026 · auditado y aplicado en v49.93)*
+
+Aplica al servicio técnico: recibir un equipo, moverlo por sus estados, entregarlo y cobrarlo, y su
+garantía.
+
+1. **Un equipo no se recibe sin identificarlo.** Cliente, equipo y falla son obligatorios; se le
+   asigna un número consecutivo (REP-#####) y arranca en estado "Recibido".
+2. **El dinero del taller entra al arqueo o no entra.** Un avance al recibir (siempre efectivo) o el
+   cobro en efectivo al entregar exigen **caja abierta** — mismo candado del §2/§3. Transferencia/
+   tarjeta sí se registran con la caja cerrada; recibir un equipo SIN avance no necesita caja.
+3. **El estado avanza por sus pasos** (Recibido → Diagnóstico → Reparando → Esperando pieza → Listo →
+   Entregado, o Cancelado). Pasar a "Entregado" pasa obligatoriamente por la ventana de cobro — no se
+   entrega saltándose el cobro.
+4. **La garantía se fija al ENTREGAR**, una sola vez, según los días configurados en Ajustes
+   (`garantia_rep_dias`). Si es 0 no hay garantía. Después se ve vigente/vencida calculada en vivo.
+5. **El cobro de la entrega puede ser mayor que el presupuesto** — el presupuesto es una estimación y
+   el diagnóstico final manda, así que ese cobro NO se topa (a diferencia de una cuota o un apartado,
+   que sí se topan a lo pendiente).
+
+**Nota:** al día de hoy la base tiene **0 reparaciones**, así que el candado de caja todavía no le
+bloquea a nadie — se deja correcto antes de que se use, igual que los reglamentos anteriores.
+
+**Pendientes de este reglamento (NO construidos):** el taller no consume piezas del inventario (el
+costo de las piezas es un número manual, no descuenta stock) · no hay un flujo de "reclamo de
+garantía" que reabra la orden — la garantía es informativa (se sabe si un equipo entregado sigue
+cubierto), sin botón de reapertura.
