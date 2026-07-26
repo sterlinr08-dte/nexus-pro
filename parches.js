@@ -168,6 +168,14 @@
         .nx-fab:active { transform: scale(.92); }
         .nx-fab.open { transform: rotate(90deg); }
         .nx-fab i { pointer-events: none; }
+        /* El FAB (z-index 9000) flotaba ENCIMA de cualquier ventana del sistema
+           (.overlay va en z-index 100) y le tapaba la esquina de abajo a la
+           derecha: precios, botones "Elegir", "Guardar". Peor: tocar ahí abría
+           el menú del FAB en vez del botón que se veía. Se esconde mientras hay
+           una ventana abierta. Si el navegador no soporta :has(), la regla
+           entera se ignora y queda el comportamiento de antes. */
+        body:has(.overlay.open) .nx-fab,
+        body:has(.overlay.open) .nx-menu { display: none !important; }
         .nx-menu-backdrop {
           position: fixed; inset: 0; z-index: 8999;
           background: rgba(15,23,42,.35);
@@ -17917,7 +17925,7 @@
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:580px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-search"></i> Buscar artículo</span><button class="nxBack" type="button" onclick="document.getElementById('nxProdPick').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        ${posBuscador({ id: 'ppkQ', placeholder: 'Buscar por nombre o código… (vacío = todos)', oninput: 'window.nxProdPickFiltrar(this.value)' })}
+        ${posBuscador({ id: 'ppkQ', placeholder: 'Buscar artículo…', oninput: 'window.nxProdPickFiltrar(this.value)' })}
         ${(_prodPickDest === 'factura' && clienteSel()) ? `<div style="font-size:11px;color:#2563eb;margin:0 0 8px;font-weight:700"><i class="ti ti-user"></i> ${esc(clienteSel().nombre)} — ${clienteSel().nivel_precio === 'mayor' ? 'PRECIO POR MAYOR' : 'precio final'} (se carga solo)</div>` : ''}
         <div id="ppkList" style="overflow-y:auto;flex:1"></div>
       </div>`;
@@ -17943,12 +17951,17 @@
         : exi <= 0 ? '<span class="nxPosStkB out">SIN STOCK</span>'
         : (min > 0 && exi <= min) ? `<span class="nxPosStkB low">BAJO: ${exi}</span>`
         : `<span class="nxPosStkB">STOCK: ${exi}</span>`;
+      // La etiqueta "aplica" (8.5px) no decía nada: salía en TODAS las filas,
+      // incluso sin cliente elegido, donde el precio es el de lista. Ahora, si
+      // al cliente le toca un precio distinto, se muestra el de lista tachado
+      // encima del que se va a cobrar — se explica solo, sin palabra rara.
+      const hayDif = aplica > 0 && Math.abs(aplica - pf) > 0.5;
       const aplicaHTML = aplica > 0
-        ? `<div style="font-size:8.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">aplica</div><b style="color:#2563eb;font-size:14px">${fmt(aplica)}</b>`
+        ? `${hayDif ? `<div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-decoration:line-through">${fmt(pf)}</div>` : ''}<b style="color:#2563eb;font-size:14px">${fmt(aplica)}</b>`
         : '<span class="nxPosStkB" style="background:#fffbeb;color:#d97706">SIN PRECIO</span>';
       return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
         <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
-          <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px">${p.codigo ? '<span>' + esc(p.codigo) + '</span>' : ''}${stkChip}</div></div>
+          <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px">${p.codigo ? '<span>' + esc(p.codigo) + '</span>' : ''}${stkChip}</div></div>
           <div style="text-align:right;white-space:nowrap;display:flex;align-items:center;gap:8px"><div>${aplicaHTML}</div><span class="nxPpkChev" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#64748b;line-height:1">&rsaquo;</span></div>
         </div>
         ${abierto ? ppkDetailHTML(p) : ''}

@@ -1,7 +1,12 @@
 {
-  "version": "49.81",
+  "version": "49.82",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.82",
+      "fecha": "2026-07-26",
+      "texto": "ARREGLADO (importante): el botón flotante morado tapaba la esquina de abajo a la derecha de TODAS las ventanas del sistema (precios, botones \"Elegir\", \"Guardar\"), y al tocar ahí se abría su menú en vez del botón que se veía. Ahora se esconde solo mientras hay una ventana abierta y vuelve al cerrarla. · ARREGLADO: en \"Buscar artículo\" el texto del buscador se salía y quedaba cortado (\"BUSCAR POR NOMBRE O CÓDIGO... (VACÍO = TO\") — ocupaba 432px en un campo de 286px; ahora dice \"Buscar artículo…\" y cabe completo. · MEJORADO: los nombres largos de artículo ya no se cortan con puntos suspensivos, se leen completos en dos líneas (de 38 nombres cortados a ninguno); solo crecen las filas que lo necesitan. · MEJORADO: se quitó la etiqueta \"APLICA\" que salía en todas las filas y no decía nada. Ahora, cuando al cliente le toca un precio distinto al de lista, se ve el de lista tachado encima del que se le va a cobrar — se entiende solo."
+    },
     {
       "v": "49.81",
       "t": "NUEVO: el tema, los favoritos, las notas y los borradores tambien pasaron a la BASE",
