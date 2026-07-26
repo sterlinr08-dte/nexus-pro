@@ -4071,7 +4071,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.95';
+const APP_VERSION='49.96';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6739,9 +6739,22 @@ function imprimirPDF(){
 
 function generarHTMLFactura(f,c,emp){
   const lineas=(c?.deps||[]).map(d=>`<tr><td style="padding:4px 8px;color:#666;font-size:11px">&nbsp;&nbsp;&nbsp;Dep: ${d.nom} (${d.rel})</td><td style="padding:4px 8px;text-align:right">RD$ ${fmtN(getPDReal(c))}</td></tr>`).join('');
+  // Pendiente de MESES ANTERIORES calculado EN VIVO (no el f.deuda_ant congelado al generar):
+  // saldo real de las OTRAS facturas del cliente + la deuda anterior al sistema (que antes ni salía).
+  // Si no hay cliente cargado, cae al valor congelado de la factura (respaldo).
+  let pendPrev=Number(f.deuda_ant||0);
+  if(c&&typeof _saldoFacturasCliente==='function'){
+    try{
+      const sm=_saldoFacturasCliente(c.id);let otras=0;
+      Object.keys(sm).forEach(id=>{if(String(id)!==String(f.id))otras+=Number(sm[id]||0);});
+      pendPrev=otras+(typeof deudaAnt==='function'?deudaAnt(c):Number(c.deuda_anterior||0));
+    }catch(e){}
+  }
+  const primaMes=Number(f.prima_base||0)+Number(f.prima_deps||0);
+  const totalPagar=primaMes+pendPrev;
   return`<div style="border-bottom:3px solid #0C447C;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start">
     <div><div style="font-size:18px;font-weight:700;color:#0C447C">${CFG.empNom}</div><div style="font-size:11px;color:#666;margin-top:3px">RNC: ${CFG.empRNC}</div><div style="font-size:11px;color:#666">${CFG.empTel} | ${CFG.empEmail}</div><div style="font-size:11px;color:#666">${CFG.empDir}</div></div>
-    <div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#0C447C">FACTURA</div><div style="font-size:11px;color:#666;margin-top:3px">Período: ${MESES[(f.mes||1)-1]} ${f.anio}</div><div style="font-size:11px;color:#666">Emitida: ${f.fecha_emision||hoy()}</div><div style="margin-top:6px;background:#FFF3CD;border:1px solid #ffc107;padding:4px 10px;border-radius:4px;display:inline-block"><strong>NCF: ${f.ncf||'—'}</strong></div></div>
+    <div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#0C447C">FACTURA</div><div style="font-size:11px;color:#666;margin-top:3px">Período: ${MESES[(f.mes||1)-1]} ${f.anio}</div><div style="font-size:11px;color:#666">Emitida: ${f.fecha_emision||hoy()}</div></div>
   </div>
   <div style="background:#f8f9fa;padding:10px 12px;border-radius:6px;margin-bottom:16px">
     <div style="font-size:10px;color:#666;margin-bottom:3px">DATOS DEL ASEGURADO</div>
@@ -6756,12 +6769,11 @@ function generarHTMLFactura(f,c,emp){
     <tbody>
       <tr><td style="padding:6px 8px;border-bottom:1px solid #eee">Prima titular — Plan ${f.plan}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">RD$ ${fmtN(f.prima_base)}</td></tr>
       ${lineas}
-      ${f.deuda_ant>0?`<tr><td style="padding:6px 8px;border-bottom:1px solid #eee;color:#dc3545">Deuda de períodos anteriores</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;color:#dc3545">RD$ ${fmtN(f.deuda_ant)}</td></tr>`:''}
+      ${pendPrev>0?`<tr><td style="padding:6px 8px;border-bottom:1px solid #eee;color:#dc3545">Pendiente de meses anteriores</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;color:#dc3545">RD$ ${fmtN(pendPrev)}</td></tr>`:''}
     </tbody>
-    <tfoot><tr style="background:#e8f4f8;font-weight:700"><td style="padding:10px 8px;font-size:14px">TOTAL A PAGAR</td><td style="padding:10px 8px;text-align:right;font-size:16px;color:#0C447C">RD$ ${fmtN(f.total)}</td></tr></tfoot>
+    <tfoot><tr style="background:#e8f4f8;font-weight:700"><td style="padding:10px 8px;font-size:14px">TOTAL A PAGAR</td><td style="padding:10px 8px;text-align:right;font-size:16px;color:#0C447C">RD$ ${fmtN(totalPagar)}</td></tr></tfoot>
   </table>
   <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;border-top:1px solid #ddd;padding-top:10px">
-    <div>Tipo de comprobante: <strong>${f.tipo_ncf||'B02'} - ${f.tipo_ncf==='B01'?'Crédito Fiscal':'Consumidor Final'}</strong></div>
     <div>Estado: <strong>${f.estado}</strong></div>
     <div>NEXUS PRO v6 · Sistema de Seguros RD</div>
   </div>`;

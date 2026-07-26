@@ -1,7 +1,12 @@
 {
-  "version": "49.95",
+  "version": "49.96",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.96",
+      "fecha": "2026-07-26",
+      "texto": "FACTURA DEL SEGURO: se quitó el número de comprobante (NCF) del documento que se le da al cliente, y ahora muestra bien lo que debe de meses anteriores. · Se quitó el recuadro del NCF y la línea 'Tipo de comprobante' de la factura impresa. · La línea 'Pendiente de meses anteriores' ahora calcula el saldo REAL al momento de imprimir (antes usaba un número congelado del día que se generó la factura) e INCLUYE la deuda anterior al sistema, que antes ni aparecía. Solo sale si el cliente de verdad debe de antes. El TOTAL A PAGAR = la prima del mes + ese pendiente real. · Nada de esto cambia lo que el cliente debe en el sistema: solo cambia lo que se ve en el papel/PDF. OJO (dueño): si le facturas a un cliente con Comprobante Fiscal (Crédito Fiscal B01), la DGII exige el NCF en la factura — avísame si hay que dejarlo para ese caso."
+    },
     {
       "v": "49.95",
       "fecha": "2026-07-26",
