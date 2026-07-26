@@ -21,7 +21,7 @@
 |---|---|---|
 | 1 | **Venta** (todos los artículos + IMEI) | ✅ decretado y auditado — v49.86 |
 | 2 | **Cobro y caja** | ✅ decretado y auditado — v49.88 |
-| 3 | Crédito y cobranza | pendiente |
+| 3 | **Crédito y cobranza** | ✅ decretado y auditado — v49.89 |
 | 4 | Fiscal y documentos (NCF, e-CF, notas de crédito) | pendiente |
 | 5 | Inventario (existencia, kardex, almacenes) | pendiente |
 | 6 | Contabilidad (partida doble, asientos automáticos) | pendiente |
@@ -107,3 +107,50 @@ Aplica a la ventana de **Cobrar** del POS y a la caja del mostrador.
 **Pendientes de este reglamento (NO construidos):** el arqueo no distingue el efectivo cobrado por
 cada cajero (hoy la caja es una sola por organización, no por persona) · no hay retiro parcial de
 efectivo a bóveda durante el turno.
+
+---
+
+## 3 · REGLAMENTO DE CRÉDITO Y COBRANZA
+*(decretado por el dueño el 26-jul-2026 · auditado y aplicado en v49.89)*
+
+Aplica al fiado, a los planes de cuotas (financiamiento del POS), a los apartados y al centro de
+avisos. Es la continuación del §2: aquel dice cómo se cobra; este, qué pasa con la deuda después.
+
+**Parte A — a quién se le fía**
+
+1. **No se le fía a un cliente que ya tiene cuotas vencidas sin pagar** en un plan activo — es la
+   señal más clara de que no está pagando su deuda. Al **cajero** se le bloquea; a **admin/gerente**
+   se les pregunta y, si aceptan, queda en Auditoría. (Junto con el límite de crédito del §2, son las
+   dos puertas por las que pasa una venta a crédito.)
+
+**Parte B — el recargo por mora**
+
+2. La **mora es un recargo ÚNICO por cuota vencida** (no se acumula día a día), configurable en
+   Ajustes, y solo aplica **pasado el período de gracia**. Con la mora apagada (0 %), no hay recargo.
+3. La mora **nunca es negativa ni se aplica a una cuota ya pagada**, y se cobra **después** de cubrir
+   el principal de la cuota — si el pago no alcanza a cubrir el principal, todavía no se reconoce mora.
+
+**Parte C — cobrar la deuda**
+
+4. **Un pago de cuota o un abono de apartado en efectivo entra a una caja abierta o no entra** — mismo
+   candado del §2 (regla 4). Transferencia/tarjeta sí se registran con la caja cerrada.
+5. **Ningún pago supera lo que se debe**: el pago de cuota se topa al pendiente + mora; el abono de
+   apartado se topa a lo que falta.
+6. **Cada cobro deja rastro**: el ledger real (`pos_fin_pagos` para cuotas), el abono (`pos_abonos`),
+   su asiento contable (con la mora reconocida aparte, cuenta 4103) y su registro de auditoría.
+
+**Parte D — la verdad del saldo**
+
+7. **El saldo de cada cuota se recalcula del ledger**, nunca de un booleano pegado
+   (`resyncCuotasPagos` corre al cargar y después de cada pago).
+8. **La exposición del cliente es un solo número**: fiado + cuotas pendientes juntas (`saldoCli`), no
+   dos bolsillos que nadie suma.
+
+**Nota honesta:** al día de hoy la base tiene **0 planes de cuotas, 0 apartados, 0 fiado activo y la
+mora apagada** — así que estas reglas todavía no muerden a nadie. Se decretan y se dejan correctas
+**antes** de que se empiecen a usar, igual que los campos que estaban guardados pero sin efecto del §1.
+
+**Pendientes de este reglamento (NO construidos):** no hay refinanciamiento ni "dar de baja" una
+deuda como incobrable · no hay bloqueo automático por acumulación (hoy es aviso + autorización, no un
+corte duro) · un fiado puro (sin plan de cuotas) no tiene fecha de vencimiento, así que su "mora" no
+existe como tal — solo las cuotas la tienen.

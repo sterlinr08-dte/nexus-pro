@@ -8453,3 +8453,46 @@ y solo entonces se escribieron las 10 reglas (texto completo en **`REGLAMENTOS.m
 - **Pendiente de este reglamento (NO construido):** el arqueo no distingue el efectivo cobrado por
   cada cajero (la caja es una por organización, no por persona) · no hay retiro parcial de efectivo a
   bóveda durante el turno.
+
+### REGLAMENTO DE CRÉDITO Y COBRANZA — decretado y auditado (26-jul-2026, v49.89)
+Tercera tanda del "un reglamento por módulo". Cubre lo que pasa con la deuda DESPUÉS de fiar: el
+fiado, las cuotas (financiamiento del POS), los apartados y el centro de avisos. Método de siempre:
+auditar `nxPosConfirmar`/`nxFinPagarGo`/`nxApaAbonarGo`/`nxPosAbonar`/`renderAvisos` línea por línea,
+medir contra la base, y solo entonces redactar (texto completo en **`REGLAMENTOS.md` §3**).
+- **Medición previa (SQL directo):** la base tiene HOY **0 planes de cuotas, 0 apartados, 0 ventas
+  fiadas activas y 0 organizaciones con mora configurada** — o sea todas las reglas de este reglamento
+  son forward-looking (mismo caso que los campos fantasma del §1). Se dejan correctas ANTES de que se
+  usen. Esto se documenta con honestidad, no se oculta.
+- **Lo que ya estaba bien** (confirmado, no tocado): la mora es un recargo ÚNICO por cuota vencida
+  pasada la gracia, se cobra después del principal, nunca negativa ni sobre una cuota pagada
+  (`moraDeCuota`) · el ledger `pos_fin_pagos` es la fuente de verdad vía `resyncCuotasPagos` · la
+  exposición del cliente ya suma fiado + cuotas en un solo `saldoCli` (v48.9) · el pago de cuota ya se
+  topaba al pendiente + mora · la mora ya se reconoce aparte en la cuenta 4103.
+- **HUECO 1, cerrado — no había freno para fiarle a un cliente ya en mora.** El §2 cerró el LÍMITE de
+  crédito, pero un cliente bien por debajo del límite podía tener una cuota vencida sin pagar y aun así
+  llevarse más fiado — `nxPosConfirmar` no miraba las cuotas. Helper nuevo `clienteConCuotaVencida(cliId)`
+  (junto a `diasAtraso`, en su mismo scope): recorre los planes activos del cliente y devuelve
+  `{n, monto}` de sus cuotas vencidas sin pagar (con mora incluida). En `nxPosConfirmar`, si hay crédito
+  y el cliente tiene cuotas vencidas: **al cajero se le bloquea, a admin/gerente se les pregunta** y, si
+  aceptan, `logAudit('POS_FIADO_CON_MORA', ...)`. Mismo patrón de permiso que el límite de crédito
+  (`puedeVerMin()`). El trigger es "tiene cuota vencida sin pagar" (no "en mora" a secas) — más robusto,
+  no depende de que la mora esté configurada.
+- **HUECO 2, cerrado — el candado de caja del §2 no cubría cuotas ni apartados.** `nxFinPagarGo` (pago
+  de cuota) y `nxApaAbonarGo` (abono de apartado) recibían efectivo sin revisar si la caja estaba
+  abierta — el mismo hueco 1 del §2, en las funciones de cobranza. `nxFinPagarGo` posteaba el
+  `pos_abonos` con `caja_id: null`; `nxApaAbonarGo` simplemente no insertaba el `pos_caja_movimientos`.
+  Los dos ahora re-consultan `pos_cajas` y bloquean si sigue cerrada (transferencia/tarjeta pasan).
+- **HUECO 3, cerrado — el abono de apartado no se topaba.** `nxFinPagarGo` ya validaba `monto > pend`;
+  `nxApaAbonarGo` no — se podía meter más de lo que faltaba del apartado. Ahora se topa a
+  `total - abonado`, igual que el pago de cuota.
+- Verificado con **23 comprobaciones** contra el código REAL extraído por contenido (`nxPosConfirmar`,
+  `nxFinPagarGo`, `nxApaAbonarGo`, `clienteConCuotaVencida`, `cuotasDe`, `diasAtraso`, `moraDeCuota`,
+  `saldoCli`, `leerCobro`, `totales`, `precioCli` — 26 funciones, balance de llaves real) con Supabase
+  simulado: el fiado a un cliente en mora bloqueado/autorizado en sus dos sentidos, la cuota vencida de
+  otro cliente que no estorba, la venta de contado exenta, el candado de caja en cuota y apartado en sus
+  dos sentidos, el tope del apartado, y 4 de no-regresión (el pago de cuota que ya se topaba + los 3
+  casos de `moraDeCuota`). Más la prueba de humo de la app real: **0 errores de JS**. `node --check`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** no hay refinanciamiento ni "dar de baja" una deuda como incobrable · el bloqueo por
+  mora es aviso + autorización, no un corte duro automático · un fiado puro (sin cuotas) no tiene fecha
+  de vencimiento, así que su "mora" no existe — solo las cuotas la tienen.

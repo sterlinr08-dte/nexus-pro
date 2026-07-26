@@ -1,7 +1,12 @@
 {
-  "version": "49.88",
+  "version": "49.89",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.89",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO DE CRÉDITO Y COBRANZA: se auditó cómo se fía, se cobran las cuotas y los apartados, y se cerraron 3 huecos. · NUEVO: no se le fía a un cliente que ya tiene cuotas vencidas sin pagar — al cajero se le bloquea diciéndole cuántas cuotas debe y por cuánto; a ti (admin) te pregunta si quieres fiarle de todos modos, y si dices que sí queda en Auditoría. Es la señal más clara de que alguien no está pagando su deuda. · ARREGLADO (importante): cobrar una cuota o abonar un apartado EN EFECTIVO con la caja cerrada dejaba ese dinero fuera de todo arqueo — el mismo hueco que ya se cerró al cobrar una factura. Ahora te manda a abrir caja primero (transferencia/tarjeta sí se pueden con la caja cerrada, no tocan la gaveta). · ARREGLADO: al abonar un apartado se podía meter más de lo que falta; ahora el abono se topa a lo pendiente, igual que ya pasaba con el pago de cuotas."
+    },
     {
       "v": "49.88",
       "fecha": "2026-07-26",

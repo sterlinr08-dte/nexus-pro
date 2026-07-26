@@ -19051,6 +19051,20 @@
         }
       }
     }
+    // REGLAMENTO DE CRÉDITO Y COBRANZA: no se le fía a un cliente que ya tiene cuotas vencidas sin
+    // pagar de un plan activo — la señal más clara de "no está pagando su deuda". Mismo criterio de
+    // permiso que el límite: al cajero se le bloquea, admin/gerente pueden autorizar y queda en
+    // auditoría. (Con 0 mora/planes en la base HOY, esta regla queda lista para cuando se use.)
+    if (c.credito > 0 && cliId) {
+      const _venc = clienteConCuotaVencida(cliId);
+      if (_venc) {
+        const _cl2 = _clientes.find(x => String(x.id) === String(cliId));
+        const _m2 = (_cl2 && _cl2.nombre || 'Ese cliente') + ' tiene ' + _venc.n + ' cuota(s) vencida(s) sin pagar por ' + fmt(_venc.monto) + '.';
+        if (!puedeVerMin()) { toast('err', 'Cliente con cuotas vencidas', _m2 + ' Que se ponga al día antes de fiarle, o pide autorización.'); return; }
+        if (!confirm('CLIENTE CON CUOTAS VENCIDAS\n\n' + _m2 + '\n\n¿Fiarle de todos modos?')) return;
+        try { logAudit('POS_FIADO_CON_MORA', (_cl2 && _cl2.nombre || '') + ' · ' + _venc.n + ' cuota(s) vencida(s) por ' + fmt(_venc.monto) + ' · se le fiaron ' + fmt(c.credito), 'POS'); } catch (e) {}
+      }
+    }
     // A5: validar que la "Nota de crédito" usada como pago exista de verdad, sea de ESTE
     // cliente y esté disponible (no aplicada ya antes) — evita que se escriba cualquier
     // monto a mano y se cuele como pago sin respaldo.
@@ -24578,6 +24592,19 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (!venc || venc >= hoyK) return 0;
     return Math.floor((new Date(hoyK + 'T12:00:00') - new Date(venc + 'T12:00:00')) / 86400000);
   }
+  // REGLAMENTO DE CRÉDITO Y COBRANZA: ¿este cliente ya está atrasado en alguna cuota de un plan
+  // activo? Devuelve {n, monto} (cuotas vencidas + su pendiente con mora) o null si está al día.
+  // Sirve para decidir si se le puede fiar más (ver nxPosConfirmar).
+  function clienteConCuotaVencida(cliId) {
+    if (!cliId) return null;
+    let n = 0, monto = 0;
+    (_fins || []).filter(f => f.estado === 'activo' && String(f.cliente_id) === String(cliId)).forEach(f => {
+      cuotasDe(f.id).filter(c => !c.pagado && diasAtraso(c) > 0).forEach(c => {
+        n++; monto += Math.max(0, Number(c.monto || 0) - Number(c.monto_pagado || 0)) + moraDeCuota(c);
+      });
+    });
+    return n ? { n: n, monto: monto } : null;
+  }
   function finClienteInfo(f) { const c = f.cliente_id ? _clientes.find(x => String(x.id) === String(f.cliente_id)) : null; return { cedula: (c && c.cedula) || '', telefono: (c && c.telefono) || '' }; }
   // Referencia corta derivada del id del plan (NO es un consecutivo — pos_financiamientos no tiene
   // numeración propia; se deriva del id ya existente para no tocar Supabase/esquema/lógica).
@@ -25083,6 +25110,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     if (!(monto > 0)) { toast('err', 'Monto inválido', 'Debe ser mayor a 0'); return; }
     if (monto > pend + 1) { toast('err', 'Monto muy alto', 'Lo que falta (con mora incluida si aplica) es ' + fmt(pend)); return; }
     const metodo = val('fpMet') || 'Efectivo';
+    // REGLAMENTO DE COBRO regla 4 / REGLAMENTO DE CRÉDITO: cobrar una cuota en efectivo exige caja abierta.
+    if (/efectivo/i.test(metodo) && !(_caja && _caja.id)) {
+      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(monto) + ' en efectivo'); return; }
+    }
     // La mora se cobra DESPUÉS de cubrir el principal de la cuota (si el monto no alcanza para
     // cubrir el principal, no se reconoce mora todavía en este pago).
     const moraPagada = Math.min(moraCuota, Math.max(0, monto - pendPrincipal));
@@ -25851,6 +25883,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const a = _apartados.find(x => String(x.id) === String(id)); if (!a) return;
     const monto = moneyVal('apMonto'); const metodo = val('apMet') || 'Efectivo';
     if (!monto || monto <= 0) { toast('err', 'Monto inválido'); return; }
+    // REGLAMENTO DE CRÉDITO regla: el abono no puede superar lo que falta del apartado (el pago de
+    // cuota ya se topaba; el apartado no — se colaba un sobre-abono).
+    const _faltaApa = Math.max(0, Number(a.total || 0) - Number(a.abonado || 0));
+    if (monto > _faltaApa + 1) { toast('err', 'Monto muy alto', 'Al apartado solo le falta ' + fmt(_faltaApa)); return; }
+    // REGLAMENTO DE COBRO regla 4: abono de apartado en efectivo exige caja abierta.
+    if (/efectivo/i.test(metodo) && !(_caja && _caja.id)) {
+      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
+    }
     try {
       const nuevo = Number(a.abonado || 0) + monto;
       await getAPI().patch('pos_apartados', 'id=eq.' + id, { abonado: nuevo }); a.abonado = nuevo;
