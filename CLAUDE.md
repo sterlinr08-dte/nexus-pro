@@ -5441,6 +5441,43 @@ Comparativa). Cuatro cosas, todas aplicadas:
   `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
 
+### El "cobrado" iba por mes de calendario, no por el ciclo 20-al-20 (26-jul-2026, v49.63)
+El dueño: *"¿Por qué dice cobrado 329,400 de julio?"* — el número era **real** (67 abonos con fecha
+en julio) pero contado por **mes de calendario**, cuando su negocio factura el día 20. Partido por
+ciclo, en hora de RD: **1 al 19 de julio = RD$ 287,900** (cierre del ciclo de JUNIO) y **20 en
+adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobro de junio.
+- **Descuido mío al reusar los datos de la gráfica:** `mesCorte()` existe desde la v39.5 y Facturas
+  ya lo respeta; este KPI se alimentó de `rChartCobros`, que agrupaba por mes de calendario.
+- **Antes de recomendar se midieron los ciclos reales** (SQL directo), y eso cambió la propuesta:
+  MAYO 401,800 total con 68,000 (17%) en los primeros 7 días · JUNIO 366,600 con 58,700 (16%).
+  El patrón es muy parejo, así que **un "cobrado del ciclo" a secas no dice nada** — recién abierto
+  siempre se ve chiquito. Lo que sí informa es **contra el mismo día del ciclo anterior**: hoy va
+  36,500 donde el ciclo pasado iba 58,700 → **▼38%**, una señal real que ninguna de las 2 opciones
+  que se habían ofrecido capturaba. El dueño aprobó las 3 piezas.
+- **Helpers nuevos** (junto a `mesCorte`): `fechaRD(f)` (a fecha calendario de RD), `cicloDe(iso)`
+  (a qué ciclo pertenece un día — misma regla que `mesCorte` pero para cualquier fecha),
+  `cicloInicio(anio,mes)`, `diasEntre(a,b)`, `hoyRD()`.
+  - **Hora de RD con desfase fijo de −4h, NO `toLocaleDateString`**: RD no cambia de hora, y no todo
+    navegador trae la base de zonas horarias completa (ya hubo un `RangeError` de ICU con
+    `'es-DO'` en la v49.16) — ahí fallaría en silencio. `fechaRD` devuelve tal cual las fechas que
+    ya vienen sin hora (10 caracteres): restarles 4h las correría un día hacia atrás.
+- **`rChartCobros` agrupa por ciclo** (6 ciclos, etiquetas = mes del ciclo), calcula
+  `antMismoDia` (lo cobrado en el ciclo anterior **hasta el mismo día**) en la misma pasada, y llena
+  `#kpiCobMes` + `#kpiCobSub`. Cero consultas nuevas. Subtítulo de la gráfica → "últimos 6 ciclos
+  (del 20 al 20)" y su pie → "Ciclo en curso (va por el día N)".
+- **2 defectos visuales propios, encontrados MIDIENDO y corregidos antes de publicar:** (1) el
+  subtítulo largo ("día 6 · ▼ 38% vs ciclo anterior") envolvía y dejaba ese mini más alto que los
+  otros dos — se acortó a `día N · ▼38%` y el detalle completo pasó al `title` y al `aria-label`
+  ("...a estas mismas alturas llevabas RD$ 58,700"); (2) con un monto de 6 cifras — que es lo normal
+  a mitad de ciclo, 366,600 en junio — `RD$ 366,600` se partía en dos líneas: el prefijo `RD$` pasó a
+  9px inline (`fmtMini`), y ahí sí entra en una sola línea. Medido: los 3 minis quedan en 52px
+  iguales y el número en 16px (una línea) tanto con 36,500 como con 366,600.
+- Verificado con Playwright y el código real extraído por contenido, con abonos que **reproducen el
+  caso real del dueño en formato UTC** (incluido un pago de las 8pm RD del 19 de julio, que en UTC
+  cae el día 20): el ciclo de julio da **RD$ 36,500** exacto (ese pago frontera queda en JUNIO, como
+  debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
+  etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
+
 ### Facturas — 4 mejoras salidas de una captura del dueño (26-jul-2026, v49.59)
 El dueño mandó la pantalla de Facturas en su iPhone y preguntó "cómo podemos mejorar". Se auditó
 contra el código real (no solo la captura) y salieron 4 cosas, ordenadas por lo que de verdad le

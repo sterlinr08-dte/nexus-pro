@@ -1,7 +1,12 @@
 {
-  "version": "49.62",
+  "version": "49.63",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.63",
+      "t": "ARREGLADO (importante) \u2014 El cobrado ahora va por tu ciclo 20-al-20, no por mes de calendario",
+      "d": "El Dashboard dec\u00eda \"Cobrado julio: RD$ 329,400\", pero eso era el mes del calendario: casi todo ese dinero era cobro del ciclo de JUNIO (lo que entra del 1 al 19 de julio pertenece a la factura del 20 de junio).\n\nAhora el n\u00famero es el de tu ciclo real, del 20 al 20 \u2014 igual que ya lo hac\u00eda la pantalla de Facturas.\n\nY no viene solo: debajo te dice c\u00f3mo vas contra el mismo d\u00eda del ciclo anterior. Ejemplo: \"d\u00eda 7 \u00b7 \u25bc 38%\" significa que a estas alturas del ciclo pasado llevabas 38% m\u00e1s cobrado. En verde si vas mejor, en \u00e1mbar si vas atr\u00e1s. Toca el dato y te dice el monto exacto de comparaci\u00f3n.\n\nLa gr\u00e1fica \"Resumen de cobros\" tambi\u00e9n pas\u00f3 a ciclos, para que no diga una cosa distinta al n\u00famero de arriba.\n\nARREGLADO de paso: las fechas se contaban en hora de Londres (UTC), no de Rep\u00fablica Dominicana. Un pago registrado de noche ca\u00eda al d\u00eda siguiente, y en el borde del ciclo (el 19 y el 20) eso lo met\u00eda en el ciclo equivocado. Ahora se cuenta en hora dominicana."
+    },
     {
       "v": "49.62",
       "t": "El Dashboard ahora abre con una tarjeta grande: lo que falta por cobrar",
