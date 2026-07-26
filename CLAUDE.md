@@ -5583,6 +5583,35 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### POS · REVERTIDO el botón de imprimir de Cobrar — el dueño detectó el fallo de lógica (26-jul-2026, v49.77)
+El dueño mandó una captura del pie de la ventana de Cobrar y preguntó: *"De manera lógica no se puede
+imprimir una factura sin guardar, ¿verdad?"*. **Tenía razón** — y al verificar el código el problema
+resultó ser peor que el argumento con el que lo planteó. Se quitó el botón (v49.72/73), su función
+`nxPagoImprimir`, su regla CSS `.nxPgPr` y la marca `_preview` de `ticketHTML` (que quedó sin ningún
+caller — regla #1 de depurar).
+- **El fallo real, confirmado leyendo el código:** `proxNumeroFacturaCorto()` solo **MIRA**
+  `sq.proximo` de `pos_secuencias` — **no aparta el número**. La secuencia se consume recién al
+  confirmar, en `nextSeq('factura_contado'|'factura_credito')` dentro de `nxPosConfirmar`. Así que si
+  el cajero imprimía y luego cancelaba la venta —o si otro usuario cobraba primero desde otro
+  dispositivo— **ese número impreso le tocaba a OTRA factura**: un papel en la calle con un número
+  que pertenece a otra venta. Con la DGII de por medio eso es un lío, no un detalle estético.
+- **Sumado:** salía sin NCF (el comprobante se consume también al confirmar), o sea un papel que dice
+  "FACTURA" sin comprobante fiscal en un negocio que factura con NCF.
+- **El caso legítimo YA tenía su herramienta, y es mejor:** si el cliente quiere ver/llevarse cuánto
+  va a pagar antes de pagar, para eso está la **Prefactura** (documento real pensado para eso, marcado
+  NO FISCAL, con su propio consecutivo `PF-` que SÍ se guarda, sin quemar NCF, convertible a factura
+  de un toque) y "Vista previa" para mirarlo en pantalla. El ticket, además, **ya sale solo** al
+  confirmar (`nxPosConfirmar`) — nunca hizo falta un botón para eso.
+- **Lección de proceso (mía):** cuando el dueño dijo *"falta el botón de imprimir"* lo implementé
+  literal sin cuestionar si tenía sentido EN ESE punto del flujo. Ponerle la marca "VISTA PREVIA — NO
+  COBRADA" tapaba el síntoma, no la causa: **el momento estaba mal, no la etiqueta**. Bajo la regla
+  #12 ("siempre aportar ideas"), un pedido que choca con la lógica del negocio hay que plantearlo
+  ANTES de construirlo, no después de publicarlo dos veces.
+- Verificado con las **59** comprobaciones de la ventana de cobro (las 70 anteriores menos las 12 del
+  botón, + 8 nuevas: no queda el botón ni la función, el pie tiene exactamente 2 botones, y el ticket
+  de una venta YA GUARDADA salió idéntico a antes de la v49.73 — "¡Gracias por su compra!", su NCF
+  real y sus 2 botones, sin rastro de la marca de vista previa). Captura del pie revisada.
+
 ### POS · quitado el enlace "Elegir cliente", duplicado con la lupa (26-jul-2026, v49.76)
 Se le había propuesto al dueño al cerrar la v49.74 y respondió *"Quita elegir cliente"*. Con la lupa
 del círculo (v49.74) haciendo lo mismo, el enlace de texto de abajo era un segundo botón para una sola
