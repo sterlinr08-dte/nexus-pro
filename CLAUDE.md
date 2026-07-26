@@ -5583,6 +5583,40 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### POS · Factura: el círculo de "Facturar a" es la lupa, y la lista de clientes con líneas (26-jul-2026, v49.74)
+Dos pedidos con capturas del iPhone: *"donde el punto negro vamos a poner ese mismo punto pero con el
+icono de lupa y clickear ahí para buscar los clientes"* y *"que la ventana flotante de buscar cliente
+tenga líneas para diferenciar bien los clientes"*.
+- **El círculo (`.pav` de `facPartesHTML`) era decorativo** — mostraba la inicial del cliente, o un `—`
+  cuando no había ninguno, y **no hacía nada al tocarlo**. Pasó de `<div>` a `<button>` real con
+  `<i class="ti ti-search">` que llama a `window.nxFacCliToggle()` (la misma función del enlace de
+  abajo, cero lógica nueva). Mismo tamaño, misma forma, mismo color — solo cambió qué muestra y que
+  ahora responde.
+  - **Decisión: la lupa se queda SIEMPRE**, también con cliente ya elegido (el `aria-label`/`title`
+    cambia a "Cambiar el cliente"). Un control que cambia de función según el estado es menos
+    predecible, y el nombre del cliente ya se lee al lado — la inicial no aportaba nada que faltara.
+  - Se borró la variable `ini` (quedó sin uso, regla #1 de depurar). CSS: `border:0;cursor:pointer;
+    padding:0;font-family:inherit` + `:hover` azul + `:focus-visible`. **`:active` con
+    `filter:brightness()`, NUNCA `transform`** — el propio CLAUDE.md ya advierte del bug de botones
+    que se "inflan" en iPhone dentro de ventanas con `backdrop-filter`.
+- **Líneas en la lista de clientes:** `.nxPf .pf2clirow` ganó `border-bottom:1px solid var(--pf-line)`
+  (el token del sistema, no un gris inventado) + `:last-child{border-bottom:0}` para que la última no
+  deje una raya suelta contra el borde de la ventana. Beneficia a las **dos** ventanas que comparten
+  ese motor (`nxPosClienteAbrir`: Facturar y Cobrar), no solo la de la captura.
+- **NO se tocó el enlace de texto "Elegir cliente"/"Cambiar cliente"** de abajo, aunque ahora hace lo
+  mismo que el círculo. El dueño pidió agregar la lupa, no quitar el enlace — y el texto es más
+  descubrible que un icono suelto para quien entra por primera vez. Se le comentó como algo que se
+  puede quitar si prefiere.
+- Verificado con Playwright y el código real extraído (`facPartesHTML`/`nxFacCliToggle`/
+  `nxPosCliFilaHTML` + el CSS real de `.nxDoc` y `.nxPf`): **74 comprobaciones** de Factura (las 65
+  anteriores sin regresión + 9 nuevas — es un `<button>`, lleva la lupa, ya NO muestra la inicial,
+  nombre accesible correcto en los 2 estados, tocarlo abre el buscador, sigue midiendo 38×38 redondo y
+  oscuro con `cursor:pointer`) y **12** del selector (las 6 anteriores + 6 nuevas: 1ra y 2da fila con
+  línea de 1px medida con `getComputedStyle`, la última en `0px`, el color es el `--pf-line` real, y
+  las filas quedan pegadas —la línea es lo que separa, no un hueco—). Sin desborde en 360-1440px, 0
+  errores de consola. Capturas revisadas. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+
 ### POS · el botón de imprimir de Cobrar saca el TICKET, no el documento (26-jul-2026, v49.73)
 El dueño: *"Que salga el ticket térmico en vez del documento grande"*. El botón de impresora que se
 había puesto en la ventana de Cobrar (v49.72) abría `docFacturaHTML` (la factura de página completa);
