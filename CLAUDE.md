@@ -8635,4 +8635,45 @@ Cubre recibir/mover/entregar/cobrar una reparación y su garantía. Texto comple
 - **Con esta pieza cierran los 7 reglamentos de negocio de la tanda** (Venta · Cobro y caja · Crédito y
   cobranza · Inventario · Contabilidad · Clientes y entidades · Taller). Queda pendiente solo el §4
   Fiscal y documentos (NCF/e-CF/notas de crédito), saltado a pedido del dueño — es donde vive la
-  auditoría del e-CF de la DGII (obligatorio 15-nov-2026).
+  auditoría del e-CF de la DGII (obligatorio 15-nov-2026). **(Ya no está pendiente: se hizo en v49.94,
+  ver abajo — esta línea queda como registro histórico.)**
+
+### REGLAMENTO FISCAL (NCF / e-CF / notas de crédito) — decretado y auditado (26-jul-2026, v49.94)
+Última tanda del "un reglamento por módulo" — el dueño pidió "Si la 4". Con esta cierran los **8**
+reglamentos de negocio. Texto completo en **`REGLAMENTOS.md` §4**.
+- **Medición previa (SQL directo):** 0 ventas con NCF, 0 duplicados, 3 secuencias, `mi_organizacion()`
+  existe, no había RPC `pos_siguiente_ncf`. Forward-looking, pero el hueco estaba VIVO.
+- **HUECO CRÍTICO, cerrado — dos ventas simultáneas podían recibir el MISMO NCF.** `asignarNCF`
+  (parches.js) leía `s.actual` de la caché en memoria `_ncfSecs`, calculaba el NCF, y luego pateaba
+  `actual+1` — una **carrera de lectura-y-escritura**: dos cajeros/pestañas cobrando en el mismo
+  instante leían el mismo `actual` y emitían el MISMO comprobante, una violación seria de la DGII (el
+  NCF debe ser único). **Arreglo de raíz en dos capas:**
+  1. **Base — apartado atómico.** Migración `pos_ncf_atomico_y_unico`: función `pos_siguiente_ncf(p_tipo)`
+     (`SECURITY DEFINER`, acotada a `mi_organizacion()`, `grant execute` solo a `authenticated`) que hace
+     `UPDATE pos_ncf_secuencias SET actual=actual+1 ... RETURNING prefijo, actual-1` — el `UPDATE...RETURNING`
+     serializa por bloqueo de fila, así que dos llamadas concurrentes reciben números distintos, jamás el
+     mismo. Devuelve el NCF ya formateado (`prefijo || lpad(num,8,'0')`) o `null` si no hay secuencia
+     disponible (misma condición que la app: activa, `actual ≤ hasta`, no vencida). Red de seguridad de
+     último nivel: índice único parcial `pos_ventas(organizacion_id, ncf) where ncf is not null and ncf<>''`
+     — la base rechaza guardar dos facturas con el mismo NCF pase lo que pase (sí excluye las ventas sin
+     NCF, que pueden ser muchas). `get_advisors(security)` sin hallazgos nuevos.
+  2. **Navegador — `asignarNCF` llama la RPC.** Primero `getAPI().post('rpc/pos_siguiente_ncf', {p_tipo:cod})`
+     (desenvuelve escalar o `[escalar]`, mismo patrón que `next_recibo_anio`); mantiene `_ncfSecs` al día
+     para el aviso "restan ≤10"; y **solo cae al camino viejo de lectura+patch si la RPC lanza error o no
+     existe** (base vieja) — menos seguro ante concurrencia, pero ahí el índice único atrapa cualquier
+     duplicado. Con la RPC desplegada, el respaldo casi nunca corre. Aplica igual al NCF de venta y al
+     B04 de anulación/devolución (los dos pasan por `asignarNCF`).
+- **Verificado con 15 comprobaciones** contra el código REAL extraído por contenido (`asignarNCF`) con un
+  Supabase simulado: camino atómico (consumo→B02, crédito→B01, B04, `'sin'`→null sin tocar la RPC, escalar
+  en array), RPC null (caché vacía→null limpio / caché con secuencia→respaldo asigna), y respaldo (RPC
+  lanza→patch clásico, secuencia agotada→null, vencida→null). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **e-CF (DGII, obligatorio 15-nov-2026) — mapa de lo que FALTA, para el trámite del dueño** (rule #12,
+  aportar; detalle completo en `REGLAMENTOS.md` §4): hoy el POS emite NCF "de papel" (B0x), NO e-CF. Para
+  llegar a e-CF: (A) **certificado digital tributario** del negocio (entidad autorizada, trámite/costo del
+  dueño, semanas) · (B) contratar un **PSFE** (Alanube u otro, por API — NEXUS ya tiene Edge Functions para
+  integrarlo) · (C) generar/firmar el XML e-CF (e-31/e-32/e-34…), enviarlo y guardar el track-id + capturar
+  el **RNC del comprador** (hoy no se captura) · (D) 606/608 (solo hay 607 parcial). **Recomendación dada al
+  dueño:** arrancar YA con (A) el certificado y elegir (B) el PSFE — son las piezas de plazo largo que no
+  dependen del código; la integración (C/D) se construye después, con el certificado en mano, en su propia
+  ronda supervisada.

@@ -18724,6 +18724,29 @@
     try {
       if (!tipoFactura || tipoFactura === 'sin') return null;
       const cod = NCF_MAP[tipoFactura] || tipoFactura;
+      // Reglamento fiscal §4: el NCF se consume de forma ATÓMICA en la base
+      // (UPDATE...RETURNING serializa por bloqueo de fila) para que dos ventas
+      // simultáneas NUNCA reciban el mismo comprobante. Un índice único en
+      // pos_ventas(organizacion_id, ncf) es la red de seguridad de último nivel.
+      try {
+        const r = await getAPI().post('rpc/pos_siguiente_ncf', { p_tipo: cod });
+        const ncfAt = Array.isArray(r) ? r[0] : r;
+        if (ncfAt) {
+          // mantener sincronizada la caché en memoria para el aviso "restan ≤10"
+          const sc = _ncfSecs.find(x => x.tipo === cod && x.activo !== false);
+          if (sc) sc.actual = Number(sc.actual || sc.desde || 1) + 1;
+          return ncfAt;
+        }
+        // r === null: no hay secuencia disponible para ese tipo → no facturar con NCF
+        const _hoyNcf0 = isoHoy();
+        const disp = _ncfSecs.some(x => x.tipo === cod && x.activo !== false && Number(x.actual || 0) <= Number(x.hasta || 0) && (!x.vencimiento || String(x.vencimiento).slice(0, 10) >= _hoyNcf0));
+        if (!disp) return null;
+        // la RPC dijo null pero la caché cree que hay secuencia (posible desfase);
+        // cae al camino de respaldo de abajo para no bloquear la venta.
+      } catch (eRpc) { /* RPC no disponible (base vieja): respaldo abajo */ }
+      // Respaldo (solo si la RPC falla/no existe): lectura+patch clásico. Menos
+      // seguro ante concurrencia, pero el índice único de pos_ventas atrapa un
+      // eventual duplicado. En producción con la RPC desplegada casi nunca corre.
       const _hoyNcf = isoHoy();
       const s = _ncfSecs.find(x => x.tipo === cod && x.activo !== false && Number(x.actual || 0) <= Number(x.hasta || 0) && (!x.vencimiento || String(x.vencimiento).slice(0, 10) >= _hoyNcf));
       if (!s) return null;
