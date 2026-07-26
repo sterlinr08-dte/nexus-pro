@@ -22,8 +22,8 @@
 | 1 | **Venta** (todos los artículos + IMEI) | ✅ decretado y auditado — v49.86 |
 | 2 | **Cobro y caja** | ✅ decretado y auditado — v49.88 |
 | 3 | **Crédito y cobranza** | ✅ decretado y auditado — v49.89 |
-| 4 | Fiscal y documentos (NCF, e-CF, notas de crédito) | pendiente |
-| 5 | Inventario (existencia, kardex, almacenes) | pendiente |
+| 4 | Fiscal y documentos (NCF, e-CF, notas de crédito) | pendiente (omitido a pedido del dueño) |
+| 5 | **Inventario (existencia, kardex, almacenes)** | ✅ decretado y auditado — v49.90 |
 | 6 | Contabilidad (partida doble, asientos automáticos) | pendiente |
 | 7 | Clientes y entidades | pendiente |
 | 8 | Taller (reparaciones, garantías) | pendiente |
@@ -154,3 +154,41 @@ mora apagada** — así que estas reglas todavía no muerden a nadie. Se decreta
 deuda como incobrable · no hay bloqueo automático por acumulación (hoy es aviso + autorización, no un
 corte duro) · un fiado puro (sin plan de cuotas) no tiene fecha de vencimiento, así que su "mora" no
 existe como tal — solo las cuotas la tienen.
+
+---
+
+## 5 · REGLAMENTO DE INVENTARIO
+*(decretado por el dueño el 26-jul-2026 · auditado y aplicado en v49.90)*
+
+Aplica a la existencia de cada artículo, al kardex y a los almacenes.
+
+**Parte A — el único camino**
+
+1. **Nada cambia el inventario por fuera.** Todo movimiento de stock pasa por un solo embudo
+   (`moverStock` / `moverStockTransferencia`) que valida el tipo y deja el rastro en el kardex —
+   nunca un `PATCH` suelto a `pos_productos.stock`. Los tipos válidos son fijos (compra, venta,
+   ajuste, transferencia, garantía, taller, producción, devolución, anulación, apertura) y están
+   candados a nivel de base (CHECK constraint en `pos_inv_movimientos.tipo`).
+2. **El stock de almacén nunca baja de 0**, y una transferencia mueve el inventario de sitio sin
+   cambiar el total (es el mismo inventario, en otro almacén).
+3. **Cada movimiento queda en el kardex** con su cantidad, su stock antes/después y su referencia.
+
+**Parte B — los artículos con IMEI**
+
+4. **El stock de un artículo con IMEI ES la cuenta de IMEI disponibles.** Registrar N IMEI sube el
+   stock en N; borrar un IMEI disponible lo baja en 1 — los dos por el embudo, así que quedan en el
+   kardex. Un IMEI ya vendido no cuenta en el stock, así que borrarlo no lo baja.
+5. **Si el stock y la cuenta de IMEI no coinciden** (un descuadre viejo, de antes de esta regla), la
+   ventana de IMEI lo avisa y ofrece cuadrarlo de un toque.
+6. **Un IMEI registrado a mano queda con el almacén activo** (antes solo los de una compra tenían
+   almacén).
+
+**Medición previa:** al auditar había **1 artículo con IMEI descuadrado** en la base (el stock no
+cuadraba con su cuenta de IMEI) — el bug era real y vivo, no teórico. El resto de las escrituras a
+`pos_productos.stock` se revisaron una por una: todas ya pasaban por el embudo (Fase 5 del Kardex
+Inteligente), cero fugas nuevas.
+
+**Pendientes de este reglamento (NO construidos):** el reparto de un artículo con IMEI POR almacén
+todavía es aproximado — el cuadre ajusta el total, no reparte los IMEI entre almacenes · el total de
+un artículo normal (sin IMEI) sigue siendo la fuente autoritativa y no se fuerza el invariante
+"total = suma de almacenes" en cada operación (la Fase 5 lo dejó así a propósito).

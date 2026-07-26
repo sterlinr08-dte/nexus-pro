@@ -8496,3 +8496,45 @@ medir contra la base, y solo entonces redactar (texto completo en **`REGLAMENTOS
 - **Pendiente:** no hay refinanciamiento ni "dar de baja" una deuda como incobrable · el bloqueo por
   mora es aviso + autorización, no un corte duro automático · un fiado puro (sin cuotas) no tiene fecha
   de vencimiento, así que su "mora" no existe — solo las cuotas la tienen.
+
+### REGLAMENTO DE INVENTARIO — decretado y auditado (26-jul-2026, v49.90)
+Cuarta tanda del "un reglamento por módulo" (el §4 Fiscal se saltó a pedido del dueño). Cubre la
+existencia, el kardex y los almacenes — y cierra los 2 pendientes que dejó el Reglamento de Venta
+(que la existencia de un artículo con IMEI SEA la cuenta de IMEI, y que el IMEI sepa su almacén).
+Texto completo en **`REGLAMENTOS.md` §5**.
+- **Lo que ya estaba blindado (confirmado, no tocado):** el embudo único `moverStock`/
+  `moverStockTransferencia` de la Fase 5 sigue siendo el único camino — se auditaron TODAS las
+  escrituras a `pos_productos` (grep de `patch`/`post`) y todas pasan por el embudo o son campos que
+  no son stock (favorito/activo/precios); el guardado de producto separa el stock y lo mete por
+  `moverStock('ajuste'/'apertura')`; los 2 importadores (CSV e Infoplus) crean en 0 y meten el stock
+  inicial por `moverStock('apertura')`. Cero fugas nuevas desde la Fase 5. El CHECK constraint en
+  `pos_inv_movimientos.tipo` y el piso 0 por almacén siguen en pie.
+- **Medición previa (SQL):** `pos_seriales` YA tiene columna `almacen_id` (la compra la llena, el
+  registro manual no). Había **1 artículo con IMEI descuadrado** (stock ≠ cuenta de IMEI disponibles)
+  — el bug era real y vivo, no teórico.
+- **HUECO 1, cerrado — registrar IMEI no subía el stock.** `nxSerialAdd` insertaba los IMEI en
+  `pos_seriales` pero **no tocaba `pos_productos.stock`** — registrabas 5 teléfonos y el artículo se
+  quedaba en "SIN STOCK", imposible de vender (IMEI obligatorio, stock 0). La compra sí subía stock,
+  el registro manual no — inconsistente. Ahora `nxSerialAdd` sube el stock en N por
+  `moverStock('ajuste', +N)` (queda en el kardex) y estampa el **almacén activo** en cada IMEI
+  (cierra el 2do pendiente del Reglamento de Venta). `nxSerialDel` baja el stock en 1 (leyendo el
+  almacén y estado del IMEI ANTES de borrarlo, y solo si estaba `disponible` — un IMEI vendido no
+  cuenta en el stock).
+- **HUECO 2, cerrado — no había forma de cuadrar un descuadre viejo.** `window.nxSerialCuadrar(pid)`
+  nueva + un aviso ámbar en `nxSerialMgr` cuando `stock ≠ cuenta de IMEI disponibles`, con un botón
+  "Cuadrar a N" que ajusta el total por `moverStock('ajuste', delta)`. Ajusta solo el total (el
+  reparto por almacén queda como pendiente documentado).
+- Verificado con **17 comprobaciones** contra el código REAL extraído por contenido (`nxSerialAdd`,
+  `nxSerialDel`, `nxSerialCuadrar`, `moverStock`, `upsertStockAlm`, `logMov`, `stockKey` + la const
+  `MOV_TIPOS_VALIDOS`) con Supabase simulado: registrar sube el stock y deja el movimiento, estampa
+  el almacén activo (y `null` sin almacenes), borrar baja el stock solo si estaba disponible, cuadrar
+  ajusta al conteo real, y el embudo sigue rechazando tipos inválidos y respetando el piso 0. Más el
+  humo de la app real: **0 errores de JS**. `node --check` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
+  - **Nota de método (2 fallos de la PRUEBA, no del código):** (1) el extractor por contenido perdió
+    el `async` de `moverStock`/`upsertStockAlm`/`logMov` porque `'function X'` es substring de
+    `'async function X'` — hay que anclar en `'async function X'`. (2) el harness declaraba un stub de
+    `stockKey` que el código real ya trae — colisión de identificador; se quitó el stub.
+- **Pendiente:** el reparto de un artículo con IMEI POR almacén es aproximado (el cuadre ajusta el
+  total, no reparte los IMEI entre almacenes) · el invariante "total = suma de almacenes" no se fuerza
+  en cada operación para artículos normales (decisión de la Fase 5, el total es autoritativo).

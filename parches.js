@@ -18136,10 +18136,16 @@
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=*&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span></span><span style="display:flex;align-items:center;gap:6px;flex:none">${colorSelectHTML('serCol_' + r.id, r.color || '')}<button class="btn bsm bghost" type="button" title="Guardar color" aria-label="Guardar color de ${esc(r.serial)}" onclick="window.nxSerialColorSet('${r.id}','${pid}')"><i class="ti ti-check"></i></button><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')" title="Eliminar" aria-label="Eliminar ${esc(r.serial)}"><i class="ti ti-trash" style="color:#dc2626"></i></button></span></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
+    // REGLAMENTO DE INVENTARIO: el stock del artículo debe ser igual a la cuenta de IMEI disponibles.
+    // Si no coinciden (un descuadre de antes de esta regla), se avisa y se ofrece cuadrarlo.
+    const disp = rows.length;
+    const descuadre = Number(p.stock || 0) !== disp;
+    const avisoCuadre = descuadre ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#92400e;margin-bottom:10px">⚠️ El stock dice <b>${Number(p.stock || 0)}</b> pero hay <b>${disp}</b> IMEI disponible(s). <button class="btn bsm bc1" type="button" style="margin-left:6px" onclick="window.nxSerialCuadrar('${pid}')">Cuadrar a ${disp}</button></div>` : '';
     const ov = document.createElement('div'); ov.id = 'nxSerMgr'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-device-mobile"></i> Seriales · ${esc(p.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxSerMgr').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        ${avisoCuadre}
         <div class="fr"><label>Agregar seriales / IMEI (uno por línea o separados por coma)</label><textarea id="serIn" class="no-upper" rows="3" placeholder="Ej:\n356789xxxxxxxxx\n356790xxxxxxxxx" style="width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px;font-size:13px;font-family:var(--mono,monospace);resize:vertical"></textarea></div>
         <div class="fr"><label>Color de este lote (opcional — se aplica a todos los que agregues ahora)</label>${colorSelectHTML('serInColor', '')}</div>
         <button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxSerialAdd('${pid}')"><i class="ti ti-plus"></i> Agregar</button>
@@ -18153,8 +18159,14 @@
     const seriales = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
     if (!seriales.length) return;
     const color = val('serInColor') || null;
+    const prod = _prods.find(x => String(x.id) === String(pid));
+    const aid = (_almacenes.length && _almacenSel) ? _almacenSel : null; // se estampa el almacén activo (antes el registro manual dejaba el IMEI sin almacén)
     try {
-      await getAPI().post('pos_seriales', seriales.map(s => ({ producto_id: pid, serial: s, estado: 'disponible', color: color })));
+      await getAPI().post('pos_seriales', seriales.map(s => ({ producto_id: pid, serial: s, estado: 'disponible', color: color, almacen_id: aid })));
+      // REGLAMENTO DE INVENTARIO: el stock de un artículo con IMEI = la cuenta de IMEI disponibles.
+      // Registrar N IMEI sube el stock en N (por moverStock, para que quede en el kardex) — antes los
+      // IMEI se agregaban pero el stock se quedaba, dejando el artículo "SIN STOCK" con teléfonos reales.
+      if (prod) { try { await moverStock(prod, 'ajuste', seriales.length, { almacenId: aid, referencia: 'Registro de IMEI', motivo: 'Alta de ' + seriales.length + ' IMEI' }); } catch (e) {} }
       toast('ok', 'Seriales agregados', seriales.length + '');
       window.nxSerialMgr(pid);
       const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid);
@@ -18166,7 +18178,26 @@
     try { await getAPI().patch('pos_seriales', 'id=eq.' + id, { color: color }); toast('ok', 'Color guardado'); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid); } catch (e) { toast('err', 'No se pudo guardar el color'); }
   };
   window.nxSerialDel = async function (id, pid) {
-    try { await getAPI().del('pos_seriales', 'id=eq.' + id); toast('ok', 'Serial eliminado'); window.nxSerialMgr(pid); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid); } catch (e) { toast('err', 'No se pudo'); }
+    try {
+      // Leer el almacén y estado del IMEI ANTES de borrarlo, para bajar el stock del almacén correcto
+      // y solo si el IMEI estaba disponible (un IMEI ya vendido no cuenta en el stock).
+      let aid = null, era = 'disponible';
+      try { const r = await getAPI().get('pos_seriales', 'select=almacen_id,estado&id=eq.' + id); if (r && r[0]) { aid = r[0].almacen_id || null; era = r[0].estado; } } catch (e) {}
+      await getAPI().del('pos_seriales', 'id=eq.' + id);
+      // REGLAMENTO DE INVENTARIO: borrar un IMEI disponible baja el stock en 1 (por moverStock → kardex).
+      if (era === 'disponible') { const prod = _prods.find(x => String(x.id) === String(pid)); if (prod) { try { await moverStock(prod, 'ajuste', -1, { almacenId: aid, referencia: 'Baja de IMEI', motivo: 'IMEI eliminado' }); } catch (e) {} } }
+      toast('ok', 'Serial eliminado'); window.nxSerialMgr(pid); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid);
+    } catch (e) { toast('err', 'No se pudo'); }
+  };
+  // REGLAMENTO DE INVENTARIO: cuadra el stock TOTAL de un artículo con IMEI a su cuenta de IMEI
+  // disponibles (para los que quedaron descuadrados antes de esta regla). Solo toca el total —
+  // el reparto por almacén queda pendiente (ver §5).
+  window.nxSerialCuadrar = async function (pid) {
+    const prod = _prods.find(x => String(x.id) === String(pid)); if (!prod) return;
+    let disp = 0; try { const r = await getAPI().get('pos_seriales', 'select=id&producto_id=eq.' + pid + '&estado=eq.disponible'); disp = (r || []).length; } catch (e) {}
+    const delta = disp - Number(prod.stock || 0);
+    if (delta === 0) { toast('ok', 'Ya está cuadrado'); return; }
+    try { await moverStock(prod, 'ajuste', delta, { referencia: 'Cuadre de IMEI', motivo: 'Stock ajustado a la cuenta de IMEI disponibles' }); toast('ok', 'Stock cuadrado', 'Ahora dice ' + disp); window.nxSerialMgr(pid); } catch (e) { toast('err', 'No se pudo'); }
   };
   // Chip IMEI del buscador: mete el artículo al destino y abre la ventanilla para elegir IMEI
   window.nxPpkImei = function (id) {
