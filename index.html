@@ -4016,7 +4016,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.59';
+const APP_VERSION='49.60';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6281,7 +6281,7 @@ function rFact(){
     const sal=saldoDe(f);
     const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''} style="padding:5px 8px"><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
     return `<tr${anul?' style="opacity:.55"':''}>
-      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
+      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:11px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Factura">${f.ncf||'—'}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
@@ -6684,7 +6684,7 @@ function rAvisos(){
   const cardVence=c=>{
     const e=getEstPol(c);const tieneWA=nxWa(c.wa);
     return `<div class="nxAvCard">
-      <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#f59e0b,#d97706)">${inits(c.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(c.nom)}</div><div class="nxAvSub" style="color:${e.est==='vencida'?'#dc2626':'#b45309'};font-weight:700">${e.lbl}</div></div></div>
+      <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#f59e0b,#d97706)">${inits(c.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(c.nom)}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(c.referencia)})</span>`:''}</div><div class="nxAvSub" style="color:${e.est==='vencida'?'#dc2626':'#b45309'};font-weight:700">${e.lbl}</div></div></div>
       ${tieneWA?`<button class="nxAvBtn wa" onclick="nxVencerWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar recordatorio</button>`:`<div class="nxAvNoWa">Sin WhatsApp registrado</div>`}
     </div>`;
   };
@@ -7999,7 +7999,7 @@ function rRepNuevos(){
     <tbody>${nuevos.map(c=>{const emp=gEmp(c.empresa_id)?.nom||'Particular';const agt=gAgt(c.agente_id)?.nom||'—';return`<tr>
       <td style="font-family:var(--mono);font-size:9px">${c.created_at?.slice(0,10)||'—'}</td>
       <td style="font-family:var(--mono);font-size:9px;color:#d97706">${c.numero_poliza||'—'}</td>
-      <td style="font-weight:700;cursor:pointer" onclick="verCliente('${c.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><span class="fav-star ${esFavorito(c.id)?'active':''}" onclick="event.stopPropagation();toggleFav('${c.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">★</span> ${c.nom}</td>
+      <td style="font-weight:700;cursor:pointer" onclick="verCliente('${c.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><span class="fav-star ${esFavorito(c.id)?'active':''}" onclick="event.stopPropagation();toggleFav('${c.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">★</span> ${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(c.referencia)})</span>`:''}</td>
       <td>${planB(c.plan)}</td>
       <td style="font-size:9px;color:#475569">${c.ars||'—'}</td>
       <td style="font-size:9px;color:#475569">${emp.split(' ').slice(0,2).join(' ')}</td>
@@ -8493,7 +8493,7 @@ async function abrirDocs(cliId){
 
   document.getElementById('mDocsTitle').textContent = `// DOCUMENTOS — ${c.nom}`;
   document.getElementById('docsClienteInfo').innerHTML = `
-    <div style="font-weight:700;color:#1e293b">${c.nom}</div>
+    <div style="font-weight:700;color:#1e293b">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(c.referencia)})</span>`:''}</div>
     <div style="color:#475569;margin-top:2px">Póliza: <strong>${c.numero_poliza||'—'}</strong> · Plan: ${c.plan} · Cédula: ${c.cedula||'—'}</div>`;
 
   await cargarDocs(cliId);

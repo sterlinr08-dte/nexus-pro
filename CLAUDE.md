@@ -5372,6 +5372,21 @@ escriben ahí.
   arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
   Edge con service-role. Se deja documentado, no se improvisa.
 
+### La referencia del cliente, visible en 4 pantallas más (26-jul-2026, v49.60)
+El dueño: *"La referencia también que se vean"*. `clientes.referencia` es el apodo con que él
+identifica a cada cliente (el buscador de Clientes ya dice "Nombre, apodo, cédula, póliza"). Se
+auditó dónde se pinta un nombre de cliente y dónde faltaba: ya salía en **Clientes**, **Historial
+de pagos** y la **ficha** (`verCliente`); **faltaba** en Facturas, Centro de Avisos, Reporte por
+agente y Documentos del cliente. Agregada en esas 4, con el MISMO patrón que ya usaba Historial de
+pagos (morado `#7c3aed`, entre paréntesis, junto al nombre) — no un estilo nuevo.
+- **Deliberadamente NO se puso en la Factura ni en el Certificado imprimibles** (`generarHTMLFactura`
+  / `generarHTMLCertificado`): son documentos formales que van a la ARS y al cliente; ahí
+  corresponde el nombre completo, no el apodo interno del negocio.
+- Cliente sin referencia no muestra nada — no queda un paréntesis vacío (verificado).
+- Verificado con Playwright y el código real de `rFact`: la referencia sale junto al nombre, el
+  color medido es `rgb(124,58,237)` (el mismo de Historial de pagos, no uno parecido), un cliente
+  sin referencia no muestra `()`, la tarjeta sigue compacta (124px) y sin desborde en 390px.
+
 ### Facturas — 4 mejoras salidas de una captura del dueño (26-jul-2026, v49.59)
 El dueño mandó la pantalla de Facturas en su iPhone y preguntó "cómo podemos mejorar". Se auditó
 contra el código real (no solo la captura) y salieron 4 cosas, ordenadas por lo que de verdad le
