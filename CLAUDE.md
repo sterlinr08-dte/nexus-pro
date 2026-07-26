@@ -5099,6 +5099,35 @@ correcto, 5 KPIs premium, 0 KPIs viejos, esperado 30,000 exacto en el recuadro v
 sin desbordes en 390px ni 1000px, 0 errores de consola. `node --check parches.js` limpio; los 3
 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 
+### "Buscar artículo" solo mostraba 2 precios aunque la org tenga más niveles (26-jul-2026, v49.84)
+El dueño mandó el detalle de un artículo en su iPhone: solo salían **CLIENTE FINAL** y **POR MAYOR**,
+sus dos precios de siempre. Pidió ver **los tres niveles**.
+- **Se verificó contra la base antes de tocar nada** (no se dio por hecho cuántos niveles hay):
+  `pos_niveles_precio` de `nexus-pro` tiene **3** — `Detalle` (default), `Mayorista` y `EXTREMO`.
+  EXTREMO solo tiene precio en 2 artículos.
+- **Causa:** `ppkDetailHTML` tenía los 2 recuadros **escritos a mano** (`p.precio` / `p.precio_mayor`,
+  los campos heredados) desde antes de que existieran los niveles ilimitados (v48.27). Los datos
+  estaban bien; la pantalla nunca se actualizó.
+- **Arreglo:** un recuadro por cada nivel real de `_niveles` (ya cargado en `cargarPOS`, cero
+  consultas nuevas), en su `orden`, con el precio de `_prodNiveles`. El nivel del cliente elegido
+  sale resaltado. **Un nivel sin precio para ese artículo muestra `—`, no `RD$ 0`** — mismo criterio
+  de no fingir un dato. Si la org no tiene ningún nivel, cae al recuadro Cliente final / Por mayor
+  de siempre (verificado explícitamente, no asumido).
+- **De paso:** la línea de arriba decía "PRECIO POR MAYOR"/"precio final" a secas — con un nivel
+  propio eso **mentía** (decía "precio final" a un cliente EXTREMO). Helper nuevo
+  `nivelDelCliente(c)` dice el nombre real del nivel.
+- **CSS:** `.nxPpkHmulti` es un grid `auto-fit minmax(84px,1fr)` con `gap:1px` sobre fondo gris —
+  las divisiones salen solas sin importar cuántos niveles haya ni si envuelven (misma técnica que
+  la franja de KPI de la v49.77). **El precio ENVUELVE, no se trunca** (regla de la v48.56): medido
+  a 360/390/430px, a 360px "RD$ 10,000" pasa a 2 líneas en vez de perder dígitos.
+- **HALLAZGO DE DATOS que se le reportó al dueño, sin tocar:** `precioCli()` solo usa un nivel si el
+  CLIENTE tiene `nivel_id`; sin cliente cobra `pos_productos.precio`. Y en PANTALLA IPHONE 11 ese
+  precio de lista es **2,000** mientras su nivel Detalle dice **2,500** — o sea a un consumidor final
+  se le cobra 500 menos de lo configurado. No se cambió cuál precio gana: eso es lógica de cobro y
+  no fue lo pedido.
+- Verificado con **15 comprobaciones** Playwright, con los precios REALES sacados de su base (3
+  niveles, uno sin precio en un artículo). Sin desborde en 360/390/430/1280px, 0 errores de JS.
+
 ### Los últimos 7 botones de solo ícono sin nombre (26-jul-2026, v49.83)
 El dueño pidió cerrar "los 144 botones de ícono". **Al medir resultó que ya estaban hechos**: la
 v49.55 cerró los 144 (y las 112 filas clicables). La línea de pendientes de la retrospectiva quedó

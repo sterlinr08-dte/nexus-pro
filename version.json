@@ -1,7 +1,12 @@
 {
-  "version": "49.83",
+  "version": "49.84",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.84",
+      "fecha": "2026-07-26",
+      "texto": "ARREGLADO: al abrir un artículo en \"Buscar artículo\" solo se veían DOS precios fijos (Cliente final y Por mayor), aunque tengas más niveles configurados — tu tercer nivel EXTREMO no aparecía por ningún lado. Ahora se muestra un recuadro por cada nivel real de tu negocio, con su nombre y su precio, y sale resaltado el que le toca al cliente que elegiste. Un nivel al que todavía no le pusiste precio a ese artículo muestra un guion, no un RD$ 0 que no es cierto. · ARREGLADO: la línea de arriba decía \"PRECIO POR MAYOR\" o \"precio final\" aunque el cliente estuviera en otro nivel; ahora dice el nombre real de su nivel."
+    },
     {
       "v": "49.83",
       "fecha": "2026-07-26",
