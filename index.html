@@ -1255,7 +1255,10 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               </button>
             </div>
             <div class="frow">
-              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="cliQ" type="search" class="nxBusca-in" placeholder="Nombre, apodo, cédula, póliza..." value="" autocomplete="off" oninput="nxBuscaTog(this);rCliBuscar()" onkeydown="if(event.key==='Enter'){event.preventDefault();rCliBuscar()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
+              <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
+                   El input sigue existiendo OCULTO para que rCli()/rCliBuscar() lean el
+                   término exactamente igual que antes (cero cambios en el filtrado). -->
+              <span id="cliQLupa"></span><input id="cliQ" type="hidden" value="">
               <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
               <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
               <select id="fAgenteCli" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los agentes</option></select>
@@ -3056,6 +3059,207 @@ function mbbElegirGuardado(id,kind,i){
 window.ModalBusquedaBase=ModalBusquedaBase;window.cerrarModalBusqueda=cerrarModalBusqueda;window.mbbElegirGuardado=mbbElegirGuardado;window.mbbToggleFav=mbbToggleFav;
 window.mbbBuscar=mbbBuscar;window.mbbEnter=mbbEnter;window.mbbPag=mbbPag;window.mbbElegir=mbbElegir;
 
+// ── VENTANA DE FILTRO (NPGS §5, cumplimiento literal — decidido por el dueño) ──
+// Los buscadores que FILTRAN una lista ya visible (Clientes, Facturas, Cobros, Vender…)
+// dejan de ser una barra fija: ahora se muestra SOLO la lupa y al tocarla se abre esta
+// ventana, con Buscar · Recientes · Favoritos · Filtros · Resultados, igual que manda
+// el §5. Es UN SOLO motor compartido por todos (NPGS §6: no duplicar) — cada pantalla
+// solo cambia su llamada, no construye su propia ventana.
+//
+// Diferencia con ModalBusquedaBase: aquel ELIGE un registro de un catálogo y lo devuelve
+// a un formulario. Este solo FILTRA lo que ya está en pantalla: al aceptar, la lista de
+// atrás queda filtrada por el término.
+//
+// Uso: nxBuscaFiltroHTML({id, placeholder, onterm:fn(term), cont:'idDelContenedor',
+//                         filtros:[{k,t,activo}], onfiltro:fn(k), inputmode})
+// `onterm` es una FUNCIÓN (no un string): así funciona con handlers que viven dentro de
+// un IIFE y no están en window — que es el caso de casi todos los módulos de parches.js.
+window.__nbfReg=window.__nbfReg||{};
+function nxBuscaFiltroHTML(o){
+  o=o||{};
+  const id=o.id||('nbf'+Math.random().toString(36).slice(2));
+  const prev=window.__nbfReg[id]||{};
+  window.__nbfReg[id]={
+    placeholder:o.placeholder||'Buscar…',
+    onterm:typeof o.onterm==='function'?o.onterm:null,
+    cont:o.cont||'',
+    filtros:Array.isArray(o.filtros)?o.filtros:null,
+    onfiltro:typeof o.onfiltro==='function'?o.onfiltro:null,
+    inputmode:o.inputmode||'',
+    titulo:o.titulo||'Buscar',
+    // el término activo sobrevive al repintado de la pantalla
+    term:(o.value!=null?o.value:(prev.term||''))
+  };
+  nxBuscaEnsureCSS();
+  const t=window.__nbfReg[id].term;
+  return '<div class="nbfWrap" id="nbfW_'+id+'">'
+    +'<button type="button" class="nbfLupa" aria-label="'+escHtml(o.placeholder||'Buscar')+'" title="'+escHtml(o.placeholder||'Buscar')+'" onclick="nxBuscaFiltroAbrir(\''+id+'\')"><i class="ti ti-search"></i></button>'
+    +(t?'<span class="nbfChip"><b>'+escHtml(t)+'</b><button type="button" aria-label="Quitar la búsqueda" onclick="nxBuscaFiltroLimpiar(\''+id+'\')">✕</button></span>':'')
+    +'</div>';
+}
+function nxBuscaFiltroCSS(){
+  if(document.getElementById('nbfCSS'))return;
+  const st=document.createElement('style');st.id='nbfCSS';
+  st.textContent='.nbfWrap{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}'
+    +'.nbfLupa{width:42px;height:42px;min-width:42px;border:1px solid #e2e8f0;background:#fff;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#475569;font-size:17px}'
+    +'.nbfLupa:hover{background:#f8fafc}'
+    +'.nbfChip{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:4px 6px 4px 11px;font-size:12.5px;max-width:60vw}'
+    +'.nbfChip b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    +'.nbfChip button{border:0;background:#dbeafe;color:#1d4ed8;width:19px;height:19px;border-radius:50%;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center}'
+    +'.nbfOv{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:10500;display:flex;align-items:flex-start;justify-content:center;padding:6vh 12px;box-sizing:border-box}'
+    +'.nbfBox{background:#fff;border-radius:14px;width:100%;max-width:480px;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(15,23,42,.35)}'
+    +'.nbfHd{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid #eef2f7}'
+    +'.nbfHd h3{margin:0;font-size:15px;font-weight:800;color:#0f172a;flex:1}'
+    +'.nbfHd button{border:0;background:#f1f5f9;color:#475569;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px}'
+    +'.nbfBody{padding:12px 14px;overflow:auto}'
+    +'.nbfSec{font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;margin:14px 0 6px}'
+    +'.nbfRow{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #eef2f7;border-radius:9px;margin-bottom:6px;cursor:pointer;font-size:13.5px;color:#0f172a}'
+    +'.nbfRow:hover{background:#f8fafc}'
+    +'.nbfRow i{color:#94a3b8;font-size:15px}'
+    +'.nbfRow span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    +'.nbfFav{border:0;background:transparent;cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;border-radius:6px;color:#cbd5e1}'
+    +'.nbfFav.on{color:#f59e0b}'
+    +'.nbfChips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}'
+    +'.nbfF{border:1px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-weight:600}'
+    +'.nbfF.on{background:#2563eb;border-color:#2563eb;color:#fff}'
+    +'.nbfRes{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-top:1px solid #eef2f7;background:#f8fafc}'
+    +'.nbfRes b{font-size:13.5px;color:#0f172a}'
+    +'.nbfRes .nbfGo{border:0;background:#2563eb;color:#fff;border-radius:9px;padding:10px 16px;font-weight:700;font-size:13px;cursor:pointer}'
+    +'.nbfVacio{text-align:center;color:#94a3b8;font-size:12.5px;padding:10px 0}';
+  document.head.appendChild(st);
+}
+function nbfSnap(t){return {__id:t,__t:t};}
+function nxBuscaFiltroAbrir(id){
+  const c=window.__nbfReg[id];if(!c)return;
+  nxBuscaFiltroCSS();
+  let ov=document.getElementById('nbfOv_'+id);
+  if(ov)ov.remove();
+  ov=document.createElement('div');ov.className='nbfOv';ov.id='nbfOv_'+id;
+  ov.onclick=function(e){if(e.target===ov)nxBuscaFiltroCerrar(id);};
+  const fil=c.filtros&&c.filtros.length
+    ? '<div class="nbfSec">Filtros</div><div class="nbfChips">'+c.filtros.map(function(f){
+        return '<button type="button" class="nbfF'+(f.activo?' on':'')+'" onclick="nxBuscaFiltroChip(\''+id+'\',\''+String(f.k).replace(/'/g,"\\'")+'\')">'+escHtml(f.t)+'</button>';
+      }).join('')+'</div>'
+    : '';
+  ov.innerHTML='<div class="nbfBox" role="dialog" aria-modal="true">'
+    +'<div class="nbfHd"><h3>'+escHtml(c.titulo)+'</h3><button type="button" aria-label="Cerrar ventana" onclick="nxBuscaFiltroCerrar(\''+id+'\')">✕</button></div>'
+    +'<div class="nbfBody">'
+      +nxBuscaHTML({id:'nbfIn_'+id,placeholder:c.placeholder,value:c.term,inputmode:c.inputmode,
+                    oninput:'nxBuscaFiltroEscribe(\''+id+'\',this.value)',
+                    onenter:'nxBuscaFiltroAceptar(\''+id+'\')'})
+      +fil
+      +'<div id="nbfGuard_'+id+'"></div>'
+    +'</div>'
+    +'<div class="nbfRes"><b id="nbfCnt_'+id+'">—</b>'
+      +'<button type="button" class="nbfGo" onclick="nxBuscaFiltroAceptar(\''+id+'\')">Ver resultados</button></div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  nbfPintarGuardados(id);
+  nbfContar(id);
+  const i=document.getElementById('nbfIn_'+id);if(i){i.focus();try{i.setSelectionRange(i.value.length,i.value.length);}catch(e){}}
+}
+function nbfPintarGuardados(id){
+  const box=document.getElementById('nbfGuard_'+id);if(!box)return;
+  const favs=mbbLSGet('Fav',id), recs=mbbLSGet('Rec',id).filter(function(r){return !favs.some(function(f){return f.__id===r.__id;});});
+  const fila=function(r,kind){
+    const on=kind==='fav';
+    return '<div class="nbfRow" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" onclick="nxBuscaFiltroUsar(\''+id+'\',this.getAttribute(\'data-t\'))" data-t="'+escHtml(r.__t)+'">'
+      +'<i class="ti ti-'+(on?'star-filled':'history')+'"></i><span>'+escHtml(r.__t)+'</span>'
+      +'<button type="button" class="nbfFav'+(on?' on':'')+'" aria-label="'+(on?'Quitar de favoritos':'Guardar en favoritos')+'" onclick="event.stopPropagation();nxBuscaFiltroFav(\''+id+'\',this.parentNode.getAttribute(\'data-t\'))">★</button></div>';
+  };
+  let h='';
+  if(favs.length)h+='<div class="nbfSec">Favoritos</div>'+favs.map(function(r){return fila(r,'fav');}).join('');
+  if(recs.length)h+='<div class="nbfSec">Recientes</div>'+recs.map(function(r){return fila(r,'rec');}).join('');
+  if(!h)h='<div class="nbfSec">Recientes</div><div class="nbfVacio">Todavía no has buscado nada aquí.</div>';
+  box.innerHTML=h;
+}
+function nbfContar(id){
+  const c=window.__nbfReg[id],el=document.getElementById('nbfCnt_'+id);
+  if(!c||!el)return;
+  if(!c.cont){el.textContent=c.term?('Buscando "'+c.term+'"'):'Escribe para buscar';return;}
+  const cont=document.getElementById(c.cont);
+  if(!cont){el.textContent=c.term?('Buscando "'+c.term+'"'):'Escribe para buscar';return;}
+  // filas reales visibles: una tabla cuenta <tbody> tr; cualquier otra cosa, hijos directos
+  const tb=cont.tagName==='TABLE'?cont.querySelector('tbody'):cont;
+  const hijos=Array.prototype.filter.call((tb||cont).children,function(n){
+    if(n.offsetParent===null&&n.tagName!=='TR')return false;
+    return !n.hasAttribute('data-nbf-ignorar');
+  });
+  const n=hijos.length;
+  el.textContent=n===1?'1 resultado':(n+' resultados');
+}
+function nxBuscaFiltroEscribe(id,v){
+  const c=window.__nbfReg[id];if(!c)return;
+  c.term=v;
+  clearTimeout(c._t);
+  c._t=setTimeout(function(){
+    if(typeof c.onterm==='function'){try{c.onterm(v);}catch(e){}}
+    nbfContar(id);
+  },200);
+}
+function nxBuscaFiltroUsar(id,t){
+  const c=window.__nbfReg[id];if(!c)return;
+  const i=document.getElementById('nbfIn_'+id);if(i){i.value=t;nxBuscaTog(i);}
+  c.term=t;
+  if(typeof c.onterm==='function'){try{c.onterm(t);}catch(e){}}
+  nxBuscaFiltroAceptar(id);
+}
+function nxBuscaFiltroFav(id,t){
+  if(!t)return;
+  let favs=mbbLSGet('Fav',id);
+  const i=favs.findIndex(function(f){return f.__id===t;});
+  if(i>=0)favs.splice(i,1);
+  else{favs.unshift(nbfSnap(t));if(favs.length>MBB_FAV_MAX)favs=favs.slice(0,MBB_FAV_MAX);}
+  mbbLSSet('Fav',id,favs);
+  nbfPintarGuardados(id);
+}
+function nxBuscaFiltroAceptar(id){
+  const c=window.__nbfReg[id];if(!c)return;
+  const i=document.getElementById('nbfIn_'+id);
+  const v=i?i.value:c.term;
+  c.term=v;
+  clearTimeout(c._t);
+  if(typeof c.onterm==='function'){try{c.onterm(v);}catch(e){}}
+  if(v&&String(v).trim()){
+    let rec=mbbLSGet('Rec',id).filter(function(r){return r.__id!==v;});
+    rec.unshift(nbfSnap(v));
+    if(rec.length>MBB_REC_MAX)rec=rec.slice(0,MBB_REC_MAX);
+    mbbLSSet('Rec',id,rec);
+  }
+  nxBuscaFiltroCerrar(id);
+  nbfRefrescarChip(id);
+}
+function nxBuscaFiltroLimpiar(id){
+  const c=window.__nbfReg[id];if(!c)return;
+  c.term='';
+  if(typeof c.onterm==='function'){try{c.onterm('');}catch(e){}}
+  nbfRefrescarChip(id);
+}
+function nbfRefrescarChip(id){
+  const c=window.__nbfReg[id],w=document.getElementById('nbfW_'+id);
+  if(!c||!w)return; // si la pantalla se repintó completa, el chip ya viene en el HTML nuevo
+  const vieja=w.querySelector('.nbfChip');
+  if(vieja)vieja.remove();
+  if(c.term){
+    const s=document.createElement('span');s.className='nbfChip';
+    s.innerHTML='<b></b><button type="button" aria-label="Quitar la búsqueda" onclick="nxBuscaFiltroLimpiar(\''+id+'\')">✕</button>';
+    s.querySelector('b').textContent=c.term;
+    w.appendChild(s);
+  }
+}
+function nxBuscaFiltroChip(id,k){
+  const c=window.__nbfReg[id];if(!c)return;
+  if(typeof c.onfiltro==='function'){try{c.onfiltro(k);}catch(e){}}
+  if(c.filtros)c.filtros.forEach(function(f){f.activo=(String(f.k)===String(k));});
+  nxBuscaFiltroAbrir(id);
+}
+function nxBuscaFiltroCerrar(id){const ov=document.getElementById('nbfOv_'+id);if(ov)ov.remove();}
+window.nxBuscaFiltroHTML=nxBuscaFiltroHTML;window.nxBuscaFiltroAbrir=nxBuscaFiltroAbrir;
+window.nxBuscaFiltroEscribe=nxBuscaFiltroEscribe;window.nxBuscaFiltroAceptar=nxBuscaFiltroAceptar;
+window.nxBuscaFiltroLimpiar=nxBuscaFiltroLimpiar;window.nxBuscaFiltroUsar=nxBuscaFiltroUsar;
+window.nxBuscaFiltroFav=nxBuscaFiltroFav;window.nxBuscaFiltroChip=nxBuscaFiltroChip;
+window.nxBuscaFiltroCerrar=nxBuscaFiltroCerrar;
+
 // Recalcula los saldos contables desde los asientos REALES guardados.
 // Los saldos NO son números fijos: se construyen sumando cada asiento.
 function recalcularSaldosContables(){
@@ -3784,7 +3988,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.56';
+const APP_VERSION='49.57';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5647,8 +5851,22 @@ function limpiarFiltrosCli(){
   ['cliQ','fPlan','fEst','fAgenteCli'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   rCli();
 }
+// NPGS §5: la barra fija de búsqueda se cambió por la lupa + ventana compartida.
+// El input #cliQ sigue existiendo (oculto) y es lo que lee rCli(), así que el filtrado
+// no cambió ni una línea: la ventana solo escribe ahí y vuelve a llamar rCliBuscar().
+function pintarLupaCli(){
+  const box=document.getElementById('cliQLupa');
+  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
+  box.innerHTML=nxBuscaFiltroHTML({
+    id:'cliQ', titulo:'Buscar cliente', cont:'tbCli',
+    placeholder:'Nombre, apodo, cédula, póliza...',
+    value:(document.getElementById('cliQ')||{}).value||'',
+    onterm:function(v){const i=document.getElementById('cliQ');if(i)i.value=v;rCliBuscar();}
+  });
+}
 function rCli(){
   llenarFiltroAgentes('fAgenteCli');
+  pintarLupaCli();
   const q=(document.getElementById('cliQ')?.value||'').toLowerCase();
   const fp=document.getElementById('fPlan')?.value||'';
   const fe=document.getElementById('fEst')?.value||'';
