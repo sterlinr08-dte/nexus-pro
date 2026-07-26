@@ -3694,7 +3694,7 @@ function aplicarTema(tema){
   else if(temaReal==='glass')body.classList.add('tema-glass');
   // clasico = sin clase (diseño por defecto)
   // Guardar preferencia
-  localStorage.setItem('nx_tema',tema);
+  nxPrefSet('tema',tema);   // preferencia -> base, no navegador
   // Actualizar selección visual en el panel
   document.querySelectorAll('.tema-opcion').forEach(o=>{
     o.classList.toggle('tema-sel',o.dataset.tema===tema);
@@ -3777,14 +3777,16 @@ function enviarCoberturasWA(cid){
   window.open(`https://wa.me/${numFull}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 function cargarTemaGuardado(){
-  const tema=localStorage.getItem('nx_tema')||'clasico';
-  aplicarTema(tema);
+  // El tema vive en la base (ver PREFERENCIAS DEL USUARIO), así que solo se puede aplicar
+  // DESPUÉS de entrar. La pantalla de login siempre se ve con el tema base: es el costo de
+  // no guardar nada en el navegador, y se decidió a propósito.
+  aplicarTema(nxPref('tema','clasico'));
 }
 
 function rApariencia(){
   const cont=document.getElementById('cfgApariencia');
   if(!cont)return;
-  const temaActual=localStorage.getItem('nx_tema')||'clasico';
+  const temaActual=nxPref('tema','clasico');
   const temas=[
     {id:'clasico',nom:'CLÁSICO',desc:'Diseño actual del sistema, claro y limpio',ico:'☀️',preview:'linear-gradient(135deg,#f0f4f8,#ffffff)'},
     {id:'premium',nom:'PREMIUM DARK',desc:'Software empresarial moderno, fondo oscuro',ico:'🌌',preview:'linear-gradient(135deg,#0a1020,#1a2540)'},
@@ -4069,7 +4071,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.80';
+const APP_VERSION='49.81';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -4370,8 +4372,7 @@ function toggleNotif(){
   rNotifs();
 }
 
-let _notifLeidas=[];
-try{_notifLeidas=JSON.parse(localStorage.getItem('nx_notif_leidas')||'[]');}catch{}
+let _notifLeidas=[];   // se llena desde la base al entrar (ver nxPrefsCargar)
 let _notifFiltro='todas';
 
 function rNotifs(){
@@ -4458,7 +4459,7 @@ function abrirNotif(n){
   // Marcar como leída
   if(n.id&&!_notifLeidas.includes(n.id)){
     _notifLeidas.push(n.id);
-    localStorage.setItem('nx_notif_leidas',JSON.stringify(_notifLeidas));
+    nxPrefSet('notif_leidas',_notifLeidas);
   }
   // Cerrar panel de notificaciones
   document.getElementById('notifPanel')?.classList.remove('show');
@@ -4481,7 +4482,7 @@ function abrirNotif(n){
 
 function marcarTodasLeidas(){
   _notifs.forEach(n=>{if(n.id&&!_notifLeidas.includes(n.id))_notifLeidas.push(n.id);});
-  localStorage.setItem('nx_notif_leidas',JSON.stringify(_notifLeidas));
+  nxPrefSet('notif_leidas',_notifLeidas);
   rNotifs();
   toast('ok','Notificaciones marcadas como leídas');
 }
@@ -4498,13 +4499,13 @@ document.addEventListener('click',e=>{
 function toggleDarkMode(){
   document.body.classList.toggle('dark');
   const dark=document.body.classList.contains('dark');
-  localStorage.setItem('nx_dark',dark?'1':'0');
+  nxPrefSet('dark',dark);
   const icon=document.getElementById('iconDarkMode');
   if(icon)icon.className='ti '+(dark?'ti-sun':'ti-moon');
 }
-// Aplicar al cargar
-if(localStorage.getItem('nx_dark')==='1'){
-  setTimeout(()=>{document.body.classList.add('dark');const i=document.getElementById('iconDarkMode');if(i)i.className='ti ti-sun';},500);
+// Aplicar al entrar (la preferencia vive en la base, no se puede leer antes del login)
+function aplicarDarkGuardado(){
+  if(nxPref('dark',false)===true){document.body.classList.add('dark');const i=document.getElementById('iconDarkMode');if(i)i.className='ti ti-sun';}
 }
 
 // ── BÚSQUEDA GLOBAL ────────────────────────────────────────────────
@@ -4716,26 +4717,26 @@ function cerrarClientSummary(){
 }
 
 // ── FAVORITOS / VIP ────────────────────────────────────────────────
-function getFavoritos(){try{return JSON.parse(localStorage.getItem('nx_favs')||'[]');}catch{return[];}}
+function getFavoritos(){const f=nxPref('favs',[]);return Array.isArray(f)?f:[];}
 function esFavorito(id){return getFavoritos().includes(id);}
 function toggleFav(id){
   let favs=getFavoritos();
   if(favs.includes(id)){favs=favs.filter(x=>x!==id);toast('ok','Quitado de favoritos');}
   else{favs.push(id);toast('ok','⭐ Agregado a VIP');}
-  localStorage.setItem('nx_favs',JSON.stringify(favs));
+  nxPrefSet('favs',favs);
   verCliente(id);
   if(typeof rCli==='function')rCli();
 }
 
 // ── NOTAS POR CLIENTE ──────────────────────────────────────────────
-function getNotas(id){try{return JSON.parse(localStorage.getItem('nx_notas_'+id)||'[]');}catch{return[];}}
+function getNotas(id){const n=nxPref('notas',{})||{};return Array.isArray(n[id])?n[id]:[];}
 function agregarNota(id){
   const inp=document.getElementById('csNuevaNota');
   const txt=inp.value.trim();
   if(!txt)return;
   const notas=getNotas(id);
   notas.unshift({txt,ts:new Date().toISOString(),autor:sesion?.nom||'Admin'});
-  localStorage.setItem('nx_notas_'+id,JSON.stringify(notas));
+  const _tn=Object.assign({},nxPref('notas',{}));_tn[id]=notas;nxPrefSet('notas',_tn);
   inp.value='';
   verCliente(id);
   toast('ok','Nota guardada');
@@ -4750,12 +4751,12 @@ function autoSave(formId,key){
     if(!form)return;
     const data={};
     form.querySelectorAll('input,select,textarea').forEach(el=>{if(el.id)data[el.id]=el.value;});
-    localStorage.setItem('nx_draft_'+key,JSON.stringify(data));
+    const _td=Object.assign({},nxPref('drafts',{}));_td[key]=data;nxPrefSet('drafts',_td);
   },1500);
 }
 function restoreAutoSave(key){
   try{
-    const d=JSON.parse(localStorage.getItem('nx_draft_'+key)||'null');
+    const d=(nxPref('drafts',{})||{})[key]||null;
     if(!d)return;
     Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&!el.value)el.value=val;});
   }catch{}
@@ -5423,6 +5424,11 @@ async function cargarTodo(){
     // (POS con su pestaña, Financiamiento, Rifas, AGUAPRO...) — ver "DÓNDE ME QUEDÉ".
     // Las preferencias viven en la base: hay que traerlas ANTES de decidir qué pantalla abrir.
     try{await nxPrefsCargar();}catch(e){}
+    // Y aplicar las que dependen de ellas (antes se leían del navegador en cuanto cargaba la
+    // página; ahora solo se pueden aplicar una vez que hay sesión para consultar la base).
+    try{cargarTemaGuardado();}catch(e){}
+    try{aplicarDarkGuardado();}catch(e){}
+    try{const nl=nxPref('notif_leidas',[]);if(Array.isArray(nl))_notifLeidas=nl;}catch(e){}
     window.__nxHtmlRestauroVista = true; // avisar al parche que ya restauramos
     const esModuloDirecto = !!(sesion && sesion.org && (sesion.org.tipo==='tienda'||sesion.org.tipo==='rifa'||sesion.org.tipo==='consultorio'));
     if(esModuloDirecto){
@@ -9570,8 +9576,9 @@ function exportarNuevosCSV(){
 const debouncedRCli=debounce(rCli,250);
 
 window.addEventListener('DOMContentLoaded',()=>{
-  // Aplicar tema visual guardado de inmediato (también en pantalla de login)
-  try{cargarTemaGuardado();}catch(e){}
+  // El tema ya no se puede aplicar aquí: vive en la base y todavía no hay sesión para
+  // consultarla. Se aplica al entrar, dentro de iniciarApp (ver PREFERENCIAS DEL USUARIO).
+  // Consecuencia aceptada: la pantalla de login siempre se ve con el tema base.
   // Usar credenciales fijas si están disponibles
   const fixedUrl = SUPABASE_URL_FIXED;
   const fixedKey = SUPABASE_KEY_FIXED;

@@ -327,7 +327,7 @@
 
     // ── Posición guardada + ARRASTRAR para ponerlo donde el usuario quiera ──
     try {
-      const sp = JSON.parse(localStorage.getItem('nx_fab_pos') || 'null');
+      const sp = (window.nxPref ? window.nxPref('fab_pos', null) : null);  // preferencia -> base
       if (sp && typeof sp.left === 'number') {
         fab.style.left = sp.left + 'px';
         fab.style.top = sp.top + 'px';
@@ -374,7 +374,7 @@
         suppressClick = true;
         setTimeout(function () { suppressClick = false; }, 350);
         const r = fab.getBoundingClientRect();
-        try { localStorage.setItem('nx_fab_pos', JSON.stringify({ left: r.left, top: r.top })); } catch (e) {}
+        try { window.nxPrefSet && window.nxPrefSet('fab_pos', { left: r.left, top: r.top }); } catch (e) {}
       }
       drag = false;
     }
