@@ -585,6 +585,8 @@
       .nx-me-reset{flex:0 0 auto;padding:12px 16px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-weight:700;cursor:pointer}
       .nx-me-save{flex:1;padding:12px;border-radius:12px;border:0;background:linear-gradient(135deg,#1e3a6e,#6d28d9);color:#fff;font-weight:800;font-size:15px;cursor:pointer}
     `;
+    // ── Ventana de cobro con pestañas por forma de pago (v49.66) ──
+    st.textContent += '.nxPago{max-width:460px;width:100%;padding:0!important;overflow:hidden;background:#fff}.nxPgHd{background:linear-gradient(135deg,#0f2a52 0%,#1d4ed8 62%,#0891b2 100%);color:#fff;padding:16px 18px 14px;position:relative;flex:none}.nxPgX{position:absolute;top:11px;right:11px;width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}.nxPgX:active{background:rgba(255,255,255,.3)}.nxPgLb{font-size:9.5px;font-weight:800;letter-spacing:1px;opacity:.72}.nxPgTot{font-size:33px;font-weight:800;letter-spacing:-1.2px;line-height:1.12;margin-top:1px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.nxPgCli{margin-top:11px;width:100%;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;border-radius:11px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;min-width:0}.nxPgCli>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nxPgTabs{display:flex;overflow-x:auto;border-bottom:1px solid #e5e7eb;background:#f8fafc;-webkit-overflow-scrolling:touch;flex:none}.nxPgTabs::-webkit-scrollbar{height:0}.nxPgTab{flex:1 1 auto;min-width:0;border:none;background:none;padding:11px 8px 9px;font-size:11.5px;font-weight:800;color:#64748b;cursor:pointer;font-family:inherit;white-space:nowrap;border-bottom:2.5px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:5px}.nxPgTab.on{color:#1d4ed8;border-bottom-color:#1d4ed8;background:#fff}.nxPgBody{padding:14px 16px;overflow-y:auto;flex:1;min-height:0}.nxPgFl{display:block;font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#64748b;margin-bottom:6px}.nxPgBig{display:flex;align-items:center;gap:8px;border:1.5px solid #dbe3ef;border-radius:13px;padding:9px 14px;background:#fff}.nxPgBig:focus-within{border-color:#2563eb}.nxPgBig>span{font-size:14px;font-weight:800;color:#94a3b8;flex:none}.nxPgBig input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:26px;font-weight:800;color:#0f172a;font-family:inherit;text-align:right;font-variant-numeric:tabular-nums;padding:0}.nxPgQ{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.nxPgQ button{flex:1 1 auto;border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:10px;padding:8px 10px;font-size:11.5px;font-weight:800;color:#334155;cursor:pointer;font-family:inherit}.nxPgQ button:active{background:#eff6ff;border-color:#bfdbfe}.nxPgDev{margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:13px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.nxPgDev>span{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#15803d}.nxPgDev b{font-size:23px;font-weight:800;color:#15803d;font-variant-numeric:tabular-nums;letter-spacing:-.5px}.nxPgGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.nxPgF{min-width:0}.nxPgF input{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit;text-align:right;outline:none}.nxPgF input:focus{border-color:#2563eb}.nxPgSum{margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:9px 13px}.nxPgSum>div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;padding:2px 0}.nxPgSum span{color:#64748b;font-weight:700}.nxPgSum b{font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums}.nxPgOpts{margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:11px;display:none}.nxPgFt{display:flex;gap:9px;padding:11px 16px;border-top:1px solid #e5e7eb;background:#fff;flex:none}.nxPgMas{flex:none;border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:12px;padding:0 13px;font-size:12px;font-weight:800;color:#475569;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}.nxPgGo{flex:1;border:none;background:#16a34a;color:#fff;border-radius:12px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px}.nxPgGo:active{background:#15803d}@media(max-width:480px){.nxPgTab{flex:1 1 0;padding:10px 3px 8px;font-size:10.5px}}@media(max-width:400px){.nxPgTot{font-size:28px}.nxPgBig input{font-size:22px}}@media(max-width:340px){.nxPgGrid{grid-template-columns:1fr}.nxPgMas{padding:0 11px;font-size:0}.nxPgMas i{font-size:16px}}';
     document.head.appendChild(st);
   }
   
@@ -18652,52 +18654,113 @@
     const devuelta = Math.max(0, pagado - total);
     return { base: base, descPct: desc, descMonto: descMonto, total: total, itbis: itbis, subtotal: subtotal, efe: efe, tar: tar, tra: tra, che: che, nc: nc, pagado: pagado, credito: credito, devuelta: devuelta };
   }
+  // ── Ventana de cobro con PESTAÑAS por forma de pago (v49.66) ──
+  // Los 5 campos REALES (payEfe/payTar/payTra/payChe/payNc) siguen SIEMPRE en el DOM (dentro
+  // del panel "Mixto", oculto cuando no toca) para que leerCobro()/nxPosConfirmar() los lean
+  // igual que siempre. Las pestañas de un solo método usan un campo grande "espejo" (#payBig)
+  // que escribe en el campo real del método activo — cero cambios en la lógica de cobro.
+  const PG_MET = [['efe', 'payEfe', 'ti-cash', 'Efectivo'], ['tar', 'payTar', 'ti-credit-card', 'Tarjeta'], ['tra', 'payTra', 'ti-building-bank', 'Transfer.'], ['che', 'payChe', 'ti-file-check', 'Cheque'], ['nc', 'payNc', 'ti-receipt-refund', 'N. Créd.'], ['mix', '', 'ti-layout-grid', 'Mixto']];
+  const PG_QUICK_EFE = [['Exacto', 'T'], ['+500', 500], ['+1,000', 1000], ['+2,000', 2000], ['+5,000', 5000]];
+  const PG_QUICK_OTRO = [['Todo el total', 'T'], ['Mitad', 'M']];
+  let _pgTab = 'efe';
   window.nxPosCobrar = function () {
     if (!_cart.length) return;
     const t = totales();
     cerrarModal('nxPosPago');
+    _pgTab = 'efe';
+    const cliTxt = (() => { const c = _factCli ? _clientes.find(x => String(x.id) === String(_factCli)) : null; return c ? esc((c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '')) : 'Consumidor final'; })();
+    const campo = (id, lb) => `<div class="nxPgF"><label class="nxPgFl" for="${id}">${lb}</label><input id="${id}" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div>`;
     const ov = document.createElement('div'); ov.id = 'nxPosPago'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
-      <div class="modal nxPrForm" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-cash"></i> Cobrar</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosPago').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="overflow-y:auto;flex:1">
-          <div class="fr"><label>Cliente</label><button type="button" class="btn bghost bsm" style="width:100%;justify-content:flex-start" id="posCliBtn" onclick="window.nxPosCobroCliToggle()"><i class="ti ti-search"></i> <span id="posCliDisp">${(() => { const c = _factCli ? _clientes.find(x => String(x.id) === String(_factCli)) : null; return c ? esc((c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '')) : 'Consumidor final'; })()}</span></button><input type="hidden" id="posCliId" value="${esc(_factCli || '')}"></div>
-          <div class="fr" id="posCliNomBox"><label>Nombre (opcional, para el ticket)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente"></div>
-          ${_vendedores.length ? `<div class="fr"><label>Vendedor</label><select id="posVendId"><option value="">— Sin vendedor —</option>${_vendedores.map(v => `<option value="${v.id}">${esc(v.nombre)}</option>`).join('')}</select></div>` : ''}
-          <div class="fr-row">
-            <div class="fr"><label>Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
-            <div class="fr"><label>Total a pagar</label><input id="posTotalLbl" readonly value="${fmt(t.total)}" style="background:#f0fdf4;font-weight:800;color:#065f46"></div>
+      <div class="modal nxPrForm nxPago" style="max-height:94vh;display:flex;flex-direction:column">
+        <div class="nxPgHd">
+          <button class="nxPgX" type="button" aria-label="Cerrar" onclick="document.getElementById('nxPosPago').remove()"><i class="ti ti-x"></i></button>
+          <div class="nxPgLb">TOTAL A COBRAR</div>
+          <div class="nxPgTot" id="posTotalLbl">${fmt(t.total)}</div>
+          <button type="button" class="nxPgCli" id="posCliBtn" onclick="window.nxPosCobroCliToggle()"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><i class="ti ti-chevron-down" style="opacity:.6"></i></button>
+          <input type="hidden" id="posCliId" value="${esc(_factCli || '')}">
+        </div>
+        <div class="nxPgTabs" role="tablist">${PG_MET.map(m => `<button type="button" role="tab" class="nxPgTab${m[0] === 'efe' ? ' on' : ''}" id="pgt_${m[0]}" onclick="window.nxPagoTab('${m[0]}')">${m[3]}</button>`).join('')}</div>
+        <div class="nxPgBody">
+          <div id="pgSimple">
+            <label class="nxPgFl" id="pgBigLb" for="payBig">Monto recibido</label>
+            <div class="nxPgBig"><span>RD$</span><input id="payBig" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPagoBigIn()"></div>
+            <div class="nxPgQ" id="pgQuick"></div>
+            <div class="nxPgDev" id="pgDevBig"><span>Devuelta</span><b id="cobroDevBig">RD$ 0</b></div>
           </div>
-          <div style="font-size:11px;font-weight:800;color:#475569;margin:6px 0 6px">FORMA DE PAGO <span style="font-weight:600;color:#475569">(toca un método para pago completo, o reparte los montos abajo)</span></div>
-          <div class="nxPayTiles">${[['payEfe', 'ti-cash', 'EFECTIVO'], ['payTar', 'ti-credit-card', 'TARJETA'], ['payTra', 'ti-building-bank', 'TRANSF.'], ['payChe', 'ti-file-check', 'CHEQUE'], ['payNc', 'ti-receipt-refund', 'N. CRÉD.']].map(x => `<button type="button" class="nxPayTile" id="tile_${x[0]}" onclick="window.nxPosPayQuick('${x[0]}')"><i class="ti ${x[1]}"></i><span>${x[2]}</span></button>`).join('')}</div>
-          <div class="fr-row"><div class="fr"><label>Efectivo</label><input id="payEfe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Tarjeta</label><input id="payTar" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
-          <div class="fr-row"><div class="fr"><label>Transferencia</label><input id="payTra" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div><div class="fr"><label>Cheque</label><input id="payChe" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div></div>
-          <div class="fr"><label>Nota de crédito</label><input id="payNc" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#475569">Pagado</span><b id="cobroPagado">RD$ 0</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span id="cobroRestoLbl" style="color:#475569">Pendiente</span><b id="cobroResto" style="color:#16a34a">RD$ 0</b></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;padding:1px 0"><span style="color:#475569">Devuelta</span><b id="cobroDev" style="color:#16a34a">RD$ 0</b></div>
-            <div id="cobroFiadoNote"></div>
+          <div id="pgMixto" style="display:none">
+            <div class="nxPgFl" style="margin-bottom:8px">Reparte el total entre varios métodos</div>
+            <div class="nxPgGrid">${campo('payEfe', 'Efectivo')}${campo('payTar', 'Tarjeta')}${campo('payTra', 'Transferencia')}${campo('payChe', 'Cheque')}</div>
+            <div class="nxPgGrid" style="margin-top:10px;grid-template-columns:1fr">${campo('payNc', 'Nota de crédito')}</div>
           </div>
-          <div id="finBox" style="display:none;margin-top:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:9px 12px">
+          <div class="nxPgSum">
+            <div><span>Pagado</span><b id="cobroPagado">RD$ 0</b></div>
+            <div><span id="cobroRestoLbl">Pendiente</span><b id="cobroResto" style="color:#16a34a">RD$ 0</b></div>
+            <div id="pgDevRow" style="display:none"><span>Devuelta</span><b id="cobroDev" style="color:#16a34a">RD$ 0</b></div>
+          </div>
+          <div id="cobroFiadoNote"></div>
+          <div id="finBox" style="display:none;margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px 13px">
             <label style="display:flex;gap:7px;align-items:center;font-size:12px;font-weight:800;color:#1e40af;cursor:pointer"><input type="checkbox" id="finChk" style="width:16px;height:16px;accent-color:#2563eb" onchange="window.nxPosCobroCalc()"> Financiar el resto en CUOTAS</label>
-            <div id="finCfg" style="display:none;margin-top:6px">
-              <div class="fr-row"><div class="fr"><label># de cuotas</label><input id="finN" inputmode="numeric" value="4" oninput="window.nxPosCobroCalc()"></div>
-              <div class="fr"><label>Frecuencia</label><select id="finFrec" onchange="window.nxPosCobroCalc()"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div></div>
-              <div id="finPrev" style="font-size:11.5px;color:#1e40af;font-weight:800"></div>
+            <div id="finCfg" style="display:none;margin-top:7px">
+              <div class="nxPgGrid"><div class="nxPgF"><label class="nxPgFl" for="finN"># de cuotas</label><input id="finN" inputmode="numeric" value="4" oninput="window.nxPosCobroCalc()"></div>
+              <div class="nxPgF"><label class="nxPgFl" for="finFrec">Frecuencia</label><select id="finFrec" onchange="window.nxPosCobroCalc()" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option></select></div></div>
+              <div id="finPrev" style="font-size:11.5px;color:#1e40af;font-weight:800;margin-top:6px"></div>
+            </div>
+          </div>
+          <div class="nxPgOpts" id="pgOpts">
+            <div class="nxPgF" id="posCliNomBox" style="margin-bottom:10px"><label class="nxPgFl" for="posCli">Nombre para el ticket (opcional)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente" style="text-align:left"></div>
+            <div class="nxPgGrid">
+              ${_vendedores.length ? `<div class="nxPgF"><label class="nxPgFl" for="posVendId">Vendedor</label><select id="posVendId" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"><option value="">— Sin vendedor —</option>${_vendedores.map(v => `<option value="${v.id}">${esc(v.nombre)}</option>`).join('')}</select></div>` : ''}
+              <div class="nxPgF"><label class="nxPgFl" for="posDesc">Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
             </div>
           </div>
         </div>
-        <div class="fe" style="margin-top:10px;gap:8px">
-          <button class="btn bghost" type="button" onclick="window.nxPosPagoExacto()">Efectivo exacto</button>
-          <button class="btn bc1" type="button" onclick="window.nxPosConfirmar()"><i class="ti ti-check"></i> Confirmar venta</button>
+        <div class="nxPgFt">
+          <button class="nxPgMas" type="button" aria-label="Más opciones de cobro" onclick="window.nxPagoOpts()"><i class="ti ti-adjustments-horizontal"></i> Opciones</button>
+          <button class="nxPgGo" type="button" onclick="window.nxPosConfirmar()"><i class="ti ti-check"></i> Confirmar venta</button>
         </div>
       </div>`;
     document.body.appendChild(ov);
     scanMoney(ov);
+    window.nxPagoTab('efe');
+  };
+  // Cambiar de pestaña: limpia TODOS los métodos y prellena el elegido con el total pendiente
+  window.nxPagoTab = function (k) {
+    _pgTab = k;
+    PG_MET.forEach(m => { const b = document.getElementById('pgt_' + m[0]); if (b) b.classList.toggle('on', m[0] === k); });
+    ['payEfe', 'payTar', 'payTra', 'payChe', 'payNc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const sim = document.getElementById('pgSimple'), mix = document.getElementById('pgMixto');
+    if (sim) sim.style.display = k === 'mix' ? 'none' : '';
+    if (mix) mix.style.display = k === 'mix' ? '' : 'none';
+    if (k === 'mix') { const b0 = document.getElementById('payBig'); if (b0) b0.value = ''; window.nxPosCobroCalc(); return; }
+    const met = PG_MET.find(m => m[0] === k) || PG_MET[0];
+    const lb = document.getElementById('pgBigLb'); if (lb) lb.textContent = k === 'efe' ? 'Monto recibido' : 'Monto por ' + met[3].replace('.', '').toLowerCase();
+    const dv = document.getElementById('pgDevBig'); if (dv) dv.style.display = k === 'efe' ? '' : 'none';
+    const qz = document.getElementById('pgQuick');
+    if (qz) qz.innerHTML = (k === 'efe' ? PG_QUICK_EFE : PG_QUICK_OTRO).map(q => `<button type="button" onclick="window.nxPagoQuick('${q[1]}')">${q[0]}</button>`).join('');
+    const c = leerCobro(); const big = document.getElementById('payBig');
+    if (big) big.value = Math.round(c.total).toLocaleString('en-US');
+    window.nxPagoBigIn();
+  };
+  // El campo grande es un ESPEJO: escribe en el campo real del método activo
+  window.nxPagoBigIn = function () {
+    const met = PG_MET.find(m => m[0] === _pgTab);
+    if (met && met[1]) { const big = document.getElementById('payBig'), el = document.getElementById(met[1]); if (el) el.value = big ? big.value : ''; }
     window.nxPosCobroCalc();
   };
+  // Botones rápidos: 'T' = el total exacto · 'M' = la mitad · un número = se SUMA a lo tecleado
+  window.nxPagoQuick = function (v) {
+    const big = document.getElementById('payBig'); if (!big) return;
+    const c = leerCobro();
+    let n;
+    if (v === 'T') n = c.total;
+    else if (v === 'M') n = Math.round(c.total / 2);
+    else n = parseMoney(big.value) + Number(v);
+    big.value = Math.round(Math.max(0, n)).toLocaleString('en-US');
+    window.nxPagoBigIn();
+  };
+  window.nxPagoOpts = function () { const b = document.getElementById('pgOpts'); if (b) b.style.display = (b.style.display === 'block') ? 'none' : 'block'; };
   // Selector de cliente dentro de "Cobrar" — antes un <select> con TODOS los clientes en una
   // lista larga sin buscar; ahora ventana con buscador + Recientes/Favoritos, mismo motor
   // COMPARTIDO nxPosClienteAbrir() que usa Factura (ver nxFacCliToggle más arriba). #posCliId se
@@ -18711,27 +18774,13 @@
       window.nxPosCobroCalc();
     });
   };
-  window.nxPosPagoExacto = function () {
-    const c = leerCobro(); const el = document.getElementById('payEfe');
-    if (el) { el.value = Math.round(c.total).toLocaleString('en-US'); }
-    window.nxPosCobroCalc();
-  };
-  // Pago completo de UN toque (fichas estilo premium): llena ese método con el total y limpia el resto
-  window.nxPosPayQuick = function (id) {
-    const c = leerCobro();
-    ['payEfe', 'payTar', 'payTra', 'payChe', 'payNc'].forEach(k => {
-      const el = document.getElementById(k); if (el) el.value = '';
-      const tl = document.getElementById('tile_' + k); if (tl) tl.classList.toggle('on', k === id);
-    });
-    const el = document.getElementById(id); if (el) el.value = Math.round(c.total).toLocaleString('en-US');
-    window.nxPosCobroCalc();
-  };
   window.nxPosCobroCalc = function () {
     const box = document.getElementById('posCliNomBox'); const cliId = val('posCliId'); if (box) box.style.display = cliId ? 'none' : '';
     const c = leerCobro();
     const setT = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    const elTot = document.getElementById('posTotalLbl'); if (elTot) elTot.value = fmt(c.total);
-    setT('cobroPagado', fmt(c.pagado)); setT('cobroResto', fmt(c.credito)); setT('cobroDev', fmt(c.devuelta));
+    const elTot = document.getElementById('posTotalLbl'); if (elTot) { if (elTot.tagName === 'INPUT') elTot.value = fmt(c.total); else elTot.textContent = fmt(c.total); }
+    setT('cobroPagado', fmt(c.pagado)); setT('cobroResto', fmt(c.credito)); setT('cobroDev', fmt(c.devuelta)); setT('cobroDevBig', fmt(c.devuelta));
+    const dvRow = document.getElementById('pgDevRow'); if (dvRow) dvRow.style.display = c.devuelta > 0 ? 'flex' : 'none';
     const rl = document.getElementById('cobroRestoLbl'); if (rl) rl.textContent = c.credito > 0 ? 'Falta / Crédito' : 'Pendiente';
     const rEl = document.getElementById('cobroResto'); if (rEl) rEl.style.color = c.credito > 0 ? '#dc2626' : '#16a34a';
     const note = document.getElementById('cobroFiadoNote');
@@ -25430,7 +25479,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     // ── Adaptación premium (diseño Stitch aprobado): etiquetas de stock, total azul y fichas de pago ──
     // Botones del NÚCLEO (bc1 morado) en azul real DENTRO del POS y sus modales (no toca seguros)
     st.textContent += '.nxLupaBox{display:flex;align-items:center;gap:8px;border:1.5px solid #cbd5e1;border-radius:11px;background:#fff;padding:0 12px;margin-bottom:8px}.nxLupaBox>i{color:#94a3b8;font-size:16px;flex:none;background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;position:static!important;padding:0!important}.nxLupaBox>i.click{color:#2563eb;cursor:pointer}.nxLupaBox input{flex:1;min-width:0;border:none;outline:none;height:42px;font-size:13px;background:transparent;color:#1e293b;font-family:inherit}' + 'html body .nc i.nxPpkChev,html body i.nxPpkChev{background:#f1f5f9!important;background-image:none!important;color:#64748b!important;box-shadow:none!important;border:0!important;text-shadow:none!important}html body .nc .nxPpkWrap.on i.nxPpkChev,html body .nxPpkWrap.on i.nxPpkChev{background:#dbeafe!important;color:#2563eb!important}';
-    st.textContent += '.nxRepKb{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}.nxRepCol{min-width:210px;max-width:240px;flex:1 0 210px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px}.nxRepColH{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--rc,#475569);border-bottom:2px solid var(--rc,#e2e8f0);padding-bottom:6px;margin-bottom:8px}.nxRepColH b{background:#fff;border-radius:7px;padding:1px 7px;font-size:10px}.nxRepCard{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;margin-bottom:7px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(15,23,42,.05)}.nxRepCard:active{opacity:.75}.nxRepNum{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:#2563eb;margin-bottom:2px}.nxRepNum span{color:#94a3b8;font-weight:700}.nxRepEq{font-size:12.5px;font-weight:800;color:#0f172a;line-height:1.15}.nxRepCli{font-size:10.5px;color:#475569}.nxRepFalla{font-size:10px;color:#64748b;margin-top:2px}.nxRepPre{font-size:11.5px;font-weight:800;color:#16a34a;margin-top:3px}.nxRepEmpty{text-align:center;color:#cbd5e1;font-size:11px;padding:10px}.nxRepChips{display:flex;gap:5px;flex-wrap:wrap}.nxRepChip{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}.nxRepChip.on{background:var(--rc,#2563eb);border-color:var(--rc,#2563eb);color:#fff}.nxTQuick{margin-left:auto;border:0;background:#2563eb;color:#fff;border-radius:11px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.3)}.nxTQuick:active{background:#1d4ed8}' + '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}.nxPayTiles{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:4px 0 10px}.nxPayTile{display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px solid #e2e8f0;background:#fff;border-radius:11px;padding:9px 2px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}.nxPayTile i{font-size:17px;color:#475569}.nxPayTile span{font-size:8px;font-weight:800;color:#475569;letter-spacing:.3px}.nxPayTile.on{border-color:#2563eb;background:#eff6ff}.nxPayTile.on i,.nxPayTile.on span{color:#2563eb}@media(max-width:380px){.nxPayTile i{font-size:15px}.nxPayTile{padding:7px 1px}}';
+    st.textContent += '.nxRepKb{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch}.nxRepCol{min-width:210px;max-width:240px;flex:1 0 210px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:9px}.nxRepColH{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--rc,#475569);border-bottom:2px solid var(--rc,#e2e8f0);padding-bottom:6px;margin-bottom:8px}.nxRepColH b{background:#fff;border-radius:7px;padding:1px 7px;font-size:10px}.nxRepCard{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:9px 10px;margin-bottom:7px;cursor:pointer;font-family:inherit;box-shadow:0 2px 6px rgba(15,23,42,.05)}.nxRepCard:active{opacity:.75}.nxRepNum{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;color:#2563eb;margin-bottom:2px}.nxRepNum span{color:#94a3b8;font-weight:700}.nxRepEq{font-size:12.5px;font-weight:800;color:#0f172a;line-height:1.15}.nxRepCli{font-size:10.5px;color:#475569}.nxRepFalla{font-size:10px;color:#64748b;margin-top:2px}.nxRepPre{font-size:11.5px;font-weight:800;color:#16a34a;margin-top:3px}.nxRepEmpty{text-align:center;color:#cbd5e1;font-size:11px;padding:10px}.nxRepChips{display:flex;gap:5px;flex-wrap:wrap}.nxRepChip{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer;font-family:inherit}.nxRepChip.on{background:var(--rc,#2563eb);border-color:var(--rc,#2563eb);color:#fff}.nxTQuick{margin-left:auto;border:0;background:#2563eb;color:#fff;border-radius:11px;padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;box-shadow:0 4px 12px rgba(37,99,235,.3)}.nxTQuick:active{background:#1d4ed8}' + '#v-pos .btn.bc1,.nxPrForm .btn.bc1{background:#2563eb!important;border-color:#2563eb!important;color:#fff}#v-pos .btn.bc1:active,.nxPrForm .btn.bc1:active{background:#1d4ed8!important}' + '.nxInvPills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.nxInvPill{border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:999px;padding:6px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .12s}.nxInvPill span{font-weight:800;opacity:.7;margin-left:2px}.nxInvPill.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxInvStk{font-size:10.5px;font-weight:700;white-space:nowrap}.nxInvStk.ok{color:#2563eb}.nxInvStk.low{color:#dc2626}.nxInvStk.out{color:#dc2626;font-weight:800}' + '.nxPosStkB{font-size:8.5px;font-weight:800;letter-spacing:.3px;padding:2px 7px;border-radius:6px;background:#eff6ff;color:#2563eb;white-space:nowrap}.nxPosStkB.low{background:#fef2f2;color:#dc2626}.nxPosStkB.out{background:#dc2626;color:#fff}.nxPosStkB.srv{background:#f0fdfa;color:#0d9488}.nxPosCard{box-shadow:0 1px 3px rgba(15,23,42,.04)}.nxPosTotPay{display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px dashed #e2e8f0;margin-top:4px}.nxPosTotPay span{font-size:12px;font-weight:700;color:#475569}.nxPosTotPay b{font-size:20px;font-weight:800;color:#2563eb;letter-spacing:-.3px}';
     st.textContent += '.nxClaveWrap{border:1px solid #e2e8f0;border-radius:12px;padding:10px;background:#f8fafc}.nxClaveTabs{display:flex;gap:4px;margin-bottom:8px}.nxClaveTab{flex:1;border:1.5px solid #e2e8f0;background:#fff;color:#475569;border-radius:8px;padding:7px 4px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}.nxClaveTab.on{background:#2563eb;border-color:#2563eb;color:#fff}.nxClaveGrid{display:grid;grid-template-columns:repeat(3,40px);gap:8px;justify-content:center;margin:6px auto}.nxClaveDot{width:40px;height:40px;border-radius:50%;border:2px solid #cbd5e1;background:#fff;color:#94a3b8;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}.nxClaveDot.on{border-color:#2563eb;background:#2563eb;color:#fff}.nxClaveResumen{text-align:center;font-size:11px;color:#475569;margin:6px 0;font-family:var(--mono,monospace)}.nxClaveBorrar{display:flex;align-items:center;justify-content:center;gap:4px;margin:0 auto;border:none;background:none;color:#dc2626;font-size:11px;font-weight:700;cursor:pointer;padding:4px;font-family:inherit}.nxClavePinDisp{text-align:center;font-size:20px;font-weight:800;letter-spacing:6px;color:#0f172a;margin-bottom:8px;min-height:26px}.nxClaveKeypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:220px;margin:0 auto}.nxClaveKey{height:42px;border:1.5px solid #e2e8f0;background:#fff;border-radius:9px;font-size:15px;font-weight:800;color:#1e293b;cursor:pointer;font-family:inherit}.nxClaveKey:active{background:#eff6ff}.nxClaveGridRO{display:inline-grid;grid-template-columns:repeat(3,22px);gap:3px;vertical-align:middle}.nxClaveDotRO{width:22px;height:22px;border-radius:50%;border:1.5px solid #cbd5e1;color:#94a3b8;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}.nxClaveDotRO.on{border-color:#2563eb;background:#2563eb;color:#fff}.nxClavePinRO{font-family:var(--mono,monospace);font-size:16px;font-weight:800;letter-spacing:5px;color:#0f172a}';
     // ── Cuotas/Financiamiento PREMIUM: CSS compartida, ver window.nxFPEnsureCSS ──
     window.nxFPEnsureCSS();
