@@ -18698,7 +18698,9 @@
   // igual que siempre. Las pestañas de un solo método usan un campo grande "espejo" (#payBig)
   // que escribe en el campo real del método activo — cero cambios en la lógica de cobro.
   const PG_MET = [['efe', 'payEfe', 'ti-cash', 'Efectivo'], ['tar', 'payTar', 'ti-credit-card', 'Tarjeta'], ['tra', 'payTra', 'ti-building-bank', 'Transfer.'], ['che', 'payChe', 'ti-file-check', 'Cheque'], ['nc', 'payNc', 'ti-receipt-refund', 'N. Créd.'], ['mix', '', 'ti-layout-grid', 'Mixto']];
-  const PG_QUICK_EFE = [['Exacto', 'T'], ['+500', 500], ['+1,000', 1000], ['+2,000', 2000], ['+5,000', 5000]];
+  // Atajos de efectivo = BILLETES REALES de RD (50/100/200/500/1000/2000). El '+5,000' que había
+  // no corresponde a ningún billete dominicano, y faltaban los dos más comunes (100 y 200).
+  const PG_QUICK_EFE = [['Exacto', 'T'], ['+100', 100], ['+200', 200], ['+500', 500], ['+1,000', 1000], ['+2,000', 2000]];
   const PG_QUICK_OTRO = [['Todo el total', 'T'], ['Mitad', 'M']];
   let _pgTab = 'efe';
   window.nxPosCobrar = function () {

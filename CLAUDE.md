@@ -5478,6 +5478,26 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### Auditoría pedida por el dueño: "en la ventana de cobro falta más botones, confirmas" (26-jul-2026, v49.71)
+El dueño puso a prueba si de verdad se verifica o solo se le da la razón. Se comparó
+`nxPosCobrar` **antes (v49.65) contra ahora**, extrayendo los dos cuerpos de función de git y
+listando ids, funciones llamadas y botones con su `onclick`.
+- **Resultado honesto: NO falta ninguno de los que había.** "Volver" pasó a la ✕ del encabezado, las
+  5 fichas de método a 6 pestañas (las mismas 5 + Mixto), "Efectivo exacto" al botón "Exacto" dentro
+  de la pestaña Efectivo, y Cliente/Confirmar venta siguen igual. Además hay uno nuevo, "Opciones"
+  (nombre del ticket / vendedor / descuento). Los 5 campos de pago (`payEfe`…`payNc`) siguen todos en
+  el DOM — al principio parecieron "desaparecidos" porque ahora se generan con el helper `campo()` y
+  el `id` va en una variable, no literal: **al auditar por `grep` de ids literales, ojo con el HTML
+  generado por helpers.**
+- **Pero sí apareció un defecto real, y de contexto dominicano:** los atajos de efectivo eran
+  `+500 / +1,000 / +2,000 / +5,000`. **En RD no existe el billete de RD$5,000** (los reales son 50,
+  100, 200, 500, 1000 y 2000) y faltaban los dos que más se reciben en el mostrador, **100 y 200**.
+  Cambiados a `Exacto · +100 · +200 · +500 · +1,000 · +2,000`. Siguen siendo aditivos, así que 5,000
+  se arma con +2,000 +2,000 +1,000 — como se cuentan los billetes en la mano.
+- Verificado con las 52 comprobaciones de la ventana de cobro (49 anteriores + 3 nuevas: son 6
+  atajos, ninguno dice 5,000, y el que ahora está en la 6ta posición sigue sumando bien). Sin
+  desborde en 360/390/430/1280px.
+
 ### BUG DE FONDO: `.nxPf` recortaba a 92vh TODA pantalla completa del POS (26-jul-2026, v49.70)
 El dueño: *"No puedo hacer scroll"*, con captura de Factura en su iPhone. Se le preguntó qué pasaba
 exactamente (3 opciones) y respondió **"Llego hasta ahí y se acaba — debajo no hay nada"**. Esa
