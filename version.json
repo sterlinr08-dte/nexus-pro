@@ -1,7 +1,12 @@
 {
-  "version": "49.63",
+  "version": "49.64",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.64",
+      "t": "Clientes se puede usar de verdad desde el celular",
+      "d": "En el tel\u00e9fono la lista de Clientes te obligaba a deslizar de lado, y al hacerlo **perd\u00edas el nombre**: ve\u00edas tres filas seguidas diciendo PARCIAL RD$ 4,500 sin saber de qui\u00e9n eran.\n\nAhora cada cliente es una tarjeta con el nombre siempre arriba y lo que debe en grande y en rojo. Ya no hay que deslizar de lado. En la computadora la tabla se ve igual que siempre.\n\n\u2022 El nombre va en UNA sola l\u00ednea (antes \"ADELMA RULLINER LUNA ALMONTE\" se part\u00eda en cuatro)\n\u2022 La referencia, la c\u00e9dula y la ARS quedan juntas en una l\u00ednea peque\u00f1a debajo\n\u2022 Empresa y Vigencia se ocultan en el celular \u2014 est\u00e1n completas en la ficha del cliente\n\nARREGLADO \u2014 la lupa de b\u00fasqueda sal\u00eda como un iconito pelado, sin su recuadro. Su dise\u00f1o solo se cargaba al ABRIR la ventana de b\u00fasqueda, o sea nunca antes del primer toque. Ahora es un bot\u00f3n \"Buscar\" en condiciones, aqu\u00ed y en Facturas.\n\nARREGLADO \u2014 las pesta\u00f1as (Nuevo / Activos / En proceso / VIP / Inhabilitados) se sal\u00edan del borde y la \u00faltima no se ve\u00eda; la barra para deslizarlas est\u00e1 oculta a prop\u00f3sito, as\u00ed que no hab\u00eda c\u00f3mo llegar a ella. Ahora bajan a una segunda l\u00ednea y se ven todas.\n\nARREGLADO \u2014 los tres filtros ya caben en una sola l\u00ednea, y los r\u00f3tulos de los recuadros de arriba (\"CON BALANCE PENDIE...\") ya no salen cortados."
+    },
     {
       "v": "49.63",
       "t": "ARREGLADO (importante) \u2014 El cobrado ahora va por tu ciclo 20-al-20, no por mes de calendario",

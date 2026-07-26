@@ -5478,6 +5478,54 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### Clientes en el celular: la tabla se volvió tarjeta, y un bug real de la lupa (26-jul-2026, v49.64)
+El dueño mandó DOS capturas de la misma pantalla — una con scroll a la izquierda y otra a la derecha —
+y preguntó qué mejorar. Al deslizar a la derecha **se pierde el nombre**: tres filas seguidas diciendo
+`PARCIAL · RD$ 4,500` sin saber de quién son.
+- **Causa: un pendiente mío.** En la v48.54 Facturas se convirtió a `.sf-tbl` (colapsa a tarjeta en
+  móvil) pero a Clientes **solo se le puso el color** — se quedó con `<table>` dentro de `.tw`, 9
+  columnas, y la regla global `@media(max-width:480px){table{min-width:500px}}` forzándole scroll.
+- **La tabla estática pasó a `class="sf-tbl sf-cli"`** y cada `<td>` del render ganó su `data-lb`.
+  Bloque `.sf-cli` nuevo dentro del `@media(max-width:720px)` ya existente, con `order:` para el
+  orden visual **sin tocar el DOM** (reordenar movería las columnas del escritorio): nombre (100%) →
+  Pendiente + Estado → Prima · Plan · Agente → Acciones (100%). Empresa y Vigencia se ocultan con
+  `sf-tbl-hide-mb`. Etiquetas `::before` en línea para las 3 celdas chicas; ocultas en Estado y
+  Acciones (el badge y los botones se explican solos).
+- **Fila compacta:** el nombre pasó a UNA línea con elipsis (`.cli-nom`) y referencia + cédula + ARS +
+  creador a una sub-línea (`.cli-sub`). Antes "ADELMA RULLINER LUNA ALMONTE" se partía en 4 líneas.
+  El nombre del agente se recorta con elipsis en vez de envolverse y salirse de la tarjeta.
+- **BUG REAL encontrado MIDIENDO, no a ojo (v49.57, mío):** la lupa medía **19px de alto** cuando su
+  CSS dice 42px. Causa: `nxBuscaFiltroHTML()` llamaba a `nxBuscaEnsureCSS()` (el CSS del *campo*)
+  pero **no a `nxBuscaFiltroCSS()`** — que solo se invocaba desde `nxBuscaFiltroAbrir()`. O sea el
+  botón salía **sin ningún estilo hasta que se abría la ventana una vez**; en la captura del dueño se
+  ve como un iconito pelado. Afectaba también a Facturas. Arreglado llamándolo también al renderizar.
+  Se le sumó una opción `label` (retrocompatible) y ahora dice **"Buscar"** en las dos pantallas.
+- **Pestañas:** `.nxft-flex` es una tira con scroll horizontal y **la barra oculta a propósito**, así
+  que la última pestaña (VIP/Inhabilitados) no se veía ni había cómo llegar a ella. En ≤620px ahora
+  envuelve (`flex-wrap:wrap`) en vez de deslizarse: nada queda cortado.
+- **Filtros y rótulos:** los 3 `<select>` con `flex:1 1 0;min-width:0` y etiquetas cortas (Plan /
+  Estado / Agente) caben en una fila. Los rótulos de los KPI (`.lb`/`.sub`) pueden ocupar 2 líneas en
+  ≤480px en vez de cortarse ("CON BALANCE PENDIE…") — **el monto (`.v`) sigue protegido** como se
+  decidió en la v48.56, solo se relajaron etiqueta y subtítulo.
+  - **Detalle de orden en la cadena (misma trampa que la v49.35):** la primera versión de esa media
+    query se insertó en el primer bloque `@media(max-width:480px)` del archivo, que va ~230 líneas
+    ANTES de la regla base `.nxSf .sf-kpi .lb` — misma especificidad, gana la última, no hacía nada.
+    Se movió justo después de la regla base. Verificar la POSICIÓN, no solo la especificidad.
+- **Una alternativa se probó y se descartó con medición:** meter Acciones en la misma fila que
+  Pendiente/Estado bajaba la tarjeta de 167px a 149px, pero la captura mostró los botones cayendo en
+  medio de la tarjeta con Prima/Plan flotando al lado. 18px no valen una tarjeta desordenada — se
+  volvió al reparto limpio de 4 filas.
+- Verificado con Playwright y el código real extraído por contenido (`rCli`, `pintarLupaCli`,
+  `nxBuscaFiltroHTML/CSS` + ~20 helpers reales y el CSS real), servido por HTTP y con los 3 clientes
+  de la captura del dueño: en 390px cada cliente es una tarjeta de 167px con **cero desborde**
+  (página y contenedor de tabla en 0), el nombre y el pendiente siempre visibles, la lupa mide
+  **92×42** con su texto, y en 1280px la tabla sigue con sus 9 columnas igual que antes. 0 errores de
+  consola.
+  - **Nota de método (error propio):** al armar el harness escribí
+    `open(f,'w').write(... + open(f).read())` — Python trunca el archivo al abrirlo para escritura
+    ANTES de evaluar el argumento, así que la lectura devolvió vacío y borré el extracto. Nunca leer
+    y escribir el mismo archivo en una sola expresión.
+
 ### Facturas — 4 mejoras salidas de una captura del dueño (26-jul-2026, v49.59)
 El dueño mandó la pantalla de Facturas en su iPhone y preguntó "cómo podemos mejorar". Se auditó
 contra el código real (no solo la captura) y salieron 4 cosas, ordenadas por lo que de verdad le
