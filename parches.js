@@ -24490,9 +24490,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxRepGuardar = async function () {
     const cli = val('repCli').trim(), eq = val('repEq').trim(), falla = val('repFalla').trim();
     if (!cli || !eq || !falla) { toast('err', 'Faltan datos', 'Cliente, equipo y falla son obligatorios'); return; }
+    const abono = moneyVal('repAbo');
+    // REGLAMENTO DEL TALLER: el avance al recibir un equipo es efectivo (entra al arqueo), así que
+    // exige caja abierta — mismo candado del §2/§3. Sin avance no estorba.
+    if (abono > 0 && !(_caja && _caja.id)) {
+      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir el avance de ' + fmt(abono) + ', o recibe el equipo sin avance.'); return; }
+    }
     let numero = null; try { numero = await nextSeq('reparacion'); } catch (e) {}
     if (!numero) numero = 'REP-' + String((_reps.length + 1)).padStart(5, '0');
-    const abono = moneyVal('repAbo');
     const d = { numero: numero, cliente_nombre: cli.toUpperCase(), cliente_telefono: val('repTel').trim() || null, equipo: eq, imei: val('repImei').trim() || null, falla: falla, estado_fisico: val('repFis').trim() || null, clave: nxClaveValor('repNueva') || null, accesorios: val('repAcc').trim() || null, presupuesto: moneyVal('repPre'), abono: abono, tecnico: val('repTec').trim() || null, estado: 'recibido' };
     try {
       const r = await getAPI().post('pos_reparaciones', d);
@@ -24588,6 +24594,11 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxRepEntregarGo = async function (id) {
     const r = _reps.find(x => String(x.id) === String(id)); if (!r) return;
     const monto = moneyVal('reMonto'); const metodo = val('reMet') || 'Efectivo';
+    // REGLAMENTO DEL TALLER: cobrar la entrega en efectivo exige caja abierta (mismo candado del §2/§3).
+    if (monto > 0 && /efectivo/i.test(metodo) && !(_caja && _caja.id)) {
+      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(monto) + ' en efectivo'); return; }
+    }
     try {
       const d = { estado: 'entregado', cobrado: true, cobrado_monto: Number(r.abono || 0) + (monto || 0), cobrado_metodo: metodo, entregado_at: new Date().toISOString() };
       if (_posCfg.garantia_rep_dias > 0) { const gh = new Date(); gh.setDate(gh.getDate() + Number(_posCfg.garantia_rep_dias)); d.garantia_hasta = gh.getFullYear() + '-' + String(gh.getMonth() + 1).padStart(2, '0') + '-' + String(gh.getDate()).padStart(2, '0'); }

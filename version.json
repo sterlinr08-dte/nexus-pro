@@ -1,7 +1,12 @@
 {
-  "version": "49.92",
+  "version": "49.93",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.93",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO DEL TALLER (Reparaciones): el dinero del taller ya no se sale del arqueo. · ARREGLADO: recibir un equipo con un AVANCE en efectivo, o entregar y cobrar en efectivo, con la caja cerrada dejaba ese dinero fuera de todo arqueo — el mismo hueco que ya se cerró en las ventas. Ahora te manda a abrir la caja primero (transferencia/tarjeta sí se pueden con la caja cerrada). Recibir un equipo SIN avance no necesita caja. · Lo que ya funcionaba se confirmó: cliente/equipo/falla son obligatorios al recibir, la garantía se fija sola al entregar según los días que configuraste, y el cobro de la entrega puede ser mayor que el presupuesto (el diagnóstico final manda), sin toparlo."
+    },
     {
       "v": "49.92",
       "fecha": "2026-07-26",
