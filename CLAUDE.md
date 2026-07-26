@@ -8721,3 +8721,25 @@ forward-looking. Texto completo en **`REGLAMENTOS.md` §9**.
 - **Pendiente:** e-CF de la DGII (ver §4, obligatorio 15-nov-2026, aplica igual a Seguros) · las
   comisiones de agente y las transferencias entre agentes tienen su propia lógica, no auditadas en
   esta tanda (serían su propio reglamento si el dueño lo pide).
+
+### Seguros · Factura impresa — sin NCF + pendiente de meses anteriores en vivo (26-jul-2026, v49.96)
+El dueño pidió sobre la factura impresa que se le da al cliente (`generarHTMLFactura`): (1) quitar el
+número de comprobante, (2) mostrar lo que debe de meses anteriores.
+- **Quitado el NCF:** se eliminó el recuadro amarillo "NCF: ..." del encabezado y la línea "Tipo de
+  comprobante: B02 - ..." del pie. **OJO fiscal:** el NCF es obligatorio por la DGII en una factura con
+  Comprobante Fiscal (Crédito Fiscal B01). La mayoría de los clientes del seguro son Consumidor Final,
+  pero si algún día factura a un cliente B01, hay que devolver el NCF para ese caso — se le avisó al
+  dueño. Es solo display: el NCF se sigue guardando y asignando de forma atómica (ver §9/§4).
+- **Pendiente de meses anteriores EN VIVO:** la línea (antes "Deuda de períodos anteriores", que usaba
+  el `f.deuda_ant` CONGELADO al generar) ahora calcula el saldo real al momento de imprimir con
+  `_saldoFacturasCliente(c.id)` — suma el saldo de las OTRAS facturas del cliente (excluye la que se
+  está imprimiendo) + `deudaAnt(c)` (la deuda anterior al sistema, que antes NO salía en la factura).
+  Solo se muestra si es > 0. `TOTAL A PAGAR` pasó de `f.total` (congelado) a `primaMes + pendPrev`
+  (prima del mes + pendiente real). **Respaldo:** si no hay cliente cargado (`c` null), cae al
+  `f.deuda_ant`/`f.total` congelados de siempre. Como el documento ya no lleva NCF, funciona como un
+  estado de cuenta/cobro (refleja la realidad actual), no como comprobante fiscal congelado.
+- Verificado con 13 comprobaciones sobre el código real (`generarHTMLFactura`+`_saldoFacturasCliente`
+  extraídos por contenido): sin NCF ni tipo de comprobante, el pendiente en vivo (mayo pagada + deuda
+  anterior 500 → 500), total = prima + pendiente, cliente al día no muestra la línea, y el respaldo sin
+  cliente usa el valor congelado. `node --check` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
