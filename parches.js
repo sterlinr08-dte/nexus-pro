@@ -587,6 +587,8 @@
     `;
     // ── Ventana de cobro con pestañas por forma de pago (v49.66) ──
     st.textContent += '.nxPago{max-width:460px;width:100%;padding:0!important;overflow:hidden;background:#fff}.nxPgHd{background:linear-gradient(135deg,#0f2a52 0%,#1d4ed8 62%,#0891b2 100%);color:#fff;padding:16px 18px 14px;position:relative;flex:none}.nxPgX{position:absolute;top:11px;right:11px;width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}.nxPgX:active{background:rgba(255,255,255,.3)}.nxPgLb{font-size:9.5px;font-weight:800;letter-spacing:1px;opacity:.72}.nxPgTot{font-size:33px;font-weight:800;letter-spacing:-1.2px;line-height:1.12;margin-top:1px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.nxPgCli{margin-top:11px;width:100%;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;border-radius:11px;padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;min-width:0}.nxPgCli>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nxPgTabs{display:flex;overflow-x:auto;border-bottom:1px solid #e5e7eb;background:#f8fafc;-webkit-overflow-scrolling:touch;flex:none}.nxPgTabs::-webkit-scrollbar{height:0}.nxPgTab{flex:1 1 auto;min-width:0;border:none;background:none;padding:11px 8px 9px;font-size:11.5px;font-weight:800;color:#64748b;cursor:pointer;font-family:inherit;white-space:nowrap;border-bottom:2.5px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:5px}.nxPgTab.on{color:#1d4ed8;border-bottom-color:#1d4ed8;background:#fff}.nxPgBody{padding:14px 16px;overflow-y:auto;flex:1;min-height:0}.nxPgFl{display:block;font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#64748b;margin-bottom:6px}.nxPgBig{display:flex;align-items:center;gap:8px;border:1.5px solid #dbe3ef;border-radius:13px;padding:9px 14px;background:#fff}.nxPgBig:focus-within{border-color:#2563eb}.nxPgBig>span{font-size:14px;font-weight:800;color:#94a3b8;flex:none}.nxPgBig input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:26px;font-weight:800;color:#0f172a;font-family:inherit;text-align:right;font-variant-numeric:tabular-nums;padding:0}.nxPgQ{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.nxPgQ button{flex:1 1 auto;border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:10px;padding:8px 10px;font-size:11.5px;font-weight:800;color:#334155;cursor:pointer;font-family:inherit}.nxPgQ button:active{background:#eff6ff;border-color:#bfdbfe}.nxPgDev{margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:13px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.nxPgDev>span{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#15803d}.nxPgDev b{font-size:23px;font-weight:800;color:#15803d;font-variant-numeric:tabular-nums;letter-spacing:-.5px}.nxPgGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.nxPgF{min-width:0}.nxPgF input{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;color:#0f172a;background:#fff;font-family:inherit;text-align:right;outline:none}.nxPgF input:focus{border-color:#2563eb}.nxPgSum{margin-top:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:9px 13px}.nxPgSum>div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;padding:2px 0}.nxPgSum span{color:#64748b;font-weight:700}.nxPgSum b{font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums}.nxPgOpts{margin-top:12px;border-top:1px dashed #e2e8f0;padding-top:11px;display:none}.nxPgFt{display:flex;gap:9px;padding:11px 16px;border-top:1px solid #e5e7eb;background:#fff;flex:none}.nxPgMas{flex:none;border:1.5px solid #e2e8f0;background:#f8fafc;border-radius:12px;padding:0 13px;font-size:12px;font-weight:800;color:#475569;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}.nxPgGo{flex:1;border:none;background:#16a34a;color:#fff;border-radius:12px;padding:14px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px}.nxPgGo:active{background:#15803d}@media(max-width:480px){.nxPgTab{flex:1 1 0;padding:10px 3px 8px;font-size:10.5px}}@media(max-width:400px){.nxPgTot{font-size:28px}.nxPgBig input{font-size:22px}}@media(max-width:340px){.nxPgGrid{grid-template-columns:1fr}.nxPgMas{padding:0 11px;font-size:0}.nxPgMas i{font-size:16px}}';
+    // ── Factura/Prefactura estilo DOCUMENTO (mockup B aprobado, v49.67) ──
+    st.textContent += '.nxDoc{color:#0f172a}.nxDocCard{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.06);overflow:hidden}.nxDocPad{padding:22px 24px}.nxDoc .dh{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:flex-start}.nxDoc .dhl{min-width:0;flex:1 1 200px}.nxDoc .emp{font-size:17px;font-weight:900;letter-spacing:-.3px;overflow-wrap:anywhere}.nxDoc .empsub{font-size:11px;color:#94a3b8;margin-top:3px;line-height:1.55;overflow-wrap:anywhere}.nxDoc .dhr{text-align:right;min-width:0;flex:0 1 auto}.nxDoc .dtit{font-size:22px;font-weight:300;letter-spacing:5px;color:#94a3b8;text-transform:uppercase;line-height:1}.nxDoc .dnumrow{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-top:5px}.nxDoc .dnum{font-size:20px;font-weight:800;letter-spacing:-.3px;color:#0f172a;font-variant-numeric:tabular-nums}.nxDoc .dnumin{width:150px;max-width:52vw;border:none;outline:none;background:transparent;text-align:right;font-family:inherit;padding:0;color:#2563eb}.nxDoc .npfx{font-size:15px;font-weight:800;color:#94a3b8;flex:none}.nxDoc .ibtn{border:1px solid #e2e8f0;background:#fff;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#2563eb;cursor:pointer;font-size:15px;flex:none;font-family:inherit}.nxDoc .ibtn:hover{background:#f8fafc}.nxDoc .dsel{display:flex;justify-content:flex-end;gap:7px;margin-top:8px;flex-wrap:wrap}.nxDoc .dsel select,.nxDoc .dsel input[type=date]{border:1px solid #e2e8f0;border-radius:9px;padding:7px 10px;font-size:16px;font-weight:700;color:#334155;font-family:inherit;background:#fff;outline:none;max-width:100%}.nxDoc .rule{height:2px;background:#0f172a;margin:16px 0 0}.nxDoc .partes{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;padding:16px 0 4px}.nxDoc .plab{font-size:9.5px;font-weight:800;letter-spacing:1px;color:#94a3b8;text-transform:uppercase;margin-bottom:7px}.nxDoc .pcli{display:flex;align-items:flex-start;gap:11px}.nxDoc .pav{width:38px;height:38px;border-radius:50%;background:#0f172a;color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;flex:none}.nxDoc .pnom{font-size:14.5px;font-weight:800;overflow-wrap:anywhere}.nxDoc .chipMay{font-size:9.5px;font-weight:800;color:#15803d;background:#dcfce7;border-radius:999px;padding:2px 8px;vertical-align:middle}.nxDoc .pdet{font-size:11.5px;color:#64748b;line-height:1.6;margin-top:2px;overflow-wrap:anywhere}.nxDoc .plinks{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}.nxDoc .plink{font-size:10.5px;font-weight:800;color:#2563eb;cursor:pointer;display:inline-flex;gap:4px;align-items:center;border:0;background:none;font-family:inherit;padding:0}.nxDoc .seg{display:inline-flex;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px}.nxDoc .seg button{border:0;background:#fff;padding:8px 15px;font-size:12px;font-weight:800;color:#64748b;cursor:pointer;font-family:inherit}.nxDoc .seg button.on{background:#0f172a;color:#fff}.nxDoc .credrow{font-size:11.5px;color:#64748b;line-height:1.7;overflow-wrap:anywhere}.nxDoc .credrow b{color:#0f172a}.nxDoc .scan{display:flex;align-items:center;gap:10px;border:1.5px solid #cbd5e1;border-radius:12px;padding:12px 14px;background:#fbfdff;cursor:pointer;margin:8px 0 2px;width:100%;text-align:left;font-family:inherit}.nxDoc .scan i{font-size:19px;color:#2563eb;flex:none}.nxDoc .scan span{font-size:13.5px;color:#64748b;font-weight:600;flex:1;min-width:0}.nxDoc .scan kbd{background:#f1f5f9;border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:800;color:#475569;font-family:inherit;flex:none}.nxDoc .docTbl{width:100%;border-collapse:collapse;margin-top:12px}.nxDoc .docTbl th{font-size:9.5px;font-weight:800;letter-spacing:.7px;color:#94a3b8;text-transform:uppercase;text-align:left;padding:9px 7px;border-bottom:1.5px solid #0f172a;white-space:nowrap}.nxDoc .docTbl th.r,.nxDoc .docTbl td.r{text-align:right}.nxDoc .docTbl td{padding:11px 7px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle}.nxDoc .cN{color:#cbd5e1;font-weight:800;font-variant-numeric:tabular-nums}.nxDoc .dnm{font-weight:700;overflow-wrap:anywhere}.nxDoc .dsub{font-size:10.5px;color:#94a3b8;margin-top:3px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}.nxDoc .dsub .cod{color:#2563eb;font-weight:700}.nxDoc .imei{border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit}.nxDoc .gar{background:#dcfce7;color:#15803d;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800}.nxDoc .serlst{margin-top:3px;font-size:10px;color:#6d28d9;font-family:var(--mono,monospace);overflow-wrap:anywhere}.nxDoc .pin{width:92px;max-width:100%;text-align:right;border:1px solid #e2e8f0;border-radius:8px;padding:7px;font-size:16px;font-weight:700;font-family:inherit;color:#0f172a;background:#fff;outline:none}.nxDoc .pin:focus{border-color:#2563eb}.nxDoc .stp{display:inline-flex;align-items:center;border:1px solid #e2e8f0;border-radius:9px;overflow:hidden}.nxDoc .stp button{width:28px;height:31px;border:0;background:#f8fafc;color:#475569;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}.nxDoc .stp span{width:30px;text-align:center;font-size:13px;font-weight:800}.nxDoc .dsc{display:inline-flex;align-items:center;border:1px solid #e2e8f0;border-radius:9px;overflow:hidden;background:#fff}.nxDoc .dsc input{width:48px;text-align:right;border:0;outline:none;padding:7px 5px;font-size:16px;font-weight:700;font-family:inherit;background:transparent}.nxDoc .dsc button{border:0;background:#f1f5f9;color:#475569;font-weight:800;font-size:10.5px;padding:7px 6px;cursor:pointer;border-left:1px solid #e2e8f0;font-family:inherit}.nxDoc .imp{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}.nxDoc .del{border:0;background:none;color:#f87171;font-size:17px;cursor:pointer;line-height:1;padding:4px;font-family:inherit}.nxDoc .del:hover{color:#dc2626}.nxDoc .vacio{text-align:center;color:#94a3b8;font-size:13px;padding:26px}.nxDoc .cnt{font-size:11px;font-weight:800;color:#94a3b8;text-align:right;padding:9px 7px 0}.nxDoc .facPie{display:grid;grid-template-columns:1fr 280px;gap:22px;padding-top:16px;align-items:start}.nxDoc .opts{display:flex;gap:8px;flex-wrap:wrap}.nxDoc .opt{border:1px solid #e2e8f0;background:#fff;border-radius:10px;padding:9px 13px;font-size:11.5px;font-weight:800;color:#475569;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px}.nxDoc .opt i{font-size:14px;color:#94a3b8}.nxDoc .opt:disabled{opacity:.45;cursor:default}.nxDoc .tr{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:#64748b;padding:5px 0}.nxDoc .tr b{color:#0f172a;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}.nxDoc .tr.big{border-top:2px solid #0f172a;margin-top:8px;padding-top:12px;align-items:baseline}.nxDoc .tr.big span{font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#0f172a}.nxDoc .tr.big b{font-size:25px;font-weight:900;letter-spacing:-.9px}.nxDoc .acc{display:flex;gap:9px;margin-top:14px}.nxDoc .g1{flex:1;background:#0f172a;color:#fff;border:0;border-radius:12px;padding:15px;font-weight:900;font-size:15px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px}.nxDoc .g1:active{background:#1e293b}.nxDoc .g1:disabled{opacity:.45;cursor:default}.nxDoc .g2{flex:none;border:1.5px solid #e2e8f0;background:#fff;border-radius:12px;padding:0 15px;font-weight:800;font-size:15px;color:#475569;cursor:pointer;font-family:inherit}.nxDoc .g2:disabled{opacity:.45;cursor:default}.nxDoc .cancel{width:100%;margin-top:9px;border:0;background:none;color:#94a3b8;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:6px}.nxDoc .keys{display:flex;gap:14px;flex-wrap:wrap;padding:11px 24px;background:#f8fafc;border-top:1px solid #eef2f7;font-size:11px;color:#94a3b8}.nxDoc .keys b{background:#fff;border:1px solid #e2e8f0;border-radius:5px;padding:2px 6px;font-size:10px;color:#475569}@media(max-width:760px){.nxDocPad{padding:16px}.nxDoc .keys{padding:11px 16px}.nxDoc .partes{grid-template-columns:1fr;gap:14px}.nxDoc .dhr{text-align:left;flex:1 1 100%}.nxDoc .dnumrow,.nxDoc .dsel{justify-content:flex-start}.nxDoc .dnumin{text-align:left;width:auto;flex:1}.nxDoc .facPie{grid-template-columns:1fr;gap:16px}.nxDoc .facTot{order:1}.nxDoc .facOtras{order:2}.nxDoc .docTbl,.nxDoc .docTbl tbody,.nxDoc .docTbl tr,.nxDoc .docTbl td{display:block;width:100%;min-width:0}.nxDoc .docTbl thead{display:none}.nxDoc .docTbl tr{border:1px solid #e5e7eb;border-radius:13px;margin:10px 0;padding:5px 11px}.nxDoc .docTbl td{border:none;border-bottom:1px solid #f6f8fb;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;text-align:left}.nxDoc .docTbl td:last-child{border-bottom:none}.nxDoc .docTbl td::before{content:attr(data-l);font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;flex:none}.nxDoc .docTbl td[data-l="Descripción"]{display:block}.nxDoc .docTbl td[data-l="Descripción"]::before{display:none}.nxDoc .cN{display:none!important}.nxDoc .cX{justify-content:flex-end}.nxDoc .docTbl td.r{text-align:right}}';
     document.head.appendChild(st);
   }
   
@@ -17594,13 +17596,55 @@
   // Indicador de pasos REAL (no decorativo): "Cliente" y "Productos" se marcan ✓ solo si de
   // verdad hay un cliente elegido / artículos en el carrito; "Pago" se resalta cuando ya se
   // puede cobrar. Se repinta en pintarFactura() para que quede en vivo, no solo al abrir la pestaña.
-  function facStepsHTML() {
-    const cliOn = !!_factCli, prodOn = _cart.length > 0, pagoOn = prodOn;
-    const paso = (on, ok, n, txt) => `<span class="nx-inv-step${on ? ' on' : ''}"><span class="nx-inv-stepn${ok ? ' ok' : ''}">${ok ? '<i class="ti ti-check"></i>' : n}</span> ${txt}</span>`;
-    return paso(cliOn, cliOn, 1, 'Cliente') + '<i class="ti ti-arrow-right"></i>'
-      + paso(prodOn, prodOn, 2, 'Productos') + '<i class="ti ti-arrow-right"></i>'
-      + paso(pagoOn, false, 3, 'Pago') + '<i class="ti ti-arrow-right"></i>'
-      + paso(false, false, 4, 'Confirmar');
+  // Datos de la empresa para el encabezado del documento (los mismos que ya imprime el ticket).
+  // Si CFG no trae nombre (organización de tienda, que no lee la config de Seguros), cae al
+  // nombre real de la organización en vez de dejar el genérico.
+  function facEmpresa() {
+    const e = empInfo(); let nom = e.nom;
+    try { const o = (window.sesion && window.sesion.org) || null; if (o && o.nombre && (!nom || nom === 'NEXUS PRO')) nom = o.nombre; } catch (x) {}
+    return { nom: nom, rnc: e.rnc, tel: e.tel, dir: e.dir };
+  }
+  // Bloque "Facturar a" + "Condición de pago" del documento (columna izquierda y derecha).
+  // Vive dentro de #facCliInfoWrap para que pintarFacCliInfo() lo repinte al cambiar de cliente.
+  function facPartesHTML(c) {
+    const pre = esPreTab();
+    const ini = c ? (String(c.nombre || '?').trim()[0] || '?').toUpperCase() : '—';
+    const det = c
+      ? [c.codigo ? esc(c.codigo) : '', c.cedula ? (c.tipo_persona === 'juridica' ? 'RNC ' : 'Céd. ') + esc(c.cedula) : ''].filter(Boolean).join(' · ')
+        + ((c.telefono || c.direccion) ? '<br>' + [c.telefono ? esc(c.telefono) : '', c.direccion ? esc(c.direccion) : ''].filter(Boolean).join(' · ') : '')
+      : 'Sin cliente asignado — la venta se registra a consumidor final.';
+    const saldo = c ? saldoCli(c) : 0;
+    const lim = c ? Number(c.limite_credito || 0) : 0;
+    const credDisp = lim > 0 ? Math.max(0, lim - saldo) : null;
+    const cred = c
+      ? `<div class="credrow">Balance actual: <b${saldo > 0 ? ' style="color:#dc2626"' : ''}>${fmt(saldo)}</b>`
+        + (lim > 0 ? `<br>Crédito disponible: <b>${fmt(credDisp)}</b>` : '')
+        + ` · <span id="facCliUltCompra">Última compra: <span class="ld">…</span></span></div>`
+      : '';
+    return `<div class="partes">
+      <div>
+        <div class="plab">Facturar a</div>
+        <div class="pcli">
+          <div class="pav">${esc(ini)}</div>
+          <div style="min-width:0;flex:1">
+            <div class="pnom" id="facCliTxt">${c ? esc(c.nombre) : 'Consumidor final'}${c && c.nivel_precio === 'mayor' ? ' <span class="chipMay">por mayor</span>' : ''}</div>
+            <div class="pdet">${det}</div>
+            <div class="plinks">
+              <button type="button" class="plink" id="facCliBtn" onclick="window.nxFacCliToggle()"><i class="ti ti-search"></i> ${c ? 'Cambiar cliente' : 'Elegir cliente'}</button>
+              ${c ? `<button type="button" class="plink" onclick="window.nxCliente360('${c.id}')"><i class="ti ti-id-badge-2"></i> Ver perfil</button>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="plab">Condición de pago</div>
+        ${pre ? '<div class="credrow" style="margin-top:2px">Este documento es una proforma: no cobra ni descuenta inventario.</div>' : `<div class="seg" role="group" aria-label="Condición de pago">
+          <button type="button" class="${_facCredito ? '' : 'on'}" onclick="window.nxFacSetCredito(false)">Contado</button>
+          <button type="button" class="${_facCredito ? 'on' : ''}" onclick="window.nxFacSetCredito(true)">A crédito</button>
+        </div>`}
+        ${cred}
+      </div>
+    </div>`;
   }
   function renderFactura() {
     nxPfEnsureCSS();
@@ -17608,67 +17652,60 @@
       return `<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay artículos.<br>Ve a <b>"Inventario"</b> (o usa <b>Importar</b>) y agrégalos.<br><button class="btn bc1 bsm" style="margin-top:10px" onclick="window.nxPosTab('productos')"><i class="ti ti-plus"></i> Ir a Inventario</button></div>`;
     }
     const cliActual = _clientes.find(c => String(c.id) === String(_factCli));
-    const cliTxt = cliActual ? (cliActual.codigo ? cliActual.codigo + ' · ' : '') + cliActual.nombre + (cliActual.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
     programarCargaUltimaCompra(cliActual && cliActual.id);
     const ncfOptions = NCF_TIPOS.map(t => `<option value="${t[0]}"${_facNCF === t[0] ? ' selected' : ''}>${esc(t[1])}</option>`).join('');
     const pre = esPreTab();
-    const numField = pre
-      ? `<div class="nx-inv-field"><div class="nx-inv-label">Prefactura No.</div><div style="display:flex;align-items:center;gap:6px"><button type="button" class="nx-inv-iconbtn" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" aria-label="Ver prefacturas guardadas" style="color:#7c3aed"><i class="ti ti-search"></i></button><span style="font-weight:800;color:#7c3aed;font-size:15px">${peekPref()}</span></div></div>`
-      : `<div class="nx-inv-field"><label class="nx-inv-label" for="facNumPrev">No. Factura / NCF</label><div style="display:flex;align-items:center;gap:6px"><button type="button" class="nx-inv-iconbtn" onclick="window.nxFacHist()" title="Ver todas las facturas" aria-label="Ver todas las facturas" style="color:#2563eb"><i class="ti ti-search"></i></button><input id="facNumPrev" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" title="Escribe un número y ENTER para traer esa factura" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-weight:800;font-size:16px;color:#2563eb;font-family:inherit" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"></div><label style="display:flex;align-items:center;gap:6px;margin-top:7px;cursor:pointer"><input type="checkbox" id="facCredito" ${_facCredito ? 'checked' : ''} onchange="window.nxFacSetCredito(this.checked)" style="width:16px;height:16px;accent-color:#2563eb"><span style="font-size:11px;font-weight:700;color:#334155">A crédito</span></label></div>`;
-    const almField = (_almacenes.length > 1) ? `<div class="nx-inv-field"><label class="nx-inv-label" for="facAlmSel">Almacén</label><select id="facAlmSel" onchange="window.nxPosSetAlmacen(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-size:16px;font-weight:700;color:#0f172a;font-family:inherit">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : '';
-    return `<div class="nxPf nx-invoice-pro">
-      <div class="nx-inv-shell">
-        <div class="nx-inv-card">
-          <div class="nx-inv-head">
-            <div class="nx-inv-title">${pre ? 'PREFACTURA' : 'FACTURA'}${pre ? '<span class="nx-inv-draft">BORRADOR · NO FISCAL</span>' : '<span class="nx-inv-draft" style="color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe">DOCUMENTO DE VENTA</span>'}</div>
-            <div class="nx-inv-steps" id="facSteps">${facStepsHTML()}</div>
-          </div>
-          <div class="nx-inv-info">
-            ${numField}
-            <div class="nx-inv-field" style="position:relative">
-              <label class="nx-inv-label">Cliente</label>
-              <div style="display:flex;align-items:center;gap:8px">
-                <button type="button" class="pf2clibtn" id="facCliBtn" onclick="window.nxFacCliToggle()" style="flex:1;min-width:0">
-                  <span style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">
-                    <i class="ti ti-search" style="color:#94a3b8;font-size:14px;flex:none"></i>
-                    <span id="facCliTxt" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cliTxt)}</span>
-                  </span>
-                  <i class="ti ti-chevron-down"></i>
-                </button>
-                ${pre ? '' : `<div style="display:flex;align-items:center;gap:4px;flex:none">
-                  <button type="button" class="nx-inv-iconbtn" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" aria-label="Ver prefacturas guardadas" style="color:#7c3aed"><i class="ti ti-search"></i></button>
-                  <span style="font-weight:800;color:#7c3aed;font-size:12px;white-space:nowrap">${esc(peekPref())}</span>
-                </div>`}
+    const emp = facEmpresa();
+    const numBloque = pre
+      ? `<div class="dnumrow"><button type="button" class="ibtn" onclick="window.nxPrefLista()" title="Ver prefacturas guardadas" aria-label="Ver prefacturas guardadas" style="color:#7c3aed"><i class="ti ti-search"></i></button><span class="npfx">Nº</span><span class="dnum" style="color:#7c3aed">${esc(peekPref())}</span></div>`
+      : `<div class="dnumrow"><button type="button" class="ibtn" onclick="window.nxFacHist()" title="Ver todas las facturas" aria-label="Ver todas las facturas"><i class="ti ti-search"></i></button><span class="npfx">Nº</span><input id="facNumPrev" class="dnum dnumin" value="${proxNumeroFacturaCorto(_facCredito)}" inputmode="numeric" aria-label="Número de factura" title="Escribe un número y ENTER para traer esa factura" onkeydown="if(event.key==='Enter'){this.blur()}" onblur="window.nxFacBuscarNum(this.value)"></div>`;
+    const almSel = (_almacenes.length > 1) ? `<select id="facAlmSel" aria-label="Almacén" onchange="window.nxPosSetAlmacen(this.value)">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select>` : '';
+    return `<div class="nxPf nx-invoice-pro nxDoc">
+      <div class="nxDocCard">
+        <div class="nxDocPad">
+          <div class="dh">
+            <div class="dhl">
+              <div class="emp">${esc(emp.nom)}</div>
+              <div class="empsub">${[emp.rnc ? 'RNC ' + esc(emp.rnc) : '', emp.dir ? esc(emp.dir) : '', emp.tel ? esc(emp.tel) : ''].filter(Boolean).join(' · ') || '&nbsp;'}</div>
+            </div>
+            <div class="dhr">
+              <div class="dtit">${pre ? 'Prefactura' : 'Factura'}</div>
+              ${numBloque}
+              <div class="dsel">
+                ${pre ? '' : `<select id="facNCFSel" aria-label="Tipo de comprobante" onchange="window.nxFacNCFPick(this.value)">${ncfOptions}</select>`}
+                ${almSel}
+                <input type="date" id="facFecha" aria-label="Fecha del documento" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)">
               </div>
             </div>
           </div>
-          <div id="facCliInfoWrap">${facCliInfoHTML(cliActual)}</div>
-          <div style="margin:0 16px 10px">
-            <div class="nx-inv-sumtitle" style="margin-bottom:8px">Datos del documento</div>
-            <div class="nx-inv-info" style="padding:0;grid-template-columns:repeat(2,minmax(0,1fr))">
-              <div class="nx-inv-field"><label class="nx-inv-label" for="facNCFSel">Tipo de comprobante</label><select id="facNCFSel" onchange="window.nxFacNCFPick(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-size:16px;font-weight:700;color:#0f172a;font-family:inherit">${ncfOptions}</select></div>
-              <div class="nx-inv-field"><label class="nx-inv-label" for="facFecha">Fecha</label><input type="date" id="facFecha" value="${_facFecha || hoy()}" onchange="window.nxFacSetFecha(this.value)" style="width:100%;border:none;outline:none;background:transparent;font-weight:700;color:#0f172a;font-family:inherit;font-size:16px"></div>
-              ${almField}
+          <div class="rule"></div>
+
+          <div id="facCliInfoWrap" data-doc="1">${facPartesHTML(cliActual)}</div>
+
+          <button type="button" class="scan" id="facSearchBox" onclick="window.nxProdPicker('factura')" aria-label="Buscar artículo">
+            <i class="ti ti-scan"></i><span>Escanea o busca por nombre, código, IMEI o serial…</span><kbd>F2</kbd>
+          </button>
+
+          <div id="facTabla"></div>
+
+          <div class="facPie">
+            <div class="facOtras">
+              <div class="plab">Otras acciones</div>
+              <div class="opts">
+                <button type="button" class="opt" ${_cart.length ? '' : 'disabled'} onclick="window.nxCotGuardarDesdeCart()"><i class="ti ti-clipboard-text"></i> Guardar cotización</button>
+                <button type="button" class="opt" onclick="window.nxPosTab('prefhist')"><i class="ti ti-files"></i> Prefacturas</button>
+                <button type="button" class="opt" onclick="window.nxPosTab('ventas')"><i class="ti ti-history"></i> Historial</button>
+                <button type="button" class="opt" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Limpiar carrito</button>
+              </div>
+              ${pre ? `<details class="nx-inv-notedet" style="margin:11px 0 0"${_facNota ? ' open' : ''}>
+                <summary><i class="ti ti-note"></i> ${_facNota ? 'Nota / condiciones' : 'Agregar nota o condiciones al documento'}</summary>
+                <textarea id="facNota" placeholder="Ej: precio válido por 15 días, incluye instalación…" maxlength="500" oninput="window.nxFacNotaSet(this.value)">${esc(_facNota)}</textarea>
+              </details>` : ''}
             </div>
-          </div>
-          <div class="nx-inv-search" id="facSearchWrap">
-            <div style="flex:1;position:relative;min-width:0" id="facSearchBox">
-              <button type="button" class="nx-inv-iconbtn" onclick="window.nxProdPicker('factura')" title="Buscar artículo" aria-label="Buscar artículo" style="color:#2563eb;border:1px solid #dbe3ef;border-radius:12px;padding:12px 14px;width:100%;justify-content:flex-start;gap:8px"><i class="ti ti-search"></i><span style="font-size:13px;font-weight:700;color:#64748b">Buscar producto por nombre, código, IMEI, serial…</span></button>
-            </div>
-          </div>
-          <div class="nx-inv-tblwrap"><div id="facTabla"></div></div>
-          ${pre ? `<details class="nx-inv-notedet"${_facNota ? ' open' : ''}>
-            <summary><i class="ti ti-note"></i> ${_facNota ? 'Nota / condiciones' : 'Agregar nota o condiciones'}</summary>
-            <textarea id="facNota" placeholder="Ej: precio válido por 15 días, incluye instalación…" maxlength="500" oninput="window.nxFacNotaSet(this.value)">${esc(_facNota)}</textarea>
-          </details>` : ''}
-          <div class="nx-inv-toolbar" style="grid-template-columns:1fr">
-            <button type="button" class="nx-inv-toolbtn danger" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Limpiar carrito</button>
+            <div class="facTot" id="facResumen"></div>
           </div>
         </div>
-        <div class="nx-inv-card nx-inv-summary" id="facResumen"></div>
-      </div>
-      <div class="nx-inv-shortcuts">
-        <span><b>F2</b> Buscar producto</span><span><b>F10</b> Limpiar carrito</span>
+        <div class="keys"><span><b>F2</b> Buscar producto</span><span><b>F10</b> Limpiar carrito</span></div>
       </div>
     </div>`;
   }
@@ -17681,7 +17718,8 @@
   function pintarFacCliInfo() {
     const wrap = document.getElementById('facCliInfoWrap'); if (!wrap) return;
     const c = _clientes.find(x => String(x.id) === String(_factCli));
-    wrap.innerHTML = facCliInfoHTML(c);
+    // Factura/Prefactura usan el bloque de documento (2 columnas); Vender, la tarjeta compacta
+    wrap.innerHTML = (wrap.getAttribute('data-doc') === '1') ? facPartesHTML(c) : facCliInfoHTML(c);
     programarCargaUltimaCompra(c && c.id);
   }
   window.nxFacSubTab = function (t) { _facSubTab = t || 'datos'; };
@@ -17710,7 +17748,13 @@
     _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos'; _facNota = '';
     const view = document.getElementById('v-pos'); if (view && (_posTab === 'factura' || _posTab === 'prefactura')) renderPOS(view);
   };
-  window.nxFacSetCredito = function (b) { _facCredito = !!b; const el = document.getElementById('facNumPrev'); if (el) el.textContent = proxNumeroFacturaFmt(_facCredito); };
+  // OJO: #facNumPrev es un <input> — antes esto escribía en .textContent, que en un input no se
+  // ve, así que el número nunca cambiaba al pasar de Contado a A crédito. Va en .value.
+  window.nxFacSetCredito = function (b) {
+    _facCredito = !!b;
+    const el = document.getElementById('facNumPrev'); if (el) el.value = proxNumeroFacturaCorto(_facCredito);
+    try { pintarFacCliInfo(); } catch (e) {}
+  };
   // Chips del comprobante fiscal (look premium) — llaman a nxFacSetNCF (sin cambios) y repintan el estado activo
   window.nxFacNCFPick = function (v) { window.nxFacSetNCF(v); };
   // Selector de cliente — abre una VENTANA de búsqueda (mismo patrón que nxFacHist()/nxPrefLista()/
@@ -17832,8 +17876,14 @@
   window.nxFacCliToggle = function () {
     nxPosClienteAbrir('nxFacCliM', function (c) {
       window.nxFacSetCli(c ? c.id : '');
-      const txt = document.getElementById('facCliTxt');
-      if (txt) txt.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+      // En Factura/Prefactura el bloque completo ya lo repintó pintarFacCliInfo() con el formato
+      // del documento (nombre + chip "por mayor" + código/cédula debajo) — pisarlo aquí con texto
+      // plano lo dañaría. Este ajuste manual es solo para el botón compacto de Vender.
+      const _w = document.getElementById('facCliInfoWrap');
+      if (!_w || _w.getAttribute('data-doc') !== '1') {
+        const txt = document.getElementById('facCliTxt');
+        if (txt) txt.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+      }
     });
   };
   // Al elegir una sugerencia, abre la misma ventanilla (precios + IMEI) con ese artículo expandido
@@ -18574,59 +18624,51 @@
   };
   function pintarFactura() {
     const cont = document.getElementById('facTabla'); if (!cont) return;
-    const stEl = document.getElementById('facSteps'); if (stEl) stEl.innerHTML = facStepsHTML();
     const t = totales();
     const filas = _cart.length ? _cart.map((it, i) => {
       const prod = _prods.find(x => String(x.id) === String(it.producto_id));
-      const img = (prod && prod.imagen) ? `<img src="${esc(prod.imagen)}" onerror="this.style.display='none'" alt="Foto del artículo">` : `<div class="nx-inv-noimg"><i class="ti ti-device-mobile"></i></div>`;
       const gd = prod ? Number(prod.garantia_dias || 0) : 0;
       const gm = Math.round(gd / 30);
       const gtxt = gd > 0 ? (gd >= 30 ? gm + (gm === 1 ? ' mes' : ' meses') : gd + ' días') : '';
-      const gbadge = gtxt ? `<span class="nx-inv-badge">${gtxt}</span>` : '<span style="color:#cbd5e1">—</span>';
-      const serTxt = (prod && prod.serial)
-        ? `<button type="button" class="nx-inv-mini" onclick="window.nxFacSerial(${i})"><i class="ti ti-device-mobile"></i> IMEI ${(it.seriales || []).length}/${it.cantidad}</button>${(it.seriales || []).length ? `<div style="margin-top:3px;font-size:10px;color:#6d28d9;font-family:var(--mono,monospace)">${(it.seriales || []).map(s => esc(s.serial)).join(', ')}</div>` : ''}`
-        : '—';
+      const cod = prodCodigo(it.producto_id);
+      const ser = (prod && prod.serial)
+        ? `<button type="button" class="imei" onclick="window.nxFacSerial(${i})" title="Elegir IMEI / serial">IMEI ${(it.seriales || []).length}/${it.cantidad}</button>`
+        : '';
+      const serLista = (it.seriales || []).length ? `<div class="serlst">${(it.seriales || []).map(x => esc(x.serial)).join(' · ')}</div>` : '';
       return `<tr>
-        <td data-l="#" style="font-weight:800;color:#94a3b8">${i + 1}</td>
-        <td data-l="Producto"><div class="nx-inv-product">${img}<div style="min-width:0"><div class="nx-inv-pnom">${esc(it.nombre)}</div></div></div></td>
-        <td data-l="Código/Ref" style="color:#2563eb;font-weight:700;font-size:12px;white-space:nowrap">${esc(prodCodigo(it.producto_id) || '—')}</td>
-        <td data-l="IMEI/Serial" class="nx-inv-serial">${serTxt}</td>
-        <td data-l="Garantía">${gbadge}</td>
-        <td data-l="Precio" style="text-align:right"><input class="nx-inv-pinput" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
-        <td data-l="Cantidad"><div class="nx-inv-qty"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
-        <td data-l="Descuento"><div class="nx-inv-dscbox"><input inputmode="decimal" aria-label="Descuento de ${esc(it.nombre)}" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$" aria-label="Cambiar tipo de descuento a porcentaje o monto">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
-        <td data-l="Total" style="text-align:right;font-weight:800;color:#0f172a">${fmt(lineImporte(it))}</td>
-        <td class="nx-inv-del"><button type="button" aria-label="Quitar ${esc(it.nombre)} de la factura" onclick="window.nxPosDel(${i});window.nxFacRepaint()"><i class="ti ti-x" aria-hidden="true"></i></button></td>
+        <td data-l="#" class="cN">${String(i + 1).padStart(2, '0')}</td>
+        <td data-l="Descripción">
+          <div class="dnm">${esc(it.nombre)}</div>
+          <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
+          ${serLista}
+        </td>
+        <td data-l="Precio" class="r"><input class="pin" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
+        <td data-l="Cant."><div class="stp"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><span>${it.cantidad}</span><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
+        <td data-l="Desc."><div class="dsc"><input inputmode="decimal" aria-label="Descuento de ${esc(it.nombre)}" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$" aria-label="Cambiar tipo de descuento a porcentaje o monto">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
+        <td data-l="Importe" class="r imp">${fmt(lineImporte(it))}</td>
+        <td data-l="Quitar" class="cX"><button type="button" class="del" aria-label="Quitar ${esc(it.nombre)} de la factura" onclick="window.nxPosDel(${i});window.nxFacRepaint()"><i class="ti ti-x" aria-hidden="true"></i></button></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="10" class="nx-inv-empty">Aún no hay artículos. Búscalos arriba (o escanéalos) y se agregan a la factura.</td></tr>`;
-    cont.innerHTML = `<table class="nx-inv-table">
-        <thead><tr><th>#</th><th>Producto</th><th>Código/Ref</th><th>IMEI / Serial</th><th>Garantía</th><th style="text-align:right">Precio</th><th>Cantidad</th><th>Descuento</th><th style="text-align:right">Total</th><th></th></tr></thead>
+    }).join('') : `<tr><td colspan="7" class="vacio">Aún no hay artículos. Búscalos arriba (o escanéalos) y se agregan al documento.</td></tr>`;
+    cont.innerHTML = `<table class="docTbl">
+        <thead><tr><th style="width:34px">#</th><th>Descripción</th><th class="r" style="width:104px">Precio</th><th style="width:100px">Cant.</th><th style="width:100px">Desc.</th><th class="r" style="width:104px">Importe</th><th style="width:32px"></th></tr></thead>
         <tbody>${filas}</tbody>
-      </table>${_cart.length ? `<div class="nx-inv-count">${_cart.length} artículo${_cart.length === 1 ? '' : 's'} · ${t.items} unidad${t.items === 1 ? '' : 'es'}</div>` : ''}`;
-    // Panel derecho: resumen + acciones. El "Detalle de pago" (5 botones que todos abrían la
-    // misma ventana Cobrar) se quitó por redundante — Cobrar ya es el único paso para pagar.
+      </table>${_cart.length ? `<div class="cnt">${_cart.length} artículo${_cart.length === 1 ? '' : 's'} · ${t.items} unidad${t.items === 1 ? '' : 'es'}</div>` : ''}`;
+    // Columna derecha del pie: totales + acciones (el "Detalle de pago" y la fila "Pendiente por
+    // cobrar" se quitaron por redundantes — repetían el TOTAL y todos abrían la misma ventana).
     const res = document.getElementById('facResumen'); if (!res) return;
     const pre = esPreTab();
-    res.innerHTML = `<div class="nx-inv-sumtitle">Resumen de venta</div>
-      <div class="nx-inv-sumrow"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
-      ${t.descuento > 0 ? `<div class="nx-inv-sumrow"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
-      <div class="nx-inv-sumrow"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
-      <div class="nx-inv-total"><span>TOTAL</span><span>${fmt(t.total)}</span></div>
-      ${pre ? '' : `<div class="nx-inv-pending" style="margin-top:14px"><span>Pendiente por cobrar</span><b>${fmt(t.total)}</b></div>`}
-      <div class="nx-inv-sumtitle" style="margin-top:18px">Opciones adicionales</div>
-      <div class="nx-inv-opts">
-        <button type="button" class="nx-inv-opt" ${_cart.length ? '' : 'disabled'} onclick="window.nxCotGuardarDesdeCart()"><i class="ti ti-clipboard-text"></i> Guardar Cotización</button>
-        <button type="button" class="nx-inv-opt" onclick="window.nxPosTab('prefhist')"><i class="ti ti-files"></i> Prefacturas</button>
-        <button type="button" class="nx-inv-opt" onclick="window.nxPosTab('ventas')"><i class="ti ti-history"></i> Historial</button>
-      </div>
-      <div class="nx-inv-actions">
-        <button type="button" class="nx-inv-btn danger" onclick="window.nxFacCancelar()">Cancelar</button>
-        <button type="button" class="nx-inv-btn" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacVistaPrevia()"><i class="ti ti-eye"></i> Vista previa</button>
-        ${pre ? `<button type="button" class="nx-inv-btn" ${_cart.length ? '' : 'disabled'} style="border-color:#c4b5fd;color:#6d28d9" onclick="window.nxPrefGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>` : ''}
+    res.innerHTML = `<div class="tr"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
+      ${t.descuento > 0 ? `<div class="tr"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
+      <div class="tr"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
+      <div class="tr big"><span>Total</span><b>${fmt(t.total)}</b></div>
+      <div class="acc">
+        <button type="button" class="g2" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacVistaPrevia()" title="Vista previa" aria-label="Vista previa del documento"><i class="ti ti-eye"></i></button>
+        ${pre ? `<button type="button" class="g2" ${_cart.length ? '' : 'disabled'} onclick="window.nxPrefGuardar(true)" title="Guardar e imprimir" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>` : ''}
         ${pre
-          ? `<button type="button" class="nx-inv-cobrar" ${_cart.length ? '' : 'disabled'} style="background:#7c3aed" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar · ${fmt(t.total)}</button>`
-          : `<button type="button" class="nx-inv-cobrar" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar · ${fmt(t.total)}</button>`}
-      </div>`;
+          ? `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} style="background:#6d28d9" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>`
+          : `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar</button>`}
+      </div>
+      <button type="button" class="cancel" onclick="window.nxFacCancelar()">Cancelar ${pre ? 'prefactura' : 'factura'}</button>`;
   }
   // Stepper de cantidad del rediseño (respeta stock al subir; ajusta combos)
   window.nxFacQtyStep = function (i, d) { const it = _cart[i]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; const _old = Number(it.cantidad || 0); const n = Math.max(0, _old + d); if (n === 0) { _cart.splice(i, 1); } else { it.cantidad = n; ajustarCombos(it.producto_id, n - _old); } pintarFactura(); };
