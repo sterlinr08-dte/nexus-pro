@@ -5147,13 +5147,23 @@ escribir: `mis_cuentas_bancarias` (las cuentas del dueño), `entregas_admin` y
   `SUPABASE_SERVICE_ROLE_KEY`, que **salta RLS**, así que el reporte diario no se ve afectado.
 
 #### NO tocado — lo que queda, por orden de urgencia
-1. **La clave de aplicación de Gmail está en TEXTO PLANO** dentro de la función
-   `enviar-reporte-email` (`const GMAIL_PASS = '...'`, no un Secret), y esa función es **pública**
-   (`verify_jwt:false`). **Recomendación: cambiar esa clave en la cuenta de Google y guardarla como
-   Secret.** Cerrar la función con `verify_jwt:true` **no se puede hacer solo**: el cron
-   `reporte-email-minuto` (que corre cada minuto) **no manda ninguna credencial**, así que habría
-   que arreglar el cron en la misma operación o el reporte diario deja de salir. No se hizo a
-   ciegas. (La clave NO se copia a este archivo a propósito.)
+1. **La clave de Gmail ya NO vive en el código** ✅ (26-jul-2026). El dueño **rotó la clave** en su
+   cuenta de Google, y la función `enviar-reporte-email` se redesplegó (**v5**) leyéndola de
+   `Deno.env.get('GMAIL_PASS')` con `.trim()` — la vieja se borró del fuente por completo.
+   - **Ojo, esto rompe el reporte hasta que el dueño ponga el Secret:** rotar la clave dejó la
+     versión anterior inservible de todos modos, así que la función env-var es estrictamente mejor.
+     Mientras falte, la función **avisa claro** (`"Falta el secreto GMAIL_PASS…"`) y lo registra en
+     `auto_notificaciones_log`, en vez de morir con un error de SMTP críptico.
+   - **Falta que el dueño lo pegue:** Supabase Dashboard → Edge Functions → Secrets → nombre
+     **exacto** `GMAIL_PASS`. El nombre importa: ya pasó una vez (NEXUS AI CONTENT) que un secreto
+     se guardó con OTRO nombre y el error era imposible de diagnosticar. No hace falta redesplegar
+     — los Secrets se leen en cada ejecución.
+   - **Verificado de punta a punta** con `net.http_post` desde la propia base (mismo camino que se
+     usó para la función de préstamos): la función responde **500 con el aviso exacto**, lo que
+     confirma a la vez que el guardia funciona y que el Secret aún no está.
+   - **Sigue pendiente:** cerrar la función con `verify_jwt:true`. No se puede solo — el cron
+     `reporte-email-minuto` **no manda ninguna credencial**, habría que arreglar el cron en la
+     misma operación o el reporte deja de salir. (La clave NO se copia a este archivo a propósito.)
 2. **`auditoria` sigue abierta** a cualquier usuario logueado de cualquier empresa (2,372 filas,
    con nombres de clientes en el detalle). No se cerró porque **el POS, Rifas y Consultorio también
    escriben ahí** — acotarla a `nexus-pro` los rompería. El arreglo correcto es darle
