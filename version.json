@@ -1,7 +1,12 @@
 {
-  "version": "49.58",
+  "version": "49.59",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.59",
+      "t": "NUEVO \u2014 Facturas: el doble de facturas por pantalla y el bot\u00f3n de anular fuera del camino",
+      "d": "Cuatro cambios en la pantalla de Facturas.\n\n1) Cada factura ocupaba media pantalla: con 95 facturas cab\u00edan 3 y hab\u00eda que bajar unas 32 pantallas. Ahora el nombre y el BALANCE van grandes arriba, con el estado a la derecha, y el resto en una l\u00ednea chiquita. Baj\u00f3 de ~200 a ~110 p\u00edxeles: el doble de facturas de un vistazo.\n\n2) Se quitaron dos l\u00edneas que no dec\u00edan nada: el ARS cuando el cliente no tiene (sal\u00eda una rayita) y el Total cuando es el mismo n\u00famero que el balance. Si hubo un abono y son distintos, el Total s\u00ed aparece.\n\n3) El recuadro \"Pagadas\" siempre marcaba 0, porque con el filtro en Pendientes nunca hay ninguna. Ahora dice ATRASADAS: cu\u00e1ntas facturas de meses anteriores siguen sin pagar. Y se toca para verlas.\n\n4) El bot\u00f3n rojo de anular estaba del mismo tama\u00f1o y pegado a Cobrar \u2014 f\u00e1cil de tocar por error con el dedo. Ahora a la vista quedan Cobrar y WhatsApp; ver la factura, corregir el precio y anular se fueron a un men\u00fa \"\u22ee\".\n\nDe paso, el buscador de Facturas pas\u00f3 a la ventana nueva, igual que Clientes."
+    },
     {
       "v": "49.58",
       "t": "ARREGLADO (importante) \u2014 Sal\u00eda c\u00f3digo escrito en el Inicio",
