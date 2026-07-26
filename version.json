@@ -1,7 +1,12 @@
 {
-  "version": "49.68",
+  "version": "49.69",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.69",
+      "t": "ARREGLADO (importante): la ventana de Cobrar con pestañas y la Factura nueva no se estaban viendo · y en \"Elegir cliente\" el nombre salía pegado al código",
+      "d": "Dos arreglos. (1) El diseño nuevo de la ventana de Cobrar (las pestañas Efectivo/Tarjeta/Transfer./Cheque/N.Créd./Mixto) y el de la Factura como documento estaban publicados, pero sus estilos se cargaban desde el sitio equivocado del sistema — el del editor del menú del celular, y encima ANTES que los estilos del Punto de Venta, así que los estilos viejos les ganaban y las pantallas se seguían viendo como antes. Ya están donde va, así que ahora sí se ven. (2) En la ventana \"Elegir cliente\" el nombre y el código salían pegados en una sola línea (\"ESTERLINCL-0003 · POR MAYOR\"); pasa desde que se le agregó la estrella de favoritos. Ahora el nombre va arriba y el código debajo, como debe ser."
+    },
     {
       "v": "49.68",
       "t": "NUEVO: la FACTURA imprimible de página completa (ya no solo la tirilla del ticket)",

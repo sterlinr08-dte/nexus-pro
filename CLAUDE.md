@@ -5478,6 +5478,40 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### BUG MÍO: el CSS de las 2 pantallas nuevas del POS se inyectaba desde el módulo equivocado (26-jul-2026, v49.69)
+El dueño: *"la ventana de factura tiene un bug y lo que acordamos en cobrar aún no me sale"*, con una
+captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las dos reales.
+- **CAUSA RAÍZ (mía, v49.66 y v49.67):** los dos bloques de CSS nuevos (`.nxPago*` de la ventana de
+  cobro con pestañas y `.nxDoc*` de la Factura-documento) se insertaron con
+  `s.index("    document.head.appendChild(st);")` — que agarra la **PRIMERA** ocurrencia del archivo
+  (línea 592), o sea **`injectMenuEditorCSS()`, el CSS del editor del menú móvil**, no el del POS
+  (`nxPosCSS`, línea ~25689). **Es exactamente la trampa que este mismo archivo ya advertía**
+  ("HAY VARIAS FUNCIONES `inyectarCSS()` EN EL ARCHIVO, una por módulo/IIFE" — v48.29). Doble
+  problema: (a) ese injector solo corre desde `crearMenuMas()`, que arranca con `if (!isMobile())
+  return` — en escritorio el CSS **nunca** se cargaba; (b) aun en móvil, se inyecta al ARRANQUE, o
+  sea **antes** que `nxPosCSS`, así que a igual especificidad las reglas viejas del POS le ganaban
+  por orden de cascada. Resultado: las dos pantallas nuevas se seguían viendo como las viejas.
+  Movidos al final de `nxPosCSS`, donde van.
+  - **Por qué las 49 + 65 + 37 pruebas no lo atraparon:** los harness inyectan el CSS a mano en la
+    página de prueba, así que verifican que las REGLAS funcionan — nunca que el CSS sea
+    **alcanzable** desde el injector correcto en producción. **Lección: al agregar CSS a
+    `parches.js`, comprobar con `grep`/asserción que la cadena quedó DENTRO del injector que le
+    toca** (`st.id === 'nxPosCSS'`, `'nxPfCSS'`, `'nxFPCSS'`…), no solo que el archivo compila.
+    Nunca anclar por `document.head.appendChild(st)` a secas.
+- **BUG 2, real y desde v49.37 (independiente del anterior):** en la ventana "Elegir cliente"
+  (`nxPosCliFilaHTML`) el nombre y el código salían **pegados en una sola línea**
+  ("ESTERLINCL-0003 · POR MAYOR"). `.nxPf .pf2clirow` es `flex-direction:column`, pero al agregar el
+  botón de favorito (v49.37) el `<b>` y el `<span>` quedaron dentro de un `<div>` intermedio **sin
+  estilo** → como son elementos en línea, se pintaban uno detrás del otro. Arreglado con
+  `.nxPf .pf2clirow>div{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}`.
+  Afectaba a las 2 ventanas que usan ese motor compartido (Facturar y Cobrar).
+- Verificado con Playwright y el CSS + markup REALES extraídos del archivo: el nombre y el código
+  quedan en líneas distintas y alineados a la izquierda (medido con `getBoundingClientRect`, no a
+  ojo), la estrella no empuja el texto y sale ámbar cuando está marcada, sin desborde en 390px —
+  más las 3 suites anteriores repasadas sin regresión (49 cobro + 65 factura + 37 documento = 151) y
+  una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
+  `nx-menu-editor-css`.
+
 ### POS · FACTURA imprimible de página completa (26-jul-2026, v49.68)
 El dueño dijo *"continúa con factura"*. Se auditó qué faltaba de verdad y el hueco real era este:
 la PANTALLA ya se ve como documento (v49.67), pero **lo único que se podía imprimir de una venta
