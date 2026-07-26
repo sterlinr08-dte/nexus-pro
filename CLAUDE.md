@@ -5125,6 +5125,17 @@ había nada que cuadrar: era un banco de pruebas.**
   faltaban, conserva las 23 de antes, el orden respeta las llaves foráneas, y solo toca los
   artículos que tenían existencia).
 
+### ⚖️ LOS REGLAMENTOS VIVEN EN `REGLAMENTOS.md` (26-jul-2026)
+El dueño pidió un reglamento por módulo. Como este archivo ya pasa de 8,000 líneas y es HISTORIA,
+las **reglas** se mudaron a **`REGLAMENTOS.md`** (archivo propio, en la raíz): ahí está la LEY que el
+código tiene que cumplir, con su índice, su estado por módulo y el método (cada reglamento es una
+tanda: redactar → auditar el código real → arreglar lo que no cumple → publicar).
+Los 4 reglamentos de DISEÑO que ya estaban decretados aquí (botones/menú lateral, buscadores,
+`ModalBusquedaBase`, un color por app) **se quedan en este archivo por ahora** y se migran cuando le
+toque su tanda a cada módulo — mudarlos de golpe sería un diff enorme sin ganancia.
+La copia del REGLAMENTO DE VENTA que sigue abajo se conserva por si alguien llega aquí primero, pero
+**la versión que manda es la de `REGLAMENTOS.md`**.
+
 ### REGLAMENTO DE VENTA (decretado por el dueño, 26-jul-2026) — OBLIGATORIO
 Aplica a TODO artículo del POS. La parte B es el caso especial de los que llevan IMEI/serial.
 
@@ -8379,3 +8390,66 @@ infra: pg_cron + Edge Functions + wa.me. WhatsApp 100% auto requiere API de Meta
 msj); plan pragmático: Fase 1 = "Centro de avisos" cron que detecta vencidos y arma cola con
 WhatsApp 1-toque (gratis) · Fase 2 = correo automático (función enviar-reporte-email existe) ·
 Fase 3 = WhatsApp API real.
+
+### REGLAMENTO DE COBRO Y CAJA — decretado y auditado (26-jul-2026, v49.88)
+Segunda tanda del pedido "un reglamento por cada módulo". Método de siempre: **el reglamento sale de
+lo que se encuentra auditando, no al revés** — primero se leyó `nxPosConfirmar`/`leerCobro`/
+`nxPosCobroCliToggle`/`nxPosAbonar` línea por línea, después se midió cada hueco contra la base real,
+y solo entonces se escribieron las 10 reglas (texto completo en **`REGLAMENTOS.md` §2**).
+- **Lo que ya estaba bien** (se confirmó, no se tocó): crédito sin cliente bloqueado · nota de crédito
+  validada contra `pos_devoluciones` reales del cliente · existencia estricta · IMEI obligatorio ·
+  RD$ 0 bloqueado · cantidad mínima del nivel · descuento global acotado 0-100 % · devuelta y crédito
+  nunca negativos · el número de factura es transaccional y no retrocede.
+- **HUECO 1, cerrado — se cobraba en efectivo con la caja CERRADA.** `caja_id: (_caja && _caja.id) ||
+  null` en el insert de la venta: si nadie había abierto caja, la venta entraba con `caja_id` en null
+  y **ese efectivo no aparecía en ningún arqueo**. Medido contra la base: bayolsale tenía **1 venta
+  con `caja_id` null cargando RD$ 14,500 de efectivo fuera de toda caja**, y en ese momento había
+  **0 cajas abiertas** en todo el sistema — o sea el hueco estaba vivo, no era teórico. Arreglado:
+  si hay efectivo y no hay caja, **se re-consulta `pos_cajas` primero** (por si la abrieron en otro
+  dispositivo — `_caja` solo se carga al abrir el POS) y solo entonces se bloquea con un aviso que
+  dice el monto. **Tarjeta/transferencia/cheque/nota de crédito/crédito NO se bloquean** (no pasan
+  por la gaveta) — regla deliberada para no paralizar un negocio que no usa caja física. El mismo
+  candado se puso en `nxPosAbonar` (abono de fiado en efectivo).
+- **HUECO 2, cerrado — inconsistencia MÍA de la v49.86.** El piso de precio se revisa en 2 momentos:
+  al teclear (`nxFacPrecio`) y al confirmar (`nxPosConfirmar`). En la v49.86 migré el primero a
+  `minimoDe(p)` (el mínimo del NIVEL del cliente) y **dejé el segundo leyendo `_p.precio_minimo`**
+  (el global). Medido: **7 artículos tienen mínimo por nivel y solo 2 tienen mínimo global**, así que
+  la revalidación final estaba ciega para la mayoría. Los dos usan ya `minimoDe(_p)`.
+- **HUECO 3, cerrado — `limite_credito` era un 5to campo fantasma.** Se leía en 2 sitios
+  (`facCliInfoHTML` y la ficha del cliente) **solo para mostrar "crédito disponible"**, nunca para
+  validar nada al fiar. Medido: **2 de 3 clientes tienen límite configurado**. Ahora `saldoCli(c) +
+  c.credito` no puede pasar del límite; **límite en 0 = sin límite** (como el resto de los topes del
+  sistema). Decisión de criterio: **al cajero se le bloquea** (con el monto exacto por el que se pasa),
+  **a admin/gerente se les pregunta** con `confirm()` y, si aceptan, queda
+  `logAudit('POS_LIMITE_CREDITO_EXCEDIDO', ...)`. Mismo patrón de permiso que el piso de precio
+  (`puedeVerMin()`): la regla no se ignora en silencio, pero el dueño no queda paralizado en el
+  mostrador.
+- **HUECO 4, cerrado — se le podía cobrar a un cliente con los precios de OTRO.** `nxPosCobroCliToggle`
+  llenaba el campo oculto `posCliId` pero **no tocaba `_factCli`**, que es de quien depende `precioCli()`
+  — así que el carrito conservaba los precios del cliente de la pantalla anterior mientras el crédito
+  se le cargaba al nuevo. Medido: **6 filas de `pos_producto_niveles` tienen un precio distinto al de
+  lista**, o sea el hueco mueve dinero real. Ahora elegir cliente en Cobrar sincroniza `_factCli`,
+  re-precia el carrito y **avisa el total de antes → después** (no se cambia el total en silencio
+  frente a alguien contando efectivo).
+- **BUG VIEJO encontrado de paso y corregido — los COMBOS se empezaban a cobrar.** Las líneas de combo
+  van en `precio: 0` con `_combo: true` ("+ X (incluido)"). `nxFacSetCli` re-preciaba **todas** las
+  líneas con `precioCli(p)`, así que cambiar de cliente le ponía su precio real al acompañante del
+  combo. Corregido en los dos sitios que re-precian (`nxFacSetCli` y el nuevo de Cobrar) saltando
+  `it._combo`. Es anterior a esta sesión.
+- Verificado con **37 comprobaciones** contra el código REAL extraído por contenido (`nxPosConfirmar`,
+  `nxPosCobroCliToggle`, `nxPosAbonar`, `nxFacSetCli`, `leerCobro`, `totales`, `precioCli`,
+  `filaNivel`, `minimoDe`, `saldoCli`, `puedeVerMin` — 21 funciones, balance de llaves real) con un
+  Supabase simulado: los 4 huecos cerrados en sus dos sentidos (bloquea cuando toca / deja pasar
+  cuando toca), el caso "caja abierta en otro equipo", el combo intacto en las 2 rutas, y **4 de
+  no-regresión** sobre las reglas que ya existían. Más la prueba de humo de la app real (`index.html`
+  + `parches.js` completos en un navegador): **0 errores de JS**. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+  - **Nota de método (2 fallos de la PRUEBA, no del código):** (1) el extractor anclaba en
+    `'function totales'` y agarraba **`async function totalesCaja`**, que aparece antes en el archivo
+    — un `await` suelto rompía el harness entero; se acotó a `'function totales('`. **Al anclar por
+    nombre, cuidado con las funciones cuyo nombre es prefijo de otra.** (2) el espía de
+    `window.nxPosCobroCalc` se ponía ANTES de evaluar el código real, que define esa misma función y
+    lo pisaba; hay que envolverlo DESPUÉS de construir el mundo.
+- **Pendiente de este reglamento (NO construido):** el arqueo no distingue el efectivo cobrado por
+  cada cajero (la caja es una por organización, no por persona) · no hay retiro parcial de efectivo a
+  bóveda durante el turno.

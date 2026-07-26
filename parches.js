@@ -17768,7 +17768,9 @@
     // re-precia el carrito según el nivel del cliente (final / por mayor) — Vender y Factura
     // comparten el mismo _cart (solo Prefactura tiene el suyo aparte), así que repintar ambas
     // vistas es seguro: cada una se sale sola si su contenedor no existe en el DOM actual.
-    _cart.forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p) it.precio = precioCli(p); });
+    // Las líneas de COMBO van en RD$ 0 ("+ X (incluido)") a propósito: si se les re-precia,
+    // el acompañante del combo empieza a cobrarse solo por cambiar de cliente.
+    _cart.forEach(it => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (p && !it._combo) it.precio = precioCli(p); });
     pintarFactura();
     try { pintarCarrito(); } catch (e) {}
     try { const g = document.getElementById('posGrid'); if (g) g.innerHTML = gridHTML(); } catch (e) {}
@@ -18930,7 +18932,21 @@
       const h = document.getElementById('posCliId'); if (h) h.value = c ? c.id : '';
       const disp = document.getElementById('posCliDisp');
       if (disp) disp.textContent = c ? (c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '') : 'Consumidor final';
+      // REGLAMENTO DE COBRO regla 1: el que paga es UNO SOLO — su nivel de precio es el que manda.
+      // Antes, elegir el cliente aquí solo llenaba el campo oculto: el carrito se quedaba con los
+      // precios del cliente de la pantalla anterior (`_factCli`), así que se podía cobrar a un
+      // cliente con los precios de otro. Ahora se sincroniza y se re-precia, avisando el cambio.
+      const _antes = totales().total;
+      _factCli = c ? c.id : '';
+      _cart.forEach(it => {
+        const p = _prods.find(x => String(x.id) === String(it.producto_id));
+        if (p && !it._combo) it.precio = precioCli(p);
+      });
+      const _dsp = totales().total;
       window.nxPosCobroCalc();
+      if (Math.abs(_dsp - _antes) > 0.5) {
+        toast('info', 'Precios al nivel de ' + (c ? (c.nombre || 'ese cliente') : 'consumidor final'), 'Total: ' + fmt(_antes) + ' → ' + fmt(_dsp));
+      }
     });
   };
   window.nxPosCobroCalc = function () {
@@ -18993,17 +19009,48 @@
         return;
       }
     }
-    // Piso de negociación: nadie sin permiso factura por debajo del precio mínimo
+    // Piso de negociación: nadie sin permiso factura por debajo del precio mínimo.
+    // REGLAMENTO DE COBRO regla 7 / REGLAMENTO DE VENTA regla 5: manda el piso del NIVEL del
+    // cliente (minimoDe), no el global del artículo — antes esta revalidación leía
+    // `_p.precio_minimo` mientras el campo de precio ya usaba minimoDe(), así que un artículo
+    // con piso solo a nivel se colaba por aquí.
     if (!puedeVerMin()) {
       for (const it of _cart) {
         const _p = _prods.find(x => String(x.id) === String(it.producto_id));
-        const _min = _p ? Number(_p.precio_minimo || 0) : 0;
+        const _min = _p ? minimoDe(_p) : 0;
         if (_min > 0 && Number(it.precio) < _min) { toast('err', 'Precio por debajo del mínimo', it.nombre + ' no puede venderse a ese precio'); return; }
       }
     }
     const c = leerCobro();
     const cliId = val('posCliId') || null;
     if (c.credito > 0 && !cliId) { toast('err', 'Hay monto a crédito: elige un cliente'); return; }
+    // REGLAMENTO DE COBRO regla 4: el efectivo entra a una caja abierta o no entra — si no,
+    // ese dinero no aparecería en ningún arqueo. Los pagos que no pasan por la gaveta
+    // (tarjeta/transferencia/cheque/nota de crédito/crédito) sí se registran con la caja cerrada.
+    // `_caja` se carga una vez al abrir el POS, así que antes de bloquear se re-consulta la base
+    // (por si la abrieron desde otro dispositivo o en otra pestaña).
+    if (c.efe > 0 && !(_caja && _caja.id)) {
+      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      if (!(_caja && _caja.id)) {
+        toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de cobrar ' + fmt(c.efe) + ' en efectivo — si no, ese dinero no aparece en ningún arqueo');
+        return;
+      }
+    }
+    // REGLAMENTO DE COBRO regla 8: lo que ya debe + lo que se le va a fiar no pasa de su límite.
+    // Límite en 0 = sin límite. Admin/gerente pueden pasarlo confirmando; los demás roles no.
+    if (c.credito > 0 && cliId) {
+      const _cl = _clientes.find(x => String(x.id) === String(cliId));
+      const _lim = _cl ? Number(_cl.limite_credito || 0) : 0;
+      if (_lim > 0) {
+        const _debe = saldoCli(_cl);
+        if (_debe + c.credito > _lim + 0.5) {
+          const _msg = (_cl.nombre || 'Ese cliente') + ' ya debe ' + fmt(_debe) + ' y su límite es ' + fmt(_lim) + '. Con estos ' + fmt(c.credito) + ' pasaría ' + fmt(_debe + c.credito - _lim) + '.';
+          if (!puedeVerMin()) { toast('err', 'Pasa del límite de crédito', _msg + ' Cóbrale más de inicial o pide autorización.'); return; }
+          if (!confirm('PASA DEL LÍMITE DE CRÉDITO\n\n' + _msg + '\n\n¿Fiarle de todos modos?')) return;
+          try { logAudit('POS_LIMITE_CREDITO_EXCEDIDO', (_cl.nombre || '') + ' · debía ' + fmt(_debe) + ' · límite ' + fmt(_lim) + ' · se le fiaron ' + fmt(c.credito), 'POS'); } catch (e) {}
+        }
+      }
+    }
     // A5: validar que la "Nota de crédito" usada como pago exista de verdad, sea de ESTE
     // cliente y esté disponible (no aplicada ya antes) — evita que se escriba cualquier
     // monto a mano y se cuele como pago sin respaldo.
@@ -21938,11 +21985,17 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   };
   window.nxPosAbonar = async function (id) {
     const monto = parseMoney(val('posAbMonto')); if (monto <= 0) { toast('err', 'Pon el monto del abono'); return; }
+    // REGLAMENTO DE COBRO regla 4: un abono en efectivo entra a una caja abierta o no entra.
+    const _met = val('posAbMet') || 'Efectivo';
+    if (/efectivo/i.test(_met) && !(_caja && _caja.id)) {
+      try { const _cj = await getAPI().get('pos_cajas', 'select=*&estado=eq.abierta&order=apertura.desc&limit=1'); _caja = (_cj && _cj[0]) || null; } catch (e) {}
+      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
+    }
     try {
-      const rab = await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: val('posAbMet') || 'Efectivo', nota: (val('posAbNota') || '').trim() || null, numero: await nextSeq('recibo'), caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
+      const rab = await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: _met, nota: (val('posAbNota') || '').trim() || null, numero: await nextSeq('recibo'), caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
       const abId = rab && rab[0] && rab[0].id;
       _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
-      try { const cli = _clientes.find(x => String(x.id) === String(id)); postAsientoAbono(cli && cli.nombre, monto, val('posAbMet') || 'Efectivo', val('posAbFecha') || hoy(), abId); } catch (e) {}
+      try { const cli = _clientes.find(x => String(x.id) === String(id)); postAsientoAbono(cli && cli.nombre, monto, _met, val('posAbFecha') || hoy(), abId); } catch (e) {}
       toast('ok', 'Abono registrado', fmt(monto));
       window.nxPosCliVer(id);
       const view = document.getElementById('v-pos'); if (view && _posTab === 'clientes') renderPOS(view);
