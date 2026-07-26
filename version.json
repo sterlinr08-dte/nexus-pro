@@ -1,7 +1,12 @@
 {
-  "version": "49.80",
+  "version": "49.81",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.81",
+      "t": "NUEVO: el tema, los favoritos, las notas y los borradores tambien pasaron a la BASE",
+      "d": "Segunda parte de sacar todo del navegador. Ahora se guardan en la base de datos, ligados a tu usuario: el TEMA que elegiste (Clasico, Premium Dark, Liquid Glass), el modo oscuro, los CLIENTES FAVORITOS (VIP), las NOTAS que le escribes a cada cliente, los BORRADORES de formularios a medio llenar, las notificaciones ya leidas, y la posicion del boton flotante. Todo eso te sigue ahora entre el celular y la computadora: marcas un cliente como VIP en el telefono y aparece VIP en la computadora. UN DETALLE QUE VAS A NOTAR: la pantalla de login siempre se vera con el tema Clasico, aunque tengas elegido otro. Es el costo de no guardar nada en el navegador — el sistema no puede saber cual es tu tema hasta que entras. Apenas entras, se aplica el tuyo. Faltan las cachas de datos repetidos y unas claves viejas de conexion; van en la ultima tanda."
+    },
     {
       "v": "49.80",
       "t": "NUEVO: tus preferencias ahora se guardan en la BASE, no en el navegador (y te siguen entre celular y computadora)",

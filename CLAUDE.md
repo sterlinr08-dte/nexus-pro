@@ -5583,6 +5583,37 @@ captura de la ventana "Elegir cliente" en su iPhone. Dos cosas distintas, las do
   una asserción nueva que confirma que `.nxPago{` y `.nxDoc{` viven dentro de `nxPosCSS` y ya NO en
   `nx-menu-editor-css`.
 
+### FUERA DE localStorage — Fase 2: tema, favoritos, notas y borradores (26-jul-2026, v49.81)
+Segunda tanda. **7 claves migradas** a `usuario_preferencias` con el motor de la Fase 1: `nx_tema`,
+`nx_dark`, `nx_favs`, `nx_notif_leidas`, `nx_notas_<id>`, `nx_draft_<key>` (index.html) y
+`nx_fab_pos` (parches.js, vía `window.nxPref`/`nxPrefSet`). **27 → 20 claves.**
+- **Cambio de forma en 2 casos, no solo de destino:** `nx_notas_<id>` y `nx_draft_<key>` eran una
+  clave POR cliente / POR formulario (crecían sin límite en el navegador). Ahora son **un solo
+  objeto** `prefs.notas = {clienteId: [...]}` y `prefs.drafts = {clave: {...}}` — una sola fila por
+  usuario, y de paso desaparece la basura de claves sueltas que nadie limpiaba.
+- **CONSECUENCIA REAL que se le avisó al dueño (y va en el changelog):** el tema y el modo oscuro se
+  aplicaban en `DOMContentLoaded`, o sea ANTES del login. Al vivir en la base no se pueden leer sin
+  sesión, así que **la pantalla de login siempre se ve con el tema Clásico**; el tema del usuario se
+  aplica al entrar, dentro de `iniciarApp` (junto a `aplicarDarkGuardado()` y la carga de
+  `_notifLeidas`). No hay forma de evitarlo sin volver a guardar algo en el navegador — es el costo
+  de la decisión, no un descuido.
+- `_notifLeidas` dejó de inicializarse en tiempo de parseo (leía localStorage al cargar el archivo);
+  ahora se llena tras `nxPrefsCargar()`.
+- Verificado con Playwright y el código real extraído por contenido (el motor de preferencias +
+  `cargarTemaGuardado`/`toggleDarkMode`/`aplicarDarkGuardado`/`getFavoritos`/`toggleFav`/`esFavorito`/
+  `getNotas`/`agregarNota`/`autoSave`/`restoreAutoSave` tal cual), contra un Supabase simulado: **18
+  comprobaciones** — cada preferencia se guarda en la base y NO en el navegador, se vuelve a aplicar
+  al entrar, sin preferencia se usa el valor por defecto, quitar un favorito funciona, la nota queda
+  bajo SU cliente y otro cliente no la ve, el borrador se restaura en el formulario, una clave
+  inexistente no revienta, y **localStorage queda en CERO en todo el flujo**. Más la prueba de humo
+  de la app real (0 errores de JS — importaba porque el tema ya no se aplica al cargar la página) y
+  las 18 de la Fase 1 sin regresión.
+- **QUEDAN 20 claves, todas ya clasificadas** (ver Fase 1): 9 son cachés de datos que ya viven en la
+  base · `nx_url`/`nx_key` son redundantes (22 usos) · 4 son la sesión, que **se queda por decisión
+  del dueño** · el resto es basura técnica (`nx_err_log`, `nx_parches_registrados`,
+  `nx_cuentas_migradas_v2`) · `nx_last_view`/`nx_last_place` solo aparecen ya en el código de rescate
+  por única vez, a propósito.
+
 ### FUERA DE localStorage — Fase 1: las preferencias viven en la BASE (26-jul-2026, v49.80)
 Decisión del dueño: *"Recuerda que nada en localStorage"* → *"Completo"*. Es un proyecto de varias
 fases; esta es la primera y deja construida la infraestructura.
