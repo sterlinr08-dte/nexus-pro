@@ -490,6 +490,7 @@ html body [tabindex="0"][role="button"]:focus-visible,html body tr[tabindex="0"]
   .tn-r > #btnRefrescar i{font-size:19px}
 }
 @media(max-width:480px){
+
   .kg{grid-template-columns:1fr 1fr}
   .qa-g{grid-template-columns:repeat(2,1fr)}
   .g3{grid-template-columns:1fr 1fr}
@@ -762,6 +763,16 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf table.sf-tbl .cli-cell b{display:block;font-size:12px;font-weight:800;color:var(--sf-tx)}
 .nxSf table.sf-tbl .cli-cell span{display:block;font-size:10px;color:var(--sf-tx3);margin-top:1px}
 .nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
+@media(max-width:480px){.nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{white-space:normal;overflow:visible;text-overflow:clip}}
+/* Fila de cliente compacta: el nombre en UNA línea con elipsis (antes se partía en
+   4 líneas y cada cliente ocupaba ~150px de alto) */
+.nxSf .cli-row{display:flex;align-items:center;gap:7px;min-width:0}
+.nxSf .cli-txt{min-width:0;flex:1}
+.nxSf .cli-nom{font-weight:800;font-size:12px;color:var(--sf-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxSf .cli-sub{font-size:9px;color:var(--sf-tx3);display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:1px;font-family:var(--mono)}
+.nxSf .cli-ref{color:#7c3aed;font-weight:700;font-family:var(--ff)}
+.nxSf table.sf-cli td.cli-pend{font-family:var(--mono);font-size:9px;font-weight:700}
+.nxSf table.sf-cli td.cli-prima{font-family:var(--mono);font-size:9px;color:var(--c1)}
 .nxSf .cli-cell:focus-visible,.nxSf .sf-btn:focus-visible,.nxSf .btn:focus-visible{outline:2px solid var(--sf-primary);outline-offset:-2px}
 @media(max-width:720px){
   .nxSf table.sf-tbl thead{display:none}
@@ -771,6 +782,26 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
   .nxSf table.sf-tbl td.cli-cell,.nxSf table.sf-tbl td[data-lb="Acciones"]{flex:1 1 100%}
   .nxSf table.sf-tbl td[data-lb]::before{content:attr(data-lb);display:block;font-size:8.5px;font-weight:800;color:var(--sf-tx3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px}
   .nxSf table.sf-tbl td.sf-tbl-hide-mb{display:none}
+  /* Clientes: el nombre SIEMPRE arriba y a lo ancho; el pendiente es lo que se busca */
+  .nxSf table.sf-cli td.cli-main{flex:1 1 100%;order:1}
+  .nxSf table.sf-cli td[data-lb="Pendiente"]{order:2;flex:1 1 45%}
+  .nxSf table.sf-cli td[data-lb="Estado"]{order:3;flex:1 1 45%;align-self:center}
+  .nxSf table.sf-cli td[data-lb="Prima"]{order:4;flex:1 1 28%}
+  .nxSf table.sf-cli td[data-lb="Plan"]{order:5;flex:1 1 28%}
+  .nxSf table.sf-cli td[data-lb="Agente"]{order:6;flex:1 1 28%}
+  .nxSf table.sf-cli td[data-lb="Acciones"]{order:9;flex:1 1 100%}
+  .nxSf table.sf-cli td.cli-pend{font-size:15px}
+  .nxSf table.sf-cli td[data-lb="Estado"]::before{display:none}
+  .nxSf table.sf-cli td{padding:3px 0}
+  .nxSf table.sf-cli td[data-lb="Prima"]::before,
+  .nxSf table.sf-cli td[data-lb="Plan"]::before,
+  .nxSf table.sf-cli td[data-lb="Agente"]::before{display:inline;margin-right:4px}
+  .nxSf table.sf-cli td[data-lb="Acciones"]{padding-top:6px;flex-wrap:wrap;min-width:0}
+  .nxSf table.sf-cli td[data-lb="Acciones"]::before{display:none}
+  .nxSf table.sf-cli td[data-lb="Prima"]{order:5;flex:1 1 30%}
+  .nxSf table.sf-cli td[data-lb="Plan"]{order:6;flex:1 1 25%}
+  /* el nombre del agente se recorta en vez de envolverse y salirse de la tarjeta */
+  .nxSf table.sf-cli td[data-lb="Agente"]{order:7;flex:1 1 35%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* ── Facturas: tarjeta compacta (NPGS §13 espacios, §14 jerarquía) ──
      Antes cada factura eran 8 líneas etiquetadas y ~200px de alto: con 95 facturas,
      3 por pantalla. Ahora: nombre y BALANCE grandes primero, el resto en una línea
@@ -939,6 +970,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 .nxft-tabs.nxft-flex::-webkit-scrollbar{height:0;display:none}
 .nxft-tabs.nxft-flex{scrollbar-width:none}
 .nxft-tabs.nxft-flex .nxft-tab{flex:0 0 auto}
+/* En el celular la tira se envuelve en vez de deslizarse: la barra de scroll está
+   oculta a propósito, así que una pestaña que se sale del borde no se ve nunca. */
+@media(max-width:620px){.nxft-tabs.nxft-flex{flex-wrap:wrap;overflow-x:visible}}
 /* Contadores dentro de las pestañas */
 .nxft-tab .nxft-cnt{padding:1px 7px;border-radius:10px;font-size:9px;margin-left:1px;background:rgba(148,163,184,.22);color:inherit}
 .nxft-tab.is-active .nxft-cnt{background:rgba(255,255,255,.25);color:#fff}
@@ -1268,7 +1302,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="sf-kpis" id="cliKpis">
             <div class="sf-kpi blue"><div class="ic"><i class="ti ti-users"></i></div><div><div class="lb">Clientes totales</div><div class="v" id="cliKpiTotal">0</div><div class="sub" id="cliKpiTotalSub">0 activos</div></div></div>
             <div class="sf-kpi ok"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Al día</div><div class="v" id="cliKpiAlDia">0</div><div class="sub">Sin balance pendiente</div></div></div>
-            <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Con balance pendiente</div><div class="v" id="cliKpiPendCount">0</div><div class="sub" id="cliKpiPendRD">RD$ 0 en total</div></div></div>
+            <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Con balance</div><div class="v" id="cliKpiPendCount">0</div><div class="sub" id="cliKpiPendRD">RD$ 0 en total</div></div></div>
             <div class="sf-kpi purple"><div class="ic"><i class="ti ti-calendar-event"></i></div><div><div class="lb">Renuevan este mes</div><div class="v" id="cliKpiRenuevan">0</div><div class="sub">Próximos 30 días</div></div></div>
           </div>
           <div class="nc">
@@ -1301,13 +1335,13 @@ input[type="text"].no-upper, input[type="search"].no-upper{
                    El input sigue existiendo OCULTO para que rCli()/rCliBuscar() lean el
                    término exactamente igual que antes (cero cambios en el filtrado). -->
               <span id="cliQLupa"></span><input id="cliQ" type="hidden" value="">
-              <select id="fPlan" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los planes</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
-              <select id="fEst" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
-              <select id="fAgenteCli" onchange="rCli()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todos los agentes</option></select>
+              <select id="fPlan" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Plan</option><option>Básico</option><option>Superior</option><option>Esencial Plus</option></select>
+              <select id="fEst" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Estado</option><option>Al día</option><option>Pendiente</option><option>Inhabilitado</option></select>
+              <select id="fAgenteCli" onchange="rCli()" style="flex:1 1 0;min-width:0;height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Agente</option></select>
               <button id="btnLimpiarCli" onclick="limpiarFiltrosCli()" title="Limpiar búsqueda y filtros" style="height:30px;padding:0 10px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx2);font-size:10px;cursor:pointer;display:none;align-items:center;gap:4px"><i class="ti ti-eraser"></i> Limpiar</button>
             </div>
-            <div class="tw"><table>
-              <thead><tr><th style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('nom')}">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('agente')}">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('plan')}">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('empresa')}">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('vigencia')}">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('prima')}">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('pendiente')}">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('estado')}">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
+            <div class="tw"><table class="sf-tbl sf-cli">
+              <thead><tr><th class="col-cli" style="width:20%;cursor:pointer;user-select:none" onclick="sortCli('nom')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('nom')}">CLIENTE <span id="scNom" style="color:#6d28d9"></span></th><th style="width:11%;cursor:pointer;user-select:none" onclick="sortCli('agente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('agente')}">AGENTE <span id="scAgente" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('plan')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('plan')}">PLAN <span id="scPlan" style="color:#6d28d9"></span></th><th style="width:14%;cursor:pointer;user-select:none" onclick="sortCli('empresa')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('empresa')}">EMPRESA <span id="scEmpresa" style="color:#6d28d9"></span></th><th style="width:10%;cursor:pointer;user-select:none" onclick="sortCli('vigencia')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('vigencia')}">VIGENCIA <span id="scVigencia" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('prima')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('prima')}">PRIMA <span id="scPrima" style="color:#6d28d9"></span></th><th style="width:9%;cursor:pointer;user-select:none" onclick="sortCli('pendiente')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('pendiente')}">PENDIENTE <span id="scPendiente" style="color:#6d28d9"></span></th><th style="width:8%;cursor:pointer;user-select:none" onclick="sortCli('estado')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortCli('estado')}">ESTADO <span id="scEstado" style="color:#6d28d9"></span></th><th style="width:10%">ACCIONES</th></tr></thead>
               <tbody id="tbCli"><tr><td colspan="9"><div class="loading"><div class="spin"></div>Cargando...</div></td></tr></tbody>
             </table></div>
           </div>
@@ -3135,9 +3169,10 @@ function nxBuscaFiltroHTML(o){
     term:(o.value!=null?o.value:(prev.term||''))
   };
   nxBuscaEnsureCSS();
+  nxBuscaFiltroCSS();   // sin esto el botón de la lupa sale sin estilo hasta que se abre la ventana
   const t=window.__nbfReg[id].term;
   return '<div class="nbfWrap" id="nbfW_'+id+'">'
-    +'<button type="button" class="nbfLupa" aria-label="'+escHtml(o.placeholder||'Buscar')+'" title="'+escHtml(o.placeholder||'Buscar')+'" onclick="nxBuscaFiltroAbrir(\''+id+'\')"><i class="ti ti-search"></i></button>'
+    +'<button type="button" class="nbfLupa'+(o.label?' conTxt':'')+'" aria-label="'+escHtml(o.placeholder||'Buscar')+'" title="'+escHtml(o.placeholder||'Buscar')+'" onclick="nxBuscaFiltroAbrir(\''+id+'\')"><i class="ti ti-search"></i>'+(o.label?'<span>'+escHtml(o.label)+'</span>':'')+'</button>'
     +(t?'<span class="nbfChip"><b>'+escHtml(t)+'</b><button type="button" aria-label="Quitar la búsqueda" onclick="nxBuscaFiltroLimpiar(\''+id+'\')">✕</button></span>':'')
     +'</div>';
 }
@@ -3147,6 +3182,8 @@ function nxBuscaFiltroCSS(){
   st.textContent='.nbfWrap{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}'
     +'.nbfLupa{width:42px;height:42px;min-width:42px;border:1px solid #e2e8f0;background:#fff;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#475569;font-size:17px}'
     +'.nbfLupa:hover{background:#f8fafc}'
+    +'.nbfLupa.conTxt{width:auto;padding:0 13px;gap:7px;font-size:15px}'
+    +'.nbfLupa.conTxt span{font-size:12.5px;font-weight:700;color:#0f172a}'
     +'.nbfChip{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:4px 6px 4px 11px;font-size:12.5px;max-width:60vw}'
     +'.nbfChip b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
     +'.nbfChip button{border:0;background:#dbeafe;color:#1d4ed8;width:19px;height:19px;border-radius:50%;cursor:pointer;font-size:11px;line-height:1;display:inline-flex;align-items:center;justify-content:center}'
@@ -4032,7 +4069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.63';
+const APP_VERSION='49.64';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5948,7 +5985,7 @@ function pintarLupaCli(){
   const box=document.getElementById('cliQLupa');
   if(!box||typeof nxBuscaFiltroHTML!=='function')return;
   box.innerHTML=nxBuscaFiltroHTML({
-    id:'cliQ', titulo:'Buscar cliente', cont:'tbCli',
+    id:'cliQ', label:'Buscar', titulo:'Buscar cliente', cont:'tbCli',
     placeholder:'Nombre, apodo, cédula, póliza...',
     value:(document.getElementById('cliQ')||{}).value||'',
     onterm:function(v){const i=document.getElementById('cliQ');if(i)i.value=v;rCliBuscar();}
@@ -6046,15 +6083,15 @@ function rCli(){
       </div>`;
     }
     return`<tr style="${!c.activo?'opacity:.5':''}">
-      <td style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div><div style="font-weight:700;font-size:11px">${c.nom}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${c.referencia})</span>`:''}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div style="font-size:8px;color:var(--tx3);font-family:var(--mono);display:flex;align-items:center;gap:4px">${c.cedula||''}${arsLogoUrl(c.ars)?`<img src="${arsLogoUrl(c.ars)}" alt="${escHtml(c.ars)}" title="${escHtml(c.ars)}" style="height:12px;max-width:34px;object-fit:contain">`:''}</div>${c.created_by_name?`<div style="font-size:7.5px;color:#475569" title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</div>`:''}${procInfo}</div></div></td>
-      <td style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
-      <td>${planB(c.plan)}</td>
-      <td style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
-      <td><span class="badge ${ep.badge}" style="font-size:8px">${ep.lbl}</span></td>
-      <td style="font-family:var(--mono);font-size:9px;color:var(--c1)">${fmt(getTot(c))}</td>
-      <td style="font-family:var(--mono);font-size:9px;font-weight:${pd>0?700:400};color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td>
-      <td>${estB(c)}</td>
-      <td style="white-space:nowrap;display:flex;gap:3px;align-items:center">
+      <td class="cli-main col-cli" style="cursor:pointer" onclick="verCliente('${c.id}')" title="Ver resumen del cliente" aria-label="Ver la ficha de ${escHtml(c.nom)}" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><div class="cli-row"><div class="av" style="background:${c.activo?'rgba(0,229,199,.1)':'rgba(244,63,94,.08)'};color:${c.activo?'var(--c1)':'var(--c3)'}">${inits(c.nom)}</div><div class="cli-txt"><div class="cli-nom">${c.nom}${!c.permitir_facturacion?' <span style="background:#fee2e2;color:#dc2626;font-size:7px;font-weight:700;padding:1px 5px;border-radius:6px">AUTO OFF</span>':''}</div><div class="cli-sub">${c.referencia?`<span class="cli-ref">(${escHtml(c.referencia)})</span>`:''}${c.cedula?`<span>${c.cedula}</span>`:''}${arsLogoUrl(c.ars)?`<img src="${arsLogoUrl(c.ars)}" alt="${escHtml(c.ars)}" title="${escHtml(c.ars)}" style="height:12px;max-width:34px;object-fit:contain">`:''}${c.created_by_name?`<span title="Creado por ${c.created_by_name}">🆕 ${String(c.created_by_name).split(' ')[0]}</span>`:''}</div>${procInfo}</div></div></td>
+      <td data-lb="Agente" style="font-size:10px;font-weight:700;color:#7c3aed">${(()=>{const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));return ag?ag.nom:'<span style=\'color:#ef4444;font-size:9px\'>⚠ SIN AGENTE</span>';})()}</td>
+      <td data-lb="Plan">${planB(c.plan)}</td>
+      <td data-lb="Empresa" class="sf-tbl-hide-mb" style="font-size:9px;color:var(--tx2)">${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}</td>
+      <td data-lb="Vigencia" class="sf-tbl-hide-mb"><span class="badge ${ep.badge}" style="font-size:8px">${ep.lbl}</span></td>
+      <td data-lb="Prima" class="r cli-prima">${fmt(getTot(c))}</td>
+      <td data-lb="Pendiente" class="r cli-pend" style="color:${pd>0?'var(--c3)':'var(--c1)'}">${fmt(pd)}</td>
+      <td data-lb="Estado">${estB(c)}</td>
+      <td data-lb="Acciones" style="white-space:nowrap;display:flex;gap:3px;align-items:center">
         <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar" aria-label="Editar"><i class="ti ti-edit"></i></button>
         <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro" aria-label="Registrar cobro"><i class="ti ti-wallet"></i></button>
         <div style="position:relative;display:inline-block">
@@ -6304,7 +6341,7 @@ function pintarLupaFact(){
   const box=document.getElementById('factQLupa');
   if(!box||typeof nxBuscaFiltroHTML!=='function')return;
   box.innerHTML=nxBuscaFiltroHTML({
-    id:'factQ', titulo:'Buscar factura', cont:'tbFact',
+    id:'factQ', label:'Buscar', titulo:'Buscar factura', cont:'tbFact',
     placeholder:'Cliente, cédula o póliza…',
     value:(document.getElementById('factQ')||{}).value||'',
     onterm:function(v){const i=document.getElementById('factQ');if(i)i.value=v;rFact();}
