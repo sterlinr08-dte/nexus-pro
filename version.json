@@ -1,7 +1,12 @@
 {
-  "version": "49.70",
+  "version": "49.71",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.71",
+      "t": "ARREGLADO: los atajos de efectivo de la ventana de Cobrar no calzaban con los billetes dominicanos",
+      "d": "En la pestaña Efectivo los botones rápidos eran +500, +1,000, +2,000 y +5,000. El de RD$5,000 no corresponde a ningún billete que exista en el país, y faltaban justo los dos que más se reciben en el mostrador: 100 y 200. Ahora son Exacto · +100 · +200 · +500 · +1,000 · +2,000 — los billetes reales de República Dominicana. Siguen sumándose entre sí, así que para RD$5,000 se tocan +2,000, +2,000 y +1,000, tal como se cuentan los billetes en la mano."
+    },
     {
       "v": "49.70",
       "t": "ARREGLADO (importante): en el celular las pantallas del POS se cortaban por abajo y no se podía bajar",
