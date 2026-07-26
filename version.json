@@ -1,7 +1,12 @@
 {
-  "version": "49.84",
+  "version": "49.85",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.85",
+      "fecha": "2026-07-26",
+      "texto": "NUEVO: los niveles de precio ya se aplican de verdad. Tenías Detalle, Mayorista y EXTREMO configurados con sus precios, pero NINGÚN cliente tenía nivel asignado — así que no se le aplicaban a nadie. Se le asignó su nivel a los 3 clientes (los que estaban marcados 'por mayor' pasaron a Mayorista, el resto a Detalle) y de ahora en adelante, al elegir el cliente en Facturar o Cobrar, el sistema le pone solo el precio de SU nivel. · MEJORADO: al crear un cliente nuevo, el selector viene con el nivel marcado como 'por defecto' (antes agarraba el primero de la lista, que coincidía de casualidad) y ese nivel se identifica en la lista. · NUEVO: en Inventario, un artículo cuyo precio de lista no coincida con el de su nivel por defecto muestra un aviso naranja con el precio que de verdad se va a cobrar — antes ese desfase no se veía por ningún lado. OJO: PANTALLA IPHONE 11 estaba descuadrada (lista RD$ 2,000, nivel Detalle RD$ 2,500); ahora se cobra RD$ 2,500 al cliente normal y RD$ 1,200 al de por mayor."
+    },
     {
       "v": "49.84",
       "fecha": "2026-07-26",
