@@ -5478,6 +5478,43 @@ adelante = RD$ 36,500** (ciclo de JULIO). O sea, el KPI mostraba mayormente cobr
   debe), el sub da **▼ 38%** — el mismo porcentaje que sale del SQL contra la base real —, las
   etiquetas de la gráfica son los 6 ciclos, sin desborde en 390px y 0 errores de consola.
 
+### WhatsApp: elegir destinatario (cliente o agente) + ronda de cobro por agente (26-jul-2026, v49.65)
+El dueño pidió un WhatsApp al AGENTE para que le dé seguimiento a su cliente atrasado; al proponerle
+dos botones separados respondió *"que yo pueda elegir al cliente o al agente"* — un solo botón con
+elección. **Se investigó la base ANTES de diseñar**, y eso cambió la propuesta dos veces:
+- **`agentes.tel` está VACÍO en los dos agentes** (la columna existe y el campo está en el formulario
+  desde siempre, nunca se llenó). Sin eso el botón no puede hacer nada → cuando falta el número, en
+  vez de fallar en silencio lleva a `editarCli`/`editarAgt` para ponérselo.
+- **ROBINSON tiene 60 de sus 61 clientes atrasados** (ESTERLIN 32 de 39, y ESTERLIN es el propio
+  dueño). Un botón por cliente = 60 WhatsApps a la misma persona; **no es usable**. Por eso, además
+  del selector pedido, se construyó la **ronda por agente**: un solo mensaje con toda su lista.
+- **`nxWaElegir(cid)`** — hoja de elección (`.waSheet`, CSS propio inyectado una vez): nombre del
+  cliente + cuánto debe, y dos filas — **Al cliente** (reusa `nxCobroWA`, sin tocarlo) y **A su
+  agente** (`nxAgenteWA`, nueva). Cliente sin agente asignado muestra una fila honesta "Sin agente"
+  en vez de una opción muerta. Entradas: botón verde nuevo en la fila de Clientes y el botón de las
+  tarjetas de atrasados en Avisos (ese pasó de ir directo al cliente a dejar elegir).
+- **`nxAgenteWARonda(agId)`** — sección nueva **"Seguimiento por agente"** arriba de Avisos, una
+  tarjeta por agente con cuántos atrasados tiene y por cuánto. El mensaje lista sus clientes
+  ordenados **de mayor a menor deuda** (el orden en que conviene perseguirlos).
+  - **Corte por TAMAÑO del enlace, no por cantidad fija.** El primer intento acotaba a 30 líneas y
+    midió **2.288 caracteres** — por encima del margen seguro de un `wa.me`. Se cambió a un cupo de
+    1.750 caracteres del texto ya codificado, sumando línea por línea: un nombre largo pesa el doble
+    que uno corto, así que una cantidad fija no sirve. Medido después: **1.948 caracteres, 25 líneas
+    y "…y 35 más"**.
+- Auditoría nueva: `AGENTE_SEGUIMIENTO_WA` (por cliente, con `cliente_id` para que salga en la línea
+  de tiempo de su ficha) y `AGENTE_RONDA_WA` (la ronda completa).
+- Verificado con Playwright y el código real extraído por contenido, con datos que **reproducen el
+  caso real** (60 clientes de Robinson sin teléfono del agente + 1 de Esterlin con teléfono): la
+  tarjeta de Robinson dice "Ponerle el WhatsApp" y **no abre nada** sino que lleva a editar el
+  agente; con teléfono arma el enlace correcto y el registro de auditoría con el monto exacto; el
+  selector muestra los 2 destinatarios con su número, elegir "A su agente" abre `wa.me` del agente
+  con el nombre y la referencia del cliente en el mensaje; un cliente sin agente muestra "Sin
+  agente". 0 errores de consola.
+  - **Nota de método (error propio, 2da vez en la sesión):** al re-extraer una sola función con
+    `re.sub` el reemplazo contenía `\n` de los template literals y Python los interpretó como
+    escapes, rompiendo el harness. Para re-extraer, volver a generar el archivo entero — no parchear
+    con `re.sub` texto que lleva backslashes.
+
 ### Clientes en el celular: la tabla se volvió tarjeta, y un bug real de la lupa (26-jul-2026, v49.64)
 El dueño mandó DOS capturas de la misma pantalla — una con scroll a la izquierda y otra a la derecha —
 y preguntó qué mejorar. Al deslizar a la derecha **se pierde el nombre**: tres filas seguidas diciendo

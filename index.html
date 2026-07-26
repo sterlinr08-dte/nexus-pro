@@ -4069,7 +4069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.64';
+const APP_VERSION='49.65';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6094,6 +6094,7 @@ function rCli(){
       <td data-lb="Acciones" style="white-space:nowrap;display:flex;gap:3px;align-items:center">
         <button class="btn bsm bghost" onclick="editarCli('${c.id}')" title="Editar" aria-label="Editar"><i class="ti ti-edit"></i></button>
         <button class="btn bsm bc1" onclick="abrirAbono('${c.id}')" title="Registrar cobro" aria-label="Registrar cobro"><i class="ti ti-wallet"></i></button>
+        <button class="btn bsm bghost" style="color:#059669" onclick="nxWaElegir('${c.id}')" title="WhatsApp — al cliente o a su agente" aria-label="Enviar WhatsApp al cliente o a su agente"><i class="ti ti-brand-whatsapp"></i></button>
         <div style="position:relative;display:inline-block">
           <button class="btn bsm bghost" onclick="toggleAccMenu(event,'${c.id}')" title="Más acciones" aria-label="Más acciones"><i class="ti ti-dots-vertical"></i></button>
           <div id="accMenu_${c.id}" class="acc-menu" style="display:none">
@@ -6757,6 +6758,97 @@ function nxCobroWA(cid){
   try{logAudit('COBRO_RECORDATORIO_WA',c.nom+' · '+fmt(tot),'Cobros');}catch(e){}
 }
 
+
+// ════════ WHATSAPP: elegir a quién se le escribe — al CLIENTE o a su AGENTE ════════
+// El mensaje al cliente reusa nxCobroWA (el de siempre). El del agente es nuevo:
+// le avisa que ESE cliente suyo está atrasado, para que le dé seguimiento.
+function nxWaElegir(cid){
+  const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
+  const ag=ST.agentes.find(a=>String(a.id)===String(c.agente_id));
+  const tot=pendTot(c);
+  const telC=nxWa(c.wa), telA=ag?nxWa(ag.tel):'';
+  const opt=(ico,color,titulo,sub,tel,accion,arreglar)=>
+    `<div class="waOpt${tel?'':' sinTel'}" ${tel?`onclick="${accion}"`:`onclick="${arreglar}"`} tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" aria-label="${escHtml(titulo)}">
+       <div class="waIco" style="background:${color}1a;color:${color}"><i class="ti ${ico}"></i></div>
+       <div style="flex:1;min-width:0">
+         <div class="waT">${escHtml(titulo)}</div>
+         <div class="waS">${tel?escHtml(sub):'Sin WhatsApp guardado · toca para ponérselo'}</div>
+       </div>
+       <i class="ti ti-chevron-right" style="color:#94a3b8;font-size:15px"></i>
+     </div>`;
+  const html=`<div class="waSheet">
+    <div class="waHd"><div><div class="waHdT">${escHtml(c.nom)}</div><div class="waHdS">${tot>0?'Debe '+fmt(tot):'Está al día'}</div></div>
+      <button onclick="closeM('mWaElegir')" aria-label="Cerrar">✕</button></div>
+    <div class="waSec">¿A quién le escribo?</div>
+    ${opt('ti-user','#059669','Al cliente',c.nom+' · '+(c.wa||''),telC,`closeM('mWaElegir');nxCobroWA('${c.id}')`,`closeM('mWaElegir');editarCli('${c.id}')`)}
+    ${ag?opt('ti-headset','#2563eb','A su agente',ag.nom+' · '+(ag.tel||''),telA,`closeM('mWaElegir');nxAgenteWA('${c.id}')`,`closeM('mWaElegir');editarAgt('${ag.id}')`)
+        :`<div class="waOpt sinTel" style="cursor:default"><div class="waIco" style="background:#ef44441a;color:#ef4444"><i class="ti ti-alert-triangle"></i></div><div style="flex:1"><div class="waT">Sin agente</div><div class="waS">Este cliente no tiene agente asignado</div></div></div>`}
+  </div>`;
+  let m=document.getElementById('mWaElegir');
+  if(!m){m=document.createElement('div');m.id='mWaElegir';m.className='overlay';m.onclick=e=>{if(e.target===m)closeM('mWaElegir');};document.body.appendChild(m);}
+  m.innerHTML='<div class="modal" style="max-width:380px">'+html+'</div>';
+  m.classList.add('open');
+  if(!document.getElementById('waElegirCSS')){
+    const st=document.createElement('style');st.id='waElegirCSS';
+    st.textContent='.waSheet{padding:4px}'
+     +'.waHd{display:flex;align-items:flex-start;gap:10px;padding:2px 2px 12px;border-bottom:1px solid #eef2f7;margin-bottom:12px}'
+     +'.waHd button{border:0;background:#f1f5f9;color:#475569;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px}'
+     +'.waHdT{font-size:15px;font-weight:800;color:#0f172a;flex:1}.waHdS{font-size:11.5px;color:#64748b;margin-top:2px}'
+     +'.waSec{font-size:10.5px;font-weight:800;color:#94a3b8;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}'
+     +'.waOpt{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid #eef2f7;border-radius:11px;margin-bottom:8px;cursor:pointer;background:#fff}'
+     +'.waOpt:hover{background:#f8fafc}.waOpt.sinTel{opacity:.72}'
+     +'.waOpt:focus-visible{outline:2px solid #2563eb;outline-offset:2px}'
+     +'.waIco{width:36px;height:36px;min-width:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px}'
+     +'.waT{font-size:13.5px;font-weight:700;color:#0f172a}'
+     +'.waS{font-size:10.5px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';
+    document.head.appendChild(st);
+  }
+}
+// Mensaje al AGENTE por UN cliente suyo
+function nxAgenteWA(cid){
+  const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return;
+  const ag=ST.agentes.find(a=>String(a.id)===String(c.agente_id));
+  if(!ag||!nxWa(ag.tel)){toast('warn','Sin WhatsApp','El agente no tiene número guardado');return;}
+  const tot=pendTot(c),pd=pend(c),da=deudaAnt(c);
+  const _mc=mesCorte();const mesLbl=MESES[_mc.mes-1]+' '+_mc.anio;
+  const det=[];
+  if(pd>0)det.push(`*Pendiente (${mesLbl}):* RD$ ${fmtN(pd)}`);
+  if(da>0)det.push(`*Deuda anterior:* RD$ ${fmtN(da)}`);
+  det.push(`*Total:* RD$ ${fmtN(tot)}`);
+  const msg=`Hola *${ag.nom.split(' ')[0]}*,\n\nTu cliente *${c.nom}*${c.referencia?` (${c.referencia})`:''} tiene pago atrasado:\n\n${det.join('\n')}\n\n`
+    +(c.wa?`Su WhatsApp: ${c.wa}\n\n`:'')+`Por favor dale seguimiento. ¡Gracias!\n\n_${CFG.empNom}_`;
+  window.open(`https://wa.me/${nxWa(ag.tel)}?text=${encodeURIComponent(msg)}`,'_blank');
+  toast('ok','WhatsApp abierto','Para '+ag.nom);
+  try{logAudit('AGENTE_SEGUIMIENTO_WA',ag.nom+' · '+c.nom+' · '+fmt(tot),'Cobros',c.id);}catch(e){}
+}
+// Mensaje al AGENTE con TODA su lista de atrasados (la ronda de cobro)
+function nxAgenteWARonda(agId){
+  const ag=ST.agentes.find(a=>String(a.id)===String(agId));if(!ag)return;
+  if(!nxWa(ag.tel)){toast('warn','Sin WhatsApp',ag.nom+' no tiene número guardado');editarAgt(ag.id);return;}
+  const suyos=ST.clientes.filter(c=>c.activo!==false&&String(c.agente_id)===String(ag.id)&&pendTot(c)>0)
+                          .sort((a,b)=>pendTot(b)-pendTot(a));
+  if(!suyos.length){toast('ok','Todo al día',ag.nom+' no tiene clientes atrasados');return;}
+  const total=suyos.reduce((s,c)=>s+pendTot(c),0);
+  // Un enlace de WhatsApp aguanta ~2000 caracteres. Se corta por TAMAÑO del enlace
+  // ya codificado (no por una cantidad fija), porque un nombre largo pesa el doble
+  // que uno corto — con 30 líneas de nombres largos el enlace se pasaba.
+  const CUPO=1750;
+  const inc=[];let usado=0;
+  for(const c of suyos){
+    const l=`• ${c.nom} — RD$ ${fmtN(pendTot(c))}`;
+    const peso=encodeURIComponent(l+'\n').length;
+    if(usado+peso>CUPO)break;
+    inc.push(l);usado+=peso;
+  }
+  const lineas=inc.join('\n');
+  const resto=suyos.length>inc.length?`\n…y ${suyos.length-inc.length} más.`:'';
+  const msg=`Hola *${ag.nom.split(' ')[0]}*,\n\nTienes *${suyos.length} cliente${suyos.length===1?'':'s'}* con pago atrasado, `
+    +`RD$ ${fmtN(total)} en total. Por favor dales seguimiento:\n\n${lineas}${resto}\n\n_${CFG.empNom}_`;
+  window.open(`https://wa.me/${nxWa(ag.tel)}?text=${encodeURIComponent(msg)}`,'_blank');
+  toast('ok','WhatsApp abierto',ag.nom+' · '+suyos.length+' clientes');
+  try{logAudit('AGENTE_RONDA_WA',ag.nom+' · '+suyos.length+' clientes · '+fmt(total),'Cobros');}catch(e){}
+}
+
 // ════════ AVISOS — quién necesita un recordatorio, calculado en vivo (1 toque para enviar) ════════
 function _nxAvCSS(){
   if(document.getElementById('nxAvCSS'))return;
@@ -6798,7 +6890,7 @@ function rAvisos(){
     const tieneWA=c&&nxWa(c.wa);
     return `<div class="nxAvCard">
       <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#f87171,#dc2626)">${inits(o.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(o.nom)}</div><div class="nxAvSub">${o.meses} mes(es) atrasado(s)</div></div><div class="nxAvMonto">${fmt(o.total)}</div></div>
-      ${tieneWA?`<button class="nxAvBtn wa" onclick="nxCobroWA('${o.cliente_id}')"><i class="ti ti-brand-whatsapp"></i> Enviar recordatorio</button>`:`<div class="nxAvNoWa">Sin WhatsApp registrado</div>`}
+      <button class="nxAvBtn wa" onclick="nxWaElegir('${o.cliente_id}')"><i class="ti ti-brand-whatsapp"></i> Enviar recordatorio</button>
     </div>`;
   };
   const cardVence=c=>{
@@ -6809,7 +6901,22 @@ function rAvisos(){
     </div>`;
   };
 
+  // Ronda de cobro por agente: UN mensaje con toda su lista (con 60 atrasados,
+  // mandar uno por cliente no es usable)
+  const porAgente=ST.agentes.map(ag=>{
+    const suyos=act.filter(c=>String(c.agente_id)===String(ag.id)&&pendTot(c)>0);
+    return {ag,n:suyos.length,total:suyos.reduce((s,c)=>s+pendTot(c),0)};
+  }).filter(x=>x.n>0).sort((a,b)=>b.total-a.total);
+  const cardAgente=x=>`<div class="nxAvCard">
+      <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#60a5fa,#2563eb)">${inits(x.ag.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(x.ag.nom)}</div><div class="nxAvSub">${x.n} cliente${x.n===1?'':'s'} con pago atrasado</div></div><div class="nxAvMonto">${fmt(x.total)}</div></div>
+      <button class="nxAvBtn wa" onclick="nxAgenteWARonda('${x.ag.id}')"><i class="ti ti-brand-whatsapp"></i> ${nxWa(x.ag.tel)?'Mandarle su lista':'Ponerle el WhatsApp'}</button>
+    </div>`;
+
   tb.innerHTML=`
+    <div class="nc" style="margin-bottom:10px">
+      <div class="ch"><span class="ct"><i class="ti ti-headset" style="color:#2563eb"></i> Seguimiento por agente</span><span class="badge bC2">${porAgente.length}</span></div>
+      ${porAgente.length?porAgente.map(cardAgente).join(''):'<div class="empty">Ningún agente tiene clientes atrasados 🎉</div>'}
+    </div>
     <div class="nc" style="margin-bottom:10px">
       <div class="ch"><span class="ct"><i class="ti ti-file-alert" style="color:#dc2626"></i> Facturas atrasadas</span><span class="badge bC3">${atrasadosArr.length}</span></div>
       ${atrasadosArr.length?atrasadosArr.map(cardAtraso).join(''):'<div class="empty">Nadie tiene facturas atrasadas 🎉</div>'}
