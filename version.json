@@ -1,7 +1,12 @@
 {
-  "version": "49.60",
+  "version": "49.61",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.61",
+      "t": "NUEVO \u2014 El Dashboard ahora arranca con los n\u00fameros, no con los iconos",
+      "d": "Al abrir la app ten\u00edas que pasar 5 filas de iconos antes de ver un solo n\u00famero. Ahora los indicadores van ARRIBA de los accesos r\u00e1pidos: abres y lo primero que ves es tu negocio.\n\nAdem\u00e1s cambiaron los n\u00fameros por unos que s\u00ed sirven para decidir el d\u00eda, en este orden:\n\n\u2022 POR COBRAR \u2014 lo que falta por cobrar en total, y cu\u00e1ntos clientes tienen saldo\n\u2022 FACTURAS ATRASADAS \u2014 las de meses anteriores sin pagar (mismo c\u00e1lculo que el filtro de Facturas)\n\u2022 COBRADO ESTE MES \u2014 lo que de verdad entr\u00f3 este mes\n\u2022 PRIMA MENSUAL, CLIENTES ACTIVOS y EN PROCESO quedan detr\u00e1s, como contexto\n\nY ahora los n\u00fameros se pueden TOCAR: POR COBRAR te lleva a Cobros, FACTURAS ATRASADAS abre Facturas ya filtrada, COBRADO ESTE MES abre el Historial de pagos, CLIENTES ACTIVOS abre Clientes. Antes solo EN PROCESO llevaba a alg\u00fan lado.\n\nARREGLADO de paso: los 8 iconos que el sistema agrega solo (NEXUS Smart, Cierre de Mes, Multiempresa, Contabilidad, Solicitudes, Consultar Cobertura, Mis Cuentas y Tabla Comparativa) no se pod\u00edan usar con el teclado \u2014 los otros 6 s\u00ed. Ya responden todos igual."
+    },
     {
       "v": "49.60",
       "t": "NUEVO \u2014 La referencia del cliente ahora se ve en Facturas, Avisos, Reportes y Documentos",
