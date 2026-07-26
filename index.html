@@ -756,7 +756,33 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
   .nxSf table.sf-tbl td.cli-cell,.nxSf table.sf-tbl td[data-lb="Acciones"]{flex:1 1 100%}
   .nxSf table.sf-tbl td[data-lb]::before{content:attr(data-lb);display:block;font-size:8.5px;font-weight:800;color:var(--sf-tx3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px}
   .nxSf table.sf-tbl td.sf-tbl-hide-mb{display:none}
+  /* ── Facturas: tarjeta compacta (NPGS §13 espacios, §14 jerarquía) ──
+     Antes cada factura eran 8 líneas etiquetadas y ~200px de alto: con 95 facturas,
+     3 por pantalla. Ahora: nombre y BALANCE grandes primero, el resto en una línea
+     chica, y el estado como pastilla arriba a la derecha. Scopeado a .sf-fact para
+     NO tocar la misma tabla en Historial de pagos. */
+  .nxSf table.sf-fact tr{position:relative;padding:10px 12px;column-gap:8px;align-items:baseline}
+  .nxSf table.sf-fact td[data-lb]::before{display:none}
+  .nxSf table.sf-fact td{padding:1px 0}
+  .nxSf table.sf-fact td.cli-cell{order:1;flex:1 1 100%;padding-right:96px}
+  .nxSf table.sf-fact td.cli-cell b{font-size:13.5px}
+  .nxSf table.sf-fact td[data-lb="Estado"]{position:absolute;top:9px;right:11px;flex:0 0 auto;padding:0;width:auto}
+  .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:0 0 auto;font-size:19px;line-height:1.15;padding-top:3px}
+  .nxSf table.sf-fact td[data-lb="Total"]{order:3;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3);align-self:flex-end;padding-bottom:3px}
+  .nxSf table.sf-fact td[data-lb="ARS"]{order:4;flex:0 0 auto;align-self:flex-end;padding-bottom:2px}
+  .nxSf table.sf-fact td[data-lb="Factura"],.nxSf table.sf-fact td[data-lb="Fecha"]{order:5;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
+  .nxSf table.sf-fact td[data-lb="Factura"]::after{content:" ·";color:var(--sf-tx3)}
+  .nxSf table.sf-fact td[data-lb="Acciones"]{order:9;flex:1 1 100%;padding-top:7px}
+  .nxSf table.sf-fact .solo-mb{display:inline}
 }
+.nxSf .solo-mb{display:none}
+/* Menú "⋮" de cada factura: posición fija calculada en JS, nunca recortado por su contenedor */
+.factMenu{position:fixed;z-index:11000;background:#fff;border:1px solid var(--sf-line,#e2e8f0);border-radius:11px;box-shadow:0 14px 34px rgba(15,23,42,.22);padding:5px;min-width:200px}
+.factMenu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;padding:10px 11px;border-radius:8px;font-size:13px;font-weight:600;color:#0f172a;cursor:pointer;text-align:left}
+.factMenu button:hover{background:#f1f5f9}
+.factMenu button i{font-size:15px;color:#64748b}
+.factMenu button.peligro{color:#dc2626}
+.factMenu button.peligro i{color:#dc2626}
 
 /* ════ GLOBAL SEARCH MODAL ════ */
 .gs-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:700;display:none;align-items:flex-start;justify-content:center;padding-top:80px;backdrop-filter:blur(4px)}
@@ -1308,7 +1334,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
               <div><div class="ct">Facturas</div><div class="ct-s">Cobra y factura a tus clientes</div></div>
               <button class="btn bsm bc1" onclick="genFacturas()"><i class="ti ti-file-plus"></i> Generar</button>
             </div>
-            <div style="margin-bottom:6px"><div class="nxBusca" style="flex:1 1 100%"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." value="" autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
+            <!-- NPGS §5: solo la lupa; la ventana la arma nxBuscaFiltroHTML. El input sigue
+                 existiendo OCULTO para que rFact() lea el término igual que siempre. -->
+            <div style="margin-bottom:6px"><span id="factQLupa"></span><input id="factQ" type="hidden" value=""></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
               <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
               <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
@@ -3988,7 +4016,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.58';
+const APP_VERSION='49.59';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6169,8 +6197,39 @@ async function resyncEstadoFacturas(cid){
     }
   }
 }
+// NPGS §4 y §10: Anular NUNCA va del mismo tamaño y pegado a Cobrar (en el celular el dedo
+// tapa media pantalla). Cobrar y WhatsApp quedan a la vista; el resto va a este menú.
+function nxFactMenuCerrar(){document.querySelectorAll('.factMenu').forEach(m=>m.remove());}
+function nxFactMenu(fid,btn){
+  nxFactMenuCerrar();
+  const f=ST.facturas.find(x=>String(x.id)===String(fid));if(!f)return;
+  const anul=f.estado==='Anulada',pag=f.estado==='Pagado';
+  const it=[['ti-file-invoice','Ver factura',`verFacturaPDF_id('${fid}')`,'']];
+  if(!anul&&!pag&&tienePermiso('modificar_precio'))it.push(['ti-pencil','Corregir el precio',`nxEditarPrecioFactura('${fid}')`,'']);
+  if(!anul&&!pag&&tienePermiso('editar_facturas'))it.push(['ti-ban','Anular factura',`anularFactura('${fid}')`,'peligro']);
+  const p=document.createElement('div');p.className='factMenu';
+  p.innerHTML=it.map(a=>`<button type="button" class="${a[3]}" onclick="nxFactMenuCerrar();${a[2]}"><i class="ti ${a[0]}" aria-hidden="true"></i>${a[1]}</button>`).join('');
+  document.body.appendChild(p);
+  // posición REAL del botón y acotada a la pantalla (misma lección del menú del POS: un
+  // popup colocado dentro de un contenedor angosto se sale por el borde en el celular)
+  const r=btn.getBoundingClientRect(),w=p.offsetWidth||210,h=p.offsetHeight||130;
+  p.style.left=Math.max(8,Math.min(r.right-w,window.innerWidth-w-8))+'px';
+  p.style.top=((r.bottom+6+h>window.innerHeight&&r.top-h-6>0)?(r.top-h-6):(r.bottom+6))+'px';
+  setTimeout(function(){document.addEventListener('click',nxFactMenuCerrar,{once:true});},0);
+}
+function pintarLupaFact(){
+  const box=document.getElementById('factQLupa');
+  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
+  box.innerHTML=nxBuscaFiltroHTML({
+    id:'factQ', titulo:'Buscar factura', cont:'tbFact',
+    placeholder:'Cliente, cédula o póliza…',
+    value:(document.getElementById('factQ')||{}).value||'',
+    onterm:function(v){const i=document.getElementById('factQ');if(i)i.value=v;rFact();}
+  });
+}
 function rFact(){
   llenarFiltroAgentes('fAgenteFact');
+  pintarLupaFact();
   const mes=parseInt(document.getElementById('fMes')?.value||mesCorte().mes);
   const anio=parseInt(document.getElementById('fAnio')?.value||mesCorte().anio);
   const key=`${anio}-${String(mes).padStart(2,'0')}`;
@@ -6199,14 +6258,19 @@ function rFact(){
   const _saldoMemo={};
   const saldoDe=f=>{if(f.estado==='Pagado')return 0;const cid=String(f.cliente_id);if(!_saldoMemo[cid])_saldoMemo[cid]=_saldoFacturasCliente(cid);const v=_saldoMemo[cid][f.id];return v!=null?v:(Number(f.prima_base||0)+Number(f.prima_deps||0));};
   const porCobrar=lista.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').reduce((s,f)=>s+saldoDe(f),0);
-  const pagadasEnLista=lista.filter(f=>f.estado==='Pagado').length;
+  // 3er indicador: "Pagadas" siempre daba 0 con el filtro en Pendientes (cuenta las pagadas
+  // DE LA LISTA, y esa lista excluye las pagadas). Se cambió por las ATRASADAS de meses
+  // anteriores, que es un número que sí cambia y que sí hay que perseguir. Respeta el corte
+  // 20-al-20 igual que el filtro "atrasadas" de arriba.
+  const _mcK=mesCorte();const _hoyKey=`${_mcK.anio}-${String(_mcK.mes).padStart(2,'0')}`;
+  const atrasadasN=ST.facturas.filter(f=>f.periodo<_hoyKey&&f.estado!=='Pagado'&&f.estado!=='Anulada').length;
   if(rz)rz.innerHTML=`<div class="sf-kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas</div><div class="v">${lista.length}</div></div></div>
       <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Por cobrar</div><div class="v">${fmt(porCobrar)}</div></div></div>
-      <div class="sf-kpi ok sf-kpi-wide"><div class="ic"><i class="ti ti-circle-check"></i></div><div><div class="lb">Pagadas</div><div class="v">${pagadasEnLista}</div></div></div>
+      <div class="sf-kpi ${atrasadasN?'err':'ok'} sf-kpi-wide" ${atrasadasN?`onclick="const s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}" style="cursor:pointer" tabindex="0" role="button" aria-label="Ver las facturas atrasadas" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"`:''}><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Atrasadas${atrasadasN?' · toca para ver':''}</div><div class="v">${atrasadasN}</div></div></div>
     </div>`;
   const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
-  tb.innerHTML=`<table class="sf-tbl"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Factura</th><th>Fecha</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
+  tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Factura</th><th>Fecha</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
     const emp=gEmp(f.empresa_id);
     const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
     const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
@@ -6218,19 +6282,17 @@ function rFact(){
     const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''} style="padding:5px 8px"><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
     return `<tr${anul?' style="opacity:.55"':''}>
       <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
-      <td data-lb="ARS">${arsLogoHTML(cli?.ars,16)}</td>
+      <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Factura">${f.ncf||'—'}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
       <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
-      <td data-lb="Total" class="r">${fmt(prima)}</td>
+      <td data-lb="Total" class="r${Math.abs(prima-sal)<0.01?' sf-tbl-hide-mb':''}"><span class="solo-mb">Total </span>${fmt(prima)}</td>
       <td data-lb="Balance" class="r" style="font-weight:800;color:${sal>0.009?'var(--sf-err)':'var(--sf-tx)'}">${fmt(sal)}</td>
       <td data-lb="Estado"><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
       <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
         ${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-wallet','Cobrar')}
-        ${btn(`verFacturaPDF_id('${f.id}')`,'bghost','ti-file-invoice','','Ver factura')}
         ${anul?'':btn(`enviarWA('${f.id}')`,'bwa','ti-brand-whatsapp','','WhatsApp')}
-        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('modificar_precio'))?btn(`nxEditarPrecioFactura('${f.id}')`,'bghost','ti-pencil','','Corregir precio de esta factura'):''}
-        ${(!anul&&f.estado!=='Pagado'&&tienePermiso('editar_facturas'))?btn(`anularFactura('${f.id}')`,'bc3','ti-ban','','Anular'):''}
+        ${btn(`event.stopPropagation();nxFactMenu('${f.id}',this)`,'bghost','ti-dots-vertical','','Más acciones')}
       </div></td>
     </tr>`;
   }).join('')+'</tbody></table>';

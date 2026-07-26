@@ -5372,6 +5372,41 @@ escriben ahí.
   arreglarlo permitiría que cualquiera llene la tabla de basura; la salida correcta sería una función
   Edge con service-role. Se deja documentado, no se improvisa.
 
+### Facturas — 4 mejoras salidas de una captura del dueño (26-jul-2026, v49.59)
+El dueño mandó la pantalla de Facturas en su iPhone y preguntó "cómo podemos mejorar". Se auditó
+contra el código real (no solo la captura) y salieron 4 cosas, ordenadas por lo que de verdad le
+ahorra tiempo:
+1. **La tarjeta ocupaba ~200px con 95 facturas** → 3 por pantalla, ~32 pantallas de scroll. De sus
+   8 líneas etiquetadas, **3 no aportaban**: `ARS —` (la mayoría de sus clientes no tienen ARS
+   registrada), **Total y Balance mostrando el MISMO número** (solo difieren si hubo abono parcial),
+   y la etiqueta "ACCIONES". Además el balance —lo que hay que cobrar— iba chiquito abajo, con el
+   mismo peso que la fecha (contra NPGS §14). Reestructurada: nombre + BALANCE grandes arriba,
+   pastilla de estado en `position:absolute` arriba a la derecha, resto en una línea de 10.5px.
+   **Medido: 200px → 111px.**
+   - **Cómo, sin romper el escritorio ni Historial de pagos:** la tabla ganó una clase extra
+     `sf-fact` y TODO el CSS nuevo va scopeado a ella dentro del `@media(max-width:720px)` que ya
+     existía. El orden visual se cambió con `order:` — **no** reordenando el DOM, que habría movido
+     las columnas del escritorio. Ocultar ARS/Total reusa la clase `sf-tbl-hide-mb` que ya existía.
+2. **El KPI "Pagadas" siempre marcaba 0**: contaba las pagadas DE LA LISTA, y con el filtro en
+   "Pendientes" esa lista las excluye por definición. Cambiado por **ATRASADAS** (facturas de meses
+   anteriores sin pagar, respetando el corte 20-al-20 igual que el filtro `atrasadas`), en rojo si
+   hay alguna y clicable para ir a verlas.
+3. **El botón rojo de anular estaba del mismo tamaño y pegado a Cobrar** — contra NPGS §4
+   ("eliminar nunca junto a la acción principal") y §10 ("agrupar en ⋮ Más acciones"). A la vista
+   quedan **Cobrar** y **WhatsApp**; Ver factura / Corregir precio / Anular pasaron a `nxFactMenu`.
+   El menú usa `position:fixed` con la posición REAL del botón (`getBoundingClientRect`) **acotada
+   al ancho de la pantalla** — misma lección del menú del POS (v48.99), donde un popup posicionado
+   dentro de un contenedor angosto se salía por el borde en el celular.
+4. **El buscador pasó a la ventana del §5**, mismo patrón de riesgo mínimo que Clientes: `#factQ`
+   sigue existiendo oculto, así que `rFact()` lee el término igual que siempre.
+- Verificado con Playwright y el código real de `rFact`/`nxFactMenu`/`pintarLupaFact` + el CSS real
+  extraído: **20 comprobaciones** — alto de tarjeta 111px, sin etiquetas repetidas, ARS vacía
+  oculta y ARS real visible, Total oculto cuando repite el balance y visible cuando hubo abono, el
+  3er KPI dice Atrasadas con el número correcto, 3 botones a la vista, el menú abre con las 3
+  opciones y **no se sale de la pantalla** (left=165, right=365 en 390px), elegir dispara la acción
+  y cierra, la ventana de búsqueda filtra y la ✕ devuelve todas, Cobrar sigue funcionando, sin
+  desborde, 0 errores de JS.
+
 ### BUG MÍO en producción: salía código escrito en el Inicio (26-jul-2026, v49.58)
 El dueño mandó una captura de su iPhone: en el Dashboard aparecían pedazos de JavaScript como
 texto (`VITCHTAB('COB'),200)`, `{VAR ETELEMENTBYID('FFA…`) encima de los accesos **Clientes** y
