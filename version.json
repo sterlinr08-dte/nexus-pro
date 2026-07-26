@@ -1,7 +1,12 @@
 {
-  "version": "49.89",
+  "version": "49.90",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.90",
+      "fecha": "2026-07-26",
+      "texto": "REGLAMENTO DE INVENTARIO: la existencia de un artículo con IMEI ahora ES la cuenta de IMEI que de verdad tienes. · ARREGLADO (importante): al registrar los IMEI de un teléfono en \"Administrar IMEI\", el stock NO subía — el artículo quedaba en \"SIN STOCK\" y no lo podías vender aunque tuvieras los teléfonos en la mano. Ahora registrar N IMEI sube el stock en N, y borrar un IMEI lo baja en 1, todo con su registro en el Kardex. · NUEVO: cuando el stock de un artículo con IMEI no coincide con la cantidad de IMEI disponibles (un descuadre viejo), la ventana de IMEI te avisa y te deja cuadrarlo de un toque. · NUEVO: los IMEI que registras a mano ahora quedan marcados con el almacén activo (antes solo los de una compra lo tenían). · El único camino para cambiar el inventario sigue siendo controlado y todo movimiento queda en el Kardex."
+    },
     {
       "v": "49.89",
       "fecha": "2026-07-26",
