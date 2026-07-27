@@ -1,7 +1,12 @@
 {
-  "version": "50.6",
+  "version": "50.7",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.7",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): los botones de la tarjeta ahora sí quedan pequeños de verdad. · El botón COBRAR bajó a ~32px y el WhatsApp y el menú (⋮) a ~23px (del tamaño de la etiqueta PENDIENTE). Antes un padding pegado al botón impedía que se achicaran; se quitó y ahora se ven compactos."
+    },
     {
       "v": "50.6",
       "fecha": "2026-07-27",
