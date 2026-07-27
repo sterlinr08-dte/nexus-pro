@@ -852,13 +852,25 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
    (.inview). SIN transformaciones 3D ni velo por-cuadro → CERO parpadeo en iPhone (el problema
    de v51.2 no puede volver aquí porque no hay transform en cada scroll, solo CSS sticky). */
 .sfr-wheel{position:relative;max-width:460px;margin:0 auto;padding:6px 5px 72px}
-/* Fondo ESPACIAL: una capa de estrellas + nebulosa que se queda FIJA (position:sticky) detrás de
-   las tarjetas. Como las tarjetas hacen scroll por encima y el espacio se queda pegado, se ve el
-   parallax "flotando en el espacio" al hacer scroll. Sin animación por-cuadro (iOS-safe, no puede
-   parpadear). margin-bottom:-100dvh cancela su alto en el flujo para que no empuje las tarjetas.
-   Full-bleed al ancho de la pantalla (margin-left) para que el espacio cubra todo, no solo la
-   columna de tarjetas. Solo aparece en la vista tarjetas (esta capa solo se pinta ahí). */
-.sfr-space{position:sticky;top:0;height:100dvh;width:100vw;margin-left:calc(-50vw + 50%);margin-bottom:-100dvh;z-index:0;pointer-events:none;background-color:#05070f;background-repeat:no-repeat;background-image:radial-gradient(1.6px 1.6px at 12% 16%,#fff,transparent 60%),radial-gradient(1.2px 1.2px at 78% 11%,rgba(255,255,255,.92),transparent 60%),radial-gradient(1px 1px at 33% 60%,rgba(255,255,255,.85),transparent 60%),radial-gradient(1.7px 1.7px at 88% 72%,#fff,transparent 60%),radial-gradient(1px 1px at 55% 38%,rgba(255,255,255,.8),transparent 60%),radial-gradient(2px 2px at 22% 84%,#fff,transparent 60%),radial-gradient(1px 1px at 66% 90%,rgba(255,255,255,.78),transparent 60%),radial-gradient(1.1px 1.1px at 45% 7%,rgba(255,255,255,.88),transparent 60%),radial-gradient(1px 1px at 6% 48%,rgba(255,255,255,.72),transparent 60%),radial-gradient(1px 1px at 95% 44%,rgba(255,255,255,.72),transparent 60%),radial-gradient(1.4px 1.4px at 40% 28%,#fff,transparent 60%),radial-gradient(1px 1px at 71% 55%,rgba(255,255,255,.7),transparent 60%),radial-gradient(1px 1px at 18% 38%,rgba(255,255,255,.7),transparent 60%),radial-gradient(1.2px 1.2px at 84% 30%,rgba(255,255,255,.85),transparent 60%),radial-gradient(1px 1px at 50% 76%,rgba(255,255,255,.72),transparent 60%),radial-gradient(1.3px 1.3px at 8% 72%,#fff,transparent 60%),radial-gradient(1px 1px at 62% 20%,rgba(255,255,255,.68),transparent 60%),radial-gradient(1px 1px at 28% 46%,rgba(255,255,255,.66),transparent 60%),radial-gradient(70% 55% at 80% 6%,rgba(99,102,241,.22),transparent 62%),radial-gradient(62% 52% at 10% 84%,rgba(168,85,247,.18),transparent 62%),radial-gradient(130% 90% at 50% 34%,rgba(13,20,45,.55),transparent 72%)}
+/* Fondo ESPACIAL de PANTALLA COMPLETA (solo la vista tarjetas: Facturas/Cobros, modo admin/celular).
+   La capa .sfr-space (primer hijo de #v-facturas) va FIJA al viewport (position:fixed) mientras TODO el
+   contenido (pestañas, KPIs, filtros, buscador y tarjetas) hace scroll por encima → parallax "flotando
+   en el espacio". z-index:0 la deja debajo del chrome de la app (barra inferior, etc. van más arriba).
+   Sin animación por-cuadro (iOS-safe, no puede parpadear). Solo se activa con la clase .nxEspacio (la
+   pone rFact/rCob en modo tarjetas) + .on (vista activa); en cualquier otra pantalla no se pinta. */
+.sfr-space{display:none}
+#v-facturas.nxEspacio.on{position:relative}
+#v-facturas.nxEspacio.on>.sfr-space{display:block;position:fixed;inset:0;z-index:0;pointer-events:none;background-color:#05070f;background-repeat:no-repeat;background-image:radial-gradient(1.6px 1.6px at 12% 16%,#fff,transparent 60%),radial-gradient(1.2px 1.2px at 78% 11%,rgba(255,255,255,.92),transparent 60%),radial-gradient(1px 1px at 33% 60%,rgba(255,255,255,.85),transparent 60%),radial-gradient(1.7px 1.7px at 88% 72%,#fff,transparent 60%),radial-gradient(1px 1px at 55% 38%,rgba(255,255,255,.8),transparent 60%),radial-gradient(2px 2px at 22% 84%,#fff,transparent 60%),radial-gradient(1px 1px at 66% 90%,rgba(255,255,255,.78),transparent 60%),radial-gradient(1.1px 1.1px at 45% 7%,rgba(255,255,255,.88),transparent 60%),radial-gradient(1px 1px at 6% 48%,rgba(255,255,255,.72),transparent 60%),radial-gradient(1px 1px at 95% 44%,rgba(255,255,255,.72),transparent 60%),radial-gradient(1.4px 1.4px at 40% 28%,#fff,transparent 60%),radial-gradient(1px 1px at 71% 55%,rgba(255,255,255,.7),transparent 60%),radial-gradient(1px 1px at 18% 38%,rgba(255,255,255,.7),transparent 60%),radial-gradient(1.2px 1.2px at 84% 30%,rgba(255,255,255,.85),transparent 60%),radial-gradient(1px 1px at 50% 76%,rgba(255,255,255,.72),transparent 60%),radial-gradient(1.3px 1.3px at 8% 72%,#fff,transparent 60%),radial-gradient(1px 1px at 62% 20%,rgba(255,255,255,.68),transparent 60%),radial-gradient(1px 1px at 28% 46%,rgba(255,255,255,.66),transparent 60%),radial-gradient(70% 55% at 80% 6%,rgba(99,102,241,.22),transparent 62%),radial-gradient(62% 52% at 10% 84%,rgba(168,85,247,.18),transparent 62%),radial-gradient(130% 90% at 50% 34%,rgba(13,20,45,.55),transparent 72%)}
+/* el contenido flota por encima del espacio */
+#v-facturas.nxEspacio.on>.nxft-tabs,#v-facturas.nxEspacio.on>#panelFact,#v-facturas.nxEspacio.on>#panelCob{position:relative;z-index:1}
+/* la tarjeta blanca contenedora desaparece: el contenido queda directo sobre el espacio */
+#v-facturas.nxEspacio.on #panelFact>.nc,#v-facturas.nxEspacio.on #panelCob>.nc{background:transparent;border-color:transparent;box-shadow:none}
+/* pestañas en vidrio oscuro para leerse sobre el espacio */
+#v-facturas.nxEspacio.on>.nxft-tabs{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}
+#v-facturas.nxEspacio.on .nxft-tab{color:rgba(255,255,255,.82)}
+/* textos oscuros que quedan sobre el espacio → claros */
+#v-facturas.nxEspacio.on .ch .ct{color:#fff}
+#v-facturas.nxEspacio.on .ch .ct-s{color:rgba(255,255,255,.72)}
 .sfr-cc{position:sticky;top:calc(6px + min(var(--i,0) * 5px, 26px));margin-bottom:14px;width:100%;border-radius:18px;padding:15px 17px;color:#fff;overflow:hidden;isolation:isolate;z-index:1;box-shadow:0 6px 26px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);backface-visibility:hidden;opacity:0;transform:translateY(22px) scale(.986);transition:transform .5s cubic-bezier(.2,.7,.15,1),opacity .42s ease}
 .sfr-cc.inview{opacity:1;transform:none}
 .sfr-cc.debt{background:linear-gradient(122deg,#ff8497 0%,#e0322f 22%,#8a1717 48%,#b81d1d 70%,#ff6d80 100%)}
@@ -1430,6 +1442,8 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
         <!-- FACTURAS + COBROS COMBINADOS -->
         <div class="view" id="v-facturas">
+          <!-- Fondo espacial de pantalla completa (solo vista tarjetas, admin/celular) -->
+          <div class="sfr-space" aria-hidden="true"></div>
           <!-- Tabs -->
           <div class="nxft-tabs">
             <button id="tabFact" class="nxft-tab is-active" onclick="switchTab('fact')"><i class="ti ti-file-invoice"></i> Facturas</button>
@@ -4149,7 +4163,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='51.5';
+const APP_VERSION='51.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6623,9 +6637,13 @@ function nxRuedaScrollOff(){
 function nxUsarRueda(){
   try{return !!(sesion&&sesion.rol==='admin'&&nxPref('vista_rueda',false)&&window.matchMedia('(max-width:720px)').matches);}catch(e){return false;}
 }
+// Activa/desactiva el FONDO ESPACIAL de pantalla completa en la vista tarjetas (clase en #v-facturas).
+// Solo debe estar ON en Facturas/Cobros en modo tarjetas; Historial/Avisos y la lista normal lo apagan.
+function nxEspacioModo(on){const v=document.getElementById('v-facturas');if(v)v.classList.toggle('nxEspacio',!!on);}
 
 function rFact(){
   nxRuedaScrollOff(); // limpiar el scroll de la rueda antes de repintar (evita listeners duplicados)
+  nxEspacioModo(nxUsarRueda()); // fondo espacial de pantalla completa solo en modo tarjetas
   llenarFiltroAgentes('fAgenteFact');
   pintarLupaFact();
   const mes=parseInt(document.getElementById('fMes')?.value||mesCorte().mes);
@@ -6672,7 +6690,7 @@ function rFact(){
   // tarjetas son tocables (regla #6). El orden es el mismo de la lista (no reordena).
   if(nxUsarRueda()){
     const arsBadge=(ars)=>{let u='';try{u=ars?arsLogoUrl(ars):'';}catch(e){u='';}return u?`<span class="sfr-ars"><img src="${u}" alt=""></span>`:(ars?`<span class="sfr-ars txt">${escHtml(String(ars).replace(/^ARS\s+/i,''))}</span>`:'');};
-    tb.innerHTML='<div class="sfr-wheel"><div class="sfr-space" aria-hidden="true"></div>'+lista.map((f,ix)=>{
+    tb.innerHTML='<div class="sfr-wheel">'+lista.map((f,ix)=>{
       const emp=gEmp(f.empresa_id);
       const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
       const ag=cli?ST.agentes?.find(a=>String(a.id)===String(cli.agente_id)):null;
@@ -7106,6 +7124,7 @@ function _nxCobCSS(){
 }
 function rCob(){
   _nxCobCSS();
+  nxEspacioModo(nxUsarRueda()); // fondo espacial de pantalla completa solo en modo tarjetas
   llenarFiltroAgentes('fAgenteCob');
   const tb=document.getElementById('tbCob');
   const q=(document.getElementById('cobQ')?.value||'').toLowerCase();
@@ -7123,7 +7142,7 @@ function rCob(){
   if(nxUsarRueda()){
     const arsBadge=(ars)=>{let u='';try{u=ars?arsLogoUrl(ars):'';}catch(e){u='';}return u?`<span class="sfr-ars"><img src="${u}" alt=""></span>`:(ars?`<span class="sfr-ars txt">${escHtml(String(ars).replace(/^ARS\s+/i,''))}</span>`:'');};
     const kd=(fn)=>`onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${fn}}"`;
-    tb.innerHTML='<div class="sfr-wheel"><div class="sfr-space" aria-hidden="true"></div>'+activos.map((c,ix)=>{
+    tb.innerHTML='<div class="sfr-wheel">'+activos.map((c,ix)=>{
       const da=deudaAnt(c);const pd=pend(c);const est=getEst(c);
       const cls=est==='Al día'?'ok':est==='Parcial'?'part':'debt';
       const lbl=est==='Al día'?'Al día':est==='Parcial'?'Falta este mes':'Pendiente del mes';
@@ -7311,6 +7330,7 @@ function _nxAvCSS(){
 }
 function rAvisos(){
   _nxAvCSS();
+  nxEspacioModo(false); // Avisos no es vista tarjetas → sin fondo espacial
   const tb=document.getElementById('tbAvisos');if(!tb)return;
   const act=ST.clientes.filter(c=>c.activo);
 
@@ -7550,6 +7570,7 @@ function aplicarPeriodoPagos(){
 
 let _pagosPeriodoInit=false;
 async function rPagos(){
+  nxEspacioModo(false); // Historial de pagos no es vista tarjetas → sin fondo espacial
   llenarPeriodosPagos();
   const tb=document.getElementById('tbPagos');
   if(!tb)return;

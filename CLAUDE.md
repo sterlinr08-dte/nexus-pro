@@ -9096,3 +9096,37 @@ El dueño: *"El fondo de atrás se vea como espacial al hacer scroll"*. Se agreg
   detrás. `node --check`/compilación de los 3 `<script>` limpia; `version.json` válido. **Pendiente:** que
   el dueño lo vea en su iPhone y diga si quiere más/menos estrellas, más nebulosa, o estrellas en
   movimiento (hoy son fijas — mover­las sería un `@keyframes` que habría que medir en iOS antes).
+
+### Vista tarjetas — el espacio pasó a PANTALLA COMPLETA (27-jul-2026, v51.6)
+El dueño (con `AskUserQuestion`): *"Vamos a usar el mismo espacio"* → eligió **"Toda la pantalla de
+tarjetas"**. En v51.5 el espacio vivía DENTRO de `.sfr-wheel`, así que solo cubría la columna de
+tarjetas — las pestañas, los KPIs, los filtros y el buscador seguían sobre el fondo blanco de `.content`.
+Ahora el espacio cubre TODA la vista de Facturas/Cobros (modo tarjetas).
+- **La capa `.sfr-space` se movió** de ser primer hijo de `.sfr-wheel` a ser **primer hijo de
+  `#v-facturas`** (el contenedor de toda la vista, tabs + paneles). Pasó de `position:sticky` (se movía con
+  su columna) a **`position:fixed;inset:0;z-index:0`** — queda FIJA al viewport mientras TODO el contenido
+  hace scroll por encima (mismo parallax, ahora de pantalla completa). `pointer-events:none` para no
+  bloquear toques.
+- **Gateada por clase, no siempre visible:** `.sfr-space{display:none}` por defecto; solo se pinta bajo
+  `#v-facturas.nxEspacio.on>.sfr-space`. El helper nuevo **`nxEspacioModo(on)`** pone/quita la clase
+  `.nxEspacio` en `#v-facturas`: `rFact`/`rCob` la encienden con `nxUsarRueda()` (admin+pref+celular, modo
+  tarjetas), y `rPagos`/`rAvisos` la apagan con `false` (Historial de pagos y Avisos NO son vista tarjetas,
+  quedan con su fondo normal). Fuera del `nxUsarRueda()` (lista/tabla normal) tampoco se enciende.
+- **El contenido flota sobre el espacio, sin la tarjeta blanca de por medio:** reglas scopeadas a
+  `#v-facturas.nxEspacio.on` — `.nxft-tabs`/`#panelFact`/`#panelCob` con `z-index:1`; **`.nc`
+  (la tarjeta blanca contenedora) pasa a `background:transparent;border-color:transparent;box-shadow:none`**
+  → el contenido queda directo sobre el espacio en vez de dentro de una caja blanca; las pestañas a vidrio
+  oscuro (`rgba(255,255,255,.07)`) y los textos de encabezado (`.ch .ct`/`.ct-s`) a claro para leerse sobre
+  el fondo. Los KPIs siguen siendo tarjetas blancas (legibles, flotando); las tarjetas billetera y el
+  buscador visible (v51.3) no cambian.
+- **Se revirtió lo de v51.5:** la capa dentro de `.sfr-wheel` se quitó de los dos renders (`rFact`/`rCob`)
+  y el CSS `.sfr-space` sticky se reemplazó por el fijo gateado. Cambio 100% CSS/estructura, cero lógica de
+  negocio tocada.
+- **Verificado con Playwright** montando la vista COMPLETA (tabs + KPIs + filtros + buscador + tarjetas) en
+  un `.content` con scroll real: la clase `.nxEspacio` aplica, la capa es `position:fixed` en `z-index:0`
+  con fondo `rgb(5,7,15)`, `.nc` queda transparente (`rgba(0,0,0,0)`), el título en blanco, sin desborde
+  horizontal, 0 errores de JS; capturas arriba y con scroll confirman que toda la pantalla (pestañas, KPIs,
+  filtros, buscador y tarjetas) se lee bien sobre el espacio. `node --check`/compilación de los 3
+  `<script>` limpia; `version.json` válido. **Pendiente:** que el dueño lo confirme en su iPhone real (el
+  harness headless no reproduce la física de scroll de iOS, pero es fondo fijo + CSS estándar, sin
+  transform, así que no reintroduce el parpadeo de v51.2).
