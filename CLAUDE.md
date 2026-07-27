@@ -8748,3 +8748,18 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   `f.ncf`) de `rFact` (header + celda `<td data-lb="Factura">` + su CSS móvil `sf-fact`). La tabla pasó
   de 9 a 8 columnas (verificado que th y td cuadran). El NCF se sigue guardando/asignando; solo se dejó
   de mostrar en la lista, igual que en la factura impresa.
+- **Seguimiento (v49.98) — reorganización de la tarjeta de factura (`rFact`, móvil):** el dueño pidió
+  "poner cobrar debajo del estado pendiente y del lado izquierdo poner la deuda de mes anterior si
+  tiene". (1) El botón **Cobrar** se sacó de la celda `Acciones` a su propia celda `<td data-lb="Cobro">`
+  (la tabla volvió a 9 columnas: se agregó `<th>Cobro</th>`), y en el CSS móvil `sf-fact` se posiciona
+  **absoluto `top:34px;right:11px`** — justo bajo el badge de Estado (que está en `top:9px`). WhatsApp y
+  el menú (…) quedaron en la celda `Acciones` al pie. (2) **Deuda de meses anteriores** a la izquierda:
+  se calcula en vivo dentro del `.map` de `rFact` — reusa el `_saldoMemo` (memo de `_saldoFacturasCliente`)
+  para sumar el saldo de las facturas del cliente con `periodo < f.periodo` (no anuladas) + `deudaAnt(cli)`
+  (la deuda anterior al sistema); se muestra como una línea roja `<span class="deuda-prev">` dentro de la
+  `.cli-cell`, solo si `> 0.009`. CSS nuevo `.cli-cell span.deuda-prev` (rojo `--sf-err`, negrita).
+  Verificado con Playwright a 390px usando el CSS real de `index.html` + el markup real de dos tarjetas
+  (una con deuda anterior y nombre largo de 2 líneas, otra sin deuda): `scrollWidth-clientWidth=0` (sin
+  desborde), Cobrar por debajo del badge (top 46 vs estado bottom 37), sin solape con el monto, y la
+  línea de deuda solo en la tarjeta que debe. Solo visual — cero cambios de montos/deuda; `node --check`
+  limpio, los 3 `<script>` pasan `new Function()`, `version.json` válido.

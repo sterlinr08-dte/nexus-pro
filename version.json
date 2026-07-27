@@ -1,7 +1,12 @@
 {
-  "version": "49.97",
+  "version": "49.98",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.98",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): la tarjeta de cada factura se reorganizó. · El botón COBRAR ahora está arriba a la derecha, justo debajo del estado (PENDIENTE), más a la mano. · A la izquierda, si el cliente debe de meses anteriores, sale en rojo 'Deuda mes ant.: RD$ X' (el saldo real de sus facturas de meses pasados + la deuda anterior al sistema). Solo aparece cuando de verdad debe de antes. · WhatsApp y el menú (…) quedan igual. Cambio solo visual, no toca montos ni deudas."
+    },
     {
       "v": "49.97",
       "fecha": "2026-07-27",
