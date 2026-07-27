@@ -1,7 +1,12 @@
 {
-  "version": "51.4",
+  "version": "51.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.5",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (vista de tarjetas): el fondo detrás de las tarjetas ahora se ve ESPACIAL — un cielo estrellado con un toque de nebulosa. Al hacer scroll el espacio se queda quieto y las tarjetas suben por encima, así que se siente como si flotaran en el espacio. Es solo fondo (sin animación pesada), así que no afecta la velocidad ni parpadea. Aplica a Facturas y Cobros (solo administrador, en el celular)."
+    },
     {
       "v": "51.4",
       "fecha": "2026-07-27",

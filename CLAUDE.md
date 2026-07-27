@@ -9071,3 +9071,28 @@ admin-only/celular, mismo contenido de tarjeta, mismas acciones.**
   `version.json` válido. Aplica a Facturas y Cobros. **Pendiente:** que el dueño confirme en su iPhone real
   (el harness headless no reproduce la física de scroll de iOS, pero el sticky es CSS estándar y sin
   transform ya no hay riesgo de parpadeo).
+
+### Vista tarjetas — fondo ESPACIAL detrás de las tarjetas (27-jul-2026, v51.5)
+El dueño: *"El fondo de atrás se vea como espacial al hacer scroll"*. Se agregó una capa de espacio
+(cielo estrellado + nebulosa) DETRÁS de las tarjetas billetera.
+- **`.sfr-space`** — un `<div>` que se inyecta como primer hijo de `.sfr-wheel` (en `rFact` y `rCob`),
+  con `position:sticky;top:0;height:100dvh` → se queda FIJO llenando la pantalla mientras las tarjetas
+  (que son `sticky` con su tuck) hacen scroll POR ENCIMA. Ese contraste (espacio quieto + tarjetas que
+  suben) es el parallax "flotando en el espacio" que pidió el dueño. `margin-bottom:-100dvh` cancela su
+  alto en el flujo (no empuja las tarjetas); `margin-left:calc(-50vw + 50%)`+`width:100vw` la hacen
+  full-bleed al ancho de la pantalla (el `overflow-x:hidden` de `.content` evita scroll horizontal).
+- **Fondo 100% CSS, sin imágenes ni animación por-cuadro:** base `#05070f` (espacio profundo) + ~18
+  estrellas (`radial-gradient` de 1-2px en posiciones `%`, brillos variados) + 2 nebulosas tenues
+  (índigo `#6366f1` y violeta `#a855f7`) + un realce central. **Sin animación** → cero riesgo de
+  parpadeo o de cargar la CPU (el "movimiento" lo da el scroll contra la capa fija, no un `@keyframes`).
+- **Las tarjetas se elevan sobre el espacio:** `.sfr-cc` ganó `z-index:1` (la capa de espacio es
+  `z-index:0`) y su sombra pasó de sombras oscuras (invisibles sobre negro) a `0 6px 26px rgba(0,0,0,.5)`
+  + una hairline clara `0 0 0 1px rgba(255,255,255,.06)` para que se despeguen del espacio. `pointer-
+  events:none` en la capa para que no bloquee toques.
+- Solo aparece en la vista de tarjetas (la capa solo se pinta en la rama `nxUsarRueda()` de `rFact`/
+  `rCob`); la lista/tabla normal no la lleva. Verificado con Playwright + `.content` con scroll real:
+  la capa existe con `position:sticky`, `z-index:0`, fondo `rgb(5,7,15)`, las tarjetas quedan en
+  `z-index:1` (encima), sin desborde horizontal, 0 errores de JS; captura del scroll confirma el espacio
+  detrás. `node --check`/compilación de los 3 `<script>` limpia; `version.json` válido. **Pendiente:** que
+  el dueño lo vea en su iPhone y diga si quiere más/menos estrellas, más nebulosa, o estrellas en
+  movimiento (hoy son fijas — mover­las sería un `@keyframes` que habría que medir en iOS antes).
