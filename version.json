@@ -1,7 +1,12 @@
 {
-  "version": "52.0",
+  "version": "52.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.1",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (POS — un solo criterio para agregar y quitar): empezamos a unificar todo el POS a un lenguaje claro — el signo + (verde) siempre es AGREGAR/SUMAR, y el signo − (rojo) siempre es QUITAR/ELIMINAR (borrar de la base siempre pide confirmación primero). En esta primera tanda quedó aplicado en Vender, Factura, Compra e Inventario: el botón de quitar una línea del carrito/compra y el de eliminar un artículo ahora son un − rojo (antes eran una ✕ o un basurero). Se irá aplicando al resto de las pantallas por tandas para que puedas ir revisando."
+    },
     {
       "v": "52.0",
       "fecha": "2026-07-27",

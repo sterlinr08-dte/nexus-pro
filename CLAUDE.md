@@ -9247,7 +9247,39 @@ completa dentro del POS (como Vender/Factura/etc.), organizada en secciones.
   + botón Volver, los 14 ids de campo presentes, prov/emp/art son input hidden con sus botones de lupa, el
   hook corre `scanMoney`, y Cancelar vuelve a la lista. Sin desborde en 390px, 0 errores de JS. `node
   --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
-- **Nota de publicación:** v51.9 (lupas prov/emp) y v52.0 van juntas en la rama `claude/compras-lupas-prov-emp`
-  — quedaron sin fusionar a `main` porque el conector de GitHub se desconectó (necesita re-autorización) y el
-  push directo a `main` sigue bloqueado por el clasificador del entorno. Pendiente: reconectar GitHub y
-  fusionar el PR (o que el dueño lo fusione a mano).
+- **Nota de publicación:** v51.9 (lupas prov/emp) y v52.0 fueron a la rama `claude/compras-lupas-prov-emp`;
+  al reconectarse el conector de GitHub se fusionaron juntas a `main` vía PR #210 (ya en vivo).
+
+### REGLAMENTO DEL + Y − (decretado por el dueño, 27-jul-2026) — POS, por tandas
+El dueño: *"Vamos ponerle al sistema completo el signo de + y - para agregar y eliminar en sistema completo
+de pos todos sus criterios de uso"*. Se confirmaron 2 decisiones por `AskUserQuestion`: (1) el **−** rojo se
+usa también para ELIMINAR de la base, **pero el borrado permanente SIEMPRE pide confirmación** antes; (2) se
+aplica **por tandas**, empezando por las pantallas más usadas, para que el dueño las revise en su iPhone.
+- **Criterio de uso (el estándar):**
+  - 🟢 **+ (verde, `ti-plus`)** = **agregar / sumar**: meter una línea al carrito/compra/cotización, subir la
+    cantidad, agregar un IMEI, crear un registro nuevo (producto, cliente, proveedor…).
+  - 🔴 **− (rojo, `ti-minus`)** = **quitar / restar / eliminar**: sacar una línea de una lista, bajar la
+    cantidad, y borrar un registro de la base (el borrado permanente **siempre** con `confirm()` antes).
+  - Los **steppers de cantidad** (`− N +`) ya cumplían el estándar de antes (Vender `citqty`/`nxPosQty`,
+    Factura `stp`/`nxFacQtyStep`) — no se tocaron.
+- **Excepción deliberada (chips/tags):** la ✕ para quitar un chip/etiqueta (ej. un IMEI ya escrito en la
+  ventanilla de compra, un filtro) se **mantiene como ✕** — en una etiqueta la ✕ es la convención universal
+  de "quitar este tag", cambiarla a − se vería raro. Solo los BOTONES de acción de quitar/eliminar pasan a −.
+- **TANDA 1 — HECHA (v52.1): Vender, Factura, Compra, Inventario.** Cambios quirúrgicos (solo ícono + color,
+  cero lógica):
+  - Vender carrito (`pintarCarrito`, `.citdel`): quitar línea ✕ → **− rojo** (CSS `.citdel` pasó de gris
+    transparente a chip rojo `#fee2e2`/`#dc2626`).
+  - Factura (`pintarFactura`, `.del`): quitar línea ✕ → **− rojo** (CSS `.del` del POS a chip rojo igual).
+  - Compra (`pintarCompraItems`): quitar artículo ✕ → **− rojo** (ya tenía color rojo inline).
+  - Inventario (`renderProductos`, `nxPosDelProd`): eliminar artículo 🗑️ → **− rojo**. `nxPosDelProd` **ya
+    pedía `confirm()`** desde antes (encaja con la decisión del dueño) — no hizo falta agregarlo.
+  - Verificado con Playwright: los 4 botones ahora usan `ti-minus`; `getComputedStyle` confirma texto rojo
+    `rgb(220,38,38)` sobre fondo `rgb(254,226,226)` en `.citdel` y `.del` (chips rojos limpios); `node
+    --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **PENDIENTE (tandas siguientes):** el resto de las pantallas del POS con acciones de quitar/eliminar —
+  Cotizaciones, Notas de crédito, Prefacturas, Apartados, Reparaciones, Clientes/Entidades, CRM, Caja
+  (movimientos), Compras (lista/proveedores), Kardex (ajustes), RRHH, Ajustes (secuencias/roles/NCF/
+  vendedores/mora), Cuotas, y el resto de `ti-x`/`ti-trash`/"Eliminar"/"Quitar"/"Borrar" del POS (quedan
+  ~76 `ti-x` + ~42 `ti-trash` por revisar). Cada tanda: mismo estándar, mismo criterio quirúrgico (solo
+  ícono/color, la lógica y las confirmaciones existentes no se tocan), verificada y publicada aparte para
+  que el dueño la revise.
