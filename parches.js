@@ -22126,15 +22126,13 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   window.nxPosNuevaCompra = function () {
     _compraItems = [];
     cerrarModal('nxPosCompra');
-    const provOpts = _proveedores.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
-    const empOpts = '<option value="">— Empleado —</option>' + (_clientes || []).filter(c => c.es_empleado).map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxPosCompra'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:92vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-truck-delivery"></i> Nueva compra</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCompra').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div class="fr"><label>Proveedor</label><div style="display:flex;gap:6px"><select id="compProv" style="flex:1">${'<option value="">— Proveedor —</option>' + provOpts}</select><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevoProvDesdeCompra()" title="Nuevo proveedor" aria-label="Nuevo proveedor"><i class="ti ti-plus"></i></button></div></div>
-          <div class="fr"><label>Empleado (quién compra)</label><select id="compEmp">${empOpts}</select></div>
+          <div class="fr"><label>Proveedor</label><div style="display:flex;gap:6px"><input type="hidden" id="compProv"><button type="button" id="compProvBtn" onclick="window.nxCompraProvBuscar()" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compProvTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar proveedor…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPosNuevoProvDesdeCompra()" title="Nuevo proveedor" aria-label="Nuevo proveedor"><i class="ti ti-plus"></i></button></div></div>
+          <div class="fr"><label>Empleado (quién compra)</label><input type="hidden" id="compEmp"><button type="button" id="compEmpBtn" onclick="window.nxCompraEmpBuscar()" style="width:100%;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compEmpTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar empleado…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button></div>
           <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Vencimiento (crédito)</label><input id="compVenc" type="date"></div></div>
           <div class="fr-row"><div class="fr"><label>Factura No. (proveedor)</label><input id="compFact" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>NCF del proveedor</label><input id="compNcf" class="no-upper" placeholder="B01... (opcional)"></div></div>
           <div class="fr-row"><div class="fr"><label>Orden No.</label><input id="compOrden" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>Liquidación No.</label><input id="compLiq" class="no-upper" placeholder="Opcional"></div></div>
@@ -22160,6 +22158,72 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     pintarCompraItems();
   };
   window.nxPosNuevoProvDesdeCompra = function () { abrirProv(null, true); };
+  // ── Opener genérico de las lupas de Compra (proveedor/empleado). El artículo tiene el suyo aparte
+  //    porque además prellena costo y área de IMEI. Cada uno mantiene su id oculto (compProv/compEmp)
+  //    así que nxPosGuardarCompra los lee igual con val(...). ──
+  function nxCompBuscadorAbrir(modalId, titulo, placeholder, oninputExpr, pintarInit) {
+    cerrarModal(modalId);
+    const ov = document.createElement('div'); ov.id = modalId; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:85vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-search"></i> ${titulo}</span><button class="nxBack" type="button" onclick="document.getElementById('${modalId}').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+        ${posBuscador({ id: modalId + 'Q', placeholder: placeholder, oninput: oninputExpr })}
+        <div id="${modalId}List" style="overflow-y:auto;flex:1;margin-top:10px"></div>
+      </div>`;
+    document.body.appendChild(ov);
+    pintarInit('');
+    setTimeout(function () { const i = document.getElementById(modalId + 'Q'); if (i) i.focus(); }, 60);
+  }
+  function _compRowHTML(onclick, nombre, sub) {
+    return `<div onclick="${onclick}" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button" style="padding:9px 10px;border:1px solid #eef0f4;border-radius:9px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-weight:700;font-size:12.5px;color:#1e293b;line-height:1.25">${nombre}</div>${sub ? `<div style="font-size:10px;color:#475569;margin-top:2px">${sub}</div>` : ''}</div><i class="ti ti-chevron-right" style="color:#94a3b8;flex:0 0 auto"></i></div>`;
+  }
+  // ── PROVEEDOR ──
+  window.nxCompraProvBuscar = function () { nxCompBuscadorAbrir('nxCompProvM', 'Buscar proveedor', 'Buscar por nombre, RNC o teléfono…', 'window.nxCompProvFiltrar(this.value)', pintarCompProvList); };
+  window.nxCompProvFiltrar = function (q) { pintarCompProvList(q); };
+  function pintarCompProvList(q) {
+    const wrap = document.getElementById('nxCompProvMList'); if (!wrap) return;
+    q = (q || '').toLowerCase().trim();
+    let lista = _proveedores || [];
+    if (q) lista = lista.filter(p => ((p.nombre || '') + ' ' + (p.rnc || '') + ' ' + (p.telefono || '') + ' ' + (p.contacto || '')).toLowerCase().includes(q));
+    const total = lista.length; const show = lista.slice(0, 400);
+    wrap.innerHTML = (total > 400 ? `<div style="font-size:10.5px;color:#475569;margin-bottom:6px">Mostrando 400 de ${total} — escribe para afinar</div>` : '') + (show.length ? show.map(p => _compRowHTML(`window.nxCompraProvPick('${p.id}')`, esc(p.nombre || ''), [p.rnc, p.telefono].filter(Boolean).map(esc).join(' · '))).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>');
+  }
+  window.nxCompraProvPick = function (id) {
+    const p = (_proveedores || []).find(x => String(x.id) === String(id)); if (!p) return;
+    const h = document.getElementById('compProv'); if (h) h.value = p.id;
+    window.nxCompraProvSync && window.nxCompraProvSync();
+    cerrarModal('nxCompProvM');
+  };
+  window.nxCompraProvSync = function () {
+    const t = document.getElementById('compProvTxt'); if (!t) return;
+    const p = (_proveedores || []).find(x => String(x.id) === String(val('compProv')));
+    t.textContent = p ? p.nombre : 'Buscar proveedor…';
+    t.style.color = p ? '#1e293b' : '#94a3b8';
+  };
+  // ── EMPLEADO (quién compra) — puede quedar vacío ("Sin empleado") ──
+  window.nxCompraEmpBuscar = function () { nxCompBuscadorAbrir('nxCompEmpM', 'Buscar empleado', 'Buscar por nombre o cédula…', 'window.nxCompEmpFiltrar(this.value)', pintarCompEmpList); };
+  window.nxCompEmpFiltrar = function (q) { pintarCompEmpList(q); };
+  function pintarCompEmpList(q) {
+    const wrap = document.getElementById('nxCompEmpMList'); if (!wrap) return;
+    q = (q || '').toLowerCase().trim();
+    let lista = (_clientes || []).filter(c => c.es_empleado);
+    if (q) lista = lista.filter(c => ((c.nombre || '') + ' ' + (c.codigo || '') + ' ' + (c.cedula || '')).toLowerCase().includes(q));
+    const none = q ? '' : `<div onclick="window.nxCompraEmpPick('')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button" style="padding:9px 10px;border:1px dashed #e2e8f0;border-radius:9px;margin-bottom:6px;cursor:pointer;color:#94a3b8;font-size:12px">— Sin empleado —</div>`;
+    const show = lista.slice(0, 400);
+    const rows = show.map(c => _compRowHTML(`window.nxCompraEmpPick('${c.id}')`, esc(c.nombre || ''), c.cedula ? esc(c.cedula) : '')).join('');
+    wrap.innerHTML = none + (rows || (q ? '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>' : '<div style="text-align:center;color:#475569;padding:14px;font-size:11px">No hay empleados registrados</div>'));
+  }
+  window.nxCompraEmpPick = function (id) {
+    const h = document.getElementById('compEmp'); if (h) h.value = id || '';
+    window.nxCompraEmpSync && window.nxCompraEmpSync();
+    cerrarModal('nxCompEmpM');
+  };
+  window.nxCompraEmpSync = function () {
+    const t = document.getElementById('compEmpTxt'); if (!t) return;
+    const c = (_clientes || []).find(x => String(x.id) === String(val('compEmp')) && x.es_empleado);
+    t.textContent = c ? c.nombre : 'Buscar empleado…';
+    t.style.color = c ? '#1e293b' : '#94a3b8';
+  };
   // ── Buscador de artículo estilo InfoplusWEB (reemplaza el <select> por una ventana con lupa) ──
   // Solo cambia CÓMO se elige el artículo. El id oculto #compArt se mantiene, así que
   // nxCompraArtCambio / nxPosCompraAddItem / nxCompraEditItem lo leen igual (cero cambio de guardado).
@@ -22405,7 +22469,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       cerrarModal('nxPosProvForm');
       _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || [];
       mergeProvEntidades();
-      if (fromCompra === '1') { const sel = document.getElementById('compProv'); if (sel) { sel.innerHTML = '<option value="">— Proveedor —</option>' + _proveedores.map(p => `<option value="${p.id}"${nuevo && String(p.id) === String(nuevo.id) ? ' selected' : ''}>${esc(p.nombre)}</option>`).join(''); } }
+      if (fromCompra === '1') { const h = document.getElementById('compProv'); if (h && nuevo) { h.value = nuevo.id; window.nxCompraProvSync && window.nxCompraProvSync(); } }
       else { const v = document.getElementById('v-pos'); if (v && _posTab === 'compras') renderPOS(v); if (document.getElementById('nxPosProvs')) window.nxPosProveedores(); }
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };

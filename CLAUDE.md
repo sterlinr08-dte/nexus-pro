@@ -9188,6 +9188,33 @@ como InfoplusWEB. Con catálogo grande eso es lento.
   tras agregar, editar una fila la devuelve al staging con el botón sincronizado, y un artículo serial muestra
   el área de IMEI. Sin desborde horizontal en 390px, 0 errores de JS. `node --check parches.js` limpio; los 3
   `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
-- **Deliberadamente NO tocado:** los selectores de Proveedor/Empleado (siguen `<select>`, no eran parte del
-  pedido) y la lógica de guardado de la compra. Si el dueño quiere después, el mismo buscador se puede llevar
-  al selector de Proveedor.
+- **Deliberadamente NO tocado (en v51.8):** los selectores de Proveedor/Empleado — se hicieron en la v51.9
+  (abajo). La lógica de guardado de la compra no se tocó.
+
+### POS · Compras — lupa también para Proveedor y Empleado (27-jul-2026, v51.9)
+Seguimiento del pedido del dueño: *"Las ventanas de empleado proveedor todos los lupas"* — aplicar el mismo
+buscador (lupa) del artículo (v51.8) a los otros 2 `<select>` de la pantalla de Nueva compra.
+- **Mismo patrón quirúrgico que el artículo:** los `<select id="compProv">` y `<select id="compEmp">` se
+  reemplazaron por **`<input type="hidden">`** (mismo id) + un **botón** que abre una ventana de búsqueda.
+  `nxPosGuardarCompra` lee `val('compProv')`/`val('compEmp')` idéntico — **cero lógica de guardado tocada**.
+- **Opener genérico compartido `nxCompBuscadorAbrir(modalId, titulo, placeholder, oninputExpr, pintarInit)`**
+  (junto a `nxPosNuevoProvDesdeCompra`) + helper de fila `_compRowHTML(onclick, nombre, sub)` — para no
+  triplicar el boilerplate de la ventana (el artículo conserva su `nxCompraArtBuscar` propio porque además
+  prellena costo + área IMEI). Proveedor: `nxCompraProvBuscar`/`pintarCompProvList`/`nxCompProvFiltrar`/
+  `nxCompraProvPick`/`nxCompraProvSync` (filtra por nombre/RNC/teléfono/contacto). Empleado:
+  `nxCompraEmpBuscar`/`pintarCompEmpList`/`nxCompEmpFiltrar`/`nxCompraEmpPick`/`nxCompraEmpSync` (filtra por
+  nombre/código/cédula, lista solo `es_empleado`, con una fila **"— Sin empleado —"** para dejarlo en blanco).
+- **Bug de flujo corregido:** al crear un proveedor nuevo desde la compra (`nxPosGuardarProv` con
+  `fromCompra==='1'`) el código repoblaba el `<select id="compProv">` con `.innerHTML` y seleccionaba el
+  nuevo — con el botón eso ya no aplica; ahora fija el `#compProv` oculto = id nuevo y llama a
+  `nxCompraProvSync()`. El botón "+" de nuevo proveedor y el flujo de crearlo siguen igual.
+- `provOpts`/`empOpts` (definiciones de los viejos desplegables) borradas como código muerto (regla #1).
+- **Verificado con Playwright, código real extraído por contenido** (16 funciones): **21 comprobaciones** —
+  los 2 son input hidden + botón (no queda ningún `<select>`), la ventana de proveedor filtra por nombre Y
+  por RNC, la de empleado lista "Sin empleado" + solo los `es_empleado` (excluye no-empleados), filtrar/
+  elegir actualiza el botón + el id oculto, "Sin empleado" limpia el campo, y crear un proveedor nuevo
+  sincroniza el botón. Sin desborde en 390px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Con esto las 3 lupas de la pantalla de Compra quedan listas** (Artículo v51.8, Proveedor + Empleado
+  v51.9). El único `<select>` que queda en esa pantalla es Almacén (solo aparece con multi-almacén, lista
+  corta — no hace falta buscador).
