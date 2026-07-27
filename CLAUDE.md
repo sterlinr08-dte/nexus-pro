@@ -8743,3 +8743,8 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   anterior 500 → 500), total = prima + pendiente, cliente al día no muestra la línea, y el respaldo sin
   cliente usa el valor congelado. `node --check` limpio; los 3 `<script>` de `index.html` pasan
   `new Function()`; `version.json` válido.
+- **Seguimiento (v49.97):** el dueño mandó una captura de la LISTA de facturas donde el NCF
+  (`B0200000608`) todavía salía en cada tarjeta al lado del monto. Se quitó la columna "Factura" (el
+  `f.ncf`) de `rFact` (header + celda `<td data-lb="Factura">` + su CSS móvil `sf-fact`). La tabla pasó
+  de 9 a 8 columnas (verificado que th y td cuadran). El NCF se sigue guardando/asignando; solo se dejó
+  de mostrar en la lista, igual que en la factura impresa.

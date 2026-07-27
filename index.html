@@ -816,8 +816,7 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
   .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:0 0 auto;font-size:19px;line-height:1.15;padding-top:3px}
   .nxSf table.sf-fact td[data-lb="Total"]{order:3;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3);align-self:flex-end;padding-bottom:3px}
   .nxSf table.sf-fact td[data-lb="ARS"]{order:4;flex:0 0 auto;align-self:flex-end;padding-bottom:2px}
-  .nxSf table.sf-fact td[data-lb="Factura"],.nxSf table.sf-fact td[data-lb="Fecha"]{order:5;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
-  .nxSf table.sf-fact td[data-lb="Factura"]::after{content:" ·";color:var(--sf-tx3)}
+  .nxSf table.sf-fact td[data-lb="Fecha"]{order:5;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
   .nxSf table.sf-fact td[data-lb="Acciones"]{order:9;flex:1 1 100%;padding-top:7px}
   .nxSf table.sf-fact .solo-mb{display:inline}
 }
@@ -4071,7 +4070,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.96';
+const APP_VERSION='49.97';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6538,7 +6537,7 @@ function rFact(){
       <div class="sf-kpi ${atrasadasN?'err':'ok'} sf-kpi-wide" ${atrasadasN?`onclick="const s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}" style="cursor:pointer" tabindex="0" role="button" aria-label="Ver las facturas atrasadas" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"`:''}><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Atrasadas${atrasadasN?' · toca para ver':''}</div><div class="v">${atrasadasN}</div></div></div>
     </div>`;
   const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
-  tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Factura</th><th>Fecha</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
+  tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Fecha</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
     const emp=gEmp(f.empresa_id);
     const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
     const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
@@ -6551,7 +6550,6 @@ function rFact(){
     return `<tr${anul?' style="opacity:.55"':''}>
       <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:11px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
-      <td data-lb="Factura">${f.ncf||'—'}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
       <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
       <td data-lb="Total" class="r${Math.abs(prima-sal)<0.01?' sf-tbl-hide-mb':''}"><span class="solo-mb">Total </span>${fmt(prima)}</td>
