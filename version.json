@@ -1,7 +1,12 @@
 {
-  "version": "50.8",
+  "version": "50.9",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.9",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (solo administrador, modo de prueba): 'Vista experimental (rueda)' en Facturas. · En Ajustes → Apariencia aparece un interruptor SOLO para el administrador. Al encenderlo, en el CELULAR la pantalla de Facturas se ve como una rueda de tarjetas estilo tarjeta de crédito, que ruedan hacia el frente (la del centro se ve de frente y brillante; las de arriba y abajo se inclinan). · Los demás usuarios y la computadora siguen viendo la lista normal. · Es solo la forma de ver: los datos, el cobro y todo lo demás son idénticos. Se puede apagar en cualquier momento. · El color marca quién debe (rojo pendiente, ámbar parcial, verde al día) y muestra el logo de la ARS; todas las tarjetas se pueden tocar para cobrar, ver el cliente, WhatsApp o ver los meses anteriores."
+    },
     {
       "v": "50.8",
       "fecha": "2026-07-27",

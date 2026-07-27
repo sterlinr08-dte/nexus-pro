@@ -8902,3 +8902,48 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   padding en línea de v50.7): sin desborde, las 3 tarjetas más apretadas. Se le dijo al dueño que si la
   quería al revés (más grande) se invierte. `node --check parches.js` limpio; los 3 `<script>` de
   `index.html` pasan `new Function()`; `version.json` válido.
+
+### Facturas (seguro) · VISTA RUEDA — modo experimental solo para el admin (27-jul-2026, v50.9)
+El dueño eligió la "rueda" (de varias muestras de scroll que se le enseñaron como Artifacts: destello
+metálico, naipes 3D, carrusel horizontal, billetera Apple Wallet, mezcla lista+billetera, y la RUEDA
+frontal — un tambor que rueda hacia el frente). Pidió aplicarla **como modo de prueba, visible SOLO
+para él (administrador)**, dejando a los demás usuarios con la lista actual, y que se le implementara
+un **reglamento** para ese modo. Se le propuso un borrador de 12 reglas; lo aprobó con un cambio
+(regla #6: **todas** las tarjetas tocables, no solo la del centro). El reglamento completo quedó en
+**`REGLAMENTOS.md` §10**.
+- **Gateado en 3 capas (`nxUsarRueda()`):** `sesion.rol==='admin'` **y** el interruptor encendido
+  (`nxPref('vista_rueda',false)`, guardado en la base, no en el navegador — respeta la regla de "nada
+  en localStorage") **y** celular (`matchMedia('(max-width:720px)')`). Si falta cualquiera → la tabla
+  de siempre. Por defecto apagado. Como solo el admin lo ve al encenderlo, se publicó a `main` sin
+  riesgo para los clientes reales.
+- **Interruptor:** en `rApariencia()` (Ajustes → Apariencia) se agregó una tarjeta "🎡 Vista
+  experimental (rueda)" que **solo se dibuja si `sesion.rol==='admin'`**. `nxToggleVistaRueda(on)`
+  guarda la preferencia, deja `VISTA_RUEDA_ON`/`OFF` en auditoría, y repinta Facturas al instante si
+  estás ahí.
+- **La rueda vive dentro de `rFact()`, no es una función aparte:** tras filtrar/ordenar la `lista`
+  (idéntico a la tabla) y pintar los KPIs, si `nxUsarRueda()` arma las tarjetas `.sfr-*` (Platinum,
+  brillo sutil, logo real de ARS, color por estado: rojo pendiente/ámbar parcial/verde pagado/gris
+  anulada) y hace `return` antes del `<table>`. **Cero cambios a la lógica de la tabla** (la rama else
+  es la de siempre) ni a los cálculos de saldo/deuda. **Todas las tarjetas tocables** (regla #6):
+  nombre→`verCliente`, monto→`cobrarDesdeFact`, tira roja→`nxMesesAntVer`, COBRAR/WhatsApp
+  (`enviarWA`)/⋮ (`nxFactMenu`) — todos wrappers de las acciones que ya existían.
+- **El scroll de la rueda** (`nxRuedaAplicar`/`nxRuedaScrollOn`/`nxRuedaScrollOff`): por cada
+  `.sfr-slot` calcula rotación/profundidad/velo según su distancia al centro del viewport
+  (`getBoundingClientRect`, robusto sin importar qué contenedor scrollee — mismo patrón que
+  `nxFactMenu`). `requestAnimationFrame` + salta las tarjetas fuera de vista (±300px) para ir fluido
+  con 100+ facturas. Respeta "reducir movimiento" (se aplana). **Se auto-apaga** al salir de Facturas
+  (guardia al inicio de `nxRuedaAplicar` que llama a `nxRuedaScrollOff`). `rFact` llama a
+  `nxRuedaScrollOff()` al inicio para no duplicar listeners.
+- **Verificado con Playwright sobre el código REAL de `rFact` extraído del archivo** (no una
+  reconstrucción): con admin+pref+390px la rueda renderiza las 3 tarjetas ACTIVAS (excluye la Pagada,
+  igual que la tabla), con COBRAR/WhatsApp/Meses anteriores, transformaciones 3D aplicadas, y al tocar
+  cada parte dispara la acción real (cobrar/ver cliente/meses anteriores); la rueda rueda al hacer
+  scroll (Parcial muestra bien la mitad del saldo); sin desborde horizontal en 390px; 0 errores de JS.
+  **Sin regresión:** con el interruptor apagado (390px) o en escritorio (1200px con pref encendido)
+  sale la **tabla** de siempre. Los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Honesto sobre el alcance:** es modo de EXHIBICIÓN, no de velocidad (muestra 1 factura de frente a
+  la vez; para cobrar en volumen la lista es más rápida). Solo móvil (en la computadora se verá aparte
+  más adelante, probablemente tabla o varias columnas). **Pendiente:** que el dueño lo pruebe en su
+  iPhone real y decida ajustes (más/menos inclinación, etc.) o si se lleva a Cobros/Pendientes/
+  Historial.
