@@ -1,7 +1,12 @@
 {
-  "version": "51.2",
+  "version": "51.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.3",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (vista rueda): la tarjeta del frente ahora se ve más clara — un aro nítido la hace destacar y las de los lados se oscurecen un poco más para que la del centro resalte y se lea mejor. · Y el buscador: en la vista rueda ahora sale una barra de búsqueda visible arriba (escribes el nombre del cliente y la rueda filtra al instante), en vez de la lupa chiquita. Aplica a Facturas y Cobros."
+    },
     {
       "v": "51.2",
       "fecha": "2026-07-27",

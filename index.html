@@ -853,7 +853,12 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
    transform (nxRuedaAplicar), así cada una se curva sobre sí misma sin importar cuántas haya. */
 .sfr-wheel{max-width:460px;margin:0 auto;padding:90px 4px 130px}
 .sfr-slot{height:210px;display:flex;align-items:center;justify-content:center;will-change:transform}
-.sfr-cc{position:relative;width:100%;border-radius:18px;padding:15px 17px;color:#fff;overflow:hidden;isolation:isolate;box-shadow:0 16px 34px rgba(15,23,42,.34),0 2px 6px rgba(15,23,42,.2);backface-visibility:hidden}
+.sfr-cc{position:relative;width:100%;border-radius:18px;padding:15px 17px;color:#fff;overflow:hidden;isolation:isolate;box-shadow:0 16px 34px rgba(15,23,42,.34),0 2px 6px rgba(15,23,42,.2);backface-visibility:hidden;transition:box-shadow .2s ease}
+/* La tarjeta central (la que está de frente) se marca .focus desde nxRuedaAplicar: aro
+   blanco nítido + sombra más fuerte para que destaque, y menos oscurecimiento en las
+   esquinas para que el texto se lea más claro. Las demás receden con más velo. */
+.sfr-cc.focus{box-shadow:0 24px 52px rgba(15,23,42,.46),0 0 0 2px rgba(255,255,255,.92),0 0 0 5px rgba(15,23,42,.05)}
+.sfr-cc.focus::after{opacity:.5}
 .sfr-cc.debt{background:linear-gradient(122deg,#ff8497 0%,#e0322f 22%,#8a1717 48%,#b81d1d 70%,#ff6d80 100%)}
 .sfr-cc.part{background:linear-gradient(122deg,#ffdf9c 0%,#e08e12 22%,#7c4a09 48%,#bd7407 70%,#ffca6a 100%)}
 .sfr-cc.ok{background:linear-gradient(122deg,#7ceaa1 0%,#12a247 22%,#0b5028 48%,#149a44 70%,#63e084 100%)}
@@ -1440,7 +1445,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             </div>
             <!-- NPGS §5: solo la lupa; la ventana la arma nxBuscaFiltroHTML. El input sigue
                  existiendo OCULTO para que rFact() lea el término igual que siempre. -->
-            <div style="margin-bottom:6px"><span id="factQLupa"></span><input id="factQ" type="hidden" value=""></div>
+            <div style="margin-bottom:6px"><span id="factQLupa"></span><div id="factQBar" class="nxBusca" style="display:none"><button type="button" class="nxBusca-lupa" aria-label="Buscar" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="factQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." autocomplete="off" oninput="nxBuscaTog(this);rFact()" onkeydown="if(event.key==='Enter'){event.preventDefault();rFact()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
               <select id="fMes" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600"></select>
               <select id="fAnio" style="height:34px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;color:#1e293b;font-size:12px;font-weight:600;width:80px"></select>
@@ -4143,7 +4148,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='51.2';
+const APP_VERSION='51.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6572,6 +6577,18 @@ function nxFactMenu(fid,btn){
 }
 function pintarLupaFact(){
   const box=document.getElementById('factQLupa');
+  const bar=document.getElementById('factQBar');
+  const wheel=nxUsarRueda();
+  // En modo rueda: buscador VISIBLE y claro (la barra estática #factQBar); fuera de la rueda:
+  // la lupa colapsada NPGS §5. La barra es HTML estático (no se reconstruye), así el input no
+  // pierde el foco al escribir; #factQ es el mismo campo que lee rFact en ambos modos.
+  if(bar)bar.style.display=wheel?'':'none';
+  if(box)box.style.display=wheel?'none':'';
+  if(wheel){
+    if(typeof nxBuscaEnsureCSS==='function')nxBuscaEnsureCSS();
+    const inp=document.getElementById('factQ');if(inp&&typeof nxBuscaTog==='function')nxBuscaTog(inp);
+    return;
+  }
   if(!box||typeof nxBuscaFiltroHTML!=='function')return;
   box.innerHTML=nxBuscaFiltroHTML({
     id:'factQ', label:'Buscar', titulo:'Buscar factura', cont:'tbFact',
@@ -6595,12 +6612,13 @@ function nxRuedaAplicar(){
   if(!slots.length)return;
   const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const cy=window.innerHeight*0.5;
+  let best=null,bestD=1e9;
   slots.forEach(s=>{
     if(s.offsetParent===null)return; // pestaña oculta → no gastar
     const r=s.getBoundingClientRect();
     if(r.bottom<-300||r.top>window.innerHeight+300)return; // fuera de vista → no gastar
     const v=s.querySelector('.sfr-veil');
-    if(reduce){s.style.transform='none';if(v)v.style.opacity=0;return;}
+    if(reduce){s.style.transform='none';if(v)v.style.opacity=0;const ad0=Math.abs((r.top+r.height/2-cy)/window.innerHeight);if(ad0<bestD){bestD=ad0;best=s;}return;}
     const center=r.top+r.height/2;
     let d=(center-cy)/window.innerHeight;d=Math.max(-1.1,Math.min(1.1,d));
     const rot=d*54,tz=-Math.abs(d)*150,sc=1-Math.abs(d)*0.14;
@@ -6608,10 +6626,15 @@ function nxRuedaAplicar(){
     // sin depender de la altura total de la lista (que con 92 facturas es enorme).
     const tr='perspective(820px) translateZ('+tz.toFixed(1)+'px) rotateX('+(-rot).toFixed(1)+'deg) scale('+sc.toFixed(3)+')';
     if(s.style.transform!==tr)s.style.transform=tr; // solo escribir si cambió (evita parpadeo en iOS)
-    if(v){const op=Math.min(.58,Math.abs(d)*0.7).toFixed(3);if(v.style.opacity!==op)v.style.opacity=op;}
+    if(v){const op=Math.min(.62,Math.abs(d)*0.85).toFixed(3);if(v.style.opacity!==op)v.style.opacity=op;} // las de los lados receden más → la central se lee más clara
     const z=String(1000-Math.round(Math.abs(d)*100));
     if(s.style.zIndex!==z)s.style.zIndex=z; // el cambio de z-index cada cuadro es una causa de parpadeo en Safari
+    const ad=Math.abs(d);if(ad<bestD){bestD=ad;best=s;}
   });
+  // Marcar SOLO la tarjeta central como .focus (más claridad); quitar de las demás.
+  const focusCard=best?best.querySelector('.sfr-cc'):null;
+  document.querySelectorAll('#v-facturas .sfr-cc.focus').forEach(cc=>{if(cc!==focusCard)cc.classList.remove('focus');});
+  if(focusCard&&!focusCard.classList.contains('focus'))focusCard.classList.add('focus');
 }
 function nxRuedaScrollOn(){
   nxRuedaScrollOff();
