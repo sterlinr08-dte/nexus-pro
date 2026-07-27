@@ -1,7 +1,12 @@
 {
-  "version": "51.7",
+  "version": "51.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.8",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (Compras — agregar mercancía): el artículo ahora se elige con un BUSCADOR (como InfoplusWEB) en vez del menú desplegable. Tocas 'Buscar artículo…', escribes el nombre, código o marca, y lo encuentras al instante. Al elegirlo se pone en la pantalla con su costo ya cargado, por si quieres corregir el costo o la cantidad antes de agregarlo a la lista. (La lista de abajo ya se podía editar tocando cada fila; eso sigue igual.)"
+    },
     {
       "v": "51.7",
       "fecha": "2026-07-27",
