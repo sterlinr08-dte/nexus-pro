@@ -8382,7 +8382,7 @@
               <div style="display:flex;gap:6px;padding:8px 10px;background:#f8fafc;border-top:1px solid #e2e8f0">
                 <button class="btn bxl" style="flex:1;font-weight:800;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none" onclick="window.nxEnviarPorWhatsApp('${esc(c.id)}')"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> ENVIAR POR WHATSAPP</button>
                 <button class="btn bsm bghost" onclick="window.nxEditarCuenta('${esc(c.id)}')" title="Editar" aria-label="Editar"><i class="ti ti-pencil"></i></button>
-                <button class="btn bsm bghost" onclick="window.nxEliminarCuenta('${esc(c.id)}')" title="Eliminar" style="color:#dc2626" aria-label="Eliminar"><i class="ti ti-trash"></i></button>
+                <button class="btn bsm bghost" onclick="window.nxEliminarCuenta('${esc(c.id)}')" title="Eliminar" style="color:#dc2626" aria-label="Eliminar"><i class="ti ti-minus"></i></button>
               </div>
             </div>
           `;
@@ -8854,7 +8854,7 @@
               <div style="font-size:10px;color:#475569;margin-bottom:8px">Recibe: ${secs.length} sección(es)</div>
               <div style="display:flex;gap:6px">
                 <button class="btn bsm bc1" style="flex:1" onclick="window.nxEditarDest('${esc(d.id)}')"><i class="ti ti-pencil"></i> Editar</button>
-                <button aria-label="Eliminar este destinatario" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxEliminarDest('${esc(d.id)}')"><i class="ti ti-trash"></i></button>
+                <button aria-label="Eliminar este destinatario" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxEliminarDest('${esc(d.id)}')"><i class="ti ti-minus"></i></button>
               </div>
             </div>`;
         }).join('');
@@ -9060,7 +9060,7 @@
           <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 11px;margin-bottom:5px">
             <i class="ti ti-clock" style="color:#6d28d9"></i>
             <span style="flex:1;font-weight:700;font-size:13px">${esc(h)}</span>
-            <button aria-label="Quitar esta hora" class="btn bsm bghost" style="color:#dc2626;padding:2px 8px" onclick="window.nxQuitarHora(${i})"><i class="ti ti-x"></i></button>
+            <button aria-label="Quitar esta hora" class="btn bsm bghost" style="color:#dc2626;padding:2px 8px" onclick="window.nxQuitarHora(${i})"><i class="ti ti-minus"></i></button>
           </div>`).join('');
   }
 
@@ -10337,7 +10337,7 @@
                 <div style="font-weight:900;color:#dc2626;font-size:14px;white-space:nowrap">- ${fmt(e.monto)}</div>
                 <div style="display:flex;gap:4px;justify-content:flex-end;margin-top:4px">
                   <button class="btn bsm bghost" onclick="window.nxEditarEgreso('${esc(e.id)}')" title="Editar" aria-label="Editar"><i class="ti ti-pencil"></i></button>
-                  <button class="btn bsm bghost" onclick="window.nxEliminarEgreso('${esc(e.id)}')" title="Eliminar" style="color:#dc2626" aria-label="Eliminar"><i class="ti ti-trash"></i></button>
+                  <button class="btn bsm bghost" onclick="window.nxEliminarEgreso('${esc(e.id)}')" title="Eliminar" style="color:#dc2626" aria-label="Eliminar"><i class="ti ti-minus"></i></button>
                 </div>
               </div>
             </div>`;
@@ -11067,7 +11067,7 @@
     if (estado === 'subiendo') {
       prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0" alt="Foto del artículo"><div style="flex:1"><div style="font-size:11px;font-weight:700;color:#475569">Subiendo bauche...</div></div><div class="spin"></div></div>`;
     } else if (estado === 'listo') {
-      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer" onclick="window.nxVerComprobante('${src}')" alt="Foto del artículo"><div style="flex:1"><div style="font-size:11px;font-weight:800;color:#059669"><i class="ti ti-check"></i> Bauche listo</div><div style="font-size:9px;color:#475569">Toca la imagen para verla</div></div><button aria-label="Quitar el comprobante" type="button" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxQuitarBauche()"><i class="ti ti-trash"></i></button></div>`;
+      prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><img src="${src}" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer" onclick="window.nxVerComprobante('${src}')" alt="Foto del artículo"><div style="flex:1"><div style="font-size:11px;font-weight:800;color:#059669"><i class="ti ti-check"></i> Bauche listo</div><div style="font-size:9px;color:#475569">Toca la imagen para verla</div></div><button aria-label="Quitar el comprobante" type="button" class="btn bsm bghost" style="color:#dc2626" onclick="window.nxQuitarBauche()"><i class="ti ti-minus"></i></button></div>`;
     } else if (estado === 'error') {
       prev.innerHTML = `<div style="display:flex;align-items:center;gap:10px;width:100%"><div style="flex:1;font-size:11px;font-weight:700;color:#dc2626"><i class="ti ti-alert-triangle"></i> No se pudo subir</div><button type="button" class="btn bsm bghost" onclick="window.nxQuitarBauche()">Reintentar</button></div>`;
     }
@@ -13234,7 +13234,7 @@
           <button type="button" title="Editar" aria-label="Editar" onclick="event.stopPropagation();window.nxPrClienteEditar('${c.id}')"><i class="ti ti-pencil"></i></button>
           ${c.telefono ? `<button type="button" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation();window.nxPrClienteWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
           <button type="button" title="Nuevo préstamo" aria-label="Nuevo préstamo" onclick="event.stopPropagation();window.nxPrestamoNuevoDeCliente('${c.id}')"><i class="ti ti-cash-plus"></i></button>
-          <button type="button" title="${st.n ? 'No se puede eliminar: tiene préstamos' : 'Eliminar cliente'}" aria-label="Eliminar cliente" onclick="event.stopPropagation();window.nxPrClienteBorrar('${c.id}')"><i class="ti ti-trash" style="color:${st.n ? '#cbd5e1' : '#dc2626'}"></i></button>
+          <button type="button" title="${st.n ? 'No se puede eliminar: tiene préstamos' : 'Eliminar cliente'}" aria-label="Eliminar cliente" onclick="event.stopPropagation();window.nxPrClienteBorrar('${c.id}')"><i class="ti ti-minus" style="color:${st.n ? '#cbd5e1' : '#dc2626'}"></i></button>
         </div></td>
       </tr>`;
     }).join('');
@@ -13338,7 +13338,7 @@
         <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
         </div>
       </div>
-      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-trash"></i></button>` : ''}<button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
+      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
     </div>`;
     document.body.appendChild(ov);
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
@@ -14435,7 +14435,7 @@
     ].join('');
     const pagosHTML = pagos.length === 0
       ? '<div style="color:#475569;font-size:11px;padding:10px">Sin pagos aún</div>'
-      : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#6d28d9;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#475569">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#475569;font-size:10px">${esc(x.nota)}</div>` : ''}</div><div style="display:flex;gap:4px;flex:none"><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoComprobante('${x.id}','${id}')" title="Comprobante de pago" aria-label="Comprobante de pago"><i class="ti ti-receipt" style="color:#6d28d9"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago" aria-label="Eliminar pago"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>`; }).join('');
+      : pagos.map(x => { const tb = x.tipo === 'capital' ? ' <span style="color:#6d28d9;font-weight:800;font-size:8.5px;background:#eff6ff;padding:1px 5px;border-radius:6px">CAPITAL</span>' : x.tipo === 'interes' ? ' <span style="color:#ea580c;font-weight:800;font-size:8.5px;background:#fff7ed;padding:1px 5px;border-radius:6px">INTERÉS</span>' : ''; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(x.monto)}</b>${tb} <span style="color:#475569">${(x.fecha || '').slice(0, 10)}${x.metodo ? ' · ' + esc(x.metodo) : ''}</span>${x.nota ? `<div style="color:#475569;font-size:10px">${esc(x.nota)}</div>` : ''}</div><div style="display:flex;gap:4px;flex:none"><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoComprobante('${x.id}','${id}')" title="Comprobante de pago" aria-label="Comprobante de pago"><i class="ti ti-receipt" style="color:#6d28d9"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarPago('${x.id}','${id}')" title="Eliminar pago" aria-label="Eliminar pago"><i class="ti ti-minus" style="color:#dc2626"></i></button></div></div>`; }).join('');
     // Línea de tiempo — SOLO eventos reales (creado + cada pago). No se inventan pasos de
     // "aprobado/contrato firmado/desembolso": este módulo crea el préstamo directo, sin ese flujo.
     const tlEventos = [{ f: p.created_at || p.fecha_prestamo, tit: 'Préstamo creado', sub: fmt(p.capital) + ' · ' + (p.nombre || '') }]
@@ -14504,7 +14504,7 @@
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(p.documentos) && p.documentos.length ? ' (' + p.documentos.length + ')' : ''}</button>
             ${_prSolicitudes.some(s => String(s.prestamo_id) === String(id)) ? `<button class="nxPrAcc" type="button" onclick="window.nxPrestamoExpediente('${id}')"><i class="ti ti-file-check"></i> Expediente firmado</button>` : ''}
             <button class="nxPrAcc" type="button" onclick="window.nxPrestamoEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
-            <button class="nxPrAcc del" type="button" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-trash"></i> Borrar</button>
+            <button class="nxPrAcc del" type="button" onclick="window.nxPrestamoBorrar('${id}')"><i class="ti ti-minus"></i> Borrar</button>
           </div>
         </div>
       </div>`;
@@ -15720,7 +15720,7 @@
             <div style="font-size:10px;color:#475569">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}${d.origen === 'firma' ? ' · <b style="color:#6d28d9">Firmado por link</b>' : ''}</div>
           </div>
           <button class="btn bsm bghost" type="button" onclick="${abrir}" title="Ver" aria-label="Ver"><i class="ti ti-eye" style="color:#6d28d9"></i></button>
-          <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarDoc('${id}',${i})" title="Eliminar" aria-label="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button>
+          <button class="btn bsm bghost" type="button" onclick="window.nxPrestamoBorrarDoc('${id}',${i})" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button>
         </div>`;
     }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
     // Si el préstamo nació de un link de firma pero su expediente todavía no está aquí
@@ -16013,7 +16013,7 @@
     ].filter(x => x[1]).map(x => `<div style="font-size:11px"><span style="color:#475569">${x[0]}:</span> <b style="color:#1e293b">${esc(x[1])}</b></div>`).join('');
     const gastosHTML = gastos.length === 0
       ? '<div style="color:#475569;font-size:11px;padding:10px">Sin gastos de reacondicionamiento aún</div>'
-      : gastos.map(g => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#0f172a">${esc(g.concepto || 'Gasto')}</b> <span style="color:#475569">${(g.fecha || '').slice(0, 10)}</span>${g.nota ? `<div style="color:#475569;font-size:10px">${esc(g.nota)}</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(g.costo)}</b><button class="btn bsm bghost" type="button" onclick="window.nxVehDelGasto('${g.id}','${id}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>`).join('');
+      : gastos.map(g => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#0f172a">${esc(g.concepto || 'Gasto')}</b> <span style="color:#475569">${(g.fecha || '').slice(0, 10)}</span>${g.nota ? `<div style="color:#475569;font-size:10px">${esc(g.nota)}</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(g.costo)}</b><button class="btn bsm bghost" type="button" onclick="window.nxVehDelGasto('${g.id}','${id}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button></div></div>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxVhDet'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -16051,7 +16051,7 @@
             <button class="nxPrAcc" type="button" onclick="window.nxVehActoVenta('${id}')"><i class="ti ti-file-certificate"></i> Acto venta</button>
             <button class="nxPrAcc" type="button" onclick="window.nxVehDocs('${id}')"><i class="ti ti-folder"></i> Docs${Array.isArray(v.documentos) && v.documentos.length ? ' (' + v.documentos.length + ')' : ''}</button>
             <button class="nxPrAcc" type="button" onclick="window.nxVehEditar('${id}')"><i class="ti ti-edit"></i> Editar</button>
-            <button class="nxPrAcc del" type="button" onclick="window.nxVehBorrar('${id}')"><i class="ti ti-trash"></i> Borrar</button>
+            <button class="nxPrAcc del" type="button" onclick="window.nxVehBorrar('${id}')"><i class="ti ti-minus"></i> Borrar</button>
           </div>
         </div>
       </div>`;
@@ -16278,7 +16278,7 @@
     cerrarModal('nxVhDocs');
     const docs = Array.isArray(v.documentos) ? v.documentos : [];
     const tiles = VH_DOC_TIPOS.map(t => `<label style="flex:1 1 64px;min-width:64px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:12px;padding:10px 5px;text-align:center"><input type="file" accept="image/*,.pdf" style="display:none" onchange="window.nxVehSubirDoc('${id}',this,'${t.k}')"><i class="ti ${t.ic}" style="font-size:19px;color:#6d28d9"></i><span style="font-size:9.5px;font-weight:700;color:#475569;line-height:1.1">${t.lbl}</span></label>`).join('');
-    const lista = docs.length ? docs.map((d, i) => { const tlbl = (VH_DOC_TIPOS.find(t => t.k === d.tipo) || {}).lbl || 'Documento'; return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9"><i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#475569"></i><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.nombre || tlbl)}</div><div style="font-size:10px;color:#475569">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div></div><button class="btn bsm bghost" type="button" onclick="window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')" title="Ver" aria-label="Ver"><i class="ti ti-eye" style="color:#6d28d9"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVehBorrarDoc('${id}',${i})" title="Eliminar" aria-label="Eliminar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
+    const lista = docs.length ? docs.map((d, i) => { const tlbl = (VH_DOC_TIPOS.find(t => t.k === d.tipo) || {}).lbl || 'Documento'; return `<div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #f1f5f9"><i class="ti ${/pdf/i.test(d.mime || d.url || '') ? 'ti-file-type-pdf' : 'ti-photo'}" style="font-size:18px;color:#475569"></i><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.nombre || tlbl)}</div><div style="font-size:10px;color:#475569">${esc(tlbl)} · ${esc((d.fecha || '').slice(0, 10))}</div></div><button class="btn bsm bghost" type="button" onclick="window.nxVerComprobante && window.nxVerComprobante('${esc(d.url)}')" title="Ver" aria-label="Ver"><i class="ti ti-eye" style="color:#6d28d9"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxVehBorrarDoc('${id}',${i})" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:14px;text-align:center">Sin documentos. Toca un tipo arriba para subir.</div>';
     const ov = document.createElement('div'); ov.id = 'nxVhDocs'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
@@ -26454,7 +26454,7 @@ try {
         (r.mostrar_progreso === false ? '<div class="nxRfHid"><i class="ti ti-eye-off"></i> Barra de vendidos oculta</div>' : '<div class="nxRfBar"><div style="width:' + pct + '%"></div></div>') +
         '<div class="nxRfAct"><button class="btn bsm bc1" type="button" onclick="window.nxRifaAbrir(\'' + r.id + '\')"><i class="ti ti-layout-grid"></i> Gestionar</button>' +
         '<button aria-label="Editar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button>' +
-        '<button aria-label="Eliminar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEliminar(\'' + r.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
+        '<button aria-label="Eliminar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEliminar(\'' + r.id + '\')"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>' +
         '</div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:13px;padding:34px">Aún no hay rifas.<br>Toca <b>"Nueva rifa"</b> para crear la primera.</div>';
 
@@ -26564,7 +26564,7 @@ try {
     if (!_rifaFaqs.length) return '<div style="font-size:11px;color:#94a3b8;padding:4px 2px">Sin preguntas. Agrega las dudas comunes (ej: ¿Cuándo es el sorteo?, ¿Cómo recojo el premio?).</div>';
     return _rifaFaqs.map(function (f, i) {
       return '<div style="border:1px solid #e8edf3;border-radius:10px;padding:8px;margin-bottom:7px;background:#fbfcfe">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:10.5px;color:#64748b">Pregunta ' + (i + 1) + '</b><button type="button" class="btn bsm bghost" title="Quitar" onclick="window.nxRifaFaqDel(' + i + ')" aria-label="Quitar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:10.5px;color:#64748b">Pregunta ' + (i + 1) + '</b><button type="button" class="btn bsm bghost" title="Quitar" onclick="window.nxRifaFaqDel(' + i + ')" aria-label="Quitar"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>' +
         '<input class="no-upper" style="margin-bottom:6px" placeholder="Pregunta" value="' + esc(f.q || '') + '" oninput="window.nxRifaFaqSet(' + i + ',\'q\',this.value)">' +
         '<textarea placeholder="Respuesta" oninput="window.nxRifaFaqSet(' + i + ',\'a\',this.value)" style="width:100%;min-height:50px;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical">' + esc(f.a || '') + '</textarea>' +
         '</div>';
@@ -26577,7 +26577,7 @@ try {
     if (!_rifaTut.length) return '<div style="font-size:11px;color:#94a3b8;padding:4px 2px">Sin pasos. El tutorial no aparecerá en la página.</div>';
     return _rifaTut.map(function (s, i) {
       return '<div style="border:1px solid #e8edf3;border-radius:10px;padding:8px;margin-bottom:7px;background:#fbfcfe">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:10.5px;color:#64748b">Paso ' + (i + 1) + '</b><button type="button" class="btn bsm bghost" title="Quitar" onclick="window.nxRifaTutDel(' + i + ')" aria-label="Quitar"><i class="ti ti-trash" style="color:#dc2626"></i></button></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:10.5px;color:#64748b">Paso ' + (i + 1) + '</b><button type="button" class="btn bsm bghost" title="Quitar" onclick="window.nxRifaTutDel(' + i + ')" aria-label="Quitar"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>' +
         '<input class="no-upper" style="margin-bottom:6px" placeholder="Título (ej: Paga)" value="' + esc(s.t || '') + '" oninput="window.nxRifaTutSet(' + i + ',\'t\',this.value)">' +
         '<textarea placeholder="Explicación del paso" oninput="window.nxRifaTutSet(' + i + ',\'d\',this.value)" style="width:100%;min-height:46px;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical">' + esc(s.d || '') + '</textarea>' +
         '</div>';
@@ -27081,7 +27081,7 @@ try {
     cerrarModal('nxCtas');
     var lista = _cuentas.length ? _cuentas.map(function (c) {
       var clase = c.clase === 'ahorro' ? 'Ahorro' : (c.clase === 'corriente' ? 'Corriente' : '');
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '(sin banco)') + (clase ? ' · ' + clase : '') + '</b><span>' + esc(c.numero_cuenta || '') + (c.titular ? ' · ' + esc(c.titular) : '') + (c.rnc_cedula ? ' · ' + esc(c.rnc_cedula) : '') + '</span></div></div><div style="display:flex;gap:4px"><button aria-label="Editar esta cuenta de cobro" class="btn bsm bghost" type="button" onclick="window.nxCuentaForm(\'' + c.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta cuenta de cobro" class="btn bsm bghost" type="button" onclick="window.nxCuentaEliminar(\'' + c.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ' + ctaIcon(c.tipo) + '"></i><div style="min-width:0"><b>' + esc(c.banco || '(sin banco)') + (clase ? ' · ' + clase : '') + '</b><span>' + esc(c.numero_cuenta || '') + (c.titular ? ' · ' + esc(c.titular) : '') + (c.rnc_cedula ? ' · ' + esc(c.rnc_cedula) : '') + '</span></div></div><div style="display:flex;gap:4px"><button aria-label="Editar esta cuenta de cobro" class="btn bsm bghost" type="button" onclick="window.nxCuentaForm(\'' + c.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar esta cuenta de cobro" class="btn bsm bghost" type="button" onclick="window.nxCuentaEliminar(\'' + c.id + '\')"><i class="ti ti-minus" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin cuentas. Agrega tus cuentas de banco, tarjeta o pago móvil para cobrar.</div>';
     var ov = document.createElement('div'); ov.id = 'nxCtas'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
@@ -27136,7 +27136,7 @@ try {
     var mios = _paquetes.filter(function (p) { return String(p.rifa_id) === String(r.id); });
     var lista = mios.length ? mios.map(function (p) {
       var normal = pb * Number(p.cantidad || 0), ah = normal - Number(p.precio || 0);
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-package" style="color:#7c3aed"></i><div style="min-width:0"><b>' + Number(p.cantidad || 0) + ' boletos · ' + fmt(p.precio) + '</b><span>' + (p.etiqueta ? esc(p.etiqueta) + ' · ' : '') + (ah > 0 ? 'ahorra ' + fmt(ah) : 'sin descuento') + '</span></div></div><div style="display:flex;gap:4px"><button aria-label="Editar este combo" class="btn bsm bghost" type="button" onclick="window.nxPaqForm(\'' + p.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este combo" class="btn bsm bghost" type="button" onclick="window.nxPaqEliminar(\'' + p.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-package" style="color:#7c3aed"></i><div style="min-width:0"><b>' + Number(p.cantidad || 0) + ' boletos · ' + fmt(p.precio) + '</b><span>' + (p.etiqueta ? esc(p.etiqueta) + ' · ' : '') + (ah > 0 ? 'ahorra ' + fmt(ah) : 'sin descuento') + '</span></div></div><div style="display:flex;gap:4px"><button aria-label="Editar este combo" class="btn bsm bghost" type="button" onclick="window.nxPaqForm(\'' + p.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este combo" class="btn bsm bghost" type="button" onclick="window.nxPaqEliminar(\'' + p.id + '\')"><i class="ti ti-minus" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin paquetes. Crea combos como "5 boletos por RD$400" para vender más.</div>';
     var ov = document.createElement('div'); ov.id = 'nxPaqs'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
@@ -27214,7 +27214,7 @@ try {
     var vs = vendsRifa();
     var lista = vs.length ? vs.map(function (v) {
       var cod = (v.codigo || '').toUpperCase();
-      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span>' + (cod ? '<span style="display:block;margin-top:3px"><i class="ti ti-key" style="font-size:12px"></i> Código: <b style="font-family:var(--mono);letter-spacing:1px;color:#4f46e5">' + esc(cod) + '</b></span>' : '') + '</div></div><div style="display:flex;gap:4px">' + (cod ? '<button class="btn bsm bghost" type="button" title="Compartir acceso" onclick="window.nxVendLink(\'' + v.id + '\')" aria-label="Compartir acceso"><i class="ti ti-share" style="color:#16a34a"></i></button>' : '') + '<button aria-label="Editar este vendedor" class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este vendedor" class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-trash" style="color:#dc2626"></i></button></div></div>';
+      return '<div class="ctaRow"><div class="ctaL"><i class="ti ti-user"></i><div style="min-width:0"><b>' + esc(v.nombre || '') + '</b><span>' + (v.telefono ? esc(v.telefono) + ' · ' : '') + 'comisión ' + Number(v.comision_pct || 0) + '%</span>' + (cod ? '<span style="display:block;margin-top:3px"><i class="ti ti-key" style="font-size:12px"></i> Código: <b style="font-family:var(--mono);letter-spacing:1px;color:#4f46e5">' + esc(cod) + '</b></span>' : '') + '</div></div><div style="display:flex;gap:4px">' + (cod ? '<button class="btn bsm bghost" type="button" title="Compartir acceso" onclick="window.nxVendLink(\'' + v.id + '\')" aria-label="Compartir acceso"><i class="ti ti-share" style="color:#16a34a"></i></button>' : '') + '<button aria-label="Editar este vendedor" class="btn bsm bghost" type="button" onclick="window.nxVendForm(\'' + v.id + '\')"><i class="ti ti-edit"></i></button><button aria-label="Eliminar este vendedor" class="btn bsm bghost" type="button" onclick="window.nxVendEliminar(\'' + v.id + '\')"><i class="ti ti-minus" style="color:#dc2626"></i></button></div></div>';
     }).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">Sin vendedores. Agrega a tu equipo para asignar ventas y calcular comisiones.</div>';
     var ov = document.createElement('div'); ov.id = 'nxVends'; ov.className = 'overlay open';
     ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
@@ -28454,7 +28454,7 @@ try {
         '<input type="color" value="' + esc(p.color || '#c026d3') + '" oninput="window.nxAiPilarSet(' + i + ',\'color\',this.value)" style="width:34px;height:32px;border:1px solid #cbd5e1;border-radius:7px;padding:1px">' +
         '<input placeholder="Nombre del pilar" value="' + esc(p.nombre || '') + '" oninput="window.nxAiPilarSet(' + i + ',\'nombre\',this.value)" style="flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:7px 9px;font-size:12.5px">' +
         '<input type="number" min="0" max="100" placeholder="%" value="' + (p.porcentaje || '') + '" oninput="window.nxAiPilarSet(' + i + ',\'porcentaje\',this.value)" style="width:56px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 6px;font-size:12.5px;text-align:center">' +
-        '<button aria-label="Eliminar este pilar" class="btn bsm bghost" type="button" onclick="window.nxAiPilarDel(' + i + ')"><i class="ti ti-trash"></i></button></div>' +
+        '<button aria-label="Eliminar este pilar" class="btn bsm bghost" type="button" onclick="window.nxAiPilarDel(' + i + ')"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>' +
         '<input placeholder="Formatos (ej. Reel, Carrusel, Historia)" value="' + esc(csv(p.formatos)) + '" oninput="window.nxAiPilarSet(' + i + ',\'formatos\',this.value)" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:11.5px;margin-bottom:5px;box-sizing:border-box">' +
         '<input placeholder="Plataformas (ej. Instagram, TikTok)" value="' + esc(csv(p.plataformas)) + '" oninput="window.nxAiPilarSet(' + i + ',\'plataformas\',this.value)" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 9px;font-size:11.5px;box-sizing:border-box"></div>';
     }).join('');
@@ -28729,7 +28729,7 @@ try {
     var cards = (_items || []).map(function (it) {
       var prev = String(it.caption || it.texto || '').slice(0, 90);
       return '<div class="nxAiDCard"><h4>' + esc(it.tema || 'Sin tema') +
-        '<button aria-label="Eliminar este contenido" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEliminarItem(\'' + it.id + '\')"><i class="ti ti-trash"></i></button>' +
+        '<button aria-label="Eliminar este contenido" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiEliminarItem(\'' + it.id + '\')"><i class="ti ti-minus" style="color:#dc2626"></i></button>' +
         '<button aria-label="Marcar como favorito" class="btn bsm bghost" style="float:right;padding:3px 8px" type="button" onclick="window.nxAiFavItem(\'' + it.id + '\')"><i class="ti ti-star' + (it.favorito ? '-filled' : '') + '" style="color:' + (it.favorito ? '#d97706' : '#94a3b8') + '"></i></button>' +
         '</h4><div style="margin-bottom:6px"><span class="nxAiChip">' + esc(it.plataforma || '') + '</span><span class="nxAiChip">' + esc(it.formato || '') + '</span></div>' +
         '<div style="font-size:11.5px;color:#64748b;margin-bottom:8px">' + esc(prev) + (prev.length >= 90 ? '…' : '') + '</div>' +

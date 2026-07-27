@@ -1,7 +1,12 @@
 {
-  "version": "52.3",
+  "version": "52.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.5",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (mismo criterio + / − ahora en TODO el sistema): llevamos el signo − rojo (quitar/eliminar) a los botones de borrar del resto de los módulos — Financiamiento, Rifas, Vehículos, NEXUS AI, el sistema de Seguros (empresas, agentes, usuarios, clientes, bancos, pagos, documentos) y los ajustes — que antes tenían un basurero o una ✕. Con esto TODO NEXUS PRO habla el mismo idioma: + verde para agregar, − rojo para quitar. Cero cambios en cómo funciona nada; solo la parte visual de los botones."
+    },
     {
       "v": "52.3",
       "fecha": "2026-07-27",
