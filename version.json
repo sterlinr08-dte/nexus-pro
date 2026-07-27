@@ -1,7 +1,12 @@
 {
-  "version": "49.96",
+  "version": "49.97",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.97",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): también se quitó el número de comprobante (NCF) de la LISTA de facturas. · En la pantalla de Facturas, cada tarjeta mostraba el número de comprobante (ej. B0200000608) al lado del monto — se quitó esa columna, igual que ya se había quitado de la factura impresa. Ahora la tarjeta muestra el cliente, el monto, la fecha y el estado, sin el número de comprobante. Solo es visual; el NCF se sigue guardando en el sistema."
+    },
     {
       "v": "49.96",
       "fecha": "2026-07-26",
