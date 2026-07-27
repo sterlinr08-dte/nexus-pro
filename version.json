@@ -1,7 +1,12 @@
 {
-  "version": "51.9",
+  "version": "52.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.0",
+      "fecha": "2026-07-27",
+      "texto": "CAMBIO (Compras): 'Nueva compra' ya NO es un cuadro flotante — ahora es una PANTALLA COMPLETA del sistema, dentro del POS, organizada por secciones claras: 'Datos de la compra' (proveedor, empleado, fecha, factura, etc.), 'Artículos' (buscador + agregar) y el 'Total de la compra' con los botones al final. Arriba tiene un botón para volver a la lista de compras. Se ve más ordenado y con más espacio para trabajar; guardar la compra funciona igual que antes."
+    },
     {
       "v": "51.9",
       "fecha": "2026-07-27",

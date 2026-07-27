@@ -9218,3 +9218,36 @@ buscador (lupa) del artículo (v51.8) a los otros 2 `<select>` de la pantalla de
 - **Con esto las 3 lupas de la pantalla de Compra quedan listas** (Artículo v51.8, Proveedor + Empleado
   v51.9). El único `<select>` que queda en esa pantalla es Almacén (solo aparece con multi-almacén, lista
   corta — no hace falta buscador).
+
+### POS · Compras — "Nueva compra" pasa de cuadro flotante a PANTALLA DEL SISTEMA (27-jul-2026, v52.0)
+El dueño: *"La ventana de compra no sea una ventana flotante sea una ventana del sistema con criterios
+claros"*. `nxPosNuevaCompra` era un `.overlay`/`.modal` centrado (cuadro flotante). Ahora es una pantalla
+completa dentro del POS (como Vender/Factura/etc.), organizada en secciones.
+- **Cómo se hizo (dentro del sistema de pestañas del POS, no un modal):** variable de módulo nueva
+  **`_compraVista`** (`'lista'` | `'nueva'`). `renderCompras()` devuelve `renderCompraForm()` cuando está en
+  `'nueva'`, si no la lista de siempre. `nxPosNuevaCompra` ya NO crea overlay — hace `_compraVista='nueva'`
+  + `renderPOS(v-pos)`. `nxPosCompraCancelar` (nueva) y el guardado exitoso (`nxPosGuardarCompra`) hacen
+  `_compraVista='lista'` + re-render. `nxPosTab` resetea `_compraVista='lista'` al navegar (entrar a Compras
+  siempre muestra la lista; la pantalla se abre con el botón "Nueva compra").
+- **Hook de inicialización en `renderPOS`** (junto a `pintarCarrito`/`pintarFactura`): cuando
+  `_posTab==='compras' && _compraVista==='nueva'` corre `scanMoney(view)` (activa el campo de dinero) +
+  `pintarCompraItems()` — antes eso corría tras crear el overlay; ahora corre tras el render de la pantalla.
+- **`renderCompraForm()` (nueva):** wrapper `.nxPf .nxPrForm` (max-width 880px centrado) con encabezado
+  (botón "← Compras" + título) y 2 tarjetas con títulos claros — **"Datos de la compra"** (proveedor/
+  empleado con lupa, fecha, vencimiento, factura, NCF, orden, liquidación, crédito, almacén) y
+  **"Artículos"** (buscador + staging cant/costo/IMEI + lista) — más un bloque de **"Total de la compra"**
+  y la barra de acciones (Cancelar / Guardar e imprimir / Guardar compra). **Todos los ids de campo son
+  idénticos** a los del viejo modal (`compProv`/`compEmp`/`compFecha`/`compArt`/`compCant`/`compCosto`/
+  `compItemsList`/`compTotal`/etc.), así que `nxPosGuardarCompra` y las 3 lupas (v51.8/51.9) **no
+  cambian** — cero lógica de guardado/costo/inventario tocada.
+- **Verificado con Playwright, código real extraído por contenido** (`renderCompras`, `nxPosNuevaCompra`,
+  `nxPosCompraCancelar`, `renderCompraForm`, `pintarCompraItems` + un `renderPOS` stub que replica el hook
+  real): **29 comprobaciones** — inicio muestra la lista, "Nueva compra" pone `_compraVista='nueva'` y
+  renderiza **sin `.overlay`/`.modal`** (pantalla dentro de `#v-pos`, `.nxPf`), con título + las 2 secciones
+  + botón Volver, los 14 ids de campo presentes, prov/emp/art son input hidden con sus botones de lupa, el
+  hook corre `scanMoney`, y Cancelar vuelve a la lista. Sin desborde en 390px, 0 errores de JS. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Nota de publicación:** v51.9 (lupas prov/emp) y v52.0 van juntas en la rama `claude/compras-lupas-prov-emp`
+  — quedaron sin fusionar a `main` porque el conector de GitHub se desconectó (necesita re-autorización) y el
+  push directo a `main` sigue bloqueado por el clasificador del entorno. Pendiente: reconectar GitHub y
+  fusionar el PR (o que el dueño lo fusione a mano).
