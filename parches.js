@@ -22127,7 +22127,6 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     _compraItems = [];
     cerrarModal('nxPosCompra');
     const provOpts = _proveedores.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
-    const prodOpts = _prods.map(p => `<option value="${p.id}">${esc(p.nombre)}${p.codigo ? ' (' + esc(p.codigo) + ')' : ''}</option>`).join('');
     const empOpts = '<option value="">— Empleado —</option>' + (_clientes || []).filter(c => c.es_empleado).map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
     const ov = document.createElement('div'); ov.id = 'nxPosCompra'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -22143,7 +22142,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           ${_almacenes.length > 1 ? `<div class="fr"><label>Almacén (entra el stock)</label><select id="compAlm">${_almacenes.map(a => `<option value="${a.id}"${String(_almacenSel) === String(a.id) ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>` : ''}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 6px">ARTÍCULOS</div>
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:8px">
-            <div class="fr" style="margin-bottom:6px"><select id="compArt" onchange="window.nxCompraArtCambio()"><option value="">— Elige un artículo —</option>${prodOpts}</select></div>
+            <div class="fr" style="margin-bottom:6px"><input type="hidden" id="compArt"><button type="button" id="compArtBtn" onclick="window.nxCompraArtBuscar()" style="width:100%;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compArtTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar artículo…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button></div>
             <div id="compImeiArea" style="display:none;margin-bottom:6px">
               <div style="font-size:9px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px">IMEI / Serial — agrega uno por uno con +</div>
               <div style="display:flex;gap:6px"><input id="compImeiIn" class="no-upper" inputmode="numeric" placeholder="Escribe un IMEI y toca +" style="flex:1;min-width:0;padding:9px;border:1.5px solid #ddd6fe;border-radius:9px;font-size:13px;font-family:var(--mono,monospace)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxCompraImeiAdd();}"><button aria-label="Agregar un IMEI" class="btn bc1 bsm" type="button" onclick="window.nxCompraImeiAdd()"><i class="ti ti-plus"></i></button></div>
@@ -22161,7 +22160,51 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     pintarCompraItems();
   };
   window.nxPosNuevoProvDesdeCompra = function () { abrirProv(null, true); };
+  // ── Buscador de artículo estilo InfoplusWEB (reemplaza el <select> por una ventana con lupa) ──
+  // Solo cambia CÓMO se elige el artículo. El id oculto #compArt se mantiene, así que
+  // nxCompraArtCambio / nxPosCompraAddItem / nxCompraEditItem lo leen igual (cero cambio de guardado).
+  window.nxCompraArtBuscar = function () {
+    cerrarModal('nxCompArtM');
+    const ov = document.createElement('div'); ov.id = 'nxCompArtM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px;max-height:85vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-search"></i> Buscar artículo</span><button class="nxBack" type="button" onclick="document.getElementById('nxCompArtM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+        ${posBuscador({ id: 'compArtQ', placeholder: 'Buscar por nombre, código o marca…', oninput: 'window.nxCompArtFiltrar(this.value)' })}
+        <div id="compArtList" style="overflow-y:auto;flex:1;margin-top:10px"></div>
+      </div>`;
+    document.body.appendChild(ov);
+    pintarCompArtList('');
+    setTimeout(function () { const i = document.getElementById('compArtQ'); if (i) i.focus(); }, 60);
+  };
+  window.nxCompArtFiltrar = function (q) { pintarCompArtList(q); };
+  function pintarCompArtList(q) {
+    const wrap = document.getElementById('compArtList'); if (!wrap) return;
+    q = (q || '').toLowerCase().trim();
+    let lista = _prods;
+    if (q) lista = _prods.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase().includes(q));
+    const total = lista.length; const show = lista.slice(0, 400);
+    wrap.innerHTML = (total > 400 ? `<div style="font-size:10.5px;color:#475569;margin-bottom:6px">Mostrando 400 de ${total} — escribe para afinar</div>` : '') + (show.length ? show.map(p => {
+      const exi = Number(p.stock || 0), serv = p.tipo === 'servicio', min = Number(p.stock_min || 0);
+      const stk = serv ? '<span class="nxPosStkB srv">SERVICIO</span>' : exi <= 0 ? '<span class="nxPosStkB out">SIN STOCK</span>' : (min > 0 && exi <= min) ? `<span class="nxPosStkB low">BAJO: ${exi}</span>` : `<span class="nxPosStkB">STOCK: ${exi}</span>`;
+      return `<div onclick="window.nxCompraArtPick('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button" style="padding:9px 10px;border:1px solid #eef0f4;border-radius:9px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-weight:700;font-size:12.5px;color:#1e293b;line-height:1.25">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px">${p.codigo ? '<span>' + esc(p.codigo) + '</span>' : ''}${stk}${Number(p.costo || 0) > 0 ? '<span>Costo ' + fmt(p.costo) + '</span>' : ''}</div></div><i class="ti ti-chevron-right" style="color:#94a3b8;flex:0 0 auto"></i></div>`;
+    }).join('') : '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>');
+  }
+  window.nxCompraArtPick = function (id) {
+    const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
+    const ar = document.getElementById('compArt'); if (ar) ar.value = p.id;
+    window.nxCompraArtCambio(); // sincroniza el botón + prellena costo + área IMEI (para revisar/corregir)
+    cerrarModal('nxCompArtM');
+    setTimeout(function () { const el = document.getElementById(p.serial ? 'compImeiIn' : 'compCant'); if (el) { el.focus(); if (el.select) try { el.select(); } catch (e) {} } }, 60);
+  };
+  // Refresca el texto del botón según el artículo elegido (o el placeholder si no hay ninguno)
+  window.nxCompraArtSync = function () {
+    const t = document.getElementById('compArtTxt'); if (!t) return;
+    const p = _prods.find(x => String(x.id) === String(val('compArt')));
+    t.textContent = p ? p.nombre : 'Buscar artículo…';
+    t.style.color = p ? '#1e293b' : '#94a3b8';
+  };
   window.nxCompraArtCambio = function () {
+    window.nxCompraArtSync && window.nxCompraArtSync();
     const p = _prods.find(x => String(x.id) === String(val('compArt')));
     const esSerial = !!(p && p.serial);
     _compraImeiBuf = [];
@@ -22195,6 +22238,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     else { const nuevo = { producto_id: p.id, nombre: p.nombre, cantidad: cant, costo: costo }; if (esSerial) nuevo.imeis = _compraImeiBuf.join('\n'); _compraItems.push(nuevo); }
     _compraImeiBuf = []; pintarCompraImeiChips();
     const ar = document.getElementById('compArt'); if (ar) ar.value = '';
+    window.nxCompraArtSync && window.nxCompraArtSync();
     const area = document.getElementById('compImeiArea'); if (area) area.style.display = 'none';
     const cc = document.getElementById('compCant'); if (cc) cc.value = '1';
     const co = document.getElementById('compCosto'); if (co) co.value = '';

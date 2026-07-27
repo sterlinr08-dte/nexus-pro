@@ -9152,3 +9152,42 @@ pantalla completa (v51.6).
 - **Nota para el futuro:** el fondo espacial (v51.5/v51.6) fue una idea que al dueño no le convenció en el
   dispositivo real — no reintroducir sin que lo pida explícitamente. El código está en el historial (PRs
   #206/#207) si algún día se retoma.
+
+### POS · Compras — elegir artículo con BUSCADOR (método InfoplusWEB), no desplegable (27-jul-2026, v51.8)
+El dueño mandó 2 fotos de la pantalla de Compra de InfoplusWEB y pidió: *"Ese método que usa infoplus
+podemos usarlo para agregar mercancías y también cuando la eliges se pone en la pantalla por si quiere
+hacer una corrección"*. **Auditoría antes de tocar nada:** el módulo de Compras (`nxPosNuevaCompra`,
+`parches.js`) YA tenía la mitad del método — un área de staging (Cantidad + Costo + botón "Agregar") y una
+lista editable (tocar una fila → `nxCompraEditItem` la devuelve al staging para corregir). El hueco real:
+el artículo se elegía con un **`<select>` desplegable** de TODOS los productos, no un buscador con lupa
+como InfoplusWEB. Con catálogo grande eso es lento.
+- **Cambio quirúrgico, cero lógica de negocio tocada:** el `<select id="compArt">` se reemplazó por
+  (1) un **`<input type="hidden" id="compArt">`** (mismo id, así `nxPosCompraAddItem`/`nxCompraEditItem`/
+  `nxCompraArtCambio` lo leen idéntico — mismo patrón que el selector de cliente en v49.02/v49.37) +
+  (2) un **botón** (`#compArtBtn`/`#compArtTxt`) que muestra el artículo elegido o "Buscar artículo…" y
+  abre una ventana de búsqueda. `nxPosGuardarCompra` (guardar/costo/inventario/asiento) **no se tocó**.
+- **Funciones nuevas** (junto a `nxCompraArtCambio`, mismo IIFE del POS): `nxCompraArtBuscar()` (ventana
+  `.overlay`/`.modal` con `posBuscador` — filtra por nombre/código/referencia/marca), `pintarCompArtList(q)`
+  (filas con nombre + código + chip de stock + costo actual), `nxCompArtFiltrar(q)`, `nxCompraArtPick(id)`
+  (fija el id oculto, llama a `nxCompraArtCambio()` para prellenar el costo y mostrar el área IMEI si es
+  serial, cierra la ventana, y enfoca Cantidad —o el input de IMEI si es serial— para revisar/corregir), y
+  `nxCompraArtSync()` (refresca el texto del botón según el artículo elegido). `nxCompraArtCambio()` llama a
+  `nxCompraArtSync()` al inicio para que tanto elegir como editar-fila mantengan el botón sincronizado;
+  `nxPosCompraAddItem()` lo llama tras limpiar para resetear el botón a "Buscar artículo…". `prodOpts`
+  (definición del viejo desplegable) se borró como código muerto (regla #1).
+- **El "por si quiere hacer una corrección" es real y en 2 momentos:** (1) ANTES de agregar — al elegir el
+  artículo, su nombre + costo quedan en pantalla y puedes cambiar costo/cantidad antes de tocar "Agregar";
+  (2) DESPUÉS de agregar — la lista sigue siendo editable (tocar la fila la devuelve al staging), que ya
+  existía. Los artículos con IMEI/serial siguen exigiendo sus IMEI uno por uno (sin cambio).
+- **Verificado con Playwright, código real extraído por contenido** (`posBuscador`, `nxPosNuevaCompra`,
+  `nxCompraArtBuscar`, `pintarCompArtList`, `nxCompraArtPick`, `nxCompraArtSync`, `nxCompraArtCambio`,
+  `nxPosCompraAddItem`, `nxCompraEditItem`, `pintarCompraItems` — 14 funciones, balance de llaves real) con
+  datos de tienda de celulares: **22 comprobaciones** — el desplegable ya no existe (es input hidden + botón),
+  la ventana de búsqueda abre y filtra por nombre/código, elegir carga el artículo en el botón + prellena el
+  costo, corregir el costo (10,460→11,000) y la cantidad se guarda tal cual en la lista, el botón se resetea
+  tras agregar, editar una fila la devuelve al staging con el botón sincronizado, y un artículo serial muestra
+  el área de IMEI. Sin desborde horizontal en 390px, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado:** los selectores de Proveedor/Empleado (siguen `<select>`, no eran parte del
+  pedido) y la lógica de guardado de la compra. Si el dueño quiere después, el mismo buscador se puede llevar
+  al selector de Proveedor.
