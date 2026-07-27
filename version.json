@@ -1,7 +1,17 @@
 {
-  "version": "51.8",
+  "version": "52.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.0",
+      "fecha": "2026-07-27",
+      "texto": "CAMBIO (Compras): 'Nueva compra' ya NO es un cuadro flotante — ahora es una PANTALLA COMPLETA del sistema, dentro del POS, organizada por secciones claras: 'Datos de la compra' (proveedor, empleado, fecha, factura, etc.), 'Artículos' (buscador + agregar) y el 'Total de la compra' con los botones al final. Arriba tiene un botón para volver a la lista de compras. Se ve más ordenado y con más espacio para trabajar; guardar la compra funciona igual que antes."
+    },
+    {
+      "v": "51.9",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (Compras — agregar mercancía): ahora también el PROVEEDOR y el EMPLEADO se eligen con buscador (lupa), igual que el artículo. Tocas 'Buscar proveedor…' o 'Buscar empleado…', escribes el nombre (el proveedor también por RNC o teléfono) y lo encuentras al instante — ya no hay que buscar en un menú largo. El botón '+' para agregar un proveedor nuevo sigue al lado, y el empleado se puede dejar en blanco con la opción 'Sin empleado'."
+    },
     {
       "v": "51.8",
       "fecha": "2026-07-27",
