@@ -8833,3 +8833,17 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   arma bien y `navigator.share` recibe el texto correcto, la auditoría se registra, sin desborde en
   390px. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
+- **Seguimiento (v50.4) — COBRAR arriba, WhatsApp+menú debajo pequeños:** el dueño (con captura) pidió
+  "poner el botón cobrar arriba de whatsapp y botón acción con el mismo tamaño de pendiente". Solo CSS
+  del bloque móvil `@media(max-width:720px)` de `.sf-fact`: (1) la celda `Cobro` pasó de `flex:1 1 auto`
+  (compartía fila con las acciones) a **`flex:1 1 100%`** — COBRAR ocupa su propia fila completa arriba.
+  (2) la celda `Acciones` (WhatsApp + menú ⋮) pasó de `flex:0 0 auto` a **`flex:1 1 100%`** — baja a su
+  propia fila DEBAJO de COBRAR, alineada a la derecha. (3) sus botones se achicaron al tamaño del badge
+  PENDIENTE (`.badge` = `padding:3px 9px;border-radius:20px`): `td[data-lb="Acciones"] .btn{height:auto;
+  min-height:0;min-width:0;padding:3px 14px;border-radius:20px}` + icono a 14px — la especificidad
+  (`.nxSf table.sf-fact td[data-lb="Acciones"] .btn` = 0,4,2) gana sobre `.btn.bsm.bghost` (0,3,0) y el
+  `min-height:34px` global de `.btn`, así que los botones quedan como pastillas pequeñas en vez de los
+  cuadros pálidos de 38px. Verificado con Playwright a 390px: COBRAR arriba y ancho (>300px), WhatsApp
+  debajo con alto similar al badge (±8px), sin desborde. La tarjeta sin meses anteriores subió de ~166px
+  a ~180px (una fila más, esperado). `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
