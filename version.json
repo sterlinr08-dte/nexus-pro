@@ -1,7 +1,12 @@
 {
-  "version": "51.5",
+  "version": "51.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.6",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (vista de tarjetas): ahora TODA la pantalla se ve espacial, no solo detrás de las tarjetas — el cielo estrellado con nebulosa cubre también las pestañas, los indicadores de arriba, los filtros y el buscador, así que la pantalla completa se siente como el espacio. Los textos se aclararon para leerse bien sobre el fondo oscuro. Al hacer scroll el espacio se queda quieto y todo sube por encima (sin animación pesada, no parpadea). Aplica a Facturas y Cobros (solo administrador, en el celular)."
+    },
     {
       "v": "51.5",
       "fecha": "2026-07-27",
