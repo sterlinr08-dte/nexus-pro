@@ -9000,3 +9000,31 @@ correcto (central 231px, 4 visibles, sin desborde, 0 errores) y una prueba de id
 re-aplicar `nxRuedaAplicar` sin desplazar deja los 20 slots con transform+zIndex **idénticos** (20/20), o
 sea que las guardas de verdad suprimen las escrituras redundantes. Pendiente que el dueño confirme en su
 iPhone. Aplica a Facturas y Cobros. Cambio 100% CSS/transform, cero lógica de negocio tocada.
+
+### Vista rueda — más claridad a la tarjeta central + buscador visible (27-jul-2026, v51.3)
+El dueño: *"A la tarjeta principal más claridad y el buscador"*. Dos piezas, sin tocar lógica de negocio:
+- **Tarjeta central más clara:** `nxRuedaAplicar` ahora marca **solo la tarjeta más centrada** con la clase
+  `.focus` (busca el `min|d|` entre las visibles y la asigna; la quita de las demás — barato, solo cambia
+  al cambiar de tarjeta, no cada cuadro). `.sfr-cc.focus` = aro blanco nítido (`box-shadow 0 0 0 2px
+  rgba(255,255,255,.92)` + sombra más fuerte) y **menos oscurecimiento de esquinas** (`.sfr-cc.focus::after
+  {opacity:.5}`) para que el texto se lea más claro. Además el velo de las tarjetas de los lados subió de
+  `.58/*0.7` a `.62/*0.85` → receden más y la del centro resalta por contraste. Se le agregó `transition:
+  box-shadow .2s` a `.sfr-cc` para que el aro entre/salga suave.
+- **Buscador visible en la rueda (Facturas):** Facturas usaba la lupa colapsada NPGS §5 (un iconito); Cobros
+  ya tenía una barra `.nxBusca` visible desde siempre. En **modo rueda**, Facturas ahora muestra la MISMA
+  barra visible (`#factQBar`, componente global `.nxBusca` con lupa+campo+✕), y oculta la lupa §5. Fuera de
+  la rueda, la lupa §5 sigue igual (no se toca el estándar del sistema). **Clave de por qué no pierde el
+  foco al escribir:** la barra es HTML **estático** en el template (no la reconstruye `rFact`/`pintarLupaFact`
+  en cada tecla) — mismo patrón que ya usa Cobros. `#factQ` pasó de `<input type=hidden>` a ser el input
+  visible de esa barra (mismo id, así `rFact` lo lee igual en los 2 modos); `pintarLupaFact` solo alterna
+  `display` entre la barra y la lupa §5 según `nxUsarRueda()`. Reusa `nxBuscaTog`/`nxBuscaClear`/`nxBuscaLupa`/
+  `nxBuscaEnsureCSS` (cero CSS nuevo para el buscador).
+- **Cobros:** la claridad de la tarjeta central le aplica automáticamente (comparten `.sfr-cc`/`nxRuedaAplicar`);
+  su buscador ya era visible, así que quedó parejo sin tocarlo.
+- Verificado con Playwright y el código real extraído (CSS + `pintarLupaFact`/`rFact`/`nxRuedaAplicar` +
+  los helpers `nxBusca*`, 25 tarjetas): **exactamente 1** tarjeta con `.focus` (la central), tarjeta central
+  214px (no gigante), 4 visibles, la barra visible en rueda con la lupa §5 oculta, **escribir NO pierde el
+  foco** y filtra la rueda (25→1), la ✕ aparece, sin desborde horizontal, 0 errores de JS. Los 3 `<script>`
+  de `index.html` compilan; `version.json` válido. Nota: el harness headless no reproduce el parpadeo de iOS
+  (ver v51.2), pero el aro `.focus` y el velo solo cambian al cambiar de tarjeta (no cada cuadro), así que no
+  reintroducen el parpadeo que se arregló en v51.2.
