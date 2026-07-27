@@ -9028,3 +9028,46 @@ El dueño: *"A la tarjeta principal más claridad y el buscador"*. Dos piezas, s
   de `index.html` compilan; `version.json` válido. Nota: el harness headless no reproduce el parpadeo de iOS
   (ver v51.2), pero el aro `.focus` y el velo solo cambian al cambiar de tarjeta (no cada cuadro), así que no
   reintroducen el parpadeo que se arregló en v51.2.
+
+### Vista tarjetas — cambiada de RUEDA 3D a BILLETERA Apple Wallet (27-jul-2026, v51.4)
+El dueño: *"Vamos a cambiar el scroll a cómo me enseñaste tipo apple semejante una mezcla"*. Antes de la
+rueda le enseñé varias muestras de scroll; eligió la **"mezcla"** (`muestra-mezcla.html`, lista + billetera
+Apple Wallet) y ahora pidió aplicarla en vez de la rueda 3D. **Cambio de mecanismo completo, mismo gate
+admin-only/celular, mismo contenido de tarjeta, mismas acciones.**
+- **De rueda 3D a billetera (sticky):** las tarjetas dejaron de ser `.sfr-slot` con transform 3D por-cuadro
+  (`nxRuedaAplicar`) y pasaron a una **lista vertical con `position:sticky`**: `.sfr-cc{position:sticky;
+  top:calc(6px + min(var(--i,0)*5px, 26px))}` — cada tarjeta se pega arriba con un escalón (tuck) que crece
+  con su índice `--i` (tope 26px), apilándose como tarjetas de crédito de Apple Wallet. Entrada suave con
+  **IntersectionObserver** (`.inview`: `opacity:0;translateY(22px)` → `1;none`), one-shot por tarjeta.
+- **Esto MATA el parpadeo de raíz (no lo mitiga):** el parpadeo de iOS (v51.1/51.2) venía del motor 3D
+  (transform + `mix-blend`/z-index por cada scroll). Ese motor se **retiró por completo** — `nxRuedaAplicar`,
+  `_ruedaScrollH`, `_ruedaRaf`, `.sfr-slot`, `.sfr-veil` y la clase `.sfr-cc.focus` (de v51.3) ya NO existen.
+  Ahora el scroll es 100% CSS `sticky` + un IntersectionObserver que solo agrega una clase una vez. No hay
+  transform por-cuadro, así que el parpadeo no puede volver.
+- **Se conservó el buscador visible de v51.3** (`pintarLupaFact`/`#factQBar` intactos) — la barra sigue
+  saliendo arriba en modo tarjetas. Se quitó la **claridad de la tarjeta central de v51.3** (el aro `.focus`)
+  porque en una lista billetera todas las tarjetas se ven completas, no hay "central" — el foco es el tuck/
+  apilado, no un aro.
+- **`nxRuedaScrollOn`/`Off` reescritas:** `On` monta el IntersectionObserver sobre `#v-facturas .sfr-cc`
+  (con respaldo: si no hay `IntersectionObserver`, agrega `.inview` a todas de una); `Off` lo desconecta.
+  `rFact`/`rCob` marcan cada tarjeta con `style="--i:${ix}"` (índice del `.map`), sin `.sfr-slot`/`.sfr-veil`.
+- **Etiqueta de Ajustes actualizada** ("💳 Vista experimental de tarjetas", ya no "🎡 rueda"); el pref key
+  `vista_rueda` se conserva (sin migración). `nxUsarRueda()` sin cambios (admin + pref + celular).
+- **ERROR DE GIT detectado y corregido a mitad del trabajo (nota honesta):** las primeras ediciones de la
+  mezcla se aplicaron por error sobre una copia del working tree que había quedado en la base v51.2 (rama
+  `flicker`), **perdiendo el buscador de v51.3**. Se detectó al probar (`barShown:false` + `pintarLupaFact`
+  viejo en el snippet). Se descartó esa copia, se hizo `git checkout -B ... origin/main` (v51.3 real, con
+  buscador) y se **re-aplicó toda la mezcla limpia encima de v51.3** — así el buscador quedó conservado.
+  Lección: antes de editar, confirmar `git branch --show-current` + `APP_VERSION` del archivo contra
+  `origin/main`; el working tree puede no estar donde uno cree tras varios `stash`/`checkout`.
+- **`.sfr-wheel`/`.sfr-cc` y las clases de contenido (`.sfr-top`/`.sfr-nm`/`.sfr-amt`/`.sfr-prev`/`.sfr-foot`/
+  `.sfr-ico`/`.sfr-cob`/`.sfr-pill`/`.sfr-ars`) se conservan** (mismo look de tarjeta Platinum) — solo cambió
+  el contenedor y el mecanismo de scroll. El nombre `sfr` (de "seguros rueda") se dejó para no churnar.
+- Verificado con Playwright montando la vista en un `.content` con scroll real (replica el scroller de la
+  app): 20 tarjetas, `position:sticky` confirmado, la tarjeta 0 se **pega arriba** al hacer scroll (222px →
+  16px), el IntersectionObserver revela las tarjetas (`.inview`), sin tarjeta gigante (197px), el buscador
+  visible se conserva (`barShown:true`), tocar el monto dispara `cobrarDesdeFact`, sin desborde horizontal,
+  0 errores de JS. Capturas del apilado (tuck) a 390px. Los 3 `<script>` de `index.html` compilan;
+  `version.json` válido. Aplica a Facturas y Cobros. **Pendiente:** que el dueño confirme en su iPhone real
+  (el harness headless no reproduce la física de scroll de iOS, pero el sticky es CSS estándar y sin
+  transform ya no hay riesgo de parpadeo).
