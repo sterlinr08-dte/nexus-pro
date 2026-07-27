@@ -1,7 +1,12 @@
 {
-  "version": "50.9",
+  "version": "51.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.0",
+      "fecha": "2026-07-27",
+      "texto": "Vista rueda (solo administrador): ahora también en COBROS. · Con el interruptor encendido, en el celular la pestaña Cobros se ve como la misma rueda de tarjetas: cada cliente con su color (rojo pendiente, ámbar parcial, verde al día), su logo de ARS, lo que debe, y los botones COBRAR y WhatsApp — todo igual que la lista normal, solo la forma de ver. · Nota: Historial de pagos y Avisos NO se pasaron a rueda a propósito — uno es una lista de pagos ya hechos y el otro un tablero de avisos con varias secciones, y la rueda de tarjetas no les queda bien; se dejan como están."
+    },
     {
       "v": "50.9",
       "fecha": "2026-07-27",
