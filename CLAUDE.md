@@ -8793,3 +8793,22 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   chip sigue tocable. Verificado con Playwright a 390px (markup real de las 10 columnas): sin desborde,
   MesAnt debajo de la fecha, chip visible sin solape con el monto, Balance con `role=button`, y la
   celda MesAnt vacía oculta en la 2da tarjeta (sin deuda). Solo visual/UX — cero cambios de montos.
+- **Seguimiento (v50.2) — tarjeta compacta + monto/ARS ordenados:** el dueño mandó una captura de la
+  lista y dijo "vamos a mejorar"; por `AskUserQuestion` eligió **compactar la tarjeta** + **ordenar el
+  monto y ARS** (descartó fecha corta y COBRAR más grande). Solo CSS del bloque móvil `@media(max-width:720px)`
+  de `.sf-fact`, cero HTML/lógica: (1) el botón **COBRAR** dejó de estar `position:absolute` arriba a la
+  derecha y pasó al flujo (`order:8;flex:1 1 auto`, con `.btn{width:100%}` para que se vea ancho), junto
+  a **WhatsApp + menú** (`Acciones`, `order:9;flex:0 0 auto`) en **una sola fila abajo** — antes esos
+  iconos flotaban abajo con un hueco vacío grande arriba. (2) el **monto** (`Balance`) pasó a `flex:1 1
+  100%` (solo en su línea, 20px), y **ARS + Total + Fecha** quedan en una línea aparte chica y gris
+  (`order:3/4/5`). (3) **truco clave para uniformidad:** la celda `MesAnt` **vacía** ya no es
+  `display:none` sino un **salto de línea invisible** (`flex:1 1 100%;height:0;padding:0`) — así la fila
+  de acciones SIEMPRE baja a su propia línea, incluso en facturas sin deuda anterior (si no, COBRAR se
+  pegaba a la línea de ARS solo en esas y las tarjetas se veían disparejas — regla #5, rejillas
+  uniformes). Resultado medido con Playwright a 390px: tarjeta sin meses anteriores **~280px → 166px**
+  (casi el doble de facturas por pantalla), con meses anteriores 196px, las 3 uniformes, `scrollWidth
+  === clientWidth` (sin desborde), COBRAR ancho + iconos en la misma fila y debajo de la línea de ARS en
+  las 3. La `.badge` de estado (PENDIENTE) sigue `position:absolute` arriba a la derecha; el
+  `padding-right` de la celda del nombre bajó de 96px a 82px (ya no hay que dejarle sitio al COBRAR
+  arriba). `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.

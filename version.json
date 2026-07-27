@@ -1,7 +1,12 @@
 {
-  "version": "50.1",
+  "version": "50.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.2",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): tarjetas más compactas y ordenadas en el celular. · Ahora caben casi el doble de facturas por pantalla: se quitó el espacio vacío que había, y el botón COBRAR, el WhatsApp y el menú (⋮) van juntos en una sola fila abajo. · El monto del mes (RD$) se ve grande y solo en su línea, y el logo + nombre de la ARS con la fecha quedan en una línea aparte más ordenada. Todas las tarjetas se ven iguales."
+    },
     {
       "v": "50.1",
       "fecha": "2026-07-27",
