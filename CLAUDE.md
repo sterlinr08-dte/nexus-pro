@@ -8847,3 +8847,13 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   debajo con alto similar al badge (±8px), sin desborde. La tarjeta sin meses anteriores subió de ~166px
   a ~180px (una fila más, esperado). `node --check parches.js` limpio; los 3 `<script>` de `index.html`
   pasan `new Function()`; `version.json` válido.
+- **Seguimiento (v50.5) — COBRAR a la derecha:** el dueño pidió "a la derecha botón cobrar". La celda
+  `Cobro` dejó de estirar el botón a ancho completo (`width:100%`→`width:auto`, `padding:9px 26px`) y se
+  alinea a la derecha. **Detalle:** el primer intento con `text-align:right` NO funcionó — una regla más
+  específica pisaba el `text-align` de la celda a `left` (medido: `getComputedStyle` daba `left` y el
+  botón quedaba a la izquierda). Se cambió a `display:flex;justify-content:flex-end` en la propia celda
+  (mismo patrón que ya usaba `Acciones`, que sí alineaba bien) — así el botón (item flex) va a la derecha
+  sin depender del `text-align`. El WhatsApp+menú pequeños ya estaban a la derecha (`justify-content:
+  flex-end`), sin cambio. Verificado con Playwright a 390px: COBRAR compacto a la derecha, arriba del
+  WhatsApp, sin desborde. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
