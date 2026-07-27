@@ -811,14 +811,15 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
      3 por pantalla. Ahora: nombre y BALANCE grandes primero, el resto en una línea
      chica, y el estado como pastilla arriba a la derecha. Scopeado a .sf-fact para
      NO tocar la misma tabla en Historial de pagos. */
-  .nxSf table.sf-fact tr{position:relative;padding:9px 12px;column-gap:8px;align-items:center}
+  .nxSf table.sf-fact tr{position:relative;padding:7px 12px;column-gap:8px;align-items:center;margin-bottom:7px}
   .nxSf table.sf-fact td[data-lb]::before{display:none}
   .nxSf table.sf-fact td{padding:1px 0}
-  .nxSf table.sf-fact td.cli-cell{order:1;flex:1 1 100%;padding-right:82px}
-  .nxSf table.sf-fact td.cli-cell b{font-size:13.5px}
-  .nxSf table.sf-fact td[data-lb="Estado"]{position:absolute;top:11px;right:12px;flex:0 0 auto;padding:0;width:auto}
-  /* Monto grande, solo en su línea (toca para cobrar) */
-  .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:1 1 100%;font-size:18px;line-height:1.1;padding-top:3px;text-align:left}
+  .nxSf table.sf-fact td.cli-cell{order:1;flex:1 1 100%;padding-right:78px}
+  .nxSf table.sf-fact td.cli-cell b{font-size:12.5px}
+  .nxSf table.sf-fact td.cli-cell span{font-size:9.5px}
+  .nxSf table.sf-fact td[data-lb="Estado"]{position:absolute;top:9px;right:11px;flex:0 0 auto;padding:0;width:auto}
+  /* Monto, solo en su línea (toca para cobrar) */
+  .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:1 1 100%;font-size:16px;line-height:1.1;padding-top:2px;text-align:left}
   /* ARS + Total + Fecha: línea aparte, chica y gris */
   .nxSf table.sf-fact td[data-lb="Total"]{order:3;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
   .nxSf table.sf-fact td[data-lb="ARS"]{order:4;flex:0 0 auto;padding-top:2px}
@@ -4085,7 +4086,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='50.7';
+const APP_VERSION='50.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6581,7 +6582,7 @@ function rFact(){
     ST.facturas.forEach(x=>{if(String(x.cliente_id)===cid2&&x.estado!=='Anulada'&&(x.periodo||'')<(f.periodo||''))deudaPrev+=Number(_saldoMemo[cid2][x.id]||0);});
     const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''}><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
     return `<tr${anul?' style="opacity:.55"':''}>
-      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:11px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
+      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
       <td data-lb="MesAnt">${deudaPrev>0.009?`<span class="deuda-prev" role="button" tabindex="0" title="Ver detalle de meses anteriores" aria-label="Ver detalle de meses anteriores de ${escHtml(f.cliente_nom)}: ${fmt(deudaPrev)}" onclick="event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')}"><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores: ${fmt(deudaPrev)} ›</span>`:''}</td>
