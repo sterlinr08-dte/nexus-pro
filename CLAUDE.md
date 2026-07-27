@@ -8812,3 +8812,24 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   `padding-right` de la celda del nombre bajó de 96px a 82px (ya no hay que dejarle sitio al COBRAR
   arriba). `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
+- **Seguimiento (v50.3) — detalle de meses anteriores + compartir:** el dueño (con captura) pidió que
+  al tocar el chip "Meses anteriores" se vea el DETALLE (qué mes debe y cuánto) + opción de compartir,
+  en vez de abrir Cobrar directo. Se construyó un modal nuevo (`nxMesesAntVer(cid,periodo)`, junto a
+  `cobrarDesdeFact`): helper `_mesesAntData(cid,periodoActual)` (reusado por el modal y por compartir,
+  sin duplicar el cálculo) recorre las facturas de períodos ANTERIORES al de la factura tocada con saldo
+  real >0 (`_saldoFacturasCliente`, mismo cálculo que el chip) + `deudaAnt(c)`, y devuelve
+  `{items:[{lbl,monto}], da, total}`. El modal (`.overlay`/`.modal`, patrón `nxWaElegir`, CSS propio
+  `mesesAntCSS`, id `mMesesAnt`) muestra mes por mes (ej. Mayo 2026: RD$ 4,000 / Junio 2026: RD$ 4,000 /
+  Deuda anterior al sistema: RD$ 500 en rojo) + total + 2 botones: **Compartir** (`nxMesesAntCompartir`:
+  arma un texto "Estado de cuenta — Meses anteriores" con el desglose y usa `navigator.share` nativo →
+  respaldo WhatsApp del cliente → respaldo copiar al portapapeles; registra
+  `logAudit('MESES_ANTERIORES_COMPARTIDO')`) y **Cobrar** (cierra el modal y llama a `cobrarDesdeFact`,
+  el flujo de siempre). El chip de la tarjeta (`rFact`) cambió su `onclick`/`onkeydown` de
+  `cobrarDesdeFact` a `nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')`; el **monto del mes**
+  (celda Balance) sigue abriendo Cobrar directo (v50.1, sin cambio). Verificado con Playwright + código
+  real extraído por contenido (`_saldoFacturasCliente`/`_mesesAntData`/`nxMesesAntVer`/
+  `nxMesesAntCompartir`): con un cliente con 2 meses viejos con saldo + deuda anterior, el modal lista
+  las 3 filas correctas, el total (RD$ 8,500) cuadra, los 2 botones existen, el mensaje de compartir se
+  arma bien y `navigator.share` recibe el texto correcto, la auditoría se registra, sin desborde en
+  390px. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.

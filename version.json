@@ -1,7 +1,12 @@
 {
-  "version": "50.2",
+  "version": "50.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.3",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): al tocar 'Meses anteriores' ahora se ve el DETALLE + botón Compartir. · Antes tocar la pastilla roja de meses anteriores abría directo la ventana de Cobrar. Ahora abre un detalle que muestra MES POR MES cuánto debe el cliente (ej. Mayo 2026: RD$ 4,000, Junio 2026: RD$ 4,000, Deuda anterior: RD$ 500) con el total abajo. · Desde ahí puedes tocar 'Compartir' para mandarle ese detalle al cliente por WhatsApp o cualquier app, o 'Cobrar' para registrar el pago."
+    },
     {
       "v": "50.2",
       "fecha": "2026-07-27",
