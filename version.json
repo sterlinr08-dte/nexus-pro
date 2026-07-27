@@ -1,7 +1,12 @@
 {
-  "version": "49.99",
+  "version": "50.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.0",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): la deuda de meses anteriores se movió DEBAJO del monto del mes actual y se hizo un poco más grande. · En la tarjeta de cada factura, la pastilla roja 'Meses anteriores: RD$ X ›' ahora queda justo debajo del monto del mes (antes salía arriba, pegada al nombre) y se ve un poco más grande. Sigue siendo un botón: al tocarla abre la ventana de Cobrar del cliente. Solo aparece si el cliente debe de meses anteriores."
+    },
     {
       "v": "49.99",
       "fecha": "2026-07-27",
