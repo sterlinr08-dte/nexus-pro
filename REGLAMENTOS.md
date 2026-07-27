@@ -28,7 +28,7 @@
 | 7 | **Clientes y entidades** | ✅ decretado y auditado — v49.92 |
 | 8 | **Taller (reparaciones, garantías)** | ✅ decretado y auditado — v49.93 |
 | 9 | **Seguros (clientes, facturación, cobro, NCF)** | ✅ decretado y auditado — v49.95 |
-| 10 | **Vista rueda** (modo experimental de Facturas, solo admin) | ✅ decretado y construido — v50.9 |
+| 10 | **Vista rueda** (modo experimental, Facturas + Cobros, solo admin) | ✅ decretado y construido — v50.9, ampliado v51.0 |
 
 > Los §1-8 son del **POS/Multiempresa**. El §9 es el **núcleo de Seguros** (`index.html`), el negocio
 > original — correduría de seguros de salud. Es el único módulo con DATOS REALES en producción (109
@@ -433,7 +433,11 @@ lógica, no auditada en esta tanda.
    siempre se ve la tabla normal. (`nxUsarRueda()` = admin && pref && móvil.)
 3. **Solo cambia la presentación.** Los datos, el cálculo de saldo/deuda, el NCF y el cobro son
    idénticos a la tabla. Apagar el interruptor devuelve la tabla al instante (`rFact()` se repinta).
-4. **Solo en Facturas.** Es el modo de prueba. Cobros/Pendientes/Historial se evalúan después.
+4. **En Facturas y Cobros** (v51.0). Las dos son listas de tarjetas de cliente por cobrar, así que la
+   rueda les queda bien. **Historial de pagos y Avisos NO** se pasaron a rueda a propósito: el primero
+   es una bitácora de pagos ya hechos y el segundo un tablero de avisos con varias secciones — la
+   rueda de tarjetas de crédito no es la forma correcta de verlos (regla de "lo que conviene", no
+   forzar). Se dejan como están.
 5. **El color manda, no el orden.** Respeta el orden actual de la lista (no reordena). El color de
    la tarjeta dice quién debe: **rojo** = pendiente, **ámbar** = parcial, **verde** = pagado/al día,
    **gris** = anulada.
@@ -462,3 +466,10 @@ Verificado con Playwright sobre el código real de `rFact` extraído del archivo
 admin+pref+móvil; tabla en apagado y en escritorio; las 3 tarjetas activas tocables disparan las
 acciones reales; sin desborde en 390px; 0 errores de JS). **Pendiente:** que el dueño lo pruebe en su
 iPhone y decida ajustes / si se lleva a las otras pantallas.
+
+**Ampliación v51.0 — Cobros:** misma rueda en la pestaña Cobros (`rCob`, `#tbCob`), con las
+acciones reales (COBRAR=`abrirAbono`, WhatsApp=`nxCobroWA`, ficha=`verCliente`). El motor de scroll se
+generalizó para toda la vista `#v-facturas` (Facturas y Cobros comparten pestañas). **Historial de pagos**
+y **Avisos** se dejaron fuera a propósito (bitácora de pagos y tablero de secciones — la rueda no encaja).
+Verificado con Playwright sobre `rCob` real: 3 tarjetas por estado, acciones reales al tocar, sin desborde
+en 390px, 0 errores; Facturas sin regresión.

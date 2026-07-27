@@ -8947,3 +8947,21 @@ un **reglamento** para ese modo. Se le propuso un borrador de 12 reglas; lo apro
   más adelante, probablemente tabla o varias columnas). **Pendiente:** que el dueño lo pruebe en su
   iPhone real y decida ajustes (más/menos inclinación, etc.) o si se lleva a Cobros/Pendientes/
   Historial.
+
+### Vista rueda — ampliada a COBROS (27-jul-2026, v51.0)
+El dueño pidió llevar la rueda también a las otras pestañas de Facturas. Al auditarlas, decisión
+honesta (regla "lo que conviene"): **Cobros** (`rCob`) es una lista de tarjetas de cliente por cobrar
+→ la rueda encaja perfecto, se aplicó. **Historial de pagos** (`rPagos`, bitácora de pagos ya hechos) y
+**Avisos** (`rAvisos`, tablero de varias secciones) NO se pasaron — la rueda de tarjetas de crédito no
+es la forma correcta de verlos; se le explicó al dueño y se dejaron como están.
+- **Cobros:** rama `if(nxUsarRueda())` en `rCob` (mismo gate admin+pref+celular). Tarjetas Platinum por
+  estado (rojo pendiente / ámbar parcial / verde al día), logo de ARS, agente, "Deuda anterior" como
+  chip, y las acciones REALES: COBRAR=`abrirAbono`, WhatsApp=`nxCobroWA`, ficha=`verCliente`. Todas
+  tocables.
+- **Motor de scroll generalizado:** `nxRuedaAplicar` pasó de buscar `#tbFact .sfr-slot` a
+  `#v-facturas .sfr-slot` (Facturas y Cobros comparten la vista por pestañas) + salta las pestañas
+  ocultas (`offsetParent===null`). El auto-apagado al salir de la vista sigue igual.
+- Verificado con Playwright sobre `rCob` real: 3 tarjetas por estado, transformaciones 3D, acciones
+  reales al tocar (cobrar/ver/deuda anterior), sin desborde en 390px, 0 errores. Facturas sin
+  regresión (el mismo motor generalizado la sigue moviendo). Los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido. Reglamento actualizado (`REGLAMENTOS.md` §10, regla #4).
