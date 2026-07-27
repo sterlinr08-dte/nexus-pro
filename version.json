@@ -1,7 +1,12 @@
 {
-  "version": "50.5",
+  "version": "50.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.6",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): tarjetas más compactas + el menú de acciones ahora sigue a su botón al hacer scroll. · Se achicaron un poco los botones (COBRAR más chico) y el espacio entre líneas, para que quepan más facturas. · El menú que abre el ⋮ (Ver factura / Corregir precio / Anular) antes se quedaba flotando pegado en la pantalla al hacer scroll; ahora se mueve junto a su botón, y si el botón sale de la pantalla el menú se cierra solo."
+    },
     {
       "v": "50.5",
       "fecha": "2026-07-27",

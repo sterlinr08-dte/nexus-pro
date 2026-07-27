@@ -811,14 +811,14 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
      3 por pantalla. Ahora: nombre y BALANCE grandes primero, el resto en una línea
      chica, y el estado como pastilla arriba a la derecha. Scopeado a .sf-fact para
      NO tocar la misma tabla en Historial de pagos. */
-  .nxSf table.sf-fact tr{position:relative;padding:11px 12px;column-gap:8px;align-items:center}
+  .nxSf table.sf-fact tr{position:relative;padding:9px 12px;column-gap:8px;align-items:center}
   .nxSf table.sf-fact td[data-lb]::before{display:none}
   .nxSf table.sf-fact td{padding:1px 0}
   .nxSf table.sf-fact td.cli-cell{order:1;flex:1 1 100%;padding-right:82px}
   .nxSf table.sf-fact td.cli-cell b{font-size:13.5px}
   .nxSf table.sf-fact td[data-lb="Estado"]{position:absolute;top:11px;right:12px;flex:0 0 auto;padding:0;width:auto}
   /* Monto grande, solo en su línea (toca para cobrar) */
-  .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:1 1 100%;font-size:20px;line-height:1.1;padding-top:4px;text-align:left}
+  .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:1 1 100%;font-size:18px;line-height:1.1;padding-top:3px;text-align:left}
   /* ARS + Total + Fecha: línea aparte, chica y gris */
   .nxSf table.sf-fact td[data-lb="Total"]{order:3;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
   .nxSf table.sf-fact td[data-lb="ARS"]{order:4;flex:0 0 auto;padding-top:2px}
@@ -827,12 +827,12 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
   /* MesAnt vacío = salto de línea invisible: fuerza que la fila de acciones baje siempre */
   .nxSf table.sf-fact td[data-lb="MesAnt"]:empty{flex:1 1 100%;height:0;min-height:0;padding:0;margin:0;overflow:hidden}
   /* COBRAR arriba a la DERECHA (su propia fila); WhatsApp + menú debajo, del tamaño del badge PENDIENTE */
-  .nxSf table.sf-fact td[data-lb="Cobro"]{order:8;flex:1 1 100%;padding-top:9px;display:flex;justify-content:flex-end}
-  .nxSf table.sf-fact td[data-lb="Cobro"] .btn{width:auto;justify-content:center;padding:9px 26px}
-  .nxSf table.sf-fact td[data-lb="Acciones"]{order:9;flex:1 1 100%;padding-top:7px}
+  .nxSf table.sf-fact td[data-lb="Cobro"]{order:8;flex:1 1 100%;padding-top:6px;display:flex;justify-content:flex-end}
+  .nxSf table.sf-fact td[data-lb="Cobro"] .btn{width:auto;min-height:0;justify-content:center;padding:6px 18px}
+  .nxSf table.sf-fact td[data-lb="Acciones"]{order:9;flex:1 1 100%;padding-top:5px}
   .nxSf table.sf-fact td[data-lb="Acciones"]>div{justify-content:flex-end;gap:6px}
-  .nxSf table.sf-fact td[data-lb="Acciones"] .btn{height:auto;min-height:0;min-width:0;padding:3px 14px;border-radius:20px}
-  .nxSf table.sf-fact td[data-lb="Acciones"] .btn i{font-size:14px;margin:0}
+  .nxSf table.sf-fact td[data-lb="Acciones"] .btn{height:auto;min-height:0;min-width:0;padding:3px 12px;border-radius:20px}
+  .nxSf table.sf-fact td[data-lb="Acciones"] .btn i{font-size:13px;margin:0}
   .nxSf table.sf-fact .solo-mb{display:inline}
 }
 .nxSf .solo-mb{display:none}
@@ -4085,7 +4085,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='50.5';
+const APP_VERSION='50.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6481,7 +6481,11 @@ async function resyncEstadoFacturas(cid){
 }
 // NPGS §4 y §10: Anular NUNCA va del mismo tamaño y pegado a Cobrar (en el celular el dedo
 // tapa media pantalla). Cobrar y WhatsApp quedan a la vista; el resto va a este menú.
-function nxFactMenuCerrar(){document.querySelectorAll('.factMenu').forEach(m=>m.remove());}
+let _factMenuRepos=null;
+function nxFactMenuCerrar(){
+  document.querySelectorAll('.factMenu').forEach(m=>m.remove());
+  if(_factMenuRepos){window.removeEventListener('scroll',_factMenuRepos,true);window.removeEventListener('resize',_factMenuRepos);_factMenuRepos=null;}
+}
 function nxFactMenu(fid,btn){
   nxFactMenuCerrar();
   const f=ST.facturas.find(x=>String(x.id)===String(fid));if(!f)return;
@@ -6492,11 +6496,20 @@ function nxFactMenu(fid,btn){
   const p=document.createElement('div');p.className='factMenu';
   p.innerHTML=it.map(a=>`<button type="button" class="${a[3]}" onclick="nxFactMenuCerrar();${a[2]}"><i class="ti ${a[0]}" aria-hidden="true"></i>${a[1]}</button>`).join('');
   document.body.appendChild(p);
-  // posición REAL del botón y acotada a la pantalla (misma lección del menú del POS: un
-  // popup colocado dentro de un contenedor angosto se sale por el borde en el celular)
-  const r=btn.getBoundingClientRect(),w=p.offsetWidth||210,h=p.offsetHeight||130;
-  p.style.left=Math.max(8,Math.min(r.right-w,window.innerWidth-w-8))+'px';
-  p.style.top=((r.bottom+6+h>window.innerHeight&&r.top-h-6>0)?(r.top-h-6):(r.bottom+6))+'px';
+  // El menú se FIJA a su botón: se reposiciona en cada scroll/resize usando la posición REAL
+  // del botón en ese momento (antes se colocaba una sola vez y al hacer scroll quedaba
+  // flotando despegado). Si el botón sale de la pantalla, el menú se cierra solo.
+  const colocar=function(){
+    const r=btn.getBoundingClientRect();
+    if(r.bottom<4||r.top>window.innerHeight-4){nxFactMenuCerrar();return;}
+    const w=p.offsetWidth||210,h=p.offsetHeight||130;
+    p.style.left=Math.max(8,Math.min(r.right-w,window.innerWidth-w-8))+'px';
+    p.style.top=((r.bottom+6+h>window.innerHeight&&r.top-h-6>0)?(r.top-h-6):(r.bottom+6))+'px';
+  };
+  colocar();
+  _factMenuRepos=colocar;
+  window.addEventListener('scroll',colocar,true); // capture: atrapa el scroll del contenedor de la lista, no solo el de window
+  window.addEventListener('resize',colocar);
   setTimeout(function(){document.addEventListener('click',nxFactMenuCerrar,{once:true});},0);
 }
 function pintarLupaFact(){

@@ -8857,3 +8857,22 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   flex-end`), sin cambio. Verificado con Playwright a 390px: COBRAR compacto a la derecha, arriba del
   WhatsApp, sin desborde. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
   `new Function()`; `version.json` válido.
+- **Seguimiento (v50.6) — tarjetas más compactas + el menú de acciones sigue a su botón al hacer
+  scroll:** el dueño pidió 2 cosas. **(1) Compactar:** COBRAR de `padding:9px 26px`→`6px 18px` +
+  `min-height:0` (antes el `min-height:34px` global lo mantenía alto), botones de acción de
+  `padding:3px 14px`→`3px 12px`, monto de `font-size:20px`→`18px`, `padding-top` de las filas Cobro/
+  Acciones bajado (9/7→6/5px) y el `tr` de `11px`→`9px` vertical — tarjeta sin meses anteriores ~180px→
+  ~162px. **(2) El menú `nxFactMenu` (Ver factura / Corregir precio / Anular) se despegaba al hacer
+  scroll:** `.factMenu` es `position:fixed` y se colocaba UNA sola vez con la posición del botón al abrir,
+  así que al hacer scroll el menú se quedaba flotando fijo en la pantalla mientras la tarjeta se movía.
+  Arreglado: la función de colocar (`colocar()`, misma lógica de acotar al viewport de siempre) se guarda
+  en `_factMenuRepos` y se engancha a `scroll` (con **`capture:true`** para atrapar el scroll del
+  contenedor de la lista, no solo el de `window`) y a `resize`; en cada evento recalcula la posición con
+  el `getBoundingClientRect()` VIVO del botón, así el menú lo sigue. Si el botón sale de la pantalla
+  (`r.bottom<4||r.top>innerHeight-4`) el menú se cierra solo. `nxFactMenuCerrar` ahora también quita esos
+  2 listeners (además de remover el `.factMenu`), y abrir otro menú los limpia primero. El menú puede
+  voltear de arriba↔abajo del botón según el espacio disponible (comportamiento correcto, no un bug).
+  Verificado con Playwright: al abrir el menú del 4º botón y hacer scroll de 120px en el contenedor, el
+  menú se reposiciona pegado al botón (dist botón→menú = 6px) en vez de quedarse flotando; tarjeta 162px,
+  sin desborde. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
