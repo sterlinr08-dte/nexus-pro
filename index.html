@@ -811,21 +811,25 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
      3 por pantalla. Ahora: nombre y BALANCE grandes primero, el resto en una línea
      chica, y el estado como pastilla arriba a la derecha. Scopeado a .sf-fact para
      NO tocar la misma tabla en Historial de pagos. */
-  .nxSf table.sf-fact tr{position:relative;padding:10px 12px;column-gap:8px;align-items:baseline}
+  .nxSf table.sf-fact tr{position:relative;padding:11px 12px;column-gap:8px;align-items:center}
   .nxSf table.sf-fact td[data-lb]::before{display:none}
   .nxSf table.sf-fact td{padding:1px 0}
-  .nxSf table.sf-fact td.cli-cell{order:1;flex:1 1 100%;padding-right:96px}
+  .nxSf table.sf-fact td.cli-cell{order:1;flex:1 1 100%;padding-right:82px}
   .nxSf table.sf-fact td.cli-cell b{font-size:13.5px}
-  .nxSf table.sf-fact td[data-lb="Estado"]{position:absolute;top:9px;right:11px;flex:0 0 auto;padding:0;width:auto}
-  .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:0 0 auto;font-size:19px;line-height:1.15;padding-top:3px;text-align:left}
-  .nxSf table.sf-fact td[data-lb="Total"]{order:3;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3);align-self:flex-end;padding-bottom:3px}
-  .nxSf table.sf-fact td[data-lb="ARS"]{order:4;flex:0 0 auto;align-self:flex-end;padding-bottom:2px}
+  .nxSf table.sf-fact td[data-lb="Estado"]{position:absolute;top:11px;right:12px;flex:0 0 auto;padding:0;width:auto}
+  /* Monto grande, solo en su línea (toca para cobrar) */
+  .nxSf table.sf-fact td[data-lb="Balance"]{order:2;flex:1 1 100%;font-size:20px;line-height:1.1;padding-top:4px;text-align:left}
+  /* ARS + Total + Fecha: línea aparte, chica y gris */
+  .nxSf table.sf-fact td[data-lb="Total"]{order:3;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
+  .nxSf table.sf-fact td[data-lb="ARS"]{order:4;flex:0 0 auto;padding-top:2px}
   .nxSf table.sf-fact td[data-lb="Fecha"]{order:5;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
   .nxSf table.sf-fact td[data-lb="MesAnt"]{display:block;order:6;flex:1 1 100%;padding-top:6px}
-  .nxSf table.sf-fact td[data-lb="MesAnt"]:empty{display:none;padding:0}
-  /* Cobrar: bajo el badge de estado, arriba a la derecha (el badge está en top:9px) */
-  .nxSf table.sf-fact td[data-lb="Cobro"]{position:absolute;top:34px;right:11px;flex:0 0 auto;padding:0;width:auto}
-  .nxSf table.sf-fact td[data-lb="Acciones"]{order:9;flex:1 1 100%;padding-top:7px}
+  /* MesAnt vacío = salto de línea invisible: fuerza que la fila de acciones baje siempre */
+  .nxSf table.sf-fact td[data-lb="MesAnt"]:empty{flex:1 1 100%;height:0;min-height:0;padding:0;margin:0;overflow:hidden}
+  /* Fila de acciones abajo: COBRAR ancho + WhatsApp + menú, todo junto (sin hueco) */
+  .nxSf table.sf-fact td[data-lb="Cobro"]{order:8;flex:1 1 auto;padding-top:9px}
+  .nxSf table.sf-fact td[data-lb="Cobro"] .btn{width:100%;justify-content:center;padding-top:9px;padding-bottom:9px}
+  .nxSf table.sf-fact td[data-lb="Acciones"]{order:9;flex:0 0 auto;padding-top:9px}
   .nxSf table.sf-fact .solo-mb{display:inline}
 }
 .nxSf .solo-mb{display:none}
@@ -4078,7 +4082,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='50.1';
+const APP_VERSION='50.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
