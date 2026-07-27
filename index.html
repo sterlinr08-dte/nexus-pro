@@ -4140,7 +4140,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='50.9';
+const APP_VERSION='51.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6584,13 +6584,16 @@ function pintarLupaFact(){
 // se aplana si el iPhone tiene "reducir movimiento".
 let _ruedaScrollH=null,_ruedaRaf=false;
 function nxRuedaAplicar(){
-  // si ya no estás en Facturas, apagar el listener (auto-limpieza al salir de la pantalla)
+  // si ya no estás en la vista de Facturas/Cobros, apagar el listener (auto-limpieza al salir)
   if(!document.getElementById('v-facturas')?.classList.contains('on')){nxRuedaScrollOff();return;}
-  const slots=document.querySelectorAll('#tbFact .sfr-slot');
+  // busca en TODA la vista (Facturas y Cobros comparten v-facturas por pestañas); solo la
+  // pestaña visible tiene tarjetas con tamaño real, las ocultas se saltan (offsetParent null).
+  const slots=document.querySelectorAll('#v-facturas .sfr-slot');
   if(!slots.length)return;
   const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   const cy=window.innerHeight*0.5;
   slots.forEach(s=>{
+    if(s.offsetParent===null)return; // pestaña oculta → no gastar
     const r=s.getBoundingClientRect();
     if(r.bottom<-300||r.top>window.innerHeight+300)return; // fuera de vista → no gastar
     const v=s.querySelector('.sfr-veil');
@@ -7112,7 +7115,41 @@ function rCob(){
   if(fest==='deuda')activos=activos.filter(c=>pendTot(c)>0);
   else if(fest==='aldia')activos=activos.filter(c=>pendTot(c)<=0);
   activos=_ordAplicar('cob',activos,_cobSortVal);
+  nxRuedaScrollOff();
   if(!activos.length){tb.innerHTML='<div class="empty">Sin resultados</div>';return;}
+  // ══ RAMA VISTA RUEDA (solo admin + interruptor + celular) — mismas acciones que la tarjeta normal ══
+  if(nxUsarRueda()){
+    const arsBadge=(ars)=>{let u='';try{u=ars?arsLogoUrl(ars):'';}catch(e){u='';}return u?`<span class="sfr-ars"><img src="${u}" alt=""></span>`:(ars?`<span class="sfr-ars txt">${escHtml(String(ars).replace(/^ARS\s+/i,''))}</span>`:'');};
+    const kd=(fn)=>`onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${fn}}"`;
+    tb.innerHTML='<div class="sfr-wheel">'+activos.map(c=>{
+      const da=deudaAnt(c);const pd=pend(c);const est=getEst(c);
+      const cls=est==='Al día'?'ok':est==='Parcial'?'part':'debt';
+      const lbl=est==='Al día'?'Al día':est==='Parcial'?'Falta este mes':'Pendiente del mes';
+      const amt=pd>0?pd:(da>0?da:0);
+      const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));
+      const agTxt=ag?ag.nom:'⚠ Sin agente';
+      const cobrar=`event.stopPropagation();abrirAbono('${c.id}')`;
+      const verCli=`verCliente('${c.id}')`;
+      const nm=`${escHtml(c.nom)}${c.referencia?` <span class="ap">(${escHtml(c.referencia)})</span>`:''}`;
+      const prevChip=da>0.009?`<div class="sfr-prev" role="button" tabindex="0" aria-label="Deuda anterior de ${escHtml(c.nom)}: ${fmt(da)} — cobrar" onclick="${cobrar}" ${kd(cobrar)}><i class="ti ti-wallet" aria-hidden="true"></i> Deuda anterior · ${fmt(da)} <b>›</b></div>`:'';
+      return `<div class="sfr-slot"><article class="sfr-cc ${cls}">
+        <div class="sfr-top">${arsBadge(c.ars)||'<span></span>'}<span class="sfr-pill">${est==='Al día'?'AL DÍA':est==='Parcial'?'PARCIAL':'PENDIENTE'}</span></div>
+        <div class="sfr-nm" role="button" tabindex="0" aria-label="Ver ficha de ${escHtml(c.nom)}" onclick="${verCli}" ${kd(verCli)}>${nm}</div>
+        <div class="sfr-ref"><i class="ti ti-user" aria-hidden="true"></i> ${escHtml(agTxt)}</div>
+        <div class="sfr-amtwrap" role="button" tabindex="0" aria-label="Cobrar a ${escHtml(c.nom)}" onclick="${cobrar}" ${kd(cobrar)}><span class="sfr-amtlbl">${lbl}</span><span class="sfr-amt">${fmt(amt)}</span></div>
+        ${prevChip}
+        <div class="sfr-foot"><span class="sfr-brand">${escHtml((CFG.empNom||'NEXUS PRO SEGUROS'))}</span>
+          <div class="sfr-acts">
+            <button class="sfr-ico" aria-label="WhatsApp a ${escHtml(c.nom)}" onclick="event.stopPropagation();nxCobroWA('${c.id}')"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
+            <button class="sfr-cob" onclick="${cobrar}">COBRAR</button>
+          </div>
+        </div>
+        <span class="sfr-veil"></span>
+      </article></div>`;
+    }).join('')+'</div>';
+    nxRuedaScrollOn();
+    return;
+  }
   tb.innerHTML=activos.map(c=>{
     const da=deudaAnt(c);const pd=pend(c);
     const est=getEst(c);
