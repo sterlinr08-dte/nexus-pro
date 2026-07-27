@@ -1,7 +1,12 @@
 {
-  "version": "50.3",
+  "version": "50.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.4",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): el botón COBRAR ahora va ancho arriba, y el WhatsApp y el menú (⋮) quedan debajo, pequeños. · En cada tarjeta el botón COBRAR ocupa toda la fila (más fácil de tocar), y justo debajo van el WhatsApp y el menú de acciones en pequeño, del mismo tamaño que la etiqueta PENDIENTE."
+    },
     {
       "v": "50.3",
       "fecha": "2026-07-27",
