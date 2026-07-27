@@ -9298,7 +9298,29 @@ aplica **por tandas**, empezando por las pantallas más usadas, para que el due�
   - Verificado: `node --check parches.js` limpio, los 3 `<script>` de `index.html` pasan `new Function()`,
     el `confirm` es la primera sentencia de `nxSerialDel`, y los colores computados de los íconos con rojo
     inline ganan (estilo en línea > CSS). `version.json` válido.
-- **PENDIENTE (tandas siguientes):** el resto de `ti-x`/`ti-trash`/"Eliminar"/"Quitar"/"Borrar" del POS que
-  no sean cerrar-ventana/chip/bulk-clear/anulación (quedan sueltos algunos en pantallas menos usadas). Cada
-  tanda: mismo estándar, mismo criterio quirúrgico (solo ícono/color, la lógica y las confirmaciones
-  existentes no se tocan), verificada y publicada aparte para que el dueño la revise.
+- **TANDA 3 — HECHA (v52.3): el COLOR del + y el − en los steppers de cantidad + cierre del POS.** Las
+  Tandas 1-2 cubrieron el ícono del lado − (borrar/quitar); esta cierra la parte de COLOR que faltaba en
+  los DOS controles +/− más usados de todo el POS — las casillas de cantidad `− N +` de **Vender**
+  (`.citqty`) y **Factura** (`.stp`), que estaban en gris para ambos signos. Ahora, puro CSS: `−` (bajar)
+  en **rojo** y `+` (subir) en **verde**, usando `button:first-child`/`button:last-child` (la estructura
+  es siempre `<button>−</button><span>N</span><button>+</button>`). `.citqty` usa `var(--pf-red)`/
+  `var(--pf-green)` (ya tiene sus variantes de tema oscuro); `.stp` usa `#dc2626`/`#16a34a` (literales,
+  consistente con el `#475569` que ya tenía). Cero lógica tocada (`nxPosQty`/`nxFacQtyStep` intactos).
+  - **Cerró el último hueco del sistema de íconos del POS:** la pastilla de un componente de combo
+    (`nxComboDel`, en la ficha de artículo) usaba un carácter `✕` de texto suelto en vez del sistema de
+    íconos — se pasó a `<i class="ti ti-x">` (mismo render que el chip de IMEI de Compra), conservando la
+    ✕ (correcto para un chip/token, ver excepción del reglamento) + se le agregó teclado (`role="button"`/
+    `tabindex`/`onkeydown`) y `aria-label` que no tenía.
+  - **Verificado con Playwright (código+CSS reales extraídos):** el − de `.citqty` y `.stp` computa rojo
+    `rgb(220,38,38)` y el + verde `rgb(22,163,74)`; la pastilla de combo es un `ti-x`. `node --check`
+    limpio, los 3 `<script>` de `index.html` pasan `new Function()`, `version.json` válido.
+- **REGLAMENTO DEL +/− COMPLETO EN EL POS.** Auditoría final confirmada: TODOS los botones de borrar/quitar
+  por fila usan `− rojo` (ti-minus); TODOS los de agregar/crear usan `+ verde` (ti-plus); los steppers de
+  cantidad tienen − rojo / + verde. Excepciones intencionales, con su razón: ✕ de cerrar ventana; basurero
+  de vaciado masivo (`Vaciar carrito`, `Borrar datos de prueba`); ✕ de chips/tokens (IMEI en Compra,
+  componente de combo); backspace/limpiar del teclado de patrón/PIN; ✕ de Cancelar/anular (`nxApaCancelar`);
+  ✕ de quitar imagen de una miniatura; `ti-sparkles` de "generar el juego base de defaults" (secuencias/
+  roles/plan de cuentas — no es "agregar uno", es sembrar el set inicial); floppy/check de submit de
+  formulario. **Pendiente (fuera del alcance "de pos" que decretó el dueño, si lo pide):** extender el mismo
+  estándar +/− a los OTROS módulos (Financiamiento, Rifas, AGUAPRO, Vehículos, Consultorio, núcleo de
+  Seguros), que hoy siguen con ✕/basurero en sus botones de borrar.
