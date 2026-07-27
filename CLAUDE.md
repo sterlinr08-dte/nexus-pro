@@ -8965,3 +8965,20 @@ es la forma correcta de verlos; se le explicó al dueño y se dejaron como está
   reales al tocar (cobrar/ver/deuda anterior), sin desborde en 390px, 0 errores. Facturas sin
   regresión (el mismo motor generalizado la sigue moviendo). Los 3 `<script>` de `index.html` pasan
   `new Function()`; `version.json` válido. Reglamento actualizado (`REGLAMENTOS.md` §10, regla #4).
+
+### Vista rueda — BUG real en el iPhone del dueño: tarjeta gigante con muchas facturas (27-jul-2026, v51.1)
+El dueño probó la rueda en su iPhone (92 facturas) y mandó captura: **una sola tarjeta llenaba toda la
+pantalla, enorme**. La rueda funcionaba (gate OK, se veía la tarjeta Platinum roja con su ARS/monto),
+pero el tamaño estaba roto. **Causa raíz:** el CSS `.sfr-wheel` usaba `perspective:820px` +
+`perspective-origin:50% 50%` a nivel de CONTENEDOR. Con pocas tarjetas (la muestra, ~14) la lista es
+corta y el punto de fuga al 50% queda cerca — se veía bien. Pero con 92 facturas la lista mide ~17,000px
+de alto, el punto de fuga al 50% queda a ~8,500px, y las tarjetas visibles (arriba) están a miles de px
+del origen de perspectiva → proyección extrema → tarjeta gigante. **Por eso no se detectó en el harness:
+las pruebas usaban pocas tarjetas.** Arreglo: quitar `perspective`/`perspective-origin` del contenedor y
+aplicar `perspective(820px)` POR tarjeta dentro del `transform` de `nxRuedaAplicar` (va primero: `perspective(820px)
+translateZ(...) rotateX(...) scale(...)`) — cada tarjeta se curva sobre su propio centro, independiente
+de cuántas facturas haya. Verificado con un harness NUEVO de **30 tarjetas** (lista alta, como su caso):
+la tarjeta central mide 231px (no ~500px), caben 4 en pantalla, sin desborde, 0 errores — igual que la
+muestra. **Lección: los efectos 3D con `perspective` de contenedor hay que probarlos con LISTAS LARGAS,
+no con 3-14 elementos; el bug solo aparece cuando el contenedor es muy alto.** Aplica a Facturas y Cobros
+(comparten `.sfr-wheel`/`nxRuedaAplicar`). Cambio 100% CSS/transform, cero lógica tocada.
