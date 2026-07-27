@@ -9130,3 +9130,25 @@ Ahora el espacio cubre TODA la vista de Facturas/Cobros (modo tarjetas).
   `<script>` limpia; `version.json` válido. **Pendiente:** que el dueño lo confirme en su iPhone real (el
   harness headless no reproduce la física de scroll de iOS, pero es fondo fijo + CSS estándar, sin
   transform, así que no reintroduce el parpadeo de v51.2).
+
+### Vista tarjetas — REVERTIDO el fondo espacial, vuelve a la billetera limpia (27-jul-2026, v51.7)
+El dueño, tras ver el espacio en su iPhone: *"Ponerlo como estaba dos actualizaciones atrás"*. Dos
+actualizaciones atrás desde v51.6 = **v51.4** (la vista billetera Apple Wallet con su buscador visible,
+ANTES de cualquier fondo espacial). No le gustó el espacio, ni detrás de las tarjetas (v51.5) ni de
+pantalla completa (v51.6).
+- **Cómo se revirtió, exacto y sin hand-editing:** se confirmó por `git diff ef95052 origin/main -- index.html`
+  (v51.4 vs v51.6) que **lo ÚNICO que cambió entre esas dos versiones fue el código del fondo espacial +
+  el número de versión** — nada más se tocó en esas 2 PRs (#206/#207). Así que se restauró el `index.html`
+  del commit de v51.4 tal cual (`git checkout ef95052 -- index.html`) y solo se subió `APP_VERSION` a
+  **51.7** (no se puede "des-publicar": la app compara versiones y necesita un número MÁS ALTO que el vivo
+  para ofrecer "Actualizar", aunque el comportamiento vaya hacia atrás).
+- **Qué queda:** la billetera Apple Wallet (sticky stacking, `nxUsarRueda()` gate admin+pref+celular), el
+  buscador visible arriba (v51.3, `#factQBar`/`pintarLupaFact`), la entrada suave con IntersectionObserver
+  (`.inview`). **Qué se fue:** toda la capa `.sfr-space` (estrellas/nebulosa), el helper `nxEspacioModo` y
+  sus llamadas en `rFact`/`rCob`/`rPagos`/`rAvisos`, y el box-shadow oscuro que v51.5 le había puesto a
+  `.sfr-cc` para el fondo negro (vuelve al de v51.4, pensado para fondo claro). Confirmado con grep:
+  `nxEspacio`=0, `sfr-space`=0, `factQBar`=3, billetera sticky presente.
+- Verificado: los 3 `<script>` de `index.html` compilan (3/3); `version.json` válido (51.7).
+- **Nota para el futuro:** el fondo espacial (v51.5/v51.6) fue una idea que al dueño no le convenció en el
+  dispositivo real — no reintroducir sin que lo pida explícitamente. El código está en el historial (PRs
+  #206/#207) si algún día se retoma.

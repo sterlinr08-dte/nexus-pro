@@ -1,7 +1,12 @@
 {
-  "version": "51.6",
+  "version": "51.7",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.7",
+      "fecha": "2026-07-27",
+      "texto": "CAMBIO (vista de tarjetas): se quitó el fondo espacial (el cielo estrellado). La vista de tarjetas vuelve a como estaba antes — estilo billetera limpia sobre fondo claro, con el buscador visible arriba. Aplica a Facturas y Cobros (solo administrador, en el celular)."
+    },
     {
       "v": "51.6",
       "fecha": "2026-07-27",
