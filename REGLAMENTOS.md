@@ -28,6 +28,7 @@
 | 7 | **Clientes y entidades** | ✅ decretado y auditado — v49.92 |
 | 8 | **Taller (reparaciones, garantías)** | ✅ decretado y auditado — v49.93 |
 | 9 | **Seguros (clientes, facturación, cobro, NCF)** | ✅ decretado y auditado — v49.95 |
+| 10 | **Vista rueda** (modo experimental de Facturas, solo admin) | ✅ decretado y construido — v50.9 |
 
 > Los §1-8 son del **POS/Multiempresa**. El §9 es el **núcleo de Seguros** (`index.html`), el negocio
 > original — correduría de seguros de salud. Es el único módulo con DATOS REALES en producción (109
@@ -416,3 +417,48 @@ corregir un precio o anular).
 · los NCF históricos con guion (103, todos viejos) se dejan como están — no se reescriben documentos
 fiscales ya emitidos · las comisiones de agente y las transferencias entre agentes tienen su propia
 lógica, no auditada en esta tanda.
+
+---
+
+## §10 — VISTA RUEDA (modo experimental de Facturas, solo administrador)
+
+**Es un reglamento de DISEÑO/UX, no de negocio.** No toca dinero: es solo una forma alterna de
+**ver** la lista de Facturas del seguro. Decretado y construido en la v50.9.
+
+1. **Quién la ve.** Solo el **administrador** (`sesion.rol==='admin'`). Se prende/apaga con el
+   interruptor **Ajustes → Apariencia → "Vista experimental (rueda)"**, que ni siquiera se dibuja
+   para los agentes. La preferencia vive en la base (`nxPref('vista_rueda')`, no en el navegador).
+   **Por defecto apagada.**
+2. **Solo web móvil.** Se activa solo si `matchMedia('(max-width:720px)')` — en la computadora
+   siempre se ve la tabla normal. (`nxUsarRueda()` = admin && pref && móvil.)
+3. **Solo cambia la presentación.** Los datos, el cálculo de saldo/deuda, el NCF y el cobro son
+   idénticos a la tabla. Apagar el interruptor devuelve la tabla al instante (`rFact()` se repinta).
+4. **Solo en Facturas.** Es el modo de prueba. Cobros/Pendientes/Historial se evalúan después.
+5. **El color manda, no el orden.** Respeta el orden actual de la lista (no reordena). El color de
+   la tarjeta dice quién debe: **rojo** = pendiente, **ámbar** = parcial, **verde** = pagado/al día,
+   **gris** = anulada.
+6. **Todas las tarjetas son tocables** (cambio aprobado por el dueño el 27-jul): tocar el nombre →
+   ficha del cliente (`verCliente`); el monto → cobrar (`cobrarDesdeFact`); la tira roja → detalle de
+   meses anteriores (`nxMesesAntVer`); COBRAR / WhatsApp (`enviarWA`) / ⋮ (`nxFactMenu`) → lo mismo
+   que en la tabla. Ninguna acción de cobro nueva; son wrappers de las que ya existen.
+7. **Cada tarjeta muestra lo mismo de hoy:** nombre + apodo, agente · empresa, logo de la ARS,
+   estado (pastilla), monto del mes, "Meses anteriores" si debe, marca y los 3 botones.
+8. **Buscador y filtros siguen igual.** `rFact()` filtra y ordena exactamente igual; la rueda solo
+   pinta la lista resultante (misma variable `lista`).
+9. **Fluidez.** Las transformaciones 3D se aplican con `requestAnimationFrame` y se **saltan las
+   tarjetas fuera de vista** (`getBoundingClientRect` fuera de ±300px) para no gastar con 100+
+   facturas.
+10. **Respeta "reducir movimiento".** Si el iPhone tiene esa opción de accesibilidad, la rueda se
+    aplana (sin inclinación ni velo) — `@media (prefers-reduced-motion:reduce)` + guardia en JS.
+11. **Es modo de exhibición, no de velocidad.** Muestra 1 factura de frente a la vez; para cobrar en
+    volumen la lista es más rápida. Por eso es un modo aparte que el admin enciende cuando quiere.
+12. **Queda en auditoría.** Encender/apagar el interruptor deja `VISTA_RUEDA_ON` / `VISTA_RUEDA_OFF`
+    en la auditoría.
+
+**Implementación (v50.9):** CSS `.sfr-*` en `index.html`; interruptor en `rApariencia()` +
+`nxToggleVistaRueda()`; rama en `rFact()` gateada por `nxUsarRueda()`; scroll de la rueda en
+`nxRuedaAplicar()`/`nxRuedaScrollOn()`/`nxRuedaScrollOff()` (se auto-apaga al salir de Facturas).
+Verificado con Playwright sobre el código real de `rFact` extraído del archivo (rueda solo con
+admin+pref+móvil; tabla en apagado y en escritorio; las 3 tarjetas activas tocables disparan las
+acciones reales; sin desborde en 390px; 0 errores de JS). **Pendiente:** que el dueño lo pruebe en su
+iPhone y decida ajustes / si se lleva a las otras pantallas.
