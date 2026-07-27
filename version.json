@@ -1,7 +1,12 @@
 {
-  "version": "51.3",
+  "version": "51.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.4",
+      "fecha": "2026-07-27",
+      "texto": "CAMBIO (vista experimental de tarjetas): se cambió el desplazamiento a estilo billetera (Apple Wallet), como te lo enseñé. Ahora las tarjetas son una lista que se apila arriba al hacer scroll (una tarjeta se pega y la siguiente sube por encima), con una entrada suave. Se quitó el efecto de rueda 3D que giraba las tarjetas — por eso ya NO puede parpadear en el iPhone (el parpadeo venía de ese efecto 3D). Sigue siendo solo para el administrador y solo en el celular; el buscador visible arriba se mantiene. Aplica a Facturas y Cobros."
+    },
     {
       "v": "51.3",
       "fecha": "2026-07-27",
