@@ -8876,3 +8876,17 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   menú se reposiciona pegado al botón (dist botón→menú = 6px) en vez de quedarse flotando; tarjeta 162px,
   sin desborde. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
+- **Seguimiento (v50.7) — los botones de la tarjeta AHORA sí se achican (bug de estilo en línea):** el
+  dueño pidió seguir con "el tamaño" (botones más chicos), pero en producción seguían viéndose grandes
+  (~44px) pese a que el CSS de v50.4-50.6 les ponía `padding:3px 12px`/etc. **Causa raíz:** el helper
+  local `btn()` de `rFact` generaba cada botón (COBRAR, WhatsApp, menú) con **`style="padding:5px 8px"`
+  EN LÍNEA** — y un estilo en línea (especificidad 1,0,0,0) le gana a CUALQUIER selector CSS, así que
+  mi `padding` nunca se aplicaba. Arreglado quitando ese `style="padding:5px 8px"` del helper `btn()`
+  (es un helper LOCAL de `rFact`, solo lo usan esos 3 botones de la tarjeta, todos dentro de celdas con
+  mi CSS de tamaño). Ahora mi CSS controla: COBRAR `padding:6px 18px` → **~32px** de alto, WhatsApp/menú
+  `padding:3px 12px` → **~23px** (del tamaño del badge PENDIENTE de 16px). Medido con Playwright con el
+  markup REAL del botón (sin el padding en línea) + el CSS real: `cobH=32`, `waH=23`, `min-height:0px`
+  aplicado, `padding` computado = el mío (`6px 18px`/`3px 12px`), sin desborde. **Lección:** un botón con
+  `style="padding:..."` en línea NO se puede redimensionar desde una hoja de estilos por más específico
+  que sea el selector — hay que quitar el estilo en línea o usar `!important`. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
