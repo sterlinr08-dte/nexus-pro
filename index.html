@@ -4082,7 +4082,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='50.2';
+const APP_VERSION='50.3';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6568,7 +6568,7 @@ function rFact(){
       <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:11px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
-      <td data-lb="MesAnt">${deudaPrev>0.009?`<span class="deuda-prev" role="button" tabindex="0" title="Cobrar meses anteriores" aria-label="Cobrar meses anteriores de ${escHtml(f.cliente_nom)}: ${fmt(deudaPrev)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores: ${fmt(deudaPrev)} ›</span>`:''}</td>
+      <td data-lb="MesAnt">${deudaPrev>0.009?`<span class="deuda-prev" role="button" tabindex="0" title="Ver detalle de meses anteriores" aria-label="Ver detalle de meses anteriores de ${escHtml(f.cliente_nom)}: ${fmt(deudaPrev)}" onclick="event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();nxMesesAntVer('${f.cliente_id}','${f.periodo||''}')}"><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores: ${fmt(deudaPrev)} ›</span>`:''}</td>
       <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
       <td data-lb="Total" class="r${Math.abs(prima-sal)<0.01?' sf-tbl-hide-mb':''}"><span class="solo-mb">Total </span>${fmt(prima)}</td>
       <td data-lb="Balance" class="r"${anul?'':` role="button" tabindex="0" title="Registrar pago" aria-label="Registrar pago de ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"`} style="font-weight:800;${anul?'':'cursor:pointer;'}color:${sal>0.009?'var(--sf-err)':'var(--sf-tx)'}">${fmt(sal)}</td>
@@ -6702,6 +6702,73 @@ function cobrarDesdeFact(cid){
   // Abrir modal de abono directo desde facturas
   abrirAbono(cid);
   // Cambiar a tab cobros al cerrar (opcional)
+}
+
+// ── Meses anteriores: detalle (qué mes debe y cuánto) + compartir ──
+// Se calcula con el saldo REAL factura por factura (_saldoFacturasCliente): los
+// meses de períodos anteriores al de la factura tocada que aún tienen saldo, más
+// la deuda anterior al sistema. Mismo cálculo que el chip de la tarjeta.
+function _mesesAntData(cid,periodoActual){
+  const c=ST.clientes.find(x=>String(x.id)===String(cid));if(!c)return null;
+  const saldoMap=_saldoFacturasCliente(cid);
+  const items=ST.facturas
+    .filter(f=>String(f.cliente_id)===String(cid)&&f.estado!=='Anulada'&&(f.periodo||'')<(periodoActual||'')&&Number(saldoMap[f.id]||0)>0.009)
+    .sort((a,b)=>((a.periodo||'')<(b.periodo||'')?-1:(a.periodo||'')>(b.periodo||'')?1:0))
+    .map(f=>({lbl:(MESES[(Number(f.mes)||1)-1]||'')+' '+(f.anio||''),monto:Number(saldoMap[f.id]||0)}));
+  const da=deudaAnt(c);
+  const total=items.reduce((s,i)=>s+i.monto,0)+da;
+  return {c,items,da,total};
+}
+function nxMesesAntVer(cid,periodoActual){
+  const d=_mesesAntData(cid,periodoActual);if(!d)return;
+  const {c,items,da,total}=d;
+  const filas=items.map(i=>`<div class="maRow"><span class="maMes">${escHtml(i.lbl)}</span><span class="maMonto">RD$ ${fmtN(i.monto)}</span></div>`).join('')
+    +(da>0?`<div class="maRow maRow-ant"><span class="maMes"><i class="ti ti-history" aria-hidden="true"></i> Deuda anterior al sistema</span><span class="maMonto">RD$ ${fmtN(da)}</span></div>`:'');
+  const html=`<div class="maSheet">
+    <div class="maHd"><div><div class="maHdT">Meses anteriores</div><div class="maHdS">${escHtml(c.nom)}</div></div>
+      <button onclick="closeM('mMesesAnt')" aria-label="Cerrar">✕</button></div>
+    ${items.length||da>0?`<div class="maList">${filas}</div>`:`<div class="maEmpty">No tiene deuda de meses anteriores.</div>`}
+    <div class="maTot"><span>Total meses anteriores</span><span class="maTotV">RD$ ${fmtN(total)}</span></div>
+    <div class="maBtns">
+      <button class="maBtn maShare" onclick="nxMesesAntCompartir('${c.id}','${periodoActual||''}')"><i class="ti ti-share" aria-hidden="true"></i> Compartir</button>
+      <button class="maBtn maCobrar" onclick="closeM('mMesesAnt');cobrarDesdeFact('${c.id}')"><i class="ti ti-wallet" aria-hidden="true"></i> Cobrar</button>
+    </div></div>`;
+  let m=document.getElementById('mMesesAnt');
+  if(!m){m=document.createElement('div');m.id='mMesesAnt';m.className='overlay';m.onclick=e=>{if(e.target===m)closeM('mMesesAnt');};document.body.appendChild(m);}
+  m.innerHTML='<div class="modal" style="max-width:400px">'+html+'</div>';
+  m.classList.add('open');
+  if(!document.getElementById('mesesAntCSS')){
+    const st=document.createElement('style');st.id='mesesAntCSS';
+    st.textContent='.maSheet{padding:4px}'
+     +'.maHd{display:flex;align-items:flex-start;gap:10px;padding:2px 2px 12px;border-bottom:1px solid #eef2f7;margin-bottom:12px}'
+     +'.maHd button{border:0;background:#f1f5f9;color:#475569;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px}'
+     +'.maHdT{font-size:15px;font-weight:800;color:#0f172a}.maHdS{font-size:12px;color:#64748b;margin-top:2px}'
+     +'.maList{display:flex;flex-direction:column;gap:1px;margin-bottom:12px}'
+     +'.maRow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border-radius:9px}'
+     +'.maRow-ant{background:#fef2f2}.maRow-ant .maMes{color:#b91c1c}.maRow-ant .maMonto{color:#b91c1c}'
+     +'.maMes{font-size:12.5px;font-weight:600;color:#334155;display:flex;align-items:center;gap:5px}'
+     +'.maMonto{font-size:13.5px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums;white-space:nowrap}'
+     +'.maEmpty{padding:16px;text-align:center;color:#64748b;font-size:12.5px}'
+     +'.maTot{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;background:#eff6ff;border-radius:10px;margin-bottom:14px}'
+     +'.maTot>span:first-child{font-size:12px;font-weight:700;color:#1e40af}.maTotV{font-size:17px;font-weight:800;color:#dc2626;font-variant-numeric:tabular-nums}'
+     +'.maBtns{display:flex;gap:9px}'
+     +'.maBtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border:0;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}'
+     +'.maBtn:active{filter:brightness(.94)}.maBtn:focus-visible{outline:2px solid #2563eb;outline-offset:2px}'
+     +'.maShare{background:#f1f5f9;color:#334155}.maCobrar{background:#7c3aed;color:#fff}';
+    document.head.appendChild(st);
+  }
+}
+function nxMesesAntCompartir(cid,periodoActual){
+  const d=_mesesAntData(cid,periodoActual);if(!d)return;
+  const {c,items,da,total}=d;
+  const lineas=items.map(i=>`• ${i.lbl}: RD$ ${fmtN(i.monto)}`);
+  if(da>0)lineas.push(`• Deuda anterior: RD$ ${fmtN(da)}`);
+  const msg=`*Estado de cuenta — Meses anteriores*\n*Cliente:* ${c.nom}\n\n${lineas.join('\n')||'Sin deuda de meses anteriores.'}\n\n*Total: RD$ ${fmtN(total)}*\n\n_${CFG.empNom||'NEXUS PRO'}_`;
+  try{logAudit('MESES_ANTERIORES_COMPARTIDO',c.nom+' · '+fmt(total),'Cobros',c.id);}catch(e){}
+  if(navigator.share){navigator.share({text:msg}).catch(()=>{});return;}
+  if(nxWa(c.wa)){window.open(`https://wa.me/${nxWa(c.wa)}?text=${encodeURIComponent(msg)}`,'_blank');return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(msg).then(()=>toast('ok','Copiado','El detalle se copió al portapapeles')).catch(()=>toast('warn','No se pudo compartir',''));return;}
+  toast('warn','No se pudo compartir','Este navegador no permite compartir');
 }
 
 async function enviarWA(fid){
