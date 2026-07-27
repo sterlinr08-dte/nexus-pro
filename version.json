@@ -1,7 +1,12 @@
 {
-  "version": "52.1",
+  "version": "52.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.2",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (POS — seguimos con el signo +/−, Tanda 2): aplicamos el mismo criterio de agregar (+) / quitar (−) a más pantallas del POS. Los botones de quitar/eliminar de Roles, Vendedores, NCF, Categorías, Clientes, Proveedores, Compras, Pagos a proveedor, Movimientos de caja, Asientos de contabilidad, Cotizaciones, Transferencias, CRM, Recursos Humanos, Niveles de precio y los IMEI/seriales ahora son un − rojo (antes eran una ✕ o un basurero). Además, borrar un IMEI ahora te pide confirmación primero (antes se borraba de una)."
+    },
     {
       "v": "52.1",
       "fecha": "2026-07-27",
