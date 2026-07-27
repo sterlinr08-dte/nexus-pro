@@ -8771,3 +8771,11 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   pastilla `background:rgba(239,68,68,.12)` + `:hover` + `:focus-visible` (aro rojo). Verificado con
   Playwright a 390px: el chip rojo tocable con la flecha `›`, sin desborde, y solo en la tarjeta con
   deuda anterior. `node --check` limpio; los 3 `<script>` pasan `new Function()`; `version.json` válido.
+- **Seguimiento (v50.0):** el dueño pidió el chip "debajo del mes actual, un poco más grande". Se movió
+  de la `.cli-cell` (donde salía ARRIBA del monto) a la celda del **Balance** (queda justo debajo del
+  número del mes), como `display:block;width:fit-content` (cae a su propia línea, hugea el contenido).
+  Font 10.5px→12.5px. La celda Balance móvil ganó `text-align:left` para que el monto no se corra a la
+  derecha al ensancharse la celda por el chip. Selector CSS de `.cli-cell span.deuda-prev` →
+  `.sf-fact .deuda-prev`. Sigue tocable (`cobrarDesdeFact`). Verificado con Playwright a 390px: el chip
+  debajo del monto, más grande, sin desborde ni solape con Cobrar; la 2da tarjeta (sin deuda) no lo
+  muestra.
