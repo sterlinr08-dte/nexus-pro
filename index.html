@@ -762,9 +762,10 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf table.sf-tbl td.r,.nxSf table.sf-tbl th.r{text-align:right}
 .nxSf table.sf-tbl .cli-cell b{display:block;font-size:12px;font-weight:800;color:var(--sf-tx)}
 .nxSf table.sf-tbl .cli-cell span{display:block;font-size:10px;color:var(--sf-tx3);margin-top:1px}
-.nxSf table.sf-fact .deuda-prev{display:block;width:fit-content;margin-top:5px;margin-left:auto;font-size:12.5px;font-weight:700;color:var(--sf-err);background:rgba(239,68,68,.12);padding:4px 10px;border-radius:9px;cursor:pointer;line-height:1.2}
+.nxSf table.sf-fact .deuda-prev{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:var(--sf-err);background:rgba(239,68,68,.12);padding:4px 10px;border-radius:9px;cursor:pointer;line-height:1.2}
 .nxSf table.sf-fact .deuda-prev:hover{background:rgba(239,68,68,.2)}
 .nxSf table.sf-fact .deuda-prev:focus-visible{outline:2px solid var(--sf-err);outline-offset:2px}
+.nxSf table.sf-fact th.mesant-col,.nxSf table.sf-fact td[data-lb="MesAnt"]{display:none}
 .nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
 @media(max-width:480px){.nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{white-space:normal;overflow:visible;text-overflow:clip}}
 /* Fila de cliente compacta: el nombre en UNA línea con elipsis (antes se partía en
@@ -820,6 +821,8 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
   .nxSf table.sf-fact td[data-lb="Total"]{order:3;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3);align-self:flex-end;padding-bottom:3px}
   .nxSf table.sf-fact td[data-lb="ARS"]{order:4;flex:0 0 auto;align-self:flex-end;padding-bottom:2px}
   .nxSf table.sf-fact td[data-lb="Fecha"]{order:5;flex:0 0 auto;font-size:10.5px;color:var(--sf-tx3)}
+  .nxSf table.sf-fact td[data-lb="MesAnt"]{display:block;order:6;flex:1 1 100%;padding-top:6px}
+  .nxSf table.sf-fact td[data-lb="MesAnt"]:empty{display:none;padding:0}
   /* Cobrar: bajo el badge de estado, arriba a la derecha (el badge está en top:9px) */
   .nxSf table.sf-fact td[data-lb="Cobro"]{position:absolute;top:34px;right:11px;flex:0 0 auto;padding:0;width:auto}
   .nxSf table.sf-fact td[data-lb="Acciones"]{order:9;flex:1 1 100%;padding-top:7px}
@@ -4075,7 +4078,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='50.0';
+const APP_VERSION='50.1';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6542,7 +6545,7 @@ function rFact(){
       <div class="sf-kpi ${atrasadasN?'err':'ok'} sf-kpi-wide" ${atrasadasN?`onclick="const s=document.getElementById('fFactEstado');if(s){s.value='atrasadas';rFact();}" style="cursor:pointer" tabindex="0" role="button" aria-label="Ver las facturas atrasadas" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"`:''}><div class="ic"><i class="ti ti-alert-triangle"></i></div><div><div class="lb">Atrasadas${atrasadasN?' · toca para ver':''}</div><div class="v">${atrasadasN}</div></div></div>
     </div>`;
   const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
-  tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Fecha</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Cobro</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
+  tb.innerHTML=`<table class="sf-tbl sf-fact"><thead><tr><th class="col-cli">Cliente</th><th>ARS</th><th>Fecha</th><th class="mesant-col">Meses ant.</th><th>Vencimiento</th><th class="r">Total</th><th class="r">Balance</th><th>Estado</th><th class="r">Cobro</th><th class="r">Acciones</th></tr></thead><tbody>`+lista.map(f=>{
     const emp=gEmp(f.empresa_id);
     const ec=f.estado==='Pagado'?'bC1':f.estado==='Parcial'?'bC4':f.estado==='Anulada'?'bC2':'bC3';
     const cli=ST.clientes?.find(c=>String(c.id)===String(f.cliente_id));
@@ -6561,9 +6564,10 @@ function rFact(){
       <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:11px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
+      <td data-lb="MesAnt">${deudaPrev>0.009?`<span class="deuda-prev" role="button" tabindex="0" title="Cobrar meses anteriores" aria-label="Cobrar meses anteriores de ${escHtml(f.cliente_nom)}: ${fmt(deudaPrev)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores: ${fmt(deudaPrev)} ›</span>`:''}</td>
       <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
       <td data-lb="Total" class="r${Math.abs(prima-sal)<0.01?' sf-tbl-hide-mb':''}"><span class="solo-mb">Total </span>${fmt(prima)}</td>
-      <td data-lb="Balance" class="r" style="font-weight:800;color:${sal>0.009?'var(--sf-err)':'var(--sf-tx)'}">${fmt(sal)}${deudaPrev>0.009?`<span class="deuda-prev" role="button" tabindex="0" title="Cobrar meses anteriores" aria-label="Cobrar meses anteriores de ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores: ${fmt(deudaPrev)} ›</span>`:''}</td>
+      <td data-lb="Balance" class="r"${anul?'':` role="button" tabindex="0" title="Registrar pago" aria-label="Registrar pago de ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"`} style="font-weight:800;${anul?'':'cursor:pointer;'}color:${sal>0.009?'var(--sf-err)':'var(--sf-tx)'}">${fmt(sal)}</td>
       <td data-lb="Estado"><span class="badge ${ec}">${f.estado.toUpperCase()}</span></td>
       <td data-lb="Cobro" class="r">${anul?'':btn(`cobrarDesdeFact('${f.cliente_id}')`,'bc1','ti-wallet','Cobrar')}</td>
       <td data-lb="Acciones"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
