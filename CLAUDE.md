@@ -8779,3 +8779,17 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   `.sf-fact .deuda-prev`. Sigue tocable (`cobrarDesdeFact`). Verificado con Playwright a 390px: el chip
   debajo del monto, más grande, sin desborde ni solape con Cobrar; la 2da tarjeta (sin deuda) no lo
   muestra.
+- **Seguimiento (v50.1):** el dueño (con captura) pidió "meses anteriores debajo de la fecha, y cuando
+  se le click al monto que haya opciones de pago". Dos cambios: (1) el chip de deuda salió de la celda
+  `Balance` y pasó a una **celda propia `MesAnt`** — columna nueva `<th class="mesant-col">` insertada
+  después de Fecha (la tabla pasó de 9 a 10 columnas, th=td=10 verificado). En escritorio la columna se
+  oculta (`.nxSf table.sf-fact th.mesant-col,td[data-lb="MesAnt"]{display:none}`); en móvil se muestra
+  con `order:6` (Fecha es `order:5`), ancho completo, y `:empty{display:none}` para que una factura sin
+  deuda anterior no deje un bloque en blanco. El `.deuda-prev` pasó de `display:block;width:fit-content;
+  margin-left:auto` a `display:inline-flex` alineado a la izquierda (ya no necesita empujarse a la
+  derecha, vive en su propia línea). (2) el **monto del mes** (celda `Balance`) ahora es un botón
+  (`role="button" tabindex="0"` + `onclick`/`onkeydown` con `event.stopPropagation()` → `cobrarDesdeFact`,
+  gateado a `!anul`) — tocarlo abre la ventana de Cobrar, igual que la pastilla y el botón Cobrar. El
+  chip sigue tocable. Verificado con Playwright a 390px (markup real de las 10 columnas): sin desborde,
+  MesAnt debajo de la fecha, chip visible sin solape con el monto, Balance con `role=button`, y la
+  celda MesAnt vacía oculta en la 2da tarjeta (sin deuda). Solo visual/UX — cero cambios de montos.
