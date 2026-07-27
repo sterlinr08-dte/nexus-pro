@@ -762,7 +762,9 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
 .nxSf table.sf-tbl td.r,.nxSf table.sf-tbl th.r{text-align:right}
 .nxSf table.sf-tbl .cli-cell b{display:block;font-size:12px;font-weight:800;color:var(--sf-tx)}
 .nxSf table.sf-tbl .cli-cell span{display:block;font-size:10px;color:var(--sf-tx3);margin-top:1px}
-.nxSf table.sf-tbl .cli-cell span.deuda-prev{font-size:10.5px;font-weight:700;color:var(--sf-err);margin-top:3px}
+.nxSf table.sf-tbl .cli-cell span.deuda-prev{display:inline-block;font-size:10.5px;font-weight:700;color:var(--sf-err);margin-top:4px;background:rgba(239,68,68,.12);padding:3px 9px;border-radius:9px;cursor:pointer}
+.nxSf table.sf-tbl .cli-cell span.deuda-prev:hover{background:rgba(239,68,68,.2)}
+.nxSf table.sf-tbl .cli-cell span.deuda-prev:focus-visible{outline:2px solid var(--sf-err);outline-offset:2px}
 .nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
 @media(max-width:480px){.nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{white-space:normal;overflow:visible;text-overflow:clip}}
 /* Fila de cliente compacta: el nombre en UNA línea con elipsis (antes se partía en
@@ -4073,7 +4075,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='49.98';
+const APP_VERSION='49.99';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6556,7 +6558,7 @@ function rFact(){
     ST.facturas.forEach(x=>{if(String(x.cliente_id)===cid2&&x.estado!=='Anulada'&&(x.periodo||'')<(f.periodo||''))deudaPrev+=Number(_saldoMemo[cid2][x.id]||0);});
     const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''} style="padding:5px 8px"><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
     return `<tr${anul?' style="opacity:.55"':''}>
-      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:11px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span>${deudaPrev>0.009?`<span class="deuda-prev">Deuda mes ant.: ${fmt(deudaPrev)}</span>`:''}</td>
+      <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:11px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span>${deudaPrev>0.009?`<span class="deuda-prev" role="button" tabindex="0" title="Cobrar meses anteriores" aria-label="Cobrar meses anteriores de ${escHtml(f.cliente_nom)}" onclick="event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cobrarDesdeFact('${f.cliente_id}')}"><i class="ti ti-wallet" aria-hidden="true"></i> Meses anteriores: ${fmt(deudaPrev)} ›</span>`:''}</td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
       <td data-lb="Vencimiento" class="sf-tbl-hide-mb">${cli?.fecha_fin?fCorta(cli.fecha_fin):'—'}</td>
