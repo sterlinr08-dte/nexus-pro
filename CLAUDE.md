@@ -9276,10 +9276,29 @@ aplica **por tandas**, empezando por las pantallas más usadas, para que el due�
   - Verificado con Playwright: los 4 botones ahora usan `ti-minus`; `getComputedStyle` confirma texto rojo
     `rgb(220,38,38)` sobre fondo `rgb(254,226,226)` en `.citdel` y `.del` (chips rojos limpios); `node
     --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
-- **PENDIENTE (tandas siguientes):** el resto de las pantallas del POS con acciones de quitar/eliminar —
-  Cotizaciones, Notas de crédito, Prefacturas, Apartados, Reparaciones, Clientes/Entidades, CRM, Caja
-  (movimientos), Compras (lista/proveedores), Kardex (ajustes), RRHH, Ajustes (secuencias/roles/NCF/
-  vendedores/mora), Cuotas, y el resto de `ti-x`/`ti-trash`/"Eliminar"/"Quitar"/"Borrar" del POS (quedan
-  ~76 `ti-x` + ~42 `ti-trash` por revisar). Cada tanda: mismo estándar, mismo criterio quirúrgico (solo
-  ícono/color, la lógica y las confirmaciones existentes no se tocan), verificada y publicada aparte para
-  que el dueño la revise.
+- **TANDA 2 — HECHA (v52.2): 18 botones de quitar/eliminar del POS.** Cambios quirúrgicos (solo ícono +
+  color, cero lógica de negocio), `ti-trash`/`ti-x` → `ti-minus`:
+  - **Rojo por fondo (botón rojo, ícono blanco):** `nxRolDel`, `nxVendDel`, `nxNcfDel`, `nxRhDelEmp`
+    (`.bc3` red bg), `nxPfNivelEliminarNuevo`, `nxCrmDel` (`.ab.g4` red bg), `nxPosDelProd` (`.danger`,
+    color rojo).
+  - **Rojo inline (botón ghost/claro, ícono ya rojo):** `nxSerialDel`, `nxPosDelCat`, `nxPosDelAbono`,
+    `nxPosDelCli`, `nxPosDelCompra`, `nxPosDelPagoProv`, `nxPosDelProv`, `nxPosDelMov`.
+  - **Se les AGREGÓ el rojo inline** (eran gris `.nxPosX`/`.nxFacDel` #cbd5e1): `nxCtaDelAsiento`,
+    `nxAsDelLinea`, `nxCotDel`, `nxTransDel` → `<i class="ti ti-minus" style="color:#dc2626">`.
+  - **CONFIRMACIÓN agregada a `nxSerialDel`** (era la única función de borrado permanente de la tanda SIN
+    `confirm()` — hueco real: borraba el IMEI de `pos_seriales` de una): ahora
+    `if(!confirm('¿Eliminar este IMEI/serial? Esta acción no se puede deshacer.'))return;` como primera
+    línea. `nxPfNivelEliminarNuevo` NO lleva confirm a propósito — solo quita un nivel del BORRADOR en
+    memoria (`_pfDraft.nivelesNuevos`), aún no guardado en la base (es "quitar de staging", como sacar
+    una línea del carrito). Las otras 14 funciones YA tenían su `confirm()`/`swalConfirm()`.
+  - **NO tocados a propósito:** las ✕ de chips/tags (quitar un IMEI escrito en la compra — la ✕ es la
+    convención de "quitar este tag"), las ✕ de cerrar ventana (`.nxBack`/`.nxPosX` de cierre), los
+    bulk-clear (`Vaciar carrito`, `nxLimpiarPruebas` "Borrar datos de prueba" — mismo criterio de Tanda 1),
+    y las anulaciones/cambios de estado (`nxApaCancelar` de apartados = cancelar, no eliminar de una lista).
+  - Verificado: `node --check parches.js` limpio, los 3 `<script>` de `index.html` pasan `new Function()`,
+    el `confirm` es la primera sentencia de `nxSerialDel`, y los colores computados de los íconos con rojo
+    inline ganan (estilo en línea > CSS). `version.json` válido.
+- **PENDIENTE (tandas siguientes):** el resto de `ti-x`/`ti-trash`/"Eliminar"/"Quitar"/"Borrar" del POS que
+  no sean cerrar-ventana/chip/bulk-clear/anulación (quedan sueltos algunos en pantallas menos usadas). Cada
+  tanda: mismo estándar, mismo criterio quirúrgico (solo ícono/color, la lógica y las confirmaciones
+  existentes no se tocan), verificada y publicada aparte para que el dueño la revise.
