@@ -1,7 +1,12 @@
 {
-  "version": "50.7",
+  "version": "50.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.8",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): la tarjeta de cada factura ahora es más compacta en conjunto. · Se achicaron un poco el nombre, la referencia, el monto y la línea de ARS/fecha, y se redujeron el relleno interno y la separación entre tarjetas — así caben más facturas por pantalla sin perder claridad."
+    },
     {
       "v": "50.7",
       "fecha": "2026-07-27",

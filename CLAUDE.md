@@ -8890,3 +8890,15 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   `style="padding:..."` en línea NO se puede redimensionar desde una hoja de estilos por más específico
   que sea el selector — hay que quitar el estilo en línea o usar `!important`. `node --check parches.js`
   limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Seguimiento (v50.8) — tarjeta de factura más compacta EN CONJUNTO:** el dueño dijo "ahora vamos con
+  el tamaño" y, al preguntarle por `AskUserQuestion` cuál "ventana completa de la factura" (documento
+  imprimible / ficha del cliente / ventana de Cobrar / **tarjeta en la lista**), eligió **la tarjeta en
+  la lista** — quería achicar la tarjeta como unidad, no un botón. Solo CSS móvil de `.sf-fact` + el
+  `font-size` en línea de la referencia en `rFact`: nombre `13.5px`→`12.5px`, referencia morada (inline)
+  `11px`→`10px`, línea agente·ubicación (`.cli-cell span`) `10px`→`9.5px`, monto (`Balance`) `18px`→`16px`,
+  padding vertical del `tr` `9px`→`7px` + `margin-bottom:7px` (scopeado a `.sf-fact`, NO toca el `.sf-tbl
+  tr` compartido con Clientes/Historial de pagos), badge de estado `top:11px`→`9px`, `cli-cell`
+  `padding-right:82px`→`78px`. Verificado con Playwright a 390px con el markup real (botones ya sin
+  padding en línea de v50.7): sin desborde, las 3 tarjetas más apretadas. Se le dijo al dueño que si la
+  quería al revés (más grande) se invierte. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
