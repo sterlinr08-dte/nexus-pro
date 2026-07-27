@@ -1,7 +1,12 @@
 {
-  "version": "49.98",
+  "version": "49.99",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "49.99",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): la deuda de meses anteriores ahora es un botón. · En la tarjeta de cada factura, la línea roja de la izquierda dice 'Meses anteriores: RD$ X' y al tocarla abre directo la ventana de Cobrar de ese cliente — para cobrarle lo atrasado de una vez, sin buscarlo aparte. · Se ve como una pastilla roja con una flechita (›) para que se note que se puede tocar. Solo aparece si el cliente debe de meses anteriores."
+    },
     {
       "v": "49.98",
       "fecha": "2026-07-27",

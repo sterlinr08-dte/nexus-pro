@@ -8763,3 +8763,11 @@ número de comprobante, (2) mostrar lo que debe de meses anteriores.
   desborde), Cobrar por debajo del badge (top 46 vs estado bottom 37), sin solape con el monto, y la
   línea de deuda solo en la tarjeta que debe. Solo visual — cero cambios de montos/deuda; `node --check`
   limpio, los 3 `<script>` pasan `new Function()`, `version.json` válido.
+- **Seguimiento (v49.99):** el dueño pidió que la línea diga "Meses anteriores" y que **al tocarla abra
+  Cobrar**. La `<span class="deuda-prev">` pasó a chip tocable (`role="button" tabindex="0"` + `onclick`/
+  `onkeydown` con `event.stopPropagation()` para no disparar el `verCliente` de la `.cli-cell`) que llama
+  a `cobrarDesdeFact(f.cliente_id)` — el mismo flujo de cobro del cliente (su modal de abono con el
+  selector de destino meses/deuda anterior). Label: `<i ti-wallet> Meses anteriores: RD$ X ›`. CSS:
+  pastilla `background:rgba(239,68,68,.12)` + `:hover` + `:focus-visible` (aro rojo). Verificado con
+  Playwright a 390px: el chip rojo tocable con la flecha `›`, sin desborde, y solo en la tarjeta con
+  deuda anterior. `node --check` limpio; los 3 `<script>` pasan `new Function()`; `version.json` válido.
