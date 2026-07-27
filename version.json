@@ -1,7 +1,12 @@
 {
-  "version": "50.4",
+  "version": "50.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "50.5",
+      "fecha": "2026-07-27",
+      "texto": "FACTURAS (seguro): el botón COBRAR ahora va a la DERECHA (no ocupa todo el ancho). · En cada tarjeta el botón COBRAR queda alineado a la derecha, con el WhatsApp y el menú (⋮) pequeños justo debajo, también a la derecha."
+    },
     {
       "v": "50.4",
       "fecha": "2026-07-27",
