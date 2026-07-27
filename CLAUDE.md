@@ -9321,6 +9321,21 @@ aplica **por tandas**, empezando por las pantallas más usadas, para que el due�
   componente de combo); backspace/limpiar del teclado de patrón/PIN; ✕ de Cancelar/anular (`nxApaCancelar`);
   ✕ de quitar imagen de una miniatura; `ti-sparkles` de "generar el juego base de defaults" (secuencias/
   roles/plan de cuentas — no es "agregar uno", es sembrar el set inicial); floppy/check de submit de
-  formulario. **Pendiente (fuera del alcance "de pos" que decretó el dueño, si lo pide):** extender el mismo
-  estándar +/− a los OTROS módulos (Financiamiento, Rifas, AGUAPRO, Vehículos, Consultorio, núcleo de
-  Seguros), que hoy siguen con ✕/basurero en sus botones de borrar.
+  formulario.
+  **Extensión a los demás módulos (el dueño eligió "Opción 1", 27-jul-2026) — por tandas:**
+  - **Tanda 4 — HECHA (v52.5): módulos secundarios de `parches.js`.** 21 botones de borrar/quitar
+    pasaron a `− rojo` (`ti-minus`), mismo criterio quirúrgico (solo ícono/color, cero lógica):
+    **Financiamiento** (`nxPrClienteBorrar` ×2, `nxPrestamoBorrar`, `nxPrestamoBorrarPago`,
+    `nxPrestamoBorrarDoc`), **Rifas** (`nxRifaEliminar`, `nxRifaFaqDel`, `nxRifaTutDel`,
+    `nxCuentaEliminar`, `nxPaqEliminar`, `nxVendEliminar`), **Vehículos** (`nxVehBorrar`,
+    `nxVehDelGasto`, `nxVehBorrarDoc`), **NEXUS AI** (`nxAiPilarDel`, `nxAiEliminarItem` — a estos 2 se
+    les agregó el rojo inline, eran gris `bghost`), y **admin/Seguros-en-parches** (`nxEliminarCuenta`,
+    `nxEliminarDest`, `nxEliminarEgreso`, `nxQuitarHora`, `nxQuitarBauche` — ya traían el rojo en el
+    botón, solo se cambió el glifo). Los botones de agregar/crear ya usaban `ti-plus`/`ti-user-plus`
+    (verificado, sin cambios). AGUAPRO y Consultorio NO tienen botones de borrar con basurero/✕.
+  - **Tanda 5 — HECHA (v52.5): núcleo de Seguros (`index.html`).** 14 botones de borrar de la app de
+    Seguros de producción (`eliminarEmp`, `eliminarAgt`, `eliminarUsu`, `eliminarTenantCfg`,
+    `eliminarClienteDef`, `eliminarBanco`, `eliminarAbono` ×3, `eliminarDoc` ×2) → `− rojo`. Casi todos
+    ya eran `bc3` (rojo) o rojo inline; a `eliminarBanco` (`bghost` gris) se le agregó el rojo.
+  - **Con esto el estándar +/− queda aplicado en TODO NEXUS PRO.** Excepciones documentadas siguen
+    igual (cerrar-ventana ✕, chips/tokens, keypad, cancelar/anular, vaciado masivo, quitar imagen).
