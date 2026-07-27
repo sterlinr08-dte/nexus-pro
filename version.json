@@ -1,7 +1,12 @@
 {
-  "version": "51.1",
+  "version": "51.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.2",
+      "fecha": "2026-07-27",
+      "texto": "ARREGLADO (vista rueda): parpadeaba mucho en el iPhone al desplazar. · Se quitaron 3 causas conocidas de parpadeo en Safari: el brillo metálico con mezcla de color sobre las tarjetas 3D (ahora un brillo normal, sin mezcla), el cambio de orden de apilado en cada cuadro (ahora solo se toca cuando de verdad cambia) y el solape entre tarjetas (se les dio un poco más de espacio). Aplica a Facturas y Cobros."
+    },
     {
       "v": "51.1",
       "fecha": "2026-07-27",

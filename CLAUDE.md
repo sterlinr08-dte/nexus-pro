@@ -8982,3 +8982,21 @@ la tarjeta central mide 231px (no ~500px), caben 4 en pantalla, sin desborde, 0 
 muestra. **Lección: los efectos 3D con `perspective` de contenedor hay que probarlos con LISTAS LARGAS,
 no con 3-14 elementos; el bug solo aparece cuando el contenedor es muy alto.** Aplica a Facturas y Cobros
 (comparten `.sfr-wheel`/`nxRuedaAplicar`). Cambio 100% CSS/transform, cero lógica tocada.
+
+### Vista rueda — parpadeo en el iPhone del dueño (27-jul-2026, v51.2)
+Tras arreglar la tarjeta gigante (v51.1), el dueño reportó **"Y parpadea mucho"** al desplazar la rueda
+en su iPhone. Es el parpadeo clásico de compositing de Safari con capas 3D. Se quitaron las 3 causas
+conocidas de iOS, sin cambiar la lógica: (1) **`mix-blend-mode:screen`** en `.sfr-cc::before` (el brillo
+metálico) — el modo de mezcla sobre capas transformadas en 3D que se solapan es la causa #1 de parpadeo en
+Safari; se cambió a un `linear-gradient` blanco normal (bajado de `.30` a `.16` de opacidad porque ya no
+se "quema" con screen). (2) **`s.style.zIndex` reescrito cada cuadro** en `nxRuedaAplicar` — aunque el
+valor casi siempre es el mismo, escribirlo fuerza al compositor a reevaluar el apilado; ahora se guarda
+(`const z=...; if(s.style.zIndex!==z)s.style.zIndex=z;`), igual el `transform` y la opacidad del velo. (3)
+**solape entre tarjetas** — `.sfr-slot` subió de 186px a 210px para que las tarjetas (~231px) se enciman
+menos. **Nota honesta:** el harness de Chromium headless NO reproduce el parpadeo de iOS Safari (es
+específico del compositor de WebKit en el dispositivo), así que la corrección se basa en buenas prácticas
+conocidas de iOS, no en reproducir el bug. Lo verificable SÍ se verificó: el harness de 30 tarjetas sigue
+correcto (central 231px, 4 visibles, sin desborde, 0 errores) y una prueba de idempotencia confirma que
+re-aplicar `nxRuedaAplicar` sin desplazar deja los 20 slots con transform+zIndex **idénticos** (20/20), o
+sea que las guardas de verdad suprimen las escrituras redundantes. Pendiente que el dueño confirme en su
+iPhone. Aplica a Facturas y Cobros. Cambio 100% CSS/transform, cero lógica de negocio tocada.
