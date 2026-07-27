@@ -1,7 +1,12 @@
 {
-  "version": "52.2",
+  "version": "52.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.3",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (POS — el + y el − ahora tienen COLOR, Tanda 3): en Vender y en Factura, los botones para subir y bajar la cantidad ya no son grises — el − (bajar) se ve ROJO y el + (subir) se ve VERDE, de un vistazo se sabe cuál suma y cuál resta. Con esto queda cerrado el criterio del + / − en todo el POS: + verde para agregar/sumar, − rojo para quitar/restar/eliminar."
+    },
     {
       "v": "52.2",
       "fecha": "2026-07-27",
