@@ -1,7 +1,12 @@
 {
-  "version": "51.0",
+  "version": "51.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "51.1",
+      "fecha": "2026-07-27",
+      "texto": "ARREGLADO (vista rueda): la tarjeta salía GIGANTE (una sola llenaba la pantalla) cuando había muchas facturas. · Causa: la perspectiva 3D se aplicaba al contenedor completo de la lista, y con 90+ facturas la lista mide miles de píxeles, lo que distorsionaba y agrandaba las tarjetas visibles. Ahora la perspectiva se aplica a CADA tarjeta por separado, así se ven del tamaño correcto sin importar cuántas facturas tengas. Aplica a Facturas y Cobros."
+    },
     {
       "v": "51.0",
       "fecha": "2026-07-27",
