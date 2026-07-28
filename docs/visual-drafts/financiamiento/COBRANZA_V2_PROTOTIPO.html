@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS PRO — Cobranza V2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#2563eb;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;--danger:#dc2626;--warn:#ea580c;--amber:#d97706;--ok:#16a34a}
+*{box-sizing:border-box}body{margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink)}button,input{font:inherit}.nxFP{min-height:100vh;display:grid;grid-template-columns:240px 1fr}.nxFP-side{background:#0f1d4a;color:#fff;padding:22px 16px;display:flex;flex-direction:column;gap:18px}.nxFP-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}.nxFP-brand i{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#4f46e5)}.nxFP-side small{display:block;color:#a5b4fc;font-size:11px;margin-top:2px}.nxFP-nav{display:grid;gap:6px}.nxFP-nav button{border:0;background:transparent;color:#cbd5e1;text-align:left;padding:11px 12px;border-radius:10px;font-weight:700;cursor:pointer}.nxFP-nav button.on{background:#2563eb;color:#fff}.nxFP-main{padding:20px;min-width:0}.nxFP-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.nxFP-title h1{margin:0;font-size:25px}.nxFP-title p{margin:5px 0 0;color:var(--muted);font-size:12px}.nxFP-company{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font-weight:700}.nxFP-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.nxFP-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 5px 18px rgba(15,23,42,.04)}.nxFP-kpi .label{font-size:11px;color:var(--muted);font-weight:700}.nxFP-kpi .value{font-size:21px;font-weight:800;margin-top:6px}.nxFP-kpi .sub{font-size:10px;color:var(--muted);margin-top:4px}.nxFP-kpi.danger{border-top:3px solid var(--danger)}.nxFP-kpi.warn{border-top:3px solid var(--warn)}.nxFP-kpi.amber{border-top:3px solid var(--amber)}.nxFP-kpi.ok{border-top:3px solid var(--ok)}.nxFP-toolbar{display:flex;gap:10px;align-items:center;margin:16px 0}.nxFP-tabs{display:flex;gap:6px;flex-wrap:wrap}.nxFP-tabs button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 11px;font-weight:700;font-size:12px}.nxFP-tabs button.on{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}.nxFP-search{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:320px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:0 10px}.nxFP-search input{width:100%;border:0;outline:0;padding:10px 0;background:transparent}.nxFP-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px}.nxFP-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.nxFP-table{width:100%;border-collapse:collapse;font-size:12px}.nxFP-table th{background:#f8fafc;color:#64748b;text-transform:uppercase;font-size:9px;letter-spacing:.4px;text-align:left;padding:10px}.nxFP-table td{padding:12px 10px;border-top:1px solid #eef2f7;vertical-align:middle}.nxFP-name{font-weight:800}.nxFP-sub{font-size:10px;color:var(--muted);margin-top:2px}.nxFP-pill{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:800}.nxFP-pill.red{background:#fef2f2;color:#b91c1c}.nxFP-pill.orange{background:#fff7ed;color:#c2410c}.nxFP-pill.yellow{background:#fffbeb;color:#a16207}.nxFP-pill.green{background:#f0fdf4;color:#15803d}.nxFP-money{font-weight:800}.nxFP-actions{display:flex;gap:5px}.nxFP-actions button{width:31px;height:31px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer}.nxFP-sidecard{padding:15px}.nxFP-sidecard h3{margin:0 0 12px;font-size:13px}.nxFP-summary{display:grid;gap:9px}.nxFP-summary div{display:flex;justify-content:space-between;font-size:11px}.nxFP-summary b{font-size:12px}.nxFP-bar{height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin-top:5px}.nxFP-bar span{display:block;height:100%;background:var(--primary)}.nxFP-mobileTitle{display:none}
+@media(max-width:980px){.nxFP{grid-template-columns:1fr}.nxFP-side{display:none}.nxFP-main{padding:12px}.nxFP-kpis{grid-template-columns:repeat(2,1fr)}.nxFP-grid{grid-template-columns:1fr}.nxFP-search{min-width:0;margin-left:0;flex:1}.nxFP-toolbar{align-items:stretch;flex-direction:column}.nxFP-table thead{display:none}.nxFP-table,.nxFP-table tbody,.nxFP-table tr,.nxFP-table td{display:block;width:100%}.nxFP-table tr{padding:12px;border-top:1px solid var(--line)}.nxFP-table tr:first-child{border-top:0}.nxFP-table td{border:0;padding:4px 0}.nxFP-table td[data-label]::before{content:attr(data-label);display:inline-block;width:120px;color:var(--muted);font-size:10px;font-weight:700}.nxFP-actions{margin-top:8px}.nxFP-top{align-items:flex-start}.nxFP-company{display:none}.nxFP-mobileTitle{display:block}}
+</style>
+</head>
+<body>
+<div class="nxFP">
+<aside class="nxFP-side">
+  <div class="nxFP-brand"><i>NP</i><div>NEXUS PRO<small>Financiamiento</small></div></div>
+  <nav class="nxFP-nav">
+    <button>Dashboard</button><button>Activos</button><button class="on">Cobranza</button><button>Cuotas</button><button>Pagados</button><button>Líneas de crédito</button><button>Clientes</button><button>Evaluación</button><button>Reportes</button><button>Configuración</button>
+  </nav>
+</aside>
+<main class="nxFP-main">
+  <header class="nxFP-top">
+    <div class="nxFP-title"><h1>Cobranza</h1><p>Gestión priorizada de préstamos vencidos y próximos a vencer</p></div>
+    <button class="nxFP-company">Empresa activa</button>
+  </header>
+  <section class="nxFP-kpis">
+    <article class="nxFP-kpi danger"><div class="label">Cobrar hoy</div><div class="value">RD$ 62,000</div><div class="sub">3 préstamos críticos</div></article>
+    <article class="nxFP-kpi warn"><div class="label">Cobrar esta semana</div><div class="value">RD$ 38,500</div><div class="sub">5 préstamos</div></article>
+    <article class="nxFP-kpi amber"><div class="label">Próximos vencimientos</div><div class="value">RD$ 25,700</div><div class="sub">4 préstamos</div></article>
+    <article class="nxFP-kpi ok"><div class="label">Pagos registrados hoy</div><div class="value">RD$ 12,500</div><div class="sub">Datos de prestamo_pagos</div></article>
+    <article class="nxFP-kpi"><div class="label">Total por cobrar</div><div class="value">RD$ 425,000</div><div class="sub">Cartera activa</div></article>
+  </section>
+  <div class="nxFP-toolbar">
+    <div class="nxFP-tabs"><button class="on">Todos</button><button>Críticos</button><button>Alta prioridad</button><button>Por vencer</button><button>Al día</button></div>
+    <label class="nxFP-search">⌕<input placeholder="Buscar por nombre, cédula o referencia"></label>
+  </div>
+  <section class="nxFP-grid">
+    <div class="nxFP-card">
+      <table class="nxFP-table">
+        <thead><tr><th>Prioridad</th><th>Cliente</th><th>Referencia</th><th>Días</th><th>Saldo</th><th>Próximo pago</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr><td data-label="Prioridad"><span class="nxFP-pill red">CRÍTICO</span></td><td data-label="Cliente"><div class="nxFP-name">Cliente de ejemplo</div><div class="nxFP-sub">809-000-0000</div></td><td data-label="Referencia">PR-000001</td><td data-label="Días"><b style="color:#dc2626">43 días</b></td><td data-label="Saldo" class="nxFP-money">RD$ 21,000</td><td data-label="Próximo pago">Atrasado</td><td data-label="Acciones"><div class="nxFP-actions"><button title="Ver">◉</button><button title="Estado de cuenta">▣</button><button title="WhatsApp">W</button></div></td></tr>
+          <tr><td data-label="Prioridad"><span class="nxFP-pill orange">ALTA</span></td><td data-label="Cliente"><div class="nxFP-name">Cliente de ejemplo</div><div class="nxFP-sub">809-000-0000</div></td><td data-label="Referencia">PR-000002</td><td data-label="Días"><b style="color:#ea580c">18 días</b></td><td data-label="Saldo" class="nxFP-money">RD$ 18,000</td><td data-label="Próximo pago">Atrasado</td><td data-label="Acciones"><div class="nxFP-actions"><button title="Ver">◉</button><button title="Estado de cuenta">▣</button><button title="WhatsApp">W</button></div></td></tr>
+          <tr><td data-label="Prioridad"><span class="nxFP-pill yellow">POR VENCER</span></td><td data-label="Cliente"><div class="nxFP-name">Cliente de ejemplo</div><div class="nxFP-sub">809-000-0000</div></td><td data-label="Referencia">PR-000003</td><td data-label="Días">3 días</td><td data-label="Saldo" class="nxFP-money">RD$ 12,000</td><td data-label="Próximo pago">Próximo</td><td data-label="Acciones"><div class="nxFP-actions"><button title="Ver">◉</button><button title="Estado de cuenta">▣</button><button title="WhatsApp">W</button></div></td></tr>
+          <tr><td data-label="Prioridad"><span class="nxFP-pill green">AL DÍA</span></td><td data-label="Cliente"><div class="nxFP-name">Cliente de ejemplo</div><div class="nxFP-sub">809-000-0000</div></td><td data-label="Referencia">PR-000004</td><td data-label="Días">0 días</td><td data-label="Saldo" class="nxFP-money">RD$ 5,000</td><td data-label="Próximo pago">Al día</td><td data-label="Acciones"><div class="nxFP-actions"><button title="Ver">◉</button><button title="Estado de cuenta">▣</button><button title="WhatsApp">W</button></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <aside class="nxFP-card nxFP-sidecard">
+      <h3>Resumen de cartera</h3>
+      <div class="nxFP-summary">
+        <div><span>Críticos</span><b>3</b></div><div class="nxFP-bar"><span style="width:18%"></span></div>
+        <div><span>Alta prioridad</span><b>5</b></div><div class="nxFP-bar"><span style="width:30%"></span></div>
+        <div><span>Por vencer</span><b>4</b></div><div class="nxFP-bar"><span style="width:24%"></span></div>
+        <div><span>Al día</span><b>15</b></div><div class="nxFP-bar"><span style="width:72%"></span></div>
+      </div>
+    </aside>
+  </section>
+</main>
+</div>
+</body>
+</html>
