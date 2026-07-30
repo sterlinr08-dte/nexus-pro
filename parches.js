@@ -12678,6 +12678,7 @@
   let _prClientes = [], _prView = 'prestamos', _prCliQuery = '', _prSolicitudes = [];
   let _prRepPeriodo = 'todo'; // Reportes: 'mes' | 'anio' | 'todo' — solo alcanza las métricas de FLUJO (colocado/recuperado/cobros); el stock (balance/mora/cartera) siempre es al día de hoy.
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
+  let _prCuotasPend = []; let _prMoraOpen = 0; // marcar cuotas a pagar (nxPrCuotaCheck)
   window.nxPrTipoPago = function (t) {
     _tipoPago = t;
     const bc = document.getElementById('prTipoCap'), bi = document.getElementById('prTipoInt');
@@ -14363,6 +14364,7 @@
     const p = _prestamos.find(x => String(x.id) === String(id)); if (!p) return;
     cerrarModal('nxPrModal');
     _tipoPago = 'capital';
+    _prCuotasPend = []; _prMoraOpen = 0;
     const pagos = (_pagosByPrestamo[id] || []).slice().sort((a, b) => (a.fecha || '') < (b.fecha || '') ? -1 : 1);
     const pag = pagadoDe(p), saldo = saldoDe(p), est = estadoDe(p);
     const esCredito = p.modo === 'credito';
@@ -14394,11 +14396,13 @@
       const rows = a.rows.map(r => {
         acum += r.cuota;
         const cub = pag >= acum - 0.5;
+        if (!cub) _prCuotasPend.push({ n: r.n, monto: r.cuota });
         if (cub) capAcum += r.capital;
         else if (!moraAsignada) { proximaFecha = r.fecha; proximaMonto = r.cuota; moraActual = moraDelPrestamo; moraAsignada = true; }
         const moraFila = (!cub && moraAsignada && r.fecha === proximaFecha) ? moraDelPrestamo : 0;
-        return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right${moraFila > 0 ? ';color:#dc2626;font-weight:700' : ''}">${moraFila > 0 ? fmt(moraFila) : '—'}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : '<span style="color:#cbd5e1;font-weight:800">·</span>'}</td></tr>`;
+        return `<tr><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9">#${r.n}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;color:#475569;white-space:nowrap">${r.fecha}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#ea580c">${fmt(r.interes)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right${moraFila > 0 ? ';color:#dc2626;font-weight:700' : ''}">${moraFila > 0 ? fmt(moraFila) : '—'}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:right">${fmt(r.saldo)}</td><td style="padding:5px 6px;border-bottom:1px solid #f1f5f9;text-align:center">${cub ? '<span style="color:#16a34a;font-weight:800">✓</span>' : `<input type="checkbox" class="prCuotaChk" data-n="${r.n}" data-monto="${r.cuota}" onclick="window.nxPrCuotaCheck(${r.n})" aria-label="Marcar cuota ${r.n} para pagar" style="width:15px;height:15px;cursor:pointer;accent-color:#6d28d9">`}</td></tr>`;
       }).join('');
+      _prMoraOpen = moraDelPrestamo;
       capPagado = capAcum;
       scheduleHTML = `${schedTit(`TABLA DE AMORTIZACIÓN · ${p.tasa_interes}% mensual · ${met === 'plano' ? 'interés plano' : 'saldo insoluto'} · cuota ${fmt(a.cuota)} · interés total ${fmt(a.interesTotal)}`)}
         <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e2e8f0;border-radius:10px">
@@ -14414,10 +14418,12 @@
         const due = fechaCuota(p.fecha_prestamo, p.frecuencia, i + 1);
         acum += cuota;
         const cubierta = pag >= acum - 0.5;
+        if (!cubierta) _prCuotasPend.push({ n: i + 1, monto: cuota });
         if (!cubierta && !asignada) { proximaFecha = due; proximaMonto = cuota; asignada = true; }
-        rows.push(`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">#${i + 1}</td><td style="padding:6px 10px;font-size:11px;color:#475569;border-bottom:1px solid #f1f5f9">${due}</td><td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:700;border-bottom:1px solid #f1f5f9">${fmt(cuota)}</td><td style="padding:6px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${cubierta ? '<span style="color:#16a34a;font-weight:800;font-size:10px">PAGADA</span>' : '<span style="color:#dc2626;font-weight:800;font-size:10px">PENDIENTE</span>'}</td></tr>`);
+        rows.push(`<tr><td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">#${i + 1}</td><td style="padding:6px 10px;font-size:11px;color:#475569;border-bottom:1px solid #f1f5f9">${due}</td><td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:700;border-bottom:1px solid #f1f5f9">${fmt(cuota)}</td><td style="padding:6px 10px;text-align:right;border-bottom:1px solid #f1f5f9">${cubierta ? '<span style="color:#16a34a;font-weight:800;font-size:10px">PAGADA</span>' : `<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;justify-content:flex-end"><input type="checkbox" class="prCuotaChk" data-n="${i + 1}" data-monto="${cuota}" onclick="window.nxPrCuotaCheck(${i + 1})" aria-label="Marcar cuota ${i + 1} para pagar" style="width:15px;height:15px;cursor:pointer;accent-color:#6d28d9"><span style="color:#dc2626;font-weight:800;font-size:10px">PENDIENTE</span></label>`}</td></tr>`);
       }
       moraActual = prMoraDe(p);
+      _prMoraOpen = moraActual;
       scheduleHTML = `${schedTit(`CALENDARIO DE CUOTAS (${fmt(cuota)} c/u)`)}<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${rows.join('')}</table>`;
     } else if (p.modo === 'libre' && Number(p.tasa_interes || 0) > 0) {
       interesTotalMostrado = Number(p.total_devolver || 0) - Number(p.capital || 0);
@@ -14487,6 +14493,7 @@
         </div>
         <div style="border-top:1px solid #f1f5f9;padding-top:10px;margin-top:10px">
           ${est !== 'pagado' ? `${esCredito ? `<div style="display:flex;gap:6px;margin-bottom:6px"><button id="prTipoCap" class="btn bc1" type="button" onclick="window.nxPrTipoPago('capital')" style="flex:1">A capital</button><button id="prTipoInt" class="btn" type="button" onclick="window.nxPrTipoPago('interes')" style="flex:1">A interés</button></div>` : ''}
+          ${_prCuotasPend.length ? '<div id="prPagoCuotasInfo" style="font-size:11px;color:#6d28d9;font-weight:700;margin-bottom:6px">Marca &#9744; las cuotas en la tabla y el monto se calcula solo.</div>' : ''}
           <div style="display:flex;gap:6px;margin-bottom:6px">
             <input id="prPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto a pagar" style="flex:1;min-width:0;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none">
             <input id="prPagoFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none">
@@ -14533,6 +14540,24 @@
       window.nxPrestamoVer(id);
       const view = document.getElementById('v-prestamos'); if (view) renderLista(view);
     } catch (e) { toast('err', 'Error al registrar el pago', String(e && e.message || e)); }
+  };
+
+  // Marcar cuotas a pagar en el detalle del préstamo (tabla de amortización): selección
+  // consecutiva desde la más vieja (calza con cómo el pago se aplica en orden). Suma las
+  // cuotas marcadas + la mora del préstamo si aplica, y llena "Monto a pagar" solo.
+  window.nxPrCuotaCheck = function (n) {
+    const chks = Array.prototype.slice.call(document.querySelectorAll('.prCuotaChk')).sort((a, b) => Number(a.dataset.n) - Number(b.dataset.n));
+    if (!chks.length) return;
+    const clicked = chks.filter(c => Number(c.dataset.n) === n)[0];
+    const target = (clicked && clicked.checked) ? n : n - 1;
+    let total = 0, count = 0;
+    chks.forEach(c => { const on = Number(c.dataset.n) <= target; c.checked = on; if (on) { total += Number(c.dataset.monto || 0); count++; } });
+    const mora = count > 0 ? Number(_prMoraOpen || 0) : 0;
+    const grand = Math.round(total + mora);
+    const inp = document.getElementById('prPagoMonto');
+    if (inp) inp.value = count > 0 ? ((window.nxMoney && window.nxMoney.format) ? window.nxMoney.format(String(grand)) : String(grand)) : '';
+    const info = document.getElementById('prPagoCuotasInfo');
+    if (info) info.innerHTML = count > 0 ? ('<b>' + count + ' cuota' + (count > 1 ? 's' : '') + '</b> seleccionada' + (count > 1 ? 's' : '') + ' \u00b7 ' + fmt(total) + (mora > 0 ? ' + ' + fmt(mora) + ' mora' : '')) : 'Marca &#9744; las cuotas en la tabla y el monto se calcula solo.';
   };
 
   window.nxPrestamoBorrarPago = async function (pagoId, prestamoId) {
