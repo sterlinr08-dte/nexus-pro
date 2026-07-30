@@ -2566,6 +2566,27 @@ foto — se construyó primero la Fase 1 sin video: cédula + firma).
   armado con los términos reales del préstamo (ya se había acordado el enfoque: no texto libre, sino un
   guion derivado de los datos reales, mismo criterio de "no fingir" del resto del sistema).
 
+### POS · Barra de acciones fija "Cobrar" — PROBADA en v52.9 y REVERTIDA en v53.0 (30-jul-2026)
+Del spec de ChatGPT `docs/visual-drafts/ui/GLOBAL_STICKY_ACTION_BAR_V1.md` (barra inferior fija
+reutilizable). Se piloteó en Factura/Prefactura del POS (v52.9, PR #219): una barra `#nxFacBar`
+colgada del `<body>` (para evitar la trampa de `container-type:inline-size` que atrapa un
+`position:fixed`), solo móvil (≤760px), con Cancelar/Borrador/Vista previa/Cobrar.
+- **Por qué se revirtió (v53.0, PR #220):** el CSS `body:has(#nxFacBar) .nx-fab{display:none}`
+  escondía el **botón flotante de menú** (`.nx-fab`, la navegación del celular) **cada vez que la
+  barra existía en el DOM** — no solo cuando de verdad se veía. La regla que MUESTRA la barra
+  (`body:has(#v-pos.on) #nxFacBar{display:flex}`) sí estaba gateada a `#v-pos.on`, pero la que
+  ESCONDE el FAB no — así que si la barra quedaba colgada al salir de Factura (el ciclo de vida
+  dependía de `renderPOS`/`nav()` removiéndola, y no todos los caminos de salida del POS pasan por
+  ahí), el FAB desaparecía dejando la parte de abajo vacía. El dueño lo reportó: *"No está abajo la
+  barra de iconos"*. El costo (esconder su navegación diaria) supera el beneficio marginal de la
+  barra, así que se revirtió por completo (revert del commit `0d0d66e`), dejando la Factura exacta a
+  como estaba: FAB siempre presente + botón Cobrar inline de siempre. v52.8 (cuota exacta) intacto.
+- **Si se retoma:** NO esconder el FAB — es la navegación. Dos caminos posibles: (a) que la barra y
+  el FAB coexistan (el FAB es draggable con `fab_pos` left/top, así que "levantarlo sobre la barra"
+  es frágil si el usuario lo movió — hay que pensarlo), o (b) que la barra viva por encima del FAB.
+  Y gatear TODA regla `:has()` a `body:has(#v-pos.on)` para que nada leak a Seguros, + asegurar que
+  la barra se remueva en TODOS los caminos de salida del POS (no solo `renderPOS`/`nav()`).
+
 ### Financiamiento — la cuota queda EXACTA y la última se ajusta (27-jul-2026, v52.8)
 El dueño: *"Por si pongo en pago de cuota 5mil Quincenal"* → *"Exacto y que al Final se ajuste"*. En
 "Calcular por → Monto de la cuota" (formulario de préstamo), antes el sistema calculaba cuántas cuotas
