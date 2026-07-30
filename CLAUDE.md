@@ -2566,6 +2566,39 @@ foto — se construyó primero la Fase 1 sin video: cédula + firma).
   armado con los términos reales del préstamo (ya se había acordado el enfoque: no texto libre, sino un
   guion derivado de los datos reales, mismo criterio de "no fingir" del resto del sistema).
 
+### Financiamiento — la cuota queda EXACTA y la última se ajusta (27-jul-2026, v52.8)
+El dueño: *"Por si pongo en pago de cuota 5mil Quincenal"* → *"Exacto y que al Final se ajuste"*. En
+"Calcular por → Monto de la cuota" (formulario de préstamo), antes el sistema calculaba cuántas cuotas
+y luego repartía el total PAREJO (80,000 al 5% quincenal, cuota 5,000 → 27 cuotas de **4,963**). El
+dueño quiere que la cuota quede EXACTA en 5,000 y la ÚLTIMA absorba el resto (**26 × 5,000 + 1 × 4,000**).
+- **El total y el interés NO cambian** — solo cómo se reparten las cuotas (misma matemática de fondo:
+  total = capital + capital·i·n = 134,000, interés 54,000). Lo único nuevo es el reparto de las filas.
+- **Columna nueva `prestamos.cuota_fija` (numeric nullable)** + la misma en `prestamo_solicitudes` (aditiva,
+  `get_advisors` sin hallazgos nuevos). `NULL` = cuotas parejas (comportamiento clásico, intacto).
+- **`amortizar` ganó un 7º parámetro opcional `cuotaFija`** — cuando >0 y n>1: las primeras n-1 cuotas
+  son EXACTAS a `cuotaFija` y la última = total − (n-1)·cuotaFija (siempre positiva y ≤ cuotaFija, porque
+  `cuotasParaMonto` garantiza que n·cuotaObj ≥ total). Cubre plano, saldo insoluto (pago fijo, la última
+  salda el saldo) y sin interés (i=0). **Retrocompatible al 100%:** las 13 llamadas viejas pasan 6 args →
+  `cuotaFija=undefined→0` → comportamiento de siempre (verificado: 6 args === 7 args con 0). Guarda de
+  seguridad: si `cuotaFija` no cabe (> total o última ≤ 0) cae a cuota pareja, nunca produce una cuota
+  negativa.
+- **Flujo completo cableado, cero lógica de negocio duplicada:** `calcPrestamo` computa `cuotaFija` desde
+  `_prCuotaMode==='monto'` + `prCuotaObjetivo` y lo retorna; los 3 sitios de vista-previa del formulario
+  pasan `c.cuotaFija`; los 6 sitios de préstamo-guardado (detalle, cronograma, contrato, tabla, `prCuotaFmt`)
+  pasan `Number(p.cuota_fija)||0`; `nxPrestamoGuardar` persiste `cuota_fija` (solo en modo cuotas); la
+  propuesta imprimible (`nxPrPropuesta`) y el link de firma (`nxPrGenerarLinkFirma`) lo llevan en su draft, y
+  `nxPrSolicitudAprobar` lo copia al préstamo real al aprobar. La página pública `firma-prestamo.html` ya
+  mostraba `cuota_calculada` (que ahora = la cuota exacta 5,000) — sin cambios, queda consistente.
+- **Al EDITAR** un préstamo guardado en modo exacto, `abrirForm` lo reabre en "Monto de la cuota" con el
+  monto precargado (para conservar la cuota fija y su última cuota ajustada).
+- Verificado con el **código real extraído por contenido** (brace-matching, no reconstrucción): 25
+  comprobaciones sobre `amortizar`/`cuotasParaMonto` (caso real del dueño 26×5,000+1×4,000, suma=total,
+  saldo final 0, retrocompat 6-vs-7-args, saldo insoluto, i=0, guardas de seguridad) + 6 sobre
+  `calcPrestamo` (modo monto retorna cuotaFija=5000/cuota=5000; modo num retorna 0/cuota pareja 4963). Más
+  la prueba de humo de la app real (`index.html`+`parches.js` en navegador): 0 errores de JS,
+  `nxAbrirPrestamos` registrado. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+
 ### Financiamiento — ventana de Nuevo/Editar préstamo a pantalla completa (nativa) (27-jul-2026, v52.7)
 El dueño mandó una captura del formulario "Editar préstamo" (modal flotante) y pidió que **esa ventana
 sea nativa, no flotante**. Es `abrirForm(pr)` (Financiamiento, `parches.js`), que antes armaba un

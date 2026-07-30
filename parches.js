@@ -12755,8 +12755,12 @@
   }
   // Amortización método de cuota fija (francés). tasa = % MENSUAL.
   // Trabaja en pesos enteros para que la suma de las cuotas cuadre EXACTO con el total.
-  function amortizar(capital, tasaPct, n, base, frec, metodo) {
+  // cuotaFija (7º param, opcional): monto EXACTO de cada cuota; la ÚLTIMA absorbe el resto
+  // (modo "calcular por monto de la cuota"). 0/undefined = cuotas parejas de siempre (0 riesgo:
+  // todas las llamadas viejas pasan 6 args → cuotaFija=undefined → comportamiento clásico).
+  function amortizar(capital, tasaPct, n, base, frec, metodo, cuotaFija) {
     capital = Math.round(Number(capital || 0)); n = parseInt(n, 10) || 0;
+    cuotaFija = Math.round(Number(cuotaFija || 0));
     const i = tasaPorCuota(tasaPct, frec) / 100;
     const rows = []; let saldo = capital;
     if (n <= 0 || capital <= 0) return { cuota: 0, total: 0, interesTotal: 0, rows: [] };
@@ -12765,20 +12769,28 @@
     if (metodo === 'plano' && i > 0) {
       const interesTotal = Math.round(capital * i * n);
       const total = capital + interesTotal;
-      const cuotaBase = Math.round(total / n);
+      // Con cuota fija: n-1 cuotas EXACTAS a cuotaFija, la última = total − (n-1)·cuotaFija (el resto).
+      // Si el fijo no cabe (última quedaría ≤0 o mayor que el fijo por mucho), cae a cuota pareja.
+      const usarFija = cuotaFija > 0 && n > 1 && (total - (n - 1) * cuotaFija) > 0 && cuotaFija <= total;
+      const cuotaBase = usarFija ? cuotaFija : Math.round(total / n);
       const intBase = Math.round(interesTotal / n);
       let accCuota = 0, accCap = 0;
       for (let k = 1; k <= n; k++) {
         let cuotaK, capPart, interes;
         if (k === n) { cuotaK = total - accCuota; capPart = capital - accCap; interes = cuotaK - capPart; } // la última cuadra el redondeo
+        else if (usarFija) { cuotaK = cuotaFija; interes = intBase; capPart = cuotaFija - intBase; }
         else { cuotaK = cuotaBase; interes = intBase; capPart = cuotaBase - intBase; }
         accCuota += cuotaK; accCap += capPart;
         saldo = Math.max(0, capital - accCap);
         rows.push({ n: k, fecha: fechaCuota(base, frec, k), cuota: cuotaK, interes: interes, capital: capPart, saldo: saldo });
       }
-      return { cuota: cuotaBase, total: total, interesTotal: total - capital, rows: rows };
+      return { cuota: usarFija ? cuotaFija : cuotaBase, total: total, interesTotal: total - capital, rows: rows };
     }
-    const cuota = i > 0 ? Math.round(capital * i / (1 - Math.pow(1 + i, -n))) : Math.round(capital / n);
+    // Saldo insoluto (francés). Con cuota fija: pago fijo = cuotaFija; el interés baja con el saldo,
+    // el capital sube, y la última cuota salda lo que quede (siempre ≤ cuotaFija porque cuotasParaMonto
+    // garantiza que el fijo cubre el interés de la 1ra cuota, el mayor de todos).
+    const fija = cuotaFija > 0 && n > 1 && cuotaFija > Math.round(capital * i);
+    const cuota = fija ? cuotaFija : (i > 0 ? Math.round(capital * i / (1 - Math.pow(1 + i, -n))) : Math.round(capital / n));
     for (let k = 1; k <= n; k++) {
       const interes = Math.round(saldo * i);
       let capPart, cuotaK;
@@ -12879,7 +12891,7 @@
   // Fecha del PRÓXIMO pago pendiente (real): la primera cuota aún no cubierta.
   function prProximoPago(p) {
     if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
-      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes || 0), p.num_cuotas, p.fecha_prestamo, p.frecuencia, p.metodo_interes || 'saldo');
+      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes || 0), p.num_cuotas, p.fecha_prestamo, p.frecuencia, p.metodo_interes || 'saldo', Number(p.cuota_fija) || 0);
       const pag = pagadoDe(p); let acum = 0;
       for (const r of a.rows) { acum += r.cuota; if (pag < acum - 0.5) return r.fecha; }
       return '';
@@ -13538,9 +13550,11 @@
   function calcPrestamo() {
     const cap = parseMoney(val('prCap')), n = parseInt(val('prNumCuotas'), 10) || 0, tasa = parsePct(val('prTasa')), frec = val('prFrec') || 'mensual';
     const metodo = val('prMetodo') || 'plano';
+    // En modo "monto de la cuota": la cuota queda EXACTA en lo que escribió el dueño y la última se ajusta.
+    const cuotaFija = (_prCuotaMode === 'monto' && _modoForm === 'cuotas') ? parseMoney(val('prCuotaObjetivo')) : 0;
     if (_modoForm === 'cuotas' && tasa > 0 && cap > 0 && n > 0) {
-      const a = amortizar(cap, tasa, n, val('prFecha') || hoy(), frec, metodo);
-      return { computa: true, modo: 'cuotas', cap, tasa, n, frec, metodo, total: Math.round(a.total), interes: a.interesTotal, cuota: a.cuota };
+      const a = amortizar(cap, tasa, n, val('prFecha') || hoy(), frec, metodo, cuotaFija);
+      return { computa: true, modo: 'cuotas', cap, tasa, n, frec, metodo, cuotaFija, total: Math.round(a.total), interes: a.interesTotal, cuota: a.cuota };
     }
     if (_modoForm === 'libre' && tasa > 0 && cap > 0) {
       const total = Math.round(cap * (1 + tasa / 100));
@@ -13594,7 +13608,7 @@
       const nota = [notaFrec, notaMet].filter(Boolean).join(' · ');
       if (resumenWrap) resumenWrap.style.display = 'block';
       if (preview) preview.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${kpi('Cuota por pago', fmt(c.cuota), '#0f172a')}${kpi('Total a devolver', fmt(c.total), '#16a34a')}${kpi('Total interés', fmt(c.interes), '#ea580c')}</div>${nota ? `<div style="font-size:10.5px;color:#475569;margin-top:8px">${nota}</div>` : ''}`;
-      const a = amortizar(c.cap, c.tasa, c.n, fecha, c.frec, c.metodo);
+      const a = amortizar(c.cap, c.tasa, c.n, fecha, c.frec, c.metodo, c.cuotaFija);
       prMostrarSchedule(a.rows, [
         { h: '#', get: r => '#' + r.n },
         { h: 'Fecha', get: r => r.fecha },
@@ -13705,6 +13719,13 @@
     // valores por defecto (semanal/plano), así que sin esto el resumen quedaba con la matemática
     // equivocada al EDITAR un préstamo quincenal/mensual o de método saldo insoluto.
     if (_reCalc) { try { window.nxPrRecalc(); } catch (e) {} }
+    // Si el préstamo se guardó con cuota EXACTA (modo "monto de la cuota"), reabrir en ese modo
+    // con el monto precargado — para que editar conserve la cuota fija y su última cuota ajustada.
+    if (pr && Number(p.cuota_fija) > 0 && p.modo === 'cuotas') {
+      const co = document.getElementById('prCuotaObjetivo');
+      if (co) co.value = Number(p.cuota_fija).toLocaleString('en-US');
+      try { window.nxPrCuotaMode('monto'); } catch (e) {}
+    }
     if (!pr && _prPrefillCli) { prFormPonerCliente(_prPrefillCli); _prPrefillCli = null; }
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
   }
@@ -13999,7 +14020,7 @@
       rows = (cc.meses || []).map(m => `<tr><td>#${m.n}</td><td>${m.fecha}</td><td style="text-align:right">${fmt(m.saldo)}</td><td style="text-align:right;color:#ea580c">${fmt(m.interes)}</td></tr>`).join('');
       cols = '<th>Mes</th><th>Desde</th><th style="text-align:right">Capital base</th><th style="text-align:right">Interés</th>';
     } else if (c.computa && c.modo === 'cuotas') {
-      const a = amortizar(c.cap, c.tasa, c.n, val('prFecha') || hoy(), c.frec, c.metodo);
+      const a = amortizar(c.cap, c.tasa, c.n, val('prFecha') || hoy(), c.frec, c.metodo, c.cuotaFija);
       rows = a.rows.map(r => `<tr><td>#${r.n}</td><td>${r.fecha}</td><td style="text-align:right;font-weight:700">${fmt(r.cuota)}</td><td style="text-align:right;color:#6d28d9">${fmt(r.capital)}</td><td style="text-align:right">${fmt(r.saldo)}</td></tr>`).join('');
       cols = '<th>#</th><th>Fecha</th><th style="text-align:right">Cuota</th><th style="text-align:right">Capital</th><th style="text-align:right">Saldo</th>';
     } else { toast('err', 'Completa el simulador primero'); return; }
@@ -14060,7 +14081,7 @@
     const cc = document.getElementById('evCuotaCard');
     if (cc) {
       if (_modoForm === 'cuotas' && c.computa) {
-        const a = amortizar(c.cap, c.tasa, c.n, val('prFecha') || hoy(), c.frec, c.metodo);
+        const a = amortizar(c.cap, c.tasa, c.n, val('prFecha') || hoy(), c.frec, c.metodo, c.cuotaFija);
         const f1 = a.rows[0] ? a.rows[0].fecha : '—', f2 = a.rows[a.rows.length - 1] ? a.rows[a.rows.length - 1].fecha : '—';
         cc.innerHTML = `<div class="ev-quota"><div class="ev-qlbl">Cuota estimada</div><div class="ev-qbig">${fmt(c.cuota)}</div>
           <div class="ev-qrow"><span>Interés total</span><b>${fmt(c.interes)}</b></div>
@@ -14164,7 +14185,7 @@
   // Puntos por cuota (ESTIMADO: aplica los pagos en orden a las cuotas).
   function prCuotaDots(p) {
     if (p.modo !== 'cuotas' || !(Number(p.num_cuotas) > 0)) return null;
-    let a; try { a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo'); } catch (e) { return null; }
+    let a; try { a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo', Number(p.cuota_fija) || 0); } catch (e) { return null; }
     const pagos = (_pagosByPrestamo[p.id] || []).slice().sort((x, y) => (x.fecha || '') < (y.fecha || '') ? -1 : 1);
     const H = hoy(); let cum = 0;
     return a.rows.map(r => {
@@ -14188,7 +14209,7 @@
     loans.forEach(p => { if ((p.fecha_prestamo || '') > m) m = p.fecha_prestamo || ''; (_pagosByPrestamo[p.id] || []).forEach(pg => { if ((pg.fecha || '') > m) m = pg.fecha; }); });
     return m || '—';
   }
-  function prCuotaFmt(p) { try { if (p.modo === 'cuotas' && Number(p.num_cuotas) > 0) { const a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo'); return fmt(a.cuota); } } catch (e) {} return '—'; }
+  function prCuotaFmt(p) { try { if (p.modo === 'cuotas' && Number(p.num_cuotas) > 0) { const a = amortizar(Number(p.capital), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo || hoy(), p.frecuencia, p.metodo_interes || 'saldo', Number(p.cuota_fija) || 0); return fmt(a.cuota); } } catch (e) {} return '—'; }
   function prPlazoTxt(p) { return p.modo === 'cuotas' && Number(p.num_cuotas) > 0 ? (p.num_cuotas + ' ' + (p.frecuencia === 'semanal' ? 'sem' : p.frecuencia === 'quincenal' ? 'quinc' : 'meses')) : p.modo === 'credito' ? ((p.plazo_meses || '—') + ' meses') : '—'; }
   let _hcCid = null, _hcTab = 'resumen';
   window.nxPrHistCredito = function (cid) {
@@ -14322,7 +14343,7 @@
     const modo = _modoForm || 'libre';
     const fecha = val('prFecha') || hoy();
     const capital = parseMoney(val('prCap'));
-    let total, tasaStore, plazoStore = null;
+    let total, tasaStore, plazoStore = null, cuotaFijaStore = null;
     if (modo === 'credito') {
       const tasa = parsePct(val('prTasa')), plazo = parseInt(val('prPlazo'), 10) || 0;
       if (capital <= 0) { toast('err', 'Pon el capital prestado'); return; }
@@ -14330,7 +14351,7 @@
       total = capital; tasaStore = tasa; plazoStore = plazo || null;
     } else {
       const c = calcPrestamo();
-      if (c.computa) { total = c.total; tasaStore = c.tasa; }
+      if (c.computa) { total = c.total; tasaStore = c.tasa; cuotaFijaStore = (c.cuotaFija && c.cuotaFija > 0) ? c.cuotaFija : null; }
       else { total = parseMoney(val('prTot')); tasaStore = 0; }
       if (total <= 0) { toast('err', c.computa ? 'Revisa el capital, las cuotas y la tasa' : 'Pon el total a devolver'); return; }
     }
@@ -14348,6 +14369,7 @@
       num_cuotas: modo === 'cuotas' ? (parseInt(val('prNumCuotas'), 10) || null) : null,
       frecuencia: modo === 'cuotas' ? (val('prFrec') || 'mensual') : null,
       metodo_interes: modo === 'cuotas' ? (val('prMetodo') || 'plano') : 'saldo',
+      cuota_fija: modo === 'cuotas' ? cuotaFijaStore : null,
       notas: (val('prNotas') || '').trim()
     };
     try {
@@ -14390,7 +14412,7 @@
         </div>`;
     } else if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
       const met = p.metodo_interes || 'saldo';
-      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia, met);
+      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia, met, Number(p.cuota_fija) || 0);
       interesTotalMostrado = a.interesTotal;
       const moraDelPrestamo = prMoraDe(p); let moraAsignada = false;
       let acum = 0, capAcum = 0;
@@ -14718,7 +14740,7 @@
       resumen = [['Tipo', 'Línea de crédito'], ['Tasa', p.tasa_interes + '% mensual sobre el saldo'], ['Capital', fmt(p.capital)], ['Capital pendiente', fmt(cc.capPend)], ['Interés pendiente', fmt(cc.interesPend)], ['Debe ahora', fmt(cc.totalDebe)]];
     } else if (p.modo === 'cuotas' && p.num_cuotas > 0 && Number(p.tasa_interes || 0) > 0) {
       const met = p.metodo_interes || 'saldo';
-      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia, met);
+      const a = amortizar(Number(p.capital || 0), Number(p.tasa_interes), p.num_cuotas, p.fecha_prestamo, p.frecuencia, met, Number(p.cuota_fija) || 0);
       titulo = 'TABLA DE AMORTIZACIÓN';
       cols = [['#', 'l'], ['Fecha', 'l'], ['Cuota', 'r'], ['Interés', 'r'], ['Capital', 'r'], ['Saldo', 'r'], ['Estado', 'c']];
       let acum = 0;
@@ -14855,8 +14877,9 @@
       const n = parseInt(val('prNumCuotas'), 10) || 0;
       if (!(cap > 0 && n > 0)) { toast('err', 'Completa el simulador primero', 'Faltan el capital o el número de cuotas.'); return; }
       const frec = val('prFrec') || 'mensual', met = val('prMetodo') || 'plano';
-      const a = tasa > 0 ? amortizar(cap, tasa, n, fecha, frec, met) : null;
-      draft = Object.assign({}, base, { modo: 'cuotas', capital: cap, tasa_interes: tasa, num_cuotas: n, frecuencia: frec, metodo_interes: met, total_devolver: a ? a.total : cap });
+      const cf = (_prCuotaMode === 'monto') ? parseMoney(val('prCuotaObjetivo')) : 0;
+      const a = tasa > 0 ? amortizar(cap, tasa, n, fecha, frec, met, cf) : null;
+      draft = Object.assign({}, base, { modo: 'cuotas', capital: cap, tasa_interes: tasa, num_cuotas: n, frecuencia: frec, metodo_interes: met, cuota_fija: cf || null, total_devolver: a ? a.total : cap });
     } else {
       toast('err', 'Los abonos libres no tienen cuotas fijas', 'Cambia a "Cuotas fijas" o "Línea de crédito" para armar una propuesta.');
       return;
@@ -14920,8 +14943,9 @@
       const n = parseInt(val('prNumCuotas'), 10) || 0;
       if (!(cap > 0 && n > 0)) { toast('err', 'Completa el simulador primero', 'Faltan el capital o el número de cuotas.'); return; }
       const frec = val('prFrec') || 'mensual', met = val('prMetodo') || 'plano';
-      const a = tasa > 0 ? amortizar(cap, tasa, n, fecha, frec, met) : null;
-      Object.assign(datos, { modo: 'cuotas', capital: cap, tasa_interes: tasa, num_cuotas: n, frecuencia: frec, metodo_interes: met, total_devolver: a ? a.total : cap, cuota_calculada: a ? a.cuota : Math.round(cap / n) });
+      const cf = (_prCuotaMode === 'monto') ? parseMoney(val('prCuotaObjetivo')) : 0;
+      const a = tasa > 0 ? amortizar(cap, tasa, n, fecha, frec, met, cf) : null;
+      Object.assign(datos, { modo: 'cuotas', capital: cap, tasa_interes: tasa, num_cuotas: n, frecuencia: frec, metodo_interes: met, cuota_fija: cf || null, total_devolver: a ? a.total : cap, cuota_calculada: a ? a.cuota : Math.round(cap / n) });
     } else {
       toast('err', 'Los abonos libres no tienen cuotas fijas', 'Cambia a "Cuotas fijas" o "Línea de crédito" para generar un link de firma.');
       return;
@@ -15147,6 +15171,7 @@
         plazo_meses: s.plazo_meses || null, fecha_prestamo: s.fecha_prestamo || hoy(), modo: s.modo,
         num_cuotas: s.modo === 'cuotas' ? s.num_cuotas : null, frecuencia: s.modo === 'cuotas' ? s.frecuencia : null,
         metodo_interes: s.modo === 'cuotas' ? (s.metodo_interes || 'plano') : 'saldo',
+        cuota_fija: (s.modo === 'cuotas' && Number(s.cuota_fija) > 0) ? Number(s.cuota_fija) : null,
         // La nota lista SOLO lo que de verdad llegó en esta solicitud (no se da por hecho
         // que haya video o foto: el flujo pudo cambiar entre una solicitud vieja y una nueva).
         notas: ((s.notas || '') + ' [Firmado por link — ' + ['cédula', 'firma'].concat(s.selfie ? ['foto con cédula'] : []).concat(s.video_path ? ['video de compromiso'] : []).join(', ') + ' en la solicitud ' + String(s.id).slice(0, 8) + ']').trim(),
@@ -15523,7 +15548,7 @@
       const total = Number(p.total_devolver || 0);
       const tieneInt = Number(p.tasa_interes || 0) > 0;
       let cuotaTxt = '';
-      if (tieneInt) { const a = amortizar(cap, p.tasa_interes, p.num_cuotas, p.fecha_prestamo, p.frecuencia, p.metodo_interes || 'saldo'); cuotaTxt = fmt(a.cuota); }
+      if (tieneInt) { const a = amortizar(cap, p.tasa_interes, p.num_cuotas, p.fecha_prestamo, p.frecuencia, p.metodo_interes || 'saldo', Number(p.cuota_fija) || 0); cuotaTxt = fmt(a.cuota); }
       else { cuotaTxt = fmt(total / p.num_cuotas); }
       const ultima = fechaCuota(p.fecha_prestamo, p.frecuencia, p.num_cuotas);
       const primera = fechaCuota(p.fecha_prestamo, p.frecuencia, 1);

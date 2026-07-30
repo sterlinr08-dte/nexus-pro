@@ -1,7 +1,12 @@
 {
-  "version": "52.7",
+  "version": "52.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.8",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (Financiamiento — la cuota queda EXACTA y la última se ajusta): en 'Calcular por → Monto de la cuota' (Nuevo/Editar préstamo), ahora la cuota que escribes se respeta al centavo. Ejemplo: capital RD$ 80,000 al 5% mensual quincenal, cuota RD$ 5,000 → 26 cuotas de RD$ 5,000 EXACTAS y la última de RD$ 4,000 (el resto). Antes el sistema repartía parejo y te daba RD$ 4,963 en todas. El total y el interés no cambian, solo cómo se reparten las cuotas. Funciona en préstamos con o sin interés, y al editar un préstamo guardado así se reabre en ese mismo modo con el monto puesto."
+    },
     {
       "v": "52.7",
       "fecha": "2026-07-27",
