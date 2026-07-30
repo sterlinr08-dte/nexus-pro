@@ -1,7 +1,12 @@
 {
-  "version": "52.5",
+  "version": "52.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.6",
+      "fecha": "2026-07-27",
+      "texto": "NUEVO (Financiamiento — marcar las cuotas a pagar): en el detalle de un préstamo, ahora puedes MARCAR ☑ las cuotas que el cliente va a pagar directamente en la tabla, y el 'Monto a pagar' se calcula solo. Como el pago se aplica de la cuota más vieja a la más nueva, al marcar una cuota se marcan también las anteriores (marcas la #3 y se marcan la #1, #2 y #3) para que el monto calce exacto con lo que se cobra. Si el préstamo tiene mora, se suma automáticamente. Igual puedes escribir el monto a mano como siempre."
+    },
     {
       "v": "52.5",
       "fecha": "2026-07-27",

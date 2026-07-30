@@ -2566,6 +2566,36 @@ foto — se construyó primero la Fase 1 sin video: cédula + firma).
   armado con los términos reales del préstamo (ya se había acordado el enfoque: no texto libre, sino un
   guion derivado de los datos reales, mismo criterio de "no fingir" del resto del sistema).
 
+### Financiamiento — marcar las cuotas a pagar en el detalle del préstamo (27-jul-2026, v52.6)
+El dueño mandó una captura del detalle de un préstamo (la tabla de amortización) y pidió poder
+**seleccionar/chequear las cuotas que va a pagar** para que el "Monto a pagar" se calcule solo, en
+vez de teclearlo. Es el módulo **Financiamiento** (`nxPrestamoVer`, tablas `prestamos`/`prestamo_pagos`),
+NO Cuotas del POS.
+- **Decisión de diseño clave (por el modelo de datos):** el pago es un abono libre (`prestamo_pagos`)
+  que se aplica **de la cuota más vieja a la más nueva** (`pag >= acum` oldest-first). Por eso la
+  selección es **consecutiva desde arriba**: marcar la #3 marca también #1 y #2. Así el monto
+  calculado calza EXACTO con cómo el dinero se aplica de verdad — si dejara marcar #1 y #3 salteando
+  #2, el monto engañaría (el pago igual iría a #1 y #2). Desmarcar una cuota desmarca las de abajo.
+- **Sin esquema nuevo, cero cambios en el guardado:** `nxPrestamoPagar` sigue leyendo `#prPagoMonto`
+  igual que siempre — marcar las cuotas solo LLENA ese campo (con `nxMoney.format`), no cambia cómo se
+  registra el pago. El monto a mano sigue funcionando (marcar es opcional).
+- **Dónde aplica:** los 2 modos de "cuotas" (con interés = tabla de amortización real `amortizar`; sin
+  interés = calendario de cuota fija). En crédito/libre NO hay cuotas fijas, así que ahí no salen
+  checkboxes (queda el monto libre). El checkbox reemplaza el "·"/"PENDIENTE" solo en las cuotas
+  **pendientes** (las pagadas siguen con ✓/PAGADA).
+- **Mora:** si el préstamo tiene mora configurada (`prMoraDe(p) > 0`), se **suma automáticamente** al
+  monto al marcar cuotas, y el aviso lo muestra ("N cuotas · RD$X + RD$Y mora"). En los préstamos sin
+  mora configurada (`mora_pct=0`, el caso normal hoy) es RD$0, no afecta.
+- **Piezas:** vars de módulo `_prCuotasPend`/`_prMoraOpen` (junto a `_tipoPago`), checkbox
+  `.prCuotaChk` con `data-n`/`data-monto` en cada fila pendiente, handler `window.nxPrCuotaCheck(n)`
+  (selección consecutiva + suma + mora + llena `#prPagoMonto`), y un aviso `#prPagoCuotasInfo` arriba
+  del campo de monto (solo si hay cuotas pendientes).
+- **Verificado con Playwright, handler real extraído del archivo** (no reconstruido): marcar #3 →
+  selecciona 1,2,3 y monto 14,889 (3×4,963); marcar #5 → 24,815; desmarcar #3 → queda 1,2 = 9,926;
+  desmarcar #1 → vacío; y con mora 500, 2 cuotas = 9,926 + 500 = 10,426 con el aviso correcto. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+
 ### Financiamiento — detalle del préstamo rediseñado con un mockup del dueño (25-jul-2026, v49.38)
 El dueño mandó una imagen ("Detalle de préstamo") de un mockup de un ERP de préstamos completo — topbar
 con buscador/notificaciones/perfil "Casa Matriz", barra lateral con Desembolsos/Moras/Refinanciaciones/
