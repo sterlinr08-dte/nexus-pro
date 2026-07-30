@@ -1,7 +1,12 @@
 {
-  "version": "52.8",
+  "version": "52.9",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.9",
+      "fecha": "2026-07-30",
+      "texto": "NUEVO (POS · Factura/Prefactura — barra de Cobrar fija abajo en el celular): en el celular, al facturar ya no tienes que bajar hasta el final para cobrar — una barra fija abajo mantiene siempre a la vista Cancelar, Borrador, Vista previa y COBRAR mientras deslizas la lista de artículos. Son los mismos botones de siempre (no cambia nada del cobro). En la computadora se ve igual que antes. Primer módulo con este cambio; después lo llevaremos a las demás pantallas."
+    },
     {
       "v": "52.8",
       "fecha": "2026-07-27",
