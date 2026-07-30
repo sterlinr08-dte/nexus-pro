@@ -5007,47 +5007,6 @@ Acordado con el dueño: **ChatGPT diseña, Claude implementa.**
   acuerde de no darle ese permiso. No hay herramienta en este entorno para configurarlo por API; es un
   ajuste que el dueño hace una vez desde la web de GitHub.
 
-### POS · Barra de acciones FIJA abajo (spec ChatGPT "Global Sticky Action Bar") — PILOTO en Factura (30-jul-2026, v52.9)
-ChatGPT dejó `docs/visual-drafts/ui/GLOBAL_STICKY_ACTION_BAR_V1.md` (barra de acciones inferior fija
-reutilizable para todo el ERP: Cancelar · Guardar · Guardar + Imprimir según el módulo). El dueño
-eligió empezar el piloto por **Facturar/Cobrar del POS** (la más usada, y dinero). Se le mostró una
-**muestra Artifact** aprobada en su iPhone antes de tocar producción (patrón de siempre para cambios
-riesgosos).
-- **Trampa técnica real (por eso NO fue trivial):** la Factura vive dentro de `.nx-invoice-pro`, que
-  usa **`container-type:inline-size`** — eso aplica *layout containment* y, según el navegador (iOS
-  Safari incluido), **atrapa un `position:fixed` hijo** anclándolo al contenedor en vez del viewport.
-  Por eso la barra NO se puede inyectar dentro del HTML de la Factura: se **cuelga del `<body>`**
-  (`facBarraSync()` la crea/recrea) — es correcto en cualquier navegador, sin depender del
-  comportamiento de `container-type`.
-- **Solo móvil (≤760px), donde está el dolor** (había que bajar hasta el final para Cobrar). En
-  escritorio la barra no aparece — el pie normal ya queda a la vista en la columna resumen sticky. En
-  móvil se ocultan las acciones en-flujo (`.nxDoc .facTot .acc/.cancel`) para no duplicar.
-- **Cero lógica de cobro nueva:** los 4 botones llaman EXACTAMENTE las mismas funciones que el pie de
-  siempre — Factura: `nxFacCancelar` · `nxPrefGuardar` (borrador) · `nxFacVistaPrevia` · `nxFacFacturar`
-  (Cobrar). Prefactura: `nxFacCancelar` · `nxFacVistaPrevia` · `nxPrefGuardar(true)` (guardar+imprimir) ·
-  `nxPrefGuardar` (Guardar). Estado habilitado/deshabilitado en vivo (según `_cart.length`), re-sincronizado
-  en cada `pintarFactura`.
-- **Colisión con el FAB (+) resuelta con el patrón `:has()` ya existente:** `body:has(#nxFacBar) .nx-fab
-  {display:none!important}` (solo móvil) — la barra inferior legacy `.mobile-bottom-nav-clean` NO es
-  riesgo (la elimina `crearFAB()` en runtime). Ciclo de vida: la barra se quita en `renderPOS` (cambio de
-  pestaña del POS) y en `nav()` de `index.html` (salir del POS a una vista de Seguros), y su display se
-  gatea a `body:has(#v-pos.on)`. Se oculta también cuando hay un modal abierto (`body:has(.overlay.open)
-  #nxFacBar`), para que la ventana de Cobrar no la deje asomando.
-- **Honestidad sobre el spec:** ChatGPT ponía "Facturar + Imprimir" como botón aparte — en el POS eso no
-  existe (el ticket se imprime solo al Cobrar); se mapeó a Cobrar (principal) + Vista previa (que sí
-  imprime el documento). No se puso un botón que no hace nada.
-- **Verificado con Playwright (dinero → rigor)**: 17 comprobaciones con el CSS real + `facBarraSync` real
-  extraídos por contenido — la barra queda **fija al fondo del viewport** (no atrapada), sigue fija al
-  hacer scroll, ancho completo, FAB oculto en móvil, acciones en-flujo ocultas en móvil, barra oculta con
-  overlay abierto, deshabilitada con carrito vacío, oculta al salir del POS, y en escritorio la barra fija
-  no aparece y el pie en-flujo sí — más la prueba de humo de la app real (0 errores de JS). `node --check
-  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
-- **Pendiente:** si el dueño aprueba en su iPhone, llevar la barra reutilizable a los demás módulos
-  (Recepción Taller, formulario de artículo, Financiamiento, etc.) — cada uno respetando el color de su
-  app. Los de dinero (ya hecho el de Factura) con el mismo cuidado. Nota de decisión: los 3 botones
-  secundarios quedaron **solo-ícono** (con `aria-label`); si el dueño los ve ambiguos, agregar texto es un
-  cambio chico.
-
 ### POS · Contabilidad — Fase 1 del rediseño (propuesta de ChatGPT), reskin + Resumen real (23-jul-2026, v49.03)
 ChatGPT dejó en `chatgpt/visual-draft` una **propuesta visual del módulo de Contabilidad** (mockup SVG +
 documento `docs/visual-drafts/contabilidad/`), respetando el flujo nuevo acordado (rama sandbox, sin
