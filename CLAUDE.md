@@ -2566,6 +2566,34 @@ foto — se construyó primero la Fase 1 sin video: cédula + firma).
   armado con los términos reales del préstamo (ya se había acordado el enfoque: no texto libre, sino un
   guion derivado de los datos reales, mismo criterio de "no fingir" del resto del sistema).
 
+### Financiamiento — ventana de Nuevo/Editar préstamo a pantalla completa (nativa) (27-jul-2026, v52.7)
+El dueño mandó una captura del formulario "Editar préstamo" (modal flotante) y pidió que **esa ventana
+sea nativa, no flotante**. Es `abrirForm(pr)` (Financiamiento, `parches.js`), que antes armaba un
+`overlay` con un `.modal.nxPrForm` de 460px centrado (tarjeta flotante sobre fondo oscuro).
+- **Cambio SOLO de contenedor/presentación, cero lógica:** todos los ids de campo (`prCap`/`prNumCuotas`/
+  `prCuotaObjetivo`/`prMetodo`/`prTot`/`prNom`/...), `pintarModo()`, `nxPrRecalc()`, `nxPrestamoGuardar()`
+  y el resto quedaron idénticos. El overlay pasó a `overlay open nxPrOvFull` y el modal a
+  `modal nxPrForm nxPrFormFull`, con CSS nuevo en `inyectarCSS()` (`nxPrestamosCSS`) que lo hace
+  **pantalla completa**: `.nxPrFormFull` = `width:100%;height:100dvh;border-radius:0` (cubre el fondo,
+  sin tarjeta flotante ni backdrop). Estructura: barra superior fija `.nxPrFormTop` (título + "Volver"),
+  área con scroll `.nxPrFormScroll` cuyo contenido va centrado a `max-width:640px` (`.nxPrFormInner`,
+  para que en escritorio no se estiren los campos), y pie fijo `.nxPrFormFoot` con el botón Guardar.
+- **Se quitó el click-fuera-para-cerrar** (ya no hay backdrop; se cierra con "Volver") — evita cerrar
+  el formulario por accidente y perder lo escrito. Solo aplica a ESTE formulario: los demás modales de
+  Financiamiento (cliente, config, etc.) siguen usando `.nxPrForm` SIN `.nxPrFormFull`, así que no
+  cambian (el CSS nuevo está scopeado a `.nxPrFormFull`).
+- **Nota sobre "cuota que pagará 5,000 → resumen 4,963" (v49.29):** NO es un bug. En modo "Calcular por
+  monto de la cuota", el sistema redondea hacia ARRIBA el número de cuotas (para no cobrar de menos), y
+  con 27 cuotas quincenales de RD$80,000 al 5% plano el total da RD$134,000 → cuota real 134,000/27 =
+  RD$4,963 (≤ 5,000). No siempre se puede pegar exacto a 5,000 con un número entero de cuotas. Se le
+  explicó al dueño; si quiere la opción de que la cuota quede EXACTA en 5,000 y la última se ajuste,
+  es un cambio aparte (confirmar antes de tocar la matemática).
+- Verificado con Playwright cargando el CSS real de `inyectarCSS` (¡ojo: hay VARIAS funciones
+  `inyectarCSS()` en el archivo — hay que anclar en `nxPrestamosCSS`, la primera coincidencia agarra
+  otra!): en 390px y 1280px la ventana llena la pantalla (`modal == viewport`), barra superior blanca,
+  contenido centrado a 640px en escritorio, sin scroll horizontal. `node --check parches.js` limpio;
+  los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
 ### Financiamiento — marcar las cuotas a pagar en el detalle del préstamo (27-jul-2026, v52.6)
 El dueño mandó una captura del detalle de un préstamo (la tabla de amortización) y pidió poder
 **seleccionar/chequear las cuotas que va a pagar** para que el "Monto a pagar" se calcule solo, en

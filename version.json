@@ -1,7 +1,12 @@
 {
-  "version": "52.6",
+  "version": "52.7",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "52.7",
+      "fecha": "2026-07-27",
+      "texto": "MEJORA (Financiamiento — ventana de Nuevo/Editar préstamo a pantalla completa): el formulario para crear o editar un préstamo dejó de ser una ventana flotante chiquita y ahora es una PANTALLA COMPLETA nativa: barra arriba con 'Volver', el formulario centrado y con más espacio, y el botón 'Guardar' fijo abajo. Se ve más ordenado y cómodo, sobre todo en el celular. Todo funciona igual que antes (cálculo de cuotas en vivo, etc.)."
+    },
     {
       "v": "52.6",
       "fecha": "2026-07-27",
