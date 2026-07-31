@@ -1,7 +1,12 @@
 {
-  "version": "53.6",
+  "version": "53.7",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.7",
+      "fecha": "2026-07-31",
+      "texto": "NUEVO (logo real en la pantalla de Login): se agregó el logo 'NEXUS PRO — Multiempresa · POS · ERP' que mandó el dueño, arriba de la tarjeta de inicio de sesión — se ve sobre el mismo fondo azul oscuro degradado de siempre (los colores del logo calzan de forma natural con ese fondo). Se limpió la mancha azul con el ícono chico y el 'NEXUS PRO' en texto que estaban dentro de la tarjeta blanca — quedaba repetido con el logo grande nuevo — y se dejó solo la línea 'Plataforma de gestión · República Dominicana'. Es solo visual, no cambia el inicio de sesión."
+    },
     {
       "v": "53.6",
       "fecha": "2026-07-31",

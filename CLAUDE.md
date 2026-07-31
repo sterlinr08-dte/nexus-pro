@@ -9722,3 +9722,49 @@ vieja — la app real va por v53.5 en ese momento).
   original) ya no aparece en ningún lugar del archivo — las únicas coincidencias de "NEXUS PRO v6"
   que quedan son 7 usos completamente distintos y legítimos (el ticker del Dashboard, el pie de
   documentos impresos, encabezados de exportación a Excel), sin relación con la pantalla eliminada.
+
+### Login — logo real del dueño arriba de la tarjeta (31-jul-2026, v53.7)
+El dueño mandó un logo nuevo ("NEXUS PRO — Multiempresa · POS · ERP", banda oscura con degradado
+azul→negro, "NEXUS" en blanco + "PRO" en un recuadro azul + una barra diagonal, brillo cálido en la
+esquina) y pidió aplicarle mejoras y agregarlo al sistema — hasta ahora el único "logo" que existía
+en toda la app era una insignia CSS (cuadrado azul redondeado con un ícono `ti-shield-check` de
+Tabler), sin ningún archivo de imagen real de por medio.
+- **Mejora aplicada a la imagen (gratis, sin gastar créditos de generación):** el archivo que mandó
+  era un JPEG de 1125×268 — se revisó de cerca (zoom 3x sobre el texto) y no tenía artefactos de
+  compresión visibles, así que **no hacía falta un upscale pagado** — se optimizó de forma
+  conservadora: convertido a **PNG sin pérdida** (para no volver a comprimir con JPEG, el tipo de
+  archivo más propenso a manchar los bordes del texto blanco sobre fondo oscuro), con un realce
+  sutil de nitidez (`UnsharpMask`) + contraste (+4%). Guardado como `logo-nexus-pro.png` en la raíz
+  del repo (mismo patrón que `icon-*.png`, servido tal cual por el Worker de Cloudflare).
+- **Dónde se agregó — la pantalla de Login, arriba de la tarjeta blanca, NO adentro:** el fondo de
+  `#loginScreen` ya es un degradado azul marino oscuro (`radial-gradient(...#1e3a6e→#132a52→#0a1730)`)
+  — casi idéntico en tono al fondo del logo — así que el logo se puso como banner (`<img class="lhero">`)
+  **encima** de `.lbox` (la tarjeta blanca del formulario), envueltos los dos en un `.lwrap` nuevo
+  (`display:flex;flex-direction:column;align-items:center` — necesario porque `#loginScreen` es
+  `display:flex` sin `flex-direction:column`, así que sin el wrapper el logo y la tarjeta habrían
+  quedado uno al lado del otro en vez de apilados). Meterlo DENTRO de la tarjeta blanca se descartó
+  a propósito — el logo tiene fondo oscuro de punta a punta (sin transparencia), así que sobre blanco
+  se habría visto como un rectángulo oscuro pegado, no como parte del diseño.
+- **BUG VISUAL real encontrado con la primera captura (no a ojo — con Playwright), corregido antes de
+  publicar:** al agregar el logo grande arriba, la insignia azul + el texto "NEXUS PRO" que ya vivían
+  DENTRO de la tarjeta blanca (`.llogo`/`.lmk`/`.lbrand`) quedaban **repetidos** — la marca salía dos
+  veces, una encima de la otra, en dos estilos distintos. Se quitó esa insignia+texto por completo
+  (código muerto verificado por grep antes de borrar — no lo usaba nada más en el archivo) y se dejó
+  solo la línea descriptiva que sí aportaba algo nuevo, `.lver` ("Plataforma de gestión · República
+  Dominicana"), ahora como subtítulo independiente arriba de "Iniciar sesión". Se limpió de paso la
+  regla CSS `.lbrand{font-size:20px}` del `@media(max-width:768px)` — quedó huérfana al quitar el
+  `<div class="lbrand">` del HTML.
+- **Deliberadamente NO tocado en esta pasada:** el ícono de la PWA (`icon-*.png`, generado por
+  `gen_icon.py` con un escudo hexagonal azul cristalino) y el favicon — es un mark cuadrado con un
+  recorte distinto al del banner (que trae texto/tagline horizontal, ilegible reducido a 16-32px), y
+  cambiar el icono real afectaría el icono ya instalado en el celular de cada usuario — no se pidió
+  explícito, así que se dejó para una ronda aparte si el dueño quiere ese paso también. Tampoco se
+  tocó la pantalla de bienvenida/splash (`#nxSplash`) ni el loader (`#nxLoader`) — misma insignia CSS
+  de siempre, sin cambios, para no arriesgar esa pantalla también sin que se pidiera.
+- **Verificado con Playwright, código real, en los dos anchos típicos** (390px móvil / 1280px
+  escritorio): el logo carga (`naturalWidth/naturalHeight` reales, `complete:true`), sin desborde
+  horizontal en ninguno de los dos, la tarjeta quedó decluttered (sin la marca duplicada), y el flujo
+  de login sigue funcionando igual (`doLogin()` con campos vacíos sigue mostrando su aviso de
+  siempre) — 0 errores de JavaScript reales (los de red son el mismo ruido de este entorno sin salida
+  a internet, documentado varias veces en este archivo). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
