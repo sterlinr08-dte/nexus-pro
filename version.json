@@ -1,7 +1,12 @@
 {
-  "version": "53.8",
+  "version": "53.9",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.9",
+      "fecha": "2026-07-31",
+      "texto": "NUEVO (Login — mockup pixel-a-pixel del dueño, estilo Enterprise): el dueño mandó un mockup completo y muy detallado (colores, medidas, íconos exactos) pidiendo reproducir 'prácticamente la misma composición' — se construyó tal cual. El logo real de NEXUS PRO ahora vive DENTRO de la tarjeta (antes iba como banner arriba) — se recortó el fondo oscuro de la imagen original dejando solo el emblema con fondo transparente (mismo archivo aprobado por el dueño, sin recrearlo a mano), a ~70% del ancho de la tarjeta como pidió. El anillo del escudo central ahora es un aro azul brillante sin relleno sólido (como en el mockup), y el de 'Seguridad de nivel empresarial' sí lleva un relleno circular tenue (son dos tratamientos distintos a propósito, igual que en la imagen). Checkbox 'Recordarme' con su propio diseño cuadrado azul (ya no el checkbox nativo del navegador). **Esta vez SÍ se agregó '¿Olvidaste tu contraseña?'** (el dueño lo pidió de nuevo, explícito) — pero de forma honesta: como el sistema no tiene ningún flujo de recuperación por correo (los logins usan un correo sintético interno, no una bandeja real), tocarlo muestra un aviso claro pidiendo contactar al administrador, en vez de fingir un enlace que no hace nada. ARREGLADO de paso (bug real, no solo estético): se encontró que TODO el sistema tiene un tema global 'semi-glass' que fuerza fondo/borde/sombra clara en cualquier campo de texto/botón de la app con máxima prioridad — sin quererlo, los campos oscuros del login nuevo salían con un fondo blanco translúcido encima. Se blindó con el mismo patrón que ya usan el menú del POS y el de Financiamiento contra este tipo de conflicto. Verificado con Playwright en 390/768/1280px: colores exactos confirmados por código (no a ojo), checkbox funcional, el aviso de 'olvidaste tu contraseña' se muestra correctamente, sin desbordes, 0 errores de JavaScript."
+    },
     {
       "v": "53.8",
       "fecha": "2026-07-31",
