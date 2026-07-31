@@ -4142,7 +4142,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='53.1';
+const APP_VERSION='53.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5726,7 +5726,7 @@ function nav(view,el){
   if(el)el.classList.add('on');
   else document.querySelectorAll('.ni').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${view}'`))n.classList.add('on');});
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
-  try{var _fbnav=document.getElementById('nxFacBar');if(_fbnav)_fbnav.remove();var _fabnav=document.querySelector('.nx-fab');if(_fabnav)_fabnav.classList.remove('nxFabLift');}catch(e){}
+  try{document.querySelectorAll('.nxFacBar').forEach(function(b){b.remove();});var _fabnav=document.querySelector('.nx-fab');if(_fabnav)_fabnav.classList.remove('nxFabLift');}catch(e){}
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
   const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>{if(typeof renderLog==='function')renderLog('logViewerAudit');},100);},
