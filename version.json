@@ -1,7 +1,12 @@
 {
-  "version": "53.4",
+  "version": "53.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.5",
+      "fecha": "2026-07-31",
+      "texto": "NUEVO (POS — Centro de Avisos, botón SMS temporal mientras se resuelve WhatsApp Business): en 'Cuotas vencidas' ahora hay un botón SMS (azul) junto al de WhatsApp — manda un mensaje real de texto (no WhatsApp) usando el propio teléfono Android del dueño como pasarela (servicio httpSMS). Es un puente TEMPORAL: aparece solo si el cliente tiene marcado 'Acepta recibir avisos por WhatsApp' en su ficha (se reusa ese mismo consentimiento, no es un permiso nuevo aparte), y solo en Cuotas vencidas — no en Apartados ni Reparaciones, porque ahí el sistema no tiene un enlace confiable al cliente para revisar su consentimiento de verdad. PENDIENTE del dueño para que funcione de verdad: crear cuenta en httpsms.com, instalar la app en el Android que va a mandar los SMS, y pegar su clave (HTTPSMS_API_KEY) y el número de ese teléfono (HTTPSMS_FROM_NUMBER) en Supabase → Edge Functions → Secrets — mientras tanto el botón avisa con un error claro en vez de fallar en silencio."
+    },
     {
       "v": "53.4",
       "fecha": "2026-07-31",

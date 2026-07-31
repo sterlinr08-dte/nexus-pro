@@ -8081,6 +8081,65 @@ Functions) para integrarlo sin plataforma intermedia.
 - **NEXUS AI CONTENT sigue en PAUSA** (decisión del dueño, problema de configuración del secreto de
   Anthropic sin resolver del todo — ver sección arriba) — no se retomó en esta fase, es un módulo aparte.
 
+### httpSMS — puente TEMPORAL de SMS mientras se resuelve WhatsApp Business API (31-jul-2026, v53.5)
+El dueño mandó una captura del proyecto **httpSMS** (`github.com/NdoleStudio/httpsms`, AGPL-3.0 —
+Android como pasarela de SMS reales) preguntando qué era. Se le explicó y, con `AskUserQuestion`
+(la ambigüedad era real: podía ser "reemplazo temporal de WhatsApp", "canal aparte permanente" o
+"solo para pruebas"), confirmó **"Reemplazo temporal de WhatsApp"** — mientras la verificación de
+negocio de Meta (FASE 3, arriba) sigue bloqueada, mandar SMS real de verdad en vez de solo el enlace
+manual `wa.me`.
+- **Contrato de API verificado contra el código fuente REAL, no de memoria:** este entorno bloquea
+  `api.httpsms.com` por política de red, pero **`raw.githubusercontent.com` sí es alcanzable**
+  (confirmado con `curl` — hallazgo nuevo, útil para futuras integraciones) — se bajó el
+  `swagger.yaml` real del repo y de ahí salió el contrato exacto: `POST /v1/messages/send`, header
+  `x-api-Key`, body `{content, from, to}` en E.164, respuesta `{status, message, data}`. `from` es el
+  número del Android del propio dueño con la app httpSMS instalada; `to` es el destinatario.
+- **Edge Function nueva `sms-httpsms-enviar`** (`verify_jwt:true`, mismo patrón exacto que
+  `whatsapp-enviar-plantilla`): lee `HTTPSMS_API_KEY`/`HTTPSMS_FROM_NUMBER` con
+  `Deno.env.get(...).trim()`, exige `acepta_whatsapp===true` en el body (**reusa el MISMO
+  consentimiento** de `pos_clientes.acepta_whatsapp` — es un puente temporal, no se crea una columna
+  nueva solo para esto), normaliza el teléfono a E.164 (`aE164`, mismo criterio +1 de NANP que ya usa
+  el resto del sistema para WhatsApp), y hace el POST real a httpSMS. Si faltan los secretos, responde
+  con el error claro de siempre en vez de fallar en silencio. **Verificado desplegada y reachable con
+  `net.http_post`** (mismo método ya usado en esta sesión para probar Edge Functions sin salida a
+  internet directa): responde 500 con *"Falta configurar HTTPSMS_API_KEY y/o HTTPSMS_FROM_NUMBER…"* —
+  correcto, porque el dueño todavía no ha configurado esos 2 secretos.
+- **Enganchado SOLO en "Cuotas vencidas" del Centro de Avisos** (`renderAvisos()`, `parches.js`) —
+  a propósito, NO en Apartados ni Reparaciones: se auditó el esquema y solo `pos_financiamientos`
+  tiene `cliente_id` como FK real a `pos_clientes` (confirmado por grep, se llena desde `cliId` en
+  `nxPosConfirmar`); `pos_apartados`/`pos_reparaciones` solo guardan `cliente_nombre`/`telefono` como
+  texto libre, sin enlace confiable — no se podía revisar su consentimiento de verdad, así que no se
+  fingió el botón ahí (mismo criterio de "no fingir funciones que no existen" de todo el sistema).
+  Botón **"SMS"** azul junto al de WhatsApp verde, con `data-tel`/`data-msg` en **base64** (evita pelear
+  con comillas/apóstrofes de nombres reales dentro de un `onclick` inline — caso real probado:
+  "Juan D'León") y `data-consiente` (atenuado a mitad de opacidad si el cliente no consintió, con
+  `title` explicando por qué). `window.nxSmsEnviarBtn(btn)` bloquea con un toast de advertencia si no
+  hay consentimiento (sin llamar a la función nunca); `window.nxSmsEnviar(tel,msg,aceptaWa,btn)` llama
+  a la Edge Function con el **token de sesión real** (`api.token`, no solo la anon key — mismo patrón
+  ya usado en `nxProbarReporte`), deshabilita el botón mientras envía, y muestra toast de éxito +
+  `logAudit('SMS_ENVIADO', tel, 'POS')`, o toast de error con el motivo real del servidor si falla.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (no una
+  reconstrucción — `nxSmsEnviarBtn`/`nxSmsEnviar`/`renderAvisos` + sus 9 helpers reales, con balance
+  de llaves real, cargados en un navegador dentro de su propia IIFE — envolver el extracto en su
+  propia función fue necesario para que el `toast`/`esc`/`fmt` locales del módulo no se filtraran a
+  `window` y pisaran el spy de la prueba, el mismo aislamiento que la app real logra siendo un IIFE):
+  **23 comprobaciones** — 2 botones SMS (uno por cliente con cuota vencida), el que consiente sale con
+  `data-consiente=1`/opacidad completa y el mensaje decodificado trae el nombre con apóstrofe intacto,
+  el que no consiente sale atenuado y el clic queda bloqueado sin llamar a `fetch` (con su toast de
+  advertencia), el envío real llama a `fetch` UNA vez con la URL/headers (`apikey` + `Authorization`
+  con el TOKEN de sesión, no solo la clave anónima)/body (`telefono`/`mensaje`/`acepta_whatsapp`)
+  correctos, toast de éxito + `logAudit` en el camino feliz, toast de error con el mensaje real del
+  servidor cuando httpSMS rechaza, toast de error sin tronar la app cuando la red falla, el botón se
+  re-habilita y recupera su texto original después de cada intento, y las secciones de Apartados/
+  Reparaciones/Bajo stock quedan exactamente igual (sin ningún botón SMS). 0 errores de consola. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Pendiente, del dueño (no de código, mismo tipo de bloqueo que `GMAIL_PASS`):** crear cuenta en
+  httpsms.com, instalar la app en el Android que va a mandar los SMS, generar la API key en
+  httpsms.com/settings, y pegar `HTTPSMS_API_KEY` + `HTTPSMS_FROM_NUMBER` (el número de ESE teléfono,
+  formato E.164) en Supabase Dashboard → Edge Functions → Secrets — nombres EXACTOS. Mientras tanto el
+  botón avisa con el error claro en vez de fallar en silencio.
+
 ---
 
 ### AGUAPRO ERP — módulo para distribuidoras de agua, dentro de Multiempresa (10-jul-2026)

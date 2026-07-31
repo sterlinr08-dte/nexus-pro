@@ -25927,12 +25927,54 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   };
 
   // ══════════════ CENTRO DE AVISOS (cola de cobro del día — calculada en vivo) ══════════════
+  // ══════════════ SMS automático vía httpSMS (puente TEMPORAL mientras se resuelve WhatsApp Business API) ══════════════
+  // NO es WhatsApp — es un SMS real, enviado desde el Android del dueño (app httpSMS) a través de la
+  // Edge Function `sms-httpsms-enviar`. Reusa el MISMO consentimiento `pos_clientes.acepta_whatsapp`
+  // (no se crea una columna nueva solo para esto — es un puente temporal, no un canal permanente aparte).
+  // data-tel/data-msg van en base64 (no texto crudo en el atributo) para no pelear con comillas/
+  // apóstrofes en nombres de clientes dentro de un onclick inline.
+  window.nxSmsEnviarBtn = async function (btn) {
+    const tel = btn.dataset.tel || '';
+    let msg = ''; try { msg = decodeURIComponent(escape(atob(btn.dataset.msg || ''))); } catch (e) {}
+    const consiente = btn.dataset.consiente === '1';
+    if (!consiente) { toast('warn', 'Este cliente no acepta avisos automáticos', 'Actívalo en su ficha (Entidades → Acepta recibir avisos por WhatsApp) para poder mandarle SMS automático.'); return; }
+    await window.nxSmsEnviar(tel, msg, true, btn);
+  };
+  window.nxSmsEnviar = async function (tel, msg, aceptaWa, btn) {
+    const api = getAPI();
+    if (!api) { toast('err', 'API no disponible', ''); return; }
+    let txt0 = null;
+    if (btn) { txt0 = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando…'; }
+    try {
+      const url = (api.url || '') + '/functions/v1/sms-httpsms-enviar';
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': (api.key || ''), 'Authorization': 'Bearer ' + (api.token || api.key || '') },
+        body: JSON.stringify({ telefono: tel, mensaje: msg, acepta_whatsapp: aceptaWa })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && data.ok) {
+        toast('ok', 'SMS enviado', 'El aviso salió por SMS al ' + tel);
+        try { window.logAudit && window.logAudit('SMS_ENVIADO', tel, 'POS'); } catch (e) {}
+      } else {
+        toast('err', 'No se pudo enviar el SMS', data.error || ('Código ' + resp.status));
+      }
+    } catch (e) {
+      toast('err', 'Error al enviar', e.message || '');
+    } finally {
+      if (btn) { btn.disabled = false; if (txt0 !== null) btn.innerHTML = txt0; }
+    }
+  };
   function renderAvisos() {
     nxPfEnsureCSS();
     const hoyK = hoyISOPos();
     const neg = (((curSesPOS() || {}).org || {}).nombre) || empNom() || 'la tienda';
     const telDe = cid => { const c = _clientes.find(x => String(x.id) === String(cid)); return c ? String(c.telefono || '').replace(/\D/g, '') : ''; };
     const wa = (tel, msg) => tel ? `<a class="ab g3" style="height:30px;width:auto;padding:0 10px;color:#16a34a" href="https://wa.me/1${tel}?text=${encodeURIComponent(msg)}" target="_blank"><i class="ti ti-brand-whatsapp"></i> Avisar</a>` : '';
+    // SMS automático vía httpSMS (puente temporal mientras se resuelve WhatsApp Business API, ver
+    // window.nxSmsEnviar) — solo donde hay un cliente REAL enlazado (pos_clientes), para poder
+    // revisar su consentimiento de verdad en vez de asumirlo.
+    const sms = (tel, msg, aceptaWa) => tel ? `<button type="button" class="ab g3" style="height:30px;width:auto;padding:0 10px;color:#2563eb;opacity:${aceptaWa ? '1' : '.5'}" data-tel="${esc(tel)}" data-msg="${btoa(unescape(encodeURIComponent(msg)))}" data-consiente="${aceptaWa ? '1' : '0'}" onclick="window.nxSmsEnviarBtn(this)" title="${aceptaWa ? 'Enviar SMS automático (httpSMS)' : 'El cliente no ha aceptado avisos automáticos'}"><i class="ti ti-message-2"></i> SMS</button>` : '';
     const fila = (t1, t2, extra) => `<div class="avrow"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:12px">${t1}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${t2}</div></div><div style="display:flex;gap:6px;align-items:center">${extra}</div></div>`;
     // 1) Cuotas vencidas
     const cuotasV = [];
@@ -25940,12 +25982,17 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       const v = _finCuotas.filter(c => String(c.financiamiento_id) === String(f.id) && !c.pagado && String(c.fecha_venc) < hoyK);
       if (v.length) cuotasV.push({ f: f, cuotas: v, monto: v.reduce((t, c) => t + Number(c.monto || 0), 0) });
     });
-    const sec1 = cuotasV.length ? cuotasV.map(x => fila(
+    const sec1 = cuotasV.length ? cuotasV.map(x => {
+      const tel = telDe(x.f.cliente_id);
+      const msg = 'Hola ' + (x.f.cliente_nombre || '') + ', le recordamos que tiene ' + x.cuotas.length + ' cuota(s) vencida(s) por ' + fmt(x.monto) + ' de su ' + (x.f.descripcion || 'compra') + ' en ' + neg + '. ¡Gracias!';
+      const cli = _clientes.find(c => String(c.id) === String(x.f.cliente_id));
+      return fila(
       esc(x.f.cliente_nombre || '') + ' · <b style="color:var(--pf-red)">' + fmt(x.monto) + '</b>',
       x.cuotas.length + ' cuota(s) vencida(s) · ' + esc(x.f.descripcion || ''),
-      wa(telDe(x.f.cliente_id), 'Hola ' + (x.f.cliente_nombre || '') + ', le recordamos que tiene ' + x.cuotas.length + ' cuota(s) vencida(s) por ' + fmt(x.monto) + ' de su ' + (x.f.descripcion || 'compra') + ' en ' + neg + '. ¡Gracias!') +
+      wa(tel, msg) + sms(tel, msg, !!(cli && cli.acepta_whatsapp)) +
       `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('cuotas')" aria-label="Ir a Cuotas"><i class="ti ti-cash"></i></button>`
-    )).join('') : '';
+      );
+    }).join('') : '';
     // 2) Apartados vencidos o por vencer (3 días)
     const lim3 = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
     const apas = _apartados.filter(a => a.estado === 'activo' && a.fecha_limite && String(a.fecha_limite) <= lim3 && (Number(a.total || 0) - Number(a.abonado || 0)) > 0);
