@@ -669,20 +669,6 @@ body.tema-premium .acc-menu-hd{color:#475569}
 .notif-item.unread{background:#eff6ff}
 .notif-item.unread::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#6d28d9;margin-right:8px;vertical-align:middle}
 
-/* ════ DARK MODE ════ */
-body.dark{background:#0f172a;color:#e2e8f0}
-body.dark .content{background:#0f172a}
-body.dark .nc,body.dark .kpi,body.dark .tnav{background:#1e293b;border-color:#334155}
-body.dark thead th{background:#0f172a;color:#475569;border-color:#334155}
-body.dark tbody td{color:#e2e8f0;border-color:#334155}
-body.dark tbody tr:hover td{background:#334155 !important}
-body.dark .ct{color:#f1f5f9}
-body.dark .fr input,body.dark .fr select,body.dark .fr textarea{background:#0f172a !important;border-color:#334155 !important;color:#e2e8f0 !important}
-body.dark .btn{background:#1e293b;border-color:#334155;color:#cbd5e1}
-body.dark .cfg-tabs-bar{background:#1e293b;border-color:#334155}
-body.dark .cfg-tab{color:#cbd5e1}
-body.dark .cfg-tab:hover{background:#334155;color:#fff}
-
 /* ════ CLIENT FAVORITES ════ */
 .fav-star{cursor:pointer;color:#cbd5e1;font-size:16px;transition:all .15s}
 .fav-star.active{color:#f59e0b}
@@ -704,6 +690,22 @@ body.dark .cfg-tab:hover{background:#334155;color:#fff}
   --sf-ok:#22C55E;--sf-ok-l:#E8F9EF;--sf-ok-d:#0F9D50;--sf-warn:#F59E0B;--sf-warn-l:#FEF3DC;--sf-warn-d:#B45309;
   --sf-err:#EF4444;--sf-err-l:#FDEBEB;--sf-err-d:#DC2626;--sf-tx:#111827;--sf-tx2:#6B7280;--sf-tx3:#94A0B4;
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--sf-tx)}
+/* Tema Premium Dark del núcleo de Seguros (Clientes/Facturas/Ficha/Pólizas/Agentes/
+   Empresas/Comisiones/Contabilidad/Reportes/Ajustes/Usuarios) — mismos 17 tokens de
+   .nxSf, solo el VALOR cambia; como todo el namespace ya está construido sobre estas
+   variables (grep confirmado: 73 reglas .nxSf, solo 4 hex sueltos fuera del sistema de
+   tokens), una sola redefinición cubre las 12 pantallas sin tocar su HTML/JS. Mismos
+   tonos ya usados y probados en --pf-* (POS) para que el sistema entero se sienta como
+   UNA sola identidad al cambiar de módulo, no dos temas oscuros distintos.*/
+body.tema-premium .nxSf{--sf-bg:#0B0F19;--sf-card:#121826;--sf-line:#232B3D;--sf-primary:#3B82F6;--sf-primary-l:#0F1B33;--sf-primary-d:#60A5FA;
+  --sf-ok:#22C55E;--sf-ok-l:#0C1F14;--sf-ok-d:#4ADE80;--sf-warn:#FBBF24;--sf-warn-l:#2A2004;--sf-warn-d:#FCD34D;
+  --sf-err:#F87171;--sf-err-l:#2A1414;--sf-err-d:#FCA5A5;--sf-tx:#F1F5F9;--sf-tx2:#94A3B8;--sf-tx3:#64748B}
+/* Los 4 hex sueltos que no pasan por --sf-* (verificado: son los únicos 4 en todo el
+   namespace) — el acento morado del KPI y la referencia del cliente, oscurecidos igual
+   que --pf-purple/--pf-purple-l del POS para que el morado se vea coherente en los 2
+   módulos. El texto blanco sobre íconos de color sólido (#fff) no necesita cambiar. */
+body.tema-premium .nxSf .sf-kpi.purple .ic{background:#1E1B33;color:#A78BFA}
+body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--sf-card);border:1px solid var(--sf-line);
   border-radius:16px;padding:14px 16px;margin-bottom:12px}
 .nxSf .sf-ava{width:48px;height:48px;border-radius:50%;background:var(--sf-primary-l);color:var(--sf-primary-d);display:flex;
@@ -3753,12 +3755,16 @@ function cargarTemaGuardado(){
   // El tema vive en la base (ver PREFERENCIAS DEL USUARIO), así que solo se puede aplicar
   // DESPUÉS de entrar. La pantalla de login siempre se ve con el tema base: es el costo de
   // no guardar nada en el navegador, y se decidió a propósito.
-  let tema=nxPref('tema','clasico');
   // Rescate por única vez: quien había prendido el botón viejo de "Modo oscuro" (preferencia
-  // suelta "dark", ya retirada) pero nunca tocó el picker nuevo de Ajustes, no debe perder su
+  // suelta "dark", ya retirada) pero JAMÁS tocó el picker nuevo de Ajustes, no debe perder su
   // preferencia en silencio — se migra a "premium" una sola vez, mismo criterio que ya se usó
-  // con "nx_last_place" (v49.80).
-  if(tema==='clasico'&&nxPref('dark',false)===true){tema='premium';nxPrefSet('tema',tema);}
+  // con "nx_last_place" (v49.80). OJO: se comprueba que "tema" no exista en absoluto (nunca
+  // guardado), NO que valga "clasico" — si se comparara contra el valor, alguien que SÍ eligió
+  // "Clásico" a propósito en Ajustes (dejando el "dark" viejo sin tocar) se vería forzado de
+  // vuelta a oscuro cada vez que entra, revirtiendo su elección real sin que lo pidiera.
+  const nuncaTocado=!(_prefs&&Object.prototype.hasOwnProperty.call(_prefs,'tema'));
+  let tema=nxPref('tema','clasico');
+  if(nuncaTocado&&nxPref('dark',false)===true){tema='premium';nxPrefSet('tema',tema);}
   aplicarTema(tema);
 }
 
@@ -4068,7 +4074,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='53.9';
+const APP_VERSION='54.0';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5420,7 +5426,6 @@ async function cargarTodo(){
     // Y aplicar las que dependen de ellas (antes se leían del navegador en cuanto cargaba la
     // página; ahora solo se pueden aplicar una vez que hay sesión para consultar la base).
     try{cargarTemaGuardado();}catch(e){}
-    try{aplicarDarkGuardado();}catch(e){}
     try{const nl=nxPref('notif_leidas',[]);if(Array.isArray(nl))_notifLeidas=nl;}catch(e){}
     window.__nxHtmlRestauroVista = true; // avisar al parche que ya restauramos
     const esModuloDirecto = !!(sesion && sesion.org && (sesion.org.tipo==='tienda'||sesion.org.tipo==='rifa'||sesion.org.tipo==='consultorio'));

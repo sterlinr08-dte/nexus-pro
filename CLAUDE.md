@@ -9916,3 +9916,100 @@ recrearlo, y el enlace de recuperar contraseña con una acción honesta en vez d
   color en vez de los glifos reales (persona, candado, ojo, escudo, entrar) — es la misma limitación ya
   documentada varias veces en este archivo, no un bug del código. En `nexusprord.com` el CDN sí carga y
   los íconos se ven normales.
+
+### NEXUS PRO — LIBRERÍAS Y ESTÁNDARES OBLIGATORIOS, FASE 1: tema oscuro unificado + núcleo de Seguros (31-jul-2026, v54.0)
+El dueño mandó un pedido de "Design System único" para todo NEXUS PRO (íconos exclusivos Tabler, tipografía
+Plus Jakarta Sans, botones/inputs/modales/sombras/colores/animaciones estandarizados, y una lista de
+componentes globales reutilizables — con la regla "NO se permiten excepciones"). Se auditó contra el
+código real antes de tocar nada (mismo criterio de siempre — verificar, no asumir):
+- **Ya cumplido, sin tocar nada:** Tabler Icons ya es 100% exclusivo (1,504 usos, cero Font Awesome/
+  Bootstrap/Material/Remix/Heroicons/Ionicons). El sistema ya evita maquetar con `<table>` para layout.
+- **`npm install` no aplica a este proyecto:** NEXUS PRO no tiene `package.json` ni build ni bundler — es
+  `index.html`+`parches.js` editados a mano y subidos directo, decisión del dueño desde el principio. El
+  dueño pidió instalar `@tabler/icons-react` y luego `lucide-react` para "probar" — los dos corrieron
+  bien como comando de npm (142 MB y 182 MB de `node_modules` respectivamente) pero **quedan
+  completamente inertes**: `index.html` no tiene ningún `<script type="module">`/`import`, y
+  `@tabler/icons-react` además necesita React, que no existe en el proyecto. Confirmado con el dueño
+  (`AskUserQuestion`) que era para NEXUS PRO, no un proyecto aparte — se retiró el experimento
+  (`rm -rf node_modules package.json package-lock.json`, con `.gitignore` nuevo por si se repite) y se
+  redirigió el esfuerzo a lo que sí produce resultado real en la arquitectura actual: aplicar los VALORES
+  del pedido (colores/radios/sombras/tipografía/tema) directo sobre el `index.html` real.
+- **3 decisiones confirmadas con el dueño por `AskUserQuestion`** (conflictos reales con reglas ya
+  decretadas, no se resolvieron por cuenta propia — mismo criterio que el propio NPGS.md exige):
+  1. **Tema oscuro en TODO el sistema** — el dueño lo confirmó pese al costo real explicado (semanas de
+     trabajo por tandas, dado que la mayoría del sistema —`.nxSf` Seguros, `.nxPf` POS— es hoy 100% tema
+     claro).
+  2. **"Cada app su color" SE QUEDA** — el reglamento ya decretado (Financiamiento morado, POS azul,
+     Rifas índigo, Consultorio teal, AGUAPRO navy, Clientes SaaS verde, Panel del Dueño ámbar, NEXUS AI
+     CONTENT magenta) NO se reversa; el tema oscuro se aplica como FONDO parejo, pero cada módulo
+     conserva su acento — como Notion/Linear con temas, no como "todo azul".
+  3. **Segoe UI se queda como fuente base** — Plus Jakarta Sans sigue siendo la excepción ya decretada
+     en v48.1/v48.16 (Cuotas del POS, Financiamiento), no se extiende a más módulos.
+- **HALLAZGO CLAVE antes de construir nada nuevo (investigado, no asumido):** ya existía un tema
+  "PREMIUM DARK" A MEDIAS construido (Ajustes → Apariencia, `aplicarTema()`/picker de 4 opciones:
+  Clásico/Premium Dark/Liquid Glass/Automático) — con **2 problemas reales**:
+  1. **Dos mecanismos de oscuro sin coordinar.** El botón de la barra superior (`toggleDarkMode()`)
+     prendía su PROPIA clase `body.dark` (17 reglas CSS, básicas) con su propia preferencia
+     (`nxPref('dark',...)`); el picker de Ajustes (`aplicarTema('premium')`) prendía `body.tema-premium`
+     (~90 reglas, mucho más completo) con OTRA preferencia (`nxPref('tema',...)`) — un usuario podía
+     tener uno prendido y el otro apagado sin saberlo, violando la propia regla #13 del dueño ("no crear
+     estilos distintos por módulo"). Además había un tercer nombre huérfano, `body.tema-oscuro`
+     (usado en una sola regla de `.nxPf` en `parches.js`), que **ningún JS del sistema prendía jamás**
+     — dead code puro.
+  2. **`.nxSf` (el núcleo de Seguros — Clientes/Facturas/Ficha del cliente/Historial de pagos/Pólizas/
+     Agentes/Empresas/Comisiones/Contabilidad/Reportes/Ajustes/Usuarios, lo que el dueño usa TODOS LOS
+     DÍAS con datos reales) tenía **CERO cobertura oscura** en cualquiera de los dos mecanismos — hoy,
+     activar "Premium Dark" dejaba el negocio entero de seguros en azul claro sobre un shell oscuro,
+     roto.
+- **Arreglo — consolidación a UN SOLO mecanismo** (`index.html`): `toggleDarkMode()` reescrito como
+  envoltorio de una línea sobre `aplicarTema()` (alterna clásico↔premium, ya no toca ninguna clase ni
+  preferencia propia); `aplicarTema()` ganó la sincronización del ícono luna/sol del botón superior
+  (antes solo `toggleDarkMode` lo hacía — ahora es el ÚNICO lugar que decide, así el botón y el picker de
+  Ajustes SIEMPRE quedan de acuerdo entre sí, sin importar cuál se tocó). `aplicarDarkGuardado()` (la
+  función vieja) se **eliminó por completo** junto con su única llamada — dead code, regla #1 del
+  reglamento ("depurar"). **Rescate por única vez** en `cargarTemaGuardado()`: quien había prendido el
+  botón viejo (`dark:true`) pero **JAMÁS** tocó el picker nuevo migra solo a "premium" la primera vez que
+  entra tras esta versión, sin perder su preferencia en silencio (mismo criterio que el rescate de
+  `nx_last_place` en v49.80). Limpieza de CSS muerto: las 12 reglas `body.dark{...}` de `index.html` se
+  borraron (ya cubiertas, mejor, por `body.tema-premium`); las 5 reglas combinadas
+  `body.tema-premium X, body.dark X` de `parches.js` se dejaron solo con `body.tema-premium X`; se quitó
+  el `body.tema-oscuro` huérfano de la regla `--pf-*` del POS.
+- **BUG REAL encontrado y corregido durante la propia verificación, antes de publicar (no llegó a
+  producción):** el primer intento del rescate comparaba `nxPref('tema','clasico')==='clasico'` — pero
+  eso **no distingue** "nunca tocó el tema" (valor por defecto) de "eligió Clásico a propósito en
+  Ajustes" (mismo valor guardado explícito) — con esa comparación, alguien que hubiera usado el botón
+  viejo alguna vez y DESPUÉS elegido "Clásico" a propósito en el picker nuevo habría sido forzado de
+  vuelta a oscuro en cada entrada, revirtiendo su elección real sin que lo pidiera. Corregido comparando
+  la EXISTENCIA de la clave (`Object.prototype.hasOwnProperty.call(_prefs,'tema')`), no su valor — solo
+  se rescata a quien de verdad nunca guardó ninguna preferencia de tema. Detectado con una prueba
+  Playwright dedicada a ese caso exacto (ver abajo), no a ojo.
+- **Cobertura oscura completa de `.nxSf`:** bloque nuevo `body.tema-premium .nxSf{...}` que redefine los
+  17 tokens `--sf-*` (bg/card/line/primary/ok/warn/err/tx, cada uno con su variante clara/oscura) con los
+  MISMOS tonos ya usados y probados en `--pf-*` del POS (`#0B0F19`/`#121826`/`#232B3D`/`#3B82F6`...) para
+  que el sistema se sienta como una sola identidad, no dos temas oscuros distintos por módulo. Como las
+  73 reglas de `.nxSf` ya estaban construidas 100% sobre estos tokens (verificado con grep: solo 4 hex
+  sueltos fuera del sistema de variables en todo el namespace), una sola redefinición cubre las 12
+  pantallas del núcleo sin tocar su HTML/JS. Los 4 hex sueltos (el ícono morado del KPI y la referencia
+  del cliente) se oscurecieron a mano con el mismo criterio que `--pf-purple`/`--pf-purple-l` del POS
+  (`#1E1B33`/`#A78BFA`) — el texto blanco sobre íconos de color sólido no necesitaba cambiar.
+- **Verificado con Playwright, código y CSS reales extraídos del archivo** (no una reconstrucción — el
+  `<style>` completo de `index.html` cargado tal cual contra markup real de `.nxSf`/`.sf-kpi`/`.sf-tbl`/
+  `.tw`, y las 3 funciones `aplicarTema`/`toggleDarkMode`/`cargarTemaGuardado` extraídas por balance de
+  llaves): **8 comprobaciones** de color (fondo/tarjeta/texto base, KPI de estado, KPI morado, referencia
+  del cliente, badge, encabezado de tabla — los 8 cambian correctamente entre claro y Premium Dark, con
+  los valores hex exactos) y **10 comprobaciones** del mecanismo unificado (arranque limpio en clásico,
+  el botón de arriba prende/apaga premium de ida y vuelta con el ícono sincronizado, el picker de Ajustes
+  queda de acuerdo con el botón y viceversa, elegir Liquid Glass y luego tocar el botón lleva a premium
+  —no se queda pegado en glass—, el rescate de la preferencia vieja migra solo cuando de verdad nunca se
+  tocó el tema, y NO migra cuando hay una elección explícita de "Clásico" guardada). Más una prueba de
+  humo de la app completa real (`index.html`+`parches.js`, 0 excepciones sin capturar, las 3 funciones
+  existen, `aplicarDarkGuardado` confirmado inexistente). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO construido en esta fase** (demasiado grande para un solo lote sin verificar cada
+  pantalla — mismo criterio de "por fases, no todo de golpe" usado en el rediseño Enterprise azul de las
+  12 pantallas de Seguros y en el rediseño del POS): el resto del sistema (POS extendido más allá de lo
+  que `--pf-*` ya cubre, Financiamiento `.nxFP`, Rifas, AGUAPRO, Consultorio, Clientes SaaS, NEXUS AI
+  CONTENT, hub de Multiempresa) sigue en tema claro cuando se activa "Premium Dark" — se completa módulo
+  por módulo en fases siguientes, cada una verificada antes de publicar, igual que toda esta sesión.
+- **Publicado desde una rama propia** (`claude/design-system-tema-oscuro` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
