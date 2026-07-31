@@ -9487,3 +9487,62 @@ aplica **por tandas**, empezando por las pantallas más usadas, para que el due�
     ya eran `bc3` (rojo) o rojo inline; a `eliminarBanco` (`bghost` gris) se le agregó el rojo.
   - **Con esto el estándar +/− queda aplicado en TODO NEXUS PRO.** Excepciones documentadas siguen
     igual (cerrar-ventana ✕, chips/tokens, keypad, cancelar/anular, vaciado masivo, quitar imagen).
+
+### REGLAMENTO DE BOTONES DE ACCIÓN Y BARRA INFERIOR — decretado y auditado, Tanda 1 (27-jul-2026, v53.3)
+El dueño pidió un reglamento formal para el pie de acciones (Guardar/Cancelar/Anular/Guardar e
+imprimir) — mismo patrón que los demás reglamentos de negocio, ahora sobre el pie de las pantallas.
+Confirmó explícitamente el grupo primario: "guardar + imprimir, guardar, cancelar, Anular" — y señaló
+un hueco real: "el botón de guardar e imprimir juntos no están", es decir, esa pareja de opciones (una
+que solo guarda, otra que guarda Y abre el documento) solo existía de verdad en 2 de las 25 pantallas
+del sistema con este tipo de pie.
+- **Auditoría primero (agente de exploración sobre `parches.js`, 25 pantallas, evidencia línea a
+  línea):** solo Factura/Prefactura y Compras ya tenían "Guardar e imprimir" como opción separada de
+  "Guardar" — con orden distinto entre su pie en línea y su barra fija (hallazgo real, corregido en el
+  texto del reglamento). Reparaciones-Nueva y Notas de crédito imprimían SIEMPRE tras guardar, sin
+  opción de solo guardar. 5 pantallas no tenían Cancelar en el pie, dependiendo solo de la flecha
+  "Volver" del header. El texto del verbo "Guardar" variaba en 8+ formas (Guardar cotización, Emitir
+  devolución, Transferir y despachar, Crear apartado...) — se decidió que ESO está bien (más claro que
+  un "Guardar" pelado), lo que se corrige es que el ÍCONO refleje lo que el botón hace de verdad.
+- **REGLAMENTOS.md §11 escrito** con el estándar completo: grupo primario de 4 posiciones
+  ([Eliminar] → Cancelar → [Guardar e imprimir] → Guardar), cuándo aplica "Guardar e imprimir" (solo
+  pantallas que producen un documento para un tercero) y cuándo no (nunca inventarlo donde no hay nada
+  que imprimir), y cuándo construir la barra fija (`nxStickyBarSet`) vs. cuándo el modal con su propio
+  pie sticky ya resuelve el problema sin duplicar el motor.
+- **Tanda 1, 4 arreglos reales, todos verificados contra el código real:**
+  1. **Reparaciones — Nueva (`nxRepNueva`):** el botón forzado "Recibir e imprimir orden" se dividió en
+     3 — Cancelar · Guardar e imprimir · Guardar. `nxRepGuardar(imprimir)` ganó el parámetro; antes
+     siempre llamaba a `nxRepImprimir`, ahora solo si `imprimir` es `true`.
+  2. **Notas de crédito (`abrirDevolucion`):** imprimía SIEMPRE tras guardar. Ahora Cancelar · Guardar
+     e imprimir · Emitir devolución — el botón primario (sin argumento) ya NO abre el documento;
+     `nxDevGuardar(imprimir)` solo llama a `nxDevImprimirObj` si se pidió explícitamente. **Cambio de
+     comportamiento por defecto**, documentado en el changelog para que el dueño lo sepa antes de
+     usarlo.
+  3. **Cotizaciones (`abrirCotizacion`):** no tenía forma de imprimir desde el propio formulario
+     (`nxCotImprimir` solo se llamaba desde la lista de cotizaciones). Ahora tiene su "Guardar e
+     imprimir" — `nxCotGuardar(imprimir)` llama a `window.nxCotImprimir(cotId)` tras guardar, con el
+     id real recién creado o editado.
+  4. **Cancelar agregado a 4 formularios que no lo tenían:** Financiamiento — Préstamo (`abrirForm`,
+     la pantalla completa de v52.7 que deliberadamente quitó el cierre-al-tocar-fuera — la que más
+     necesitaba un Cancelar de verdad), Financiamiento — Cliente (`abrirClienteForm`, conserva el
+     Eliminar condicional a la izquierda cuando el cliente ya existe), Apartados — Nuevo y Apartados —
+     Abonar (`nxApaNuevo`/`nxApaAbonar`, volvieron a la rejilla de 2 columnas de siempre en vez de
+     forzar 1 columna).
+- **Verificado con Playwright, código real extraído de `parches.js` por contenido** (no una
+  reconstrucción): 25 comprobaciones por regex sobre las 7 funciones tocadas (footer con los botones
+  correctos, en el orden correcto, con el `onclick` literal correcto, y el guardia `if(imprimir)` en el
+  lugar correcto) + **14 comprobaciones de clic real en un navegador** (las 7 pantallas renderizadas con
+  el código REAL — no un stub del footer — con las funciones de guardado espiadas: tocar "Guardar e
+  imprimir" llama con `true`, tocar el botón primario llama sin argumento, tocar Cancelar cierra el
+  modal) — las 39 comprobaciones pasan, 0 errores de JS. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado en esta tanda** (no son botones rotos, son verbos de negocio correctos o
+  pantallas sin nada que imprimir): Transferencias ("Transferir y despachar" ya implica el conduce),
+  Producto/Artículo ("Imprimir etiqueta" vive aparte en el menú "..." del header a propósito — es una
+  etiqueta interna del inventario, no un documento para el cliente de la venta), y ninguna de las
+  pantallas sin documento (CRM, Entidades, Roles, Vendedores, NCF, Almacenes, Cuentas, Asientos,
+  Empleados, Nómina, Vehículos, Rifas, Proveedores) — forzarles "Guardar e imprimir" habría sido fingir
+  una función que no existe.
+- **Pendiente (fases siguientes, si el dueño las pide):** unificar formalmente los 8+ verbos de
+  "Guardar" en un inventario si algún día se decide que hace falta (hoy se deja variar a propósito) ·
+  extender `nxStickyBarSet` a Cotizaciones si algún día deja de ser modal · revisar si Producto/
+  Artículo debería tener "Guardar e imprimir etiqueta" en el pie en vez de en el menú del header.

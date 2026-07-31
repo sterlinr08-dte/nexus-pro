@@ -29,6 +29,7 @@
 | 8 | **Taller (reparaciones, garantías)** | ✅ decretado y auditado — v49.93 |
 | 9 | **Seguros (clientes, facturación, cobro, NCF)** | ✅ decretado y auditado — v49.95 |
 | 10 | **Vista rueda** (modo experimental, Facturas + Cobros, solo admin) | ✅ decretado y construido — v50.9, ampliado v51.0 |
+| 11 | **Botones de acción y barra inferior** (POS) | ✅ decretado y auditado — v53.3, Tanda 1 |
 
 > Los §1-8 son del **POS/Multiempresa**. El §9 es el **núcleo de Seguros** (`index.html`), el negocio
 > original — correduría de seguros de salud. Es el único módulo con DATOS REALES en producción (109
@@ -473,3 +474,107 @@ generalizó para toda la vista `#v-facturas` (Facturas y Cobros comparten pesta�
 y **Avisos** se dejaron fuera a propósito (bitácora de pagos y tablero de secciones — la rueda no encaja).
 Verificado con Playwright sobre `rCob` real: 3 tarjetas por estado, acciones reales al tocar, sin desborde
 en 390px, 0 errores; Facturas sin regresión.
+
+---
+
+## 11 · REGLAMENTO DE BOTONES DE ACCIÓN Y BARRA INFERIOR (POS)
+*(decretado por el dueño el 27-jul-2026 · auditadas 25 pantallas · aplicado Tanda 1 en v53.3)*
+
+**Es un reglamento de DISEÑO/UX, no de negocio** (como el §10) — no toca dinero, existencia ni
+comprobantes. Aplica al **pie de acciones** (footer) de cada formulario/modal del POS y a la
+**barra fija** (`nxStickyBarSet`) que algunos ya tienen en el celular.
+
+**Auditoría previa (26-jul-2026, agente de exploración sobre `parches.js`):** 25 pantallas con pie
+de Guardar/Cancelar/Anular. Encontró 5 sin Cancelar, 2 con "Guardar e imprimir" real (Factura,
+Compras) y 2 forzando el imprimir sin dar opción de solo guardar (Reparaciones, Notas de crédito).
+El reglamento sale de esos hallazgos, no al revés.
+
+### El grupo primario — 4 posiciones fijas, de izquierda a derecha
+
+1. **Eliminar/Anular** (`ab g4`, icono `ti-minus`, rojo, 44px de ancho fijo). **Solo si el registro
+   YA EXISTE** (nunca al crear uno nuevo) — y **siempre con `confirm()`/`swalConfirm()`** antes de
+   borrar. Es el mismo icono/color que ya decreta el reglamento del +/− en `CLAUDE.md`.
+2. **Cancelar** (`ab g3` o `btn bghost`, neutral). **Obligatorio en TODO pie de acciones**, incluso
+   si el modal también cierra al tocar el fondo o con la flecha "Volver" del header — en el celular
+   no siempre es obvio que se puede tocar afuera, y una pantalla completa (como Financiamiento) ni
+   siquiera tiene fondo que tocar.
+3. **Guardar e imprimir** (`ab g2` o `btn bghost`, azul/secundario, icono `ti-printer`). **Solo si el
+   registro produce un documento que se le entrega a alguien** (factura, prefactura, compra, orden de
+   servicio, cotización, nota de crédito, conduce). Guarda Y abre el documento de una — nunca
+   reemplaza al botón de "Guardar" a secas, coexisten como dos opciones.
+4. **Guardar** (`ab g1` o `btn bc1`, verde/azul primario, icono `ti-device-floppy` — o el verbo del
+   dominio si aplica, ver abajo). Guarda **sin imprimir**. Es el botón más ancho/prominente del pie.
+
+**Orden:** [Eliminar] → Cancelar → [Guardar e imprimir] → Guardar. Mismo orden que ya usan
+`facBarraSync`/`compBarraSync` (la barra fija) y el patrón ya establecido en CRM/Roles/Vendedores/
+NCF/Empleado (`auto 1fr 1fr` con Eliminar de icono a la izquierda).
+
+### El verbo puede variar, el icono no
+
+No se fuerza la palabra "Guardar" en todos lados — **"Guardar cliente"/"Guardar cotización"/"Guardar
+compra"** son MÁS claros que un "Guardar" pelado y se quedan así. Un dominio con un verbo propio de
+negocio (Transferir y despachar, Crear apartado, Registrar abono, Recibir equipo) también se queda —
+es mejor escritura, no una inconsistencia (mismo criterio de `frontend-design`: nombrar por lo que la
+persona reconoce, no por cómo vive el sistema). **Lo que SÍ se corrige:** el icono tiene que coincidir
+con lo que el botón hace de verdad — 💾 (`ti-device-floppy`) es "guardar sin más"; si el botón también
+IMPRIME, GUARDA-Y-EMITE una nota de crédito, o hace algo más que guardar, usa el icono de esa acción
+(`ti-printer`, `ti-check`, `ti-transfer`). Antes de esta tanda, Notas de crédito usaba el icono de
+guardar con el texto "Emitir devolución" — mezcla corregida (ver Tanda 1).
+
+### Cuándo aplica "Guardar e imprimir" (y cuándo NO)
+
+Solo en pantallas que producen un **documento para un tercero**: Factura/Prefactura, Compras,
+Reparaciones (orden de servicio), Notas de crédito, Cotizaciones. **No aplica** — y no hay que
+inventarlo — en pantallas sin nada que imprimir: CRM, Entidades/Clientes, Roles, Vendedores, NCF,
+Almacenes, Cuentas contables, Asientos, Empleados, Apartados, Transferencias (esta ya usa "Transferir
+y despachar", que ya implica el conduce), Vehículos, Rifas, Proveedores. Forzar el botón ahí sería
+fingir una función que no existe — el mismo criterio de "no inventar" que ya rige todo el sistema.
+
+### Barra fija (`nxStickyBarSet`) — cuándo construirla, cuándo no
+
+La barra fija (v52.7-v53.2) resuelve un problema concreto: un pie de acciones que queda enterrado al
+final de un formulario LARGO, dentro de una PANTALLA (no modal) del POS. **No hace falta en un modal
+con `max-height:92vh;overflow-y:auto` y su propio pie `sticky`/fijo dentro del modal** (Reparaciones,
+Cotizaciones, CRM, Entidades... todos así) — ese patrón ya resuelve "no enterrar el botón" sin
+duplicar el motor. Se construye SOLO para pantallas completas dentro de `#v-pos` (hoy: Factura/
+Prefactura, Compras — candidatas futuras si aparecen: Cotizaciones si algún día deja de ser modal).
+
+### Tanda 1 — lo que se encontró y se cerró (v53.3)
+
+Auditoría real (25 pantallas, evidencia línea-por-línea) — hallazgos y su arreglo:
+
+1. **Reparaciones — Nueva (`nxRepNueva`)** forzaba "Recibir e imprimir orden" como única opción, sin
+   Cancelar ni forma de guardar sin imprimir. Ahora: Cancelar · Guardar e imprimir · Guardar
+   (`nxRepGuardar(imprimir)`, antes siempre imprimía).
+2. **Notas de crédito (`abrirDevolucion`)** imprimía SIEMPRE tras guardar, sin opción de solo emitir.
+   Ahora: Cancelar · Guardar e imprimir · Emitir devolución (`nxDevGuardar(imprimir)` — **cambio de
+   comportamiento por defecto**: antes `nxDevGuardar()` siempre abría el documento, ahora solo lo
+   abre si se toca explícitamente "Guardar e imprimir"; el botón primario emite sin imprimir).
+3. **Cotizaciones (`abrirCotizacion`)** no tenía forma de imprimir desde el propio formulario
+   (`nxCotImprimir` solo se llamaba desde la lista). Ahora: Cancelar · Guardar e imprimir · Guardar
+   (`nxCotGuardar(imprimir)`).
+4. **Cancelar agregado a 4 pantallas que no lo tenían:** Financiamiento — Préstamo (`abrirForm`, la
+   pantalla completa que deliberadamente quitó el cierre-al-tocar-fuera en v52.7 — necesitaba un
+   Cancelar de verdad más que ninguna otra), Financiamiento — Cliente (`abrirClienteForm`, conserva
+   el Eliminar condicional a la izquierda), Apartados — Nuevo y Apartados — Abonar (`nxApaNuevo`/
+   `nxApaAbonar`, volvieron a la rejilla de 2 columnas de siempre).
+
+**Deliberadamente NO tocado en esta tanda** (no son botones — son verbos de negocio ya correctos, o
+pantallas sin nada que imprimir): Transferencias, Apartados (verbos "Crear"/"Registrar" se quedan),
+Producto/Artículo (su "Imprimir etiqueta" vive aparte en el menú "..." del header — a propósito, no
+es un documento que se entregue al cliente de la venta, es una etiqueta interna del inventario),
+ninguna de las pantallas sin documento (CRM, Entidades, Roles, Vendedores, NCF, Almacenes, Cuentas,
+Asientos, Empleados, Nómina, Vehículos, Rifas, Proveedores).
+
+**Pendiente (fases siguientes, no construidas):** unificar los 8+ verbos de "Guardar" en un
+inventario formal si el dueño lo pide (hoy se deja variar a propósito, ver arriba) · extender
+`nxStickyBarSet` a Cotizaciones si algún día deja de ser modal · revisar si Producto/Artículo debería
+tener "Guardar e imprimir etiqueta" en el pie en vez de en el menú "..." del header.
+
+**Verificado con Playwright, código real extraído de `parches.js` por contenido** (no una
+reconstrucción): las 4 funciones tocadas (`nxRepGuardar`, `nxDevGuardar`, `nxCotGuardar` con el
+parámetro `imprimir`, y los 4 footers con Cancelar agregado) probadas con datos simulados — cada
+botón dispara la llamada correcta con el argumento correcto, "Guardar"/"Emitir devolución" sin
+argumento NO abre ningún documento, "Guardar e imprimir" sí, y los 4 Cancelar cierran su modal sin
+tocar ningún dato. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+`new Function()`; `version.json` válido.

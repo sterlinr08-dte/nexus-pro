@@ -13351,7 +13351,7 @@
         <div class="fr"><textarea id="prcNotas" rows="2" class="no-upper" placeholder="Observaciones">${esc(c.notas || '')}</textarea></div>
         </div>
       </div>
-      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
+      <div style="padding-top:10px;display:flex;gap:8px">${cli ? `<button class="btn" type="button" style="flex:none;border-color:#fecaca;color:#dc2626" onclick="window.nxPrClienteBorrar('${cli.id}')" aria-label="Eliminar cliente"><i class="ti ti-minus"></i></button>` : ''}<button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrCliForm').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrClienteGuardar('${cli ? cli.id : ''}')"><i class="ti ti-device-floppy"></i> ${_prCliOnSaved ? 'Guardar y usar cliente' : 'Guardar cliente'}</button></div>
     </div>`;
     document.body.appendChild(ov);
     try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(ov); } catch (e) {}
@@ -13708,7 +13708,7 @@
           </div>
          </div>
         </div>
-        <div class="nxPrFormFoot"><div class="nxPrFormInner"><button class="btn bc1" type="button" style="width:100%" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div></div>
+        <div class="nxPrFormFoot"><div class="nxPrFormInner" style="display:flex;gap:8px"><button class="btn bghost" type="button" style="flex:0 0 auto" onclick="document.getElementById('nxPrModal').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:1" onclick="window.nxPrestamoGuardar('${pr ? pr.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button></div></div>
       </div>`;
     document.body.appendChild(ov);
     pintarModo();
@@ -21247,7 +21247,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <div class="fr"><label>Cómo se devuelve</label><select id="devMet"><option>Efectivo</option><option>Nota de crédito</option><option>Transferencia</option><option>Rebaja a cuenta (CxC)</option></select></div>
         </div>
         <div id="devTot" class="nxAsTot"></div>
-        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxDevForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxDevGuardar()"><i class="ti ti-device-floppy"></i> Emitir devolución</button></div>
+        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxDevForm').remove()">Cancelar</button><button class="btn bghost" type="button" onclick="window.nxDevGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button><button class="btn bc1" type="button" onclick="window.nxDevGuardar()"><i class="ti ti-check"></i> Emitir devolución</button></div>
       </div>`;
     document.body.appendChild(ov);
     pintarDevLineas();
@@ -21276,7 +21276,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
   }
   function pintarDevTot() { const el = document.getElementById('devTot'); if (!el) return; const t = devTotales(); el.innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span>Subtotal: <b>${fmt(t.subtotal)}</b></span><span>ITBIS: <b>${fmt(t.itbis)}</b></span><span style="color:#dc2626">A devolver: <b>${fmt(t.total)}</b></span></div>`; }
   function devProxNumero(lista) { let mx = 0; (lista || []).forEach(d => { const m = String(d.numero || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return 'NC-' + String(mx + 1).padStart(5, '0'); }
-  window.nxDevGuardar = async function () {
+  window.nxDevGuardar = async function (imprimir) {
     const lineas = _devEdit.lineas.filter(l => Number(l.cant || 0) > 0);
     if (!lineas.length) { toast('err', 'Indica al menos una cantidad a devolver'); return; }
     const t = devTotales();
@@ -21311,7 +21311,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       try { postAsientoDevolucion(dev, t, metodo, v); } catch (e) {}
       cerrarModal('nxDevForm');
       toast('ok', 'Devolución emitida', (ncfDev ? 'NCF ' + ncfDev + ' · ' : '') + fmt(t.total));
-      nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v }));
+      if (imprimir) nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v }));
     } catch (e) { toast('err', 'No se pudo emitir', String(e && e.message || e)); }
   };
   async function postAsientoDevolucion(dev, t, metodo, venta) {
@@ -23502,9 +23502,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
             <div class="fld"><label>Notas (opcional)</label><div class="inw"><input id="cotNotas" class="no-upper" value="${esc(_cotEdit.notas || '')}" placeholder="Condiciones, entrega..." onchange="window.nxCotField('notas',this.value)"></div></div>
           </div>
         </div>
-        <div class="actions" style="margin-top:0">
+        <div class="actions" style="margin-top:0;grid-template-columns:1fr 1fr 1fr">
           <button class="ab g3" type="button" onclick="document.getElementById('nxCotForm').remove()">Cancelar</button>
-          <button class="ab g1" type="button" onclick="window.nxCotGuardar()"><i class="ti ti-device-floppy"></i> Guardar cotización</button>
+          <button class="ab g2" type="button" onclick="window.nxCotGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>
+          <button class="ab g1" type="button" onclick="window.nxCotGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>
         </div>
       </div>`;
     document.body.appendChild(ov);
@@ -23539,7 +23540,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
     const tt = cotTotales(_cotEdit.lineas); const t = document.getElementById('cotTot');
     if (t) t.innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><span>Subtotal: <b>${fmt(tt.subtotal)}</b></span><span>ITBIS: <b>${fmt(tt.itbis)}</b></span><span style="color:#0f172a">TOTAL: <b>${fmt(tt.total)}</b></span></div>`;
   }
-  window.nxCotGuardar = async function () {
+  window.nxCotGuardar = async function (imprimir) {
     if (!_cotEdit.lineas.length) { toast('err', 'Agrega al menos un producto'); return; }
     const tt = cotTotales(_cotEdit.lineas);
     const numero = _cotEdit.numero || (await nextSeq('cotizacion')) || cotProxNumero();
@@ -23563,6 +23564,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       _cotEditSnapshot = null;
       cerrarModal('nxCotForm'); toast('ok', 'Cotización guardada', numero);
       await cargarCotizaciones(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+      if (imprimir) window.nxCotImprimir(cotId);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   window.nxCotConvertir = async function (id) {
@@ -24740,11 +24742,15 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <div class="nxRepEstim" id="nxRepEstimBox" style="margin-top:10px"></div>
         </div>
       </div>
-      <div style="padding:12px 14px;border-top:1px solid var(--pf-line)"><button class="ab g1" style="width:100%" type="button" onclick="window.nxRepGuardar()"><i class="ti ti-check"></i> Recibir e imprimir orden</button></div>
+      <div class="actions" style="margin-top:0;grid-template-columns:1fr 1fr 1fr">
+        <button class="ab g3" type="button" onclick="document.getElementById('nxRepM').remove()">Cancelar</button>
+        <button class="ab g2" type="button" onclick="window.nxRepGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>
+        <button class="ab g1" type="button" onclick="window.nxRepGuardar()"><i class="ti ti-check"></i> Guardar</button>
+      </div>
     </div>`;
     document.body.appendChild(ov); scanMoney(ov); window.nxRepEstim();
   };
-  window.nxRepGuardar = async function () {
+  window.nxRepGuardar = async function (imprimir) {
     const cli = val('repCli').trim(), eq = val('repEq').trim(), falla = val('repFalla').trim();
     if (!cli || !eq || !falla) { toast('err', 'Faltan datos', 'Cliente, equipo y falla son obligatorios'); return; }
     const abono = moneyVal('repAbo');
@@ -24765,7 +24771,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       if (abono > 0) { try { await postAsientoServicio('Avance reparación ' + numero + ' · ' + d.cliente_nombre, abono, 'Efectivo', rep.id || null); } catch (e) {} }
       try { window.logAudit && window.logAudit('REP_RECIBIDA', numero + ' · ' + eq + ' · ' + d.cliente_nombre, 'Reparaciones'); } catch (e) {}
       cerrarModal('nxRepM'); toast('ok', 'Equipo recibido', numero);
-      window.nxRepImprimir(rep.id || null, rep);
+      if (imprimir) window.nxRepImprimir(rep.id || null, rep);
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
@@ -26158,7 +26164,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           <div class="fld"><label>Días de plazo</label><div class="inw"><input id="apDias" inputmode="numeric" value="30"></div></div>
         </div>
       </div>
-      <div class="actions" style="margin-top:0;grid-template-columns:1fr"><button class="ab g1" type="button" onclick="window.nxApaGuardarNuevo()"><i class="ti ti-check"></i> Crear apartado</button></div>
+      <div class="actions" style="margin-top:0"><button class="ab g3" type="button" onclick="document.getElementById('nxApaM').remove()">Cancelar</button><button class="ab g1" type="button" onclick="window.nxApaGuardarNuevo()"><i class="ti ti-check"></i> Crear apartado</button></div>
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
   };
@@ -26206,7 +26212,7 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
           </div>
         </div>
       </div>
-      <div class="actions" style="margin-top:0;grid-template-columns:1fr"><button class="ab g1" type="button" onclick="window.nxApaAbonarGo('${id}')"><i class="ti ti-check"></i> Registrar abono</button></div>
+      <div class="actions" style="margin-top:0"><button class="ab g3" type="button" onclick="document.getElementById('nxApaM').remove()">Cancelar</button><button class="ab g1" type="button" onclick="window.nxApaAbonarGo('${id}')"><i class="ti ti-check"></i> Registrar abono</button></div>
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
   };
