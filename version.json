@@ -1,7 +1,12 @@
 {
-  "version": "53.0",
+  "version": "53.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.1",
+      "fecha": "2026-07-30",
+      "texto": "NUEVO (POS — vuelve la barra de 'Cobrar' abajo, esta vez sin tapar tu menú): en Facturar/Prefactura del celular, la barra fija con COBRAR queda pegada abajo mientras deslizas — como antes — pero ahora tu botón de menú (el redondito) NUNCA se esconde: se LEVANTA solo, arriba de la barra, para que los dos convivan sin taparse. Funciona igual aunque hayas movido el botón de menú a otro lugar de la pantalla."
+    },
     {
       "v": "53.0",
       "fecha": "2026-07-30",
