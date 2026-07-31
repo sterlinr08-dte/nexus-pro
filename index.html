@@ -3662,6 +3662,10 @@ function aplicarTema(tema){
   if(temaReal==='premium')body.classList.add('tema-premium');
   else if(temaReal==='glass')body.classList.add('tema-glass');
   // clasico = sin clase (diseño por defecto)
+  // Sincroniza el icono del botón de la barra superior (moon/sun) — único lugar donde se
+  // decide, así el botón y el picker de Ajustes SIEMPRE están de acuerdo entre sí.
+  const iconTop=document.getElementById('iconDarkMode');
+  if(iconTop)iconTop.className='ti '+(temaReal==='premium'?'ti-sun':'ti-moon');
   // Guardar preferencia
   nxPrefSet('tema',tema);   // preferencia -> base, no navegador
   // Actualizar selección visual en el panel
@@ -3749,7 +3753,13 @@ function cargarTemaGuardado(){
   // El tema vive en la base (ver PREFERENCIAS DEL USUARIO), así que solo se puede aplicar
   // DESPUÉS de entrar. La pantalla de login siempre se ve con el tema base: es el costo de
   // no guardar nada en el navegador, y se decidió a propósito.
-  aplicarTema(nxPref('tema','clasico'));
+  let tema=nxPref('tema','clasico');
+  // Rescate por única vez: quien había prendido el botón viejo de "Modo oscuro" (preferencia
+  // suelta "dark", ya retirada) pero nunca tocó el picker nuevo de Ajustes, no debe perder su
+  // preferencia en silencio — se migra a "premium" una sola vez, mismo criterio que ya se usó
+  // con "nx_last_place" (v49.80).
+  if(tema==='clasico'&&nxPref('dark',false)===true){tema='premium';nxPrefSet('tema',tema);}
+  aplicarTema(tema);
 }
 
 function rApariencia(){
@@ -4483,16 +4493,13 @@ document.addEventListener('click',e=>{
 });
 
 // ── DARK MODE ──────────────────────────────────────────────────────
+// Botón de la barra superior: atajo de 1 toque del MISMO sistema de temas de Ajustes
+// (aplicarTema/tema-premium). Antes tenía su propio mecanismo paralelo (clase "dark",
+// preferencia "dark" aparte) que no se enteraba de lo que hacía el picker de Ajustes
+// (ni viceversa) — un usuario podía terminar con los dos prendidos a la vez, pisándose
+// entre sí. Se retiró: ahora hay UN SOLO interruptor, UNA sola preferencia ("tema").
 function toggleDarkMode(){
-  document.body.classList.toggle('dark');
-  const dark=document.body.classList.contains('dark');
-  nxPrefSet('dark',dark);
-  const icon=document.getElementById('iconDarkMode');
-  if(icon)icon.className='ti '+(dark?'ti-sun':'ti-moon');
-}
-// Aplicar al entrar (la preferencia vive en la base, no se puede leer antes del login)
-function aplicarDarkGuardado(){
-  if(nxPref('dark',false)===true){document.body.classList.add('dark');const i=document.getElementById('iconDarkMode');if(i)i.className='ti ti-sun';}
+  aplicarTema(nxPref('tema','clasico')==='premium' ? 'clasico' : 'premium');
 }
 
 // ── BÚSQUEDA GLOBAL ────────────────────────────────────────────────
