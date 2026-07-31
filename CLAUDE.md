@@ -9660,3 +9660,65 @@ pueda retomar después, no poner suponer"* (que sea real, no un botón decorativ
 - **Pendiente si el dueño lo pide:** los otros 2 huecos reales de la misma auditoría — Exportar
   universal en pantallas de reporte, y botones reales de WhatsApp/Correo en el flujo post-cobro
   (hoy solo hay auto-impresión + los botones de "Ver factura" del ticket).
+
+### Login — quitada la pantalla vieja de "Conectar base de datos" con `admin123` de ejemplo (31-jul-2026, v53.6)
+El dueño conectó **firecrawl** (MCP, ver arriba) y usó `mcp__firecrawl__firecrawl_scrape` contra
+`nexusprord.com` para probar que ya se podía navegar la web de verdad. El resultado del scrape trajo
+algo inesperado: una pantalla "Configuración inicial — Conectar base de datos Supabase" con un
+recuadro de SQL de ejemplo que incluía `insert into usuarios_sistema(...) values('Administrador',
+'Admin General','admin','admin123','admin')` **en texto plano**, marcada "NEXUS PRO v6" (versión
+vieja — la app real va por v53.5 en ese momento).
+- **Investigado ANTES de tocar nada, con el código real del repo (no solo el HTML capturado por el
+  scrape):** se confirmó que `SUPABASE_URL_FIXED`/`SUPABASE_KEY_FIXED` (dos constantes fijas, no
+  vacías, línea ~2472 de `index.html`) son la fuente REAL de credenciales de la app en producción —
+  se pusieron ahí hace mucho para que la app "funcione en cualquier dispositivo" sin que nadie tenga
+  que teclear una URL/clave de Supabase. Esto hace que `if(url && key)` en el `DOMContentLoaded`
+  **siempre** sea verdadero, así que la pantalla de "Conectar base de datos" (`#setupScreen`) y su
+  enlace de entrada (`.lsetup`, "⚙️ Primera vez — conectar base de datos") **nunca se llegaban a
+  mostrar en producción** — quedaron ahí desde una versión mucho más vieja del sistema (antes de que
+  las credenciales quedaran fijas), antes de esta sesión de trabajo. **Conclusión: NO era un agujero
+  de seguridad vivo contra el backend real** — el `admin123` de ese SQL es solo texto de ejemplo para
+  alguien que arrancara un proyecto Supabase distinto desde cero, nunca se ejecuta contra la base
+  real del dueño (`tnwsgcxurfyuszxsewsn`). **Pero SÍ era código muerto expuesto en el código fuente
+  de la página** (visible con "Ver código fuente" o cualquier scraper, como pasó aquí) — exactamente
+  el tipo de cosa que la propia regla #1 de este archivo pide quitar ("Depurar — quitar dead code").
+  Se le explicó esto al dueño con la evidencia real antes de proponer nada; confirmó "Si" para
+  eliminarlo.
+- **Quitado por completo, sin dejar ninguna referencia colgada:** el `<div id="setupScreen">`
+  completo (instrucciones, caja de SQL, campos de URL/clave, botón "Conectar y entrar al sistema"),
+  el enlace `.lsetup` del login, todo el bloque CSS `/* ── SETUP ── */` (`.sbox`/`.slogo`/`.smk`/
+  `.sh`/`.sp`/`.sfr`/`.serr`/`.sbtn`/`.ssteps`/`.sstep`/`.ssn`/`.sql-box`/`.sql-btn` — verificado con
+  grep, uno por uno, que ninguna de esas clases se usaba en ningún otro lugar del archivo antes de
+  borrarlas), la constante `const SQL_SCRIPT = ...` (el script con el `admin123`), y las 3 funciones
+  que solo existían para esa pantalla: `mostrarSetup()`, `copiarSQL()` y `conectar()`. El enlace
+  muerto dentro del mensaje de error de `doLogin()` ("Haz clic aquí para configurar →", que llamaba a
+  `mostrarSetup()`) se cambió a un texto plano ("Contacta al administrador") — ese mensaje de error en
+  sí tampoco se llega a mostrar nunca en producción (mismo motivo: `url`/`key` siempre están puestas),
+  pero se corrigió igual por si algún día cambia esa condición.
+- **El paso más delicado — 6 llamadas sueltas a `document.getElementById('setupScreen').style.
+  display=...` repartidas por el archivo** (dentro de `iniciarApp()`, del flujo SSO, de la
+  restauración de sesión, y dos dentro del `DOMContentLoaded` — una de ellas en la rama
+  `if(url && key){...}` que corre en **cada carga de página en producción**, sin ningún `if(el)` de
+  por medio). Quitar el HTML sin quitar también estas 6 líneas habría hecho que la app **crasheara
+  en el arranque para todos los usuarios** (`TypeError: Cannot read properties of null`) — exactamente
+  el tipo de bug que este mismo archivo ya documentó una vez (v49.58, "BUG MÍO en producción"). Se
+  quitaron las 6, sin tocar nada más de esas funciones. La lógica de "recordar el último usuario"
+  (`nx_user_persist`) que vivía después de la rama muerta de `setupScreen` se dejó **intacta en su
+  lugar** (sigue siendo una rama inalcanzable, como ya lo era antes de este cambio) — es un bug
+  aparte y menor (esa lógica nunca corre porque la rama de arriba siempre retorna primero), y no se
+  mezcló en este cambio sin preguntarle antes al dueño.
+- **Verificado en 3 capas, no solo `node --check`:** (1) los 3 bloques `<script>` de `index.html`
+  pasan `new Function()` (1,423 / 486,869 / 681 caracteres); (2) `node --check parches.js` limpio
+  (archivo no tocado en este cambio); (3) **Playwright cargando el `index.html` real** (con
+  `parches.js` real al lado) en un navegador, sirviendo los archivos por HTTP local — confirmado:
+  la pantalla de login carga (`display:flex`), `#setupScreen`/`.lsetup` ya no existen en el DOM,
+  **cero excepciones sin capturar** (`pageerror`), y tocar "Entrar al sistema" con los campos vacíos
+  sigue disparando `doLogin()` correctamente ("Ingresa usuario y contraseña."). Los 12 errores de
+  consola que salieron en la prueba son ruido de red del propio entorno de esta sesión (bloqueado sin
+  salida real a internet — `net::ERR_TUNNEL_CONNECTION_FAILED` contra CDNs de fuentes/íconos y contra
+  el API real de Supabase), no errores de JavaScript — se filtraron aparte y se confirmó que **cero**
+  eran errores reales de código.
+- Verificado también que `admin123`/`SQL_SCRIPT`/"NEXUS PRO v6" (el texto exacto del hallazgo
+  original) ya no aparece en ningún lugar del archivo — las únicas coincidencias de "NEXUS PRO v6"
+  que quedan son 7 usos completamente distintos y legítimos (el ticker del Dashboard, el pie de
+  documentos impresos, encabezados de exportación a Excel), sin relación con la pantalla eliminada.

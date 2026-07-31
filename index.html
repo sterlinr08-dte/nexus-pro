@@ -93,8 +93,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .lerr{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:11px;color:#dc2626;margin-bottom:12px;display:none;text-align:center}
 .lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#1e3a6e,#2563eb);border:none;border-radius:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:box-shadow .2s;margin-top:6px;box-shadow:0 6px 16px rgba(30,58,110,.35)}
 .lbtn:hover{box-shadow:0 8px 20px rgba(30,58,110,.45)}.lbtn:active{box-shadow:inset 0 2px 6px rgba(0,0,0,.22);filter:brightness(.96)}.lbtn:disabled{opacity:.5;cursor:not-allowed}
-.lsetup{text-align:center;margin-top:1rem;font-size:11px;color:#475569}
-.lsetup a{color:#2563eb;cursor:pointer;text-decoration:underline}
 
 /* ── SPLASH (pantalla de bienvenida animada) ── */
 #nxSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
@@ -130,31 +128,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 #nxLoader.nxl-out{opacity:0;pointer-events:none;transition:opacity .35s ease}
 .nxl-logo{width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,#1e3a6e,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;animation:nxlLogoOrbit 1.6s linear infinite}
 @keyframes nxlLogoOrbit{0%{box-shadow:0 13px 32px rgba(15,23,42,.6)}25%{box-shadow:15px 0 32px rgba(96,165,250,.7)}50%{box-shadow:0 -13px 32px rgba(15,23,42,.6)}75%{box-shadow:-15px 0 32px rgba(96,165,250,.7)}100%{box-shadow:0 13px 32px rgba(15,23,42,.6)}}
-
-/* ── SETUP ── */
-#setupScreen{display:none;align-items:center;justify-content:center;min-height:100vh;padding:1rem;background:linear-gradient(135deg,#1e3a6e 0%,#2d5a9e 50%,#1a2d5a 100%)}
-.sbox{background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.slogo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
-.smk{width:34px;height:34px;border-radius:var(--r10);background:linear-gradient(135deg,var(--c2),var(--c1));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
-.sbrand{font-size:16px;font-weight:700;color:var(--c1)}
-.ssub{font-size:9px;color:var(--tx3);font-family:var(--mono)}
-.sh{font-size:14px;font-weight:600;margin-bottom:.4rem}
-.sp{font-size:11px;color:var(--tx2);line-height:1.6;margin-bottom:1.25rem}
-.sfr{margin-bottom:11px}
-.sfr label{font-size:9px;font-weight:700;color:var(--tx3);letter-spacing:.8px;text-transform:uppercase;font-family:var(--mono);display:block;margin-bottom:3px}
-.sfr input{width:100%;padding:9px 11px;border:1px solid rgba(0,229,199,.15);border-radius:var(--r6);background:var(--bg3);color:var(--tx1);font-size:12px;outline:none;transition:border .15s}
-.sfr input:focus{border-color:var(--c1)}
-.serr{background:rgba(244,63,94,.08);border:1px solid var(--c3);border-radius:var(--r6);padding:10px;font-size:11px;color:#fb7185;margin-bottom:11px;display:none;line-height:1.6}
-.sbtn{width:100%;padding:12px;background:linear-gradient(135deg,var(--c2),var(--c1));border:none;border-radius:var(--r10);color:#060810;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
-.sbtn:hover{opacity:.88}.sbtn:disabled{opacity:.5;cursor:not-allowed}
-.ssteps{background:var(--bg3);border-radius:var(--r10);padding:12px 14px;margin-bottom:1.25rem;border:1px solid rgba(0,229,199,.07)}
-.sstep{display:flex;gap:9px;margin-bottom:8px;font-size:11px;color:var(--tx2);line-height:1.5}
-.sstep:last-child{margin-bottom:0}
-.ssn{width:20px;height:20px;border-radius:50%;background:rgba(0,229,199,.1);color:var(--c1);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
-.sstep a{color:var(--c1)}
-.sql-box{background:var(--bg0);border:1px solid rgba(0,229,199,.15);border-radius:var(--r6);padding:10px 12px;font-family:var(--mono);font-size:9px;color:var(--c1);max-height:120px;overflow-y:auto;margin-bottom:8px;white-space:pre-wrap;word-break:break-all;line-height:1.7}
-.sql-btn{background:rgba(0,229,199,.1);border:1px solid var(--c1);color:var(--c1);border-radius:var(--r6);padding:5px 12px;font-size:10px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;margin-bottom:1rem;transition:background .15s}
-.sql-btn:hover{background:rgba(0,229,199,.2)}
 
 /* ── APP ── */
 #app{display:none;height:100vh;height:100dvh;flex-direction:column}
@@ -1107,7 +1080,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   <div class="lerr" id="loginErr" aria-live="polite"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
   <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#475569;text-decoration:none" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">🔒 Probar inicio de sesión seguro (beta)</a></div>
-  <div class="lsetup"><a onclick="mostrarSetup()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">⚙️ Primera vez — conectar base de datos</a></div>
 </div>
 </div>
 
@@ -1121,27 +1093,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
     <div id="pwChangeErr" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px"></div>
     <button id="pwChangeBtn" onclick="nxGuardarNuevaPwd()" style="width:100%;padding:9px;background:linear-gradient(135deg,#1e3a6e,#8b5cf6);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Guardar y entrar</button>
   </div>
-</div>
-
-<!-- ═══════════════ SETUP ═══════════════ -->
-<div id="setupScreen">
-<div class="sbox">
-  <div class="slogo"><div class="smk"><i class="ti ti-shield-check"></i></div><div><div class="sbrand">NEXUS PRO v6</div><div class="ssub">Configuración inicial</div></div></div>
-  <div class="sh">Conectar base de datos Supabase</div>
-  <div class="sp">Para guardar datos en la nube y acceder desde cualquier PC, conecta tu cuenta de Supabase.</div>
-  <div class="ssteps">
-    <div class="sstep"><div class="ssn">1</div><div>Ve a <a href="https://supabase.com" target="_blank">supabase.com</a> → tu proyecto → Settings → API</div></div>
-    <div class="sstep"><div class="ssn">2</div><div>Copia la <strong>Project URL</strong> y la <strong>anon public key</strong></div></div>
-    <div class="sstep"><div class="ssn">3</div><div>Ejecuta el SQL de abajo en SQL Editor → Run, luego conecta</div></div>
-  </div>
-  <div class="sql-box" id="sqlBox"></div>
-  <button class="sql-btn" onclick="copiarSQL()"><i class="ti ti-copy"></i> Copiar SQL</button>
-  <div class="sfr"><label>URL del proyecto Supabase</label><input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co" autocomplete="off"/></div>
-  <div class="sfr"><label>Clave anon public (API Key)</label><input type="text" id="sbKey" placeholder="eyJhbGci..." autocomplete="off"/></div>
-  <div class="serr" id="setupErr"></div>
-  <button class="sbtn" id="btnConn" onclick="conectar()"><i class="ti ti-plug"></i> Conectar y entrar al sistema</button>
-  <div style="text-align:center;margin-top:10px"><a onclick="document.getElementById('setupScreen').style.display='none';document.getElementById('loginScreen').style.display='flex'" style="color:var(--tx3);font-size:11px;cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">← Volver al login</a></div>
-</div>
 </div>
 
 <!-- ═══════════════ APP ═══════════════ -->
@@ -2469,55 +2420,6 @@ function mostrarInstruccionesIOS(){
   alert(msg);
 }
 
-// ── SQL para copiar ──────────────────────────────────────────────────────────
-const SQL_SCRIPT = `-- NEXUS PRO v6 · Script SQL completo
--- Ejecuta en Supabase → SQL Editor → Run
-
-create table if not exists empresas(id uuid default gen_random_uuid() primary key,nom text not null,rnc text,sector text,tel text,email text,contacto text,created_at timestamptz default now());
-create table if not exists agentes(id uuid default gen_random_uuid() primary key,nom text not null,cargo text,tel text,email text,licencia text,lic_vence date,activo boolean default true,created_at timestamptz default now());
-create table if not exists clientes(id uuid default gen_random_uuid() primary key,nom text not null,cedula text,wa text,tel text,email text,plan text not null,empresa_id uuid,agente_id uuid,dir text,deps jsonb default '[]',deuda_total numeric default 0,pagado numeric default 0,activo boolean default true,motivo_inhab text,nota_inhab text,numero_poliza text,fecha_inicio date,fecha_fin date,tipo_ncf text default 'B02',ars text,created_at timestamptz default now());
-create table if not exists facturas(id uuid default gen_random_uuid() primary key,cliente_id uuid,cliente_nom text,plan text,empresa_id uuid,periodo text,mes integer,anio integer,prima_base numeric default 0,prima_deps numeric default 0,deuda_ant numeric default 0,total numeric default 0,estado text default 'Pendiente',wa_sent boolean default false,ncf text,tipo_ncf text,fecha_emision date default current_date,created_at timestamptz default now());
-create table if not exists abonos(id uuid default gen_random_uuid() primary key,cliente_id uuid,monto numeric not null,metodo text,referencia text,fecha date default current_date,created_at timestamptz default now());
-create table if not exists asientos(id uuid default gen_random_uuid() primary key,fecha date not null,referencia text,descripcion text not null,cuenta_dr_cod text,cuenta_dr_nom text,monto_dr numeric default 0,cuenta_cr_cod text,cuenta_cr_nom text,monto_cr numeric default 0,created_at timestamptz default now());
-create table if not exists usuarios_sistema(id uuid default gen_random_uuid() primary key,nom text not null,cargo text,login text unique not null,pwd text,rol text default 'agente',activo boolean default true,created_at timestamptz default now());
-create table if not exists secuencias_ncf(tipo text primary key,ultimo_numero integer default 0);
-create table if not exists comisiones(id uuid default gen_random_uuid() primary key,agente_id uuid,agente_nom text,mes integer,anio integer,periodo text,total_primas numeric default 0,porcentaje numeric default 0,monto_bruto numeric default 0,itbis numeric default 0,monto_neto numeric default 0,estado text default 'Pendiente',created_at timestamptz default now());
-create table if not exists configuracion(clave text primary key,valor text,actualizado timestamptz default now());
-
-alter table empresas enable row level security;
-alter table agentes enable row level security;
-alter table clientes enable row level security;
-alter table facturas enable row level security;
-alter table abonos enable row level security;
-alter table asientos enable row level security;
-alter table usuarios_sistema enable row level security;
-alter table secuencias_ncf enable row level security;
-alter table comisiones enable row level security;
-alter table configuracion enable row level security;
-
-create policy "all_emp" on empresas for all using(true) with check(true);
-create policy "all_agt" on agentes for all using(true) with check(true);
-create policy "all_cli" on clientes for all using(true) with check(true);
-create policy "all_fac" on facturas for all using(true) with check(true);
-create policy "all_abo" on abonos for all using(true) with check(true);
-create policy "all_asi" on asientos for all using(true) with check(true);
-create policy "all_usu" on usuarios_sistema for all using(true) with check(true);
-create policy "all_ncf" on secuencias_ncf for all using(true) with check(true);
-create policy "all_com" on comisiones for all using(true) with check(true);
-create policy "all_cfg" on configuracion for all using(true) with check(true);
-
-insert into usuarios_sistema(nom,cargo,login,pwd,rol) values('Administrador','Admin General','admin','admin123','admin') on conflict do nothing;
-insert into secuencias_ncf values('B01',0),('B02',0),('B14',0) on conflict do nothing;
-insert into configuracion values
-  ('empresa_nom','Mi Correduría de Seguros',now()),
-  ('empresa_rnc','000-00000-0',now()),('empresa_tel','809-000-0000',now()),
-  ('empresa_dir','Santo Domingo, RD',now()),('empresa_email','info@correduría.com',now()),
-  ('comision_basico','5',now()),('comision_superior','7',now()),('comision_esencial','10',now()),
-  ('seq_poliza','0',now()),('prima_basico','3500',now()),('prima_superior','5800',now()),
-  ('prima_esencial','8200',now()),('dep_basico','2100',now()),('dep_superior','3480',now()),
-  ('dep_esencial','4920',now()),('alerta_dias','30',now())
-on conflict(clave) do nothing;`;
-
 // ── Credenciales hardcodeadas (funcionan en cualquier dispositivo) ──────────
 const SUPABASE_URL_FIXED = 'https://tnwsgcxurfyuszxsewsn.supabase.co';
 const SUPABASE_KEY_FIXED = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRud3NnY3h1cmZ5dXN6eHNld3NuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDM3NzIsImV4cCI6MjA5NjUxOTc3Mn0.G7hRg4Cdki0jilRMg2hUZ6dVJsqvXWXOPFQOdGVbR1k';
@@ -3435,13 +3337,7 @@ function toast(tp,ttl,msg=''){
   setTimeout(()=>el.remove(),4500);
 }
 
-// ── SQL Box ──────────────────────────────────────────────────────────────────
-document.getElementById('sqlBox').textContent=SQL_SCRIPT;
-function copiarSQL(){navigator.clipboard.writeText(SQL_SCRIPT).then(()=>toast('ok','SQL copiado','Pégalo en Supabase → SQL Editor → Run')).catch(()=>toast('warn','Copia el SQL manualmente'));}
-
 // ── LOGIN ────────────────────────────────────────────────────────────────────
-function mostrarSetup(){document.getElementById('loginScreen').style.display='none';document.getElementById('setupScreen').style.display='flex';}
-
 // ── FASE 2 (opt-in): login por Supabase Auth ─────────────────────────────────
 // Se activa/desactiva con ?authmode=auth | ?authmode=legacy. Por defecto: legacy.
 (function(){try{const p=new URLSearchParams(location.search).get('authmode');if(p==='legacy'){localStorage.setItem('nx_auth_mode','legacy');}else if(p==='auth'){localStorage.removeItem('nx_auth_mode');}}catch(e){}})();
@@ -3640,7 +3536,7 @@ async function doLogin(){
   // Verificar si hay conexión configurada
   if(!API.url||!API.key){
     const url=localStorage.getItem('nx_url'),key=localStorage.getItem('nx_key');
-    if(!url||!key){err.innerHTML='No hay base de datos configurada.<br><a onclick="mostrarSetup()" style="color:var(--c1);cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">Haz clic aquí para configurar →</a>';err.style.display='block';return;}
+    if(!url||!key){err.textContent='No hay base de datos configurada. Contacta al administrador.';err.style.display='block';return;}
     API.url=url;API.key=key;
   }
   if(nxAuthMode())return doLoginAuth(user,pwd,err,btn);
@@ -3691,34 +3587,6 @@ function logout(forzado){
     localStorage.removeItem('nx_user_persist');
     try{nxClearAuth();}catch(e){}
     location.reload();
-  }
-}
-
-// ── SETUP / CONEXIÓN ─────────────────────────────────────────────────────────
-async function conectar(){
-  const rawUrl=document.getElementById('sbUrl').value.trim();
-  const key=document.getElementById('sbKey').value.trim();
-  const err=document.getElementById('setupErr');
-  const btn=document.getElementById('btnConn');
-  err.style.display='none';
-  if(!rawUrl||!key){err.textContent='Completa los dos campos.';err.style.display='block';return;}
-  const url=rawUrl.replace(/\/(rest|auth|storage|realtime)\/v\d.*$/,'').replace(/\/+$/,'').trim();
-  if(!url.startsWith('https://')){err.textContent='La URL debe empezar con https://';err.style.display='block';return;}
-  btn.disabled=true;btn.innerHTML='<div class="spin" style="border-color:rgba(0,0,0,.2);border-top-color:#060810"></div> Conectando...';
-  API.url=url;API.key=key;
-  try{
-    await API.get('clientes','select=id&limit=1');
-    localStorage.setItem('nx_url',url);localStorage.setItem('nx_key',key);
-    toast('ok','Base de datos conectada','Ahora inicia sesión');
-    document.getElementById('setupScreen').style.display='none';
-    document.getElementById('loginScreen').style.display='flex';
-  }catch(e){
-    let msg=e.message||'';
-    if(msg.includes('fetch')||msg.includes('Failed'))err.innerHTML='❌ No se puede conectar.<br>• Verifica que el proyecto Supabase esté activo<br>• Ejecuta el SQL primero';
-    else if(msg.includes('relation')&&msg.includes('does not exist'))err.innerHTML='⚠️ Conectado pero falta ejecutar el SQL.<br>Copia el SQL de arriba y ejecútalo en Supabase → SQL Editor.';
-    else err.innerHTML='❌ '+msg;
-    err.style.display='block';API.url='';API.key='';
-    btn.disabled=false;btn.innerHTML='<i class="ti ti-plug"></i> Conectar y entrar al sistema';
   }
 }
 
@@ -4142,7 +4010,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='53.5';
+const APP_VERSION='53.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5352,7 +5220,6 @@ async function iniciarApp(){
   cargarTemaGuardado(); // Aplicar tema visual guardado
   await nxCargarOrg(); // multi-empresa: organización del usuario (login o sesión restaurada)
   document.getElementById('loginScreen').style.display='none';
-  document.getElementById('setupScreen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('sbAv').textContent=inits(sesion.nom);
   document.getElementById('sbNom').textContent=sesion.nom.split(' ')[0];
@@ -9887,7 +9754,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   // ── Pase SSO entrante (#access_token=...): entrar ya logueado, sin pantalla de login ──
   if((window.location.hash||'').indexOf('access_token=')>=0 && url && key){
-    try{ const l=document.getElementById('loginScreen'); if(l)l.style.display='none'; const st=document.getElementById('setupScreen'); if(st)st.style.display='none'; }catch(e){}
+    try{ const l=document.getElementById('loginScreen'); if(l)l.style.display='none'; }catch(e){}
     nxRecibirPaseSSO();
     return;
   }
@@ -9904,7 +9771,6 @@ window.addEventListener('DOMContentLoaded',()=>{
       sesion = JSON.parse(s);
       // Restaurar sesión directamente sin mostrar el login (evita el parpadeo)
       document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('setupScreen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       document.getElementById('sbAv').textContent = inits(sesion.nom);
       document.getElementById('sbNom').textContent = sesion.nom.split(' ')[0];
@@ -9924,15 +9790,12 @@ window.addEventListener('DOMContentLoaded',()=>{
   // Si hay credenciales (fijas o guardadas), mostrar solo login
   if(url && key){
     document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('setupScreen').style.display = 'none';
-    document.querySelector('.lsetup').style.display = 'none';
     try{nxUpdateAuthToggle();}catch(e){}
     return;
   }
 
-  // Sin credenciales: mostrar setup
+  // Sin credenciales: mostrar login
   document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('setupScreen').style.display = 'flex';
 
   // Pre-llenar usuario recordado
   const savedUser=localStorage.getItem('nx_user_persist');
