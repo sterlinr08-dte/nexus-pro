@@ -9845,3 +9845,74 @@ panel de "Seguridad de nivel empresarial" al pie.
 - **Deliberadamente NO tocado:** el ícono de la PWA/favicon, la pantalla de splash (`#nxSplash`) ni
   el loader — mismos motivos que en v53.7, no se pidió y cambiar el ícono ya instalado en el celular
   de cada usuario no es un ajuste trivial de reversar.
+
+### Login — mockup pixel-a-pixel del dueño, estilo Enterprise (31-jul-2026, v53.9)
+El dueño mandó un mockup mucho más detallado que el anterior — marcado "PROMPT PARA CLAUDE" con
+medidas exactas (colores hex, alturas en px, radios, tipografía) e instrucción explícita:
+*"No quiero una reinterpretación... quiero reproducir prácticamente la misma composición del mockup
+aprobado."* Se construyó tal cual, con 2 desviaciones deliberadas y documentadas (logo real en vez de
+recrearlo, y el enlace de recuperar contraseña con una acción honesta en vez de un flujo inexistente).
+- **Logo real DENTRO de la tarjeta, no recreado a mano.** El mockup pedía "NEXUS" blanco + "PRO" en
+  caja azul + tagline con separadores — exactamente lo que YA tiene el logo real que el dueño mandó y
+  aprobó en v53.7 (`logo-nexus-pro.png`). En vez de reinterpretar esa composición en HTML/CSS (arriesgando
+  una tipografía/proporción distinta a la marca real), se **recortó el fondo oscuro de la imagen
+  original** dejando el emblema con transparencia real: se midió el histograma de brillo de la imagen
+  (`PIL`+`numpy`, sin herramientas de pago) para separar las letras/caja azul (brillo alto) del fondo casi
+  negro (brillo bajo), con una rampa de transición suave en los bordes para que no quedara dentado. El
+  recorte se acotó al ancho x=[165,925] para excluir a propósito el brillo cálido que la imagen original
+  tenía en la esquina derecha (decorativo del banner ancho, no del emblema) — confirmado con un escaneo
+  columna por columna de píxeles brillantes antes de cortar, no a ojo. Resultado: `logo-nexus-pro-mark.png`
+  (756×224, fondo transparente), colocado a `width:70%;max-width:300px` como pedía el mockup. El banner
+  ancho original (`logo-nexus-pro.png`) se queda en el repo sin usar, por si sirve en otra pantalla más
+  adelante (splash, documentos impresos) — no se borró.
+- **El anillo del escudo central usa "no fondos sólidos" tal como pedía el mockup** — círculo con solo
+  borde azul + `box-shadow` de glow, sin relleno. El círculo MÁS CHICO del panel "Seguridad de nivel
+  empresarial" SÍ lleva relleno (`radial-gradient` tenue) — confirmado con zoom del propio mockup que son
+  2 tratamientos distintos a propósito, no un descuido.
+- **Checkbox "Recordarme" — de `accent-color` a un checkbox 100% custom**, tal como pedía "No usar estilo
+  HTML por defecto": `appearance:none` + `border-radius:6px` + fondo/borde propios + un check en `::after`
+  dibujado con 2 bordes rotados 45° (sin SVG ni ícono de fuente, CSS puro). Mismo `<label for=>` de
+  siempre, accesible.
+- **"¿Olvidaste tu contraseña?" — esta vez SÍ se agregó** (el dueño lo pidió explícito, dos veces, con
+  color/hover exactos) pero **sin fingir un flujo que no existe**: se verificó con grep en `index.html` y
+  `parches.js` que no hay NINGÚN sistema de recuperación de contraseña por correo (los logins usan un
+  correo sintético `<usuario>@<org>.local`, no una bandeja de correo real que se le pueda mandar un enlace
+  de reseteo). Función nueva `nxForgotPassword()` (junto a `nxTogglePwd`): al tocar el enlace, muestra un
+  `toast('info',...)` — "Contacta al administrador del sistema para restablecer tu contraseña" — honesto
+  sobre lo que el sistema puede hacer hoy, en vez de un enlace muerto o una pantalla de "revisa tu correo"
+  falsa. Si el dueño más adelante quiere un flujo de verdad, es un proyecto aparte (necesitaría decidir
+  cómo resetear una cuenta con correo sintético — probablemente un flujo asistido por el admin, no
+  autoservicio por correo).
+- **BUG REAL encontrado y arreglado, no solo estético — un tema global viejo pisaba TODOS los campos de
+  la app.** Al verificar con Playwright que el fondo oscuro de los campos se veía bien, salió que los
+  inputs/checkbox/botón del login se rendereaban con un fondo BLANCO translúcido en vez del oscuro que
+  el CSS pedía. Investigado con un volcado de TODAS las reglas CSS que hacían match contra el elemento
+  (no a ojo): `parches.js` inyecta, sin condición de tema ni de pantalla, un bloque
+  `input,select,textarea{background:rgba(255,255,255,.78)!important;...}` +
+  `.btn,button,.bsm,.bxl{border-radius:14px!important;border:1px solid rgba(139,92,246,.2)!important;...}`
+  — un tema "semi-glass" antiguo (`nx-semi-glass-global-css`) que corre en **cualquier pantalla del
+  sistema**, no solo donde se pensó. Como usa `!important` sobre selectores de TAG (`input`, `button`), le
+  ganaba a las reglas del login nuevo que no tenían esa fuerza. **Esto no es un bug nuevo de esta sesión —
+  ya afectaba a TODOS los campos e botones de toda la app desde antes**, solo que en pantallas con fondo
+  claro pasaba desapercibido (un input "blanco translúcido" sobre un fondo ya blanco no se nota); en el
+  login oscuro nuevo se hizo evidente. Arreglado con el mismo patrón de "blindaje" que ya usan el sidebar
+  del POS y el de Financiamiento contra exactamente este tipo de conflicto: reglas `#loginScreen .lfr
+  input{...!important}`/`#loginScreen .lchk input[type=checkbox]{...!important}`/`#loginScreen
+  .lbtn{...!important}` con más especificidad (id+clase) que gana al `!important` de tag-solo. **Alcance
+  del arreglo: solo el login** — el resto de la app sigue con el mismo tema "semi-glass" corriendo de
+  fondo; si el dueño quiere, cerrar esto de raíz en TODA la app sería una auditoría aparte (encontrar por
+  qué ese bloque no está condicionado a ningún tema y decidir si debe estarlo).
+- **Verificado con Playwright, código real, en 3 anchos (390/768/1280px):** los 4 elementos afectados por
+  el bug del tema global (usuario, contraseña, checkbox, botón) se confirmaron con `getComputedStyle`
+  ANTES (fondo/borde/sombra del tema viejo, medido) y DESPUÉS del blindaje (los valores propios del
+  diseño nuevo, medido) — no se dio por bueno a ojo. El checkbox se marca de verdad con un clic real y
+  queda azul (`rgb(37,99,235)`, confirmado por color exacto); tocar "¿Olvidaste tu contraseña?" dispara el
+  toast correcto; el logo con transparencia carga y mide 70% del ancho de la tarjeta; sin desborde
+  horizontal en los 3 anchos; 0 errores de JavaScript reales. `node --check parches.js` limpio (archivo no
+  tocado en el login, aunque el bug del tema vive ahí); los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
+- **Nota honesta sobre los íconos:** en este entorno de prueba (sandbox sin salida a internet) el webfont
+  de Tabler Icons no carga (bloqueado el CDN), así que las capturas de esta sesión muestran círculos de
+  color en vez de los glifos reales (persona, candado, ojo, escudo, entrar) — es la misma limitación ya
+  documentada varias veces en este archivo, no un bug del código. En `nexusprord.com` el CDN sí carga y
+  los íconos se ven normales.
