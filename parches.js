@@ -16812,6 +16812,7 @@
   let _apartados = [], _apaPagos = []; // apartados (layaway)
   let _comboTmp = [], _comboSelId = ''; // combo en edición del producto
   let _prefs = []; // prefacturas abiertas
+  let _ventasSusp = []; // ventas suspendidas (carrito pausado, se resuelve solo o se retoma — NO es Prefactura)
   let _ultCompraCache = {}; // cliente_id -> texto ya resuelto de "última compra" (panel de cliente en Vender/Factura)
   let _prodsRecientesIds = null; // ids de los últimos productos VENDIDOS de verdad (null = todavía no se ha cargado, perezoso)
   let _cartFacSaved = [], _cartPre = []; // carritos separados: Factura vs Prefactura
@@ -16844,7 +16845,7 @@
     // TODAS las cargas EN PARALELO (antes eran 16 viajes secuenciales: el POS tardaba
     // varios segundos en abrir en el teléfono; ahora tarda lo que tarde UNA consulta).
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
-    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, finpag, apa, apap, alm, stkAlm, prefs, notasCred, prefAll, niveles, prodNiveles] = await Promise.all([
+    const [cats, prods, cli, prov, cj, cf, ncf, vend, sec, acc, reps, fins, fcuo, finpag, apa, apap, alm, stkAlm, prefs, notasCred, prefAll, niveles, prodNiveles, ventaSusp] = await Promise.all([
       g('pos_categorias', 'select=*&order=orden.asc,nombre.asc'),
       g('pos_productos', 'select=*&activo=eq.true&order=nombre.asc'),
       g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
@@ -16867,7 +16868,8 @@
       g('pos_devoluciones', 'select=*&order=created_at.desc&limit=500'),
       g('pos_prefacturas', 'select=*&order=created_at.desc&limit=500'),
       g('pos_niveles_precio', 'select=*&activo=eq.true&order=orden.asc,nombre.asc'),
-      g('pos_producto_niveles', 'select=*&limit=20000')
+      g('pos_producto_niveles', 'select=*&limit=20000'),
+      g('pos_ventas_suspendidas', 'select=*&order=created_at.desc&limit=100')
     ]);
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
@@ -16880,6 +16882,7 @@
     _prefs = prefs || [];
     _notasCred = notasCred || [];
     _prefHist = prefAll || [];
+    _ventasSusp = ventaSusp || [];
     if (_almacenes.length) {
       try { const _ses = curSesPOS(); if (_ses && _ses.almacen_id && _almacenes.find(a => String(a.id) === String(_ses.almacen_id))) _almacenSel = _ses.almacen_id; } catch (e) {}
       if (!_almacenSel || !_almacenes.find(a => String(a.id) === String(_almacenSel))) { const pr = almPrincipal(); _almacenSel = pr ? pr.id : _almacenes[0].id; }
@@ -17666,7 +17669,7 @@
         <button type="button" class="citdel" aria-label="Quitar ${esc(it.nombre)} del carrito" onclick="window.nxPosDel(${i})"><i class="ti ti-minus"></i></button>
       </div>`).join('') : '<div class="cartempty"><i class="ti ti-shopping-cart"></i>Carrito vacío.<br>Toca un producto para agregarlo.</div>';
     wrap.innerHTML = `<div class="cartcard">
-        <div class="carthd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span>${_cart.length ? `<button type="button" class="cartclear" onclick="window.nxPosVaciar()" title="Vaciar" aria-label="Vaciar carrito"><i class="ti ti-trash"></i></button>` : ''}</div>
+        <div class="carthd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span><div style="display:flex;align-items:center"><button type="button" class="cartsuspbadge" onclick="window.nxVentaSuspLista()" title="Ventas suspendidas" aria-label="Ver ventas suspendidas"><i class="ti ti-player-pause"></i>${_ventasSusp.length ? `<b>${_ventasSusp.length}</b>` : ''}</button>${_cart.length ? `<button type="button" class="cartclear" onclick="window.nxPosVaciar()" title="Vaciar" aria-label="Vaciar carrito"><i class="ti ti-trash"></i></button>` : ''}</div></div>
         <div class="cartlist">${filas}</div>
         <div class="carttotals">
           <div class="cartrow"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
@@ -17676,6 +17679,7 @@
         <div class="cartsave">
           <button type="button" class="cartsavebtn" ${_cart.length ? '' : 'disabled'} onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Prefactura</button>
           <button type="button" class="cartsavebtn" ${_cart.length ? '' : 'disabled'} onclick="window.nxCotGuardarDesdeCart()"><i class="ti ti-clipboard-text"></i> Cotización</button>
+          <button type="button" class="cartsavebtn" ${_cart.length ? '' : 'disabled'} onclick="window.nxVentaSuspender()"><i class="ti ti-player-pause"></i> Suspender</button>
         </div>
         <button class="ab g1 cartcobrar" type="button" ${_cart.length ? '' : 'disabled style="opacity:.5"'} onclick="window.nxPosCobrar()"><i class="ti ti-cash"></i> Cobrar ${fmt(t.total)}</button>
       </div>`;
@@ -19986,7 +19990,10 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
 .nxPf .cartpaytot{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;color:var(--pf-txt);padding:8px 0 2px;border-top:1px solid var(--pf-line);margin-top:4px}
 .nxPf .cartpaytot b{font-size:17px;color:var(--pf-blue-d)}
 .nxPf .cartcobrar{width:100%;margin-top:10px;height:46px;font-size:13px}
-.nxPf .cartsave{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.nxPf .cartsave{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.nxPf .cartsuspbadge{position:relative;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);border-radius:10px;height:30px;width:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;margin-right:6px}
+.nxPf .cartsuspbadge i{font-size:14px}
+.nxPf .cartsuspbadge b{position:absolute;top:-6px;right:-6px;background:var(--pf-orange,#f59e0b);color:#fff;border-radius:20px;font-size:9.5px;font-weight:800;min-width:15px;height:15px;line-height:15px;text-align:center;padding:0 3px}
 .nxPf .cartsavebtn{height:40px;border-radius:11px;border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;min-width:0}
 .nxPf .cartsavebtn:disabled{opacity:.45;cursor:default}
 .nxPf .cartsavebtn i{font-size:13px;flex:none}
@@ -25717,6 +25724,77 @@ body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#25
       // Refresca según dónde se anuló: en el Historial repinta la vista; si no, reabre el modal
       if (_posTab === 'prefhist') { const v = document.getElementById('v-pos'); if (v) renderPOS(v); } else { window.nxPrefLista(); }
       toast('ok', 'Prefactura anulada');
+    } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
+  };
+  // ══════════════ SUSPENDER VENTA (guardar el carrito y retomarlo después) ══════════════
+  // Distinto de Prefactura a propósito: Prefactura es un DOCUMENTO para el cliente (numeración
+  // propia, imprimible, entra al Motor de Documentos). Suspender venta es puramente operativo —
+  // el cajero se ve interrumpido (llega otro cliente, hay que atender el taller) y necesita
+  // "guardar y seguir" sin perder lo armado. Sin impresión, sin Motor de Documentos: al retomarla
+  // el registro se BORRA (no queda un historial permanente de carritos pausados, a diferencia de
+  // Prefactura que sí se conserva). Vive en pos_ventas_suspendidas (tabla propia, mismo patrón
+  // org+trigger+RLS que pos_prefacturas).
+  window.nxVentaSuspender = async function () {
+    if (!_cart.length) { toast('warn', 'El cuadro está vacío'); return; }
+    const t = totales();
+    let numero = null; try { numero = await nextSeq('venta_suspendida'); } catch (e) {}
+    if (!numero) numero = 'SV-' + String(_ventasSusp.length + 1).padStart(5, '0');
+    const cli = clienteSel();
+    try {
+      const r = await getAPI().post('pos_ventas_suspendidas', { numero: numero, cliente_id: cli ? cli.id : null, cliente_nombre: cli ? cli.nombre : null, items: _cart, total: t.total, notas: _facNota || null, created_by_name: ((curSesPOS() || {}).nom) || null });
+      if (r && r[0]) _ventasSusp.unshift(r[0]);
+      try { window.logAudit && window.logAudit('VENTA_SUSPENDIDA', numero + ' · ' + fmt(t.total) + (cli ? ' · ' + cli.nombre : ''), 'POS'); } catch (e) {}
+      _cart = []; _facNota = '';
+      toast('ok', 'Venta suspendida', numero + ' — la puedes retomar cuando quieras');
+      const el = document.getElementById('v-pos'); if (el) renderPOS(el);
+    } catch (e) { toast('err', 'No se pudo suspender', String(e && e.message || e)); }
+  };
+  window.nxVentaSuspLista = function () {
+    nxPfEnsureCSS();
+    cerrarModal('nxSuspM');
+    const ov = document.createElement('div'); ov.id = 'nxSuspM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPf" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column;padding:0;border-radius:18px;overflow:hidden">
+      <div class="head">
+        <button class="nxBack" type="button" onclick="document.getElementById('nxSuspM').remove()" title="Cerrar" aria-label="Cerrar"><i class="ti ti-arrow-left"></i></button>
+        <h3><i class="ti ti-player-pause"></i> Ventas suspendidas</h3>
+      </div>
+      <div id="nxSuspRows" style="overflow-y:auto;flex:1;padding:14px"></div>
+    </div>`;
+    document.body.appendChild(ov);
+    window.nxVentaSuspRows();
+  };
+  window.nxVentaSuspRows = function () {
+    const el = document.getElementById('nxSuspRows'); if (!el) return;
+    el.innerHTML = _ventasSusp.length ? _ventasSusp.map(s => `<div class="oppcard" style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:var(--pf-blue-d)">${esc(s.numero || '')}</div>
+        <div style="font-size:10.5px;color:var(--pf-txt3)">${esc(s.cliente_nombre || 'Consumidor final')} · ${(Array.isArray(s.items) ? s.items.length : 0)} art. · ${String(s.created_at || '').slice(0, 16).replace('T', ' ')}${s.created_by_name ? ' · ' + esc(s.created_by_name) : ''}</div></div>
+        <b style="font-size:12.5px">${fmt(s.total)}</b>
+        <button class="ab g1" style="height:32px;width:auto;padding:0 10px" type="button" onclick="window.nxVentaRetomar('${s.id}')"><i class="ti ti-player-play"></i> Retomar</button>
+        <button class="ab g3" style="height:32px;width:32px;padding:0" type="button" onclick="window.nxVentaSuspBorrar('${s.id}')" aria-label="Descartar venta suspendida"><i class="ti ti-minus" style="color:var(--pf-red)"></i></button>
+      </div>`).join('') : '<div class="emptyrow">Sin ventas suspendidas</div>';
+  };
+  window.nxVentaRetomar = async function (id) {
+    const s = _ventasSusp.find(x => String(x.id) === String(id)); if (!s) return;
+    if (_cart.length && !confirm('El cuadro tiene artículos. ¿Reemplazarlos con la venta suspendida ' + (s.numero || '') + '?')) return;
+    _cart = (Array.isArray(s.items) ? s.items : []).map(x => Object.assign({}, x));
+    _factCli = s.cliente_id || '';
+    _facNota = s.notas || '';
+    try { await getAPI().del('pos_ventas_suspendidas', 'id=eq.' + id); } catch (e) {}
+    _ventasSusp = _ventasSusp.filter(x => String(x.id) !== String(id));
+    cerrarModal('nxSuspM');
+    try { window.logAudit && window.logAudit('VENTA_RETOMADA', (s.numero || '') + ' · ' + fmt(s.total), 'POS'); } catch (e) {}
+    window.nxPosTab('vender');
+    toast('ok', 'Venta retomada', (s.numero || '') + ' — sigue donde la dejaste');
+  };
+  window.nxVentaSuspBorrar = async function (id) {
+    const s = _ventasSusp.find(x => String(x.id) === String(id)); if (!s) return;
+    if (!confirm('¿Descartar la venta suspendida ' + (s.numero || '') + '? Se perderá el carrito guardado.')) return;
+    try {
+      await getAPI().del('pos_ventas_suspendidas', 'id=eq.' + id);
+      _ventasSusp = _ventasSusp.filter(x => String(x.id) !== String(id));
+      window.nxVentaSuspRows();
+      toast('ok', 'Venta suspendida descartada');
     } catch (e) { toast('err', 'Error', String(e && e.message || e)); }
   };
 
