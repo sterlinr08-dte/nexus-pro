@@ -1,7 +1,17 @@
 {
-  "version": "53.6",
+  "version": "53.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.8",
+      "fecha": "2026-07-31",
+      "texto": "NUEVO (Login — rediseño de cristal esmerilado, mockup aprobado por el dueño): el dueño mandó un mockup detallado de un login con tarjeta oscura semitransparente sobre un fondo con desenfoque — el mismo look 'genérico de plantilla de IA' que se había quitado del sistema en v48.14. Se le mostró esa historia y confirmó explícitamente que quería volver a ese look ahora, así que se implementó tal cual: la tarjeta pasó de blanca a oscura semitransparente con desenfoque real (backdrop-filter), sobre el mismo fondo azul degradado de siempre + 2 manchas de luz difuminadas (azul y ámbar) hechas 100% en CSS — el mockup mostraba una foto real de oficina de fondo, pero no hay forma de generar/traer una foto real desde esta sesión (sin salida a internet ni crédito disponible en las herramientas de imagen), así que se sustituyó por el efecto de luces ambientales; se puede reemplazar por una foto real más adelante si el dueño la manda. Se agregó una insignia circular de escudo, el encabezado cambió a 'Bienvenido de nuevo · Inicia sesión para continuar', los campos de Usuario/Contraseña ganaron un ícono a la izquierda, y se sumó un panel de 'Seguridad de nivel empresarial' al pie. **La casilla 'Recordarme en este dispositivo' ahora es real** — la lógica de guardar la sesión ya existía en el código desde antes (guardaba en el navegador si se marcaba), pero le faltaba la casilla en la pantalla; de paso se encontró y arregló un error real: el código que rellena el usuario recordado al volver a abrir la app estaba en una parte del código a la que nunca se llega (dead code) — se movió a donde sí se ejecuta siempre. **Deliberadamente NO se agregó** el enlace '¿Olvidaste tu contraseña?' que traía el mockup — no existe ningún flujo de recuperación de contraseña construido en el sistema, y poner un enlace que no lleva a ningún lado habría sido fingir una función que no existe. Verificado con Playwright en 390px y 1280px: la tarjeta oscura y el desenfoque se confirmaron por el color/estilo real (no a ojo), la casilla se marca y desmarca de verdad, sin desbordes, 0 errores de JavaScript, y el botón de entrar sigue funcionando igual."
+    },
+    {
+      "v": "53.7",
+      "fecha": "2026-07-31",
+      "texto": "NUEVO (logo real en la pantalla de Login): se agregó el logo 'NEXUS PRO — Multiempresa · POS · ERP' que mandó el dueño, arriba de la tarjeta de inicio de sesión — se ve sobre el mismo fondo azul oscuro degradado de siempre (los colores del logo calzan de forma natural con ese fondo). Se limpió la mancha azul con el ícono chico y el 'NEXUS PRO' en texto que estaban dentro de la tarjeta blanca — quedaba repetido con el logo grande nuevo — y se dejó solo la línea 'Plataforma de gestión · República Dominicana'. Es solo visual, no cambia el inicio de sesión."
+    },
     {
       "v": "53.6",
       "fecha": "2026-07-31",

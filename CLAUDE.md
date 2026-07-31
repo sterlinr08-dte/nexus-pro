@@ -9722,3 +9722,126 @@ vieja — la app real va por v53.5 en ese momento).
   original) ya no aparece en ningún lugar del archivo — las únicas coincidencias de "NEXUS PRO v6"
   que quedan son 7 usos completamente distintos y legítimos (el ticker del Dashboard, el pie de
   documentos impresos, encabezados de exportación a Excel), sin relación con la pantalla eliminada.
+
+### Login — logo real del dueño arriba de la tarjeta (31-jul-2026, v53.7)
+El dueño mandó un logo nuevo ("NEXUS PRO — Multiempresa · POS · ERP", banda oscura con degradado
+azul→negro, "NEXUS" en blanco + "PRO" en un recuadro azul + una barra diagonal, brillo cálido en la
+esquina) y pidió aplicarle mejoras y agregarlo al sistema — hasta ahora el único "logo" que existía
+en toda la app era una insignia CSS (cuadrado azul redondeado con un ícono `ti-shield-check` de
+Tabler), sin ningún archivo de imagen real de por medio.
+- **Mejora aplicada a la imagen (gratis, sin gastar créditos de generación):** el archivo que mandó
+  era un JPEG de 1125×268 — se revisó de cerca (zoom 3x sobre el texto) y no tenía artefactos de
+  compresión visibles, así que **no hacía falta un upscale pagado** — se optimizó de forma
+  conservadora: convertido a **PNG sin pérdida** (para no volver a comprimir con JPEG, el tipo de
+  archivo más propenso a manchar los bordes del texto blanco sobre fondo oscuro), con un realce
+  sutil de nitidez (`UnsharpMask`) + contraste (+4%). Guardado como `logo-nexus-pro.png` en la raíz
+  del repo (mismo patrón que `icon-*.png`, servido tal cual por el Worker de Cloudflare).
+- **Dónde se agregó — la pantalla de Login, arriba de la tarjeta blanca, NO adentro:** el fondo de
+  `#loginScreen` ya es un degradado azul marino oscuro (`radial-gradient(...#1e3a6e→#132a52→#0a1730)`)
+  — casi idéntico en tono al fondo del logo — así que el logo se puso como banner (`<img class="lhero">`)
+  **encima** de `.lbox` (la tarjeta blanca del formulario), envueltos los dos en un `.lwrap` nuevo
+  (`display:flex;flex-direction:column;align-items:center` — necesario porque `#loginScreen` es
+  `display:flex` sin `flex-direction:column`, así que sin el wrapper el logo y la tarjeta habrían
+  quedado uno al lado del otro en vez de apilados). Meterlo DENTRO de la tarjeta blanca se descartó
+  a propósito — el logo tiene fondo oscuro de punta a punta (sin transparencia), así que sobre blanco
+  se habría visto como un rectángulo oscuro pegado, no como parte del diseño.
+- **BUG VISUAL real encontrado con la primera captura (no a ojo — con Playwright), corregido antes de
+  publicar:** al agregar el logo grande arriba, la insignia azul + el texto "NEXUS PRO" que ya vivían
+  DENTRO de la tarjeta blanca (`.llogo`/`.lmk`/`.lbrand`) quedaban **repetidos** — la marca salía dos
+  veces, una encima de la otra, en dos estilos distintos. Se quitó esa insignia+texto por completo
+  (código muerto verificado por grep antes de borrar — no lo usaba nada más en el archivo) y se dejó
+  solo la línea descriptiva que sí aportaba algo nuevo, `.lver` ("Plataforma de gestión · República
+  Dominicana"), ahora como subtítulo independiente arriba de "Iniciar sesión". Se limpió de paso la
+  regla CSS `.lbrand{font-size:20px}` del `@media(max-width:768px)` — quedó huérfana al quitar el
+  `<div class="lbrand">` del HTML.
+- **Deliberadamente NO tocado en esta pasada:** el ícono de la PWA (`icon-*.png`, generado por
+  `gen_icon.py` con un escudo hexagonal azul cristalino) y el favicon — es un mark cuadrado con un
+  recorte distinto al del banner (que trae texto/tagline horizontal, ilegible reducido a 16-32px), y
+  cambiar el icono real afectaría el icono ya instalado en el celular de cada usuario — no se pidió
+  explícito, así que se dejó para una ronda aparte si el dueño quiere ese paso también. Tampoco se
+  tocó la pantalla de bienvenida/splash (`#nxSplash`) ni el loader (`#nxLoader`) — misma insignia CSS
+  de siempre, sin cambios, para no arriesgar esa pantalla también sin que se pidiera.
+- **Verificado con Playwright, código real, en los dos anchos típicos** (390px móvil / 1280px
+  escritorio): el logo carga (`naturalWidth/naturalHeight` reales, `complete:true`), sin desborde
+  horizontal en ninguno de los dos, la tarjeta quedó decluttered (sin la marca duplicada), y el flujo
+  de login sigue funcionando igual (`doLogin()` con campos vacíos sigue mostrando su aviso de
+  siempre) — 0 errores de JavaScript reales (los de red son el mismo ruido de este entorno sin salida
+  a internet, documentado varias veces en este archivo). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Login — vuelta al cristal esmerilado, DECISIÓN REVERTIDA A PROPÓSITO por el dueño (31-jul-2026, v53.8)
+El dueño mandó un mockup detallado ("PROMPT PARA CLAUDE") de un login completo: tarjeta oscura
+semitransparente con desenfoque de verdad (`backdrop-filter`) sobre una foto de oficina difuminada,
+insignia circular de escudo, "Bienvenido de nuevo" + "Inicia sesión para continuar", campos con
+ícono a la izquierda, casilla "Recordarme" + enlace "¿Olvidaste tu contraseña?", botón grande, y un
+panel de "Seguridad de nivel empresarial" al pie.
+- **Conflicto real detectado ANTES de tocar nada, no ignorado ni aplicado a ciegas:** ese mismo look
+  —tarjeta de cristal esmerilado sobre una foto difuminada— es EXACTAMENTE lo que este archivo ya
+  documenta que se **quitó a propósito** en v48.14 ("REDISEÑO PREMIUM"): "se quitaron las 4 manchas
+  de color flotantes animadas... el `backdrop-filter`... y el brillo animado del botón — todo eso es
+  el 'look genérico de plantilla de IA' que ya se había identificado como problema". Aplicar el
+  mockup tal cual habría revertido esa decisión sin que nadie lo supiera. Se le explicó al dueño esa
+  historia exacta y se le preguntó cómo seguir (3 opciones: volver al cristal esmerilado tal cual,
+  quedarse con el estilo sólido actual y sumar solo las piezas reales, o un punto medio sin foto/
+  blur). **El dueño confirmó explícitamente: "Sí, quiero ese look ahora"** — decisión suya, informada,
+  documentada aquí como el registro de la autorización.
+- **Auditado antes de construir, qué del mockup era real y qué no** (mismo criterio de "no fingir
+  funciones que no existen" de siempre):
+  1. **"Recordarme" — YA era real, solo le faltaba la casilla en pantalla.** `doLogin()`/
+     `doLoginAuth()` ya leían `document.getElementById('rememberMe')?.checked` y ya guardaban
+     `nx_sesion_persist`/`nx_user_persist` en el navegador si estaba marcado — el código llevaba
+     tiempo esperando un checkbox que nunca se agregó al HTML. **Bug real encontrado de paso:** la
+     lógica que RELLENA el usuario recordado al volver a abrir la app vivía después de un `return`
+     dentro de la rama `if(url && key)` del arranque — como esa rama SIEMPRE es verdadera en
+     producción (las credenciales de Supabase están fijas en el código, ver más arriba), ese código
+     de restauración nunca se ejecutaba, dead code puro. Se movió DENTRO de la rama alcanzable, antes
+     del `return`, protegido con `if(el)`/`if(rm)` por si el checkbox aún no existiera.
+  2. **"¿Olvidaste tu contraseña?" — NO existe ningún flujo de recuperación de contraseña en el
+     sistema (verificado con grep en `index.html` y `parches.js`, cero resultados).** Se decidió
+     **NO agregarlo** — un enlace que no lleva a ningún lado sería justo el tipo de función fingida
+     que este archivo evita en cada módulo (ver NEXUS AI CONTENT, Cuotas, Financiamiento...).
+- **La foto de fondo del mockup se sustituyó por 2 manchas de luz difuminadas hechas 100% en CSS**
+  (`#loginScreen::before`/`::after`, azul + ámbar, `filter:blur(90px)`) — no una foto real. Se le
+  avisa esto al dueño explícitamente (no se ocultó): este entorno de sesión no tiene salida a
+  internet para buscar/descargar una foto, y el intento de generar una imagen con Higgsfield falló
+  por dos motivos reales (Recraft exige un plan de pago que la cuenta no tiene; el modelo de
+  respaldo `nano_banana_pro` dio "Out of credits in the selected workspace", sin ningún plan
+  gratuito de respaldo disponible — confirmado con `models_explore(unlim:true)` → `available:false`).
+  Si el dueño manda o consigue una foto real más adelante, se puede meter como `background-image` de
+  `#loginScreen` sin tocar nada más — el desenfoque real (`backdrop-filter`) de la tarjeta seguiría
+  funcionando exactamente igual encima de una foto real.
+- **Piezas nuevas construidas (`index.html`, solo la pantalla de login — cero cambios en
+  `doLogin()`/`doLoginAuth()`/RLS/lo que hace el botón):**
+  - `.lbox` pasó de `background:#ffffff` sólido a `background:rgba(13,17,23,.72)` +
+    `backdrop-filter:blur(24px) saturate(140%)` (con prefijo `-webkit-` para Safari/iOS) + borde y
+    sombra ajustados para el fondo oscuro.
+  - `.lshield` (nueva): insignia circular con degradado azul tenue + ícono `ti-shield-check`, entre
+    el logo (v53.7) y el encabezado.
+  - Encabezado cambiado a "Bienvenido de nuevo" (`.lh`, ahora blanco y más grande) +
+    "Inicia sesión para continuar" — reusa la clase `.lver` (antes mostraba "Plataforma de gestión ·
+    República Dominicana" en mono chico; se redefinió como subtítulo normal en vez de crear una
+    clase nueva y dejar `.lver` como CSS muerto).
+  - `.lfi` (nueva): envoltorio de cada campo con un ícono a la izquierda (`ti-user` para Usuario,
+    `ti-lock` para Contraseña) — `.lfr .lfi input{padding-left:42px}` (especificidad 0,2,1, a
+    propósito más específica que la regla base `.lfr input`, mismo criterio de siempre en este
+    archivo sobre no confiar en el orden de las reglas para vencer un empate de especificidad). El
+    campo de contraseña conserva su `padding-right:42px` inline para el botón de mostrar/ocultar
+    (`loginPwdEye`, sin tocar) — los dos paddings conviven sin chocar porque son lados distintos.
+  - `.lchkrow`/`#rememberMe`: casilla real con su `<label for="rememberMe">`, `accent-color:#2563eb`.
+  - `.lerr`: recolorada para verse bien sobre fondo oscuro (antes roja sobre blanco).
+  - `.lsec` (nueva): panel "Seguridad de nivel empresarial" al pie, con ícono + texto — 100%
+    decorativo/informativo (no afirma nada que el sistema no cumpla — cifrado en tránsito vía HTTPS
+    es real, RLS de Supabase respalda "los mismos estándares que usan bancos", sin exagerar).
+  - `#authToggleLink` (el enlace oculto "Probar inicio de sesión seguro (beta)", `display:none` de
+    por sí) ganó el mismo color claro por consistencia si algún día se muestra.
+- **Verificado con Playwright, código real, 390px y 1280px:** el fondo de `.lbox` se confirmó por
+  `getComputedStyle` (`rgba(13,17,23,.72)` + `backdrop-filter:blur(24px) saturate(1.4)`, no a ojo),
+  la insignia/encabezado/subtítulo/panel de seguridad existen, la casilla `#rememberMe` es un
+  checkbox real que se marca/desmarca de verdad (`.check()` de Playwright), **no existe ningún
+  enlace de "olvidaste tu contraseña"** (aserción explícita de ausencia), sin desborde horizontal en
+  ninguno de los 2 anchos, 0 errores de JavaScript reales, y `doLogin()` con campos vacíos sigue
+  mostrando su aviso de siempre. `node --check parches.js` limpio (archivo no tocado); los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado:** el ícono de la PWA/favicon, la pantalla de splash (`#nxSplash`) ni
+  el loader — mismos motivos que en v53.7, no se pidió y cambiar el ícono ya instalado en el celular
+  de cada usuario no es un ajuste trivial de reversar.

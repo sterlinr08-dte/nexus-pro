@@ -75,24 +75,39 @@ select{-webkit-appearance:none;-moz-appearance:none;appearance:none;padding-righ
    !important, así que la flecha nunca se pintaba (verificado: quedaba en "none"). */
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 10px center!important;background-size:10px 6px!important}
 
-/* ── LOGIN (v2 — sin morado, sin glass/blobs, look plano premium) ── */
+/* ── LOGIN (v3 — cristal esmerilado, confirmado por el dueño 31-jul-2026, ver CLAUDE.md) ── */
 #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;position:relative;overflow:hidden;background:radial-gradient(130% 100% at 18% -10%,#1e3a6e 0%,#132a52 45%,#0a1730 100%)}
-.lbox{position:relative;z-index:1;background:#ffffff;border:1px solid rgba(15,23,42,.06);border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:400px;box-shadow:0 30px 70px rgba(5,12,28,.5);animation:lxBoxIn .5s cubic-bezier(.2,.8,.3,1) both}
+#loginScreen::before,#loginScreen::after{content:'';position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+#loginScreen::before{width:520px;height:520px;top:-140px;left:-120px;background:radial-gradient(circle,rgba(37,99,235,.5),transparent 70%)}
+#loginScreen::after{width:460px;height:460px;bottom:-160px;right:-100px;background:radial-gradient(circle,rgba(217,119,6,.26),transparent 70%)}
+.lwrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px}
+.lhero{width:100%;max-width:280px;height:auto;display:block;margin-bottom:1.75rem;filter:drop-shadow(0 14px 28px rgba(0,0,0,.4));animation:lxHeroIn .55s cubic-bezier(.2,.8,.3,1) both}
+@keyframes lxHeroIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.lhero{animation:none}}
+.lbox{position:relative;background:rgba(13,17,23,.72);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);border:1px solid rgba(148,163,184,.16);border-radius:22px;padding:2.5rem 2rem;width:100%;box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);animation:lxBoxIn .5s cubic-bezier(.2,.8,.3,1) both}
 @keyframes lxBoxIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.lbox{animation:none}}
-.llogo{display:flex;align-items:center;gap:10px;margin-bottom:2rem;justify-content:center;flex-direction:column}
-.lmk{width:52px;height:52px;border-radius:16px;background:linear-gradient(150deg,#2563eb,#1e3a6e 80%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;position:relative;box-shadow:0 14px 28px rgba(30,58,110,.4),inset 0 2px 3px rgba(255,255,255,.35),inset 0 -6px 10px rgba(0,0,0,.22)}
-.lmk::after{content:'';position:absolute;left:14%;top:8%;width:72%;height:42%;border-radius:50%;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.65),rgba(255,255,255,0) 72%);pointer-events:none}
-.lbrand{font-size:20px;font-weight:700;color:#1e3a6e;letter-spacing:.5px;text-align:center}
-.lver{font-size:10px;color:#475569;font-weight:600;font-family:var(--mono);margin-top:2px;text-align:center}
-.lh{font-size:14px;font-weight:600;color:#1e293b;margin-bottom:1.25rem;text-align:center}
+.lshield{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,rgba(37,99,235,.26),rgba(37,99,235,.06));border:1px solid rgba(96,165,250,.35);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:#60a5fa;font-size:22px}
+.lver{font-size:12.5px;color:#94a3b8;font-weight:400;text-align:center;margin-bottom:1.75rem}
+.lh{font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:4px;text-align:center}
 .lfr{margin-bottom:14px}
-.lfr label{font-size:11px;font-weight:600;color:#475569;display:block;margin-bottom:5px}
-.lfr input{width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:11px;background:#f8fafc;color:#1e293b;font-size:16px;outline:none;transition:border-color .15s,background .15s,box-shadow .15s}
-.lfr input:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
-.lerr{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:11px;color:#dc2626;margin-bottom:12px;display:none;text-align:center}
-.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,#1e3a6e,#2563eb);border:none;border-radius:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:box-shadow .2s;margin-top:6px;box-shadow:0 6px 16px rgba(30,58,110,.35)}
-.lbtn:hover{box-shadow:0 8px 20px rgba(30,58,110,.45)}.lbtn:active{box-shadow:inset 0 2px 6px rgba(0,0,0,.22);filter:brightness(.96)}.lbtn:disabled{opacity:.5;cursor:not-allowed}
+.lfr label{font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px}
+.lfi{position:relative}
+.lfi i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#64748b;font-size:16px;pointer-events:none}
+.lfr .lfi input{padding-left:42px}
+.lfr input{width:100%;padding:13px;border:1.5px solid rgba(148,163,184,.18);border-radius:12px;background:rgba(15,23,42,.55);color:#f1f5f9;font-size:16px;outline:none;transition:border-color .15s,background .15s,box-shadow .15s}
+.lfr input::placeholder{color:#64748b}
+.lfr input:focus{border-color:#2563eb;background:rgba(15,23,42,.85);box-shadow:0 0 0 4px rgba(37,99,235,.2)}
+.lchkrow{display:flex;align-items:center;gap:8px;margin:2px 0 16px}
+.lchkrow input[type=checkbox]{accent-color:#2563eb;width:15px;height:15px;cursor:pointer;flex:0 0 auto}
+.lchkrow label{font-size:11.5px;color:#94a3b8;cursor:pointer;user-select:none}
+.lerr{background:rgba(220,38,38,.14);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:10px;font-size:11px;color:#fca5a5;margin-bottom:12px;display:none;text-align:center}
+.lbtn{width:100%;padding:14px;background:linear-gradient(135deg,#1e3a6e,#2563eb);border:none;border-radius:12px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:box-shadow .2s;margin-top:6px;box-shadow:0 6px 16px rgba(30,58,110,.4);letter-spacing:.3px}
+.lbtn:hover{box-shadow:0 8px 20px rgba(30,58,110,.5)}.lbtn:active{box-shadow:inset 0 2px 6px rgba(0,0,0,.22);filter:brightness(.96)}.lbtn:disabled{opacity:.5;cursor:not-allowed}
+.lsec{display:flex;align-items:flex-start;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}
+.lsec i{color:#60a5fa;font-size:16px;margin-top:1px;flex:0 0 auto}
+.lsec b{display:block;font-size:11.5px;font-weight:600;color:#cbd5e1;margin-bottom:2px}
+.lsec span{font-size:10.5px;color:#64748b;line-height:1.4}
 
 /* ── SPLASH (pantalla de bienvenida animada) ── */
 #nxSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
@@ -443,8 +458,8 @@ html body [tabindex="0"][role="button"]:focus-visible,html body tr[tabindex="0"]
   .br-r{grid-template-columns:60px 1fr 50px}
   .br-l{font-size:8px}
   /* Login */
+  .lhero{max-width:220px;margin-bottom:1.25rem}
   .lbox{padding:1.75rem 1.25rem;border-radius:16px}
-  .lbrand{font-size:20px}
   /* Chips empresa */
   .esel{max-height:80px;overflow-y:auto}
   /* Ocultar col en móvil */
@@ -1069,17 +1084,20 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 
 <!-- ═══════════════ LOGIN ═══════════════ -->
 <div id="loginScreen">
+<div class="lwrap">
+<img class="lhero" src="logo-nexus-pro.png" alt="NEXUS PRO — Multiempresa · POS · ERP" width="1125" height="268" loading="eager"/>
 <div class="lbox">
-  <div class="llogo">
-    <div class="lmk"><i class="ti ti-shield-check"></i></div>
-    <div><div class="lbrand">NEXUS PRO</div><div class="lver">Plataforma de gestión · República Dominicana</div></div>
-  </div>
-  <div class="lh">Iniciar sesión</div>
-  <div class="lfr"><label for="loginUser">Usuario</label><input type="text" id="loginUser" class="no-upper login-input" placeholder="usuario@empresa" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"/></div>
-  <div class="lfr"><label for="loginPwd">Contraseña</label><div style="position:relative"><input type="password" id="loginPwd" class="no-upper login-input" placeholder="••••••••" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar contraseña" aria-label="Mostrar u ocultar contraseña" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#475569;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
+  <div class="lshield"><i class="ti ti-shield-check"></i></div>
+  <div class="lh">Bienvenido de nuevo</div>
+  <div class="lver">Inicia sesión para continuar</div>
+  <div class="lfr"><label for="loginUser">Usuario</label><div class="lfi"><i class="ti ti-user"></i><input type="text" id="loginUser" class="no-upper login-input" placeholder="usuario@empresa" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"/></div></div>
+  <div class="lfr"><label for="loginPwd">Contraseña</label><div class="lfi"><i class="ti ti-lock"></i><input type="password" id="loginPwd" class="no-upper login-input" placeholder="••••••••" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px"/><button type="button" id="loginPwdEye" onclick="nxTogglePwd('loginPwd','loginPwdEye')" title="Mostrar/ocultar contraseña" aria-label="Mostrar u ocultar contraseña" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;line-height:0;font-size:18px"><i class="ti ti-eye"></i></button></div></div>
+  <div class="lchkrow"><input type="checkbox" id="rememberMe"/><label for="rememberMe">Recordarme en este dispositivo</label></div>
   <div class="lerr" id="loginErr" aria-live="polite"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
-  <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#475569;text-decoration:none" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">🔒 Probar inicio de sesión seguro (beta)</a></div>
+  <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#94a3b8;text-decoration:none" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">🔒 Probar inicio de sesión seguro (beta)</a></div>
+  <div class="lsec"><i class="ti ti-shield-lock"></i><div><b>Seguridad de nivel empresarial</b><span>Tus datos viajan cifrados y se guardan con los mismos estándares que usan bancos y aseguradoras.</span></div></div>
+</div>
 </div>
 </div>
 
@@ -4010,7 +4028,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='53.6';
+const APP_VERSION='53.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -9791,18 +9809,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(url && key){
     document.getElementById('loginScreen').style.display = 'flex';
     try{nxUpdateAuthToggle();}catch(e){}
+    // Pre-llenar usuario recordado
+    const savedUser=localStorage.getItem('nx_user_persist');
+    if(savedUser){
+      const el=document.getElementById('loginUser');
+      const rm=document.getElementById('rememberMe');
+      if(el){el.value=savedUser;} if(rm){rm.checked=true;}
+    }
     return;
   }
 
   // Sin credenciales: mostrar login
   document.getElementById('loginScreen').style.display = 'none';
-
-  // Pre-llenar usuario recordado
-  const savedUser=localStorage.getItem('nx_user_persist');
-  if(savedUser){
-    const el=document.getElementById('loginUser');
-    if(el){el.value=savedUser;document.getElementById('rememberMe').checked=true;}
-  }
 });
 
 // ── Alerta elegante de confirmación ─────────────────────────────────────────
