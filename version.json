@@ -1,7 +1,12 @@
 {
-  "version": "53.2",
+  "version": "53.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.3",
+      "fecha": "2026-07-31",
+      "texto": "NUEVO (POS — reglamento de botones de acción, primera tanda): reordenado el pie de varias pantallas para que todas se comporten igual — Cancelar, Guardar e imprimir (cuando aplica) y Guardar, en ese orden. Ahora 'Recibir equipo' (Reparaciones) ya no te obliga a imprimir la orden, puedes guardarla nomás; 'Emitir devolución' (Notas de crédito) también dejó de imprimir automático — el botón de imprimir es aparte; y Cotizaciones ganó su propio 'Guardar e imprimir'. Se agregó el botón Cancelar en 4 formularios que no lo tenían (Nuevo/Editar préstamo, Nuevo cliente de Financiamiento, Nuevo apartado y Abonar apartado) — antes solo se podía salir con la flechita de 'Volver'."
+    },
     {
       "v": "53.2",
       "fecha": "2026-07-30",
