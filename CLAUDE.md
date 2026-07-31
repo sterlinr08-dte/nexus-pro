@@ -2586,6 +2586,42 @@ colgada del `<body>` (para evitar la trampa de `container-type:inline-size` que 
   es frágil si el usuario lo movió — hay que pensarlo), o (b) que la barra viva por encima del FAB.
   Y gatear TODA regla `:has()` a `body:has(#v-pos.on)` para que nada leak a Seguros, + asegurar que
   la barra se remueva en TODOS los caminos de salida del POS (no solo `renderPOS`/`nav()`).
+- **RECONSTRUIDA CON EL FAB CORREGIDO (v53.1, PR #222) — el dueño mandó de nuevo la muestra y
+  confirmó "la barra en la parte inferior para los botones" (sí la quería, el problema real era
+  solo el FAB).** Se aplicó la opción (a): el FAB **NUNCA se esconde** — se **LEVANTA** con
+  `transform:translateY(-78px)!important` vía una clase JS (`.nxFabLift`, `!important` combinado
+  con `:active`/`.open` para no pisar esos otros estados) en vez de forzar `bottom`/`right`. La
+  ventaja del `transform`: **funciona sin importar la posición base** del FAB (compone con
+  cualquier `left/top` que haya dejado el arrastre), a diferencia de forzar `bottom` que solo
+  aplicaría si nunca se movió — verificado con Playwright arrastrando el FAB a otro punto de la
+  pantalla y confirmando que igual sube. `nxFabLift` se agrega/quita en el MISMO punto donde se
+  crea/destruye la barra (nunca por separado, cero riesgo de desincronía).
+- **EXTENDIDA A "Nueva compra" (v53.2, mismo PR de ideas) — el dueño pidió "la barra de acción en
+  demás" (los otros módulos).** Antes de construir se investigaron los candidatos reales del
+  mockup (Facturación/Cobranza/Recepción Taller/Inventario/Reportes) contra el código: **"Recibir
+  equipo" (`nxRepNueva`, Recepción Taller) NO lo necesita** — ya es un modal `flex-direction:column`
+  con su propio pie fijo DENTRO del modal (scroll interno, el botón nunca queda enterrado), mismo
+  patrón que ya resuelve el problema sin la barra global. **"Nueva compra" (`renderCompraForm`) SÍ
+  tenía el problema real**: es una página normal (no modal) con el pie Cancelar/Guardar al final
+  del flujo — con muchos artículos, hay que hacer scroll largo para llegar a Guardar. Motor
+  **refactorizado a compartido** (`nxStickyBarSet(id, html)`, junto a `facBarraSync`): monta/
+  desmonta el nodo del body + sube/baja el FAB — cada pantalla solo decide CUÁNDO mostrarse y QUÉ
+  botones lleva (`facBarraSync`/`compBarraSync`), sin duplicar la mecánica del FAB. Ambas barras
+  comparten la clase `.nxFacBar` (id propio `#nxFacBar`/`#nxCompBar`) así que el CSS de mostrar/
+  ocultar (`body:has(#v-pos.on) .nxFacBar`, el de overlay abierto, el `padding-bottom` de
+  `.nxTMain`) sirve a las dos sin duplicar nada. La limpieza en `renderPOS()`/`nav()` pasó de
+  `getElementById('nxFacBar')` a `querySelectorAll('.nxFacBar')` — quita CUALQUIER barra al cambiar
+  de pestaña o salir del POS, sin tener que acordarse de sumar cada id nuevo a mano. `compBarraSync`
+  refleja los 3 botones EXACTOS del pie en línea (`nxPosCompraCancelar`/`nxPosGuardarCompra(1)`/
+  `nxPosGuardarCompra()`), sin inventar un estado deshabilitado que el pie real tampoco tiene (la
+  validación real vive dentro de `nxPosGuardarCompra`, que avisa por toast si faltan datos).
+  Verificado con Playwright (11 comprobaciones): Factura sin regresión tras el refactor, Compras con
+  sus 3 botones reales y el FAB levantado sin solape, "Compras · lista" (no "nueva") sin barra, el
+  cleanup general quita cualquier barra al cambiar de pestaña, el overlay de buscar proveedor/
+  empleado/artículo la oculta igual que en Factura, escritorio sin barra. **Pendiente si el dueño
+  sigue pidiendo "los demás módulos":** revisar Cotizaciones/CRM/Entidades (son modales, probablemente
+  ya resueltos como Recepción Taller — hay que confirmar uno por uno, no asumir) y Financiamiento
+  (su "Nuevo préstamo" YA tiene pie fijo nativo desde v52.7, no necesita esto).
 
 ### Financiamiento — la cuota queda EXACTA y la última se ajusta (27-jul-2026, v52.8)
 El dueño: *"Por si pongo en pago de cuota 5mil Quincenal"* → *"Exacto y que al Final se ajuste"*. En

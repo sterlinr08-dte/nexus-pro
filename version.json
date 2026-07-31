@@ -1,7 +1,12 @@
 {
-  "version": "53.1",
+  "version": "53.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.2",
+      "fecha": "2026-07-30",
+      "texto": "NUEVO (POS — la barra fija de abajo también en 'Nueva compra'): igual que en Facturar/Cobrar, la pantalla de registrar una compra (Cancelar/Guardar e imprimir/Guardar compra) ahora también tiene su barra de acciones pegada abajo mientras deslizas por la lista de artículos — sin taparte el botón de menú, igual que en Factura."
+    },
     {
       "v": "53.1",
       "fecha": "2026-07-30",
