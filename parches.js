@@ -5247,11 +5247,11 @@
       }
       .cfg-tab.active-tab span{ color: #6d28d9 !important; font-weight: 800 !important; }
       /* temas oscuros */
-      body.tema-premium .cfg-tab, body.dark .cfg-tab{ background: none !important; }
-      body.tema-premium .cfg-tab i, body.dark .cfg-tab i{ background: #1e293b !important; color: #cbd5e1 !important; }
-      body.tema-premium .cfg-tab.active-tab i, body.dark .cfg-tab.active-tab i{ background: linear-gradient(135deg,#1e3a6e,#6d28d9) !important; color: #fff !important; }
-      body.tema-premium .cfg-tab span, body.dark .cfg-tab span{ color: #475569 !important; }
-      body.tema-premium .cfg-tab.active-tab span, body.dark .cfg-tab.active-tab span{ color: #60a5fa !important; }
+      body.tema-premium .cfg-tab{ background: none !important; }
+      body.tema-premium .cfg-tab i{ background: #1e293b !important; color: #cbd5e1 !important; }
+      body.tema-premium .cfg-tab.active-tab i{ background: linear-gradient(135deg,#1e3a6e,#6d28d9) !important; color: #fff !important; }
+      body.tema-premium .cfg-tab span{ color: #475569 !important; }
+      body.tema-premium .cfg-tab.active-tab span{ color: #60a5fa !important; }
 
       /* === MENU LATERAL: iconos en circulo de color (sin onda, para no romper el clic del div) === */
       nav.sb .ni .ni-i{
@@ -19712,7 +19712,7 @@
     const st = document.createElement('style'); st.id = 'nxPfCSS';
     st.textContent = `
 .nxPf{--pf-blue:#2563eb;--pf-blue-d:#1d4ed8;--pf-blue-l:#eff6ff;--pf-green:#16a34a;--pf-green-l:#f0fdf4;--pf-red:#dc2626;--pf-red-l:#fef2f2;--pf-red-b:#fecaca;--pf-orange:#d97706;--pf-orange-l:#fffbeb;--pf-purple:#7c3aed;--pf-purple-l:#f5f3ff;--pf-bg:#f5f7fa;--pf-panel:#fff;--pf-line:#e8ebf0;--pf-txt:#0f172a;--pf-txt2:#64748b;--pf-txt3:#94a3b8;--pf-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);font-family:'Plus Jakarta Sans',var(--ff);background:var(--pf-bg);color:var(--pf-txt);display:flex;flex-direction:column}
-body.tema-oscuro .nxPf,body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b33;--pf-green:#22c55e;--pf-green-l:#0c1f14;--pf-red:#f87171;--pf-red-l:#2a1414;--pf-red-b:#4c1d1d;--pf-orange:#fbbf24;--pf-orange-l:#2a2004;--pf-purple:#a78bfa;--pf-purple-l:#1e1b33;--pf-bg:#0b0f19;--pf-panel:#121826;--pf-line:#232b3d;--pf-txt:#f1f5f9;--pf-txt2:#94a3b8;--pf-txt3:#64748b}
+body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b33;--pf-green:#22c55e;--pf-green-l:#0c1f14;--pf-red:#f87171;--pf-red-l:#2a1414;--pf-red-b:#4c1d1d;--pf-orange:#fbbf24;--pf-orange-l:#2a2004;--pf-purple:#a78bfa;--pf-purple-l:#1e1b33;--pf-bg:#0b0f19;--pf-panel:#121826;--pf-line:#232b3d;--pf-txt:#f1f5f9;--pf-txt2:#94a3b8;--pf-txt3:#64748b}
 .nxPf .head{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--pf-panel);border-bottom:1px solid var(--pf-line)}
 .nxPf .head h3{margin:0;font-size:14.5px;font-weight:800;flex:1;min-width:0}
 .nxPf .body{flex:1;overflow-y:auto;overflow-x:hidden;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:14px}

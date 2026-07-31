@@ -1,7 +1,12 @@
 {
-  "version": "53.9",
+  "version": "54.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.0",
+      "fecha": "2026-07-31",
+      "texto": "ARREGLADO (bug real de raíz — Modo oscuro): el sistema tenía DOS interruptores de tema oscuro que no se enteraban entre sí — el botón de la barra superior y el selector 'PREMIUM DARK' de Ajustes → Apariencia. Se podía tener uno prendido y el otro apagado sin darse cuenta, o los dos a la vez pisándose. Ahora es UN SOLO interruptor: tocar cualquiera de los dos deja exactamente el mismo resultado, y quien ya había prendido el botón viejo (sin haber tocado el selector nuevo) pasa solo a 'Premium Dark' la primera vez que entra, sin perder su preferencia. NUEVO — Tema Premium Dark completo en el núcleo de Seguros: hasta ahora 'Premium Dark' solo cubría el Punto de Venta — Clientes, Facturas, Ficha del cliente, Historial de pagos, Pólizas, Agentes, Empresas, Comisiones, Contabilidad y Reportes se quedaban en azul claro sobre un fondo oscuro, rotos. Ahora las 12 pantallas del núcleo tienen su propia versión oscura completa, con los mismos tonos ya usados en el resto del sistema para que se sienta como una sola identidad. Primera fase de un pedido más grande del dueño ('librerías y estándares obligatorios' — un solo Design System para todo NEXUS PRO); las fases siguientes (POS extendido, Financiamiento, Rifas, AGUAPRO, Consultorio, Clientes SaaS, NEXUS AI) quedan pendientes, una por una."
+    },
     {
       "v": "53.9",
       "fecha": "2026-07-31",
