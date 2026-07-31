@@ -9546,3 +9546,58 @@ del sistema con este tipo de pie.
   "Guardar" en un inventario si algún día se decide que hace falta (hoy se deja variar a propósito) ·
   extender `nxStickyBarSet` a Cotizaciones si algún día deja de ser modal · revisar si Producto/
   Artículo debería tener "Guardar e imprimir etiqueta" en el pie en vez de en el menú del header.
+
+### POS · Vender — "Suspender venta" (27-jul-2026, v53.4)
+El dueño, tras la auditoría de la guía de botones de PC (ver arriba), pidió construir de verdad
+uno de los 3 huecos reales identificados: **"Suspender venta"** — *"que guarde el carrito y lo
+pueda retomar después, no poner suponer"* (que sea real, no un botón decorativo).
+- **Distinto de Prefactura A PROPÓSITO** (no se reusó esa tabla ni ese flujo): Prefactura es un
+  **documento** — numeración fiscal-adyacente, entra al Motor de Documentos, se imprime, es para
+  el cliente. Suspender venta es puramente **operativo** — el cajero se ve interrumpido (llega
+  otro cliente, hay que atender el taller) y necesita "guardar y seguir" sin perder nada. Sin
+  impresión, sin Motor de Documentos (`registrarDocumento` nunca se llama), sin marcar ningún
+  `estado` — al retomarla, el registro simplemente **se borra** (no queda un historial permanente
+  de carritos pausados, a diferencia de Prefactura que sí se conserva como historial).
+- **Tabla nueva `pos_ventas_suspendidas`** (migración `pos_ventas_suspendidas`, mismo patrón
+  org+trigger `set_organizacion_id()`+RLS `mi_rol() is not null AND organizacion_id =
+  mi_organizacion()` que `pos_prefacturas`): `numero`, `cliente_id`, `cliente_nombre`, `items`
+  (jsonb, el carrito completo), `total`, `notas`, `created_by_name`, `created_at`.
+  `get_advisors(security)` sin hallazgos nuevos para esta tabla.
+- **4 funciones nuevas** (junto a `nxPrefGuardar`/`nxPrefFacturar`/`nxPrefAnular`, mismo patrón
+  calcado con las diferencias de arriba): `window.nxVentaSuspender()` (guarda `_cart` completo —
+  igual que `nxPrefGuardar` pero sin Motor de Documentos ni imprimir; numeración con
+  `nextSeq('venta_suspendida')` y respaldo `'SV-'+...` si la org no sembró esa secuencia, mismo
+  criterio que Prefactura/Reparaciones cuando falta la secuencia), `window.nxVentaSuspLista()`
+  (ventana con la lista, mismo componente visual `.oppcard` que ya usa Prefactura),
+  `window.nxVentaRetomar(id)` (carga el carrito de vuelta, pide confirmación SOLO si el carrito
+  actual tiene algo que se perdería, **borra** el registro de la base — nunca lo marca
+  `estado:'facturada'` como hace Prefactura — y navega a la pestaña Vender), y
+  `window.nxVentaSuspBorrar(id)` (descartar sin retomar, con `confirm()` — mismo criterio de
+  "el borrado permanente siempre pide confirmación" ya establecido en el reglamento del +/−).
+- **UI en `pintarCarrito()` (Vender), 2 piezas:** (1) 3er botón "Suspender" en la fila `.cartsave`
+  (junto a Prefactura/Cotización, mismo estilo `.cartsavebtn`, deshabilitado con el carrito
+  vacío — el CSS de esa fila pasó de `grid-template-columns:1fr 1fr` a `repeat(3,1fr)`); (2) una
+  insignia circular (`.cartsuspbadge`, icono de pausa) junto al botón "Vaciar carrito" en el
+  encabezado del panel — **siempre visible** (para que se descubra la función aunque nunca se
+  haya usado) con un contador ámbar que solo aparece si `_ventasSusp.length>0`, abre la lista al
+  tocarla.
+- **Cargada en `cargarPOS()`** (`_ventasSusp`, junto a `_prefs`/`_prefHist`, mismo patrón
+  `Promise.all` en paralelo — `pos_ventas_suspendidas?select=*&order=created_at.desc&limit=100`).
+- **Deliberadamente no se tocó Factura/Prefactura** — el botón vive solo en `pintarCarrito()`
+  (el panel de Vender, `#posCartWrap`), que es la única pantalla que lo renderiza; como Vender y
+  Factura ya comparten el mismo `_cart` (desde v48.36), suspender desde cualquiera de las dos
+  pestañas suspende lo mismo — no hacía falta duplicar el botón en el panel de Factura.
+- Verificado con Playwright, código real extraído por contenido (`pintarCarrito`/
+  `nxVentaSuspender`/`nxVentaSuspLista`/`nxVentaSuspRows`/`nxVentaRetomar`/`nxVentaSuspBorrar`
+  + `totales`/`nextSeq`/`clienteSel`/`curSesPOS` tal cual, con balance de llaves real, no una
+  reconstrucción): **34 comprobaciones** — carrito vacío deja los 3 botones deshabilitados,
+  suspender con carrito lleno postea el total/items/cliente correctos y limpia el carrito, sin
+  carrito no postea nada, la insignia muestra el conteo real, la ventana lista la venta
+  suspendida con su número/total/cliente, retomar restaura el carrito y BORRA el registro (no lo
+  marca `facturada`) y navega a Vender, retomar con el carrito ya ocupado pide confirmación y
+  respeta cancelar/aceptar, descartar borra de la base con confirmación y respeta cancelar, sin
+  desborde horizontal en 390px. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente si el dueño lo pide:** los otros 2 huecos reales de la misma auditoría — Exportar
+  universal en pantallas de reporte, y botones reales de WhatsApp/Correo en el flujo post-cobro
+  (hoy solo hay auto-impresión + los botones de "Ver factura" del ticket).

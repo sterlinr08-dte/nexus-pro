@@ -1,7 +1,12 @@
 {
-  "version": "53.3",
+  "version": "53.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.4",
+      "fecha": "2026-07-31",
+      "texto": "NUEVO (POS — Vender: Suspender venta): si te interrumpe un cliente o hay que atender el taller a mitad de una venta, el botón 'Suspender' (junto a Prefactura y Cotización, arriba del carrito) guarda el carrito completo — artículos, cantidades, cliente y nota — y lo deja listo para retomar cuando quieras, sin perder nada. Un ícono de pausa junto al botón 'Vaciar carrito' muestra cuántas ventas tienes suspendidas y las abre en una lista: 'Retomar' carga ese carrito de vuelta (avisa si el actual tiene algo, para no perderlo por accidente) y 'Descartar' la borra si ya no hace falta. Es distinto de Prefactura — no imprime nada ni genera un documento para el cliente, es solo para el cajero: al retomarla, el registro desaparece."
+    },
     {
       "v": "53.3",
       "fecha": "2026-07-31",
