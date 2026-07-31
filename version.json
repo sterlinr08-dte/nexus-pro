@@ -1,7 +1,12 @@
 {
-  "version": "53.5",
+  "version": "53.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "53.6",
+      "fecha": "2026-07-31",
+      "texto": "ARREGLADO (seguridad/limpieza — quitada la pantalla de 'Conectar base de datos'): el sistema arrastraba desde una versión muy vieja (antes de que las credenciales de Supabase quedaran fijas en el código) una pantalla de 'Primera vez — conectar base de datos' con un botón que copiaba un script SQL de ejemplo — ese script incluía una fila de prueba con el usuario 'admin'/clave 'admin123' en texto plano, pensada para alguien armando un proyecto Supabase nuevo desde cero. Se confirmó que esa pantalla NUNCA se muestra en producción de verdad (las credenciales ya vienen fijas en el código, así que el sistema siempre entra directo al login normal) — pero como el HTML seguía viviendo en el archivo, ese texto de ejemplo aparecía si alguien miraba el código fuente de la página. Se quitó por completo: la pantalla, su enlace, el script SQL de ejemplo y todas las funciones que solo servían para eso — nada de esto se usaba por el camino normal de la app. Verificado que el login sigue entrando exactamente igual, sin ningún error nuevo."
+    },
     {
       "v": "53.5",
       "fecha": "2026-07-31",
