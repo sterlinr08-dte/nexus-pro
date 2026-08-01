@@ -1,7 +1,12 @@
 {
-  "version": "54.3",
+  "version": "54.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.4",
+      "fecha": "2026-08-01",
+      "texto": "ARREGLADO (POS, mismo tipo de bug que el escudo del login v54.3): el ícono de ~20+ campos del formulario de Nuevo/Editar artículo, Ajustes, Entidades y el modal de Nivel de precio (el patrón \"campo con ícono a la izquierda\", clase .inw) tenía el mismo hueco — la lista de excepciones que evita que el sistema le ponga a cada ícono una esfera de color con relieve 3D no los incluía. Se agregaron a esa lista, con la misma regla especial para no quitarles la posición que necesitan para verse en su sitio dentro del campo (mismo caso que el ícono de Usuario del login). Probado con 7 íconos distintos del formulario real, en móvil y escritorio, confirmando que ningún otro ícono del sistema perdió su color."
+    },
     {
       "v": "54.3",
       "fecha": "2026-08-01",
