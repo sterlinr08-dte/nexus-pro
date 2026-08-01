@@ -215,7 +215,17 @@
         body:has(.overlay.on) .mobile-more-sheet-clean {
           display: none !important;
         }
-        
+
+        /* Mientras no hay sesión (login/cambio de clave), ocultar el botón
+           flotante y su menú — body.nx-sin-sesion lo pone vigilarSesionParaFAB()
+           observando #app (nunca se lee/escribe el flujo de login en sí). */
+        body.nx-sin-sesion .mobile-bottom-nav-clean,
+        body.nx-sin-sesion .nx-fab,
+        body.nx-sin-sesion .nx-menu-backdrop,
+        body.nx-sin-sesion .mobile-more-sheet-clean {
+          display: none !important;
+        }
+
         /* ═══ FIX MENÚ DE ACCIONES (⋮) ═══ */
         /* El menú de 3 puntos del cliente DEBE estar por encima de TODO,
            incluido el modal de editar/cliente. */
@@ -614,10 +624,34 @@
   }
 
   // ═══════════════════════════════════════════════════════════
+  // 4.6. OCULTAR EL BOTÓN FLOTANTE MIENTRAS NO HAY SESIÓN
+  // ═══════════════════════════════════════════════════════════
+  // #app/#loginScreen NUNCA se quitan del DOM (index.html solo alterna
+  // style.display en ~8 sitios del flujo de login/logout/restauración de
+  // sesión) — así que en vez de tocar esos sitios (riesgoso) se vigila
+  // #app con un MutationObserver y se refleja en una clase de body. La
+  // regla CSS (nx-ux-extras-css) reusa el MISMO patrón/lista de elementos
+  // que ya usa el bloque "overlay abierto" de arriba.
+  function actualizarClaseSinSesion() {
+    var app = document.getElementById('app');
+    var sinApp = !app || getComputedStyle(app).display === 'none';
+    document.body.classList.toggle('nx-sin-sesion', sinApp);
+  }
+
+  function vigilarSesionParaFAB() {
+    actualizarClaseSinSesion();
+    var app = document.getElementById('app');
+    if (!app || typeof MutationObserver === 'undefined') return;
+    var mo = new MutationObserver(actualizarClaseSinSesion);
+    mo.observe(app, { attributes: true, attributeFilter: ['style'] });
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 5. INICIALIZACIÓN
   // ═══════════════════════════════════════════════════════════
   function init() {
     injectCSS();
+    vigilarSesionParaFAB();
     if (!isMobile()) return;
     crearFAB();
     crearMenuMas();
