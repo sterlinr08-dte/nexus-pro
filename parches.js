@@ -5329,7 +5329,7 @@
          Los componentes ya estilizados (ni-i, qa-ico, cfg-tab) ganan solos
          por mayor specificity, no hace falta listarlos. */
       .btn .ti, button .ti, td .ti, th .ti, label .ti, summary .ti,
-      .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti, .nxs-badge .ti, .nxl-logo .ti,
+      .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti,
       .sb-av .ti, .nxDC-bank-badge .ti,
       .lshield .ti, .lsec-ic .ti,
       .ti.ti-search, .ti.ti-search-off,
@@ -5348,7 +5348,7 @@
         backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
       }
       .btn .ti::after, button .ti::after, td .ti::after, th .ti::after, label .ti::after, summary .ti::after,
-      .nx-fab .ti::after, .sb-mk .ti::after, .lmk .ti::after, .smk .ti::after, .nxs-badge .ti::after, .nxl-logo .ti::after,
+      .nx-fab .ti::after, .sb-mk .ti::after, .lmk .ti::after, .smk .ti::after,
       .sb-av .ti::after, .nxDC-bank-badge .ti::after,
       .lshield .ti::after, .lsec-ic .ti::after,
       .ti.ti-search::after, .ti.ti-search-off::after,
@@ -5392,6 +5392,27 @@
         backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
       }
       .nxPf .inw .ti::after{ content: none !important; }
+      /* .nxs-badge .ti (escudo del Splash/Loader, rediseño 1-ago-2026) aparte:
+         a diferencia de antes (cuando .nxs-badge SI estaba en el bloque
+         compartido de arriba, forzado a static), ahora el icono necesita
+         quedarse position:relative + z-index para pintarse ENCIMA de las 3
+         ondas .nxs-wave (position:absolute) -- sin eso, las ondas (elementos
+         posicionados) pintan despues que un icono static, tapando el escudo.
+         .nxl-logo quedo sin uso (el loader ahora reusa .nxs-badge) -- se
+         quito de las 2 listas de arriba por ser codigo muerto. */
+      .nxs-badge .ti{
+        width: auto !important; height: auto !important;
+        border-radius: 0 !important;
+        background: none !important;
+        box-shadow: none !important;
+        display: inline-block !important;
+        vertical-align: baseline !important;
+        line-height: inherit !important;
+        border: 0 !important;
+        overflow: visible !important;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+      }
+      .nxs-badge .ti::after{ content: none !important; }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
@@ -12650,7 +12671,7 @@
   // badge VIEJO del login, quitado en v53.7) ya estaban en esta lista; al rediseñar el login
   // en v53.8 el badge cambió de nombre a .lshield/.lsec-ic y nunca se actualizó esta lista.
   var SKIP_CTX = '.btn,button,td,th,label,summary,.cfg-tab,.qa,.ni,.kpi,' +
-                 '.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.nxl-logo,.sb-av,.nx-fab,' +
+                 '.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.sb-av,.nx-fab,' +
                  '.lshield,.lsec-ic';
   function hue(name){
     var h = 0;

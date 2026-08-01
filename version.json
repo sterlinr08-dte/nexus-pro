@@ -1,7 +1,12 @@
 {
-  "version": "54.4",
+  "version": "54.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.5",
+      "fecha": "2026-08-01",
+      "texto": "NUEVO (Pantalla de carga / Splash): rediseño completo con el mismo lenguaje visual del Login Enterprise — fondo plano #08101c (sin degradado ni manchas de color), un escudo azul #2563EB en el centro con 3 ondas circulares que se expanden lentamente (1.4s, opacidad 15-30%, sin spinner clásico, sin barras, sin puntos, sin porcentajes), título \"Cargando NEXUS PRO\" y subtítulo \"Preparando tu espacio de trabajo...\" en Plus Jakarta Sans. Al terminar la carga se desvanece con un pequeño achicamiento (200ms) y el Login aparece con su propio fade-in (220ms), coordinados entre sí. La pantalla de recarga (el spinner corto que sale al actualizar) recibió el mismo look para que las dos se sientan como una sola cosa. Se respeta \"reducir movimiento\" del sistema — con esa preferencia activada, las ondas no laten. ARREGLADO de paso, antes de que llegara a pasar: el escudo nuevo tenía el mismo hueco de las versiones 54.1-54.4 (el sistema de íconos con color automático no lo tenía en su lista de excepciones) — se protegió desde el primer commit, con la misma regla especial que necesita para pintarse ENCIMA de las 3 ondas en vez de escondido detrás."
+    },
     {
       "v": "54.4",
       "fecha": "2026-08-01",

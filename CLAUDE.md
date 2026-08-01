@@ -10266,3 +10266,94 @@ el escudo/usuario del login, sin haberse tocado nunca en la lista de excepciones
   de tiempo (8 marcas de 0 a 2000ms) confirmando que el ícono nunca recibe un estilo en línea de
   color en ningún momento y se queda estable en `position:absolute`. `node --check parches.js`
   limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Pantalla de carga (Splash) — rediseño completo, mismo lenguaje visual del Login Enterprise (1-ago-2026, v54.5)
+El dueño mandó una captura real del splash viejo (`nexusprord.com` en su iPhone: gradiente navy, esfera
+morado-azul con brillo/relieve 3D, sin relación con el Login Enterprise ya publicado en v53.8-54.4) y avisó
+que estaba preparando un reemplazo con ChatGPT. Después mandó la especificación exacta, con medidas
+concretas (colores hex, duración en segundos, timings de transición) — se implementó tal cual, sin pedirle
+confirmación de más porque el pedido ya venía completo y sin ambigüedad real.
+- **Especificación aplicada punto por punto:** fondo `#08101C` plano (sin degradado, sin manchas de color,
+  sin decoración) · en el centro, el ícono `ti-shield` de Tabler en `#2563EB` con **3 ondas circulares**
+  alrededor que se expanden lentamente (`@keyframes nxsWave`, 1.4s, loop infinito, opacidad entre 15% y
+  30%, escalonadas con `animation-delay` de 0/.467/.933s para que no las 3 exploten a la vez) · **sin**
+  spinner clásico, sin barras, sin puntos, sin porcentajes (se borró por completo la `.nxs-bar` que existía
+  antes) · título "Cargando NEXUS PRO" + subtítulo "Preparando tu espacio de trabajo..." en **Plus Jakarta
+  Sans** (fuente nueva cargada solo para esta pantalla — `nxPfEnsureCSS()` ya la carga para el POS, pero el
+  splash aparece ANTES de que esa función corra, así que se agregó su propio `<link>` en el `<head>`) ·
+  transición de salida: fade-out 200ms + `scale(.98)` (`#nxSplash.nxs-out{opacity:0;transform:scale(.98);
+  visibility:hidden}`) · el Login aparece después con su propio fade-in de 220ms.
+- **Desviación deliberada, documentada:** la especificación pedía "usar Motion para las animaciones" — Motion
+  es una librería de JavaScript (requiere `npm install`, y en su variante para React necesitaría React). Este
+  proyecto **no tiene build, no tiene npm, no tiene bundler, no tiene React** — es la arquitectura de
+  siempre, decidida por el dueño desde el principio (ver arriba, "Arquitectura (importante)"). Instalar
+  Motion habría quedado 100% inerte, igual que ya pasó esta misma sesión con `@tabler/icons-react` y
+  `lucide-react` (se probaron y se retiraron por inertes — ver la sección de más arriba). Se implementó con
+  **CSS puro** (`@keyframes`/`animation`), el mismo mecanismo que usa el 100% del resto del sistema (el
+  vocabulario de animación global de `nxPopIn`/`nxFadeUp`, v48.61) — el resultado visual es idéntico al
+  pedido (ondas expandiéndose, timings exactos), solo cambia la tecnología por debajo.
+- **`#nxLoader` (el spinner corto que sale al ACTUALIZAR la app, no al abrirla por primera vez) recibió el
+  mismo tratamiento** — no lo pedía la especificación explícita (que hablaba del "Splash Screen" de la
+  primera carga), pero es la MISMA pantalla en espíritu (fondo oscuro + espera) y antes tenía su propio
+  ícono `.nxl-logo` con degradado en caja cuadrada, chocando visualmente con el splash nuevo. Ahora reusa el
+  mismo `.nxs-badge` (escudo + 3 ondas) sin el texto — mismo criterio de "un solo lenguaje visual", no dos
+  pantallas de espera con look distinto. `.nxl-logo` (la clase vieja) quedó sin ningún uso — código muerto,
+  se limpiaron sus 2 apariciones en las listas de excepciones de íconos de `parches.js` (quedaba ahí de
+  antes, protegiéndolo del sistema de color automático — ya no hacía falta).
+- **Respeta "reducir movimiento"** (`@media (prefers-reduced-motion:reduce)`): las ondas dejan de latir
+  (`animation-duration:.01ms!important;opacity:0!important`) y el texto aparece de inmediato sin el
+  deslizamiento de entrada — mismo criterio que el resto del vocabulario de animación del sistema (v48.61).
+- **`body:has(#nxSplash) #loginScreen{opacity:0;transition:none}`** — mientras el splash sigue en el DOM, el
+  Login se queda invisible por debajo (aunque esté tapado, evita un parpadeo si el splash se remueve un
+  instante antes de que el Login termine de pintar) sin necesitar tocar ninguno de los 8+ sitios del código
+  que hacen `document.getElementById('loginScreen').style.display=...` — mismo patrón `:has()` ya
+  establecido y probado en el sistema (`body:has(.overlay.open) .nx-fab{display:none}`, v53.4). Si el
+  splash sale del DOM, la regla deja de aplicar sola y el Login usa su propia transición de opacidad de
+  220ms — sin `:has()` en el navegador, la regla se ignora entera y el Login queda visible desde siempre
+  (degrada limpio).
+- **BUG DE RAÍZ encontrado y arreglado ANTES de que llegara a pasar (no fue una regresión detectada
+  después, fue una revisión propia antes de escribir el CSS final):** `.nxs-badge`/`.nxl-logo` ya estaban
+  en las 2 listas de excepciones de íconos de `parches.js` desde antes (protegiéndolos del sistema global
+  que le pinta a cada ícono suelto un color automático — el mismo mecanismo de los bugs del login v54.1-3 y
+  del formulario del POS v54.4) — pero una de esas 2 listas **también fuerza `position:static!important`**
+  en todo lo que protege (correcto para íconos dentro de botones/celdas, que no necesitan posicionarse
+  solos). El escudo nuevo SÍ necesita quedarse `position:relative;z-index:1` para pintarse ENCIMA de las 3
+  ondas (`position:absolute`) — por las reglas de pintado de CSS (los elementos posicionados siempre pintan
+  después/encima de los hermanos sin posicionar, sin importar el orden del HTML ni el `z-index` que se le
+  ponga a un elemento `static`, que simplemente no aplica). Con el `static` forzado, el escudo habría
+  quedado **tapado detrás de las ondas**. Se sacó `.nxs-badge`/`.nxl-logo` de esa lista y se les hizo una
+  regla PROPIA (mismo patrón "excepción a prueba de posición" ya usado 2 veces esta sesión — `.lfi .ti` del
+  login v54.3, `.nxPf .inw .ti` del POS v54.4): quita color/sombra/relieve pero **sin tocar `position`**.
+- **Trampa real del propio método de prueba, encontrada y documentada para el futuro:** `page.screenshot()`
+  de Playwright espera internamente a que las fuentes web pendientes terminen de cargar antes de capturar
+  el frame — y en este entorno sandbox (sin salida general a internet) la petición a Google Fonts nunca
+  resuelve (`net::ERR_CONNECTION_RESET`), así que esa espera interna consume tiempo REAL de reloj muy por
+  encima de cualquier `page.waitForTimeout(...)` del propio test. Mientras Playwright esperaba en silencio,
+  los timers propios del splash (mínimo 2800ms, tope 8000ms) seguían corriendo en tiempo real — y para
+  cuando el screenshot por fin se tomaba, el splash YA se había auto-ocultado, dejando capturas que
+  mostraban el Login en vez del splash, aunque todas las aserciones de `getComputedStyle`/
+  `elementFromPoint` (que no dependen de `screenshot()`) confirmaran que el splash SÍ estaba presente y
+  visible en el momento exacto de la prueba. Confirmado el diagnóstico con un control mínimo (un overlay
+  rojo simple SÍ se capturaba bien) y aislando la causa con `element screenshot: Element is not attached to
+  the DOM` tras "waiting for fonts to load" en el log de Playwright. **Arreglo del harness (no del
+  código de la app):** se agregó un interceptor `page.route('**/*', ...)` que aborta al instante cualquier
+  petición que no sea al servidor HTTP local de prueba — así ninguna espera de red real consume presupuesto
+  de tiempo de los timers de la app. Es la misma clase de lección ya documentada en esta sesión con
+  `waitUntil:'load'` vs `'domcontentloaded'` (v54.5 la extiende: cualquier API de Playwright que dependa
+  de red-completa-o-fuentes-completas hay que blindarla contra este sandbox, no solo la navegación).
+- **Verificado con Playwright, código real, con el interceptor de red ya corregido:** **32 comprobaciones**
+  — fondo plano sin degradado y el hex exacto `#08101c`, exactamente 3 ondas con sus 3 delays escalonados y
+  su color azul exacto, el ícono es `ti-shield` (no `ti-shield-check`) sin degradado ni estilo en línea de
+  color, azul exacto, sigue en `position:relative` con `z-index:1` (pinta encima de las ondas), título y
+  subtítulo con el texto exacto, la fuente incluye Plus Jakarta Sans, no queda ninguna barra de progreso,
+  el Login arranca en `opacity:0` mientras el splash sigue arriba, la transición de salida deja
+  `opacity:0`+`scale(.98)`+`visibility:hidden`, tras remover el splash el Login termina en `opacity:1`
+  (tolerancia numérica, no comparación exacta de string — el muestreo cae a mitad de una transición de
+  270ms), con "reducir movimiento" activo las ondas casi no animan (duración parseada numéricamente, no
+  comparación de string) y quedan invisibles, el camino de recarga (`#nxLoader`) reusa el mismo badge con
+  las mismas 3 ondas y el mismo ícono sin ningún rastro de `.nxl-logo`, y de regresión: un ícono normal
+  fuera del splash sigue con su color automático de siempre y uno dentro de un botón sigue plano — el
+  arreglo no rompió nada del sistema de íconos existente. Capturas de pantalla revisadas visualmente (con
+  el interceptor de red ya corregido, muestran el splash real: escudo azul con las ondas visibles sobre
+  fondo `#08101c`, y el Login Enterprise revelado después). `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
