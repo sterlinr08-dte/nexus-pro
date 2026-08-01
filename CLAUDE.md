@@ -10225,3 +10225,44 @@ glossy, pese al arreglo de la v54.2 — con la instrucción "Quitar esos iconos 
   porque el pedido de hoy era específicamente el login y ampliar el arreglo a todo el sistema es un
   barrido más grande que merece su propia verificación — queda anotado como pendiente real, no
   inventado, para cuando el dueño confirme si lo quiere resuelto ahora.
+
+### POS · el mismo hueco de íconos 3D del login, cerrado en el formulario de artículo (1-ago-2026, v54.4)
+El dueño confirmó ("Si") cerrar el pendiente que había quedado anotado en la v54.3: `.nxPf .inw i`
+— el patrón "campo con ícono a la izquierda" que usan ~20+ campos del formulario de Nuevo/Editar
+artículo (`abrirProd`), Ajustes, Entidades y el modal de Nivel de precio — tenía el mismo hueco que
+el escudo/usuario del login, sin haberse tocado nunca en la lista de excepciones.
+- **Investigado antes de tocar nada, con el CSS real** (no a ojo): `.nxPf .inw i{position:absolute;
+  left:11px;color:var(--pf-txt3);font-size:14px}` vive dentro de `nxPfEnsureCSS()` — así que el
+  chequeo mejorado de la v54.3 (`getComputedStyle(el).position==='absolute'`) YA los detecta y el
+  sistema NO les pone un gradiente en línea (confirmado: `inlineStyle:null`) — pero la regla BASE de
+  CSS (`.ti{background:linear-gradient(145deg,#8b5cf6,#22d3ee);...}`, el sistema global de íconos)
+  sigue aplicando su esfera violeta-cian por defecto, porque `.inw` nunca estuvo en la lista de
+  excepciones — confirmado con una prueba real: `bg:"linear-gradient(145deg, rgb(139, 92, 246),
+  rgb(34, 211, 238))"` con `position:absolute` intacto. Mismo mecanismo exacto que el escudo del
+  login, en un lugar distinto.
+- **Trampa real encontrada AL EXTRAER el CSS para verificar** (documentada porque puede repetirse):
+  el sistema global de íconos ("ICONOS GLOBALES") NO vive dentro de `st.textContent = \`...\`` como
+  se asumió al principio (esa era la trampa de `nx-menu-editor-css` ya documentada en v49.69) —
+  vive dentro de `style.textContent = \`...\`` (variable `style`, no `st`) con
+  `style.id = "nx-dashboard-icons-3d-css"`. Un extractor que ancla en el string `"st.textContent = \`"`
+  sin verificar el nombre real de la variable cae en el injector equivocado, aunque no sea el mismo
+  error exacto del pasado — hay que contar backticks no-escapados desde el inicio del archivo hasta
+  el texto que se busca para confirmar cuál template literal lo contiene de verdad, no adivinar por
+  el primer patrón que calce.
+- **Arreglo — mismo patrón que `.lfi .ti` (v54.3):** se agregó `.nxPf .inw .ti` a la lista de
+  excepciones de CSS, con los mismos resets (sin fondo, sin sombra, sin `border-radius`, sin
+  `backdrop-filter`, `content:none` en su `::after`) pero **sin tocar `position`** — igual que el
+  ícono de Usuario del login, estos íconos necesitan quedarse `position:absolute` para verse en su
+  sitio dentro del campo; forzarlos a `static` los sacaría de lugar Y volvería a exponerlos al chequeo
+  de JavaScript (que dejaría de verlos como `absolute` y los coloriaría de nuevo).
+- Verificado con Playwright y el CSS real extraído de los 2 injectores correctos
+  (`nx-dashboard-icons-3d-css` y `nxPfCSS`) cargados juntos en un navegador, contra el markup real de
+  7 campos distintos del sistema (`ppNom`/`ppCat`/`ppCod`/`ppProv`/`cfgPrefCo` y el chevron de
+  selects, cada uno con su ícono real): **72 comprobaciones** (7 íconos × 5 chequeos × 2 anchos +
+  2 de regresión) — todas pasan: sin degradado, sin sombra, sin `border-radius`, `::after` suprimido,
+  y **siguen en `position:absolute`** en los 7 casos y en 390px/1280px; un ícono normal fuera de
+  `.nxPf .inw` sigue con su color de siempre (no se rompió el sistema global), y un ícono dentro de
+  `.nxPf` pero fuera de `.inw` (el título de una tarjeta) también sigue con su color. Más una prueba
+  de tiempo (8 marcas de 0 a 2000ms) confirmando que el ícono nunca recibe un estilo en línea de
+  color en ningún momento y se queda estable en `position:absolute`. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.

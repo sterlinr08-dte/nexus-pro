@@ -5372,6 +5372,26 @@
         backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
       }
       .lfi .ti::after{ content: none !important; }
+      /* .nxPf .inw .ti (~20+ iconos de adorno en formularios .nxPf: Nuevo/Editar
+         articulo, Ajustes, Entidades, modal de Nivel de precio) -- .inw es el
+         mismo patron 'campo con icono a la izquierda' que .lfi del login, con
+         position:absolute puesto por CSS (nxPfEnsureCSS, no inline) -- mismo
+         hueco real que el escudo/usuario del login (v54.3), encontrado al
+         auditar el resto del sistema por el mismo tipo de problema. Mismo
+         criterio que .lfi .ti: los resets SI, pero SIN tocar position. */
+      .nxPf .inw .ti{
+        width: auto !important; height: auto !important;
+        border-radius: 0 !important;
+        background: none !important;
+        box-shadow: none !important;
+        display: inline-block !important;
+        vertical-align: baseline !important;
+        line-height: inherit !important;
+        border: 0 !important;
+        overflow: visible !important;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+      }
+      .nxPf .inw .ti::after{ content: none !important; }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
