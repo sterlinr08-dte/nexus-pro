@@ -10013,3 +10013,30 @@ código real antes de tocar nada (mismo criterio de siempre — verificar, no as
   por módulo en fases siguientes, cada una verificada antes de publicar, igual que toda esta sesión.
 - **Publicado desde una rama propia** (`claude/design-system-tema-oscuro` → PR → fusionado con las
   herramientas MCP de GitHub), no directo a `main`.
+
+### Login — el escudo verde era caché del teléfono, no un bug del código (1-ago-2026, v54.1)
+El dueño mandó una captura REAL de `nexusprord.com` en su iPhone mostrando el escudo del login en
+**verde brillante tipo esfera 3D** — el diseño se hizo azul con anillo (v53.9), así que algo no cuadraba.
+- **Investigado con el método correcto, no a ojo:** se cargó el código real (`index.html`+`parches.js`)
+  en un navegador limpio y se enumeraron TODAS las reglas CSS que de verdad hacen match contra
+  `.lshield`/`.lsec-ic` (con `document.styleSheets`+`el.matches(...)`, la misma técnica que ya había
+  destapado el bug del checkbox en v53.9) — el resultado: **solo su propia regla aplica, calculan azul
+  exacto**, sin ningún otro selector pisándolas. Se revisó también el bloque "semi-glass" de `parches.js`
+  completo (no solo la parte ya blindada de inputs/botones) y las clases `.nxs-badge`/`.nxl-logo` del
+  splash/loader (también usan `ti-shield-check` pero son cuadrados navy→morado, sin relación) — ninguno
+  de los dos toca estos elementos. **Conclusión: NO hay bug en el código** — con máxima probabilidad es
+  una copia vieja guardada en el teléfono del dueño (se le indicó tocar "Actualizar" en Ajustes o cerrar
+  y reabrir la app).
+- **Sí se corrigió una diferencia real contra el mockup que el dueño mandó de referencia:** el ícono del
+  panel "Seguridad de nivel empresarial" (`.lsec-ic`) era un círculo RELLENO (`radial-gradient`); en el
+  mockup es un anillo, igual que el escudo grande de arriba. Se cambió a `background:rgba(37,99,235,.08);
+  border:1.5px solid rgba(37,99,235,.5)` — mismo lenguaje visual que `.lshield`, solo más chico.
+- **Pendiente igual que antes (sin cambios, ya documentado en v53.8/v53.9):** la foto de fondo desenfocada
+  del mockup (sala con planta, ventana con luz cálida) sigue sin poder generarse — se probó de nuevo con
+  la herramienta de imágenes disponible en este entorno (modelo `soul_location`, costo real de 1 crédito
+  confirmado con `get_cost`) pero la cuenta sigue en **0 créditos**. El fondo se queda con el desenfoque
+  100% CSS de siempre.
+- Verificado con Playwright, código real, 390px y 1280px: `.lsec-ic` ahora es anillo (`background-image:
+  none`, borde azul, fondo `rgba(37,99,235,.08)`), `.lshield` intacto, sin desbordes, 0 errores de JS.
+  `node --check parches.js` limpio (archivo no tocado); los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.
