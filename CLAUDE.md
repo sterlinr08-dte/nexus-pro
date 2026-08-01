@@ -10058,3 +10058,112 @@ El dueño mandó una captura REAL de `nexusprord.com` en su iPhone mostrando el 
   solo el estado actual) antes de insistir de nuevo en "es caché". Y cuando el código está agotado
   como sospechoso, la prueba que de verdad zanja la duda es una que el propio dueño pueda correr en su
   dispositivo real (Navegación Privada) — no otra ronda de grep.
+
+### Login — foto real de fondo (`login-bg.jpg`) + la SEGUNDA causa real del "escudo verde" (1-ago-2026, v54.2)
+El único pendiente que quedaba del mockup pixel-a-pixel (v53.9) era la foto de fondo corporativa
+desenfocada — este entorno no tiene salida a internet para buscarla y la herramienta de generación de
+imágenes seguía con **0 créditos** (confirmado dos veces, en v53.9 y v54.1). Se retomó el flujo
+**"ChatGPT diseña, Claude implementa"** ya establecido (ver "ChatGPT — nuevo flujo de trabajo para la
+parte visual" más arriba): el dueño preguntó qué pedirle a ChatGPT — se le armó un encargo concreto en
+español con los tokens de color ya en producción (`#08101c`, `rgba(13,17,23,.95)`, `#2563eb`/`#3b82f6`)
+y las reglas de siempre (subir a `chatgpt/visual-draft`, carpeta `docs/visual-drafts/login/`, nunca
+tocar `main` ni el código de la app).
+- **3 entregas de ChatGPT, las 3 rotas — verificadas con evidencia técnica, no a ojo, cada vez:**
+  1. Un SVG con la foto embebida en base64 **truncado a mitad de cadena** (459 bytes, sin cerrar
+     etiquetas) — se le explicó al dueño el punto exacto del corte y se sugirió mandar un archivo
+     binario normal en vez de base64 dentro de un SVG.
+  2. Un `.jpg` con cabecera JFIF válida (`file` lo reconoce como JPEG real) pero **con los píxeles
+     corruptos** — `PIL.Image.load()` tiraba `OSError: broken data stream`, y hasta con lectura
+     tolerante (`ImageFile.LOAD_TRUNCATED_IMAGES=True`) lo único recuperable era un PNG negro sólido
+     de 750 bytes. Además las dimensiones no coincidían con lo documentado (640×360 real vs 1280×853
+     que decía el `.md`).
+  3. Un tercer aviso de "ya está" que resultó ser **el mismo archivo roto** — confirmado comparando el
+     hash de blob de git (`git hash-object`) contra la copia ya verificada como corrupta: idéntico
+     byte a byte, no había llegado nada nuevo.
+  - El dueño terminó **subiendo la foto directo por el chat** (adjunto), saltándose la rama por esta
+    vez. Verificada con PIL antes de usarla: JPEG real, 1280×853, 38,983 bytes, decodifica limpio sin
+    ningún error — pasillo de oficina nocturno, salas de reunión con vidrio, un panel/monitor con
+    gráficas en la pared, luz cálida bajo un mueble, una planta, piso oscuro reflectante, sin personas.
+    **Pendiente:** avisarle al dueño que le diga a ChatGPT que suba esta MISMA foto (ya buena) a
+    `chatgpt/visual-draft` para que quede el registro — esa rama todavía solo tiene el `.jpg` viejo
+    roto de 11,907 bytes.
+- **Implementación (`index.html`, solo `#loginScreen` y sus pseudo-elementos):** las 2 manchas de luz
+  100% CSS que estaban de sustituto desde la v53.8/v53.9 (`repeating-linear-gradient`+`blur(60px)`) se
+  reemplazaron por la foto real: `background:#08101c url('login-bg.jpg') center/cover no-repeat`, con
+  un degradado oscurecedor en `::before` (`rgba(4,9,20,.58)→.74`, arriba más claro que abajo, donde
+  vive la tarjeta) y una viñeta radial en `::after` para que las esquinas se apaguen y el centro (la
+  tarjeta) quede legible — mismo criterio que el `.md` de ChatGPT pedía ("mantener un overlay oscuro y
+  frío si hace falta legibilidad, sin cambiar la paleta aprobada"). El archivo `login-bg.jpg` se guardó
+  en la raíz del repo, mismo patrón que `logo-nexus-pro-mark.png`/`icon-*.png` — Cloudflare lo sirve tal
+  cual, sin build.
+- **LA SEGUNDA CAUSA REAL, encontrada al verificar la foto en un navegador — distinta de la v54.1,
+  NO era caché:** con el fondo real ya puesto, el escudo (`.lshield`) volvió a salir **verde relleno**,
+  el mismo síntoma que el dueño ya había reportado dos veces. Se investigó a fondo, con 2 intentos
+  fallidos antes de dar con la causa real (documentados aquí porque explican por qué el problema no era
+  obvio):
+  1. **Intento 1 — oscurecer el fondo del círculo** (de `transparent`/`rgba(37,99,235,.08)` a un navy
+     sólido `#0d1420`), por la teoría de que el `backdrop-filter` de la tarjeta se estaba "manchando"
+     con algún color de fondo. Reprobado: el ícono siguió verde con el fondo del contenedor ya opaco —
+     el mecanismo real no tenía nada que ver con el fondo del círculo.
+  2. **Intento 2 — neutralizar el propio ícono por CSS con `!important`**
+     (`.lshield i,.lsec-ic i{background:none!important;...}`), tras encontrar por enumeración de CSSOM
+     (`document.styleSheets` + `el.matches(...)`, la misma técnica de la v53.9) un sistema genérico de
+     "badge con relieve 3D" para íconos sueltos. Reprobado también: el `backdrop-filter` sí quedó en
+     `none` (confirmado por `getComputedStyle`), pero el `background-image` **siguió siendo el
+     degradado verde** — ninguna regla de hoja de estilos, por más específica o con `!important`, le
+     podía ganar a lo que sea que estuviera pintando ese verde.
+  3. **La causa real, encontrada inspeccionando el atributo `style` del elemento directamente** (no el
+     CSSOM — el CSSOM solo enumera reglas de HOJAS de estilo, nunca estilos puestos por JavaScript):
+     `el.getAttribute('style')` mostraba `background: linear-gradient(145deg, rgb(37, 208, 117),
+     rgb(77, 230, 204)) !important; box-shadow: ... !important` **con un `data-nxc="1"` al lado** — un
+     estilo en línea con `!important` puesto por JavaScript, que le gana a CUALQUIER regla de CSS sin
+     importar su especificidad. Un `grep` de `data-nxc` en `parches.js` llevó directo al culpable: la
+     IIFE **"Iconos multicolor"** (línea ~12601), un sistema que existe desde hace mucho (`v13.1: iconos
+     multicolor con relieve 3D uniforme en todo el sistema`, muy anterior a esta sesión) y que le pone
+     un color calculado a CUALQUIER `<i class="ti ...">` suelto de TODA la app — el color sale de un
+     hash del nombre del ícono (`hue(name)=(suma de char-code*31)%360`), así que es 100% determinístico:
+     **verificado a mano que `hue('ti-shield-check')=148` → `hsl(148,70%,48%)=rgb(37,208,117)`, el
+     verde EXACTO que se veía en la captura del dueño** — no una coincidencia, una prueba matemática.
+  - **La raíz del bug: `SKIP_CTX` (la lista de contextos donde el sistema debe dejar el ícono plano)
+    nunca se actualizó cuando el login cambió de badge.** Antes de la v53.7 el logo del login usaba las
+    clases `.lmk`/`.smk`, que SÍ estaban protegidas en esa lista desde siempre. Al rediseñarse el login
+    en la v53.8 (cristal esmerilado), el badge cambió de nombre a `.lshield`/`.lsec-ic` — y nadie sumó
+    esos 2 nombres nuevos a `SKIP_CTX`. El escudo quedó expuesto al sistema de colores desde ese
+    momento, silenciosamente, sin que ningún cambio posterior del login (v53.9, v54.1) lo notara.
+  - **Arreglo de raíz — cero parche de CSS, un candado en la fuente:** se agregó `.lshield,.lsec-ic` a
+    `SKIP_CTX` (con un comentario explicando la causa exacta, para que quien toque este archivo después
+    sepa por qué están ahí) — así el sistema de íconos nunca vuelve a tocar el escudo, sin importar
+    cuántas veces cambie de color el resto de la app. Se revirtieron los 2 intentos fallidos (el fondo
+    opaco y la regla CSS de neutralización) — `.lshield`/`.lsec-ic` quedaron EXACTAMENTE en sus valores
+    originales ya aprobados (fondo transparente/tenue, borde y color azul `#3b82f6`).
+  - **Honestidad sobre lo que esto deja sin resolver del todo:** este bug es 100% determinístico (mismo
+    hash → mismo verde, en CUALQUIER carga de la página, en cualquier navegador o modo) y estuvo vivo
+    en `main` desde que se fusionó el PR #228 (31-jul-2026, el rediseño de cristal esmerilado) — es
+    decir, ya estaba presente durante la prueba de **Navegación Privada** que en la v54.1 se tomó como
+    confirmación de que el problema era solo caché. Un bug determinístico no debería dar verde en una
+    pestaña y azul en otra con el MISMO código corriendo — así que esa prueba, en sentido estricto, no
+    se explica del todo con lo que se sabe ahora. La investigación de la v54.1 revisó el bloque
+    "semi-glass" de `parches.js` (que sí es JS y sí pone estilos con `!important`, pero afecta a
+    `input`/`select`/`button`, NUNCA a `<i class="ti">`) — nunca llegó a la IIFE de "Iconos multicolor",
+    que es un mecanismo completamente aparte. No se tiene una explicación confirmada de por qué la
+    Navegación Privada mostró azul en ese momento (la más plausible, sin confirmar: que `parches.js` no
+    llegara a cargar/ejecutar del todo en esa prueba puntual, por lo que fuera — condición de red,
+    alguna protección de privacidad de Safari en modo privado — y el ícono se quedara con su CSS base,
+    que ya es azul). **Lo que sí es cierto y no depende de resolver ese misterio histórico:** con
+    `SKIP_CTX` arreglado, el escudo no puede volver a colorearse por este mecanismo nunca más, sin
+    importar caché, sin importar modo de navegación — el candado está en la fuente, no en un efecto
+    secundario de las circunstancias de una prueba puntual.
+- **Verificado con Playwright, código real, en los dos anchos de siempre** (390px móvil / 1280px
+  escritorio, servidos por HTTP local — `login-bg.jpg` copiada junto a `index.html`/`parches.js` en el
+  webroot de prueba): el fondo referencia `login-bg.jpg` con `cover`/`center`, la imagen carga sin
+  romperse (1280×853 reales), la tarjeta sigue con su fondo oscuro casi opaco de siempre, sin desborde
+  horizontal en ninguno de los 2 anchos. Para el ícono: `.lshield` y `.lsec-ic` NO tienen ningún
+  `style` en línea (el sistema de colores los saltó, tal como debía), su `background-color` computado
+  es transparente (el de diseño), y capturas de pantalla en los 2 anchos confirman visualmente el
+  círculo azul de vidrio de siempre, con la foto de fondo asomando alrededor de la tarjeta. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` (1,423 / 488,428 / 681 caracteres)
+  pasan `new Function()`; `version.json` válido.
+- **Pendiente:** que ChatGPT suba la foto ya buena a `chatgpt/visual-draft` para dejar el registro
+  (el dueño ya sabe que hay que pedírselo). Los 4 extras opcionales que traía el `.md` original del
+  fondo (glow de foco sutil, entrada de la tarjeta con fade+scale de ~180ms, intensidad del glow del
+  escudo, legibilidad en móvil) quedan sin construir — no eran obligatorios y no se pidieron esta vez.

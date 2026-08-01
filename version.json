@@ -1,7 +1,12 @@
 {
-  "version": "54.1",
+  "version": "54.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.2",
+      "fecha": "2026-08-01",
+      "texto": "NUEVO (Login): foto real de fondo (pasillo de oficina corporativa nocturna, desenfocada, sin personas) enviada por el dueño — reemplaza las 2 manchas de luz solo-CSS que estaban de sustituto desde la v53.8/v53.9. ARREGLADO (segunda causa real del \"escudo verde\", encontrada al construir lo de arriba): además de lo ya investigado en la v54.1, se encontró un bug de raíz aparte — un sistema global de íconos (parches.js) le pone un color calculado (hash del nombre del ícono) a CUALQUIER ícono suelto de la app con !important, y el escudo del login (ti-shield-check) nunca estuvo en su lista de excepciones desde que se rediseñó en la v53.8 (confirmado con la fórmula exacta: da verde). Se agregó a esa lista — el escudo queda protegido para siempre, sin ningún parche de CSS por encima. Se probaron 2 caminos antes de encontrar la causa real (los dos se descartaron por no funcionar): oscurecer el fondo del círculo, y forzar el ícono a estilo plano por CSS — ninguno podía ganarle al color puesto directo por JavaScript."
+    },
     {
       "v": "54.1",
       "fecha": "2026-08-01",
