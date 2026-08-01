@@ -8428,6 +8428,7 @@ no quiera el método — es que no lo conoce ni tiene por qué.
 | "no me funciona", "está dando error", "esto está mal", "se ve raro", manda una captura de algo roto, "¿por qué pasa esto?" | **`gstack-investigate`** — obliga a demostrar la causa ANTES de escribir el arreglo (su regla #3: "arreglos de RAÍZ, no parches") |
 | "revisa antes de publicar", "¿está bien esto?", o el cambio toca **dinero** (cobro, cuotas, contabilidad, facturación, comisiones, nómina, caja) | **`gstack-review`** — antes de abrir el PR |
 | "quiero que haga X" sin más detalle, manda un mockup/imagen/brief de ChatGPT, "hazme un módulo de…" | **`gstack-spec`** — primero convertir en especificación (qué se construye y qué NO), después programar |
+| Piden **construir/agregar algo nuevo** (una función, un botón, un módulo) — ANTES de escribir la primera línea | **`ponytail`** (modo `full`) — repasa la escalera: ¿ya existe en el repo una función/patrón que sirva? Reusarla antes de escribir código nuevo. Evita repetir el error real de los 4 intentos fallidos de ChatGPT en Vender/Prefactura (`MutationObserver` genérico adivinando el DOM en vez de editar `renderVender`/`gridHTML`, que ya existían — ver "Limpieza de 4 intentos de ChatGPT" más abajo) |
 | "¿qué construyo primero?", "¿vale la pena?", "quiero vender esto", decisiones de alcance o precio | **`gstack-plan-ceo-review`** |
 | Antes de un cambio grande de arquitectura, esquema o algo que toque varias pantallas | **`gstack-plan-eng-review`** |
 | Cualquier cosa de RLS, permisos, `organizacion_id`, aislamiento entre empresas, logins, claves | **`gstack-cso`** |
@@ -8455,6 +8456,11 @@ no quiera el método — es que no lo conoce ni tiene por qué.
 6. **`ship`/`land-and-deploy` de gstack NO están instaladas a propósito** — el flujo de
    publicación de este proyecto ya está definido (subir `APP_VERSION` + `version.json`, rama
    propia → PR → fusionar con las herramientas MCP de GitHub). No buscar reemplazarlo.
+7. **`ponytail` en modo `ultra` NUNCA en Cobro/Crédito/Contabilidad/Inventario** (los reglamentos
+   de negocio, `REGLAMENTOS.md` §1-§9) — su propia filosofía es "cuestiona el requerimiento,
+   dispara el one-liner", y este sistema exige auditar antes de recortar. Modo `full`/`lite` sí se
+   pueden usar ahí — respetan la excepción de no simplificar seguridad/manejo de errores que la
+   propia skill ya trae.
 
 > Catálogo completo de las 12 skills de gstack instaladas, con qué se le quitó a cada una:
 > `.agents/skills/GSTACK-README.md`.
