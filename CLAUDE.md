@@ -10040,3 +10040,21 @@ El dueño mandó una captura REAL de `nexusprord.com` en su iPhone mostrando el 
   none`, borde azul, fondo `rgba(37,99,235,.08)`), `.lshield` intacto, sin desbordes, 0 errores de JS.
   `node --check parches.js` limpio (archivo no tocado); los 3 `<script>` de `index.html` pasan
   `new Function()`; `version.json` válido.
+- **El dueño insistió que seguía viendo el escudo verde en producción, con captura real de
+  `nexusprord.com`** — obligó a descartar la teoría de caché con evidencia dura, no repetirla a ciegas.
+  Se hizo `git log -p --all -S ".lshield{"` sobre TODO el historial del repo: **el escudo nunca fue
+  verde en ningún commit**, siempre azul desde que se creó (v53.8). Se confirmó que `origin/main` (lo
+  que Cloudflare sirve) trae el CSS azul correcto, que ningún otro chat había tocado el archivo en
+  paralelo, y que `worker.js` (el Worker real de Cloudflare, leído con las herramientas MCP) sirve
+  `index.html` como archivo estático directo — sin ninguna lógica que pudiera recolorearlo. Con el
+  código 100% descartado, se le pidió al dueño la prueba decisiva: abrir el sitio en una pestaña de
+  **Navegación Privada** de Safari (sin ningún caché posible). **Resultado: ahí el escudo sale azul,
+  exactamente como el código** — confirma que era caché de su Safari normal, no del código ni de
+  Cloudflare. Se le indicó borrar los datos del sitio desde Ajustes → Safari → Avanzado → Datos de
+  sitios web → `nexusprord.com`, para que su pestaña normal también se ponga al día.
+- **Lección de método:** cuando el dueño reporta "sigue igual" DESPUÉS de un fix ya publicado y
+  verificado, no alcanza con repetir la misma comprobación de código — hay que buscar evidencia que
+  la CONTRADIGA activamente (acá: recorrer TODO el historial de git de esa clase CSS específica, no
+  solo el estado actual) antes de insistir de nuevo en "es caché". Y cuando el código está agotado
+  como sospechoso, la prueba que de verdad zanja la duda es una que el propio dueño pueda correr en su
+  dispositivo real (Navegación Privada) — no otra ronda de grep.
