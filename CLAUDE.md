@@ -10587,3 +10587,46 @@ a un navy/azul de marca real (`#08101c`/`#2563eb`/`#3b82f6`).
   mismo tamaño que antes en cada uno); comparación visual a 180/76/32/16px confirmando que la "N"
   se sigue leyendo en los 4 tamaños. `node --check parches.js` limpio (archivo no tocado);
   `version.json` válido.
+
+### POS · barra fija de abajo — arreglado el ancho en PC (1-ago-2026, v55.1)
+El dueño mandó una foto real de la pantalla de Prefactura en su computadora (monitor ThinkVision) tras el
+cambio de v54.8 (la barra fija de Cancelar/Guardar/Cobrar se extendió de móvil-only a también-en-PC).
+**Causa raíz, confirmada mirando la foto antes de tocar código:** `.nxFacBar` es `position:fixed;left:0;
+right:0` (borde a borde, correcto para móvil) y el botón primario `.fbP` es `flex:1 1 auto` (crece para
+llenar lo que sobre) — en un monitor de escritorio ese "lo que sobre" es casi todo el viewport, así que el
+botón GUARDAR terminaba estirado a ~1900px de ancho, dejando una franja gris enorme y desproporcionada.
+No se había notado en v54.8 porque esa versión solo verificó que la barra apareciera en PC (visibilidad),
+no su proporción/ancho.
+- **Arreglo — mismo criterio de breakpoint ya usado en el resto del sistema** (`.nxDoc` ya usa
+  `@media(max-width:760px)` para sus reglas móviles, así que `@media(min-width:761px)` es el corte
+  complementario correcto): regla nueva que en pantallas de escritorio cambia `.nxFacBar` de barra
+  borde-a-borde a **panel flotante centrado** — `left:50%;right:auto;transform:translateX(-50%);
+  width:min(640px,calc(100% - 48px))`, con esquinas redondeadas arriba y una sombra más elevada (mismo
+  lenguaje visual que un pie de modal/diálogo, no un pie de pantalla completa). El botón primario sigue
+  creciendo con `flex:1 1 auto`, pero ahora DENTRO de un ancho ya razonable — nunca vuelve a verse
+  desproporcionado. En móvil (`max-width:760px`) no se tocó nada — sigue exactamente borde a borde, como
+  siempre.
+- **`.nxCompBar` (Compras) queda cubierto por la misma regla** — `nxStickyBarSet()` siempre le pone la
+  clase `.nxFacBar` al elemento que crea, sin importar el `id` recibido (`'nxFacBar'` o `'nxCompBar'`,
+  gotcha ya documentado en v54.8) — así que un solo selector de clase basta para las dos barras.
+- **BUG DEL PROPIO MÉTODO DE PRUEBA, encontrado y corregido ANTES de confiar en el resultado (no era un
+  bug del código):** el primer intento de extraer el CSS real del archivo (para probarlo contra el
+  código de verdad, no una reconstrucción a mano) cortaba el texto justo DESPUÉS del `';` que cierra el
+  string de JavaScript (`st.textContent += '...';`) — ese `';` es sintaxis de JS, no CSS, pero al quedar
+  pegado al final del fragmento extraído metía una comilla simple suelta y sin cerrar dentro del
+  `<style>` de la página de prueba. El navegador, al toparse con una comilla sin cerrar, descarta en
+  silencio TODO lo que viene después como un token de string sin terminar — sin ningún error visible.
+  Confirmado inspeccionando `document.styleSheets[...].cssRules` directamente: la regla de la media
+  query simplemente NO estaba en el CSSOM parseado, aunque el archivo real la tuviera bien escrita.
+  Corregido cortando la extracción exactamente en la llave `}` que cierra la propia regla CSS, nunca en
+  la puntuación de JavaScript que viene después — con eso, 10 de 11 comprobaciones pasaron de inmediato
+  (la única que seguía fallando era un umbral arbitrario de la propia prueba —"< 500px"— contra un botón
+  de 550px que en realidad es perfectamente razonable dentro de una barra de 640px; se ajustó el umbral a
+  algo con sentido real, `< 640 && > 40`, y las 11 pasaron limpio).
+- **Verificado con Playwright, CSS real extraído del archivo** (no una reconstrucción), en 5 anchos:
+  1920px (barra capada <700px, centrada con >400px de margen a cada lado, esquinas redondeadas, botón
+  GUARDAR de 550px dentro de la barra de 640px), 1366px (sigue capada), Compras a 1920px (también capada,
+  misma clase compartida), 390px móvil (sin regresión — sigue borde a borde exacto, botón creciendo
+  normal) y justo en el punto de corte (760px sigue borde-a-borde, 761px ya capada). Las 11
+  comprobaciones pasan. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
+  `new Function()`; `version.json` válido.

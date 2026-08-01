@@ -1,7 +1,12 @@
 {
-  "version": "55.0",
+  "version": "55.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.1",
+      "fecha": "2026-08-01",
+      "texto": "ARREGLADO (POS, PC): el dueño mandó una foto real de la pantalla de Prefactura en su computadora — la barra fija de abajo (v54.8, la que se agregó recién para que se viera igual en PC que en el celular) cubría TODO el ancho de la pantalla de punta a punta, dejando el botón GUARDAR gigante y desproporcionado, con una franja gris casi vacía a los lados. Causa: el botón principal (`flex:1 1 auto`) crece para llenar lo que sobre del contenedor — y en un monitor de escritorio ese contenedor era el viewport completo, así que el botón terminaba estirándose a casi 1900px de ancho. Arreglado con una regla nueva SOLO para pantallas de escritorio (`min-width:761px`, el mismo corte que ya usa el resto del sistema para separar móvil de PC): la barra pasa a ser un panel flotante centrado, con un ancho máximo razonable (hasta 640px) y las esquinas redondeadas arriba — como el pie de un diálogo, no como una barra de pantalla completa. En el celular (donde SÍ debe ir de borde a borde, como siempre) no cambió nada. Verificado con 11 pruebas automáticas contra el CSS real del sistema, en varios anchos de pantalla (1920px, 1366px, 390px móvil, y justo en el punto exacto donde cambia de uno a otro) — confirmando que en PC la barra queda compacta y centrada, y en móvil sigue exactamente igual que antes."
+    },
     {
       "v": "55.0",
       "fecha": "2026-08-01",
