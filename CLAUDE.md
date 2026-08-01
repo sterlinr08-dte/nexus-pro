@@ -10357,3 +10357,77 @@ confirmación de más porque el pedido ya venía completo y sin ambigüedad real
   el interceptor de red ya corregido, muestran el splash real: escudo azul con las ondas visibles sobre
   fondo `#08101c`, y el Login Enterprise revelado después). `node --check parches.js` limpio; los 3
   `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Login — el amarillo del autofill, el panel "Seguridad" fuera, y los efectos de la 3ra imagen (1-ago-2026, v54.6)
+El dueño mandó 3 capturas: (1) una REAL de su iPhone mostrando los campos Usuario/Contraseña con un
+fondo **amarillo** en vez del oscuro del diseño; (2) otra REAL mostrando el panel "Seguridad de nivel
+empresarial" (con el FAB flotante morado encimado, prueba de que es la captura real de producción); (3)
+un mockup de referencia (ChatGPT) con el login ya funcionando bien: escudo con halo vívido, botón azul
+con un destello de vidrio, sin el panel de seguridad. Pidió 3 cosas: quitar el amarillo (usar el color
+de la imagen 3), quitar el panel "Seguridad de nivel empresarial" por completo, y aplicarle los mismos
+efectos de la imagen 3.
+- **1. El amarillo — diagnóstico correcto sin necesitar reproducirlo en este entorno:** el patrón
+  (fondo pálido amarillo, SOLO en los 2 campos con `autocomplete="username"`/`"current-password"`) es
+  la firma exacta del resaltado nativo de `:-webkit-autofill` que Safari/Chrome/Edge le ponen a un
+  campo cuando reconocen una credencial guardada — el navegador pinta su PROPIO fondo por encima del
+  `background:#0f172a` de siempre, y ningún `background` de autor (con o sin `!important`) le puede
+  ganar; el único truco que funciona es un `box-shadow: 0 0 0 1000px <color> inset` (llena el campo con
+  nuestro color "desde adentro") + `-webkit-text-fill-color` (fuerza el texto blanco, que igual queda
+  ignorado por el color normal del texto bajo autofill). Se agregó dentro del bloque "blindaje" ya
+  existente (`#loginScreen .lfr input`, el mismo que ya pelea contra el tema semi-glass global) — mismo
+  patrón de siempre en este archivo. **Verificación honesta:** el navegador headless de este entorno SÍ
+  implementa `:-webkit-autofill` (a diferencia de otros bugs de iOS ya documentados aquí que son
+  imposibles de reproducir fuera de un dispositivo real), pero simular el estado "credencial guardada
+  por el sistema" dentro de una prueba automatizada es frágil — se verificó en su lugar que la regla CSS
+  existe y trae el `box-shadow` correcto (el mecanismo, no el disparador), y se dejó documentado el
+  criterio estándar de la industria para este arreglo, que es el mismo en todos los navegadores basados
+  en WebKit/Blink.
+- **2. Panel "Seguridad de nivel empresarial" — QUITADO por completo.** Se borró el `<div class="lsec">`
+  entero del HTML (icono+título+texto) y sus 4 reglas CSS (`.lsec`/`.lsec-ic`/`.lsec b`/`.lsec span`),
+  que ya no las usaba nadie más. **Limpieza en cascada, siguiendo la regla #1 del reglamento ("depurar —
+  quitar dead code"):** `.lsec-ic` vivía también en las DOS listas de excepciones del sistema de íconos
+  de `parches.js` (la de CSS y el `SKIP_CTX` de JS, ambas creadas en v54.1-54.3 específicamente para
+  proteger este mismo panel del "escudo verde") — al quedar el panel sin ningún elemento en el DOM, esas
+  2 referencias a `.lsec-ic` quedaron huérfanas; se sacaron de las 2 listas (con el comentario actualizado
+  explicando por qué), dejando `.lshield` (el escudo de arriba, que SÍ sigue existiendo) intacto en ambas.
+- **3. Efectos de la imagen 3 — comparación pieza por pieza, con capturas ampliadas de la referencia
+  (no a ojo):** se recortó y amplió el escudo, el botón y el checkbox del mockup para ver exactamente qué
+  faltaba. El checkbox ya calzaba (relleno azul sólido + check blanco, sin cambios). Dos piezas sí
+  necesitaban más: (a) **el halo del escudo** — la referencia muestra un aro más vívido con un brillo
+  más extendido; se subió la opacidad del borde y se agregó una 3ra capa de `box-shadow` (antes 2 capas,
+  ahora `0 0 20px` + `0 0 46px` + `0 0 90px`, todas en el mismo azul), más un fondo radial tenue detrás
+  del ícono y un `filter:drop-shadow` en el propio glifo del escudo para que el brillo se sienta también
+  en los trazos del ícono, no solo en el aro. (b) **el destello del botón** — la referencia muestra un
+  degradado más vivo con una banda más clara arriba, un efecto "vidrio" típico de botones Apple/Stripe.
+  Se agregó como una SEGUNDA capa de `background` (gradiente blanco-a-transparente encima del gradiente
+  azul de siempre, en la MISMA propiedad `background`, separadas por coma) — a propósito NO se usó un
+  pseudo-elemento `::before` para esto: por el orden de pintado de CSS, un `::before` con
+  `position:absolute` pintaría ENCIMA del ícono y el texto del botón (que son contenido en línea sin
+  posicionar), tapándolos parcialmente; una segunda capa de `background` en cambio se pinta siempre
+  DETRÁS de cualquier contenido, sin ese riesgo — evitado antes de escribir el código, no descubierto
+  después de un bug visual.
+- **El cambio se hizo en LOS DOS lugares donde vive cada regla** (la base `.lbtn`/`.lshield` y el bloque
+  "blindaje" `#loginScreen .lbtn{...!important}` que existe para ganarle al tema semi-glass global de
+  `parches.js`) — mismo cuidado ya documentado varias veces en este archivo: cambiar solo la base y
+  olvidar el blindaje deja el `!important` del blindaje pisando el valor nuevo con el viejo.
+- **Se investigó pero DELIBERADAMENTE NO se tocó** un hallazgo real que salió de las propias capturas del
+  dueño: el botón flotante morado (`.nx-fab`, el menú "Más" del móvil) aparece encimado sobre el login en
+  las 2 capturas reales — confirmado que es un bug genuino (`crearFAB()`/`crearMenuMas()` en `parches.js`
+  se disparan en cualquier `DOMContentLoaded` en móvil, sin comprobar si el usuario ya inició sesión). Se
+  investigó un arreglo con `:has()` (mismo patrón ya usado en el splash) pero se descartó por un riesgo
+  real: `#loginScreen` y `#app` NUNCA se quitan del DOM (solo alternan `style.display`), así que un
+  selector `:has(#loginScreen)` habría escondido el FAB **para siempre, incluso después de iniciar
+  sesión** — un bug peor que el que se quería arreglar. La alternativa robusta (comparar el atributo
+  `style` serializado) depende de detalles de cuándo el navegador re-serializa ese atributo, que no se
+  pudo confirmar sin riesgo de una regresión intermitente; y tocar los 8+ puntos del flujo de login para
+  agregar una señal propia se sale del tamaño de "arreglo chico y seguro" para esta ronda. Se le queda
+  pendiente al dueño como hallazgo documentado, no como algo resuelto en silencio.
+- Verificado con Playwright, código real, 390px y 1280px (splash forzado a ya-mostrado vía
+  `sessionStorage` para llegar directo al login): **14 comprobaciones** — el panel `.lsec`/`.lsec-ic` ya
+  no existe en el DOM ni su texto aparece, existe una regla CSS para `:-webkit-autofill` con el
+  `box-shadow` inset correcto, el escudo tiene sus 3 capas de sombra + `drop-shadow` en el ícono (y el
+  ícono sigue SIN estilo en línea de color — el sistema de íconos automático lo sigue respetando), el
+  botón tiene sus 2 capas de `background` (destello + gradiente), los campos Usuario/Contraseña siguen
+  con su fondo oscuro normal (`rgb(15, 23, 42)`, sin regresión), sin desborde horizontal en 390px ni
+  1280px. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
