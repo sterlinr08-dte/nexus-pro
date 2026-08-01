@@ -1,7 +1,12 @@
 {
-  "version": "54.8",
+  "version": "54.9",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.9",
+      "fecha": "2026-08-01",
+      "texto": "NUEVO/QUITADO (Multiempresa): se eliminó por completo el módulo **AGUAPRO ERP** — el negocio de agua para el que se construyó decidió no usarlo, así que el dueño pidió sacarlo del sistema. Antes de tocar nada se investigó el alcance real: era un módulo 100% autocontenido (una sola IIFE de ~1,040 líneas dentro de `parches.js`, registrada en el hub de Multiempresa vía `nxMERegistrar`), con sus propias 10 tablas en Supabase (`agua_clientes`/`agua_productos`/`agua_pedidos`/`agua_botellones`/`agua_produccion`/`agua_caja`/`agua_movimientos`/`agua_proveedores`/`agua_compras`/`agua_config`) y sin ninguna otra parte del sistema dependiendo de él. Se verificó ANTES de borrar que esas 10 tablas solo tenían datos de PRUEBA (un cliente literalmente llamado \"PRUEBA 1\", en la propia organización del dueño — nunca hubo un negocio real usándolo) — con eso confirmado, se quitó el módulo completo del frontend y se borraron las 10 tablas de la base. También se limpió la entrada \"agua\" de la lista blanca de \"dónde me quedé\" (`NX_MODULOS_LUGAR`, la que restaura el último módulo abierto tras actualizar la app) para no dejar una referencia colgando a una función que ya no existe. Verificado: `node --check parches.js` limpio, los 3 bloques de código de `index.html` compilan sin errores, cero excepciones de JavaScript al cargar la app, y una auditoría de seguridad de la base (`get_advisors`) confirmó que no quedó ningún hallazgo nuevo tras borrar las tablas — solo desaparecieron las 10 de AGUAPRO, todo lo demás quedó exactamente igual."
+    },
     {
       "v": "54.8",
       "fecha": "2026-08-01",
