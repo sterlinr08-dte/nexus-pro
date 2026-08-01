@@ -1,7 +1,12 @@
 {
-  "version": "54.0",
+  "version": "54.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.1",
+      "fecha": "2026-08-01",
+      "texto": "ARREGLADO (Login): el dueño mandó una captura de su iPhone mostrando el escudo del login en VERDE brillante tipo esfera 3D, en vez del anillo azul con el que se diseñó — se cargó el código real en un navegador con arranque limpio y se confirmó que calcula azul exacto, sin ninguna otra regla pisándolo: la causa más probable es una copia vieja guardada en el teléfono (toca 'Actualizar' en Ajustes, o cierra y vuelve a abrir la app). Se aprovechó para corregir la única diferencia real contra el mockup del dueño: el ícono del panel 'Seguridad de nivel empresarial' pasó de un círculo relleno a un anillo azul (igual que el escudo grande de arriba), tal como pedía la imagen. La foto de fondo desenfocada del mockup sigue sin poder generarse — la herramienta de imágenes de este entorno sigue en 0 créditos."
+    },
     {
       "v": "54.0",
       "fecha": "2026-07-31",
