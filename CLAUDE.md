@@ -10630,3 +10630,92 @@ no su proporción/ancho.
   normal) y justo en el punto de corte (760px sigue borde-a-borde, 761px ya capada). Las 11
   comprobaciones pasan. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan
   `new Function()`; `version.json` válido.
+
+### POS · Ventana de Cobrar — auditoría, mockup aprobado y rediseño real (1-ago-2026, v55.2)
+El dueño pidió auditar el proceso de cobro y el botón "Opciones" de la ventana de Cobrar, confirmar que
+tuvieran reglamento/procedimiento documentado, y **presentarlo antes de tocar código** ("Muéstrame una
+muestra primero" — mismo criterio de siempre, ver §2/§11 de `REGLAMENTOS.md`). Se auditó `nxPosCobrar`/
+`leerCobro`/`nxPosConfirmar` línea por línea contra el código real, se confirmaron 3 problemas con
+evidencia (no a ojo): (1) `.nxPgQ{display:flex;flex-wrap:wrap}`+`button{flex:1 1 auto}` producía un botón
+"+2,000" gigante y solo en una fila aparte en casi cualquier iPhone (reproducido con Playwright de 360 a
+428px, con la fuente REAL `'Segoe UI',system-ui,-apple-system,sans-serif` — un test aislado sin ese font-
+stack no lo reproducía, lección ya anotada en otras partes de este archivo sobre no confiar en fuentes por
+defecto del navegador de prueba); (2) el pie solo tenía "Opciones"+"Confirmar venta" — sin Cancelar,
+contra el propio REGLAMENTOS.md §11 ("todo pie de acción necesita Cancelar"); (3) "Opciones" no mapea a
+ninguno de los 4 roles canónicos del reglamento y esconde campos de uso frecuente (Vendedor, Descuento).
+Se le mostró un mockup (`Artifact`, favicon 💳) con 2 direcciones, luego se le pidió feedback puntual y
+respondió con 3 correcciones exactas — **el cliente no se puede remover**, **faltan botones de
+imprimir**, **el vendedor debe ser el mismo del login automático** — más una pregunta técnica ("¿la barra
+inferior en qué va a funcionar?", respondida con evidencia: el pie de Cobrar YA usa el patrón correcto de
+REGLAMENTOS.md §11 — modal `max-height:94vh` con flexbox-column y su propio pie fijo DENTRO, no necesita
+el mecanismo `nxStickyBarSet`/`.nxFacBar` de las pantallas completas). Se le mostró el módulo real de
+Vendedores (`ajustesVendedores`/`abrirVend`) como referencia visual de datos reales, y finalmente una
+comparación lado a lado del ancho de escritorio (460px actual vs 620px ensanchado, mismo criterio que la
+barra fija v55.1) — **eligió la recomendada (ensanchar)**.
+- **HALLAZGO CLAVE que cambió el diseño del botón de imprimir:** el propio historial de este archivo ya
+  documentaba (v49.72→v49.77) que un botón de imprimir DENTRO de Cobrar se había revertido porque
+  `proxNumeroFacturaCorto()` solo mira la secuencia, no la aparta — imprimir antes de confirmar arriesgaba
+  entregar un número que después le tocara a OTRA venta. Esa razón sigue vigente y no se tocó. Pero al
+  investigar el flujo actual (`nxPosConfirmar`) se encontró la causa real de "faltan botones de imprimir":
+  al confirmar, el sistema cerraba el modal de Cobrar y abría el ticket con `window.open('','_blank')`
+  **después de varios `await`** (el POST a `pos_ventas`, a `pos_venta_items`, etc.) — casi cualquier
+  navegador (Safari del iPhone incluido) bloquea un popup que no viene pegado de forma síncrona al toque
+  original del usuario. En producción, ese ticket probablemente nunca llegaba a abrirse — de ahí que el
+  dueño viera "faltar" los botones: estaban ahí, encerrados en una ventana que el navegador nunca mostró.
+- **Arreglo real (parches.js, `nxPosCobrar`/`nxPosConfirmar`), 6 piezas quirúrgicas, cero cambios a la
+  lógica de dinero/validaciones/impuestos de `nxPosConfirmar` (los §2/§3 de REGLAMENTOS.md siguen intactos
+  — límite de crédito, caja abierta, cuotas vencidas, IMEI, mínimos, etc.):**
+  1. **`.nxPgQ` pasó de flex-wrap a `display:grid;grid-template-columns:repeat(3,1fr)`** — 6 botones =
+     siempre 2 filas de 3, sin importar el ancho de pantalla; nunca un huérfano que se estire a ocupar
+     toda la fila.
+  2. **Chip de cliente con ✕ dedicada:** `.nxPgCli` pasó de `<button>` a `<div role="button" tabindex="0">`
+     (mismo patrón ya usado con la estrella de favorito en Vender, v48.81 — un `<button>` no puede
+     contener otro `<button>`) con un `<button class="nxPgCliX">` real adentro (`event.stopPropagation()`
+     para no disparar el toggle del contenedor). Refactor: la lógica de re-precio que antes vivía inline
+     dentro del callback de `nxPosClienteAbrir` se extrajo a `_posCobroCliAplicar(c)`, compartida por
+     `nxPosCobroCliToggle` (abre el buscador) y `nxPosCobroCliClear` (la ✕, sin abrir nada) — evita
+     duplicar la regla de re-precio del §2 en dos sitios.
+  3. **Vendedor auto-completado:** `_posVendAuto()` busca en `_vendedores` por coincidencia de nombre
+     contra `curSesPOS().nom` (no hay FK real entre el login y `pos_vendedores`, es intencional — mismo
+     criterio "safe no-op fallback" ya usado en otras partes del sistema); si hay match, el `<option>`
+     sale preseleccionado con un badge azul "AUTO" junto a la etiqueta; sin match, cae a "— Sin vendedor —"
+     como siempre, sin bloquear ni forzar nada — el cajero lo cambia libremente en cualquier caso.
+  4. **Botón Cancelar** (`.nxPgCan`, nuevo) en el pie, antes de Opciones — cierra el modal sin pedir
+     confirmación (abrir Cobrar no toca el carrito, solo lo hace Confirmar venta, así que no hay nada que
+     perder al cancelar).
+  5. **Estado "✅ Vendido" DENTRO del mismo modal, reemplaza el popup ciego:** `nxPosConfirmar` ya no hace
+     `cerrarModal('nxPosPago')` + `ticketHTML(ventaTicket)` al final — ahora llama a `_posVentaExito(v)`,
+     que reemplaza el `innerHTML` del `.modal` (el mismo nodo, sigue abierto y visible) por un encabezado
+     verde "Vendido" + número real + resumen (cliente/artículos/total) + **3 botones reales, cada uno
+     disparado por el CLIC del cajero, no por un callback async** — así ningún navegador los bloquea:
+     "Imprimir ticket" (llama a `ticketHTML(v)`, la misma función de siempre, ahora desde un clic directo),
+     "Factura completa" (llama a `window.nxFacDocVenta(v.id)`, ya existía, solo le faltaba este botón), y
+     "Enviar por WhatsApp" (`nxPosVentaWA`, nuevo — arma un mensaje con los artículos y el total, usa
+     `waNum(c.telefono)` + el mismo formato `https://wa.me/`+num que ya usa `nxPosCliWA`; si el cliente no
+     tiene teléfono válido, el botón sale deshabilitado con `title` explicando por qué, en vez de un botón
+     muerto). "Nueva venta" cierra el modal — mismo punto de salida de siempre.
+  6. **Ensanchada en escritorio:** `@media(min-width:761px){.nxPago{max-width:620px}...}` — mismo
+     breakpoint exacto ya usado en la barra fija (v55.1) — con `.nxPgHd`/`.nxPgBody`/`.nxPgFt` (padding) y
+     `.nxPgTot`/`.nxPgBig input` (tipografía) proporcionalmente más grandes; en móvil (`≤760px`) no cambia
+     nada, sigue en 460px como siempre.
+- **Verificado con Playwright, código real extraído por contenido de `parches.js`** (no una reconstrucción
+  — el bloque completo desde `function leerCobro()` hasta el cierre de `nxPosConfirmar`, 38.224 caracteres,
+  cargado en un navegador con un backend Supabase simulado): **34 comprobaciones** — la rejilla de 6
+  botones nunca produce un huérfano gigante (ancho parejo, 3 columnas reales), el pie tiene Cancelar/
+  Opciones/Confirmar venta, sin cliente la ✕ está oculta y el chevron se ve (y viceversa con cliente
+  elegido), el vendedor se auto-selecciona a "Robinson" cuando la sesión es "Robinson" (badge AUTO
+  visible) y cae a "Sin vendedor" sin badge cuando no hay match, la ✕ del cliente limpia el chip SIN abrir
+  el buscador completo (verificado que `nxPosClienteAbrir` no se llama), Cancelar cierra sin confirmar,
+  `.nxPago` mide `620px` en 1600px y `460px` en 390px, una venta completa en efectivo deja el modal
+  ABIERTO con el estado "Vendido" (nunca se cierra solo), NO se abre ningún popup automático, los 3
+  botones llaman a `ticketHTML`/`nxFacDocVenta`/WhatsApp con los datos reales de la venta recién creada
+  (incluido el número de teléfono correcto en la URL de `wa.me` y el total en el mensaje), el botón de
+  WhatsApp queda deshabilitado con un cliente sin teléfono, "Nueva venta" cierra el modal, y una venta a
+  Consumidor final (sin cliente elegido) se confirma igual de bien. Capturas de pantalla revisadas en
+  390px (con y sin cliente, y el estado "Vendido") y 1600px (desktop ensanchado) — sin desbordes, 0
+  errores de JavaScript en todo el recorrido. `node --check parches.js` limpio.
+- **Deliberadamente NO tocado:** ninguna validación de negocio de `nxPosConfirmar` (límite de crédito,
+  caja abierta, IMEI, mínimos, cuotas vencidas — REGLAMENTOS.md §2/§3, todas intactas), ni la restricción
+  histórica de "no imprimir antes de confirmar" (el número de factura sigue sin apartarse hasta el POST
+  real — el estado "Vendido" solo aparece DESPUÉS de que la venta ya existe en la base, con su NCF/número
+  reales).
