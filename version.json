@@ -1,7 +1,12 @@
 {
-  "version": "54.7",
+  "version": "54.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.8",
+      "fecha": "2026-08-01",
+      "texto": "NUEVO (POS): la barra de acciones fija de abajo (Cancelar/Guardar/Cobrar pegada al fondo de la pantalla, en Factura/Prefactura y en \"Nueva compra\") ahora TAMBIÉN se ve en la computadora — antes era solo para el celular. El dueño lo pidió: \"ese POS está más enfocado a PC porque es para vender\". Antes de prenderla en PC se investigó el riesgo real: esos mismos 3 botones ya vivían DENTRO del propio documento (sin necesidad de fijarlos abajo), así que prender la barra sin más habría dejado los botones DUPLICADOS (uno adentro del documento, otro flotando abajo). Se arregló de raíz: los botones internos de Factura (\"Vista previa\"/\"Cobrar\"/\"Cancelar\") y el pie de \"Nueva compra\" se ocultan automáticamente en CUALQUIER tamaño de pantalla mientras la barra fija esté visible — nunca los dos a la vez, ni en móvil ni en PC. **Bug real encontrado y corregido ANTES de publicar** (con una prueba automatizada, no se vio a simple vista): la primera versión del arreglo intentaba ocultar el pie de \"Nueva compra\" con una regla que buscaba una CLASE que en realidad nunca existe en el sistema (las dos barras — la de Factura y la de Compras — comparten la MISMA clase interna, solo cambia su identificador) — con ese error, el pie de Compras se habría quedado duplicado sin que nadie lo notara hasta verlo en vivo. Corregido apuntando al identificador correcto y verificado con 16 comprobaciones automáticas (en PC y en celular) antes de publicar."
+    },
     {
       "v": "54.7",
       "fecha": "2026-08-01",
