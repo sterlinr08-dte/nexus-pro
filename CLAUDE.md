@@ -10550,3 +10550,40 @@ de agua") decidió no usarlo, así que se sacó del sistema por completo.
   `nxMERegistrar` (el mecanismo del hub) sigue funcionando para el resto de módulos. `get_advisors`
   de seguridad en Supabase corrido después del `DROP`: sin ningún hallazgo nuevo — solo
   desaparecieron las 10 tablas de AGUAPRO, todo lo demás del listado de siempre quedó igual.
+
+### El icono del iPhone (PWA) — colores al día con la marca nueva (1-ago-2026, v55.0)
+El dueño: *"Vamos a cambiar el logo del icono en el menú de inicio del iPhone"*. El icono que se
+ve al instalar NEXUS PRO como PWA (`icon-*.png`, generados por `gen_icon.py`, referenciados desde
+`manifest.json` y `<link rel="apple-touch-icon">` en `index.html`) seguía siendo el azul claro
+genérico de la versión original — **de antes** del rediseño del login (v53.8-54.6), que ya pasó
+a un navy/azul de marca real (`#08101c`/`#2563eb`/`#3b82f6`).
+- **El logo completo "NEXUS PRO" (el que se usa en el login) no cabe legible en un icono de 16-180px**
+  — es un logotipo horizontal ancho con texto ("NEXUS" + insignia "PRO" + línea de tagline), pensado
+  para un encabezado, no para un ícono cuadrado chico. Se le explicó esto al dueño y se le mostraron
+  **3 propuestas simplificadas** (generadas con PIL/Python, mismo método que ya usa `gen_icon.py`,
+  renderizadas con el recorte redondeado real de iOS para que se vieran como quedarían de verdad):
+  (A) una insignia "PRO" sola, reusando el mismo azul/forma de la insignia real del logo aprobado;
+  (B) un monograma "NP" en blanco con el acento diagonal azul del logo; (C) el escudo hexagonal de
+  siempre, con los colores nuevos de la marca en vez de los viejos.
+- **El dueño eligió C** — mantener el escudo de siempre (mismo criterio que un rediseño de colores,
+  no una nueva identidad) pero con los tonos reales de la marca actual.
+- **Bug de legibilidad encontrado y corregido ANTES de publicar (no llegó a producción):** el primer
+  intento de la opción C usaba la fuente del sistema para dibujar "NP" (2 letras) — a 16px (el tamaño
+  del favicon) se veía como un borrón sin forma, ilegible. El icono ORIGINAL nunca tuvo ese problema
+  porque su "N" no es texto de fuente — son 3 trazos gruesos dibujados a mano con `ImageDraw.line` +
+  remates redondeados en las uniones (mucho más tolerante a downscale agresivo que un glifo de
+  fuente con detalles finos). Se corrigió replicando exactamente esa misma técnica (una sola letra
+  "N", no dos) con los colores nuevos — verificado a 16/32/76/180px que sigue legible en los 4.
+- **`gen_icon.py` actualizado** (mismos 9 tamaños de siempre: `icon-16/32/192/512.png`,
+  `icon-apple-76/120/152/180.png`, `icon-512 (1).png`): fondo `vgrad` de navy `#182e54`→`#08101c`
+  (antes un azul más claro sin relación con el login), escudo cristalino `#609afa`→`#1e40af` (antes
+  `#6eafff`→`#1d4ed8`, un azul distinto), glow radial en `#3b82f6` (el mismo tono exacto que
+  `.lshield` del login). La forma del hexágono, la sombra, el brillo de vidrio, el borde blanco y la
+  "N" a trazos gruesos **no cambiaron** — es un cambio de paleta, no de diseño.
+- **Cero cambios en `manifest.json` ni `index.html`** — los 9 archivos se sobrescribieron con el
+  MISMO nombre de siempre, así que las referencias existentes (`<link rel="apple-touch-icon"...>`,
+  `manifest.json.icons[]`) siguen apuntando a los archivos correctos sin tocar una línea.
+- Verificado: los 9 archivos regenerados con las dimensiones y el modo de color correctos (RGB,
+  mismo tamaño que antes en cada uno); comparación visual a 180/76/32/16px confirmando que la "N"
+  se sigue leyendo en los 4 tamaños. `node --check parches.js` limpio (archivo no tocado);
+  `version.json` válido.
