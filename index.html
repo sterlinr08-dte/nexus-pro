@@ -75,15 +75,10 @@ select{-webkit-appearance:none;-moz-appearance:none;appearance:none;padding-righ
    !important, así que la flecha nunca se pintaba (verificado: quedaba en "none"). */
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 10px center!important;background-size:10px 6px!important}
 
-/* ── LOGIN (v4 — Enterprise glass, mockup del dueño 31-jul-2026, ver CLAUDE.md) ── */
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;position:relative;overflow:hidden;background:#08101c}
-#loginScreen::before{content:'';position:absolute;inset:-15%;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 900px 560px at 82% 14%,rgba(37,99,235,.18),transparent 62%),
-    radial-gradient(ellipse 760px 560px at 10% 88%,rgba(30,64,175,.16),transparent 62%),
-    repeating-linear-gradient(115deg,rgba(148,163,184,.035) 0px,rgba(148,163,184,.035) 2px,transparent 2px,transparent 90px);
-  filter:blur(60px)}
-#loginScreen::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 42%,rgba(2,6,15,.62) 100%)}
+/* ── LOGIN (v5 — foto corporativa real de fondo, mockup ChatGPT 1-ago-2026, ver CLAUDE.md) ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;position:relative;overflow:hidden;background:#08101c url('login-bg.jpg') center/cover no-repeat}
+#loginScreen::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(4,9,20,.58) 0%,rgba(4,9,20,.74) 100%)}
+#loginScreen::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,rgba(2,6,15,.7) 100%)}
 .lwrap{position:relative;z-index:1;width:100%;max-width:430px}
 .lbox{position:relative;width:100%;background:rgba(13,17,23,.95);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border:1px solid #1e293b;border-radius:28px;padding:2.75rem 2.25rem 2.25rem;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:lxBoxIn .5s cubic-bezier(.2,.8,.3,1) both}
 @keyframes lxBoxIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -4074,7 +4069,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='54.1';
+const APP_VERSION='54.2';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

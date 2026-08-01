@@ -12603,8 +12603,14 @@
   if (window.__NX_ICON_COLOR__) return;
   window.__NX_ICON_COLOR__ = true;
   // Contextos donde el icono NO debe ser badge (debe quedar plano)
+  // .lshield/.lsec-ic (1-ago-2026): CAUSA RAÍZ del "escudo verde" que reportó el dueño en el
+  // login — este sistema le pone hash('ti-shield-check')%360=148° (verde) a CUALQUIER ícono
+  // ti-shield-check suelto, con !important inline (ningún CSS le puede ganar). .lmk/.smk (el
+  // badge VIEJO del login, quitado en v53.7) ya estaban en esta lista; al rediseñar el login
+  // en v53.8 el badge cambió de nombre a .lshield/.lsec-ic y nunca se actualizó esta lista.
   var SKIP_CTX = '.btn,button,td,th,label,summary,.cfg-tab,.qa,.ni,.kpi,' +
-                 '.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.nxl-logo,.sb-av,.nx-fab';
+                 '.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.nxl-logo,.sb-av,.nx-fab,' +
+                 '.lshield,.lsec-ic';
   function hue(name){
     var h = 0;
     for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
