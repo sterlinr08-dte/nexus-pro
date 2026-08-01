@@ -10167,3 +10167,61 @@ tocar `main` ni el código de la app).
   (el dueño ya sabe que hay que pedírselo). Los 4 extras opcionales que traía el `.md` original del
   fondo (glow de foco sutil, entrada de la tarjeta con fade+scale de ~180ms, intensidad del glow del
   escudo, legibilidad en móvil) quedan sin construir — no eran obligatorios y no se pidieron esta vez.
+
+### Login — el escudo verde de la v54.2 era una corrección INCOMPLETA: hay DOS listas, no una (1-ago-2026, v54.3)
+El dueño mandó 2 capturas REALES de `nexusprord.com` (no de un mockup) — el ícono del campo "Usuario
+o correo electrónico" como una esfera glossy azul-cian, y el escudo de arriba TODAVÍA como esfera
+glossy, pese al arreglo de la v54.2 — con la instrucción "Quitar esos iconos 3D".
+- **Corrección honesta sobre lo dicho en la v54.2:** ahí se le dijo al dueño "el escudo mostrando 3D
+  es muy probablemente caché" — **eso era incorrecto**, y se descubrió al investigar el campo
+  Usuario (un ícono que NUNCA se había tocado, así que no podía ser cuestión de caché). La v54.2
+  arregló de raíz el mecanismo que decide **qué color de hash** ponerle a un ícono
+  (`SKIP_CTX` en JavaScript) — pero ese es solo UN lado del sistema. Investigando el CSS real se
+  encontró una **segunda lista, completamente aparte, en CSS puro** (comentada en el propio archivo
+  como "ICONOS GLOBALES: todo icono 'suelto' como círculo de color... Excepciones: estos NO deben
+  ser círculo") que existe desde `v13.1` (mucho antes de esta sesión) — TODO ícono `.ti` recibe por
+  defecto, vía una regla CSS base de baja especificidad, una esfera de vidrio violeta→cian
+  (`#8b5cf6→#22d3ee`) con relieve 3D y un reflejo (`::after`), y esta lista de excepciones tiene sus
+  PROPIAS 14 clases protegidas (`.btn`, `button`, `.nx-fab`, `.lmk`, `.smk`...) — que **nunca**
+  incluyó `.lshield`/`.lsec-ic`/`.lfi`, exactamente el mismo hueco que `SKIP_CTX` tenía, pero en un
+  mecanismo COMPLETAMENTE distinto que la v54.2 nunca tocó. Por eso el escudo seguía en 3D: la v54.2
+  arregló que no le pusiera un color de HASH específico, pero nunca le quitó el color POR DEFECTO
+  que la base ya le pone a todo ícono suelto, así que seguía viéndose como esfera de cristal —
+  cambió de "verde" a "violeta-cian genérico", pero seguía siendo una esfera 3D, no el anillo plano
+  del diseño.
+- **Arreglado:** se agregaron `.lshield .ti, .lsec-ic .ti` a la lista de excepciones de CSS (y sus
+  correspondientes `::after` a la lista que suprime el reflejo) — mismo patrón exacto que las otras
+  14 entradas ya existentes, ninguna tocada.
+- **Efecto secundario real, encontrado y corregido ANTES de publicar (no llegó a producción):** el
+  ícono del campo Usuario (`.lfi i`) es distinto a los otros 14 — **necesita quedarse
+  `position:absolute`** para sentarse encima del campo (`.lfi i{position:absolute;left:16px;
+  top:50%;...}`, es un adorno de input, no un badge suelto). La lista de excepciones de CSS, además
+  de quitar el fondo/sombra, **también fuerza `position:static!important`** en las 14 entradas
+  existentes (correcto para ellas — íconos dentro de botones/celdas no necesitan posicionarse solos)
+  — pero agregar `.lfi` ahí de la misma forma **le quitaba el `position:absolute` que necesita para
+  su propio layout**, Y de paso rompía el propio chequeo de posición que se había arreglado en la
+  v54.2 (`getComputedStyle(el).position==='absolute'` — con la posición forzada a `static`, ese
+  chequeo dejaba de detectarlo, así que JavaScript LO SEGUÍA coloreando, solo que con otro tono).
+  Detectado con un test de tiempos (`t=0ms` hasta `t=2000ms`) que mostró el ícono coloreado desde el
+  primer instante con `pos:"static"` en vez de `"absolute"`. **Arreglo real:** `.lfi .ti` se sacó de
+  la lista compartida de las 14 y se le hizo su PROPIA regla, con los mismos resets de fondo/sombra/
+  relieve pero SIN tocar `position` — así conserva su sitio Y el chequeo de JavaScript lo detecta
+  bien.
+- **Verificado con Playwright, código real, timing explícito** (se midió el estado del ícono del
+  campo Usuario en 8 momentos distintos, de 0ms a 2000ms, para descartar una condición de carrera —
+  quedó estable "sin colorear" en los 8): en 390px y 1280px, los 3 íconos (Usuario/escudo grande/
+  escudo del panel de seguridad) quedan sin `background-image`, sin `box-shadow`, sin `border-radius`
+  forzado y con su reflejo `::after` suprimido; el ícono del campo Usuario sigue centrado
+  verticalmente sobre el campo y a 16px del borde (no perdió su sitio); un ícono normal SIN excluir
+  (probado con `ti-shopping-cart` fuera de cualquier contexto protegido) sigue recibiendo su color de
+  hash normalmente — sin regresión en el resto del sistema. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Hallazgo real, NO corregido en esta versión (fuera de alcance de lo pedido, se le avisa al
+  dueño):** esta MISMA lista de excepciones de CSS también le falta a `.nxPf .inw i` (~20 íconos
+  distintos del formulario "Nuevo/Editar producto" del POS — código de barras, efectivo, categoría,
+  paquete...) y a algunos otros adornos de input fuera del login (confirmado con grep del propio
+  archivo) — esos íconos, HOY, también deberían estar saliendo como esferas de cristal violeta-cian
+  en vez de íconos planos grises, en una pantalla de uso diario del POS. No se tocó en esta versión
+  porque el pedido de hoy era específicamente el login y ampliar el arreglo a todo el sistema es un
+  barrido más grande que merece su propia verificación — queda anotado como pendiente real, no
+  inventado, para cuando el dueño confirme si lo quiere resuelto ahora.

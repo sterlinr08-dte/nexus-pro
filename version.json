@@ -1,7 +1,12 @@
 {
-  "version": "54.2",
+  "version": "54.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.3",
+      "fecha": "2026-08-01",
+      "texto": "ARREGLADO (Login, el escudo verde de la v54.2 era una corrección incompleta): el dueño mandó 2 capturas reales mostrando el ícono del campo Usuario Y el escudo todavía en 3D/con color — el arreglo de la v54.2 solo tocó una de las DOS listas que controlan esto (la de JavaScript); había una SEGUNDA lista, en CSS, que le pone a cada ícono suelto una esfera de color con relieve 3D por defecto, y esa lista tampoco tenía a estos 2 íconos — por eso seguían saliendo coloreados aunque la de JavaScript ya estuviera arreglada. Se agregaron a la lista de CSS también. Al hacerlo se encontró un efecto secundario real: el ícono del campo Usuario necesita quedarse \"flotando\" sobre el campo para verse en su sitio, y la lista de CSS por accidente se lo quitaba — se armó una regla aparte para que quede plano SIN perder su posición. Se probó con capturas del código real, en 2 tamaños de pantalla, verificando que ningún otro ícono del sistema perdiera su color."
+    },
     {
       "v": "54.2",
       "fecha": "2026-08-01",
