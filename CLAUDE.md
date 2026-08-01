@@ -10471,3 +10471,37 @@ login**. El dueño respondió: *"Hazlo con cuidado"*.
   capturar en toda la carga. Las 10 comprobaciones pasan. Capturas de pantalla revisadas: sin rastro
   del botón morado sobre el login, y reaparece limpio tras "iniciar sesión". `node --check parches.js`
   limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Barra de acciones fija ahora TAMBIÉN en PC (1-ago-2026, v54.8)
+El dueño: *"Con relación al POS la barra inferior en la Pc no se visualiza solo se ve en el iPhone ese
+POS está más enfocado a Pc por qué es para vender"*. La barra fija de abajo (Cancelar/Guardar/Cobrar,
+`.nxFacBar`/`.nxCompBar`, `nxStickyBarSet`) era mobile-only desde que se construyó (v52.9→v53.2,
+`@media(max-width:760px)`) — investigado con `AskUserQuestion` antes de tocar nada, porque prenderla en
+PC sin más habría dejado los botones **duplicados** (los mismos ya vivían dentro del propio documento
+en PC, visibles sin scroll, y la barra los repetiría flotando abajo). El dueño eligió **"Prenderla
+también en PC"**.
+- **Arreglo, solo CSS/HTML, cero lógica de cobro tocada:** se sacó todo el bloque de la barra del
+  `@media(max-width:760px)` — `body:has(#v-pos.on) .nxFacBar{display:flex}` ya no depende del ancho de
+  pantalla. Los botones internos que antes solo se ocultaban en móvil (`.nxDoc .facTot .acc`/`.cancel`
+  en Factura, el pie de "Nueva compra" — se le agregó la clase nueva `.compResFoot` para poder
+  apuntarle) ahora se ocultan por **`body:has(...)` de la barra**, no por ancho — así nunca se duplican
+  en NINGÚN tamaño de pantalla. El levantamiento del FAB (`.nx-fab.nxFabLift`) se dejó sin media query
+  también — es inofensivo en PC porque el FAB (`.nx-fab`) solo se crea en móvil (`isMobile()`), así que
+  esas reglas simplemente no matchean nada ahí.
+- **BUG REAL encontrado y corregido ANTES de publicar, con una prueba automatizada (no se vio a
+  simple vista):** el primer intento ocultaba el pie de Compras con `body:has(.nxCompBar) .compResFoot
+  {display:none}` — pero `nxStickyBarSet()` (el motor compartido) le pone **SIEMPRE** `className =
+  'nxFacBar'` al elemento que crea, sin importar si el `id` que recibió es `'nxFacBar'` o `'nxCompBar'`
+  — o sea, la clase `.nxCompBar` **nunca existe** en el DOM (solo existe como `id`). Con ese selector
+  roto, el pie de Compras jamás se habría ocultado y habría quedado duplicado con la barra flotante en
+  producción. Corregido a `body:has(#nxCompBar) .compResFoot{display:none!important}` (selector de ID,
+  que sí existe). **Lección repetida en este archivo, otra vez confirmada:** una prueba automatizada
+  contra el CSS real encontró el bug antes de publicarlo — a ojo, mirando solo el código, este error
+  era fácil de pasar por alto.
+- Verificado con Playwright cargando el **CSS real extraído del archivo** (literal, no reconstruido) en
+  markup sintético fiel a la estructura real, en PC (1280px) y móvil (390px): **16 comprobaciones** —
+  la barra se ve en los 2 anchos (Factura y Compras), los botones internos de Factura quedan ocultos,
+  el pie de Compras queda oculto, `.nxTMain` gana el padding-bottom para no tapar contenido, sin
+  ninguna barra los botones internos se ven normal (sin regresión del caso base), y con un overlay
+  abierto la barra se sigue ocultando en cualquier ancho. Las 16 pasan en los 2 anchos. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
