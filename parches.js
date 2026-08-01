@@ -25538,6 +25538,14 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     //    `body:has(.nxCompBar)` en vez de por ancho — para no duplicar los mismos 3 botones (uno
     //    adentro del documento, otro flotando abajo) en NINGÚN tamaño de pantalla, ni PC ni móvil. ──
     st.textContent += '.nxFacBar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;gap:8px;align-items:stretch;background:#fff;border-top:1px solid #e5e7eb;box-shadow:0 -6px 20px rgba(15,23,42,.09);padding:9px 12px calc(9px + env(safe-area-inset-bottom))}.nxFacBar button{font-family:inherit;cursor:pointer;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;line-height:1}.nxFacBar .fbC,.nxFacBar .fbG{flex:0 0 auto;border:1.5px solid #e2e8f0;background:#fff;color:#475569;font-weight:800;font-size:14px;padding:13px}.nxFacBar .fbC{color:#94a3b8}.nxFacBar .fbP{flex:1 1 auto;border:0;background:#0f172a;color:#fff;font-weight:900;font-size:15px;padding:14px}.nxFacBar .fbP:active{background:#1e293b}.nxFacBar button:active{filter:brightness(.95)}.nxFacBar button:disabled{opacity:.45;cursor:default}.nxFacBar .fbP i{font-size:19px}.nxFacBar .fbG i,.nxFacBar .fbC i{font-size:18px}body:has(#v-pos.on) .nxFacBar{display:flex}body:has(.nxFacBar) .nxDoc .facTot .acc,body:has(.nxFacBar) .nxDoc .facTot .cancel{display:none}body:has(#nxCompBar) .compResFoot{display:none!important}body:has(.nxFacBar) .nxTMain{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}.nx-fab.nxFabLift{transform:translateY(-78px)!important}.nx-fab.nxFabLift:active{transform:translateY(-78px) scale(.92)!important}.nx-fab.nxFabLift.open{transform:translateY(-78px) rotate(90deg)!important}body:has(.overlay.open) .nxFacBar,body:has(.overlay.on) .nxFacBar{display:none!important}';
+    // EXTENDIDA A PC (v54.8) pero SIN capar el ancho -> en un monitor de escritorio el botón
+    // primario (.fbP, flex:1 1 auto) crecía para llenar TODO lo que sobraba del viewport,
+    // dejando una franja gris vacía enorme (bug real reportado por el dueño con foto: la barra
+    // se veía "rota", un botón gigante casi vacío). Arreglo: en pantallas ≥761px la barra se
+    // encoge a un panel flotante centrado (mismo criterio que un footer de modal/diálogo, no
+    // un pie de pantalla completo) — el botón primario sigue creciendo, pero DENTRO de un
+    // ancho ya razonable, así que nunca vuelve a verse desproporcionado.
+    st.textContent += '@media(min-width:761px){.nxFacBar{left:50%;right:auto;transform:translateX(-50%);width:min(640px,calc(100% - 48px));border-radius:16px 16px 0 0;box-shadow:0 -14px 34px rgba(15,23,42,.14)}}';
     document.head.appendChild(st);
     inyectarCSSTienda();
   }
