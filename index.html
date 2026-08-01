@@ -96,7 +96,8 @@ body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
 .llogomark{display:block;width:70%;max-width:300px;height:auto;margin:0 auto 26px;animation:lxHeroIn .55s cubic-bezier(.2,.8,.3,1) both}
 @keyframes lxHeroIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.llogomark{animation:none}}
-.lshield{width:96px;height:96px;border-radius:50%;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;background:transparent;border:1.5px solid rgba(37,99,235,.5);box-shadow:0 0 34px rgba(37,99,235,.35),0 0 70px rgba(37,99,235,.15);color:#3b82f6;font-size:38px}
+.lshield{width:96px;height:96px;border-radius:50%;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(37,99,235,.14) 0%,transparent 70%);border:1.5px solid rgba(59,130,246,.65);box-shadow:0 0 20px rgba(37,99,235,.55),0 0 46px rgba(37,99,235,.35),0 0 90px rgba(37,99,235,.18);color:#60a5fa;font-size:38px}
+.lshield i{filter:drop-shadow(0 0 10px rgba(96,165,250,.7))}
 .lh{font-size:27px;font-weight:700;color:#fff;margin-bottom:6px;text-align:center}
 .lver{font-size:14.5px;color:#94a3b8;font-weight:400;text-align:center;margin-bottom:30px}
 .lfr{margin-bottom:18px}
@@ -117,12 +118,8 @@ body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
 .lforgot{font-size:13px;color:#2563eb;text-decoration:none;cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
 .lforgot:hover,.lforgot:focus-visible{text-decoration:underline}
 .lerr{background:rgba(220,38,38,.14);border:1px solid rgba(248,113,113,.3);border-radius:8px;padding:10px;font-size:11px;color:#fca5a5;margin-bottom:14px;display:none;text-align:center}
-.lbtn{width:100%;height:58px;background:linear-gradient(135deg,#1e40af,#2563eb);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;letter-spacing:.4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .15s,box-shadow .15s;box-shadow:0 8px 22px rgba(37,99,235,.28)}
+.lbtn{width:100%;height:58px;background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,0) 55%),linear-gradient(135deg,#1e40af,#2563eb);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;letter-spacing:.4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .15s,box-shadow .15s;box-shadow:0 8px 22px rgba(37,99,235,.28)}
 .lbtn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(37,99,235,.4)}.lbtn:active{transform:translateY(0);filter:brightness(.95)}.lbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.lsec{display:flex;align-items:flex-start;gap:14px;margin-top:24px;padding:16px;background:#0f172a;border:1px solid #1e293b;border-radius:16px}
-.lsec-ic{width:44px;height:44px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:rgba(37,99,235,.08);border:1.5px solid rgba(37,99,235,.5);box-shadow:0 0 16px rgba(37,99,235,.35);color:#3b82f6;font-size:19px}
-.lsec b{display:block;font-size:13.5px;font-weight:700;color:#fff;margin-bottom:3px}
-.lsec span{font-size:12px;color:#94a3b8;line-height:1.5}
 @media (max-width:420px){.lbox{padding:2.25rem 1.5rem 1.75rem}}
 /* BLINDAJE: parches.js inyecta un tema global "semi-glass" (input,select,textarea,
    .btn,button{...!important}) que corre SIEMPRE, en cualquier pantalla, sin estar
@@ -132,10 +129,25 @@ body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
    ya usan el sidebar del POS y el de Financiamiento contra conflictos iguales. */
 #loginScreen .lfr input{background:#0f172a!important;border:1px solid #1e293b!important;border-radius:12px!important;box-shadow:none!important}
 #loginScreen .lfr input:focus{border-color:#2563eb!important;box-shadow:0 0 0 3px rgba(37,99,235,.2)!important;outline:none!important}
+/* Autofill/sugerencia de contraseña de Safari/Chrome (iOS): el navegador pinta su
+   propio fondo amarillo pálido sobre el campo, ignorando el background de arriba —
+   el truco estándar es un box-shadow inset del tamaño del campo con NUESTRO color,
+   más -webkit-text-fill-color para que el texto siga blanco. Reportado por el
+   dueño con captura real del iPhone (1-ago-2026). */
+#loginScreen .lfr input:-webkit-autofill,
+#loginScreen .lfr input:-webkit-autofill:hover,
+#loginScreen .lfr input:-webkit-autofill:focus,
+#loginScreen .lfr input:-webkit-autofill:active{
+  -webkit-text-fill-color:#fff!important;
+  -webkit-box-shadow:0 0 0 1000px #0f172a inset!important;
+  box-shadow:0 0 0 1000px #0f172a inset!important;
+  caret-color:#fff!important;
+  transition:background-color 9999s ease-in-out 0s,color 9999s ease-in-out 0s!important;
+}
 #loginScreen .lchk input[type=checkbox]{background:#0f172a!important;border:1.5px solid #334155!important;border-radius:6px!important;box-shadow:none!important}
 #loginScreen .lchk input[type=checkbox]:checked{background:#2563eb!important;border-color:#2563eb!important}
 #loginScreen .lchk input[type=checkbox]:focus-visible{box-shadow:0 0 0 3px rgba(37,99,235,.35)!important}
-#loginScreen .lbtn{background:linear-gradient(135deg,#1e40af,#2563eb)!important;border:none!important;border-radius:12px!important;box-shadow:0 8px 22px rgba(37,99,235,.28)!important}
+#loginScreen .lbtn{background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,0) 55%),linear-gradient(135deg,#1e40af,#2563eb)!important;border:none!important;border-radius:12px!important;box-shadow:0 8px 22px rgba(37,99,235,.28)!important}
 #loginScreen .lbtn:hover{box-shadow:0 14px 30px rgba(37,99,235,.4)!important}
 
 /* ── SPLASH (pantalla de carga — rediseño Enterprise, mismo lenguaje visual que
@@ -1127,7 +1139,6 @@ input[type="text"].no-upper, input[type="search"].no-upper{
   <div class="lerr" id="loginErr" aria-live="polite"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
   <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#94a3b8;text-decoration:none" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">🔒 Probar inicio de sesión seguro (beta)</a></div>
-  <div class="lsec"><div class="lsec-ic"><i class="ti ti-shield-lock"></i></div><div><b>Seguridad de nivel empresarial</b><span>Tus datos están protegidos mediante cifrado y altos estándares de seguridad.</span></div></div>
 </div>
 </div>
 </div>
@@ -4079,7 +4090,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='54.5';
+const APP_VERSION='54.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

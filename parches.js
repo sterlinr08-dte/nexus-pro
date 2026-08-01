@@ -5331,7 +5331,7 @@
       .btn .ti, button .ti, td .ti, th .ti, label .ti, summary .ti,
       .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti,
       .sb-av .ti, .nxDC-bank-badge .ti,
-      .lshield .ti, .lsec-ic .ti,
+      .lshield .ti,
       .ti.ti-search, .ti.ti-search-off,
       i.ti[style*="absolute"], i.ti[style*="position:absolute"]{
         width: auto !important; height: auto !important;
@@ -5350,7 +5350,7 @@
       .btn .ti::after, button .ti::after, td .ti::after, th .ti::after, label .ti::after, summary .ti::after,
       .nx-fab .ti::after, .sb-mk .ti::after, .lmk .ti::after, .smk .ti::after,
       .sb-av .ti::after, .nxDC-bank-badge .ti::after,
-      .lshield .ti::after, .lsec-ic .ti::after,
+      .lshield .ti::after,
       .ti.ti-search::after, .ti.ti-search-off::after,
       i.ti[style*="absolute"]::after, i.ti[style*="position:absolute"]::after{ content: none !important; }
       /* .lfi .ti (ícono del campo Usuario del login) aparte: a diferencia de los
@@ -12665,14 +12665,16 @@
   if (window.__NX_ICON_COLOR__) return;
   window.__NX_ICON_COLOR__ = true;
   // Contextos donde el icono NO debe ser badge (debe quedar plano)
-  // .lshield/.lsec-ic (1-ago-2026): CAUSA RAÍZ del "escudo verde" que reportó el dueño en el
+  // .lshield (1-ago-2026): CAUSA RAÍZ del "escudo verde" que reportó el dueño en el
   // login — este sistema le pone hash('ti-shield-check')%360=148° (verde) a CUALQUIER ícono
   // ti-shield-check suelto, con !important inline (ningún CSS le puede ganar). .lmk/.smk (el
   // badge VIEJO del login, quitado en v53.7) ya estaban en esta lista; al rediseñar el login
-  // en v53.8 el badge cambió de nombre a .lshield/.lsec-ic y nunca se actualizó esta lista.
+  // en v53.8 el badge cambió de nombre a .lshield. .lsec-ic (el ícono del panel "Seguridad de
+  // nivel empresarial") se sacó de esta lista el 1-ago-2026 al quitar ese panel por completo
+  // del login (pedido del dueño) — el selector se quedaba huérfano, sin nada que proteger.
   var SKIP_CTX = '.btn,button,td,th,label,summary,.cfg-tab,.qa,.ni,.kpi,' +
                  '.nxDC-bank-badge,.sb-mk,.lmk,.smk,.nxs-badge,.sb-av,.nx-fab,' +
-                 '.lshield,.lsec-ic';
+                 '.lshield';
   function hue(name){
     var h = 0;
     for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;

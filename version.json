@@ -1,7 +1,12 @@
 {
-  "version": "54.5",
+  "version": "54.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.6",
+      "fecha": "2026-08-01",
+      "texto": "ARREGLADO (Login): el dueño mandó una captura real de su iPhone mostrando los campos de Usuario y Contraseña con un fondo AMARILLO — es el resaltado que iOS Safari/Chrome le ponen al campo cuando reconocen una contraseña guardada (autocompletar), y ese fondo del navegador ganaba por encima del fondo oscuro del diseño. Se agregó el arreglo estándar (un \"box-shadow\" del tamaño del campo con nuestro color, más el texto forzado a blanco) para que el campo se quede oscuro como siempre, aunque el navegador quiera pintarlo amarillo. NUEVO/QUITADO: se quitó por completo el panel \"Seguridad de nivel empresarial\" (icono+título+texto) que iba debajo del botón \"Entrar al sistema\" — a pedido del dueño. NUEVO: se reforzó el brillo/halo del escudo de arriba (más vivo, con un resplandor extra alrededor del ícono) y se le agregó un destello sutil de vidrio al botón \"Entrar al sistema\", para que el login se vea más parecido a la imagen de referencia que mandó el dueño."
+    },
     {
       "v": "54.5",
       "fecha": "2026-08-01",
