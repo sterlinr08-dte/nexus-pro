@@ -10505,3 +10505,48 @@ también en PC"**.
   ninguna barra los botones internos se ven normal (sin regresión del caso base), y con un overlay
   abierto la barra se sigue ocultando en cualquier ancho. Las 16 pasan en los 2 anchos. `node --check
   parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### AGUAPRO ERP — eliminado (1-ago-2026, v54.9)
+El dueño: *"AGUAPRO eliminarlo / El cliente no lo quiso"* — el negocio de distribuidora de agua
+para el que se construyó el módulo (ver historia arriba, "AGUAPRO ERP — módulo para distribuidoras
+de agua") decidió no usarlo, así que se sacó del sistema por completo.
+- **Auditoría de alcance ANTES de tocar nada** (dado que borrar tablas de la base es irreversible):
+  el módulo era 100% autocontenido — una sola IIFE (`(function(){...})()`, ~1,040 líneas) al inicio
+  de `parches.js`, registrada en el hub de Multiempresa vía `nxMERegistrar({orden:6,...})`, con su
+  propio CSS (`nxAguaCSS`) y sus 10 tablas propias (`agua_clientes`/`agua_productos`/`agua_pedidos`/
+  `agua_botellones`/`agua_produccion`/`agua_caja`/`agua_movimientos`/`agua_proveedores`/
+  `agua_compras`/`agua_config`, todas con `organizacion_id`+trigger+RLS, patrón `pos_*`/`rifa_*`).
+  Verificado con `grep` en todo el repo (no solo `parches.js`) que **ninguna otra parte del
+  sistema** hacía referencia a AGUAPRO — el único enlace externo real era la entrada
+  `agua:'nxAbrirAguaPro'` dentro de `NX_MODULOS_LUGAR` (la lista blanca de "dónde me quedé",
+  v49.78) en `index.html`.
+- **Verificado con SQL directo, antes de decidir si dropear las tablas o solo dejarlas vacías:**
+  las 10 tablas tenían en total 6 filas (`agua_clientes`=1, `agua_movimientos`=2,
+  `agua_produccion`=1, `agua_productos`=1, `agua_proveedores`=1, el resto en 0) — y el único
+  cliente guardado se llamaba literalmente **"PRUEBA 1"**, en la propia organización del dueño
+  (`nexus-pro`). Nunca hubo un cliente real usándolo — es exactamente el mismo tipo de dato de
+  prueba que ya se limpió una vez en el propio POS (ver "Cuadrar el inventario: era todo dato de
+  prueba", v49.87). Con eso confirmado, y sin ninguna FK externa apuntando a las tablas `agua_*`
+  (verificado con `information_schema`, las únicas FK eran internas entre ellas mismas), se
+  borraron las 10 de una — mismo criterio y mismo patrón ya usado en "Borradas 5 tablas muertas"
+  (26-jul-2026): verificar cero uso real antes de dropear, nunca a ciegas.
+- **Cambios reales:**
+  1. Se quitó la IIFE completa de AGUAPRO de `parches.js` (banner + módulo + helpers locales,
+     1,037 líneas).
+  2. Se quitó la entrada `agua:'nxAbrirAguaPro'` de `NX_MODULOS_LUGAR` en `index.html` — sin
+     esto, un usuario cuya última pantalla guardada hubiera sido AGUAPRO habría intentado llamar
+     a una función que ya no existe (el propio mecanismo ya tenía un respaldo honesto para ese
+     caso — reintenta unos segundos y cae al Dashboard — pero quitar la entrada muerta es más
+     limpio, regla #1 del reglamento: "depurar, quitar dead code").
+  3. Migración `borrar_tablas_aguapro`: `DROP TABLE ... CASCADE` de las 10 tablas `agua_*`.
+- **Deliberadamente NO tocado:** 5 comentarios sueltos en `parches.js` que mencionan "AGUAPRO"
+  solo como ejemplo ilustrativo dentro de un patrón general (ej. "nxBuscaHTML en caché, mismo
+  criterio que ya usa AGUAPRO/POS") — no son referencias funcionales, tocarlas era ruido
+  innecesario en el diff.
+- Verificado: `node --check parches.js` limpio; los 3 bloques `<script>` de `index.html`
+  (1,423 / 488,406 / 681 caracteres) pasan `new Function()`; `version.json` válido. Con Playwright
+  cargando el `index.html`+`parches.js` reales (0 excepciones de JS al arrancar): confirmado que
+  `window.nxAbrirAguaPro` ya no existe, `NX_MODULOS_LUGAR` ya no tiene la entrada `agua`, y
+  `nxMERegistrar` (el mecanismo del hub) sigue funcionando para el resto de módulos. `get_advisors`
+  de seguridad en Supabase corrido después del `DROP`: sin ningún hallazgo nuevo — solo
+  desaparecieron las 10 tablas de AGUAPRO, todo lo demás del listado de siempre quedó igual.
