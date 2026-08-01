@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS PRO — Login visual draft</title>
+<style>
+:root{--bg:#07101d;--panel:rgba(8,18,34,.94);--panel2:#0f1b2d;--line:#375277;--muted:#a9b7ce;--text:#fff;--blue:#2563eb;--blue2:#1d4ed8;--focus:#60a5fa;--radius:28px}
+*{box-sizing:border-box}html,body{min-height:100%;margin:0}body{font-family:Inter,"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);background:
+linear-gradient(rgba(3,10,22,.72),rgba(3,10,22,.82)),
+radial-gradient(circle at 20% 15%,rgba(37,99,235,.28),transparent 32%),
+radial-gradient(circle at 78% 25%,rgba(96,165,250,.16),transparent 26%),
+linear-gradient(135deg,#111827,#030712 62%,#111827);display:grid;place-items:center;padding:34px;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:
+linear-gradient(90deg,transparent 0 12%,rgba(255,255,255,.025) 12% 12.2%,transparent 12.2% 86%,rgba(255,255,255,.025) 86% 86.2%,transparent 86.2%),
+radial-gradient(ellipse at 50% 110%,rgba(37,99,235,.16),transparent 54%);filter:blur(.2px)}
+.login-shell{width:min(760px,100%);position:relative}
+.login-card{position:relative;border:1px solid rgba(96,165,250,.46);border-radius:var(--radius);padding:52px 58px 38px;background:linear-gradient(180deg,rgba(8,19,37,.97),rgba(3,12,25,.96));box-shadow:0 30px 90px rgba(0,0,0,.52),0 0 55px rgba(37,99,235,.12);overflow:hidden}
+.login-card:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.035),transparent 34% 72%,rgba(37,99,235,.055))}
+.brand{position:relative;z-index:1;text-align:center;margin-bottom:34px}.wordmark{display:flex;justify-content:center;align-items:center;gap:16px;line-height:1}.nexus{font-size:clamp(52px,9vw,86px);font-weight:900;letter-spacing:-5px;color:#fff;text-shadow:0 6px 24px rgba(255,255,255,.1)}.pro{font-size:clamp(34px,6vw,60px);font-weight:900;padding:8px 18px 9px;border:4px solid var(--blue);border-radius:10px;color:var(--blue);box-shadow:inset 0 0 18px rgba(37,99,235,.16),0 0 20px rgba(37,99,235,.12)}.tagline{margin-top:18px;color:#f2f6fd;letter-spacing:.38em;font-size:clamp(13px,2vw,20px);font-weight:500}.tagline b{color:var(--blue)}
+.shield-wrap{position:relative;z-index:1;width:116px;height:116px;margin:0 auto 26px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(96,165,250,.55);background:radial-gradient(circle at 50% 35%,rgba(37,99,235,.14),rgba(2,10,22,.92) 70%);box-shadow:0 0 28px rgba(37,99,235,.26),inset 0 0 22px rgba(37,99,235,.09)}.shield-wrap svg{width:54px;height:54px;color:var(--blue);filter:drop-shadow(0 0 10px rgba(37,99,235,.5))}
+.heading{position:relative;z-index:1;text-align:center;margin-bottom:34px}.heading h1{font-size:clamp(32px,5vw,46px);margin:0 0 10px}.heading p{margin:0;color:var(--muted);font-size:clamp(18px,2.5vw,24px)}
+.form{position:relative;z-index:1}.field{margin-bottom:24px}.field label{display:block;margin-bottom:9px;color:#cbd7ea;font-weight:700;font-size:15px;letter-spacing:.03em}.input-wrap{height:68px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,rgba(19,36,60,.88),rgba(11,25,44,.96));display:flex;align-items:center;padding:0 18px;transition:.18s ease}.input-wrap:focus-within{border-color:var(--focus);box-shadow:0 0 0 4px rgba(37,99,235,.15)}.input-wrap svg{width:28px;height:28px;color:#eef4ff;flex:none}.input-wrap input{width:100%;border:0;outline:0;background:transparent;color:#fff;font-size:23px;padding:0 16px;font-family:inherit}.eye{border:0;background:transparent;color:#eef4ff;padding:8px;cursor:pointer;border-radius:10px}.eye:hover{background:rgba(255,255,255,.06)}
+.form-row{display:flex;justify-content:space-between;gap:18px;align-items:center;margin:4px 0 26px}.remember{display:inline-flex;align-items:center;gap:12px;font-size:18px}.remember input{appearance:none;width:28px;height:28px;border-radius:6px;border:1px solid #60a5fa;background:#0b1e3a;display:grid;place-content:center}.remember input:checked{background:var(--blue);border-color:var(--blue)}.remember input:checked:after{content:"✓";font-weight:900;color:white;font-size:20px}.forgot{color:#3b82f6;text-decoration:none;font-size:18px}.forgot:hover{text-decoration:underline}
+.submit{width:100%;height:72px;border:1px solid #3b82f6;border-radius:14px;color:#fff;font-size:24px;font-weight:800;letter-spacing:.025em;background:linear-gradient(100deg,var(--blue2),var(--blue));box-shadow:0 14px 28px rgba(37,99,235,.22);display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:.18s ease}.submit:hover{transform:translateY(-1px);filter:brightness(1.06);box-shadow:0 18px 34px rgba(37,99,235,.3)}.submit:active{transform:translateY(0) scale(.995)}.submit svg{width:30px;height:30px}
+.security{position:relative;z-index:1;margin-top:24px;display:grid;grid-template-columns:76px 1fr;gap:18px;align-items:center;padding:22px;border:1px solid rgba(55,82,119,.58);border-radius:16px;background:linear-gradient(180deg,rgba(15,27,45,.9),rgba(8,19,35,.92))}.security-icon{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#2563eb 0,#123d99 48%,#071833 72%);box-shadow:0 0 24px rgba(37,99,235,.38)}.security-icon svg{width:36px;height:36px}.security h2{font-size:18px;margin:0 0 5px}.security p{margin:0;color:var(--muted);line-height:1.45}
+.status{min-height:24px;margin-top:12px;color:#93c5fd;text-align:center;font-size:14px}
+@media(max-width:640px){body{padding:18px}.login-card{padding:34px 22px 26px;border-radius:24px}.wordmark{gap:10px}.nexus{letter-spacing:-3px}.pro{border-width:3px;padding:6px 11px}.tagline{letter-spacing:.2em}.shield-wrap{width:92px;height:92px}.shield-wrap svg{width:44px;height:44px}.heading{margin-bottom:28px}.input-wrap{height:60px}.input-wrap input{font-size:18px}.form-row{align-items:flex-start}.remember,.forgot{font-size:15px}.remember input{width:24px;height:24px}.submit{height:62px;font-size:18px}.security{grid-template-columns:58px 1fr;padding:17px}.security-icon{width:52px;height:52px}.security h2{font-size:16px}.security p{font-size:13px}}
+</style>
+</head>
+<body>
+<main class="login-shell">
+<section class="login-card" aria-labelledby="login-title">
+<header class="brand">
+<div class="wordmark" aria-label="NEXUS PRO"><span class="nexus">NEXUS</span><span class="pro">PRO</span></div>
+<div class="tagline">MULTIEMPRESA <b>•</b> POS <b>•</b> ERP</div>
+</header>
+<div class="shield-wrap" aria-hidden="true">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/><path d="M9.5 12l1.7 1.7L15 10"/></svg>
+</div>
+<div class="heading"><h1 id="login-title">Bienvenido de nuevo</h1><p>Inicia sesión para continuar</p></div>
+<form class="form" id="loginDemo">
+<div class="field"><label for="user">USUARIO O CORREO ELECTRÓNICO</label><div class="input-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><input id="user" name="user" autocomplete="username" value="sterlin08"></div></div>
+<div class="field"><label for="password">CONTRASEÑA</label><div class="input-wrap"><input id="password" name="password" type="password" autocomplete="current-password" value="12345678"><button class="eye" id="togglePass" type="button" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+<div class="form-row"><label class="remember"><input type="checkbox" checked><span>Recordarme</span></label><a class="forgot" href="#">¿Olvidaste tu contraseña?</a></div>
+<button class="submit" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 8l4 4-4 4"/><path d="M18 12H7"/><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/></svg>ENTRAR AL SISTEMA</button>
+<div class="status" id="status" aria-live="polite"></div>
+</form>
+<div class="security"><div class="security-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/><path d="M9.5 12l1.7 1.7L15 10"/></svg></div><div><h2>Seguridad de nivel empresarial</h2><p>Tus datos están protegidos con altos estándares de seguridad y encriptación.</p></div></div>
+</section>
+</main>
+<script>
+const pass=document.getElementById('password');
+const toggle=document.getElementById('togglePass');
+toggle.addEventListener('click',()=>{const visible=pass.type==='text';pass.type=visible?'password':'text';toggle.setAttribute('aria-label',visible?'Mostrar contraseña':'Ocultar contraseña');});
+document.getElementById('loginDemo').addEventListener('submit',e=>{e.preventDefault();document.getElementById('status').textContent='Prototipo visual: Claude debe conectar aquí la autenticación real existente.';});
+</script>
+</body>
+</html>
