@@ -10431,3 +10431,43 @@ efectos de la imagen 3.
   con su fondo oscuro normal (`rgb(15, 23, 42)`, sin regresión), sin desborde horizontal en 390px ni
   1280px. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
+
+### El botón flotante del móvil ya no se encima sobre el login (1-ago-2026, v54.7)
+Al cerrar el arreglo del login (v54.6) se le avisó al dueño de un hallazgo real, sin tocarlo, porque
+tocar código cerca del flujo de login sin cuidado es peligroso: sus propias capturas mostraban el
+**botón flotante morado** (`.nx-fab`, el menú "Más" del celular) **encimado sobre la pantalla de
+login**. El dueño respondió: *"Hazlo con cuidado"*.
+- **Causa raíz:** `crearFAB()`/`crearMenuMas()` (mismo IIFE de `parches.js`) se disparan en
+  `DOMContentLoaded` con la única condición de `isMobile()` — **nunca comprueban si el usuario ya
+  inició sesión**. En cualquier carga móvil (login, cambio de clave obligatorio, o ya adentro) el
+  botón se crea igual, y como es `position:fixed` de alto z-index, queda flotando sobre lo que sea
+  que esté en pantalla — incluida la tarjeta de login.
+- **El arreglo obvio se descartó por peligroso, investigado ANTES de escribir código:** un
+  `body:has(#loginScreen) .nx-fab{display:none}` (mismo patrón `:has()` ya usado para ocultar el FAB
+  cuando hay una ventana abierta, o para el splash) parecía la solución rápida — pero
+  `#loginScreen`/`#app` **NUNCA se quitan del DOM en ningún lugar del sistema**: solo alternan
+  `style.display` en **~8 sitios distintos** repartidos por todo el flujo de login/logout/
+  restauración de sesión de `index.html`. Como `#loginScreen` SIEMPRE está presente (solo a veces
+  oculto), un selector de presencia como ese habría escondido el botón **para siempre, incluso ya
+  logueado** — un bug peor que el que se quería arreglar. Se le explicó esto al dueño antes de
+  construir nada, y su "Hazlo con cuidado" confirmó seguir adelante con un diseño más seguro.
+- **Arreglo real — cero cambios al flujo de login, todo autocontenido en el IIFE del botón
+  flotante:** `vigilarSesionParaFAB()` (nueva, junto a `crearFAB`/`crearMenuMas`/`init`) monta un
+  `MutationObserver` que **vigila el atributo `style` de `#app`** (nunca lo escribe, solo lo lee) y
+  refleja su estado REAL (`getComputedStyle(app).display`, no el texto crudo del atributo — evita el
+  problema ya documentado de que un mismo valor se serializa distinto según si lo escribió el HTML
+  original o una mutación de JavaScript) en una clase nueva de `body`: `nx-sin-sesion`. La regla CSS
+  que la usa se agregó **justo al lado** de la que ya existía para "hay una ventana abierta, esconde
+  el botón" (`body:has(.overlay.on) .mobile-bottom-nav-clean, .nx-fab, .nx-menu-backdrop,
+  .mobile-more-sheet-clean`) — mismos 4 elementos, mismo criterio, solo cambia la condición que los
+  esconde. `#mobile-bottom-nav-clean` es una clase heredada de una versión anterior de la barra móvil
+  (hoy nadie la crea, solo queda su CSS de compatibilidad) — se incluyó igual por consistencia con el
+  patrón ya establecido, sin costo.
+- **Verificado con Playwright, código real, 5 escenarios:** (1) pantalla de login (`#app` oculto) →
+  el botón SÍ se crea en el DOM (viewport móvil) pero queda oculto por CSS; (2) simular un login
+  exitoso (`#app` visible) → la clase `nx-sin-sesion` desaparece y el botón reaparece; (3) simular un
+  logout → la clase vuelve y el botón se oculta de nuevo; (4) escritorio (1280px) → el botón ni
+  siquiera se crea (`isMobile()` en falso, sin regresión); (5) 0 excepciones de JavaScript sin
+  capturar en toda la carga. Las 10 comprobaciones pasan. Capturas de pantalla revisadas: sin rastro
+  del botón morado sobre el login, y reaparece limpio tras "iniciar sesión". `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.

@@ -1,7 +1,12 @@
 {
-  "version": "54.6",
+  "version": "54.7",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "54.7",
+      "fecha": "2026-08-01",
+      "texto": "ARREGLADO (menú móvil): el dueño mandó 2 capturas reales de su iPhone donde el botón flotante morado (el menú ‘Más’ del celular) sale encimado sobre la pantalla de Login — confirmado como un bug real: el menú flotante se crea SIEMPRE en cualquier carga móvil (`crearFAB()`), sin comprobar si el usuario ya inició sesión. Se investigó con cuidado antes de tocar nada (el propio dueño pidió “Hazlo con cuidado”, por lo cerca que está del flujo de login): `#app`/`#loginScreen` NUNCA se quitan del DOM — solo alternan `style.display` en ~8 sitios distintos del flujo de login/logout/restauración de sesión — así que un arreglo con `:has()` puro (el mismo patrón ya usado para el splash) habría escondido el botón PARA SIEMPRE, incluso ya logueado, porque `#loginScreen` siempre está presente en el DOM (solo oculto). **Arreglo real, sin tocar ninguno de esos 8 sitios**: un `MutationObserver` nuevo (`vigilarSesionParaFAB()`, dentro del mismo IIFE del botón flotante) vigila el atributo `style` de `#app` y refleja su estado REAL (`getComputedStyle`, no el texto del atributo) en una clase de `body` (`nx-sin-sesion`) — la misma clase que ya usa el sistema para el caso “hay una ventana abierta, esconde el botón” (`body:has(.overlay.on) .nx-fab...`), ahora extendido con el mismo grupo de 4 elementos (botón flotante, su fondo, la barra inferior vieja y el menú deslizable) para cuando NO hay sesión. Verificado con Playwright contra el código real: el botón queda oculto en la pantalla de login, reaparece al simular un login exitoso, y vuelve a ocultarse al cerrar sesión — sin tocar ni un solo sitio del flujo real de autenticación."
+    },
     {
       "v": "54.6",
       "fecha": "2026-08-01",
