@@ -5331,6 +5331,7 @@
       .btn .ti, button .ti, td .ti, th .ti, label .ti, summary .ti,
       .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti, .nxs-badge .ti, .nxl-logo .ti,
       .sb-av .ti, .nxDC-bank-badge .ti,
+      .lshield .ti, .lsec-ic .ti,
       .ti.ti-search, .ti.ti-search-off,
       i.ti[style*="absolute"], i.ti[style*="position:absolute"]{
         width: auto !important; height: auto !important;
@@ -5349,8 +5350,28 @@
       .btn .ti::after, button .ti::after, td .ti::after, th .ti::after, label .ti::after, summary .ti::after,
       .nx-fab .ti::after, .sb-mk .ti::after, .lmk .ti::after, .smk .ti::after, .nxs-badge .ti::after, .nxl-logo .ti::after,
       .sb-av .ti::after, .nxDC-bank-badge .ti::after,
+      .lshield .ti::after, .lsec-ic .ti::after,
       .ti.ti-search::after, .ti.ti-search-off::after,
       i.ti[style*="absolute"]::after, i.ti[style*="position:absolute"]::after{ content: none !important; }
+      /* .lfi .ti (ícono del campo Usuario del login) aparte: a diferencia de los
+         de arriba, este SÍ necesita quedarse position:absolute (es un adorno de
+         input, .lfi i{position:absolute;left:16px;...} — forzar position:static
+         como arriba lo saca de su sitio Y hace que el chequeo de posición del JS
+         (getComputedStyle==='absolute') deje de detectarlo, coloreándolo otra
+         vez). Mismos resets que arriba, MENOS position. */
+      .lfi .ti{
+        width: auto !important; height: auto !important;
+        border-radius: 0 !important;
+        background: none !important;
+        box-shadow: none !important;
+        display: inline-block !important;
+        vertical-align: baseline !important;
+        line-height: inherit !important;
+        border: 0 !important;
+        overflow: visible !important;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+      }
+      .lfi .ti::after{ content: none !important; }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
@@ -12627,8 +12648,14 @@
       // iconos que deben quedar planos (flechas, chevrons, x, etc.)
       // la lupa de búsqueda queda plana (sin círculo de color)
       if (name === 'ti-search' || name === 'ti-search-off') continue;
-      // iconos decorativos posicionados (adornos de inputs) → no colorear
-      if (/absolute/.test(el.getAttribute('style') || '')) continue;
+      // iconos decorativos posicionados (adornos de inputs) → no colorear.
+      // getComputedStyle (no el atributo style en línea) — muchos adornos de
+      // input llevan position:absolute por una regla CSS (.lfi i, .inw i,
+      // .nxFacAdd>i...), nunca inline; el chequeo viejo solo miraba el
+      // atributo style y por eso dejaba pasar la mayoría de estos (v54.3,
+      // ver CLAUDE.md — el escudo/usuario del login "3D" reportado por el
+      // dueño destapó que era un bug sistémico, no solo del login).
+      try { if (getComputedStyle(el).position === 'absolute') continue; } catch (e) {}
       // dentro de un contexto excluido → plano
       try { if (el.closest(SKIP_CTX)) continue; } catch (e) {}
       var hu = hue(name);
