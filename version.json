@@ -1,7 +1,12 @@
 {
-  "version": "54.9",
+  "version": "55.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.0",
+      "fecha": "2026-08-01",
+      "texto": "NUEVO (icono del iPhone): el dueño pidió cambiar el icono que aparece en el menú de inicio del iPhone cuando la app se instala como PWA — hasta ahora era un azul claro genérico de antes del rediseño del login (v53.8-54.6, que ya cambió a un navy/azul real de marca). Se le mostraron 3 propuestas simplificadas (una insignia \"PRO\", un monograma \"NP\" y el escudo de siempre con los colores nuevos) — un logo completo con texto no cabe legible en un icono tan chico, así que hizo falta simplificar. El dueño eligió mantener el **escudo hexagonal de siempre, con los colores de la marca nueva** (navy `#08101c` → azul real `#2563eb`/`#3b82f6`, el mismo tono que ya usa el login rediseñado) en vez del azul más claro de la versión original. La \"N\" se mantuvo dibujada a mano con trazos gruesos (`gen_icon.py`) en vez de un glifo de fuente — se probó con un monograma de fuente primero y a 16px (el tamaño del favicon) quedaba ilegible, un borrón; los trazos gruesos sí se leen incluso a ese tamaño, igual que ya pasaba con el icono original. Se regeneraron los 9 tamaños reales (16/32/76/120/152/180/192/512px) — mismos archivos de siempre, mismo nombre, así que `manifest.json` e `index.html` no necesitaron ningún cambio."
+    },
     {
       "v": "54.9",
       "fecha": "2026-08-01",

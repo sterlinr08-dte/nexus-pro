@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Genera el icono de la app NEXUS PRO: escudo hexagonal azul cristalino con la N."""
+"""Genera el icono de la app NEXUS PRO: escudo hexagonal azul cristalino con la N.
+Colores actualizados (1-ago-2026) al azul/navy real de la marca (login rediseñado,
+`#2563eb`/`#3b82f6`/`#08101c`), en vez del azul más claro de la versión original."""
 from PIL import Image, ImageDraw, ImageFilter
 
 SS = 4
@@ -15,12 +17,12 @@ def vgrad(size, top, bot):
         d.line([(0, y), (size, y)], fill=lerp(top, bot, y / (size - 1)))
     return g
 
-# ---- fondo: gradiente azul diagonal + brillo superior ----
-img = vgrad(S, (74, 144, 248), (24, 49, 96)).convert('RGBA')  # #4a90f8 -> #183160
+# ---- fondo: navy profundo -> azul de marca (mismo tono que el login/.lshield) ----
+img = vgrad(S, (24, 46, 84), (8, 16, 28)).convert('RGBA')  # #182e54 -> #08101c
 # brillo radial arriba (cristalino)
 glow = Image.new('RGBA', (S, S), (0, 0, 0, 0))
 gd = ImageDraw.Draw(glow)
-gd.ellipse([S*0.02, -S*0.45, S*0.98, S*0.55], fill=(255, 255, 255, 60))
+gd.ellipse([S*0.02, -S*0.45, S*0.98, S*0.55], fill=(59, 130, 246, 60))  # #3b82f6
 glow = glow.filter(ImageFilter.GaussianBlur(S*0.05))
 img = Image.alpha_composite(img, glow)
 
@@ -37,14 +39,14 @@ pts = [
 
 # ---- sombra del escudo (profundidad) ----
 sh = Image.new('RGBA', (S, S), (0, 0, 0, 0))
-ImageDraw.Draw(sh).polygon([(x, y + S*0.02) for (x, y) in pts], fill=(8, 20, 50, 150))
+ImageDraw.Draw(sh).polygon([(x, y + S*0.02) for (x, y) in pts], fill=(4, 8, 20, 150))
 sh = sh.filter(ImageFilter.GaussianBlur(S*0.025))
 img = Image.alpha_composite(img, sh)
 
-# ---- escudo cristalino (gradiente claro->profundo) ----
+# ---- escudo cristalino (gradiente claro->profundo, azul real de marca) ----
 mask = Image.new('L', (S, S), 0)
 ImageDraw.Draw(mask).polygon(pts, fill=255)
-shield = vgrad(S, (110, 175, 255), (29, 78, 216)).convert('RGBA')  # #6eafff -> #1d4ed8
+shield = vgrad(S, (96, 154, 250), (30, 64, 175)).convert('RGBA')  # #609afa -> #1e40af
 img.paste(shield, (0, 0), mask)
 
 # brillo de vidrio en la mitad superior del escudo
@@ -59,7 +61,8 @@ img = Image.alpha_composite(img, gm)
 # borde blanco del escudo
 ImageDraw.Draw(img).polygon(pts, outline=(255, 255, 255, 235), width=int(S*0.011))
 
-# ---- la "N" en blanco ----
+# ---- la "N" en blanco (trazos gruesos a mano, NO texto de fuente — legible hasta
+#      en 16px, que un glifo de fuente no logra) ----
 d = ImageDraw.Draw(img)
 nw = int(S*0.052)
 nx0, nx1 = cx - S*0.115, cx + S*0.115
