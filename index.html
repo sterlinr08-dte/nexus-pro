@@ -713,7 +713,10 @@ body.tema-premium .nxSf{--sf-bg:#0B0F19;--sf-card:#121826;--sf-line:#232B3D;--sf
 body.tema-premium .nxSf .sf-kpi.purple .ic{background:#1E1B33;color:#A78BFA}
 body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf .sf-head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--sf-card);border:1px solid var(--sf-line);
-  border-radius:16px;padding:14px 16px;margin-bottom:12px}
+  border-top:4px solid var(--sf-line);border-radius:16px;padding:14px 16px;margin-bottom:12px}
+.nxSf .sf-head.u-ok{border-top-color:var(--sf-ok)}
+.nxSf .sf-head.u-warn{border-top-color:var(--sf-warn)}
+.nxSf .sf-head.u-err{border-top-color:var(--sf-err)}
 .nxSf .sf-ava{width:48px;height:48px;border-radius:50%;background:var(--sf-primary-l);color:var(--sf-primary-d);display:flex;
   align-items:center;justify-content:center;font-size:16px;font-weight:800;flex:0 0 auto}
 .nxSf .sf-id{flex:0 0 auto;max-width:100%;min-width:0}
@@ -783,6 +786,18 @@ body.tema-premium .nxSf .cli-ref{color:#A78BFA}
 .nxSf table.sf-fact .deuda-prev:hover{background:rgba(239,68,68,.2)}
 .nxSf table.sf-fact .deuda-prev:focus-visible{outline:2px solid var(--sf-err);outline-offset:2px}
 .nxSf table.sf-fact th.mesant-col,.nxSf table.sf-fact td[data-lb="MesAnt"]{display:none}
+/* Barra de urgencia (mismo elemento firma que Cobros/Ficha/Avisos): en escritorio va en la
+   1ra celda (border-left en <tr> no se pinta con border-collapse:collapse), en móvil el <tr>
+   ya es una tarjeta con borde propio, así que solo se le sobreescribe el lado izquierdo. */
+.nxSf table.sf-fact tr.u-crit td.cli-cell{border-left:4px solid var(--sf-err)}
+.nxSf table.sf-fact tr.u-warn td.cli-cell{border-left:4px solid var(--sf-warn)}
+.nxSf table.sf-fact tr.u-ok td.cli-cell{border-left:4px solid var(--sf-ok)}
+@media(max-width:720px){
+  .nxSf table.sf-fact tr.u-crit{border-left:4px solid var(--sf-err)}
+  .nxSf table.sf-fact tr.u-warn{border-left:4px solid var(--sf-warn)}
+  .nxSf table.sf-fact tr.u-ok{border-left:4px solid var(--sf-ok)}
+  .nxSf table.sf-fact tr.u-crit td.cli-cell,.nxSf table.sf-fact tr.u-warn td.cli-cell,.nxSf table.sf-fact tr.u-ok td.cli-cell{border-left:none}
+}
 .nxSf table.sf-tbl th.col-cli,.nxSf table.sf-tbl td.col-cli{min-width:190px}
 @media(max-width:480px){.nxSf .sf-kpi .lb,.nxSf .sf-kpi .sub{white-space:normal;overflow:visible;text-overflow:clip}}
 /* Fila de cliente compacta: el nombre en UNA línea con elipsis (antes se partía en
@@ -4090,7 +4105,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='55.4';
+const APP_VERSION='55.5';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -4640,13 +4655,14 @@ function verCliente(id){
   const fCorta=(s)=>{if(!s)return '—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
   const estado=getEst(c);
   const estBadgeCls=estado==='Al día'?'ok':estado==='Inhabilitado'?'err':'warn';
+  const urgHead=estado==='Al día'?'u-ok':estado==='Parcial'?'u-warn':'u-err';
   const estPol=getEstPol(c);
   const facturasCli=ST.facturas.filter(f=>String(f.cliente_id)===String(id)).sort((a,b)=>(b.periodo||'').localeCompare(a.periodo||''));
   const facPend=facturasCli.filter(f=>f.estado!=='Pagado'&&f.estado!=='Anulada').length;
   const facPagadas=facturasCli.filter(f=>f.estado==='Pagado').length;
   document.getElementById('csBody').innerHTML=`
     <div class="nxSf">
-      <div class="sf-head">
+      <div class="sf-head ${urgHead}">
         <div class="sf-ava">${inits(c.nom)}</div>
         <div class="sf-id">
           <h2>${c.nom}${c.referencia?` (${c.referencia})`:''}</h2>
@@ -6662,7 +6678,8 @@ function rFact(){
     let deudaPrev=cli?deudaAnt(cli):0;
     ST.facturas.forEach(x=>{if(String(x.cliente_id)===cid2&&x.estado!=='Anulada'&&(x.periodo||'')<(f.periodo||''))deudaPrev+=Number(_saldoMemo[cid2][x.id]||0);});
     const btn=(onclick,cls,icon,label,title)=>`<button onclick="${onclick}" class="btn bsm ${cls}" ${title?`title="${title}" aria-label="${title}"`:''}><i class="ti ${icon}" aria-hidden="true"></i> ${label}</button>`;
-    return `<tr${anul?' style="opacity:.55"':''}>
+    const urg=anul?'':(f.estado==='Pagado'?'u-ok':f.estado==='Parcial'?'u-warn':'u-crit');
+    return `<tr class="${urg}"${anul?' style="opacity:.55"':''}>
       <td data-lb="Cliente" class="cli-cell" onclick="verCliente('${f.cliente_id}')" tabindex="0" role="button" aria-label="Ver ficha de ${escHtml(f.cliente_nom)}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();verCliente('${f.cliente_id}')}" style="cursor:pointer"><b>${f.cliente_nom}${cli?.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(cli.referencia)})</span>`:''}</b><span>${agTxt} · ${emp?emp.nom.split(' ').slice(0,2).join(' '):'Particular'}${atrasadas?' · 📅 '+(MESES[f.mes-1]||'')+' '+(f.anio||''):''}</span></td>
       <td data-lb="ARS"${cli?.ars?'':' class="sf-tbl-hide-mb"'}>${arsLogoHTML(cli?.ars,16)}</td>
       <td data-lb="Fecha">${fCorta(f.created_at)}</td>
@@ -7013,7 +7030,10 @@ function _nxCobCSS(){
   if(document.getElementById('nxCobCSS'))return;
   const st=document.createElement('style');st.id='nxCobCSS';
   st.textContent=`.nxCobCards{display:flex;flex-direction:column;gap:12px}
-  .nxCobCard{background:#fff;border:1px solid #eceef3;border-radius:16px;padding:12px 12px 10px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
+  .nxCobCard{background:#fff;border:1px solid #eceef3;border-left:4px solid #e2e5ec;border-radius:16px;padding:12px 12px 10px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
+  .nxCobCard.u-crit{border-left-color:#e11d48}
+  .nxCobCard.u-warn{border-left-color:#d97706}
+  .nxCobCard.u-ok{border-left-color:#16a34a}
   .nxCobCard .cbHead{display:flex;align-items:flex-start;gap:10px}
   .nxCobCard .cbAv{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);box-shadow:0 4px 10px rgba(109,40,217,.28)}
   .nxCobCard .cbWho{flex:1;min-width:0}
@@ -7096,7 +7116,8 @@ function rCob(){
     const ag=ST.agentes?.find(a=>String(a.id)===String(c.agente_id));
     const agHtml=ag?`<i class="ti ti-user"></i> ${escHtml(ag.nom)}`:'<i class="ti ti-alert-triangle" style="color:#ef4444"></i> <span style="color:#ef4444">Sin agente</span>';
     const planBadge=c.plan?`<span class="cbBdg plan">${escHtml(c.plan==='Esencial Plus'?'ESC+':String(c.plan).toUpperCase())}</span>`:'';
-    return `<div class="nxCobCard">
+    const urg=estCls==='pend'?'u-crit':estCls==='parcial'?'u-warn':'u-ok';
+    return `<div class="nxCobCard ${urg}">
       <div class="cbHead">
         <div class="cbAv">${inits(c.nom)}</div>
         <div class="cbWho">
@@ -7234,7 +7255,10 @@ function nxAgenteWARonda(agId){
 function _nxAvCSS(){
   if(document.getElementById('nxAvCSS'))return;
   const st=document.createElement('style');st.id='nxAvCSS';
-  st.textContent=`.nxAvCard{background:#fff;border:1px solid #eceef3;border-radius:14px;padding:11px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  st.textContent=`.nxAvCard{background:#fff;border:1px solid #eceef3;border-left:4px solid #e2e5ec;border-radius:14px;padding:11px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .nxAvCard.u-crit{border-left-color:#dc2626}
+  .nxAvCard.u-warn{border-left-color:#d97706}
+  .nxAvCard.u-ok{border-left-color:#16a34a}
   .nxAvHead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .nxAvAv{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px}
   .nxAvWho{flex:1;min-width:0}
@@ -7277,14 +7301,16 @@ function rAvisos(){
   const cardAtraso=o=>{
     const c=ST.clientes.find(x=>String(x.id)===String(o.cliente_id));
     const tieneWA=c&&nxWa(c.wa);
-    return `<div class="nxAvCard">
+    const urg=o.meses>=2?'u-crit':'u-warn';
+    return `<div class="nxAvCard ${urg}">
       <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#f87171,#dc2626)">${inits(o.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(o.nom)}</div><div class="nxAvSub">${o.meses} mes(es) atrasado(s)</div></div><div class="nxAvMonto">${fmt(o.total)}</div></div>
       <button class="nxAvBtn wa" onclick="nxWaElegir('${o.cliente_id}')"><i class="ti ti-brand-whatsapp"></i> Enviar recordatorio</button>
     </div>`;
   };
   const cardVence=c=>{
     const e=getEstPol(c);const tieneWA=nxWa(c.wa);
-    return `<div class="nxAvCard">
+    const urg=e.est==='vencida'?'u-crit':'u-warn';
+    return `<div class="nxAvCard ${urg}">
       <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#f59e0b,#d97706)">${inits(c.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(c.nom)}${c.referencia?` <span style="color:#7c3aed;font-weight:600;font-size:10px">(${escHtml(c.referencia)})</span>`:''}</div><div class="nxAvSub" style="color:${e.est==='vencida'?'#dc2626':'#b45309'};font-weight:700">${e.lbl}</div></div></div>
       ${tieneWA?`<button class="nxAvBtn wa" onclick="nxVencerWA('${c.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar recordatorio</button>`:`<div class="nxAvNoWa">Sin WhatsApp registrado</div>`}
     </div>`;
@@ -7296,7 +7322,7 @@ function rAvisos(){
     const suyos=act.filter(c=>String(c.agente_id)===String(ag.id)&&pendTot(c)>0);
     return {ag,n:suyos.length,total:suyos.reduce((s,c)=>s+pendTot(c),0)};
   }).filter(x=>x.n>0).sort((a,b)=>b.total-a.total);
-  const cardAgente=x=>`<div class="nxAvCard">
+  const cardAgente=x=>`<div class="nxAvCard u-crit">
       <div class="nxAvHead"><div class="nxAvAv" style="background:linear-gradient(135deg,#60a5fa,#2563eb)">${inits(x.ag.nom)}</div><div class="nxAvWho"><div class="nxAvNm">${escHtml(x.ag.nom)}</div><div class="nxAvSub">${x.n} cliente${x.n===1?'':'s'} con pago atrasado</div></div><div class="nxAvMonto">${fmt(x.total)}</div></div>
       <button class="nxAvBtn wa" onclick="nxAgenteWARonda('${x.ag.id}')"><i class="ti ti-brand-whatsapp"></i> ${nxWa(x.ag.tel)?'Mandarle su lista':'Ponerle el WhatsApp'}</button>
     </div>`;

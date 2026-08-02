@@ -1,7 +1,12 @@
 {
-  "version": "55.4",
+  "version": "55.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.5",
+      "fecha": "2026-08-02",
+      "texto": "NUEVO (Seguros — Pendientes, Cobros, Ficha del cliente, Avisos): rediseño visual aprobado por el dueño (mockup mostrado y confirmado) — las 4 pantallas de dinero comparten ahora un mismo elemento firma: una **barra de urgencia** de color a la izquierda (o arriba, en la Ficha) de cada tarjeta/fila, roja si hay que cobrar YA, ámbar si es parcial/en gracia, verde si está al día — así se ve de un vistazo quién urge sin tener que leer cada monto. Cambio 100% visual, sobre datos ya calculados en cada pantalla (mismo estado/saldo real de siempre) — cero funciones nuevas, cero campos inventados, ningún botón/onclick se tocó: en Cobros y Avisos es un borde a la tarjeta existente; en Facturas es un borde a la primera celda de cada fila (el borde en `<tr>` no se pinta con las tablas de este sistema); en la Ficha del cliente es un borde arriba del encabezado. Verificado con 19 pruebas contra el código real de las 4 funciones (`rCob`/`rFact`/`rAvisos`/`verCliente`) extraído del archivo, más 17 pruebas visuales con Playwright confirmando los colores exactos renderizados y que ningún botón (Cobrar/WhatsApp/Editar/etc.) se rompió. `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido."
+    },
     {
       "v": "55.4",
       "fecha": "2026-08-02",
