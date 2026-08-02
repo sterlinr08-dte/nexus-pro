@@ -11045,3 +11045,53 @@ Continuación de la Tanda B (arriba), pedida con "Sigue con lo pendiente".
 - **Pendiente:** la Tanda D (Rifas `rfTabQ`/`tkQ`, Consultorio `mdQ`, Vehículos `nxVhBuscar`,
   Pendientes-prev `nxPendBuscar` — auditar cada uno primero, algunos pueden vivir ya en ventana) y la
   decisión de Vender (`posBuscar`) que sigue esperando al dueño.
+
+### NPGS §5 — Tanda D: Vehículos, Consultorio, Rifas y Pendientes — CIERRA LA MIGRACIÓN (2-ago-2026, v55.9)
+Última tanda del plan de buscadores (A núcleo Seguros · B POS · C Financiamiento · D esta). El dueño
+confirmó seguir; con esta pieza **todos los buscadores del sistema quedan en el patrón del §5** — lo
+único abierto es la decisión de Vender (`posBuscar`), que es del dueño (ver abajo).
+- **Auditoría primero, alcance real:** de los 5 candidatos, **`tkQ` (lista de tickets de Rifas) se
+  excluyó** — ya vive dentro de su propia ventana (`#nxTks`), anidarle otra sería un paso atrás
+  (mismo criterio que los 9 excluidos de la Tanda B y `nxPrCliPickQ` de la C). Migrados los otros 4:
+  **Vehículos** (`nxVhBuscar`), **Consultorio · Pacientes** (`mdQ`/`nxMdBuscar`), **Rifas · tablero
+  de números** (`rfTabQ`/`nxRifaBuscar`) y **Facturas pendientes de meses anteriores**
+  (`nxPendBuscar`/`nxFiltrarPend`, módulo `__NEXUS_FACT_PENDIENTES_PREV__`).
+- **Mismo motor compartido de las Tandas A-C** (`nxBuscaFiltroHTML`), mismo patrón de riesgo mínimo:
+  cero cambios en las funciones de filtrado — cada `pintarLupaX()` nueva llena un `<span>` y su
+  `onterm` llama la función real de siempre. **Los enganches respetan la arquitectura de inyección
+  de cada módulo** (la lección de la Tanda B): Vehículos/Consultorio/Rifas pintan su propia vista
+  con `view.innerHTML = ...` dentro de `renderLista`/`renderMed`/`renderRifaPanel` — el hook va al
+  FINAL de esas mismas funciones (precedente: el hook de `evInit()` en Financiamiento); Pendientes
+  usa `renderPendPanel(inner,...)` — hook al final de esa función.
+- **Decisiones por pantalla, con su razón:**
+  - **Rifas conserva `inputmode:'numeric'`** (los boletos se buscan por número — la opción ya
+    existía en el motor desde v48.0, solo había que pasarla) y va **SIN `cont:`** a propósito: el
+    tablero pagina de a 120 celdas (`boardHTML`), un contador contra la página visible mentiría —
+    cae al mensaje honesto "Buscando…" (mismo criterio que Inventario/Reparaciones en la B).
+  - **Vehículos, Pacientes y Pendientes SÍ llevan contador real** (`cont:` a `nxVhLista`/
+    `mdPacLista`/`nxPendLista` — este último es un `id` nuevo en el `<div>` que ya envolvía las
+    tarjetas, solo el atributo). Sus estados vacíos ("No hay vehículos…", `.nxMdEmpty`) se marcaron
+    con `data-nbf-ignorar` para que "0 resultados" diga 0, no 1.
+  - En Consultorio el botón "Nuevo paciente" quedó con `margin-left:auto` en la misma fila de la
+    lupa (la barra vieja ocupaba el espacio flexible; al colapsarla, el botón se corría).
+- **Dead code eliminado (regla #1):** `pendBuscador`, `vhBuscador` y `mdBuscador` — los helpers de
+  respaldo del buscador viejo quedaron sin ningún uso tras la migración; verificado con grep antes
+  de borrar. **`rfBuscador` se queda** — la lista de tickets (`tkQ`, la excluida) todavía lo usa.
+  El primer intento de borrado con un solo regex para los 3 falló en `vhBuscador` (cuerpo distinto)
+  — el `assert n==1` abortó ANTES de escribir nada; se rehízo con corte por límites exactos +
+  verificación de balance de llaves sobre el texto removido.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (extractor con
+  balance de llaves; se evitaron a propósito los nombres que colisionan entre IIFEs —
+  `renderLista`/`cardHTML`/`esc`/`fmt` — extrayendo solo nombres únicos y stubbeando `esc`/`fmt`
+  equivalentes en el harness): **28 comprobaciones, todas a la primera** — en las 4 pantallas: la
+  lupa existe, la función de filtro real se llama de verdad (espías con contador de invocaciones),
+  filtra 3→1, chip persiste al aceptar y limpiar restaura; más los casos específicos: Rifas "015" →
+  exactamente 11 celdas (0015 + 0150-0159) con `inputmode=numeric` en el campo de la ventana y el
+  mensaje honesto sin contador; Pacientes con 0 resultados dice "0 resultados" (vacío ignorado);
+  Vehículos con `display:none` excluido del conteo. Capturas en 390px/1280px + la ventana abierta —
+  0px de desborde en los 3 casos, revisadas visualmente. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente (lo ÚNICO del plan §5):** la decisión de Vender (`posBuscar`) — su lupa hoy abre el
+  catálogo completo (`nxProdPicker('vender')`, con precio/existencia/IMEI) en vez de solo filtrar la
+  lista. Es una decisión de diseño del dueño, flagueada en los changelogs de v55.7/v55.8/v55.9 — no
+  se decide sola.

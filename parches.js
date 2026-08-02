@@ -9656,11 +9656,6 @@
   function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
   // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
   // nxBuscaHTML en caché.
-  function pendBuscador(o) {
-    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
-    o = o || {};
-    return '<input type="text"' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '" style="width:100%;height:38px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b">';
-  }
   function fmt(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
   function notify(t, ti, m) { if (typeof window.toast === 'function') window.toast(t, ti, m || ''); }
 
@@ -9811,11 +9806,25 @@
           <div style="font-size:24px;font-weight:900;color:#dc2626;margin-top:2px">${fmt(totalGeneral)}</div>
           <div style="font-size:10px;color:#475569;font-weight:600">${lista.length} cliente(s) con atraso</div>
         </div>` : ''}
-        ${lista.length ? `<div style="margin:0 0 12px">${pendBuscador({ id: 'nxPendBuscar', placeholder: 'Buscar cliente...', oninput: 'window.nxFiltrarPend(this.value)' })}</div>` : ''}
-        <div>${filas}</div>
+        ${lista.length ? `<div style="margin:0 0 12px"><span id="nxPendBuscarLupa"></span></div>` : ''}
+        <div id="nxPendLista">${filas}</div>
       </div>`;
+    // NPGS §5: la lupa se pinta DESPUÉS de inner.innerHTML — el <span> recién existe aquí
+    // (y solo cuando hay lista; con la lista vacía el guard de pintarLupaPend sale solo).
+    try { pintarLupaPend(); } catch (e) {}
   }
 
+  // NPGS §5: lupa colapsada. cont: sirve — las tarjetas son <div> hijos directos de #nxPendLista
+  // y el contador compartido excluye los <div> ocultos por display:none (offsetParent).
+  function pintarLupaPend() {
+    const box = document.getElementById('nxPendBuscarLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'nxPendBuscar', label: 'Buscar', titulo: 'Buscar cliente', cont: 'nxPendLista',
+      placeholder: 'Nombre del cliente…',
+      onterm: function (v) { window.nxFiltrarPend(v); }
+    });
+  }
   // Filtrar la lista de pendientes por nombre de cliente
   window.nxFiltrarPend = function (q) {
     const t = String(q || '').trim().toLowerCase();
@@ -14944,11 +14953,6 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
   // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
   // nxBuscaHTML en caché (mismo criterio que ya usa AGUAPRO/POS).
-  function vhBuscador(o) {
-    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
-    o = o || {};
-    return '<div style="position:relative"><i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#475569;font-size:15px;pointer-events:none"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '" style="width:100%;height:38px;padding:0 12px 0 34px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fff;color:#1e293b"></div>';
-  }
   function fmt(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
   function hoy() { return new Date().toISOString().slice(0, 10); }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
@@ -15037,8 +15041,8 @@
     const lista = _vehiculos.filter(v => f === 'inventario' ? v.estado !== 'vendido' : f === 'vendidos' ? v.estado === 'vendido' : true);
     const chip = (k, l) => `<button type="button" class="btn bsm${_vhFiltro === k ? ' bc1' : ''}" onclick="window.nxVehFiltro('${k}')" style="font-size:10px;padding:5px 10px">${l}</button>`;
     const cards = _vehiculos.length === 0
-      ? '<div style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay vehículos.<br>Toca <b>"Nuevo"</b> para registrar uno.</div>'
-      : (lista.length === 0 ? '<div style="text-align:center;padding:30px;color:#475569;font-size:12px">Ningún vehículo en este filtro.</div>' : lista.map(cardHTML).join(''));
+      ? '<div data-nbf-ignorar style="text-align:center;padding:36px;color:#475569;font-size:13px">Aún no hay vehículos.<br>Toca <b>"Nuevo"</b> para registrar uno.</div>'
+      : (lista.length === 0 ? '<div data-nbf-ignorar style="text-align:center;padding:30px;color:#475569;font-size:12px">Ningún vehículo en este filtro.</div>' : lista.map(cardHTML).join(''));
     view.innerHTML = `
       <div class="nc">
         <div class="ch">
@@ -15058,9 +15062,11 @@
           ${kpi('Ganancia realizada', fmt(ganReal), '#059669')}
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chip('todos', 'Todos')}${chip('inventario', 'En inventario')}${chip('vendidos', 'Vendidos')}</div>
-        <div style="margin-bottom:10px">${vhBuscador({ id: 'nxVhBuscar', placeholder: 'Buscar por marca, placa, chasis o comprador...', oninput: 'window.nxVehBuscar(this.value)' })}</div>
+        <div style="margin-bottom:10px"><span id="nxVhBuscarLupa"></span></div>
         <div id="nxVhLista">${cards}</div>
       </div>`;
+    // NPGS §5: la lupa se pinta DESPUÉS de view.innerHTML — el <span> recién existe aquí.
+    try { pintarLupaVh(); } catch (e) {}
   }
 
   window.nxVehFiltro = function (k) { _vhFiltro = k; const v = document.getElementById('v-vehiculos'); if (v) renderLista(v); };
@@ -15068,6 +15074,17 @@
     const t = String(q || '').trim().toLowerCase();
     document.querySelectorAll('#nxVhLista .nxVhCard').forEach(c => { const b = c.getAttribute('data-busca') || ''; c.style.display = (!t || b.includes(t)) ? '' : 'none'; });
   };
+  // NPGS §5: lupa colapsada. cont: SÍ funciona aquí — las tarjetas son <div> hijos directos de
+  // #nxVhLista y el contador compartido excluye los <div> ocultos por display:none (offsetParent).
+  function pintarLupaVh() {
+    const box = document.getElementById('nxVhBuscarLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'nxVhBuscar', label: 'Buscar', titulo: 'Buscar vehículo', cont: 'nxVhLista',
+      placeholder: 'Marca, placa, chasis o comprador…',
+      onterm: function (v) { window.nxVehBuscar(v); }
+    });
+  }
 
   window.nxAbrirVehiculos = async function () {
     if (!esAdmin()) { toast('err', 'Acceso restringido', 'Solo el administrador'); return; }
@@ -26263,13 +26280,26 @@ try {
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()" title="Empleados / vendedores de esta rifa" aria-label="Empleados / vendedores de esta rifa"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes" aria-label="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra" aria-label="Link público de compra"><i class="ti ti-link"></i></button><button aria-label="Editar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis"><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'\',\'Vendidos\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'por_confirmar\',\'Por confirmar\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
-      '<div class="rfCtl">' + rfBuscador({ id: 'rfTabQ', inputmode: 'numeric', value: _tabQ || '', placeholder: 'Buscar número…', oninput: 'window.nxRifaBuscar(this.value)' }) + '<button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
+      '<div class="rfCtl"><span id="rfTabQLupa"></span><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
       '<div class="rfLegend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#fde68a"></i>Por confirmar</span><span><i class="d" style="background:#c7d2fe"></i>Confirmado</span><span><i class="d" style="background:#cbd5e1"></i>Apartado</span></div>' +
       '<div id="rfBoardWrap">' + boardHTML(r) + '</div>' +
       '</div>';
+    // NPGS §5: la lupa se pinta DESPUÉS de view.innerHTML — el <span> recién existe aquí.
+    try { pintarLupaRfTab(); } catch (e) {}
   }
 
   window.nxRifaBuscar = function (v) { _tabQ = v; _tabPage = 0; var r = currentRifa(); var w = document.getElementById('rfBoardWrap'); if (r && w) w.innerHTML = boardHTML(r); };
+  // NPGS §5: lupa colapsada, con teclado numérico (inputmode). SIN cont: — el tablero pagina de a
+  // 120 celdas por página, un conteo de celdas visibles engañaría (no es "N boletos encontrados").
+  function pintarLupaRfTab() {
+    var box = document.getElementById('rfTabQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'rfTabQ', label: 'Buscar', titulo: 'Buscar número de boleto',
+      placeholder: 'Número de boleto…', value: _tabQ || '', inputmode: 'numeric',
+      onterm: function (v) { window.nxRifaBuscar(v); }
+    });
+  }
   window.nxRifaTabPage = function (d) { _tabPage += d; if (_tabPage < 0) _tabPage = 0; var r = currentRifa(); var w = document.getElementById('rfBoardWrap'); if (r && w) w.innerHTML = boardHTML(r); };
   window.nxRifaNum = function (s) { var b = _bolMap[s]; if (b) gestBoleto(b); else nxRifaVender(s); };
 
@@ -27142,11 +27172,6 @@ try {
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]; }); }
   // Buscador estándar (reglamento del dueño): respaldo por si index.html aún no trae
   // nxBuscaHTML en caché (mismo criterio que ya usa AGUAPRO/POS).
-  function mdBuscador(o) {
-    if (typeof window.nxBuscaHTML === 'function') return window.nxBuscaHTML(o || {});
-    o = o || {};
-    return '<input class="nxMdSearch"' + (o.id ? ' id="' + o.id + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '">';
-  }
   function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
   function toast() { try { return window.toast.apply(null, arguments); } catch (e) {} }
   function val(id) { var e = document.getElementById(id); return e ? e.value : ''; }
@@ -27233,6 +27258,8 @@ try {
     var tabsH = '<div class="nxMdTabs">' + tabs.map(function (t) { return '<button type="button" class="nxMdTab' + (_mdTab === t[0] ? ' on' : '') + '" onclick="window.nxMdTab(\'' + t[0] + '\')"><i class="ti ' + t[1] + '"></i> ' + t[2] + '</button>'; }).join('') + '</div>';
     var body = _mdTab === 'agenda' ? bodyAgenda() : _mdTab === 'pacientes' ? bodyPacientes() : _mdTab === 'consultas' ? bodyConsultas() : bodyInicio(citasHoy, consMes, ingMes);
     view.innerHTML = '<div style="max-width:860px;margin:0 auto">' + head + tabsH + body + '</div>';
+    // NPGS §5: la lupa se pinta DESPUÉS de inyectar el HTML — el <span> recién existe aquí.
+    if (_mdTab === 'pacientes') try { pintarLupaMd(); } catch (e) {}
   }
 
   function bodyInicio(citasHoy, consMes, ingMes) {
@@ -27322,7 +27349,7 @@ try {
   window.nxMdBuscar = function (q) { _mdQ = String(q || '').toLowerCase(); var w = document.getElementById('mdPacLista'); if (w) w.innerHTML = pacsHTML(); };
   function pacsHTML() {
     var lst = _pacs.filter(function (p) { return p.activo !== false && (!_mdQ || (p.nombre || '').toLowerCase().indexOf(_mdQ) >= 0 || (p.cedula || '').indexOf(_mdQ) >= 0 || (p.telefono || '').indexOf(_mdQ) >= 0); });
-    if (!lst.length) return '<div class="nxMdEmpty"><i class="ti ti-user-search"></i>' + (_mdQ ? 'Sin resultados' : 'Aún no hay pacientes — registra el primero') + '</div>';
+    if (!lst.length) return '<div class="nxMdEmpty" data-nbf-ignorar><i class="ti ti-user-search"></i>' + (_mdQ ? 'Sin resultados' : 'Aún no hay pacientes — registra el primero') + '</div>';
     return lst.map(function (p) {
       var ini = (p.nombre || 'P').trim().split(/\s+/).slice(0, 2).map(function (w) { return w[0] || ''; }).join('').toUpperCase();
       var ed = edad(p.fecha_nacimiento);
@@ -27334,9 +27361,20 @@ try {
     }).join('');
   }
   function bodyPacientes() {
-    return '<div style="display:flex;gap:8px;margin-bottom:10px">' + mdBuscador({ placeholder: 'Buscar por nombre, cédula o teléfono...', value: _mdQ, oninput: 'window.nxMdBuscar(this.value)' }) +
-      '<button aria-label="Nuevo paciente" class="btn bc1" type="button" style="border-radius:999px;flex:none" onclick="window.nxMdPacNuevo()"><i class="ti ti-user-plus"></i></button></div>' +
+    return '<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center"><span id="mdQLupa"></span>' +
+      '<button aria-label="Nuevo paciente" class="btn bc1" type="button" style="border-radius:999px;flex:none;margin-left:auto" onclick="window.nxMdPacNuevo()"><i class="ti ti-user-plus"></i></button></div>' +
       '<div id="mdPacLista">' + pacsHTML() + '</div>';
+  }
+  // NPGS §5: lupa colapsada. cont: sirve — las filas son <div> hijos directos de #mdPacLista
+  // (se reconstruyen por tecla); el estado vacío lleva data-nbf-ignorar.
+  function pintarLupaMd() {
+    var box = document.getElementById('mdQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'mdQ', label: 'Buscar', titulo: 'Buscar paciente', cont: 'mdPacLista',
+      placeholder: 'Nombre, cédula o teléfono…', value: _mdQ,
+      onterm: function (v) { window.nxMdBuscar(v); }
+    });
   }
   function formPac(p) {
     p = p || {};
