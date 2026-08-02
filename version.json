@@ -1,7 +1,12 @@
 {
-  "version": "56.2",
+  "version": "56.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.3",
+      "fecha": "2026-08-02",
+      "texto": "ARREGLADO (Factura completa de página entera — el documento formal, no el ticket): en un celular angosto la tabla de artículos se salía por el borde derecho de la pantalla (desborde horizontal). La causa: las columnas de la tabla se acomodaban según su contenido en vez de respetar el ancho del celular. Ahora, en pantalla angosta, las 5 columnas visibles (Descripción/Cant./Precio/Desc./Importe) se reparten en porcentajes fijos que suman exactamente el ancho disponible — nunca se salen. Si un monto no cabe en una línea, pasa a la siguiente (nunca se corta ni se pierde un dígito)."
+    },
     {
       "v": "56.2",
       "fecha": "2026-08-02",

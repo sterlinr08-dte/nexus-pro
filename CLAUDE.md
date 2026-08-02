@@ -11217,3 +11217,42 @@ más alta de lo normal, y "Devolver" cortado contra el borde derecho.
   se acomodan en 2 filas limpias sin corte ni desborde (`desborde:0` en los 4 anchos). `docFacturaHTML`
   verificado igual en 320/360/390px, sus 3 botones también en líneas únicas sin partirse. `node --check
   parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+
+### POS · Factura completa de página entera — la tabla de artículos se salía en el celular (2-ago-2026, v56.3)
+Cierre del hallazgo aparte que quedó documentado en v56.2 (el dueño: "Arréglalo"). En `docFacturaHTML`
+(la factura formal de página completa — distinta al ticket, esta se abre con "📄 Factura completa"),
+la tabla de artículos desbordaba 17px a 320px de ancho aunque la media query móvil ya reducía padding
+y ocultaba la columna `#`.
+- **Causa raíz medida, no supuesta.** El `<table>` tiene `width:100%`, pero con `table-layout:auto`
+  (el default) `width:100%` es solo una SUGERENCIA — si el contenido de las columnas lo pide, el
+  navegador igual expande la tabla más allá de su contenedor. Medido con `getBoundingClientRect` en
+  cada `<th>`/`<td>`: la tabla terminaba en 309px cuando el espacio real disponible dentro de `.doc`
+  era de 264px — 45px de diferencia, exactamente lo que sumaban los anchos "preferidos" de las 5
+  columnas visibles (Descripción 88 + Cant. 42 + Precio 52 + Desc. 43 + Importe 84 = 309).
+- **Arreglo de raíz:** en la media query móvil (`@media(max-width:700px)`), la tabla pasó a
+  `table-layout:fixed` — con esto `width:100%` deja de ser una sugerencia y se vuelve un límite real;
+  las 5 columnas visibles se repartieron en porcentajes fijos que suman exactamente 100%
+  (Descripción 36% / Cant. 11% / Precio 18% / Desc. 15% / Importe 20%, con `!important` para ganarle
+  a los anchos en píxeles que el escritorio ya trae en línea). `th,td` ganaron
+  `overflow-wrap:break-word` (defensivo, para un código/SKU sin espacios que algún día sea más largo)
+  y `td.b` (la celda de Importe, que en escritorio es `white-space:nowrap` a propósito) pasó a
+  `white-space:normal` solo en móvil — mismo criterio ya establecido en este archivo para montos
+  ("el monto NUNCA se trunca, envuelve a 2 líneas en vez de perder dígitos", v48.56): si un total no
+  cabe en una línea, pasa a la siguiente, nunca se corta ni se pierde un dígito.
+- **Un segundo reparto de porcentajes se probó y se descartó.** Se intentó darle más aire a Importe
+  (27%) achicando Cant./Desc. — el desborde seguía en 0, pero el encabezado "CANT." se partía en 3
+  líneas feas ("CA"/"N"/"T.") y "Precio" empezaba a partir números a la mitad, cambiando un problema
+  cosmético por otro sin ganancia real. Se volvió al primer reparto (36/11/18/15/20), que no
+  presentaba ninguno de los dos defectos en las pruebas.
+- **Desktop (>700px) verificado sin regresión:** la media query es exclusiva de `max-width:700px`, así
+  que en escritorio la tabla sigue en `table-layout:auto` con sus anchos en píxeles de siempre
+  (incluida la columna `#`, oculta solo en móvil) — confirmado a 800/1000/1400px, `desborde:0` en
+  los 3, sin cambios visuales.
+- Verificado con Playwright y el código real de `docFacturaHTML` extraído por contenido (no una
+  reconstrucción): 2 casos de contenido (el caso real de la captura del dueño, RD$1,000 con un solo
+  artículo de nombre largo; y un caso de monto grande de 6 cifras con 2 artículos, para estresar la
+  columna Importe) × 4 anchos móviles (320/360/390/428px) = 8 combinaciones, **`desborde:0` en las
+  8**, con `tableWidth` calzando exacto contra el ancho real disponible de `.doc` en cada una.
+  Capturas de pantalla revisadas visualmente en 320px: sin solapamientos, los montos wrappean a 2
+  líneas en vez de cortarse, encabezados legibles. `node --check parches.js` limpio; los 3 `<script>`
+  de `index.html` pasan `new Function()`; `version.json` válido.
