@@ -1,7 +1,12 @@
 {
-  "version": "55.8",
+  "version": "55.9",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.9",
+      "fecha": "2026-08-02",
+      "texto": "NUEVO (NPGS §5 — Tanda D, cierra la migración de buscadores): migrados al patrón de ventana \"lupa + buscador\" los 4 buscadores que quedaban como barra fija — Vehículos, Consultorio Médico (Pacientes), el tablero de números de Rifas y \"Facturas pendientes de meses anteriores\" (Seguros). El buscador de la lista de tickets de Rifas se queda como está a propósito: ya vive dentro de su propia ventana. En Rifas la lupa conserva el teclado numérico del celular (los boletos se buscan por número) y la ventana no muestra el contador de \"N resultados\" a propósito — el tablero pagina de a 120 números y el conteo engañaría; sale el mensaje honesto \"Buscando…\". En Vehículos, Pacientes y Pendientes el contador SÍ es real (los estados vacíos se marcaron para que no cuenten como resultado). De paso se limpiaron 3 funciones de buscador viejo que quedaron sin ningún uso (Vehículos/Consultorio/Pendientes — la de Rifas se queda porque la lista de tickets todavía la usa). Verificado con 28 pruebas contra el código real extraído del archivo (Playwright, sin reconstrucción) y capturas en 390px/1280px, incluida la ventana abierta, sin desbordes. Con esto TODOS los buscadores del sistema están en el patrón del §5 — lo único abierto es la decisión de Vender (su lupa hoy abre el catálogo completo con precio/existencia en vez de solo filtrar: ¿se queda así o se cambia? — la decide el dueño)."
+    },
     {
       "v": "55.8",
       "fecha": "2026-08-02",
