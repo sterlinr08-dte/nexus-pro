@@ -11181,3 +11181,39 @@ ambas ventas"* (Factura y Prefactura).
   `max-width:760px`, no la toca), tarjeta capada a 1080px como en v56.0, 0 errores de consola.
 - `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
   `version.json` válido.
+
+### POS · el ticket de venta — botones del header apretados y con texto cortado (2-ago-2026, v56.2)
+El dueño mandó una captura real de `nexusprord.com` — el ticket que se abre al cobrar (`ticketHTML`,
+la tirilla monospace tipo recibo térmico) con los 3 botones de arriba (Cerrar / Factura completa /
+Devolver) desnivelados: "Factura completa" partido en dos líneas ("Factura" / "completa"), la fila
+más alta de lo normal, y "Devolver" cortado contra el borde derecho.
+- **Causa raíz medida, no supuesta.** El cuerpo del ticket usa a propósito `max-width:300px` (imita
+  una tirilla de impresora térmica de 80mm) — pero los 3 botones a su ancho natural (sin apretar)
+  suman **382px + 16px de gaps = 398px**, muy por encima de los ~300px disponibles. La barra
+  (`.noprint`) era `display:flex` sin `flex-wrap`, y los botones no tenían `white-space:nowrap` ni
+  `flex-shrink:0` — así que el navegador los apretaba (flex-shrink por defecto) hasta que el texto de
+  2 palabras de "Factura completa" partía en dos líneas, mientras "Cerrar"/"Devolver" (más cortos)
+  aguantaban en una línea, produciendo la fila desnivelada. **Esto NO era un capricho del dispositivo
+  del dueño** — se reprodujo igual en Chromium a CUALQUIER ancho de viewport probado (320/375/390/428px)
+  porque el ancho que manda es el `max-width:300px` del propio documento, no la pantalla del teléfono.
+- **Arreglo, quirúrgico, cero cambios de lógica:** `.noprint{...flex-wrap:wrap...}` (el contenedor
+  ahora puede pasar un botón a una segunda fila si no caben los 3) + cada botón ganó
+  `white-space:nowrap;flex-shrink:0` (nunca se aprietan ni se les parte el texto por dentro — si no
+  caben, el navegador manda el botón completo a la fila de abajo, nunca corta su texto a la mitad).
+  Mismo arreglo aplicado, por consistencia y mismo riesgo real, a `.bar button` de `docFacturaHTML`
+  (la Factura de página completa, Imprimir/PDF + WhatsApp) — comparte la misma clase de bug con
+  etiquetas de 2+ palabras, aunque su barra ya tenía `flex-wrap:wrap` desde antes.
+- **Hallazgo aparte, NO corregido (fuera de alcance de lo pedido):** al verificar `docFacturaHTML` a
+  320px salió un desborde horizontal real de 17px — no es de la barra de botones (confirmado
+  elemento por elemento con `getBoundingClientRect`), es la tabla de artículos de la factura completa
+  que a 320px (tamaño de un iPhone 5/SE de 1ra gen, prácticamente extinto hoy) no cabe del todo pese
+  a la media query `@media(max-width:700px)` que ya reduce sus columnas. Se documenta para no perderlo,
+  pero no se tocó — es un problema distinto, en otra pantalla, que no fue lo que el dueño señaló.
+- Verificado con Playwright y el código real extraído por contenido de `ticketHTML`/`docFacturaHTML`
+  (balance de llaves, no reconstrucción): reproducido el bug exacto de la captura (foto idéntica:
+  "Factura completa" partido en 2 líneas, fila desnivelada, "Devolver" cortado) ANTES del arreglo;
+  después, en 320/375/390/428px los 3 botones quedan siempre en una sola línea de texto cada uno
+  (nunca se parten), y cuando no caben los 3 en una fila (el caso real, dado el `max-width:300px`),
+  se acomodan en 2 filas limpias sin corte ni desborde (`desborde:0` en los 4 anchos). `docFacturaHTML`
+  verificado igual en 320/360/390px, sus 3 botones también en líneas únicas sin partirse. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
