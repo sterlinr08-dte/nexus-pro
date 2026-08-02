@@ -1,7 +1,12 @@
 {
-  "version": "56.1",
+  "version": "56.2",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.2",
+      "fecha": "2026-08-02",
+      "texto": "ARREGLADO (ticket de venta — la ventanita que sale al cobrar): los 3 botones de arriba (Cerrar / Factura completa / Devolver) podían apretarse y el texto de \"Factura completa\" se cortaba en dos líneas, dejando la barra desnivelada y fea. Ahora, si los 3 no caben en una sola fila (el ticket es angosto a propósito, como un recibo de impresora térmica), el que sobra pasa limpio a una segunda fila — nunca se corta el texto dentro de un botón. Mismo arreglo aplicado también a la Factura completa de página entera (Imprimir/PDF y WhatsApp)."
+    },
     {
       "v": "56.1",
       "fecha": "2026-08-02",
