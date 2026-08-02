@@ -10863,3 +10863,14 @@ Confirmó las 4 con **"Si las 4 pantalla"**.
   actual) NO se implementó en esta ronda — habría requerido traer datos de abonos que hoy solo vive en
   el modal aparte `verHistorialAbonos`, un cambio de mayor alcance que el elemento firma compartido que
   el dueño aprobó explícitamente.
+
+### Skill nueva `i-have-adhd` (2-ago-2026)
+El dueño mandó una captura de `github.com/ayghri/i-have-adhd` y pidió instalarla. Es un output-style
+de un solo archivo (`SKILL.md`, MIT, sin scripts/instaladores) que reformatea las respuestas para que
+sean accionables de inmediato: acción primero, pasos numerados, sin preámbulo ("Great question!"), sin
+cierre de cortesía ("Hope this helps!"), estimados de tiempo concretos, listas topadas a 5. Trae
+`disable-model-invocation: true` — se activa a propósito con `/i-have-adhd`, no solo (mismo patrón que
+las skills de un solo comando ya instaladas, ej. `gstack-spec`).
+- Instalada con el mismo patrón que el resto (`.agents/skills/i-have-adhd/SKILL.md`+`LICENSE.txt`,
+  enlace en `.claude/skills/i-have-adhd`) — copia directa, sin correr el instalador oficial del repo
+  (no trae ninguno; es un solo archivo, a diferencia de gstack que sí traía maquinaria de instalador).
