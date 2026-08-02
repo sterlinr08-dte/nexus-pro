@@ -1,7 +1,12 @@
 {
-  "version": "55.7",
+  "version": "55.8",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.8",
+      "fecha": "2026-08-02",
+      "texto": "NUEVO (NPGS §5 — Tanda C): migrados al patrón de ventana \"lupa + buscador\" los 3 buscadores de la familia de préstamos que seguían siendo una barra fija — la lista de préstamos de Financiamiento, la lista de Clientes de Financiamiento, y Cuotas del POS. El buscador de la ventana \"Elegir cliente\" (al armar un préstamo) se queda como está a propósito: ya vive dentro de su propia ventana, anidarle otra habría sido un paso atrás. En las 2 listas de Financiamiento la ventana no muestra el contador de \"N resultados\" a propósito (la tabla vive envuelta en un contenedor que engañaría el conteo, y la de préstamos además pagina de a 12) — sale el mensaje honesto \"Buscando…\" en vez de un número que podría estar mal. En Cuotas el contador SÍ es real, y de paso se corrigió un detalle encontrado al probar: cada tarjeta de préstamo trae un segundo nodo (el menú \"...\"), que habría hecho contar el doble — se marcó para que el contador lo ignore, así 3 préstamos dicen \"3 resultados\" y 0 dicen \"0 resultados\", no 6 ni 1. Verificado con 23 pruebas contra el código real extraído del archivo (Playwright, sin reconstrucción, con el CSS real del módulo) y capturas en 390px/1280px sin desbordes. Quedan las Tandas D (Rifas/Consultorio/Vehículos/Pendientes) y la decisión de Vender para cerrar el plan completo."
+    },
     {
       "v": "55.7",
       "fecha": "2026-08-02",

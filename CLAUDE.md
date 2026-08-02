@@ -10998,3 +10998,50 @@ seguir con **"Si"** al ofrecer avanzar sobre el POS.
 - **Pendiente:** confirmar con el dueño qué hacer con `posBuscar` (Vender) — mantener el catálogo
   completo actual o migrarlo a filtro en línea — y las Tandas C (Financiamiento, `finQ` +
   `nxPrElegirCliente`) y D (Rifas/Consultorio/Vehículos), mismo patrón, cada una en su propia ronda.
+
+### NPGS §5 — Tanda C: Financiamiento (préstamos + clientes) y Cuotas del POS (2-ago-2026, v55.8)
+Continuación de la Tanda B (arriba), pedida con "Sigue con lo pendiente".
+- **Alcance real auditado antes de tocar código:** de los 4 candidatos de Financiamiento, solo **3**
+  califican — la lista de préstamos (`nxPrBuscar`, filtra `nxPrestamoFiltrar`→`repintarPrLista`), la
+  lista de Clientes de Financiamiento (`nxPrCliBuscar`, filtra `nxPrClienteFiltrar`) y **Cuotas del
+  POS** (`finQ`, filtra `nxFinBuscar`→`finRepintarLista`). El 4to, `nxPrCliPickQ`, vive DENTRO de la
+  ventana "Elegir cliente" (`nxPrElegirCliente`) — mismo criterio de las Tandas anteriores: un campo
+  de búsqueda que ya vive en una ventana abierta cumple el §5, anidarle otra sería un paso atrás. Se
+  dejó intacto.
+- **Mismo motor y mismo patrón de riesgo mínimo:** un `<span id="XLupa">` reemplaza la barra vieja
+  (`prBuscador`/`posBuscador`) y una `pintarLupaX()` por pantalla lo llena con `nxBuscaFiltroHTML`,
+  cuyo `onterm` llama la función de filtro real de siempre — cero cambios en la lógica de filtrado.
+  `prBuscador` NO quedó muerto: conserva su único uso real dentro del picker de cliente.
+- **Los hooks van donde cada módulo inyecta de verdad** (la lección de la Tanda B, aplicada según la
+  arquitectura de CADA módulo, no copiada a ciegas): Financiamiento NO pasa por `renderPOS` —
+  `renderLista(view)` hace `view.innerHTML = ...` directo, así que las 2 lupas se pintan AL FINAL de
+  esa misma función (junto al hook `evInit()` que ya existía), espejando el ternario de vistas
+  (clientes → su lupa; el ELSE de préstamos → la suya). Cuotas SÍ es una pestaña del POS
+  (`_posTab==='cuotas'` → `renderCuotas()` devuelve string) — su hook se sumó a la lista de la Tanda
+  B en `renderPOS`, después de `view.innerHTML = shellTienda(...)`.
+- **Contador de resultados, decidido por estructura real, no parejo:** las 2 listas de Financiamiento
+  van SIN `cont:` — sus tablas viven envueltas en `.nxFP-tblWrap` (el contador contaría 1 wrapper, no
+  las filas) y la de préstamos además pagina de a 12 (un conteo de página engañaría). Caen al
+  "Buscando…" honesto. Cuotas SÍ lleva `cont:'finList'` (tarjetas como hijos directos, reconstruidas
+  por tecla).
+- **BUG REAL encontrado POR el harness, corregido antes de publicar:** `finCardHTML` produce **2
+  nodos raíz por préstamo** — la tarjeta + el `.nxFP-cardMenuWrap` del menú "..." — así que el
+  contador habría dicho "6 resultados" con 3 préstamos (y "1 resultado" con 0, por el estado vacío).
+  Arreglado con `data-nbf-ignorar` (el soporte que el motor compartido ya traía) en el wrap del menú
+  y en los 2 estados vacíos de `finListaHTML` — 3 préstamos dicen "3 resultados" y 0 dicen
+  "0 resultados", verificado explícitamente en ambos sentidos.
+- **Verificado con Playwright, código real extraído por contenido** (no una reconstrucción — el motor
+  completo de `index.html` + 40 funciones reales de `parches.js`, incluidas la cadena de cálculo
+  completa `creditoCalc`/`amortizar`/`prEstadoInfo`/`finEstado` descubierta iterativamente por los
+  `ReferenceError` reales del harness, nunca stubbeada): **23 comprobaciones** — en las 3 pantallas:
+  la barra vieja no existe, la lupa abre la ventana, escribir llama la función de filtro REAL
+  (contador de invocaciones) y filtra de verdad (3→1, incluida la búsqueda por TELÉFONO en Clientes),
+  el contador dice el número correcto donde va y el mensaje honesto donde no, el caso 0-resultados
+  dice "0 resultados", el chip queda tras aceptar y limpiarlo restaura la lista. Capturas en 390px y
+  1280px **con el CSS real de `nxFPEnsureCSS()` extraído y ejecutado** (la primera pasada de
+  capturas dio 272px de desborde falso porque el harness no tenía ese CSS — es CSS inyectado por
+  `parches.js`, no del `<style>` de `index.html`; con el real, 0px en ambos anchos). `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** la Tanda D (Rifas `rfTabQ`/`tkQ`, Consultorio `mdQ`, Vehículos `nxVhBuscar`,
+  Pendientes-prev `nxPendBuscar` — auditar cada uno primero, algunos pueden vivir ya en ventana) y la
+  decisión de Vender (`posBuscar`) que sigue esperando al dueño.

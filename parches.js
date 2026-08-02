@@ -12108,7 +12108,7 @@
             <div class="nxFP-hAst"><div class="nxFP-hAsi"><i class="ti ti-users"></i></div><div><div class="nxFP-hAsl">Clientes</div><div class="nxFP-hAsv">${clientesActivos} activos</div></div></div>
           </div>
         </div>
-        <div class="nxFP-searchRow">${prBuscador({ id: 'nxPrBuscar', placeholder: 'Buscar por nombre o cédula...', oninput: 'window.nxPrestamoFiltrar(this.value)' })}</div>
+        <div class="nxFP-searchRow"><span id="nxPrBuscarLupa"></span></div>
         <div class="nxFP-listHead"><span>LISTA DE PRÉSTAMOS</span></div>
         <div id="nxPrLista">${prTablaHTML()}</div>
         <div class="nxFP-dash">
@@ -12121,6 +12121,10 @@
       </div>
     </div>`;
     if (_prView === 'evaluacion') { try { evInit(); } catch (e) {} }
+    // NPGS §5: pintar la lupa DESPUÉS de view.innerHTML — el <span> recién existe aquí.
+    // Espeja el ternario de arriba: clientes → su lupa; el ELSE (lista de préstamos) → la suya.
+    if (_prView === 'clientes') { try { pintarLupaPrCli(); } catch (e) {} }
+    else if (_prView !== 'evaluacion' && _prView !== 'reportes' && _prView !== 'solicitudes') { try { pintarLupaPr(); } catch (e) {} }
   }
   // ══════════════════════════════════════════════════════════════════
   //  REPORTES DE FINANCIAMIENTO (dashboard, spec ChatGPT "Reportes V1")
@@ -12343,7 +12347,7 @@
         ${kpi2('ti-user-check', '#ecfdf5', '#059669', 'CON PRÉSTAMO', conPrestamo, 'Tienen al menos uno')}
         ${kpi2('ti-alert-triangle', '#fef2f2', '#dc2626', 'EN MORA', enMora, 'Con préstamo vencido')}
       </div>
-      <div class="nxFP-searchRow">${prBuscador({ id: 'nxPrCliBuscar', placeholder: 'Buscar cliente por nombre, cédula o teléfono...', oninput: 'window.nxPrClienteFiltrar(this.value)' })}</div>
+      <div class="nxFP-searchRow"><span id="nxPrCliBuscarLupa"></span></div>
       <div class="nxFP-listHead"><span>LISTA DE CLIENTES</span></div>
       <div id="nxPrCliLista">${prClientesTablaHTML()}</div>`;
   }
@@ -12469,6 +12473,27 @@
   window.nxPrestamoFiltrar = function (q) {
     _prQuery = String(q || ''); _prPage = 1; repintarPrLista();
   };
+  // NPGS §5: lupa colapsada que abre la ventana compartida (Buscar/Recientes/Favoritos).
+  // Sin cont: — la tabla vive envuelta en .nxFP-tblWrap (el contador contaría 1 wrapper,
+  // no las filas) y además pagina de a 12, así que un conteo de página engañaría.
+  function pintarLupaPr() {
+    const box = document.getElementById('nxPrBuscarLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'nxPrBuscar', label: 'Buscar', titulo: 'Buscar préstamo',
+      placeholder: 'Nombre o cédula…', value: _prQuery,
+      onterm: function (v) { window.nxPrestamoFiltrar(v); }
+    });
+  }
+  function pintarLupaPrCli() {
+    const box = document.getElementById('nxPrCliBuscarLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'nxPrCliBuscar', label: 'Buscar', titulo: 'Buscar cliente',
+      placeholder: 'Nombre, cédula o teléfono…', value: _prCliQuery,
+      onterm: function (v) { window.nxPrClienteFiltrar(v); }
+    });
+  }
   window.nxFPToggleSide = function () { const s = document.getElementById('nxFPShell'); if (s) s.classList.toggle('side-open'); };
 
   function ensureView() {
@@ -16322,6 +16347,7 @@
     if (_posTab === 'prefhist') try { pintarLupaPH(); } catch (e) {}
     if (_posTab === 'productos') try { pintarLupaProd(); } catch (e) {}
     if (_posTab === 'reparaciones') try { pintarLupaRep(); } catch (e) {}
+    if (_posTab === 'cuotas') try { pintarLupaFin(); } catch (e) {}
     if (_posTab === 'ventas') try { pintarLupaHist(); } catch (e) {}
   }
 
@@ -24220,7 +24246,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
           <div>${est.key === 'pagado' ? `<div class="nxFP-gLbl">Estado</div><div class="nxFP-gVal">Completado</div>` : est.key === 'cancelado' ? `<div class="nxFP-gLbl">Estado</div><div class="nxFP-gVal">Anulado</div>` : prox ? `<div class="nxFP-gLbl">${atraso > 0 ? 'Días vencidos' : 'Próximo pago'}</div><div class="nxFP-gVal ${atraso > 0 ? 'danger' : ''}">${atraso > 0 ? atraso + ' días' : String(prox.fecha_venc).slice(0, 10)}</div></div>` : ''}</div>
         </div>
       </div>
-      <div class="nxFP-cardMenuWrap">
+      <div class="nxFP-cardMenuWrap" data-nbf-ignorar>
         <button type="button" class="nxFP-menuBtn" aria-label="Más opciones de ${esc(f.cliente_nombre || '')}" onclick="window.nxFinMenu(event,'${f.id}')"><i class="ti ti-dots-vertical"></i></button>
         <div class="nxFP-menuPop" id="finMenu_${f.id}">
           ${est.key !== 'pagado' && est.key !== 'cancelado' && prox ? `<button type="button" onclick="window.nxFinMenuGo(event,'${f.id}','pagar')"><i class="ti ti-cash"></i> Cobrar cuota</button>` : ''}
@@ -24233,8 +24259,8 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   function finListaHTML() {
     const lista = finFiltrados();
     if (!lista.length) {
-      if (!_fins.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-file-off"></i></div><h3>Aún no hay préstamos</h3><p>Se crean al cobrar una venta marcando "Financiar el resto en CUOTAS".</p><button type="button" class="nxFP-qbtn" style="max-width:220px;margin:14px auto 0" onclick="window.nxFinNuevo()"><div class="nxFP-qico primary"><i class="ti ti-plus"></i></div><span>Nuevo préstamo</span></button></div>`;
-      return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún préstamo coincide con este filtro o búsqueda.</p></div>`;
+      if (!_fins.length) return `<div class="nxFP-empty" data-nbf-ignorar><div class="nxFP-emptyIco"><i class="ti ti-file-off"></i></div><h3>Aún no hay préstamos</h3><p>Se crean al cobrar una venta marcando "Financiar el resto en CUOTAS".</p><button type="button" class="nxFP-qbtn" style="max-width:220px;margin:14px auto 0" onclick="window.nxFinNuevo()"><div class="nxFP-qico primary"><i class="ti ti-plus"></i></div><span>Nuevo préstamo</span></button></div>`;
+      return `<div class="nxFP-empty" data-nbf-ignorar><div class="nxFP-emptyIco"><i class="ti ti-search-off"></i></div><h3>Nada por aquí</h3><p>Ningún préstamo coincide con este filtro o búsqueda.</p></div>`;
     }
     return lista.map(finCardHTML).join('');
   }
@@ -24524,6 +24550,18 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     finRepintarLista();
   };
   window.nxFinBuscar = function (v) { _finQ = v || ''; finRepintarLista(); };
+  // NPGS §5: lupa colapsada. Aquí SÍ va cont: — las tarjetas son hijos directos de #finList
+  // (se reconstruyen en cada tecla, no se ocultan con display:none); el estado vacío lleva
+  // data-nbf-ignorar para que 0 resultados no cuente como "1 resultado".
+  function pintarLupaFin() {
+    const box = document.getElementById('finQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'finQ', label: 'Buscar', titulo: 'Buscar financiamiento', cont: 'finList',
+      placeholder: 'Nombre, cédula, teléfono o referencia…', value: _finQ,
+      onterm: function (v) { window.nxFinBuscar(v); }
+    });
+  }
   window.nxFinMenu = function (ev, id) {
     if (ev) ev.stopPropagation();
     document.querySelectorAll('.nxFP-menuPop.open').forEach(m => { if (m.id !== 'finMenu_' + id) m.classList.remove('open'); });
@@ -24592,7 +24630,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       <div class="nxFP-secTitle">ACCIONES RÁPIDAS</div>
       <div class="nxFP-quick">${quickBtns.map(b => `<button type="button" class="nxFP-qbtn" onclick="window.${b[0]}()"><div class="nxFP-qico ${b[2]}"><i class="ti ${b[1]}"></i></div><span>${b[3]}</span></button>`).join('')}</div>
       <div class="nxFP-tabs" id="finTabs">${finTabsHTML()}</div>
-      <div class="nxFP-searchRow">${posBuscador({ id: 'finQ', placeholder: 'Buscar por nombre, cédula, teléfono o referencia...', value: _finQ, oninput: 'window.nxFinBuscar(this.value)' })}</div>
+      <div class="nxFP-searchRow"><span id="finQLupa"></span></div>
       <div class="nxFP-listHead" id="finListHead"><span>LISTA DE FINANCIAMIENTOS</span><span id="finTotalLbl">Total: ${finFiltrados().length} préstamos</span></div>
       <div id="finList">${finListaHTML()}</div>
       <div class="nxFP-dash">
