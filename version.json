@@ -1,7 +1,12 @@
 {
-  "version": "55.2",
+  "version": "55.3",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.3",
+      "fecha": "2026-08-02",
+      "texto": "ARREGLADO (importante, Seguros — Clientes): el dueño pidió auditar Facturas/Cobros/Pendientes porque sentía que algo andaba mal. Se investigó a fondo contra la base real (109 clientes, 300 facturas, 184 cobros) — el modelo de deuda y el estado de las facturas están sanos (0 discrepancias), pero se encontró un bug real y silencioso en el botón **\"Inhabilitar\"/\"Reactivar\"** de la ficha del cliente: ese botón solo marcaba `activo=false`, pero el formulario de EDITAR cliente vuelve a calcular `activo` en CADA guardado a partir de otro campo distinto (\"Estado del cliente\", el desplegable Activo/En proceso/Suspendido/Cancelado) que el botón nunca tocaba. Resultado: un cliente inhabilitado por falta de pago se reactivaba SOLO, en silencio, la próxima vez que alguien le editaba cualquier dato (el teléfono, la ARS, lo que fuera) — sin ningún aviso ni rastro distinto en Auditoría que lo diferenciara de una edición normal. Confirmado con el historial real que el bug NO se había disparado todavía en ningún cliente (es un riesgo vivo, no un incidente ya ocurrido) — pero afectaba a los clientes hoy inhabilitados por falta de pago. Arreglado sincronizando el desplegable en los dos botones (Inhabilitar → Suspendido, Reactivar → Activo), así el formulario de editar ya no tiene de dónde sacar un valor viejo. Verificado con una prueba de regresión que reproduce el bug exacto contra el estado real (sin el arreglo, editar reactiva solo; con el arreglo, se queda inhabilitado) — 7/7. Corrección de datos aplicada una sola vez (SQL) a los clientes que ya estaban inhabilitados, para que queden protegidos de inmediato sin esperar a que alguien los edite."
+    },
     {
       "v": "55.2",
       "fecha": "2026-08-01",
