@@ -10771,3 +10771,39 @@ hay algo mal."* Sin síntoma concreto — investigación de causa raíz contra l
   aparece en el historial como reactivada manualmente en algún momento y vuelta a inhabilitar después —
   hoy está sana (`activo=false`, `estado_cliente='SUSPENDIDO'`, sincronizados). No se investigó más a
   fondo por no ser parte de este bug.
+
+### Seguros · Avisos — bug real: "Facturas atrasadas" mostraba deuda ya pagada (2-ago-2026, v55.4)
+El dueño mandó una captura real de la pestaña Avisos: una clienta (CARMEN ISELSA CABREJA ARIAS — la
+misma del bug anterior, sin relación entre los dos) aparecía debiendo **RD$13,500** de meses anteriores,
+pero su deuda real es **RD$500**. Investigado contra la base real, no contra supuestos.
+- **Causa raíz:** `rAvisos()` (sección "Facturas atrasadas") sumaba **`f.total`** — el monto CONGELADO
+  de cada factura al momento de crearse — en vez de calcular cuánto debe el cliente HOY. En facturas
+  viejas ese `total` puede traer deuda anterior ya arrastrada (de antes de que el sistema separara esa
+  deuda en su propia columna, ver "DEUDA ANTERIOR" v36.0 más arriba en este archivo) — un monto que ya
+  no refleja la realidad aunque el cliente haya ido pagando desde entonces. Además filtraba por
+  `f.estado!=='Pagado'`, que es una CACHÉ (`resyncEstadoFacturas`, v49.95) que puede quedar
+  desactualizada por caminos que no la resincronizan.
+- **Arreglo — mismo criterio que el resto del sistema, reusar la fuente de verdad ya establecida:**
+  en vez de sumar `f.total`/filtrar por `f.estado`, ahora se recalcula el saldo real de cada factura con
+  **`_saldoFacturasCliente(cid)`** — la MISMA función que ya usan Facturas, Cobros y la Ficha del
+  cliente (reparte `cliente.pagado` oldest-first sobre las facturas no anuladas) — y solo se cuenta lo
+  que en verdad sigue pendiente. Un cliente que ya pagó del todo **deja de aparecer por completo** en
+  Avisos, sin importar qué diga la etiqueta guardada de esa factura. Cero tablas/columnas nuevas, cero
+  cambio en `_saldoFacturasCliente` en sí — solo se cambió qué usa `rAvisos()` para sumar.
+- **Revisado con `/ponytail-review`:** se había agregado una memoización (`_saldoCache`) para no
+  recalcular el saldo del mismo cliente dos veces — la skill la marcó `yagni` dado el tamaño real del
+  dataset (~300 facturas totales, el costo de recalcular es insignificante) y no es un patrón que el
+  resto del código use en este contexto. Se quitó — `_saldoFacturasCliente(cid)[f.id]??0` se llama
+  directo por cada factura, sin caché.
+- Verificado con **5 pruebas** contra el código real extraído del archivo (no reconstruido): (1) el caso
+  exacto reportado — con `deuda_total:4500,pagado:4000` y una factura vieja con `total:13500` congelado,
+  muestra RD$500 (saldo real) y NUNCA RD$13,500; (2) cliente con el estado cacheado "Parcial" pegado
+  pero que ya pagó del todo (`deuda_total===pagado`) — desaparece de Avisos por completo; (3) cliente que
+  sí debe, sin regresión — sigue apareciendo con el monto correcto; (4) reparto oldest-first entre 2
+  facturas de un mismo cliente — el monto mostrado es solo lo que falta (no la suma ciega de las 2
+  facturas) y el conteo de "meses atrasados" excluye la que ya quedó cubierta por el reparto; (5) factura
+  `Anulada` — nunca se cuenta. Las 5 pasan. `node --check parches.js` limpio (archivo no tocado); los 3
+  `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado:** las otras 2 secciones de Avisos — "Seguimiento por agente" (ya usaba
+  `pendTot(c)`, la fuente correcta, confirmado sano) y "Pólizas por vencer" (usa `getEstPol()`, un
+  cálculo distinto sin relación con este bug).
