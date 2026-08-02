@@ -11256,3 +11256,73 @@ y ocultaba la columna `#`.
   Capturas de pantalla revisadas visualmente en 320px: sin solapamientos, los montos wrappean a 2
   líneas en vez de cortarse, encabezados legibles. `node --check parches.js` limpio; los 3 `<script>`
   de `index.html` pasan `new Function()`; `version.json` válido.
+
+### Financiamiento — pestaña "Cobranza" con vista propia + bug real de raíz en el listado móvil (2-ago-2026, v56.4)
+El dueño pidió aplicar el trabajo pendiente en `chatgpt/visual-draft` — se investigó qué había ahí
+(mismo flujo ya establecido, "ChatGPT diseña, Claude implementa") y se le presentaron 4 candidatos
+reales encontrados en esa rama. Eligió **"Cobranza V2 (Financiamiento)"**
+(`docs/visual-drafts/financiamiento/COBRANZA_V2_INTEGRACION.md`).
+- **Qué faltaba de verdad:** tocar "Cobranza" en la barra lateral de Financiamiento solo aplicaba
+  el filtro genérico `vencidos` sobre la lista de siempre — la misma tabla, mismos KPIs de arriba,
+  nada dedicado a "a quién llamo primero". El spec pedía 4 funciones nuevas, nada más, consumiendo
+  SOLO `_prestamos`/`_pagosByPrestamo` ya cargados (sin tabla/columna/estado nueva en Supabase).
+- **`prPrioridadCobranza(p)`** (nueva, junto a `estadoDe`): clasificación DERIVADA (nunca se guarda) —
+  `critico` (vencido >30 días), `alta` (vencido 8-30 días — y por decisión deliberada, también
+  1-7 días, rango que el spec no cubría explícito: se le dio la misma urgencia que el resto de
+  "vencido" en vez de inventar una 5ta categoría), `porvencer` (próximo pago en 0-7 días),
+  `aldia` (el resto). Un préstamo `pagado` devuelve `null` — queda 100% fuera de Cobranza.
+- **`prCobranzaListaFiltrada()`**: filtra por la pestaña activa (`_prCobTab`) + el buscador
+  (`_prCobQ`, por nombre o cédula) y ordena por prioridad (crítico→alta→porvencer→aldia) y, dentro
+  de la misma prioridad, por saldo pendiente descendente — el que más debe, primero.
+- **`prCobranzaTablaHTML()`**: reusa la MISMA clase `.nxFP-tbl` (con sus clases de columna
+  `.nxFP-tdNom`/`.nxFP-tEst`/`.nxFP-tRef`/`.nxFP-tCed`/`.nxFP-tTot`/`.nxFP-tProx`/`.nxFP-tAccC`) que
+  ya usa la lista general de préstamos — el colapso a tarjeta en el celular se hereda gratis, sin
+  CSS responsive nuevo. Columnas: Ref/Prestatario/Cédula/Saldo pendiente/Próximo pago (para
+  crítico/alta muestra "N días vencido" en vez de una fecha)/Prioridad (pastilla de color)/Acciones
+  — **las 4 acciones reales de siempre** (Ver detalle/Editar/Estado de cuenta/WhatsApp,
+  `nxPrestamoVer`/`Editar`/`EstadoCuenta`/`WA`, ninguna nueva).
+- **`prCobranzaMainHTML()`**: topbar propia ("Cobranza"), **5 KPIs con datos reales** (Cobrar hoy =
+  saldo de los críticos; Cobrar esta semana = saldo de alta prioridad; Próximos vencimientos = saldo
+  de por-vencer; Pagos registrados hoy = suma real de `_pagosByPrestamo` con fecha=hoy; Total por
+  cobrar = saldo de TODA la cartera activa), la lupa del §5 (`nxBuscaFiltroHTML`/`pintarLupaPrCob`,
+  sin `cont:` a propósito — la tabla vive envuelta en `.nxFP-tblWrap`, un contador contaría 1
+  wrapper, no filas, mismo criterio ya usado en `pintarLupaPr`), pestañas de prioridad con contador
+  real, la tabla, y una tarjeta lateral de resumen (`.nxFP-cobSide`, sticky en escritorio).
+- **Enganchado en `renderLista(view)`** (el mismo punto de entrada de siempre): la rama
+  `(_prView==='prestamos' && _prFiltro==='vencidos')` decide si se pinta `prCobranzaMainHTML()` en
+  vez del dashboard genérico, y el hook de la lupa se agregó al mismo `if/else if` que ya despacha
+  `pintarLupaPrCli()`/`pintarLupaPr()` según la vista activa. El botón "Cobranza" de la barra
+  lateral **no se tocó** — sigue llamando a `nxPrestamoFiltroTipo('vencidos')`, que ya ponía
+  exactamente ese filtro.
+- **BUG REAL DE RAÍZ, encontrado por la propia verificación (no era un problema de mi código nuevo
+  — reproducible con el código genérico de la lista de préstamos, sin tocar Cobranza):** en el
+  celular (≤760px), `.nxFP-tbl tbody tr` tiene `width:100%` + `padding:12px 14px` + `border:1px
+  solid` para verse como tarjeta — pero **sin `box-sizing:border-box`**. Con el `box-sizing`
+  por defecto (`content-box`), el navegador interpreta `width:100%` como el ancho del CONTENIDO, y
+  le suma los 14px+14px de padding + 1px+1px de borde por FUERA — 30px de más, que era exactamente
+  el desborde horizontal de 22px medido en la pantalla (verificado quitando/forzando el
+  `box-sizing` con estilos inyectados en tiempo de ejecución hasta aislar la causa exacta: con
+  `box-sizing:border-box` puesto a mano, `scrollWidth` pasó de 412 a 390 sin ningún otro cambio).
+  Arreglo de una sola propiedad en la regla ya existente (línea ~24522 de `parches.js`,
+  `@media(max-width:760px){.nxFP-tbl tbody tr{...}}`): se agregó `box-sizing:border-box` — nada
+  más se tocó. Como la regla es compartida, el arreglo beneficia TANTO a Cobranza como a la lista
+  general de préstamos (`_prFiltro='todos'`), que tenía el mismo desborde desde antes de este
+  trabajo, sin relación con la funcionalidad nueva.
+- **Verificado con Playwright, código real extraído por contenido de `parches.js`** (extractor
+  propio con balance de llaves, string/backtick-aware — no una reconstrucción a mano) — **61
+  comprobaciones**: clasificación de prioridad (7/7, incluidos los 2 casos límite de "3 días" vs
+  "15 días vencido" y el préstamo pagado excluido), orden y filtros de la lista (6/6, incluida la
+  búsqueda por cédula), que la vista de Cobranza se pinta y NO el dashboard genérico (4/4), los 5
+  KPIs con montos EXACTOS calculados a mano contra el seed (6/6), las 5 pestañas con su contador
+  real (5/5), la tabla con sus columnas/pastillas/texto de "próximo pago" (8/8), el resumen lateral
+  (3/3), las 4 acciones de fila con `stopPropagation` (no disparan también el clic de la fila,
+  4/4), el repintado parcial al cambiar de pestaña (los KPIs NO se recalculan, solo la tabla, 3/3),
+  el flujo real del buscador compartido del §5 (abrir/escribir/filtrar en vivo/cerrar/chip/limpiar,
+  6/6), regresión de que otros filtros (`todos`/`activos`) NO activan la vista de Cobranza y el
+  botón de la barra lateral sigue llamando exactamente a lo mismo de siempre (5/5), y CERO
+  desborde horizontal en 1600/1280/390px (3/3, el 390px es el que estaba fallando antes del
+  arreglo de `box-sizing`) — 0 errores de consola. `node --check parches.js` limpio; los 3
+  `<script>` de `index.html` (1,423 / 493,343 / 681 caracteres) pasan `new Function()`;
+  `version.json` válido.
+- **Publicado por rama propia** (`claude/cobranza-v2-financiamiento` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main` — como pedía explícitamente el spec.

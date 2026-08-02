@@ -11757,6 +11757,10 @@
   let _prFiltro = 'todos';
   let _prPage = 1, _prQuery = '';
   const PR_PAGE_SIZE = 12;
+  // Cobranza V2 (spec ChatGPT, ver docs/visual-drafts/financiamiento/COBRANZA_V2_INTEGRACION.md):
+  // pestaña de prioridad + búsqueda propias, distintas de _prFiltro/_prQuery (esas son de la
+  // lista general de préstamos). 'todos' es el default al entrar a Cobranza.
+  let _prCobTab = 'todos', _prCobQ = '';
   let _prClientes = [], _prView = 'prestamos', _prCliQuery = '', _prSolicitudes = [];
   let _prRepPeriodo = 'todo'; // Reportes: 'mes' | 'anio' | 'todo' — solo alcanza las métricas de FLUJO (colocado/recuperado/cobros); el stock (balance/mora/cartera) siempre es al día de hoy.
   let _tipoPago = 'capital'; // para línea de crédito: 'capital' o 'interes'
@@ -12049,9 +12053,129 @@
   function repintarPrLista() { const el = document.getElementById('nxPrLista'); if (el) el.innerHTML = prTablaHTML(); }
   window.nxPrTablaPagina = function (n) { _prPage = n; repintarPrLista(); };
 
+  // ══════════════════════════════════════════════════════════════════
+  //  COBRANZA V2 (spec ChatGPT "Cobranza V2 Integración") — vista dedicada dentro del
+  //  mismo shell, sin observadores DOM ni timers. Consume EXCLUSIVAMENTE _prestamos y
+  //  _pagosByPrestamo (ya cargados por cargarPrestamos), ningún estado nuevo en Supabase.
+  // ══════════════════════════════════════════════════════════════════
+  // Prioridad DERIVADA (nunca escrita) — mismo criterio que prEstadoTabla, solo parte
+  // "vencido" por severidad de días. Un préstamo vencido 1-7 días no lo cubre el spec
+  // explícitamente (solo define >30=crítico y 8-30=alta) — se deja en 'alta' a propósito:
+  // es al menos tan urgente como el resto del rango 1-30, más urgente que "por vencer"
+  // (que todavía ni vence), y así ningún préstamo activo queda sin prioridad.
+  function prPrioridadCobranza(p) {
+    if (estadoDe(p) === 'pagado') return null;
+    if (esVencido(p)) return prDiasVencido(p) > 30 ? 'critico' : 'alta';
+    const f = prProximoPago(p);
+    if (f) { const d = Math.floor((new Date(f + 'T12:00:00') - new Date(hoy() + 'T12:00:00')) / 86400000); if (d >= 0 && d <= 7) return 'porvencer'; }
+    return 'aldia';
+  }
+  const PR_COB_LBL = { critico: 'Crítico', alta: 'Alta prioridad', porvencer: 'Por vencer', aldia: 'Al día' };
+  const PR_COB_ORD = { critico: 0, alta: 1, porvencer: 2, aldia: 3 };
+  function prCobranzaConPrioridad() { return _prestamos.map(p => ({ p: p, prio: prPrioridadCobranza(p) })).filter(x => x.prio); }
+  function prCobranzaListaFiltrada() {
+    const q = (_prCobQ || '').trim().toLowerCase();
+    const arr = prCobranzaConPrioridad().filter(x => {
+      if (_prCobTab !== 'todos' && x.prio !== _prCobTab) return false;
+      if (q) { const b = (x.p.nombre || '').toLowerCase() + ' ' + (x.p.cedula || ''); if (!b.includes(q)) return false; }
+      return true;
+    });
+    // Orden: Crítico → Alta → Por vencer → Al día; dentro de cada grupo, mayor saldo primero.
+    arr.sort((a, b) => (PR_COB_ORD[a.prio] - PR_COB_ORD[b.prio]) || (saldoDe(b.p) - saldoDe(a.p)));
+    return arr.map(x => x.p);
+  }
+  function prCobranzaTablaHTML() {
+    const lista = prCobranzaListaFiltrada();
+    if (!lista.length) return `<div class="nxFP-empty"><div class="nxFP-emptyIco"><i class="ti ti-mood-smile"></i></div><h3>Nada por cobrar aquí</h3><p>Ningún préstamo coincide con este filtro.</p></div>`;
+    const rows = lista.map(p => {
+      const prio = prPrioridadCobranza(p), saldo = saldoDe(p), prox = prProximoPago(p), vDias = prDiasVencido(p);
+      const proxTxt = (prio === 'critico' || prio === 'alta') ? (vDias + (vDias === 1 ? ' día vencido' : ' días vencido')) : (prox || '—');
+      return `<tr onclick="window.nxPrestamoVer('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
+        <td data-l="Ref" class="nxFP-tRef">${prRef(p)}</td>
+        <td data-l="Prestatario" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(p.nombre || 'Sin nombre')}</div>${p.telefono ? `<div class="nxFP-tSub">${esc(p.telefono)}</div>` : ''}</td>
+        <td data-l="Cédula" class="nxFP-tCed">${esc(p.cedula || '—')}</td>
+        <td data-l="Saldo pendiente" class="nxFP-tMoney nxFP-tTot">${fmt(saldo)}</td>
+        <td data-l="Próximo pago" class="nxFP-tProx">${proxTxt}</td>
+        <td data-l="Prioridad" class="nxFP-tEst"><span class="nxFP-tBadge ${prio}">${PR_COB_LBL[prio]}</span></td>
+        <td data-l="Acciones" class="nxFP-tAccC"><div class="nxFP-tAcc">
+          <button type="button" title="Ver detalle" aria-label="Ver ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrestamoVer('${p.id}')"><i class="ti ti-eye"></i></button>
+          <button type="button" title="Editar" aria-label="Editar ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrestamoEditar('${p.id}')"><i class="ti ti-pencil"></i></button>
+          <button type="button" title="Estado de cuenta" aria-label="Estado de cuenta" onclick="event.stopPropagation();window.nxPrestamoEstadoCuenta('${p.id}')"><i class="ti ti-printer"></i></button>
+          ${p.telefono ? `<button type="button" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation();window.nxPrestamoWA('${p.id}')"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+        </div></td>
+      </tr>`;
+    }).join('');
+    return `<div class="nxFP-tblWrap"><table class="nxFP-tbl"><thead><tr>
+        <th>Ref</th><th>Prestatario</th><th>Cédula</th><th>Saldo pendiente</th><th>Próximo pago</th><th>Prioridad</th><th>Acciones</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function prCobranzaTabsHTML() {
+    const all = prCobranzaConPrioridad();
+    const n = k => k === 'todos' ? all.length : all.filter(x => x.prio === k).length;
+    const tabs = [['todos', 'Todos', 'ti-layout-grid'], ['critico', 'Críticos', 'ti-alert-octagon'], ['alta', 'Alta prioridad', 'ti-alert-triangle'], ['porvencer', 'Por vencer', 'ti-calendar-due'], ['aldia', 'Al día', 'ti-circle-check']];
+    return tabs.map(t => `<button type="button" class="nxFP-tab ${_prCobTab === t[0] ? 'on' : ''}" onclick="window.nxPrCobTab('${t[0]}')"><i class="ti ${t[2]}"></i> ${t[1]} <span class="nxFP-tabN">${n(t[0])}</span></button>`).join('');
+  }
+  window.nxPrCobTab = function (k) {
+    _prCobTab = k || 'todos';
+    const t = document.getElementById('nxPrCobTabs'); if (t) t.innerHTML = prCobranzaTabsHTML();
+    const l = document.getElementById('nxPrCobLista'); if (l) l.innerHTML = prCobranzaTablaHTML();
+  };
+  window.nxPrCobBuscar = function (v) { _prCobQ = v || ''; const l = document.getElementById('nxPrCobLista'); if (l) l.innerHTML = prCobranzaTablaHTML(); };
+  // NPGS §5: sin cont: — la tabla vive envuelta en .nxFP-tblWrap (el contador contaría
+  // 1 wrapper, no las filas), mismo criterio ya usado en pintarLupaPr() para la lista general.
+  function pintarLupaPrCob() {
+    const box = document.getElementById('nxPrCobBuscarLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'nxPrCobBuscar', label: 'Buscar', titulo: 'Buscar en cobranza',
+      placeholder: 'Nombre o cédula…', value: _prCobQ,
+      onterm: function (v) { window.nxPrCobBuscar(v); }
+    });
+  }
+  function prCobranzaMainHTML() {
+    const bucket = k => prCobranzaConPrioridad().filter(x => x.prio === k);
+    const critico = bucket('critico'), alta = bucket('alta'), porvencer = bucket('porvencer'), aldia = bucket('aldia');
+    const totalActivo = critico.length + alta.length + porvencer.length + aldia.length;
+    const sumSaldo = arr => arr.reduce((s, x) => s + saldoDe(x.p), 0);
+    // "Pagos registrados hoy" — suma real de prestamo_pagos.monto con fecha=hoy, de _pagosByPrestamo
+    // (ya cargado por cargarPrestamos, mismo objeto que usa renderLista para "Cobrado este mes").
+    const pagosHoy = Object.values(_pagosByPrestamo).reduce((s, arr) => s + arr.filter(pg => String(pg.fecha || '').slice(0, 10) === hoy()).reduce((s2, pg) => s2 + Number(pg.monto || 0), 0), 0);
+    const totalPorCobrar = _prestamos.filter(p => estadoDe(p) !== 'pagado').reduce((s, p) => s + saldoDe(p), 0);
+    const repKpi = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
+    return `
+      <div class="nxFP-topbar">
+        <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
+        <div><div class="nxFP-topTitle">Cobranza</div><div class="nxFP-topSub">Préstamos que necesitan seguimiento, priorizados por urgencia</div></div>
+        <div class="nxFP-topActions"><button type="button" onclick="window.nxPrestamoExportar()"><i class="ti ti-file-spreadsheet"></i> <span>Excel</span></button></div>
+      </div>
+      <div class="nxFP-kpis">
+        ${repKpi('ti-alert-octagon', '#fee2e2', '#b91c1c', 'COBRAR HOY', fmt(sumSaldo(critico)), critico.length + (critico.length === 1 ? ' préstamo crítico' : ' préstamos críticos'))}
+        ${repKpi('ti-alert-triangle', '#ffedd5', '#c2410c', 'COBRAR ESTA SEMANA', fmt(sumSaldo(alta)), alta.length + (alta.length === 1 ? ' préstamo vencido (8-30 días)' : ' préstamos vencidos (8-30 días)'))}
+        ${repKpi('ti-calendar-due', '#fef9c3', '#a16207', 'PRÓXIMOS VENCIMIENTOS', fmt(sumSaldo(porvencer)), porvencer.length + (porvencer.length === 1 ? ' préstamo en 7 días' : ' préstamos en 7 días'))}
+        ${repKpi('ti-cash-banknote', '#dcfce7', '#15803d', 'PAGOS REGISTRADOS HOY', fmt(pagosHoy), 'Cobrado hoy')}
+        ${repKpi('ti-wallet', '#ede9fe', '#6d28d9', 'TOTAL POR COBRAR', fmt(totalPorCobrar), 'Toda la cartera activa')}
+      </div>
+      <div class="nxFP-searchRow"><span id="nxPrCobBuscarLupa"></span></div>
+      <div class="nxFP-tabs" id="nxPrCobTabs">${prCobranzaTabsHTML()}</div>
+      <div class="nxFP-cobGrid">
+        <div id="nxPrCobLista">${prCobranzaTablaHTML()}</div>
+        <aside class="nxFP-cobSide">
+          <div class="nxFP-cobSideTit">Resumen de cobranza</div>
+          <div class="nxFP-cobSideRow"><span>Total en gestión</span><b>${totalActivo}</b></div>
+          <div class="nxFP-cobSideRow crit"><span><i class="ti ti-alert-octagon"></i> Críticos</span><b>${critico.length}</b></div>
+          <div class="nxFP-cobSideRow alta"><span><i class="ti ti-alert-triangle"></i> Alta prioridad</span><b>${alta.length}</b></div>
+          <div class="nxFP-cobSideRow porv"><span><i class="ti ti-calendar-due"></i> Por vencer</span><b>${porvencer.length}</b></div>
+          <div class="nxFP-cobSideRow"><span><i class="ti ti-circle-check"></i> Al día</span><b>${aldia.length}</b></div>
+          <div class="nxFP-cobSideDiv"></div>
+          <div class="nxFP-cobSideRow big"><span>Saldo urgente (crítico + alta)</span><b>${fmt(sumSaldo(critico) + sumSaldo(alta))}</b></div>
+        </aside>
+      </div>`;
+  }
+
   function renderLista(view) {
     window.nxFPEnsureCSS();
     _prPage = 1; _prQuery = '';
+    _prCobTab = 'todos'; _prCobQ = '';
     const totalCap = _prestamos.reduce((s, p) => s + Number(p.capital || 0), 0);
     const totalPag = _prestamos.reduce((s, p) => s + pagadoDe(p), 0);
     const totalSaldo = _prestamos.reduce((s, p) => s + saldoDe(p), 0);
@@ -12098,7 +12222,7 @@
         </nav>
         <button type="button" class="nxFP-sideBack" onclick="window.nxAbrirMultiempresa()"><i class="ti ti-arrow-left"></i> Volver a Multiempresa</button>
       </aside>
-      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : `
+      <div class="nxFP-main">${_prView === 'clientes' ? prClientesMainHTML() : _prView === 'evaluacion' ? prEvalMainHTML() : _prView === 'reportes' ? prReportesMainHTML() : _prView === 'solicitudes' ? prSolicitudesMainHTML() : (_prView === 'prestamos' && _prFiltro === 'vencidos') ? prCobranzaMainHTML() : `
         <div class="nxFP-topbar">
           <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
           <div><div class="nxFP-topTitle">Financiamiento</div><div class="nxFP-topSub">Administra y controla todos los préstamos</div></div>
@@ -12131,8 +12255,10 @@
     </div>`;
     if (_prView === 'evaluacion') { try { evInit(); } catch (e) {} }
     // NPGS §5: pintar la lupa DESPUÉS de view.innerHTML — el <span> recién existe aquí.
-    // Espeja el ternario de arriba: clientes → su lupa; el ELSE (lista de préstamos) → la suya.
+    // Espeja el ternario de arriba: clientes → su lupa; Cobranza → la suya; el ELSE (lista
+    // general de préstamos) → la de siempre.
     if (_prView === 'clientes') { try { pintarLupaPrCli(); } catch (e) {} }
+    else if (_prView === 'prestamos' && _prFiltro === 'vencidos') { try { pintarLupaPrCob(); } catch (e) {} }
     else if (_prView !== 'evaluacion' && _prView !== 'reportes' && _prView !== 'solicitudes') { try { pintarLupaPr(); } catch (e) {} }
   }
   // ══════════════════════════════════════════════════════════════════
@@ -24362,6 +24488,16 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tNom{font-weight:700;color:#0f172a}.nxFP-tSub{font-size:10px;color:#94a3b8}.nxFP-tMoney{font-variant-numeric:tabular-nums;white-space:nowrap}' +
       '.nxFP-tBadge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;padding:3px 10px;border-radius:999px;white-space:nowrap}' +
       '.nxFP-tBadge.activo{background:#dcfce7;color:#15803d}.nxFP-tBadge.porvencer{background:#fef9c3;color:#a16207}.nxFP-tBadge.vencido{background:#fee2e2;color:#dc2626}.nxFP-tBadge.pagado{background:#e0e7ff;color:#4338ca}' +
+      '.nxFP-tBadge.critico{background:#fecaca;color:#991b1b}.nxFP-tBadge.alta{background:#fed7aa;color:#9a3412}' +
+      // Cobranza V2: resumen lateral (sticky en escritorio, se apila abajo en móvil vía la media query 900px).
+      '.nxFP-cobGrid{display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:start}' +
+      '.nxFP-cobSide{background:#fff;border:1px solid #eef0f5;border-radius:16px;padding:16px;position:sticky;top:12px}' +
+      '.nxFP-cobSideTit{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:12px}' +
+      '.nxFP-cobSideRow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:12.5px;color:#475569;font-weight:600}' +
+      '.nxFP-cobSideRow span{display:flex;align-items:center;gap:6px}.nxFP-cobSideRow b{font-size:13.5px;color:#0f172a;font-variant-numeric:tabular-nums}' +
+      '.nxFP-cobSideRow.crit span i,.nxFP-cobSideRow.crit b{color:#dc2626}.nxFP-cobSideRow.alta span i,.nxFP-cobSideRow.alta b{color:#c2410c}.nxFP-cobSideRow.porv span i{color:#a16207}' +
+      '.nxFP-cobSideDiv{height:1px;background:#eef0f5;margin:8px 0}' +
+      '.nxFP-cobSideRow.big{padding-top:10px}.nxFP-cobSideRow.big span{font-size:11px;color:#94a3b8;font-weight:700}.nxFP-cobSideRow.big b{font-size:16px;color:#6d28d9}' +
       '.nxFP-tDias{font-weight:800;font-variant-numeric:tabular-nums;color:#94a3b8}.nxFP-tDias.bad{color:#dc2626}' +
       '.nxFP-tAcc{display:flex;gap:4px;align-items:center}' +
       '.nxFP-tAcc button{width:30px;height:30px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#64748b;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px}' +
@@ -24383,7 +24519,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '@media(max-width:760px){.nxFP-tbl thead{display:none}' +
       '.nxFP-tbl,.nxFP-tbl tbody,.nxFP-tbl td{display:block;width:100%;min-width:0}' +
       '.nxFP-tblWrap{min-width:0;border:0;background:transparent;overflow:visible}' +
-      '.nxFP-tbl tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;align-items:center;' +
+      '.nxFP-tbl tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;align-items:center;box-sizing:border-box;' +
       'border:1px solid #eef0f5;border-radius:14px;margin:0 0 10px;padding:12px 14px;background:#fff;width:100%;min-width:0}' +
       '.nxFP-tbl tbody td{border:0;padding:0;min-width:0}' +
       '.nxFP-tbl tbody td::before{display:none}' +          // fuera las etiquetas repetidas
@@ -24532,7 +24668,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tup{color:#16a34a;font-weight:800}.nxFP-tdn{color:#dc2626;font-weight:800}.nxFP-repMuted{color:#94a3b8;font-weight:600}' +
       '@media(max-width:1000px){.nxFP-kpis6{grid-template-columns:repeat(3,1fr)}.nxFP-repGrid{grid-template-columns:1fr}}' +
       '@media(max-width:560px){.nxFP-kpis6{grid-template-columns:1fr 1fr}.nxFP-repQuick{grid-template-columns:1fr 1fr}.nxFP-repBar{flex-direction:column;align-items:flex-start}}' +
-      '@media(max-width:900px){.nxFP-hero{flex-direction:column}.nxFP-heroR{grid-template-columns:repeat(2,1fr)}.nxFP-quick{grid-template-columns:repeat(3,1fr)}.nxFP-dash{grid-template-columns:repeat(2,1fr)}}' +
+      '@media(max-width:900px){.nxFP-hero{flex-direction:column}.nxFP-heroR{grid-template-columns:repeat(2,1fr)}.nxFP-quick{grid-template-columns:repeat(3,1fr)}.nxFP-dash{grid-template-columns:repeat(2,1fr)}.nxFP-cobGrid{grid-template-columns:1fr}.nxFP-cobSide{position:static}}' +
       '@media(max-width:640px){.nxFP-hero{padding:18px}.nxFP-heroNum{font-size:27px}.nxFP-heroR{grid-template-columns:1fr 1fr;gap:14px}.nxFP-quick{grid-template-columns:repeat(3,1fr);gap:8px}.nxFP-qbtn{padding:13px 4px}.nxFP-qbtn span{font-size:9px}.nxFP-cardGrid{grid-template-columns:1fr 1fr}.nxFP-card{padding:13px 12px}.nxFP-cardBody{padding-right:22px}.nxFP-dash{grid-template-columns:1fr 1fr}}' +
       // ── NPGS §12 (enmienda "un color por app", 25-jul-2026) ────────────────────
       // Este motor de estilos lo comparten DOS apps: Financiamiento (Multiempresa,
