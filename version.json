@@ -1,7 +1,12 @@
 {
-  "version": "55.3",
+  "version": "55.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.4",
+      "fecha": "2026-08-02",
+      "texto": "ARREGLADO (importante, Seguros — Avisos): el dueño reportó desde una captura real que la pestaña Avisos mostraba a algunos clientes debiendo un monto que ya habían pagado. Causa raíz: \"Facturas atrasadas\" sumaba el monto **congelado** de la factura (`total`) en vez de calcular cuánto debe el cliente HOY — y en facturas viejas, ese `total` puede traer deuda anterior ya arrastrada de antes de que el sistema separara esa deuda en su propia columna (versión 36.0). Caso real confirmado contra la base: una clienta aparecía debiendo RD$13,500 cuando su deuda real es RD$500 — la factura vieja se quedó con ese monto congelado desde antes, aunque ella ya fue pagando. Arreglado: ahora se calcula el saldo real de cada factura con la misma función que ya usan Facturas, Cobros y la Ficha del cliente, y un cliente que ya pagó del todo deja de aparecer por completo en Avisos, sin importar qué diga la etiqueta guardada de esa factura. Verificado con 5 pruebas contra el código real (el caso exacto de la clienta reportada, un cliente con la etiqueta vieja pegada que ya pagó, uno que sí debe de verdad, un reparto entre 2 facturas, y una factura anulada que nunca debe contarse)."
+    },
     {
       "v": "55.3",
       "fecha": "2026-08-02",
