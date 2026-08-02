@@ -1,7 +1,12 @@
 {
-  "version": "55.6",
+  "version": "55.7",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.7",
+      "fecha": "2026-08-02",
+      "texto": "NUEVO (NPGS §5 — Tanda B): migrados al patrón de ventana \"lupa + buscador\" 5 buscadores del POS que seguían siendo una barra fija en pantalla — Notas de crédito, Historial de ventas, Prefacturas (historial), Inventario/Productos y Reparaciones (kanban). Investigado primero cuáles de los ~15 sitios con la barra vieja de verdad calificaban: 9 ya viven DENTRO de su propia ventana de selección (elegir cliente, elegir artículo, elegir IMEI...) — meterlos en OTRA ventana habría sido un paso atrás, no una mejora, así que se dejaron intactos. En Inventario y Reparaciones el filtro oculta filas/tarjetas con `display:none` en vez de reconstruir la lista — el contador compartido de \"N resultados\" no distingue eso de una fila real, así que ahí se dejó sin ese contador (cae al \"Buscando…\" honesto en vez de mostrar un número que podría estar mal). Bug real encontrado y corregido antes de publicar: la lupa se pintaba DESDE ADENTRO de la función que arma la pantalla, antes de que su propio contenedor existiera en el DOM — se movió a un enganche posterior a la inyección real del HTML (mismo patrón ya usado por Vender/Factura/Compras). Verificado con 31 pruebas contra el código real extraído del archivo (Playwright, sin reconstrucción) y capturas en 390px/1280px, incluida la ventana abierta, sin desbordes. Queda pendiente el buscador de Vender (`posBuscar`, decisión de diseño — hoy abre el catálogo completo en vez de solo filtrar, se deja así hasta que el dueño confirme si quiere cambiarlo) y Financiamiento/Rifas/Consultorio/Vehículos para tandas siguientes."
+    },
     {
       "v": "55.6",
       "fecha": "2026-08-02",
