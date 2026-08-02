@@ -10874,3 +10874,62 @@ las skills de un solo comando ya instaladas, ej. `gstack-spec`).
 - Instalada con el mismo patrón que el resto (`.agents/skills/i-have-adhd/SKILL.md`+`LICENSE.txt`,
   enlace en `.claude/skills/i-have-adhd`) — copia directa, sin correr el instalador oficial del repo
   (no trae ninguno; es un solo archivo, a diferencia de gstack que sí traía maquinaria de instalador).
+
+### NPGS §5 — Tanda A: Pólizas, Cobros, Historial de pagos, Auditoría (2-ago-2026, v55.6)
+Continuación de la Fase 3 de buscadores (v49.36-49.37, ya documentada arriba) — el dueño pidió seguir
+migrando los buscadores que quedaban como barra fija en pantalla al patrón de ventana del §5. Antes de
+tocar código se investigó el inventario REAL (no el documentado, que estaba desactualizado): **28
+pendientes**, no ~23 — la cifra vieja incluía ~6 buscadores de AGUAPRO, módulo eliminado por completo el
+1-ago-2026 (ver más arriba). Se partió el trabajo en 4 tandas por bloque funcional (A: núcleo de Seguros
+estático · B: POS ~15 · C: Financiamiento ~4 · D: Rifas/Consultorio/Vehículos ~4). Esta versión cierra la
+**Tanda A**, los 4 buscadores estáticos del núcleo de Seguros que quedaban con la barra vieja `.nxBusca`
+siempre visible en vez de la lupa: **Pólizas** (`polQ`), **Cobros** (`cobQ`), **Historial de pagos**
+(`pgBuscar`) y **Auditoría** (`auditFiltroUsr`).
+- **Mismo patrón ya probado con Clientes (`cliQ`, v49.36-37), sin variación:** el `<input>` original se
+  queda en el DOM pero pasa a `type="hidden"` — así la función de filtrado que ya existía
+  (`rPolizas`/`rCob`/`aplicarFiltrosPagos`/`rAuditRows`) sigue leyendo `document.getElementById(id).value`
+  exactamente igual, cero líneas de lógica de filtrado tocadas. Un `<span id="XLupa">` nuevo se llena con
+  `nxBuscaFiltroHTML({...})`, cuyo `onterm` escribe en el input oculto y vuelve a llamar la función de
+  filtrado correcta. Se agregó una función `pintarLupaX()` por pantalla, llamada al inicio del render.
+- **2 variantes del patrón, según si la función de entrada de la pantalla es pesada o liviana:**
+  - Pólizas y Cobros: la MISMA función (`rPolizas`/`rCob`) sirve de entrada Y de filtro — `onterm` la
+    llama directo, igual que ya hacían sus `<select>` vecinos con `onchange="rPolizas()"`.
+  - Historial de pagos: `rPagos()` (async, trae `pos_ventas`/`abonos` del servidor por rango de fecha) es
+    pesada; `aplicarFiltrosPagos()` (filtro en memoria) es liviana — igual que ya hacían los `<select>` de
+    empresa/agente/método/banco de ese mismo panel. `pintarLupaPagos()` se llama una sola vez dentro de
+    `rPagos()`; el `onterm` de la lupa llama solo a `aplicarFiltrosPagos()`.
+  - Auditoría: `rAuditoria()` reconstruye TODA la barra de filtros (incluida la propia lupa) en un solo
+    template string — se le agregó `pintarLupaAudit()` al final, después de montar el HTML. `rAuditRows()`
+    (repinta solo `#auditRows`) es la que ya usaban los filtros de Módulo/Fecha en su `onchange` — el
+    `onterm` de la lupa llama a esa, NUNCA a `rAuditoria()` de nuevo (que reconstruiría la barra completa
+    en cada tecla, perdiendo el foco del campo — el mismo bug de "Auditoría" que ya se había encontrado y
+    arreglado una vez, en v47.7, con el patrón de fondo intacto).
+- **Desperdicio real encontrado y corregido de paso:** el `onterm` original de `pgBuscar` (antes de esta
+  migración) llamaba a la función PESADA `rPagos()` en cada tecla — un refetch completo al servidor por
+  cada letra escrita, cuando sus 4 filtros vecinos (empresa/agente/método/banco) en esa misma pantalla ya
+  usaban el camino liviano `aplicarFiltrosPagos()`. Quedó corregido al construir `pintarLupaPagos()`.
+- **`limpiarFiltrosPagos()`/`limpiarFiltrosAudit()`** (los botones "Limpiar" de esos 2 paneles) ahora
+  también llaman a su `pintarLupaX()` correspondiente antes de re-filtrar — si no, el dato se limpiaba
+  pero el chip de búsqueda de la lupa se quedaba pegado mostrando el término viejo.
+- **Deliberadamente NO tocado — `factQ` en modo "vista rueda":** `pintarLupaFact()` (Facturas) mantiene a
+  propósito la barra vieja visible cuando el admin activa el modo experimental de tarjetas (`nxUsarRueda()`,
+  v51.3) — es una excepción de diseño ya decidida y documentada, no un hueco de esta migración.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (no una reconstrucción —
+  `nxBuscaFiltroHTML`/`nxBuscaFiltroAbrir`/`nxBuscaFiltroEscribe`/`nxBuscaFiltroAceptar`/
+  `nxBuscaFiltroLimpiar`/`nbfRefrescarChip` + las 4 funciones de pantalla y sus `pintarLupaX` nuevas,
+  extraídas con balance de llaves real): **34 comprobaciones** — en las 4 pantallas: la barra vieja
+  `.nxBusca` ya no existe, el input queda oculto, la lupa abre la ventana, escribir en vivo actualiza el
+  input oculto y dispara la función real (confirmado que es la correcta y no otra, con contadores de
+  llamadas sobre las funciones reales), los resultados filtran de verdad, aceptar cierra y deja el chip
+  visible, y "Limpiar"/la ✕ del chip devuelven la lista completa y borran el chip. Más 2 rondas de
+  verificación visual con capturas a 390px y 1280px (con el `<style>` REAL de `index.html` cargado, 85,896
+  caracteres) confirmando 0px de desborde horizontal en ambos anchos — en el camino se encontraron y
+  corrigieron 4 bugs del propio harness de prueba (nunca del código real): la extracción por regex se
+  comía la palabra `async` al extraer `rPagos` (rompía la compilación entera del script generado con un
+  `SyntaxError` silencioso), 2 helpers globales sin stub (`inits`, `_ordTablas`), y 2 fragmentos HTML
+  copiados a mano al harness a los que les faltaba una clase real de producción (`.view.on` en Pólizas,
+  `.nxSf` en el panel de Pagos) — confirmado contra el markup real de `index.html` que la producción SÍ
+  tiene esas clases, el error era solo de la copia de prueba. `node --check parches.js` limpio (archivo no
+  tocado); los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
+- **Pendiente:** Tandas B (POS, ~15 buscadores), C (Financiamiento, ~4), D (Rifas 2 + Consultorio 1 +
+  Vehículos 1) — mismo patrón, cada tanda se construye y verifica por separado antes de publicar.

@@ -1437,7 +1437,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="nc">
             <div class="ch"><div><div class="ct">Gestión de pólizas</div><div class="ct-s">vigencia, vencimientos y certificados</div></div><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
             <div class="frow">
-              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="polQ" type="search" class="nxBusca-in" placeholder="Póliza, cliente..." value="" autocomplete="off" oninput="nxBuscaTog(this);rPolizas()" onkeydown="if(event.key==='Enter'){event.preventDefault();rPolizas()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
+              <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
+                   El input sigue existiendo OCULTO para que rPolizas() lea el término igual que siempre. -->
+              <span id="polQLupa"></span><input id="polQ" type="hidden" value="">
               <select id="polEst" onchange="rPolizas()" style="height:30px;padding:0 8px;border:1px solid rgba(0,229,199,.1);border-radius:var(--r6);background:var(--bg2);color:var(--tx1);font-size:10px"><option value="">Todas</option><option value="vigente">Vigentes</option><option value="gracia">En período de gracia</option><option value="vencida">Vencidas</option><option value="sin">Sin vigencia</option></select>
             </div>
             <div class="tw"><table>
@@ -1496,7 +1498,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
           <div class="nc">
             <div class="ch"><span class="ct">Cobros y abonos</span><button class="btn bsm bc4" onclick="exportarCSV()"><i class="ti ti-file-spreadsheet"></i> Excel</button></div>
             <div class="frow" style="margin-bottom:6px">
-              <div class="nxBusca" style="flex:1 1 100%"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="cobQ" type="search" class="nxBusca-in" placeholder="Buscar cliente, cédula o póliza..." value="" autocomplete="off" oninput="nxBuscaTog(this);rCob()" onkeydown="if(event.key==='Enter'){event.preventDefault();rCob()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
+              <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
+                   El input sigue existiendo OCULTO para que rCob() lea el término igual que siempre. -->
+              <span id="cobQLupa"></span><input id="cobQ" type="hidden" value="">
             </div>
             <div class="frow">
               <select id="fAgenteCob" onchange="rCob()" style="height:32px;padding:0 8px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;color:#1e293b;font-size:10px"><option value="">Todos los agentes</option></select>
@@ -1520,7 +1524,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px">
               <select id="pgPeriodo" onchange="aplicarPeriodoPagos()" title="Período de pagos (corte día 20)" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:600;color:#6d28d9"></select>
-              <div class="nxBusca"><button type="button" class="nxBusca-lupa" aria-label="Abrir búsqueda" onclick="nxBuscaLupa(this)"><i class="ti ti-search"></i></button><input id="pgBuscar" type="search" class="nxBusca-in" placeholder="Buscar cliente..." value="" autocomplete="off" oninput="nxBuscaTog(this);rPagos()" onkeydown="if(event.key==='Enter'){event.preventDefault();rPagos()}"><button type="button" class="nxBusca-x" aria-label="Limpiar búsqueda" style="display:none" onclick="nxBuscaClear(this)">✕</button></div>
+              <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
+                   El input sigue existiendo OCULTO para que aplicarFiltrosPagos() lea el término igual que siempre. -->
+              <span id="pgBuscarLupa"></span><input id="pgBuscar" type="hidden" value="">
               <input type="date" id="pgFechaD" onchange="rPagos()" title="Desde" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <input type="date" id="pgFechaH" onchange="rPagos()" title="Hasta" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
               <select id="pgEmpresa" onchange="rPagos()" style="padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"><option value="">Todas las empresas</option></select>
@@ -4105,7 +4111,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='55.5';
+const APP_VERSION='55.6';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6305,7 +6311,20 @@ function rCli(){
 function toggleCliVerTodos(){_cliVerTodos=!_cliVerTodos;rCli();}
 
 // ── PÓLIZAS ──────────────────────────────────────────────────────────────────
+// NPGS §5: la barra fija de búsqueda se cambió por la lupa + ventana compartida.
+// El input #polQ sigue existiendo (oculto) y es lo que lee rPolizas(), sin cambios de filtrado.
+function pintarLupaPol(){
+  const box=document.getElementById('polQLupa');
+  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
+  box.innerHTML=nxBuscaFiltroHTML({
+    id:'polQ', label:'Buscar', titulo:'Buscar póliza', cont:'tbPol',
+    placeholder:'Póliza, cliente…',
+    value:(document.getElementById('polQ')||{}).value||'',
+    onterm:function(v){const i=document.getElementById('polQ');if(i)i.value=v;rPolizas();}
+  });
+}
 function rPolizas(){
+  pintarLupaPol();
   const q=(document.getElementById('polQ')?.value||'').toLowerCase();
   const fe=document.getElementById('polEst')?.value||'';
   let list=ST.clientes.filter(c=>c.activo);
@@ -7061,7 +7080,20 @@ function _nxCobCSS(){
   @media(max-width:460px){.nxCobCard .cbActs{width:100%;margin-left:0;margin-top:6px}.nxCobCard .cbBtn{flex:1;justify-content:center}}`;
   document.head.appendChild(st);
 }
+// NPGS §5: la barra fija de búsqueda se cambió por la lupa + ventana compartida.
+// El input #cobQ sigue existiendo (oculto) y es lo que lee rCob(), sin cambios de filtrado.
+function pintarLupaCob(){
+  const box=document.getElementById('cobQLupa');
+  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
+  box.innerHTML=nxBuscaFiltroHTML({
+    id:'cobQ', label:'Buscar', titulo:'Buscar cliente', cont:'tbCob',
+    placeholder:'Cliente, cédula o póliza…',
+    value:(document.getElementById('cobQ')||{}).value||'',
+    onterm:function(v){const i=document.getElementById('cobQ');if(i)i.value=v;rCob();}
+  });
+}
 function rCob(){
+  pintarLupaCob();
   _nxCobCSS();
   llenarFiltroAgentes('fAgenteCob');
   const tb=document.getElementById('tbCob');
@@ -7520,7 +7552,23 @@ function aplicarPeriodoPagos(){
 }
 
 let _pagosPeriodoInit=false;
+// NPGS §5: la barra fija de búsqueda se cambió por la lupa + ventana compartida.
+// El input #pgBuscar sigue existiendo (oculto); onterm llama aplicarFiltrosPagos() (filtro local
+// sobre _pagosCache) en vez de rPagos() — antes cada tecla disparaba un refetch al servidor por
+// el rango de fechas, igual que las demás casillas del panel (empresa/agente/método/banco) que
+// YA llamaban aplicarFiltrosPagos(); pgBuscar era la única inconsistente.
+function pintarLupaPagos(){
+  const box=document.getElementById('pgBuscarLupa');
+  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
+  box.innerHTML=nxBuscaFiltroHTML({
+    id:'pgBuscar', label:'Buscar', titulo:'Buscar cliente', cont:'tbPagos',
+    placeholder:'Buscar cliente…',
+    value:(document.getElementById('pgBuscar')||{}).value||'',
+    onterm:function(v){const i=document.getElementById('pgBuscar');if(i)i.value=v;aplicarFiltrosPagos();}
+  });
+}
 async function rPagos(){
+  pintarLupaPagos();
   llenarPeriodosPagos();
   const tb=document.getElementById('tbPagos');
   if(!tb)return;
@@ -7645,6 +7693,7 @@ function limpiarFiltrosPagos(){
   ['pgBuscar','pgFechaD','pgFechaH','pgEmpresa','pgAgente','pgMetodo','pgBanco'].forEach(id=>{
     const e=document.getElementById(id);if(e)e.value='';
   });
+  pintarLupaPagos(); // repinta el chip de la lupa (limpio) — aplicarFiltrosPagos() no toca ese HTML
   aplicarFiltrosPagos();
 }
 
@@ -8970,13 +9019,28 @@ function rAuditoria(){
         <option value="">Todos los módulos</option>
         ${modulos.map(m=>`<option value="${m}" ${m===fMod?'selected':''}>${m}</option>`).join('')}
       </select>
-      ${nxBuscaHTML({id:'auditFiltroUsr',placeholder:'Buscar usuario...',value:fUsr,oninput:'_auditPag=1;rAuditRows()'})}
+      <!-- NPGS §5: solo la lupa; la ventana de búsqueda la arma nxBuscaFiltroHTML.
+           El input sigue existiendo OCULTO para que rAuditRows() lea el término igual que siempre. -->
+      <span id="auditFiltroUsrLupa"></span><input id="auditFiltroUsr" type="hidden" value="${fUsr}">
       <input type="date" id="auditFiltroFecha" value="${fFecha}" onchange="_auditPag=1;rAuditRows()" style="padding:7px 9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:11px"/>
       <button class="btn bsm bghost" onclick="limpiarFiltrosAudit()" style="width:auto;padding:0 12px"><i class="ti ti-filter-off"></i> Limpiar</button>
     </div>
     <div id="auditRows"></div>
   `;
+  pintarLupaAudit();
   rAuditRows();
+}
+// NPGS §5: rAuditoria() arma la barra UNA vez (patrón v47.7); la lupa vive aquí,
+// no en rAuditRows() (que solo repinta resultados en cada tecla/filtro).
+function pintarLupaAudit(){
+  const box=document.getElementById('auditFiltroUsrLupa');
+  if(!box||typeof nxBuscaFiltroHTML!=='function')return;
+  box.innerHTML=nxBuscaFiltroHTML({
+    id:'auditFiltroUsr', label:'Buscar', titulo:'Buscar usuario', cont:'auditRows',
+    placeholder:'Buscar usuario…',
+    value:(document.getElementById('auditFiltroUsr')||{}).value||'',
+    onterm:function(v){const i=document.getElementById('auditFiltroUsr');if(i)i.value=v;_auditPag=1;rAuditRows();}
+  });
 }
 // Repinta SOLO los resultados (tabla+paginación), sin tocar la barra de filtros
 function rAuditRows(){
@@ -9032,6 +9096,7 @@ function limpiarFiltrosAudit(){
   ['auditFiltroMod','auditFiltroUsr','auditFiltroFecha'].forEach(id=>{
     const e=document.getElementById(id);if(e)e.value='';
   });
+  pintarLupaAudit(); // repinta el chip de la lupa (limpio) — rAuditRows() no toca ese HTML
   _auditPag=1;
   rAuditRows();
 }
