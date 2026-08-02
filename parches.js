@@ -12094,6 +12094,34 @@
   // paginación y exportación: evita recorrer _prestamos y recalcular prPrioridadCobranza
   // (y amortizar() para préstamos con interés) varias veces por render — antes se
   // llamaba ~6 veces por cada entrada a la pantalla.
+  // Monto VENCIDO real — solo lo que ya pasó su fecha y sigue sin cubrir, NUNCA el
+  // saldo completo del préstamo (que incluye cuotas futuras aún no vencidas). Es un
+  // dato NUEVO (Cobranza V3, mockup de ChatGPT pedía la columna "Monto vencido"
+  // separada de "Saldo" — se verificó que es real y calculable, no se inventó ni se
+  // fingió). Recorre el MISMO cronograma que ya usa prProximoPago() y suma, cuota
+  // por cuota, la parte de cada una VENCIDA que sigue sin cubrirse (reparto
+  // acumulado oldest-first, el mismo criterio ya usado en todo el sistema). Cuotas
+  // futuras no vencidas nunca cuentan aquí, aunque falten por pagar — eso es "Saldo".
+  function prMontoVencidoDe(p) {
+    if (estadoDe(p) === 'pagado') return 0;
+    if (p.modo === 'credito') { const c = creditoCalc(p); return esVencido(p) ? c.totalDebe : 0; }
+    if (p.modo !== 'cuotas' || !(p.num_cuotas > 0)) return 0; // abonos libres: sin cronograma, nada que aislar
+    let rows;
+    if (Number(p.tasa_interes || 0) > 0) {
+      rows = amortizar(Number(p.capital || 0), Number(p.tasa_interes || 0), p.num_cuotas, p.fecha_prestamo, p.frecuencia, p.metodo_interes || 'saldo', Number(p.cuota_fija) || 0).rows;
+    } else {
+      const cuota = Number(p.total_devolver || 0) / p.num_cuotas;
+      rows = []; for (let i = 1; i <= p.num_cuotas; i++) rows.push({ cuota: cuota, fecha: fechaCuota(p.fecha_prestamo, p.frecuencia, i) });
+    }
+    const pag = pagadoDe(p), hoyISO = hoy();
+    let acum = 0, vencido = 0;
+    for (const r of rows) {
+      acum += r.cuota;
+      const pendienteDeEsta = Math.max(0, Math.min(r.cuota, acum - pag));
+      if (pendienteDeEsta > 0.5 && r.fecha < hoyISO) vencido += pendienteDeEsta;
+    }
+    return vencido;
+  }
   let _prCobModelo = [];
   function prCobranzaCalcularModelo() {
     _prCobModelo = _prestamos.map(function (p) {
@@ -12103,7 +12131,7 @@
       const pagos = _pagosByPrestamo[p.id] || [];
       let ultimoPago = null;
       for (let i = 0; i < pagos.length; i++) { if (!ultimoPago || (pagos[i].fecha || '') > (ultimoPago.fecha || '')) ultimoPago = pagos[i]; }
-      return { p: p, prio: prio, saldo: saldoDe(p), prox: prox, d: d, diasVencido: diasVencido, ultimoPago: ultimoPago };
+      return { p: p, prio: prio, saldo: saldoDe(p), prox: prox, d: d, diasVencido: diasVencido, ultimoPago: ultimoPago, montoVencido: prMontoVencidoDe(p) };
     }).filter(Boolean);
     return _prCobModelo;
   }
@@ -12128,27 +12156,33 @@
     return arr;
   }
   function fCortaCob(iso) { const s = String(iso || '').slice(0, 10).split('-'); return s.length === 3 ? (s[2] + '/' + s[1] + '/' + s[0]) : '—'; }
+  // Formato V3 (mockup ChatGPT, aprobado solo en botones/ubicación/formato — el color
+  // sigue siendo el morado del módulo, NO el azul del mockup, "un color por app"):
+  // Cliente (avatar+nombre+tel) / Referencia / Estado / Días vencido / Próxima cuota /
+  // Monto vencido / Saldo / Último pago / Acciones (Cobrar + "…").
   function prCobranzaFilaHTML(x) {
-    const p = x.p, prio = x.prio;
-    const proxTxt = x.d == null ? '—' : x.d < 0 ? (x.diasVencido + (x.diasVencido === 1 ? ' día vencido' : ' días vencido')) : ('Vence el ' + fCortaCob(x.prox));
+    const p = x.p, prio = x.prio, av = prIniciales(p.nombre);
+    const diasTxt = x.diasVencido ? (x.diasVencido + (x.diasVencido === 1 ? ' día' : ' días')) : '0 días';
+    const proxTxt = x.d == null ? '—' : x.d < 0 ? 'Vencida' : ('Vence el ' + fCortaCob(x.prox));
     const ultTxt = x.ultimoPago ? (fCortaCob(x.ultimoPago.fecha) + ' · ' + fmt(x.ultimoPago.monto)) : '—';
     return `<tr onclick="window.nxPrestamoVer('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" aria-label="Préstamo de ${esc(p.nombre || 'sin nombre')}, ${PR_COB_LBL[prio]}, saldo ${fmt(x.saldo)}">
-        <td data-l="Ref" class="nxFP-tRef">${prRef(p)}</td>
-        <td data-l="Prestatario" class="nxFP-tdNom"><div class="nxFP-tNom">${esc(p.nombre || 'Sin nombre')}</div>${p.telefono ? `<div class="nxFP-tSub">${esc(p.telefono)}</div>` : ''}</td>
-        <td data-l="Cédula" class="nxFP-tCed">${esc(p.cedula || '—')}</td>
-        <td data-l="Saldo pendiente" class="nxFP-tMoney nxFP-tTot">${fmt(x.saldo)}</td>
-        <td data-l="Próximo pago" class="nxFP-tProx">${proxTxt}</td>
+        <td data-l="Cliente" class="nxFP-tCliCell"><div class="nxFP-tClient"><div class="nxFP-avatar sm" style="background:${av.color}">${av.ini}</div><div class="nxFP-tId"><div class="nxFP-tNom">${esc(p.nombre || 'Sin nombre')}</div>${p.telefono ? `<div class="nxFP-tSub">${esc(p.telefono)}</div>` : ''}</div></div></td>
+        <td data-l="Referencia" class="nxFP-tRef">${prRef(p)}</td>
+        <td data-l="Estado" class="nxFP-tEst"><span class="nxFP-tBadge ${prio}">${PR_COB_LBL[prio]}</span></td>
+        <td data-l="Días vencido" class="nxFP-tDiasV${x.diasVencido ? ' late' : ''}">${diasTxt}</td>
+        <td data-l="Próxima cuota" class="nxFP-tProxCuota">${proxTxt}</td>
+        <td data-l="Monto vencido" class="nxFP-tMoney nxFP-tVencido${x.montoVencido > 0.5 ? ' late' : ''}">${x.montoVencido > 0.5 ? fmt(x.montoVencido) : '—'}</td>
+        <td data-l="Saldo" class="nxFP-tMoney nxFP-tSaldo">${fmt(x.saldo)}</td>
         <td data-l="Último pago" class="nxFP-tUlt">${ultTxt}</td>
-        <td data-l="Prioridad" class="nxFP-tEst"><span class="nxFP-tBadge ${prio}">${PR_COB_LBL[prio]}</span></td>
         <td data-l="Acciones" class="nxFP-tAccC"><div class="nxFP-tAcc">
-          <button type="button" class="nxFP-tPay" aria-label="Registrar pago de ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrCobPagar('${p.id}')"><i class="ti ti-cash"></i><span class="nxFP-tPayD">Registrar pago</span><span class="nxFP-tPayM">Cobrar</span></button>
-          ${p.telefono ? `<button type="button" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation();window.nxPrestamoWA('${p.id}')"><i class="ti ti-brand-whatsapp"></i></button>` : ''}
+          <button type="button" class="nxFP-tPay" aria-label="Registrar pago de ${esc(p.nombre || '')}" onclick="event.stopPropagation();window.nxPrCobPagar('${p.id}')"><i class="ti ti-cash"></i><span>Cobrar</span></button>
           <span class="nxFP-tMenuWrap">
             <button type="button" class="nxFP-menuBtn" aria-label="Más opciones de ${esc(p.nombre || '')}" onclick="window.nxPrCobMenu(event,'${p.id}')"><i class="ti ti-dots-vertical"></i></button>
             <div class="nxFP-menuPop" id="prCobMenu_${p.id}">
               <button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','ver')"><i class="ti ti-eye"></i> Ver detalle</button>
               <button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','editar')"><i class="ti ti-pencil"></i> Editar</button>
               <button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','estado')"><i class="ti ti-printer"></i> Estado de cuenta</button>
+              ${p.telefono ? `<button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','wa')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
             </div>
           </span>
         </div></td>
@@ -12173,6 +12207,7 @@
     if (accion === 'ver') window.nxPrestamoVer(id);
     else if (accion === 'editar') window.nxPrestamoEditar(id);
     else if (accion === 'estado') window.nxPrestamoEstadoCuenta(id);
+    else if (accion === 'wa') window.nxPrestamoWA(id);
   };
   function prCobranzaPagFooterHTML(total, totalPag, desde) {
     if (total <= PR_COB_PAGE_SIZE) return '';
@@ -12190,7 +12225,7 @@
     const desde = (_prCobPage - 1) * PR_COB_PAGE_SIZE;
     const rows = todos.slice(desde, desde + PR_COB_PAGE_SIZE).map(prCobranzaFilaHTML).join('');
     return `<div class="nxFP-tblWrap"><table class="nxFP-tbl nxFP-cobTbl"><thead><tr>
-        <th>Ref</th><th>Prestatario</th><th>Cédula</th><th>Saldo pendiente</th><th>Próximo pago</th><th>Último pago</th><th>Prioridad</th><th>Acciones</th>
+        <th>Cliente</th><th>Referencia</th><th>Estado</th><th>Días vencido</th><th>Próxima cuota</th><th>Monto vencido</th><th>Saldo</th><th>Último pago</th><th>Acciones</th>
       </tr></thead><tbody>${rows}</tbody></table></div>${prCobranzaPagFooterHTML(todos.length, totalPag, desde)}`;
   }
   function prCobranzaTabsHTML() {
@@ -12247,44 +12282,62 @@
       onterm: function (v) { window.nxPrCobBuscar(v); }
     });
   }
+  // Formato V3 (mockup ChatGPT, aprobado solo en botones/ubicación/formato — el
+  // color/tipografía siguen siendo los del módulo, morado + Plus Jakarta, NO el
+  // azul/Inter del mockup): 5 KPIs separados (antes "alta"+"mora" iban combinados
+  // en un solo "SALDO VENCIDO"), panel lateral reformado a "Resumen del día" +
+  // "Pagos recientes" REALES (el mockup traía "Promesas de pago"/"Meta del
+  // día"/"Actividad reciente" — ninguno tiene dato real detrás en este módulo, se
+  // omiten por completo en vez de fingirlos; "Pagos recientes" sí es real, mismo
+  // dato ya cargado en _pagosByPrestamo).
   function prCobranzaMainHTML() {
     prCobranzaCalcularModelo(); // modelo derivado ÚNICO — de aquí en adelante todo lee _prCobModelo
     const modelo = _prCobModelo;
     const bucket = k => modelo.filter(x => x.prio === k);
-    const critico = bucket('critico'), alta = bucket('alta'), morareciente = bucket('morareciente'), porvencer = bucket('porvencer');
-    const pendientes = critico.length + alta.length + morareciente.length + porvencer.length;
+    const critico = bucket('critico'), alta = bucket('alta'), morareciente = bucket('morareciente'), porvencer = bucket('porvencer'), aldia = bucket('aldia');
     const sumSaldo = arr => arr.reduce((s, x) => s + x.saldo, 0);
-    const saldoVencido1a30 = sumSaldo(alta) + sumSaldo(morareciente);
+    const sumVencido = arr => arr.reduce((s, x) => s + x.montoVencido, 0);
+    // "Cobrar hoy" = lo que YA venció y sigue sin cubrir en toda la cartera con
+    // gestión pendiente — el monto real que hay que perseguir, no una meta inventada.
+    const cobrarHoy = sumVencido(critico) + sumVencido(alta) + sumVencido(morareciente);
     // "Pagos registrados hoy" — suma real de prestamo_pagos.monto con fecha=hoy, de _pagosByPrestamo
     // (ya cargado por cargarPrestamos, mismo objeto que usa renderLista para "Cobrado este mes").
     const pagosHoy = Object.values(_pagosByPrestamo).reduce((s, arr) => s + arr.filter(pg => String(pg.fecha || '').slice(0, 10) === hoy()).reduce((s2, pg) => s2 + Number(pg.monto || 0), 0), 0);
-    const totalPorCobrar = _prestamos.filter(p => estadoDe(p) !== 'pagado').reduce((s, p) => s + saldoDe(p), 0);
+    // Pagos RECIENTES (no "actividad" inventada) — últimos 5 pagos de toda la
+    // cartera, más nuevo primero. Reusa _pagosByPrestamo ya cargado, cero consulta nueva.
+    const pagosRecientes = [];
+    Object.keys(_pagosByPrestamo).forEach(function (pid) {
+      const pr = _prestamos.find(function (x) { return x.id === pid; });
+      (_pagosByPrestamo[pid] || []).forEach(function (pg) { pagosRecientes.push({ nombre: (pr && pr.nombre) || 'Cliente', fecha: pg.fecha, monto: pg.monto }); });
+    });
+    pagosRecientes.sort(function (a, b) { return (b.fecha || '') < (a.fecha || '') ? -1 : (b.fecha || '') > (a.fecha || '') ? 1 : 0; });
     const repKpi = (ico, bg, col, lbl, val, sub) => `<div class="nxFP-kpi"><div class="nxFP-kpiTop"><div class="nxFP-kpiIco" style="background:${bg};color:${col}"><i class="ti ${ico}"></i></div><div class="nxFP-kpiLbl">${lbl}</div></div><div class="nxFP-kpiVal">${val}</div><div class="nxFP-kpiSub">${sub}</div></div>`;
     return `
       <div class="nxFP-topbar">
         <button type="button" class="nxFP-burger" onclick="window.nxFPToggleSide()" aria-label="Abrir menú"><i class="ti ti-menu-2"></i></button>
-        <div><div class="nxFP-topTitle">Cobranza</div><div class="nxFP-topSub">Préstamos que necesitan seguimiento, priorizados por urgencia</div></div>
+        <div><div class="nxFP-topTitle">Cobranza</div><div class="nxFP-topSub">Gestión y seguimiento de cartera</div></div>
         <div class="nxFP-topActions"><button type="button" onclick="window.nxPrCobranzaExportar()"><i class="ti ti-file-spreadsheet"></i> <span>Excel</span></button></div>
       </div>
       <div class="nxFP-kpis">
-        ${repKpi('ti-alert-octagon', '#fee2e2', '#b91c1c', 'SALDO CRÍTICO', fmt(sumSaldo(critico)), critico.length + (critico.length === 1 ? ' préstamo con más de 30 días' : ' préstamos con más de 30 días'))}
-        ${repKpi('ti-alert-triangle', '#ffedd5', '#c2410c', 'SALDO VENCIDO', fmt(saldoVencido1a30), (alta.length + morareciente.length) + ((alta.length + morareciente.length) === 1 ? ' préstamo vencido entre 1 y 30 días' : ' préstamos vencidos entre 1 y 30 días'))}
-        ${repKpi('ti-calendar-due', '#fef9c3', '#a16207', 'VENCE EN 7 DÍAS', fmt(sumSaldo(porvencer)), porvencer.length + (porvencer.length === 1 ? ' préstamo próximo a vencer' : ' préstamos próximos a vencer'))}
-        ${repKpi('ti-cash-banknote', '#dcfce7', '#15803d', 'PAGOS REGISTRADOS HOY', fmt(pagosHoy), 'Cobrado hoy')}
-        ${repKpi('ti-wallet', '#ede9fe', '#6d28d9', 'TOTAL POR COBRAR', fmt(totalPorCobrar), 'Toda la cartera activa')}
+        ${repKpi('ti-alert-octagon', '#fee2e2', '#b91c1c', 'SALDO CRÍTICO', fmt(sumSaldo(critico)), critico.length + (critico.length === 1 ? ' cliente' : ' clientes'))}
+        ${repKpi('ti-alert-triangle', '#ffedd5', '#c2410c', 'ALTA PRIORIDAD', fmt(sumSaldo(alta)), alta.length + (alta.length === 1 ? ' cliente' : ' clientes'))}
+        ${repKpi('ti-clock-exclamation', '#fef3c7', '#92400e', 'MORA RECIENTE', fmt(sumSaldo(morareciente)), morareciente.length + (morareciente.length === 1 ? ' cliente' : ' clientes'))}
+        ${repKpi('ti-calendar-due', '#dbeafe', '#1d4ed8', 'VENCE EN 7 DÍAS', fmt(sumSaldo(porvencer)), porvencer.length + (porvencer.length === 1 ? ' cliente' : ' clientes'))}
+        ${repKpi('ti-circle-check', '#dcfce7', '#15803d', 'AL DÍA', String(aldia.length), 'clientes sin atrasos')}
       </div>
       <div class="nxFP-searchRow"><span id="nxPrCobBuscarLupa"></span></div>
       <div class="nxFP-tabs" id="nxPrCobTabs">${prCobranzaTabsHTML()}</div>
       <div class="nxFP-cobGrid">
         <aside class="nxFP-cobSide">
-          <div class="nxFP-cobSideTit">Resumen de cobranza</div>
-          <div class="nxFP-cobSideRow"><span>Total pendientes</span><b>${pendientes}</b></div>
-          <div class="nxFP-cobSideRow crit"><span><i class="ti ti-alert-octagon"></i> Críticos</span><b>${critico.length}</b></div>
-          <div class="nxFP-cobSideRow alta"><span><i class="ti ti-alert-triangle"></i> Alta prioridad</span><b>${alta.length}</b></div>
-          <div class="nxFP-cobSideRow mora"><span><i class="ti ti-clock-exclamation"></i> Mora reciente</span><b>${morareciente.length}</b></div>
-          <div class="nxFP-cobSideRow porv"><span><i class="ti ti-calendar-due"></i> Por vencer</span><b>${porvencer.length}</b></div>
+          <div class="nxFP-cobSideTit">Resumen del día</div>
+          <div class="nxFP-cobSideRow big"><span>Cobrar hoy</span><b>${fmt(cobrarHoy)}</b></div>
+          <div class="nxFP-cobSideRow crit"><span><i class="ti ti-alert-octagon"></i> Clientes críticos</span><b>${critico.length}</b></div>
+          <div class="nxFP-cobSideRow"><span><i class="ti ti-cash-banknote"></i> Pagos registrados hoy</span><b>${fmt(pagosHoy)}</b></div>
           <div class="nxFP-cobSideDiv"></div>
-          <div class="nxFP-cobSideRow big"><span>Saldo vencido total</span><b>${fmt(sumSaldo(critico) + saldoVencido1a30)}</b></div>
+          <div class="nxFP-cobSideActivity">
+            <div class="nxFP-cobSideTit">Pagos recientes</div>
+            ${pagosRecientes.length ? pagosRecientes.slice(0, 5).map(function (e) { return `<div class="nxFP-cobEvent">${esc(e.nombre)} · pago ${fmt(e.monto)}</div>`; }).join('') : '<div class="nxFP-cobEmpty">Sin pagos registrados todavía.</div>'}
+          </div>
         </aside>
         <div id="nxPrCobLista">${prCobranzaTablaHTML()}</div>
       </div>`;
@@ -24608,6 +24661,16 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tBadge.activo{background:#dcfce7;color:#15803d}.nxFP-tBadge.porvencer{background:#fef9c3;color:#a16207}.nxFP-tBadge.vencido{background:#fee2e2;color:#dc2626}.nxFP-tBadge.pagado{background:#e0e7ff;color:#4338ca}' +
       '.nxFP-tBadge.critico{background:#fecaca;color:#991b1b}.nxFP-tBadge.alta{background:#fed7aa;color:#9a3412}' +
       '.nxFP-tBadge.morareciente{background:#fef3c7;color:#92400e}.nxFP-tBadge.aldia{background:#dcfce7;color:#15803d}' +
+      // Cobranza V3 (formato del mockup — botones/ubicación/formato "tal cual", color
+      // y tipografía siguen siendo los del módulo): celda "Cliente" con avatar chico +
+      // nombre/teléfono apilados; columnas Días vencido/Próxima cuota/Monto vencido/
+      // Saldo, cada una con su propio peso visual (vencido en rojo cuando aplica).
+      '.nxFP-tClient{display:flex;align-items:center;gap:9px}' +
+      '.nxFP-avatar.sm{width:32px;height:32px;border-radius:10px;font-size:11px}' +
+      '.nxFP-tDiasV{font-weight:700;font-variant-numeric:tabular-nums;color:#94a3b8;white-space:nowrap}.nxFP-tDiasV.late{color:#dc2626}' +
+      '.nxFP-tProxCuota{font-size:11.5px;color:#64748b;white-space:nowrap}' +
+      '.nxFP-tVencido{color:#94a3b8}.nxFP-tVencido.late{color:#dc2626;font-weight:800}' +
+      '.nxFP-tSaldo{font-weight:800;color:#0f172a;font-size:13px}' +
       // Cobranza V2.1: sidebar (aside) va ANTES de la lista en el HTML — en
       // escritorio queda a la izquierda (260px fijo), en móvil el @media 900px de
       // abajo colapsa a 1 columna y el orden del HTML ya alcanza para que el resumen
@@ -24627,6 +24690,14 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-cobSideRow.crit span i,.nxFP-cobSideRow.crit b{color:#dc2626}.nxFP-cobSideRow.alta span i,.nxFP-cobSideRow.alta b{color:#c2410c}.nxFP-cobSideRow.mora span i,.nxFP-cobSideRow.mora b{color:#92400e}.nxFP-cobSideRow.porv span i{color:#a16207}' +
       '.nxFP-cobSideDiv{height:1px;background:#eef0f5;margin:8px 0}' +
       '.nxFP-cobSideRow.big{padding-top:10px}.nxFP-cobSideRow.big span{font-size:11px;color:#94a3b8;font-weight:700}.nxFP-cobSideRow.big b{font-size:16px;color:#6d28d9}' +
+      // Cobranza V3 — "Pagos recientes" (dato REAL de _pagosByPrestamo, nunca la
+      // "Actividad reciente"/"Promesas de pago" inventadas del mockup): timeline de
+      // puntos, mismo lenguaje visual ya usado en el detalle del préstamo (nxPrTl).
+      '.nxFP-cobSideActivity{margin-top:2px}' +
+      '.nxFP-cobEvent{position:relative;padding:0 0 12px 16px;font-size:11.5px;color:#475569;font-weight:600;border-left:1.5px solid #eef0f5}' +
+      '.nxFP-cobEvent:last-child{border-left-color:transparent;padding-bottom:0}' +
+      '.nxFP-cobEvent:before{content:"";position:absolute;left:-4.5px;top:2px;width:7px;height:7px;border-radius:50%;background:#6d28d9}' +
+      '.nxFP-cobEmpty{font-size:11.5px;color:#94a3b8;font-style:italic}' +
       '.nxFP-tDias{font-weight:800;font-variant-numeric:tabular-nums;color:#94a3b8}.nxFP-tDias.bad{color:#dc2626}' +
       '.nxFP-tAcc{display:flex;gap:4px;align-items:center}' +
       '.nxFP-tAcc button{width:30px;height:30px;border-radius:8px;border:1px solid #eef0f5;background:#fff;color:#64748b;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px}' +
@@ -24635,6 +24706,16 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       // nxPrestamoVer + foco al campo real, sin modal nuevo). Texto dual: la etiqueta
       // larga en escritorio, la corta en móvil (swap por CSS, ver media 760px abajo).
       '.nxFP-tPay{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:8px;border:1px solid #2563eb;background:#2563eb;color:#fff;font-weight:700;font-size:11.5px;cursor:pointer;white-space:nowrap;font-family:inherit}' +
+      // BUG REAL (encontrado revisando la captura de escritorio, no a ojo): el
+      // botón "Cobrar" vive DENTRO de .nxFP-tAcc — y `.nxFP-tAcc button{width:30px;
+      // height:30px;...}` (pensado para los íconos de la lista general de
+      // préstamos) le gana por especificidad (0,1,1 > 0,1,0) a este `.nxFP-tPay`,
+      // que nunca declaraba `width` propio — el botón quedaba forzado a un
+      // cuadrado de 30px con `white-space:nowrap`, así que el texto "Cobrar" se
+      // desbordaba VISUALMENTE por encima del botón de menú de al lado (parecía
+      // "Cobra" cortado en la captura). `.nxFP-tAcc .nxFP-tPay` (0,2,0) gana por
+      // especificidad sin importar el orden — el botón vuelve a su ancho natural.
+      '.nxFP-tAcc .nxFP-tPay{width:auto}' +
       '.nxFP-tPay:hover{background:#1d4ed8;border-color:#1d4ed8}.nxFP-tPay i{font-size:13px}' +
       '.nxFP-tPayD{display:inline}.nxFP-tPayM{display:none}' +
       '@media(max-width:760px){.nxFP-tPayD{display:none}.nxFP-tPayM{display:inline}}' +
@@ -24679,19 +24760,33 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tbl td.nxFP-tDias{grid-column:1;grid-row:4;justify-self:start;align-self:center;font-size:11px;margin-top:6px}' +
       '.nxFP-tbl td.nxFP-tAccC{grid-column:2;grid-row:4;justify-self:end;margin-top:6px}' +
       '.nxFP-tAcc{justify-content:flex-end}}' +
-      // Cobranza V2.1 — su propia tarjeta móvil tiene 2 celdas que la lista general
-      // NO tiene (Último pago + una fila de Acciones con 3 elementos, no solo
-      // iconos) — compound .nxFP-tbl.nxFP-cobTbl (más específico que .nxFP-tbl solo)
-      // para no chocar con el layout de 4 filas ya establecido arriba, que sigue
-      // sirviendo a la lista general de préstamos sin cambios. El resto de celdas
-      // (nombre/estado/ref/cédula/saldo/próximo pago) ya caen en su fila correcta
-      // porque Cobranza reusa las MISMAS clases con el MISMO orden visual — no
-      // hace falta repetirlas aquí.
+      // Cobranza V3 — mockup mobile format (.mhead/.mgrid/.mactions), reescrito
+      // completo: la fila V3 emite otras clases (nxFP-tCliCell, no nxFP-tdNom) que
+      // el layout de 4 filas de arriba NO reconoce — compound .nxFP-tbl.nxFP-cobTbl
+      // (más específico) le da su PROPIA rejilla, sin tocar la lista general.
+      // Tarjeta: [ Cliente ] [ Estado ]  →  2×2 (Días vencido/Monto vencido/
+      // Próxima cuota/Saldo, con etiqueta arriba tipo .mgrid) → Acciones (Cobrar
+      // ancho + "…" fijo), igual al mockup. Referencia/Último pago no caben en
+      // la tarjeta compacta — el mockup tampoco los muestra ahí, quedan en la
+      // fila de escritorio y en el modal de detalle (nxPrestamoVer).
       '@media(max-width:760px){' +
-      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tUlt{grid-column:1/-1;grid-row:4;justify-self:start;text-align:left;margin-top:4px}' +
-      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tAccC{grid-column:1/-1;grid-row:5;justify-self:stretch;margin-top:8px}' +
-      '.nxFP-tbl.nxFP-cobTbl .nxFP-tAcc{justify-content:flex-start;width:100%}' +
-      '.nxFP-tbl.nxFP-cobTbl .nxFP-tPay{flex:1}' +
+      '.nxFP-tbl.nxFP-cobTbl tbody tr{grid-template-columns:1fr 1fr}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tCliCell{grid-column:1;grid-row:1;text-align:left;overflow:hidden}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tCliCell .nxFP-tNom{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tEst{grid-column:2;grid-row:1;justify-self:end}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tRef,.nxFP-tbl.nxFP-cobTbl td.nxFP-tUlt{display:none}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tDiasV{grid-column:1;grid-row:2}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tVencido{grid-column:2;grid-row:2;justify-self:end;text-align:right}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tProxCuota{grid-column:1;grid-row:3}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tSaldo{grid-column:2;grid-row:3;justify-self:end;text-align:right}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tDiasV,.nxFP-tbl.nxFP-cobTbl td.nxFP-tVencido,.nxFP-tbl.nxFP-cobTbl td.nxFP-tProxCuota,.nxFP-tbl.nxFP-cobTbl td.nxFP-tSaldo{border-top:1px solid #f4f5f9;padding-top:8px;margin-top:10px}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tDiasV::before,.nxFP-tbl.nxFP-cobTbl td.nxFP-tVencido::before,.nxFP-tbl.nxFP-cobTbl td.nxFP-tProxCuota::before,.nxFP-tbl.nxFP-cobTbl td.nxFP-tSaldo::before{content:attr(data-l);display:block;font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.2px;margin-bottom:3px}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tVencido::before,.nxFP-tbl.nxFP-cobTbl td.nxFP-tSaldo::before{text-align:right}' +
+      '.nxFP-tbl.nxFP-cobTbl td.nxFP-tAccC{grid-column:1/-1;grid-row:4;margin-top:12px}' +
+      '.nxFP-tbl.nxFP-cobTbl .nxFP-tAcc{display:grid;grid-template-columns:1fr 40px;gap:8px;width:100%}' +
+      '.nxFP-tbl.nxFP-cobTbl .nxFP-tPay{width:100%;justify-content:center;height:38px}' +
+      '.nxFP-tbl.nxFP-cobTbl .nxFP-tMenuWrap{width:100%}' +
+      '.nxFP-tbl.nxFP-cobTbl .nxFP-menuBtn{width:100%;height:38px;border:1px solid #eef0f5;border-radius:9px}' +
       '}' +
       '@media(max-width:560px){.nxFP-kpis{grid-template-columns:1fr 1fr}}' +
       '.nxFPShell{display:flex;gap:16px;align-items:flex-start;position:relative}' +
@@ -24824,7 +24919,13 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       '.nxFP-tup{color:#16a34a;font-weight:800}.nxFP-tdn{color:#dc2626;font-weight:800}.nxFP-repMuted{color:#94a3b8;font-weight:600}' +
       '@media(max-width:1000px){.nxFP-kpis6{grid-template-columns:repeat(3,1fr)}.nxFP-repGrid{grid-template-columns:1fr}}' +
       '@media(max-width:560px){.nxFP-kpis6{grid-template-columns:1fr 1fr}.nxFP-repQuick{grid-template-columns:1fr 1fr}.nxFP-repBar{flex-direction:column;align-items:flex-start}}' +
-      '@media(max-width:900px){.nxFP-hero{flex-direction:column}.nxFP-heroR{grid-template-columns:repeat(2,1fr)}.nxFP-quick{grid-template-columns:repeat(3,1fr)}.nxFP-dash{grid-template-columns:repeat(2,1fr)}.nxFP-cobGrid{grid-template-columns:1fr}.nxFP-cobSide{position:static}}' +
+      // .nxFP-cobGrid a minmax(0,1fr), NO 1fr a secas — mismo bug de "grid con
+      // min-width:auto" ya documentado (v49.19/v49.38/v56.5 en este archivo): un
+      // solo track `1fr` no puede encogerse por debajo del ancho intrínseco de la
+      // TABLA (9 columnas en Cobranza V3), así que entre 761-900px empujaba la
+      // página entera a desbordar 59px — reproducido y medido con Playwright antes
+      // de arreglarlo, no a ojo.
+      '@media(max-width:900px){.nxFP-hero{flex-direction:column}.nxFP-heroR{grid-template-columns:repeat(2,1fr)}.nxFP-quick{grid-template-columns:repeat(3,1fr)}.nxFP-dash{grid-template-columns:repeat(2,1fr)}.nxFP-cobGrid{grid-template-columns:minmax(0,1fr)}.nxFP-cobSide{position:static}}' +
       '@media(max-width:640px){.nxFP-hero{padding:18px}.nxFP-heroNum{font-size:27px}.nxFP-heroR{grid-template-columns:1fr 1fr;gap:14px}.nxFP-quick{grid-template-columns:repeat(3,1fr);gap:8px}.nxFP-qbtn{padding:13px 4px}.nxFP-qbtn span{font-size:9px}.nxFP-cardGrid{grid-template-columns:1fr 1fr}.nxFP-card{padding:13px 12px}.nxFP-cardBody{padding-right:22px}.nxFP-dash{grid-template-columns:1fr 1fr}}' +
       // ── NPGS §12 (enmienda "un color por app", 25-jul-2026) ────────────────────
       // Este motor de estilos lo comparten DOS apps: Financiamiento (Multiempresa,

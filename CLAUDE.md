@@ -11421,3 +11421,73 @@ a `esVencido`/`prDiasVencido`/`prMoraDe`/la lista general de préstamos.
   ("no romper ninguna funcionalidad existente").
 - **Publicado por rama propia** (`claude/cobranza-v2-1-mejoras` → PR → fusionado con las
   herramientas MCP de GitHub), no directo a `main`.
+
+### Financiamiento — Cobranza "V3": el FORMATO del mockup, sin los colores (2-ago-2026, v56.6)
+El dueño mandó un tercer boceto de ChatGPT (`chatgpt/visual-draft`, dentro de la carpeta de
+Financiamiento) y pidió — textual — **"Omite la parte de los colores pero la visualización de los
+botones y las ubicaciones y el formato que sea tal cual"**. O sea: copiar la disposición/tamaño de
+botones y el orden de la información, pero **NO** el azul/Inter del mockup — el morado y Plus
+Jakarta Sans propios de Financiamiento se quedan intactos (regla decretada "un color por app, sin
+excepciones", ya aplicada en las 2 rondas anteriores de esta misma pantalla).
+- **Auditado el mockup contra el esquema real antes de tocar nada** (mismo criterio de "no fingir
+  datos" de siempre): el boceto traía 3 piezas sin ningún dato real detrás — "Promesas de pago",
+  una barra de progreso "Meta del día", y un feed de "Actividad reciente" con eventos inventados
+  (recordatorios enviados, notas de gestión). Este módulo de Financiamiento (`prestamos`/
+  `prestamo_pagos`, sin `organizacion_id`) **no registra promesas de pago ni metas ni un log de
+  gestión** — se le explicó al dueño en el propio changelog por qué esas 3 piezas se dejaron
+  fuera, en vez de inventarlas.
+- **Lo real del mockup, sí implementado — reformateo puro, cero lógica de cobro/mora/saldo
+  tocada:**
+  - **Tabla de escritorio, de 8 a 9 columnas**, con una columna genuinamente nueva:
+    **"Monto vencido"** — no es el saldo total del préstamo, es lo que YA venció (calculado
+    recorriendo el plan de pagos real hasta la fecha de hoy, un helper nuevo
+    `prMontoVencidoDe(p)` junto a `prCobranzaCalcularModelo`). El resto de columnas (Cliente,
+    Referencia, Estado, Días vencido, Próxima cuota, Saldo, Último pago, Acciones) se
+    reordenaron para calzar con el mockup, sin cambiar ningún dato.
+  - **Los 5 indicadores de arriba se reorganizaron**: Crítico / Alta prioridad / Mora reciente /
+    Vence en 7 días (los 4 en monto, como antes) y **Al día pasó de no existir a ser un
+    CONTEO** (cuántos préstamos, no cuánto dinero — el mockup lo pedía así, y contar dinero "al
+    día" no es información accionable de cobranza).
+  - **Panel lateral rediseñado**: "Resumen del día" (Cobrar hoy = suma de lo vencido en
+    crítico+alta+mora reciente; Clientes críticos; Pagos registrados hoy = suma real de
+    `_pagosByPrestamo` con fecha de hoy) + **"Pagos recientes"** — una línea de tiempo real con
+    los últimos 5 cobros de TODA la cartera (no solo los que aparecen filtrados en la tabla),
+    ordenados del más reciente al más viejo, con un estado vacío honesto ("Sin pagos registrados
+    todavía.") cuando no hay ninguno.
+  - **Tarjetas del celular reformateadas a cuadrícula de 2×2** (Cliente+Estado arriba, Días
+    vencido/Monto vencido/Próxima cuota/Saldo en 2 columnas debajo, con etiqueta chica encima de
+    cada valor — patrón `data-l`/`::before`, el mismo ya usado en otras tablas responsivas del
+    sistema), botón "Cobrar" a ancho completo + el menú "…" al lado, igual que el mockup.
+- **2 bugs REALES, encontrados durante la propia verificación (nunca llegaron a producción con
+  estos defectos — no eran del mockup, eran de la implementación V2/V2.1 anterior, expuestos
+  recién ahora por la tabla más ancha de la V3):**
+  1. **A 900px de ancho la página volvía a desbordar horizontalmente** — la MISMA clase de bug de
+     `grid-template-columns:1fr` que ya se había arreglado una vez en esta pantalla (el track de
+     la columna izquierda del grid, `.nxFP-cobGrid`) y otra vez en Historial crediticio/detalle de
+     préstamo (v49.19/v49.38): un `1fr` puro tiene un mínimo implícito igual al ancho de su
+     contenido, así que no se dejaba encoger. Esta vez el `1fr` roto vivía en la media query de
+     `@media(max-width:900px){.nxFP-cobGrid{grid-template-columns:1fr}}` (colapso a una sola
+     columna en tablet) — corregido a `minmax(0,1fr)`.
+  2. **El botón "Cobrar" de cada tarjeta, en el celular, mostraba el texto cortado** ("Cobra" en
+     vez de "Cobrar") — se detectó revisando las CAPTURAS de pantalla, no por ninguna aserción
+     numérica. Causa: una regla más genérica del sistema, `.nxFP-tAcc button{width:30px;
+     height:30px}` (pensada para el botón del menú "…", que sí es un cuadrado de ícono), le ganaba
+     por especificidad a `.nxFP-tPay{...}` y forzaba el botón "Cobrar" a un cuadrado de 30px,
+     apretando su propio texto. Arreglado con una regla más específica,
+     `.nxFP-tAcc .nxFP-tPay{width:auto}`.
+- **Verificado con 85 pruebas contra el código real extraído del archivo** (scripts propios de
+  corte por llaves balanceadas, nunca una reconstrucción a mano — extractor nuevo que suma
+  `PR_AVATAR_COLORES`/`prIniciales`/`toast` a los ya usados en la ronda anterior): clasificación y
+  el nuevo `prMontoVencidoDe`, los 5 KPIs con montos exactos calculados a mano contra los datos de
+  prueba, las pestañas, el panel lateral (incluida la línea de tiempo de pagos recientes y su
+  estado vacío), la tabla de 9 columnas, el menú "…" de cada fila (incluida la opción de
+  WhatsApp), "Registrar pago"/"Cobrar" abriendo el mismo modal real de siempre con el campo de
+  monto ya enfocado, el buscador compartido NPGS §5 con exportación filtrada, el formato de
+  tarjeta del celular, y un barrido de anchos de pantalla (1600/1280/1100/1024/901/900/760/390px
+  — incluida a propósito la franja 900-1150px que ya había fallado antes) sin ningún desborde en
+  ninguno — 85/85, con captura de pantalla revisada visualmente en escritorio (1440px) y celular
+  (390px) confirmando el formato del mockup CON el morado/Plus Jakarta Sans del módulo, sin
+  ningún rastro del azul/Inter original. `node --check parches.js` limpio; los 3 `<script>` de
+  `index.html` pasan `new Function()`; `version.json` válido.
+- **Publicado por rama propia** (`claude/cobranza-v3-formato` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
