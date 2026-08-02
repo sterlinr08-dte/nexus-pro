@@ -7251,14 +7251,22 @@ function rAvisos(){
   const tb=document.getElementById('tbAvisos');if(!tb)return;
   const act=ST.clientes.filter(c=>c.activo);
 
-  // Facturas atrasadas (de meses anteriores al de corte, sin pagar) — mismo criterio que rFact('atrasadas')
+  // Facturas atrasadas (de meses anteriores al de corte). NO se filtra por f.estado ni se
+  // suma f.total: el estado es una CACHÉ que puede quedar pegada (ver resyncEstadoFacturas)
+  // y f.total es el monto congelado de la factura, que en facturas viejas puede traer deuda
+  // anterior ya arrastrada (ver v36.0) — nada de eso refleja lo que el cliente debe HOY. Se
+  // recalcula el saldo real con _saldoFacturasCliente (la misma fuente de verdad que ya usan
+  // Facturas/Cobros/la Ficha) y solo se cuenta lo que en verdad sigue pendiente — así un
+  // cliente que ya pagó no vuelve a aparecer aquí.
   const _mc=mesCorte();const hoyKey=`${_mc.anio}-${String(_mc.mes).padStart(2,'0')}`;
-  const facAtrasadas=ST.facturas.filter(f=>f.periodo<hoyKey&&f.estado!=='Pagado'&&f.estado!=='Anulada');
+  const facAtrasadas=ST.facturas.filter(f=>f.periodo<hoyKey&&f.estado!=='Anulada');
   const porCliente={};
   facAtrasadas.forEach(f=>{
     const cid=String(f.cliente_id);
+    const saldo=_saldoFacturasCliente(cid)[f.id]??0;
+    if(saldo<=0.009)return;
     if(!porCliente[cid])porCliente[cid]={cliente_id:f.cliente_id,nom:f.cliente_nom,total:0,meses:0};
-    porCliente[cid].total+=Number(f.total||0);porCliente[cid].meses++;
+    porCliente[cid].total+=saldo;porCliente[cid].meses++;
   });
   const atrasadosArr=Object.values(porCliente).sort((a,b)=>b.total-a.total);
 
