@@ -1,7 +1,12 @@
 {
-  "version": "56.4",
+  "version": "56.5",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.5",
+      "fecha": "2026-08-02",
+      "texto": "ARREGLADO (Financiamiento — Cobranza, mejoras operativas sobre la pantalla de la v56.4, auditoría propuesta por ChatGPT): 1) BUG REAL DE FONDO — un préstamo con la primera cuota vencida hacía MESES (vencido a mitad de plazo, no cerca de terminar) se veía como \"Al día\" — el cálculo solo reconocía préstamos por vencer en los próximos 7 días y, si ya habían vencido, no caía en ninguna categoría real. Corregido: ahora se compara SIEMPRE contra la cuota más vieja sin pagar, y hay una categoría nueva \"Mora reciente\" (1 a 7 días vencido, ámbar) entre \"Alta prioridad\" y \"Por vencer\" — antes esos préstamos recién atrasados no se distinguían de los que llevan meses sin pagar. 2) Botón \"Registrar pago\" en cada fila — antes había que abrir el detalle completo del préstamo para cobrar; ahora un toque abre la misma ventana de siempre con el campo de monto ya enfocado, listo para escribir. 3) Buscar por nombre o cédula, con el mismo buscador de ventana que ya usa el resto del sistema. 4) Columna nueva \"Último pago\" (cuándo y cuánto pagó por última vez). 5) Exportar a Excel ahora respeta el filtro/búsqueda activos (antes exportaba TODA la cartera sin importar qué estuviera viendo en pantalla). 6) El cálculo pesado (clasificar y ordenar toda la cartera) ahora se hace UNA sola vez al entrar, no 6 veces por pantalla. ARREGLADO de raíz durante la propia verificación (nunca llegó a producción con este defecto): en pantallas de 900 a 1150px aprox. (una laptop de 13\", una tablet en horizontal) la tabla empujaba TODA la página a desbordar por la derecha — la columna donde vive la tabla no se dejaba encoger por debajo del ancho de la tabla misma. Corregido con una sola propiedad de CSS; ahora la tabla, si no cabe, se desplaza sola de lado a lado DENTRO de su propio recuadro, sin mover el resto de la pantalla. Verificado con 108 pruebas en total (59 de la lógica pura contra el código real extraído del archivo — incluido el caso exacto del bug de fondo — y 49 de la pantalla renderizada de verdad en un navegador, con un barrido de anchos de pantalla ampliado a propósito hasta 901/1024/1100px para que este tipo de hueco no se vuelva a colar). Cero tablas nuevas, cero cambios a como se calcula el vencimiento en el resto del sistema (lista general de préstamos, mora, reportes) — solo esta pantalla."
+    },
     {
       "v": "56.4",
       "fecha": "2026-08-02",
