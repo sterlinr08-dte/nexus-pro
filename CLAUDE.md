@@ -11097,3 +11097,53 @@ confirmó seguir; con esta pieza **todos los buscadores del sistema quedan en el
   al dueño con la recomendación de dejarla así (para el cajero, ver precio y existencia antes de
   agregar vale más que un filtro simple) y respondió **"Déjalo asi"**. **No reabrir sin que lo pida
   explícitamente** — no es un hueco de la migración, es una excepción decidida a propósito.
+
+### POS · Factura/Prefactura en la computadora: el documento no tenía tope de ancho (2-ago-2026, v56.0)
+El dueño: *"El modal de factura y prefactura en la web de Pc se ve mal hay que organizar"*. Se
+investigó con el método de siempre — código real extraído por contenido (`renderFactura`,
+`facPartesHTML`, `facEmpresa`, `pintarFactura` + el CSS real de `.nxDoc` y `.nxFacBar`) cargado en un
+navegador dentro del armazón real del POS, midiendo el ancho de cada bloque con
+`getBoundingClientRect` en 1920/1440/1280/390px, no a ojo.
+- **Causa raíz medida:** `.nxDocCard` **no tenía `max-width`** — el documento se estiraba al ancho
+  completo del contenedor. Medido: **1,884px de tarjeta en una pantalla de 1920**, con la columna
+  "Descripción" en **1,338px** — un océano de blanco entre el nombre del artículo y su precio, que
+  obliga a pasear el ojo de una punta a la otra para leer una sola línea. En 1440 seguía en 1,404px
+  de tarjeta / 858px de descripción. Es un documento (una factura), no un tablero: necesita ancho de
+  lectura, no ancho de pantalla.
+- **Segundo efecto del mismo problema:** `.facPie` es `grid-template-columns:1fr 280px` — o sea el
+  bloque de totales quedaba fijo en 280px mientras "Otras acciones" se llevaba TODO lo demás
+  (**1,532px en 1920**), dejando 4 botones chiquitos perdidos en una franja enorme y el TOTAL
+  arrinconado contra el borde derecho, lejos de la tabla que resume.
+- **Arreglo, 100% CSS, solo escritorio (`@media(min-width:761px)`), cero lógica tocada:**
+  `.nxDoc .nxDocCard{max-width:1080px;margin:0 auto}` (ancho de lectura + centrado — mismo criterio
+  ya establecido en el proyecto: `renderCompraForm` usa `max-width:880px` centrado desde v52.0, el
+  formulario de préstamo 640px desde v52.7, y la barra fija se capó a 640px en v55.1) ·
+  `.facPie` pasó a `1fr 300px` con más `gap` · `.facTot` ganó fondo `#f8fafc` + borde + radio +
+  padding, así el resumen se lee como un **bloque** y no como números sueltos flotando.
+  **En móvil no cambia NADA** — la media query es `min-width:761px`, y el bloque `max-width:760px`
+  de siempre quedó intacto (verificado con captura: 390px idéntico antes y después).
+- **Medición después del arreglo:** tarjeta **1,884 → 1,080px** (constante en 1920/1440/1280),
+  descripción **1,338 → 534px**, "Otras acciones" **1,532 → 702px**, totales 280 → 300px, cero
+  desborde horizontal en los 4 anchos, 0 errores de JS.
+- **Trampa del propio harness, encontrada y corregida antes de confiar en el "antes":** la primera
+  extracción de CSS se llevó solo el bloque `st.textContent += '.nxDocCard{...}'` y el de
+  `.nxFacBar{position:fixed...}` — pero la regla que capa la barra fija en PC (v55.1) vive en un
+  `st.textContent +=` **aparte** (`@media(min-width:761px){.nxFacBar{...}}`), así que la primera
+  captura mostraba la barra a todo lo ancho y parecía un bug del producto. Se amplió el extractor y
+  con la regla real la barra sale correctamente capada a 640px centrada. **Al extraer CSS de
+  `parches.js` hay que buscar TODOS los `st.textContent +=` que tocan la clase, no solo el primero**
+  — el CSS de una misma pantalla está repartido en varios trozos.
+- **Deliberadamente NO tocado:** la barra de acciones fija en PC (`.nxFacBar`) se queda — fue un
+  pedido explícito del dueño en v54.8 ("ese POS está más enfocado a Pc porque es para vender"), no
+  se revierte. Tampoco se tocó el hueco vertical bajo "Otras acciones" (es el resultado natural de
+  dos columnas de altura distinta en un documento, y con el cap ya casi no se nota).
+- **Ambigüedad real del pedido, comunicada al dueño (no resuelta por cuenta propia):** "el modal de
+  factura y prefactura" puede leerse como (a) las PANTALLAS de Factura/Prefactura — lo que se
+  arregló aquí — o (b) las dos VENTANAS que abre la lupa: "Facturas generadas" (`nxFacHist`) y
+  "Prefacturas abiertas" (`nxPrefLista`). Se auditaron también las (b) y **sí tienen una
+  inconsistencia real, sin arreglar todavía**: son ventanas hermanas pero usan estilos distintos —
+  `nxPrefLista` usa `.modal nxPf` (460px, `padding:0`, encabezado `.head` con flecha) y `nxFacHist`
+  usa **`.modal nxPrForm`**, que es la clase de modal de **Financiamiento** (480px, `padding:20px`,
+  encabezado `.mt` con "← Cerrar") — un préstamo de estilo entre módulos que explica por qué las dos
+  se ven diferentes. Queda anotado como pendiente real hasta que el dueño confirme si era eso lo que
+  quería organizar.
