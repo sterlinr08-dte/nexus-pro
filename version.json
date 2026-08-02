@@ -1,7 +1,12 @@
 {
-  "version": "56.5",
+  "version": "56.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.6",
+      "fecha": "2026-08-02",
+      "texto": "NUEVO (Financiamiento — Cobranza, formato \"V3\" propuesto por ChatGPT en la rama de bocetos, colores omitidos a propósito): se auditó el mockup contra la pantalla real y se aplicó SOLO su formato — ubicación de los botones, orden de las columnas, tarjetas del celular — dejando intacto el morado y la tipografía propia del módulo (el mockup traía azul; cada app del sistema tiene su propio color, sin excepciones, y no era lo pedido). La tabla del escritorio pasó a 9 columnas con una nueva de verdad, \"Monto vencido\" (no el saldo completo — solo lo que ya venció, calculado recorriendo el plan de pagos real). Los 5 indicadores de arriba se reordenaron (Crítico / Alta prioridad / Mora reciente / Vence en 7 días / Al día, este último un conteo en vez de un monto). El panel lateral ahora tiene un \"Resumen del día\" con datos reales y una lista de \"Pagos recientes\" (los últimos 5 cobros de toda la cartera, no inventados). En el celular, cada préstamo pasó a una tarjeta con los datos en cuadrícula de 2 columnas, como en el mockup. DELIBERADAMENTE NO SE IMPLEMENTÓ del mockup: \"Promesas de pago\", la barra de \"Meta del día\" y el feed de \"Actividad reciente\" que traía — ninguno tiene un dato real detrás en este sistema (Financiamiento no registra promesas ni metas), y este proyecto no finge una función que no existe. ARREGLADOS DE PASO, encontrados durante la propia verificación (no llegaron a producción con estos defectos): (1) a 900px de ancho la página volvía a desbordar horizontalmente — la misma clase de error ya vista otras veces en este archivo, un `1fr` de CSS Grid que no se deja encoger por debajo del ancho de su contenido; (2) el botón \"Cobrar\" de cada tarjeta, en el celular, se veía con el texto cortado (\"Cobra\") porque una regla más genérica del sistema le forzaba un tamaño cuadrado de ícono — detectado revisando las capturas de pantalla, no por ningún número. Los dos, arreglados con una sola línea de CSS cada uno. Verificado con 85 pruebas contra el código real extraído del archivo (sin reconstruir nada a mano): la clasificación, los montos exactos de los 5 indicadores, las pestañas, el menú \"…\" de cada fila, \"Registrar pago\" abriendo el mismo modal de siempre con el campo enfocado, el buscador compartido del sistema, el formato de las tarjetas del celular, y un barrido de anchos de pantalla (390 a 1600px, incluida la franja 900-1150px que ya había dado problemas antes) sin ningún desborde — más revisión visual de las capturas antes de publicar."
+    },
     {
       "v": "56.5",
       "fecha": "2026-08-02",
