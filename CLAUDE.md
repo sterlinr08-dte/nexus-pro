@@ -10807,3 +10807,59 @@ pero su deuda real es **RD$500**. Investigado contra la base real, no contra sup
 - **Deliberadamente NO tocado:** las otras 2 secciones de Avisos — "Seguimiento por agente" (ya usaba
   `pendTot(c)`, la fuente correcta, confirmado sano) y "Pólizas por vencer" (usa `getEstPol()`, un
   cálculo distinto sin relación con este bug).
+
+### Seguros · rediseño — barra de urgencia compartida en Pendientes, Cobros, Ficha y Avisos (2-ago-2026, v55.5)
+El dueño pidió "un rediseño en pendientes, cobros, y los ficheros de cada cliente". Investigado primero
+el código/CSS real (`.nxSf` tokens, `rFact`/`rCob`/`verCliente`), luego construido y publicado un mockup
+Artifact de 3 pantallas con un elemento visual compartido (Pendientes/Cobros/Ficha del cliente, todas con
+una "barra de urgencia" de color) — el dueño lo revisó y, al reportar de paso el bug de Avisos (arreglado
+arriba, v55.4), pidió agregar Avisos como 4ta pantalla al mismo mockup con el mismo lenguaje visual.
+Confirmó las 4 con **"Si las 4 pantalla"**.
+- **El elemento firma:** una barra de color (roja=hay que cobrar YA, ámbar=parcial/en gracia,
+  verde=al día) que se agrega a la tarjeta/fila/encabezado que cada pantalla YA renderiza — cero campos
+  nuevos, cero cálculo nuevo, el color sale del mismo `estado`/`saldo` que cada pantalla ya calcula.
+- **Cobros (`rCob`):** borde izquierdo en `.nxCobCard`, clase `u-crit`/`u-warn`/`u-ok` derivada de
+  `estCls` (el mismo que ya pinta el badge PENDIENTE/PARCIAL/AL DÍA de la tarjeta).
+- **Facturas/Pendientes (`rFact`):** borde izquierdo, pero NO en el `<tr>` — con
+  `border-collapse:collapse` (que `.sf-tbl` ya usa) un `border` puesto directo en `<tr>` no se pinta, es
+  un gotcha de CSS conocido. Se puso en la 1ra celda (`.cli-cell`) para escritorio; en móvil el `<tr>` YA
+  es una tarjeta con su propio borde de 1px (`.sf-tbl` colapsa a bloque bajo 720px), así que ahí se
+  sobreescribe solo el lado izquierdo del borde existente. Mismo criterio de `f.estado` que ya usa el
+  badge (`ec`): Pendiente=rojo, Parcial=ámbar, Pagado=verde, Anulada=sin barra (además de su opacidad
+  reducida de siempre).
+- **Avisos (`rAvisos`):** borde izquierdo en `.nxAvCard`, en sus 3 secciones — "Seguimiento por agente"
+  siempre rojo (la lista de por sí solo trae agentes con clientes atrasados, `x.n>0`, así que no hacía
+  falta un umbral arbitrario); "Facturas atrasadas" ámbar con 1 mes, rojo con 2+ (grounded en el propio
+  campo `o.meses` que ya se mostraba, sin inventar un umbral de monto); "Pólizas por vencer" rojo si
+  `e.est==='vencida'`, ámbar si `'gracia'` — mismo criterio que ya usaba el color del texto de esa
+  tarjeta (`e.est==='vencida'?'#dc2626':'#b45309'`), solo se llevó también al borde.
+- **Ficha del cliente (`verCliente`):** borde ARRIBA (no a la izquierda — el encabezado `.sf-head` es
+  horizontal, un borde superior calza mejor con esa forma) según `getEst(c)`: Al día=verde,
+  Parcial=ámbar, el resto (Pendiente/Inhabilitado)=rojo.
+- **Verificado con 19 pruebas de lógica** contra el código real de las 4 funciones extraído del archivo
+  (no reconstruido, balance de llaves real): la clase de urgencia correcta en cada caso (incluidos los 2
+  casos límite de Avisos — 2+ meses atrasados y póliza vencida vs. en gracia), y que ningún
+  `onclick`/botón real se tocó (`cobrarDesdeFact`/`abrirAbono`/`nxCobroWA`/etc. siguen intactos).
+- **Más 17 pruebas visuales con Playwright**, cargando el `<style>` estático real de `index.html`
+  (85,896 caracteres extraídos tal cual) + el CSS que `_nxCobCSS()`/`_nxAvCSS()` inyectan en runtime
+  (capturado interceptando `document.createElement('style').textContent`) + el HTML real generado por
+  las 4 funciones con datos de prueba realistas — midiendo `getComputedStyle` para confirmar los colores
+  EXACTOS (`rgb(225,29,72)` rojo Cobros, `rgb(239,68,68)` rojo Facturas, `rgb(34,197,94)` verde
+  Facturas, etc. — cada pantalla con su propia paleta hex, sin asumir que coinciden) y 0 desbordes
+  horizontales. Captura de pantalla completa revisada visualmente antes de publicar.
+  - **Bug del propio harness de prueba, encontrado y corregido antes de confiar en el resultado:** el
+    primer intento de stub de `document.getElementById` devolvía SIEMPRE un elemento (creándolo si no
+    existía) — pero `_nxCobCSS()`/`_nxAvCSS()` empiezan con `if(document.getElementById('nxCobCSS'))
+    return;` (el guardia de "solo inyectar una vez"), así que con ese stub el guardia SIEMPRE daba
+    verdadero y el CSS real nunca se llegaba a capturar — las 3 primeras pruebas de color de Cobros
+    fallaban en falso. Corregido acotando el stub a una lista blanca de ids "de pantalla" que la app
+    real ya trae en el DOM (`tbCob`, `fMes`, `csBody`...); cualquier otro id (como los guardias de CSS)
+    devuelve `null` la primera vez, igual que en el navegador real.
+- `node --check parches.js` limpio (archivo no tocado); los 3 `<script>` de `index.html` (1,423 /
+  490,124 / 681 caracteres) pasan `new Function()`; `version.json` válido.
+- **Deliberadamente NO tocado:** ninguna lógica de negocio, ninguna tabla/columna nueva, ningún
+  `onclick` — 100% visual sobre datos que cada pantalla ya calculaba. La reorganización más grande del
+  mockup (tabs Resumen/Facturas/Pagos/Notas en la Ficha del cliente, en vez del grid de 2 columnas
+  actual) NO se implementó en esta ronda — habría requerido traer datos de abonos que hoy solo vive en
+  el modal aparte `verHistorialAbonos`, un cambio de mayor alcance que el elemento firma compartido que
+  el dueño aprobó explícitamente.
