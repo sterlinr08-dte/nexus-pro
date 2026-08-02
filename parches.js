@@ -18675,7 +18675,7 @@
       .fl{border-top:1px solid #94a3b8;padding-top:6px;font-size:10.5px;color:#94a3b8;text-align:center}
       .legal{margin-top:22px;font-size:10.5px;color:#94a3b8;line-height:1.6;text-align:center}
       @media print{body{background:#fff;padding:0}.bar{display:none}.doc{box-shadow:none;border-radius:0;max-width:none;padding:0}}
-      @media(max-width:700px){.doc{padding:18px 14px}.partes,.pie{grid-template-columns:1fr}.dhr{text-align:left}table{font-size:11.5px}th,td{padding:7px 4px;width:auto!important}th:first-child,td.n{display:none}.ser{font-size:10px}.sub{gap:6px}.dtit{font-size:20px}.dnum{font-size:19px}}
+      @media(max-width:700px){.doc{padding:18px 14px}.partes,.pie{grid-template-columns:1fr}.dhr{text-align:left}table{font-size:11.5px;table-layout:fixed}th,td{padding:7px 4px;overflow-wrap:break-word}th:first-child,td.n{display:none}th:nth-child(2),td:nth-child(2){width:36%!important}th:nth-child(3),td:nth-child(3){width:11%!important}th:nth-child(4),td:nth-child(4){width:18%!important}th:nth-child(5),td:nth-child(5){width:15%!important}th:nth-child(6),td:nth-child(6){width:20%!important}td.b{white-space:normal}.ser{font-size:10px}.sub{gap:6px}.dtit{font-size:20px}.dnum{font-size:19px}}
       </style></head><body>
       <div class="bar">
         <button type="button" id="bX">✕ Cerrar</button>
