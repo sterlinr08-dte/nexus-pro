@@ -11147,3 +11147,37 @@ navegador dentro del armazón real del POS, midiendo el ancho de cada bloque con
   encabezado `.mt` con "← Cerrar") — un préstamo de estilo entre módulos que explica por qué las dos
   se ven diferentes. Queda anotado como pendiente real hasta que el dueño confirme si era eso lo que
   quería organizar.
+
+### POS · Factura/Prefactura en el celular: el bloque de arriba se quedaba a la derecha (2-ago-2026, v56.1)
+El dueño mandó una captura real de su iPhone: el encabezado (título FACTURA, N°, comprobante,
+fecha) aparecía apretado del lado derecho de la pantalla en vez de ir claramente a la izquierda,
+debajo del nombre de la empresa. Pidió: *"Yo quiero que esa información esté del lado izquierdo en
+ambas ventas"* (Factura y Prefactura).
+- **Investigado antes de tocar nada — confirmado con el código real, no a ojo:** la regla móvil ya
+  existente (`.nxDoc .dhr{flex:1 1 100%}`, desde v49.67) fuerza a `dhr` a envolver a su propia fila
+  completa dentro del contenedor flex `.dh` (`display:flex;flex-wrap:wrap`) — y con datos cortos
+  (nombre de empresa corto, como en mi prueba original) SÍ se apila bien. Pero ese mecanismo depende
+  de que el "wrap" se dispare — y `flex-wrap` solo envuelve cuando el contenido no cabe en una sola
+  fila. Con un nombre de empresa/cliente corto o cierta combinación de anchos reales, `dhl` (nombre
+  de empresa) y `dhr` (título+N°+comprobante+fecha) pueden caber juntos en una sola fila — y como
+  `.dh` es `justify-content:space-between`, `dhr` queda pegado al borde DERECHO, exactamente lo que
+  se ve en la captura del dueño.
+- **Arreglo de raíz, no un parche de texto:** en vez de depender de que el wrap se dispare solo, se
+  fuerza el apilado de forma **incondicional**: `.nxDoc .dh{flex-direction:column}` en el bloque
+  móvil (`@media(max-width:760px)`) — así `dhl` y `dhr` SIEMPRE van uno debajo del otro, sin
+  importar cuánto midan sus contenidos.
+- **Bug real encontrado y corregido ANTES de publicar, durante la propia verificación:** al pasar
+  `.dh` a `flex-direction:column`, el `flex-basis` que `dhl`/`dhr` traían desde el diseño de
+  escritorio (`flex:1 1 200px` y `flex:1 1 100%`, pensados como ANCHO en fila) se reinterpretó como
+  ALTO al estar ahora en columna — eso dejaba un hueco vacío enorme (~220px) entre el nombre de la
+  empresa y el título FACTURA. Corregido con `.nxDoc .dhl,.nxDoc .dhr{width:100%;flex:0 0 auto}` —
+  cada bloque mide según su contenido real, no según un ancho heredado mal aplicado como alto.
+- **Verificado con Playwright, código real extraído por contenido, bajo estrés** (nombre de empresa
+  y de cliente artificialmente largos, para forzar el peor caso — el mismo tipo de dato que reveló
+  el bug original) en 6 anchos de celular (320/360/375/390/414/430px): los 2 bloques siempre quedan
+  en el MISMO borde izquierdo, uno debajo del otro, **cero desborde horizontal** en los 6 anchos.
+  Capturas de Factura y de Prefactura revisadas visualmente — el hueco del bug intermedio ya no
+  aparece. En escritorio (1920/1440/1280px) `.dh` sigue en `flex-direction:row` (la media query es
+  `max-width:760px`, no la toca), tarjeta capada a 1080px como en v56.0, 0 errores de consola.
+- `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.

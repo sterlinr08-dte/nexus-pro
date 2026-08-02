@@ -1,7 +1,12 @@
 {
-  "version": "56.0",
+  "version": "56.1",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.1",
+      "fecha": "2026-08-02",
+      "texto": "ARREGLADO (Factura y Prefactura en el celular): el bloque de arriba (título FACTURA/PREFACTURA, número, tipo de comprobante y fecha) podía terminar apretado hacia la derecha en vez de quedar claramente debajo del nombre de la empresa, del lado izquierdo. Ahora ese bloque SIEMPRE va apilado, empezando desde el mismo borde izquierdo que el nombre de la empresa — sin depender de cuánto mida el nombre de la empresa o del cliente. Aplica igual en Factura y en Prefactura. La computadora no cambia (sigue en 2 columnas como se dejó ayer). Probado con nombres muy largos en 6 anchos de celular distintos, sin ningún desborde."
+    },
     {
       "v": "56.0",
       "fecha": "2026-08-02",
