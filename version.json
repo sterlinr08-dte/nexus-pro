@@ -1,7 +1,12 @@
 {
-  "version": "56.3",
+  "version": "56.4",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.4",
+      "fecha": "2026-08-02",
+      "texto": "NUEVO (Financiamiento — pestaña \"Cobranza\", propuesta de ChatGPT auditada e implementada): antes, tocar \"Cobranza\" en la barra lateral solo mostraba la lista genérica de préstamos filtrada por vencidos. Ahora tiene su propia pantalla, pensada para saber a quién llamar primero: cada préstamo activo se clasifica solo (sin guardar nada nuevo) en Crítico (más de 30 días vencido), Alta prioridad (8-30 días), Por vencer (vence en 7 días o menos) o Al día — los ya pagados no aparecen. 5 indicadores reales arriba (Cobrar hoy, Cobrar esta semana, Próximos vencimientos, Pagos registrados hoy, Total por cobrar), pestañas para filtrar por prioridad, buscador (nombre o cédula), la tabla ordenada del más urgente al menos urgente, y un resumen a un lado con el total en gestión. Los botones de cada fila son los de siempre — Ver detalle, Editar, Estado de cuenta, WhatsApp — nada nuevo que aprender. ARREGLADO de paso (encontrado auditando esta pantalla, pero afectaba también la lista general de préstamos en el celular): las tarjetas de préstamo en pantalla angosta se salían 22px por el borde derecho — les faltaba una propiedad de CSS (\"box-sizing\") para que el borde y el espacio interno se contaran DENTRO del ancho de la tarjeta en vez de sumarse por fuera. Verificado con 61 pruebas contra el código real extraído del archivo (clasificación, orden, los 5 indicadores con montos exactos, las pestañas, la tabla, el buscador compartido del sistema, que la lista general no cambió, y sin ningún desborde en celular/tablet/escritorio)."
+    },
     {
       "v": "56.3",
       "fecha": "2026-08-02",
