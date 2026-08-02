@@ -10725,3 +10725,49 @@ barra fija v55.1) — **eligió la recomendada (ensanchar)**.
   histórica de "no imprimir antes de confirmar" (el número de factura sigue sin apartarse hasta el POST
   real — el estado "Vendido" solo aparece DESPUÉS de que la venta ya existe en la base, con su NCF/número
   reales).
+
+### Seguros · Clientes — bug real: "Inhabilitar" se reactivaba solo al editar (2-ago-2026, v55.3)
+El dueño: *"Con mi sistema de seguro con relación a factura y cobros y pendientes audita presiento que
+hay algo mal."* Sin síntoma concreto — investigación de causa raíz contra la base real (109 clientes,
+300 facturas, 184 cobros), no contra supuestos.
+- **Lo que se auditó y estaba SANO (confirmado, no tocado):** el modelo de deuda (`deuda_total`/`pagado`/
+  `deuda_anterior`/`pendTot`) cuadra en los 109 clientes; `resyncEstadoFacturas` (el arreglo de la v49.95
+  para el estado cacheado de las facturas) sigue funcionando — 0 facturas con el badge desactualizado,
+  replicado con una ventana `SUM(...) OVER (PARTITION BY cliente_id ORDER BY periodo ROWS BETWEEN
+  UNBOUNDED PRECEDING AND CURRENT ROW)` en SQL puro contra las 300 facturas reales.
+- **HALLAZGO REAL — un cliente inhabilitado se reactivaba SOLO, en silencio, al editarlo por cualquier
+  motivo ajeno.** `clientes` tiene DOS campos de estado independientes: `activo` (booleano, la fuente de
+  verdad real que usa toda la UI — badge, filtro de pestañas, `getEst()`) y `estado_cliente` (texto:
+  ACTIVO/EN_PROCESO/SUSPENDIDO/CANCELADO, el desplegable "Estado del cliente" del formulario). El botón
+  **"Inhabilitar"** (`confirmarInhab()`) y **"Reactivar"** (`reactivar()`) solo tocaban `activo` — nunca
+  `estado_cliente`. Pero `guardarCli()` (el guardado GENERAL del formulario de editar cliente) **re-deriva
+  `activo` desde `estado_cliente` en CADA guardado**: `if(estado_cliente==='SUSPENDIDO'||'CANCELADO')
+  activo=false; else activo=true`. Resultado: un cliente inhabilitado por falta de pago, con
+  `estado_cliente` todavía en 'ACTIVO' (nunca se tocó), se reactivaba SOLO la próxima vez que alguien le
+  editara el teléfono, la ARS, o cualquier dato sin relación — **sin ningún aviso, sin diferenciarse en
+  Auditoría de una edición normal**. Confirmado con el historial real (`auditoria`, cruzado por nombre por
+  no tener `cliente_id` poblado en eventos viejos) que el bug **no se había disparado todavía** en ningún
+  cliente — riesgo vivo, no incidente ya ocurrido. Afectaba a los 4 clientes reales hoy inhabilitados por
+  falta de pago (Yelvel Silverio, Vanessa Hiciano, Angelica Maria Santos Martinez, Lino Andres Peña Reyes).
+- **Arreglo — mínimo, sin abstracción nueva** (revisado con `/ponytail-review`: "Lean already. Ship.",
+  se descartó extraer un helper compartido: `confirmarInhab`/`reactivar` divergen de verdad — una limpia
+  `motivo_inhab`, la otra lo pone, y `reactivar` además renueva la póliza vencida): `confirmarInhab()`
+  ahora manda `estado_cliente:'SUSPENDIDO'` junto a `activo:false` en el mismo `PATCH`;
+  `reactivar()` manda `estado_cliente:'ACTIVO'` junto a `activo:true`. Mismo patrón exacto ya usado para
+  `motivo_inhab`/`nota_inhab` en esas mismas líneas.
+- **Corrección de datos, una sola vez (SQL, verificado contra la base en vivo antes de escribir, no de
+  memoria):** los 4 clientes reales con el desfase (`estado_cliente='ACTIVO'` con `activo=false`)
+  actualizados a `estado_cliente='SUSPENDIDO'` — pinneado por id explícito, no por predicado ancho.
+  Confirmado el valor correcto por el propio patrón ya existente en la tabla: los otros clientes
+  inhabilitados por "Falta de pago" (o sin motivo) ya tenían `SUSPENDIDO`; los inhabilitados por
+  "Solicitud del cliente" tenían `CANCELADO` — los 4 corregidos son todos "Falta de pago", así que
+  `SUSPENDIDO` es consistente con el resto de la tabla, no solo con el código. Verificado después:
+  `0` clientes con `activo=false` y `estado_cliente` fuera de (SUSPENDIDO, CANCELADO).
+- Verificado con un harness de Node contra el código real extraído del archivo tras el edit (7/7,
+  incluida la prueba control que reproduce el bug exacto contra el estado real de los 4 clientes antes
+  del fix). `node --check parches.js` limpio (archivo no tocado); los 3 `<script>` de `index.html`
+  (1,423 / 488,791 / 681 caracteres) pasan `new Function()`; `version.json` válido.
+- **Nota aparte, sin tocar (no era el bug, es una operación distinta):** CARMEN ISELSA CABREJA ARIAS
+  aparece en el historial como reactivada manualmente en algún momento y vuelta a inhabilitar después —
+  hoy está sana (`activo=false`, `estado_cliente='SUSPENDIDO'`, sincronizados). No se investigó más a
+  fondo por no ser parte de este bug.
