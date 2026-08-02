@@ -12180,6 +12180,7 @@
             <button type="button" class="nxFP-menuBtn" aria-label="Más opciones de ${esc(p.nombre || '')}" onclick="window.nxPrCobMenu(event,'${p.id}')"><i class="ti ti-dots-vertical"></i></button>
             <div class="nxFP-menuPop" id="prCobMenu_${p.id}">
               <button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','ver')"><i class="ti ti-eye"></i> Ver detalle</button>
+              ${p.cliente_id ? `<button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','cliente')"><i class="ti ti-user"></i> Ver cliente</button>` : ''}
               <button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','editar')"><i class="ti ti-pencil"></i> Editar</button>
               <button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','estado')"><i class="ti ti-printer"></i> Estado de cuenta</button>
               ${p.telefono ? `<button type="button" onclick="window.nxPrCobMenuGo(event,'${p.id}','wa')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>` : ''}
@@ -12205,6 +12206,7 @@
     if (ev) ev.stopPropagation();
     const pop = document.getElementById('prCobMenu_' + id); if (pop) pop.classList.remove('open');
     if (accion === 'ver') window.nxPrestamoVer(id);
+    else if (accion === 'cliente') { const p = _prestamos.find(x => String(x.id) === String(id)); if (p && p.cliente_id) window.nxPrHistCredito(p.cliente_id); }
     else if (accion === 'editar') window.nxPrestamoEditar(id);
     else if (accion === 'estado') window.nxPrestamoEstadoCuenta(id);
     else if (accion === 'wa') window.nxPrestamoWA(id);
@@ -13704,7 +13706,28 @@
     } else if (_hcTab === 'gestiones') {
       mainTab = `<div class="hc-card"><div class="hc-ct">Gestiones de cobro</div><div class="hc-empty">Este módulo aún no registra gestiones de cobro (llamadas, promesas de pago, visitas). Es una función que se puede agregar si la necesitas.</div></div>`;
     } else if (_hcTab === 'documentos') {
-      mainTab = `<div class="hc-card"><div class="hc-ct">Documentos</div><div class="hc-empty">Este módulo aún no guarda documentos del cliente (no hay almacenamiento de archivos configurado). Es una función que se puede agregar si la necesitas.</div></div>`;
+      // Real (Storage ya existe — ver v49.40): agrupa los documentos de CADA préstamo del
+      // cliente, reusando window.nxPrestamoDocs(id) para administrar (sin duplicar subida/
+      // borrado/URL firmada — spec ChatGPT "mover documentos a la ficha del cliente").
+      const docBlock = loans.map(p => {
+        const info = prEstadoInfo(p), col = info.key === 'pagado' ? '#059669' : info.key === 'vencido' ? '#dc2626' : '#2563eb';
+        const docs = Array.isArray(p.documentos) ? p.documentos : [];
+        const irADocs = `document.getElementById('nxPrHc').remove();window.nxPrestamoDocs('${p.id}')`;
+        const nombres = docs.slice(0, 3).map(d => { const t = DOC_TIPOS.find(t => t.k === d.tipo) || {}; return esc(d.nombre || t.lbl || 'Documento'); });
+        const lista = docs.length
+          ? `<div>${nombres.map(n => `<div style="font-size:11.5px;color:#475569;padding:3px 0"><i class="ti ti-circle-check" style="color:#059669"></i> ${n}</div>`).join('')}${docs.length > 3 ? `<div class="hc-verall" style="text-align:left;padding:4px 0" onclick="${irADocs}" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">+${docs.length - 3} más — Ver todos</div>` : ''}</div>`
+          : `<div style="font-size:11px;color:#94a3b8;padding:2px 0">Sin documentos todavía.</div>`;
+        return `<div class="hc-card" style="margin-bottom:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
+            <a class="hc-ref" onclick="document.getElementById('nxPrHc').remove();window.nxPrestamoVer('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">${esc(prRef(p))}</a>
+            <span class="hc-est-b" style="color:${col};background:${col}14">${info.label}</span>
+          </div>
+          <div style="font-size:10.5px;color:#94a3b8;margin-bottom:8px">${esc(p.fecha_prestamo || '—')} · Saldo ${fmt(saldoDe(p))} · ${docs.length} ${docs.length === 1 ? 'documento' : 'documentos'}</div>
+          ${lista}
+          <button class="btn bsm bghost" type="button" style="width:100%;margin-top:8px" onclick="${irADocs}"><i class="ti ti-folder" style="color:#6d28d9"></i> Administrar documentos</button>
+        </div>`;
+      }).join('');
+      mainTab = loans.length ? docBlock : '<div class="hc-card"><div class="hc-ct">Documentos</div><div class="hc-empty">Este cliente todavía no tiene préstamos.</div></div>';
     }
     // ── Panel derecho: Recomendación ──
     const caps = loans.map(p => Number(p.capital || 0)).filter(x => x > 0), maxCap = caps.length ? Math.max.apply(null, caps) : 0;
@@ -15191,8 +15214,9 @@
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `
       <div class="modal nxPrForm" style="max-width:440px;max-height:86vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-folder"></i> Documentos — ${esc((p.nombre || '').split(' ')[0] || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrDocs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="mt"><span><i class="ti ti-folder"></i> Documentos del préstamo</span><button class="nxBack" type="button" onclick="document.getElementById('nxPrDocs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+          <div style="font-size:11.5px;color:#64748b;font-weight:700;margin-bottom:8px">${esc(p.nombre || '')} · ${esc(prRef(p))}</div>
           ${avisoExp}
           <div style="font-size:11px;color:#475569;margin-bottom:8px">Sube cédula, contrato firmado, garantías u otros archivos (imágenes o PDF).</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${tiles}</div>

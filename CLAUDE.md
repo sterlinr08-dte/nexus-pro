@@ -11491,3 +11491,76 @@ excepciones", ya aplicada en las 2 rondas anteriores de esta misma pantalla).
   `index.html` pasan `new Function()`; `version.json` válido.
 - **Publicado por rama propia** (`claude/cobranza-v3-formato` → PR → fusionado con las
   herramientas MCP de GitHub), no directo a `main`.
+
+### Financiamiento — los documentos del cliente ya se ven desde su propia ficha (2-ago-2026, v56.7)
+El dueño mandó un cuarto spec de ChatGPT (`chatgpt/visual-draft`,
+`docs/visual-drafts/financiamiento/MOVER_DOCUMENTOS_COBRANZA_A_CLIENTE.md`), con reglas explícitas:
+no duplicar la subida/borrado/URL firmada de `nxPrestamoDocs` (el gestor de documentos POR
+PRÉSTAMO, ya existente y probado), no inventar "Registrar promesa de pago" si no hay tabla detrás.
+- **El hueco real, confirmado antes de tocar código:** el Historial Crediticio
+  (`nxPrHistCredito`/`hcRender`, 6 pestañas — Resumen/Préstamos/Pagos/Evaluaciones/Gestiones/
+  Documentos) tenía su pestaña "Documentos" con un placeholder honesto de una versión anterior a
+  que se confirmara que Supabase Storage existe de verdad (ver "SUPABASE STORAGE — SÍ EXISTE",
+  v49.40 más arriba en este archivo): *"Este módulo aún no guarda documentos del cliente (no hay
+  almacenamiento de archivos configurado)"* — un texto que ya no era cierto (`pos_reparaciones`/
+  `prestamos.documentos` sí guardan archivos por préstamo desde hace tiempo), solo que nunca se
+  había juntado en la vista del CLIENTE (solo existía por PRÉSTAMO, `nxPrestamoDocs`).
+- **3 piezas reales, cero tabla/columna nueva, cero lógica de subida duplicada:**
+  1. **Pestaña "Documentos" real**: por cada préstamo del cliente (`loans`, ya cargado por
+     `hcRender`), una tarjeta con referencia (`prRef`)+badge de estado (mismo `prEstadoInfo` de
+     siempre), fecha+saldo, los primeros 3 documentos por nombre (`DOC_TIPOS` para la etiqueta si
+     el documento no trae la suya), "+N más — Ver todos" si hay más de 3, y un botón **"Administrar
+     documentos"** que llama a `window.nxPrestamoDocs(p.id)` — la MISMA función que ya existía, sin
+     ninguna copia de su lógica de subida/borrado/URL firmada. Un cliente sin préstamos muestra un
+     estado vacío honesto ("Este cliente todavía no tiene préstamos"), no una lista rota.
+  2. **El header de `nxPrestamoDocs` ya no confundía de quién eran los documentos**: antes decía
+     `Documentos — [primer nombre]` (sin decir de qué préstamo, un problema real si el cliente tiene
+     varios). Ahora dice **"Documentos del préstamo"** + una línea con el nombre completo del
+     cliente y la referencia (`PR-XXXXXX`) del préstamo — deja claro de inmediato cuál de los
+     préstamos del cliente se está viendo.
+  3. **"Ver cliente" en el menú de 3 puntos de Cobranza** (`prCobranzaFilaHTML`/
+     `window.nxPrCobMenuGo`, el módulo de la v56.4-56.6): salta directo a `nxPrHistCredito(cliente_id)`
+     — solo si el préstamo tiene `cliente_id` (uno tecleado a mano, sin cliente enlazado, NO muestra
+     esta opción, evitando un botón que no llevaría a ningún lado).
+- **Deliberadamente NO implementado, del propio mockup — "Registrar promesa de pago":** este
+  módulo (`prestamos`/`prestamo_pagos`/`prestamos_config`/`prestamo_clientes`) no tiene ninguna
+  tabla ni campo de promesas de pago — agregar el botón sin nada real detrás habría sido fingir
+  una función que no existe, mismo criterio de siempre en este proyecto.
+- **BUG REAL DE MÉTODO encontrado y corregido durante la propia verificación (nunca fue un problema
+  de producción — era del harness de pruebas, no del código real):** la primera ronda de pruebas
+  midió un desborde horizontal de ~133px, **IDÉNTICO en las 4 pestañas del Historial Crediticio**
+  (Resumen/Préstamos/Pagos/Documentos), lo cual era la pista de que no era un bug real de la
+  pestaña nueva — un bug real de layout varía con el contenido de cada pestaña, uno constante en
+  las 4 apunta a algo estructural que no cambia entre ellas. Investigado: **`window.nxFPEnsureCSS`**
+  (el motor que inyecta TODO el CSS de `.hc-2col`/`.hc-main`/`.hc-tblwrap`/`.hc-kpis`/etc. — el
+  mismo motor documentado en v48.17/v49.11 como "compartido con Cuotas del POS") **vive en OTRO
+  módulo de `parches.js`**, físicamente separado del módulo de Financiamiento (`nxAbrirPrestamos`,
+  que solo lo LLAMA, nunca lo DEFINE). El harness solo extraía y cargaba el módulo de
+  Financiamiento — `window.nxFPEnsureCSS` nunca existía de verdad ahí, así que se había estado
+  probando (en esta ronda y muy probablemente en rondas anteriores de Cobranza) contra HTML **sin
+  ningún CSS real aplicado** — ni la media query `minmax(0,1fr)` de `.hc-2col`, ni el colapso a
+  tarjeta en móvil, nada. Arreglado extrayendo la función completa (369 líneas, autocontenida — solo
+  usa `document.getElementById`/`createElement`/`head.appendChild`, sin depender de nada más del
+  módulo que la define) y cargándola en el navegador de prueba ANTES del módulo de Financiamiento.
+  Con el CSS real aplicado, el desborde bajó a **0px exacto en 390px y 1440px** en las 4 pestañas.
+  **Lección para la próxima vez que se pruebe cualquier pantalla de este módulo: cargar siempre
+  `window.nxFPEnsureCSS` real (extraída del archivo), nunca un `stub` vacío** — un stub silencioso
+  hace que el `TypeError: not a function` desaparezca pero deja el CSS entero sin aplicar, lo que
+  puede esconder o inventar bugs de layout que no tienen nada que ver con el cambio que se está
+  probando.
+- **Verificado con Playwright, código real extraído del archivo** (arranque de módulo por ancla de
+  texto único —`window.__NX_PRESTAMOS__`→`})();`—, no por número de línea; confirmado el archivo
+  extraído corresponde exactamente a `parches.js:11732-15259`): **22 comprobaciones** — el módulo
+  carga sin errores de JS, Cobranza muestra "Ver cliente" solo en los préstamos con `cliente_id`,
+  tocarlo abre el Historial Crediticio del cliente correcto, la pestaña Documentos muestra 2
+  tarjetas (una por préstamo) con el conteo/nombres/"Ver todos" correctos y el estado vacío honesto
+  en el préstamo sin documentos, las pestañas Resumen y Préstamos siguen funcionando sin regresión,
+  sin desborde horizontal en 390px ni 1440px, el botón "Administrar documentos" llama a
+  `nxPrestamoDocs('p1')` con el id correcto, el modal muestra el título y subtítulo nuevos con los 4
+  archivos reales del préstamo correcto, y navegar a "Administrar documentos" cierra el Historial de
+  fondo — **mismo patrón ya establecido en esta pantalla** para "Ver detalle"/"Ver cliente" (no es
+  un bug, es consistencia con lo que ya existía). 0 errores de consola en todo el recorrido. `node
+  --check parches.js` limpio; los 3 `<script>` de `index.html` (1,423 / 493,343 / 681 caracteres)
+  pasan `new Function()`; `version.json` válido.
+- **Publicado por rama propia** (`claude/mover-documentos-a-cliente` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
