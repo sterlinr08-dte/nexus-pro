@@ -1,7 +1,12 @@
 {
-  "version": "55.9",
+  "version": "56.0",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.0",
+      "fecha": "2026-08-02",
+      "texto": "ARREGLADO (Factura y Prefactura en la computadora): el documento se estiraba de borde a borde. En una pantalla de 1920px la columna de la descripción medía 1,338px, o sea un océano de blanco entre el nombre del artículo y su precio — había que pasear el ojo de una punta a la otra para leer una línea. Ahora el documento tiene un ancho de lectura fijo (1,080px) y va CENTRADO en la pantalla, como una factura de verdad — mismo criterio que ya se usa en \"Nueva compra\" y en el formulario de préstamo. El bloque de Subtotal/Descuento/ITBIS/Total pasó a ser una tarjeta con su propio fondo (antes eran números sueltos flotando en la esquina, lejos de la tabla) y se le dio un poco más de ancho. En el celular NO cambia nada — sigue exactamente igual que antes. Verificado midiendo el ancho real de cada bloque en 1920, 1440, 1280 y 390px, con capturas antes/después de Factura y de Prefactura."
+    },
     {
       "v": "55.9",
       "fecha": "2026-08-02",
