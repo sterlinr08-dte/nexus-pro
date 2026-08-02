@@ -1,7 +1,12 @@
 {
-  "version": "55.5",
+  "version": "55.6",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "55.6",
+      "fecha": "2026-08-02",
+      "texto": "NUEVO (NPGS §5 — Tanda A): migradas al patrón de ventana \"lupa + buscador\" 4 buscadores del núcleo de Seguros que seguían siendo una barra fija en pantalla — Pólizas (`polQ`), Cobros (`cobQ`), Historial de pagos (`pgBuscar`) y Auditoría (`auditFiltroUsr`). Mismo criterio ya probado con Clientes: el campo original queda oculto (`type=\"hidden\"`) para que la función de filtrado no cambie ni una línea, y se agrega una lupa que abre la ventana compartida (Buscar/Recientes/Favoritos/Resultados). De paso, arreglado un desperdicio real: el buscador de Historial de pagos disparaba una recarga completa del servidor en cada tecla (igual que el rango de fechas) en vez de filtrar en memoria como ya hacían sus filtros vecinos (empresa/agente/método/banco) — ahora usa el mismo camino liviano. Los botones \"Limpiar filtros\" de Pagos y Auditoría también repintan la lupa para que no quede un chip de búsqueda pegado tras limpiar. Verificado con 34 pruebas contra el código real extraído del archivo (Playwright, sin reconstrucción) y captura visual en 390px/1280px sin desbordes. Quedan ~24 buscadores por migrar (POS, Financiamiento, Rifas, Consultorio, Vehículos) para tandas siguientes — el buscador de Facturas en modo \"vista rueda\" (experimental, solo admin) se deja tal cual a propósito, es una excepción de diseño ya documentada (v51.3), no un pendiente."
+    },
     {
       "v": "55.5",
       "fecha": "2026-08-02",
