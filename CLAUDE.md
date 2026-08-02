@@ -11326,3 +11326,98 @@ reales encontrados en esa rama. Eligió **"Cobranza V2 (Financiamiento)"**
   `version.json` válido.
 - **Publicado por rama propia** (`claude/cobranza-v2-financiamiento` → PR → fusionado con las
   herramientas MCP de GitHub), no directo a `main` — como pedía explícitamente el spec.
+
+### Financiamiento — Cobranza V2.1: bug de fondo en la clasificación + mejoras operativas (2-ago-2026, v56.5)
+El dueño mandó un segundo spec de ChatGPT (`docs/visual-drafts/financiamiento/
+COBRANZA_V2_1_MEJORAS_OPERATIVAS.md`), esta vez con reglas explícitas: **no romper ninguna
+funcionalidad existente, no duplicar funciones, no crear tablas nuevas en Supabase, no usar
+observadores DOM, no usar temporizadores, mantener el namespace `.nxFP`, mantener compatibilidad
+móvil y escritorio, ejecutar las pruebas necesarias antes de finalizar.** Pidió primero una
+**auditoría de solo lectura** ("No implementes cambios todavía... entrega ✅ Correcto / ⚠️
+Mejorable / ❌ Errores encontrados / 💡 Recomendaciones. No publiques todavía") — se hizo, sin
+tocar código, y el dueño aprobó implementar todo lo marcado ❌/💡 con un **"Si"**, excluyendo (por
+recomendación propia de la auditoría) la migración `event.keyCode`→`event.key` y cualquier cambio
+a `esVencido`/`prDiasVencido`/`prMoraDe`/la lista general de préstamos.
+- **❌ EL HALLAZGO GRAVE — la clasificación de Cobranza tenía un bug de fondo, no cosmético.**
+  `prPrioridadCobranza(p)` (v56.4) calculaba `diasHasta(prProximoPago(p))` pero **solo reconocía
+  el rango `[0,7]`** ("por vencer") — cualquier `d` NEGATIVO (préstamo ya vencido) caía sin ninguna
+  rama que lo atrapara y terminaba en el `else` final, que era `'aldia'`. Un préstamo de línea de
+  crédito o de cuotas cuya PRIMERA cuota lleva meses vencida, a mitad de su plazo total (no cerca
+  de su fecha límite), se mostraba como **"Al día"** — exactamente lo contrario de lo que Cobranza
+  existe para mostrar. Reescrito: `d<0` ahora sí se atrapa (`dv=-d; dv>30?'critico':dv>=8?'alta':
+  'morareciente'`), agregando una **5ta categoría real, "Mora reciente"** (1-7 días vencido, ámbar,
+  entre "Alta prioridad" y "Por vencer") que antes no existía — antes esos préstamos recién
+  atrasados se perdían dentro de "alta" o, peor, dentro de "al día". Cero cambios a
+  `esVencido()`/`prDiasVencido()`/`prMoraDe()` (que siguen sirviendo a la lista general, la mora y
+  los reportes) — el arreglo es exclusivo de la clasificación derivada de esta pantalla.
+- **❌ El modelo se recalculaba ~6 veces por entrada a la pantalla** (KPIs, pestañas, resumen
+  lateral, tabla, paginación y exportación llamaban cada uno a `prPrioridadCobranza`/`amortizar`
+  por su cuenta). Un caché único `_prCobModelo` (calculado una sola vez en `prCobranzaMainHTML`,
+  reusado por todo lo demás) lo resuelve sin tocar la forma en que cada pieza consume el dato.
+- **💡 "Exportar" exportaba TODA la cartera, ignorando el filtro/búsqueda activos** —
+  `window.nxPrCobranzaExportar()` ahora lee de `prCobranzaListaFiltrada()`, no de `_prestamos`
+  completo.
+- **💡 Sin acción primaria en la fila** — había que abrir el detalle completo del préstamo para
+  registrar un cobro. `window.nxPrCobPagar(id)` (nueva) reusa **el mismo modal de siempre**
+  (`nxPrestamoVer`, ya existente, cero modal nuevo) y enfoca su campo real de monto
+  (`#prPagoMonto`) — un solo `appendChild` síncrono, sin `setTimeout` (cumple "no usar
+  temporizadores"). Botón dual: "Registrar pago" en escritorio, "Cobrar" en móvil (mismo `<button>`,
+  dos `<span>` que alternan por CSS con `@media`, sin JS de por medio).
+- **💡 Menú "..." por fila** (`window.nxPrCobMenu`/`nxPrCobMenuGo`, reusa `nxPrestamoVer`/
+  `Editar`/`EstadoCuenta`/`WA` — cero funciones nuevas de acción, solo el menú que las agrupa).
+  Requirió una clase nueva `.nxFP-tMenuWrap{position:relative}` — a diferencia de
+  `.nxFP-cardMenuWrap` (pensada para flotar sobre una tarjeta con `position:absolute`), el menú de
+  Cobranza vive dentro de una `<td>` sin ningún ancestro posicionado, así que necesita su propio
+  contexto de posicionamiento o el popup se ancla al viewport en vez de al botón.
+- **💡 Columna nueva "Último pago"** (`.nxFP-tUlt`, cuándo y cuánto pagó por última vez, leído de
+  `_pagosByPrestamo` ya cargado — cero consulta nueva).
+- **💡 Buscador por nombre/cédula** con el motor compartido NPGS §5 (`nxBuscaFiltroHTML`), mismo
+  patrón que el resto del sistema — no un campo de búsqueda nuevo.
+- **BUG REAL DE CSS, encontrado DURANTE la propia verificación (nunca llegó a producción con este
+  defecto):** entre ~901px y ~1150px (una laptop de 13", una tablet en horizontal — zona que el
+  barrido de anchos original de Cobranza V2 no cubría) la página entera desbordaba horizontalmente.
+  Causa: `.nxFP-cobGrid{grid-template-columns:260px 1fr}` — un track `1fr` puro tiene un mínimo
+  implícito de `auto` (el ancho mínimo de su contenido), así que la columna que aloja la tabla
+  (~830px de ancho intrínseco) no podía encogerse por debajo de ese mínimo aunque el viewport fuera
+  más angosto — el `overflow-x:auto` de `.nxFP-tblWrap` nunca llegaba a activarse porque su propio
+  contenedor nunca se encogía lo suficiente para necesitarlo. **Mismo bug de "grid con
+  `min-width:auto`" ya documentado varias veces en este archivo** (Historial crediticio v49.19,
+  detalle de préstamo v49.38, entre otros). Arreglo de una sola propiedad:
+  `grid-template-columns:260px minmax(0,1fr)` — con el mínimo del track puesto en `0`, la columna sí
+  se encoge y `.nxFP-tblWrap` retoma su scroll horizontal PROPIO (contenido, no de página) para las
+  anchuras donde la tabla de 8 columnas no cabe cómoda. Verificado en 3 capas: `document.
+  documentElement.scrollWidth===clientWidth` (0 en 1024/1100/901px, antes 84/207px de desborde real
+  de página) Y por separado que `.nxFP-tblWrap` sí sigue conteniendo su propio scroll interno
+  (`wrap.scrollWidth-wrap.clientWidth=84` en 1024px — comportamiento correcto y ya establecido en
+  el sistema, no un defecto: la tabla de 8 columnas simplemente no cabe cómoda en 1024px sin
+  scroll propio, igual que `.tw` en Seguros).
+- **2 arreglos de wiring, chicos pero reales, encontrados auditando `renderLista(view)`:** (1)
+  entrar/salir de la vista de Cobranza no reiniciaba `_prCobTab`/`_prCobQ`/`_prCobPage` — quedaban
+  pegados de una visita anterior; ahora se resetean junto con `_prPage`/`_prQuery` (mismo punto
+  donde ya se reseteaban esos otros dos). (2) `pintarLupaPrCob()` se llamaba sin ningún `try/catch`
+  — si el motor `nxBuscaFiltroHTML` fallara por cualquier razón, rompería silenciosamente el resto
+  del render sin dejar rastro; ahora está envuelta como sus pares (`pintarLupaPrCli`/`pintarLupaPr`)
+  ya lo hacían, con `console.error` explícito.
+- **Verificado, dos capas, código real extraído del archivo por contenido (no una reconstrucción a
+  mano):** **59 comprobaciones en Node** (`vm`, reloj congelado en `'2026-08-02'`) — incluido el
+  caso EXACTO del bug de fondo (préstamo vencido 45/60 días antes → `'critico'`, no `'aldia'`),
+  los 5 niveles con sus 2 límites (7↔8 días, 30↔31 días), el orden de la lista, el modelo cacheado,
+  la exportación filtrada — 59/59. **49 comprobaciones en Playwright** (Chromium real, servidor
+  HTTP local): estructura DOM, los 5 KPIs con montos exactos calculados a mano contra el seed, las
+  6 pestañas con su contador real, los 5 colores de badge (incluido el nuevo "Mora reciente",
+  medido por `rgb()` real vía `getComputedStyle`, no a ojo), el botón primario (texto dual
+  desktop/móvil, abre el modal real, enfoca el campo real), el menú de 3 puntos, el buscador real
+  con su debounce de 200ms, **el barrido de anchos ampliado a 1600/1280/1100/1024/901/900/760/390px
+  a propósito** (para que la "zona gris" 901-1150px que dejó pasar el bug quede cubierta para
+  siempre), el `grid-template-columns` correcto en cada zona, el compound-class `.nxFP-tbl.
+  nxFP-cobTbl` en móvil sin afectar la lista general — 49/49, 0 errores de consola. `node --check
+  parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`; `version.json`
+  válido.
+- **Deliberadamente NO tocado, por decisión explícita del dueño (recomendación de la propia
+  auditoría, aceptada tal cual):** la migración `event.keyCode`→`event.key` en el resto del
+  sistema (cambio de mayor alcance, sin relación directa con Cobranza) y cualquier ajuste a
+  `esVencido`/`prDiasVencido`/`prMoraDe`/la lista general de préstamos — ya estaban sanos, y
+  tocarlos habría sido exactamente el tipo de riesgo que las reglas del propio spec pedían evitar
+  ("no romper ninguna funcionalidad existente").
+- **Publicado por rama propia** (`claude/cobranza-v2-1-mejoras` → PR → fusionado con las
+  herramientas MCP de GitHub), no directo a `main`.
