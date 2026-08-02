@@ -10933,3 +10933,68 @@ siempre visible en vez de la lupa: **Pólizas** (`polQ`), **Cobros** (`cobQ`), *
   tocado); los 3 `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
 - **Pendiente:** Tandas B (POS, ~15 buscadores), C (Financiamiento, ~4), D (Rifas 2 + Consultorio 1 +
   Vehículos 1) — mismo patrón, cada tanda se construye y verifica por separado antes de publicar.
+
+### NPGS §5 — Tanda B: Notas de crédito, Historial de ventas, Prefacturas, Inventario, Reparaciones (2-ago-2026, v55.7)
+Continuación de la Tanda A (Pólizas/Cobros/Historial de pagos/Auditoría, arriba). El dueño confirmó
+seguir con **"Si"** al ofrecer avanzar sobre el POS.
+- **El inventario real no era ~15 — auditado antes de tocar código:** se leyeron los 15 sitios crudos
+  con `posBuscador(` en `parches.js` y se encontró que **9 de los 15 ya viven DENTRO de su propia
+  ventana de selección** (elegir cliente en Facturar/Cobrar, elegir proveedor/empleado en Compras,
+  elegir artículo en la ventanilla `nxProdPicker`, elegir IMEI en `nxFacSerial`, el buscador de nivel de
+  precio dentro de `abrirProd`, el buscador de artículo dentro de `nxCompraArtBuscar`, y los 2 modales
+  rápidos `nxPrefLista`/`nxFacHist`) — meterlos en OTRA ventana habría sido un paso atrás, no una mejora
+  (mismo criterio ya establecido con `ModalBusquedaBase`: un campo de búsqueda que ya vive dentro de una
+  ventana abierta cumple el espíritu del §5, no hace falta anidarlo). El alcance real era **6 candidatos**:
+  5 migrados aquí (Notas de crédito, Historial de ventas, Prefacturas historial, Inventario/Productos,
+  Reparaciones) + 1 dejado a propósito sin tocar (**Vender**, `posBuscar` — su lupa hoy abre
+  `nxProdPicker('vender')`, el catálogo completo con precio/existencia/IMEI, en vez de solo filtrar; es
+  una decisión de diseño real —¿se quiere seguir abriendo el catálogo, o cambiar a filtrar en línea como
+  las demás?— no algo que se decida solo, se le comunica al dueño en el changelog para que lo confirme).
+  `finQ` (Financiamiento) queda para una futura Tanda C, sin investigar más en esta ronda.
+- **Mismo motor compartido de la Tanda A (`nxBuscaFiltroHTML`/`nxBuscaFiltroAbrir`), aplicado con el
+  mismo criterio de riesgo mínimo:** cada función de filtro real (`nxNCBuscar`, `nxPosVentasBuscar`,
+  `nxPHBuscar`, `nxProdTablaBuscar`, `nxRepBuscar`) se llama EXACTAMENTE igual que antes — cero cambios
+  en la lógica de filtrado de ninguna de las 5. Un `<span id="XQLupa"></span>` reemplaza la barra vieja
+  `posBuscador({...})`; una función nueva `pintarLupaX()` por pantalla llena ese `<span>` con
+  `nxBuscaFiltroHTML({id, titulo, placeholder, value, onterm})`, cuyo `onterm` llama a la función de
+  filtro real de siempre.
+  - **Diferencia real con la Tanda A, resuelta con una decisión de diseño explícita:** `nbfContar` (el
+    contador de "N resultados" del motor compartido) sabe excluir un `<tr>` oculto por
+    `offsetParent===null` para elementos que NO son `<tr>`, pero **no** para los que sí lo son —
+    Inventario/Productos y Reparaciones filtran ocultando filas/tarjetas con `display:none` (no
+    reconstruyen la lista), así que pasarles `cont:` habría mostrado un número FALSO (el total, no lo
+    filtrado). Se dejó sin `cont:` en esas 2 — el componente cae solo a su mensaje honesto ("Buscando
+    '...'") en vez de mentir con un conteo — sin tocar el motor compartido en sí (usado con éxito en
+    otras 4+ pantallas, riesgoso modificarlo para este caso puntual).
+- **BUG REAL encontrado y corregido ANTES de publicar (no llegó a producción):** el primer intento
+  llamaba a `pintarLupaX()` DESDE ADENTRO de cada función que arma la pantalla (mismo patrón que ya
+  funcionaba en la Tanda A) — pero las pantallas de la Tanda A tienen su barra de búsqueda escrita a
+  mano en el HTML estático de `index.html` desde el arranque, mientras que estas 5 son funciones SPA que
+  CONSTRUYEN Y DEVUELVEN el HTML completo como un string — el `<span id="XQLupa">` no existe todavía en
+  el DOM mientras la propia función que lo genera sigue corriendo. La falla era completamente silenciosa
+  (`if(!box)return;`), y solo salió a la luz al cronometrar el clic de Playwright contra el botón de la
+  lupa, que nunca aparecía. **Arreglo de raíz:** investigado el flujo real de `renderPOS(view)` — el
+  patrón correcto, ya usado y documentado desde v48.98 para Compras, es: `view.innerHTML =
+  shellTienda(...)` primero, y SOLO DESPUÉS correr los hooks por pestaña (`pintarCarrito()` para Vender,
+  `pintarFactura()` para Factura/Prefactura). Se movieron los 5 `pintarLupaX()` a ese mismo punto, como
+  hooks nuevos gateados por `_posTab` (`'notascredito'`/`'prefhist'`/`'productos'`/`'reparaciones'`/
+  `'ventas'` — este último confirmado con `grep` como el valor real que usa el botón de navegación, no
+  supuesto), y se quitaron las llamadas internas redundantes de dentro de cada función de render.
+- **Verificado con Playwright, código real extraído del archivo por contenido** (no una reconstrucción —
+  se construyó un extractor nuevo con un helper `extractVarFn` para las 5 funciones reales declaradas
+  como `window.NAME = function(...)`, junto con las 5 pantallas y sus ~35 dependencias reales,
+  descubiertas iterativamente por los `ReferenceError` reales que fue tirando el harness —
+  `ncFiltradas`/`hoy`/`kpiPf`/`ventasFiltradas`/`claveParse`, cada una agregada solo tras confirmar que
+  el error venía de código de negocio real, no de un stub faltante): **31 comprobaciones** — en las 5
+  pantallas: la barra vieja ya no existe, la lupa abre la ventana compartida, escribir en vivo llama a
+  la función de filtro real (contador de invocaciones, no solo "algo pasó") y filtra de verdad (3→1
+  fila/tarjeta en los 5 casos), el contador de resultados dice el número correcto en las 3 que sí lo
+  llevan y cae al mensaje honesto en las 2 que no, aceptar cierra la ventana y deja el chip visible con
+  el término, y en Notas de crédito limpiar el chip devuelve las 3 filas. Capturas de pantalla en 390px
+  y 1280px (las 5 pantallas apiladas) y 2 capturas más con la ventana de Reparaciones abierta —
+  revisadas visualmente, sin desbordes horizontales ni roturas de layout, datos de prueba correctos.
+  `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** confirmar con el dueño qué hacer con `posBuscar` (Vender) — mantener el catálogo
+  completo actual o migrarlo a filtro en línea — y las Tandas C (Financiamiento, `finQ` +
+  `nxPrElegirCliente`) y D (Rifas/Consultorio/Vehículos), mismo patrón, cada una en su propia ronda.

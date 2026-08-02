@@ -16316,6 +16316,13 @@
     if (_posTab === 'factura' || _posTab === 'prefactura') pintarFactura();
     // Pantalla completa de "Nueva compra": activar campos de dinero + pintar la lista de artículos
     if (_posTab === 'compras' && _compraVista === 'nueva') { try { scanMoney(view); } catch (e) {} try { pintarCompraItems(); } catch (e) {} try { compBarraSync(); } catch (e) {} }
+    // NPGS §5: pintar la lupa colapsada DESPUÉS de inyectar el HTML — el <span> placeholder
+    // recién existe en el DOM en este punto, no dentro de la función que arma el string.
+    if (_posTab === 'notascredito') try { pintarLupaNC(); } catch (e) {}
+    if (_posTab === 'prefhist') try { pintarLupaPH(); } catch (e) {}
+    if (_posTab === 'productos') try { pintarLupaProd(); } catch (e) {}
+    if (_posTab === 'reparaciones') try { pintarLupaRep(); } catch (e) {}
+    if (_posTab === 'ventas') try { pintarLupaHist(); } catch (e) {}
   }
 
   // ── Envoltorio del POS independiente para tiendas: barra lateral índigo + área principal ──
@@ -18764,6 +18771,19 @@
       return Math.abs(v - Number(p.precio || 0)) > 0.5 ? v : 0;
     } catch (e) { return 0; }
   }
+  // NPGS §5: lupa colapsada. nxProdTablaBuscar oculta filas con display:none (no reconstruye
+  // la tabla) — el contador compartido de "N resultados" no distingue filas ocultas de un
+  // <tr>, así que NO se pasa cont: (mostraría el total, no lo filtrado); cae al "Buscando…"
+  // honesto que ya trae el componente en vez de un número falso.
+  function pintarLupaProd() {
+    const box = document.getElementById('prodQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'prodQ', label: 'Buscar', titulo: 'Buscar artículo',
+      placeholder: 'Nombre, código o marca…',
+      onterm: function (v) { window.nxProdTablaBuscar(v); }
+    });
+  }
   function renderProductos() {
     const esBajo = p => p.tipo !== 'servicio' && Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0) && Number(p.stock_min || 0) > 0;
     const esSin = p => p.tipo !== 'servicio' && Number(p.stock || 0) <= 0;
@@ -18791,7 +18811,7 @@
         <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="5" style="text-align:center;padding:24px;color:#475569;font-size:12px">${_prods.length ? 'Nada con este filtro.' : 'Sin productos. Toca "Nuevo" para agregar.'}</td></tr>`;
-    return `<div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar producto por nombre, código o marca…', oninput: 'window.nxProdTablaBuscar(this.value)' })}</div>
+    return `<div style="margin-bottom:8px"><span id="prodQLupa"></span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosCategorias()"><i class="ti ti-tags"></i> Categorías</button>
         <button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProd()"><i class="ti ti-plus"></i> Nuevo producto</button>
@@ -20528,11 +20548,23 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       </tr>`;
     }).join('');
   }
+  // NPGS §5: lupa colapsada que abre la ventana compartida (Buscar/Recientes/Favoritos/Resultados)
+  // en vez de la barra fija. pintarNC() ya reconstruye SOLO #ncBody, así que onterm reusa
+  // exactamente lo que nxNCBuscar ya hacía — cero cambio de lógica de filtrado.
+  function pintarLupaNC() {
+    const box = document.getElementById('ncQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'ncQ', label: 'Buscar', titulo: 'Buscar nota de crédito', cont: 'ncBody',
+      placeholder: 'No., NCF o cliente…', value: _ncQ,
+      onterm: function (v) { window.nxNCBuscar(v); }
+    });
+  }
   function renderNotasCredito() {
     nxPfEnsureCSS();
     return `<div class="nxPf">
       <div class="toolbar2">
-        <div style="flex:1;min-width:200px">${posBuscador({ id: 'ncQ', value: _ncQ, placeholder: 'Buscar por No., NCF o cliente…', oninput: 'window.nxNCBuscar(this.value)' })}</div>
+        <span id="ncQLupa"></span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="date" id="ncDesde" value="${_ncDesde}" onchange="window.nxNCFecha()" title="Desde" class="datef">
           <input type="date" id="ncHasta" value="${_ncHasta}" onchange="window.nxNCFecha()" title="Hasta" class="datef">
@@ -20556,11 +20588,21 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     nxDevImprimirObj(Object.assign({}, d, { _items: items, _venta: vt }));
   };
 
+  // NPGS §5: mismo patrón que Notas de crédito — pintarHistorial() ya reconstruye SOLO #histBody.
+  function pintarLupaHist() {
+    const box = document.getElementById('histQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'histQ', label: 'Buscar', titulo: 'Buscar venta', cont: 'histBody',
+      placeholder: 'No. de factura o cliente…', value: _histQ,
+      onterm: function (v) { window.nxPosVentasBuscar(v); }
+    });
+  }
   function renderVentas() {
     nxPfEnsureCSS();
     return `<div class="nxPf nxVenWrap">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-        <div style="flex:1;min-width:200px">${posBuscador({ id: 'histQ', value: _histQ, placeholder: 'Buscar por No. de factura o cliente…', oninput: 'window.nxPosVentasBuscar(this.value)' })}</div>
+        <span id="histQLupa"></span>
         <input type="date" id="histDesde" value="${_histDesde}" onchange="window.nxPosHistFecha()" title="Desde" style="height:38px;padding:0 10px;border:1.5px solid var(--pf-line);border-radius:10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt);font-family:inherit">
         <input type="date" id="histHasta" value="${_histHasta}" onchange="window.nxPosHistFecha()" title="Hasta" style="height:38px;padding:0 10px;border:1.5px solid var(--pf-line);border-radius:10px;font-size:12px;background:var(--pf-panel);color:var(--pf-txt);font-family:inherit">
         <button class="btn bsm bghost" type="button" onclick="window.nxPosHistLimpiar()"><i class="ti ti-filter-off"></i> Limpiar</button>
@@ -23801,6 +23843,20 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     const fFmt = String(r.garantia_hasta).slice(0, 10).split('-').reverse().join('/');
     return { vigente: vigente, fecha: fFmt };
   }
+  // NPGS §5: lupa colapsada. Las tarjetas son <button>, no <tr> — nbfContar sí sabe
+  // excluir por offsetParent en ese caso, así que cont: funcionaría bien para UNA sola
+  // columna; pero el kanban reparte las tarjetas en varias columnas por estado sin un
+  // contenedor único que las agrupe todas — se deja sin cont: (mismo "Buscando…" honesto
+  // que Inventario/Productos) en vez de contar solo la primera columna.
+  function pintarLupaRep() {
+    const box = document.getElementById('repQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'repQ', label: 'Buscar', titulo: 'Buscar reparación',
+      placeholder: 'Cliente, equipo, IMEI o número…',
+      onterm: function (v) { window.nxRepBuscar(v); }
+    });
+  }
   function renderReparaciones() {
     nxPfEnsureCSS();
     const activas = _reps.filter(r => r.estado !== 'entregado' && r.estado !== 'cancelado');
@@ -23821,7 +23877,7 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     const entregadasHTML = _repVista === 'entregadas'
       ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => { const g = garantiaInfo(r); return `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}${g ? ` · <span style="color:${g.vigente ? '#16a34a' : '#dc2626'};font-weight:700">garantía ${g.vigente ? 'hasta ' + g.fecha : 'vencida'}</span>` : ''}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`; }).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
       : '';
-    return `<div class="nxPf nxRepWrapK"><div style="margin-bottom:8px">${posBuscador({ placeholder: 'Buscar por cliente, equipo, IMEI o número…', oninput: 'window.nxRepBuscar(this.value)' })}</div>
+    return `<div class="nxPf nxRepWrapK"><div style="margin-bottom:8px"><span id="repQLupa"></span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <button class="btn bc1" type="button" onclick="window.nxRepNueva()"><i class="ti ti-plus"></i> Recibir equipo</button>
         <div class="nxInvPills" style="margin:0">
@@ -24990,12 +25046,23 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       </tr>`;
     }).join('');
   }
+  // NPGS §5: mismo patrón que Notas de crédito/Historial de ventas — pintarPH() ya
+  // reconstruye SOLO #phBody.
+  function pintarLupaPH() {
+    const box = document.getElementById('phQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'phQ', label: 'Buscar', titulo: 'Buscar prefactura', cont: 'phBody',
+      placeholder: 'No. o cliente…', value: _phQ,
+      onterm: function (v) { window.nxPHBuscar(v); }
+    });
+  }
   function renderPrefHist() {
     nxPfEnsureCSS();
     const pill = (k, lbl) => `<button type="button" class="chip${_phEstado === k ? ' on' : ''}" onclick="window.nxPHEstado('${k}')">${lbl}</button>`;
     return `<div class="nxPf">
       <div class="toolbar2">
-        <div style="flex:1;min-width:200px">${posBuscador({ id: 'phQ', value: _phQ, placeholder: 'Buscar por No. o cliente…', oninput: 'window.nxPHBuscar(this.value)' })}</div>
+        <span id="phQLupa"></span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input type="date" id="phDesde" value="${_phDesde}" onchange="window.nxPHFecha()" title="Desde" class="datef">
           <input type="date" id="phHasta" value="${_phHasta}" onchange="window.nxPHFecha()" title="Hasta" class="datef">
