@@ -8290,9 +8290,13 @@ async function confirmarInhab(){
   }
   const btn=document.getElementById('btnInhab');btn.disabled=true;
   try{
-    await API.patch('clientes',`id=eq.${inhabCliId}`,{activo:false,motivo_inhab:motivo,nota_inhab:nota});
+    // Sincroniza también estado_cliente: guardarCli() re-deriva 'activo' desde este campo en
+    // CADA guardado del formulario de editar cliente (línea ~8185) — si se queda desincronizado,
+    // la próxima vez que alguien edite al cliente por cualquier motivo (teléfono, ARS...) lo
+    // reactiva solo, en silencio, sin aviso ni rastro distinto en Auditoría.
+    await API.patch('clientes',`id=eq.${inhabCliId}`,{activo:false,estado_cliente:'SUSPENDIDO',motivo_inhab:motivo,nota_inhab:nota});
     if(pend(c)>0){const asi={fecha:hoy(),referencia:'AST-BAJA',descripcion:`Baja póliza: ${c.nom} [${c.numero_poliza||'—'}] — ${motivo}`,cuenta_dr_cod:'2101',cuenta_dr_nom:'Cuentas por pagar',monto_dr:0,cuenta_cr_cod:'1201',cuenta_cr_nom:'Cuentas por cobrar',monto_cr:pend(c)};const r=await API.post('asientos',asi);if(r&&r[0]){ST.asientos.unshift(r[0]);recalcularSaldosContables();}}
-    c.activo=false;logAudit('CLIENTE_INHABILITADO',`${c.nom} · ${c.numero_poliza||'—'} · Motivo: ${motivo}${nota?' · '+nota:''}`,'Clientes',c.id);
+    c.activo=false;c.estado_cliente='SUSPENDIDO';logAudit('CLIENTE_INHABILITADO',`${c.nom} · ${c.numero_poliza||'—'} · Motivo: ${motivo}${nota?' · '+nota:''}`,'Clientes',c.id);
     closeM('mInhab');toast('warn','Cliente inhabilitado — póliza cancelada',c.nom);rCli();rDash();actualizarTicker();
   }catch(e){toast('err','Error',e.message);}
   btn.disabled=false;
@@ -8301,7 +8305,7 @@ async function reactivar(id){
   const c=ST.clientes.find(x=>x.id===id);if(!c||!confirm(`¿Reactivar a ${c.nom}?`))return;
   try{
     // Renovar póliza si estaba vencida
-    const datos={activo:true,motivo_inhab:null,nota_inhab:null};
+    const datos={activo:true,estado_cliente:'ACTIVO',motivo_inhab:null,nota_inhab:null};
     if(c.fecha_fin&&new Date(c.fecha_fin)<new Date()){const fin=new Date();fin.setFullYear(fin.getFullYear()+1);datos.fecha_inicio=hoy();datos.fecha_fin=fin.toISOString().slice(0,10);}
     await API.patch('clientes',`id=eq.${id}`,datos);Object.assign(c,datos);
     toast('ok','Cliente reactivado',c.nom+(datos.fecha_fin?` · Póliza renovada hasta ${datos.fecha_fin}`:''));rCli();rDash();actualizarTicker();
