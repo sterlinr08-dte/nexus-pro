@@ -11091,7 +11091,9 @@ confirmó seguir; con esta pieza **todos los buscadores del sistema quedan en el
   Vehículos con `display:none` excluido del conteo. Capturas en 390px/1280px + la ventana abierta —
   0px de desborde en los 3 casos, revisadas visualmente. `node --check parches.js` limpio; los 3
   `<script>` de `index.html` pasan `new Function()`; `version.json` válido.
-- **Pendiente (lo ÚNICO del plan §5):** la decisión de Vender (`posBuscar`) — su lupa hoy abre el
-  catálogo completo (`nxProdPicker('vender')`, con precio/existencia/IMEI) en vez de solo filtrar la
-  lista. Es una decisión de diseño del dueño, flagueada en los changelogs de v55.7/v55.8/v55.9 — no
-  se decide sola.
+- **DECIDIDO por el dueño (2-ago-2026) — Vender se queda como está, y con esto el plan §5 CIERRA
+  COMPLETO.** Era la única pieza abierta: la lupa de Vender (`posBuscar`) no filtra la lista, abre el
+  catálogo completo (`nxProdPicker('vender')`, con precio/existencia/IMEI). Se le planteó la decisión
+  al dueño con la recomendación de dejarla así (para el cajero, ver precio y existencia antes de
+  agregar vale más que un filtro simple) y respondió **"Déjalo asi"**. **No reabrir sin que lo pida
+  explícitamente** — no es un hueco de la migración, es una excepción decidida a propósito.
