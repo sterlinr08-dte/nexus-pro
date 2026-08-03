@@ -11864,6 +11864,39 @@ de cajón. Cambio grande, toca toda la pantalla."*
   `<script>` del sistema (`index.html` ×3 + este módulo standalone) compilan.
 - **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
 
+### Rifas — detalle del participante: "Confirmado"/"En revisión" clicables (3-ago-2026, v56.14) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura real del modal de un participante (`nxRfPartVer`, dentro de la pestaña
+Participantes de la ronda 4, arriba) y pidió: *"cuando demos clic en confirmado y por revisar... nos
+dirija a la ventana de cada sección, [la] que está pendiente, [la que] está confirmado[a]"* — que las 2
+tarjetas KPI (Confirmado RD$X / En revisión RD$Y) dejen de ser solo números y filtren la lista de "Sus
+boletos" de abajo a esa sección.
+- **Sin navegar a otra pantalla ni abrir otra ventana** — se decidió así porque los boletos que
+  respaldan esos 2 montos YA se listan como chips dentro del mismo modal; filtrar ahí mismo es más
+  directo que cerrar el participante y saltar a otra pestaña a buscarlos.
+- **`partChipHTML(b)`/`partChipsFiltrar(g,tipo)`** (nuevos, junto a `nxRfPartVer`): la construcción de
+  chips se extrajo a helpers reusables — `tipo=''` todos, `'confirmado'` solo `estado==='confirmado'`,
+  `'pendiente'` solo `estado!=='confirmado'` (por_confirmar + apartado — MISMO criterio que ya usaba
+  `g.pend` al sumar el monto, para que el filtro coincida exacto con lo que dice la tarjeta).
+- **`window.nxRfPartFiltro(idx,tipo)`** (nuevo): toca "Confirmado"/"En revisión" → filtra
+  `#rfPartChips` y actualiza la etiqueta ("Confirmados (6)"/"En revisión (3)"); tocar la MISMA tarjeta
+  2 veces limpia el filtro (toggle); aparece un enlace **"Ver todos"** solo cuando hay un filtro activo.
+  Las 2 tarjetas ganaron `id`/`tabindex="0"`/`role="button"`/`aria-label`/teclado (Enter/Espacio) — no
+  eran accesibles antes, mismo patrón ya usado en el resto del sistema.
+- **Los montos de las 2 tarjetas NUNCA cambian al filtrar** (son totales de siempre, no se recalculan
+  contra la vista filtrada) — solo la lista de chips de abajo se acota.
+- **CSS:** reusa `.rfKpiT` (el mismo chevron+cursor:pointer que ya usan los KPI del panel principal,
+  cero clase nueva para eso) + `.rfKpi.on` nuevo (fondo índigo tenue, mismo lenguaje "activo" que
+  `.rfSide .rfTab.on`) + `.rfKpiT:focus-visible` (aro de foco, no existía en esta tarjeta).
+- **Verificado con Playwright reproduciendo el caso EXACTO de la captura del dueño** (LIC. ESTERLIN
+  ESPINAL, 9 boletos, RD$1,200 confirmado + RD$600 en revisión — código real extraído del archivo, no
+  reconstrucción): tocar "Confirmado" filtra a los 6 boletos verificados correctos (#0400/#2244/#2672/
+  #2679/#2712/#2746), tocar "En revisión" filtra a los 3 correctos (#0335/#1476 pendiente + #2077
+  apartado = RD$600 exacto), tocar de nuevo limpia el filtro, "Ver todos" limpia el filtro, Enter por
+  teclado hace lo mismo que el clic, los montos de las 2 tarjetas se quedan fijos en cualquier estado
+  del filtro, 0 errores de JavaScript. `node --check parches.js` limpio; los 4 `<script>` del sistema
+  compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
 ### Login — 3 animaciones sutiles, del análisis de un demo "Lunara" (3-ago-2026, v56.8)
 El dueño mandó una captura de un demo de código ("Lunara" — un login estilo desierto/luna con
 tarjeta de vidrio, tilt 3D al cursor, un brillo ambiental que respira, y una transición temática al

@@ -1,7 +1,12 @@
 {
-  "version": "56.13",
+  "version": "56.14",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.14",
+      "fecha": "2026-08-03",
+      "texto": "NUEVO (Rifas — panel administrativo, misma rama aparte pendiente de revisión): en el detalle de un PARTICIPANTE (pestaña 'Participantes'), el dueño pidió con una captura real que las tarjetas 'Confirmado'/'En revisión' fueran clicables — al tocarlas, filtrar la lista de 'Sus boletos' a esa sección, en vez de ser solo un número decorativo. Hecho: tocar 'Confirmado' muestra únicamente sus boletos verificados; tocar 'En revisión' muestra solo los pendientes/apartados; tocar la misma tarjeta 2 veces (o el enlace nuevo 'Ver todos') vuelve a la lista completa. La tarjeta activa se resalta (mismo fondo índigo que ya usa el resto del sistema para 'estado activo') y reusa el chevron/cursor que ya tenían los KPI del panel principal — sin CSS nuevo aparte de la marca 'activo'. Ambas tarjetas ganaron teclado (Enter/Espacio, aria-label) — no eran accesibles antes. Cero dato nuevo: los mismos boletos que ya se listaban abajo, solo se les agregó un filtro por estado (confirmado / no-confirmado). Verificado con Playwright reproduciendo el caso EXACTO de la captura del dueño (LIC. ESTERLIN ESPINAL, 9 boletos, RD$1,200 confirmado + RD$600 en revisión): tocar 'Confirmado' filtra a los 6 boletos verificados correctos, tocar 'En revisión' filtra a los 3 pendientes/apartados correctos, tocar de nuevo limpia el filtro, 'Ver todos' limpia el filtro, Enter por teclado hace lo mismo que el clic, los montos de las 2 tarjetas NUNCA cambian al filtrar (son totales, no se recalculan), 0 errores de JavaScript. `node --check parches.js` limpio; los 4 `<script>` del sistema compilan. Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño."
+    },
     {
       "v": "56.13",
       "fecha": "2026-08-03",
