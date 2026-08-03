@@ -27362,18 +27362,30 @@ try {
       cerrarModal('nxBolEdit');
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _boletos.find(function (x) { return String(x.id) === String(id); });
+      if (nb) gestBoleto(nb);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
+  // Aprobar/Rechazar/Cambiar número/Editar YA NO cierran la ventana de detalle al terminar —
+  // pedido del dueño (2-ago-2026): así puede aprobar un pago y de inmediato tocar "Enviar por
+  // WhatsApp" sin tener que volver a buscar al cliente. En vez de dejar la ventana vieja con
+  // datos desactualizados, se REABRE con gestBoleto(nb) usando el boleto YA REFRESCADO de
+  // cargarBoletos() — mismo patrón que ya usaba "Cambiar número" (nxRifaCambNumGuardar, más
+  // abajo), ahora aplicado también aquí. "Liberar" es la única excepción a propósito: borra el
+  // boleto por completo, así que no queda ningún detalle real que volver a mostrar.
   window.nxRifaConfirmar = async function (id) {
     try {
       await getAPI().patch('rifa_boletos', 'id=eq.' + id, { estado: 'confirmado' });
       toast('ok', 'Pago confirmado', '');
-      cerrarModal('nxRbGest');
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _boletos.find(function (x) { return String(x.id) === String(id); });
+      if (nb) gestBoleto(nb); else cerrarModal('nxRbGest');
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
+  // Liberar SÍ cierra la ventana — a diferencia de Aprobar/Rechazar/Cambiar/Editar, este boleto
+  // se BORRA por completo (DELETE), así que no queda ningún registro real que volver a mostrar.
   window.nxRifaLiberar = async function (id) {
     if (!confirm('¿Liberar este número? Se borra el boleto y el número queda disponible otra vez.')) return;
     try {
@@ -27417,6 +27429,8 @@ try {
       cerrarModal('nxRifaRech');
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _boletos.find(function (x) { return String(x.id) === String(id); });
+      if (nb) gestBoleto(nb);
     } catch (e) {
       toast('err', 'No se pudo', String(e && e.message || e));
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-x"></i> Rechazar pago'; }

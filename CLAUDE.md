@@ -11897,6 +11897,44 @@ boletos" de abajo a esa sección.
   compilan.
 - **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
 
+### Rifas — el detalle de un boleto YA NO se cierra al aprobar/rechazar/editar (3-ago-2026, v56.15) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura del detalle de un boleto ("BOLETO 1476", estado "POR CONFIRMAR") y pidió,
+con sus palabras: *"Cuando le demos aprobar, rechazar o cambiar o algo o algún cambio en esa ventana,
+que no se cierre... para poder ahí mismo darle a Enviar por WhatsApp, porque si se me cierra tengo que
+volver a buscar el cliente"*.
+- **Investigado antes de tocar nada:** de las 5 acciones del detalle (`gestBoleto`), 2 cerraban la
+  ventana sin dejar nada abierto (**Aprobar pago** — `nxRifaConfirmar` — y **Editar** —
+  `nxRifaEditBoletoGuardar`), 1 la dejaba cerrada porque el flujo pasa por un formulario aparte
+  (**Rechazar pago** — `nxRifaRechazar` cierra la ventana al abrir el textarea del motivo,
+  `nxRifaRechazarGuardar` nunca la reabría), y 1 (**Cambiar número**) YA hacía lo que el dueño pedía —
+  `nxRifaCambNumGuardar` cierra su formulario y REABRE el detalle con `gestBoleto(nb)` usando el
+  boleto ya refrescado. Ese patrón existente fue la plantilla para las otras 3.
+- **Arreglo, mismo patrón en las 3 funciones (Aprobar/Rechazar/Editar):** en vez de `cerrarModal
+  ('nxRbGest')` al final, cada una hace `await cargarBoletos(_rifaSel)` (que reemplaza `_boletos` con
+  datos frescos del servidor) y luego busca el boleto actualizado por id
+  (`_boletos.find(x=>x.id===id)`) y llama a `gestBoleto(nb)` — que se encarga de reabrir en el
+  contenedor que corresponda (el panel FIJO de escritorio en la pestaña Números, o el panel lateral
+  que se desliza en móvil/otras pestañas — la misma función ya distingue los dos casos desde la ronda
+  4). El badge de estado cambia solo (Por confirmar → Pago verificado / Rechazado), los botones
+  "Aprobar"/"Rechazar" desaparecen porque `gestBoleto` los gatea al `estado` real, y "Enviar por
+  WhatsApp" queda ahí, a un toque.
+- **Excepción a propósito, documentada en el propio código:** "Liberar" (`nxRifaLiberar`) SIGUE
+  cerrando la ventana — es un DELETE real del boleto, no queda ningún registro que volver a mostrar.
+  El panel cae solo a su mensaje "Toca un número para ver su detalle" de siempre (el mismo estado
+  vacío que ya usaba antes de seleccionar cualquier número) — no hizo falta ningún código nuevo para
+  eso, es el comportamiento natural de re-renderizar la pestaña sin nada seleccionado.
+- **Verificado con Playwright contra el módulo REAL re-extraído del archivo** (no una reconstrucción —
+  1,762 líneas, `26331` a `28092` de `parches.js`), con un backend simulado que de verdad APLICA los
+  cambios (PATCH/DELETE mutan los datos en memoria, no solo se registran como llamadas) para que el
+  boleto reabierto refleje el estado posterior real: **10 comprobaciones** — Aprobar deja el panel
+  abierto con "Pago verificado" y sin los botones Aprobar/Rechazar, con WhatsApp disponible, probado
+  en las 2 formas (panel fijo de escritorio en Números, y panel lateral fuera de esa pestaña); Rechazar
+  (con un motivo escrito) reabre mostrando "Rechazado" + el motivo guardado + WhatsApp; Editar reabre
+  mostrando el dato corregido (probado cambiando el nombre del comprador); Liberar sigue cerrando y el
+  panel cae a su mensaje vacío de siempre, sin boleto fantasma. Capturas de pantalla revisadas
+  visualmente. `node --check parches.js` limpio; los 4 `<script>` del sistema compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
 ### Login — 3 animaciones sutiles, del análisis de un demo "Lunara" (3-ago-2026, v56.8)
 El dueño mandó una captura de un demo de código ("Lunara" — un login estilo desierto/luna con
 tarjeta de vidrio, tilt 3D al cursor, un brillo ambiental que respira, y una transición temática al
