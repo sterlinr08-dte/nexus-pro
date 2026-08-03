@@ -11783,6 +11783,87 @@ recomendable"**.
 - **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño** — mismo
   criterio de siempre.
 
+### Rifas — panel administrativo, RONDA 4: rediseño de FORMATO (3-ago-2026, v56.13) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura de un dashboard de referencia ("RIFAS PRO") y preguntó "Verifica qué opción
+hace falta" — se malinterpretó como pedido funcional; corrigió: **"Me refiero al formato / Como se
+visualiza"**. Se compararon capturas reales del panel V3.1 contra el mockup (harness Playwright con
+datos mezclados no-contiguos, para que la página 1 del tablero mostrara una mezcla real de colores en
+vez del artefacto de la primera prueba, donde los 648 confirmados seguidos hacían ver la página 1 de un
+solo color) y salieron 8 diferencias de FORMATO, no de función: layout de 1 columna + cajón vs 3
+columnas fijas, sin encabezado global, KPI sin ícono/dona, sin panel de detalle fijo, paleta más plana.
+Se le ofreció al dueño con `AskUserQuestion` qué hacer con esas diferencias; eligió **"Rehacer todo el
+layout"**, con sus palabras exactas: *"3 columnas fijas (nav+tablero+detalle en escritorio), números
+con color de fondo por estado, tarjetas KPI con ícono/dona, panel de detalle como columna fija en vez
+de cajón. Cambio grande, toca toda la pantalla."*
+- **(1) Semántica de color del tablero, reordenada** — `.rfN-disp/pend/conf/apar` YA pintaban el color
+  correcto por estado desde antes (no era un bug, era un artefacto de los datos de prueba de la
+  comparación inicial); lo único que cambió es CUÁL color le toca a cada uno: disponible=gris neutro
+  (`#f8fafc`/`#e2e8f0`/`#64748b`, antes verde), por confirmar=naranja (`#fff7ed`/`#fdba74`/`#c2410c`,
+  antes ámbar), confirmado=verde (`#f0fdf4`/`#86efac`/`#15803d`, antes índigo), apartado=ámbar
+  (`#fffbeb`/`#fde68a`/`#b45309`, antes gris) — calzando con la convención semántica del mockup
+  (verde=éxito/confirmado, no un color arbitrario).
+- **(2) Las 5 tarjetas KPI** (Disponibles/Apartados/Pagos x revisar/Confirmados/Recaudado) ganaron un
+  `<div class="rfKpiIco">` — círculo de 26px con un ícono Tabler y su color de estado — arriba de la
+  etiqueta, dentro de cada `.rfKpi`.
+- **(3) Tarjeta nueva "Progreso de ventas"** en la pestaña Resumen (`rfResumenTabHTML`, antes del grid
+  de 3 tarjetas de siempre): una dona (`conic-gradient`, reusa las clases `.pie`/`.pieLeg`/`.pieRow`/
+  `.pieDot`/`.pieK`/`.piePct` que ya existían para "Medios de pago" en `nxRifaStats()` — cero CSS
+  nuevo para el propio gráfico) con el % vendido en el centro (círculo blanco superpuesto) y la
+  leyenda de los 4 estados (Confirmados/Apartados/Por confirmar/Disponibles) con su monto y
+  porcentaje, ordenados por prioridad. Solo aparece si `k.total>0 && k.vendidos>0` — sin datos, no
+  se pinta un donut vacío/engañoso.
+- **(4) Barra lateral fija en escritorio (`.rfSide`), reemplaza las píldoras horizontales SOLO en
+  `min-width:900px`.** `renderRifaPanel` arma `sideHTML` con los mismos 5 botones (Resumen/Números/
+  Pagos por revisar con badge/Participantes/Tickets) usando la MISMA clase `rfTab` y el MISMO
+  `data-tab` que ya usaban las píldoras `.rfTabs` — el alternador `nxRfTab()` (que hace
+  `querySelectorAll('.rfTab').forEach(...)`) no necesitó ningún cambio: sirve a los dos formatos a la
+  vez, sin saber cuál está visible. El shell pasó de `<div class="nc">...</div>` a `<div
+  class="rfShell">` + `sideHTML` + `<div class="rfMain"><div class="nc">...</div></div>` — 2 divs de
+  cierre extra al final. CSS: `.rfShell{display:block}.rfSide{display:none}` por defecto,
+  `@media(min-width:900px){.rfShell{display:flex}.rfSide{display:flex...}.rfTabs{display:none}}` — en
+  móvil (`<900px`) es idéntico a como estaba antes de esta ronda: solo las píldoras `.rfTabs`, sin
+  ninguna barra lateral.
+- **(5) Panel de detalle FIJO en escritorio, solo para la pestaña Números** —
+  `rfNumerosTabHTML(r)` envuelve el tablero + un `<div class="rfDetailDock" id="rfDetailDock">` con un
+  estado vacío (`RF_DOCK_EMPTY`: "Toca un número del tablero para ver su detalle aquí."). `gestBoleto(b)`
+  ganó una constante `RF_DOCK_MIN=900` (el MISMO breakpoint de la media query, a propósito, para que JS
+  y CSS nunca se desincronicen) — arma el detalle en una variable `body2` y, si `_rfTab==='numeros' &&
+  window.innerWidth>=RF_DOCK_MIN`, lo inyecta DENTRO de `#rfDetailDock` (con un mini-encabezado propio y
+  botón "Cerrar" → `window.nxRfDockCerrar()`, que resetea al estado vacío) en vez de crear el
+  `.overlay`/`.modal` de siempre. Si la condición es falsa (móvil, O cualquier otra pestaña que también
+  llama `gestBoleto` vía `nxTkOpen` — Pagos/Participantes/Tickets), cae exactamente al camino de
+  overlay/drawer que ya existía, sin ningún cambio. CSS: `.rfNumRow{display:block}.rfDetailDock{
+  display:none}` por defecto, `@media(min-width:900px){.rfNumRow{display:grid;grid-template-columns:1fr
+  360px}.rfDetailDock{display:block;position:sticky;top:10px}}`.
+- **BUG REAL encontrado por la propia verificación (nunca en producción):** la dona nueva referenciaba
+  una variable `pct` que solo existía en el scope de `renderRifaPanel` (la función que llama), no
+  dentro de `rfResumenTabHTML` (la función separada donde se usa, alcanzada vía `rfTabBodyHTML`) — dio
+  `ReferenceError: pct is not defined` al abrir la pestaña Resumen. Lo atrapó Playwright (ejecución
+  real en navegador), NO `node --check` (es un error de scope en tiempo de ejecución, no de sintaxis).
+  Corregido agregando `var pct = k.total ? Math.min(100, Math.round(k.vendidos/k.total*100)) : 0;`
+  localmente al inicio de `rfResumenTabHTML`, justo después de `var k = rfKpisData(r);`.
+- **Verificado con Playwright contra el módulo REAL re-extraído del archivo** (no una reconstrucción),
+  escritorio (1536×900) y móvil (390×844): en escritorio, `hasOverlay=false` al tocar un número (el
+  dock se llena en vez de abrir un cajón), `dockHasContent=true` con el detalle real del boleto,
+  `sideDisplay=flex`/`pillsDisplay=none` (barra lateral visible, píldoras ocultas), 0px de desborde
+  horizontal; en móvil, CONFIRMADO que el comportamiento previo a esta ronda queda intacto —
+  `hasOverlay=true` (el cajón sigue abriendo al tocar un número, sin dock), `sideDisplay=none`/
+  `pillsDisplay=flex` (barra lateral oculta, píldoras visibles), `dockDisplay=none`, 0px de desborde.
+  **NOTA DE MÉTODO (2 rondas de verificación, no una):** la primera tanda de capturas móviles usó un
+  shell de prueba con `.sidebar{width:220px;flex-shrink:0}` SIN la media query real que tiene `.sb` en
+  `index.html` (línea 471: `@media(max-width:768px){.sb{position:fixed;top:0;left:-220px;...}}` — en
+  producción el sidebar sale de pantalla y NO ocupa espacio en móvil) — eso comprimía el contenido de
+  prueba a solo ~170px de los 390px reales, haciendo ver un apretón/desborde que no existe en
+  producción. Se corrigió el shell del harness para replicar exactamente esa media query y se
+  reconfirmó `contentWidth=390` (el ancho completo real) sin desborde. Un segundo falso positivo (el
+  cajón móvil "cortado" contra el borde derecho en una captura) resultó ser la animación CSS
+  `rfDrawerIn .22s` capturada a mitad de camino (sin ningún `waitForTimeout` antes del screenshot) —
+  confirmado con `getComputedStyle`/`getBoundingClientRect` que el elemento real mide 390×844 (ancho
+  completo) una vez que la animación termina; con una espera de 400ms antes de la captura, la imagen
+  final confirma el cajón a ancho completo como siempre. `node --check parches.js` limpio; los 4
+  `<script>` del sistema (`index.html` ×3 + este módulo standalone) compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
 ### Login — 3 animaciones sutiles, del análisis de un demo "Lunara" (3-ago-2026, v56.8)
 El dueño mandó una captura de un demo de código ("Lunara" — un login estilo desierto/luna con
 tarjeta de vidrio, tilt 3D al cursor, un brillo ambiental que respira, y una transición temática al

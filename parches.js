@@ -26767,15 +26767,27 @@ try {
       (atn.apVencen > 0 ? '<button class="rfAttnRow" type="button" onclick="window.nxRfIrApartados()"><b>' + atn.apVencen + ' apartado' + (atn.apVencen === 1 ? '' : 's') + '</b><span>Vencen en menos de 1 hora</span><i class="ti ti-chevron-right"></i></button>' : '') +
       '</div>'
     ) : '';
-    view.innerHTML = '<div class="nc">' +
+    var sideHTML = '<div class="rfSide">' +
+      '<button class="rfTab' + (_rfTab === 'resumen' ? ' on' : '') + '" data-tab="resumen" type="button" onclick="window.nxRfTab(\'resumen\')"><i class="ti ti-layout-dashboard"></i><span>Resumen</span></button>' +
+      '<button class="rfTab' + (_rfTab === 'numeros' ? ' on' : '') + '" data-tab="numeros" type="button" onclick="window.nxRfTab(\'numeros\')"><i class="ti ti-grid-dots"></i><span>Números</span></button>' +
+      '<button class="rfTab' + (_rfTab === 'pagos' ? ' on' : '') + '" data-tab="pagos" type="button" onclick="window.nxRfTab(\'pagos\')"><i class="ti ti-receipt"></i><span>Pagos por revisar</span>' + (k.porConf > 0 ? '<span class="rfTabBadge">' + k.porConf + '</span>' : '') + '</button>' +
+      '<button class="rfTab' + (_rfTab === 'participantes' ? ' on' : '') + '" data-tab="participantes" type="button" onclick="window.nxRfTab(\'participantes\')"><i class="ti ti-users"></i><span>Participantes</span></button>' +
+      '<button class="rfTab' + (_rfTab === 'tickets' ? ' on' : '') + '" data-tab="tickets" type="button" onclick="window.nxRfTab(\'tickets\')"><i class="ti ti-list-details"></i><span>Tickets</span></button>' +
+      '</div>';
+    // Sidebar vertical fija (solo escritorio, min-width:900px vía CSS) — MISMA clase .rfTab y
+    // MISMO data-tab que la fila de pestañas horizontal de abajo (que sigue intacta para el
+    // celular, decisión ya tomada en RONDA 2). nxRfTab() hace querySelectorAll('.rfTab') para
+    // marcar la activa — como matchea las DOS listas a la vez, la barra lateral se actualiza
+    // sola sin tocar esa función.
+    view.innerHTML = '<div class="rfShell">' + sideHTML + '<div class="rfMain"><div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()" title="Empleados / vendedores de esta rifa" aria-label="Empleados / vendedores de esta rifa"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes" aria-label="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra" aria-label="Link público de compra"><i class="ti ti-link"></i></button><button aria-label="Editar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
       '<div class="rfKpis">' +
-      '<div class="rfKpi rfKpiT" onclick="window.nxRfIrDisponibles()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Disponibles</span><b>' + k.disp + '</b></div>' +
-      '<div class="rfKpi rfKpiT" onclick="window.nxRfIrApartados()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Apartados</span><b style="color:#64748b">' + k.apar + '</b></div>' +
-      '<div class="rfKpi rfKpiT" onclick="window.nxRfTab(\'pagos\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Pagos x revisar</span><b style="color:#d97706">' + k.porConf + '</b></div>' +
-      '<div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Confirmados</span><b style="color:#16a34a">' + k.conf + '</b></div>' +
-      '<div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Recaudado</span><b style="color:#16a34a">' + fmt(k.monto) + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRfIrDisponibles()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#eef2ff;color:#4338ca"><i class="ti ti-grid-dots"></i></div><span>Disponibles</span><b>' + k.disp + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRfIrApartados()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#fffbeb;color:#b45309"><i class="ti ti-bookmark"></i></div><span>Apartados</span><b style="color:#64748b">' + k.apar + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRfTab(\'pagos\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#fff7ed;color:#c2410c"><i class="ti ti-clock-hour-4"></i></div><span>Pagos x revisar</span><b style="color:#d97706">' + k.porConf + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#f0fdf4;color:#16a34a"><i class="ti ti-circle-check"></i></div><span>Confirmados</span><b style="color:#16a34a">' + k.conf + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#f0fdf4;color:#16a34a"><i class="ti ti-cash"></i></div><span>Recaudado</span><b style="color:#16a34a">' + fmt(k.monto) + '</b></div>' +
       '</div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
       atnHTML +
@@ -26787,7 +26799,7 @@ try {
       '<button class="rfTab' + (_rfTab === 'tickets' ? ' on' : '') + '" data-tab="tickets" type="button" onclick="window.nxRfTab(\'tickets\')">Tickets</button>' +
       '</div>' +
       '<div id="rfTabBody">' + rfTabBodyHTML(r) + '</div>' +
-      '</div>';
+      '</div></div></div>';
     // NPGS §5: la lupa se pinta DESPUÉS de view.innerHTML — el <span> recién existe aquí; cada
     // pestaña pinta la suya (una sola existe a la vez en el DOM real, según _rfTab).
     try { pintarLupaRfTabActiva(); } catch (e) {}
@@ -26826,6 +26838,7 @@ try {
   // "Meta del día"/"Promesas de pago" (sin esquema que las respalde) — ver el changelog.
   function rfResumenTabHTML(r) {
     var k = rfKpisData(r);
+    var pct = k.total ? Math.min(100, Math.round(k.vendidos / k.total * 100)) : 0;
     var pendConfirmar = _boletos.reduce(function (s, b) { return s + (b.estado === 'por_confirmar' ? Number(b.precio || 0) : 0); }, 0);
     var potencial = k.disp * Number(r.precio_boleto || 0);
     var sorteoHTML;
@@ -26837,7 +26850,28 @@ try {
     } else {
       sorteoHTML = '<div class="rfSumEmpty">Sin fecha de sorteo definida</div><button class="rfSumLink" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')">Ponerle fecha <i class="ti ti-chevron-right"></i></button>';
     }
-    return '<div class="rfSumGrid">' +
+    // Donut "Progreso de ventas": mismo conic-gradient que ya usa "Medios de pago"
+    // (nxRifaStats) — reusa .pie/.pieLeg/.pieRow/.pieDot/.piePct, cero CSS nuevo. Solo se
+    // pinta si hay algún número vendido (k.vendidos>0); con la rifa recién creada (todo
+    // disponible) no aporta nada mostrar un donut de un solo color, así que no se arma.
+    var donutHTML = '';
+    if (k.total > 0 && k.vendidos > 0) {
+      var segsD = [
+        { k: 'Confirmados', v: k.conf, c: '#16a34a' },
+        { k: 'Apartados', v: k.apar, c: '#d97706' },
+        { k: 'Por confirmar', v: k.porConf, c: '#ea580c' },
+        { k: 'Disponibles', v: k.disp, c: '#94a3b8' }
+      ].filter(function (s) { return s.v > 0; });
+      var accD2 = 0;
+      var stopsD = segsD.map(function (s) { var a = accD2, b3 = accD2 + s.v / k.total * 360; accD2 = b3; return s.c + ' ' + a + 'deg ' + b3 + 'deg'; }).join(',');
+      var legendD = segsD.map(function (s) { var p = Math.round(s.v / k.total * 100); return '<div class="pieRow"><span class="pieDot" style="background:' + s.c + '"></span><span class="pieK">' + s.k + '</span><b>' + s.v + '</b><span class="piePct">' + p + '%</span></div>'; }).join('');
+      donutHTML = '<div class="rfSumCard" style="grid-column:1/-1"><div class="rfSumT"><i class="ti ti-chart-donut"></i> Progreso de ventas</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center">' +
+        '<div style="position:relative;width:148px;height:148px;margin:6px auto 12px"><div class="pie" style="margin:0;background:conic-gradient(' + stopsD + ')"></div><div style="position:absolute;inset:28px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0f172a;box-shadow:inset 0 0 0 1px #f1f5f9">' + pct + '%</div></div>' +
+        '<div class="pieLeg" style="min-width:200px;flex:1">' + legendD + '</div>' +
+        '</div></div>';
+    }
+    return '<div class="rfSumGrid">' + donutHTML +
       '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-calendar-event"></i> Próximo sorteo</div>' + sorteoHTML + '</div>' +
       '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-hourglass"></i> Por cobrar en revisión</div><div class="rfSumBig">' + fmt(pendConfirmar) + '</div><div class="rfSumSub">' + k.porConf + ' pago' + (k.porConf === 1 ? '' : 's') + ' esperando aprobación</div>' +
       (k.porConf > 0 ? '<button class="rfSumLink" type="button" onclick="window.nxRfTab(\'pagos\')">Revisar ahora <i class="ti ti-chevron-right"></i></button>' : '') + '</div>' +
@@ -26847,8 +26881,14 @@ try {
   }
   // ── Pestaña "Números" — el tablero de siempre (era "Resumen" antes de esta versión, mismo
   // contenido, solo se movió a su propia pestaña dedicada).
+  // Detalle del número: en escritorio (min-width:900px vía CSS) va DOCKEADO como columna fija
+  // junto al tablero (#rfDetailDock, ver gestBoleto); en móvil ese contenedor se oculta y
+  // gestBoleto sigue usando el cajón/overlay de siempre — comportamiento intacto.
+  var RF_DOCK_EMPTY = '<div class="rfDockCard rfDockEmpty"><i class="ti ti-hand-click"></i>Toca un número del tablero para ver su detalle aquí.</div>';
+  window.nxRfDockCerrar = function () { var d = document.getElementById('rfDetailDock'); if (d) d.innerHTML = RF_DOCK_EMPTY; };
   function rfNumerosTabHTML(r) {
-    return '<div class="rfCtl"><span id="rfTabQLupa"></span>' +
+    return '<div class="rfNumRow"><div class="rfBoardCol">' +
+      '<div class="rfCtl"><span id="rfTabQLupa"></span>' +
       '<select id="rfBoardEstSel" onchange="window.nxRfBoardEst(this.value)" aria-label="Filtrar tablero por estado">' +
       '<option value=""' + (!_rfBoardEst ? ' selected' : '') + '>Todos los estados</option>' +
       '<option value="disponible"' + (_rfBoardEst === 'disponible' ? ' selected' : '') + '>Disponibles</option>' +
@@ -26857,8 +26897,11 @@ try {
       '<option value="confirmado"' + (_rfBoardEst === 'confirmado' ? ' selected' : '') + '>Confirmados</option>' +
       '</select>' +
       '<button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
-      '<div class="rfLegend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#fde68a"></i>Por confirmar</span><span><i class="d" style="background:#c7d2fe"></i>Confirmado</span><span><i class="d" style="background:#cbd5e1"></i>Apartado</span></div>' +
-      '<div id="rfBoardWrap">' + boardHTML(r) + '</div>';
+      '<div class="rfLegend"><span><i class="d" style="background:#e2e8f0"></i>Disponible</span><span><i class="d" style="background:#fdba74"></i>Por confirmar</span><span><i class="d" style="background:#86efac"></i>Confirmado</span><span><i class="d" style="background:#fde68a"></i>Apartado</span></div>' +
+      '<div id="rfBoardWrap">' + boardHTML(r) + '</div>' +
+      '</div>' +
+      '<div class="rfDetailDock" id="rfDetailDock">' + RF_DOCK_EMPTY + '</div>' +
+      '</div>';
   }
   window.nxRfBoardEst = function (v) {
     _rfBoardEst = (['disponible', 'apartado', 'por_confirmar', 'confirmado'].indexOf(v) >= 0) ? v : '';
@@ -27141,6 +27184,10 @@ try {
     }
   };
 
+  // Ancho mínimo (px) a partir del cual, en la pestaña Números, el detalle se dockea como
+  // columna fija (#rfDetailDock) en vez de abrir el cajón lateral — MISMO breakpoint que usa el
+  // CSS (.rfNumRow/.rfDetailDock, min-width:900px) para que JS y CSS decidan lo mismo.
+  var RF_DOCK_MIN = 900;
   function gestBoleto(b) {
     cerrarModal('nxRbGest');
     var wa = String(b.comprador_telefono || '').replace(/\D/g, ''); if (wa.length === 10) wa = '1' + wa;
@@ -27149,15 +27196,13 @@ try {
     var prem = rg.premio || rg.nombre || 'la rifa';
     _bolActual = bolData(b, rg); _bolTexto = bolTexto(b, rg);
     var waHref = boletoWaHref(b, rg);
-    // RIFAS V3: panel LATERAL, no modal centrado — .rfDrawerOv/.rfDrawer (CSS nueva) reusan el
-    // MISMO .overlay/.modal de siempre (mismo id nxRbGest, mismo cierre por click-afuera y por
-    // botón, mismos onclick internos) — solo cambia el contenedor visual. Con esto ninguna de
-    // las funciones que ya cierran este id (nxRifaConfirmar/nxRifaLiberar/nxRifaCambiarNum) tuvo
-    // que tocarse: cerrarModal('nxRbGest') sigue funcionando igual.
-    var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open rfDrawerOv';
-    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal rfDrawer"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
-      '<div style="font-size:13px;color:#334155;line-height:1.7;padding:2px 2px 8px">' +
+    // Contenido del detalle — el MISMO de siempre, ahora en una variable para poder mostrarlo en
+    // 2 contenedores distintos: el cajón lateral (móvil, o fuera de la pestaña Números) o la
+    // columna fija #rfDetailDock (escritorio, pestaña Números — ver RF_DOCK_MIN más abajo).
+    // Ninguna de las funciones que actúan sobre el boleto (nxRifaConfirmar/Liberar/CambiarNum/...)
+    // tuvo que tocarse: siguen cerrando 'nxRbGest' (no-op si no existe) y volviendo a pintar la
+    // pestaña completa, que reconstruye este mismo detalle en el contenedor que corresponda.
+    var body2 = '<div style="font-size:13px;color:#334155;line-height:1.7;padding:2px 2px 8px">' +
       '<div style="font-size:15px;font-weight:800;color:#0f172a">' + esc(b.comprador_nombre || '—') + '</div>' +
       (b.comprador_telefono ? '<div><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> ' + esc(b.comprador_telefono) + '</div>' : '') +
       '<div><i class="ti ti-cash"></i> ' + fmt(b.precio) + (b.metodo_pago ? ' · ' + esc(b.metodo_pago) : '') + '</div>' +
@@ -27179,7 +27224,23 @@ try {
       (b.estado === 'por_confirmar' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#dc2626;border-color:#dc2626;color:#fff" onclick="window.nxRifaRechazar(\'' + b.id + '\')"><i class="ti ti-x"></i> Rechazar pago</button>' : '') +
       (esAdmin() ? '<button class="btn bsm bghost" type="button" style="flex:1;min-width:120px;justify-content:center;color:#4338ca" onclick="window.nxRifaCambiarNum(\'' + b.id + '\')"><i class="ti ti-arrows-exchange"></i> Cambiar número</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
-      '</div></div>';
+      '</div>';
+    var dock = (_rfTab === 'numeros' && window.innerWidth >= RF_DOCK_MIN) ? document.getElementById('rfDetailDock') : null;
+    if (dock) {
+      dock.innerHTML = '<div class="rfDockCard"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<span style="font-size:14px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:6px"><i class="ti ti-ticket" style="color:#4338ca"></i> Boleto ' + esc(String(b.numero)) + '</span>' +
+        '<button aria-label="Cerrar detalle" class="btn bsm bghost" type="button" onclick="window.nxRfDockCerrar()"><i class="ti ti-x"></i></button></div>' +
+        body2 + '</div>';
+      return;
+    }
+    // RIFAS V3: panel LATERAL, no modal centrado — .rfDrawerOv/.rfDrawer (CSS nueva) reusan el
+    // MISMO .overlay/.modal de siempre (mismo id nxRbGest, mismo cierre por click-afuera y por
+    // botón, mismos onclick internos) — solo cambia el contenedor visual. Con esto ninguna de
+    // las funciones que ya cierran este id (nxRifaConfirmar/nxRifaLiberar/nxRifaCambiarNum) tuvo
+    // que tocarse: cerrarModal('nxRbGest') sigue funcionando igual.
+    var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open rfDrawerOv';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal rfDrawer"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' + body2 + '</div>';
     document.body.appendChild(ov);
   }
 
@@ -27906,7 +27967,7 @@ try {
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center;position:relative}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfKpiT{cursor:pointer;-webkit-tap-highlight-color:transparent}.rfKpiT::after{content:"\\203A";position:absolute;top:2px;right:6px;color:#cbd5e1;font-weight:800;font-size:13px;line-height:1}.rfKpiT:active{background:#eef2ff;border-color:#c7d2fe}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:var(--mono);outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:var(--mono);font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:var(--mono);letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}.liqRow{border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}.liqTop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.liqTop b{font-size:13.5px;font-weight:800}.liqTop span{font-size:11px;color:#64748b;font-weight:600;white-space:nowrap}.liqBot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#475569}.rsConBox{background:#fff;border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-top:10px}.rsConT{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.rsCon{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;color:#334155}.rsCon span b{color:#0f172a;font-family:var(--mono)}.repItem{display:flex;align-items:center;gap:11px;width:100%;border:0;background:#fff;cursor:pointer;padding:12px 4px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;color:#334155;text-align:left;font-family:inherit}.repItem:last-child{border-bottom:0}.repItem:active{background:#f8fafc}.repIco{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.tkTbl{width:100%;border-collapse:collapse;font-size:11.5px;min-width:520px}.tkTbl thead th{background:#f8fafc;font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:8px 9px;border-bottom:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0}.tkTbl tbody td{padding:8px 9px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle}.tkTbl tbody tr:active{background:#f8fafc}.tkNumC{font-family:var(--mono);font-weight:800;color:#4338ca}.tkSub{font-size:9.5px;color:#94a3b8}.tkNw{white-space:nowrap}.tkR2{text-align:right;font-weight:800;color:#0f172a;white-space:nowrap}.tkBadge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}.stT{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}.stChart{display:flex;align-items:flex-end;gap:4px;height:122px;border-bottom:1px solid #e8edf3;padding-bottom:2px}.stCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.stBarWrap{width:100%;height:100px;display:flex;align-items:flex-end;justify-content:center}.stBar{width:72%;min-width:8px;background:linear-gradient(180deg,#6366f1,#4338ca);border-radius:4px 4px 0 0}.stLbl{font-size:8px;color:#94a3b8;white-space:nowrap}.stStat{margin-bottom:9px}.stStatTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.stStatTop b{color:#0f172a}.stStatBar{height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden}.stStatBar>div{height:100%;border-radius:5px}.pie{width:148px;height:148px;border-radius:50%;margin:6px auto 12px;box-shadow:0 4px 14px rgba(15,23,42,.10)}.pieLeg{display:flex;flex-direction:column;gap:0}.pieRow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:7px 2px;border-bottom:1px solid #f5f7fa}.pieRow:last-child{border-bottom:0}.pieDot{width:12px;height:12px;border-radius:3px;flex:0 0 auto}.pieK{flex:1;color:#334155;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pieRow b{color:#0f172a;font-weight:800;white-space:nowrap}.piePct{color:#64748b;font-weight:700;min-width:36px;text-align:right}' +
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center;position:relative}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfKpiT{cursor:pointer;-webkit-tap-highlight-color:transparent}.rfKpiT::after{content:"\\203A";position:absolute;top:2px;right:6px;color:#cbd5e1;font-weight:800;font-size:13px;line-height:1}.rfKpiT:active{background:#eef2ff;border-color:#c7d2fe}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:var(--mono);outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:var(--mono);font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f8fafc;border-color:#e2e8f0;color:#64748b}.rfN-pend{background:#fff7ed;border-color:#fdba74;color:#c2410c}.rfN-conf{background:#f0fdf4;border-color:#86efac;color:#15803d}.rfN-apar{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:var(--mono);letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}.liqRow{border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}.liqTop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.liqTop b{font-size:13.5px;font-weight:800}.liqTop span{font-size:11px;color:#64748b;font-weight:600;white-space:nowrap}.liqBot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#475569}.rsConBox{background:#fff;border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-top:10px}.rsConT{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.rsCon{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;color:#334155}.rsCon span b{color:#0f172a;font-family:var(--mono)}.repItem{display:flex;align-items:center;gap:11px;width:100%;border:0;background:#fff;cursor:pointer;padding:12px 4px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;color:#334155;text-align:left;font-family:inherit}.repItem:last-child{border-bottom:0}.repItem:active{background:#f8fafc}.repIco{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.tkTbl{width:100%;border-collapse:collapse;font-size:11.5px;min-width:520px}.tkTbl thead th{background:#f8fafc;font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:8px 9px;border-bottom:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0}.tkTbl tbody td{padding:8px 9px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle}.tkTbl tbody tr:active{background:#f8fafc}.tkNumC{font-family:var(--mono);font-weight:800;color:#4338ca}.tkSub{font-size:9.5px;color:#94a3b8}.tkNw{white-space:nowrap}.tkR2{text-align:right;font-weight:800;color:#0f172a;white-space:nowrap}.tkBadge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}.stT{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}.stChart{display:flex;align-items:flex-end;gap:4px;height:122px;border-bottom:1px solid #e8edf3;padding-bottom:2px}.stCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.stBarWrap{width:100%;height:100px;display:flex;align-items:flex-end;justify-content:center}.stBar{width:72%;min-width:8px;background:linear-gradient(180deg,#6366f1,#4338ca);border-radius:4px 4px 0 0}.stLbl{font-size:8px;color:#94a3b8;white-space:nowrap}.stStat{margin-bottom:9px}.stStatTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.stStatTop b{color:#0f172a}.stStatBar{height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden}.stStatBar>div{height:100%;border-radius:5px}.pie{width:148px;height:148px;border-radius:50%;margin:6px auto 12px;box-shadow:0 4px 14px rgba(15,23,42,.10)}.pieLeg{display:flex;flex-direction:column;gap:0}.pieRow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:7px 2px;border-bottom:1px solid #f5f7fa}.pieRow:last-child{border-bottom:0}.pieDot{width:12px;height:12px;border-radius:3px;flex:0 0 auto}.pieK{flex:1;color:#334155;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pieRow b{color:#0f172a;font-weight:800;white-space:nowrap}.piePct{color:#64748b;font-weight:700;min-width:36px;text-align:right}' +
       // ── RIFAS V3 (panel administrativo) — tabs internas, atención requerida, bandeja de pagos
       // y panel lateral (drawer) para gestBoleto. .rfCtl gana flex-wrap para el select nuevo.
       '.rfCtl{flex-wrap:wrap}#rfBoardEstSel,#rfTkEstSel{height:38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;padding:0 8px;flex:0 0 auto;background:#fff;color:#334155}' +
@@ -27955,6 +28016,27 @@ try {
       '.overlay.open.rfDrawerOv .modal.rfDrawer{margin:0;max-width:400px;width:100%;height:100%;max-height:100%;border-radius:0;box-shadow:-10px 0 30px rgba(15,23,42,.2);overflow-y:auto;animation:rfDrawerIn .22s cubic-bezier(.32,.72,0,1) both}' +
       '@keyframes rfDrawerIn{from{transform:translateX(100%)}to{transform:translateX(0)}}' +
       '@media(max-width:480px){.overlay.open.rfDrawerOv .modal.rfDrawer{max-width:100%}}' +
+      // RIFAS V3.2 (formato): ícono con círculo de color en cada tarjeta KPI (mismo patrón que
+      // ya usa .rfPayIni), barra lateral fija en escritorio para las 5 pestañas (misma clase
+      // .rfTab que ya trae la fila horizontal — solo se apila distinto vía CSS) y columna fija
+      // de detalle en la pestaña Números (#rfDetailDock) en vez del cajón, también solo en
+      // escritorio. Móvil (<900px) queda IDÉNTICO a como estaba: fila de pestañas + cajón.
+      '.rfKpiIco{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;margin:0 auto 5px}' +
+      '.rfShell{display:block}.rfSide{display:none}.rfMain{min-width:0}' +
+      '@media(min-width:900px){' +
+      '.rfShell{display:flex;gap:16px;align-items:flex-start}' +
+      '.rfSide{display:flex;flex-direction:column;gap:2px;width:186px;flex-shrink:0;position:sticky;top:10px;background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:9px}' +
+      '.rfSide .rfTab{width:100%;text-align:left;justify-content:flex-start;padding:9px 10px;border-radius:9px;border-bottom:0;font-size:12.5px}' +
+      '.rfSide .rfTab i{font-size:15px;width:17px;text-align:center;color:#94a3b8}' +
+      '.rfSide .rfTab.on{background:#eef2ff;color:#4338ca}.rfSide .rfTab.on i{color:#4338ca}' +
+      '.rfSide .rfTabBadge{margin-left:auto}' +
+      '.rfMain{flex:1;min-width:0}' +
+      '.rfTabs{display:none}' +
+      '}' +
+      '.rfNumRow{display:block}.rfDetailDock{display:none}' +
+      '@media(min-width:900px){.rfNumRow{display:grid;grid-template-columns:1fr 360px;gap:14px;align-items:start}.rfDetailDock{display:block;position:sticky;top:10px}}' +
+      '.rfDockCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}' +
+      '.rfDockEmpty{text-align:center;color:#94a3b8;font-size:12.5px;padding:38px 10px}.rfDockEmpty i{font-size:26px;display:block;margin-bottom:8px;color:#cbd5e1}' +
       BOL_CSS;
     document.head.appendChild(st);
   }
