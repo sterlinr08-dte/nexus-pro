@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS PRO · Rifas V3</title>
+<link rel="stylesheet" href="rifas-v3.css">
+</head>
+<body>
+<div class="rfApp">
+  <aside class="rfSide">
+    <div class="rfBrand"><span class="rfLogo">N</span><div><strong>NEXUS PRO</strong><small>Rifas</small></div></div>
+    <nav>
+      <button class="active" data-view="resumen">Resumen</button>
+      <button data-view="numeros">Números</button>
+      <button data-view="pagos">Pagos por revisar <span>18</span></button>
+      <button data-view="participantes">Participantes</button>
+      <button data-view="boletos">Boletos</button>
+      <button data-view="vendedores">Vendedores</button>
+      <button data-view="sorteo">Sorteo</button>
+      <button data-view="config">Configuración</button>
+    </nav>
+    <div class="rfUser"><b>Administrador</b><small>Sesión activa</small></div>
+  </aside>
+
+  <main class="rfMain">
+    <header class="rfTop">
+      <button class="rfMenu" id="rfMenu">☰</button>
+      <div class="rfSearch"><span>⌕</span><input id="globalSearch" placeholder="Buscar número, cliente o teléfono"></div>
+      <button class="rfBell">18</button>
+      <button class="rfAvatar">SR</button>
+    </header>
+
+    <section class="rfContent">
+      <div class="rfHero">
+        <div>
+          <div class="rfEyebrow">RIFA ACTIVA <span>PUBLICADA</span></div>
+          <h1>Yamaha YZ 125</h1>
+          <p>RD$500 por número · Sorteo 15 de agosto de 2026</p>
+        </div>
+        <div class="rfHeroActions">
+          <button class="ghost">Vista pública</button>
+          <button class="primary">Nuevo ticket</button>
+          <button class="icon">⋮</button>
+        </div>
+      </div>
+
+      <div class="rfTabs">
+        <button class="active" data-view="resumen">Resumen</button>
+        <button data-view="numeros">Números</button>
+        <button data-view="pagos">Pagos por revisar</button>
+        <button data-view="participantes">Participantes</button>
+      </div>
+
+      <div id="view-resumen" class="rfView active">
+        <div class="rfKpis">
+          <article><small>Confirmados</small><strong>648</strong><em>64.8% del total</em></article>
+          <article><small>Pagos por revisar</small><strong>42</strong><em>RD$21,000 pendientes</em></article>
+          <article><small>Apartados</small><strong>15</strong><em>5 vencen pronto</em></article>
+          <article><small>Disponibles</small><strong>295</strong><em>29.5% restantes</em></article>
+          <article class="money"><small>Recaudado</small><strong>RD$324,000</strong><em>Meta RD$500,000</em></article>
+        </div>
+
+        <div class="rfGrid">
+          <section class="rfCard rfProgressCard">
+            <div class="rfCardHead"><div><h2>Progreso de la rifa</h2><p>648 de 1,000 números confirmados</p></div><strong>64.8%</strong></div>
+            <div class="rfProgress"><i style="width:64.8%"></i></div>
+            <div class="rfLegend"><span><i class="confirmed"></i>Confirmados 648</span><span><i class="review"></i>En revisión 42</span><span><i class="reserved"></i>Apartados 15</span><span><i class="available"></i>Disponibles 295</span></div>
+          </section>
+
+          <aside class="rfCard rfAttention">
+            <div class="rfCardHead"><div><h2>Atención requerida</h2><p>Tareas que necesitan acción</p></div></div>
+            <button data-open="pago"><b>18 comprobantes</b><span>Esperan revisión</span><em>›</em></button>
+            <button><b>5 apartados</b><span>Vencen en menos de 1 hora</span><em>›</em></button>
+            <button><b>4 rechazados</b><span>Sin comprobante corregido</span><em>›</em></button>
+          </aside>
+
+          <section class="rfCard rfPayments">
+            <div class="rfCardHead"><div><h2>Pagos recientes</h2><p>Últimas solicitudes recibidas</p></div><button data-view="pagos">Ver todos</button></div>
+            <div class="rfPaymentRow" data-open="pago"><div class="rfInitial">JP</div><div><b>Juan Pérez</b><span>#0254 · hace 5 min</span></div><strong>RD$500</strong><span class="status review">Revisar</span></div>
+            <div class="rfPaymentRow"><div class="rfInitial">MG</div><div><b>María Gómez</b><span>#0123, #0124 · hace 12 min</span></div><strong>RD$1,000</strong><span class="status confirmed">Confirmado</span></div>
+            <div class="rfPaymentRow"><div class="rfInitial">CR</div><div><b>Carlos Rodríguez</b><span>#0781 · hace 20 min</span></div><strong>RD$500</strong><span class="status reserved">Apartado</span></div>
+          </section>
+
+          <section class="rfCard rfMiniNumbers">
+            <div class="rfCardHead"><div><h2>Vista rápida de números</h2><p>Rango 0241–0264</p></div><button data-view="numeros">Abrir tablero</button></div>
+            <div class="rfNumberGrid compact" id="miniNumbers"></div>
+          </section>
+        </div>
+      </div>
+
+      <div id="view-numeros" class="rfView">
+        <div class="rfToolbar">
+          <div class="rfSearch local"><span>⌕</span><input id="numberSearch" inputmode="numeric" placeholder="Buscar número"></div>
+          <select id="statusFilter"><option value="all">Todos los estados</option><option value="available">Disponibles</option><option value="reserved">Apartados</option><option value="review">En revisión</option><option value="confirmed">Confirmados</option></select>
+          <button class="ghost">Ir al rango</button>
+          <button class="primary">Asignar números</button>
+        </div>
+        <div class="rfCard">
+          <div class="rfCardHead"><div><h2>Tablero de números</h2><p>Mostrando 120 números por página</p></div><div class="rfPager"><button>‹</button><span>1–120</span><button>›</button></div></div>
+          <div class="rfLegend top"><span><i class="available"></i>Disponible</span><span><i class="reserved"></i>Apartado</span><span><i class="review"></i>En revisión</span><span><i class="confirmed"></i>Confirmado</span><span><i class="blocked"></i>Bloqueado</span></div>
+          <div class="rfNumberGrid" id="numberGrid"></div>
+        </div>
+      </div>
+
+      <div id="view-pagos" class="rfView">
+        <div class="rfSplit">
+          <section class="rfCard rfInbox">
+            <div class="rfCardHead"><div><h2>Pagos por revisar</h2><p>Procesa solicitudes sin salir de la bandeja</p></div><span class="counter">18 pendientes</span></div>
+            <div id="paymentList"></div>
+          </section>
+          <aside class="rfCard rfPreview" id="paymentPreview">
+            <div class="emptyPreview"><strong>Selecciona un pago</strong><span>Verás aquí el comprobante y sus acciones.</span></div>
+          </aside>
+        </div>
+      </div>
+
+      <div id="view-participantes" class="rfView">
+        <section class="rfCard"><div class="rfCardHead"><div><h2>Participantes</h2><p>Clientes, números, tickets y pagos en una sola lista</p></div><button class="primary">Nuevo participante</button></div>
+        <div class="rfTable"><div class="head"><span>Participante</span><span>Números</span><span>Estado</span><span>Monto</span><span>Actividad</span><span></span></div>
+        <div class="row" data-open="cliente"><span><b>Juan Pérez</b><small>829-555-0123</small></span><span>0254</span><span><i class="status review">En revisión</i></span><span>RD$500</span><span>Hace 5 min</span><button>⋮</button></div>
+        <div class="row"><span><b>María Gómez</b><small>809-555-0190</small></span><span>0123, 0124</span><span><i class="status confirmed">Confirmado</i></span><span>RD$1,000</span><span>Hace 12 min</span><button>⋮</button></div></div></section>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="rfDrawer" id="rfDrawer" aria-hidden="true"><div class="rfDrawerBackdrop" data-close></div><aside><header><div><small>DETALLE</small><h2 id="drawerTitle">Ticket #TK-000245</h2></div><button data-close>×</button></header><div id="drawerBody"></div></aside></div>
+<div class="rfToast" id="rfToast"></div>
+<script src="rifas-v3-demo.js"></script>
+</body>
+</html>
