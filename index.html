@@ -89,15 +89,39 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
 #loginScreen::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(4,9,20,.58) 0%,rgba(4,9,20,.74) 100%)}
 #loginScreen::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 1500px 950px at 50% 48%,transparent 30%,rgba(2,6,15,.7) 100%)}
-.lwrap{position:relative;z-index:1;width:100%;max-width:430px}
+/* Tilt 3D hacia el cursor (mockup "Lunara" del dueño, 3-ago-2026, ver CLAUDE.md):
+   --lx-ry/--lx-rx los mueve nxLoginTiltInit() (script junto al markup del login).
+   El transform vive en .lwrap (el envoltorio), NUNCA en .lbox — .lbox ya tiene su
+   propia animación de entrada (lxBoxIn) sobre transform, y mezclar un @keyframes
+   con un transform inline en el MISMO elemento arriesga que la animación gane la
+   cascada y el tilt nunca se vea. Separar en 2 elementos evita el conflicto. */
+.lwrap{position:relative;z-index:1;width:100%;max-width:430px;transform:perspective(1200px) rotateY(var(--lx-ry,0deg)) rotateX(var(--lx-rx,0deg));transition:transform .4s cubic-bezier(.2,.8,.3,1)}
 .lbox{position:relative;width:100%;background:rgba(13,17,23,.95);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border:1px solid #1e293b;border-radius:28px;padding:2.75rem 2.25rem 2.25rem;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:lxBoxIn .5s cubic-bezier(.2,.8,.3,1) both}
 @keyframes lxBoxIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.lbox{animation:none}}
+@media (prefers-reduced-motion:reduce){.lbox{animation:none}.lwrap{transition:none}}
 .llogomark{display:block;width:70%;max-width:300px;height:auto;margin:0 auto 26px;animation:lxHeroIn .55s cubic-bezier(.2,.8,.3,1) both}
 @keyframes lxHeroIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.llogomark{animation:none}}
-.lshield{width:96px;height:96px;border-radius:50%;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(37,99,235,.14) 0%,transparent 70%);border:1.5px solid rgba(59,130,246,.65);box-shadow:0 0 20px rgba(37,99,235,.55),0 0 46px rgba(37,99,235,.35),0 0 90px rgba(37,99,235,.18);color:#60a5fa;font-size:38px}
-.lshield i{filter:drop-shadow(0 0 10px rgba(96,165,250,.7))}
+/* Brillo que respira: capa ::before detrás del ícono (mismo patrón ya usado en
+   .nxs-badge/.nxs-wave del splash — z-index:0 en el glow, z-index:1 en el ícono,
+   para que el halo nunca tape el escudo). Solo opacity+scale (compositor, sin
+   repintar), igual que el resto del vocabulario de animación del sistema. */
+.lshield{position:relative;width:96px;height:96px;border-radius:50%;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(37,99,235,.14) 0%,transparent 70%);border:1.5px solid rgba(59,130,246,.65);box-shadow:0 0 20px rgba(37,99,235,.55),0 0 46px rgba(37,99,235,.35),0 0 90px rgba(37,99,235,.18);color:#60a5fa;font-size:38px}
+.lshield::before{content:'';position:absolute;inset:-14px;z-index:0;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.4) 0%,transparent 72%);opacity:.5;animation:lxBreathe 4.6s ease-in-out infinite;pointer-events:none}
+.lshield i{position:relative;z-index:1;filter:drop-shadow(0 0 10px rgba(96,165,250,.7))}
+@keyframes lxBreathe{0%,100%{opacity:.35;transform:scale(.9)}50%{opacity:.9;transform:scale(1.1)}}
+@media (prefers-reduced-motion:reduce){.lshield::before{animation:none}}
+/* Transición al entrar: el escudo "se abre" (crece + brilla + se disuelve) y la
+   tarjeta se apaga ANTES de ocultar #loginScreen — la disparan nxLoginRevelar()
+   desde iniciarApp() (único punto de convergencia de los 3 caminos de login
+   exitoso: normal, Auth, SSO entrante — ver CLAUDE.md). Mismo idioma que
+   #nxSplash.nxs-out/#nxLoader.nxl-out: clase + setTimeout calzado con la
+   duración real de la animación (ver nxLoginRevelar, junto a nxForgotPassword). */
+#loginScreen.lx-revelando .lbox{animation:lxCardOut .42s cubic-bezier(.4,0,.2,1) both}
+#loginScreen.lx-revelando .lshield{animation:lxShieldPop .42s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes lxCardOut{0%{opacity:1;transform:none}100%{opacity:0;transform:scale(.97)}}
+@keyframes lxShieldPop{0%{transform:scale(1)}45%{transform:scale(1.18)}100%{transform:scale(1.32);opacity:0}}
+@media (prefers-reduced-motion:reduce){#loginScreen.lx-revelando .lbox,#loginScreen.lx-revelando .lshield{animation:none}}
 .lh{font-size:27px;font-weight:700;color:#fff;margin-bottom:6px;text-align:center}
 .lver{font-size:14.5px;color:#94a3b8;font-weight:400;text-align:center;margin-bottom:30px}
 .lfr{margin-bottom:18px}
@@ -1157,6 +1181,33 @@ input[type="text"].no-upper, input[type="search"].no-upper{
 </div>
 </div>
 </div>
+<script>
+(function(){
+  // Tilt 3D hacia el cursor (mockup "Lunara" del dueño, 3-ago-2026, ver CLAUDE.md).
+  // Solo con mouse real (pointer:fine) y sin "reducir movimiento" — en touch no
+  // hay pointermove continuo (el efecto no aportaría nada) y respetamos la
+  // preferencia de accesibilidad como en el resto del sistema. Mueve solo
+  // --lx-ry/--lx-rx en .lwrap; el CSS ya trae el transform inerte por defecto.
+  var ls=document.getElementById('loginScreen');
+  if(!ls||!window.matchMedia)return;
+  if(!matchMedia('(pointer:fine)').matches||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var lw=null;
+  ls.addEventListener('pointermove',function(e){
+    if(!lw)lw=ls.querySelector('.lwrap');
+    if(!lw)return;
+    var r=ls.getBoundingClientRect();
+    var nx=(e.clientX-r.left)/r.width, ny=(e.clientY-r.top)/r.height;
+    var ry=(nx-.5)*2*7, rx=(.5-ny)*2*4; // tope ±7deg horizontal, ±4deg vertical
+    lw.style.setProperty('--lx-ry',ry.toFixed(2)+'deg');
+    lw.style.setProperty('--lx-rx',rx.toFixed(2)+'deg');
+  });
+  ls.addEventListener('pointerleave',function(){
+    if(!lw)return;
+    lw.style.setProperty('--lx-ry','0deg');
+    lw.style.setProperty('--lx-rx','0deg');
+  });
+})();
+</script>
 
 <!-- Pantalla propia para definir contraseña (modo seguro) -->
 <div id="pwChangeScreen" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.62);align-items:center;justify-content:center;padding:20px">
@@ -3559,6 +3610,21 @@ function nxForgotPassword(){
   // no hace nada, se dirige honestamente a pedirle el reseteo al administrador.
   try{toast('info','Recuperar contraseña','Contacta al administrador del sistema para restablecer tu contraseña.');}catch(e){}
 }
+// El escudo "se abre" antes de revelar la app (mockup "Lunara" del dueño, 3-ago-2026,
+// ver CLAUDE.md) — se llama UNA sola vez, desde iniciarApp(), que es el único punto
+// de convergencia de los 3 caminos de login exitoso (normal, Auth, SSO entrante).
+// Se salta entera si #loginScreen nunca se mostró (SSO directo la oculta ANTES de
+// llegar aquí) o si el usuario prefiere menos movimiento — mismo idioma que
+// #nxSplash.nxs-out: clase + setTimeout calzado con la duración real del CSS.
+async function nxLoginRevelar(){
+  try{
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    const ls=document.getElementById('loginScreen');
+    if(!ls||ls.style.display==='none')return;
+    ls.classList.add('lx-revelando');
+    await new Promise(r=>setTimeout(r,440));
+  }catch(e){}
+}
 async function doLogin(){
   const rawUser=document.getElementById('loginUser').value.trim();
   const pwd=document.getElementById('loginPwd').value;
@@ -4111,7 +4177,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='56.7';
+const APP_VERSION='56.8';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -5318,6 +5384,7 @@ async function iniciarApp(){
   activarMayusculasGlobales(); // Mayúsculas automáticas en inputs
   cargarTemaGuardado(); // Aplicar tema visual guardado
   await nxCargarOrg(); // multi-empresa: organización del usuario (login o sesión restaurada)
+  await nxLoginRevelar(); // el escudo se abre antes de revelar la app (no-op si no había login visible)
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('sbAv').textContent=inits(sesion.nom);

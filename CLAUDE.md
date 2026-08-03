@@ -11564,3 +11564,64 @@ PRÉSTAMO, ya existente y probado), no inventar "Registrar promesa de pago" si n
   pasan `new Function()`; `version.json` válido.
 - **Publicado por rama propia** (`claude/mover-documentos-a-cliente` → PR → fusionado con las
   herramientas MCP de GitHub), no directo a `main`.
+
+### Login — 3 animaciones sutiles, del análisis de un demo "Lunara" (3-ago-2026, v56.8)
+El dueño mandó una captura de un demo de código ("Lunara" — un login estilo desierto/luna con
+tarjeta de vidrio, tilt 3D al cursor, un brillo ambiental que respira, y una transición temática al
+enviar el formulario) y pidió analizar esa animación para aplicarla a nuestro login.
+- **Se separó la TÉCNICA del TEMA.** El fondo de luna+desierto NO se aplicó — rompería la
+  identidad navy/azul + escudo ya establecida en el login (rediseño Enterprise v53.8-v54.7) y sería
+  una foto sin relación con el negocio. Se identificaron **3 técnicas genuinamente trasladables**
+  y se le presentaron al dueño con `AskUserQuestion` (multi-select); eligió **"Las 3"**.
+- **(1) Tilt 3D hacia el cursor:** `pointermove` en `#loginScreen` calcula la posición relativa del
+  mouse y setea `--lx-ry`/`--lx-rx` (tope ±7° horizontal, ±4° vertical) en `.lwrap` — **el transform
+  vive en el envoltorio, NUNCA en `.lbox`**: `.lbox` ya tiene su propia animación de entrada
+  (`lxBoxIn`) sobre `transform`, y mezclar un `@keyframes` con un `transform` inline en el MISMO
+  elemento arriesgaba que la animación le ganara la cascada al tilt (nunca se habría visto). Se
+  apaga solo (`matchMedia('(pointer:fine)')` + `prefers-reduced-motion`) — en touch no hay
+  `pointermove` continuo, así que el listener ni se agrega.
+- **(2) Brillo que respira:** `.lshield::before` pulsa lento (4.6s, `opacity`+`scale`, compositor-
+  friendly, nunca `box-shadow` animado) — mismo patrón exacto que ya usan las ondas del splash
+  (`.nxs-badge`/`.nxs-wave`, v54.5): el halo detrás en `z-index:0`, el ícono encima en `z-index:1`,
+  para que el brillo nunca tape el escudo. Antes el glow era estático (solo `box-shadow` fijo).
+- **(3) Transición al entrar:** el escudo "se abre" (crece + brilla + se disuelve, `lxShieldPop`) y
+  la tarjeta se apaga (`lxCardOut`) ANTES de ocultar `#loginScreen` — mismo idioma que
+  `#nxSplash.nxs-out`/`#nxLoader.nxl-out`: una clase (`lx-revelando`) + `setTimeout` calzado con la
+  duración real del CSS (440ms). **`nxLoginRevelar()` se llama UNA sola vez, dentro de
+  `iniciarApp()`** — investigado antes de tocar nada: es el ÚNICO punto de convergencia real de los
+  3 caminos de login exitoso (usuario/clave clásico en `doLogin()`, Auth en `doLoginAuth()`/
+  `nxFinalizarLoginAuth()`, y SSO entrante en `nxRecibirPaseSSO()` — los 3 terminan llamando
+  `iniciarApp()`), así que no hizo falta duplicar la llamada en 3 sitios. Se salta entera —sin
+  ningún `setTimeout`, retorno inmediato— si `#loginScreen` nunca se mostró (el caso SSO oculta la
+  pantalla ANTES de llegar a `iniciarApp()`, línea 9936) o si el usuario prefiere menos movimiento,
+  para no penalizar el flujo de acceso por accesibilidad.
+- **BUG REAL encontrado y arreglado en el propio proceso de verificación, ANTES de publicar (nunca
+  llegó a producción):** un comentario CSS nuevo escribía literalmente `<script>` como texto de
+  prosa ("ver el `<script>` junto a este HTML") — el script de verificación de esta sesión (separa
+  el HTML en bloques `<script>` reales para validarlos con `new Function()`) confundió ese texto de
+  comentario con una etiqueta real, y arrastró la "validación" 83,193 caracteres de más, mezclando
+  CSS con JS de otro bloque completamente distinto. Se corrigió el propio comentario (ya no
+  contiene la secuencia literal `<script>`) — mismo tipo de trampa "naive regex vs. prosa" ya
+  documentada varias veces en este archivo, aquí en la propia herramienta de verificación, no en el
+  producto. Los 4 bloques `<script>` del archivo (antes 3 — el nuevo es el pequeño IIFE del tilt,
+  colocado junto al markup del login) vuelven a validar limpio.
+- **Verificado con 25 pruebas Playwright contra el login real, servido por HTTP local** (código
+  extraído tal cual, no una reconstrucción): el tilt responde a `pointermove` de verdad —incluido
+  el `matrix3d` resultante confirmado con una escritura directa de 600ms de espera, más allá de la
+  duración de la transición (400ms)—, invierte el signo entre izquierda y derecha, vuelve a 0° al
+  salir el cursor (`pointerleave`), y se queda inerte con `reduced-motion` y en viewport táctil; el
+  halo respira con `opacity`/`scale` variando en el tiempo (muestreado 4 veces con 600ms de
+  separación) y se apaga con `reduced-motion`; la transición de apertura agrega su clase, tarda
+  ~440ms (calzados con la duración real del CSS), y se salta entera en el caso SSO simulado y con
+  `reduced-motion`; `doLogin()` con campos vacíos sigue mostrando el aviso de siempre (sin
+  regresión); 0 errores de JavaScript; sin desbordes horizontales en 390px ni 1280px. **Nota de
+  método:** la primera ronda usó `page.mouse.move()` de Playwright (input a nivel de sistema
+  operativo) y salió intermitente por timing de la transición/proceso cruzado — se reescribió con
+  `dispatchEvent(new PointerEvent(...))` síncrono (corre en el mismo tick, sin cruce de proceso) y
+  quedó estable en 3 corridas seguidas, 25/25 cada vez. Capturas de pantalla en 390px y 1280px
+  revisadas visualmente (el escudo sale como círculo liso sin el glifo Tabler porque el sandbox de
+  esta sesión no tiene salida al CDN de íconos — limitación del entorno ya documentada varias
+  veces en este archivo, no un bug; en `nexusprord.com` el ícono carga normal).
+- **Publicado directo a `main`** (push fast-forward, sin PR) — cambio chico, aditivo, verificado a
+  fondo, sin tocar lógica de autenticación/negocio, dentro del criterio por defecto del dueño
+  ("Publicar EN VIVO directo a `main`... reservar rama/PR para cambios grandes o riesgosos").
