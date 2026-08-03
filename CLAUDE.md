@@ -11625,3 +11625,41 @@ enviar el formulario) y pidió analizar esa animación para aplicarla a nuestro 
 - **Publicado directo a `main`** (push fast-forward, sin PR) — cambio chico, aditivo, verificado a
   fondo, sin tocar lógica de autenticación/negocio, dentro del criterio por defecto del dueño
   ("Publicar EN VIVO directo a `main`... reservar rama/PR para cambios grandes o riesgosos").
+
+### Seguimiento v56.9 — el ícono del escudo se pintaba DEBAJO del brillo (bug real, mismo patrón que el Splash)
+El dueño reportó dos veces que las 3 animaciones no se veían ("actualicé y no hace nada" / "igual",
+incluso después de cerrar sesión y volver a entrar). Investigado a fondo, no asumido:
+- **Descartado — sesión persistida:** confirmado leyendo el código que la primera vez SÍ podía ser eso
+  (`nx_sesion_persist` salta `#loginScreen` entero sin pasar por `iniciarApp()`, líneas 10008-10034) —
+  se le explicó y se le pidió cerrar sesión. Que siguiera igual después de eso obligó a investigar el
+  código en sí, no repetir la misma explicación.
+- **Prueba con Playwright contra `iniciarApp()` real (no una reconstrucción):** simulando el camino
+  exacto de un login exitoso (mismo `sesion`+`iniciarApp()` que usan `doLogin`/`nxFinalizarLoginAuth`)
+  se confirmó que el MECANISMO de las 3 técnicas funciona — `nxLoginRevelar()` agrega la clase
+  `lx-revelando`, espera, y solo entonces `#loginScreen` se oculta y `#app` aparece.
+- **BUG REAL encontrado por la propia prueba, con evidencia — `.lshield i` quedaba `position:static` en
+  vez de `relative`:** en v56.8 el ícono del escudo ganó `position:relative;z-index:1` (índex.html) para
+  pintarse ENCIMA del brillo que respira (`.lshield::before`, `position:absolute`) — pero la lista de
+  "iconos globales" de `parches.js` (protege al escudo del sistema de colores automáticos desde la saga
+  del "escudo verde", v54.1-54.3) seguía forzando `position:static!important` sobre `.lshield .ti`, esa
+  MISMA regla, con más especificidad — anulando la capa nueva. **La suite de la v56.8 (25 pruebas) NO lo
+  detectó** porque solo medía `zIndex` (una propiedad que se puede fijar en el CSS aunque no tenga ningún
+  efecto visual en un elemento `static`), nunca `position` en sí. `getComputedStyle(icono).position` daba
+  `'static'`, confirmado con una prueba nueva. **Ya existía el patrón correcto para copiar:** el escudo
+  del Splash (`.nxs-badge .ti`, v54.5) había resuelto exactamente este mismo problema — se replicó ese
+  patrón: `.lshield .ti` salió del reset compartido (`position:static!important`) y pasó a su propia
+  excepción, con los mismos resets MENOS `position`.
+- **Honesto sobre el alcance real de este bug:** solo afecta cómo se superponen el ÍCONO y el resplandor
+  detrás — NO afecta si la transición de la tarjeta/escudo se dispara (esa animación vive en `.lshield`
+  el CONTENEDOR, no en `.ti` el ícono, y nunca estuvo en la lista de exclusión). Así que es real y se
+  arregló, pero **no se puede confirmar que fuera la causa completa** de "no se ve nada" — la transición
+  dura ~420ms justo cuando la pantalla cambia entera al Dashboard, fácil de no notar a simple vista; y
+  este entorno no tiene salida a internet para comprobar si `nexusprord.com` ya sirve la versión nueva.
+- Verificado con Playwright contra el código real (`iniciarApp`/`nxLoginRevelar` extraídos por contenido,
+  con `sesion` inyectado igual que lo haría `doLogin`): antes del fix, `position:'static'` confirmado;
+  después, `position:'relative'`. `node --check parches.js` limpio; los 3 `<script>` de `index.html`
+  pasan `new Function()`; `version.json` válido.
+- **Pendiente:** que el dueño confirme en su iPhone tras actualizar. Si sigue "sin ver nada", el próximo
+  paso es preguntarle algo puntual (¿el círculo azul detrás del escudo late lento en la pantalla de
+  login, antes de tocar nada? ¿la tarjeta se encoge/desvanece un instante justo antes de que aparezca el
+  Dashboard?) para distinguir "no se dispara" de "se dispara pero es muy sutil/rápido para notarlo".

@@ -1,7 +1,12 @@
 {
-  "version": "56.8",
+  "version": "56.9",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.9",
+      "fecha": "2026-08-03",
+      "texto": "ARREGLADO (Login — el ícono del escudo se quedaba pintado DEBAJO del brillo que respira): el dueño reportó que las 3 animaciones nuevas del login (v56.8) \"no hacían nada\" en su iPhone, incluso después de cerrar sesión y volver a entrar. Se investigó con una prueba automatizada que recorre iniciarApp() (la función real que dispara la transición) contra el código EXACTO ya publicado, no una reconstrucción — confirmó que el mecanismo de las 3 técnicas SÍ funciona correctamente (la clase se agrega, la pantalla de login se oculta después de esperar, la tarjeta y el escudo sí animan) pero encontró un bug real de raíz, del mismo tipo que ya se había arreglado una vez para el escudo del Splash (v54.5, ver CLAUDE.md): el ícono del escudo (.lshield i) había ganado position:relative + z-index:1 en index.html para pintarse ENCIMA del brillo que respira (.lshield::before, position:absolute) — pero la regla vieja de \"iconos globales\" de parches.js (protegía al escudo de teñirse de colores automáticos desde la saga del \"escudo verde\", v54.1-54.3) seguía forzando position:static!important sobre ESE MISMO ícono, anulando la capa nueva sin que ninguna prueba lo detectara — la suite anterior solo medía z-index (una propiedad que se puede fijar aunque no tenga efecto visual en un elemento static), nunca position en sí. Arreglado con el mismo patrón que ya usa el escudo del Splash (.nxs-badge .ti): position se saca del reset compartido y el ícono del login pasa a tener su propia excepción, sin tocar su position. Verificado con Playwright contra el código real (getComputedStyle del ícono ya da position:'relative') — el bug afectaba solo cómo se superponen el ícono y el resplandor, no si la transición se disparaba. NOTA HONESTA: no se pudo confirmar si esto era la causa completa de \"no se ve nada\" — la transición del escudo dura ~420ms justo cuando la pantalla entera cambia al Dashboard, así que es fácil no notarla a simple vista; y este entorno de sesión no tiene salida a internet para comprobar si nexusprord.com ya sirve esta versión. Pendiente que el dueño confirme en su iPhone tras actualizar de nuevo."
+    },
     {
       "v": "56.8",
       "fecha": "2026-08-03",

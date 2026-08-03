@@ -4328,7 +4328,6 @@
       .btn .ti, button .ti, td .ti, th .ti, label .ti, summary .ti,
       .nx-fab .ti, .sb-mk .ti, .lmk .ti, .smk .ti,
       .sb-av .ti, .nxDC-bank-badge .ti,
-      .lshield .ti,
       .ti.ti-search, .ti.ti-search-off,
       i.ti[style*="absolute"], i.ti[style*="position:absolute"]{
         width: auto !important; height: auto !important;
@@ -4347,7 +4346,6 @@
       .btn .ti::after, button .ti::after, td .ti::after, th .ti::after, label .ti::after, summary .ti::after,
       .nx-fab .ti::after, .sb-mk .ti::after, .lmk .ti::after, .smk .ti::after,
       .sb-av .ti::after, .nxDC-bank-badge .ti::after,
-      .lshield .ti::after,
       .ti.ti-search::after, .ti.ti-search-off::after,
       i.ti[style*="absolute"]::after, i.ti[style*="position:absolute"]::after{ content: none !important; }
       /* .lfi .ti (ícono del campo Usuario del login) aparte: a diferencia de los
@@ -4410,6 +4408,29 @@
         backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
       }
       .nxs-badge .ti::after{ content: none !important; }
+      /* .lshield .ti (escudo del LOGIN, animaciones "Lunara" 3-ago-2026) — mismo caso
+         que .nxs-badge de arriba, encontrado tarde: el ícono ganó position:relative +
+         z-index:1 en index.html (.lshield i{...}) para pintarse ENCIMA del brillo que
+         respira (.lshield::before, position:absolute) — pero .lshield .ti se había
+         quedado en el bloque compartido de arriba, forzando position:static!important
+         y anulando esa capa SIN que ningún test lo detectara (la suite anterior solo
+         medía z-index, nunca position — z-index es una propiedad válida aunque no
+         tenga efecto visual en un elemento static). Confirmado con Playwright contra
+         el código real: getComputedStyle(icono).position daba 'static', no 'relative'.
+         Mismos resets que .nxs-badge .ti, MENOS position. */
+      .lshield .ti{
+        width: auto !important; height: auto !important;
+        border-radius: 0 !important;
+        background: none !important;
+        box-shadow: none !important;
+        display: inline-block !important;
+        vertical-align: baseline !important;
+        line-height: inherit !important;
+        border: 0 !important;
+        overflow: visible !important;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+      }
+      .lshield .ti::after{ content: none !important; }
 
       /* Los íconos DENTRO de botones (acciones de tablas) NO deben encajonarse */
       #v-dashboard .nc .btn i, #v-dashboard .nc .btn .ti,
