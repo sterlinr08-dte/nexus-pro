@@ -11734,6 +11734,55 @@ dueño el hueco real, y con su **"Si"** se continuó la construcción sobre la M
 - **Pendiente:** que el dueño revise la rama `claude/rifas-v3-admin` (ahora con esta 2da ronda
   encima) y confirme fusionar a `main` — mismo criterio de siempre, no se fusiona sin su OK
   explícito.
+
+### Rifas — panel administrativo, RONDA 3: auditoría formal + "Rechazar pago" (3-ago-2026, v56.12) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño pidió una **auditoría formal antes de tocar código**: leer `RIFAS_V3_AUDITORIA_IMPLEMENTACION.md`
+en `chatgpt/visual-draft`, compararlo contra el código real de Rifas, y entregar primero la matriz
+✅/⚠️/❌ + el mapa de funciones existentes — sin programar hasta terminarla. Se hizo así. Resultado: la
+ronda 2 (arriba) ya había cerrado casi todo lo real del documento; el único hueco genuino que quedaba
+era **"Rechazar pago"** — el sistema solo tenía "Aprobar" (`nxRifaConfirmar`) o "Liberar"
+(`nxRifaLiberar`, un DELETE permanente sin motivo ni rastro). El dueño confirmó: **"Con notas, has lo
+recomendable"**.
+- **Migración aditiva:** `rifa_boletos.motivo_rechazo` (text, nullable). `get_advisors(security)` sin
+  hallazgos nuevos.
+- **`window.nxRifaRechazar(id)`/`nxRifaRechazarGuardar(id)`** (nuevas, junto a `nxRifaConfirmar`/
+  `nxRifaLiberar`): ventana de verdad — `.overlay`/`.modal`, mismo patrón que `nxRifaCambiarNum`/
+  `nxPrSolicitudPedirCorreccion` — con un `<textarea>` para el motivo (**nunca `prompt()`**, regla ya
+  establecida en el proyecto). Al confirmar: `PATCH estado:'anulado', motivo_rechazo:<texto o null>`.
+  **`'anulado'` YA EXISTÍA como estado** en el sistema desde antes de esta sesión — aparecía en el
+  filtro "Anulados" de la pestaña Tickets y en `tkEstInfo()`, pero **ninguna función lo escribía
+  nunca** (quedaba fantasma, confirmado por auditoría). Al reusarlo, el número queda libre SOLO —
+  `_bolMap` (el mapa de números ocupados) ya excluye `'anulado'` desde que se construyó, así que no
+  hizo falta tocar ese mecanismo. Queda en Auditoría (`RIFA_PAGO_RECHAZADO`, con el número y el
+  motivo). Motivo vacío/solo espacios se guarda como `null`, no como cadena vacía.
+- **`gestBoleto` (el panel lateral del boleto), 3 ajustes:** (1) el botón "Aprobar pago" ahora también
+  se esconde si el boleto ya está `'anulado'` (antes solo se ocultaba con `'confirmado'` — un boleto
+  rechazado seguía mostrando "Aprobar pago", sin sentido); (2) botón nuevo **"Rechazar pago"** (rojo),
+  visible SOLO mientras el estado es `'por_confirmar'` — no aplica a uno ya aprobado ni a uno ya
+  rechazado; (3) si el boleto está `'anulado'` con `motivo_rechazo` guardado, se muestra en un
+  recuadro rojo. El texto de estado (`estTxt`) ahora distingue "Rechazado" de "Por confirmar" (antes
+  los mostraba igual, porque el estado anulado nunca se había contemplado ahí).
+- **Bandeja "Pagos por revisar" (`rfPagosRowsHTML`):** cada fila ganó 2 botones de un toque —
+  ✓ verde Aprobar / ✕ rojo Rechazar (mismo reglamento de color +/− del sistema) — con
+  `event.stopPropagation()` para no disparar también el clic de la fila completa (que abre el panel
+  lateral). CSS nuevo `.rfPayBtns`/`.rfPayBtn`/`.rfPayBtnOk`/`.rfPayBtnNo`.
+- **Deliberadamente NO se tocó** (ya identificado y descartado en la ronda 2, misma razón): el menú de
+  3 puntos por fila, y el rediseño de la barra lateral/topbar/navegación inferior del hub.
+- **Verificado con 44 pruebas Playwright contra el módulo REAL re-extraído del archivo** (no una
+  reconstrucción): el botón Aprobar/Rechazar aparece o se esconde según el estado real en los 3 casos
+  (por confirmar/confirmado/ya rechazado), el motivo se guarda y se ve al reabrir el boleto, un motivo
+  en blanco se guarda como `null`, rechazar libera el número (mismo `_bolMap` de siempre, sin tocarlo),
+  los 2 botones de la bandeja aprueban/rechazan sin abrir el panel lateral por accidente
+  (`stopPropagation` confirmado), y **0 errores de JavaScript** en todo el recorrido. Se verificó
+  también con un caso realista (nombre largo + monto de 6 cifras) que la fila con los 2 botones nuevos
+  **no desborda horizontalmente** a 390px — usando el reset global `*{box-sizing:border-box;margin:0;
+  padding:0}` y el padding real de `.content`/`.nc` de `index.html` (un primer intento de la prueba,
+  sin ese reset, había medido un falso desborde de 24px — corregido en la propia prueba, no en el
+  código, antes de dar el resultado por bueno). `node --check parches.js` limpio; los 4 `<script>` del
+  sistema (`index.html` ×3 + este módulo standalone) compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño** — mismo
+  criterio de siempre.
+
 ### Login — 3 animaciones sutiles, del análisis de un demo "Lunara" (3-ago-2026, v56.8)
 El dueño mandó una captura de un demo de código ("Lunara" — un login estilo desierto/luna con
 tarjeta de vidrio, tilt 3D al cursor, un brillo ambiental que respira, y una transición temática al

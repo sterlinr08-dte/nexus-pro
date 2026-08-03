@@ -26891,6 +26891,13 @@ try {
         thumb +
         '<div class="rfPayInfo"><b>' + esc(nom || '—') + '</b><span>#' + esc(String(b.numero)) + ' · ' + esc(fechaTk(b.created_at)) + '</span></div>' +
         '<div class="rfPayR"><b>' + fmt(b.precio) + '</b>' + (b.voucher ? '<i class="ti ti-receipt" style="color:#16a34a" title="Con comprobante"></i>' : '') + '</div>' +
+        // Aprobar/Rechazar de 1 toque, sin abrir el panel lateral (stopPropagation — la fila
+        // entera ya tiene su propio onclick que la abriría). Mismas 2 funciones de siempre
+        // (nxRifaConfirmar/nxRifaRechazar), nada nuevo — solo un atajo desde la bandeja.
+        '<div class="rfPayBtns">' +
+        '<button type="button" class="rfPayBtn rfPayBtnOk" aria-label="Aprobar pago" title="Aprobar pago" onclick="event.stopPropagation();window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i></button>' +
+        '<button type="button" class="rfPayBtn rfPayBtnNo" aria-label="Rechazar pago" title="Rechazar pago" onclick="event.stopPropagation();window.nxRifaRechazar(\'' + b.id + '\')"><i class="ti ti-x"></i></button>' +
+        '</div>' +
         '</div>';
     }).join('');
   }
@@ -27137,7 +27144,7 @@ try {
   function gestBoleto(b) {
     cerrarModal('nxRbGest');
     var wa = String(b.comprador_telefono || '').replace(/\D/g, ''); if (wa.length === 10) wa = '1' + wa;
-    var estTxt = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : 'Por confirmar');
+    var estTxt = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : (b.estado === 'anulado' ? 'Rechazado' : 'Por confirmar'));
     var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
     var prem = rg.premio || rg.nombre || 'la rifa';
     _bolActual = bolData(b, rg); _bolTexto = bolTexto(b, rg);
@@ -27157,6 +27164,9 @@ try {
       '<div>Estado: <b>' + estTxt + '</b></div>' +
       (b.vendedor_nombre ? '<div>Vendedor: ' + esc(b.vendedor_nombre) + '</div>' : '') +
       '</div>' +
+      // Motivo del rechazo — solo se ve si el boleto quedó anulado por rechazo de pago
+      // (nxRifaRechazarGuardar). No inventa nada: si no hay motivo guardado, no aparece nada.
+      (b.estado === 'anulado' && b.motivo_rechazo ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:9px 11px;margin:2px 2px 8px;font-size:12px;color:#991b1b"><b>Motivo del rechazo:</b> ' + esc(b.motivo_rechazo) + '</div>' : '') +
       // "Vista previa del comprobante" (pedido explícito del prototipo): miniatura clicable
       // ANTES de los botones, mismo nxVerVoucher() de siempre para el tamaño completo — no se
       // duplica la acción de "Voucher", solo se le agregó un atajo visual.
@@ -27165,7 +27175,8 @@ try {
       '<a class="btn bsm bc1" href="' + waHref + '" target="_blank" rel="noopener" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</a>' +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver / imagen</button>' +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center" onclick="window.nxRifaEditarBoleto(\'' + b.id + '\')"><i class="ti ti-edit"></i> Editar</button>' +
-      (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Aprobar pago</button>' : '') +
+      (b.estado !== 'confirmado' && b.estado !== 'anulado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Aprobar pago</button>' : '') +
+      (b.estado === 'por_confirmar' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#dc2626;border-color:#dc2626;color:#fff" onclick="window.nxRifaRechazar(\'' + b.id + '\')"><i class="ti ti-x"></i> Rechazar pago</button>' : '') +
       (esAdmin() ? '<button class="btn bsm bghost" type="button" style="flex:1;min-width:120px;justify-content:center;color:#4338ca" onclick="window.nxRifaCambiarNum(\'' + b.id + '\')"><i class="ti ti-arrows-exchange"></i> Cambiar número</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
       '</div></div>';
@@ -27280,6 +27291,44 @@ try {
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // ── RECHAZAR PAGO (con motivo) ──────────────────────────────────────────────────────────
+  // Distinto de "Liberar": Liberar BORRA el boleto (sin rastro, sin motivo). Rechazar lo deja
+  // en estado 'anulado' (ya existía como estado, pero ninguna función lo escribía — quedaba
+  // "fantasma": aparecía en el filtro "Anulados" de Tickets y en tkEstInfo, pero nunca se
+  // llegaba a producir). Al marcarlo 'anulado', _bolMap lo excluye automáticamente
+  // (estadoCelda()), así que el número queda disponible para otro comprador SIN tocar nada más
+  // — el mismo mecanismo que ya usa el resto del tablero. El motivo se guarda para que el
+  // admin (o cualquiera revisando después) sepa POR QUÉ se rechazó ese pago.
+  window.nxRifaRechazar = function (id) {
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    cerrarModal('nxRbGest'); cerrarModal('nxRifaRech');
+    var ov = document.createElement('div'); ov.id = 'nxRifaRech'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-x"></i> Rechazar pago</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRifaRech\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:12.5px;color:#475569;padding:2px 2px 10px">Boleto <b style="font-family:var(--mono);color:#4338ca">' + esc(String(b.numero)) + '</b> · ' + esc(b.comprador_nombre || '—') + '. El número queda <b>libre</b> para otro comprador.</div>' +
+      '<div class="fr"><label>Motivo del rechazo (queda guardado, se ve en el detalle del boleto)</label><textarea id="rrMotivo" class="no-upper" rows="3" placeholder="Ej: el comprobante no corresponde al monto del boleto"></textarea></div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxRifaRech\').remove()">Cancelar</button><button class="btn bsm" type="button" style="background:#dc2626;border-color:#dc2626;color:#fff" onclick="window.nxRifaRechazarGuardar(\'' + b.id + '\')"><i class="ti ti-x"></i> Rechazar pago</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxRifaRechazarGuardar = async function (id) {
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    var motivo = (val('rrMotivo') || '').trim();
+    var btn = document.querySelector('#nxRifaRech .fe .bsm[style*="dc2626"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Rechazando…'; }
+    try {
+      await getAPI().patch('rifa_boletos', 'id=eq.' + id, { estado: 'anulado', motivo_rechazo: motivo || null });
+      var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
+      try { window.logAudit && window.logAudit('RIFA_PAGO_RECHAZADO', (rg.nombre || 'Rifa') + ': boleto ' + String(b.numero) + ' · ' + (b.comprador_nombre || 's/n') + (motivo ? ' · ' + motivo.slice(0, 120) : ''), 'Rifas'); } catch (e) {}
+      toast('ok', 'Pago rechazado', 'El número ' + String(b.numero) + ' quedó libre otra vez');
+      cerrarModal('nxRifaRech');
+      await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+    } catch (e) {
+      toast('err', 'No se pudo', String(e && e.message || e));
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-x"></i> Rechazar pago'; }
+    }
   };
 
   // ── LINK PÚBLICO DE COMPRA ──
@@ -27873,6 +27922,12 @@ try {
       '.rfPayIni{width:34px;height:34px;border-radius:50%;background:#eef2ff;color:#4338ca;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
       '.rfPayInfo{min-width:0;flex:1}.rfPayInfo b{display:block;font-size:13px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rfPayInfo span{display:block;font-size:10.5px;color:#94a3b8;margin-top:1px}' +
       '.rfPayR{display:flex;align-items:center;gap:6px;flex-shrink:0}.rfPayR b{font-size:13px;font-weight:800;color:#0f172a}' +
+      // Aprobar/Rechazar de 1 toque en la bandeja de "Pagos por revisar" — verde=confirmar,
+      // rojo=rechazar (mismo reglamento +/− del sistema). stopPropagation en el onclick evita
+      // que también dispare el click de la fila completa (que abre el panel lateral).
+      '.rfPayBtns{display:flex;gap:5px;flex-shrink:0}' +
+      '.rfPayBtn{width:30px;height:30px;border-radius:9px;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;background:#fff;flex-shrink:0;-webkit-tap-highlight-color:transparent}.rfPayBtn:active{opacity:.65}' +
+      '.rfPayBtnOk{border-color:#bbf7d0;color:#16a34a;background:#f0fdf4}.rfPayBtnNo{border-color:#fecaca;color:#dc2626;background:#fef2f2}' +
       '.rfPayEmpty{text-align:center;color:#475569;font-size:12.5px;padding:26px 10px}.rfPayEmpty i{font-size:26px;display:block;margin-bottom:8px;color:#16a34a}' +
       '.rfVouThumb{display:block;width:100%;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;padding:0;background:#f8fafc;cursor:pointer;margin-bottom:10px;text-align:left}.rfVouThumb img{width:100%;max-height:180px;object-fit:cover;display:block}.rfVouThumb span{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700;color:#4338ca;padding:7px}' +
       // Miniatura del comprobante DENTRO de la fila de "Pagos por revisar" (reemplaza el avatar de
