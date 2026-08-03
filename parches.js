@@ -26331,7 +26331,9 @@ try {
   var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [], _paquetes = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
   // RIFAS V3 (panel administrativo): pestaña interna activa + filtro de estado del tablero.
-  var _rfTab = 'resumen', _rfBoardEst = '', _rfPagosQ = '', _rfPtQ = '';
+  // 5 pestañas reales (Resumen/Números/Pagos por revisar/Participantes/Tickets, ver auditoría
+  // RIFAS_V3_AUDITORIA_IMPLEMENTACION.md en chatgpt/visual-draft).
+  var _rfTab = 'resumen', _rfBoardEst = '', _rfPagosQ = '', _rfPtQ = '', _rfTkQ = '';
   var _rifaFaqs = [];
   var _rifaTut = [];
   var RIFA_TUT_DEF = [
@@ -26656,7 +26658,7 @@ try {
   }
 
   window.nxRifaAbrir = async function (id) {
-    _rifaSel = id; _tabPage = 0; _tabQ = ''; _rfTab = 'resumen'; _rfBoardEst = ''; _rfPagosQ = ''; _rfPtQ = '';
+    _rifaSel = id; _tabPage = 0; _tabQ = ''; _rfTab = 'resumen'; _rfBoardEst = ''; _rfPagosQ = ''; _rfPtQ = ''; _rfTkQ = ''; _tkEst = '';
     var view = document.getElementById('v-rifas'); if (!view) return;
     await cargarBoletos(id);
     renderRifas(view);
@@ -26758,8 +26760,10 @@ try {
       atnHTML +
       '<div class="rfTabs">' +
       '<button class="rfTab' + (_rfTab === 'resumen' ? ' on' : '') + '" data-tab="resumen" type="button" onclick="window.nxRfTab(\'resumen\')">Resumen</button>' +
+      '<button class="rfTab' + (_rfTab === 'numeros' ? ' on' : '') + '" data-tab="numeros" type="button" onclick="window.nxRfTab(\'numeros\')">Números</button>' +
       '<button class="rfTab' + (_rfTab === 'pagos' ? ' on' : '') + '" data-tab="pagos" type="button" onclick="window.nxRfTab(\'pagos\')">Pagos por revisar' + (k.porConf > 0 ? '<span class="rfTabBadge">' + k.porConf + '</span>' : '') + '</button>' +
       '<button class="rfTab' + (_rfTab === 'participantes' ? ' on' : '') + '" data-tab="participantes" type="button" onclick="window.nxRfTab(\'participantes\')">Participantes</button>' +
+      '<button class="rfTab' + (_rfTab === 'tickets' ? ' on' : '') + '" data-tab="tickets" type="button" onclick="window.nxRfTab(\'tickets\')">Tickets</button>' +
       '</div>' +
       '<div id="rfTabBody">' + rfTabBodyHTML(r) + '</div>' +
       '</div>';
@@ -26773,25 +26777,56 @@ try {
   // tienen su entrada real en los botones del encabezado de arriba (Vendedores/Sorteo/Editar) —
   // no se duplicaron como pestañas nuevas.
   window.nxRfTab = function (t) {
-    _rfTab = (['resumen', 'pagos', 'participantes'].indexOf(t) >= 0) ? t : 'resumen';
+    _rfTab = (['resumen', 'numeros', 'pagos', 'participantes', 'tickets'].indexOf(t) >= 0) ? t : 'resumen';
     var r = currentRifa(); if (!r) return;
     document.querySelectorAll('.rfTab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === _rfTab); });
     var body = document.getElementById('rfTabBody'); if (body) body.innerHTML = rfTabBodyHTML(r);
     try { pintarLupaRfTabActiva(); } catch (e) {}
   };
   function rfTabBodyHTML(r) {
+    if (_rfTab === 'numeros') return rfNumerosTabHTML(r);
     if (_rfTab === 'pagos') return rfPagosTabHTML();
     if (_rfTab === 'participantes') return rfParticipantesTabHTML();
+    if (_rfTab === 'tickets') return rfTicketsTabHTML();
     return rfResumenTabHTML(r);
   }
   // NPGS §5: pinta la lupa de LA pestaña que esté activa ahora mismo — cada pestaña tiene su
-  // propio <span> placeholder y su propio término (_tabQ/_rfPagosQ/_rfPtQ), sin cruzarse entre sí.
+  // propio <span> placeholder y su propio término (_tabQ/_rfPagosQ/_rfPtQ/_rfTkQ), sin cruzarse
+  // entre sí. "Resumen" (dashboard) no lleva lupa — no hay ninguna lista que filtrar ahí.
   function pintarLupaRfTabActiva() {
-    if (_rfTab === 'pagos') pintarLupaRfPagos();
+    if (_rfTab === 'numeros') pintarLupaRfTab();
+    else if (_rfTab === 'pagos') pintarLupaRfPagos();
     else if (_rfTab === 'participantes') pintarLupaRfPt();
-    else pintarLupaRfTab();
+    else if (_rfTab === 'tickets') pintarLupaRfTk();
   }
+  // ── Pestaña "Resumen" — REAL, no decorativa: 3 tarjetas derivadas de rifas.fecha_sorteo y
+  // _boletos (ya cargados), nunca inventadas. Descartado a propósito del mockup original: una
+  // "Actividad reciente" (no hay ningún log de gestión en este módulo, cero tabla real detrás) y
+  // "Meta del día"/"Promesas de pago" (sin esquema que las respalde) — ver el changelog.
   function rfResumenTabHTML(r) {
+    var k = rfKpisData(r);
+    var pendConfirmar = _boletos.reduce(function (s, b) { return s + (b.estado === 'por_confirmar' ? Number(b.precio || 0) : 0); }, 0);
+    var potencial = k.disp * Number(r.precio_boleto || 0);
+    var sorteoHTML;
+    if (r.mostrar_fecha !== false && r.fecha_sorteo) {
+      var fs = null; try { fs = new Date(r.fecha_sorteo); } catch (e) {}
+      var dias = fs ? Math.ceil((fs.getTime() - Date.now()) / 86400000) : null;
+      var fTxt = fs ? fs.toLocaleString('es-DO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      sorteoHTML = '<div class="rfSumBig">' + esc(fTxt) + '</div><div class="rfSumSub">' + (dias === null ? '' : (dias > 0 ? 'Faltan ' + dias + ' día' + (dias === 1 ? '' : 's') : (dias === 0 ? 'Es hoy' : 'Ya pasó'))) + '</div>';
+    } else {
+      sorteoHTML = '<div class="rfSumEmpty">Sin fecha de sorteo definida</div><button class="rfSumLink" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')">Ponerle fecha <i class="ti ti-chevron-right"></i></button>';
+    }
+    return '<div class="rfSumGrid">' +
+      '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-calendar-event"></i> Próximo sorteo</div>' + sorteoHTML + '</div>' +
+      '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-hourglass"></i> Por cobrar en revisión</div><div class="rfSumBig">' + fmt(pendConfirmar) + '</div><div class="rfSumSub">' + k.porConf + ' pago' + (k.porConf === 1 ? '' : 's') + ' esperando aprobación</div>' +
+      (k.porConf > 0 ? '<button class="rfSumLink" type="button" onclick="window.nxRfTab(\'pagos\')">Revisar ahora <i class="ti ti-chevron-right"></i></button>' : '') + '</div>' +
+      '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-trending-up"></i> Ingreso potencial restante</div><div class="rfSumBig">' + fmt(potencial) + '</div><div class="rfSumSub">Si se venden los ' + k.disp + ' número' + (k.disp === 1 ? '' : 's') + ' disponibles</div>' +
+      (k.disp > 0 ? '<button class="rfSumLink" type="button" onclick="window.nxRfIrDisponibles()">Ver disponibles <i class="ti ti-chevron-right"></i></button>' : '') + '</div>' +
+      '</div>';
+  }
+  // ── Pestaña "Números" — el tablero de siempre (era "Resumen" antes de esta versión, mismo
+  // contenido, solo se movió a su propia pestaña dedicada).
+  function rfNumerosTabHTML(r) {
     return '<div class="rfCtl"><span id="rfTabQLupa"></span>' +
       '<select id="rfBoardEstSel" onchange="window.nxRfBoardEst(this.value)" aria-label="Filtrar tablero por estado">' +
       '<option value=""' + (!_rfBoardEst ? ' selected' : '') + '>Todos los estados</option>' +
@@ -26810,8 +26845,8 @@ try {
     var r = currentRifa(); var w = document.getElementById('rfBoardWrap');
     if (r && w) w.innerHTML = boardHTML(r);
   };
-  window.nxRfIrDisponibles = function () { _rfBoardEst = 'disponible'; window.nxRfTab('resumen'); };
-  window.nxRfIrApartados = function () { _rfBoardEst = 'apartado'; window.nxRfTab('resumen'); };
+  window.nxRfIrDisponibles = function () { _rfBoardEst = 'disponible'; window.nxRfTab('numeros'); };
+  window.nxRfIrApartados = function () { _rfBoardEst = 'apartado'; window.nxRfTab('numeros'); };
 
   // ── Pestaña "Pagos por revisar" (bandeja) — solo boletos por_confirmar. Filtro y filas propios
   // (NO comparte _tkEst con el modal nxRifaTickets, para no arrastrar estado entre los dos).
@@ -26827,8 +26862,12 @@ try {
     return list.map(function (b) {
       var nom = (b.comprador_nombre || '').trim();
       var ini = nom ? nom.split(/\s+/).map(function (x) { return x[0] || ''; }).slice(0, 2).join('').toUpperCase() : '?';
+      // Miniatura real del comprobante en la fila (no solo un ícono) si el boleto trae voucher —
+      // sin voucher, cae al avatar de iniciales de siempre. Mismo dato (b.voucher), ninguna
+      // consulta nueva.
+      var thumb = b.voucher ? '<img class="rfPayThumb" src="' + esc(b.voucher) + '" alt="Comprobante de pago">' : '<div class="rfPayIni">' + esc(ini) + '</div>';
       return '<div class="rfPayRow" onclick="window.nxTkOpen(\'' + b.id + '\')" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">' +
-        '<div class="rfPayIni">' + esc(ini) + '</div>' +
+        thumb +
         '<div class="rfPayInfo"><b>' + esc(nom || '—') + '</b><span>#' + esc(String(b.numero)) + ' · ' + esc(fechaTk(b.created_at)) + '</span></div>' +
         '<div class="rfPayR"><b>' + fmt(b.precio) + '</b>' + (b.voucher ? '<i class="ti ti-receipt" style="color:#16a34a" title="Con comprobante"></i>' : '') + '</div>' +
         '</div>';
@@ -26851,21 +26890,123 @@ try {
     });
   }
 
-  // ── Pestaña "Participantes" — reusa tkRowsHTML (la MISMA tabla del modal "Lista de tickets"),
-  // sin filtro de estado (se resetea _tkEst por si quedó pegado de un uso anterior del modal).
-  function rfParticipantesTabHTML() {
-    _tkEst = '';
-    return '<div style="margin-bottom:9px"><span id="rfPtQLupa"></span></div>' +
-      '<div class="tw" style="overflow:auto"><table class="tkTbl"><thead><tr><th>No.</th><th>Participante</th><th>Fecha</th><th>Pago</th><th>Monto</th><th>Estado</th><th>Modo</th></tr></thead><tbody id="rfPtBody">' + tkRowsHTML(_rfPtQ) + '</tbody></table></div>';
+  // ── Pestaña "Participantes" — antes reusaba tkRowsHTML tal cual (una fila por TICKET, no por
+  // persona): un mismo comprador con 3 boletos salía 3 veces sin ningún total (Hallazgo E de la
+  // auditoría). Ahora se AGRUPA de verdad por comprador — telKey() (el mismo normalizador que ya
+  // usa nxRifaPrevBoletos para "cliente repetido"), o 'n:'+nombre si no hay teléfono, IGUAL
+  // criterio que ya usa rifaStats()/nxRifaStats para no inventar un 2do criterio de agrupación.
+  // comprador_cedula/comprador_email SÍ son columnas reales de rifa_boletos (confirmado por SQL
+  // directo) — se muestran cuando existen, nada se inventa si vienen vacías.
+  function rfParticipantesData(q) {
+    var ql = (q || '').trim().toLowerCase();
+    var groups = {}, order = [];
+    _boletos.forEach(function (b) {
+      if (b.estado === 'anulado') return;
+      var k = telKey(b.comprador_telefono) || ('n:' + (b.comprador_nombre || '?'));
+      if (!groups[k]) { groups[k] = { nombre: '', telefono: '', cedula: '', email: '', tickets: [], montoConf: 0, pend: 0 }; order.push(k); }
+      var g = groups[k];
+      if (!g.nombre && b.comprador_nombre) g.nombre = b.comprador_nombre;
+      if (!g.telefono && b.comprador_telefono) g.telefono = b.comprador_telefono;
+      if (!g.cedula && b.comprador_cedula) g.cedula = b.comprador_cedula;
+      if (!g.email && b.comprador_email) g.email = b.comprador_email;
+      g.tickets.push(b);
+      if (b.estado === 'confirmado') g.montoConf += Number(b.precio || 0); else g.pend += Number(b.precio || 0);
+    });
+    var list = order.map(function (k) { return groups[k]; });
+    if (ql) list = list.filter(function (g) { return (g.nombre + ' ' + g.telefono + ' ' + g.cedula).toLowerCase().indexOf(ql) >= 0; });
+    list.sort(function (a, b) { return b.tickets.length - a.tickets.length || (b.montoConf + b.pend) - (a.montoConf + a.pend); });
+    return list;
   }
-  window.nxRfPtBuscar = function (v) { _rfPtQ = v || ''; var b = document.getElementById('rfPtBody'); if (b) b.innerHTML = tkRowsHTML(_rfPtQ); };
+  // Índice numérico → grupo, para que nxRfPartVer reciba un ÍNDICE en vez de un nombre/teléfono
+  // embebido en el onclick (un nombre con apóstrofe, ej. "d'Leon", rompería el string de JS del
+  // atributo — mismo bug ya documentado y evitado en este sistema). Se refresca en cada pintado,
+  // consistente porque el render es síncrono de un solo hilo.
+  var _rfPartCache = [];
+  function rfParticipantesRowsHTML(q) {
+    var list = rfParticipantesData(q);
+    _rfPartCache = list;
+    if (!list.length) return '<div class="rfPayEmpty"><i class="ti ti-users"></i>Sin participantes con ese filtro.</div>';
+    return list.map(function (g, i) {
+      var ini = g.nombre ? g.nombre.trim().split(/\s+/).map(function (x) { return x[0] || ''; }).slice(0, 2).join('').toUpperCase() : '?';
+      var sub = [g.telefono, (g.tickets.length + ' boleto' + (g.tickets.length === 1 ? '' : 's'))].filter(Boolean).join(' · ');
+      return '<div class="rfPayRow" onclick="window.nxRfPartVer(' + i + ')" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">' +
+        '<div class="rfPayIni">' + esc(ini) + '</div>' +
+        '<div class="rfPayInfo"><b>' + esc(g.nombre || '—') + '</b><span>' + esc(sub) + '</span></div>' +
+        '<div class="rfPartR"><b>' + fmt(g.montoConf) + '</b>' + (g.pend > 0 ? '<span class="rfPartPend">+' + fmt(g.pend) + ' en revisión</span>' : '') + '</div>' +
+        '</div>';
+    }).join('');
+  }
+  function rfParticipantesTabHTML() {
+    return '<div style="margin-bottom:9px"><span id="rfPtQLupa"></span></div>' +
+      '<div id="rfPtBody">' + rfParticipantesRowsHTML(_rfPtQ) + '</div>';
+  }
+  window.nxRfPtBuscar = function (v) { _rfPtQ = v || ''; var b = document.getElementById('rfPtBody'); if (b) b.innerHTML = rfParticipantesRowsHTML(_rfPtQ); };
   function pintarLupaRfPt() {
     var box = document.getElementById('rfPtQLupa');
     if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
     box.innerHTML = nxBuscaFiltroHTML({
       id: 'rfPtQ', label: 'Buscar', titulo: 'Buscar participante',
-      placeholder: 'Número, comprador o teléfono…', value: _rfPtQ || '',
+      placeholder: 'Comprador, teléfono o cédula…', value: _rfPtQ || '',
       onterm: function (v) { window.nxRfPtBuscar(v); }
+    });
+  }
+  // Detalle de UN participante: sus datos reales + sus boletos (chips, cada uno abre gestBoleto
+  // vía nxTkOpen — cero acción nueva, mismo panel lateral de siempre).
+  window.nxRfPartVer = function (idx) {
+    var g = _rfPartCache[idx]; if (!g) return;
+    cerrarModal('nxRfPart');
+    var ini = g.nombre ? g.nombre.trim().split(/\s+/).map(function (x) { return x[0] || ''; }).slice(0, 2).join('').toUpperCase() : '?';
+    var chips = g.tickets.slice().sort(function (a, b) { return String(a.numero).localeCompare(String(b.numero)); }).map(function (b) {
+      var e = tkEstInfo(b);
+      return '<button type="button" class="rfPartTk" style="color:' + e[1] + ';border-color:' + e[1] + '55;background:' + e[1] + '14" onclick="window.nxTkOpen(\'' + b.id + '\')">#' + esc(String(b.numero)) + '<span class="rfPartTkM">' + e[0] + '</span></button>';
+    }).join('');
+    var ov = document.createElement('div'); ov.id = 'nxRfPart'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-user"></i> Participante</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRfPart\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="overflow-y:auto;flex:1">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+      '<div class="rfPayIni" style="width:46px;height:46px;font-size:15px;flex-shrink:0">' + esc(ini) + '</div>' +
+      '<div style="min-width:0"><div style="font-size:15px;font-weight:800;color:#0f172a">' + esc(g.nombre || '—') + '</div>' +
+      (g.telefono ? '<div style="font-size:12.5px;color:#334155"><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> ' + esc(g.telefono) + '</div>' : '') +
+      '</div></div>' +
+      (g.cedula || g.email ? '<div style="font-size:12px;color:#475569;margin-bottom:10px">' + [g.cedula ? 'Cédula: ' + esc(g.cedula) : '', g.email ? 'Correo: ' + esc(g.email) : ''].filter(Boolean).join(' · ') + '</div>' : '') +
+      '<div class="rfKpis" style="grid-template-columns:1fr 1fr;margin-bottom:12px">' +
+      '<div class="rfKpi"><span>Confirmado</span><b style="color:#16a34a">' + fmt(g.montoConf) + '</b></div>' +
+      '<div class="rfKpi"><span>En revisión</span><b style="color:#d97706">' + fmt(g.pend) + '</b></div>' +
+      '</div>' +
+      '<div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px;margin-bottom:7px">Sus boletos (' + g.tickets.length + ')</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:7px">' + chips + '</div>' +
+      '</div></div>';
+    document.body.appendChild(ov);
+  };
+
+  // ── Pestaña "Tickets" — lista CRUDA de boletos (reusa tkRowsHTML, la MISMA tabla del modal
+  // "Lista de tickets", cero lógica nueva) — distinta a "Participantes", que agrupa por PERSONA.
+  // Comparte _tkEst con el modal nxRifaTickets a propósito: es el mismo filtro global de estado
+  // que ya usan los botones/KPIs del panel (Confirmados/Por confirmar/...) — no un estado nuevo.
+  function rfTicketsTabHTML() {
+    return '<div class="rfCtl"><span id="rfTkQLupa"></span>' +
+      '<select id="rfTkEstSel" onchange="window.nxRfTkEst(this.value)" aria-label="Filtrar tickets por estado">' +
+      '<option value=""' + (!_tkEst ? ' selected' : '') + '>Todos los estados</option>' +
+      '<option value="confirmado"' + (_tkEst === 'confirmado' ? ' selected' : '') + '>Confirmados</option>' +
+      '<option value="por_confirmar"' + (_tkEst === 'por_confirmar' ? ' selected' : '') + '>Por confirmar</option>' +
+      '<option value="apartado"' + (_tkEst === 'apartado' ? ' selected' : '') + '>Apartados</option>' +
+      '<option value="anulado"' + (_tkEst === 'anulado' ? ' selected' : '') + '>Anulados</option>' +
+      '</select></div>' +
+      '<div class="tw" style="overflow:auto"><table class="tkTbl"><thead><tr><th>No.</th><th>Participante</th><th>Fecha</th><th>Pago</th><th>Monto</th><th>Estado</th><th>Modo</th></tr></thead><tbody id="rfTkBody">' + tkRowsHTML(_rfTkQ) + '</tbody></table></div>';
+  }
+  window.nxRfTkEst = function (v) {
+    _tkEst = (['confirmado', 'por_confirmar', 'apartado', 'anulado'].indexOf(v) >= 0) ? v : '';
+    var b = document.getElementById('rfTkBody'); if (b) b.innerHTML = tkRowsHTML(_rfTkQ);
+  };
+  window.nxRfTkBuscar = function (v) { _rfTkQ = v || ''; var b = document.getElementById('rfTkBody'); if (b) b.innerHTML = tkRowsHTML(_rfTkQ); };
+  function pintarLupaRfTk() {
+    var box = document.getElementById('rfTkQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'rfTkQ', label: 'Buscar', titulo: 'Buscar ticket',
+      placeholder: 'Número, comprador o teléfono…', value: _rfTkQ || '',
+      onterm: function (v) { window.nxRfTkBuscar(v); }
     });
   }
 
@@ -27698,7 +27839,7 @@ try {
     st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center;position:relative}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfKpiT{cursor:pointer;-webkit-tap-highlight-color:transparent}.rfKpiT::after{content:"\\203A";position:absolute;top:2px;right:6px;color:#cbd5e1;font-weight:800;font-size:13px;line-height:1}.rfKpiT:active{background:#eef2ff;border-color:#c7d2fe}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:var(--mono);outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:var(--mono);font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:var(--mono);letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}.liqRow{border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}.liqTop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.liqTop b{font-size:13.5px;font-weight:800}.liqTop span{font-size:11px;color:#64748b;font-weight:600;white-space:nowrap}.liqBot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#475569}.rsConBox{background:#fff;border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-top:10px}.rsConT{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.rsCon{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;color:#334155}.rsCon span b{color:#0f172a;font-family:var(--mono)}.repItem{display:flex;align-items:center;gap:11px;width:100%;border:0;background:#fff;cursor:pointer;padding:12px 4px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;color:#334155;text-align:left;font-family:inherit}.repItem:last-child{border-bottom:0}.repItem:active{background:#f8fafc}.repIco{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.tkTbl{width:100%;border-collapse:collapse;font-size:11.5px;min-width:520px}.tkTbl thead th{background:#f8fafc;font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:8px 9px;border-bottom:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0}.tkTbl tbody td{padding:8px 9px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle}.tkTbl tbody tr:active{background:#f8fafc}.tkNumC{font-family:var(--mono);font-weight:800;color:#4338ca}.tkSub{font-size:9.5px;color:#94a3b8}.tkNw{white-space:nowrap}.tkR2{text-align:right;font-weight:800;color:#0f172a;white-space:nowrap}.tkBadge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}.stT{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}.stChart{display:flex;align-items:flex-end;gap:4px;height:122px;border-bottom:1px solid #e8edf3;padding-bottom:2px}.stCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.stBarWrap{width:100%;height:100px;display:flex;align-items:flex-end;justify-content:center}.stBar{width:72%;min-width:8px;background:linear-gradient(180deg,#6366f1,#4338ca);border-radius:4px 4px 0 0}.stLbl{font-size:8px;color:#94a3b8;white-space:nowrap}.stStat{margin-bottom:9px}.stStatTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.stStatTop b{color:#0f172a}.stStatBar{height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden}.stStatBar>div{height:100%;border-radius:5px}.pie{width:148px;height:148px;border-radius:50%;margin:6px auto 12px;box-shadow:0 4px 14px rgba(15,23,42,.10)}.pieLeg{display:flex;flex-direction:column;gap:0}.pieRow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:7px 2px;border-bottom:1px solid #f5f7fa}.pieRow:last-child{border-bottom:0}.pieDot{width:12px;height:12px;border-radius:3px;flex:0 0 auto}.pieK{flex:1;color:#334155;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pieRow b{color:#0f172a;font-weight:800;white-space:nowrap}.piePct{color:#64748b;font-weight:700;min-width:36px;text-align:right}' +
       // ── RIFAS V3 (panel administrativo) — tabs internas, atención requerida, bandeja de pagos
       // y panel lateral (drawer) para gestBoleto. .rfCtl gana flex-wrap para el select nuevo.
-      '.rfCtl{flex-wrap:wrap}#rfBoardEstSel{height:38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;padding:0 8px;flex:0 0 auto;background:#fff;color:#334155}' +
+      '.rfCtl{flex-wrap:wrap}#rfBoardEstSel,#rfTkEstSel{height:38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;padding:0 8px;flex:0 0 auto;background:#fff;color:#334155}' +
       '.rfTabs{display:flex;gap:4px;overflow-x:auto;margin:12px 0 10px;border-bottom:1px solid #e8edf3}' +
       '.rfTab{border:0;background:transparent;padding:9px 12px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}' +
       '.rfTab.on{color:#4338ca;border-bottom-color:#4f46e5}' +
@@ -27713,6 +27854,22 @@ try {
       '.rfPayR{display:flex;align-items:center;gap:6px;flex-shrink:0}.rfPayR b{font-size:13px;font-weight:800;color:#0f172a}' +
       '.rfPayEmpty{text-align:center;color:#475569;font-size:12.5px;padding:26px 10px}.rfPayEmpty i{font-size:26px;display:block;margin-bottom:8px;color:#16a34a}' +
       '.rfVouThumb{display:block;width:100%;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;padding:0;background:#f8fafc;cursor:pointer;margin-bottom:10px;text-align:left}.rfVouThumb img{width:100%;max-height:180px;object-fit:cover;display:block}.rfVouThumb span{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700;color:#4338ca;padding:7px}' +
+      // Miniatura del comprobante DENTRO de la fila de "Pagos por revisar" (reemplaza el avatar de
+      // iniciales cuando hay voucher) — mismo tamaño/posición que .rfPayIni para no romper el layout.
+      '.rfPayThumb{width:34px;height:34px;border-radius:9px;object-fit:cover;flex-shrink:0;border:1px solid #e2e8f0}' +
+      // Participantes (vista agregada por persona, no por ticket): total a la derecha de la fila,
+      // apilado (confirmado grande + pendiente chico en ámbar si hay algo por confirmar).
+      '.rfPartR{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}.rfPartR>b{font-size:13px;font-weight:800;color:#16a34a}.rfPartPend{font-size:9.5px;font-weight:700;color:#d97706;white-space:nowrap}' +
+      // Chips de boleto dentro del detalle de un participante (nxRfPartVer) — mismo lenguaje visual
+      // que los badges de estado ya usados en tkRowsHTML/tkBadge, en formato botón (abre el boleto).
+      '.rfPartTk{display:inline-flex;align-items:center;gap:5px;border:1px solid;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:800;font-family:var(--mono);cursor:pointer;background:transparent}.rfPartTkM{font-family:var(--ff);font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.2px;opacity:.85}' +
+      // Pestaña "Resumen" — dashboard de 3 tarjetas reales (próximo sorteo/por cobrar en revisión/
+      // ingreso potencial), no decorativo: cada número sale de rifas.fecha_sorteo o de _boletos.
+      '.rfSumGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:640px){.rfSumGrid{grid-template-columns:repeat(3,1fr)}}' +
+      '.rfSumCard{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:14px}.rfSumT{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:6px;margin-bottom:8px}.rfSumT i{font-size:14px;color:#94a3b8}' +
+      '.rfSumBig{font-size:19px;font-weight:800;color:#0f172a;line-height:1.2}.rfSumSub{font-size:11px;color:#64748b;font-weight:600;margin-top:3px}' +
+      '.rfSumEmpty{font-size:12.5px;color:#94a3b8;font-weight:600}' +
+      '.rfSumLink{display:inline-flex;align-items:center;gap:3px;border:0;background:transparent;color:#4338ca;font-size:11.5px;font-weight:800;padding:8px 0 0;cursor:pointer}.rfSumLink i{font-size:13px}' +
       // Panel lateral (drawer): reusa .overlay/.modal de siempre — solo cambia SU posición/tamaño
       // vía estas 2 clases nuevas, sin tocar la base compartida por el resto del sistema. El
       // fondo se aclara (mantener visible la pantalla detrás, pedido explícito del prototipo) y

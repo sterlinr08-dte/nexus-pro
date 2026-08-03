@@ -11654,3 +11654,83 @@ revise (mismo criterio que ya se usó con la reconstrucción del formulario de a
      con una espera de 350ms, que el CSS estaba bien desde el principio — era un problema de tiempo del
      propio test, no del código.
 - **Pendiente:** que el dueño revise la rama `claude/rifas-v3-admin` y confirme fusionar a `main`.
+
+### Rifas — panel administrativo, RONDA 2 sobre el documento completo de ChatGPT (3-ago-2026, v56.9) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+Después de publicar el panel V3 (arriba), el dueño pidió revisar qué había subido ChatGPT a
+`chatgpt/visual-draft` — apareció un archivo NUEVO,
+`docs/visual-drafts/rifas/RIFAS_V3_AUDITORIA_IMPLEMENTACION.md` (498 líneas, subido ~26 min después
+de que se abriera el PR de la V3), con el spec COMPLETO de lo que se había pedido — la V3 solo
+había cubierto una parte real (3 pestañas de las 5 pedidas; "Resumen" seguía siendo el tablero de
+números sin ningún dato de negocio; "Participantes" reusaba la tabla cruda de tickets, una fila por
+BOLETO, no por persona). Se comparó el documento completo contra lo ya construido, se le explicó al
+dueño el hueco real, y con su **"Si"** se continuó la construcción sobre la MISMA rama
+`claude/rifas-v3-admin` (todavía sin fusionar), antes de que revisara el PR.
+- **(1) "Resumen" dejó de ser el tablero — ahora es un dashboard de 3 tarjetas REALES:**
+  `rfResumenTabHTML(r)` (reescrita) muestra **"Próximo sorteo"** (fecha real de `rifas.fecha_sorteo`
+  con cuenta regresiva "Faltan N días"/"Es hoy"/"Ya pasó" — si la rifa NO tiene fecha, un aviso
+  honesto "Sin fecha de sorteo definida" + botón directo a `nxRifaEditar` para ponérsela, en vez de
+  inventar una), **"Por cobrar en revisión"** (la SUMA en pesos de los boletos `por_confirmar` —
+  antes el único dato visible era el CONTEO en el KPI de arriba, nunca el monto en dinero) e
+  **"Ingreso potencial restante"** (`disponibles × precio_boleto` — cuánto más entraría si se vende
+  todo lo que queda). Las 2 últimas tienen un enlace directo ("Revisar ahora"/"Ver disponibles") que
+  salta a la pestaña correspondiente, solo si hay algo real que revisar (`k.porConf>0`/`k.disp>0`).
+- **(2) El tablero de números se movió a su PROPIA pestaña, "Números"** (`rfNumerosTabHTML`, es el
+  MISMO contenido que antes vivía en "Resumen" — filtro por estado, "A la suerte", paginación —
+  solo cambió de pestaña; renombrada, no reescrita). `window.nxRfIrDisponibles`/`nxRfIrApartados`
+  (los KPIs de arriba que saltan al tablero filtrado) ahora navegan a `'numeros'`, no a `'resumen'`.
+- **(3) Pagos por revisar — miniatura real del comprobante:** `rfPagosRowsHTML` reemplaza el avatar
+  de iniciales por la imagen real del voucher (`<img class="rfPayThumb">`) cuando el boleto la trae
+  — se ve de un vistazo si ya hay foto o no, sin abrir cada fila. Sin voucher, cae al avatar de
+  iniciales de siempre (mismo dato `b.voucher`, cero consulta nueva).
+- **(4) "Participantes" — la pieza más grande de esta ronda: de tabla cruda a agregado REAL por
+  persona.** `rfParticipantesData(q)` agrupa `_boletos` (excluyendo anulados) por `telKey()` — el
+  MISMO normalizador de teléfono que el propio módulo ya usaba en `nxRifaPrevBoletos` para detectar
+  "cliente repetido" al vender — o `'n:'+nombre` si no hay teléfono (mismo criterio que
+  `nxRifaStats`, para no inventar un 2do criterio de agrupación). Cada grupo suma su monto
+  confirmado y lo que tiene pendiente de aprobar, y muestra `comprador_cedula`/`comprador_email` (sí
+  son columnas reales de `rifa_boletos`, confirmado por SQL directo antes de usarlas) cuando el
+  comprador las dejó — nunca se inventa un dato que no vino. `_rfPartCache` (array indexado, se
+  refresca en cada pintado) + `window.nxRfPartVer(idx)` — el detalle recibe un **ÍNDICE numérico**,
+  no el nombre/teléfono embebido en el `onclick`, a propósito: un nombre con apóstrofe (ej.
+  "d'León") habría roto el string de JavaScript del atributo — el mismo tipo de bug ya documentado
+  en este archivo (v53.5). El detalle muestra cédula/correo + KPI de Confirmado/En revisión + un
+  chip por cada boleto del participante (ordenados por número), cada uno abre su detalle real de
+  siempre vía `nxTkOpen`.
+- **(5) Pestaña nueva "Tickets"** (`rfTicketsTabHTML`) — la lista CRUDA que antes vivía (mal
+  ubicada) dentro de "Participantes": reusa `tkRowsHTML` **sin tocar su lógica**, con su propio
+  selector de estado (comparte `_tkEst` con el modal `nxRifaTickets` a propósito — es el mismo
+  filtro global que ya usan los KPIs/botones del panel, no un estado nuevo) y su propio buscador
+  (`_rfTkQ`, patrón NPGS §5). Distinta a propósito de "Participantes": una ve boletos, la otra ve
+  personas — no se fusionaron en una sola pantalla.
+- **Auditado del documento y DESCARTADO a propósito, con su razón** (mismo criterio de "no fingir
+  funciones que no existen" de siempre): la restructuración completa de la barra lateral/topbar del
+  hub de Multiempresa (cambiaría la navegación de TODO el hub, no solo de Rifas — fuera del alcance
+  de este pedido puntual), una barra de navegación inferior aparte para el celular (la fila de 5
+  pestañas ya hace scroll horizontal por sí sola — un segundo menú de navegación habría sido
+  redundante, mismo criterio ya usado y documentado en otras pantallas de este sistema, ej. v48.16),
+  y "Promesas de pago"/un log de "Actividad reciente" (ninguno tiene una tabla real detrás en este
+  módulo de rifas — inventarlos habría sido fingir un historial de gestión que no existe).
+- **Verificado con 72 pruebas de Playwright** contra el módulo REAL re-extraído del archivo (no una
+  reconstrucción a mano — con el `stubs.js` ampliado a 8 boletos de prueba, uno de ellos
+  deliberadamente con el MISMO teléfono que otro para probar que la agregación de verdad suma en vez
+  de listar duplicado, y una 2da rifa sin `fecha_sorteo` para probar el aviso honesto sin depender
+  del reloj del entorno): los 5 KPIs recalculados, las 5 pestañas en el orden correcto, las 3
+  tarjetas del dashboard con los montos exactos, el tablero intacto en su nueva pestaña, la
+  miniatura del comprobante solo en la fila que la trae, los 6 participantes agregados
+  correctamente (uno con 2 boletos reales sumando RD$1,200), su detalle con cédula/correo cuando
+  existen y sus boletos ordenados, la pestaña Tickets con su filtro y buscador propios sin excluir
+  anulados (igual que el modal de siempre), y **CERO desborde horizontal** en las 5 pestañas × 6
+  anchos de pantalla (390/760/901/1024/1280/1600px) — 72/72, 0 errores de consola. Capturas de
+  pantalla revisadas visualmente en 390px y 1600px para las 4 pestañas nuevas/rediseñadas.
+- **NOTA DE MÉTODO — 2 fallos de la primera corrida eran del PROPIO script de prueba, no del
+  código** (se investigaron antes de tocar el código de producción): un `startsWith('0005')` al que
+  le faltaba el símbolo `#` que el texto real sí trae, y una comparación de correo en minúscula
+  contra `element.innerText` — que SIEMPRE devuelve el texto YA RENDERIZADO (el sistema fuerza
+  mayúsculas globales por CSS, el mismo gotcha que este archivo ya documentó varias veces en otras
+  rondas de verificación de esta sesión). Se corrigieron las 2 aserciones, no el código — confirmado
+  releyendo la salida real de la primera corrida antes de decidir cuál lado tenía el error.
+- `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** que el dueño revise la rama `claude/rifas-v3-admin` (ahora con esta 2da ronda
+  encima) y confirme fusionar a `main` — mismo criterio de siempre, no se fusiona sin su OK
+  explícito.
