@@ -26351,6 +26351,10 @@ try {
 
   var _rifas = [], _resByRifa = {}, _rifaImgData = '', _cuentas = [], _vendedores = [], _paquetes = [];
   var _rifaSel = null, _boletos = [], _bolMap = {}, _tabPage = 0, _tabQ = '';
+  // RIFAS V3 (panel administrativo): pestaña interna activa + filtro de estado del tablero.
+  // 5 pestañas reales (Resumen/Números/Pagos por revisar/Participantes/Tickets, ver auditoría
+  // RIFAS_V3_AUDITORIA_IMPLEMENTACION.md en chatgpt/visual-draft).
+  var _rfTab = 'resumen', _rfBoardEst = '', _rfPagosQ = '', _rfPtQ = '', _rfTkQ = '';
   var _rifaFaqs = [];
   var _rifaTut = [];
   var RIFA_TUT_DEF = [
@@ -26675,7 +26679,7 @@ try {
   }
 
   window.nxRifaAbrir = async function (id) {
-    _rifaSel = id; _tabPage = 0; _tabQ = '';
+    _rifaSel = id; _tabPage = 0; _tabQ = ''; _rfTab = 'resumen'; _rfBoardEst = ''; _rfPagosQ = ''; _rfPtQ = ''; _rfTkQ = ''; _tkEst = '';
     var view = document.getElementById('v-rifas'); if (!view) return;
     await cargarBoletos(id);
     renderRifas(view);
@@ -26687,19 +26691,34 @@ try {
     renderRifas(view);
   };
 
+  // Estado real de una celda (por su número YA rellenado con ceros). 'disponible' si no hay
+  // boleto en _bolMap. Un solo lugar para no repetir el ternario entre el filtro y el pintado.
+  function estadoCelda(s) {
+    var b = _bolMap[s];
+    if (!b) return 'disponible';
+    if (b.estado === 'confirmado') return 'confirmado';
+    if (b.estado === 'apartado') return 'apartado';
+    return 'por_confirmar';
+  }
   function boardHTML(r) {
     var dig = Number(r.cantidad_digitos || 4);
     var total = Number(r.cantidad_numeros || 0);
     var q = (_tabQ || '').trim();
+    var est = _rfBoardEst || '';
     var per = 120;
     var nums = [];
-    for (var i = 0; i < total; i++) { var s = String(i).padStart(dig, '0'); if (!q || s.indexOf(q) >= 0) nums.push(s); }
+    for (var i = 0; i < total; i++) {
+      var s = String(i).padStart(dig, '0');
+      if (q && s.indexOf(q) < 0) continue;
+      if (est && estadoCelda(s) !== est) continue;
+      nums.push(s);
+    }
     var pages = Math.max(1, Math.ceil(nums.length / per));
     if (_tabPage >= pages) _tabPage = 0;
     var slice = nums.slice(_tabPage * per, _tabPage * per + per);
     var cells = slice.map(function (s) {
-      var b = _bolMap[s];
-      var cls = b ? (b.estado === 'confirmado' ? 'rfN-conf' : (b.estado === 'apartado' ? 'rfN-apar' : 'rfN-pend')) : 'rfN-disp';
+      var e = estadoCelda(s);
+      var cls = e === 'confirmado' ? 'rfN-conf' : (e === 'apartado' ? 'rfN-apar' : (e === 'por_confirmar' ? 'rfN-pend' : 'rfN-disp'));
       return '<button type="button" class="rfN ' + cls + '" onclick="window.nxRifaNum(\'' + s + '\')">' + s + '</button>';
     }).join('');
     var board = '<div class="rfBoard">' + (slice.length ? cells : '<div style="grid-column:1/-1;text-align:center;color:#475569;font-size:12px;padding:20px">Sin números con ese filtro</div>') + '</div>';
@@ -26707,23 +26726,390 @@ try {
     return board + pager;
   }
 
-  function renderRifaPanel(view, r) {
+  // RIFAS V3 — KPIs reales del panel (5, no los 2 buckets de rifaStats): confirmado/apartado/
+  // por_confirmar separados, tal como pide la auditoría del prototipo. rifaStats() NO se toca —
+  // sigue siendo lo que usa el modal nxRifaStats().
+  function rfKpisData(r) {
     var total = Number(r.cantidad_numeros || 0);
-    var o = rifaStats();
-    var pct = total ? Math.min(100, Math.round(o.n / total * 100)) : 0;
+    var conf = 0, apar = 0, porConf = 0, monto = 0;
+    _boletos.forEach(function (b) {
+      if (b.estado === 'anulado') return;
+      if (b.estado === 'confirmado') { conf++; monto += Number(b.precio || 0); }
+      else if (b.estado === 'apartado') apar++;
+      else porConf++;
+    });
+    var vendidos = conf + apar + porConf;
+    return { total: total, disp: Math.max(0, total - vendidos), apar: apar, porConf: porConf, conf: conf, monto: monto, vendidos: vendidos };
+  }
+  // "Atención requerida": pagos sin revisar + apartados a punto de vencer (apartado_hasta ya
+  // viaja en cada boleto —select=* — solo no se leía en el panel; se calcula en vivo, nunca se
+  // guarda). Apartados sin apartado_hasta (ventas del staff, que no expiran) no cuentan aquí.
+  function atencionRifa() {
+    var pagos = 0, apVencen = 0, now = Date.now();
+    _boletos.forEach(function (b) {
+      if (b.estado === 'por_confirmar') pagos++;
+      if (b.estado === 'apartado' && b.apartado_hasta) {
+        var t = new Date(b.apartado_hasta).getTime();
+        if (!isNaN(t) && t > now && (t - now) <= 3600000) apVencen++;
+      }
+    });
+    return { pagos: pagos, apVencen: apVencen };
+  }
+  function renderRifaPanel(view, r) {
+    var k = rfKpisData(r);
+    var pct = k.total ? Math.min(100, Math.round(k.vendidos / k.total * 100)) : 0;
     var wb = '';
     if (r.numero_ganador) { var gb = _bolMap[String(r.numero_ganador)]; wb = '<div class="rsBanner"><i class="ti ti-trophy"></i> <span><b>Ganador:</b> número ' + esc(r.numero_ganador) + ' — ' + (gb ? esc(gb.comprador_nombre || 'sin nombre') : 'no vendido (casa)') + '</span></div>'; }
-    view.innerHTML = '<div class="nc">' +
+    var atn = atencionRifa();
+    var atnHTML = (atn.pagos > 0 || atn.apVencen > 0) ? (
+      '<div class="rfAttn"><div class="rfAttnT"><i class="ti ti-alert-triangle"></i> Atención requerida</div>' +
+      (atn.pagos > 0 ? '<button class="rfAttnRow" type="button" onclick="window.nxRfTab(\'pagos\')"><b>' + atn.pagos + ' comprobante' + (atn.pagos === 1 ? '' : 's') + '</b><span>Esperan revisión</span><i class="ti ti-chevron-right"></i></button>' : '') +
+      (atn.apVencen > 0 ? '<button class="rfAttnRow" type="button" onclick="window.nxRfIrApartados()"><b>' + atn.apVencen + ' apartado' + (atn.apVencen === 1 ? '' : 's') + '</b><span>Vencen en menos de 1 hora</span><i class="ti ti-chevron-right"></i></button>' : '') +
+      '</div>'
+    ) : '';
+    var sideHTML = '<div class="rfSide">' +
+      '<button class="rfTab' + (_rfTab === 'resumen' ? ' on' : '') + '" data-tab="resumen" type="button" onclick="window.nxRfTab(\'resumen\')"><i class="ti ti-layout-dashboard"></i><span>Resumen</span></button>' +
+      '<button class="rfTab' + (_rfTab === 'numeros' ? ' on' : '') + '" data-tab="numeros" type="button" onclick="window.nxRfTab(\'numeros\')"><i class="ti ti-grid-dots"></i><span>Números</span></button>' +
+      '<button class="rfTab' + (_rfTab === 'pagos' ? ' on' : '') + '" data-tab="pagos" type="button" onclick="window.nxRfTab(\'pagos\')"><i class="ti ti-receipt"></i><span>Pagos por revisar</span>' + (k.porConf > 0 ? '<span class="rfTabBadge">' + k.porConf + '</span>' : '') + '</button>' +
+      '<button class="rfTab' + (_rfTab === 'participantes' ? ' on' : '') + '" data-tab="participantes" type="button" onclick="window.nxRfTab(\'participantes\')"><i class="ti ti-users"></i><span>Participantes</span></button>' +
+      '<button class="rfTab' + (_rfTab === 'tickets' ? ' on' : '') + '" data-tab="tickets" type="button" onclick="window.nxRfTab(\'tickets\')"><i class="ti ti-list-details"></i><span>Tickets</span></button>' +
+      '</div>';
+    // Sidebar vertical fija (solo escritorio, min-width:900px vía CSS) — MISMA clase .rfTab y
+    // MISMO data-tab que la fila de pestañas horizontal de abajo (que sigue intacta para el
+    // celular, decisión ya tomada en RONDA 2). nxRfTab() hace querySelectorAll('.rfTab') para
+    // marcar la activa — como matchea las DOS listas a la vez, la barra lateral se actualiza
+    // sola sin tocar esa función.
+    view.innerHTML = '<div class="rfShell">' + sideHTML + '<div class="rfMain"><div class="nc">' +
       '<div class="ch"><div style="min-width:0"><div class="ct"><i class="ti ti-ticket"></i> ' + esc(r.nombre || '') + '</div><div class="ct-s">' + esc(r.premio || '') + ' · ' + fmt(r.precio_boleto) + '</div></div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn bsm" type="button" onclick="window.nxRifaVolverLista()"><i class="ti ti-arrow-left"></i> Rifas</button><button class="btn bsm bc1" type="button" onclick="window.nxRifaSorteo()"><i class="ti ti-trophy"></i> Sorteo</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaReportes()"><i class="ti ti-chart-bar"></i> Reportes</button><button class="btn bsm bghost" type="button" onclick="window.nxRifaVendedores()" title="Empleados / vendedores de esta rifa" aria-label="Empleados / vendedores de esta rifa"><i class="ti ti-users"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaPaquetes()" title="Combos / paquetes" aria-label="Combos / paquetes"><i class="ti ti-package"></i></button><button class="btn bsm bghost" type="button" onclick="window.nxRifaLink()" title="Link público de compra" aria-label="Link público de compra"><i class="ti ti-link"></i></button><button aria-label="Editar esta rifa" class="btn bsm bghost" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')"><i class="ti ti-edit"></i></button></div></div>' +
-      '<div class="rfKpis"><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'\',\'Vendidos\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Vendidos</span><b>' + o.n + '/' + total + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Confirm.</span><b style="color:#16a34a">' + o.conf + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'por_confirmar\',\'Por confirmar\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Pend.</span><b style="color:#d97706">' + o.pend + '</b></div><div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span>Recaudado</span><b style="color:#16a34a">' + fmt(o.monto) + '</b></div></div>' + wb +
+      '<div class="rfKpis">' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRfIrDisponibles()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#eef2ff;color:#4338ca"><i class="ti ti-grid-dots"></i></div><span>Disponibles</span><b>' + k.disp + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRfIrApartados()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#fffbeb;color:#b45309"><i class="ti ti-bookmark"></i></div><span>Apartados</span><b style="color:#64748b">' + k.apar + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRfTab(\'pagos\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#fff7ed;color:#c2410c"><i class="ti ti-clock-hour-4"></i></div><span>Pagos x revisar</span><b style="color:#d97706">' + k.porConf + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRifaTickets(\'confirmado\',\'Confirmados\')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#f0fdf4;color:#16a34a"><i class="ti ti-circle-check"></i></div><span>Confirmados</span><b style="color:#16a34a">' + k.conf + '</b></div>' +
+      '<div class="rfKpi rfKpiT" onclick="window.nxRifaPorCuenta()" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div class="rfKpiIco" style="background:#f0fdf4;color:#16a34a"><i class="ti ti-cash"></i></div><span>Recaudado</span><b style="color:#16a34a">' + fmt(k.monto) + '</b></div>' +
+      '</div>' + wb +
       (r.mostrar_progreso === false ? '' : '<div class="nxRfBar" style="margin:10px 0"><div style="width:' + pct + '%"></div></div>') +
-      '<div class="rfCtl"><span id="rfTabQLupa"></span><button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
-      '<div class="rfLegend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:#fde68a"></i>Por confirmar</span><span><i class="d" style="background:#c7d2fe"></i>Confirmado</span><span><i class="d" style="background:#cbd5e1"></i>Apartado</span></div>' +
-      '<div id="rfBoardWrap">' + boardHTML(r) + '</div>' +
+      atnHTML +
+      '<div class="rfTabs">' +
+      '<button class="rfTab' + (_rfTab === 'resumen' ? ' on' : '') + '" data-tab="resumen" type="button" onclick="window.nxRfTab(\'resumen\')">Resumen</button>' +
+      '<button class="rfTab' + (_rfTab === 'numeros' ? ' on' : '') + '" data-tab="numeros" type="button" onclick="window.nxRfTab(\'numeros\')">Números</button>' +
+      '<button class="rfTab' + (_rfTab === 'pagos' ? ' on' : '') + '" data-tab="pagos" type="button" onclick="window.nxRfTab(\'pagos\')">Pagos por revisar' + (k.porConf > 0 ? '<span class="rfTabBadge">' + k.porConf + '</span>' : '') + '</button>' +
+      '<button class="rfTab' + (_rfTab === 'participantes' ? ' on' : '') + '" data-tab="participantes" type="button" onclick="window.nxRfTab(\'participantes\')">Participantes</button>' +
+      '<button class="rfTab' + (_rfTab === 'tickets' ? ' on' : '') + '" data-tab="tickets" type="button" onclick="window.nxRfTab(\'tickets\')">Tickets</button>' +
+      '</div>' +
+      '<div id="rfTabBody">' + rfTabBodyHTML(r) + '</div>' +
+      '</div></div></div>';
+    // NPGS §5: la lupa se pinta DESPUÉS de view.innerHTML — el <span> recién existe aquí; cada
+    // pestaña pinta la suya (una sola existe a la vez en el DOM real, según _rfTab).
+    try { pintarLupaRfTabActiva(); } catch (e) {}
+  }
+
+  // RIFAS V3 — 3 pestañas internas reales (Resumen=tablero, Pagos por revisar=bandeja,
+  // Participantes=lista completa). Boletos/Vendedores/Sorteo/Configuración del prototipo YA
+  // tienen su entrada real en los botones del encabezado de arriba (Vendedores/Sorteo/Editar) —
+  // no se duplicaron como pestañas nuevas.
+  window.nxRfTab = function (t) {
+    _rfTab = (['resumen', 'numeros', 'pagos', 'participantes', 'tickets'].indexOf(t) >= 0) ? t : 'resumen';
+    var r = currentRifa(); if (!r) return;
+    document.querySelectorAll('.rfTab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === _rfTab); });
+    var body = document.getElementById('rfTabBody'); if (body) body.innerHTML = rfTabBodyHTML(r);
+    try { pintarLupaRfTabActiva(); } catch (e) {}
+  };
+  function rfTabBodyHTML(r) {
+    if (_rfTab === 'numeros') return rfNumerosTabHTML(r);
+    if (_rfTab === 'pagos') return rfPagosTabHTML();
+    if (_rfTab === 'participantes') return rfParticipantesTabHTML();
+    if (_rfTab === 'tickets') return rfTicketsTabHTML();
+    return rfResumenTabHTML(r);
+  }
+  // NPGS §5: pinta la lupa de LA pestaña que esté activa ahora mismo — cada pestaña tiene su
+  // propio <span> placeholder y su propio término (_tabQ/_rfPagosQ/_rfPtQ/_rfTkQ), sin cruzarse
+  // entre sí. "Resumen" (dashboard) no lleva lupa — no hay ninguna lista que filtrar ahí.
+  function pintarLupaRfTabActiva() {
+    if (_rfTab === 'numeros') pintarLupaRfTab();
+    else if (_rfTab === 'pagos') pintarLupaRfPagos();
+    else if (_rfTab === 'participantes') pintarLupaRfPt();
+    else if (_rfTab === 'tickets') pintarLupaRfTk();
+  }
+  // ── Pestaña "Resumen" — REAL, no decorativa: 3 tarjetas derivadas de rifas.fecha_sorteo y
+  // _boletos (ya cargados), nunca inventadas. Descartado a propósito del mockup original: una
+  // "Actividad reciente" (no hay ningún log de gestión en este módulo, cero tabla real detrás) y
+  // "Meta del día"/"Promesas de pago" (sin esquema que las respalde) — ver el changelog.
+  function rfResumenTabHTML(r) {
+    var k = rfKpisData(r);
+    var pct = k.total ? Math.min(100, Math.round(k.vendidos / k.total * 100)) : 0;
+    var pendConfirmar = _boletos.reduce(function (s, b) { return s + (b.estado === 'por_confirmar' ? Number(b.precio || 0) : 0); }, 0);
+    var potencial = k.disp * Number(r.precio_boleto || 0);
+    var sorteoHTML;
+    if (r.mostrar_fecha !== false && r.fecha_sorteo) {
+      var fs = null; try { fs = new Date(r.fecha_sorteo); } catch (e) {}
+      var dias = fs ? Math.ceil((fs.getTime() - Date.now()) / 86400000) : null;
+      var fTxt = fs ? fs.toLocaleString('es-DO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      sorteoHTML = '<div class="rfSumBig">' + esc(fTxt) + '</div><div class="rfSumSub">' + (dias === null ? '' : (dias > 0 ? 'Faltan ' + dias + ' día' + (dias === 1 ? '' : 's') : (dias === 0 ? 'Es hoy' : 'Ya pasó'))) + '</div>';
+    } else {
+      sorteoHTML = '<div class="rfSumEmpty">Sin fecha de sorteo definida</div><button class="rfSumLink" type="button" onclick="window.nxRifaEditar(\'' + r.id + '\')">Ponerle fecha <i class="ti ti-chevron-right"></i></button>';
+    }
+    // Donut "Progreso de ventas": mismo conic-gradient que ya usa "Medios de pago"
+    // (nxRifaStats) — reusa .pie/.pieLeg/.pieRow/.pieDot/.piePct, cero CSS nuevo. Solo se
+    // pinta si hay algún número vendido (k.vendidos>0); con la rifa recién creada (todo
+    // disponible) no aporta nada mostrar un donut de un solo color, así que no se arma.
+    var donutHTML = '';
+    if (k.total > 0 && k.vendidos > 0) {
+      var segsD = [
+        { k: 'Confirmados', v: k.conf, c: '#16a34a' },
+        { k: 'Apartados', v: k.apar, c: '#d97706' },
+        { k: 'Por confirmar', v: k.porConf, c: '#ea580c' },
+        { k: 'Disponibles', v: k.disp, c: '#94a3b8' }
+      ].filter(function (s) { return s.v > 0; });
+      var accD2 = 0;
+      var stopsD = segsD.map(function (s) { var a = accD2, b3 = accD2 + s.v / k.total * 360; accD2 = b3; return s.c + ' ' + a + 'deg ' + b3 + 'deg'; }).join(',');
+      var legendD = segsD.map(function (s) { var p = Math.round(s.v / k.total * 100); return '<div class="pieRow"><span class="pieDot" style="background:' + s.c + '"></span><span class="pieK">' + s.k + '</span><b>' + s.v + '</b><span class="piePct">' + p + '%</span></div>'; }).join('');
+      donutHTML = '<div class="rfSumCard" style="grid-column:1/-1"><div class="rfSumT"><i class="ti ti-chart-donut"></i> Progreso de ventas</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center">' +
+        '<div style="position:relative;width:148px;height:148px;margin:6px auto 12px"><div class="pie" style="margin:0;background:conic-gradient(' + stopsD + ')"></div><div style="position:absolute;inset:28px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#0f172a;box-shadow:inset 0 0 0 1px #f1f5f9">' + pct + '%</div></div>' +
+        '<div class="pieLeg" style="min-width:200px;flex:1">' + legendD + '</div>' +
+        '</div></div>';
+    }
+    return '<div class="rfSumGrid">' + donutHTML +
+      '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-calendar-event"></i> Próximo sorteo</div>' + sorteoHTML + '</div>' +
+      '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-hourglass"></i> Por cobrar en revisión</div><div class="rfSumBig">' + fmt(pendConfirmar) + '</div><div class="rfSumSub">' + k.porConf + ' pago' + (k.porConf === 1 ? '' : 's') + ' esperando aprobación</div>' +
+      (k.porConf > 0 ? '<button class="rfSumLink" type="button" onclick="window.nxRfTab(\'pagos\')">Revisar ahora <i class="ti ti-chevron-right"></i></button>' : '') + '</div>' +
+      '<div class="rfSumCard"><div class="rfSumT"><i class="ti ti-trending-up"></i> Ingreso potencial restante</div><div class="rfSumBig">' + fmt(potencial) + '</div><div class="rfSumSub">Si se venden los ' + k.disp + ' número' + (k.disp === 1 ? '' : 's') + ' disponibles</div>' +
+      (k.disp > 0 ? '<button class="rfSumLink" type="button" onclick="window.nxRfIrDisponibles()">Ver disponibles <i class="ti ti-chevron-right"></i></button>' : '') + '</div>' +
       '</div>';
-    // NPGS §5: la lupa se pinta DESPUÉS de view.innerHTML — el <span> recién existe aquí.
-    try { pintarLupaRfTab(); } catch (e) {}
+  }
+  // ── Pestaña "Números" — el tablero de siempre (era "Resumen" antes de esta versión, mismo
+  // contenido, solo se movió a su propia pestaña dedicada).
+  // Detalle del número: en escritorio (min-width:900px vía CSS) va DOCKEADO como columna fija
+  // junto al tablero (#rfDetailDock, ver gestBoleto); en móvil ese contenedor se oculta y
+  // gestBoleto sigue usando el cajón/overlay de siempre — comportamiento intacto.
+  var RF_DOCK_EMPTY = '<div class="rfDockCard rfDockEmpty"><i class="ti ti-hand-click"></i>Toca un número del tablero para ver su detalle aquí.</div>';
+  window.nxRfDockCerrar = function () { var d = document.getElementById('rfDetailDock'); if (d) d.innerHTML = RF_DOCK_EMPTY; };
+  function rfNumerosTabHTML(r) {
+    return '<div class="rfNumRow"><div class="rfBoardCol">' +
+      '<div class="rfCtl"><span id="rfTabQLupa"></span>' +
+      '<select id="rfBoardEstSel" onchange="window.nxRfBoardEst(this.value)" aria-label="Filtrar tablero por estado">' +
+      '<option value=""' + (!_rfBoardEst ? ' selected' : '') + '>Todos los estados</option>' +
+      '<option value="disponible"' + (_rfBoardEst === 'disponible' ? ' selected' : '') + '>Disponibles</option>' +
+      '<option value="apartado"' + (_rfBoardEst === 'apartado' ? ' selected' : '') + '>Apartados</option>' +
+      '<option value="por_confirmar"' + (_rfBoardEst === 'por_confirmar' ? ' selected' : '') + '>Por confirmar</option>' +
+      '<option value="confirmado"' + (_rfBoardEst === 'confirmado' ? ' selected' : '') + '>Confirmados</option>' +
+      '</select>' +
+      '<button class="btn bsm bc1" type="button" onclick="window.nxRifaSuerte()"><i class="ti ti-dice-5"></i> A la suerte</button></div>' +
+      '<div class="rfLegend"><span><i class="d" style="background:#e2e8f0"></i>Disponible</span><span><i class="d" style="background:#fdba74"></i>Por confirmar</span><span><i class="d" style="background:#86efac"></i>Confirmado</span><span><i class="d" style="background:#fde68a"></i>Apartado</span></div>' +
+      '<div id="rfBoardWrap">' + boardHTML(r) + '</div>' +
+      '</div>' +
+      '<div class="rfDetailDock" id="rfDetailDock">' + RF_DOCK_EMPTY + '</div>' +
+      '</div>';
+  }
+  window.nxRfBoardEst = function (v) {
+    _rfBoardEst = (['disponible', 'apartado', 'por_confirmar', 'confirmado'].indexOf(v) >= 0) ? v : '';
+    _tabPage = 0;
+    var r = currentRifa(); var w = document.getElementById('rfBoardWrap');
+    if (r && w) w.innerHTML = boardHTML(r);
+  };
+  window.nxRfIrDisponibles = function () { _rfBoardEst = 'disponible'; window.nxRfTab('numeros'); };
+  window.nxRfIrApartados = function () { _rfBoardEst = 'apartado'; window.nxRfTab('numeros'); };
+
+  // ── Pestaña "Pagos por revisar" (bandeja) — solo boletos por_confirmar. Filtro y filas propios
+  // (NO comparte _tkEst con el modal nxRifaTickets, para no arrastrar estado entre los dos).
+  // Abrir una fila reusa gestBoleto vía nxTkOpen — cero acciones nuevas, mismo panel lateral.
+  function rfPagosRowsHTML(q) {
+    var ql = (q || '').trim().toLowerCase();
+    var list = _boletos.filter(function (b) {
+      if (b.estado !== 'por_confirmar') return false;
+      if (!ql) return true;
+      return (String(b.numero) + ' ' + (b.comprador_nombre || '') + ' ' + (b.comprador_telefono || '')).toLowerCase().indexOf(ql) >= 0;
+    });
+    if (!list.length) return '<div class="rfPayEmpty"><i class="ti ti-checks"></i>No hay pagos por revisar.</div>';
+    return list.map(function (b) {
+      var nom = (b.comprador_nombre || '').trim();
+      var ini = nom ? nom.split(/\s+/).map(function (x) { return x[0] || ''; }).slice(0, 2).join('').toUpperCase() : '?';
+      // Miniatura real del comprobante en la fila (no solo un ícono) si el boleto trae voucher —
+      // sin voucher, cae al avatar de iniciales de siempre. Mismo dato (b.voucher), ninguna
+      // consulta nueva.
+      var thumb = b.voucher ? '<img class="rfPayThumb" src="' + esc(b.voucher) + '" alt="Comprobante de pago">' : '<div class="rfPayIni">' + esc(ini) + '</div>';
+      return '<div class="rfPayRow" onclick="window.nxTkOpen(\'' + b.id + '\')" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">' +
+        thumb +
+        '<div class="rfPayInfo"><b>' + esc(nom || '—') + '</b><span>#' + esc(String(b.numero)) + ' · ' + esc(fechaTk(b.created_at)) + '</span></div>' +
+        '<div class="rfPayR"><b>' + fmt(b.precio) + '</b>' + (b.voucher ? '<i class="ti ti-receipt" style="color:#16a34a" title="Con comprobante"></i>' : '') + '</div>' +
+        // Aprobar/Rechazar de 1 toque, sin abrir el panel lateral (stopPropagation — la fila
+        // entera ya tiene su propio onclick que la abriría). Mismas 2 funciones de siempre
+        // (nxRifaConfirmar/nxRifaRechazar), nada nuevo — solo un atajo desde la bandeja.
+        '<div class="rfPayBtns">' +
+        '<button type="button" class="rfPayBtn rfPayBtnOk" aria-label="Aprobar pago" title="Aprobar pago" onclick="event.stopPropagation();window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i></button>' +
+        '<button type="button" class="rfPayBtn rfPayBtnNo" aria-label="Rechazar pago" title="Rechazar pago" onclick="event.stopPropagation();window.nxRifaRechazar(\'' + b.id + '\')"><i class="ti ti-x"></i></button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }
+  function rfPagosTabHTML() {
+    return '<div style="margin-bottom:9px"><span id="rfPagosQLupa"></span></div>' +
+      '<div id="rfPagosBody">' + rfPagosRowsHTML(_rfPagosQ) + '</div>';
+  }
+  window.nxRfPagosBuscar = function (v) { _rfPagosQ = v || ''; var b = document.getElementById('rfPagosBody'); if (b) b.innerHTML = rfPagosRowsHTML(_rfPagosQ); };
+  // NPGS §5: lupa colapsada, mismo patrón que pintarLupaRfTab (tablero) — SIN cont: porque las
+  // filas viven dentro de #rfPagosBody sin marcado propio de "resultados" (mensaje ya honesto).
+  function pintarLupaRfPagos() {
+    var box = document.getElementById('rfPagosQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'rfPagosQ', label: 'Buscar', titulo: 'Buscar pago por revisar',
+      placeholder: 'Comprador, número o teléfono…', value: _rfPagosQ || '',
+      onterm: function (v) { window.nxRfPagosBuscar(v); }
+    });
+  }
+
+  // ── Pestaña "Participantes" — antes reusaba tkRowsHTML tal cual (una fila por TICKET, no por
+  // persona): un mismo comprador con 3 boletos salía 3 veces sin ningún total (Hallazgo E de la
+  // auditoría). Ahora se AGRUPA de verdad por comprador — telKey() (el mismo normalizador que ya
+  // usa nxRifaPrevBoletos para "cliente repetido"), o 'n:'+nombre si no hay teléfono, IGUAL
+  // criterio que ya usa rifaStats()/nxRifaStats para no inventar un 2do criterio de agrupación.
+  // comprador_cedula/comprador_email SÍ son columnas reales de rifa_boletos (confirmado por SQL
+  // directo) — se muestran cuando existen, nada se inventa si vienen vacías.
+  function rfParticipantesData(q) {
+    var ql = (q || '').trim().toLowerCase();
+    var groups = {}, order = [];
+    _boletos.forEach(function (b) {
+      if (b.estado === 'anulado') return;
+      var k = telKey(b.comprador_telefono) || ('n:' + (b.comprador_nombre || '?'));
+      if (!groups[k]) { groups[k] = { nombre: '', telefono: '', cedula: '', email: '', tickets: [], montoConf: 0, pend: 0 }; order.push(k); }
+      var g = groups[k];
+      if (!g.nombre && b.comprador_nombre) g.nombre = b.comprador_nombre;
+      if (!g.telefono && b.comprador_telefono) g.telefono = b.comprador_telefono;
+      if (!g.cedula && b.comprador_cedula) g.cedula = b.comprador_cedula;
+      if (!g.email && b.comprador_email) g.email = b.comprador_email;
+      g.tickets.push(b);
+      if (b.estado === 'confirmado') g.montoConf += Number(b.precio || 0); else g.pend += Number(b.precio || 0);
+    });
+    var list = order.map(function (k) { return groups[k]; });
+    if (ql) list = list.filter(function (g) { return (g.nombre + ' ' + g.telefono + ' ' + g.cedula).toLowerCase().indexOf(ql) >= 0; });
+    list.sort(function (a, b) { return b.tickets.length - a.tickets.length || (b.montoConf + b.pend) - (a.montoConf + a.pend); });
+    return list;
+  }
+  // Índice numérico → grupo, para que nxRfPartVer reciba un ÍNDICE en vez de un nombre/teléfono
+  // embebido en el onclick (un nombre con apóstrofe, ej. "d'Leon", rompería el string de JS del
+  // atributo — mismo bug ya documentado y evitado en este sistema). Se refresca en cada pintado,
+  // consistente porque el render es síncrono de un solo hilo.
+  var _rfPartCache = [];
+  function rfParticipantesRowsHTML(q) {
+    var list = rfParticipantesData(q);
+    _rfPartCache = list;
+    if (!list.length) return '<div class="rfPayEmpty"><i class="ti ti-users"></i>Sin participantes con ese filtro.</div>';
+    return list.map(function (g, i) {
+      var ini = g.nombre ? g.nombre.trim().split(/\s+/).map(function (x) { return x[0] || ''; }).slice(0, 2).join('').toUpperCase() : '?';
+      var sub = [g.telefono, (g.tickets.length + ' boleto' + (g.tickets.length === 1 ? '' : 's'))].filter(Boolean).join(' · ');
+      return '<div class="rfPayRow" onclick="window.nxRfPartVer(' + i + ')" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">' +
+        '<div class="rfPayIni">' + esc(ini) + '</div>' +
+        '<div class="rfPayInfo"><b>' + esc(g.nombre || '—') + '</b><span>' + esc(sub) + '</span></div>' +
+        '<div class="rfPartR"><b>' + fmt(g.montoConf) + '</b>' + (g.pend > 0 ? '<span class="rfPartPend">+' + fmt(g.pend) + ' en revisión</span>' : '') + '</div>' +
+        '</div>';
+    }).join('');
+  }
+  function rfParticipantesTabHTML() {
+    return '<div style="margin-bottom:9px"><span id="rfPtQLupa"></span></div>' +
+      '<div id="rfPtBody">' + rfParticipantesRowsHTML(_rfPtQ) + '</div>';
+  }
+  window.nxRfPtBuscar = function (v) { _rfPtQ = v || ''; var b = document.getElementById('rfPtBody'); if (b) b.innerHTML = rfParticipantesRowsHTML(_rfPtQ); };
+  function pintarLupaRfPt() {
+    var box = document.getElementById('rfPtQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'rfPtQ', label: 'Buscar', titulo: 'Buscar participante',
+      placeholder: 'Comprador, teléfono o cédula…', value: _rfPtQ || '',
+      onterm: function (v) { window.nxRfPtBuscar(v); }
+    });
+  }
+  // Detalle de UN participante: sus datos reales + sus boletos (chips, cada uno abre gestBoleto
+  // vía nxTkOpen — cero acción nueva, mismo panel lateral de siempre).
+  // Las 2 tarjetas "Confirmado"/"En revisión" son ahora CLICABLES (pedido del dueño): tocar una
+  // filtra la lista de boletos de ABAJO a esa sección — no abre otra ventana ni navega fuera del
+  // participante, porque los boletos que respaldan esos 2 montos son justo los que ya se listan
+  // aquí mismo como chips. Reusa `.rfKpiT` (mismo chevron+cursor:pointer que ya usan los KPI del
+  // panel principal) — no un estilo nuevo.
+  function partChipHTML(b) {
+    var e = tkEstInfo(b);
+    return '<button type="button" class="rfPartTk" style="color:' + e[1] + ';border-color:' + e[1] + '55;background:' + e[1] + '14" onclick="window.nxTkOpen(\'' + b.id + '\')">#' + esc(String(b.numero)) + '<span class="rfPartTkM">' + e[0] + '</span></button>';
+  }
+  function partChipsFiltrar(g, tipo) {
+    var list = g.tickets.slice().sort(function (a, b) { return String(a.numero).localeCompare(String(b.numero)); });
+    if (tipo === 'confirmado') list = list.filter(function (b) { return b.estado === 'confirmado'; });
+    else if (tipo === 'pendiente') list = list.filter(function (b) { return b.estado !== 'confirmado'; }); // por_confirmar + apartado, mismo criterio que g.pend
+    return list;
+  }
+  window.nxRfPartVer = function (idx) {
+    var g = _rfPartCache[idx]; if (!g) return;
+    cerrarModal('nxRfPart');
+    var ini = g.nombre ? g.nombre.trim().split(/\s+/).map(function (x) { return x[0] || ''; }).slice(0, 2).join('').toUpperCase() : '?';
+    var chips = partChipsFiltrar(g, '').map(partChipHTML).join('');
+    var ov = document.createElement('div'); ov.id = 'nxRfPart'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    var kbd = ' onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"';
+    ov.innerHTML = '<div class="modal" style="max-width:420px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-user"></i> Participante</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRfPart\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="overflow-y:auto;flex:1">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+      '<div class="rfPayIni" style="width:46px;height:46px;font-size:15px;flex-shrink:0">' + esc(ini) + '</div>' +
+      '<div style="min-width:0"><div style="font-size:15px;font-weight:800;color:#0f172a">' + esc(g.nombre || '—') + '</div>' +
+      (g.telefono ? '<div style="font-size:12.5px;color:#334155"><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> ' + esc(g.telefono) + '</div>' : '') +
+      '</div></div>' +
+      (g.cedula || g.email ? '<div style="font-size:12px;color:#475569;margin-bottom:10px">' + [g.cedula ? 'Cédula: ' + esc(g.cedula) : '', g.email ? 'Correo: ' + esc(g.email) : ''].filter(Boolean).join(' · ') + '</div>' : '') +
+      '<div class="rfKpis" style="grid-template-columns:1fr 1fr;margin-bottom:12px">' +
+      '<div class="rfKpi rfKpiT" id="rfPartKpiConf" tabindex="0" role="button" aria-label="Ver solo los boletos confirmados" onclick="window.nxRfPartFiltro(' + idx + ',\'confirmado\')"' + kbd + '><span>Confirmado</span><b style="color:#16a34a">' + fmt(g.montoConf) + '</b></div>' +
+      '<div class="rfKpi rfKpiT" id="rfPartKpiPend" tabindex="0" role="button" aria-label="Ver solo los boletos en revisión" onclick="window.nxRfPartFiltro(' + idx + ',\'pendiente\')"' + kbd + '><span>En revisión</span><b style="color:#d97706">' + fmt(g.pend) + '</b></div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">' +
+      '<span id="rfPartChipsLbl" style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px">Sus boletos (' + g.tickets.length + ')</span>' +
+      '<button type="button" id="rfPartVerTodos" onclick="window.nxRfPartFiltro(' + idx + ',\'\')" style="display:none;border:0;background:none;color:#4338ca;font-size:11px;font-weight:800;cursor:pointer;padding:0">Ver todos</button>' +
+      '</div>' +
+      '<div id="rfPartChips" style="display:flex;flex-wrap:wrap;gap:7px">' + chips + '</div>' +
+      '</div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxRfPartFiltro = function (idx, tipo) {
+    var g = _rfPartCache[idx]; if (!g) return;
+    var wrap = document.getElementById('rfPartChips'); if (!wrap) return;
+    var actual = wrap.getAttribute('data-filtro') || '';
+    var next = actual === tipo ? '' : tipo; // tocar la misma tarjeta 2 veces limpia el filtro
+    wrap.setAttribute('data-filtro', next);
+    var list = partChipsFiltrar(g, next);
+    wrap.innerHTML = list.length ? list.map(partChipHTML).join('') : '<div style="font-size:12px;color:#94a3b8;padding:6px 2px">Sin boletos en esta sección.</div>';
+    var lbl = document.getElementById('rfPartChipsLbl');
+    if (lbl) lbl.textContent = (next === 'confirmado' ? 'Confirmados' : next === 'pendiente' ? 'En revisión' : 'Sus boletos') + ' (' + list.length + ')';
+    var ver = document.getElementById('rfPartVerTodos'); if (ver) ver.style.display = next ? '' : 'none';
+    var k1 = document.getElementById('rfPartKpiConf'), k2 = document.getElementById('rfPartKpiPend');
+    if (k1) k1.classList.toggle('on', next === 'confirmado');
+    if (k2) k2.classList.toggle('on', next === 'pendiente');
+  };
+
+  // ── Pestaña "Tickets" — lista CRUDA de boletos (reusa tkRowsHTML, la MISMA tabla del modal
+  // "Lista de tickets", cero lógica nueva) — distinta a "Participantes", que agrupa por PERSONA.
+  // Comparte _tkEst con el modal nxRifaTickets a propósito: es el mismo filtro global de estado
+  // que ya usan los botones/KPIs del panel (Confirmados/Por confirmar/...) — no un estado nuevo.
+  function rfTicketsTabHTML() {
+    return '<div class="rfCtl"><span id="rfTkQLupa"></span>' +
+      '<select id="rfTkEstSel" onchange="window.nxRfTkEst(this.value)" aria-label="Filtrar tickets por estado">' +
+      '<option value=""' + (!_tkEst ? ' selected' : '') + '>Todos los estados</option>' +
+      '<option value="confirmado"' + (_tkEst === 'confirmado' ? ' selected' : '') + '>Confirmados</option>' +
+      '<option value="por_confirmar"' + (_tkEst === 'por_confirmar' ? ' selected' : '') + '>Por confirmar</option>' +
+      '<option value="apartado"' + (_tkEst === 'apartado' ? ' selected' : '') + '>Apartados</option>' +
+      '<option value="anulado"' + (_tkEst === 'anulado' ? ' selected' : '') + '>Anulados</option>' +
+      '</select></div>' +
+      '<div class="tw" style="overflow:auto"><table class="tkTbl"><thead><tr><th>No.</th><th>Participante</th><th>Fecha</th><th>Pago</th><th>Monto</th><th>Estado</th><th>Modo</th></tr></thead><tbody id="rfTkBody">' + tkRowsHTML(_rfTkQ) + '</tbody></table></div>';
+  }
+  window.nxRfTkEst = function (v) {
+    _tkEst = (['confirmado', 'por_confirmar', 'apartado', 'anulado'].indexOf(v) >= 0) ? v : '';
+    var b = document.getElementById('rfTkBody'); if (b) b.innerHTML = tkRowsHTML(_rfTkQ);
+  };
+  window.nxRfTkBuscar = function (v) { _rfTkQ = v || ''; var b = document.getElementById('rfTkBody'); if (b) b.innerHTML = tkRowsHTML(_rfTkQ); };
+  function pintarLupaRfTk() {
+    var box = document.getElementById('rfTkQLupa');
+    if (!box || typeof nxBuscaFiltroHTML !== 'function') return;
+    box.innerHTML = nxBuscaFiltroHTML({
+      id: 'rfTkQ', label: 'Buscar', titulo: 'Buscar ticket',
+      placeholder: 'Número, comprador o teléfono…', value: _rfTkQ || '',
+      onterm: function (v) { window.nxRfTkBuscar(v); }
+    });
   }
 
   window.nxRifaBuscar = function (v) { _tabQ = v; _tabPage = 0; var r = currentRifa(); var w = document.getElementById('rfBoardWrap'); if (r && w) w.innerHTML = boardHTML(r); };
@@ -26829,33 +27215,63 @@ try {
     }
   };
 
+  // Ancho mínimo (px) a partir del cual, en la pestaña Números, el detalle se dockea como
+  // columna fija (#rfDetailDock) en vez de abrir el cajón lateral — MISMO breakpoint que usa el
+  // CSS (.rfNumRow/.rfDetailDock, min-width:900px) para que JS y CSS decidan lo mismo.
+  var RF_DOCK_MIN = 900;
   function gestBoleto(b) {
     cerrarModal('nxRbGest');
     var wa = String(b.comprador_telefono || '').replace(/\D/g, ''); if (wa.length === 10) wa = '1' + wa;
-    var estTxt = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : 'Por confirmar');
+    var estTxt = b.estado === 'confirmado' ? 'Pago verificado' : (b.estado === 'apartado' ? 'Apartado' : (b.estado === 'anulado' ? 'Rechazado' : 'Por confirmar'));
     var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
     var prem = rg.premio || rg.nombre || 'la rifa';
     _bolActual = bolData(b, rg); _bolTexto = bolTexto(b, rg);
     var waHref = boletoWaHref(b, rg);
-    var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open';
-    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = '<div class="modal" style="max-width:380px"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' +
-      '<div style="font-size:13px;color:#334155;line-height:1.7;padding:2px 2px 8px">' +
+    // Contenido del detalle — el MISMO de siempre, ahora en una variable para poder mostrarlo en
+    // 2 contenedores distintos: el cajón lateral (móvil, o fuera de la pestaña Números) o la
+    // columna fija #rfDetailDock (escritorio, pestaña Números — ver RF_DOCK_MIN más abajo).
+    // Ninguna de las funciones que actúan sobre el boleto (nxRifaConfirmar/Liberar/CambiarNum/...)
+    // tuvo que tocarse: siguen cerrando 'nxRbGest' (no-op si no existe) y volviendo a pintar la
+    // pestaña completa, que reconstruye este mismo detalle en el contenedor que corresponda.
+    var body2 = '<div style="font-size:13px;color:#334155;line-height:1.7;padding:2px 2px 8px">' +
       '<div style="font-size:15px;font-weight:800;color:#0f172a">' + esc(b.comprador_nombre || '—') + '</div>' +
       (b.comprador_telefono ? '<div><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> ' + esc(b.comprador_telefono) + '</div>' : '') +
       '<div><i class="ti ti-cash"></i> ' + fmt(b.precio) + (b.metodo_pago ? ' · ' + esc(b.metodo_pago) : '') + '</div>' +
       '<div>Estado: <b>' + estTxt + '</b></div>' +
       (b.vendedor_nombre ? '<div>Vendedor: ' + esc(b.vendedor_nombre) + '</div>' : '') +
       '</div>' +
+      // Motivo del rechazo — solo se ve si el boleto quedó anulado por rechazo de pago
+      // (nxRifaRechazarGuardar). No inventa nada: si no hay motivo guardado, no aparece nada.
+      (b.estado === 'anulado' && b.motivo_rechazo ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:9px 11px;margin:2px 2px 8px;font-size:12px;color:#991b1b"><b>Motivo del rechazo:</b> ' + esc(b.motivo_rechazo) + '</div>' : '') +
+      // "Vista previa del comprobante" (pedido explícito del prototipo): miniatura clicable
+      // ANTES de los botones, mismo nxVerVoucher() de siempre para el tamaño completo — no se
+      // duplica la acción de "Voucher", solo se le agregó un atajo visual.
+      (b.voucher ? '<button type="button" class="rfVouThumb" onclick="window.nxVerVoucher(\'' + b.id + '\')" aria-label="Ver comprobante completo"><img src="' + esc(b.voucher) + '" alt="Comprobante de pago"><span><i class="ti ti-zoom-in"></i> Ver comprobante completo</span></button>' : '') +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' +
       '<a class="btn bsm bc1" href="' + waHref + '" target="_blank" rel="noopener" style="flex:1 1 100%;justify-content:center;padding:11px"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</a>' +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxRifaBoleto(\'' + b.id + '\')"><i class="ti ti-eye"></i> Ver / imagen</button>' +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center" onclick="window.nxRifaEditarBoleto(\'' + b.id + '\')"><i class="ti ti-edit"></i> Editar</button>' +
-      (b.voucher ? '<button class="btn bsm bghost" type="button" style="flex:1;min-width:110px;justify-content:center" onclick="window.nxVerVoucher(\'' + b.id + '\')"><i class="ti ti-receipt"></i> Voucher</button>' : '') +
-      (b.estado !== 'confirmado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Confirmar</button>' : '') +
+      (b.estado !== 'confirmado' && b.estado !== 'anulado' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#16a34a;border-color:#16a34a;color:#fff" onclick="window.nxRifaConfirmar(\'' + b.id + '\')"><i class="ti ti-check"></i> Aprobar pago</button>' : '') +
+      (b.estado === 'por_confirmar' ? '<button class="btn bsm" type="button" style="flex:1;min-width:110px;justify-content:center;background:#dc2626;border-color:#dc2626;color:#fff" onclick="window.nxRifaRechazar(\'' + b.id + '\')"><i class="ti ti-x"></i> Rechazar pago</button>' : '') +
       (esAdmin() ? '<button class="btn bsm bghost" type="button" style="flex:1;min-width:120px;justify-content:center;color:#4338ca" onclick="window.nxRifaCambiarNum(\'' + b.id + '\')"><i class="ti ti-arrows-exchange"></i> Cambiar número</button>' : '') +
       '<button class="btn bsm bghost" type="button" style="flex:1;min-width:100px;justify-content:center;color:#dc2626" onclick="window.nxRifaLiberar(\'' + b.id + '\')"><i class="ti ti-trash"></i> Liberar</button>' +
-      '</div></div>';
+      '</div>';
+    var dock = (_rfTab === 'numeros' && window.innerWidth >= RF_DOCK_MIN) ? document.getElementById('rfDetailDock') : null;
+    if (dock) {
+      dock.innerHTML = '<div class="rfDockCard"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+        '<span style="font-size:14px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:6px"><i class="ti ti-ticket" style="color:#4338ca"></i> Boleto ' + esc(String(b.numero)) + '</span>' +
+        '<button aria-label="Cerrar detalle" class="btn bsm bghost" type="button" onclick="window.nxRfDockCerrar()"><i class="ti ti-x"></i></button></div>' +
+        body2 + '</div>';
+      return;
+    }
+    // RIFAS V3: panel LATERAL, no modal centrado — .rfDrawerOv/.rfDrawer (CSS nueva) reusan el
+    // MISMO .overlay/.modal de siempre (mismo id nxRbGest, mismo cierre por click-afuera y por
+    // botón, mismos onclick internos) — solo cambia el contenedor visual. Con esto ninguna de
+    // las funciones que ya cierran este id (nxRifaConfirmar/nxRifaLiberar/nxRifaCambiarNum) tuvo
+    // que tocarse: cerrarModal('nxRbGest') sigue funcionando igual.
+    var ov = document.createElement('div'); ov.id = 'nxRbGest'; ov.className = 'overlay open rfDrawerOv';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal rfDrawer"><div class="mt"><span><i class="ti ti-ticket"></i> Boleto ' + esc(String(b.numero)) + '</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRbGest\').remove()"><i class="ti ti-x"></i></button></div>' + body2 + '</div>';
     document.body.appendChild(ov);
   }
 
@@ -26946,18 +27362,30 @@ try {
       cerrarModal('nxBolEdit');
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _boletos.find(function (x) { return String(x.id) === String(id); });
+      if (nb) gestBoleto(nb);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
+  // Aprobar/Rechazar/Cambiar número/Editar YA NO cierran la ventana de detalle al terminar —
+  // pedido del dueño (2-ago-2026): así puede aprobar un pago y de inmediato tocar "Enviar por
+  // WhatsApp" sin tener que volver a buscar al cliente. En vez de dejar la ventana vieja con
+  // datos desactualizados, se REABRE con gestBoleto(nb) usando el boleto YA REFRESCADO de
+  // cargarBoletos() — mismo patrón que ya usaba "Cambiar número" (nxRifaCambNumGuardar, más
+  // abajo), ahora aplicado también aquí. "Liberar" es la única excepción a propósito: borra el
+  // boleto por completo, así que no queda ningún detalle real que volver a mostrar.
   window.nxRifaConfirmar = async function (id) {
     try {
       await getAPI().patch('rifa_boletos', 'id=eq.' + id, { estado: 'confirmado' });
       toast('ok', 'Pago confirmado', '');
-      cerrarModal('nxRbGest');
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _boletos.find(function (x) { return String(x.id) === String(id); });
+      if (nb) gestBoleto(nb); else cerrarModal('nxRbGest');
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
 
+  // Liberar SÍ cierra la ventana — a diferencia de Aprobar/Rechazar/Cambiar/Editar, este boleto
+  // se BORRA por completo (DELETE), así que no queda ningún registro real que volver a mostrar.
   window.nxRifaLiberar = async function (id) {
     if (!confirm('¿Liberar este número? Se borra el boleto y el número queda disponible otra vez.')) return;
     try {
@@ -26967,6 +27395,46 @@ try {
       await cargarBoletos(_rifaSel);
       var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
     } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
+
+  // ── RECHAZAR PAGO (con motivo) ──────────────────────────────────────────────────────────
+  // Distinto de "Liberar": Liberar BORRA el boleto (sin rastro, sin motivo). Rechazar lo deja
+  // en estado 'anulado' (ya existía como estado, pero ninguna función lo escribía — quedaba
+  // "fantasma": aparecía en el filtro "Anulados" de Tickets y en tkEstInfo, pero nunca se
+  // llegaba a producir). Al marcarlo 'anulado', _bolMap lo excluye automáticamente
+  // (estadoCelda()), así que el número queda disponible para otro comprador SIN tocar nada más
+  // — el mismo mecanismo que ya usa el resto del tablero. El motivo se guarda para que el
+  // admin (o cualquiera revisando después) sepa POR QUÉ se rechazó ese pago.
+  window.nxRifaRechazar = function (id) {
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    cerrarModal('nxRbGest'); cerrarModal('nxRifaRech');
+    var ov = document.createElement('div'); ov.id = 'nxRifaRech'; ov.className = 'overlay open';
+    ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = '<div class="modal" style="max-width:400px"><div class="mt"><span><i class="ti ti-x"></i> Rechazar pago</span><button aria-label="Cerrar ventana" class="nxBack" type="button" onclick="document.getElementById(\'nxRifaRech\').remove()"><i class="ti ti-x"></i></button></div>' +
+      '<div style="font-size:12.5px;color:#475569;padding:2px 2px 10px">Boleto <b style="font-family:var(--mono);color:#4338ca">' + esc(String(b.numero)) + '</b> · ' + esc(b.comprador_nombre || '—') + '. El número queda <b>libre</b> para otro comprador.</div>' +
+      '<div class="fr"><label>Motivo del rechazo (queda guardado, se ve en el detalle del boleto)</label><textarea id="rrMotivo" class="no-upper" rows="3" placeholder="Ej: el comprobante no corresponde al monto del boleto"></textarea></div>' +
+      '<div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById(\'nxRifaRech\').remove()">Cancelar</button><button class="btn bsm" type="button" style="background:#dc2626;border-color:#dc2626;color:#fff" onclick="window.nxRifaRechazarGuardar(\'' + b.id + '\')"><i class="ti ti-x"></i> Rechazar pago</button></div></div>';
+    document.body.appendChild(ov);
+  };
+  window.nxRifaRechazarGuardar = async function (id) {
+    var b = _boletos.find(function (x) { return String(x.id) === String(id); }); if (!b) return;
+    var motivo = (val('rrMotivo') || '').trim();
+    var btn = document.querySelector('#nxRifaRech .fe .bsm[style*="dc2626"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Rechazando…'; }
+    try {
+      await getAPI().patch('rifa_boletos', 'id=eq.' + id, { estado: 'anulado', motivo_rechazo: motivo || null });
+      var rg = currentRifa() || _rifas.find(function (x) { return String(x.id) === String(b.rifa_id); }) || {};
+      try { window.logAudit && window.logAudit('RIFA_PAGO_RECHAZADO', (rg.nombre || 'Rifa') + ': boleto ' + String(b.numero) + ' · ' + (b.comprador_nombre || 's/n') + (motivo ? ' · ' + motivo.slice(0, 120) : ''), 'Rifas'); } catch (e) {}
+      toast('ok', 'Pago rechazado', 'El número ' + String(b.numero) + ' quedó libre otra vez');
+      cerrarModal('nxRifaRech');
+      await cargarBoletos(_rifaSel);
+      var v = document.getElementById('v-rifas'); if (v) renderRifas(v);
+      var nb = _boletos.find(function (x) { return String(x.id) === String(id); });
+      if (nb) gestBoleto(nb);
+    } catch (e) {
+      toast('err', 'No se pudo', String(e && e.message || e));
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-x"></i> Rechazar pago'; }
+    }
   };
 
   // ── LINK PÚBLICO DE COMPRA ──
@@ -27544,7 +28012,77 @@ try {
   function inyectarCSS() {
     if (document.getElementById('nxRifasCSS')) return;
     var st = document.createElement('style'); st.id = 'nxRifasCSS';
-    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center;position:relative}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfKpiT{cursor:pointer;-webkit-tap-highlight-color:transparent}.rfKpiT::after{content:"\\203A";position:absolute;top:2px;right:6px;color:#cbd5e1;font-weight:800;font-size:13px;line-height:1}.rfKpiT:active{background:#eef2ff;border-color:#c7d2fe}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:var(--mono);outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:var(--mono);font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}.rfN-pend{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfN-conf{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}.rfN-apar{background:#f1f5f9;border-color:#cbd5e1;color:#94a3b8}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:var(--mono);letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}.liqRow{border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}.liqTop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.liqTop b{font-size:13.5px;font-weight:800}.liqTop span{font-size:11px;color:#64748b;font-weight:600;white-space:nowrap}.liqBot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#475569}.rsConBox{background:#fff;border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-top:10px}.rsConT{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.rsCon{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;color:#334155}.rsCon span b{color:#0f172a;font-family:var(--mono)}.repItem{display:flex;align-items:center;gap:11px;width:100%;border:0;background:#fff;cursor:pointer;padding:12px 4px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;color:#334155;text-align:left;font-family:inherit}.repItem:last-child{border-bottom:0}.repItem:active{background:#f8fafc}.repIco{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.tkTbl{width:100%;border-collapse:collapse;font-size:11.5px;min-width:520px}.tkTbl thead th{background:#f8fafc;font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:8px 9px;border-bottom:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0}.tkTbl tbody td{padding:8px 9px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle}.tkTbl tbody tr:active{background:#f8fafc}.tkNumC{font-family:var(--mono);font-weight:800;color:#4338ca}.tkSub{font-size:9.5px;color:#94a3b8}.tkNw{white-space:nowrap}.tkR2{text-align:right;font-weight:800;color:#0f172a;white-space:nowrap}.tkBadge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}.stT{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}.stChart{display:flex;align-items:flex-end;gap:4px;height:122px;border-bottom:1px solid #e8edf3;padding-bottom:2px}.stCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.stBarWrap{width:100%;height:100px;display:flex;align-items:flex-end;justify-content:center}.stBar{width:72%;min-width:8px;background:linear-gradient(180deg,#6366f1,#4338ca);border-radius:4px 4px 0 0}.stLbl{font-size:8px;color:#94a3b8;white-space:nowrap}.stStat{margin-bottom:9px}.stStatTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.stStatTop b{color:#0f172a}.stStatBar{height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden}.stStatBar>div{height:100%;border-radius:5px}.pie{width:148px;height:148px;border-radius:50%;margin:6px auto 12px;box-shadow:0 4px 14px rgba(15,23,42,.10)}.pieLeg{display:flex;flex-direction:column;gap:0}.pieRow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:7px 2px;border-bottom:1px solid #f5f7fa}.pieRow:last-child{border-bottom:0}.pieDot{width:12px;height:12px;border-radius:3px;flex:0 0 auto}.pieK{flex:1;color:#334155;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pieRow b{color:#0f172a;font-weight:800;white-space:nowrap}.piePct{color:#64748b;font-weight:700;min-width:36px;text-align:right}' + BOL_CSS;
+    st.textContent = '.nxRfGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:680px){.nxRfGrid{grid-template-columns:1fr 1fr}}.nxRfCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.nxRfTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}.nxRfNom{font-weight:800;font-size:14.5px;color:#0f172a;line-height:1.15}.nxRfSub{font-size:11.5px;color:#64748b;margin-top:2px}.nxRfEst{font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}.nxRfMeta{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#475569;font-weight:600;margin-bottom:9px}.nxRfMeta i{font-size:13px;color:#94a3b8}.nxRfBar{height:8px;background:#eef2f7;border-radius:5px;overflow:hidden;margin-bottom:11px}.nxRfBar>div{height:100%;background:linear-gradient(90deg,#6366f1,#4338ca);border-radius:5px}.nxRfAct{display:flex;gap:6px}.nxRfAct .bc1{flex:1}.nxRfK{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}.nxRfKi{background:#f8fafc;border:1px solid #e8edf3;border-radius:12px;padding:11px}.nxRfKi span{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px}.nxRfKi b{display:block;font-size:18px;font-weight:800;color:#0f172a;margin-top:3px}.nxRfHid{font-size:10.5px;color:#94a3b8;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:11px}.nxRfHid i{font-size:13px}.rfKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.rfKpi{background:#f8fafc;border:1px solid #e8edf3;border-radius:11px;padding:8px 5px;text-align:center;position:relative}.rfKpi span{font-size:8.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.2px}.rfKpi b{display:block;font-size:15px;font-weight:800;color:#0f172a;margin-top:2px}.rfKpiT{cursor:pointer;-webkit-tap-highlight-color:transparent}.rfKpiT::after{content:"\\203A";position:absolute;top:2px;right:6px;color:#cbd5e1;font-weight:800;font-size:13px;line-height:1}.rfKpiT:active{background:#eef2ff;border-color:#c7d2fe}.rfKpi.on{background:#eef2ff;border-color:#c7d2fe}.rfKpi.on span{color:#4338ca}.rfKpiT:focus-visible{outline:2px solid #4338ca;outline-offset:2px}.rfCtl{display:flex;gap:8px;margin:11px 0 9px}.rfSearch{flex:1;position:relative}.rfSearch i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px}.rfSearch input{width:100%;height:38px;padding:0 12px 0 32px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:var(--mono);outline:none}.rfLegend{display:flex;flex-wrap:wrap;gap:9px;font-size:10px;color:#475569;font-weight:600;margin-bottom:9px}.rfLegend span{display:inline-flex;align-items:center;gap:4px}.rfLegend .d{width:10px;height:10px;border-radius:3px}.rfBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:5px}.rfN{font-family:var(--mono);font-size:11.5px;font-weight:800;padding:7px 2px;border-radius:7px;border:1.5px solid;cursor:pointer}.rfN:active{opacity:.65}.rfN-disp{background:#f8fafc;border-color:#e2e8f0;color:#64748b}.rfN-pend{background:#fff7ed;border-color:#fdba74;color:#c2410c}.rfN-conf{background:#f0fdf4;border-color:#86efac;color:#15803d}.rfN-apar{background:#fffbeb;border-color:#fde68a;color:#b45309}.rfPager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:13px;font-size:12px;font-weight:700;color:#475569}.rsBanner{background:linear-gradient(135deg,#fef9c3,#fef3c7);border:1px solid #fde68a;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px;color:#92400e;font-weight:700;display:flex;align-items:center;gap:7px}.rsBanner i{color:#d97706;font-size:17px;flex-shrink:0}.rsWin{background:linear-gradient(160deg,#16a34a,#15803d);color:#fff;border-radius:14px;padding:16px;text-align:center;box-shadow:0 8px 20px rgba(22,163,74,.3)}.rsWinT{font-size:13px;font-weight:800;letter-spacing:1px}.rsWinNum{font-size:38px;font-weight:800;font-family:var(--mono);letter-spacing:5px;margin:4px 0}.rsWinNom{font-size:17px;font-weight:800}.rsWinTel{font-size:13px;opacity:.95;margin-top:2px}.rsWinEst{font-size:11.5px;opacity:.9;margin-top:3px}.rsNone{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;font-size:12.5px;color:#9a3412;text-align:center}.rsNone i{font-size:24px;display:block;margin-bottom:6px;color:#ea580c}.ctaRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px;border-bottom:1px solid #f1f5f9;font-size:13px}.ctaRow:last-child{border-bottom:0}.ctaL{display:flex;align-items:center;gap:10px;min-width:0}.ctaL i{font-size:18px;color:#4f46e5;flex-shrink:0}.ctaL b{font-weight:700;font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ctaL span{display:block;font-size:10.5px;color:#64748b}.liqRow{border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}.liqTop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}.liqTop b{font-size:13.5px;font-weight:800}.liqTop span{font-size:11px;color:#64748b;font-weight:600;white-space:nowrap}.liqBot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:#475569}.rsConBox{background:#fff;border:1px solid #e8edf3;border-radius:12px;padding:10px 12px;margin-top:10px}.rsConT{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}.rsCon{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;color:#334155}.rsCon span b{color:#0f172a;font-family:var(--mono)}.repItem{display:flex;align-items:center;gap:11px;width:100%;border:0;background:#fff;cursor:pointer;padding:12px 4px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;color:#334155;text-align:left;font-family:inherit}.repItem:last-child{border-bottom:0}.repItem:active{background:#f8fafc}.repIco{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.tkTbl{width:100%;border-collapse:collapse;font-size:11.5px;min-width:520px}.tkTbl thead th{background:#f8fafc;font-size:9px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:8px 9px;border-bottom:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0}.tkTbl tbody td{padding:8px 9px;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle}.tkTbl tbody tr:active{background:#f8fafc}.tkNumC{font-family:var(--mono);font-weight:800;color:#4338ca}.tkSub{font-size:9.5px;color:#94a3b8}.tkNw{white-space:nowrap}.tkR2{text-align:right;font-weight:800;color:#0f172a;white-space:nowrap}.tkBadge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;white-space:nowrap}.stT{font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}.stChart{display:flex;align-items:flex-end;gap:4px;height:122px;border-bottom:1px solid #e8edf3;padding-bottom:2px}.stCol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.stBarWrap{width:100%;height:100px;display:flex;align-items:flex-end;justify-content:center}.stBar{width:72%;min-width:8px;background:linear-gradient(180deg,#6366f1,#4338ca);border-radius:4px 4px 0 0}.stLbl{font-size:8px;color:#94a3b8;white-space:nowrap}.stStat{margin-bottom:9px}.stStatTop{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin-bottom:3px}.stStatTop b{color:#0f172a}.stStatBar{height:8px;background:#f1f5f9;border-radius:5px;overflow:hidden}.stStatBar>div{height:100%;border-radius:5px}.pie{width:148px;height:148px;border-radius:50%;margin:6px auto 12px;box-shadow:0 4px 14px rgba(15,23,42,.10)}.pieLeg{display:flex;flex-direction:column;gap:0}.pieRow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:7px 2px;border-bottom:1px solid #f5f7fa}.pieRow:last-child{border-bottom:0}.pieDot{width:12px;height:12px;border-radius:3px;flex:0 0 auto}.pieK{flex:1;color:#334155;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pieRow b{color:#0f172a;font-weight:800;white-space:nowrap}.piePct{color:#64748b;font-weight:700;min-width:36px;text-align:right}' +
+      // ── RIFAS V3 (panel administrativo) — tabs internas, atención requerida, bandeja de pagos
+      // y panel lateral (drawer) para gestBoleto. .rfCtl gana flex-wrap para el select nuevo.
+      '.rfCtl{flex-wrap:wrap}#rfBoardEstSel,#rfTkEstSel{height:38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:12px;padding:0 8px;flex:0 0 auto;background:#fff;color:#334155}' +
+      '.rfTabs{display:flex;gap:4px;overflow-x:auto;margin:12px 0 10px;border-bottom:1px solid #e8edf3}' +
+      '.rfTab{border:0;background:transparent;padding:9px 12px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}' +
+      '.rfTab.on{color:#4338ca;border-bottom-color:#4f46e5}' +
+      '.rfTabBadge{background:#fef3c7;color:#b45309;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:20px}' +
+      '.rfAttn{background:#fffbeb;border:1px solid #fde68a;border-radius:13px;padding:2px 10px;margin:10px 0}' +
+      '.rfAttnT{font-size:10.5px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.3px;padding:8px 2px 2px;display:flex;align-items:center;gap:5px}.rfAttnT i{font-size:13px}' +
+      '.rfAttnRow{display:flex;align-items:center;width:100%;border:0;background:transparent;text-align:left;padding:8px 2px;gap:2px;cursor:pointer;border-top:1px solid rgba(180,83,9,.15);-webkit-tap-highlight-color:transparent}' +
+      '.rfAttnRow:active{background:rgba(180,83,9,.08)}.rfAttnRow b{font-size:12.5px;font-weight:800;color:#78350f;white-space:nowrap}.rfAttnRow span{font-size:10.5px;color:#92400e;font-weight:600;flex:1;margin-left:6px}.rfAttnRow i{color:#d97706;font-size:14px;flex-shrink:0}' +
+      '.rfPayRow{display:flex;align-items:center;gap:10px;width:100%;background:#fff;border:1px solid #e8edf3;border-radius:12px;padding:10px 11px;margin-bottom:7px;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}.rfPayRow:active{background:#f8fafc}' +
+      '.rfPayIni{width:34px;height:34px;border-radius:50%;background:#eef2ff;color:#4338ca;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
+      '.rfPayInfo{min-width:0;flex:1}.rfPayInfo b{display:block;font-size:13px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rfPayInfo span{display:block;font-size:10.5px;color:#94a3b8;margin-top:1px}' +
+      '.rfPayR{display:flex;align-items:center;gap:6px;flex-shrink:0}.rfPayR b{font-size:13px;font-weight:800;color:#0f172a}' +
+      // Aprobar/Rechazar de 1 toque en la bandeja de "Pagos por revisar" — verde=confirmar,
+      // rojo=rechazar (mismo reglamento +/− del sistema). stopPropagation en el onclick evita
+      // que también dispare el click de la fila completa (que abre el panel lateral).
+      '.rfPayBtns{display:flex;gap:5px;flex-shrink:0}' +
+      '.rfPayBtn{width:30px;height:30px;border-radius:9px;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;background:#fff;flex-shrink:0;-webkit-tap-highlight-color:transparent}.rfPayBtn:active{opacity:.65}' +
+      '.rfPayBtnOk{border-color:#bbf7d0;color:#16a34a;background:#f0fdf4}.rfPayBtnNo{border-color:#fecaca;color:#dc2626;background:#fef2f2}' +
+      '.rfPayEmpty{text-align:center;color:#475569;font-size:12.5px;padding:26px 10px}.rfPayEmpty i{font-size:26px;display:block;margin-bottom:8px;color:#16a34a}' +
+      '.rfVouThumb{display:block;width:100%;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;padding:0;background:#f8fafc;cursor:pointer;margin-bottom:10px;text-align:left}.rfVouThumb img{width:100%;max-height:180px;object-fit:cover;display:block}.rfVouThumb span{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700;color:#4338ca;padding:7px}' +
+      // Miniatura del comprobante DENTRO de la fila de "Pagos por revisar" (reemplaza el avatar de
+      // iniciales cuando hay voucher) — mismo tamaño/posición que .rfPayIni para no romper el layout.
+      '.rfPayThumb{width:34px;height:34px;border-radius:9px;object-fit:cover;flex-shrink:0;border:1px solid #e2e8f0}' +
+      // Participantes (vista agregada por persona, no por ticket): total a la derecha de la fila,
+      // apilado (confirmado grande + pendiente chico en ámbar si hay algo por confirmar).
+      '.rfPartR{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}.rfPartR>b{font-size:13px;font-weight:800;color:#16a34a}.rfPartPend{font-size:9.5px;font-weight:700;color:#d97706;white-space:nowrap}' +
+      // Chips de boleto dentro del detalle de un participante (nxRfPartVer) — mismo lenguaje visual
+      // que los badges de estado ya usados en tkRowsHTML/tkBadge, en formato botón (abre el boleto).
+      '.rfPartTk{display:inline-flex;align-items:center;gap:5px;border:1px solid;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:800;font-family:var(--mono);cursor:pointer;background:transparent}.rfPartTkM{font-family:var(--ff);font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.2px;opacity:.85}' +
+      // Pestaña "Resumen" — dashboard de 3 tarjetas reales (próximo sorteo/por cobrar en revisión/
+      // ingreso potencial), no decorativo: cada número sale de rifas.fecha_sorteo o de _boletos.
+      '.rfSumGrid{display:grid;grid-template-columns:1fr;gap:11px}@media(min-width:640px){.rfSumGrid{grid-template-columns:repeat(3,1fr)}}' +
+      '.rfSumCard{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:14px}.rfSumT{font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:6px;margin-bottom:8px}.rfSumT i{font-size:14px;color:#94a3b8}' +
+      '.rfSumBig{font-size:19px;font-weight:800;color:#0f172a;line-height:1.2}.rfSumSub{font-size:11px;color:#64748b;font-weight:600;margin-top:3px}' +
+      '.rfSumEmpty{font-size:12.5px;color:#94a3b8;font-weight:600}' +
+      '.rfSumLink{display:inline-flex;align-items:center;gap:3px;border:0;background:transparent;color:#4338ca;font-size:11.5px;font-weight:800;padding:8px 0 0;cursor:pointer}.rfSumLink i{font-size:13px}' +
+      // Panel lateral (drawer): reusa .overlay/.modal de siempre — solo cambia SU posición/tamaño
+      // vía estas 2 clases nuevas, sin tocar la base compartida por el resto del sistema. El
+      // fondo se aclara (mantener visible la pantalla detrás, pedido explícito del prototipo) y
+      // pierde el blur — con !important + 3 clases para ganarle al tema oscuro
+      // (body.tema-premium .overlay{...!important}, que es más específico por el selector `body`).
+      '.overlay.open.rfDrawerOv{background:rgba(15,23,42,.25)!important;backdrop-filter:none!important;align-items:stretch;justify-content:flex-end;padding:0}' +
+      '.overlay.open.rfDrawerOv .modal.rfDrawer{margin:0;max-width:400px;width:100%;height:100%;max-height:100%;border-radius:0;box-shadow:-10px 0 30px rgba(15,23,42,.2);overflow-y:auto;animation:rfDrawerIn .22s cubic-bezier(.32,.72,0,1) both}' +
+      '@keyframes rfDrawerIn{from{transform:translateX(100%)}to{transform:translateX(0)}}' +
+      '@media(max-width:480px){.overlay.open.rfDrawerOv .modal.rfDrawer{max-width:100%}}' +
+      // RIFAS V3.2 (formato): ícono con círculo de color en cada tarjeta KPI (mismo patrón que
+      // ya usa .rfPayIni), barra lateral fija en escritorio para las 5 pestañas (misma clase
+      // .rfTab que ya trae la fila horizontal — solo se apila distinto vía CSS) y columna fija
+      // de detalle en la pestaña Números (#rfDetailDock) en vez del cajón, también solo en
+      // escritorio. Móvil (<900px) queda IDÉNTICO a como estaba: fila de pestañas + cajón.
+      '.rfKpiIco{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;margin:0 auto 5px}' +
+      '.rfShell{display:block}.rfSide{display:none}.rfMain{min-width:0}' +
+      '@media(min-width:900px){' +
+      '.rfShell{display:flex;gap:16px;align-items:flex-start}' +
+      '.rfSide{display:flex;flex-direction:column;gap:2px;width:186px;flex-shrink:0;position:sticky;top:10px;background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:9px}' +
+      '.rfSide .rfTab{width:100%;text-align:left;justify-content:flex-start;padding:9px 10px;border-radius:9px;border-bottom:0;font-size:12.5px}' +
+      '.rfSide .rfTab i{font-size:15px;width:17px;text-align:center;color:#94a3b8}' +
+      '.rfSide .rfTab.on{background:#eef2ff;color:#4338ca}.rfSide .rfTab.on i{color:#4338ca}' +
+      '.rfSide .rfTabBadge{margin-left:auto}' +
+      '.rfMain{flex:1;min-width:0}' +
+      '.rfTabs{display:none}' +
+      '}' +
+      '.rfNumRow{display:block}.rfDetailDock{display:none}' +
+      '@media(min-width:900px){.rfNumRow{display:grid;grid-template-columns:1fr 360px;gap:14px;align-items:start}.rfDetailDock{display:block;position:sticky;top:10px}}' +
+      '.rfDockCard{background:#fff;border:1px solid #e8edf3;border-radius:15px;padding:14px;box-shadow:0 4px 14px rgba(15,23,42,.05)}' +
+      '.rfDockEmpty{text-align:center;color:#94a3b8;font-size:12.5px;padding:38px 10px}.rfDockEmpty i{font-size:26px;display:block;margin-bottom:8px;color:#cbd5e1}' +
+      BOL_CSS;
     document.head.appendChild(st);
   }
   function registrar() { try { if (window.nxMERegistrar) window.nxMERegistrar({ orden: 4, nombre: 'Rifas', desc: 'Boletos, vendedores y sorteo', icon: 'ti-ticket', color: '#4f46e5', bg: '#eef2ff', onclick: 'window.nxAbrirRifas()' }); } catch (e) {} }

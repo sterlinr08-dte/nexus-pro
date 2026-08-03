@@ -11565,6 +11565,376 @@ PRÉSTAMO, ya existente y probado), no inventar "Registrar promesa de pago" si n
 - **Publicado por rama propia** (`claude/mover-documentos-a-cliente` → PR → fusionado con las
   herramientas MCP de GitHub), no directo a `main`.
 
+### Rifas — panel administrativo "V3" (mockup de ChatGPT auditado e implementado, 3-ago-2026, v56.10) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño pidió auditar el paquete `docs/visual-drafts/rifas/` de `chatgpt/visual-draft` contra el
+módulo real de Rifas ANTES de tocar código — mismo flujo ya establecido ("ChatGPT diseña, Claude
+implementa", ver v48.88/v56.4-56.7). Se hizo la auditoría, se entregó un plan de integración por
+escrito (qué se reusa, qué se descarta del mockup y por qué), y el dueño autorizó implementarlo tal
+cual con **"Continúa"**. Esta versión cierra la implementación completa: verificada con `node --check`
++ Playwright y publicada en rama propia — **sin fusionar todavía**, a la espera de que el dueño la
+revise (mismo criterio que ya se usó con la reconstrucción del formulario de artículo, v48.98).
+- **Lo que el panel de una rifa mostraba antes:** 4 KPIs genéricos (Vendidos/Confirm./Pend./
+  Recaudado) y un solo tablero de números, sin ninguna forma de saber de un vistazo "a quién hay que
+  atender ahora" ni de separar "los que ya pagaron y solo faltan confirmar" del resto.
+- **Auditado del mockup, qué era real y qué NO** (mismo criterio de "no fingir funciones que no
+  existen" de todo este archivo): SÍ existen ya en el sistema — aprobar/liberar un boleto
+  (`nxRifaConfirmar`/`nxRifaLiberar`), cambiar número (`nxRifaCambiarNum`), vender/apartar
+  (`nxRifaVender`), ver el comprobante (`nxVerVoucher`), el enlace de WhatsApp
+  (`boletoWaHref`), y la lista completa de tickets (`tkRowsHTML`, del modal "Lista de tickets") — el
+  plan fue reusarlos TODOS sin duplicar ni una línea de esa lógica. NO existen y se descartaron del
+  mockup: un flujo de "rechazar con motivo" (solo hay Aprobar o Liberar), un estado "bloqueado" (no
+  está en el esquema `rifa_boletos.estado`), y la tipografía Inter que traía el mockup (el reglamento
+  de este proyecto — "cada app su color y su tipografía, sin excepciones" — mantiene el índigo y la
+  fuente propia de Rifas, no se adopta la del boceto).
+- **5 KPIs reales, separados y clicables** (`rfKpisData`, reemplaza el viejo `rifaStats()` de 2
+  buckets solo para este panel — `rifaStats()` no se tocó, lo sigue usando el modal `nxRifaStats()`):
+  Disponibles → filtra el tablero a ese estado; Apartados → idem; Pagos x revisar → salta a la pestaña
+  de pagos; Confirmados → abre `nxRifaTickets('confirmado',...)` de siempre; Recaudado → abre
+  `nxRifaPorCuenta()` de siempre.
+- **Bloque "Atención requerida"** (`atencionRifa()`), calculado en vivo, **nunca se guarda**: cuenta
+  pagos `por_confirmar` y apartados cuyo `apartado_hasta` vence en menos de 1 hora — aparece solo si
+  hay algo de qué avisar, con un botón por cada categoría que salta directo a resolverlo.
+- **3 pestañas internas** (`_rfTab`, reseteado a `'resumen'` cada vez que se abre una rifa distinta):
+  **Resumen** = el tablero de siempre (`boardHTML`), con un `<select>` nuevo para filtrar por estado
+  (Disponible/Apartado/Por confirmar/Confirmado — helper `estadoCelda(s)` compartido entre el filtro
+  y el pintado de cada celda, para no repetir el ternario en dos sitios). **Pagos por revisar** =
+  bandeja nueva (`rfPagosTabHTML`/`rfPagosRowsHTML`), solo boletos `por_confirmar`, con buscador propio
+  y un ícono de recibo si el boleto trae comprobante; tocar una fila abre el mismo panel de detalle de
+  siempre (`nxTkOpen`→`gestBoleto`). **Participantes** = reusa `tkRowsHTML()` **sin tocar su lógica**
+  (mismo comportamiento del modal "Lista de tickets" de siempre: no filtra anulados por defecto), con
+  buscador propio y `_tkEst` reseteado para no arrastrar un filtro pegado de un uso anterior del modal.
+- **Buscadores de las 2 pestañas nuevas, patrón NPGS §5** (`nxBuscaFiltroHTML`, la lupa colapsada de
+  siempre — no el buscador viejo `.rfSearch` siempre visible): `pintarLupaRfPagos()`/`pintarLupaRfPt()`,
+  unificadas bajo un dispatcher nuevo `pintarLupaRfTabActiva()` que pinta la lupa de la pestaña que
+  esté activa en ese momento (Resumen sigue con su `pintarLupaRfTab()` de siempre, sin tocar).
+- **`gestBoleto` — de modal centrado a panel LATERAL (drawer):** mismo `#nxRbGest` / `.overlay`/
+  `.modal` de siempre — solo se le agregaron 2 clases (`.rfDrawerOv`/`.rfDrawer`) que cambian su
+  posición/tamaño por CSS, sin tocar el HTML interno ni ninguna de las funciones que ya cierran ese
+  id (`nxRifaConfirmar`/`nxRifaLiberar`/`nxRifaCambiarNum` llaman `cerrarModal('nxRbGest')` igual que
+  antes). Se agregó una miniatura del comprobante de pago (clicable, abre `nxVerVoucher` de siempre)
+  arriba de los botones si el boleto trae voucher — antes solo había un botón de texto "Voucher" entre
+  los demás; ahora ese botón se quitó (ya no aportaba nada nuevo) y la miniatura hace ese trabajo de
+  forma visual. El botón de aprobar pasó de decir "Confirmar" a "Aprobar pago" (mismo `onclick`).
+- **CSS nuevo, agregado al bloque `st.textContent` de siempre** (mismo patrón de inyección única del
+  módulo): `.rfTabs`/`.rfTab`/`.rfTabBadge` (las 3 pestañas), `.rfAttn`/`.rfAttnRow` (el bloque de
+  atención), `.rfPayRow`/`.rfPayIni`/`.rfPayEmpty` (la bandeja de pagos), `.rfVouThumb` (la miniatura
+  del comprobante), y `.overlay.open.rfDrawerOv`/`.modal.rfDrawer`/`@keyframes rfDrawerIn` (el panel
+  lateral — fondo más claro que el de un modal normal para mantener visible la pantalla de atrás,
+  como pedía el mockup, con `!important` porque el tema oscuro `body.tema-premium .overlay{...}` es
+  más específico por el selector `body` y sin eso le habría ganado al color nuevo).
+- **Verificado con Playwright, código real extraído del archivo por contenido** (38 pruebas): los 5
+  KPIs y el bloque de atención con datos exactos contra un backend simulado (7 boletos: 2 confirmados,
+  2 `por_confirmar` —uno con comprobante—, 2 apartados —uno vence en 30min, otro en 24h, para probar
+  que solo el de 30min entra en "atención"— y 1 anulado), las 3 pestañas cambiando de contenido
+  correctamente (Participantes lista los 7 boletos, incluido el anulado — comportamiento correcto de
+  `tkRowsHTML` sin tocar, no un bug), el filtro de estado del tablero, los 2 buscadores nuevos
+  filtrando en vivo, el panel lateral abriendo con la miniatura y el botón "Aprobar pago", aprobar/
+  liberar mutando los datos correctos, el enlace de WhatsApp armado bien, y **cero desborde
+  horizontal ni errores de consola en 390/760/901/1024/1280/1600px**. `node --check parches.js`
+  limpio; los 3 `<script>` de `index.html` pasan `new Function()` (1,423 / 493,343 / 681 caracteres).
+- **NOTA DE MÉTODO — 2 lecciones reales de esta ronda, para la próxima vez que se toque un módulo
+  grande de `parches.js`:**
+  1. **Localizar el inicio/fin exacto de un módulo por conteo de llaves a mano NO es seguro.** El
+     escáner de balance de llaves que se intentó primero (contando `{`/`}` carácter por carácter,
+     saltando strings/comentarios) se desincronizó porque este mismo módulo tiene una expresión
+     regular real (`/[&<>"']/g`, dentro de su helper `esc()`) — un regex literal en JavaScript
+     contiene caracteres que parecen delimitadores de string, y distinguir "esto es un regex" de
+     "esto es una comilla" es un problema de tokenización ambiguo (division vs. regex-literal) que un
+     escáner ingenuo no resuelve. El método que sí funcionó: `grep` del comentario-banner del SIGUIENTE
+     módulo + `grep "^})();$"` para las líneas candidatas de cierre entre medio, confirmando a mano
+     cuál cierre es el correcto leyendo el código real alrededor (el correcto termina con el bloque
+     `registrar()`/`nxMERegistrar({orden:4, nombre:'Rifas',...})` de siempre).
+  2. **Medir/capturar una animación de entrada CSS (`@keyframes`) requiere esperar MÁS que su
+     duración.** El panel lateral nuevo usa un deslizamiento de 220ms (`transform:translateX`); las
+     primeras mediciones/capturas se tomaron con una espera de solo 60ms — la mitad de la transición
+     todavía sin terminar se ve EXACTAMENTE como un bug de posicionamiento real (el panel parecía estar
+     "fuera de la pantalla", con coordenadas que no cuadraban con ninguna regla de CSS escrita). Se
+     investigó a fondo (especificidad de `.modal{margin:auto}`, comportamiento de `flexbox
+     justify-content:flex-end`, dimensiones computadas del `.overlay`) antes de confirmar, remidiendo
+     con una espera de 350ms, que el CSS estaba bien desde el principio — era un problema de tiempo del
+     propio test, no del código.
+- **Pendiente:** que el dueño revise la rama `claude/rifas-v3-admin` y confirme fusionar a `main`.
+
+### Rifas — panel administrativo, RONDA 2 sobre el documento completo de ChatGPT (3-ago-2026, v56.11) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+Después de publicar el panel V3 (arriba), el dueño pidió revisar qué había subido ChatGPT a
+`chatgpt/visual-draft` — apareció un archivo NUEVO,
+`docs/visual-drafts/rifas/RIFAS_V3_AUDITORIA_IMPLEMENTACION.md` (498 líneas, subido ~26 min después
+de que se abriera el PR de la V3), con el spec COMPLETO de lo que se había pedido — la V3 solo
+había cubierto una parte real (3 pestañas de las 5 pedidas; "Resumen" seguía siendo el tablero de
+números sin ningún dato de negocio; "Participantes" reusaba la tabla cruda de tickets, una fila por
+BOLETO, no por persona). Se comparó el documento completo contra lo ya construido, se le explicó al
+dueño el hueco real, y con su **"Si"** se continuó la construcción sobre la MISMA rama
+`claude/rifas-v3-admin` (todavía sin fusionar), antes de que revisara el PR.
+- **(1) "Resumen" dejó de ser el tablero — ahora es un dashboard de 3 tarjetas REALES:**
+  `rfResumenTabHTML(r)` (reescrita) muestra **"Próximo sorteo"** (fecha real de `rifas.fecha_sorteo`
+  con cuenta regresiva "Faltan N días"/"Es hoy"/"Ya pasó" — si la rifa NO tiene fecha, un aviso
+  honesto "Sin fecha de sorteo definida" + botón directo a `nxRifaEditar` para ponérsela, en vez de
+  inventar una), **"Por cobrar en revisión"** (la SUMA en pesos de los boletos `por_confirmar` —
+  antes el único dato visible era el CONTEO en el KPI de arriba, nunca el monto en dinero) e
+  **"Ingreso potencial restante"** (`disponibles × precio_boleto` — cuánto más entraría si se vende
+  todo lo que queda). Las 2 últimas tienen un enlace directo ("Revisar ahora"/"Ver disponibles") que
+  salta a la pestaña correspondiente, solo si hay algo real que revisar (`k.porConf>0`/`k.disp>0`).
+- **(2) El tablero de números se movió a su PROPIA pestaña, "Números"** (`rfNumerosTabHTML`, es el
+  MISMO contenido que antes vivía en "Resumen" — filtro por estado, "A la suerte", paginación —
+  solo cambió de pestaña; renombrada, no reescrita). `window.nxRfIrDisponibles`/`nxRfIrApartados`
+  (los KPIs de arriba que saltan al tablero filtrado) ahora navegan a `'numeros'`, no a `'resumen'`.
+- **(3) Pagos por revisar — miniatura real del comprobante:** `rfPagosRowsHTML` reemplaza el avatar
+  de iniciales por la imagen real del voucher (`<img class="rfPayThumb">`) cuando el boleto la trae
+  — se ve de un vistazo si ya hay foto o no, sin abrir cada fila. Sin voucher, cae al avatar de
+  iniciales de siempre (mismo dato `b.voucher`, cero consulta nueva).
+- **(4) "Participantes" — la pieza más grande de esta ronda: de tabla cruda a agregado REAL por
+  persona.** `rfParticipantesData(q)` agrupa `_boletos` (excluyendo anulados) por `telKey()` — el
+  MISMO normalizador de teléfono que el propio módulo ya usaba en `nxRifaPrevBoletos` para detectar
+  "cliente repetido" al vender — o `'n:'+nombre` si no hay teléfono (mismo criterio que
+  `nxRifaStats`, para no inventar un 2do criterio de agrupación). Cada grupo suma su monto
+  confirmado y lo que tiene pendiente de aprobar, y muestra `comprador_cedula`/`comprador_email` (sí
+  son columnas reales de `rifa_boletos`, confirmado por SQL directo antes de usarlas) cuando el
+  comprador las dejó — nunca se inventa un dato que no vino. `_rfPartCache` (array indexado, se
+  refresca en cada pintado) + `window.nxRfPartVer(idx)` — el detalle recibe un **ÍNDICE numérico**,
+  no el nombre/teléfono embebido en el `onclick`, a propósito: un nombre con apóstrofe (ej.
+  "d'León") habría roto el string de JavaScript del atributo — el mismo tipo de bug ya documentado
+  en este archivo (v53.5). El detalle muestra cédula/correo + KPI de Confirmado/En revisión + un
+  chip por cada boleto del participante (ordenados por número), cada uno abre su detalle real de
+  siempre vía `nxTkOpen`.
+- **(5) Pestaña nueva "Tickets"** (`rfTicketsTabHTML`) — la lista CRUDA que antes vivía (mal
+  ubicada) dentro de "Participantes": reusa `tkRowsHTML` **sin tocar su lógica**, con su propio
+  selector de estado (comparte `_tkEst` con el modal `nxRifaTickets` a propósito — es el mismo
+  filtro global que ya usan los KPIs/botones del panel, no un estado nuevo) y su propio buscador
+  (`_rfTkQ`, patrón NPGS §5). Distinta a propósito de "Participantes": una ve boletos, la otra ve
+  personas — no se fusionaron en una sola pantalla.
+- **Auditado del documento y DESCARTADO a propósito, con su razón** (mismo criterio de "no fingir
+  funciones que no existen" de siempre): la restructuración completa de la barra lateral/topbar del
+  hub de Multiempresa (cambiaría la navegación de TODO el hub, no solo de Rifas — fuera del alcance
+  de este pedido puntual), una barra de navegación inferior aparte para el celular (la fila de 5
+  pestañas ya hace scroll horizontal por sí sola — un segundo menú de navegación habría sido
+  redundante, mismo criterio ya usado y documentado en otras pantallas de este sistema, ej. v48.16),
+  y "Promesas de pago"/un log de "Actividad reciente" (ninguno tiene una tabla real detrás en este
+  módulo de rifas — inventarlos habría sido fingir un historial de gestión que no existe).
+- **Verificado con 72 pruebas de Playwright** contra el módulo REAL re-extraído del archivo (no una
+  reconstrucción a mano — con el `stubs.js` ampliado a 8 boletos de prueba, uno de ellos
+  deliberadamente con el MISMO teléfono que otro para probar que la agregación de verdad suma en vez
+  de listar duplicado, y una 2da rifa sin `fecha_sorteo` para probar el aviso honesto sin depender
+  del reloj del entorno): los 5 KPIs recalculados, las 5 pestañas en el orden correcto, las 3
+  tarjetas del dashboard con los montos exactos, el tablero intacto en su nueva pestaña, la
+  miniatura del comprobante solo en la fila que la trae, los 6 participantes agregados
+  correctamente (uno con 2 boletos reales sumando RD$1,200), su detalle con cédula/correo cuando
+  existen y sus boletos ordenados, la pestaña Tickets con su filtro y buscador propios sin excluir
+  anulados (igual que el modal de siempre), y **CERO desborde horizontal** en las 5 pestañas × 6
+  anchos de pantalla (390/760/901/1024/1280/1600px) — 72/72, 0 errores de consola. Capturas de
+  pantalla revisadas visualmente en 390px y 1600px para las 4 pestañas nuevas/rediseñadas.
+- **NOTA DE MÉTODO — 2 fallos de la primera corrida eran del PROPIO script de prueba, no del
+  código** (se investigaron antes de tocar el código de producción): un `startsWith('0005')` al que
+  le faltaba el símbolo `#` que el texto real sí trae, y una comparación de correo en minúscula
+  contra `element.innerText` — que SIEMPRE devuelve el texto YA RENDERIZADO (el sistema fuerza
+  mayúsculas globales por CSS, el mismo gotcha que este archivo ya documentó varias veces en otras
+  rondas de verificación de esta sesión). Se corrigieron las 2 aserciones, no el código — confirmado
+  releyendo la salida real de la primera corrida antes de decidir cuál lado tenía el error.
+- `node --check parches.js` limpio; los 3 `<script>` de `index.html` pasan `new Function()`;
+  `version.json` válido.
+- **Pendiente:** que el dueño revise la rama `claude/rifas-v3-admin` (ahora con esta 2da ronda
+  encima) y confirme fusionar a `main` — mismo criterio de siempre, no se fusiona sin su OK
+  explícito.
+
+### Rifas — panel administrativo, RONDA 3: auditoría formal + "Rechazar pago" (3-ago-2026, v56.12) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño pidió una **auditoría formal antes de tocar código**: leer `RIFAS_V3_AUDITORIA_IMPLEMENTACION.md`
+en `chatgpt/visual-draft`, compararlo contra el código real de Rifas, y entregar primero la matriz
+✅/⚠️/❌ + el mapa de funciones existentes — sin programar hasta terminarla. Se hizo así. Resultado: la
+ronda 2 (arriba) ya había cerrado casi todo lo real del documento; el único hueco genuino que quedaba
+era **"Rechazar pago"** — el sistema solo tenía "Aprobar" (`nxRifaConfirmar`) o "Liberar"
+(`nxRifaLiberar`, un DELETE permanente sin motivo ni rastro). El dueño confirmó: **"Con notas, has lo
+recomendable"**.
+- **Migración aditiva:** `rifa_boletos.motivo_rechazo` (text, nullable). `get_advisors(security)` sin
+  hallazgos nuevos.
+- **`window.nxRifaRechazar(id)`/`nxRifaRechazarGuardar(id)`** (nuevas, junto a `nxRifaConfirmar`/
+  `nxRifaLiberar`): ventana de verdad — `.overlay`/`.modal`, mismo patrón que `nxRifaCambiarNum`/
+  `nxPrSolicitudPedirCorreccion` — con un `<textarea>` para el motivo (**nunca `prompt()`**, regla ya
+  establecida en el proyecto). Al confirmar: `PATCH estado:'anulado', motivo_rechazo:<texto o null>`.
+  **`'anulado'` YA EXISTÍA como estado** en el sistema desde antes de esta sesión — aparecía en el
+  filtro "Anulados" de la pestaña Tickets y en `tkEstInfo()`, pero **ninguna función lo escribía
+  nunca** (quedaba fantasma, confirmado por auditoría). Al reusarlo, el número queda libre SOLO —
+  `_bolMap` (el mapa de números ocupados) ya excluye `'anulado'` desde que se construyó, así que no
+  hizo falta tocar ese mecanismo. Queda en Auditoría (`RIFA_PAGO_RECHAZADO`, con el número y el
+  motivo). Motivo vacío/solo espacios se guarda como `null`, no como cadena vacía.
+- **`gestBoleto` (el panel lateral del boleto), 3 ajustes:** (1) el botón "Aprobar pago" ahora también
+  se esconde si el boleto ya está `'anulado'` (antes solo se ocultaba con `'confirmado'` — un boleto
+  rechazado seguía mostrando "Aprobar pago", sin sentido); (2) botón nuevo **"Rechazar pago"** (rojo),
+  visible SOLO mientras el estado es `'por_confirmar'` — no aplica a uno ya aprobado ni a uno ya
+  rechazado; (3) si el boleto está `'anulado'` con `motivo_rechazo` guardado, se muestra en un
+  recuadro rojo. El texto de estado (`estTxt`) ahora distingue "Rechazado" de "Por confirmar" (antes
+  los mostraba igual, porque el estado anulado nunca se había contemplado ahí).
+- **Bandeja "Pagos por revisar" (`rfPagosRowsHTML`):** cada fila ganó 2 botones de un toque —
+  ✓ verde Aprobar / ✕ rojo Rechazar (mismo reglamento de color +/− del sistema) — con
+  `event.stopPropagation()` para no disparar también el clic de la fila completa (que abre el panel
+  lateral). CSS nuevo `.rfPayBtns`/`.rfPayBtn`/`.rfPayBtnOk`/`.rfPayBtnNo`.
+- **Deliberadamente NO se tocó** (ya identificado y descartado en la ronda 2, misma razón): el menú de
+  3 puntos por fila, y el rediseño de la barra lateral/topbar/navegación inferior del hub.
+- **Verificado con 44 pruebas Playwright contra el módulo REAL re-extraído del archivo** (no una
+  reconstrucción): el botón Aprobar/Rechazar aparece o se esconde según el estado real en los 3 casos
+  (por confirmar/confirmado/ya rechazado), el motivo se guarda y se ve al reabrir el boleto, un motivo
+  en blanco se guarda como `null`, rechazar libera el número (mismo `_bolMap` de siempre, sin tocarlo),
+  los 2 botones de la bandeja aprueban/rechazan sin abrir el panel lateral por accidente
+  (`stopPropagation` confirmado), y **0 errores de JavaScript** en todo el recorrido. Se verificó
+  también con un caso realista (nombre largo + monto de 6 cifras) que la fila con los 2 botones nuevos
+  **no desborda horizontalmente** a 390px — usando el reset global `*{box-sizing:border-box;margin:0;
+  padding:0}` y el padding real de `.content`/`.nc` de `index.html` (un primer intento de la prueba,
+  sin ese reset, había medido un falso desborde de 24px — corregido en la propia prueba, no en el
+  código, antes de dar el resultado por bueno). `node --check parches.js` limpio; los 4 `<script>` del
+  sistema (`index.html` ×3 + este módulo standalone) compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño** — mismo
+  criterio de siempre.
+
+### Rifas — panel administrativo, RONDA 4: rediseño de FORMATO (3-ago-2026, v56.13) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura de un dashboard de referencia ("RIFAS PRO") y preguntó "Verifica qué opción
+hace falta" — se malinterpretó como pedido funcional; corrigió: **"Me refiero al formato / Como se
+visualiza"**. Se compararon capturas reales del panel V3.1 contra el mockup (harness Playwright con
+datos mezclados no-contiguos, para que la página 1 del tablero mostrara una mezcla real de colores en
+vez del artefacto de la primera prueba, donde los 648 confirmados seguidos hacían ver la página 1 de un
+solo color) y salieron 8 diferencias de FORMATO, no de función: layout de 1 columna + cajón vs 3
+columnas fijas, sin encabezado global, KPI sin ícono/dona, sin panel de detalle fijo, paleta más plana.
+Se le ofreció al dueño con `AskUserQuestion` qué hacer con esas diferencias; eligió **"Rehacer todo el
+layout"**, con sus palabras exactas: *"3 columnas fijas (nav+tablero+detalle en escritorio), números
+con color de fondo por estado, tarjetas KPI con ícono/dona, panel de detalle como columna fija en vez
+de cajón. Cambio grande, toca toda la pantalla."*
+- **(1) Semántica de color del tablero, reordenada** — `.rfN-disp/pend/conf/apar` YA pintaban el color
+  correcto por estado desde antes (no era un bug, era un artefacto de los datos de prueba de la
+  comparación inicial); lo único que cambió es CUÁL color le toca a cada uno: disponible=gris neutro
+  (`#f8fafc`/`#e2e8f0`/`#64748b`, antes verde), por confirmar=naranja (`#fff7ed`/`#fdba74`/`#c2410c`,
+  antes ámbar), confirmado=verde (`#f0fdf4`/`#86efac`/`#15803d`, antes índigo), apartado=ámbar
+  (`#fffbeb`/`#fde68a`/`#b45309`, antes gris) — calzando con la convención semántica del mockup
+  (verde=éxito/confirmado, no un color arbitrario).
+- **(2) Las 5 tarjetas KPI** (Disponibles/Apartados/Pagos x revisar/Confirmados/Recaudado) ganaron un
+  `<div class="rfKpiIco">` — círculo de 26px con un ícono Tabler y su color de estado — arriba de la
+  etiqueta, dentro de cada `.rfKpi`.
+- **(3) Tarjeta nueva "Progreso de ventas"** en la pestaña Resumen (`rfResumenTabHTML`, antes del grid
+  de 3 tarjetas de siempre): una dona (`conic-gradient`, reusa las clases `.pie`/`.pieLeg`/`.pieRow`/
+  `.pieDot`/`.pieK`/`.piePct` que ya existían para "Medios de pago" en `nxRifaStats()` — cero CSS
+  nuevo para el propio gráfico) con el % vendido en el centro (círculo blanco superpuesto) y la
+  leyenda de los 4 estados (Confirmados/Apartados/Por confirmar/Disponibles) con su monto y
+  porcentaje, ordenados por prioridad. Solo aparece si `k.total>0 && k.vendidos>0` — sin datos, no
+  se pinta un donut vacío/engañoso.
+- **(4) Barra lateral fija en escritorio (`.rfSide`), reemplaza las píldoras horizontales SOLO en
+  `min-width:900px`.** `renderRifaPanel` arma `sideHTML` con los mismos 5 botones (Resumen/Números/
+  Pagos por revisar con badge/Participantes/Tickets) usando la MISMA clase `rfTab` y el MISMO
+  `data-tab` que ya usaban las píldoras `.rfTabs` — el alternador `nxRfTab()` (que hace
+  `querySelectorAll('.rfTab').forEach(...)`) no necesitó ningún cambio: sirve a los dos formatos a la
+  vez, sin saber cuál está visible. El shell pasó de `<div class="nc">...</div>` a `<div
+  class="rfShell">` + `sideHTML` + `<div class="rfMain"><div class="nc">...</div></div>` — 2 divs de
+  cierre extra al final. CSS: `.rfShell{display:block}.rfSide{display:none}` por defecto,
+  `@media(min-width:900px){.rfShell{display:flex}.rfSide{display:flex...}.rfTabs{display:none}}` — en
+  móvil (`<900px`) es idéntico a como estaba antes de esta ronda: solo las píldoras `.rfTabs`, sin
+  ninguna barra lateral.
+- **(5) Panel de detalle FIJO en escritorio, solo para la pestaña Números** —
+  `rfNumerosTabHTML(r)` envuelve el tablero + un `<div class="rfDetailDock" id="rfDetailDock">` con un
+  estado vacío (`RF_DOCK_EMPTY`: "Toca un número del tablero para ver su detalle aquí."). `gestBoleto(b)`
+  ganó una constante `RF_DOCK_MIN=900` (el MISMO breakpoint de la media query, a propósito, para que JS
+  y CSS nunca se desincronicen) — arma el detalle en una variable `body2` y, si `_rfTab==='numeros' &&
+  window.innerWidth>=RF_DOCK_MIN`, lo inyecta DENTRO de `#rfDetailDock` (con un mini-encabezado propio y
+  botón "Cerrar" → `window.nxRfDockCerrar()`, que resetea al estado vacío) en vez de crear el
+  `.overlay`/`.modal` de siempre. Si la condición es falsa (móvil, O cualquier otra pestaña que también
+  llama `gestBoleto` vía `nxTkOpen` — Pagos/Participantes/Tickets), cae exactamente al camino de
+  overlay/drawer que ya existía, sin ningún cambio. CSS: `.rfNumRow{display:block}.rfDetailDock{
+  display:none}` por defecto, `@media(min-width:900px){.rfNumRow{display:grid;grid-template-columns:1fr
+  360px}.rfDetailDock{display:block;position:sticky;top:10px}}`.
+- **BUG REAL encontrado por la propia verificación (nunca en producción):** la dona nueva referenciaba
+  una variable `pct` que solo existía en el scope de `renderRifaPanel` (la función que llama), no
+  dentro de `rfResumenTabHTML` (la función separada donde se usa, alcanzada vía `rfTabBodyHTML`) — dio
+  `ReferenceError: pct is not defined` al abrir la pestaña Resumen. Lo atrapó Playwright (ejecución
+  real en navegador), NO `node --check` (es un error de scope en tiempo de ejecución, no de sintaxis).
+  Corregido agregando `var pct = k.total ? Math.min(100, Math.round(k.vendidos/k.total*100)) : 0;`
+  localmente al inicio de `rfResumenTabHTML`, justo después de `var k = rfKpisData(r);`.
+- **Verificado con Playwright contra el módulo REAL re-extraído del archivo** (no una reconstrucción),
+  escritorio (1536×900) y móvil (390×844): en escritorio, `hasOverlay=false` al tocar un número (el
+  dock se llena en vez de abrir un cajón), `dockHasContent=true` con el detalle real del boleto,
+  `sideDisplay=flex`/`pillsDisplay=none` (barra lateral visible, píldoras ocultas), 0px de desborde
+  horizontal; en móvil, CONFIRMADO que el comportamiento previo a esta ronda queda intacto —
+  `hasOverlay=true` (el cajón sigue abriendo al tocar un número, sin dock), `sideDisplay=none`/
+  `pillsDisplay=flex` (barra lateral oculta, píldoras visibles), `dockDisplay=none`, 0px de desborde.
+  **NOTA DE MÉTODO (2 rondas de verificación, no una):** la primera tanda de capturas móviles usó un
+  shell de prueba con `.sidebar{width:220px;flex-shrink:0}` SIN la media query real que tiene `.sb` en
+  `index.html` (línea 471: `@media(max-width:768px){.sb{position:fixed;top:0;left:-220px;...}}` — en
+  producción el sidebar sale de pantalla y NO ocupa espacio en móvil) — eso comprimía el contenido de
+  prueba a solo ~170px de los 390px reales, haciendo ver un apretón/desborde que no existe en
+  producción. Se corrigió el shell del harness para replicar exactamente esa media query y se
+  reconfirmó `contentWidth=390` (el ancho completo real) sin desborde. Un segundo falso positivo (el
+  cajón móvil "cortado" contra el borde derecho en una captura) resultó ser la animación CSS
+  `rfDrawerIn .22s` capturada a mitad de camino (sin ningún `waitForTimeout` antes del screenshot) —
+  confirmado con `getComputedStyle`/`getBoundingClientRect` que el elemento real mide 390×844 (ancho
+  completo) una vez que la animación termina; con una espera de 400ms antes de la captura, la imagen
+  final confirma el cajón a ancho completo como siempre. `node --check parches.js` limpio; los 4
+  `<script>` del sistema (`index.html` ×3 + este módulo standalone) compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
+### Rifas — detalle del participante: "Confirmado"/"En revisión" clicables (3-ago-2026, v56.14) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura real del modal de un participante (`nxRfPartVer`, dentro de la pestaña
+Participantes de la ronda 4, arriba) y pidió: *"cuando demos clic en confirmado y por revisar... nos
+dirija a la ventana de cada sección, [la] que está pendiente, [la que] está confirmado[a]"* — que las 2
+tarjetas KPI (Confirmado RD$X / En revisión RD$Y) dejen de ser solo números y filtren la lista de "Sus
+boletos" de abajo a esa sección.
+- **Sin navegar a otra pantalla ni abrir otra ventana** — se decidió así porque los boletos que
+  respaldan esos 2 montos YA se listan como chips dentro del mismo modal; filtrar ahí mismo es más
+  directo que cerrar el participante y saltar a otra pestaña a buscarlos.
+- **`partChipHTML(b)`/`partChipsFiltrar(g,tipo)`** (nuevos, junto a `nxRfPartVer`): la construcción de
+  chips se extrajo a helpers reusables — `tipo=''` todos, `'confirmado'` solo `estado==='confirmado'`,
+  `'pendiente'` solo `estado!=='confirmado'` (por_confirmar + apartado — MISMO criterio que ya usaba
+  `g.pend` al sumar el monto, para que el filtro coincida exacto con lo que dice la tarjeta).
+- **`window.nxRfPartFiltro(idx,tipo)`** (nuevo): toca "Confirmado"/"En revisión" → filtra
+  `#rfPartChips` y actualiza la etiqueta ("Confirmados (6)"/"En revisión (3)"); tocar la MISMA tarjeta
+  2 veces limpia el filtro (toggle); aparece un enlace **"Ver todos"** solo cuando hay un filtro activo.
+  Las 2 tarjetas ganaron `id`/`tabindex="0"`/`role="button"`/`aria-label`/teclado (Enter/Espacio) — no
+  eran accesibles antes, mismo patrón ya usado en el resto del sistema.
+- **Los montos de las 2 tarjetas NUNCA cambian al filtrar** (son totales de siempre, no se recalculan
+  contra la vista filtrada) — solo la lista de chips de abajo se acota.
+- **CSS:** reusa `.rfKpiT` (el mismo chevron+cursor:pointer que ya usan los KPI del panel principal,
+  cero clase nueva para eso) + `.rfKpi.on` nuevo (fondo índigo tenue, mismo lenguaje "activo" que
+  `.rfSide .rfTab.on`) + `.rfKpiT:focus-visible` (aro de foco, no existía en esta tarjeta).
+- **Verificado con Playwright reproduciendo el caso EXACTO de la captura del dueño** (LIC. ESTERLIN
+  ESPINAL, 9 boletos, RD$1,200 confirmado + RD$600 en revisión — código real extraído del archivo, no
+  reconstrucción): tocar "Confirmado" filtra a los 6 boletos verificados correctos (#0400/#2244/#2672/
+  #2679/#2712/#2746), tocar "En revisión" filtra a los 3 correctos (#0335/#1476 pendiente + #2077
+  apartado = RD$600 exacto), tocar de nuevo limpia el filtro, "Ver todos" limpia el filtro, Enter por
+  teclado hace lo mismo que el clic, los montos de las 2 tarjetas se quedan fijos en cualquier estado
+  del filtro, 0 errores de JavaScript. `node --check parches.js` limpio; los 4 `<script>` del sistema
+  compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
+### Rifas — el detalle de un boleto YA NO se cierra al aprobar/rechazar/editar (3-ago-2026, v56.15) — RAMA APARTE, PENDIENTE DE APROBACIÓN
+El dueño mandó una captura del detalle de un boleto ("BOLETO 1476", estado "POR CONFIRMAR") y pidió,
+con sus palabras: *"Cuando le demos aprobar, rechazar o cambiar o algo o algún cambio en esa ventana,
+que no se cierre... para poder ahí mismo darle a Enviar por WhatsApp, porque si se me cierra tengo que
+volver a buscar el cliente"*.
+- **Investigado antes de tocar nada:** de las 5 acciones del detalle (`gestBoleto`), 2 cerraban la
+  ventana sin dejar nada abierto (**Aprobar pago** — `nxRifaConfirmar` — y **Editar** —
+  `nxRifaEditBoletoGuardar`), 1 la dejaba cerrada porque el flujo pasa por un formulario aparte
+  (**Rechazar pago** — `nxRifaRechazar` cierra la ventana al abrir el textarea del motivo,
+  `nxRifaRechazarGuardar` nunca la reabría), y 1 (**Cambiar número**) YA hacía lo que el dueño pedía —
+  `nxRifaCambNumGuardar` cierra su formulario y REABRE el detalle con `gestBoleto(nb)` usando el
+  boleto ya refrescado. Ese patrón existente fue la plantilla para las otras 3.
+- **Arreglo, mismo patrón en las 3 funciones (Aprobar/Rechazar/Editar):** en vez de `cerrarModal
+  ('nxRbGest')` al final, cada una hace `await cargarBoletos(_rifaSel)` (que reemplaza `_boletos` con
+  datos frescos del servidor) y luego busca el boleto actualizado por id
+  (`_boletos.find(x=>x.id===id)`) y llama a `gestBoleto(nb)` — que se encarga de reabrir en el
+  contenedor que corresponda (el panel FIJO de escritorio en la pestaña Números, o el panel lateral
+  que se desliza en móvil/otras pestañas — la misma función ya distingue los dos casos desde la ronda
+  4). El badge de estado cambia solo (Por confirmar → Pago verificado / Rechazado), los botones
+  "Aprobar"/"Rechazar" desaparecen porque `gestBoleto` los gatea al `estado` real, y "Enviar por
+  WhatsApp" queda ahí, a un toque.
+- **Excepción a propósito, documentada en el propio código:** "Liberar" (`nxRifaLiberar`) SIGUE
+  cerrando la ventana — es un DELETE real del boleto, no queda ningún registro que volver a mostrar.
+  El panel cae solo a su mensaje "Toca un número para ver su detalle" de siempre (el mismo estado
+  vacío que ya usaba antes de seleccionar cualquier número) — no hizo falta ningún código nuevo para
+  eso, es el comportamiento natural de re-renderizar la pestaña sin nada seleccionado.
+- **Verificado con Playwright contra el módulo REAL re-extraído del archivo** (no una reconstrucción —
+  1,762 líneas, `26331` a `28092` de `parches.js`), con un backend simulado que de verdad APLICA los
+  cambios (PATCH/DELETE mutan los datos en memoria, no solo se registran como llamadas) para que el
+  boleto reabierto refleje el estado posterior real: **10 comprobaciones** — Aprobar deja el panel
+  abierto con "Pago verificado" y sin los botones Aprobar/Rechazar, con WhatsApp disponible, probado
+  en las 2 formas (panel fijo de escritorio en Números, y panel lateral fuera de esa pestaña); Rechazar
+  (con un motivo escrito) reabre mostrando "Rechazado" + el motivo guardado + WhatsApp; Editar reabre
+  mostrando el dato corregido (probado cambiando el nombre del comprador); Liberar sigue cerrando y el
+  panel cae a su mensaje vacío de siempre, sin boleto fantasma. Capturas de pantalla revisadas
+  visualmente. `node --check parches.js` limpio; los 4 `<script>` del sistema compilan.
+- **Sigue en la rama `claude/rifas-v3-admin`, sin fusionar, esperando revisión del dueño.**
+
 ### Login — 3 animaciones sutiles, del análisis de un demo "Lunara" (3-ago-2026, v56.8)
 El dueño mandó una captura de un demo de código ("Lunara" — un login estilo desierto/luna con
 tarjeta de vidrio, tilt 3D al cursor, un brillo ambiental que respira, y una transición temática al
