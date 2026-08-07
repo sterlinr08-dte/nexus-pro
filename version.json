@@ -1,7 +1,12 @@
 {
-  "version": "56.15",
+  "version": "56.16",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.16",
+      "fecha": "2026-08-07",
+      "texto": "ARREGLADO (importante — seguridad): la función `nexus-smart` (Nexus Smart IA, el asistente del Dashboard) respondía a CUALQUIERA en internet, sin login — un simple POST a su URL devolvía la lista completa de clientes (cédula, WhatsApp, deuda, cuentas bancarias) porque no revisaba quién llamaba, además de usar la clave de Anthropic escrita en texto plano en el código. `verify_jwt` se quedó en FALSE a propósito (activarlo solo no cierra el hueco: la clave anónima, pública en index.html, es un JWT válido y el gateway la habría aceptado igual) — el candado real se puso DENTRO de la función: ahora exige que el token pertenezca a un usuario logueado con rol admin (`auth.getUser(token)` → `profiles.rol==='admin'`, el mismo patrón ya probado en `enviar-reporte-email`). La clave de Anthropic salió del código y ahora se lee del Secret `ANTHROPIC_API_KEY` (con `.trim()`, mismo criterio que `GMAIL_PASS`). El frontend (`parches.js`) ahora manda el token de la SESIÓN real del admin, no solo la clave anónima. Verificado en vivo con `pg_net` contra la función ya desplegada: sin credencial → 401; con la clave anónima (probando exactamente el caso que preocupaba) → también 401, confirmando que el candado real funciona y no solo el de la puerta. Pendiente del dueño: confirmar que el Secret `ANTHROPIC_API_KEY` sigue vivo (no se pudo probar el camino feliz desde aquí sin una sesión real) y rotar la clave de Anthropic anterior por quedar expuesta."
+    },
     {
       "v": "56.15",
       "fecha": "2026-08-03",

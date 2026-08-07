@@ -8641,13 +8641,13 @@
     try {
       const api = getAPI();
       const baseUrl = (api?.url || 'https://tnwsgcxurfyuszxsewsn.supabase.co');
-      const anonKey = api?.key || '';
-      
+
       const resp = await fetch(baseUrl + '/functions/v1/nexus-smart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + anonKey
+          'apikey': (api?.key || ''),
+          'Authorization': 'Bearer ' + (api?.token || api?.key || '')
         },
         body: JSON.stringify({ pregunta })
       });
