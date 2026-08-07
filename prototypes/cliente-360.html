@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es-DO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NEXUS PRO — Cliente 360</title>
+<style>
+:root{--bg:#f6f8fc;--panel:#fff;--line:#e7eaf1;--txt:#151a2d;--muted:#697086;--brand:#6d4aff;--brand2:#8a62ff;--green:#0b9f6e;--greenbg:#eaf8f3;--amber:#b56a00;--amberbg:#fff6e5;--red:#d64045;--redbg:#fff0f1;--blue:#2c6bed;--bluebg:#eef4ff;--shadow:0 10px 30px rgba(33,42,75,.08);--r:18px}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}.app{min-height:100vh;display:grid;grid-template-columns:230px 1fr}.side{background:#11162a;color:#dfe3f3;padding:22px 14px;position:sticky;top:0;height:100vh}.brand{font-weight:800;font-size:20px;padding:10px 12px 24px}.nav{display:grid;gap:6px}.nav button{border:0;background:transparent;color:#b9c0d7;text-align:left;padding:11px 12px;border-radius:11px;cursor:pointer}.nav button.active{background:#6d4aff;color:white}.main{min-width:0}.top{height:72px;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 24px;position:sticky;top:0;z-index:5}.search{flex:1;max-width:760px;position:relative}.search input{width:100%;height:44px;border:1px solid var(--line);border-radius:13px;background:#f9faff;padding:0 14px 0 42px;outline:0}.search:before{content:'⌕';position:absolute;left:15px;top:8px;font-size:24px;color:#7d8498}.iconbtn{width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer}.wrap{padding:22px;max-width:1460px;margin:auto}.head{background:linear-gradient(135deg,#fff 0%,#fbfaff 70%,#f4f0ff 100%);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}.headrow{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.identity{display:flex;gap:15px;align-items:center}.avatar{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--brand),#a88dff);color:white;display:grid;place-items:center;font-size:22px;font-weight:800}.name{font-size:24px;font-weight:800;line-height:1.1}.meta{margin-top:7px;color:var(--muted);font-size:14px}.badges{margin-top:9px;display:flex;gap:8px;flex-wrap:wrap}.badge{font-size:12px;font-weight:700;border-radius:999px;padding:6px 9px}.ok{color:var(--green);background:var(--greenbg)}.warn{color:var(--amber);background:var(--amberbg)}.soft{color:#5c647a;background:#f0f2f7}.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.btn{height:40px;border-radius:12px;border:1px solid var(--line);padding:0 14px;background:#fff;font-weight:700;cursor:pointer}.btn.primary{border-color:var(--brand);background:var(--brand);color:#fff}.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}.kpi{border:1px solid var(--line);background:#fff;border-radius:15px;padding:15px}.klabel{font-size:12px;color:var(--muted);font-weight:700}.kval{margin-top:7px;font-size:21px;font-weight:800}.ksub{font-size:12px;color:var(--muted);margin-top:3px}.tabs{display:flex;gap:6px;margin-top:18px;overflow:auto;padding-bottom:4px}.tab{white-space:nowrap;border:0;background:transparent;color:#687087;padding:10px 12px;border-radius:10px;font-weight:700;cursor:pointer}.tab.active{background:#ede9ff;color:#5632df}.content{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,.8fr);gap:16px;margin-top:16px}.panel{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:0 6px 18px rgba(33,42,75,.05)}.ph{padding:17px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.pt{font-weight:800}.body{padding:16px 18px}.timeline{display:grid;gap:0}.event{display:grid;grid-template-columns:56px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid #f0f2f7}.datebox{width:48px;height:48px;border-radius:12px;background:#f4f2ff;display:grid;place-items:center;text-align:center;color:#5c3ce0;font-weight:800;font-size:12px}.event b{font-size:14px}.event p{margin:4px 0 0;color:var(--muted);font-size:13px}.loan{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}.loanrow{display:flex;justify-content:space-between;gap:14px}.loanname{font-weight:800}.money{font-weight:800}.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.mini div{background:#f8f9fc;border-radius:10px;padding:10px}.mini span{display:block;font-size:11px;color:var(--muted)}.mini b{display:block;margin-top:4px;font-size:13px}.sectionTitle{font-weight:800;margin:2px 0 12px}.info{display:grid;grid-template-columns:1fr 1fr;gap:10px}.info div{border:1px solid var(--line);border-radius:12px;padding:11px}.info span{display:block;font-size:11px;color:var(--muted)}.info b{font-size:13px}.quick{display:grid;grid-template-columns:1fr 1fr;gap:8px}.quick button{height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer}.empty{padding:40px 20px;text-align:center;color:var(--muted)}.mobilebar{display:none}.sheet{position:fixed;inset:0;background:rgba(8,12,28,.38);display:none;align-items:flex-end;justify-content:center;z-index:20}.sheet.open{display:flex}.sheetCard{width:min(520px,100%);background:#fff;border-radius:24px 24px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -20px 50px rgba(0,0,0,.16)}.sheetCard h3{margin:0 0 14px}.field{margin:11px 0}.field label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}.field input,.field select{width:100%;height:46px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff}.sheetBtns{display:flex;gap:8px;margin-top:14px}.sheetBtns button{flex:1}.hidden{display:none!important}
+@media(max-width:900px){.app{display:block}.side{display:none}.top{height:64px;padding:0 14px}.wrap{padding:14px 12px 88px}.head{padding:16px;border-radius:18px}.headrow{display:block}.identity{align-items:flex-start}.avatar{width:54px;height:54px;border-radius:16px}.name{font-size:20px}.actions{margin-top:14px;justify-content:flex-start}.actions .btn:not(.primary){display:none}.kpis{grid-template-columns:1fr 1fr;gap:9px}.kpi{padding:13px}.kval{font-size:18px}.content{display:block}.content>.panel:last-child{margin-top:12px}.tabs{margin-left:-4px;margin-right:-4px}.mobilebar{position:fixed;display:grid;grid-template-columns:repeat(4,1fr);left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:10}.mobilebar button{border:0;background:transparent;color:#50586d;font-size:11px;font-weight:800;padding:8px 2px}.mobilebar button.primary{background:#ede9ff;color:#5632df;border-radius:12px}.loanrow{align-items:flex-start}.mini{grid-template-columns:1fr 1fr}.info{grid-template-columns:1fr}.search input{height:42px}.iconbtn{width:40px;height:40px}.meta{font-size:13px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">NEXUS PRO</div>
+    <div class="nav">
+      <button>Inicio</button><button>POS</button><button>Financiamiento</button><button class="active">Cliente 360</button><button>Inventario</button><button>Seguros</button><button>Facturas</button><button>Contabilidad</button>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <div class="search"><input id="search" value="Estherlin Espinal" placeholder="Buscar cliente por nombre, cédula o teléfono"></div>
+      <button class="iconbtn" title="Notificaciones">◔</button>
+      <button class="iconbtn" title="Más">•••</button>
+    </header>
+    <div class="wrap">
+      <section class="head">
+        <div class="headrow">
+          <div class="identity">
+            <div class="avatar">EE</div>
+            <div>
+              <div class="name">Estherlin Espinal</div>
+              <div class="meta">001-1234567-8 · (809) 555-0198 · Santo Domingo</div>
+              <div class="badges"><span class="badge ok">Cliente activo</span><span class="badge soft">Desde 2024</span><span class="badge warn">1 cuota próxima</span></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn">WhatsApp</button><button class="btn">Nueva factura</button><button class="btn primary" onclick="openPay()">Cobrar</button><button class="btn">•••</button>
+          </div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="klabel">Saldo pendiente</div><div class="kval">RD$ 42,300</div><div class="ksub">Financiamiento activo</div></div>
+          <div class="kpi"><div class="klabel">Pagado histórico</div><div class="kval">RD$ 287,700</div><div class="ksub">47 movimientos</div></div>
+          <div class="kpi"><div class="klabel">Compras</div><div class="kval">RD$ 325,000</div><div class="ksub">5 equipos</div></div>
+          <div class="kpi"><div class="klabel">Relación</div><div class="kval">A+</div><div class="ksub">96% puntualidad</div></div>
+        </div>
+      </section>
+
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-tab="resumen">Resumen</button><button class="tab" data-tab="financiamiento">Financiamiento</button><button class="tab" data-tab="pagos">Pagos</button><button class="tab" data-tab="seguros">Seguros</button><button class="tab" data-tab="facturas">Facturas</button><button class="tab" data-tab="equipos">Equipos</button><button class="tab" data-tab="documentos">Documentos</button><button class="tab" data-tab="actividad">Actividad</button>
+      </nav>
+
+      <div class="content" id="resumen">
+        <section class="panel">
+          <div class="ph"><div class="pt">Actividad reciente</div><button class="btn">Ver todo</button></div>
+          <div class="body timeline">
+            <div class="event"><div class="datebox">07<br>AGO</div><div><b>Pago recibido · RD$ 5,000</b><p>Financiamiento PR-0001 · Efectivo · Recibo #1048</p></div></div>
+            <div class="event"><div class="datebox">02<br>AGO</div><div><b>Factura POS emitida</b><p>iPhone 15 Pro 256GB · RD$ 68,500</p></div></div>
+            <div class="event"><div class="datebox">28<br>JUL</div><div><b>WhatsApp</b><p>Cliente confirmó pago para el 7 de agosto.</p></div></div>
+            <div class="event"><div class="datebox">15<br>JUL</div><div><b>Pago recibido · RD$ 5,000</b><p>Aplicado a cuota #7.</p></div></div>
+          </div>
+        </section>
+        <aside class="panel">
+          <div class="ph"><div class="pt">Préstamo activo</div><span class="badge ok">Al día</span></div>
+          <div class="body">
+            <div class="loan">
+              <div class="loanrow"><div><div class="loanname">PR-0001</div><div class="meta">Cuotas fijas · Quincenal</div></div><div class="money">RD$ 42,300</div></div>
+              <div class="mini"><div><span>Capital</span><b>RD$ 80,000</b></div><div><span>Cuota</span><b>RD$ 5,000</b></div><div><span>Próxima</span><b>15 AGO</b></div><div><span>Pagado</span><b>RD$ 37,700</b></div></div>
+            </div>
+            <div class="sectionTitle">Información del cliente</div>
+            <div class="info"><div><span>Teléfono</span><b>(809) 555-0198</b></div><div><span>Correo</span><b>esterlin@nexus.do</b></div><div><span>Asesor</span><b>Juan Pérez</b></div><div><span>Organización</span><b>NEXUS PRO</b></div></div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="panel hidden" id="generic"><div class="ph"><div class="pt" id="genericTitle">Sección</div></div><div class="body" id="genericBody"></div></div>
+    </div>
+  </main>
+</div>
+
+<div class="mobilebar"><button>Resumen</button><button>WhatsApp</button><button>Factura</button><button class="primary" onclick="openPay()">Cobrar</button></div>
+
+<div class="sheet" id="sheet" onclick="if(event.target===this)closePay()">
+  <div class="sheetCard">
+    <h3>Registrar pago</h3>
+    <div class="meta">Estherlin Espinal · PR-0001 · Saldo RD$ 42,300</div>
+    <div class="field"><label>Monto</label><input value="5000" inputmode="decimal"></div>
+    <div class="field"><label>Método</label><select><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
+    <div class="field"><label>Aplicar a</label><select><option>Cuota actual</option><option>Capital</option><option>Interés</option></select></div>
+    <div class="field"><label>Referencia (opcional)</label><input placeholder="Ej. transferencia 8472"></div>
+    <div class="sheetBtns"><button class="btn" onclick="closePay()">Cancelar</button><button class="btn primary" onclick="simulatePay()">Registrar pago</button></div>
+  </div>
+</div>
+
+<script>
+const content=document.getElementById('resumen'), generic=document.getElementById('generic');
+const mock={
+ financiamiento:'<div class="loan"><div class="loanrow"><div><div class="loanname">PR-0001</div><div class="meta">Cuotas fijas · Quincenal · 10% mensual</div></div><span class="badge ok">Al día</span></div><div class="mini"><div><span>Capital</span><b>RD$ 80,000</b></div><div><span>Saldo</span><b>RD$ 42,300</b></div><div><span>Próxima cuota</span><b>15 AGO</b></div><div><span>Cuotas restantes</span><b>8</b></div></div></div>',
+ pagos:'<div class="timeline"><div class="event"><div class="datebox">07<br>AGO</div><div><b>RD$ 5,000 · Efectivo</b><p>Recibo #1048 · Cuota actual</p></div></div><div class="event"><div class="datebox">15<br>JUL</div><div><b>RD$ 5,000 · Transferencia</b><p>Ref. 238744 · Cuota #7</p></div></div></div>',
+ seguros:'<div class="loan"><div class="loanrow"><div><div class="loanname">ARS Humano · Superior</div><div class="meta">Póliza POL-2026-000128</div></div><span class="badge ok">Vigente</span></div><div class="mini"><div><span>Prima</span><b>RD$ 4,000</b></div><div><span>Renueva</span><b>20 AGO</b></div></div></div>',
+ facturas:'<div class="timeline"><div class="event"><div class="datebox">02<br>AGO</div><div><b>Factura F-00984 · RD$ 68,500</b><p>POS · iPhone 15 Pro 256GB</p></div></div><div class="event"><div class="datebox">20<br>JUL</div><div><b>Factura Seguro · RD$ 4,000</b><p>ARS Humano · Superior</p></div></div></div>',
+ equipos:'<div class="loan"><div class="loanrow"><div><div class="loanname">iPhone 15 Pro 256GB</div><div class="meta">IMEI 35 123456 789012 3</div></div><span class="badge ok">Activo</span></div><div class="mini"><div><span>Compra</span><b>02 AGO</b></div><div><span>Garantía</span><b>12 meses</b></div><div><span>MDM</span><b>Enrolado</b></div></div></div>',
+ documentos:'<div class="quick"><button>🪪 Cédula</button><button>✍️ Firma</button><button>📄 Contrato</button><button>🎥 Video</button><button>🧾 Recibos</button><button>📎 Otros</button></div>',
+ actividad:'<div class="timeline"><div class="event"><div class="datebox">07<br>AGO</div><div><b>Pago registrado</b><p>RD$ 5,000 · usuario admin</p></div></div><div class="event"><div class="datebox">28<br>JUL</div><div><b>WhatsApp</b><p>Promesa de pago registrada.</p></div></div></div>'
+};
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');const t=b.dataset.tab;if(t==='resumen'){content.classList.remove('hidden');generic.classList.add('hidden');return}content.classList.add('hidden');generic.classList.remove('hidden');document.getElementById('genericTitle').textContent=b.textContent;document.getElementById('genericBody').innerHTML=mock[t]||'<div class="empty">Sin información.</div>'});
+function openPay(){document.getElementById('sheet').classList.add('open')}function closePay(){document.getElementById('sheet').classList.remove('open')}function simulatePay(){closePay();setTimeout(()=>alert('Prototipo: pago simulado. No se envió a Supabase.'),50)}
+</script>
+</body>
+</html>
