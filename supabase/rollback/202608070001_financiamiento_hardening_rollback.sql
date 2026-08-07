@@ -105,6 +105,10 @@ alter table public.prestamo_solicitudes
   drop constraint if exists prestamo_solicitudes_prestamo_org_fkey,
   drop constraint if exists prestamo_solicitudes_cliente_org_fkey;
 
+-- ADVERTENCIA: este rollback restaura deliberadamente ON DELETE CASCADE para volver
+-- al esquema anterior. Eso reintroduce el riesgo conocido de borrar un prestamo y
+-- destruir silenciosamente su historial de pagos. Si se ejecuta, planificar la
+-- re-migracion de hardening antes de continuar operando el modulo.
 alter table public.prestamo_pagos
   drop constraint if exists prestamo_pagos_movimiento_origen_org_fkey,
   drop constraint if exists prestamo_pagos_prestamo_org_fkey,
@@ -119,6 +123,11 @@ alter table public.prestamos
 alter table public.prestamo_pagos drop constraint if exists prestamo_pagos_org_id_key;
 alter table public.prestamos drop constraint if exists prestamos_org_id_key;
 alter table public.prestamo_clientes drop constraint if exists prestamo_clientes_org_id_key;
+
+-- Indices tenant-aware agregados por la migracion.
+drop index if exists public.idx_prestamo_solicitudes_org_estado;
+drop index if exists public.idx_prestamo_pagos_org_prestamo;
+drop index if exists public.idx_prestamos_org_estado;
 
 -- Reversion ledger additivo.
 drop index if exists public.prestamo_pagos_un_reverso_por_movimiento_uidx;
