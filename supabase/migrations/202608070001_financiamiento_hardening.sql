@@ -296,16 +296,17 @@ alter table public.prestamos
   add constraint prestamos_estado_check
     check (estado in ('activo','reestructurado','liquidado','cancelado'));
 
+-- POS Cuotas usa `saldado` al completar el plan. Vencido/en mora siguen derivados.
 update public.pos_financiamientos
 set estado = 'activo'
-where estado is null or estado not in ('activo','reestructurado','liquidado','cancelado');
+where estado is null or estado not in ('activo','saldado','cancelado');
 
 alter table public.pos_financiamientos
   alter column estado set default 'activo',
   alter column estado set not null,
   drop constraint if exists pos_financiamientos_estado_check,
   add constraint pos_financiamientos_estado_check
-    check (estado in ('activo','reestructurado','liquidado','cancelado'));
+    check (estado in ('activo','saldado','cancelado'));
 
 -- -----------------------------------------------------------------------------
 -- 8. Ledger: preparar reversos sin romper la columna legacy `tipo`
@@ -343,11 +344,24 @@ alter table public.prestamo_pagos
     (tipo_movimiento = 'reverso' and movimiento_origen_id is not null)
   );
 
+-- PENDIENTE FASE RPC/LOCKDOWN:
+-- La estructura de ledger ya existe, pero el UPDATE/DELETE directo de authenticated
+-- se mantendra temporalmente por compatibilidad. Antes del cierre del modulo se
+-- revocara DML directo y registrar/reversar pagos pasara exclusivamente por RPC PG.
+
 -- Soft delete solo donde tiene semantica de maestro/entidad, no en ledger.
 alter table public.prestamo_clientes
   add column if not exists deleted_at timestamptz;
 alter table public.prestamos
   add column if not exists deleted_at timestamptz;
+
+-- Indices tenant-aware para consultas frecuentes y filtros RLS.
+create index if not exists idx_prestamos_org_estado
+  on public.prestamos (organizacion_id, estado);
+create index if not exists idx_prestamo_pagos_org_prestamo
+  on public.prestamo_pagos (organizacion_id, prestamo_id);
+create index if not exists idx_prestamo_solicitudes_org_estado
+  on public.prestamo_solicitudes (organizacion_id, estado);
 
 -- -----------------------------------------------------------------------------
 -- 9. POS Financiamiento: tenant NOT NULL + FKs compuestas + RESTRICT
