@@ -1319,6 +1319,7 @@ input[type="text"].no-upper, input[type="search"].no-upper{
         <div class="ni on" onclick="nav('dashboard',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-layout-dashboard ni-i"></i><span class="ni-l">Dashboard</span></div>
         <div class="ni" onclick="nav('facturas',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-file-invoice ni-i"></i><span class="ni-l">Facturas</span></div>
         <div class="ni" onclick="nav('clientes',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-users ni-i"></i><span class="ni-l">Clientes</span><span class="ni-b" id="nb1">0</span></div>
+        <div class="ni" onclick="nav('cliente360',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-user-search ni-i"></i><span class="ni-l">Cliente 360</span></div>
         <div class="ni" onclick="nav('polizas',this)" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><i class="ti ti-certificate ni-i"></i><span class="ni-l">Pólizas</span><span class="ni-b" id="nb2" style="display:none"></span></div>
 
 
@@ -1476,6 +1477,9 @@ input[type="text"].no-upper, input[type="search"].no-upper{
             </table></div>
           </div>
         </div>
+
+        <!-- CLIENTE 360 — agregador de solo lectura sobre módulos existentes -->
+        <div class="view nxSf" id="v-cliente360"></div>
 
         <!-- PÓLIZAS -->
         <div class="view nxSf" id="v-polizas">
@@ -2842,7 +2846,7 @@ const CUENTAS=[
   {cod:'5301',nom:'Publicidad',tipo:'Gasto',saldo:0},
   {cod:'5401',nom:'Comisiones pagadas',tipo:'Gasto',saldo:0},
 ];
-const TITLES={dashboard:'DASHBOARD',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
+const TITLES={dashboard:'DASHBOARD',email:'NOTIFICACIONES POR CORREO',auditoria:'REGISTRO DE AUDITORÍA',clientes:'CLIENTES','cliente360':'CLIENTE 360',polizas:'PÓLIZAS',facturas:'FACTURAS',cobros:'COBROS',empresas:'EMPRESAS',agentes:'AGENTES',comisiones:'COMISIONES',mayor:'MAYOR GENERAL',asientos:'DIARIO DE ASIENTOS',balance:'BALANCE GENERAL',pyg:'P&G','rep-agente':'REPORTE AGENTES','rep-plan':'REPORTE PLANES','rep-empresa':'REPORTE EMPRESAS','rep-aging':'AGING DE CARTERA',dgii:'REPORTES DGII / ARS',auto:'AUTOMATIZACIÓN',config:'CONFIGURACIÓN',usuarios:'USUARIOS'};
 
 // ── Estado global ────────────────────────────────────────────────────────────
 let ST={clientes:[],facturas:[],empresas:[],agentes:[],asientos:[],usuarios:[],config:{}};
@@ -4820,6 +4824,482 @@ function cerrarClientSummary(){
   document.getElementById('csOverlay')?.classList.remove('show');
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// CLIENTE 360 — módulo AGREGADOR de solo lectura sobre módulos ya existentes.
+// No crea ninguna fuente de verdad nueva: cada pestaña lee directo de las
+// tablas reales (clientes/facturas/abonos/auditoria de Seguros; prestamos/
+// prestamo_pagos/prestamo_clientes de Financiamiento; pos_clientes/pos_ventas/
+// pos_venta_items/pos_financiamientos/pos_documentos/pos_reparaciones del
+// POS). Todas las consultas van por el mismo API.get() con la sesión ya
+// autenticada de siempre → RLS de cada tabla decide qué se ve, igual que en
+// el resto del sistema (nunca se filtra organizacion_id a mano aquí).
+//
+// Financiamiento/POS NO comparten identidad de cliente con Seguros (son
+// tablas distintas, `clientes` no tiene FK hacia ellas) — el cruce es
+// APROXIMADO por cédula o teléfono normalizados (mismo criterio ya usado en
+// el sistema para Reparaciones↔Cliente, ver Artículo 360°/Cliente 360° del
+// POS) y se etiqueta como tal en pantalla, nunca se presenta como un enlace
+// exacto que no existe.
+// ══════════════════════════════════════════════════════════════════════════
+let _c360Sel=null,_c360Tab='resumen',_c360Cache={};
+let _c360OrgPrestamos=null,_c360OrgPrestamoClientes=null,_c360OrgPosClientes=null,_c360OrgPosReparaciones=null;
+const C360_TABS=[
+  {k:'resumen',l:'Resumen',ic:'ti-layout-dashboard'},
+  {k:'financiamiento',l:'Financiamiento',ic:'ti-credit-card'},
+  {k:'pagos',l:'Pagos',ic:'ti-cash'},
+  {k:'facturas',l:'Facturas',ic:'ti-file-invoice'},
+  {k:'pos',l:'POS',ic:'ti-shopping-cart'},
+  {k:'equipos',l:'Equipos',ic:'ti-device-mobile'},
+  {k:'seguros',l:'Seguros',ic:'ti-shield-check'},
+  {k:'documentos',l:'Documentos',ic:'ti-folder'},
+  {k:'actividad',l:'Actividad',ic:'ti-activity'},
+  {k:'historial',l:'Historial',ic:'ti-history'},
+];
+
+function ensureC360CSS(){
+  if(document.getElementById('c360CSS'))return;
+  const st=document.createElement('style');st.id='c360CSS';
+  st.textContent=`
+  .c360-shell{display:flex;gap:14px;align-items:flex-start}
+  .c360-side{width:320px;flex:0 0 320px;display:flex;flex-direction:column;background:var(--sf-card,#fff);border:1px solid var(--sf-line,#e2e8f0);border-radius:12px;overflow:hidden;max-height:calc(100vh - 200px)}
+  .c360-search{display:flex;align-items:center;gap:8px;padding:12px;border-bottom:1px solid var(--sf-line,#e2e8f0)}
+  .c360-search i{color:var(--sf-tx3,#94a3b8);font-size:15px}
+  .c360-search input{flex:1;border:1.5px solid var(--sf-line,#e2e8f0);border-radius:8px;padding:9px 10px;font-size:13px;background:var(--sf-bg,#f8fafc);color:var(--sf-tx,#0f172a)}
+  .c360-lista{flex:1;overflow-y:auto;padding:6px}
+  .c360-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer}
+  .c360-row:hover{background:var(--sf-bg,#f8fafc)}
+  .c360-row.on{background:var(--sf-primary-l,#eaf1ff)}
+  .c360-ava{width:32px;height:32px;border-radius:50%;background:var(--sf-primary,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:0 0 32px}
+  .c360-rinfo{display:flex;flex-direction:column;min-width:0;flex:1}
+  .c360-rinfo b{font-size:12.5px;color:var(--sf-tx,#0f172a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .c360-rinfo span{font-size:10.5px;color:var(--sf-tx3,#94a3b8)}
+  .c360-dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+  .c360-dot.ok{background:#16a34a}.c360-dot.warn{background:#d97706}.c360-dot.err{background:#dc2626}
+  .c360-nores,.c360-more{padding:16px;text-align:center;color:var(--sf-tx3,#94a3b8);font-size:11.5px}
+  .c360-main{flex:1;min-width:0}
+  .c360-empty{padding:60px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--sf-tx3,#94a3b8);background:var(--sf-card,#fff);border:1px solid var(--sf-line,#e2e8f0);border-radius:12px}
+  .c360-empty i{font-size:44px}
+  .c360-tabbody{padding:14px 0}
+  .c360-tbl{width:100%;border-collapse:collapse;font-size:12px}
+  .c360-tbl th{text-align:left;padding:8px;color:var(--sf-tx3,#94a3b8);font-size:10.5px;text-transform:uppercase;border-bottom:1px solid var(--sf-line,#e2e8f0)}
+  .c360-tbl td{padding:8px;border-bottom:1px solid var(--sf-line,#f1f5f9);color:var(--sf-tx2,#475569)}
+  .c360-empty-tab{padding:30px;text-align:center;color:var(--sf-tx3,#94a3b8);font-size:12px;white-space:pre-line;line-height:1.7}
+  .c360-aviso{background:var(--sf-warn-l,#fffbeb);color:var(--sf-warn-d,#92400e);border:1px solid var(--sf-warn,#d97706);border-radius:8px;padding:8px 12px;font-size:11px;margin-bottom:10px}
+  .c360-back{display:none;align-items:center;gap:6px;background:none;border:none;color:var(--sf-primary,#2563eb);font-weight:700;font-size:12.5px;cursor:pointer;padding:6px 0;margin-bottom:8px}
+  @media(max-width:900px){
+    .c360-shell{flex-direction:column}
+    .c360-side{width:100%;flex:none;max-height:none}
+    .c360-shell.c360-detail-open .c360-side{display:none}
+    .c360-shell:not(.c360-detail-open) .c360-main{display:none}
+    .c360-back{display:inline-flex}
+    #c360TabsBar{overflow-x:auto;flex-wrap:nowrap!important}
+  }`;
+  document.head.appendChild(st);
+}
+
+function rCliente360(){
+  const view=document.getElementById('v-cliente360');if(!view)return;
+  ensureC360CSS();
+  view.innerHTML=`
+    <div class="c360-shell" id="c360Shell">
+      <div class="c360-side">
+        <div class="c360-search"><i class="ti ti-search"></i><input id="c360Q" type="text" placeholder="Nombre, cédula, teléfono, póliza…" oninput="nxC360Buscar(this.value)" autocomplete="off"></div>
+        <div id="c360Lista" class="c360-lista"></div>
+      </div>
+      <div class="c360-main" id="c360Main">
+        <div class="c360-empty"><i class="ti ti-user-search"></i><p>Busca un cliente a la izquierda para ver su expediente.</p></div>
+      </div>
+    </div>`;
+  nxC360Buscar('');
+}
+
+function nxC360Buscar(q){
+  const box=document.getElementById('c360Lista');if(!box)return;
+  const qn=(q||'').trim().toLowerCase();
+  let lista=(ST.clientes||[]).slice();
+  if(qn){
+    lista=lista.filter(c=>
+      (c.nom||'').toLowerCase().includes(qn)||
+      (c.cedula||'').toLowerCase().includes(qn)||
+      (c.tel||'').toLowerCase().includes(qn)||
+      (c.wa||'').toLowerCase().includes(qn)||
+      (c.numero_poliza||'').toLowerCase().includes(qn)||
+      (c.referencia||'').toLowerCase().includes(qn)
+    );
+  }
+  lista=lista.sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+  const top=lista.slice(0,80);
+  if(!top.length){box.innerHTML='<div class="c360-nores">Sin resultados</div>';return;}
+  box.innerHTML=top.map(c=>{
+    const est=getEst(c);const cls=est==='Al día'?'ok':est==='Inhabilitado'?'err':'warn';
+    return `<div class="c360-row ${_c360Sel===c.id?'on':''}" onclick="nxC360Abrir('${c.id}')" tabindex="0" role="button" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}">
+      <div class="c360-ava">${inits(c.nom)}</div>
+      <div class="c360-rinfo"><b>${escHtml(c.nom)}</b><span>${escHtml(c.cedula||c.numero_poliza||'Sin cédula')}</span></div>
+      <span class="c360-dot ${cls}" title="${est}"></span>
+    </div>`;
+  }).join('')+(lista.length>80?`<div class="c360-more">+${lista.length-80} más — afina la búsqueda</div>`:'');
+}
+
+function nxC360Volver(){document.getElementById('c360Shell')?.classList.remove('c360-detail-open');}
+
+function nxC360Abrir(id){
+  _c360Sel=id;_c360Tab='resumen';
+  const c=(ST.clientes||[]).find(x=>x.id===id);if(!c)return;
+  document.getElementById('c360Shell')?.classList.add('c360-detail-open');
+  nxC360Buscar(document.getElementById('c360Q')?.value||'');
+  pintarC360Expediente(c);
+  c360CargarTodo(c);
+}
+
+function pintarC360Expediente(c){
+  const main=document.getElementById('c360Main');if(!main)return;
+  const estado=getEst(c);
+  const cls=estado==='Al día'?'ok':estado==='Inhabilitado'?'err':'warn';
+  const urg=cls==='ok'?'u-ok':cls==='err'?'u-err':'u-warn';
+  const wa=nxWa(c.wa||c.tel);
+  main.innerHTML=`
+    <button class="c360-back" onclick="nxC360Volver()"><i class="ti ti-arrow-left"></i> Volver a la lista</button>
+    <div class="sf-head ${urg}">
+      <div class="sf-ava">${inits(c.nom)}</div>
+      <div class="sf-id">
+        <h2>${escHtml(c.nom)}${c.referencia?` (${escHtml(c.referencia)})`:''}</h2>
+        <span class="sf-badge ${cls}">● ${estado}</span>
+      </div>
+      <div class="sf-facts">
+        <div class="sf-fact"><span class="lb">Cédula</span><b>${escHtml(c.cedula||'—')}</b></div>
+        <div class="sf-fact"><span class="lb">Plan</span><b>${planB(c.plan)}</b></div>
+        <div class="sf-fact err"><span class="lb">Balance total</span><b>${fmt(pendTot(c))}</b></div>
+      </div>
+      <div class="sf-actions" style="flex-wrap:wrap">
+        ${wa?`<a class="sf-btn ok" href="https://wa.me/${wa}" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>`:''}
+        ${c.tel?`<a class="sf-btn" href="tel:${escHtml(c.tel)}"><i class="ti ti-phone"></i> Llamar</a>`:''}
+        <button class="sf-btn primary" onclick="c360AccionRegistrarPago('${c.id}')"><i class="ti ti-cash"></i> Registrar pago</button>
+        <button class="sf-btn" onclick="c360AccionNuevaFactura('${c.id}')"><i class="ti ti-file-invoice"></i> Nueva factura</button>
+        <button class="sf-btn" onclick="c360AccionNuevoPrestamo('${c.id}')"><i class="ti ti-credit-card"></i> Nuevo préstamo</button>
+        <button class="sf-btn" onclick="c360AccionNuevaPoliza('${c.id}')"><i class="ti ti-shield-plus"></i> Nueva póliza</button>
+        <button class="sf-btn" onclick="c360AccionImprimir('${c.id}')"><i class="ti ti-printer"></i> Imprimir estado</button>
+        <button class="sf-btn" onclick="c360AccionCompartir('${c.id}')"><i class="ti ti-share"></i> Compartir</button>
+      </div>
+    </div>
+    <div class="nxft-tabs nxft-flex" id="c360TabsBar">
+      ${C360_TABS.map(t=>`<button class="nxft-tab ${t.k===_c360Tab?'is-active':''}" id="c360tab-${t.k}" onclick="nxC360Tab('${t.k}')"><i class="ti ${t.ic}"></i> ${t.l}</button>`).join('')}
+    </div>
+    <div class="c360-tabbody" id="c360TabBody"><div class="c360-empty-tab"><i class="ti ti-loader-2"></i> Cargando…</div></div>`;
+  pintarC360Tab();
+}
+
+function nxC360Tab(tab){
+  _c360Tab=tab;
+  document.querySelectorAll('#c360TabsBar .nxft-tab').forEach(b=>b.classList.remove('is-active'));
+  document.getElementById('c360tab-'+tab)?.classList.add('is-active');
+  pintarC360Tab();
+}
+
+function pintarC360Tab(){
+  const body=document.getElementById('c360TabBody');if(!body||!_c360Sel)return;
+  const c=(ST.clientes||[]).find(x=>x.id===_c360Sel);if(!c)return;
+  const cache=_c360Cache[c.id]||{};
+  const fns={resumen:c360TabResumen,financiamiento:c360TabFinanciamiento,pagos:c360TabPagos,facturas:c360TabFacturas,pos:c360TabPOS,equipos:c360TabEquipos,seguros:c360TabSeguros,documentos:c360TabDocumentos,actividad:c360TabActividad,historial:c360TabHistorial};
+  const fn=fns[_c360Tab]||c360TabResumen;
+  body.innerHTML=fn(c,cache);
+}
+
+function c360Empty(msg){return `<div class="c360-empty-tab"><i class="ti ti-inbox" style="font-size:22px"></i><br>${escHtml(msg)}</div>`;}
+function c360Norm(s){return String(s||'').replace(/\D/g,'');}
+function c360Match(c,cedOtra,telOtro){
+  const cCed=c360Norm(c.cedula),oCed=c360Norm(cedOtra);
+  if(cCed&&oCed&&cCed===oCed)return true;
+  const cTel=c360Norm(c.tel||c.wa).slice(-10),oTel=c360Norm(telOtro).slice(-10);
+  if(cTel.length===10&&oTel.length===10&&cTel===oTel)return true;
+  return false;
+}
+
+// ── Carga cruzada (org-wide se cachea UNA vez por sesión; por-cliente se cachea por id) ──
+async function c360CargarTodo(c){
+  const id=c.id;if(!_c360Cache[id])_c360Cache[id]={};
+  const cache=_c360Cache[id];
+  const repintar=()=>{if(_c360Sel===id)pintarC360Tab();};
+
+  if(cache.abonos===undefined){
+    try{cache.abonos=await API.get('abonos',`cliente_id=eq.${id}&order=fecha.desc&limit=100`)||[];}catch(e){cache.abonos=[];}
+    repintar();
+  }
+  if(cache.auditoria===undefined){
+    try{cache.auditoria=await API.get('auditoria',`cliente_id=eq.${id}&order=ts.desc&limit=60`)||[];}catch(e){cache.auditoria=[];}
+    repintar();
+  }
+  if(cache.prestamos===undefined){
+    try{
+      if(_c360OrgPrestamos===null)_c360OrgPrestamos=await API.get('prestamos','order=created_at.desc&limit=1000')||[];
+      cache.prestamos=_c360OrgPrestamos.filter(p=>c360Match(c,p.cedula,p.telefono));
+    }catch(e){cache.prestamos=[];}
+    if(cache.prestamos.length){
+      try{cache.prestamoPagos=await API.get('prestamo_pagos','prestamo_id=in.('+cache.prestamos.map(p=>p.id).join(',')+')&order=fecha.desc')||[];}catch(e){cache.prestamoPagos=[];}
+    }else cache.prestamoPagos=[];
+    try{
+      if(_c360OrgPrestamoClientes===null)_c360OrgPrestamoClientes=await API.get('prestamo_clientes','order=created_at.desc&limit=1000')||[];
+      cache.prestamoCliente=_c360OrgPrestamoClientes.find(p=>c360Match(c,p.cedula,p.telefono))||null;
+    }catch(e){cache.prestamoCliente=null;}
+    repintar();
+  }
+  if(cache.posCliente===undefined){
+    try{
+      if(_c360OrgPosClientes===null)_c360OrgPosClientes=await API.get('pos_clientes','order=created_at.desc&limit=2000')||[];
+      cache.posCliente=_c360OrgPosClientes.find(p=>c360Match(c,p.cedula,p.telefono))||null;
+    }catch(e){cache.posCliente=null;}
+    if(cache.posCliente){
+      const pcid=cache.posCliente.id;
+      try{cache.posVentas=await API.get('pos_ventas',`cliente_id=eq.${pcid}&order=fecha.desc&limit=100`)||[];}catch(e){cache.posVentas=[];}
+      try{cache.posFinanciamientos=await API.get('pos_financiamientos',`cliente_id=eq.${pcid}&order=created_at.desc&limit=50`)||[];}catch(e){cache.posFinanciamientos=[];}
+      try{cache.posDocumentos=await API.get('pos_documentos',`cliente_id=eq.${pcid}&order=created_at.desc&limit=100`)||[];}catch(e){cache.posDocumentos=[];}
+      if(cache.posVentas.length){
+        try{cache.posVentaItems=await API.get('pos_venta_items','venta_id=in.('+cache.posVentas.map(v=>v.id).join(',')+')')||[];}catch(e){cache.posVentaItems=[];}
+      }else cache.posVentaItems=[];
+    }else{cache.posVentas=[];cache.posFinanciamientos=[];cache.posDocumentos=[];cache.posVentaItems=[];}
+    repintar();
+  }
+  if(cache.posReparaciones===undefined){
+    try{
+      if(_c360OrgPosReparaciones===null)_c360OrgPosReparaciones=await API.get('pos_reparaciones','order=created_at.desc&limit=500')||[];
+      cache.posReparaciones=_c360OrgPosReparaciones.filter(r=>{
+        const rTel=c360Norm(r.cliente_telefono),cTel=c360Norm(c.tel||c.wa).slice(-10);
+        if(rTel.slice(-10).length===10&&cTel.length===10)return rTel.slice(-10)===cTel;
+        return String(r.cliente_nombre||'').toLowerCase().trim()===String(c.nom||'').toLowerCase().trim();
+      });
+    }catch(e){cache.posReparaciones=[];}
+    repintar();
+  }
+}
+
+// ── Pestañas ──────────────────────────────────────────────────────────────
+function c360TabResumen(c,cache){
+  const estPol=getEstPol(c);
+  const loading=cache.prestamos===undefined;
+  return `<div class="sf-kpis">
+    <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas (Seguros)</div><div class="v">${(ST.facturas||[]).filter(f=>String(f.cliente_id)===String(c.id)).length}</div></div></div>
+    <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Balance pendiente</div><div class="v">${fmt(pendTot(c))}</div></div></div>
+    <div class="sf-kpi purple"><div class="ic"><i class="ti ti-credit-card"></i></div><div><div class="lb">Préstamos vinculados</div><div class="v">${loading?'…':(cache.prestamos||[]).length}</div></div></div>
+    <div class="sf-kpi ok"><div class="ic"><i class="ti ti-shopping-cart"></i></div><div><div class="lb">Ventas POS vinculadas</div><div class="v">${loading?'…':(cache.posVentas||[]).length}</div></div></div>
+  </div>
+  <div class="sf-panel"><h3>Contacto</h3>
+    <div style="font-size:12px;line-height:2;color:var(--sf-tx2,#475569)">
+      <div><b style="color:var(--sf-tx,#0f172a)">Teléfono:</b> ${escHtml(c.tel||'—')}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Email:</b> ${escHtml(c.email||'—')}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Dirección:</b> ${escHtml(c.dir||'—')}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Vigencia de póliza:</b> ${estPol.lbl}</div>
+    </div>
+  </div>`;
+}
+
+function c360TabSeguros(c){
+  const emp=gEmp(c.empresa_id)?.nom||'Particular';
+  const agt=gAgt(c.agente_id)?.nom||'Sin asignar';
+  const estPol=getEstPol(c);
+  const fCorta=s=>{if(!s)return'—';try{return new Date(s).toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(s).slice(0,10);}};
+  return `<div class="sf-panel"><h3>Póliza</h3>
+    <div style="font-size:12px;line-height:2;color:var(--sf-tx2,#475569)">
+      <div><b style="color:var(--sf-tx,#0f172a)">No. Póliza:</b> ${escHtml(c.numero_poliza||'Sin póliza')}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Plan:</b> ${planB(c.plan)}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Vigencia:</b> ${estPol.lbl} (vence ${fCorta(c.fecha_fin)})</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">ARS:</b> ${arsLogoHTML(c.ars,18)}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Empresa cotizante:</b> ${escHtml(emp)}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Agente:</b> ${escHtml(agt)}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Dependientes:</b> ${(c.deps||[]).length}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Prima mensual:</b> ${fmt(getTot(c))}</div>
+      <div><b style="color:var(--sf-tx,#0f172a)">Día de facturación:</b> ${escHtml(c.dia_facturacion||'—')}</div>
+      ${deudaAnt(c)>0?`<div style="color:var(--sf-err,#dc2626);font-weight:700;margin-top:4px">🔴 Deuda antes del sistema: ${fmt(c.deuda_anterior)}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function c360TabFacturas(c){
+  const rows=(ST.facturas||[]).filter(f=>String(f.cliente_id)===String(c.id)).sort((a,b)=>(b.periodo||'').localeCompare(a.periodo||''));
+  if(!rows.length)return c360Empty('Sin facturas generadas todavía.');
+  return `<div style="overflow-x:auto"><table class="c360-tbl"><thead><tr><th>Período</th><th>NCF</th><th>Total</th><th>Estado</th></tr></thead><tbody>
+    ${rows.map(f=>`<tr><td>${MESES[(f.mes||1)-1]||''} ${f.anio||''}</td><td>${escHtml(f.ncf||'—')}</td><td>${fmt(f.total)}</td><td>${escHtml(f.estado||'—')}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function c360TabPagos(c,cache){
+  if(cache.abonos===undefined)return c360Empty('Cargando…');
+  const rows=cache.abonos||[];
+  if(!rows.length)return c360Empty('Sin pagos registrados en Seguros para este cliente.');
+  return `<div style="overflow-x:auto"><table class="c360-tbl"><thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th></tr></thead><tbody>
+    ${rows.map(a=>`<tr><td>${String(a.fecha||a.created_at||'').slice(0,10)}</td><td>${fmt(a.monto)}</td><td>${escHtml(a.metodo||'—')}</td><td>${escHtml(a.referencia||'—')}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function c360TabFinanciamiento(c,cache){
+  if(cache.prestamos===undefined)return c360Empty('Cargando…');
+  const rows=cache.prestamos||[];
+  if(!rows.length)return c360Empty('Sin préstamos vinculados en Financiamiento.\n(Vínculo aproximado por cédula/teléfono — Financiamiento y Seguros no comparten tabla de clientes.)');
+  const pagadoDe=pid=>(cache.prestamoPagos||[]).filter(p=>p.prestamo_id===pid&&p.tipo_movimiento!=='reverso').reduce((s,p)=>s+Number(p.monto||0),0);
+  return `<div class="c360-aviso">Vinculado por cédula/teléfono — no es una relación exacta de base de datos.</div>
+  <div style="overflow-x:auto"><table class="c360-tbl"><thead><tr><th>Préstamo</th><th>Capital</th><th>Total a devolver</th><th>Pagado</th><th>Estado</th></tr></thead><tbody>
+  ${rows.map(p=>`<tr><td>PR-${String(p.id).slice(0,6).toUpperCase()}</td><td>${fmt(p.capital)}</td><td>${fmt(p.total_devolver)}</td><td>${fmt(pagadoDe(p.id))}</td><td>${escHtml(p.estado||'—')}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function c360TabPOS(c,cache){
+  if(cache.posCliente===undefined)return c360Empty('Cargando…');
+  if(!cache.posCliente)return c360Empty('Sin registro en el catálogo de clientes del POS de esta organización.\n(Vínculo aproximado por cédula/teléfono.)');
+  const pc=cache.posCliente,ventas=cache.posVentas||[],fin=cache.posFinanciamientos||[];
+  let html=`<div class="c360-aviso">Vinculado con "${escHtml(pc.nombre)}" (código ${escHtml(pc.codigo||'—')}) en el catálogo del POS.</div>
+  <div class="sf-panel"><h3>Ventas (${ventas.length})</h3>
+  ${ventas.length?`<div style="overflow-x:auto"><table class="c360-tbl"><thead><tr><th>No.</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead><tbody>
+  ${ventas.slice(0,30).map(v=>`<tr><td>${escHtml(v.numero_factura||v.numero)}</td><td>${String(v.fecha||'').slice(0,10)}</td><td>${fmt(v.total)}</td><td>${escHtml(v.estado||'—')}</td></tr>`).join('')}
+  </tbody></table></div>`:'<div class="c360-empty-tab">Sin ventas.</div>'}
+  </div>`;
+  if(fin.length)html+=`<div class="sf-panel"><h3>Cuotas activas</h3><div style="overflow-x:auto"><table class="c360-tbl"><thead><tr><th>Descripción</th><th>Financiado</th><th>Cuota</th><th>Estado</th></tr></thead><tbody>
+  ${fin.map(f=>`<tr><td>${escHtml(f.descripcion||'—')}</td><td>${fmt(f.monto_financiado)}</td><td>${fmt(f.cuota_monto)}</td><td>${escHtml(f.estado||'—')}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+  return html;
+}
+
+function c360TabEquipos(c,cache){
+  if(cache.posVentaItems===undefined)return c360Empty('Cargando…');
+  const items=(cache.posVentaItems||[]).filter(it=>it.serial);
+  const rep=cache.posReparaciones||[];
+  if(!items.length&&!rep.length)return c360Empty('Sin equipos (IMEI/serial) vendidos ni reparaciones vinculadas en POS.');
+  let html='';
+  if(items.length)html+=`<div class="sf-panel"><h3>Equipos vendidos</h3><div style="overflow-x:auto"><table class="c360-tbl"><thead><tr><th>Artículo</th><th>Serial / IMEI</th><th>Garantía hasta</th></tr></thead><tbody>
+    ${items.map(it=>`<tr><td>${escHtml(it.nombre||'—')}</td><td>${escHtml(it.serial||'—')}</td><td>${escHtml(it.garantia_hasta||'—')}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  if(rep.length)html+=`<div class="sf-panel"><h3>Reparaciones (vinculadas por nombre/teléfono)</h3><div style="overflow-x:auto"><table class="c360-tbl"><thead><tr><th>Equipo</th><th>Falla</th><th>Estado</th></tr></thead><tbody>
+    ${rep.map(r=>`<tr><td>${escHtml(r.equipo||'—')}</td><td>${escHtml(r.falla||'—')}</td><td>${escHtml(r.estado||'—')}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  return html;
+}
+
+function c360TabDocumentos(c,cache){
+  if(cache.posDocumentos===undefined||cache.prestamos===undefined)return c360Empty('Cargando…');
+  const docsPos=cache.posDocumentos||[];
+  const docsPrest=[];
+  (cache.prestamos||[]).forEach(p=>{
+    const arr=Array.isArray(p.documentos)?p.documentos:[];
+    arr.forEach(d=>docsPrest.push({nombre:(d&&(d.nombre||d.tipo))||'Documento',prestamo:'PR-'+String(p.id).slice(0,6).toUpperCase()}));
+  });
+  if(!docsPos.length&&!docsPrest.length)return c360Empty('Sin documentos en POS ni Financiamiento.\n(Seguros no tiene almacenamiento de archivos configurado en este sistema.)');
+  let html='<div class="c360-aviso">Seguros no guarda archivos — este listado reúne lo que existe en POS y Financiamiento.</div>';
+  if(docsPos.length)html+=`<div class="sf-panel"><h3>Documentos (POS)</h3><ul style="margin:0;padding-left:18px;font-size:12px;line-height:2;color:var(--sf-tx2,#475569)">${docsPos.map(d=>`<li>${escHtml(d.codigo||d.tipo||'Documento')} — ${escHtml(d.tipo||'')} · ${fmt(d.monto||0)}</li>`).join('')}</ul></div>`;
+  if(docsPrest.length)html+=`<div class="sf-panel"><h3>Documentos (Financiamiento)</h3><ul style="margin:0;padding-left:18px;font-size:12px;line-height:2;color:var(--sf-tx2,#475569)">${docsPrest.map(d=>`<li>${escHtml(d.nombre)} — ${d.prestamo}</li>`).join('')}</ul></div>`;
+  return html;
+}
+
+function c360TabActividad(c,cache){
+  if(cache.auditoria===undefined)return c360Empty('Cargando…');
+  const rows=cache.auditoria||[];
+  if(!rows.length)return c360Empty('Sin eventos de auditoría registrados para este cliente.');
+  return `<div class="sf-panel">${rows.slice(0,40).map(a=>`
+    <div class="sf-tl-item"><div class="sf-tl-dot" style="background:var(--sf-primary,#2563eb)"><i class="ti ti-activity" style="font-size:12px"></i></div>
+    <div class="sf-tl-b"><b>${escHtml(a.accion||'Evento')}</b><div class="when">${String(a.ts||a.created_at||'').slice(0,16).replace('T',' ')}</div><div class="desc">${escHtml(a.detalle||'')}</div></div></div>`).join('')}</div>`;
+}
+
+function c360TabHistorial(c,cache){
+  const colorVar=cls=>({primary:'var(--sf-primary,#2563eb)',ok:'var(--sf-ok,#16a34a)',warn:'var(--sf-warn,#d97706)',err:'var(--sf-err,#dc2626)',purple:'#7c3aed'}[cls]||'var(--sf-primary,#2563eb)');
+  const eventos=[];
+  if(c.created_at)eventos.push({ts:c.created_at,ic:'ti-user-plus',cls:'primary',tit:'Cliente registrado (Seguros)',desc:''});
+  (ST.facturas||[]).filter(f=>String(f.cliente_id)===String(c.id)).forEach(f=>{
+    if(f.created_at)eventos.push({ts:f.created_at,ic:'ti-file-invoice',cls:'primary',tit:'Factura emitida',desc:`${MESES[(f.mes||1)-1]||''} ${f.anio||''} · ${fmt(f.total)}`});
+  });
+  (cache.abonos||[]).forEach(a=>eventos.push({ts:a.created_at||a.fecha,ic:'ti-cash',cls:'ok',tit:'Pago (Seguros)',desc:`${fmt(a.monto)} · ${a.metodo||''}`}));
+  (cache.prestamos||[]).forEach(p=>{if(p.created_at)eventos.push({ts:p.created_at,ic:'ti-credit-card',cls:'purple',tit:'Préstamo creado',desc:fmt(p.capital)});});
+  (cache.prestamoPagos||[]).forEach(pp=>eventos.push({ts:pp.created_at||pp.fecha,ic:'ti-cash-banknote',cls:'ok',tit:'Pago (Financiamiento)',desc:fmt(pp.monto)}));
+  (cache.posVentas||[]).forEach(v=>eventos.push({ts:v.created_at||v.fecha,ic:'ti-shopping-cart',cls:'warn',tit:'Venta (POS)',desc:`#${v.numero} · ${fmt(v.total)}`}));
+  (cache.auditoria||[]).forEach(a=>eventos.push({ts:a.ts||a.created_at,ic:'ti-activity',cls:'err',tit:a.accion||'Evento',desc:a.detalle||''}));
+  if(!eventos.length)return c360Empty('Sin eventos todavía.');
+  eventos.sort((a,b)=>new Date(b.ts||0)-new Date(a.ts||0));
+  return `<div class="sf-panel">${eventos.slice(0,60).map(e=>`
+    <div class="sf-tl-item"><div class="sf-tl-dot" style="background:${colorVar(e.cls)}"><i class="ti ${e.ic}" style="font-size:12px"></i></div>
+    <div class="sf-tl-b"><b>${escHtml(e.tit)}</b><div class="when">${String(e.ts||'').slice(0,16).replace('T',' ')}</div><div class="desc">${escHtml(e.desc||'')}</div></div></div>`).join('')}</div>`;
+}
+
+// ── Acciones rápidas ─────────────────────────────────────────────────────
+function c360AccionRegistrarPago(id){cerrarClientSummary();if(typeof abrirAbono==='function')abrirAbono(id);}
+
+function c360AccionNuevaFactura(id){
+  const c=(ST.clientes||[]).find(x=>x.id===id);if(!c)return;
+  nav('facturas',null);
+  setTimeout(()=>{
+    const inp=document.getElementById('factQ');
+    if(inp){inp.value=c.nom;}
+    if(typeof rFact==='function')rFact();
+    toast('info','Facturas de '+c.nom,'Aquí puedes ver, cobrar o corregir sus facturas.');
+  },250);
+}
+
+function c360AccionNuevoPrestamo(id){
+  const c=(ST.clientes||[]).find(x=>x.id===id);if(!c)return;
+  const cache=_c360Cache[id]||{};
+  if(typeof window.nxAbrirPrestamos!=='function'){toast('err','No disponible','El módulo de Financiamiento no está cargado.');return;}
+  const p=window.nxAbrirPrestamos();
+  const ir=()=>{setTimeout(()=>{
+    if(cache.prestamoCliente&&typeof window.nxPrestamoNuevoDeCliente==='function'){
+      window.nxPrestamoNuevoDeCliente(cache.prestamoCliente.id);
+    }else{
+      toast('info','Financiamiento','Este cliente no está registrado como prestatario todavía — créalo desde ahí.');
+    }
+  },350);};
+  if(p&&typeof p.then==='function')p.then(ir);else ir();
+}
+
+function c360AccionNuevaPoliza(id){
+  toast('info','Póliza','En este sistema la póliza vive en la ficha del cliente — se abre para editarla.');
+  if(typeof editarCli==='function')editarCli(id);
+}
+
+function c360AccionImprimir(id){
+  const c=(ST.clientes||[]).find(x=>x.id===id);if(!c)return;
+  const cache=_c360Cache[id]||{};
+  const w=window.open('','_blank');if(!w){toast('err','El navegador bloqueó la ventana');return;}
+  const fCorta=s=>{try{return new Date(s).toLocaleDateString('es-DO');}catch(e){return String(s||'').slice(0,10);}};
+  const facturasCli=(ST.facturas||[]).filter(f=>String(f.cliente_id)===String(id));
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Estado — ${escHtml(c.nom)}</title>
+    <style>body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:24px;color:#0f172a}
+    h1{font-size:18px;margin:0 0 4px}h2{font-size:13px;margin:18px 0 6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+    td,th{padding:6px 4px;border-bottom:1px solid #f1f5f9;text-align:left}
+    .tot{font-weight:700;color:#dc2626}
+    @media print{.noprint{display:none}}</style></head><body>
+    <h1>NEXUS PRO — Estado de cliente</h1>
+    <div style="color:#64748b;font-size:12px">Generado ${new Date().toLocaleString('es-DO')}</div>
+    <h2>${escHtml(c.nom)}</h2>
+    <div style="font-size:12px;line-height:1.9">
+      Cédula: ${escHtml(c.cedula||'—')} · Teléfono: ${escHtml(c.tel||'—')} · Póliza: ${escHtml(c.numero_poliza||'—')}<br>
+      Balance total pendiente: <span class="tot">${fmt(pendTot(c))}</span>
+    </div>
+    <h2>Facturas (Seguros)</h2>
+    <table><tr><th>Período</th><th>Total</th><th>Estado</th></tr>
+    ${facturasCli.map(f=>`<tr><td>${MESES[(f.mes||1)-1]||''} ${f.anio||''}</td><td>${fmt(f.total)}</td><td>${escHtml(f.estado||'')}</td></tr>`).join('')||'<tr><td colspan="3">Sin facturas</td></tr>'}
+    </table>
+    <h2>Préstamos (Financiamiento)</h2>
+    <table><tr><th>Capital</th><th>Total a devolver</th><th>Estado</th></tr>
+    ${(cache.prestamos||[]).map(p=>`<tr><td>${fmt(p.capital)}</td><td>${fmt(p.total_devolver)}</td><td>${escHtml(p.estado||'')}</td></tr>`).join('')||'<tr><td colspan="3">Sin préstamos vinculados</td></tr>'}
+    </table>
+    <h2>Ventas (POS)</h2>
+    <table><tr><th>No.</th><th>Fecha</th><th>Total</th></tr>
+    ${(cache.posVentas||[]).map(v=>`<tr><td>${escHtml(v.numero_factura||v.numero)}</td><td>${fCorta(v.fecha)}</td><td>${fmt(v.total)}</td></tr>`).join('')||'<tr><td colspan="3">Sin ventas vinculadas</td></tr>'}
+    </table>
+    <div class="noprint" style="margin-top:20px"><button onclick="window.print()">Imprimir / PDF</button></div>
+    </body></html>`);
+  w.document.close();
+  if(typeof logAudit==='function')logAudit('CLIENTE360_IMPRESO',c.nom,'Cliente 360',id);
+}
+
+async function c360AccionCompartir(id){
+  const c=(ST.clientes||[]).find(x=>x.id===id);if(!c)return;
+  const cache=_c360Cache[id]||{};
+  const txt=`Expediente — ${c.nom}\nCédula: ${c.cedula||'—'}\nBalance pendiente (Seguros): ${fmt(pendTot(c))}\nPréstamos vinculados: ${(cache.prestamos||[]).length}\nVentas POS vinculadas: ${(cache.posVentas||[]).length}\n\nNEXUS PRO — Cliente 360`;
+  try{
+    if(navigator.share){await navigator.share({title:'Expediente — '+c.nom,text:txt});}
+    else{await navigator.clipboard.writeText(txt);toast('ok','Copiado','Resumen del expediente copiado al portapapeles.');}
+  }catch(e){
+    if(e && e.name==='AbortError')return;
+    try{await navigator.clipboard.writeText(txt);toast('ok','Copiado','Resumen del expediente copiado al portapapeles.');}catch(e2){toast('err','No se pudo compartir');}
+  }
+  if(typeof logAudit==='function')logAudit('CLIENTE360_COMPARTIDO',c.nom,'Cliente 360',id);
+}
+
 // ── FAVORITOS / VIP ────────────────────────────────────────────────
 function getFavoritos(){const f=nxPref('favs',[]);return Array.isArray(f)?f:[];}
 function esFavorito(id){return getFavoritos().includes(id);}
@@ -5761,7 +6241,7 @@ function nav(view,el){
   try{document.querySelectorAll('.nxFacBar').forEach(function(b){b.remove();});var _fabnav=document.querySelector('.nx-fab');if(_fabnav)_fabnav.classList.remove('nxFabLift');}catch(e){}
   const vEl=document.getElementById('v-'+view);if(vEl)vEl.classList.add('on');
   document.getElementById('pttl').textContent=TITLES[view]||''+view.toUpperCase();
-  const fn={dashboard:rDash,clientes:rCli,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>{if(typeof renderLog==='function')renderLog('logViewerAudit');},100);},
+  const fn={dashboard:rDash,clientes:rCli,'cliente360':rCliente360,polizas:rPolizas,auditoria:()=>{rAuditoria();setTimeout(()=>{if(typeof renderLog==='function')renderLog('logViewerAudit');},100);},
       email:()=>{rEmail();},facturas:()=>{initMesSel();rFact();switchTab('fact');},cobros:rCob,empresas:rEmpGrd,agentes:rAgentes,comisiones:()=>initComSel(),mayor:rMayor,asientos:rAsientos,balance:rBalance,pyg:rPYG,'rep-agente':rRepAgt,'rep-plan':rRepPlan,'rep-empresa':rRepEmp,'rep-aging':rRepAging,dgii:initDGIISel,auto:rAuto,config:()=>{rConfig();setTimeout(()=>{rArsList();switchCfgTab(_cfgTabSolicitado||1);_cfgTabSolicitado=null;},150);},usuarios:rUsuarios};
   if(fn[view])fn[view]();
   // Asientos se cargan diferidos: si entras a una vista que los usa antes de que
