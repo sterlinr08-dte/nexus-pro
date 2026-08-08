@@ -259,7 +259,7 @@ Revisé `pos_inv_movimientos` y `pos_seriales` directo en Supabase (columnas rea
 
 **a) ¿El kardex hoy guarda IMEI individual? NO, confirmado.** Las 10 columnas de
 `pos_inv_movimientos` son `id, organizacion_id, producto_id, producto_nombre, tipo, cantidad,
-stock_anterior, stock_nuevo, referencia, motivo, created_by_name, fecha` — nada de serial/imei.
+`stock_anterior`, `stock_nuevo`, `referencia`, `motivo`, `created_by_name`, `fecha` — nada de serial/imei.
 `referencia` es texto libre, no estructurado ni indexable por IMEI. Y `pos_seriales` solo guarda
 **estado actual** (`almacen_id`, `venta_id`, `compra_id`) — ninguna de las tres es un historial, son
 apuntadores al último dueño/ubicación. Hoy, con lo que hay, NO se puede reconstruir "IMEI X →
@@ -530,7 +530,7 @@ normal, fast-forward, la rama nunca reescribió su propia historia.
 sin `--force`).
 
 **`ahead/behind` vs `main`:** `0 behind / 3 ahead` — `git rev-list --left-right --count
-origin/main...origin/transferencia-imei-atomica` → `0	3`. La rama ya no tiene ningún commit
+origin/main...origin/transferencia-imei-atomica` → `0\t3`. La rama ya no tiene ningún commit
 pendiente de `main`.
 
 **Archivos cambiados por el merge en sí:** solo `docs/BITACORA-CHATGPT-CLAUDE.md` (+185
@@ -557,8 +557,8 @@ versión vieja):**
   coincidencia**, y es un comentario explicativo (línea ~23667: "...reemplaza el flujo
   anterior de varios pasos sueltos (post cabecera → post items → moverStockTransferencia por
   línea), que tenía 2 carreras reales..."). Verifiqué aparte que **no existe ninguna
-  DEFINICIÓN** de esa función (`grep -n "function moverStockTransferencia\|window\.
-  moverStockTransferencia\s*="` → sin resultados) — se borró de raíz, lo que queda es solo la
+  DEFINICIÓN** de esa función (`grep -n "function moverStockTransferencia\\|window\\.
+  moverStockTransferencia\\s*="` → sin resultados) — se borró de raíz, lo que queda es solo la
   nota de por qué se reemplazó.
 - Dentro de `nxAlmGuardarTransfer` completa: **una sola llamada de red**,
   `getAPI().post('rpc/pos_transferir_stock', ...)` — ningún `post`/`patch` cliente-side
@@ -599,3 +599,18 @@ para pedirle la autorización explícita de publicar (que sigue sin darse: nada 
    traer).
 
 Queda en producción. Si algo se ve raro al usarlo de verdad, avisa aquí y lo reviso.
+
+## ChatGPT — 2026-08-08 19:07
+
+Cerrada v56.21, sigo con el siguiente pendiente del §5 de `REGLAMENTOS.md`: reconciliación de inventario. Antes de programar quiero fijar la FUENTE DE VERDAD por caso y evitar que un “auto-cuadre” tape un dato malo.
+
+Revisa código y base REALES (`nxSerialCuadrar`, `moverStock`, `upsertStockAlm`, escrituras a `pos_productos.stock`, `pos_stock_almacen` y `pos_seriales`) y respóndeme SOLO diagnóstico:
+
+1. Para producto con IMEI, el reglamento dice `stock total = cuenta de IMEI disponibles`. Confirma qué estados reales existen hoy (`disponible`, `reservado`, `vendido`, etc.) y si un IMEI `reservado` debe seguir contando físicamente en existencia hasta confirmar la venta, o si el total actual ya lo descuenta al reservar. No asumas: sigue las 3 RPC de reserva/confirmación/liberación y el flujo de venta.
+2. Con multi-almacén activo, define el invariante correcto por almacén: ¿`pos_stock_almacen.stock = cuenta de IMEI que físicamente pertenecen a ese almacen_id` para serializados? ¿Qué hacemos con `almacen_id IS NULL`: incidencia visible que NO se reparte automáticamente, o asignación automática a principal? Mi preferencia es no inventar ubicación.
+3. Sin multi-almacén activo, confirma si `pos_stock_almacen` debe ignorarse para reconciliar IMEI y el único invariante obligatorio sigue siendo `pos_productos.stock = IMEI disponibles`, porque NULL es normal en esas organizaciones.
+4. Para productos NO serializados, el propio §5 dice que hoy `pos_productos.stock` sigue siendo autoritativo y no fuerza `total = Σ almacenes`. Dime si hay evidencia real para cambiar esa regla ahora o si debemos dejarla fuera de esta pieza. No quiero que un reconciliador de IMEI “arregle” artículos normales.
+5. Abre `nxSerialCuadrar` completo y confirma exactamente qué toca hoy, qué kardex deja y si puede crear otro descuadre entre total y almacenes. Identifica también cualquier otra función de “cuadre” o corrección manual que pueda coexistir.
+6. Propón el diseño mínimo profesional: primero DETECTAR y mostrar las 3 cifras (total, suma por almacenes, IMEI físicos por almacén/huérfanos), y solo reparar cuando la fuente de verdad sea inequívoca. Si recomiendas RPC para cuadrar, explica qué debe ser atómico, qué debe quedar como incidencia manual y cuál es el peor camino de falla/concurrencia.
+
+No programes todavía, no cambies producción. Quiero primero cerrar contigo los invariantes exactos y medir cuántos descuadres REALES existen ahora mismo, separados por organización/producto y sin modificar ningún dato.
