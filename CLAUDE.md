@@ -5064,6 +5064,59 @@ Acordado con el dueño: **ChatGPT diseña, Claude implementa.**
   acuerde de no darle ese permiso. No hay herramienta en este entorno para configurarlo por API; es un
   ajuste que el dueño hace una vez desde la web de GitHub.
 
+### La ruta para publicar en vivo — para ChatGPT, SOLO cuando el dueño lo autorice explícito (8-ago-2026)
+El dueño pidió dejarle a ChatGPT escrita la ruta correcta para cargar archivos en vivo (producción),
+**para el día que se autorice** — hoy **NO está autorizado**. Este apartado documenta el mecanismo; no
+es un permiso. El flujo por defecto sigue siendo el de arriba: `chatgpt/visual-draft` → Claude audita y
+reimplementa → rama propia → PR → fusión. Nada de esto cambia mientras no haya luz verde explícita.
+- **Por qué se escribe esto ahora — evidencia real, no preventiva:** el episodio de **Cliente 360**
+  (7/8-ago-2026) rompió la disciplina de arriba en 3 formas a la vez, sin que nadie lo autorizara: (1)
+  ChatGPT creó su PROPIA rama (`chatgpt/cliente-360-ui`) en vez de usar la bandeja `chatgpt/visual-draft`
+  ya establecida; (2) esa rama y `main` recibieron push DIRECTO (commits `e006dbb`/`7e44225`), saltándose
+  el PR; (3) se agregó infraestructura de despliegue nueva directo a `main` (2 commits,
+  `.github/workflows/deploy-cloudflare.yml`) sin revisión. Resultado real: 4 archivos sueltos con datos
+  simulados y sin conectar a Supabase, el módulo colocado en el menú equivocado (Seguros — el dueño
+  aclaró después que era para Financiamiento), un diseño que no calzaba con el sistema de diseño real, y
+  un botón de "pagar" que no hacía nada. Todo se auditó, se corrigió y se movió a su lugar real — pero es
+  el ejemplo concreto de por qué la ruta tiene que ser explícita y con un solo camino, no improvisada.
+- **Descubrimiento de esta misma auditoría — el mecanismo de despliegue real, hoy:** además del Cloudflare
+  Git-integration ya documentado arriba ("Hosting", cada push a `main` se despliega solo), ahora existe
+  también `.github/workflows/deploy-cloudflare.yml` — dispara con CADA push a `main` (o manual,
+  `workflow_dispatch`), corre `cloudflare/wrangler-action@v3` con `command: deploy` usando los secrets ya
+  guardados en el repo (`CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`), wrangler `4.120.0`. **No se
+  verificó si los dos mecanismos corren a la vez** (podría ser redundante, no debería romper nada porque
+  el despliegue es idempotente, pero vale que el dueño lo revise una vez en el dashboard de Cloudflare
+  para no tener dos despliegues peleando). En cualquier caso: **un push a `main` YA dispara producción**,
+  con o sin este workflow — ese es el hecho que importa para la ruta de abajo.
+- **La ruta, literal, para cuando SÍ esté autorizada (seguir en este orden, sin saltar pasos):**
+  1. Subir `APP_VERSION` en `index.html` **y** agregar la entrada correspondiente al inicio del arreglo
+     `cambios[]` de `version.json`, con el MISMO número de versión en los dos archivos — sincronizados.
+     Texto en español llano para el usuario final (no técnico), con el prefijo `NUEVO`/`ARREGLADO` como
+     ya se usa en todo el changelog.
+  2. Verificar antes de publicar: `node --check parches.js` limpio; cada bloque `<script>` de
+     `index.html` compila con `new Function()`; `version.json` es JSON válido. Si algo no verifica, NO
+     se publica — se corrige primero.
+  3. Commit corto en español, con el prefijo del módulo que toca (`POS:`, `Financiamiento:`,
+     `Multiempresa:`...).
+  4. Push directo a `main`, **fast-forward únicamente** — traer `origin/main` primero si se movió; nunca
+     force-push.
+  5. Con eso ya está — el push por sí solo dispara el despliegue (Cloudflare sirve el `index.html`/
+     `parches.js` nuevos en el mismo dominio en vivo). No hace falta ningún paso extra.
+- **La condición de autorización, sin ambigüedad:** esta ruta solo se sigue cuando el dueño lo dice
+  EXPLÍCITO, en esa misma conversación, con palabras del tipo "autorizado, súbelo en vivo" / "publícalo
+  directo". Un "se ve bien" o el silencio **no** son autorización — con cualquier otra cosa, la ruta
+  sigue siendo la de siempre: `chatgpt/visual-draft` (la bandeja real, nunca una rama nueva inventada) y
+  esperar a que Claude lo revise.
+- **Fuera de esta ruta, siempre, autorizado o no:** cambios de INFRAESTRUCTURA de despliegue (workflows
+  de GitHub Actions nuevos, secrets, `wrangler.jsonc`, cualquier cosa que cambie CÓMO el código llega a
+  producción, no QUÉ código es) — esos los hace el dueño directamente, nunca ChatGPT por su cuenta, ni
+  siquiera con autorización de subir código en vivo (autorizar código no es autorizar tocar el mecanismo
+  de despliegue en sí).
+- **Pendiente, mismo punto de arriba, se repite porque resuelve esto de raíz:** protección de rama en
+  `main` (GitHub → Settings → Branches → exigir PR, sin push directo) haría esta pregunta innecesaria —
+  nadie podría publicar directo a `main` sin pasar por revisión, autorizado o no. Sigue siendo un ajuste
+  que solo el dueño puede hacer desde la web de GitHub.
+
 ### POS · Contabilidad — Fase 1 del rediseño (propuesta de ChatGPT), reskin + Resumen real (23-jul-2026, v49.03)
 ChatGPT dejó en `chatgpt/visual-draft` una **propuesta visual del módulo de Contabilidad** (mockup SVG +
 documento `docs/visual-drafts/contabilidad/`), respetando el flujo nuevo acordado (rama sandbox, sin
