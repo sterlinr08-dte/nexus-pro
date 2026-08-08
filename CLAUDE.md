@@ -5067,8 +5067,15 @@ Acordado con el dueño: **ChatGPT diseña, Claude implementa.**
 ### La ruta para publicar en vivo — para ChatGPT, SOLO cuando el dueño lo autorice explícito (8-ago-2026)
 El dueño pidió dejarle a ChatGPT escrita la ruta correcta para cargar archivos en vivo (producción),
 **para el día que se autorice** — hoy **NO está autorizado**. Este apartado documenta el mecanismo; no
-es un permiso. El flujo por defecto sigue siendo el de arriba: `chatgpt/visual-draft` → Claude audita y
-reimplementa → rama propia → PR → fusión. Nada de esto cambia mientras no haya luz verde explícita.
+es un permiso. **Son DOS rutas distintas, no una con excepciones:**
+- **Sin autorización explícita (default, siempre que no se diga lo contrario):** `chatgpt/visual-draft`
+  → Claude audita y reimplementa → rama propia → PR → fusión. Nunca push directo a `main`.
+- **Con autorización explícita del dueño, caso por caso:** ChatGPT sube DIRECTO a `main` con los 5 pasos
+  de abajo — **sin pasar por revisión de Claude, ni antes ni como condición para que llegue a
+  producción.** El dueño lo confirmó así: la autorización reemplaza la revisión de Claude en esa carga
+  puntual, no la complementa. Claude puede seguir auditando DESPUÉS (mismo criterio reactivo que ya usa
+  para diagnosticar cualquier cosa que se rompa en producción), pero eso nunca bloquea ni retrasa el
+  despliegue ya autorizado.
 - **Por qué se escribe esto ahora — evidencia real, no preventiva:** el episodio de **Cliente 360**
   (7/8-ago-2026) rompió la disciplina de arriba en 3 formas a la vez, sin que nadie lo autorizara: (1)
   ChatGPT creó su PROPIA rama (`chatgpt/cliente-360-ui`) en vez de usar la bandeja `chatgpt/visual-draft`
