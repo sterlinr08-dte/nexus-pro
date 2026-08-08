@@ -27,7 +27,7 @@ declare
   v_tomados integer := 0;
 begin
   if v_org is null then
-    raise exception 'SIN_ORGANIZACION';
+    raise exception 'IMEI_SIN_ORGANIZACION';
   end if;
 
   if v_esperados = 0 then
@@ -45,7 +45,7 @@ begin
   update public.pos_seriales
      set estado = 'reservado',
          reserva_token = v_token,
-         reserva_hasta = now() + interval '5 minutes'
+         reserva_hasta = now() + interval '60 seconds'
    where organizacion_id = v_org
      and id = any(p_serial_ids)
      and estado = 'disponible'
@@ -75,7 +75,7 @@ declare
   v_count integer := 0;
 begin
   if v_org is null then
-    raise exception 'SIN_ORGANIZACION';
+    raise exception 'IMEI_SIN_ORGANIZACION';
   end if;
 
   update public.pos_seriales
@@ -104,7 +104,7 @@ declare
   v_count integer := 0;
 begin
   if v_org is null then
-    raise exception 'SIN_ORGANIZACION';
+    raise exception 'IMEI_SIN_ORGANIZACION';
   end if;
 
   update public.pos_seriales
@@ -118,5 +118,13 @@ begin
   return v_count;
 end;
 $$;
+
+revoke execute on function public.pos_reservar_seriales(uuid[]) from public;
+revoke execute on function public.pos_confirmar_seriales_reservados(uuid, uuid) from public;
+revoke execute on function public.pos_liberar_reserva_seriales(uuid) from public;
+
+grant execute on function public.pos_reservar_seriales(uuid[]) to authenticated;
+grant execute on function public.pos_confirmar_seriales_reservados(uuid, uuid) to authenticated;
+grant execute on function public.pos_liberar_reserva_seriales(uuid) to authenticated;
 
 commit;
