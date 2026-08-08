@@ -23340,13 +23340,16 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
   // ══════════════ KARDEX INTELIGENTE (Fase 5, Plan Maestro POS 3.0) ══════════════
   // "No modificar inventario directamente. Todo movimiento deberá provenir de: Compra, Venta,
   // Ajuste, Transferencia, Garantía, Taller, Producción. Con historial completo." — regla del
-  // dueño. `moverStock`/`moverStockTransferencia` son el ÚNICO camino permitido para cambiar
-  // `pos_productos.stock`/`pos_stock_almacen.stock` en todo el archivo — cualquier código nuevo
-  // que necesite tocar stock pasa por aquí, nunca con un `getAPI().patch('pos_productos',
-  // {stock:...})` suelto. `garantia`/`taller`/`producción` quedan reservados en el enum, listos
-  // para cuando exista un flujo real que los dispare (hoy Reparaciones no consume piezas del
-  // inventario ni existe un módulo de producción dentro del POS — no se inventó uno solo para
-  // tener dónde usar el tipo, mismo criterio de "no fingir" del resto del sistema).
+  // dueño. `moverStock` es el ÚNICO camino permitido para cambiar `pos_productos.stock`/
+  // `pos_stock_almacen.stock` desde el navegador — cualquier código nuevo que necesite tocar
+  // stock pasa por aquí, nunca con un `getAPI().patch('pos_productos', {stock:...})` suelto.
+  // Las TRANSFERENCIAS son la única excepción: desde la RPC `pos_transferir_stock` (transferencia
+  // con IMEI atómica), que mueve el stock de los 2 almacenes + el kardex dentro de la MISMA
+  // transacción del lado de la base — el candado real (UPDATE condicional, no SELECT-luego-
+  // escribe) solo es posible ahí, no en JS. `garantia`/`taller`/`producción` quedan reservados en
+  // el enum, listos para cuando exista un flujo real que los dispare (hoy Reparaciones no consume
+  // piezas del inventario ni existe un módulo de producción dentro del POS — no se inventó uno
+  // solo para tener dónde usar el tipo, mismo criterio de "no fingir" del resto del sistema).
   const MOV_TIPOS_VALIDOS = ['compra', 'venta', 'ajuste', 'transferencia', 'garantia', 'taller', 'produccion', 'devolucion', 'anulacion', 'apertura'];
   // Mueve el stock TOTAL de un producto (y, si se pasa almacenId, también ESE almacén por el
   // mismo delta — nunca al revés). delta positivo = entra, negativo = sale. `opts.piso0` (default
@@ -23369,16 +23372,6 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       try { await upsertStockAlm(prod.id, opts.almacenId, stockEnAlm(prod.id, opts.almacenId) + delta); } catch (e) {}
     }
     return ns;
-  }
-  // Transferencia entre almacenes: mueve SOLO el stock por-almacén (origen −cantidad, destino
-  // +cantidad) — el TOTAL del producto no cambia (sigue siendo el mismo inventario, solo de sitio).
-  async function moverStockTransferencia(prod, cantidad, aidOrigen, aidDestino, referencia, motivoSalida, motivoEntrada) {
-    cantidad = Number(cantidad || 0);
-    const so = stockEnAlm(prod.id, aidOrigen), sd = stockEnAlm(prod.id, aidDestino);
-    await upsertStockAlm(prod.id, aidOrigen, so - cantidad);
-    await upsertStockAlm(prod.id, aidDestino, sd + cantidad);
-    await logMov(prod, 'transferencia', -cantidad, so, so - cantidad, referencia, motivoSalida);
-    await logMov(prod, 'transferencia', cantidad, sd, sd + cantidad, referencia, motivoEntrada);
   }
   async function cargarInventario() {
     try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=200') || []; } catch (e) { _invMovs = []; }
@@ -23541,10 +23534,16 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
       await cargarInventario(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
-  let _transEdit = null; // { origen, destino, fecha, notas, lineas:[{producto_id,nombre,cant}] }
+  // { origen, destino, fecha, notas, lineas:[{producto_id,nombre,cant,serial?,seriales?}] }
+  // Líneas serializadas (producto.serial===true): `cant` se deriva SIEMPRE de `seriales.length` —
+  // nunca se teclea, mismo criterio del Reglamento de Venta (§10: no existe "vender sin IMEI").
+  let _transEdit = null;
+  let _transSerOpen = null; // índice de la línea con el selector de IMEI abierto (uno a la vez)
+  let _transSerCache = {}; // 'producto_id|almacen_id' -> [{id,serial,color}], se invalida al cambiar origen
   window.nxAlmTransferir = function () {
     if (_almacenes.length < 2) { toast('err', 'Necesitas al menos 2 almacenes'); return; }
     _transEdit = { origen: _almacenes[0].id, destino: _almacenes[1].id, fecha: isoHoy(), notas: '', lineas: [] };
+    _transSerOpen = null; _transSerCache = {};
     abrirTransfer();
   };
   function abrirTransfer() {
@@ -23568,54 +23567,125 @@ body.tema-premium .nxPf{--pf-blue:#3b82f6;--pf-blue-d:#2563eb;--pf-blue-l:#0f1b3
     document.body.appendChild(ov);
     pintarTransTabla();
   }
-  window.nxTransField = function (k, v) { if (_transEdit) { _transEdit[k] = v; if (k === 'origen') pintarTransTabla(); } };
+  window.nxTransField = function (k, v) {
+    if (!_transEdit) return;
+    _transEdit[k] = v;
+    if (k === 'origen') {
+      // El origen cambió: cualquier IMEI ya elegido pertenecía al almacén viejo — se limpia
+      // (mismo criterio que ya se sigue en Vender/Factura al filtrar IMEI por almacén, v56.20).
+      // `cant` se resetea junto con `seriales` — para una línea serializada `cant` SIEMPRE debe
+      // ser `seriales.length`, nunca quedar pegado al valor de antes del cambio de almacén.
+      _transEdit.lineas.forEach(l => { if (l.serial) { l.seriales = []; l.cant = 0; } });
+      _transSerCache = {}; _transSerOpen = null;
+      pintarTransTabla();
+    }
+  };
   window.nxTransAdd = function (txt) {
     if (!txt) return; const t = String(txt).toLowerCase();
     let p = _prods.find(x => (x.nombre + (x.codigo ? ' [' + x.codigo + ']' : '')).toLowerCase() === t) || _prods.find(x => String(x.nombre).toLowerCase() === t);
     if (!p) { const m = String(txt).match(/\[([^\]]+)\]/); if (m) p = _prods.find(x => x.codigo && String(x.codigo).toLowerCase() === m[1].toLowerCase()); }
     if (!p) { toast('warn', 'Producto no encontrado', 'Elígelo de la lista'); return; }
     const ex = _transEdit.lineas.find(l => String(l.producto_id) === String(p.id));
-    if (ex) ex.cant += 1; else _transEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1 });
+    if (ex) { if (!p.serial) ex.cant += 1; }
+    else if (p.serial) _transEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 0, serial: true, seriales: [] });
+    else _transEdit.lineas.push({ producto_id: p.id, nombre: p.nombre, cant: 1 });
     const inp = document.getElementById('trBuscar'); if (inp) inp.value = '';
     pintarTransTabla();
   };
-  window.nxTransCant = function (i, v) { const l = _transEdit.lineas[i]; if (!l) return; let n = parseInt(String(v).replace(/[^0-9.-]/g, ''), 10); if (isNaN(n) || n < 1) n = 1; l.cant = n; pintarTransTabla(); };
-  window.nxTransDel = function (i) { _transEdit.lineas.splice(i, 1); pintarTransTabla(); };
+  window.nxTransCant = function (i, v) { const l = _transEdit.lineas[i]; if (!l || l.serial) return; let n = parseInt(String(v).replace(/[^0-9.-]/g, ''), 10); if (isNaN(n) || n < 1) n = 1; l.cant = n; pintarTransTabla(); };
+  window.nxTransDel = function (i) { _transEdit.lineas.splice(i, 1); if (_transSerOpen === i) _transSerOpen = null; pintarTransTabla(); };
+  // IMEI disponibles de este producto EN EL ALMACÉN ORIGEN — mismo filtro por almacén que ya
+  // usan Vender/Factura (nxCargarSerialesDet/nxFacSerial, v56.20), con caché por producto+almacén.
+  async function transSerDisponibles(pid, oid) {
+    const k = pid + '|' + oid;
+    if (_transSerCache[k]) return _transSerCache[k];
+    let rows = [];
+    try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + pid + '&estado=eq.disponible&almacen_id=eq.' + oid + '&order=created_at.asc') || []; } catch (e) {}
+    _transSerCache[k] = rows;
+    return rows;
+  }
+  window.nxTransSerAbrir = async function (i) {
+    _transSerOpen = (_transSerOpen === i) ? null : i;
+    pintarTransTabla();
+    if (_transSerOpen === i) {
+      const l = _transEdit.lineas[i]; if (!l) return;
+      await transSerDisponibles(l.producto_id, _transEdit.origen);
+      if (_transSerOpen === i) pintarTransTabla();
+    }
+  };
+  window.nxTransSerTog = function (i, id, ser) {
+    const l = _transEdit.lineas[i]; if (!l) return;
+    const idx = l.seriales.findIndex(s => String(s.id) === String(id));
+    if (idx >= 0) l.seriales.splice(idx, 1); else l.seriales.push({ id: id, serial: ser });
+    l.cant = l.seriales.length;
+    pintarTransTabla();
+  };
+  function transSerChipsHTML(i) {
+    const l = _transEdit.lineas[i]; if (!l) return '';
+    const rows = _transSerCache[l.producto_id + '|' + _transEdit.origen];
+    if (!rows) return '<div style="font-size:10.5px;color:#475569;padding:6px 2px">Cargando IMEI…</div>';
+    if (!rows.length) return '<div style="font-size:10.5px;color:#475569;padding:6px 2px">Sin IMEI disponible de este artículo en ' + esc(almNombre(_transEdit.origen)) + '.</div>';
+    const sel = new Set(l.seriales.map(s => String(s.id)));
+    return rows.map(r => `<span class="nxSerPick${sel.has(String(r.id)) ? ' on' : ''}" onclick="window.nxTransSerTog(${i},'${r.id}','${esc(r.serial)}')" style="display:inline-flex;align-items:center;gap:5px" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">${colorDotHTML(r.color)}${esc(r.serial)}</span>`).join('');
+  }
   function pintarTransTabla() {
     const wrap = document.getElementById('trTabla'); if (!wrap || !_transEdit) return;
     if (!_transEdit.lineas.length) { wrap.innerHTML = '<div style="text-align:center;color:#475569;font-size:12px;padding:22px">Agrega los artículos a despachar.</div>'; return; }
     const oid = _transEdit.origen;
-    const filas = _transEdit.lineas.map((l, i) => { const disp = stockEnAlm(l.producto_id, oid); const falta = l.cant > disp; return `<tr>
-        <td class="nxFacDesc">${esc(l.nombre)}</td>
+    const filas = _transEdit.lineas.map((l, i) => {
+      const disp = stockEnAlm(l.producto_id, oid);
+      const falta = l.cant > disp;
+      const cantCell = l.serial
+        ? `<button class="btn bsm bghost" type="button" onclick="window.nxTransSerAbrir(${i})" style="${falta ? 'border-color:#dc2626;color:#dc2626' : ''}"><i class="ti ti-device-mobile"></i> IMEI: ${l.seriales.length}</button>`
+        : `<input inputmode="numeric" value="${l.cant}" onchange="window.nxTransCant(${i},this.value)" style="${falta ? 'border-color:#dc2626' : ''}">`;
+      const serRow = (l.serial && _transSerOpen === i)
+        ? `<tr><td colspan="4" style="padding:6px 10px;background:#f8fafc"><div style="display:flex;flex-wrap:wrap;gap:6px">${transSerChipsHTML(i)}</div></td></tr>`
+        : '';
+      return `<tr>
+        <td class="nxFacDesc">${esc(l.nombre)}${l.serial ? ' <span style="font-size:9px;color:#0891b2">· IMEI</span>' : ''}</td>
         <td class="nxFacExi"><span${falta ? ' class="nxFacExi0"' : ''}>${fmtN(disp)}</span></td>
-        <td class="nxFacCant"><input inputmode="numeric" value="${l.cant}" onchange="window.nxTransCant(${i},this.value)" style="${falta ? 'border-color:#dc2626' : ''}"></td>
+        <td class="nxFacCant">${cantCell}</td>
         <td class="nxFacDel"><button aria-label="Quitar esta línea" onclick="window.nxTransDel(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></td>
-      </tr>`; }).join('');
+      </tr>${serRow}`;
+    }).join('');
     wrap.innerHTML = `<div class="nxFacTblWrap"><table class="nxFacTbl" style="min-width:0"><thead><tr><th>Artículo</th><th style="text-align:center">Disp. origen</th><th style="text-align:right">Cantidad</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
-  function transProxNumero(lista) { let mx = 0; (lista || []).forEach(d => { const m = String(d.numero || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return 'TR-' + String(mx + 1).padStart(5, '0'); }
+  // Transferencia con IMEI atómica: TODO el despacho (numeración, seriales, stock de los 2
+  // almacenes, kardex) es UNA sola llamada RPC transaccional (pos_transferir_stock) — reemplaza
+  // el flujo anterior de varios pasos sueltos (post cabecera → post items → moverStockTransferencia
+  // por línea), que tenía 2 carreras reales: nextSeq('transferencia') podía repetir número entre 2
+  // despachos simultáneos, y upsertStockAlm calculaba el stock nuevo en memoria (SELECT-luego-
+  // escribe) en vez de un UPDATE condicional. Las 2 quedan cerradas del lado de la base, no aquí.
   window.nxAlmGuardarTransfer = async function () {
     const oid = _transEdit.origen, did = _transEdit.destino;
     if (oid === did) { toast('err', 'Origen y destino deben ser distintos'); return; }
+    for (const l of _transEdit.lineas) { if (l.serial && !l.seriales.length) { toast('err', 'Elige los IMEI', l.nombre); return; } }
     const lineas = _transEdit.lineas.filter(l => Number(l.cant || 0) > 0);
     if (!lineas.length) { toast('err', 'Agrega al menos un artículo'); return; }
-    for (const l of lineas) { if (l.cant > stockEnAlm(l.producto_id, oid)) { toast('err', 'Sin stock suficiente', l.nombre + ' en ' + almNombre(oid)); return; } }
+    for (const l of lineas) { if (!l.serial && l.cant > stockEnAlm(l.producto_id, oid)) { toast('err', 'Sin stock suficiente', l.nombre + ' en ' + almNombre(oid)); return; } }
     try {
-      let prev = []; try { prev = await getAPI().get('pos_transferencias', 'select=numero&order=created_at.desc&limit=1') || []; } catch (e) {}
-      const numero = (await nextSeq('transferencia')) || transProxNumero(prev);
-      const head = await getAPI().post('pos_transferencias', { numero: numero, fecha: _transEdit.fecha || isoHoy(), origen_id: oid, destino_id: did, origen_nombre: almNombre(oid), destino_nombre: almNombre(did), notas: (_transEdit.notas || '').trim() || null, created_by_name: nomAdmin() });
-      const tid = head && head[0] && head[0].id; if (!tid) throw new Error('No se creó el despacho');
-      await getAPI().post('pos_transferencia_items', lineas.map(l => ({ transferencia_id: tid, producto_id: l.producto_id, nombre: l.nombre, cantidad: l.cant })));
-      const ref = numero + ' · ' + almNombre(oid) + ' → ' + almNombre(did);
-      for (const l of lineas) {
-        const p = _prods.find(x => String(x.id) === String(l.producto_id)) || { id: l.producto_id, nombre: l.nombre };
-        await moverStockTransferencia(p, l.cant, oid, did, ref, 'Salida ' + numero, 'Entrada ' + numero);
-      }
+      const payload = lineas.map(l => l.serial
+        ? { producto_id: l.producto_id, serial_ids: l.seriales.map(s => s.id) }
+        : { producto_id: l.producto_id, cantidad: l.cant });
+      const r = await getAPI().post('rpc/pos_transferir_stock', {
+        p_origen_id: oid, p_destino_id: did, p_fecha: _transEdit.fecha || isoHoy(),
+        p_notas: (_transEdit.notas || '').trim() || null, p_lineas: payload, p_created_by_name: nomAdmin()
+      });
+      const res = Array.isArray(r) ? r[0] : r;
+      if (!res || !res.id) throw new Error('No se pudo transferir');
       cerrarModal('nxAlmTransf');
-      toast('ok', 'Despacho ' + numero, lineas.length + ' artículo(s)');
-      transDespachoImprimir(Object.assign({}, head[0], { _items: lineas.map(l => ({ nombre: l.nombre, cantidad: l.cant })) }));
+      toast('ok', 'Despacho ' + res.numero, lineas.length + ' artículo(s)');
+      transDespachoImprimir({ numero: res.numero, fecha: _transEdit.fecha || isoHoy(), origen_nombre: almNombre(oid), destino_nombre: almNombre(did), notas: (_transEdit.notas || '').trim() || null, _items: lineas.map(l => ({ nombre: l.nombre, cantidad: l.cant })) });
       await cargarInventario(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
-    } catch (e) { toast('err', 'No se pudo transferir', String(e && e.message || e)); }
+    } catch (e) {
+      const msg = String(e && e.message || e);
+      const amigable = /TRANSFER_STOCK_INSUFICIENTE/.test(msg) ? 'No hay suficiente stock en el almacén origen'
+        : /TRANSFER_IMEI_NO_DISPONIBLE/.test(msg) ? 'Un IMEI elegido ya no está disponible (puede que otra venta o transferencia lo haya tomado) — vuelve a elegirlo'
+        : /TRANSFER_IMEI_REQUERIDO/.test(msg) ? 'Falta elegir el IMEI de un artículo serializado'
+        : /TRANSFER_ORIGEN_IGUAL_DESTINO/.test(msg) ? 'Origen y destino deben ser distintos'
+        : msg;
+      toast('err', 'No se pudo transferir', amigable);
+    }
   };
   function transDespachoImprimir(t) {
     const e = empInfo();
