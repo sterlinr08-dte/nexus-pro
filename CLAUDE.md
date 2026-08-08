@@ -5171,6 +5171,45 @@ Mismo criterio de siempre: esto se le puede pasar a ChatGPT como mensaje directo
 para que cualquier sesión de Claude lo use también como vara para juzgar lo que llega de
 `chatgpt/visual-draft`.
 
+**Caso real que confirma las 10 reglas — el candado atómico de IMEI (8-ago-2026, rama
+`chatgpt/imei-atomic-draft`).** ChatGPT auditó la fuga de doble venta de IMEI y dejó un borrador (SQL +
+JS + reglamento) en su propia rama, sin tocar `main`. Claude lo revisó dos veces (crítica primero,
+implementación después) y esto es lo que separó el borrador bueno del malo, con evidencia real:
+- **El primer borrador de ChatGPT (`IMEI_CANDADO_ATOMICO_V1.js`, versión inicial) tenía un fallo real:**
+  su pseudocódigo de integración hacía `throw e` dentro del bloque de confirmación de IMEI **después**
+  de que `pos_ventas` YA se había insertado — y como todo el flujo vive envuelto en un solo `try/catch`
+  exterior, ese `throw` habría caído en el mismo `catch` que hoy solo maneja "no se pudo crear la
+  venta". El cliente se habría ido con su factura ya cobrada mientras la pantalla decía "No se pudo
+  cobrar" — la venta sí existe, el mensaje miente. Nueve commits de auto-corrección después
+  (`ba21254`→`a381ee4`), la versión final se corrigió sola: agregó `p_esperados` a la RPC de
+  confirmación (todo-o-nada), `REVOKE`/`GRANT` explícito en las 3 funciones nuevas (sin esto quedan
+  ejecutables por cualquiera con la anon key, el mismo hueco que ya se había cerrado una vez para
+  `pos_siguiente_ncf`), y separó con cuidado el caso "la venta no existe todavía" (si algo falla, se
+  libera la reserva) del caso "la venta ya existe" (nunca se revierte, nunca se libera a ciegas — se
+  fija la reserva a `venta_id` y se deja un rastro en Auditoría para revisión administrativa).
+- **La instrucción del dueño para Claude fue más precisa que la propia recomendación de Claude**:
+  Claude había sugerido "nunca lances, solo registra en Auditoría y sigue" — el dueño agregó el matiz
+  que cerró el hueco de verdad: *"si la venta YA existe y falla la confirmación del IMEI, NO reviertas
+  la venta y NO liberes el IMEI a ciegas"* — liberar la reserva a ciegas habría dejado el mismo
+  candado abierto para un SEGUNDO cajero mientras el primer IMEI seguía técnicamente "vendido" en
+  `pos_seriales` pero sin reserva que lo proteja. La solución real: la reserva se queda ligada a la
+  venta (nunca vuelve a estar disponible por el TTL), y el problema se resuelve a mano, no en silencio.
+- **La implementación de Claude fue quirúrgica de verdad, medible en el diff:** +129/−3 líneas en un
+  archivo de +29,000 — se insertaron los 6 helpers nuevos completos tal cual venían del borrador ya
+  corregido, se agregaron 4 líneas de una sola instrucción (`await
+  liberarReservasImeisVencidas();`) a las 4 pantallas que listan IMEI, y dentro de `nxPosConfirmar` se
+  tocaron solo los 3 puntos exactos que el propio documento de integración de ChatGPT señalaba con
+  número de línea — nada de la validación de caja/crédito/NCF/cuotas/documentos que ya existía se
+  movió ni se reescribió. Se verificó con `grep` que el mecanismo viejo (`PATCH` best-effort sin exigir
+  `estado=disponible`) no quedó coexistiendo en ningún otro lugar del archivo, y que las funciones de
+  anulación/devolución (que liberan el IMEI por `venta_id`) seguían siendo compatibles sin tocarlas —
+  porque el candado nuevo deja el IMEI exactamente en la misma forma (`estado='vendido',
+  venta_id=<id>`) que dejaba el mecanismo viejo cuando funcionaba bien.
+- **La lección para ChatGPT, en una frase:** un borrador de lógica de negocio (no solo visual) se
+  audita simulando el peor camino de falla ANTES de escribirlo — "¿qué pasa si esto truena justo
+  DESPUÉS de que el dinero ya se cobró?" — y esa pregunta se responde leyendo el `catch` real que ya
+  existe en el archivo, no inventando uno nuevo.
+
 ### POS · Contabilidad — Fase 1 del rediseño (propuesta de ChatGPT), reskin + Resumen real (23-jul-2026, v49.03)
 ChatGPT dejó en `chatgpt/visual-draft` una **propuesta visual del módulo de Contabilidad** (mockup SVG +
 documento `docs/visual-drafts/contabilidad/`), respetando el flujo nuevo acordado (rama sandbox, sin
