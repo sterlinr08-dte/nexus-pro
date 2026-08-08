@@ -8,6 +8,19 @@ function imeiErrorCode(e) {
   return 'IMEI_RPC_ERROR';
 }
 
+// El TTL de 60 s solo sirve si las reservas vencidas vuelven a estar visibles.
+// Se limpia al entrar a cualquier superficie que lista IMEI; RLS limita el PATCH a la organización activa.
+async function liberarReservasImeisVencidas() {
+  try {
+    const ahora = encodeURIComponent(new Date().toISOString());
+    await getAPI().patch('pos_seriales', 'estado=eq.reservado&venta_id=is.null&reserva_hasta=lt.' + ahora, {
+      estado: 'disponible', reserva_token: null, reserva_hasta: null
+    });
+  } catch (e) {
+    console.warn('No se pudieron limpiar reservas IMEI vencidas:', e);
+  }
+}
+
 async function reservarImeisCart() {
   const ids = [];
   for (const it of _cart) {
@@ -53,30 +66,26 @@ async function liberarReservaImeis(token) {
 }
 
 /*
-INTEGRACIÓN EXACTA EN nxPosConfirmar
+INTEGRACIÓN EXACTA EN nxPosConfirmar (medida sobre main actual)
 
-A) Después de TODAS las validaciones del carrito y ANTES de crear pos_ventas:
+A) Después de construir `body` y ANTES del `try` que crea pos_ventas:
 
 let _imeiReserva = null;
+let _imeiVentaCreada = false;
 try {
   _imeiReserva = await reservarImeisCart();
 } catch (e) {
   return;
 }
 
-B) Envolver la creación de la venta para liberar la reserva si la venta NO llegó a existir:
+B) Mantener el POST real de pos_ventas dentro de su try actual. Justo después de comprobar `venta`:
 
-let venta = null;
-try {
-  const r = await getAPI().post('pos_ventas', body);
-  venta = (r && r[0]) || null;
-  if (!venta) throw new Error('No se pudo registrar la venta');
-} catch (e) {
-  if (_imeiReserva) await liberarReservaImeis(_imeiReserva);
-  throw e;
-}
+const r = await getAPI().post('pos_ventas', body);
+const venta = (r && r[0]) || null;
+if (!venta) throw new Error('No se pudo registrar la venta');
+_imeiVentaCreada = true;
 
-C) Inmediatamente después de tener `venta`, confirmar IMEI SIN abortar la venta si algo falla:
+C) Inmediatamente después, confirmar IMEI SIN abortar la venta si algo falla:
 
 if (_imeiReserva) {
   const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
@@ -85,22 +94,14 @@ if (_imeiReserva) {
     if (confirmados === esperados) {
       _imeiReserva = null;
     } else {
-      try {
-        await logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR',
-          'Venta ' + (venta.numero_factura || venta.id) + ': esperados ' + esperados + ', confirmados ' + confirmados,
-          'Punto de Venta');
-      } catch (e2) {}
-      toast('err', 'Venta registrada con incidencia de IMEI', 'La venta fue registrada, pero los IMEI requieren revisión administrativa.');
+      try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — esperados ' + esperados + ', confirmados ' + confirmados, 'POS'); } catch (e2) {}
+      toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
       // NO throw. La venta ya existe y no se revierte por este fallo secundario.
-      // NO liberar a ciegas la reserva: podría volver disponible un equipo ya comprometido por una venta real.
+      // NO liberar a ciegas la reserva: podría volver disponible un equipo comprometido por una venta real.
     }
   } catch (e) {
-    try {
-      await logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR',
-        'Venta ' + (venta.numero_factura || venta.id) + ': error al confirmar reserva IMEI - ' + String(e && e.message || e),
-        'Punto de Venta');
-    } catch (e2) {}
-    toast('err', 'Venta registrada con incidencia de IMEI', 'La venta fue registrada, pero los IMEI requieren revisión administrativa.');
+    try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — error al confirmar reserva IMEI: ' + String(e && e.message || e), 'POS'); } catch (e2) {}
+    toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
     // NO throw y NO liberar aquí.
   }
 }
@@ -108,5 +109,19 @@ if (_imeiReserva) {
 D) ELIMINAR el bloque viejo de `best-effort`:
    getAPI().patch('pos_seriales', 'id=eq.' + s.id, { estado: 'vendido', venta_id: venta.id }).catch(() => {});
 
-No deben coexistir ambos mecanismos.
+E) Cambiar el catch exterior real para liberar SOLO si la venta nunca llegó a existir:
+
+} catch (e) {
+  if (!_imeiVentaCreada && _imeiReserva) await liberarReservaImeis(_imeiReserva);
+  toast('err', 'No se pudo cobrar', String(e && e.message || e));
+}
+
+F) Antes de cada consulta que lista IMEI disponibles, ejecutar:
+
+await liberarReservasImeisVencidas();
+
+Aplicar al menos en `nxCargarSerialesDet`, `nxSerialMgr`, `nxFacSerial` y antes del conteo de `nxSerialCuadrar`.
+Esto evita que una reserva vencida siga escondida indefinidamente aunque su TTL ya haya pasado.
+
+No deben coexistir el mecanismo nuevo y el PATCH viejo de venta.
 */
