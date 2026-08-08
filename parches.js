@@ -17724,7 +17724,19 @@
       // REGLAMENTO DE INVENTARIO: borrar un IMEI disponible baja el stock en 1 (por moverStock → kardex).
       if (era === 'disponible') { const prod = _prods.find(x => String(x.id) === String(pid)); if (prod) { try { await moverStock(prod, 'ajuste', -1, { almacenId: aid, referencia: 'Baja de IMEI', motivo: 'IMEI eliminado' }); } catch (e) {} } }
       toast('ok', 'Serial eliminado'); window.nxSerialMgr(pid); const box = document.getElementById('ppkSer'); if (box) nxCargarSerialesDet(pid);
-    } catch (e) { toast('err', 'No se pudo'); }
+    } catch (e) {
+      // REVISIÓN (ChatGPT, punto 2): con ON DELETE RESTRICT en pos_transferencia_item_seriales.serial_id,
+      // borrar un IMEI que YA aparece en el historial de una transferencia lo rechaza la base — el
+      // trazado de ese IMEI nunca puede desaparecer arrastrado por un borrado posterior. Mismo patrón
+      // ya usado en este archivo: detectar el código/marcador del error real y explicarlo en español,
+      // en vez de un "No se pudo" genérico que esconde por qué.
+      const msg = String((e && e.message) || e || '');
+      if (/23503|foreign key|violates.*constraint/i.test(msg)) {
+        toast('err', 'No se puede eliminar', 'Este IMEI tiene historial de transferencias entre almacenes registrado — no se puede borrar sin perder ese rastro.');
+      } else {
+        toast('err', 'No se pudo');
+      }
+    }
   };
   // REGLAMENTO DE INVENTARIO: cuadra el stock TOTAL de un artículo con IMEI a su cuenta de IMEI
   // disponibles (para los que quedaron descuadrados antes de esta regla). Solo toca el total —

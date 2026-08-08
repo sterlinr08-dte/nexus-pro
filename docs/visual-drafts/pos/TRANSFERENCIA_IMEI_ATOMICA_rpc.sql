@@ -18,11 +18,45 @@
 --     almacen_id=origen AND producto_id=<el de la línea>` — mismo patrón exacto que
 --     pos_reservar_seriales usa contra ventas concurrentes. Si una venta ya reservó ese IMEI
 --     (estado pasa a 'reservado') o si el IMEI no es de ese producto/almacén, la fila no matchea,
---     el conteo de filas afectadas no cuadra con lo pedido, y la RPC entera aborta.
---   - Numeración: mismo patrón atómico que pos_siguiente_ncf (UPDATE...RETURNING sobre
---     pos_secuencias) — nextSeq() del lado cliente NO se usa aquí a propósito: tiene la
---     misma carrera de lectura-y-escritura que ya se cerró para NCF, y esta pieza la cierra
---     también para transferencias.
+--     el conteo de filas afectadas no cuadra con lo pedido, y la RPC entera aborta. El mismo
+--     mecanismo (row_count contra lo pedido) rechaza de paso 3 casos reales de integridad
+--     verificados con datos de prueba (ChatGPT, punto 6): serial_ids con un UUID duplicado dentro
+--     de la misma línea (`= any(array)` solo toca la fila UNA vez sin importar cuántas veces se
+--     repita en el array, así que el conteo de filas tocadas queda por debajo del array_length
+--     pedido y revienta), un serial de OTRA organización (el `organizacion_id = v_org` del WHERE
+--     lo excluye de raíz, nunca matchea), y un serial válido mezclado con uno inválido en la misma
+--     línea (el válido no persiste porque el RAISE de esta misma sentencia revierte TODA la
+--     llamada, cabecera incluida — no hay forma de que la parte "buena" quede a medias).
+--   - Numeración: UPSERT atómico real sobre `pos_secuencias` (UNIQUE(organizacion_id, tipo)
+--     confirmado por `pg_constraint`) — REVISIÓN (ChatGPT, punto 1): se eliminó por completo el
+--     fallback `MAX(numero)+1` que tenía la primera versión. Ya no existe NINGÚN camino que calcule
+--     el número por conteo — si la organización no tiene fila `pos_secuencias` para
+--     `tipo='transferencia'` (nunca tocó "Ajustes → Secuencias"), el mismo `INSERT ... ON
+--     CONFLICT ... DO UPDATE` la crea y la incrementa en la MISMA sentencia atómica — no hay
+--     ninguna ventana entre "crear" e "incrementar" donde dos llamadas concurrentes puedan verse
+--     ambas como "la primera". Valores de siembra confirmados contra las 2 organizaciones reales
+--     que ya tienen esta secuencia (`prefijo='TR-'`, `longitud=5`, `nombre='Transferencia /
+--     Despacho'` — mismos valores que ya siembra `nxSecInit()` del lado cliente). Si el admin
+--     desactivó la secuencia (`activo=false`), la fila NO se toca (el `WHERE` del `DO UPDATE` lo
+--     impide) y la RPC falla cerrado con un error administrativo claro — nunca inventa un número.
+--     `nextSeq('transferencia')` del lado cliente ya NO se usa (tenía la misma carrera de lectura-
+--     y-escritura que ya se había cerrado para NCF).
+--   - Autorización (ChatGPT, punto 3): además de `REVOKE FROM PUBLIC/anon` + `GRANT TO
+--     authenticated` (capa de "¿puede llamar la función?"), la RPC ahora exige explícitamente
+--     `mi_rol() is not null` — la MISMA condición, ni más estricta ni más laxa, que ya usan las
+--     políticas RLS reales de TODAS las tablas que esta RPC toca (`pos_stock_almacen`,
+--     `pos_seriales`, `pos_transferencias`, `pos_transferencia_items`,
+--     `pos_transferencia_item_seriales`: las 5 confirmadas con `pg_policies`, todas
+--     `USING(mi_rol() is not null AND organizacion_id = mi_organizacion())`). NO se inventó un rol
+--     "admin-only" para esta RPC — ese rol no existe en ningún candado real del sistema hoy: el
+--     modelo de roles del cliente (`ROLES_DEF`/`puedeVer()` en parches.js) es SOLO una restricción
+--     de interfaz para la función "Ver como [rol]" de vista previa — verificado contra el propio
+--     comentario del código real ("todos los usuarios del POS tienen sesion.rol='admin', así que
+--     hoy puedeVer=true salvo en preview") y confirmado que TODA cuenta de staff real hoy tiene
+--     `mi_rol()='admin'` a nivel de base — inventar aquí una regla server-side más estricta que
+--     "cualquier usuario de la organización" habría sido inconsistente con cómo ya se protege el
+--     resto de las tablas `pos_*` (un usuario que hoy puede escribir `pos_stock_almacen`/
+--     `pos_seriales` directo por REST ya tiene ese mismo acceso con o sin esta RPC).
 --
 -- Cualquier RAISE EXCEPTION revierte TODO lo hecho en esta llamada (cabecera, items, seriales,
 -- stock, kardex) — nunca queda una transferencia a medias.
@@ -42,6 +76,7 @@ set search_path to 'public'
 as $function$
 declare
   v_org uuid := mi_organizacion();
+  v_rol text := mi_rol();
   v_origen_nombre text;
   v_destino_nombre text;
   v_head_id uuid;
@@ -59,6 +94,14 @@ declare
   v_stock_destino numeric;
   v_n_lineas integer := 0;
 begin
+  -- Autorización server-side (punto 3): misma condición exacta que la RLS real de las 5 tablas
+  -- que esta RPC toca — mi_rol() is not null. No es un chequeo redundante con v_org: mi_rol()
+  -- solo necesita la fila de `profiles`, mi_organizacion() necesita además el join hasta
+  -- `usuarios_sistema` — son 2 candados independientes, mismo par que ya exige cada policy real.
+  if v_rol is null then
+    raise exception 'TRANSFER_SIN_PERMISO';
+  end if;
+
   if v_org is null then
     raise exception 'TRANSFER_SIN_ORGANIZACION';
   end if;
@@ -79,18 +122,26 @@ begin
     raise exception 'TRANSFER_SIN_LINEAS';
   end if;
 
-  -- Numeración atómica — mismo patrón que pos_siguiente_ncf.
-  update pos_secuencias
-     set proximo = proximo + 1
-   where tipo = 'transferencia' and organizacion_id = v_org and coalesce(activo, true)
+  -- Numeración atómica — SIN fallback MAX()+1 bajo ninguna circunstancia (punto 1). Un solo
+  -- UPSERT real sobre el UNIQUE(organizacion_id, tipo) confirmado: si la fila ya existe (siempre
+  -- el caso hoy, ya sembrada por nxSecInit() del lado cliente), la incrementa; si no existe
+  -- todavía, la CREA ya incrementada en la MISMA sentencia atómica — nunca hay una ventana entre
+  -- "sembrar" e "incrementar" donde dos llamadas concurrentes puedan verse ambas como la primera.
+  -- Semántica de `proximo`: siempre representa el próximo número SIN emitir. Se siembra con 2
+  -- (no 1) porque VALUES() ya representa la fila tras el primer incremento implícito de esta
+  -- misma llamada — RETURNING (proximo-1) da 1 como primer número emitido, igual que si la fila
+  -- hubiera nacido en 1 (por nxSecInit) y luego se hubiera incrementado a 2 en un segundo paso.
+  insert into pos_secuencias (organizacion_id, tipo, nombre, prefijo, longitud, proximo, activo)
+  values (v_org, 'transferencia', 'Transferencia / Despacho', 'TR-', 5, 2, true)
+  on conflict (organizacion_id, tipo) do update
+     set proximo = pos_secuencias.proximo + 1
+   where pos_secuencias.activo
   returning coalesce(prefijo, '') || lpad((proximo - 1)::text, coalesce(longitud, 5), '0')
     into v_numero;
+  -- v_numero solo queda null si la fila YA existía y estaba activo=false (el WHERE del DO UPDATE
+  -- se comporta como DO NOTHING) — nunca por falta de fila, esa rama ya la cubre el INSERT.
   if v_numero is null then
-    -- Respaldo si la secuencia no está sembrada para esta org (mismo criterio que
-    -- transProxNumero()/cotProxNumero() del lado cliente: nunca bloquear por falta de secuencia).
-    select 'TR-' || lpad((coalesce(max(nullif(regexp_replace(numero, '\D', '', 'g'), '')::int), 0) + 1)::text, 5, '0')
-      into v_numero
-      from pos_transferencias where organizacion_id = v_org;
+    raise exception 'TRANSFER_SECUENCIA_INACTIVA';
   end if;
 
   v_ref := v_numero || ' · ' || v_origen_nombre || ' → ' || v_destino_nombre;
