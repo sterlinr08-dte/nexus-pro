@@ -17633,6 +17633,7 @@
   function colorSelectHTML(id, val) { return `<select id="${id}" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:4px 6px;font-size:11px;font-family:inherit;background:#fff;color:#334155"><option value="">Sin color</option>${TEL_COLORES.map(c => `<option value="${c[0]}"${val === c[0] ? ' selected' : ''}>${esc(c[1])}</option>`).join('')}</select>`; }
   async function nxCargarSerialesDet(pid) {
     const box = document.getElementById('ppkSer'); if (!box) return;
+    await liberarReservasImeisVencidas();
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     _ppkSerRows = rows;
@@ -17666,6 +17667,7 @@
   window.nxSerialMgr = async function (pid) {
     const p = _prods.find(x => String(x.id) === String(pid)); if (!p) return;
     cerrarModal('nxSerMgr');
+    await liberarReservasImeisVencidas();
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=*&producto_id=eq.' + pid + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     const lista = rows.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="font-family:var(--mono,monospace);font-weight:700;color:#334155">${esc(r.serial)}</span></span><span style="display:flex;align-items:center;gap:6px;flex:none">${colorSelectHTML('serCol_' + r.id, r.color || '')}<button class="btn bsm bghost" type="button" title="Guardar color" aria-label="Guardar color de ${esc(r.serial)}" onclick="window.nxSerialColorSet('${r.id}','${pid}')"><i class="ti ti-check"></i></button><button class="nxPosX" type="button" onclick="window.nxSerialDel('${r.id}','${pid}')" title="Eliminar" aria-label="Eliminar ${esc(r.serial)}"><i class="ti ti-minus" style="color:#dc2626"></i></button></span></div>`).join('') || '<div style="text-align:center;color:#475569;font-size:11.5px;padding:14px">Sin seriales</div>';
@@ -17728,6 +17730,7 @@
   // el reparto por almacén queda pendiente (ver §5).
   window.nxSerialCuadrar = async function (pid) {
     const prod = _prods.find(x => String(x.id) === String(pid)); if (!prod) return;
+    await liberarReservasImeisVencidas();
     let disp = 0; try { const r = await getAPI().get('pos_seriales', 'select=id&producto_id=eq.' + pid + '&estado=eq.disponible'); disp = (r || []).length; } catch (e) {}
     const delta = disp - Number(prod.stock || 0);
     if (delta === 0) { toast('ok', 'Ya está cuadrado'); return; }
@@ -17762,6 +17765,7 @@
     const it = _cart[i]; if (!it) return;
     const prod = _prods.find(x => String(x.id) === String(it.producto_id)); if (!prod) return;
     cerrarModal('nxFacSer');
+    await liberarReservasImeisVencidas();
     let rows = [];
     try { rows = await getAPI().get('pos_seriales', 'select=id,serial,color&producto_id=eq.' + it.producto_id + '&estado=eq.disponible&order=created_at.asc') || []; } catch (e) {}
     const sel = new Set((it.seriales || []).map(s => String(s.id)));
@@ -18662,6 +18666,90 @@
     const msg = 'Gracias por tu compra' + (v.cliente_nombre ? ', ' + v.cliente_nombre : '') + '\n' + (v.numero_factura ? 'Factura ' + v.numero_factura : 'No. ' + (v.numero || '')) + '\n\n' + items + '\n\nTOTAL: ' + fmt(v.total);
     window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
   };
+
+  // ── Candado atómico de IMEI (concurrencia venta) ──
+  // Dos cajeros nunca pueden adjudicarse el mismo IMEI: `disponible`→`reservado`→`vendido`,
+  // resuelto en la base (RPC `pos_reservar_seriales`/`pos_confirmar_seriales_reservados`/
+  // `pos_liberar_reserva_seriales`, UPDATE condicional todo-o-nada). Reemplaza el PATCH
+  // best-effort de "marcar vendido" de siempre — ese mecanismo NO exigía estado=disponible,
+  // así que dos cobros simultáneos podían pisarse el venta_id del mismo IMEI.
+  function imeiErrorCode(e) {
+    const s = String((e && (e.message || e.error || e.details)) || e || '');
+    if (s.includes('IMEI_NO_DISPONIBLE')) return 'IMEI_NO_DISPONIBLE';
+    if (s.includes('IMEI_SIN_ORGANIZACION')) return 'IMEI_SIN_ORGANIZACION';
+    if (s.includes('IMEI_RESERVA_INCOMPLETA')) return 'IMEI_RESERVA_INCOMPLETA';
+    return 'IMEI_RPC_ERROR';
+  }
+  // El TTL de 60s solo sirve si las reservas vencidas vuelven a estar visibles — se limpia al
+  // entrar a cualquier superficie que lista IMEI disponibles. RLS limita el PATCH a la org activa.
+  // Solo toca venta_id IS NULL: una reserva ya ligada a una venta real NUNCA se libera por TTL.
+  async function liberarReservasImeisVencidas() {
+    try {
+      const ahora = encodeURIComponent(new Date().toISOString());
+      await getAPI().patch('pos_seriales', 'estado=eq.reservado&venta_id=is.null&reserva_hasta=lt.' + ahora, {
+        estado: 'disponible', reserva_token: null, reserva_hasta: null
+      });
+    } catch (e) {
+      console.warn('No se pudieron limpiar reservas IMEI vencidas:', e);
+    }
+  }
+  async function reservarImeisCart() {
+    const ids = [];
+    for (const it of _cart) {
+      if (it.seriales && it.seriales.length) {
+        for (const s of it.seriales) if (s && s.id) ids.push(String(s.id));
+      }
+    }
+    if (!ids.length) return null;
+    try {
+      const r = await getAPI().post('rpc/pos_reservar_seriales', { p_serial_ids: ids });
+      return Array.isArray(r) ? r[0] : r;
+    } catch (e) {
+      const code = imeiErrorCode(e);
+      if (code === 'IMEI_NO_DISPONIBLE') {
+        for (const it of _cart) if (it.seriales && it.seriales.length) it.seriales = [];
+        toast('err', 'IMEI ya no disponible', 'Otro usuario pudo vender o reservar uno de los IMEI. Vuelve a seleccionarlo.');
+      } else if (code === 'IMEI_SIN_ORGANIZACION') {
+        toast('err', 'No autorizado', 'No se pudo validar la organización para reservar el IMEI.');
+      } else {
+        toast('err', 'No se pudo validar el IMEI', 'Intenta nuevamente. Si persiste, revisa la conexión.');
+      }
+      throw e;
+    }
+  }
+  async function confirmarImeisReservados(token, ventaId, esperados) {
+    if (!token) return 0;
+    const r = await getAPI().post('rpc/pos_confirmar_seriales_reservados', {
+      p_reserva_token: token,
+      p_venta_id: ventaId,
+      p_esperados: Number(esperados || 0)
+    });
+    return Number(Array.isArray(r) ? r[0] : r) || 0;
+  }
+  async function liberarReservaImeis(token) {
+    if (!token) return;
+    try {
+      await getAPI().post('rpc/pos_liberar_reserva_seriales', { p_reserva_token: token });
+    } catch (e) {
+      console.warn('No se pudo liberar reserva IMEI:', e);
+    }
+  }
+  // Si la venta YA existe pero la confirmación final falla, fija la reserva a esa venta.
+  // Así el limpiador de TTL (que solo toca venta_id IS NULL) nunca vuelve a exponer ese IMEI.
+  async function fijarReservaImeisAVenta(token, ventaId) {
+    if (!token || !ventaId) return false;
+    try {
+      await getAPI().patch('pos_seriales', 'reserva_token=eq.' + token + '&estado=eq.reservado&venta_id=is.null', {
+        venta_id: ventaId,
+        reserva_hasta: null
+      });
+      return true;
+    } catch (e) {
+      console.error('No se pudo fijar la reserva IMEI a la venta:', e);
+      return false;
+    }
+  }
+
   window.nxPosConfirmar = async function () {
     if (!_cart.length) return;
     // IMEI obligatorio: para artículos con serial hay que elegir el/los IMEI antes de cobrar
@@ -18809,10 +18897,43 @@
       estado: 'completada', caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin()
     };
     if (_facFecha) body.fecha = _facFecha;
+    // Candado atómico de IMEI: reservar ANTES de crear la venta. Si el carrito no tiene
+    // artículos con serial, reservarImeisCart() devuelve null y el flujo sigue igual de
+    // siempre. Si algún IMEI ya no está disponible, reservarImeisCart() ya avisó por toast
+    // y lanzó — se corta aquí, ANTES de tocar pos_ventas (nada que revertir todavía).
+    let _imeiReserva = null;
+    let _imeiVentaCreada = false;
+    try {
+      _imeiReserva = await reservarImeisCart();
+    } catch (e) {
+      return;
+    }
     try {
       const r = await getAPI().post('pos_ventas', body);
       const venta = (r && r[0]) || null;
       if (!venta) throw new Error('No se pudo registrar la venta');
+      _imeiVentaCreada = true;
+      // A partir de aquí la venta YA EXISTE. Cualquier fallo de la confirmación de IMEI es
+      // secundario — REGLAMENTOS §2 regla 10: una venta cobrada nunca se revierte por un
+      // fallo secundario. Nunca throw desde este bloque; nunca liberar la reserva aquí
+      // (fijarReservaImeisAVenta la deja ligada a venta_id para que el TTL no la libere sola).
+      if (_imeiReserva) {
+        const esperados = _cart.reduce((n, it) => n + ((it.seriales || []).length), 0);
+        try {
+          const confirmados = await confirmarImeisReservados(_imeiReserva, venta.id, esperados);
+          if (confirmados === esperados) {
+            _imeiReserva = null;
+          } else {
+            await fijarReservaImeisAVenta(_imeiReserva, venta.id);
+            try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — esperados ' + esperados + ', confirmados ' + confirmados, 'POS'); } catch (e2) {}
+            toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
+          }
+        } catch (e) {
+          const fijada = await fijarReservaImeisAVenta(_imeiReserva, venta.id);
+          try { window.logAudit && window.logAudit('POS_VENTA_IMEI_SIN_CONFIRMAR', 'Factura ' + (numFac || ('No. ' + (venta.numero || ''))) + ' — error al confirmar reserva IMEI: ' + String(e && e.message || e) + (fijada ? ' · reserva fijada a la venta' : ' · NO se pudo fijar la reserva'), 'POS'); } catch (e2) {}
+          toast('warn', 'Venta registrada con incidencia de IMEI', 'La venta existe, pero los IMEI requieren revisión administrativa.');
+        }
+      }
       // VENTA EN CUOTAS: si se marcó financiar, crear el plan (best-effort, no rompe la venta)
       try {
         const finChk = document.getElementById('finChk');
@@ -18875,8 +18996,8 @@
         }
       } catch (eDoc) { console.warn('motor de documentos (factura):', eDoc); }
       _facOrigenDoc = null;
-      // Marcar seriales/IMEI vendidos (best-effort)
-      try { for (const it of _cart) { if (it.seriales && it.seriales.length) { for (const s of it.seriales) { getAPI().patch('pos_seriales', 'id=eq.' + s.id, { estado: 'vendido', venta_id: venta.id }).catch(() => {}); } } } } catch (e) {}
+      // Los IMEI ya quedaron marcados 'vendido' por el candado atómico de arriba
+      // (reservarImeisCart/confirmarImeisReservados) — no coexiste con el PATCH best-effort viejo.
       // Asignar NCF fiscal si hay secuencia activa para el tipo elegido (best-effort)
       let ncfAsignado = null;
       try { ncfAsignado = await asignarNCF(_facNCF); if (ncfAsignado) await getAPI().patch('pos_ventas', 'id=eq.' + venta.id, { ncf: ncfAsignado }); } catch (e) {}
@@ -18901,7 +19022,12 @@
       _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos';
       const view = document.getElementById('v-pos'); if (view && (_posTab === 'vender' || _posTab === 'factura')) renderPOS(view);
       _posVentaExito(ventaTicket);
-    } catch (e) { toast('err', 'No se pudo cobrar', String(e && e.message || e)); }
+    } catch (e) {
+      // Solo se libera la reserva IMEI si la venta NUNCA llegó a existir. Una venta ya
+      // creada no se revierte por este catch — REGLAMENTOS §2 regla 10.
+      if (!_imeiVentaCreada && _imeiReserva) await liberarReservaImeis(_imeiReserva);
+      toast('err', 'No se pudo cobrar', String(e && e.message || e));
+    }
   };
 
   // ── Ticket imprimible ──
