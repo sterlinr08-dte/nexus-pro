@@ -1,7 +1,12 @@
 {
-  "version": "56.19",
+  "version": "56.20",
   "url": "https://nexusprord.com/index.html",
   "cambios": [
+    {
+      "v": "56.20",
+      "fecha": "2026-08-08",
+      "texto": "ARREGLADO: en negocios con MÁS de un almacén activo, la lista de IMEI para vender ahora solo muestra los teléfonos que de verdad están en el almacén que tienes elegido en ese momento — antes se mezclaban con los de todos los almacenes, sin importar cuál estuviera activo en pantalla. Si cambias de almacén, la lista de IMEI disponibles cambia con él. Si tu negocio NO usa multi-almacén (la mayoría), no cambia nada — sigue funcionando exactamente igual que siempre."
+    },
     {
       "v": "56.19",
       "fecha": "2026-08-08",
