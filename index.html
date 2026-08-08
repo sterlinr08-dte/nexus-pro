@@ -5076,10 +5076,10 @@ function c360TabResumen(c,cache){
   const estPol=getEstPol(c);
   const loading=cache.prestamos===undefined;
   return `<div class="sf-kpis">
-    <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas (Seguros)</div><div class="v">${(ST.facturas||[]).filter(f=>String(f.cliente_id)===String(c.id)).length}</div></div></div>
-    <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Balance pendiente</div><div class="v">${fmt(pendTot(c))}</div></div></div>
-    <div class="sf-kpi purple"><div class="ic"><i class="ti ti-credit-card"></i></div><div><div class="lb">Préstamos vinculados</div><div class="v">${loading?'…':(cache.prestamos||[]).length}</div></div></div>
-    <div class="sf-kpi ok"><div class="ic"><i class="ti ti-shopping-cart"></i></div><div><div class="lb">Ventas POS vinculadas</div><div class="v">${loading?'…':(cache.posVentas||[]).length}</div></div></div>
+    <div class="sf-kpi blue"><div class="ic"><i class="ti ti-file-invoice"></i></div><div><div class="lb">Facturas</div><div class="v">${(ST.facturas||[]).filter(f=>String(f.cliente_id)===String(c.id)).length}</div><div class="sub">Fuente: Seguros</div></div></div>
+    <div class="sf-kpi warn"><div class="ic"><i class="ti ti-clock"></i></div><div><div class="lb">Balance pendiente</div><div class="v">${fmt(pendTot(c))}</div><div class="sub">Fuente: Seguros</div></div></div>
+    <div class="sf-kpi purple"><div class="ic"><i class="ti ti-credit-card"></i></div><div><div class="lb">Préstamos vinculados</div><div class="v">${loading?'…':(cache.prestamos||[]).length}</div><div class="sub">Fuente: Financiamiento</div></div></div>
+    <div class="sf-kpi ok"><div class="ic"><i class="ti ti-shopping-cart"></i></div><div><div class="lb">Ventas POS vinculadas</div><div class="v">${loading?'…':(cache.posVentas||[]).length}</div><div class="sub">Fuente: POS</div></div></div>
   </div>
   <div class="sf-panel"><h3>Contacto</h3>
     <div style="font-size:12px;line-height:2;color:var(--sf-tx2,#475569)">
