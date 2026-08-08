@@ -5124,6 +5124,53 @@ es un permiso. **Son DOS rutas distintas, no una con excepciones:**
   nadie podría publicar directo a `main` sin pasar por revisión, autorizado o no. Sigue siendo un ajuste
   que solo el dueño puede hacer desde la web de GitHub.
 
+### Cómo programar bien en NEXUS PRO — el mismo estándar para ChatGPT (8-ago-2026)
+El dueño pidió qué más decirle a ChatGPT para que programe con la misma disciplina que se usa en esta
+sesión. No es una lista de estilo — cada punto sale de un bug real que YA pasó en este proyecto (el
+propio historial de este archivo, no una teoría). Aplica siempre que ChatGPT toque código de verdad, no
+solo cuando manda un mockup.
+
+1. **Leer el código real ANTES de escribir, nunca asumir.** Antes de tocar una función, abrirla y leerla
+   completa — nombre exacto de los `id`, qué tabla usa, qué formato de dato espera. La causa raíz de los
+   4 intentos fallidos de ChatGPT en Vender/Prefactura (ver "Limpieza de 4 intentos de ChatGPT" arriba)
+   fue exactamente esto al revés: un detector genérico que **adivinaba** el DOM en vez de leer
+   `renderVender`/`gridHTML` (que ya existían) — nunca encontró su objetivo porque nunca miró el código
+   real.
+2. **Reusar lo que ya existe, nunca duplicar.** Antes de escribir un buscador, un modal, un color, un
+   patrón de tarjeta — buscar si YA hay uno (`nxBuscaHTML`, `ModalBusquedaBase`, `moverStock`, `.nxPf`,
+   `.nxFP`...). Este proyecto tiene un reglamento entero sobre esto (`ModalBusquedaBase` §"no duplicar
+   funciones") precisamente porque ya pasó.
+3. **No fingir una función que no existe.** Si el dato no está en la base (sin tabla, sin columna), no
+   se inventa un botón que no hace nada — se dice "Próximamente" o se pregunta antes de construir. El
+   botón de "pagar" falso del prototipo de Cliente 360 es el ejemplo más reciente y concreto.
+4. **Cambios quirúrgicos al hacer un reskin visual.** Si el pedido es "que se vea mejor", se tocan
+   SOLO clases/CSS/HTML — los mismos `id`, los mismos `onclick`, las mismas funciones de guardado
+   quedan intactos. Mezclar "se ve mejor" con "cambié cómo funciona" es como se rompen cosas que ya
+   andaban bien.
+5. **Un color por app, nunca mezclado.** Cada módulo (POS azul, Financiamiento morado, Rifas índigo...)
+   tiene su propio acento — nunca el de otro módulo, y nunca dos colores compitiendo dentro del mismo
+   módulo. Ver NPGS §12.
+6. **Verificar de verdad antes de decir "listo" — no basta con que compile.** Cargar el archivo real en
+   un navegador (no una reconstrucción a mano), probar a 390px de ancho (celular) sin que nada se
+   desborde, 0 errores de consola, y confirmar que el dato que se muestra es el dato real, no uno de
+   prueba inventado. "Se ve bien en mi cabeza" no cuenta como verificado.
+7. **Dinero, inventario y contabilidad tienen reglamento escrito — seguirlo, no improvisar.** Antes de
+   tocar cobro, crédito, cuotas, existencia o asientos contables, leer `REGLAMENTOS.md` (§1 a §9) — ya
+   están las reglas exactas de qué se permite y qué no, con la razón de cada una.
+8. **Incrementos chicos y verificables, no todo de un tirón.** Una pieza, probada, publicada — después
+   la siguiente. Construir 5 funciones nuevas de un golpe sin probar ninguna es como se acumulan bugs
+   invisibles.
+9. **Ser honesto sobre lo que no se pudo probar.** Si algo no se puede verificar desde donde se está
+   trabajando (ej. sin salida a internet, sin poder abrir un iPhone real), decirlo explícito — no
+   afirmar que "funciona" cuando en realidad no se comprobó.
+10. **Sin build, sin npm, sin bundler — este proyecto es HTML/JS plano.** No instalar paquetes que no se
+    puedan usar de verdad sin un sistema de build (ya pasó con `@tabler/icons-react`/`lucide-react` —
+    quedaron 100% inertes porque `index.html` no tiene ningún `import`).
+
+Mismo criterio de siempre: esto se le puede pasar a ChatGPT como mensaje directo, y queda escrito aquí
+para que cualquier sesión de Claude lo use también como vara para juzgar lo que llega de
+`chatgpt/visual-draft`.
+
 ### POS · Contabilidad — Fase 1 del rediseño (propuesta de ChatGPT), reskin + Resumen real (23-jul-2026, v49.03)
 ChatGPT dejó en `chatgpt/visual-draft` una **propuesta visual del módulo de Contabilidad** (mockup SVG +
 documento `docs/visual-drafts/contabilidad/`), respetando el flujo nuevo acordado (rama sandbox, sin
