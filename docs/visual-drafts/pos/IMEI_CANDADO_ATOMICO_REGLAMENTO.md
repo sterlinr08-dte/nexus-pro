@@ -4,15 +4,15 @@
 
 13. Al iniciar la confirmación, cada IMEI elegido pasa temporalmente de `disponible` a `reservado`. La reserva pertenece a una sola operación, vive en la base de datos y vence en aproximadamente 60 segundos si la venta no termina. Las superficies que listan IMEI limpian primero las reservas vencidas para que un equipo no quede oculto indefinidamente después del TTL. Solo una reserva válida puede convertir el IMEI a `vendido`.
 
-14. Si uno solo de los IMEI seleccionados ya no está disponible, se rechaza la reserva COMPLETA y se obliga a re-elegir. Nunca se confirma parcialmente una línea serializada.
+14. Si uno solo de los IMEI seleccionados ya no está disponible, se rechaza la reserva COMPLETA y se obliga a re-elegir. Nunca se confirma parcialmente una línea serializada. La confirmación final también es todo-o-nada: si no puede confirmar todos los IMEI esperados, la RPC revierte la confirmación completa.
 
 15. Si la venta todavía NO existe y falla su creación, cualquier reserva IMEI de esa operación se libera.
 
-16. Si la venta YA existe y falla la confirmación final de uno o más IMEI, la venta NO se revierte y nunca se informa al usuario que “no se pudo cobrar”. Se registra `POS_VENTA_IMEI_SIN_CONFIRMAR`, se avisa que existe una incidencia administrativa y NO se libera la reserva a ciegas.
+16. Si la venta YA existe y falla la confirmación final de uno o más IMEI, la venta NO se revierte y nunca se informa al usuario que “no se pudo cobrar”. Se registra `POS_VENTA_IMEI_SIN_CONFIRMAR`, se avisa que existe una incidencia administrativa y la reserva se liga a `venta_id` para impedir que el TTL vuelva a exponer ese teléfono. Una reserva ligada a una venta no se libera automáticamente.
 
 17. Las RPC de reserva/confirmación/liberación solo pueden ejecutarlas usuarios `authenticated`; no quedan ejecutables por `public`.
 
-18. Los errores deben diferenciar al menos entre IMEI ya no disponible, sesión/organización inválida y error técnico de la RPC, para no atribuir falsamente todos los fallos a otro cajero.
+18. Los errores deben diferenciar al menos entre IMEI ya no disponible, sesión/organización inválida, reserva incompleta y error técnico de la RPC, para no atribuir falsamente todos los fallos a otro cajero.
 
 ## Evidencia del hueco actual
 
